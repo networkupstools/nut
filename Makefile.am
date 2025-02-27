@@ -645,10 +645,16 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
 	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
 	        else \
-	            echo "  DOC-CHANGELOG-GENERATE        $@" ; \
+	            if test -s "$@" ; then \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : RE-GENERATE (older than Git workspace metadata) ..." ; \
+	            else \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : GENERATE (currently absent) ..." ; \
+	            fi ; \
 	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
 	            CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR="$(CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR)" \
-	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || { \
+	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) \
+	              && { echo "  DOC-CHANGELOG-GENERATE        $@ : SUCCESS"; } \
+	              || { \
 	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
 	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
 	            } ; \
