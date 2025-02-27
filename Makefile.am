@@ -192,11 +192,15 @@ all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/clients
 
 all/include \
 all/conf \
-all/docs/man \
+.prep-src-docs/docs/man \
+.prep-src-docs/docs \
 all/lib \
 .ChangeLog.adoc-parsed.latest/docs \
 ChangeLog.adoc-parsed/docs \
 all-recursive/data:
+	+@$(SUBDIR_TGT_RULE)
+
+all/docs/man: .prep-src-docs/docs/man
 	+@$(SUBDIR_TGT_RULE)
 
 # Note: we optionally sort of depend on ChangeLog.adoc so it is pre-made and
@@ -205,7 +209,7 @@ all-recursive/data:
 # BUT we do not want to (re-)build ChangeLog if no (relevant) DOC_BUILD_LIST
 # types are enabled.
 MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 0
-all/docs:
+all/docs: .prep-src-docs/docs/man
 	+@case "@DOC_BUILD_LIST@" in \
 		*pdf*|*html-single*|*html-chunked*) \
 			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ ..." ; \
