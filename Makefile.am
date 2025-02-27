@@ -206,13 +206,14 @@ all-recursive/data:
 # do not compete for it to be made by independent "make" processes later on.
 # BUT we do not want to (re-)build ChangeLog if no (relevant) DOC_BUILD_LIST
 # types are enabled.
+MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 0
 all/docs:
 	+@case "@DOC_BUILD_LIST@" in \
 		*pdf*|*html-single*|*html-chunked*) \
-			MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY=0 && \
+			MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" \
 			export MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY && \
-			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$${MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY}" ChangeLog.adoc/. && \
-			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$${MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY}" .ChangeLog.adoc-parsed.latest/docs ;; \
+			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" ChangeLog.adoc/. && \
+			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" .ChangeLog.adoc-parsed.latest/docs ;; \
 		*) ;; \
 	  esac
 	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
