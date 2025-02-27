@@ -155,6 +155,19 @@ endif HAVE_WINDOWS
 
 if WITH_NUT_MONITOR
 HTML_CLIENT_MANS += NUT-Monitor.html
+
+# Can't make this work on all make implementations at once, so disabled for now
+# Anyway it would be the same man-like page for several functions
+HTML_CLIENT_MANS_FICTION = \
+	NUT-Monitor-py2gtk2.html \
+	NUT-Monitor-py3qt5.html
+
+NUT-Monitor-py2gtk2.html: NUT-Monitor.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+NUT-Monitor-py3qt5.html: NUT-Monitor.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
 endif WITH_NUT_MONITOR
 
 SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt nutconf.txt
