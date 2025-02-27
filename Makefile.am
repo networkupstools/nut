@@ -221,6 +221,12 @@ if SOME_DRIVERS
 all/drivers: all-libs-local/clients all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 else !SOME_DRIVERS
+# We build all drivers, let dummy-ups be built with respect for
+# libupsclient while not blocking other driver builds on that.
+# FIXME: Define an equivalent of DOCS_NO_MAN to let other drivers
+# build in a separate target, then "all/drivers" should depend on
+# both "dummy-ups" and "the rest". Currently this build sequence
+# may be still ordered...
 dummy-ups/drivers: all-libs-local/clients all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
