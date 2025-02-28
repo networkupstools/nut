@@ -37,7 +37,8 @@ all:
 #EGREP = egrep
 EGREP = grep -E
 
-IMAGE_FILES = images/asciidoc.png \
+IMAGE_FILES = \
+	images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
 	images/nut-logo.png \
@@ -132,29 +133,32 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
 # nut-website recipes by now...
 EXTRA_DIST += sms-brazil-protocol.txt
 
-ASCIIDOC_HTML_SINGLE = user-manual.html \
+ASCIIDOC_HTML_SINGLE = \
+	$(top_builddir)/docs/ChangeLog.html \
+	user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
 	release-notes.html \
-	$(top_builddir)/docs/ChangeLog.html \
 	solaris-usb.html \
 	cables.html \
 	FAQ.html
 
-ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
+ASCIIDOC_HTML_CHUNKED = \
+	$(top_builddir)/docs/ChangeLog.chunked \
+	user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
 	release-notes.chunked \
-	$(top_builddir)/docs/ChangeLog.chunked \
 	solaris-usb.chunked \
 	cables.chunked \
 	FAQ.chunked
 
-ASCIIDOC_PDF = user-manual.pdf \
+ASCIIDOC_PDF = \
+	$(top_builddir)/docs/ChangeLog.pdf \
+	user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
 	release-notes.pdf \
-	$(top_builddir)/docs/ChangeLog.pdf \
 	solaris-usb.pdf \
 	cables.pdf \
 	FAQ.pdf
