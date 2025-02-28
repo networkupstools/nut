@@ -2,8 +2,7 @@
 
 AM_CFLAGS = -I$(top_srcdir)/include
 
-$(top_builddir)/common/libcommon.la \
-$(top_builddir)/include/nut_version.h: FORCE
+$(top_builddir)/common/libcommon.la: FORCE
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 EXTRA_DIST = \
