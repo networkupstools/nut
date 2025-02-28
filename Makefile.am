@@ -286,15 +286,29 @@ all/common: all/include all-libs-local/common
 all/clients: all/common all-libs-local/clients
 	+@$(SUBDIR_TGT_RULE)
 
+### Summary of drivers/ subdir dependencies:
 ### Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: clients/libupsclient.la (dummy-ups only)
 ### Requires-int: libdummy.la libdummy_upsdrvquery.la
 ### Requires-int: libdummy_serial.la
-# only libupsclient is needed for dummy-ups,
-# but we do wholesale subdir all-libs-local at the moment...
+
+# TODO in the future: propagate the knowledge of whether we are building
+# dummy-ups by default (if only SOME_DRIVERS are requested) from configure.ac,
+# and so decide if a goal to build it would conflict or not with "all/drivers"
+# (or alternately if it should be or not be part of "all-drivers", keeping the
+# current web of definitions in place). Primarily for the benefit of tests/NIT.
+
+# NOTE: The dummy-ups driver program relies on both libupsclient (ext) and
+# libdummy_upsdrvquery.la (int) - and so requires all-libs-local/drivers too.
 if SOME_DRIVERS
-all/drivers all-drivers: all-libs-local/clients all-libs-local/common
+# Here we do wholesale subdir all-libs-local at the moment, to
+# build whichever drivers are enabled (no idea if dummy-ups is
+# in the default list - FIXME: configure.ac could tell us, so
+# we could provide it for tests/NIT anyway...)
+all/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
 	+@$(SUBDIR_TGT_RULE)
+
+all-drivers: all/drivers
 else !SOME_DRIVERS
 # We build all drivers, let dummy-ups be built with respect for
 # libupsclient while not blocking other driver builds on that.
@@ -303,8 +317,6 @@ else !SOME_DRIVERS
 # separate target with separate dependency trail, then "all-drivers"
 # should depend on both "dummy-ups" and the rest in so constrained
 # "all/drivers". This allows to ultimately not order one after another.
-# NOTE: dummy-ups relies on libdummy_upsdrvquery.la - and so requires
-# all-libs-local/drivers too.
 dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
 	+@$(SUBDIR_TGT_RULE)
 
@@ -343,6 +355,8 @@ all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
 # tests/cppnit (if available).
 # FIXME: technically of all drivers we need dummy-ups here;
 # if it is not enabled among SOME_DRIVERS, things can get funny...
+# But then we should also consider what is enabled by configure and what is not.
+# Maybe we are doing a quick build not to be tested at all? :-/
 all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recursive/data
 	+@$(SUBDIR_TGT_RULE)
 
