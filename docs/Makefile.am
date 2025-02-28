@@ -359,8 +359,11 @@ man:
 	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked .check-* docbook-xsl.css docinfo.xml.in.tmp
-CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
+CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/ChangeLog.adoc
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
+# These two "must be" there per autotools standards, so a "make clean"
+# should not compromise a rebuild:
+DISTCLEANFILES = $(top_builddir)/NEWS $(top_builddir)/README
 
 ### TODO: general automatic dependency generation
 
@@ -858,7 +861,7 @@ $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
 	 fi
 
-DISTCLEANFILES = $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
+DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
 
 # NOTE: In "make SPELLCHECK_INTERACTIVE=true ${docsrc}-spellchecked",
 # after an interactive "aspell check" we follow-up by a run of usual
