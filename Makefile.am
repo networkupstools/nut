@@ -186,6 +186,7 @@ all-libs-local/common: all-libs-local/include
 	+@$(SUBDIR_TGT_RULE)
 
 ### Delivers: libupsclient.la libnutclient.la libnutclientstub.la
+### Delivers: libupsclient-version.h
 ### LIB-Requires-ext: common/libcommonclient.la
 ### Requires-ext: common/libcommon.la common/libcommonclient.la
 ### Requires-ext: common/libparseconf.la
@@ -320,8 +321,11 @@ all/server: all-libs-local/common
 ### LIB-Requires-ext: drivers/libserial-nutscan.la
 ### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
 ### Requires-ext: include/nut_version.h
+### Requires-ext: clients/libupsclient-version.h
 ### Requires-int: libnutscan.la
-all/tools/nut-scanner: all-libs-local/include all-libs-local/tools/nut-scanner all-libs-local/drivers all-libs-local/common
+all/tools/nut-scanner: all-libs-local/include all-libs-local/common \
+	all-libs-local/drivers all-libs-local/clients \
+	all-libs-local/tools/nut-scanner
 	+@$(SUBDIR_TGT_RULE)
 
 # only libnutscan is needed for nutconf,
