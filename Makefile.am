@@ -222,13 +222,17 @@ all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/clients
 
 all/include \
 all/conf \
-prep-src-docs/docs/man \
-prep-src-docs/docs \
 all/lib \
 .ChangeLog.adoc-parsed.latest/docs \
 ChangeLog.adoc-parsed/docs \
 all-recursive/data:
 	+@$(SUBDIR_TGT_RULE)
+
+prep-src-docs/docs/man:
+	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3'; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
+
+prep-src-docs/docs:
+	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
 
 all/docs/man: prep-src-docs/docs/man
 	+@$(SUBDIR_TGT_RULE)
