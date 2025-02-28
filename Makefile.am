@@ -68,8 +68,9 @@ SUBDIRS_ALL_RECURSIVE = \
 # List maintenance is aided by this query:
 #   git grep -E 'LTLIBRARIES' '*.am'
 SUBDIRS_ALL_LIBS_LOCAL = \
-	all-libs-local/clients \
+	all-libs-local/include \
 	all-libs-local/common  \
+	all-libs-local/clients \
 	all-libs-local/drivers \
 	all-libs-local/tests   \
 	all-libs-local/tools/nut-scanner
@@ -173,10 +174,15 @@ SUBDIR_TGT_RULE = ( \
 # the intimate details of other directories' deliverables (so far?). Query:
 #   git grep -E '(LTLIBRARIES|\.la([ :'"`printf '\t'`"']|$))' '*.am'
 
+### Delivers: nut_version.h
+all-libs-local/include:
+	+@$(SUBDIR_TGT_RULE)
+
 ### Delivers: libcommon.la libcommonclient.la libcommonstr.la
 ### Delivers: libparseconf.la libnutconf.la libnutwincompat.la
+### Requires-ext: include/nut_version.h
 ### Requires-int: libparseconf.la libcommonclient.la
-all-libs-local/common: all/include
+all-libs-local/common: all-libs-local/include
 	+@$(SUBDIR_TGT_RULE)
 
 ### Delivers: libupsclient.la libnutclient.la libnutclientstub.la
@@ -220,12 +226,14 @@ all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/clients
 # NOTE: "lib" dir only delivers pkg-config metadata or legacy scripts for any
 # third-party development to integrate with NUT libs, no library recipes there.
 
-all/include \
 all/conf \
 all/lib \
 .ChangeLog.adoc-parsed.latest/docs \
 ChangeLog.adoc-parsed/docs \
 all-recursive/data:
+	+@$(SUBDIR_TGT_RULE)
+
+all/include: all-libs-local/include
 	+@$(SUBDIR_TGT_RULE)
 
 prep-src-docs/docs/man:
@@ -311,8 +319,9 @@ all/server: all-libs-local/common
 
 ### LIB-Requires-ext: drivers/libserial-nutscan.la
 ### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
+### Requires-ext: include/nut_version.h
 ### Requires-int: libnutscan.la
-all/tools/nut-scanner: all-libs-local/tools/nut-scanner all-libs-local/drivers all-libs-local/common
+all/tools/nut-scanner: all-libs-local/include all-libs-local/tools/nut-scanner all-libs-local/drivers all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
 # only libnutscan is needed for nutconf,
