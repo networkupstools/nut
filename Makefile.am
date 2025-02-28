@@ -254,6 +254,7 @@ all/docs: prep-src-docs/docs/man
 			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ : SUCCESS" ;; \
 		*) ;; \
 	  esac
+	+@$(MAKE) $(AM_MAKEFLAGS) prep-src-docs/docs
 	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
 
 all-recursive/docs: all/docs all/docs/man
