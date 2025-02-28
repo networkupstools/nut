@@ -37,7 +37,8 @@ all:
 #EGREP = egrep
 EGREP = grep -E
 
-IMAGE_FILES = images/asciidoc.png \
+IMAGE_FILES = \
+	images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
 	images/nut-logo.png \
@@ -132,29 +133,32 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
 # nut-website recipes by now...
 EXTRA_DIST += sms-brazil-protocol.txt
 
-ASCIIDOC_HTML_SINGLE = user-manual.html \
+ASCIIDOC_HTML_SINGLE = \
+	$(top_builddir)/docs/ChangeLog.html \
+	user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
 	release-notes.html \
-	ChangeLog.html \
 	solaris-usb.html \
 	cables.html \
 	FAQ.html
 
-ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
+ASCIIDOC_HTML_CHUNKED = \
+	$(top_builddir)/docs/ChangeLog.chunked \
+	user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
 	release-notes.chunked \
-	ChangeLog.chunked \
 	solaris-usb.chunked \
 	cables.chunked \
 	FAQ.chunked
 
-ASCIIDOC_PDF = user-manual.pdf \
+ASCIIDOC_PDF = \
+	$(top_builddir)/docs/ChangeLog.pdf \
+	user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
 	release-notes.pdf \
-	ChangeLog.pdf \
 	solaris-usb.pdf \
 	cables.pdf \
 	FAQ.pdf
@@ -215,13 +219,15 @@ pdf_DATA = $(ASCIIDOC_PDFS)
 endif
 
 # the "for" loops might better use $^ but it might be not portable
-check-pdf: $(ASCIIDOC_PDF)
+check-pdf: .check-pdf
+.check-pdf: $(ASCIIDOC_PDF) Makefile
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(ASCIIDOC_PDF) ; do \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i 'PDF document' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED PDF sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED PDF sanity check"; exit 0
+	@touch $@
 
 # Regarding ChangeLog check: sometimes asciidoc gives up early
 # (we have megabytes of text and thousands of sections here).
@@ -244,7 +250,8 @@ check-pdf: $(ASCIIDOC_PDF)
 # (either with different e-mails, or if different author's work
 # is interleaved during the day, e.g. many PRs merged, and no
 # CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR=true setting was in place.
-# NOTE: No dependencies, avoids (re-)generation and log messages.
+# NOTE: No dependencies, avoids (re-)generation and log messages
+# but causes re-run of the check every time.
 ChangeLog.html-contentchecked:
 	@FAILED=""; \
 	 if [ -s '$(top_builddir)/ChangeLog' ] && [ -s ChangeLog.html ] ; then \
@@ -309,7 +316,8 @@ ChangeLog.html-contentchecked:
 	 fi ; \
 	 exit 1
 
-check-html-single: $(ASCIIDOC_HTML_SINGLE)
+check-html-single: .check-html-single
+.check-html-single: $(ASCIIDOC_HTML_SINGLE) Makefile
 	+@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for F in $(ASCIIDOC_HTML_SINGLE) ; do \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
@@ -321,8 +329,10 @@ check-html-single: $(ASCIIDOC_HTML_SINGLE)
 	 done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-single sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	 fi; echo "PASSED HTML-single sanity check"; exit 0
+	@touch $@
 
-check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
+check-html-chunked: .check-html-chunked
+.check-html-chunked: $(ASCIIDOC_HTML_CHUNKED) Makefile
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for D in $(ASCIIDOC_HTML_CHUNKED); do \
 	    for F in "$$D"/*.html ; do \
@@ -334,23 +344,34 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-chunked sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-chunked sanity check"; exit 0
+	@touch $@
 
 # Note: usually the results from man-page check will be reported twice:
 # once as a SUBDIRS child makefile, and once via DOC_CHECK_LIST expansion
 # Note: default `make all` in the man directory caters to drivers etc.
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
+# NOTE; we rig it up with a DOCS_NO_MAN option to simplify parallel work
+# from top-level Makefile, while allowing legacy "cd docs && make" to
+# still do the right thing by default :)
 check-man check-man-man all-man man-man all-html html-man:
-	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
+	+@if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOC-NOT-MAN     SKIP: $@ called in docs/Makefile" ; exit 0 ; fi ; \
+	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
-	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
+	+@if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOC-NOT-MAN     SKIP: $@ called in docs/Makefile" ; exit 0 ; fi ; \
+	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked docbook-xsl.css docinfo.xml.in.tmp
-CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
+CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked .check-* docbook-xsl.css docinfo.xml.in.tmp
+CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/ChangeLog.adoc
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
+# These two "must be" there per autotools standards, so a "make clean"
+# should not compromise a rebuild:
+DISTCLEANFILES = $(top_builddir)/NEWS $(top_builddir)/README
 
 ### TODO: general automatic dependency generation
+
+MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 
 # Prepare text files (currently a manually tracked list)
 # with known presence of GitHub links to convert them from
@@ -360,7 +381,19 @@ CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 # the asciidoc markup (use double-hash to avoid conversion).
 # The $< is okay here, it is used in a suffix rule below
 .adoc.adoc-parsed:
-	@echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
+	@if [ -s '$@' ] && [ x"`find '$@' -newer '$<'`" != x ] ; then \
+		echo "  DOC-ASCIIDOC-GITHUB-LINKS    SKIP: $@ already exists and is newer than $<" ; \
+		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
+			ls -lad $@ $< || true ; \
+			stat $@ $< || true ; \
+		fi ; \
+		exit 0 ; \
+	 fi ; \
+	 echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
+	 if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
+		ls -lad $@ $< || true ; \
+		stat $@ $< || true ; \
+	 fi ; \
 	 cat '$<' | { $(SED) \
 		-e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
 		-e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
@@ -372,8 +405,16 @@ CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 		-e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
 	 ; } > "$@.tmp.$$$$" \
 	 && mv -f "$@.tmp.$$$$" "$@"
+	@if [ x'$@' = x'$(top_builddir)/ChangeLog.adoc-parsed' ] ; then \
+		touch -r '$@' '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' || touch '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' ; \
+	 fi
 
 $(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
+
+.ChangeLog.adoc-parsed.latest: $(top_builddir)/ChangeLog.adoc-parsed
+	@[ x"$?" != x ] && touch -r '$?' '$@' || touch '$@'
+
+CLEANFILES += .ChangeLog.adoc-parsed.latest
 
 dummy:
 $(top_builddir)/ChangeLog: dummy
@@ -389,6 +430,11 @@ A2X_ASCII_IDS =
 else !WITH_PDF_NONASCII_TITLES
 A2X_ASCII_IDS = ":ascii-ids:\n"
 endif !WITH_PDF_NONASCII_TITLES
+
+# Timeout for ChangeLog.adoc rule to wait for competing threads to maybe create
+# (or start creating) the file first - then this "make" thread just waits for
+# it to be done, and exits, as the goal is fulfilled.
+MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 10
 
 # Probably due to the web of makefiles and an overwhelmed job server in some
 # implementations, during parallel builds we can end up scheduling several
@@ -408,10 +454,19 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     test -n "$@" && { printf '=== Failed to generate the ChangeLog\n\n%s\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n' "$${MSG}" > "$@" ; } ; \
 	     exit ; \
 	 } ; \
-	 W=10 ; while [ "$${W}" -gt 0 ] && find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null >/dev/null ; do sleep 1 ; W="`expr $$W - 1`"; done ; touch "$@.tmp.$$$$"; \
-	 if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
-	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
-	 && printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp.$$$$" \
+	 if [ -s '$@' ] && [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
+	 W=0 ; \
+	 if [ "$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" -gt 0 ] 2>/dev/null ; then \
+	        echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : Block for up to $(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY) sec, maybe another thread will make the file first" ; \
+	        while [ "$${W}" -lt "$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" ] && [ x"`find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null`" = x ] ; do sleep 1 ; W="`expr $$W + 1`"; done ; touch "$@.tmp.$$$$"; \
+	        if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
+	 fi ; \
+	 if [ -s "$@" ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : RE-GENERATE" ; else echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : GENERATE" ; fi ; \
+	 { if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then ls -la "$${INPUT}" "$@" || true ; stat "$${INPUT}" "$@" || true ; fi ; } ; \
+	 if [ "$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" -gt 0 ] 2>/dev/null ; then \
+	        echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : PROCEED, waited for $${W} sec" ; \
+	 fi ; \
+	 printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp.$$$$" \
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
 	        -e 's,^\([0-9a-zA-Z]\),=== \1,' \
@@ -441,8 +496,34 @@ user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
 release-notes.html release-notes.chunked release-notes.pdf: release-notes.txt $(top_builddir)/NEWS.adoc-parsed $(top_builddir)/UPGRADING.adoc-parsed asciidoc.conf
-ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf
 solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.conf
+
+# We intentionally evaluate that the original generated ChangeLog file is
+# up to date (from dist or against git) every time we look at it. However
+# we do want to skip re-generation of heavy file formats afterwards if it
+# is still valid (for make, a need for re-evaluation without timestamps
+# to look at is cause to run a recipe always). We define recipes outside
+# the suffix-based handling and require *them* for default target builds.
+ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt .ChangeLog.adoc-parsed.latest asciidoc.conf
+$(top_builddir)/docs/ChangeLog.html $(top_builddir)/docs/ChangeLog.chunked $(top_builddir)/docs/ChangeLog.pdf: ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf
+	@+if [ -s '$(@F)' ] && [ x"`find '$(@F)' -newer '$(top_builddir)/ChangeLog.adoc-parsed'`" != x ] ; then \
+		echo "  DOC-CHANGELOG-RENDER-WRAPPER	SKIP: `pwd`/$(@F) already exists and is newer than ChangeLog.adoc-parsed" ; \
+		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
+			ls -lad `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+			stat `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+		fi ; \
+		exit 0 ; \
+	  else \
+		echo "  DOC-CHANGELOG-RENDER-WRAPPER	`pwd`/$(@F) does not already exist or is older than ChangeLog.adoc-parsed" ; \
+		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
+			ls -lad `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+			stat `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+			time $(MAKE) $(AM_MAKEFLAGS) $(@F) || exit ; \
+		else \
+			$(MAKE) $(AM_MAKEFLAGS) $(@F) || exit ; \
+		fi ; \
+		echo "  DOC-CHANGELOG-RENDER-WRAPPER	`pwd`/$(@F): SUCCESS" ; \
+	  fi
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML. In this case, export the environment
@@ -552,7 +633,7 @@ DOCBUILD_END = { \
 *.html: common.xsl xhtml.xsl
 .txt-prepped.html:
 	+@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
-	 echo "  DOC-HTML Generating $@"; \
+	 echo "  DOC-HTML	Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; \
@@ -560,7 +641,7 @@ DOCBUILD_END = { \
 	    *ChangeLog*) if [ -s '$(top_builddir)/ChangeLog' ] ; then \
 	            $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
 	            if [ "$$RES" != 0 ] ; then \
-	                echo "  DOC-HTML Generating $@ (retry once)" >&2; \
+	                echo "  DOC-HTML	Generating $@ (retry once)" >&2; \
 	                rm -f "$@"; \
 	                A2X_OUTDIR="tmp/html-single.$(@F).$$$$-retry" ; \
 	                $(DOCBUILD_BEGIN) ; RES=0; rm -f "`basename '$(@F)'`"-contentchecked || true ; \
@@ -572,10 +653,16 @@ DOCBUILD_END = { \
 	 esac ; \
 	 exit $$RES
 
+# Note: extra age check here because *.chunked is a directory and not all
+# "make" implementations check its age vs. source files, just always build:
 *.chunked: common.xsl chunked.xsl
 .txt-prepped.chunked:
-	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
-	 echo "  DOC-HTML-CHUNKED Generating $@"; \
+	@if [ -d "$@" ] && [ x"`find '$@' -newer "$<" 2>/dev/null`" != x ] ; then \
+	    echo "  DOC-HTML-CHUNKED	SKIP: keep existing $@"; \
+	    exit 0 ; \
+	 fi ; \
+	 A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
+	 echo "  DOC-HTML-CHUNKED	Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
@@ -584,7 +671,7 @@ DOCBUILD_END = { \
 *.pdf: docinfo.xml
 .txt-prepped.pdf:
 	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
-	 echo "  DOC-PDF  Generating $@"; \
+	 echo "  DOC-PDF	Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
@@ -778,7 +865,7 @@ $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
 	 fi
 
-DISTCLEANFILES = $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
+DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
 
 # NOTE: In "make SPELLCHECK_INTERACTIVE=true ${docsrc}-spellchecked",
 # after an interactive "aspell check" we follow-up by a run of usual
@@ -875,6 +962,7 @@ PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 # NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
 # so should be run from $(abs_builddir) to be safe, as we jump around
 # the build workspace
+prep-src-docs: $(abs_top_builddir)/docs/.prep-src-docs
 $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
 	 linkroot="$(abs_builddir)" ; \

@@ -62,6 +62,10 @@ libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 libnutscan_la_LIBADD = $(NETLIBS)
 libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
 
+# Make sure generated sources are there when needed
+scan_snmp.c: nutscan-snmp.h
+scan_usb.c: nutscan-usb.h
+
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif WITH_LIBLTDL
@@ -182,3 +186,6 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # the root Makefile.am takes care of that!
 #clean-local:
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

@@ -70,3 +70,5 @@ FORCE:
 # distribution
 dist-hook:
 	$(AM_V_at)rm -f $(distdir)/nut_version.h
+
+all-libs-local: nut_version.h

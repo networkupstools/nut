@@ -46,7 +46,10 @@ endif ENABLE_EXTAPI_ENPHASE
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-CLEANFILES = *-spellchecked enphase/*-spellchecked \
+CLEANFILES = *-spellchecked enphase/*-spellchecked
+
+# Do not remove files generated from .in templates during mere "make check":
+DISTCLEANFILES = \
 	enphase/enphase-monitor \
 	enphase/enphase-monitor@.service
 

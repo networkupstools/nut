@@ -37,6 +37,7 @@ endif !WITH_HTML_SINGLE
 all: $(abs_top_builddir)/docs/man/.prep-src-docs
 	+@case "$(ALL_TGT)" in \
 	  *all-*) \
+		if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile" ; exit 0 ; fi ; \
 		echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make $(ALL_TGT)' to ensure complex document types (if enabled)" ; \
 		$(MAKE) $(AM_MAKEFLAGS) $(ALL_TGT) ; exit ;; \
 	  esac ; exit 0
@@ -154,6 +155,19 @@ endif HAVE_WINDOWS
 
 if WITH_NUT_MONITOR
 HTML_CLIENT_MANS += NUT-Monitor.html
+
+# Can't make this work on all make implementations at once, so disabled for now
+# Anyway it would be the same man-like page for several functions
+HTML_CLIENT_MANS_FICTION = \
+	NUT-Monitor-py2gtk2.html \
+	NUT-Monitor-py3qt5.html
+
+NUT-Monitor-py2gtk2.html: NUT-Monitor.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+NUT-Monitor-py3qt5.html: NUT-Monitor.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
 endif WITH_NUT_MONITOR
 
 SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt nutconf.txt
@@ -1051,7 +1065,8 @@ check-man check-man-man: check-man-txt check-man-pages check-html-man
 # the "for" loops might better use $^ but it might be not portable
 check-man-html: check-html-man
 
-check-html-man: $(HTML_MANS)
+check-html-man: .check-html-man
+.check-html-man: $(HTML_MANS) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(HTML_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
@@ -1059,12 +1074,14 @@ check-html-man: $(HTML_MANS)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-man sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-man sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
 # Note: many man-pages here have code samples and are mis-identified as C code
 check-man-page: check-man-pages
 
 # Man-pages may be pre-generated (srcdir), or re-built (builddir)
-check-man-pages: $(MAN_MANS)
+check-man-pages: .check-man-pages
+.check-man-pages: $(MAN_MANS) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(MAN_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
@@ -1077,12 +1094,14 @@ check-man-pages: $(MAN_MANS)
 	      echo "BUILDDIR:"; cd "$(abs_builddir)/" && file $$FAILED ; \
 	    ) >&2 ; exit 1; \
 	fi; echo "PASSED man-page sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
 check-man-source: check-man-txt
 
 # Note: (GNU) make can helpfully add VPATH to the short source filenames
 # which we had listed above, so the "case" below handles two possibilities
-check-man-txt: $(SRC_ALL_PAGES)
+check-man-txt: .check-man-txt
+.check-man-txt: $(SRC_ALL_PAGES) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	( cd $(abs_srcdir) ) || exit; \
 	for F in $(SRC_ALL_PAGES) ; do \
@@ -1095,8 +1114,9 @@ check-man-txt: $(SRC_ALL_PAGES)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
-CLEANFILES = *-spellchecked .prep-src-docs *-prepped
+CLEANFILES = *-spellchecked .prep-src-docs *-prepped .check-*
 
 SUFFIXES = .txt-prepped .txt .html .$(MAN_SECTION_CMD_USR) .$(MAN_SECTION_API) .$(MAN_SECTION_CFG) .$(MAN_SECTION_CMD_SYS)
 
@@ -1314,8 +1334,21 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
 # so should be run from $(abs_builddir) to be safe, as we jump around
 # the build workspace
+# NOTE: For DOCS_NO_MAN case we expect that the top-level Makefile caused
+# parallel runs of several directories, so we can reasonably wait some
+# time for the target file to just appear.
+MAINTAINER_DOCS_PREP_MAN_DELAY = 60
+prep-src-docs: $(abs_top_builddir)/docs/man/.prep-src-docs
 $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
+	 if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then \
+	    if [ "$(MAINTAINER_DOCS_PREP_MAN_DELAY)" -gt 0 ] 2>/dev/null ; then \
+	        echo "  DOCS_NO_MAN     BLOCK: $@ called in docs/man/Makefile : waiting for other thread to complete this target" ; \
+	        W=0 ; while [ "$${W}" -lt "$(MAINTAINER_DOCS_PREP_MAN_DELAY)" ] && ( [ \! -e '$@' ] || [ x"`find $(PREP_SRC) \! -newer '$@' 2>/dev/null`" = x ] ) ; do sleep 1 ; W="`expr $$W + 1`"; done ; \
+	        echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile : waited $$W seconds" ; \
+	    fi ; \
+	    exit 0 ; \
+	 fi ; \
 	 linkroot="$(abs_builddir)" ; \
 	 MAN_SECTIONS_DEFAULT=false ; \
 	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)" = x3581 ] ; then \
