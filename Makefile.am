@@ -168,19 +168,48 @@ SUBDIR_TGT_RULE = ( \
 	)
 
 # A way to quickly handle SUBDIRS_ALL_LIBS_LOCAL as dependency for all others
-# (aka `make all-libs-local` also in root dir):
+# (aka `make all-libs-local` also in root dir). Libs themselves have complex
+# inter-dependencies which we do not spell out here and let one recipe handle
+# the intimate details of other directories' deliverables (so far?). Query:
+#   git grep -E '(LTLIBRARIES|\.la([ :'"`printf '\t'`"']|$))' '*.am'
+
+### Delivers: libcommon.la libcommonclient.la libcommonstr.la
+### Delivers: libparseconf.la libnutconf.la libnutwincompat.la
+### Requires-int: libparseconf.la libcommonclient.la
 all-libs-local/common: all/include
 	+@$(SUBDIR_TGT_RULE)
 
+### Delivers: libupsclient.la libnutclient.la libnutclientstub.la
+### LIB-Requires-ext: common/libcommonclient.la
+### Requires-ext: common/libcommon.la common/libcommonclient.la
+### Requires-ext: common/libparseconf.la
+### Requires-int: libupsclient.la
 all-libs-local/clients: all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
+### Delivers: libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
+### Delivers: libdummy_mockdrv.la libserial-nutscan.la
+### LIB-Requires-ext: common/libcommon.la common/libparseconf.la
+### Requires-ext: common/libcommon.la common/libparseconf.la
+### Requires-ext: clients/libupsclient.la (dummy-ups only)
+### Requires-int: libdummy.la libdummy_upsdrvquery.la
+### Requires-int: libdummy_serial.la
 all-libs-local/drivers: all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
+### Delivers: libdriverstubusb.la
+### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
+### Requires-ext: common/libcommon.la common/libnutconf.la
+### Requires-ext: clients/libnutclient.la clients/libnutclientstub.la
+### Requires-ext: drivers/libdummy_mockdrv.la
+### Requires-int: libdriverstubusb.la
 all-libs-local/tests: all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
+### Delivers: libnutscan.la
+### LIB-Requires-ext: drivers/libserial-nutscan.la
+### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
+### Requires-int: libnutscan.la
 all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/clients
 	+@$(SUBDIR_TGT_RULE)
 
@@ -232,12 +261,21 @@ all-recursive/docs: all/docs all/docs/man
 #   git grep -E '/[^ ]*\.la([ :]|$)' '*.am'
 # It does help to spell out all dependencies, even if transitive, to ensure
 # that the top-level make completes needed (all-libs*) targets before drilling.
+
+### Requires-int: libparseconf.la libcommonclient.la
 all/common: all/include all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
+### Requires-ext: common/libcommon.la common/libcommonclient.la
+### Requires-ext: common/libparseconf.la
+### Requires-int: libupsclient.la
 all/clients: all/common all-libs-local/clients
 	+@$(SUBDIR_TGT_RULE)
 
+### Requires-ext: common/libcommon.la common/libparseconf.la
+### Requires-ext: clients/libupsclient.la (dummy-ups only)
+### Requires-int: libdummy.la libdummy_upsdrvquery.la
+### Requires-int: libdummy_serial.la
 # only libupsclient is needed for dummy-ups,
 # but we do wholesale subdir all-libs-local at the moment...
 if SOME_DRIVERS
@@ -251,7 +289,7 @@ else !SOME_DRIVERS
 # separate target with separate dependency trail, then "all-drivers"
 # should depend on both "dummy-ups" and the rest in so constrained
 # "all/drivers". This allows to ultimately not order one after another.
-# NOTE: dummy-ups relies on libdummy_upsdrvquery.la so requires
+# NOTE: dummy-ups relies on libdummy_upsdrvquery.la - and so requires
 # all-libs-local/drivers too.
 dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
 	+@$(SUBDIR_TGT_RULE)
@@ -262,24 +300,39 @@ all/drivers: all/common all-libs-local/drivers
 all-drivers: dummy-ups$(EXEEXT)/drivers all/drivers
 endif !SOME_DRIVERS
 
+### Requires-ext: common/libcommon.la common/libparseconf.la
 all/server: all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
+### LIB-Requires-ext: drivers/libserial-nutscan.la
+### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
+### Requires-int: libnutscan.la
 all/tools/nut-scanner: all-libs-local/tools/nut-scanner all-libs-local/drivers all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
 # only libnutscan is needed for nutconf,
 # but we do wholesale subdir all-libs-local at the moment...
+### Requires-ext: common/libcommon.la common/libnutconf.la
+### Requires-ext: tools/nut-scanner/libnutscan.la
 all/tools/nutconf: all-libs-local/tools/nut-scanner all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
 all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
 	+@$(SUBDIR_TGT_RULE)
 
-# At least prereqs for NIT, maybe for certain compiled tests too:
+# Prereqs for NIT are runnable upsd, upsc, upsmon, dummy-ups, sample configs...
+# For the actual "make check-NIT" runs - also python scripts and/or compiled
+# tests/cppnit (if available).
+# FIXME: technically of all drivers we need dummy-ups here;
+# if it is not enabled among SOME_DRIVERS, things can get funny...
 all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recursive/data
 	+@$(SUBDIR_TGT_RULE)
 
+### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
+### Requires-ext: common/libcommon.la common/libnutconf.la
+### Requires-ext: clients/libnutclient.la clients/libnutclientstub.la
+### Requires-ext: drivers/libdummy_mockdrv.la
+### Requires-int: libdriverstubusb.la
 all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients
 	+@$(SUBDIR_TGT_RULE)
 
@@ -288,6 +341,7 @@ all-recursive/tests: all/tests/NIT all/tests
 
 if HAVE_MINGW_RESGEN
 if HAVE_WINDOWS
+### Requires-ext: common/libcommon.la
 all/scripts/Windows: all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 else !HAVE_WINDOWS
