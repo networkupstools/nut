@@ -58,8 +58,8 @@ SUBDIRS_ALL_RECURSIVE = \
 	all/server \
 	all/tests/NIT \
 	all/tests \
-	all/docs/man \
 	all/docs \
+	all/docs/man \
 	all-recursive/docs \
 	all-recursive/tests
 
