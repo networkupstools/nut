@@ -9,23 +9,119 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
-# First target often defines default behavior: all
-# We follow up with another pass to `make doc` because our wild recipes
-# sometimes preclude generating all of them on the first pass (FIXME!)
-# missing e.g. PDF and HTML which then pop up in `make check` footprint,
-# or misses a .prep-src-docs stage needed to pattern-make man page files
-# with some "make" implementations...
-all all-am-local all-local: all-recursive
-	+@$(MAKE) $(AM_MAKEFLAGS) doc
-	+@$(MAKE) $(AM_MAKEFLAGS) doc
-
 # include directory for aclocal
 ACLOCAL_AMFLAGS = -I m4
 
-# subdirectories to build and distribute. The order matters, as
-# several subdirectories depend on stuff in "common" or tools being built first
-SUBDIRS = include common clients conf data docs drivers tools \
-  lib scripts server tests
+# Autotools' SUBDIRS (our values are listed below) allow for powerful recursive
+# recipe automation, with one notable weakness: the dirs are processed in a
+# loop sequentially, even in parallel builds (each such sub-make is parallel
+# then). In our case, the HTML/PDF render of ChangeLog can take a minute of
+# work in "docs" while we are not building anything in other dirs. On the up
+# side, that approach does allow for dirs with dependencies to get built first
+# deterministically. For more details search for "am__recursive_targets" in the
+# generated Makefile.
+#
+# The commonly suggested way out of this predicament is to consolidate numerous
+# Makefile.am recipes into one, which alone properly defines all the needed
+# interdependecies that are "known" to one instance of the `make` process.
+# This however loses the ability to quickly e.g. `cd tests && make check`, so
+# the next layer is to re-introduce Makefiles in sub-directories that define
+# a few popular targets to perform via the one big top-level Makefile.
+#
+# Our approach here is to merge the two solutions: do use SUBDIRS the way
+# autotools handle them for the hordes of `*-recursive` targets for us, but
+# define more explicitly the targets for hot code paths (all, check) so that
+# they can run first for certain different directories (in parallel if asked
+# to) with "knowledge" of dependencies, and then a bit wastefully maybe re-run
+# those directories via autotools integration. They should be quick no-ops by
+# then in the anticipated common use-cases.
+#
+# List of source subdirectories to build and distribute, used to spawn automake
+# (alas sequential) target recipes. The order matters, as several subdirectories
+# depend on stuff in "common" or tools being built first!
+SUBDIRS = include common clients conf data drivers tools \
+  lib scripts server tests docs
+
+# Note: not generated from SUBDIRS, because not all are recursive:
+SUBDIRS_ALL_RECURSIVE = \
+	all/include \
+	all/common \
+	all/clients \
+	all/conf \
+	all-recursive/data \
+	all-drivers \
+	all/tools/nut-scanner \
+	all/tools/nutconf \
+	all-recursive/tools \
+	all/lib \
+	all-recursive/scripts \
+	all/server \
+	all/tests/NIT \
+	all/tests \
+	all/docs \
+	all/docs/man \
+	all-recursive/docs \
+	all-recursive/tests
+
+# Library creation happens in a number of subdirectories, may be optional
+# (e.g. C++ ones are not built without a suitable compiler and enablement).
+# List maintenance is aided by this query:
+#   git grep -E 'LTLIBRARIES' '*.am'
+SUBDIRS_ALL_LIBS_LOCAL = \
+	all-libs-local/include \
+	all-libs-local/common  \
+	all-libs-local/clients \
+	all-libs-local/drivers \
+	all-libs-local/tests   \
+	all-libs-local/tools/nut-scanner
+
+# First target often defines default behavior, and in automake is always at least:
+#   all: all-recursive
+# with maybe custom dependencies of "all:" from a Makefile.am tacked on too
+# (which used to cause us a lot of headache, building same things twice at
+# the same time).
+
+#all all-recursive all-am-local all-local: all-fanout-maybe
+all-recursive: all-fanout-maybe
+
+# Run the standard build if going sequential (or with unknown MAKEFLAGS),
+# or fanout if parallel (presuming GNU/BSD/Sun make at least):
+all-fanout-maybe:
+	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
+		echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; exit 0 ; \
+	  fi ; \
+	  case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+		*-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*-[jl][0123456789]*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*|*--jobserver*|*--jobs" "[0123456789]*|*--load-average" "[0123456789]*|*--max-load" "[0123456789]*) \
+			echo "  SUBDIR-MAKE       $@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
+			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs ;; \
+		*)	echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ;; \
+	  esac
+
+# We start with a pass to `make all` in `common` dir because our wild recipes
+# (with other subdirs ensuring the libraries they need have been built) can
+# sometimes cause parallel compilation and library generation for same files
+# driven by different make processes that do not know they aim for same goal,
+# with some "make" implementations...
+# Just in case we followed up with "make doc", since our wild recipes could end
+# up writing into same files and so corrupting them (fixes applied, but...)
+
+# FIXME: Alas, we still tend to step on our toes when making everything at
+# once from scratch, so still do benefit from pre-making the libraries:
+all-fanout-staged:
+	+$(MAKE) $(AM_MAKEFLAGS) all/include
+	+$(MAKE) $(AM_MAKEFLAGS) all/common
+	+$(MAKE) $(AM_MAKEFLAGS) all-fanout-libs
+	+$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs
+
+all-fanout-subdirs: $(SUBDIRS_ALL_RECURSIVE)
+
+all-fanout-libs all-libs-local: $(SUBDIRS_ALL_LIBS_LOCAL)
+
+#all all-am-local all-local:
+#	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
+#	+@$(MAKE) $(AM_MAKEFLAGS) all-recursive
+#	+@$(MAKE) $(AM_MAKEFLAGS) doc
+#	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 bindir = @bindir@
 sbindir = @sbindir@
@@ -57,6 +153,240 @@ EXTRA_DIST += autogen.sh
 if KEEP_NUT_REPORT
 nodist_data_DATA = config.nut_report_feature.log
 endif
+
+# Not too different from automake generated recursive rules at first sight,
+# but here we do not loop all subdirs sequentially - instead, a sub-make
+# (maybe parallel itself and with parallel flags passed) with a certain
+# target in specified dir is the goal, all as separate targets for this
+# level's Makefile:
+SUBDIR_TGT_RULE = ( \
+	TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
+	DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
+	echo "  SUBDIR-MAKE       STARTING: 'make $$TGT' in $$DIR ..." ; \
+	cd "$(abs_builddir)/$${DIR}" && \
+	$(MAKE) $(AM_MAKEFLAGS) $${SUBDIR_TGT_MAKEFLAGS-} "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE       FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
+	echo "  SUBDIR-MAKE       SUCCESS: 'make $$TGT' in $$DIR" ; \
+	)
+
+# A way to quickly handle SUBDIRS_ALL_LIBS_LOCAL as dependency for all others
+# (aka `make all-libs-local` also in root dir). Libs themselves have complex
+# inter-dependencies which we do not spell out here and let one recipe handle
+# the intimate details of other directories' deliverables (so far?). Query:
+#   git grep -E '(LTLIBRARIES|\.la([ :'"`printf '\t'`"']|$))' '*.am'
+
+### Delivers: nut_version.h
+all-libs-local/include:
+	+@$(SUBDIR_TGT_RULE)
+
+### Delivers: libcommon.la libcommonclient.la libcommonstr.la
+### Delivers: libparseconf.la libnutconf.la libnutwincompat.la
+### Requires-ext: include/nut_version.h
+### Requires-int: libparseconf.la libcommonclient.la
+all-libs-local/common: all-libs-local/include
+	+@$(SUBDIR_TGT_RULE)
+
+### Delivers: libupsclient.la libnutclient.la libnutclientstub.la
+### Delivers: libupsclient-version.h
+### LIB-Requires-ext: common/libcommonclient.la
+### Requires-ext: common/libcommon.la common/libcommonclient.la
+### Requires-ext: common/libparseconf.la
+### Requires-int: libupsclient.la
+all-libs-local/clients: all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+### Delivers: libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
+### Delivers: libdummy_mockdrv.la libserial-nutscan.la
+### LIB-Requires-ext: common/libcommon.la common/libparseconf.la
+### Requires-ext: common/libcommon.la common/libparseconf.la
+### Requires-ext: clients/libupsclient.la (dummy-ups only)
+### Requires-int: libdummy.la libdummy_upsdrvquery.la
+### Requires-int: libdummy_serial.la
+all-libs-local/drivers: all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+### Delivers: libdriverstubusb.la
+### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
+### Requires-ext: common/libcommon.la common/libnutconf.la
+### Requires-ext: clients/libnutclient.la clients/libnutclientstub.la
+### Requires-ext: drivers/libdummy_mockdrv.la
+### Requires-int: libdriverstubusb.la
+all-libs-local/tests: all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+### Delivers: libnutscan.la
+### LIB-Requires-ext: drivers/libserial-nutscan.la
+### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
+### Requires-int: libnutscan.la
+all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/clients
+	+@$(SUBDIR_TGT_RULE)
+
+# Handle all SUBDIRS_ALL_RECURSIVE in a way that dependencies can be specified,
+# and portably to different make program implementations. Note we may revisit
+# some dirs via "all-recursive" of a parent after "all" in them first, but it is
+# expected to be a quick no-op (beneficial overall in parallel make situation).
+# NOTE: "lib" dir only delivers pkg-config metadata or legacy scripts for any
+# third-party development to integrate with NUT libs, no library recipes there.
+
+all/conf \
+all/lib \
+.ChangeLog.adoc-parsed.latest/docs \
+ChangeLog.adoc-parsed/docs \
+all-recursive/data:
+	+@$(SUBDIR_TGT_RULE)
+
+all/include: all-libs-local/include
+	+@$(SUBDIR_TGT_RULE)
+
+prep-src-docs/docs/man:
+	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3'; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
+
+prep-src-docs/docs:
+	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
+
+all/docs/man: prep-src-docs/docs/man
+	+@$(SUBDIR_TGT_RULE)
+
+# Note: we optionally sort of depend on ChangeLog.adoc so it is pre-made and
+# pre-processed for html/pdf renders (if any are requested), so they surely
+# do not compete for it to be made by independent "make" processes later on.
+# BUT we do not want to (re-)build ChangeLog if no (relevant) DOC_BUILD_LIST
+# types are enabled.
+MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 0
+all/docs: prep-src-docs/docs/man
+	+@case "@DOC_BUILD_LIST@" in \
+		*pdf*|*html-single*|*html-chunked*) \
+			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ ..." ; \
+			MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" \
+			export MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY && \
+			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" ChangeLog.adoc && \
+			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" .ChangeLog.adoc-parsed.latest/docs && \
+			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ : SUCCESS" ;; \
+		*) ;; \
+	  esac
+	+@$(MAKE) $(AM_MAKEFLAGS) prep-src-docs/docs
+	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
+
+all-recursive/docs: all/docs all/docs/man
+	+@$(SUBDIR_TGT_RULE)
+
+# Dependencies below are dictated by who needs whose library from another dir
+# (generated by a sub-make there, so we pre-emptively ensure it exists to avoid
+# conflicts of several make's writing to same files). Aided by this query:
+#   git grep -E '/[^ ]*\.la([ :]|$)' '*.am'
+# It does help to spell out all dependencies, even if transitive, to ensure
+# that the top-level make completes needed (all-libs*) targets before drilling.
+
+### Requires-int: libparseconf.la libcommonclient.la
+all/common: all/include all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+### Requires-ext: common/libcommon.la common/libcommonclient.la
+### Requires-ext: common/libparseconf.la
+### Requires-int: libupsclient.la
+all/clients: all/common all-libs-local/clients
+	+@$(SUBDIR_TGT_RULE)
+
+### Summary of drivers/ subdir dependencies:
+### Requires-ext: common/libcommon.la common/libparseconf.la
+### Requires-ext: clients/libupsclient.la (dummy-ups only)
+### Requires-int: libdummy.la libdummy_upsdrvquery.la
+### Requires-int: libdummy_serial.la
+
+# TODO in the future: propagate the knowledge of whether we are building
+# dummy-ups by default (if only SOME_DRIVERS are requested) from configure.ac,
+# and so decide if a goal to build it would conflict or not with "all/drivers"
+# (or alternately if it should be or not be part of "all-drivers", keeping the
+# current web of definitions in place). Primarily for the benefit of tests/NIT.
+
+# NOTE: The dummy-ups driver program relies on both libupsclient (ext) and
+# libdummy_upsdrvquery.la (int) - and so requires all-libs-local/drivers too.
+if SOME_DRIVERS
+# Here we do wholesale subdir all-libs-local at the moment, to
+# build whichever drivers are enabled (no idea if dummy-ups is
+# in the default list - FIXME: configure.ac could tell us, so
+# we could provide it for tests/NIT anyway...)
+all/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
+	+@$(SUBDIR_TGT_RULE)
+
+all-drivers: all/drivers
+else !SOME_DRIVERS
+# We build all drivers, let dummy-ups be built with respect for
+# libupsclient while not blocking other driver builds on that.
+# NUTSW_DRIVERLIST_DUMMY_UPS acts as an equivalent of DOCS_NO_MAN
+# in a way, to let other (non dummy-ups) drivers get built in a
+# separate target with separate dependency trail, then "all-drivers"
+# should depend on both "dummy-ups" and the rest in so constrained
+# "all/drivers". This allows to ultimately not order one after another.
+dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
+	+@$(SUBDIR_TGT_RULE)
+
+all/drivers: all/common all-libs-local/drivers
+	+@SUBDIR_TGT_MAKEFLAGS='NUTSW_DRIVERLIST_DUMMY_UPS=dummy'; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
+
+all-drivers: dummy-ups$(EXEEXT)/drivers all/drivers
+endif !SOME_DRIVERS
+
+### Requires-ext: common/libcommon.la common/libparseconf.la
+all/server: all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+### LIB-Requires-ext: drivers/libserial-nutscan.la
+### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
+### Requires-ext: include/nut_version.h
+### Requires-ext: clients/libupsclient-version.h
+### Requires-int: libnutscan.la
+all/tools/nut-scanner: all-libs-local/include all-libs-local/common \
+	all-libs-local/drivers all-libs-local/clients \
+	all-libs-local/tools/nut-scanner
+	+@$(SUBDIR_TGT_RULE)
+
+# only libnutscan is needed for nutconf,
+# but we do wholesale subdir all-libs-local at the moment...
+### Requires-ext: common/libcommon.la common/libnutconf.la
+### Requires-ext: tools/nut-scanner/libnutscan.la
+all/tools/nutconf: all-libs-local/tools/nut-scanner all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
+	+@$(SUBDIR_TGT_RULE)
+
+# Prereqs for NIT are runnable upsd, upsc, upsmon, dummy-ups, sample configs...
+# For the actual "make check-NIT" runs - also python scripts and/or compiled
+# tests/cppnit (if available).
+# FIXME: technically of all drivers we need dummy-ups here;
+# if it is not enabled among SOME_DRIVERS, things can get funny...
+# But then we should also consider what is enabled by configure and what is not.
+# Maybe we are doing a quick build not to be tested at all? :-/
+all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recursive/data
+	+@$(SUBDIR_TGT_RULE)
+
+### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
+### Requires-ext: common/libcommon.la common/libnutconf.la
+### Requires-ext: clients/libnutclient.la clients/libnutclientstub.la
+### Requires-ext: drivers/libdummy_mockdrv.la
+### Requires-int: libdriverstubusb.la
+all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients
+	+@$(SUBDIR_TGT_RULE)
+
+all-recursive/tests: all/tests/NIT all/tests
+	+@$(SUBDIR_TGT_RULE)
+
+if HAVE_MINGW_RESGEN
+if HAVE_WINDOWS
+### Requires-ext: common/libcommon.la
+all/scripts/Windows: all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+else !HAVE_WINDOWS
+all/scripts/Windows:
+	+@$(SUBDIR_TGT_RULE)
+endif !HAVE_WINDOWS
+else !HAVE_MINGW_RESGEN
+all/scripts/Windows:
+	+@$(SUBDIR_TGT_RULE)
+endif !HAVE_MINGW_RESGEN
+
+all-recursive/scripts: all/scripts/Windows
+	+@$(SUBDIR_TGT_RULE)
 
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
@@ -435,10 +765,16 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
 	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
 	        else \
-	            echo "  DOC-CHANGELOG-GENERATE        $@" ; \
+	            if test -s "$@" ; then \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : RE-GENERATE (older than Git workspace metadata) ..." ; \
+	            else \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : GENERATE (currently absent) ..." ; \
+	            fi ; \
 	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
 	            CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR="$(CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR)" \
-	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || { \
+	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) \
+	              && { echo "  DOC-CHANGELOG-GENERATE        $@ : SUCCESS"; } \
+	              || { \
 	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
 	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
 	            } ; \
@@ -446,13 +782,17 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
 	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
-	            echo "Using distributed ChangeLog file from sources" >&2 ; \
-	            rm -f "$@" || true ; \
-	            cat ./ChangeLog > "$@" ; \
+	            if ! diff ./ChangeLog "$@" >/dev/null 2>/dev/null ; then \
+	                echo "Using distributed ChangeLog file from sources (and builddir is not srcdir)" >&2 ; \
+	                rm -f "$@" || true ; \
+	                cp -pf ./ChangeLog "$@" || { cat ./ChangeLog > "$@" ; touch -r ./ChangeLog "$@" || true ; } ; \
+	            else \
+	                echo "Using distributed ChangeLog file from sources (and builddir already has content identical to one in srcdir)" >&2 ; \
+	            fi ; \
 	        else \
 	            if test -s "$@" ; then \
 	                echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
-	                echo "Using distributed ChangeLog file from sources" >&2 ; \
+	                echo "Using distributed ChangeLog file from sources (and builddir is srcdir)" >&2 ; \
 	            else \
 	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
 	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
