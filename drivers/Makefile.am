@@ -31,25 +31,25 @@ LDADD = $(LDADD_DRIVERS_SERIAL)
 AM_CFLAGS = -I$(top_srcdir)/include
 if WITH_USB
   AM_CFLAGS += $(LIBUSB_CFLAGS)
-endif
+endif WITH_USB
 if WITH_NEON
   AM_CFLAGS += $(LIBNEON_CFLAGS)
-endif
+endif WITH_NEON
 if WITH_LIBPOWERMAN
   AM_CFLAGS += $(LIBPOWERMAN_CFLAGS)
-endif
+endif WITH_LIBPOWERMAN
 if WITH_IPMI
   AM_CFLAGS += $(LIBIPMI_CFLAGS)
-endif
+endif WITH_IPMI
 if WITH_GPIO
   AM_CFLAGS += $(LIBGPIO_CFLAGS)
-endif
+endif WITH_GPIO
 if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
-endif
+endif WITH_MODBUS
 if HAVE_LIBREGEX
   AM_CFLAGS += $(LIBREGEX_CFLAGS)
-endif
+endif HAVE_LIBREGEX
 
 # Allow top-level Makefile override NUTSW_DRIVERLIST_DUMMY_UPS="dummy" to run
 # a build scenario without this driver (it is in a different dependency)
@@ -94,45 +94,45 @@ EXTRA_PROGRAMS += $(GPIO_DRIVERLIST)
 # construct the list of drivers to build
 if SOME_DRIVERS
  driverexec_PROGRAMS = $(DRIVER_BUILD_LIST)
-else
+else !SOME_DRIVERS
  driverexec_PROGRAMS = $(NUTSW_DRIVERLIST)
 if WITH_SERIAL
   driverexec_PROGRAMS += $(SERIAL_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
-else
+else !WITH_SERIAL
 if WITH_USB
   driverexec_PROGRAMS += $(SERIAL_USB_DRIVERLIST)
-endif
-endif
+endif WITH_USB
+endif !WITH_SERIAL
 if WITH_SNMP
   driverexec_PROGRAMS += $(SNMP_DRIVERLIST)
-endif
+endif WITH_SNMP
 if WITH_USB
    driverexec_PROGRAMS += $(USB_LIBUSB_DRIVERLIST)
-endif
+endif WITH_USB
 if WITH_NEON
    driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
-endif
+endif WITH_NEON
 if WITH_LIBPOWERMAN
    driverexec_PROGRAMS += $(POWERMAN_DRIVERLIST)
-endif
+endif WITH_LIBPOWERMAN
 if WITH_IPMI
    driverexec_PROGRAMS += $(IPMI_DRIVERLIST)
-endif
+endif WITH_IPMI
 if WITH_GPIO
    driverexec_PROGRAMS += $(GPIO_DRIVERLIST)
-endif
+endif WITH_GPIO
 if WITH_MACOSX
    driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
-endif
+endif WITH_MACOSX
 if WITH_LINUX_I2C
    driverexec_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
-endif
+endif WITH_LINUX_I2C
 if WITH_MODBUS
   driverexec_PROGRAMS += $(MODBUS_DRIVERLIST)
-endif
+endif WITH_MODBUS
 else
    driverexec_PROGRAMS += skel
-endif
+endif !SOME_DRIVERS
 
 # always build upsdrvctl
 sbin_PROGRAMS = upsdrvctl
@@ -214,7 +214,7 @@ if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LIBS)
   dummy_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
-endif
+endif WITH_SSL
 
 # Clone drivers (in NUTSW_DRIVERLIST)
 clone_SOURCES = clone.c
@@ -233,10 +233,10 @@ skel_LDADD = $(LDADD_DRIVERS)
 # USB
 if WITH_LIBUSB_0_1
 LIBUSB_IMPL = libusb0.c
-endif
+endif WITH_LIBUSB_0_1
 if WITH_LIBUSB_1_0
 LIBUSB_IMPL = libusb1.c
-endif
+endif WITH_LIBUSB_1_0
 USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
  openups-hid.c powervar-hid.c delta_ups-hid.c ever-hid.c legrand-hid.c salicru-hid.c
@@ -311,7 +311,7 @@ if WITH_SSL
   netxml_ups_CFLAGS += $(LIBSSL_CFLAGS)
   netxml_ups_LDADD += $(LIBSSL_LIBS)
   netxml_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
-endif
+endif WITH_SSL
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
@@ -321,7 +321,7 @@ powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
 nut_ipmipsu_SOURCES = nut-ipmipsu.c
 if WITH_FREEIPMI
   nut_ipmipsu_SOURCES += nut-libfreeipmi.c
-endif
+endif WITH_FREEIPMI
 # FIXME: Hacky hot-fix for build agents of varying OS generations:
 # Different versions of IPMI libs requested 'unsigned int *' or 'int *' args:
 #nut_ipmipsu_CFLAGS = $(AM_CFLAGS) -Wno-pointer-sign
@@ -348,7 +348,7 @@ apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 if WITH_MODBUS_USB
   apc_modbus_SOURCES += $(LIBUSB_IMPL) hidparser.c usb-common.c
   apc_modbus_LDADD += $(LIBUSB_LIBS)
-endif
+endif WITH_MODBUS_USB
 
 # Huawei UPS2000 driver
 # (this is both a Modbus and a serial driver)
@@ -379,12 +379,12 @@ nutdrv_qx_CFLAGS = $(AM_CFLAGS)
 if WITH_SERIAL
 nutdrv_qx_CFLAGS += -DQX_SERIAL
 nutdrv_qx_LDADD += libdummy_serial.la $(SERLIBS)
-endif
+endif WITH_SERIAL
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
 nutdrv_qx_SOURCES += $(LIBUSB_IMPL) usb-common.c
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
-endif
+endif WITH_USB
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
  nutdrv_qx_innovart31.c	\
  nutdrv_qx_masterguard.c	\
