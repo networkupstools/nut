@@ -25,8 +25,6 @@ endif WITH_NUTCONF
 
 libparseconf_la_SOURCES = parseconf.c
 
-libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
-
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
@@ -140,7 +138,12 @@ libcommonclient_la_CFLAGS = $(AM_CFLAGS)
 if WITH_NUTCONF
   libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
   libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@ libcommonclient.la
-endif WITH_NUTCONF
+  libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp \
+	../include/nutconf.hpp ../include/nutipc.hpp \
+	../include/nutstream.hpp ../include/nutwriter.hpp
+else !WITH_NUTCONF
+  EXTRA_DIST += nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
+endif !WITH_NUTCONF
 
 if HAVE_LIBREGEX
   libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)
