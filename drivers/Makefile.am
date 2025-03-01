@@ -130,8 +130,6 @@ endif WITH_LINUX_I2C
 if WITH_MODBUS
   driverexec_PROGRAMS += $(MODBUS_DRIVERLIST)
 endif WITH_MODBUS
-else
-   driverexec_PROGRAMS += skel
 endif !SOME_DRIVERS
 
 # always build upsdrvctl
