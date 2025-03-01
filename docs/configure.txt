@@ -250,6 +250,30 @@ CGI configuration files. This is not enabled by default, as they
 are only useful on web servers. See link:data/html/README[] for additional
 information on how to set up CGI programs.
 
+NUT Scanner tool
+~~~~~~~~~~~~~~~~
+
+	--with-nut-scanner (default: auto)
+
+Build and install the optional linkman:nut-scanner[8] tool to discover some
+types of UPS or ePDU devices on locally or remotely connected media (such as
+Serial, USB, SNMP, IPMI, NetXML), as well as NUT data servers (by Avahi/mDNS
+broadcasts or "old" NUT port polling) and simulation device configurations
+that can be relayed by a local linkman:dummy-ups[8] driver instance.
+
+Many of the features depend on third-party libraries that are loosely linked
+at run-time using libltdl, and due to that, the build, delivery and use of the
+tool does not depend on *all* of them being available in the final deployment.
+
+NUT Configuration tool
+~~~~~~~~~~~~~~~~~~~~~~
+
+	--with-nutconf (default: auto)
+
+Build and install the optional linkman:nutconf[8] tool to create and manipulate
+NUT configuration files.  It also optionally supports device scanning, using
+the linkman:nutscan[3] library (if built), to suggest configuration of devices.
+
 Pretty documentation and man pages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
