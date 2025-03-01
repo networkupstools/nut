@@ -1351,7 +1351,7 @@ if [ -z "$BUILD_TYPE" ] ; then
 
         win32|cross-windows-mingw32) BUILD_TYPE="cross-windows-mingw32" ; shift ;;
 
-        win|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
+        win|windows|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
 
         spellcheck|spellcheck-interactive)
             # Note: this is a little hack to reduce typing
