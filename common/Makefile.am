@@ -155,7 +155,8 @@ if HAVE_WINDOWS
 endif HAVE_WINDOWS
 endif WITH_DEV_LIBNUTCONF
   libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
-  libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@ libcommonclient.la
+  # NOTE: No @LTLIBOBJS@ here, because libcommonclient.la includes them (if any)
+  libnutconf_la_LIBADD = @NETLIBS@ libcommonclient.la
   libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp \
 	../include/nutconf.hpp ../include/nutipc.hpp \
 	../include/nutstream.hpp ../include/nutwriter.hpp
