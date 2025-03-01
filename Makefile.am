@@ -321,7 +321,7 @@ dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-lib
 	+@$(SUBDIR_TGT_RULE)
 
 all/drivers: all/common all-libs-local/drivers
-	+@SUBDIR_TGT_MAKEFLAGS='NUTSW_DRIVERLIST_DUMMY_UPS='; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
+	+@SUBDIR_TGT_MAKEFLAGS='NUTSW_DRIVERLIST_DUMMY_UPS=dummy'; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
 
 all-drivers: dummy-ups$(EXEEXT)/drivers all/drivers
 endif !SOME_DRIVERS
