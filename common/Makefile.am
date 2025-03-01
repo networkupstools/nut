@@ -136,8 +136,16 @@ libcommon_la_CFLAGS = $(AM_CFLAGS)
 libcommonclient_la_CFLAGS = $(AM_CFLAGS)
 
 if WITH_NUTCONF
+  # libnutconf version information and build
+  # currently considered a highly experimental and so unstable API at least
+  # (at least, headers contain a lot of data/code, not sure they should)
+  libnutconf_la_LDFLAGS = -version-info 0:1:0
   libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
   libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@ libcommonclient.la
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutconf_la_LDFLAGS += -no-undefined
+endif HAVE_WINDOWS
   libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp \
 	../include/nutconf.hpp ../include/nutipc.hpp \
 	../include/nutstream.hpp ../include/nutwriter.hpp
