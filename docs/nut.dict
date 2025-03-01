@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3322 utf-8
+personal_ws-1.1 en 3323 utf-8
 AAC
 AAS
 ABI
@@ -2264,6 +2264,7 @@ libnut
 libnutclient
 libnutclientstub
 libnutclientsub
+libnutconf
 libnutconfig
 libnutscan
 libpcre

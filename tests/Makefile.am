@@ -133,7 +133,7 @@ $(top_builddir)/common/libcommon.la: dummy
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
-# These are an optional part of cppunittest, if building WITH_NUTCONF
+# These are an optional part of cppunittest, if building WITH_LIBNUTCONF
 CPPUNITTESTSRC_NUTCONF = nutconf_parser_ut.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
 # The test driver which orchestrates running those tests above
 CPPUNITTESTERSRC = cpputest.cpp
@@ -161,10 +161,10 @@ cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 # Currently nutconf and related codebase causes woes for static analysis
 # so we do not build it unless explicitly asked to.
-if WITH_NUTCONF
+if WITH_LIBNUTCONF
 cppunittest_SOURCES += $(CPPUNITTESTSRC_NUTCONF)
 cppunittest_LDADD += $(top_builddir)/common/libnutconf.la
-endif WITH_NUTCONF
+endif WITH_LIBNUTCONF
 
 cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)

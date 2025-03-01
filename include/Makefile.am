@@ -19,11 +19,11 @@ dist_noinst_HEADERS = \
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
 include_HEADERS += parseconf.h
-if WITH_NUTCONF
+if WITH_DEV_LIBNUTCONF
 include_HEADERS += nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.hpp
-else !WITH_NUTCONF
+else !WITH_DEV_LIBNUTCONF
 dist_noinst_HEADERS += nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.hpp
-endif !WITH_NUTCONF
+endif !WITH_DEV_LIBNUTCONF
 else !WITH_DEV
 dist_noinst_HEADERS += parseconf.h
 dist_noinst_HEADERS += nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.hpp
