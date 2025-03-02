@@ -501,15 +501,25 @@ static libraries.
 
 Build and install the nutconf library and header files, to build further
 projects against NUT (especially those that need to set it up).  This is
-currently not tied into either `--with-dev` nor `--with-nutconf`, because
-the tool and library are experimental and the API may undergo significant
-changes in the coming years.
-+
+currently not automatically tied into either `--with-dev` nor `--with-nutconf`
+(note below on `--with-all`), because the tool and library are experimental
+and the API may yet undergo significant changes in the coming years.
+
 It is more recommended to use the CLI tool as a presumably more stable API
 for third-party integrations, than the library directly.
-+
-This would be (optionally) enabled by `--with-all(=auto)` request, though.
-+
+
+This feature may however be enabled or disabled implicitly, using
+`--with-all(=yes/no/auto)` request, based on a combination of
+`--with-nutconf` and `--with-dev` options:
+
+* if `--without-all`, default to set `--with-dev-libnutconf=no`; otherwise...
+* if either `--without-dev` or `--without-nutconf`,
+  default to set `--with-dev-libnutconf=no`; otherwise...
+* if either `--without-dev=auto` and/or `--without-nutconf=auto`,
+  default to set `--with-dev-libnutconf=auto`; otherwise...
+* if both `--with-dev` and `--with-nutconf`,
+  default to set `--with-dev-libnutconf=yes`.
+
 Requires C++11 support to be enabled (available in compiler, not neutered
 by explicit selection of an older standard).
 

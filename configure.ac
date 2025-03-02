@@ -2143,7 +2143,22 @@ AC_ARG_WITH(all,
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
 		if test -z "${with_nut_scanner}"; then with_nut_scanner="${withval}"; fi
 		if test -z "${with_nutconf}"; then with_nutconf="${withval}"; fi
-		if test -z "${with_dev_libnutconf}"; then with_dev_libnutconf="${withval}"; fi
+
+		dnl dev-libnutconf is experimental, and relies on
+		dnl functional C++11 that we only check for later;
+		dnl at best, we can follow main nutconf request
+		dnl (explicit from caller, or set a few lines above)
+		if test -z "${with_dev_libnutconf}" ; then
+			if test "${withval}" = no ; then
+				with_dev_libnutconf="no"
+			else
+				case "${with_dev}${with_nutconf}" in
+					*no*) with_dev_libnutconf="no" ;;
+					*auto*) with_dev_libnutconf="auto" ;;
+					yesyes) with_dev_libnutconf="yes" ;;
+				esac
+			fi
+		fi
 
 		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
 		|| test x"${withval}" != xyes \
