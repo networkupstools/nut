@@ -494,7 +494,7 @@ build further projects against NUT (such as wmNUT client and many others).
 Also delivers `libnutscan` library and header files, if `--with-nut-scanner`
 is enabled.
 
-	--with-dev-libnutconf (default: no)
+	--with-dev-libnutconf (yes/no/auto, default: no)
 
 Build and install the nutconf library and header files, to build further
 projects against NUT (especially those that need to set it up).  This is
