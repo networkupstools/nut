@@ -503,10 +503,15 @@ Build and install the nutconf library and header files, to build further
 projects against NUT (especially those that need to set it up).  This is
 currently not tied into either `--with-dev` nor `--with-nutconf`, because
 the tool and library are experimental and the API may undergo significant
-changes in the coming years.  It is more recommended to use the CLI tool
-for third-party integrations, than the library.
+changes in the coming years.
++
+It is more recommended to use the CLI tool as a presumably more stable API
+for third-party integrations, than the library directly.
 +
 This would be (optionally) enabled by `--with-all(=auto)` request, though.
++
+Requires C++11 support to be enabled (available in compiler, not neutered
+by explicit selection of an older standard).
 
 Options for developers
 ~~~~~~~~~~~~~~~~~~~~~~
