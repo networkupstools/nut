@@ -3,6 +3,27 @@ Configure options
 =================
 endif::website[]
 
+As many other projects relying on GNU autotools for build recipe automation,
+NUT sources deliver a `configure` script which is used to set up numerous
+nuances relevant for your build of the project.  Most of the configuration
+requirements are passed by `--with-something` or `--enable-something` options
+(allegedly, not always used consistently with autotools naming recommendations),
+and with environment variables like `CFLAGS` typically also passed as command
+line options.
+
+Default syntax of `--with-something` or `--enable-something` assumes a boolean
+approach, so the option as such conveys a `yes` string value, and aliases
+`--without-something` or `--disable-something` are handled automatically as
+a `no` string value, for the option named `something`.
+
+In many cases, these options are used to pass non-boolean configuration of the
+option in question, commonly a path, program name, compiler flags to use along
+with a particular dependency, user name or type of documentation to build, etc.
+
+A special case here concerns options that accept an `auto` value, where the
+`configure` script would opine to request a final `yes` or `no`, depending on
+other circumstances of the build environment and requested configuration.
+
 [NOTE]
 ======
 When building NUT from Git sources rather than the distribution tarballs,
