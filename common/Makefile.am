@@ -16,15 +16,22 @@ EXTRA_DIST =
 CLEANFILES =
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
+lib_LTLIBRARIES =
+
+# We define the recipe below in any case, but only activate it by default
+# if the build configuration tells us to:
+if WITH_DEV_LIBNUTCONF
+# We want it built and delivered (standalone or with tool)
+  lib_LTLIBRARIES += libnutconf.la
+else !WITH_DEV_LIBNUTCONF
 if WITH_NUTCONF
-  # We define the recipe below in any case, but only activate it by default
-  # if the build configuration tells us to:
+# We only want the tool, make a private build
   noinst_LTLIBRARIES += libnutconf.la
+# else do not build at all, e.g. do not have C++ support
 endif WITH_NUTCONF
+endif !WITH_DEV_LIBNUTCONF
 
 libparseconf_la_SOURCES = parseconf.c
-
-libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
@@ -136,10 +143,26 @@ libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@ @BSDKVMPROCLIB
 libcommon_la_CFLAGS = $(AM_CFLAGS)
 libcommonclient_la_CFLAGS = $(AM_CFLAGS)
 
-if WITH_NUTCONF
+if WITH_LIBNUTCONF
+if WITH_DEV_LIBNUTCONF
+  # libnutconf version information and build
+  # currently considered a highly experimental and so unstable API at least
+  # (at least, headers contain a lot of data/code, not sure they should)
+  libnutconf_la_LDFLAGS = -version-info 0:1:0
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutconf_la_LDFLAGS += -no-undefined
+endif HAVE_WINDOWS
+endif WITH_DEV_LIBNUTCONF
   libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
-  libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@ libcommonclient.la
-endif WITH_NUTCONF
+  # NOTE: No @LTLIBOBJS@ here, because libcommonclient.la includes them (if any)
+  libnutconf_la_LIBADD = @NETLIBS@ libcommonclient.la
+  libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp \
+	../include/nutconf.hpp ../include/nutipc.hpp \
+	../include/nutstream.hpp ../include/nutwriter.hpp
+else !WITH_LIBNUTCONF
+  EXTRA_DIST += nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
+endif !WITH_LIBNUTCONF
 
 if HAVE_LIBREGEX
   libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)

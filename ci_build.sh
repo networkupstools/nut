@@ -1251,8 +1251,8 @@ consider_cleanup_shortcut() {
         fi
     fi
 
-    # When itertating configure.ac or m4 sources, we can end up with an
-    # existing but useless scropt file - nuke it and restart from scratch!
+    # When iterating configure.ac or m4 sources, we can end up with an
+    # existing but useless script file - nuke it and restart from scratch!
     if [ -s "${CI_BUILDDIR}"/configure ] ; then
         if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
             echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
@@ -1351,7 +1351,7 @@ if [ -z "$BUILD_TYPE" ] ; then
 
         win32|cross-windows-mingw32) BUILD_TYPE="cross-windows-mingw32" ; shift ;;
 
-        win|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
+        win|windows|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
 
         spellcheck|spellcheck-interactive)
             # Note: this is a little hack to reduce typing

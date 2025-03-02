@@ -152,7 +152,7 @@ EXTRA_DIST += autogen.sh
 
 if KEEP_NUT_REPORT
 nodist_data_DATA = config.nut_report_feature.log
-endif
+endif KEEP_NUT_REPORT
 
 # Not too different from automake generated recursive rules at first sight,
 # but here we do not loop all subdirs sequentially - instead, a sub-make
@@ -736,9 +736,9 @@ ChangeLog: dummy-stamp
 
 if WITH_PDF_NONASCII_TITLES
 WITH_PDF_NONASCII_TITLES_ENVVAR = WITH_PDF_NONASCII_TITLES=yes
-else
+else !WITH_PDF_NONASCII_TITLES
 WITH_PDF_NONASCII_TITLES_ENVVAR = WITH_PDF_NONASCII_TITLES=no
-endif
+endif !WITH_PDF_NONASCII_TITLES
 
 # Be sure to not confuse with a DIST'ed file (and so try to overwrite it);
 # do however avoid re-generating it if already made on a previous pass and
@@ -900,39 +900,39 @@ install-data-hook:
 
 if HAVE_SYSTEMD
 HAVE_SYSTEMD = true
-else
+else !HAVE_SYSTEMD
 HAVE_SYSTEMD = false
-endif
+endif !HAVE_SYSTEMD
 
 if WITH_SYSTEMD_TMPFILES
 WITH_SYSTEMD_TMPFILES = true
-else
+else !WITH_SYSTEMD_TMPFILES
 WITH_SYSTEMD_TMPFILES = false
-endif
+endif !WITH_SYSTEMD_TMPFILES
 
 if WITH_SYSTEMD_PRESET
 WITH_SYSTEMD_PRESET = true
-else
+else !WITH_SYSTEMD_PRESET
 WITH_SYSTEMD_PRESET = false
-endif
+endif !WITH_SYSTEMD_PRESET
 
 if WITH_CGI
 WITH_CGI = true
-else
+else !WITH_CGI
 WITH_CGI = false
-endif
+endif !WITH_CGI
 
 if WITH_SOLARIS_SMF
 WITH_SOLARIS_SMF = true
-else
+else !WITH_SOLARIS_SMF
 WITH_SOLARIS_SMF = false
-endif
+endif !WITH_SOLARIS_SMF
 
 if WITH_SOLARIS_INIT
 WITH_SOLARIS_INIT = true
-else
+else !WITH_SOLARIS_INIT
 WITH_SOLARIS_INIT = false
-endif
+endif !WITH_SOLARIS_INIT
 
 # TODO: Actually move this into scripts like Solaris/postinstall
 # using OS-specific `useradd`/`groupadd`, etc.
@@ -1212,13 +1212,13 @@ install-win-bundle-thirdparty:
 	 | grep -vE "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir}|$${rellibexecdir})" \
 	 | ( RES=0 ; while IFS= read LINE ; do echo "$$LINE" ; RES=1; done; exit $$RES )
 
-else
+else !HAVE_WINDOWS
 install-win-bundle:
 	@echo "SKIP: '$@' not enabled for current build configuration"
 
 install-win-bundle-thirdparty:
 	@echo "SKIP: '$@' not enabled for current build configuration"
-endif
+endif !HAVE_WINDOWS
 
 print-MAINTAINERCLEANFILES print-REALCLEANFILES:
 	@echo $(MAINTAINERCLEANFILES)

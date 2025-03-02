@@ -3,6 +3,27 @@ Configure options
 =================
 endif::website[]
 
+As many other projects relying on GNU autotools for build recipe automation,
+NUT sources deliver a `configure` script which is used to set up numerous
+nuances relevant for your build of the project.  Most of the configuration
+requirements are passed by `--with-something` or `--enable-something` options
+(allegedly, not always used consistently with autotools naming recommendations),
+and with environment variables like `CFLAGS` typically also passed as command
+line options.
+
+Default syntax of `--with-something` or `--enable-something` assumes a boolean
+approach, so the option as such conveys a `yes` string value, and aliases
+`--without-something` or `--disable-something` are handled automatically as
+a `no` string value, for the option named `something`.
+
+In many cases, these options are used to pass non-boolean configuration of the
+option in question, commonly a path, program name, compiler flags to use along
+with a particular dependency, user name or type of documentation to build, etc.
+
+A special case here concerns options that accept an `auto` value, where the
+`configure` script would opine to request a final `yes` or `no`, depending on
+other circumstances of the build environment and requested configuration.
+
 [NOTE]
 ======
 When building NUT from Git sources rather than the distribution tarballs,
@@ -250,6 +271,30 @@ CGI configuration files. This is not enabled by default, as they
 are only useful on web servers. See link:data/html/README[] for additional
 information on how to set up CGI programs.
 
+NUT Scanner tool
+~~~~~~~~~~~~~~~~
+
+	--with-nut-scanner (default: auto)
+
+Build and install the optional linkman:nut-scanner[8] tool to discover some
+types of UPS or ePDU devices on locally or remotely connected media (such as
+Serial, USB, SNMP, IPMI, NetXML), as well as NUT data servers (by Avahi/mDNS
+broadcasts or "old" NUT port polling) and simulation device configurations
+that can be relayed by a local linkman:dummy-ups[8] driver instance.
+
+Many of the features depend on third-party libraries that are loosely linked
+at run-time using libltdl, and due to that, the build, delivery and use of the
+tool does not depend on *all* of them being available in the final deployment.
+
+NUT Configuration tool
+~~~~~~~~~~~~~~~~~~~~~~
+
+	--with-nutconf (default: auto)
+
+Build and install the optional linkman:nutconf[8] tool to create and manipulate
+NUT configuration files.  It also optionally supports device scanning, using
+the linkman:nutscan[3] library (if built), to suggest configuration of devices.
+
 Pretty documentation and man pages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -445,6 +490,38 @@ Development files
 
 Build and install the upsclient and nutclient library and header files, to
 build further projects against NUT (such as wmNUT client and many others).
+
+Also delivers `libnutscan` library and header files, if `--with-nut-scanner`
+is enabled.
+
+Disabled development file delivery, in particular, disables installation of
+static libraries.
+
+	--with-dev-libnutconf (yes/no/auto, default: no)
+
+Build and install the nutconf library and header files, to build further
+projects against NUT (especially those that need to set it up).  This is
+currently not automatically tied into either `--with-dev` nor `--with-nutconf`
+(note below on `--with-all`), because the tool and library are experimental
+and the API may yet undergo significant changes in the coming years.
+
+It is more recommended to use the CLI tool as a presumably more stable API
+for third-party integrations, than the library directly.
+
+This feature may however be enabled or disabled implicitly, using
+`--with-all(=yes/no/auto)` request, based on a combination of
+`--with-nutconf` and `--with-dev` options:
+
+* if `--without-all`, default to set `--with-dev-libnutconf=no`; otherwise...
+* if either `--without-dev` or `--without-nutconf`,
+  default to set `--with-dev-libnutconf=no`; otherwise...
+* if either `--without-dev=auto` and/or `--without-nutconf=auto`,
+  default to set `--with-dev-libnutconf=auto`; otherwise...
+* if both `--with-dev` and `--with-nutconf`,
+  default to set `--with-dev-libnutconf=yes`.
+
+Requires C++11 support to be enabled (available in compiler, not neutered
+by explicit selection of an older standard).
 
 Options for developers
 ~~~~~~~~~~~~~~~~~~~~~~

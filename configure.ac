@@ -2098,7 +2098,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, dev-libnutconf, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -2144,6 +2144,22 @@ AC_ARG_WITH(all,
 		if test -z "${with_nut_scanner}"; then with_nut_scanner="${withval}"; fi
 		if test -z "${with_nutconf}"; then with_nutconf="${withval}"; fi
 
+		dnl dev-libnutconf is experimental, and relies on
+		dnl functional C++11 that we only check for later;
+		dnl at best, we can follow main nutconf request
+		dnl (explicit from caller, or set a few lines above)
+		if test -z "${with_dev_libnutconf}" ; then
+			if test "${withval}" = no ; then
+				with_dev_libnutconf="no"
+			else
+				case "${with_dev}${with_nutconf}" in
+					*no*) with_dev_libnutconf="no" ;;
+					*auto*) with_dev_libnutconf="auto" ;;
+					yesyes) with_dev_libnutconf="yes" ;;
+				esac
+			fi
+		fi
+
 		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
 		|| test x"${withval}" != xyes \
 		; then
@@ -2172,9 +2188,14 @@ dnl they are listed near the top by "./configure --help"; however,
 dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
 
+dnl Depends on C++ support being available and enabled
 NUT_ARG_WITH([nutconf], [build and install the nutconf tool (experimental, has compiler/coverage warnings)], [auto])
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
+
+dnl Depends on C++ support being available and enabled
+dnl Does not depend on nutconf or dev explicitly (but warns about inconsistencies)
+NUT_ARG_WITH([dev-libnutconf], [deliver the C++ library behind the nutconf tool and its headers (experimental)], [no])
 
 dnl Activate WITH_UNMAPPED_DATA_POINTS for troubleshooting and evolution?
 dnl Note that production drivers must conform to docs/nut-names.txt
@@ -4495,6 +4516,39 @@ NUT_REPORT_PROGRAM([build and install the nutconf tool (experimental, may lack s
 
 dnl ----------------------------------------------------------------------
 
+dnl Depends on C++, potentially nutconf and dev...
+dnl If not enabled for delivery, the library is built as internal detail
+dnl of the tool (if that is enabled)
+AC_MSG_CHECKING([whether we can and want to deliver the libnutconf library and headers])
+
+AS_CASE(["${nut_with_dev_libnutconf}"],
+		["auto"], [AS_IF([test x"${have_cxx11}" = xyes], [nut_with_dev_libnutconf="yes"], [nut_with_dev_libnutconf="no"])],
+		["yes"], [AS_IF([test x"${have_cxx11}" = xyes], [], [AC_MSG_ERROR([explicit --with-dev-libnutconf=yes can not be satisfied: C++11 support not enabled])])],
+		["no"], [nut_with_dev_libnutconf=no]
+	)
+AC_MSG_RESULT(${nut_with_dev_libnutconf})
+
+AM_CONDITIONAL(WITH_DEV_LIBNUTCONF, test "${nut_with_dev_libnutconf}" = "yes")
+NUT_REPORT_PROGRAM([build and install the deliver the libnutconf library and headers (experimental)],
+					[${nut_with_dev_libnutconf}], [],
+					[WITH_DEV_LIBNUTCONF], [Define to enable delivery of libnutconf developer files])
+
+AS_IF([test x"$nut_with_dev_libnutconf" = x"yes" -a x"${nut_with_dev}" != x"yes"], [
+	AC_MSG_WARN([You are effectively building --with-dev-libnutconf --without-dev, so would only get this library and headers but maybe not others it might need])
+])
+AS_IF([test x"$nut_with_dev_libnutconf" = x"yes" -a x"${nut_with_nutconf}" != x"yes"], [
+	AC_MSG_NOTICE([You are effectively building --with-dev-libnutconf --without-nutconf, so would only get the library and headers but not the tool])
+])
+AS_IF([test x"$nut_with_dev_libnutconf" != x"yes" -a x"${nut_with_nutconf}" = x"yes"], [
+	AC_MSG_NOTICE([You are effectively building --without-dev-libnutconf --with-nutconf, so would only get the tool (library and headers are just its internal detail during build)])
+])
+
+dnl At least the lib and/or the tool delivery are enabled, generate the
+dnl automake rules to build the library (privately or publicly, that depends):
+AM_CONDITIONAL(WITH_LIBNUTCONF, [test x"${nut_with_dev_libnutconf}" = x"yes" -o x"${nut_with_nutconf}" = x"yes"])
+
+dnl ----------------------------------------------------------------------
+
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
 	AS_HELP_STRING([--with-augeas-lenses-dir=PATH], [where to install Augeas configuration-management lenses (/usr/share/augeas/lenses{/dist,/})]),
@@ -5731,6 +5785,7 @@ AC_CONFIG_FILES([
  include/Makefile
  lib/libupsclient.pc
  lib/libnutclient.pc
+ lib/libnutconf.pc
  lib/libnutclientstub.pc
  lib/libnutscan.pc
  lib/Makefile

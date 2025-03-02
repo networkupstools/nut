@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3319 utf-8
+personal_ws-1.1 en 3323 utf-8
 AAC
 AAS
 ABI
@@ -1137,6 +1137,7 @@ STIME
 STO
 STP
 STRARG
+SUBDIRS
 SUNWlibusbugen
 SUNWugen
 SUNWusb
@@ -2263,6 +2264,7 @@ libnut
 libnutclient
 libnutclientstub
 libnutclientsub
+libnutconf
 libnutconfig
 libnutscan
 libpcre
@@ -2589,6 +2591,7 @@ ovmf
 pF
 pacman
 pacstrap
+parallelizable
 parallelized
 param
 parsable
@@ -3258,6 +3261,7 @@ wix
 wmNUT
 wmnut
 workflow
+workflows
 workspace
 workspaceFolder
 workspaces
