@@ -179,7 +179,7 @@ during a transition period. The `ups.*` data will then be removed.
 | device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27
 | device.uptime       | Device uptime in seconds                   | 1782
 | device.count        | Total number of daisychained devices       | 1
-| device.usb.version  | Device USB version                         | 01.29
+| device.usb.version  | Device (firmware-reported) USB version     | 01.29
 |====================================================================================
 
 [NOTE]
