@@ -3122,7 +3122,7 @@ static void scanSerialDevices(const NutConfOptions & options) {
  */
 static int mainx(int argc, char * const argv[]) {
 	const char	*prog = xbasename(argv[0]);
-	char	*s = NULL;
+	char	*s = nullptr;
 
 	// Get options
 	NutConfOptions options(argv, argc);
