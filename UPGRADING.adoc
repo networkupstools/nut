@@ -171,6 +171,15 @@ Changes from 2.8.2 to 2.8.3
   and one structure (`nutscan_ipmi_t`) updated in a (hopefully) backwards
   compatible manner. [PR #2523, issue #2244 and numerous PRs for it]
 
+- The `nutconf` tool added to main codebase with NUT v2.8.2 release could be
+  packaged as a single program (with just a dependency on `libnutscan`), e.g.
+  the library code with configuration file processing logic was built into it.
+  Starting with NUT v2.8.3, the `libnutconf` may optionally be built as a
+  standalone shared library, to deliver for development of integrations using
+  `--with-dev-libnutconf` option. In this case the `nutconf` tool program would
+  also depend on it for run-time linking. This may have to be considered in
+  packaging recipes. [#2828]
+
 - Internal API change for `sendsignalpid()` and `sendsignalfn()` methods,
   which can impact NUT forks which build using `libcommon.la` and similar
   libraries.  Added new last argument with `const char *progname` (may be
