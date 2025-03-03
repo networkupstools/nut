@@ -1,7 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -2055,6 +2055,162 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	}
 #endif
 	return (int)len + ret;
+}
+
+/*****************************************************************************
+ * String methods for space-separated token lists, used originally in dstate *
+ *****************************************************************************/
+
+/* Return non-zero if "string" contains "token" (case-sensitive),
+ * either surrounded by space character(s) or start/end of "string",
+ * or 0 if that token is not there, or if either string is NULL or empty.
+ */
+int	str_contains_token(const char *string, const char *token)
+{
+	char	*s = NULL;
+	size_t	offset = 0, toklen = 0;
+
+	if (!token || !*token || !string || !*string)
+		return 0;
+
+	s = strstr(string, token);
+	toklen = strlen(token);
+
+repeat:
+	/* not found or hit end of line */
+	if (!s || !*s)
+		return 0;
+
+	offset = s - string;
+#ifdef DEBUG
+	upsdebugx(3, "%s: '%s' in '%s': offset=%" PRIuSIZE" toklen=%" PRIuSIZE" s[toklen]='0x%2X'\n",
+		__func__, token, string, offset, toklen, s[toklen]);
+#endif
+	if (offset == 0 || string[offset - 1] == ' ') {
+		/* We have hit the start of token */
+		if (s[toklen] == '\0' || s[toklen] == ' ') {
+			/* And we have hit the end of token */
+			return 1;
+		}
+	}
+
+	/* token was a substring of some other token */
+	s = strstr(s + 1, token);
+	goto repeat;
+}
+
+/* Add "token" to end of string "tgt", if it is not yet there
+ * (prefix it with a space character if "tgt" is not empty).
+ * Return 0 if already there, 1 if token was added successfully,
+ * -1 if we needed to add it but it did not fit under the tgtsize limit,
+ * -2 if either string was NULL or "token" was empty.
+ * NOTE: If token contains space(s) inside, recurse to treat it
+ * as several tokens to add independently.
+ * Optionally calls "callback_always" (if not NULL) after checking
+ * for spaces (and maybe recursing) and before checking if the token
+ * is already there, and/or "callback_unique" (if not NULL) after
+ * checking for uniqueness and going to add a newly seen token.
+ * If such callback returns 0, abort the addition of token.
+ */
+int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+			    int (*callback_always)(char *, size_t, const char *),
+			    int (*callback_unique)(char *, size_t, const char *)
+)
+{
+	size_t	toklen = 0, tgtlen = 0;
+
+#ifdef DEBUG
+	upsdebugx(3, "%s: '%s'\n", __func__, token);
+#endif
+
+	if (!tgt || !token || !*token)
+		return -2;
+
+	if (strstr(token, " ")) {
+		/* Recurse adding each sub-token one by one (avoid duplicates)
+		 * We frown upon adding "A FEW TOKENS" at once, but in e.g.
+		 * code with mapping tables this is not easily avoidable...
+		 */
+		char	*tmp = xstrdup(token), *p = tmp, *s = tmp;
+		int	retval = -2, ret = 0;
+
+		while (*p) {
+			if (*p == ' ') {
+				*p = '\0';
+				if (s != p) {
+					/* Only recurse to set non-trivial tokens */
+					ret = str_add_unique_token(tgt, tgtsize, s, callback_always, callback_unique);
+
+					/* Only remember this ret if we are just
+					 * starting, or it is a failure, or
+					 * if we never failed and keep up the
+					 * successful streak */
+					if ( (retval == -2)
+					||   (ret < 0)
+					||   (retval >= 0 && ret >= retval) )
+						retval = ret;
+				}
+				p++;
+				s = p;	/* Start of new word... or a consecutive space to ignore on next cycle */
+			} else {
+				p++;
+			}
+		}
+
+		if (s != p) {
+			/* Last valid token did end with (*p=='\0') */
+			ret = str_add_unique_token(tgt, tgtsize, s, callback_always, callback_unique);
+			if ( (retval == -2)
+			||   (ret < 0)
+			||   (retval >= 0 && ret >= retval) )
+				retval = ret;
+		}
+
+		free(tmp);
+
+		/* Return 0 if all tokens were already there,
+		 * or 1 if all tokens were successfully added
+		 * (and there was at least one non-trivial token) */
+		return retval;
+	}
+
+	if (callback_always) {
+		int	cbret = callback_always(tgt, tgtsize, token);
+		if (!cbret) {
+			upsdebugx(2, "%s: skip token '%s': due to callback_always()", __func__, token);
+			return -3;
+		}
+	}
+
+	if (str_contains_token(tgt, token)) {
+		upsdebugx(2, "%s: skip token '%s': was already set", __func__, token);
+		return 0;
+	}
+
+	if (callback_unique) {
+		int	cbret = callback_unique(tgt, tgtsize, token);
+		if (!cbret) {
+			upsdebugx(2, "%s: skip token '%s': due to callback_unique()", __func__, token);
+			return -3;
+		}
+	}
+
+	/* separate with a space if multiple elements are present */
+	toklen = strlen(token);
+	tgtlen = strlen(tgt);
+
+	if (tgtsize < (tgtlen + (tgtlen > 0 ? 1 : 0) + toklen + 1)) {
+		upsdebugx(1, "%s: skip token '%s': too long for target string", __func__, token);
+		return -1;
+	}
+
+	if (snprintfcat(tgt, tgtsize, "%s%s", (tgtlen > 0) ? " " : "", token) < 0) {
+		upsdebugx(1, "%s: error adding token '%s': snprintfcat() failed", __func__, token);
+		return -1;
+	}
+
+	/* Added successfully */
+	return 1;
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
