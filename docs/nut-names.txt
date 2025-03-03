@@ -636,7 +636,8 @@ battery: Any battery details
                                  and load level lower (Watts)        | 10
 |===============================================================================
 
-NOTE:
+[NOTE]
+======
 `battery.charger.status` replaces the historic flags `CHRG` and `DISCHRG`
 that were exposed through `ups.status`.
 The `battery.charger.status` can have one of the following values:
@@ -646,6 +647,7 @@ The `battery.charger.status` can have one of the following values:
 - `floating`: battery has completed its charge cycle,
    and waiting to go to resting mode,
 - `resting`: the battery is fully charged, and not charging nor discharging.
+======
 
 NOTE: When possible, time-stamps and dates should be expressed as detailed
 above in the Time and Date format chapter.
