@@ -216,6 +216,11 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
    * extended Voltronic protocol to support longer numbers as remaining
      `battery.runtime` value. [#2765]
 
+ - GPIO drivers:
+   * extending to support library API of not only libgpiod v1.x releases,
+     but also v2.x; introduced a NUT `WITH_LIBGPIO_VERSION` C macro (in
+     `config.h`) to differentiate the library variants. [issue #2833]
+
  - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
    communication protocol, which supports any UPS shipped with the PSZ-1053
    extension module. [PR #2448]
