@@ -517,6 +517,7 @@
 "Gtec"	"ups"	"2"	"AP160N-1K / AP160LCD-1K-KS / AP160N-2K / AP160LCD-2K-KS / AP160N-3K / AP160LCD-3K-KS / AP160N-6K-PDU / AP160N-10K-PDU"	"USB port"	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-10K-31-00 / ZP120N-10K-31-07 / ZP120N-10K-31-09 / ZP120N-10K-31-99 / ZP120N-20K"	"Serial port"	"blazer_ser"
 "Gtec"	"ups"	"2"	"AP160N-1K / AP160LCD-1K-KS / AP160N-2K / AP160LCD-2K-KS / AP160N-3K / AP160LCD-3K-KS / AP160N-6K-PDU / AP160N-10K-PDU"	"Serial port"	"blazer_ser"
+"Gtec"	"ups"	"3"	"ZP120N"	"USB"	"nutdrv_qx with subdriver=gtec protocol=gtec"
 
 "Guardian"	"ups"	"2"	"LCD 1500 AP (IGA1500LCD)"	"Serial"	"nutdrv_qx"
 
