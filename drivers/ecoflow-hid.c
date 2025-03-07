@@ -104,15 +104,21 @@ static hid_info_t ecoflow_hid2nut[] = {
  * docs/nut-names.txt and group the rest under the ifdef below:
  */
 #if WITH_UNMAPPED_DATA_POINTS
+	/* ConfigActivePower: seems to be close to Wh ratings of the Devices (260Wh for River3+(286Wh are specs)/1024Wh for Delta3+(1024Wh are specs)) */
 	{ "unmapped.ups.flow.[4].configactivepower", 0, 0, "UPS.Flow.[4].ConfigActivePower", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.audiblealarmcontrol", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%.0f", 0, NULL },
+	/* AverageTimeToEmpty: not sure what to map this to and the values do not make sense at this point, they update way too slowly. */
 	{ "unmapped.ups.powersummary.averagetimetoempty", 0, 0, "UPS.PowerSummary.AverageTimeToEmpty", NULL, "%.0f", 0, NULL },
+	/* AverageTimeToFull: not sure what to map this to and the values do not make sense at this point, they update way too slowly. */
 	{ "unmapped.ups.powersummary.averagetimetofull", 0, 0, "UPS.PowerSummary.AverageTimeToFull", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.capacitygranularity1", 0, 0, "UPS.PowerSummary.CapacityGranularity1", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.capacitygranularity2", 0, 0, "UPS.PowerSummary.CapacityGranularity2", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.capacitymode", 0, 0, "UPS.PowerSummary.CapacityMode", NULL, "%.0f", 0, NULL },
-	{ "unmapped.ups.powersummary.configvoltage", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", 0, NULL },
+	/* ConfigVoltage: not sure what this is, had a decimal */
+	{ "unmapped.ups.powersummary.configvoltage", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", 0, NULL },
+	/* DelayBeforeReboot: does not seem to work */
 	{ "unmapped.ups.powersummary.delaybeforereboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", 0, NULL },
+	/* DelayBeforeShutdown: does not seem to work */
 	{ "unmapped.ups.powersummary.delaybeforeshutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.designcapacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.fullchargecapacity", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", 0, NULL },
@@ -129,14 +135,17 @@ static hid_info_t ecoflow_hid2nut[] = {
 	{ "unmapped.ups.powersummary.presentstatus.needreplacement", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.presentstatus.remainingtimelimitexpired", 0, 0, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.presentstatus.shutdownimminent", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, "%.0f", 0, NULL },
+	/* ShutdownRequested: */
 	{ "unmapped.ups.powersummary.presentstatus.shutdownrequested", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownRequested", NULL, "%.0f", 0, NULL },
+	/* VoltageNotRegulated: not sure how to trigger this */
 	{ "unmapped.ups.powersummary.presentstatus.voltagenotregulated", 0, 0, "UPS.PowerSummary.PresentStatus.VoltageNotRegulated", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.remainingcapacity", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.remainingcapacitylimit", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.remainingtimelimit", 0, 0, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", 0, NULL },
 	{ "unmapped.ups.powersummary.runtimetoempty", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
-	{ "unmapped.ups.powersummary.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.0f", 0, NULL },
+	/* Voltage: Probably should have a decimal to match ConfigVoltage, does not seem to change even at 0% capacity */
+	{ "unmapped.ups.powersummary.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
 	{ "unmapped.ups.powersummary.warningcapacitylimit", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
 #endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
