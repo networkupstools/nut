@@ -55,6 +55,7 @@
 #	include "belkin-hid.h"
 #	include "cps-hid.h"
 #	include "delta_ups-hid.h"
+#	include "ecoflow-hid.h"
 #	include "ever-hid.h"
 #	include "idowell-hid.h"
 #	include "legrand-hid.h"
@@ -79,6 +80,7 @@ static subdriver_t *subdriver_list[] = {
 	&belkin_subdriver,
 	&cps_subdriver,
 	&delta_ups_subdriver,
+	&ecoflow_subdriver,
 	&ever_subdriver,
 	&idowell_subdriver,
 	&legrand_subdriver,
