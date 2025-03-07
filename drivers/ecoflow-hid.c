@@ -4,13 +4,9 @@
  *  2003 - 2012	Arnaud Quette <ArnaudQuette@Eaton.com>
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
- *  2013 Charles Lepple <clepple+nut@gmail.com>
- *
- *  TODO: Add year and name for new subdriver author (contributor)
- *  Mention in docs/acknowledgements.txt if this is a vendor contribution
- *
- *  Note: this subdriver was initially generated as a "stub" by the
- *  gen-usbhid-subdriver script. It must be customized.
+ *  2013	Charles Lepple <clepple+nut@gmail.com>
+ *  2024	Yevgeniy Kuksenko <2882631+ykuksenko@users.noreply.github.com>
+ *  2025	M. Greyson Christoforo <grey@christoforo.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,7 +28,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define ECOFLOW_HID_VERSION	"EcoFlow HID 0.1"
+#define ECOFLOW_HID_VERSION	"EcoFlow HID 0.01"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* EcoFlow */
