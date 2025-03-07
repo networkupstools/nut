@@ -255,6 +255,8 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
      would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
    * Added `ups.beeper.status` support for Masterpower MF-UPS650VA using the
      MGE HID subdriver. [#2662]
+   * Added basic support for EcoFlow River 3 Plus and Delta 3 Plus models.
+     [issue #2735, PRs #2740, #2837]
    * Added support for `0x09D6:0x0001` devices using the MGE HID subdriver
      assuming devices made by KSTAR (alternately using MGE vendor ID). [#2661]
    * `powercom-hid` subdriver sent UPS shutdown commands in wrong byte order,
