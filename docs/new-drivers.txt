@@ -284,6 +284,21 @@ met. Otherwise, setting status to `OB LB` should be preferred.
 variable naming scheme,nut-names] for more information.
 ==============================================================================
 
+Similar functionality can be supported for `output.inverter.mode`, where it is
+tracked dynamically (e.g. due to ECO/ESS/HE/Smart or similar marketing buzzword
+modes supported by the device), using the following methods in the loop:
+
+	invmode_init()   -- before doing anything else (clear internal buffers,
+	                    etc.)
+
+	invmode_get(val) -- optionally check if an inverter mode word had been
+	                   set since the most-recent invmode_init()
+
+	invmode_set(val) -- add an inverter mode word (online, line-interactive,
+	                    vendor:eaton:ECO, etc.)
+
+	invmode_commit() -- push out the update
+
 UPS alarms
 ----------
 

@@ -51,7 +51,8 @@
 	static char	*pipename = NULL;
 #endif
 	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
-	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
+	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN],
+			invmode_buf[ST_MAX_VALUE_LEN];
 	static conn_t	*connhead = NULL;
 	static st_tree_t	*dtree_root = NULL;
 	static cmdlist_t	*cmdhead = NULL;
@@ -1737,6 +1738,33 @@ void status_commit(void)
 	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);
 	}
+}
+
+/* similar functions for output.inverter.mode, where tracked dynamically
+ * (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
+void invmode_init(void)
+{
+	memset(invmode_buf, 0, sizeof(invmode_buf));
+}
+
+int  invmode_get(const char *buf)
+{
+	return str_contains_token(invmode_buf, buf);
+}
+
+void invmode_set(const char *buf)
+{
+	str_add_unique_token(invmode_buf, sizeof(invmode_buf), buf, NULL, NULL);
+}
+
+void invmode_commit(void)
+{
+	if (!*invmode_buf) {
+		dstate_delinfo("output.inverter.mode");
+		return;
+	}
+
+	dstate_setinfo("output.inverter.mode", "%s", invmode_buf);
 }
 
 /* similar handlers for ups.alarm */

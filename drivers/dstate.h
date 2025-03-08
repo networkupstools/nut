@@ -3,7 +3,7 @@
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
-	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -110,6 +110,13 @@ void status_set(const char *buf);
 
 /* write the temporary status_buf into ups.status */
 void status_commit(void);
+
+/* similar functions for output.inverter.mode, where tracked dynamically
+ * (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
+void invmode_init(void);
+int  invmode_get(const char *buf);
+void invmode_set(const char *buf);
+void invmode_commit(void);
 
 /* similar functions for ups.alarm */
 void alarm_init(void);
