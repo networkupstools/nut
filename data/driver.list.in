@@ -329,6 +329,7 @@
 "Deltec"	"ups"	"4"	"PRM 450/700/1000/1500"	""	"upscode2"
 
 "DEXP"	"ups"	"2"	"MIX 850VA"	"USB"	"blazer_usb langid_fix=0x0409 runtimecal=240,100,720,50 default.battery.voltage.high=2.27 default.battery.voltage.low=1.72"	# https://github.com/networkupstools/nut/issues/721
+"DEXP"	"ups"	"2"	"LCD EURO 1200VA"	"USB"	"driver=nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 langid_fix=0x0409 protocol=hunnox subdriver=hunnox novendor norating noscanlangid default.battery.voltage.high=28,6 default.battery.voltage.low=21,4"	
 
 "Digital Loggers"	"pdu"	"1"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
