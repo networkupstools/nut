@@ -2488,10 +2488,14 @@ static void ups_status_set(void)
 		status_set("BYPASS");		/* on bypass */
 	}
 	if (ups_status & STATUS(ECOMODE)) {
-		status_set("ECO");		/* on ECO(HE) Mode */
+		status_set("ECO");		/* on ECO(HE) Mode,
+						 * should not happen
+						 * via ups.status anymore */
 	}
 	if (ups_status & STATUS(ESSMODE)) {
-		status_set("ESS");		/* on ESS Mode */
+		status_set("ESS");		/* on ESS Mode,
+						 * should not happen
+						 * via ups.status anymore */
 	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
