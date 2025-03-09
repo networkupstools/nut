@@ -61,7 +61,8 @@ MAN_CONF_PAGES = \
 	upssched.conf.$(MAN_SECTION_CFG)
 endif WITH_MANS
 
-man@MAN_SECTION_CFG_BASE@_MANS = $(MAN_CONF_PAGES)
+mancfgdir = $(mandir)/man$(MAN_SECTION_CFG_BASE)
+mancfg_DATA = $(MAN_CONF_PAGES)
 
 HTML_CONF_MANS = \
 	nut.conf.html \
@@ -134,7 +135,8 @@ else !WITH_NUT_MONITOR
 SRC_ALL_PAGES += NUT-Monitor.txt
 endif !WITH_NUT_MONITOR
 
-man@MAN_SECTION_CMD_SYS_BASE@_MANS = $(MAN_CLIENT_PAGES)
+mansysdir = $(mandir)/man$(MAN_SECTION_CMD_SYS_BASE)
+mansys_DATA = $(MAN_CLIENT_PAGES)
 
 HTML_CLIENT_MANS = \
 	nutupsdrv.html \
@@ -176,7 +178,7 @@ if WITH_MANS
 MAN_TOOL_PAGES = nut-scanner.$(MAN_SECTION_CMD_SYS) nut-recorder.$(MAN_SECTION_CMD_SYS) nutconf.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
 
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_TOOL_PAGES)
+mansys_DATA += $(MAN_TOOL_PAGES)
 
 HTML_TOOL_MANS = nut-scanner.html nut-recorder.html nutconf.html
 
@@ -202,8 +204,8 @@ MAN@MAN_SECTION_CMD_SYS_BASE@_CGI_PAGES = \
 endif WITH_MANS
 
 if WITH_CGI
-man@MAN_SECTION_CFG_BASE@_MANS += $(MAN@MAN_SECTION_CFG_BASE@_CGI_PAGES)
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN@MAN_SECTION_CMD_SYS_BASE@_CGI_PAGES)
+mancfg_DATA += $(MAN@MAN_SECTION_CFG_BASE@_CGI_PAGES)
+mansys_DATA += $(MAN@MAN_SECTION_CMD_SYS_BASE@_CGI_PAGES)
 endif WITH_CGI
 
 HTML_CGI_MANS = \
@@ -424,11 +426,13 @@ MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES = \
 endif WITH_MANS
 
 if WITH_DEV
-man@MAN_SECTION_API_BASE@_MANS = $(MAN@MAN_SECTION_API_BASE@_DEV_PAGES)
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES)
+manapidir = $(mandir)/man$(MAN_SECTION_API_BASE)
+manapi_DATA = $(MAN@MAN_SECTION_API_BASE@_DEV_PAGES)
+mansys_DATA += $(MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES)
 
 if !WITH_PKG_CONFIG
-man@MAN_SECTION_CMD_USR_BASE@_MANS = $(MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES)
+manusrdir = $(mandir)/man$(MAN_SECTION_CMD_USR_BASE)
+manusr_DATA = $(MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES)
 endif !WITH_PKG_CONFIG
 
 endif WITH_DEV
@@ -526,7 +530,7 @@ nutscan_add_commented_option_to_device.html: nutscan_add_option_to_device.html
 # If (--with-drivers=...) then we only build specific documents, however
 # still do track (and EXTRA_DIST, and spellcheck) all available sources.
 if SOME_DRIVERS
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(DRIVER_MAN_LIST)
+mansys_DATA += $(DRIVER_MAN_LIST)
 endif
 
 # (--with-serial)
@@ -643,7 +647,7 @@ endif WITH_MANS
 
 
 if WITH_SERIAL
-man@MAN_SECTION_CMD_SYS_BASE@_MANS +=  $(MAN_SERIAL_PAGES)
+mansys_DATA +=  $(MAN_SERIAL_PAGES)
 endif WITH_SERIAL
 
 HTML_SERIAL_MANS = \
@@ -709,7 +713,7 @@ MAN_SNMP_PAGES = snmp-ups.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
 
 if WITH_SNMP
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_SNMP_PAGES)
+mansys_DATA += $(MAN_SNMP_PAGES)
 endif WITH_SNMP
 
 HTML_SNMP_MANS = snmp-ups.html
@@ -741,7 +745,7 @@ MAN_USB_LIBUSB_PAGES = \
 endif WITH_MANS
 
 if WITH_USB
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_USB_LIBUSB_PAGES)
+mansys_DATA += $(MAN_USB_LIBUSB_PAGES)
 endif WITH_USB
 
 HTML_USB_LIBUSB_MANS = \
@@ -765,10 +769,10 @@ MAN_SERIAL_USB_PAGES = \
 endif WITH_MANS
 
 if WITH_SERIAL
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_SERIAL_USB_PAGES)
+mansys_DATA += $(MAN_SERIAL_USB_PAGES)
 else !WITH_SERIAL
 if WITH_USB
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_SERIAL_USB_PAGES)
+mansys_DATA += $(MAN_SERIAL_USB_PAGES)
 endif WITH_USB
 endif !WITH_SERIAL
 
@@ -784,7 +788,7 @@ MAN_NETXML_PAGES = netxml-ups.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
 
 if WITH_NEON
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_NETXML_PAGES)
+mansys_DATA += $(MAN_NETXML_PAGES)
 endif WITH_NEON
 
 HTML_NETXML_MANS = netxml-ups.html
@@ -798,7 +802,7 @@ MAN_POWERMAN_PAGES = powerman-pdu.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
 
 if WITH_LIBPOWERMAN
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_POWERMAN_PAGES)
+mansys_DATA += $(MAN_POWERMAN_PAGES)
 endif WITH_LIBPOWERMAN
 
 HTML_POWERMAN_MANS = powerman-pdu.html
@@ -812,7 +816,7 @@ MAN_IPMIPSU_PAGES = nut-ipmipsu.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
 
 if WITH_IPMI
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_IPMIPSU_PAGES)
+mansys_DATA += $(MAN_IPMIPSU_PAGES)
 endif WITH_IPMI
 
 HTML_IPMIPSU_MANS = nut-ipmipsu.html
@@ -826,7 +830,7 @@ MAN_MACOSX_PAGES = macosx-ups.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
 
 if WITH_MACOSX
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_MACOSX_PAGES)
+mansys_DATA += $(MAN_MACOSX_PAGES)
 endif WITH_MACOSX
 
 HTML_MACOSX_MANS = macosx-ups.html
@@ -851,7 +855,7 @@ MAN_MODBUS_PAGES = phoenixcontact_modbus.$(MAN_SECTION_CMD_SYS) \
 endif WITH_MANS
 
 if WITH_MODBUS
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_MODBUS_PAGES)
+mansys_DATA += $(MAN_MODBUS_PAGES)
 endif WITH_MODBUS
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html \
@@ -870,7 +874,7 @@ MAN_LINUX_I2C_PAGES = asem.$(MAN_SECTION_CMD_SYS) pijuice.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
 
 if WITH_LINUX_I2C
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_LINUX_I2C_PAGES)
+mansys_DATA += $(MAN_LINUX_I2C_PAGES)
 endif WITH_LINUX_I2C
 
 HTML_LINUX_I2C_MANS = asem.html pijuice.html hwmon_ina219.html
@@ -884,7 +888,7 @@ MAN_GPIO_PAGES = generic_gpio.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
 
 if WITH_GPIO
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_GPIO_PAGES)
+mansys_DATA += $(MAN_GPIO_PAGES)
 endif WITH_GPIO
 
 HTML_GPIO_MANS = generic_gpio.html
@@ -943,7 +947,8 @@ SRC_ALL_PAGES += \
 	$(SRC_TOOL_PAGES) \
 	$(SRC_CGI_PAGES) \
 	$(SRC_DEV_PAGES) \
-	$(SRC_DRIVERS_PAGES)
+	$(SRC_DRIVERS_PAGES) \
+	index.txt
 
 EXTRA_DIST = \
 	$(SRC_ALL_PAGES) \
@@ -1038,9 +1043,6 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 # These files are generated when we build from git source so not tracked in
 # git, and not part of tarball (to be in builddir) - so not in EXTRA_DIST.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
-
-# Make sure sources are there for out-of-tree builds:
-$(HTML_MANS) $(MAN_MANS) index.html: $(abs_top_builddir)/docs/man/.prep-src-docs
 
 all-html html-man: $(HTML_MANS) index.html
 
@@ -1177,9 +1179,12 @@ DOCBUILD_END = { \
 ### or just touch-files for peace of mind (in-tree builds). Then we
 ### use these path names (truncated "-prepped") now surely located
 ### in the builddir as the sources for rendered docs.
-*.txt-prepped: $(abs_top_builddir)/docs/man/.prep-src-docs
 
-#.txt.txt-prepped: $(abs_top_builddir)/docs/man/.prep-src-docs
+.NOTINTERMEDIATE: %.txt-prepped
+
+.txt.txt-prepped:
+	rm -f "$(abs_top_builddir)/docs/man/.prep-src-docs"*
+	$(MAKE) prep-src-docs
 
 ### Regarding absolute paths in attributes below: by default asciidoc
 ### resolves include paths relative to the main document, so while we
