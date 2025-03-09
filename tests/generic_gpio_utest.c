@@ -1,7 +1,7 @@
-/*  generic_gpio_utest.c - gpio NUT driver code test tool
+/*  tests/generic_gpio_utest.c - gpio NUT driver code test tool
  *
  *  Copyright (C)
- *	2023       	Modris Berzonis <modrisb@apollo.lv>
+ *	2023 - 2025		Modris Berzonis <modrisb@apollo.lv>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -143,6 +143,8 @@ int main(int argc, char **argv) {
 	char testDescFileNameBuf[LARGEBUF];
 	char *testDescFileName = "generic_gpio_test.txt";
 	unsigned int i;
+	unsigned long version = WITH_LIBGPIO_VERSION;
+	printf("Tests running for libgpiod library version %lu\n", version);
 
 	test_with_exit=0;
 
