@@ -107,14 +107,21 @@ if test -z "${nut_have_gpio_seen}"; then
 
 		dnl Normally this would be in library headers, but they do not seem forthcoming
 		AS_CASE([${GPIO_VERSION}],
-			[2.*], [AC_DEFINE(WITH_LIBGPIO_VERSION, 0x00020000, [Define libgpio C API version generation])],
-			[1.*], [AC_DEFINE(WITH_LIBGPIO_VERSION, 0x00010000, [Define libgpio C API version generation])]
+			[2.*], [
+				AC_DEFINE(WITH_LIBGPIO_VERSION, 0x00020000, [Define libgpio C API version generation])
+				AC_DEFINE_UNQUOTED(WITH_LIBGPIO_VERSION_STR, ["0x00020000"], [Define libgpio C API version generation as string])
+				],
+			[1.*], [
+				AC_DEFINE(WITH_LIBGPIO_VERSION, 0x00010000, [Define libgpio C API version generation])
+				AC_DEFINE_UNQUOTED(WITH_LIBGPIO_VERSION_STR, ["0x00010000"], [Define libgpio C API version generation as string])
+				]
 		)
 	else
 		dnl FIXME: Report "none" here?
 		nut_gpio_lib=""
 
 		AC_DEFINE(WITH_LIBGPIO_VERSION, 0x00000000, [Define libgpio C API version generation])
+		AC_DEFINE_UNQUOTED(WITH_LIBGPIO_VERSION_STR, ["0x00000000"], [Define libgpio C API version generation as string])
 	fi
 
 	unset CFLAGS
