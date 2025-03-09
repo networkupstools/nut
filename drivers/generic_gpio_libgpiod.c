@@ -26,6 +26,10 @@
 #include "generic_gpio_common.h"
 #include "generic_gpio_libgpiod.h"
 
+#if !(defined WITH_LIBGPIO_VERSION) || !(defined WITH_LIBGPIO_VERSION_STR) || (WITH_LIBGPIO_VERSION == 0)
+# error "This driver can not be built, requires a known API WITH_LIBGPIO_VERSION to build against"
+#endif
+
 #define DRIVER_NAME	"GPIO UPS driver (API " WITH_LIBGPIO_VERSION_STR ")"
 #define DRIVER_VERSION	"1.02"
 
