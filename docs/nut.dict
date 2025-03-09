@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3323 utf-8
+personal_ws-1.1 en 3324 utf-8
 AAC
 AAS
 ABI
@@ -245,6 +245,7 @@ DES
 DESTDIR
 DEVICEALARM
 DEVNAME
+DEXP
 DF
 DHEA
 DIGYS
