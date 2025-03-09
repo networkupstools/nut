@@ -671,6 +671,7 @@ Daniele Pezzini <hyouko@gmail.com> - Italiano
     def gui_about_licence( self ) :
         QMessageBox.about( None, _("Licence"), _("""
 Copyright (C) 2010 David Goncalves <david@lestat.st>
+Copyright (C) since 2010 by NUT Community
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

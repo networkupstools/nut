@@ -348,26 +348,35 @@ msgid "Enter a new value for the variable.\n"
 msgstr ""
 
 #: gui-1.3.glade.h:29
-msgid "Copyright (c) 2010 David Goncalves"
+msgid "Copyright (c) 2010 David Goncalves, Copyright (c) after 2010 NUT Community"
 msgstr ""
 
 #: gui-1.3.glade.h:30
 msgid ""
-"GUI to manage devices connected a NUT server.\n"
+"GUI to manage devices connected to a NUT server.\n"
+"Provided with NUT @PACKAGE_VERSION@.\n"
 "\n"
 "For more information about NUT (Network UPS Tools)\n"
-"please visit the author's website.\n"
+"please visit the project web-site:\n"
 "\n"
-"https://www.networkupstools.org\n"
+"@NUT_WEBSITE_BASE@\n"
+"\n"
+"For more information about the GUI please visit\n"
+"the author's web-site:\n"
+"\n"
+"https://www.lestat.st/en/informatique/projets/nut-monitor\n"
+"\n"
+"https://www.lestat.st\n"
 msgstr ""
 
-#: gui-1.3.glade.h:37
-msgid "http://www.lestat.st"
+#: gui-1.3.glade.h:45
+msgid "https://www.lestat.st"
 msgstr ""
 
-#: gui-1.3.glade.h:38
+#: gui-1.3.glade.h:46
 msgid ""
 "Copyright (C) 2010 David Goncalves <david@lestat.st>\n"
+"Copyright (C) since 2010 by NUT Community\n"
 "\n"
 "This program is free software: you can redistribute it and/or modify\n"
 "it under the terms of the GNU General Public License as published by\n"
