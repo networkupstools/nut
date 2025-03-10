@@ -259,7 +259,9 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
    * MGE HID list of `mge_model_names[]` was extended for Eaton 9E, 5PX and 5SC
      series (largely guessing, feedback and PRs for adaptation to actual
      string values reported by devices via USB are welcome), so these devices
-     would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
+     would now report `battery.voltage` and `battery.voltage.nominal`.
+     Also a device from 5S series (5S1200AU) was tested, although it identifies
+     as an "Ellipse PRO" in USB metadata. [#2380]
    * Added `ups.beeper.status` support for Masterpower MF-UPS650VA using the
      MGE HID subdriver. [#2662]
    * Added support for `0x09D6:0x0001` devices using the MGE HID subdriver

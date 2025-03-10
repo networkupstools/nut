@@ -50,7 +50,7 @@
 # endif
 #endif
 
-#define MGE_HID_VERSION		"MGE HID 1.52"
+#define MGE_HID_VERSION		"MGE HID 1.53"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -138,7 +138,7 @@ typedef enum {
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
 		MGE_PULSAR_M_3000_XL,
-	EATON_5P = 0x500,			/* Eaton 5P / 5PX / 5SC series */
+	EATON_5P = 0x500,			/* Eaton 5P / 5PX / 5SC series; possibly 5S also */
 	EATON_9E = 0x900			/* Eaton 9E entry-level / 9SX / 9PX series */
 } models_type_t;
 
@@ -1605,6 +1605,13 @@ static models_name_t mge_model_names [] =
 	{ "Eaton 5SC", "1500", EATON_5P, NULL },
 	{ "Eaton 5SC", "2200", EATON_5P, NULL },
 	{ "Eaton 5SC", "3000", EATON_5P, NULL },
+
+	/* Eaton 5S, sort of:
+	 * Per https://github.com/networkupstools/nut/issues/2380#issuecomment-2705813132
+	 * a device marketed as Eaton "5S1200AU" self-identified as an "Ellipse PRO" in
+	 * USB metadata; the trailing space after "1200 " was significant for matching it.
+	 */
+	{ "Ellipse PRO", "1200 ", EATON_5P, "Eaton 5S1200" },
 
 	/* Eaton 9E entry-level series per discussions in
 	 * https://github.com/networkupstools/nut/issues/1925
