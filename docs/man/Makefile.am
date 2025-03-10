@@ -1044,6 +1044,9 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 # git, and not part of tarball (to be in builddir) - so not in EXTRA_DIST.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
+# Make sure sources are there for out-of-tree builds:
+$(HTML_MANS) $(MAN_MANS) index.html: $(abs_top_builddir)/docs/man/.prep-src-docs
+
 all-html html-man: $(HTML_MANS) index.html
 
 # Have a way to build all man pages, not just those that fit currently
@@ -1180,11 +1183,9 @@ DOCBUILD_END = { \
 ### use these path names (truncated "-prepped") now surely located
 ### in the builddir as the sources for rendered docs.
 
-.NOTINTERMEDIATE: %.txt-prepped
+*.txt-prepped: $(abs_top_builddir)/docs/man/.prep-src-docs
 
-.txt.txt-prepped:
-	rm -f "$(abs_top_builddir)/docs/man/.prep-src-docs"*
-	$(MAKE) prep-src-docs
+#.txt.txt-prepped: $(abs_top_builddir)/docs/man/.prep-src-docs
 
 ### Regarding absolute paths in attributes below: by default asciidoc
 ### resolves include paths relative to the main document, so while we
