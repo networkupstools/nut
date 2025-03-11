@@ -109,8 +109,8 @@ generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
 
 gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
 nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
-gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
-gpiotest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBGPIO_LDFLAGS)
+gpiotest_CFLAGS = $(LIBGPIO_CFLAGS) $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 else !WITH_GPIO
 EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
 endif !WITH_GPIO
