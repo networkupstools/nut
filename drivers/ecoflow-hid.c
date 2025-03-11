@@ -59,6 +59,34 @@ static usage_tables_t ecoflow_utab[] = {
 	NULL,
 };
 
+/* ----------------------------------------------------------------------------- */
+/* Runtime conversion function to match NUT HID driver's conversion signature    */
+/* minutes -> seconds                                                            */
+/* ----------------------------------------------------------------------------- */
+static const char *ecoflow_battery_runtime_conversion(double hid_value) {
+	char *converted_value;
+	double converted_runtime;
+
+	/* Handle runtime values, including those over 24 hours */
+	if (hid_value >= 0) {
+		/* Convert minutes to seconds */
+		converted_runtime = hid_value * 60.0;
+
+		/* Allocate memory for string representation */
+		converted_value = xmalloc(HU_INFOSIZE);
+		snprintf(converted_value, HU_INFOSIZE, "%.0f", converted_runtime);
+		return converted_value;
+	}
+	return NULL;
+}
+
+/* Lookup table for runtime conversion */
+static info_lkp_t ecoflow_runtime_conversion_lkp[] = {
+	{ 0, NULL, ecoflow_battery_runtime_conversion, NULL },
+	{ -1, NULL, NULL, NULL }
+};
+
+
 /* --------------------------------------------------------------- */
 /* HID2NUT lookup table                                            */
 /* --------------------------------------------------------------- */
@@ -150,8 +178,13 @@ static hid_info_t ecoflow_hid2nut[] = {
 	{ "battery.runtime.low", 0, 0, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 
 	/* RunTimeToEmpty: unit minutes - this estimate is for full capacity, not discharge limit capacity
-	 *   FIXME: convert to seconds? */
-	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
+	 * NOTE: Per https://github.com/networkupstools/nut/pull/2837#issuecomment-2709497100
+	 * the device is funny and its readings served here are too...
+	 * default when charged is about 40 hours, because that is the
+	 * power draw of the UPS's controller alone.
+	 */
+	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_QUICK_POLL, ecoflow_runtime_conversion_lkp },
+	/*{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },*/
 
 	/* Voltage: Probably should have a decimal to match ConfigVoltage, does not seem to change even at 0% capacity */
 	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
