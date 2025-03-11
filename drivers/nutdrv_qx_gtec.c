@@ -30,17 +30,16 @@
 /* Process status letters */
 static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 {
+	/* Return value is set by letters A/C/M, exactly one of them *
+	 * should be present in the status unless the UPS is off     */
 	char	*val = "OFF";
 	char	*letters;
 
+	update_status("OL"); /* UPS is on line unless indicated otherwise */
 	upsdebugx(10, "%s: Processing status letters %s", __func__, item->value);
 
 	/* NOTE: The main driver calls status_init() and alarm_init()      *
 	 * for us in nutdrv_qx.c::upsdrv_updateinfo()                      */
-	/* TOTHINK: Should we status_set() the encountered letters where we
-	 * assign "val" below? It is generally possible that states overlap
-	 * e.g. "!OL + LB", but is it possible on this device?
-	 */
 
 	for (letters = item->value; *letters; letters++)
 	{
@@ -48,13 +47,12 @@ static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 		{
 		case 'A': /* Utility fail */
 
-			/* FIXME: Isn't this same as the more common "OB"? */
-			val = "!OL";
+			val = "!OL"; /* "OB" is not defined in status_info */
 			break;
 
 		case 'B': /* Battery low */
 
-			val = "LB";
+			update_status("LB");
 			break;
 
 		case 'C': /* Bypass/boost active */
@@ -74,7 +72,7 @@ static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 
 		case 'F': /* Shutdown active */
 
-			val = "FSD";
+			update_status("FSD");
 			break;
 
 		case 'G': /* Site fault */
@@ -94,11 +92,12 @@ static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 		case 'J': /* Test passed - Result: Failed */
 
 			dstate_setinfo("battery.test.status", "Test passed - Result: Failed");
+			update_status("RB");
 			break;
 
-		case 'K': /* Test not possible or inhibited */
+		case 'K': /* Test Result: Battery disconnected */
 
-			dstate_setinfo("battery.test.status", "Test not possible or inhibited");
+			dstate_setinfo("battery.test.status", "Battery disconnected");
 			break;
 
 		case 'L': /* Test status unknown */
@@ -111,9 +110,14 @@ static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 			val = "OL";
 			break;
 
-		case 'N': /* UPS 110% overload */
+		case 'N': /* UPS overload */
 
-			val = "OVER";
+			update_status("OVER");
+			break;
+
+		case 'P': /* Battery disconnected */
+
+			alarm_set("Battery disconnected");
 			break;
 
 		default:

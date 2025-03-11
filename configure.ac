@@ -1902,6 +1902,8 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_gpio}"; then
 			dnl NOTE: Currently we only support a Linux libgpiod
 			dnl backend for GPIO; eventually there could be more.
+			dnl Also note that since March 2023 the very different
+			dnl libgpiod v2.x is out (requires kernel 5.17.4+)
 			case ${target_os} in
 				linux*) with_gpio="auto";; dnl # TODO: Detect 2018+ distros?
 				*) with_gpio="auto";;
@@ -2117,6 +2119,8 @@ AC_ARG_WITH(all,
 		if test -z "${with_gpio}"; then
 			dnl NOTE: Currently we only support a Linux libgpiod
 			dnl backend for GPIO; eventually there could be more.
+			dnl Also note that since March 2023 the very different
+			dnl libgpiod v2.x is out (requires kernel 5.17.4+)
 			with_gpio="${withval}"
 			case ${target_os} in
 				linux*) ;;
@@ -2595,7 +2599,8 @@ if test "${nut_with_gpio}" != "no"; then
    nut_with_gpio="${nut_have_gpio}"
 fi
 
-NUT_REPORT_DRIVER([build GPIO driver], [${nut_with_gpio}], [${nut_gpio_lib}],
+dnl NOTE: m4 scriptlet also defines WITH_LIBGPIO_VERSION like 0x00020000 in config.h
+NUT_REPORT_DRIVER([build GPIO driver (library v${GPIO_VERSION})], [${nut_with_gpio}], [${nut_gpio_lib}],
 					[WITH_GPIO], [Define to enable GPIO support])
 
 dnl ----------------------------------------------------------------------
