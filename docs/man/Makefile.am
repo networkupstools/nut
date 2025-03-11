@@ -955,6 +955,9 @@ EXTRA_DIST = \
 	$(MAN_MANS) \
 	asciidoc.conf
 
+# Make sure pages are built for the archive (or inherited from earlier tarball)
+BUILT_SOURCES = $(MAN_MANS)
+
 if ! WITH_MANS
 if ! SKIP_MANS
 # Cause "make dist" to fail, unless caller (like the stack of distcheck-dmf)
