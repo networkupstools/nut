@@ -626,7 +626,8 @@ SRC_SERIAL_PAGES = \
 	metasys.txt	\
 	mge-shut.txt	\
 	mge-utalk.txt	\
-	oneac.txt		\
+	nhs_ser.txt	\
+	oneac.txt	\
 	microdowell.txt	\
 	microsol-apc.txt	\
 	nutdrv_siemens_sitop.txt	\
@@ -643,12 +644,6 @@ SRC_SERIAL_PAGES = \
 	upscode2.txt	\
 	victronups.txt	\
 	apcupsd-ups.txt
-
-if HAVE_LINUX_SERIAL_H
-# Temporary, until ported to more OSes
-SRC_SERIAL_PAGES += \
-	nhs_ser.txt
-endif HAVE_LINUX_SERIAL_H
 
 if ! SOME_DRIVERS
 if WITH_MANS
