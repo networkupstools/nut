@@ -183,15 +183,24 @@ NUT-Monitor-py3qt5.html: NUT-Monitor.html
 
 endif WITH_NUT_MONITOR
 
-SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt nutconf.txt
+SRC_TOOL_PAGES = \
+	nut-scanner.txt \
+	nut-recorder.txt \
+	nutconf.txt
 
 if WITH_MANS
-MAN_TOOL_PAGES = nut-scanner.$(MAN_SECTION_CMD_SYS) nut-recorder.$(MAN_SECTION_CMD_SYS) nutconf.$(MAN_SECTION_CMD_SYS)
+MAN_TOOL_PAGES = \
+	nut-scanner.$(MAN_SECTION_CMD_SYS) \
+	nut-recorder.$(MAN_SECTION_CMD_SYS) \
+	nutconf.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
 
 mansys_DATA += $(MAN_TOOL_PAGES)
 
-HTML_TOOL_MANS = nut-scanner.html nut-recorder.html nutconf.html
+HTML_TOOL_MANS = \
+	nut-scanner.html \
+	nut-recorder.html \
+	nutconf.html
 
 # CGI (--with-cgi) related manpages
 SRC_CGI_PAGES = \
