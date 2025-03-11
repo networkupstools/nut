@@ -341,7 +341,7 @@ SRC_DEV_PAGES = \
 if WITH_MANS
 # NOTE: nutclient_*.$(MAN_SECTION_API) has no source counterpart (libnutclient_*.txt)
 
-LIBNUTCLIENT_MISC_DEPS= \
+LIBNUTCLIENT_MISC_DEPS = \
 	nutclient_authenticate.$(MAN_SECTION_API) \
 	nutclient_logout.$(MAN_SECTION_API) \
 	nutclient_device_login.$(MAN_SECTION_API) \
@@ -352,7 +352,7 @@ LIBNUTCLIENT_MISC_DEPS= \
 $(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_TCP_DEPS= \
+LIBNUTCLIENT_TCP_DEPS = \
 	nutclient_tcp_create_client.$(MAN_SECTION_API) \
 	nutclient_tcp_disconnect.$(MAN_SECTION_API) \
 	nutclient_tcp_get_timeout.$(MAN_SECTION_API) \
@@ -363,13 +363,13 @@ LIBNUTCLIENT_TCP_DEPS= \
 $(LIBNUTCLIENT_TCP_DEPS): libnutclient_tcp.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_GENERAL_DEPS= \
+LIBNUTCLIENT_GENERAL_DEPS = \
 	nutclient_destroy.$(MAN_SECTION_API)
 
 $(LIBNUTCLIENT_GENERAL_DEPS): libnutclient_general.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_VARIABLES_DEPS= \
+LIBNUTCLIENT_VARIABLES_DEPS = \
 	nutclient_get_device_rw_variables.$(MAN_SECTION_API) \
 	nutclient_get_device_variable_description.$(MAN_SECTION_API) \
 	nutclient_get_device_variables.$(MAN_SECTION_API) \
@@ -381,7 +381,7 @@ LIBNUTCLIENT_VARIABLES_DEPS= \
 $(LIBNUTCLIENT_VARIABLES_DEPS): libnutclient_variables.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_COMMANDS_DEPS= \
+LIBNUTCLIENT_COMMANDS_DEPS = \
 	nutclient_execute_device_command.$(MAN_SECTION_API) \
 	nutclient_get_device_command_description.$(MAN_SECTION_API) \
 	nutclient_get_device_commands.$(MAN_SECTION_API) \
@@ -390,7 +390,7 @@ LIBNUTCLIENT_COMMANDS_DEPS= \
 $(LIBNUTCLIENT_COMMANDS_DEPS): libnutclient_commands.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_DEVICES_DEPS= \
+LIBNUTCLIENT_DEVICES_DEPS = \
 	nutclient_get_device_description.$(MAN_SECTION_API) \
 	nutclient_get_devices.$(MAN_SECTION_API) \
 	nutclient_has_device.$(MAN_SECTION_API)
