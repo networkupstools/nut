@@ -1162,7 +1162,9 @@ if ! WITH_MANS
 if ! SKIP_MANS
 # Absense of pages can cause "make dist" to fail, unless caller
 # (like `make distcheck-light`) runs ./configure --with-doc=skip
-# (or --with-doc=man=skip specifically)
+# (or --with-doc=man=skip specifically).
+# FIXME: See also HAVE_ASCIIDOC (covers several tools in fact)
+#  and DOC_INSTALL_DISTED_MANS for a more granular approach.
 dist-warning:
 	@echo "WARNING: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2
 
