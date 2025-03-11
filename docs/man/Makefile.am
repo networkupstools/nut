@@ -15,12 +15,26 @@
 #   the --with-doc=man=auto detected an inability to build the man-pages
 #   but enabled the DOC_INSTALL_DISTED_MANS toggle so we deliver disted
 #   files from source tree
+# - Man page lists are collected into several patterns of make variables
+#   (FIXME? to simplify?) :
+#   * INST_MAN_xxx_PAGES: what we would install (if building of man pages,
+#     and perhaps an optional tool building, are enabled);
+#   * MAN_xxx_PAGES: what we actually enable to build and deliver (may be empty);
+#   * DIST_ALL_PAGES: all known page file names, to help ensure dist archive
+#     contains everything that any build may want (even if missing tools to
+#     build the docs from scratch, or choosing not to do that for speed).
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 #EGREP = egrep
 EGREP = grep -E
 
 SRC_ALL_PAGES =
+
+# Used for dist completeness checks; the actual build products
+# (depending on enabled features) are in MAN_MANS and HTML_MANS.
+# This does not necessarily trigger the build, just allows us
+# to check if they all exist.
+DIST_ALL_PAGES =
 
 # Groups and locations for man pages
 manapidir = $(mandir)/man$(MAN_SECTION_API_BASE)
@@ -85,6 +99,14 @@ print-MAN_MANS:
 check-list-MAN_MANS:
 	@FILENAMES='$(MAN_MANS)' ; $(LIST_FILES)
 
+# List all (man page) file names we know we should distribute in a tarball
+# (whether built right now or inherited from a tarball build by itself)
+print-DIST_ALL_PAGES:
+	@echo "$(DIST_ALL_PAGES)"
+
+check-list-DIST_ALL_PAGES:
+	@FILENAMES='$(DIST_ALL_PAGES)' ; $(LIST_FILES)
+
 # Likewise for HTML renders
 print-HTML_MANS:
 	@echo "$(HTML_MANS)"
@@ -108,14 +130,18 @@ SRC_CONF_PAGES = \
 	upsmon.conf.txt \
 	upssched.conf.txt
 
-if WITH_MANS
-MAN_CONF_PAGES = \
+INST_MAN_CONF_PAGES = \
 	nut.conf.$(MAN_SECTION_CFG) \
 	ups.conf.$(MAN_SECTION_CFG) \
 	upsd.conf.$(MAN_SECTION_CFG) \
 	upsd.users.$(MAN_SECTION_CFG) \
 	upsmon.conf.$(MAN_SECTION_CFG) \
 	upssched.conf.$(MAN_SECTION_CFG)
+
+DIST_ALL_PAGES += $(INST_MAN_CONF_PAGES)
+
+if WITH_MANS
+MAN_CONF_PAGES = $(INST_MAN_CONF_PAGES)
 endif WITH_MANS
 
 mancfg_DATA += $(MAN_CONF_PAGES)
@@ -147,8 +173,7 @@ SRC_CLIENT_PAGES = \
 	upsrw.txt \
 	upssched.txt
 
-if WITH_MANS
-MAN_CLIENT_PAGES = \
+INST_MAN_CLIENT_PAGES = \
 	nutupsdrv.$(MAN_SECTION_CMD_SYS) \
 	nut-driver-enumerator.$(MAN_SECTION_CMD_SYS) \
 	upsc.$(MAN_SECTION_CMD_SYS) \
@@ -160,21 +185,27 @@ MAN_CLIENT_PAGES = \
 	upsmon.$(MAN_SECTION_CMD_SYS) \
 	upsrw.$(MAN_SECTION_CMD_SYS) \
 	upssched.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_PAGES += $(INST_MAN_CLIENT_PAGES)
+
+if WITH_MANS
+MAN_CLIENT_PAGES = $(INST_MAN_CLIENT_PAGES)
 endif WITH_MANS
 
+MAN_CLIENT_PAGES_ADDON_NUT_EXE = nut.exe.$(MAN_SECTION_CMD_SYS)
 if HAVE_WINDOWS
 SRC_CLIENT_PAGES += nut.exe.txt
 if WITH_MANS
-MAN_CLIENT_PAGES += nut.exe.$(MAN_SECTION_CMD_SYS)
-endif WITH_MANS
+INST_MAN_CLIENT_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
+else !WITH_MANS
+DIST_ALL_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
+endif !WITH_MANS
 else !HAVE_WINDOWS
 SRC_ALL_PAGES += nut.exe.txt
+DIST_ALL_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
 endif !HAVE_WINDOWS
 
-if WITH_NUT_MONITOR
-SRC_CLIENT_PAGES += NUT-Monitor.txt
-if WITH_MANS
-MAN_CLIENT_PAGES += \
+MAN_CLIENT_PAGES_ADDON_NUT_MONITOR = \
 	NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS) \
 	NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS) \
 	NUT-Monitor.$(MAN_SECTION_CMD_SYS)
@@ -186,9 +217,16 @@ NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
 NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
 	touch $@
 
-endif WITH_MANS
+if WITH_NUT_MONITOR
+SRC_CLIENT_PAGES += NUT-Monitor.txt
+if WITH_MANS
+INST_MAN_CLIENT_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
+else !WITH_MANS
+DIST_ALL_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
+endif !WITH_MANS
 else !WITH_NUT_MONITOR
 SRC_ALL_PAGES += NUT-Monitor.txt
+DIST_ALL_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
 endif !WITH_NUT_MONITOR
 
 mansys_DATA += $(MAN_CLIENT_PAGES)
@@ -232,11 +270,15 @@ SRC_TOOL_PAGES = \
 	nut-recorder.txt \
 	nutconf.txt
 
-if WITH_MANS
-MAN_TOOL_PAGES = \
+INST_MAN_TOOL_PAGES = \
 	nut-scanner.$(MAN_SECTION_CMD_SYS) \
 	nut-recorder.$(MAN_SECTION_CMD_SYS) \
 	nutconf.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_PAGES += $(INST_MAN_TOOL_PAGES)
+
+if WITH_MANS
+MAN_TOOL_PAGES = $(INST_MAN_TOOL_PAGES)
 endif WITH_MANS
 
 mansys_DATA += $(MAN_TOOL_PAGES)
@@ -255,21 +297,26 @@ SRC_CGI_PAGES = \
 	upsstats.cgi.txt \
 	upsimage.cgi.txt
 
-if WITH_MANS
-MAN@MAN_SECTION_CFG_BASE@_CGI_PAGES = \
+INST_MAN_CGI_CFG_PAGES = \
 	hosts.conf.$(MAN_SECTION_CFG) \
 	upsset.conf.$(MAN_SECTION_CFG) \
 	upsstats.html.$(MAN_SECTION_CFG)
 
-MAN@MAN_SECTION_CMD_SYS_BASE@_CGI_PAGES = \
+INST_MAN_CGI_CMD_SYS_PAGES = \
 	upsset.cgi.$(MAN_SECTION_CMD_SYS) \
 	upsstats.cgi.$(MAN_SECTION_CMD_SYS) \
 	upsimage.cgi.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_PAGES += $(INST_MAN_CGI_CFG_PAGES) $(INST_MAN_CGI_CMD_SYS_PAGES)
+
+if WITH_MANS
+MAN_CGI_CFG_PAGES = $(INST_MAN_CGI_CFG_PAGES)
+MAN_CGI_CMD_SYS_PAGES = $(INST_MAN_CGI_CMD_SYS_PAGES)
 endif WITH_MANS
 
 if WITH_CGI
-mancfg_DATA += $(MAN@MAN_SECTION_CFG_BASE@_CGI_PAGES)
-mansys_DATA += $(MAN@MAN_SECTION_CMD_SYS_BASE@_CGI_PAGES)
+mancfg_DATA += $(MAN_CGI_CFG_PAGES)
+mansys_DATA += $(MAN_CGI_CMD_SYS_PAGES)
 endif WITH_CGI
 
 HTML_CGI_MANS = \
@@ -338,7 +385,6 @@ SRC_DEV_PAGES = \
 	sockdebug.txt \
 	skel.txt
 
-if WITH_MANS
 # NOTE: nutclient_*.$(MAN_SECTION_API) has no source counterpart (libnutclient_*.txt)
 
 LIBNUTCLIENT_MISC_DEPS = \
@@ -398,7 +444,7 @@ LIBNUTCLIENT_DEVICES_DEPS = \
 $(LIBNUTCLIENT_DEVICES_DEPS): libnutclient_devices.$(MAN_SECTION_API)
 	touch $@
 
-MAN@MAN_SECTION_API_BASE@_DEV_PAGES = \
+INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
 	upscli_cleanup.$(MAN_SECTION_API) \
@@ -482,19 +528,26 @@ nutscan_scan_ip_range_ipmi.$(MAN_SECTION_API): nutscan_scan_ipmi.$(MAN_SECTION_A
 nutscan_add_commented_option_to_device.$(MAN_SECTION_API): nutscan_add_option_to_device.$(MAN_SECTION_API)
 	touch $@
 
-MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES = \
+INST_MAN_DEV_CMD_USR_PAGES = \
 	libupsclient-config.$(MAN_SECTION_CMD_USR)
 
-MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES = \
+INST_MAN_DEV_CMD_SYS_PAGES = \
 	sockdebug.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_PAGES += $(INST_MAN_DEV_API_PAGES) $(INST_MAN_DEV_CMD_USR_PAGES) $(INST_MAN_DEV_CMD_SYS_PAGES)
+
+if WITH_MANS
+MAN_DEV_API_PAGES = $(INST_MAN_DEV_API_PAGES)
+MAN_DEV_CMD_USR_PAGES = $(INST_MAN_DEV_CMD_USR_PAGES)
+MAN_DEV_CMD_SYS_PAGES = $(INST_MAN_DEV_CMD_SYS_PAGES)
 endif WITH_MANS
 
 if WITH_DEV
-manapi_DATA += $(MAN@MAN_SECTION_API_BASE@_DEV_PAGES)
-mansys_DATA += $(MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES)
+manapi_DATA += $(MAN_DEV_API_PAGES)
+mansys_DATA += $(MAN_DEV_CMD_SYS_PAGES)
 
 if !WITH_PKG_CONFIG
-manusr_DATA += $(MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES)
+manusr_DATA += $(MAN_DEV_CMD_USR_PAGES)
 endif !WITH_PKG_CONFIG
 
 endif WITH_DEV
@@ -645,9 +698,7 @@ SRC_SERIAL_PAGES = \
 	victronups.txt	\
 	apcupsd-ups.txt
 
-if ! SOME_DRIVERS
-if WITH_MANS
-MAN_SERIAL_PAGES = \
+INST_MAN_SERIAL_PAGES = \
 	al175.$(MAN_SECTION_CMD_SYS)	\
 	apcsmart.$(MAN_SECTION_CMD_SYS)	\
 	apcsmart-old.$(MAN_SECTION_CMD_SYS)	\
@@ -694,12 +745,23 @@ MAN_SERIAL_PAGES = \
 	victronups.$(MAN_SECTION_CMD_SYS)	\
 	apcupsd-ups.$(MAN_SECTION_CMD_SYS)
 
+DIST_ALL_PAGES += $(MAN_SERIAL_PAGES)
+
+if SOME_DRIVERS
+
+DIST_ALL_PAGES += nhs_ser.$(MAN_SECTION_CMD_SYS)
+
+else ! SOME_DRIVERS
+
+if WITH_MANS
+MAN_SERIAL_PAGES = $(INST_MAN_SERIAL_PAGES)
 if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
 MAN_SERIAL_PAGES += \
 	nhs_ser.$(MAN_SECTION_CMD_SYS)
-endif HAVE_LINUX_SERIAL_H
-
+else !HAVE_LINUX_SERIAL_H
+DIST_ALL_PAGES += nhs_ser.$(MAN_SECTION_CMD_SYS)
+endif !HAVE_LINUX_SERIAL_H
 endif WITH_MANS
 
 
@@ -764,9 +826,13 @@ endif ! SOME_DRIVERS
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
+INST_MAN_SNMP_PAGES = snmp-ups.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_PAGES += $(INST_MAN_SNMP_PAGES)
+
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_SNMP_PAGES = snmp-ups.$(MAN_SECTION_CMD_SYS)
+MAN_SNMP_PAGES = $(INST_MAN_SNMP_PAGES)
 endif WITH_MANS
 
 if WITH_SNMP
@@ -788,10 +854,7 @@ SRC_USB_LIBUSB_PAGES = \
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
-if ! SOME_DRIVERS
-# NOTE: nut_usb_addvars and blazer-common are not standalone man pages
-if WITH_MANS
-MAN_USB_LIBUSB_PAGES = \
+INST_MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.$(MAN_SECTION_CMD_SYS) \
 	blazer_usb.$(MAN_SECTION_CMD_SYS) \
 	nutdrv_atcl_usb.$(MAN_SECTION_CMD_SYS) \
@@ -799,6 +862,13 @@ MAN_USB_LIBUSB_PAGES = \
 	riello_usb.$(MAN_SECTION_CMD_SYS)	\
 	tripplite_usb.$(MAN_SECTION_CMD_SYS) \
 	usbhid-ups.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_PAGES += $(INST_MAN_USB_LIBUSB_PAGES)
+
+if ! SOME_DRIVERS
+# NOTE: nut_usb_addvars and blazer-common are not standalone man pages
+if WITH_MANS
+MAN_USB_LIBUSB_PAGES = $(INST_MAN_USB_LIBUSB_PAGES)
 endif WITH_MANS
 
 if WITH_USB
@@ -819,10 +889,13 @@ endif ! SOME_DRIVERS
 SRC_SERIAL_USB_PAGES = \
 	nutdrv_qx.txt
 
+INST_MAN_SERIAL_USB_PAGES = \
+	nutdrv_qx.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_PAGES += $(INST_MAN_SERIAL_USB_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_SERIAL_USB_PAGES = \
-	nutdrv_qx.$(MAN_SECTION_CMD_SYS)
+MAN_SERIAL_USB_PAGES = $(INST_MAN_SERIAL_USB_PAGES)
 endif WITH_MANS
 
 if WITH_SERIAL
@@ -839,9 +912,11 @@ endif ! SOME_DRIVERS
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
+INST_MAN_NETXML_PAGES = netxml-ups.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_PAGES += $(INST_MAN_NETXML_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_NETXML_PAGES = netxml-ups.$(MAN_SECTION_CMD_SYS)
+MAN_NETXML_PAGES = $(INST_MAN_NETXML_PAGES)
 endif WITH_MANS
 
 if WITH_NEON
@@ -853,9 +928,11 @@ endif ! SOME_DRIVERS
 
 # (--with-powerman)
 SRC_POWERMAN_PAGES = powerman-pdu.txt
+INST_MAN_POWERMAN_PAGES = powerman-pdu.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_PAGES += $(INST_MAN_POWERMAN_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_POWERMAN_PAGES = powerman-pdu.$(MAN_SECTION_CMD_SYS)
+MAN_POWERMAN_PAGES = $(INST_MAN_POWERMAN_PAGES)
 endif WITH_MANS
 
 if WITH_LIBPOWERMAN
@@ -867,9 +944,11 @@ endif ! SOME_DRIVERS
 
 # (--with-ipmi)
 SRC_IPMIPSU_PAGES = nut-ipmipsu.txt
+INST_MAN_IPMIPSU_PAGES = nut-ipmipsu.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_PAGES += $(INST_MAN_IPMIPSU_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_IPMIPSU_PAGES = nut-ipmipsu.$(MAN_SECTION_CMD_SYS)
+MAN_IPMIPSU_PAGES = $(INST_MAN_IPMIPSU_PAGES)
 endif WITH_MANS
 
 if WITH_IPMI
@@ -881,9 +960,11 @@ endif ! SOME_DRIVERS
 
 # (--with-macosx_ups)
 SRC_MACOSX_PAGES = macosx-ups.txt
+INST_MAN_MACOSX_PAGES = macosx-ups.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_PAGES += $(INST_MAN_MACOSX_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_MACOSX_PAGES = macosx-ups.$(MAN_SECTION_CMD_SYS)
+MAN_MACOSX_PAGES = $(INST_MAN_MACOSX_PAGES)
 endif WITH_MANS
 
 if WITH_MACOSX
@@ -894,28 +975,35 @@ HTML_MACOSX_MANS = macosx-ups.html
 endif ! SOME_DRIVERS
 
 # (--with-modbus)
-SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
+SRC_MODBUS_PAGES = \
+	phoenixcontact_modbus.txt \
 	generic_modbus.txt \
 	huawei-ups2000.txt \
 	socomec_jbus.txt   \
 	adelsystem_cbi.txt \
 	apc_modbus.txt
 
-if ! SOME_DRIVERS
-if WITH_MANS
-MAN_MODBUS_PAGES = phoenixcontact_modbus.$(MAN_SECTION_CMD_SYS) \
+INST_MAN_MODBUS_PAGES = \
+	phoenixcontact_modbus.$(MAN_SECTION_CMD_SYS) \
 	generic_modbus.$(MAN_SECTION_CMD_SYS) \
 	huawei-ups2000.$(MAN_SECTION_CMD_SYS) \
 	socomec_jbus.$(MAN_SECTION_CMD_SYS)   \
 	adelsystem_cbi.$(MAN_SECTION_CMD_SYS) \
 	apc_modbus.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_PAGES += $(INST_MAN_MODBUS_PAGES)
+
+if ! SOME_DRIVERS
+if WITH_MANS
+MAN_MODBUS_PAGES = $(INST_MAN_MODBUS_PAGES)
 endif WITH_MANS
 
 if WITH_MODBUS
 mansys_DATA += $(MAN_MODBUS_PAGES)
 endif WITH_MODBUS
 
-HTML_MODBUS_MANS = phoenixcontact_modbus.html \
+HTML_MODBUS_MANS = \
+	phoenixcontact_modbus.html \
 	generic_modbus.html \
 	huawei-ups2000.html \
 	socomec_jbus.html   \
@@ -924,24 +1012,40 @@ HTML_MODBUS_MANS = phoenixcontact_modbus.html \
 endif ! SOME_DRIVERS
 
 # (--with-linux_i2c)
-SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt hwmon_ina219.txt
+SRC_LINUX_I2C_PAGES = \
+	asem.txt \
+	pijuice.txt \
+	hwmon_ina219.txt
+
+INST_MAN_LINUX_I2C_PAGES = \
+	asem.$(MAN_SECTION_CMD_SYS) \
+	pijuice.$(MAN_SECTION_CMD_SYS) \
+	hwmon_ina219.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_PAGES += $(INST_MAN_LINUX_I2C_PAGES)
+
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_LINUX_I2C_PAGES = asem.$(MAN_SECTION_CMD_SYS) pijuice.$(MAN_SECTION_CMD_SYS) hwmon_ina219.$(MAN_SECTION_CMD_SYS)
+MAN_LINUX_I2C_PAGES = $(INST_MAN_LINUX_I2C_PAGES)
 endif WITH_MANS
 
 if WITH_LINUX_I2C
 mansys_DATA += $(MAN_LINUX_I2C_PAGES)
 endif WITH_LINUX_I2C
 
-HTML_LINUX_I2C_MANS = asem.html pijuice.html hwmon_ina219.html
+HTML_LINUX_I2C_MANS = \
+	asem.html \
+	pijuice.html \
+	hwmon_ina219.html
 endif ! SOME_DRIVERS
 
 # (--with-gpio)
 SRC_GPIO_PAGES = generic_gpio.txt
+INST_MAN_GPIO_PAGES = generic_gpio.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_PAGES += $(INST_MAN_GPIO_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_GPIO_PAGES = generic_gpio.$(MAN_SECTION_CMD_SYS)
+MAN_GPIO_PAGES = $(INST_MAN_GPIO_PAGES)
 endif WITH_MANS
 
 if WITH_GPIO
@@ -957,11 +1061,11 @@ MAN_MANS += \
 	$(MAN_CONF_PAGES) \
 	$(MAN_CLIENT_PAGES) \
 	$(MAN_TOOL_PAGES) \
-	$(MAN@MAN_SECTION_CFG_BASE@_CGI_PAGES) \
-	$(MAN@MAN_SECTION_CMD_SYS_BASE@_CGI_PAGES) \
-	$(MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES) \
-	$(MAN@MAN_SECTION_API_BASE@_DEV_PAGES) \
-	$(MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES) \
+	$(MAN_CGI_CFG_PAGES) \
+	$(MAN_CGI_CMD_SYS_PAGES) \
+	$(MAN_DEV_CMD_USR_PAGES) \
+	$(MAN_DEV_API_PAGES) \
+	$(MAN_DEV_CMD_SYS_PAGES) \
 	$(MAN_SERIAL_PAGES) \
 	$(MAN_SNMP_PAGES) \
 	$(MAN_USB_LIBUSB_PAGES) \
@@ -1009,11 +1113,13 @@ SRC_ALL_PAGES += \
 
 EXTRA_DIST = \
 	$(SRC_ALL_PAGES) \
+	$(DIST_ALL_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
 
-# Make sure pages are built for the archive (or inherited from earlier tarball)
-BUILT_SOURCES = $(MAN_MANS)
+# DIST_ALL_PAGES: Make sure pages are built for the archive (or
+# inherited from earlier tarball this release is being built from)
+BUILT_SOURCES = $(DIST_ALL_PAGES)
 
 if ! WITH_MANS
 if ! SKIP_MANS
