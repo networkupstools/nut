@@ -3445,6 +3445,7 @@ dnl is effectively ignored by docs/man/Makefile.am at this time.
 AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
 AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
+NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${DOC_INSTALL_DISTED_MANS}"])
 
 WITH_HTML_SINGLE=no
 SKIP_HTML_SINGLE=no
