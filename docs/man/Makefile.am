@@ -1132,12 +1132,18 @@ EXTRA_DIST = \
 BUILT_SOURCES = $(DIST_ALL_PAGES)
 
 if ! WITH_MANS
+# We may be here because tools are missing, or because caller ran
+# ./configure --without-doc (but the tools were present and AC_PROG
+# caused the needed variables to resolve, so pages can in fact get
+# built, or are present in the release tarball we are building).
 if ! SKIP_MANS
-# Cause "make dist" to fail, unless caller (like the stack of distcheck-dmf)
-# runs ./configure --with-doc=skip (or --with-doc=man=skip specifically)
-EXTRA_DIST += dist
-dist:
-	@echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+# Absense of pages can cause "make dist" to fail, unless caller
+# (like `make distcheck-light`) runs ./configure --with-doc=skip
+# (or --with-doc=man=skip specifically)
+dist-warning:
+	@echo "WARNING: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2
+
+dist: dist-warning
 endif ! SKIP_MANS
 endif ! WITH_MANS
 
