@@ -36,6 +36,16 @@ SRC_ALL_PAGES =
 # to check if they all exist.
 DIST_ALL_PAGES =
 
+# Possible man page section remapping in some distros:
+MAN_SECTION_API_BASE=@MAN_SECTION_API_BASE@
+MAN_SECTION_CFG_BASE=@MAN_SECTION_CFG_BASE@
+MAN_SECTION_CMD_SYS_BASE=@MAN_SECTION_CMD_SYS_BASE@
+MAN_SECTION_CMD_USR_BASE=@MAN_SECTION_CMD_USR_BASE@
+# Other rewritable properties:
+NUT_WEBSITE_BASE=@NUT_WEBSITE_BASE@
+PACKAGE_VERSION=@PACKAGE_VERSION@
+TREE_VERSION=@TREE_VERSION@
+
 # Groups and locations for man pages
 manapidir = $(mandir)/man$(MAN_SECTION_API_BASE)
 manapi_DATA =
@@ -1367,16 +1377,16 @@ DOCBUILD_END = { \
 	 $(ASCIIDOC) --backend=xhtml11 $${A2X_VERBOSE} \
 		--attribute=localdate="`TZ=UTC date +%Y-%m-%d`" \
 		--attribute=localtime="`TZ=UTC date +%H:%M:%S`" \
-		--attribute=nutversion="@PACKAGE_VERSION@" \
+		--attribute=nutversion="$(PACKAGE_VERSION)" \
 		--attribute=srcdir="$(abs_srcdir)/" \
 		--attribute=builddir="$(abs_builddir)/" \
 		--attribute=top_srcdir="$(abs_top_srcdir)/" \
 		--attribute=top_builddir="$(abs_top_builddir)/" \
-		--attribute=MAN_SECTION_API_BASE='@MAN_SECTION_API_BASE@' \
-		--attribute=MAN_SECTION_CFG_BASE='@MAN_SECTION_CFG_BASE@' \
-		--attribute=MAN_SECTION_CMD_SYS_BASE='@MAN_SECTION_CMD_SYS_BASE@' \
-		--attribute=MAN_SECTION_CMD_USR_BASE='@MAN_SECTION_CMD_USR_BASE@' \
-		--attribute=NUT_WEBSITE_BASE='@NUT_WEBSITE_BASE@' \
+		--attribute=MAN_SECTION_API_BASE='$(MAN_SECTION_API_BASE)' \
+		--attribute=MAN_SECTION_CFG_BASE='$(MAN_SECTION_CFG_BASE)' \
+		--attribute=MAN_SECTION_CMD_SYS_BASE='$(MAN_SECTION_CMD_SYS_BASE)' \
+		--attribute=MAN_SECTION_CMD_USR_BASE='$(MAN_SECTION_CMD_USR_BASE)' \
+		--attribute=NUT_WEBSITE_BASE='$(NUT_WEBSITE_BASE)' \
 		-o "$${A2X_OUTDIR}/$(@F)" '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
@@ -1385,7 +1395,7 @@ DOCBUILD_END = { \
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--xsltproc-opts="--nonet" \
 	--attribute=mansource="Network UPS Tools" \
-	--attribute=manversion="@PACKAGE_VERSION@" \
+	--attribute=manversion="$(PACKAGE_VERSION)" \
 	--attribute=manmanual="NUT Manual" \
 	--attribute=srcdir="$(abs_srcdir)/" \
 	--attribute=builddir="$(abs_builddir)/" \
@@ -1538,10 +1548,10 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	        esac ; \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
 	            sed \
-	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \
 	            sed \
-	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
@@ -1597,10 +1607,10 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	        fi ; \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
 	            sed \
-	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \
 	            sed \
-	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
