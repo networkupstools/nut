@@ -1152,7 +1152,18 @@ EXTRA_DIST = \
 
 # DIST_ALL_PAGES: Make sure pages are built for the archive (or
 # inherited from earlier tarball this release is being built from)
+# unless we are in a situation we know we can not provide them.
+if WITH_MANS
 BUILT_SOURCES = $(DIST_ALL_PAGES)
+else !WITH_MANS
+if HAVE_ASCIIDOC
+BUILT_SOURCES = $(DIST_ALL_PAGES)
+else !HAVE_ASCIIDOC
+if DOC_INSTALL_DISTED_MANS
+BUILT_SOURCES = $(DIST_ALL_PAGES)
+endif DOC_INSTALL_DISTED_MANS
+endif !HAVE_ASCIIDOC
+endif !WITH_MANS
 
 if ! WITH_MANS
 # We may be here because tools are missing, or because caller ran
@@ -1342,9 +1353,18 @@ else
 SRC_PREBUILT_CLAUSE=
 endif
 
+# Only clean away build products if we can reproduce them
+if WITH_MANS
+CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS)
+else !WITH_MANS
 if HAVE_ASCIIDOC
+CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS)
+endif HAVE_ASCIIDOC
+endif !WITH_MANS
 
-CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS) *.xml *.html *.pdf
+if HAVE_ASCIIDOC
+# Only clean away build products if we can reproduce them
+CLEANFILES += *.xml *.html *.pdf
 
 # Working around a2x not friendly to parallelized runs.
 # See more details in the main NUT docs/Makefile.am
