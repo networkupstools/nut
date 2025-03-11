@@ -213,6 +213,8 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
      on Innova devices, but other models than RT 3/1. [#2798]
    * introduced a `gtec` subdriver and protocol, tested over USB with a
      Gtec ZP120N device. [#2818]
+   * fixed `hunnox_protocol()` to honour the optional `novendor` setting for
+     devices that are confused by such query, e.g. DEXP LCD EURO 1200VA. [#2839]
    * extended Voltronic protocol to support longer numbers as remaining
      `battery.runtime` value. [#2765]
 
