@@ -22,6 +22,19 @@ EGREP = grep -E
 
 SRC_ALL_PAGES =
 
+# Groups and locations for man pages
+manapidir = $(mandir)/man$(MAN_SECTION_API_BASE)
+manapi_DATA =
+
+mancfgdir = $(mandir)/man$(MAN_SECTION_CFG_BASE)
+mancfg_DATA =
+
+mansysdir = $(mandir)/man$(MAN_SECTION_CMD_SYS_BASE)
+mansys_DATA =
+
+manusrdir = $(mandir)/man$(MAN_SECTION_CMD_USR_BASE)
+manusr_DATA =
+
 ALL_TGT =
 if WITH_MANS
 ALL_TGT += all-man
@@ -61,8 +74,7 @@ MAN_CONF_PAGES = \
 	upssched.conf.$(MAN_SECTION_CFG)
 endif WITH_MANS
 
-mancfgdir = $(mandir)/man$(MAN_SECTION_CFG_BASE)
-mancfg_DATA = $(MAN_CONF_PAGES)
+mancfg_DATA += $(MAN_CONF_PAGES)
 
 HTML_CONF_MANS = \
 	nut.conf.html \
@@ -135,8 +147,7 @@ else !WITH_NUT_MONITOR
 SRC_ALL_PAGES += NUT-Monitor.txt
 endif !WITH_NUT_MONITOR
 
-mansysdir = $(mandir)/man$(MAN_SECTION_CMD_SYS_BASE)
-mansys_DATA = $(MAN_CLIENT_PAGES)
+mansys_DATA += $(MAN_CLIENT_PAGES)
 
 HTML_CLIENT_MANS = \
 	nutupsdrv.html \
@@ -426,13 +437,11 @@ MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES = \
 endif WITH_MANS
 
 if WITH_DEV
-manapidir = $(mandir)/man$(MAN_SECTION_API_BASE)
-manapi_DATA = $(MAN@MAN_SECTION_API_BASE@_DEV_PAGES)
+manapi_DATA += $(MAN@MAN_SECTION_API_BASE@_DEV_PAGES)
 mansys_DATA += $(MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES)
 
 if !WITH_PKG_CONFIG
-manusrdir = $(mandir)/man$(MAN_SECTION_CMD_USR_BASE)
-manusr_DATA = $(MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES)
+manusr_DATA += $(MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES)
 endif !WITH_PKG_CONFIG
 
 endif WITH_DEV
