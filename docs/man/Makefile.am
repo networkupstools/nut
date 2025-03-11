@@ -55,6 +55,50 @@ all: $(abs_top_builddir)/docs/man/.prep-src-docs
 		$(MAKE) $(AM_MAKEFLAGS) $(ALL_TGT) ; exit ;; \
 	  esac ; exit 0
 
+# Quickly check that we have all needed files (e.g. from configure script)
+# Do not ensure they are built/valid/etc.
+LIST_FILES = ( \
+	echo "  HELPER	$@" >&2 ; \
+	MISSING=0; \
+	TOTAL=0; \
+	for P in $${FILENAMES} ; do \
+		TOTAL="`expr $$TOTAL + 1`" ; \
+		F="`basename "$$P"`" ; \
+		if [ -s "$(builddir)/$$F" ] ; then \
+				echo "BUILDDIR: $(builddir)/$$F" ; \
+		else \
+			if [ -s "$(srcdir)/$$F" ] ; then \
+				echo "SRCDIR:   $(srcdir)/$$F" ; \
+			else \
+				echo "MISSING:  $$F" >&2 ; \
+				MISSING="`expr $$MISSING + 1`" ; \
+			fi ; \
+		fi ; \
+	done ; \
+	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files are all present)" >&2 ; else echo "$@: FAILED ($$MISSING files of $$TOTAL are missing, see above)" >&2 ; exit 1 ; fi ; \
+)
+
+# List man pages we intend to deliver (depending on chosen build products)
+print-MAN_MANS:
+	@echo "$(MAN_MANS)"
+
+check-list-MAN_MANS:
+	@FILENAMES='$(MAN_MANS)' ; $(LIST_FILES)
+
+# Likewise for HTML renders
+print-HTML_MANS:
+	@echo "$(HTML_MANS)"
+
+check-list-HTML_MANS:
+	@FILENAMES='$(HTML_MANS)' ; $(LIST_FILES)
+
+# Likewise for plaintext sources
+print-SRC_ALL_PAGES:
+	@echo "$(SRC_ALL_PAGES)"
+
+check-list-SRC_ALL_PAGES:
+	@FILENAMES='$(SRC_ALL_PAGES)' ; $(LIST_FILES)
+
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
 	nut.conf.txt \
