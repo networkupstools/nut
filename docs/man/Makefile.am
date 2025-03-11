@@ -102,6 +102,22 @@ LIST_FILES = ( \
 	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files are all present)" >&2 ; else echo "$@: FAILED ($$MISSING files of $$TOTAL are missing, see above)" >&2 ; exit 1 ; fi ; \
 )
 
+FAKE_PAGES_BUMP_SRC = true
+FAKE_FILES = ( \
+	echo "  HELPER	$@" >&2 ; \
+	MISSING=0; \
+	TOTAL=0; \
+	for P in $${FILENAMES} ; do \
+		TOTAL="`expr $$TOTAL + 1`" ; \
+		F="`basename "$$P"`" ; \
+		if [ ! -s "$(builddir)/$$F" ] && [ ! -s "$(srcdir)/$$F" ] ; then \
+			echo "PLACEHOLDER" > "$(builddir)/$$F" ; \
+			MISSING="`expr $$MISSING + 1`" ; \
+		fi ; \
+	done ; \
+	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files are all present)" >&2 ; else echo "$@: FAKED SOME FILES ($$MISSING files of $$TOTAL were missing, see above)" >&2 ; exit 1 ; fi ; \
+)
+
 # List man pages we intend to deliver (depending on chosen build products)
 print-MAN_MANS:
 	@echo "$(MAN_MANS)"
@@ -116,6 +132,13 @@ print-DIST_ALL_PAGES:
 
 check-list-DIST_ALL_PAGES:
 	@FILENAMES='$(DIST_ALL_PAGES)' ; $(LIST_FILES)
+
+# If any pages are missing, fake them
+distcheck-light-DIST_ALL_PAGES:
+	@FILENAMES='$(DIST_ALL_PAGES)' ; $(FAKE_FILES) || ( \
+		if [ x"$(FAKE_PAGES_BUMP_SRC)" = xtrue ] ; then \
+			cd "$(srcdir)" && touch $(SRC_ALL_PAGES) || echo "$@: Well we tried" >&2 ; \
+		fi ; )
 
 # Likewise for HTML renders
 print-HTML_MANS:
