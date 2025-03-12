@@ -641,6 +641,15 @@ class interface :
 
         dialog = PyQt5.uic.loadUi( dialog_ui_file )
         dialog.icon.setPixmap( QPixmap( self.__find_icon_file() ) )
+        ### sys.stderr.write("gui_about_dialog(): dialog=%s\n" % str(dir(dialog)))
+        ### sys.stderr.write("gui_about_dialog(): label=%s\n" % str(dir(dialog.label)))
+        ### sys.stderr.write("gui_about_dialog(): text=%s\n" % str(dir(dialog.label.text)))
+        s = (dialog.label.text()
+             .replace('%s%s%s' % ("@", "PACKAGE_VERSION", "@"), '@PACKAGE_VERSION@')
+             .replace('%s%s%s' % ("@", "NUT_WEBSITE_BASE", "@"), '@NUT_WEBSITE_BASE@')
+            )
+        ### sys.stderr.write("gui_about_dialog(): s='%s'\n" % s)
+        dialog.label.setText(s)
 
         credits_button = QPushButton( dialog )
         credits_button.setText( _("C&redits") )

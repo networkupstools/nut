@@ -632,6 +632,12 @@ class interface :
     def gui_about_dialog( self, widget=None ) :
         dialog_interface = gtk.glade.XML( self.__glade_file, "aboutdialog1" )
         dialog = dialog_interface.get_widget( "aboutdialog1" )
+        s = (dialog.label.text()
+             .replace('%s%s%s' % ("@", "PACKAGE_VERSION", "@"), '@PACKAGE_VERSION@')
+             .replace('%s%s%s' % ("@", "NUT_WEBSITE_BASE", "@"), '@NUT_WEBSITE_BASE@')
+            )
+        ### print(sys.stderr, "gui_about_dialog(): s='%s'\n" % s)
+        dialog.label.setText(s)
 
         self.__widgets["main_window"].set_sensitive( False )
         dialog.run()
