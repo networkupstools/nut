@@ -95,10 +95,10 @@ LIST_FILES = ( \
 	for P in $${FILENAMES} ; do \
 		TOTAL="`expr $$TOTAL + 1`" ; \
 		F="`basename "$$P"`" ; \
-		if [ -s "$(builddir)/$$F" ] ; then \
+		if [ -s "$(abs_builddir)/$$F" ] ; then \
 				echo "BUILDDIR: $(builddir)/$$F" ; \
 		else \
-			if [ -s "$(srcdir)/$$F" ] ; then \
+			if [ -s "$(abs_srcdir)/$$F" ] ; then \
 				echo "SRCDIR:   $(srcdir)/$$F" ; \
 			else \
 				echo "MISSING:  $$F" >&2 ; \
@@ -117,8 +117,8 @@ FAKE_FILES = ( \
 	for P in $${FILENAMES} ; do \
 		TOTAL="`expr $$TOTAL + 1`" ; \
 		F="`basename "$$P"`" ; \
-		if [ ! -s "$(builddir)/$$F" ] && [ ! -s "$(srcdir)/$$F" ] ; then \
-			echo "PLACEHOLDER" > "$(builddir)/$$F" ; \
+		if [ ! -s "$(abs_builddir)/$$F" ] && [ ! -s "$(abs_srcdir)/$$F" ] ; then \
+			echo "PLACEHOLDER" > "$(abs_builddir)/$$F" ; \
 			MISSING="`expr $$MISSING + 1`" ; \
 		fi ; \
 	done ; \
@@ -133,9 +133,9 @@ FAKE_FILES_RM = ( \
 	for P in $${FILENAMES} ; do \
 		TOTAL="`expr $$TOTAL + 1`" ; \
 		F="`basename "$$P"`" ; \
-		if [ -s "$(builddir)/$$F" ] \
-		&& [ x"PLACEHOLDER" = x"`cat "$(builddir)/$$F"`" ] ; then \
-			rm -f "$(builddir)/$$F" ; \
+		if [ -s "$(abs_builddir)/$$F" ] \
+		&& [ x"PLACEHOLDER" = x"`cat "$(abs_builddir)/$$F"`" ] ; then \
+			rm -f "$(abs_builddir)/$$F" ; \
 			MISSING="`expr $$MISSING + 1`" ; \
 		fi ; \
 	done ; \
@@ -161,7 +161,7 @@ check-list-DIST_ALL_PAGES:
 distcheck-light-DIST_ALL_PAGES:
 	@FILENAMES='$(DIST_ALL_PAGES)' ; $(FAKE_FILES) || ( \
 		if [ x"$(FAKE_PAGES_BUMP_SRC)" = xtrue ] ; then \
-			cd "$(srcdir)" && touch $(SRC_ALL_PAGES) || echo "$@: Well we tried" >&2 ; \
+			cd "$(abs_srcdir)" && touch $(SRC_ALL_PAGES) || echo "$@: Well we tried" >&2 ; \
 		fi ; )
 
 # Likewise for HTML renders
