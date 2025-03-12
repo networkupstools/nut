@@ -1485,16 +1485,16 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
-		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page (as HTML), since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
-		echo "Could not find prebuilt $@ manual page." ; \
+		echo "Could not find prebuilt $@ manual page (as HTML)." ; \
 		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
 		exit 1; \
 	fi
 
 .txt.$(MAN_SECTION_CMD_USR):
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1503,7 +1503,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_API):
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1512,7 +1512,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_CFG):
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1521,7 +1521,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_CMD_SYS):
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
