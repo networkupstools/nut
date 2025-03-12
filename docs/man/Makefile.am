@@ -1155,26 +1155,15 @@ SRC_ALL_PAGES += \
 	$(SRC_DRIVERS_PAGES) \
 	index.txt
 
+# DIST_ALL_PAGES: Make sure pages are built for the archive (or
+# inherited from earlier tarball this release is being built from);
+# caller may have to fake them if we are in a situation we know we can
+# not provide them (see `make distcheck-ci` in top-level Makefile.am).
 EXTRA_DIST = \
 	$(SRC_ALL_PAGES) \
 	$(DIST_ALL_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
-
-# DIST_ALL_PAGES: Make sure pages are built for the archive (or
-# inherited from earlier tarball this release is being built from)
-# unless we are in a situation we know we can not provide them.
-if WITH_MANS
-BUILT_SOURCES = $(DIST_ALL_PAGES)
-else !WITH_MANS
-if HAVE_ASCIIDOC
-BUILT_SOURCES = $(DIST_ALL_PAGES)
-else !HAVE_ASCIIDOC
-if DOC_INSTALL_DISTED_MANS
-BUILT_SOURCES = $(DIST_ALL_PAGES)
-endif DOC_INSTALL_DISTED_MANS
-endif !HAVE_ASCIIDOC
-endif !WITH_MANS
 
 if ! WITH_MANS
 # We may be here because tools are missing, or because caller ran
