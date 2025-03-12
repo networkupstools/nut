@@ -115,7 +115,24 @@ FAKE_FILES = ( \
 			MISSING="`expr $$MISSING + 1`" ; \
 		fi ; \
 	done ; \
-	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files are all present)" >&2 ; else echo "$@: FAKED SOME FILES ($$MISSING files of $$TOTAL were missing, see above)" >&2 ; exit 1 ; fi ; \
+	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files are all present)" >&2 ; else echo "$@: FAKED SOME FILES ($$MISSING files of $$TOTAL were missing)" >&2 ; exit 1 ; fi ; \
+)
+
+# Unlike helpers above, does not fail if placeholders were seen
+FAKE_FILES_RM = ( \
+	echo "  HELPER	$@" >&2 ; \
+	MISSING=0; \
+	TOTAL=0; \
+	for P in $${FILENAMES} ; do \
+		TOTAL="`expr $$TOTAL + 1`" ; \
+		F="`basename "$$P"`" ; \
+		if [ -s "$(builddir)/$$F" ] \
+		&& [ x"PLACEHOLDER" = x"`cat "$(builddir)/$$F"`" ] ; then \
+			rm -f "$(builddir)/$$F" ; \
+			MISSING="`expr $$MISSING + 1`" ; \
+		fi ; \
+	done ; \
+	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files were all real or already absent)" >&2 ; else echo "$@: REMOVED SOME FAKED FILES ($$MISSING files of $$TOTAL were placeholders)" >&2 ; fi ; \
 )
 
 # List man pages we intend to deliver (depending on chosen build products)
@@ -1348,12 +1365,18 @@ SRC_PREBUILT_CLAUSE=
 endif
 
 # Only clean away build products if we can reproduce them
+# including cases where we generate placeholders
 if WITH_MANS
 CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS)
+clean-man-pages:
 else !WITH_MANS
 if HAVE_ASCIIDOC
 CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS)
-endif HAVE_ASCIIDOC
+clean-man-pages:
+else !HAVE_ASCIIDOC
+clean-man-pages:
+	@FILENAMES='$(DIST_ALL_PAGES)' ; $(FAKE_FILES_RM)
+endif !HAVE_ASCIIDOC
 endif !WITH_MANS
 
 if HAVE_ASCIIDOC
@@ -1674,7 +1697,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
-clean-local:
+clean-local: clean-man-pages
 	$(AM_V_at)rm -rf tmp
 	$(AM_V_at)for F in $(PREP_SRC) ; do \
 	        case "$$F" in \
