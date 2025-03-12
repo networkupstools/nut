@@ -1023,21 +1023,17 @@ want to delete from list...
     <property name="program_name">NUT-Monitor</property>
     <property name="version">1.3.1</property>
     <property name="copyright" translatable="yes">Copyright (c) 2010 David Goncalves, Copyright (c) since 2010 by NUT Community</property>
-    <property name="comments" translatable="yes">GUI to manage devices connected to a NUT server.
-Provided with NUT @PACKAGE_VERSION@.
-
-For more information about NUT (Network UPS Tools)
-please visit the project web-site:
-
-@NUT_WEBSITE_BASE@
-
-For more information about the GUI please visit
-the author's web-site:
-
-https://www.lestat.st/en/informatique/projets/nut-monitor
-
-https://www.lestat.st
-</property>
+    <property name="comments" translatable="yes">"&lt;h1&gt;NUT-Monitor 1.3.1&lt;/h1&gt;\n"
+"&lt;p&gt;GUI to manage devices connected to a NUT server.&lt;br/&gt;\n"
+"Provided with NUT version @PACKAGE_VERSION@.&lt;/p&gt;\n"
+"&lt;p style=&quot; font-size:8pt;&quot;&gt;Copyright (C) 2010 David Goncalves&lt;br/&gt;\n"
+"Copyright (C) since 2010 by NUT Community&lt;/p&gt;\n"
+"&lt;p&gt;For more information about NUT (Network UPS Tools)&lt;br/&gt;\n"
+"please visit the project web-site:&lt;/p&gt;\n"
+"&lt;p style=&quot;margin-bottom: 1.5em&quot;&gt;&lt;a href=&quot;@NUT_WEBSITE_BASE@&quot;&gt;@NUT_WEBSITE_BASE@&lt;/a&gt;&lt;/p&gt;\n"
+"&lt;p&gt;For more information about the GUI please visit&lt;br/&gt;\n"
+"the author's web-site:&lt;/p&gt;\n"
+"&lt;p&gt;&lt;a href=&quot;https://www.lestat.st/en/informatique/projets/nut-monitor&quot;&gt;https://www.lestat.st&lt;/a&gt;&lt;/p&gt;\n"</property>
     <property name="website">@NUT_WEBSITE_BASE@</property>
     <property name="website_label" translatable="yes">The Network UPS Tools project</property>
     <property name="license" translatable="yes">Copyright (C) 2010 David Goncalves &lt;david@lestat.st&gt;

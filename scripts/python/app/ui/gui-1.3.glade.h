@@ -27,21 +27,18 @@ char *s = N_("<None>");
 char *s = N_("Enter a new value for the variable.\n"
              "");
 char *s = N_("Copyright (c) 2010 David Goncalves, Copyright (c) since 2010 by NUT Community");
-char *s = N_("GUI to manage devices connected to a NUT server.\n"
-             "Provided with NUT @PACKAGE_VERSION@.\n"
-             "\n"
-             "For more information about NUT (Network UPS Tools)\n"
-             "please visit the project web-site:\n"
-             "\n"
-             "@NUT_WEBSITE_BASE@\n"
-             "\n"
-             "For more information about the GUI please visit\n"
-             "the author's web-site:\n"
-             "\n"
-             "https://www.lestat.st/en/informatique/projets/nut-monitor\n"
-             "\n"
-             "https://www.lestat.st\n"
-             "");
+char *s = N_("<h1>NUT-Monitor 1.3.1</h1>\n"
+             "<p>GUI to manage devices connected to a NUT server.<br/>\n"
+             "Provided with NUT version @PACKAGE_VERSION@.</p>\n"
+             "<p style=\" font-size:8pt;\">Copyright (C) 2010 David Goncalves<br/>\n"
+             "Copyright (C) since 2010 by NUT Community</p>\n"
+             "<p>For more information about NUT (Network UPS Tools)<br/>\n"
+             "please visit the project web-site:</p>\n"
+             "<p style=\"margin-bottom: 1.5em\"><a href=\"@NUT_WEBSITE_BASE@\">@NUT_WEBSITE_BASE@</a></p>\n"
+             "<p>For more information about the GUI please visit<br/>\n"
+             "the author's web-site:</p>\n"
+             "<p><a href=\"https://www.lestat.st/en/informatique/projets/nut-monitor\">https://www.lestat.st</a></p>\n"
+             );
 char *s = N_("https://www.lestat.st");
 char *s = N_("Copyright (C) 2010 David Goncalves <david@lestat.st>\n"
              "Copyright (C) since 2010 by NUT Community\n"
