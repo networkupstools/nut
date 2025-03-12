@@ -553,6 +553,9 @@ if [ -z "$PARMAKE_FLAGS" ]; then
     fi
 fi
 
+# Stash the value provided by caller, if any
+ORIG_DISTCHECK_TGT="${DISTCHECK_TGT-}"
+
 # CI builds on Jenkins
 [ -z "$NODE_LABELS" ] || \
 for L in $NODE_LABELS ; do
@@ -600,27 +603,32 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_NIT_TESTS" ] || CANBUILD_NIT_TESTS=yes ;;
 
         "NUT_BUILD_CAPS=docs:man=no")
+            [ -n "${DISTCHECK_TGT-}" ] || DISTCHECK_TGT="distcheck-ci"
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
         "NUT_BUILD_CAPS=docs:man"|"NUT_BUILD_CAPS=docs:man=yes")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=yes ;;
 
         "NUT_BUILD_CAPS=docs:all=no")
+            [ -n "${DISTCHECK_TGT-}" ] || DISTCHECK_TGT="distcheck-ci"
             [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=no ;;
         "NUT_BUILD_CAPS=docs:all"|"NUT_BUILD_CAPS=docs:all=yes")
             [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=yes ;;
 
         "NUT_BUILD_CAPS=drivers:all=no")
+            ( [ -n "${DISTCHECK_TGT-}" ] && [ x"${DISTCHECK_TGT-}" != x"distcheck-ci" ] ) || DISTCHECK_TGT="distcheck-light"
             [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=no ;;
         "NUT_BUILD_CAPS=drivers:all"|"NUT_BUILD_CAPS=drivers:all=yes")
             [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=yes ;;
 
         "NUT_BUILD_CAPS=cgi=no")
+            ( [ -n "${DISTCHECK_TGT-}" ] && [ x"${DISTCHECK_TGT-}" != x"distcheck-ci" ] ) || DISTCHECK_TGT="distcheck-light"
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=no ;;
         "NUT_BUILD_CAPS=cgi"|"NUT_BUILD_CAPS=cgi=yes")
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=yes ;;
 
         # Currently for nut-scanner, might be more later - hence agnostic naming:
         "NUT_BUILD_CAPS=libltdl=no")
+            ( [ -n "${DISTCHECK_TGT-}" ] && [ x"${DISTCHECK_TGT-}" != x"distcheck-ci" ] ) || DISTCHECK_TGT="distcheck-light"
             [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=no ;;
         "NUT_BUILD_CAPS=libltdl"|"NUT_BUILD_CAPS=libltdl=yes")
             [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=yes ;;
@@ -1392,11 +1400,14 @@ if [ -z "$BUILD_TYPE" ] ; then
     esac
 fi
 
+# Default follows autotools:
+[ -n "${DISTCHECK_TGT-}" ] || DISTCHECK_TGT="distcheck"
+
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 ensure_CI_CCACHE_SYMLINKDIR_envvar
 echo "Build host settings:"
-set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*)=' || true
+set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -1629,6 +1640,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
 
+            # Use "distcheck-ci" if caller did not ask for any DISTCHECK_TGT
+            # value, and we defaulted to strict "distcheck" above
+            ( [ -n "${ORIG_DISTCHECK_TGT}" ] || [ x"${DISTCHECK_TGT}" != x"distcheck" ] ) || DISTCHECK_TGT="distcheck-ci"
+
             if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
@@ -1664,8 +1679,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "WARNING: this is effectively default-tgt:distcheck-light then" >&2
                 fi
                 CONFIG_OPTS+=("--with-all=auto")
+                # Use "distcheck-light" if caller did not ask for any DISTCHECK_TGT
+                # value, and we defaulted to strict "distcheck" above
+                ( [ -n "${ORIG_DISTCHECK_TGT}" ] || [ x"${DISTCHECK_TGT}" != x"distcheck" ] ) || DISTCHECK_TGT="distcheck-light"
             else
                 CONFIG_OPTS+=("--with-all=yes")
+                # Use "distcheck-ci" if caller did not ask for any DISTCHECK_TGT
+                # value, and we defaulted to strict "distcheck" above
+                ( [ -n "${ORIG_DISTCHECK_TGT}" ] || [ x"${DISTCHECK_TGT}" != x"distcheck" ] ) || DISTCHECK_TGT="distcheck-ci"
             fi
             ;;
         "default-tgt:cppcheck")
@@ -1680,11 +1701,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             fi
             CONFIG_OPTS+=("--enable-cppcheck=yes")
             CONFIG_OPTS+=("--with-doc=skip")
+            # Use "distcheck-ci" if caller did not ask for any DISTCHECK_TGT
+            # value, and we defaulted to strict "distcheck" above
+            ( [ -n "${ORIG_DISTCHECK_TGT}" ] || [ x"${DISTCHECK_TGT}" != x"distcheck" ] ) || DISTCHECK_TGT="distcheck-ci"
             ;;
         "default"|"default-tgt:"*|*)
             # Do not build the docs and tell distcheck it is okay
             CONFIG_OPTS+=("--with-doc=skip")
             CONFIG_OPTS+=("--disable-spellcheck")
+            # Use "distcheck-ci" if caller did not ask for any DISTCHECK_TGT
+            # value, and we defaulted to strict "distcheck" above
+            ( [ -n "${ORIG_DISTCHECK_TGT}" ] || [ x"${DISTCHECK_TGT}" != x"distcheck" ] ) || DISTCHECK_TGT="distcheck-ci"
             ;;
     esac
     # NOTE: The case "$BUILD_TYPE" above was about setting CONFIG_OPTS.
@@ -1768,8 +1795,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # for all other scenarios proceeds.below.
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
-            # e.g. distcheck-light, distcheck-valgrind, cppcheck, maybe
-            # others later, as defined in Makefile.am:
+            # e.g. distcheck-ci, distcheck-light, distcheck-valgrind, cppcheck,
+            # maybe others later, as defined in top-level Makefile.am:
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             if [ -n "${PARMAKE_FLAGS}" ]; then
                 echo "`date`: Starting the parallel build attempt for singular target $BUILD_TGT..."
@@ -1782,7 +1809,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
 
-            # Tell the sub-makes (distcheck) to hush down
+            # Tell the sub-makes (likely distcheck*) to hush down
             # NOTE: Parameter pass-through was tested with:
             #   MAKEFLAGS="-j 12" BUILD_TYPE=default-tgt:distcheck-light ./ci_build.sh
             MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
@@ -2281,7 +2308,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         find "$INST_PREFIX" -ls || true
 
     if [ "$DO_DISTCHECK" = "no" ] ; then
-        echo "Skipping distcheck (doc generation is disabled, it would fail)"
+        echo "Skipping distcheck (by caller request or BUILD_TYPE specifics)"
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
         (
@@ -2292,10 +2319,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
         # Tell the sub-makes (distcheck) to hush down
         MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS ${DISTCHECK_TGT}
 
         #FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
-        check_gitignore "distcheck" || exit
+        check_gitignore "${DISTCHECK_TGT}" || exit
         )
     fi
 
