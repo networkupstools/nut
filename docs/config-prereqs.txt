@@ -1622,6 +1622,24 @@ binaries.
 WARNING: Take care to *NOT* symlink a `clang-cpp(-14)` which is not a
 name recognized by XCode dispatcher program, so requests to it freeze.
 
+On a machine dedicated to CI purposes, it may be wise to disable Spotlight
+search indexing with `sudo mdutil -a -i off`, disable active desktop themes,
+etc. (normally you would not even log in interactively).
+
+For scratch workers (VMs) also consider going to System Preferences =>
+Software Updates => Advanced, and un-checking all the boxes (disable the
+overheads of pulling in the updates you won't remember in an hour anyway).
+
+If you eventually find that the `kernel_task` consumes a lot of CPU, this
+is usually the system's way of throttling (scheduling A LOT of high-priority
+no-op cycles to preempt any other workload). In this case please investigate
+cooling and hardware compatibility (especially in a VM), or find and follow
+community documentation about neutering `IOPlatformPluginFamily.kext` module
+(probably not on the bare-metal MacOS instance -- find the cooling problem
+there instead).
+
+* https://grafxflow.co.uk/blog/mac-os-x/delete-ioplatformpluginfamilykext-macos-big-sur
+
 
 Windows builds
 ~~~~~~~~~~~~~~

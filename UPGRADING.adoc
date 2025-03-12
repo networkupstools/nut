@@ -117,6 +117,11 @@ Changes from 2.8.2 to 2.8.3
   other devices using that MIB (negatively, if the older mappings were
   indeed correct for any practical cases, and were not a typo). [#2803]
 
+- `nutdrv_qx` fixed `hunnox_protocol()` to honour the optional `novendor`
+  setting for devices that are confused by such query (e.g. DEXP LCD EURO
+  1200VA); it may be remotely possible that some other devices could begin
+  to misbehave due to this fix -- please let us know then. [#2839]
+
 - mge-utalk driver will no longer set non-standard status values `COMMFAULT`
   and `ALARM` (for a specific status bit); instead, it will set modern
   `ups.alarm` with values `COMMFAULT` and/or `DEVICEALARM` (and raise

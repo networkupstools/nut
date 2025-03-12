@@ -993,7 +993,7 @@ static int 	hunnox_protocol(int asking_for)
 			}
 			break;
 		case 3:
-			if (asking_for != 0x0c) {
+			if (asking_for != 0x0c && !testvar("novendor")) {
 				upsdebugx(3, "asking for: %02X", (unsigned int)0x0c);
 				usb_get_string(udev, 0x0c,
 					langid_fix_local, (usb_ctrl_charbuf)buf, 102);

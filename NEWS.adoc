@@ -213,8 +213,15 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
      on Innova devices, but other models than RT 3/1. [#2798]
    * introduced a `gtec` subdriver and protocol, tested over USB with a
      Gtec ZP120N device. [#2818]
+   * fixed `hunnox_protocol()` to honour the optional `novendor` setting for
+     devices that are confused by such query, e.g. DEXP LCD EURO 1200VA. [#2839]
    * extended Voltronic protocol to support longer numbers as remaining
      `battery.runtime` value. [#2765]
+
+ - GPIO drivers:
+   * extending to support library API of not only libgpiod v1.x releases,
+     but also v2.x; introduced a NUT `WITH_LIBGPIO_VERSION` C macro (in
+     `config.h`) to differentiate the library variants. [issue #2833]
 
  - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
    communication protocol, which supports any UPS shipped with the PSZ-1053
@@ -252,7 +259,9 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
    * MGE HID list of `mge_model_names[]` was extended for Eaton 9E, 5PX and 5SC
      series (largely guessing, feedback and PRs for adaptation to actual
      string values reported by devices via USB are welcome), so these devices
-     would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
+     would now report `battery.voltage` and `battery.voltage.nominal`.
+     Also a device from 5S series (5S1200AU) was tested, although it identifies
+     as an "Ellipse PRO" in USB metadata. [#2380]
    * Added `ups.beeper.status` support for Masterpower MF-UPS650VA using the
      MGE HID subdriver. [#2662]
    * Added basic support for EcoFlow River 3 Plus and Delta 3 Plus models.

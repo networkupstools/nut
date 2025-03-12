@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3324 utf-8
+personal_ws-1.1 en 3330 utf-8
 AAC
 AAS
 ABI
@@ -245,6 +245,7 @@ DES
 DESTDIR
 DEVICEALARM
 DEVNAME
+DEXP
 DF
 DHEA
 DIGYS
@@ -512,6 +513,7 @@ INTERR
 INTL
 INV
 INVOLT
+IOPlatformPluginFamily
 IPAR
 IPC
 IPM
@@ -596,6 +598,7 @@ LEDs
 LGTM
 LH
 LIBGD
+LIBGPIO
 LIBNEON
 LIBNETSNMP
 LIBOPENSSL
@@ -1354,6 +1357,7 @@ VLAN
 VM
 VMIN
 VMM
+VMs
 VMware
 VNC
 VPATH
@@ -2205,6 +2209,7 @@ kVA
 kadets
 kaminski
 kde
+kext
 keychain
 keygen
 keyout
@@ -2378,6 +2383,7 @@ mc
 mcedit
 md
 mdadm
+mdutil
 mecer
 megatec
 memset
