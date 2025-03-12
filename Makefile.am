@@ -421,13 +421,41 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
 # that is meaningful for sub-make program (gets stripped away
 # otherwise and breaks custom distchecks).
 
+# Helper for CI runs: ensure presence of pre-built man pages
+# (even if faked where lack and can not build them), so that
+# the majority of distcheck logic can pass.
+# See also docs/man/Makefile.am
+if WITH_MANS
+distcheck-ci: distcheck
+else !WITH_MANS
+if HAVE_ASCIIDOC
+distcheck-ci: distcheck
+else !HAVE_ASCIIDOC
+if DOC_INSTALL_DISTED_MANS
+distcheck-ci: distcheck
+else !DOC_INSTALL_DISTED_MANS
+distcheck-ci: distcheck-fake-man
+endif !DOC_INSTALL_DISTED_MANS
+endif !HAVE_ASCIIDOC
+endif !WITH_MANS
+
+# Here we generate man pages (if absent) or fake them
+# Require other dependencies as usual distcheck does
+distcheck-fake-man:
+	+@cd docs/man && $(MAKE) $(AM_MAKEFLAGS) all
+	+@cd docs/man && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) distcheck
+
 # Here we allow to skip docs if tools are absent, so "make dist"
 # should not hiccup on lack of the page files (but MAY make them
-# if it can)
+# if it can); be relaxed toward other dependencies.
 distcheck-light:
+	+@cd docs/man && $(MAKE) $(AM_MAKEFLAGS) all
 	+@cd docs/man && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
+# Require man pages to be built (or fail trying), but not other docs;
+# be relaxed toward other dependencies.
 distcheck-light-man:
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
 
