@@ -113,7 +113,12 @@ static hid_info_t ecoflow_hid2nut[] = {
 	 */
 	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_QUICK_POLL, beeper_info },
 
-	/* ConfigActivePower: seems to be close to Wh ratings of the Devices (260Wh for River3+(286Wh are specs)/1024Wh for Delta3+(1024Wh are specs)) */
+	/* ConfigActivePower:
+	 * - For firmwares from before end of 2024, this seems to be close
+	 *   to Wh ratings of the Devices: 260Wh for River3+ (286Wh are specs)
+	 *   and 1024Wh for Delta3+ (1024Wh are specs)
+	 * - For later firmwares, the capacity reported matches the datasheet
+	 */
 	{ "ups.power.nominal", 0, 0, "UPS.Flow.[4].ConfigActivePower", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 
 	/* ConfigVoltage: not sure what this is (should be rated battery nominal V), had a decimal */
@@ -141,7 +146,7 @@ static hid_info_t ecoflow_hid2nut[] = {
 	/* BelowRemainingCapacityLimit: did not trigger when when charge was less than discharge limit. Seemed same when at %0 charge */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
 
-	/* CommunicationLost: Could not find how to trigger */
+	/* CommunicationLost: Could not find how to trigger; not served by some devices/firmwares */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.CommunicationLost", NULL, NULL, HU_FLAG_QUICK_POLL, commfault_info },
 
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },
@@ -153,6 +158,7 @@ static hid_info_t ecoflow_hid2nut[] = {
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FullyDischarged", NULL, NULL, HU_FLAG_QUICK_POLL, depleted_info },
 	/* NeedReplacement: activates at APP's discharge limit */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, HU_FLAG_QUICK_POLL, replacebatt_info },
+	/* Not served by some devices/firmwares */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, NULL, HU_FLAG_QUICK_POLL, overload_info },
 	/* RemainingTimeLimitExpired: not sure how this works */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, NULL, HU_FLAG_QUICK_POLL, timelimitexpired_info },
@@ -181,7 +187,8 @@ static hid_info_t ecoflow_hid2nut[] = {
 	 * NOTE: Per https://github.com/networkupstools/nut/pull/2837#issuecomment-2709497100
 	 * the device is funny and its readings served here are too...
 	 * default when charged is about 40 hours, because that is the
-	 * power draw of the UPS's controller alone.
+	 * power draw of the UPS's controller alone while the load is
+	 * fed from the wall-power, apparently.
 	 */
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_QUICK_POLL, ecoflow_runtime_conversion_lkp },
 	/*{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },*/
