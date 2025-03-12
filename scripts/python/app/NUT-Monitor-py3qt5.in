@@ -650,7 +650,7 @@ class interface :
         licence_button = QPushButton( dialog )
         licence_button.setText( _("&Licence") )
         licence_button.clicked.connect( self.gui_about_licence )
-        
+
         dialog.buttonBox.addButton( credits_button, QDialogButtonBox.HelpRole )
         dialog.buttonBox.addButton( licence_button, QDialogButtonBox.HelpRole )
 
@@ -815,7 +815,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
         # Try to resize the main window...
         self.__widgets["main_window"].adjustSize()
-    
+
     #-------------------------------------------------------------------
     # Disconnect from the UPS
     def disconnect_from_ups( self, widget=None ) :
