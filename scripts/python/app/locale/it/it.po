@@ -369,7 +369,7 @@ msgid "Copyright (c) 2010 David Goncalves, Copyright (c) after 2010 NUT Communit
 msgstr ""
 
 #: gui-1.3.glade.h:30
-msgid "<h1>NUT-Monitor 1.3.1</h1>\n"
+msgid "<h1>NUT-Monitor 2.0.2</h1>\n"
 "<p>GUI to manage devices connected to a NUT server.<br/>\n"
 "Provided with NUT version @PACKAGE_VERSION@.</p>\n"
 "<p style=\" font-size:8pt;\">Copyright (C) 2010 David Goncalves<br/>\n"
@@ -380,7 +380,7 @@ msgid "<h1>NUT-Monitor 1.3.1</h1>\n"
 "<p>For more information about the GUI please visit<br/>\n"
 "the author's web-site:</p>\n"
 "<p><a href=\"https://www.lestat.st/en/informatique/projets/nut-monitor\">https://www.lestat.st</a></p>"
-msgstr "<h1>NUT-Monitor 1.3.1</h1>\n"
+msgstr "<h1>NUT-Monitor 2.0.2</h1>\n"
 "Interfaccia grafica per gestire dispositivi connessi a un server di NUT.<br/>\n"
 "fornito con la versione @PACKAGE_VERSION@ del NUT.</p>\n"
 "<p style=\" font-size:8pt;\">Copyright (C) 2010 David Goncalves<br/>\n"

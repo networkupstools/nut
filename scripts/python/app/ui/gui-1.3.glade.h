@@ -27,7 +27,7 @@ char *s = N_("<None>");
 char *s = N_("Enter a new value for the variable.\n"
              "");
 char *s = N_("Copyright (c) 2010 David Goncalves, Copyright (c) since 2010 by NUT Community");
-char *s = N_("<h1>NUT-Monitor 1.3.1</h1>\n"
+char *s = N_("<h1>NUT-Monitor 2.0.2</h1>\n"
              "<p>GUI to manage devices connected to a NUT server.<br/>\n"
              "Provided with NUT version @PACKAGE_VERSION@.</p>\n"
              "<p style=\" font-size:8pt;\">Copyright (C) 2010 David Goncalves<br/>\n"

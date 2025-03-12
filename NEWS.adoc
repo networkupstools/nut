@@ -596,6 +596,11 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
 
  - added man page for the `NUT-Monitor` Python UI client.
 
+ - The `NUT-Monitor` Python UI client itself was revised to report the
+   `PACKAGE_VERSION` and `NUT_WEBSITE_BASE` strings in the "About" dialog
+   contents; localization support for the dialog and some other resources
+   was revised to work in Py3Qt5 variant of the script. [#722]
+
  - enabled installation of built single-file PDF and HTML (including man page
    renditions) under the configured `docdir`. It seems previously they were
    only built (if requested) but not installed via `make`, unlike the common

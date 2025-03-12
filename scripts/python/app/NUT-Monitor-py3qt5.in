@@ -32,6 +32,10 @@
 #
 # 2023-11-27 Laurent Bigonville - Version 2.0.1
 #            Set the DesktopFileName
+#
+# 2025-03-15 Jim Klimov - Version 2.0.2
+#            Revise localisation, inject PACKAGE_VERSION and NUT_WEBSITE_BASE
+#            into the About dialog contents
 
 
 import PyQt5.uic
