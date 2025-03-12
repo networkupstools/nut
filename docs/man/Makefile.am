@@ -71,6 +71,9 @@ ALL_TGT += all-html
 endif WITH_HTML_CHUNKED
 endif !WITH_HTML_SINGLE
 
+# Ensure early build by default automake "all" rule, if it gets used.
+BUILT_SOURCES = $(abs_top_builddir)/docs/man/.prep-src-docs
+
 # Note: this intends to override the "all" target that may have been
 # provided by automake, since we want to do nothing in certain cases.
 # Some (older) make implementations can complain about this.
