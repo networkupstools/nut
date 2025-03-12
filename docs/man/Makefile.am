@@ -71,6 +71,9 @@ ALL_TGT += all-html
 endif WITH_HTML_CHUNKED
 endif !WITH_HTML_SINGLE
 
+# Note: this intends to override the "all" target that may have been
+# provided by automake, since we want to do nothing in certain cases.
+# Some (older) make implementations can complain about this.
 all: $(abs_top_builddir)/docs/man/.prep-src-docs
 	+@case "$(ALL_TGT)" in \
 	  ""|" "|"  "|"   ") echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile: No format of man page rendering is enabled" ; exit 0 ;; \
