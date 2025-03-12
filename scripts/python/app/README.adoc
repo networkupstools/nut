@@ -36,8 +36,6 @@ For localized UI, you can also request the locale with different precision like
 `export LANG=fr_FR.UTF-8`, `export LANG=it_IT` or `export LANG=ru`
 (see and feel welcome to improve the choice of languages in `locale` directory).
 
-NOTE: Currently localization only works for Python 2 client, PRs are welcome.
-
 Desktop menu integration
 ------------------------
 

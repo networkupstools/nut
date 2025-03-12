@@ -9,11 +9,12 @@
 #
 # License: GPLv2+
 
-# Currently we have issues using localization for py3qt5 variant,
-# so if both seem functional, the wrapper would call py2gtk2:
+# We used to have issues using localization for py3qt5 variant,
+# so if both seem functional, the wrapper would call py2gtk2.
+# NOTE: This may be no longer relevant (since NUT-Monitor 2.0.2):
 case "${PREFER_PY2-}" in
     true|false) ;;
-    "") PREFER_PY2=true ;;
+    "") PREFER_PY2=false ;;
     *)  echo "Unsupported value of PREFER_PY2='$PREFER_PY2', defaulting to 'true'" >&2
         PREFER_PY2=true
         ;;
