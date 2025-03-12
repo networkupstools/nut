@@ -443,8 +443,8 @@ endif !WITH_MANS
 # Require other dependencies as usual distcheck does
 distcheck-fake-man:
 	@echo "Starting $@" >&2
-	+@cd docs/man && $(MAKE) $(AM_MAKEFLAGS) all
-	+@cd docs/man && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
+	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) all
+	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) distcheck
 	@echo "Completed $@: strict distcheck, but with possibly faked pre-built man pages" >&2
 
@@ -453,8 +453,8 @@ distcheck-fake-man:
 # if it can); be relaxed toward other dependencies.
 distcheck-light:
 	@echo "Starting $@" >&2
-	+@cd docs/man && $(MAKE) $(AM_MAKEFLAGS) all
-	+@cd docs/man && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
+	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) all
+	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 	@echo "Completed $@: relaxed distcheck, with possibly faked pre-built man pages" >&2
 
@@ -478,7 +478,7 @@ memcheck:
 distcheck-valgrind:
 	@echo "Starting $@" >&2
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
-	+@cd docs/man && $(MAKE) $(AM_MAKEFLAGS) FAKE_PAGES_BUMP_SRC=false distcheck-light-DIST_ALL_PAGES
+	+@cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) FAKE_PAGES_BUMP_SRC=false distcheck-light-DIST_ALL_PAGES
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 	@echo "Completed $@: relaxed distcheck, without man pages ('pre-built' placeholders in dist archive), running tests under valgrind" >&2
 else !HAVE_VALGRIND
