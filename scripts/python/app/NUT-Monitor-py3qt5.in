@@ -74,6 +74,9 @@ except Exception as ignored:
 	### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
 	import PyNUT
 
+# We would seek locale files relative to script dir
+os.chdir(os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
+# print(os.getcwd())
 
 class interface :
 
@@ -234,7 +237,11 @@ class interface :
         self.__app.exec()
 
     def __find_res_file( self, ftype, filename ) :
+        # print("%s ~ %s => '%s' '%s'\n" % (os.getcwd(), os.path.dirname( sys.argv[0] ), ftype, filename))
         filename = os.path.join( ftype, filename )
+        # We would be in script dir
+        if os.path.exists(filename):
+            return filename
         # TODO: Skip checking application directory if installed
         path = os.path.join( os.path.dirname( sys.argv[0] ), filename )
         if os.path.exists(path):
@@ -248,6 +255,10 @@ class interface :
         filename = 'nut-monitor.png'
 
         # TODO: Skip checking application directory if installed
+        path = os.path.join( "icons", "256x256", filename )
+        if os.path.exists(path):
+            return path
+
         path = os.path.join( os.path.dirname( sys.argv[0] ), "icons", "256x256", filename )
         if os.path.exists(path):
             return path
