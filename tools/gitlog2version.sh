@@ -253,6 +253,7 @@ report_output() {
         "SEMVER")	echo "${SEMVER}" ;;
         "IS_RELEASE")	[ x"${SEMVER}" = x"${VER50}" ] && echo true || echo false ;;
         "TAG")  	echo "${TAG}" ;;
+        "TRUNK")  	echo "${NUT_VERSION_GIT_TRUNK-}" ;;
         "SUFFIX")	echo "${SUFFIX}" ;;
         "BASE") 	echo "${BASE}" ;;
         "URL")
