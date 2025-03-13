@@ -43,6 +43,7 @@ struct list_t {
 
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
+#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
 
 static char	*monups, *username, *password, *function, *upscommand;
 
@@ -338,13 +339,18 @@ static void loginscreen(void)
 /* try to connect to upsd - generate an error page if it fails */
 static void upsd_connect(void)
 {
+	struct timeval tv;
+
 	if (upscli_splitname(monups, &upsname, &hostname, &port) != 0) {
 		error_page("showsettings", "UPS name is unusable",
 			"Unable to split UPS name [%s]", monups);
 		/* NOTREACHED */
 	}
 
-	if (upscli_connect(&ups, hostname, port, 0) < 0) {
+	tv.tv_sec = NET_TIMEOUT;
+	tv.tv_usec = 0;
+
+	if (upscli_tryconnect(&ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
 		error_page("showsettings", "Connect failure",
 			"Unable to connect to %s: %s",
 			monups, upscli_strerror(&ups));

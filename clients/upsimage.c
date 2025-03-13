@@ -47,6 +47,7 @@
 #include "upsimagearg.h"
 
 #define MAX_CGI_STRLEN 64
+#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
 
 static	char	*monhost = NULL, *cmd = NULL;
 
@@ -618,6 +619,7 @@ int main(int argc, char **argv)
 	char	str[SMALLBUF];
 	int	i, min, nom, max;
 	double	var = 0;
+	struct timeval tv;
 	NUT_UNUSED_VARIABLE(argc);
 	NUT_UNUSED_VARIABLE(argv);
 
@@ -639,7 +641,10 @@ int main(int argc, char **argv)
 #endif
 	}
 
-	if (upscli_connect(&ups, hostname, port, 0) < 0) {
+	tv.tv_sec = NET_TIMEOUT;
+	tv.tv_usec = 0;
+
+	if (upscli_tryconnect(&ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
 		noimage("Can't connect to server:\n%s\n",
 			upscli_strerror(&ups));
 #ifndef HAVE___ATTRIBUTE__NORETURN

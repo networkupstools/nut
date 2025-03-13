@@ -43,6 +43,8 @@
 #include "upslog.h"
 #include "str.h"
 
+#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+
 #ifdef WIN32
 #include "wincompat.h"
 #endif
@@ -504,6 +506,7 @@ int main(int argc, char **argv)
 	const char	*pidfilebase = prog;
 	/* For legacy single-ups -s/-l args: */
 	static	char *logfn = NULL, *monhost = NULL;
+	struct timeval tv;
 
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
@@ -757,7 +760,10 @@ int main(int argc, char **argv)
 			);
 
 			conn = xmalloc(sizeof(*conn));
-			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0) {
+			tv.tv_sec = NET_TIMEOUT;
+			tv.tv_usec = 0;
+
+			if (upscli_tryconnect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
 				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
 			}
 
@@ -869,7 +875,10 @@ int main(int argc, char **argv)
 		}
 
 		monhost_ups_current->ups = xmalloc(sizeof(UPSCONN_t));
-		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0)
+		tv.tv_sec = NET_TIMEOUT;
+		tv.tv_usec = 0;
+
+		if (upscli_tryconnect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL, &tv) < 0)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",
 				upscli_strerror(monhost_ups_current->ups));
 
@@ -948,11 +957,14 @@ int main(int argc, char **argv)
 		) {
 			/* reconnect if necessary */
 			if (upscli_fd(monhost_ups_current->ups) < 0) {
-				upscli_connect(
+				tv.tv_sec = NET_TIMEOUT;
+				tv.tv_usec = 0;
+
+				upscli_tryconnect(
 					monhost_ups_current->ups,
 					monhost_ups_current->hostname,
 					monhost_ups_current->port,
-					0);
+					UPSCLI_CONN_TRYSSL, &tv);
 			}
 
 			run_flist(monhost_ups_current);

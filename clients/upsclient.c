@@ -157,6 +157,8 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
 
 static int upscli_initialized = 0;
 
+static struct timeval upscli_default_timeout; /* 0 is no timeout */
+
 #ifdef WITH_OPENSSL
 static SSL_CTX	*ssl_ctx;
 #elif defined(WITH_NSS) /* WITH_OPENSLL */
@@ -1070,7 +1072,6 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		ups->upserror = UPSCLI_ERR_UNKNOWN;
 		return -1;
 	}
-
 	for (ai = res; ai != NULL; ai = ai->ai_next) {
 
 		sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
@@ -1130,6 +1131,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 				else {
 					/* Timeout */
 					v = -1;
+					ups->upserror = UPSCLI_ERR_CONNFAILURE;
+					ups->syserrno = ETIMEDOUT;
 					break;
 				}
 			}
@@ -1150,6 +1153,13 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 		if (v < 0) {
 			close(sock_fd);
+			/* if timeout, break out so client can continue */
+			/* match Linux behavior that updates timeout struct */
+			if (timeout != NULL &&
+			    ups->upserror == UPSCLI_ERR_CONNFAILURE &&
+			    ups->syserrno == ETIMEDOUT) {
+				break;
+			}
 			continue;
 		}
 
@@ -1234,7 +1244,11 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags)
 {
-	return upscli_tryconnect(ups,host,port,flags,NULL);
+	struct timeval tv = upscli_default_timeout, *ptv = NULL;
+	if (tv.tv_sec != 0 || tv.tv_usec != 0) {
+		ptv = &tv;
+	}
+	return upscli_tryconnect(ups, host, port, flags, ptv);
 }
 
 /* map upsd error strings back to upsclient internal numbers */
@@ -1845,3 +1859,27 @@ int upscli_ssl(UPSCONN_t *ups)
 
 	return 0;
 }
+
+int upscli_set_default_timeout(const char *secs) {
+	float fsecs;
+
+	if (secs) {
+		/* FIXME: LC_NUMERIC=C for dot floats */
+		if (sscanf(secs, "%f", &fsecs) < 1) {
+			return -1;
+		}
+		if (fsecs < 0.0) {
+			return -1;
+		}
+		upscli_default_timeout.tv_sec = (time_t)fsecs;
+		fsecs *= 1000000;
+		upscli_default_timeout.tv_usec =
+			(suseconds_t)((int)fsecs % 1000000);
+	}
+	else {
+		upscli_default_timeout.tv_sec = 0;
+		upscli_default_timeout.tv_usec = 0;
+	}
+	return 0;
+}
+

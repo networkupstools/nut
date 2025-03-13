@@ -136,6 +136,8 @@ int upscli_upserror(UPSCONN_t *ups);
 /* returns 1 if SSL mode is active for this connection */
 int upscli_ssl(UPSCONN_t *ups);
 
+int upscli_set_default_timeout(const char *secs);
+
 /* upsclient error list */
 
 #define UPSCLI_ERR_NONE		-1	/* No known error (internally used in tools like upsmon, not set by upsclient.c) */
