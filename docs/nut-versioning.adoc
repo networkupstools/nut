@@ -20,6 +20,11 @@ codified as a formal standard at link:https://semver.org/[semver.org]:
   not correspond to post-release fixes but reflected iterative development,
   of which releases were the better-reviewed snapshots. Such a triplet was
   only spelled in `AC_INIT` for the commit tagged as that release.
+* Until NUT v2.6.x, the odd values of the `MINOR` component meant development
+  code trees, and even values meant the stable tree. This approach was
+  skipped (or effectively abandoned, as over a decade passed) with the
+  move to Git branches for development -- as numerous NUT v2.7.x based
+  releases were produced, and development continued into NUT v2.8.x.
 * NUT development versions were specified by the next commit after a
   release was published, spelling an `AC_INIT` macro argument like
   `MAJOR.MINOR.PATCH.1` to provide a fourth component -- which is
