@@ -641,13 +641,25 @@ class interface :
     # Display the about dialog
     def gui_about_dialog( self, widget=None ) :
         dialog_interface = gtk.glade.XML( self.__glade_file, "aboutdialog1" )
+        ### sys.stderr.write("gui_about_dialog(): dialog_interface=%s\n" % str(dir(dialog_interface)))
+        ### sys.stderr.write("gui_about_dialog(): dialog_interface.props=%s\n" % str(dir(dialog_interface.props)))
+        ### sys.stderr.write("gui_about_dialog(): dialog_interface.get_data=%s\n" % str(dir(dialog_interface.get_data("label"))))
+        ### sys.stderr.write("gui_about_dialog(): dialog_interface.get_properties=%s\n" % str(dir(dialog_interface.get_properties("label"))))
         dialog = dialog_interface.get_widget( "aboutdialog1" )
-        s = (dialog.label.text()
+        ### sys.stderr.write("gui_about_dialog(): dialog=%s\n" % str(dir(dialog)))
+        ### sys.stderr.write("gui_about_dialog(): label=%s\n" % str(dir(dialog.label)))
+        ### sys.stderr.write("gui_about_dialog(): text=%s\n" % str(dir(dialog.label.text)))
+        ### sys.stderr.write("gui_about_dialog(): text()=%s\n" % str(dir(dialog.label.text())))
+        s = dialog.get_comments()
+        ### sys.stderr.write("gui_about_dialog(): s (original) ='%s'\n" % s)
+        s = _(s)
+        ### sys.stderr.write("gui_about_dialog(): s (localized) ='%s'\n" % s)
+        s = (s
              .replace('%s%s%s' % ("@", "PACKAGE_VERSION", "@"), '@PACKAGE_VERSION@')
              .replace('%s%s%s' % ("@", "NUT_WEBSITE_BASE", "@"), '@NUT_WEBSITE_BASE@')
             )
-        ### print(sys.stderr, "gui_about_dialog(): s='%s'\n" % s)
-        dialog.label.setText(s)
+        ### sys.stderr.write("gui_about_dialog(): s (rewritten) ='%s'\n" % s)
+        dialog.set_comments(s)
 
         self.__widgets["main_window"].set_sensitive( False )
         dialog.run()
