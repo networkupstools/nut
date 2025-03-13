@@ -344,3 +344,48 @@ Variables propagated by nut_version.h
 		| * `1` if `$GITREV_IS_RELEASE`
 		  * `0` otherwise
 |=========================================================================
+
+Use in C code
+-------------
+
+common.c
+~~~~~~~~
+
+* The `NUT_VERSION_MACRO` is used in `common/common.c` and further made known
+  to all code base as a static string `UPS_VERSION` linked via `libcommon*.la`
+  internal libraries.
+* Method `describe_NUT_VERSION_once()` prepares the string which combines the
+  `NUT_VERSION_MACRO` with comments that it is either a `release` or a
+  `(development iteration after $NUT_VERSION_SEMVER_MACRO)`, based on
+  the value of `NUT_VERSION_IS_RELEASE`.
++
+It is used from a number of other methods, such as `print_banner_once()`,
+  `nut_report_config_flags()`, and so ends up in version reports of programs
+  via their `help()`/`usage()` methods.
+* Method `suggest_doc_links()` prepares a uniform bit of text for driver and
+  tool programs to report in their `help()`/`usage()` methods, to refer to
+  their manual page under the `NUT_WEBSITE_BASE`.
+
+Man pages
+~~~~~~~~~
+
+* Manual pages and other documentation consume the `PACKAGE_VERSION`,
+  `PACKAGE_VERSION` and `NUT_WEBSITE_BASE` as `asciidoc` attributes
+  when rendering HTML/PDF/man document formats.
+* The `NUT_WEBSITE_BASE` is also substituted instead of literal
+  `https://www.networkupstools.org/*` which follows a `home page:` prefix
+  (so that the pages rendered for a release refer to the historic website).
+
+systemd and SMF manifests
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Service manifests include references to documentation for the tools they wrap,
+including published pages under the `NUT_WEBSITE_BASE` for the development or
+historic variants of the NUT website.
+
+NUT-Monitor (Python UI) and PyNUTClient
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* The `PACKAGE_VERSION` and `NUT_WEBSITE_BASE` are reported in the About dialog.
+* Version information is propagated into PyPI packages for the `PyNUTClient`
+  module.
