@@ -37,6 +37,16 @@ all:
 #EGREP = egrep
 EGREP = grep -E
 
+# Possible man page section remapping in some distros:
+MAN_SECTION_API_BASE=@MAN_SECTION_API_BASE@
+MAN_SECTION_CFG_BASE=@MAN_SECTION_CFG_BASE@
+MAN_SECTION_CMD_SYS_BASE=@MAN_SECTION_CMD_SYS_BASE@
+MAN_SECTION_CMD_USR_BASE=@MAN_SECTION_CMD_USR_BASE@
+# Other rewritable properties:
+NUT_WEBSITE_BASE=@NUT_WEBSITE_BASE@
+PACKAGE_VERSION=@PACKAGE_VERSION@
+TREE_VERSION=@TREE_VERSION@
+
 IMAGE_FILES = \
 	images/asciidoc.png \
 	images/hostedby.png \
@@ -537,21 +547,21 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --xsltproc-opts="--nonet" \
     --xsltproc-opts="--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
     --xsltproc-opts="--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
-    --xsltproc-opts="--stringparam nut.nutversion \"@PACKAGE_VERSION@\"" \
+    --xsltproc-opts="--stringparam nut.nutversion \"$(PACKAGE_VERSION)\"" \
     --attribute=docinfodir="$(builddir)" \
     --attribute=iconsdir="$(srcdir)/images" \
     --attribute=badges \
     --attribute=external_title \
-    --attribute=tree_version="@TREE_VERSION@" \
+    --attribute=tree_version="$(TREE_VERSION)" \
     --attribute=srcdir="$(abs_srcdir)/" \
     --attribute=builddir="$(abs_builddir)/" \
     --attribute=top_srcdir="$(abs_top_srcdir)/" \
     --attribute=top_builddir="$(abs_top_builddir)/" \
-    --attribute=MAN_SECTION_API_BASE='@MAN_SECTION_API_BASE@' \
-    --attribute=MAN_SECTION_CFG_BASE='@MAN_SECTION_CFG_BASE@' \
-    --attribute=MAN_SECTION_CMD_SYS_BASE='@MAN_SECTION_CMD_SYS_BASE@' \
-    --attribute=MAN_SECTION_CMD_USR_BASE='@MAN_SECTION_CMD_USR_BASE@' \
-    --attribute=NUT_WEBSITE_BASE='@NUT_WEBSITE_BASE@' \
+    --attribute=MAN_SECTION_API_BASE='$(MAN_SECTION_API_BASE)' \
+    --attribute=MAN_SECTION_CFG_BASE='$(MAN_SECTION_CFG_BASE)' \
+    --attribute=MAN_SECTION_CMD_SYS_BASE='$(MAN_SECTION_CMD_SYS_BASE)' \
+    --attribute=MAN_SECTION_CMD_USR_BASE='$(MAN_SECTION_CMD_USR_BASE)' \
+    --attribute=NUT_WEBSITE_BASE='$(NUT_WEBSITE_BASE)' \
     -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
 # As of version 8.6.9 it lies, and the argument is required for our distcheck
@@ -982,10 +992,10 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	        esac ; \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
 	            sed \
-	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \
 	            sed \
-	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
@@ -1038,10 +1048,10 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	        fi ; \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
 	            sed \
-	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \
 	            sed \
-	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \

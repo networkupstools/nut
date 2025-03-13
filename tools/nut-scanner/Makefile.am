@@ -41,6 +41,12 @@ $(top_builddir)/common/libcommon.la: dummy
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else
+# FIXME: this can cause rebuilds of nut_version.h for every mention
+#  (especially if we `configire --enable-force-nut-version-header`,
+#  which is default). This also causes binary build of libupsclient.la
+#  to look up its metadata and generate libupsclient-version.h which
+#  may be a bit of overkill (especially in cross-build cases etc.)
+#  Notably this pops up in `configure && make dist(check)` rituals.
 nut-scanner.c: $(top_builddir)/include/nut_version.h
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
