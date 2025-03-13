@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3334 utf-8
+personal_ws-1.1 en 3337 utf-8
 AAC
 AAS
 ABI
@@ -1482,6 +1482,7 @@ advorder
 ae
 aec
 af
+afeb
 aggregator
 ai
 aix
@@ -1941,6 +1942,7 @@ extapi
 extern
 externalConsole
 extradata
+faa
 fabula
 facto
 fallthrough
@@ -2738,6 +2740,7 @@ qxflags
 rD
 raritan
 rb
+rc
 rcctl
 readline
 readonly
