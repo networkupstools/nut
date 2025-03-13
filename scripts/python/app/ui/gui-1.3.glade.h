@@ -27,6 +27,22 @@ char *s = N_("<None>");
 char *s = N_("Enter a new value for the variable.\n"
              "");
 char *s = N_("Copyright (c) 2010 David Goncalves, Copyright (c) since 2010 by NUT Community");
+/* NOTE: This plaintext markup of the "comment" is used
+ *       in the Python2/GTK2 version of NUT Monitor.
+ *       Equivalent "label" text in HTML markup is used in
+ *       Python3/Qt5 localization.
+ */
+char *s = N_("GUI to manage devices connected to a NUT server.\n"
+             "Provided with NUT version @PACKAGE_VERSION@.\n"
+             "\n"
+             "For more information about the GUI please visit\n"
+             "the author's web-site:\n"
+             "https://www.lestat.st/en/informatique/projets/nut-monitor\n"
+             "\n"
+             "For more information about NUT (Network UPS Tools)\n"
+             "please visit the project web-site:\n"
+             "@NUT_WEBSITE_BASE@\n"
+             );
 char *s = N_("<h1>NUT-Monitor 2.0.2</h1>\n"
              "<p>GUI to manage devices connected to a NUT server.<br/>\n"
              "Provided with NUT version @PACKAGE_VERSION@.</p>\n"
