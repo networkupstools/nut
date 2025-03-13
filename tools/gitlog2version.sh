@@ -19,8 +19,9 @@
 ############################################################################
 #
 # For setup check NUT_VERSION* in script source.
+# For more info see docs/nut-versioning.adoc
 #
-# The NUT SEMVER definition mostly follows https://semver.org/#spec-item-10
+# The NUT SEMVER definition mostly follows https://semver.org/ standard
 # except that for development iterations the base version may have up to
 # five dot-separated numeric components (SEMVER triplet for base release,
 # and additional data described below). Unlike standard semver provisions
