@@ -41,6 +41,9 @@ import ConfigParser
 import locale
 import gettext
 
+if platform.system() == "Windows":
+    import xml.dom.minidom
+
 # Try local development/accompanying packaging first,
 # then system installation
 sys_path_orig = list(sys.path)
@@ -114,7 +117,18 @@ class interface :
             self.__glade_file = os.path.join(self.__resdir, "ui", "gui-1.3.glade" )
             # If not exists, we bail out in load attempt below
 
-        self.__widgets["interface"]                   = gtk.glade.XML( self.__glade_file, "window1", APP )
+        if ( platform.system() == "Windows" ) :
+            ### Fails for "fr" and "ru" locales with errors decoding UTF-8 in
+            ### both XML() and xml_new_from_buffer() despite any trickery like
+            ### attempts done below. PRs welcome:
+            # with open(self.__glade_file, 'rb') as f:
+            #    doc = f.read()  # .decode("cp1250").encode("utf8")
+            #    self.__widgets["interface"]           = gtk.glade.xml_new_from_buffer( doc, len(doc), "window1", APP )
+            doc = xml.dom.minidom.parse(self.__glade_file).toxml().encode("utf-8")
+            self.__widgets["interface"]               = gtk.glade.xml_new_from_buffer( doc, len(doc), "window1", APP )
+        else :
+            self.__widgets["interface"]               = gtk.glade.XML( self.__glade_file, "window1", APP )
+
         self.__widgets["main_window"]                 = self.__widgets["interface"].get_widget("window1")
         self.__widgets["status_bar"]                  = self.__widgets["interface"].get_widget("statusbar2")
         self.__widgets["ups_host_entry"]              = self.__widgets["interface"].get_widget("entry1")
