@@ -264,6 +264,8 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
      as an "Ellipse PRO" in USB metadata. [#2380]
    * Added `ups.beeper.status` support for Masterpower MF-UPS650VA using the
      MGE HID subdriver. [#2662]
+   * Added basic support for EcoFlow River 3 Plus and Delta 3 Plus models.
+     [issue #2735, PRs #2740, #2837]
    * Added support for `0x09D6:0x0001` devices using the MGE HID subdriver
      assuming devices made by KSTAR (alternately using MGE vendor ID). [#2661]
    * `powercom-hid` subdriver sent UPS shutdown commands in wrong byte order,
@@ -595,6 +597,11 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
    The Python module name (and its directory) should remain camel-cased. [#2773]
 
  - added man page for the `NUT-Monitor` Python UI client.
+
+ - The `NUT-Monitor` Python UI client itself was revised to report the
+   `PACKAGE_VERSION` and `NUT_WEBSITE_BASE` strings in the "About" dialog
+   contents; localization support for the dialog and some other resources
+   was revised to work in Py3Qt5 variant of the script. [#722]
 
  - enabled installation of built single-file PDF and HTML (including man page
    renditions) under the configured `docdir`. It seems previously they were
