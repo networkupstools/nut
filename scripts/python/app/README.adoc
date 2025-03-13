@@ -55,6 +55,41 @@ image::screenshots/nut-monitor-2.png[Example report of device variables]
 
 image::screenshots/nut-monitor-3.png[Example modification of a writable variable]
 
+Development/Testing notes
+-------------------------
+
+As Python2 falls out of favor and packaging scope of different distributions,
+one where both variants of the script can be tested simultaneously as of 2025
+is MSYS2 (on Windows), see `docs/config-prereqs.txt` in NUT sources for more
+details about general prerequisites for the NUT build in that environment.
+
+Regarding the Python UI support, you would need:
+
+----
+:; pacman -Sy mingw-w64-x86_64-python2-pygtk mingw-w64-x86_64-python-pyqt5
+----
+
+This should pull in the interpreters and libraries involved.
+
+You may have to add this to your `~/.bashrc` for Python 2 to work properly:
+
+----
+PYTHONIOENCODING=UTF-8
+export PYTHONIOENCODING
+----
+
+To iterate during specifically localization development, you can edit the `.in`
+template sources of the scripts and the localization files, and (from the `app`
+directory) run with:
+
+----
+:; (cd .. && make `pwd`/app/locale/*/*/*) ; (cd ../../../ && ./config.status \
+   scripts/python/app/NUT-Monitor-py2gtk2 scripts/python/app/NUT-Monitor-py3qt5) \
+   && LANG=fr_FR ./NUT-Monitor-py2gtk2
+----
+
+or `..../NUT-Monitor-py3qt5` respectively.
+
 Kudos
 -----
 
