@@ -277,3 +277,41 @@ DESC='v2.8.2-2381+g1faa9945d'
 			| `NUT_VERSION_DEFAULT='2.8.2.2379.2-2381+g1faa9945d'`
 |default	| Report `DESC50`	| `v2.8.2-2381-g1faa9945d`
 |=========================================================================
+
+Variables propagated by configure.ac
+------------------------------------
+
+.Values reported via `NUT_VERSION_QUERY`
+[opts="header",cols="1,3,2a"]
+|=========================================================================
+|Variable	| Description	| Example (development and release)
+|`PACKAGE_VERSION`	| Argument to `AC_INIT` determined by
+			  `NUT_VERSION_QUERY=VER50 gitlog2version.sh`
+			| * dev: `2.8.2.695.1`
+			  * trunk: `2.8.2.695`
+			  * release: `2.8.2`
+|`PACKAGE_URL`	| Argument to `AC_INIT` determined by
+			  `NUT_VERSION_QUERY=URL gitlog2version.sh`
+			| * dev/trunk: `https://www.networkupstools.org/`
+			  * release: `https://www.networkupstools.org/historic/v2.8.2/index.html`
+|`NUT_WEBSITE_BASE`	| Derived from `PACKAGE_URL` without a trailing slash
+			  nor `index.html` (prefixed to documentation file URLs, etc.)
+			| * dev/trunk: `https://www.networkupstools.org`
+			  * release: `https://www.networkupstools.org/historic/v2.8.2`
+|`NUT_SOURCE_GITREV`
+			| Determined by `NUT_VERSION_QUERY=DESC50 gitlog2version.sh`
+			| `2.8.2.695.1-696+g0e00f0777`
+|`NUT_SOURCE_GITREV_SEMVER`
+			| Determined by `NUT_VERSION_QUERY=SEMVER gitlog2version.sh`
+			| `2.8.2`
+|`NUT_SOURCE_GITREV_NUMERIC`
+			| Determined by `NUT_SOURCE_GITREV` leaving only the numbers,
+			  e.g. for PyPI uploads (currently without the total commit count)
+			| `2.8.2.695.1'`
+|`NUT_SOURCE_GITREV_IS_RELEASE`
+			| Determined by `NUT_VERSION_QUERY=IS_RELEASE gitlog2version.sh`
+			| `true` or `false`
+|`NUT_SOURCE_GITREV_DEVREL`
+			| String determined by `NUT_SOURCE_GITREV_IS_RELEASE`
+			| `"release"` or `"development iteration"`
+|=========================================================================
