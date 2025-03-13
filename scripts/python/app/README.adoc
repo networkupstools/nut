@@ -41,6 +41,12 @@ menu names, dialog field labels, etc. remain in default English wording despite
 the presence of translations in resource files. PRs to attach them to run-time
 rendering in the Python 3 client are welcome.
 
+Note that some items, like the standard menu items for Preferences or About,
+can come from the interpreter's default library and so partially cover the
+interface elements in other languages (e.g. system default) independently of
+the resources provided with the script or its sources (at least in the
+Python 2 / GTK2 variant of the UI).
+
 Desktop menu integration
 ------------------------
 
