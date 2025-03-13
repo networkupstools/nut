@@ -43,7 +43,7 @@ import gettext
 
 # Try local development/accompanying packaging first,
 # then system installation
-sys_path_orig = sys.path.copy()
+sys_path_orig = list(sys.path)
 try:
 	# Try "module" path relative to this program script:
 	mod_path = os.path.sep.join([
