@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3330 utf-8
+personal_ws-1.1 en 3333 utf-8
 AAC
 AAS
 ABI
@@ -903,6 +903,7 @@ PULS
 PV
 PWR
 PXG
+PYTHONIOENCODING
 PYTHONPATH
 PaaS
 Pac
@@ -2721,7 +2722,9 @@ py
 pycparser
 pydoc
 pygments
+pygtk
 pynut
+pyqt
 qDEB
 qa
 qemu
