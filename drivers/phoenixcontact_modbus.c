@@ -221,6 +221,7 @@ void upsdrv_updateinfo(void)
 	uint16_t actual_code_functions2;
 	uint16_t actual_alarms = 0;
 	uint16_t actual_alarms1 = 0;
+	uint16_t actual_alarms2 = 0;
 	uint16_t battery_voltage;
 	uint16_t battery_temperature;
 	uint16_t battery_runtime;
@@ -535,12 +536,7 @@ void upsdrv_updateinfo(void)
 
 		mrir(modbus_ctx, 0x3000, 1, &actual_alarms);
 		mrir(modbus_ctx, 0x3001, 1, &actual_alarms1);
-
-		if (CHECK_BIT(actual_alarms, 9))
-			alarm_set("End of life (Resistance)");
-
-		if (CHECK_BIT(????????????))
-			alarm_set("End of life (Time)");
+		mrir(modbus_ctx, 0x3012, 1, &actual_alarms2);
 
 		if (CHECK_BIT(actual_alarms, 10))
 			alarm_set("End of life (Voltage)");
@@ -548,20 +544,11 @@ void upsdrv_updateinfo(void)
 		if (CHECK_BIT(actual_alarms, 3))
 			alarm_set("No Battery");
 
-		if (CHECK_BIT(?????????????))
-			alarm_set("Inconsistent technology");
-
 		if (CHECK_BIT(actual_alarms1, 8))
 			alarm_set("Overload Cutoff");
 
-		if (CHECK_BIT(?????????????))
+		if (CHECK_BIT(actual_alarms1, 17))
 			alarm_set("Low Battery (Voltage)");
-
-		if (CHECK_BIT(????????????))
-			alarm_set("Low Battery (Charge)");
-
-		if (CHECK_BIT(?????????????))
-			alarm_set("Low Battery (Time)");
 
 		if (CHECK_BIT(actual_alarms1, 14))
 			alarm_set("Low Battery (Service)");
@@ -593,6 +580,18 @@ void upsdrv_updateinfo(void)
 			alarm_set("Low Battery (Time)");
 		if (CHECK_BIT(tab_reg[0], 16))
 			alarm_set("Low Battery (Service)");
+		break;
+	case TRIO_2G_UPS:
+		mrir(modbus_ctx, 29706, 1, tab_reg);
+
+		if (CHECK_BIT(tab_reg[0], 0))
+			alarm_set("End of life (Time)");
+		if (CHECK_BIT(tab_reg[0], 2))
+			alarm_set("End of life (Voltage)");
+		if (CHECK_BIT(tab_reg[0], 1))
+			alarm_set("No Battery");
+		if (CHECK_BIT(tab_reg[0], 3))
+			alarm_set("Low Battery (Voltage)");
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
