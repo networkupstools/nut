@@ -347,7 +347,7 @@ void upsdrv_updateinfo(void)
 		mrir(modbus_ctx, 29749, 5, tab_reg);
 		break;
 	case TRIO_UPS:
-		mrir(modbus_ctx, 29699, 1, tab_reg);
+		/*battery.charge is not available for TRIO and TRIO-2G models*/
 		break;
 	case TRIO_2G_UPS:
 		/*battery.charge is not available for TRIO and TRIO-2G models*/
@@ -382,7 +382,7 @@ void upsdrv_updateinfo(void)
 # pragma GCC diagnostic pop
 #endif
 	}
-	if(UPSModel != TRIO_2G_UPS)
+	if(UPSModel != TRIO_2G_UPS && UPSModel != TRIO_UPS)
 		dstate_setinfo("battery.charge", "%d", tab_reg[0]);
 	/* dstate_setinfo("battery.runtime",tab_reg[1]*60); */ /* also reported on this address, but less accurately */
 
