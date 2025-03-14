@@ -24,7 +24,7 @@
 #include "ydn23.h"
 
 #define DRIVER_NAME	"Liebert GXE Series UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 #define PROBE_RETRIES	3
 #define DEFAULT_STALE_RETRIES	3
@@ -173,9 +173,10 @@ static void upsdrv_updateinfo_onoff(void)
 		status_set("OB");
 	else if (pwrval == 0x01)
 		status_set("OL");
-	else if (pwrval == 0x02)
-		status_set("OL BYPASS");
-	else
+	else if (pwrval == 0x02) {
+		status_set("OL");
+		status_set("BYPASS");
+	} else
 		upslogx(LOG_WARNING, "unknown ups state: %x %x",
 			(unsigned int)pwrval,
 			(unsigned int)rectval);

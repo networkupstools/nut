@@ -329,6 +329,7 @@
 "Deltec"	"ups"	"4"	"PRM 450/700/1000/1500"	""	"upscode2"
 
 "DEXP"	"ups"	"2"	"MIX 850VA"	"USB"	"blazer_usb langid_fix=0x0409 runtimecal=240,100,720,50 default.battery.voltage.high=2.27 default.battery.voltage.low=1.72"	# https://github.com/networkupstools/nut/issues/721
+"DEXP"	"ups"	"2"	"LCD EURO 1200VA"	"USB"	"driver=nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 langid_fix=0x0409 protocol=hunnox subdriver=hunnox novendor norating noscanlangid default.battery.voltage.high=28.6 default.battery.voltage.low=21.4"	# https://github.com/networkupstools/nut/pull/2839
 
 "Digital Loggers"	"pdu"	"1"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
@@ -422,6 +423,9 @@
 "Eaton"	"ats"	"5"	"Eaton ATS16"	""	"snmp-ups"
 "Eaton"	"ats"	"5"	"Eaton ATS30"	""	"snmp-ups"
 
+"Ecoflow"	"ups"	"3"	"Delta 3 Plus"	"USB"	"usbhid-ups"
+"Ecoflow"	"ups"	"3"	"River 3 Plus"	"USB"	"usbhid-ups"
+
 "Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"blazer_ser"
 "Effekta"	"ups"	"2"	"RM2000MH"	""	"blazer_ser"
 
@@ -506,6 +510,7 @@
 
 "Grafenthal"	"ups"	"3"	"PR-3000-HS"	"SNMP/Web Minislot card (ref 149G0006)"	"snmp-ups"	# http://grafenthal.de/produkte/usv/online/pr-hs-serie/pr-3000-hs/?L=3et8
 
+"Greencell"	"ups"	"2"	"2000VA"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1673
 "Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1080
 "Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/1080
 "Greencell"	"ups"	"2"	"PowerProof 2000"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/2727
@@ -516,6 +521,7 @@
 "Gtec"	"ups"	"2"	"AP160N-1K / AP160LCD-1K-KS / AP160N-2K / AP160LCD-2K-KS / AP160N-3K / AP160LCD-3K-KS / AP160N-6K-PDU / AP160N-10K-PDU"	"USB port"	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-10K-31-00 / ZP120N-10K-31-07 / ZP120N-10K-31-09 / ZP120N-10K-31-99 / ZP120N-20K"	"Serial port"	"blazer_ser"
 "Gtec"	"ups"	"2"	"AP160N-1K / AP160LCD-1K-KS / AP160N-2K / AP160LCD-2K-KS / AP160N-3K / AP160LCD-3K-KS / AP160N-6K-PDU / AP160N-10K-PDU"	"Serial port"	"blazer_ser"
+"Gtec"	"ups"	"3"	"ZP120N"	"USB"	"nutdrv_qx with subdriver=gtec protocol=gtec"
 
 "Guardian"	"ups"	"2"	"LCD 1500 AP (IGA1500LCD)"	"Serial"	"nutdrv_qx"
 
@@ -1265,6 +1271,7 @@
 "Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
 
 "Salicru"	"ups"	"2"	"SPS ONE 700VA"	"USB"	"blazer_usb"
+"Salicru"	"ups"	"2"	"SPS ONE 900VA"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1623
 "Salicru"	"ups"	"2"	"SPS ONE 2000VA"	"USB"	"nutdrv_qx"	# https://www.salicru.com/en/ups/sps-one.html https://github.com/networkupstools/nut/issues/554
 "Salicru"	"ups"	"3"	"SPS 650/850 HOME"	"usb"	"usbhid-ups (experimental)"
 "Salicru"	"ups"	"3"	"SLC TWIN PRO2"	"usb"	"usbhid-ups (experimental)" # https://github.com/networkupstools/nut/issues/450

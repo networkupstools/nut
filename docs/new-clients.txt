@@ -8,8 +8,8 @@ NUT (the GNU General Public License).
 If none of these suits you for technical or legal reasons, you can
 implement one easily using the <<net-protocol,Network protocol information>>.
 
-The latter approach has been used to create the Python 'PyNUT' module, the
-Nagios 'check_ups' plugin (and probably others), which can serve as a
+The latter approach has been used to create the Python 'PyNUTClient' module,
+the Nagios 'check_ups' plugin (and probably others), which can serve as a
 reference.
 
 C / C++

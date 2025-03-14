@@ -16,30 +16,44 @@ EXTRA_DIST =
 CLEANFILES =
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
+lib_LTLIBRARIES =
+
+# We define the recipe below in any case, but only activate it by default
+# if the build configuration tells us to:
+if WITH_DEV_LIBNUTCONF
+# We want it built and delivered (standalone or with tool)
+  lib_LTLIBRARIES += libnutconf.la
+else !WITH_DEV_LIBNUTCONF
 if WITH_NUTCONF
-  # We define the recipe below in any case, but only activate it by default
-  # if the build configuration tells us to:
+# We only want the tool, make a private build
   noinst_LTLIBRARIES += libnutconf.la
+# else do not build at all, e.g. do not have C++ support
 endif WITH_NUTCONF
+endif !WITH_DEV_LIBNUTCONF
 
 libparseconf_la_SOURCES = parseconf.c
-
-libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else... but do depend on its build area:
 if BUILDING_IN_TREE
-  # No need for symlink hack
+# No need for symlink hack
   common.c: $(top_builddir)/include/nut_version.h
 else !BUILDING_IN_TREE
-  # Surprisingly, for some "make" implementations this dependency means
-  # that the "common.c" required for builds below will be seeked in the
-  # current directory. So for out-of-tree builds like distcheck, we have
-  # to symlink the "real" source to build area:
+# Surprisingly, for some "make" implementations this dependency means
+# that the "common.c" required for builds below will be seeked in the
+# current directory. So for out-of-tree builds like distcheck, we have
+# to symlink the "real" source to build area. And then when we handle
+# subsequent dependencies, we already have a filename that "make" now
+# discovers and is confused about:
   common.c: $(top_builddir)/include/nut_version.h $(srcdir)/common.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/common/common.c" "$@"
+	@if [ x"$(abs_top_srcdir)" = x"$(abs_top_builddir)" ] || test -s "$@" ; then \
+		exit 0 ; \
+	 else \
+		echo "  LN         $(top_srcdir)/common/common.c => $@ (relative to `pwd`)" ; \
+		ln -s -f "$(top_srcdir)/common/common.c" "$@" ; \
+	 fi
 endif !BUILDING_IN_TREE
 
 $(top_builddir)/include/nut_version.h:
@@ -129,10 +143,26 @@ libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@ @BSDKVMPROCLIB
 libcommon_la_CFLAGS = $(AM_CFLAGS)
 libcommonclient_la_CFLAGS = $(AM_CFLAGS)
 
-if WITH_NUTCONF
+if WITH_LIBNUTCONF
+if WITH_DEV_LIBNUTCONF
+  # libnutconf version information and build
+  # currently considered a highly experimental and so unstable API at least
+  # (at least, headers contain a lot of data/code, not sure they should)
+  libnutconf_la_LDFLAGS = -version-info 0:1:0
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutconf_la_LDFLAGS += -no-undefined
+endif HAVE_WINDOWS
+endif WITH_DEV_LIBNUTCONF
   libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
-  libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@ libcommonclient.la
-endif WITH_NUTCONF
+  # NOTE: No @LTLIBOBJS@ here, because libcommonclient.la includes them (if any)
+  libnutconf_la_LIBADD = @NETLIBS@ libcommonclient.la
+  libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp \
+	../include/nutconf.hpp ../include/nutipc.hpp \
+	../include/nutstream.hpp ../include/nutwriter.hpp
+else !WITH_LIBNUTCONF
+  EXTRA_DIST += nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
+endif !WITH_LIBNUTCONF
 
 if HAVE_LIBREGEX
   libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)
@@ -162,5 +192,9 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
-#clean-local:
+clean-local:
+	if test -L $(builddir)/common.c || test -h $(builddir)/common.c ; then rm -f $(builddir)/common.c ; fi
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

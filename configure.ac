@@ -131,6 +131,27 @@ AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     ])
 AC_CANONICAL_TARGET
 NUT_CHECK_OS
+
+dnl Further below we shuffle variants of these values possibly stripped of
+dnl warnings or with added further values. Here we save the most-original copy
+dnl so it can be passed e.g. to "make distcheck" the way the caller intended.
+NUT_CONFIG_CFLAGS=""
+NUT_CONFIG_CPPFLAGS=""
+NUT_CONFIG_CXXFLAGS=""
+NUT_CONFIG_LDFLAGS=""
+AS_IF([test -n "${CFLAGS-}"   -a x"${CFLAGS-}"   != x" "],
+	[NUT_CONFIG_CFLAGS="${CFLAGS-}"])
+AS_IF([test -n "${CXXFLAGS-}" -a x"${CXXFLAGS-}" != x" "],
+	[NUT_CONFIG_CXXFLAGS="${CXXFLAGS-}"])
+AS_IF([test -n "${CPPFLAGS-}" -a x"${CPPFLAGS-}" != x" "],
+	[NUT_CONFIG_CPPFLAGS="${CPPFLAGS-}"])
+AS_IF([test -n "${LDFLAGS-}"  -a x"${LDFLAGS-}"  != x" "],
+	[NUT_CONFIG_LDFLAGS="${LDFLAGS-}"])
+AC_SUBST([NUT_CONFIG_CFLAGS])
+AC_SUBST([NUT_CONFIG_CXXFLAGS])
+AC_SUBST([NUT_CONFIG_CPPFLAGS])
+AC_SUBST([NUT_CONFIG_LDFLAGS])
+
 NUT_STASH_WARNINGS
 AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
@@ -158,8 +179,14 @@ dnl experimentation, we do not want to actually mangle the flags provided
 dnl by autoconf - for GCC at least, the rightmost mentions of conflicting
 dnl flags on command line win. We just want to know when it is okay to add
 dnl ours. They may be inherited from "in-place" build setup though.
-test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS="${CFLAGS-}"
+test -n "${CONFIG_CFLAGS-}"   || CONFIG_CFLAGS="${CFLAGS-}"
 test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS="${CXXFLAGS-}"
+test -n "${CONFIG_CPPFLAGS-}" || CONFIG_CPPFLAGS="${CPPFLAGS-}"
+test -n "${CONFIG_LDFLAGS-}"  || CONFIG_LDFLAGS="${LDFLAGS-}"
+AC_SUBST([CONFIG_CFLAGS])
+AC_SUBST([CONFIG_CXXFLAGS])
+AC_SUBST([CONFIG_CPPFLAGS])
+AC_SUBST([CONFIG_LDFLAGS])
 dnl +-------------------------------------------------------------------
 
 dnl Default to `configure --enable-silent-rules` or `make V=1` for details?
@@ -735,10 +762,14 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         ])
         export NUT_VERSION_DEPLOYED
         dnl # Avoid replacement after re-entering:
-        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CFLAGS-}"   || CONFIG_CFLAGS=" "
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        test -n "${CONFIG_CPPFLAGS-}" || CONFIG_CPPFLAGS=" "
+        test -n "${CONFIG_LDFLAGS-}"  || CONFIG_LDFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+        export CONFIG_CPPFLAGS
+        export CONFIG_LDFLAGS
 
         AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
         mv -f config.log config.log.inplace-outer || true
@@ -749,10 +780,14 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         NUT_VERSION_DEPLOYED="<reenter>"
         export NUT_VERSION_DEPLOYED
         dnl # Avoid replacement after re-entering:
-        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CFLAGS-}"   || CONFIG_CFLAGS=" "
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        test -n "${CONFIG_CPPFLAGS-}" || CONFIG_CPPFLAGS=" "
+        test -n "${CONFIG_LDFLAGS-}"  || CONFIG_LDFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+        export CONFIG_CPPFLAGS
+        export CONFIG_LDFLAGS
 
         AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
         mv -f config.log config.log.inplace-outer || true
@@ -1867,6 +1902,8 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_gpio}"; then
 			dnl NOTE: Currently we only support a Linux libgpiod
 			dnl backend for GPIO; eventually there could be more.
+			dnl Also note that since March 2023 the very different
+			dnl libgpiod v2.x is out (requires kernel 5.17.4+)
 			case ${target_os} in
 				linux*) with_gpio="auto";; dnl # TODO: Detect 2018+ distros?
 				*) with_gpio="auto";;
@@ -2063,7 +2100,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, dev-libnutconf, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -2082,6 +2119,8 @@ AC_ARG_WITH(all,
 		if test -z "${with_gpio}"; then
 			dnl NOTE: Currently we only support a Linux libgpiod
 			dnl backend for GPIO; eventually there could be more.
+			dnl Also note that since March 2023 the very different
+			dnl libgpiod v2.x is out (requires kernel 5.17.4+)
 			with_gpio="${withval}"
 			case ${target_os} in
 				linux*) ;;
@@ -2108,6 +2147,22 @@ AC_ARG_WITH(all,
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
 		if test -z "${with_nut_scanner}"; then with_nut_scanner="${withval}"; fi
 		if test -z "${with_nutconf}"; then with_nutconf="${withval}"; fi
+
+		dnl dev-libnutconf is experimental, and relies on
+		dnl functional C++11 that we only check for later;
+		dnl at best, we can follow main nutconf request
+		dnl (explicit from caller, or set a few lines above)
+		if test -z "${with_dev_libnutconf}" ; then
+			if test "${withval}" = no ; then
+				with_dev_libnutconf="no"
+			else
+				case "${with_dev}${with_nutconf}" in
+					*no*) with_dev_libnutconf="no" ;;
+					*auto*) with_dev_libnutconf="auto" ;;
+					yesyes) with_dev_libnutconf="yes" ;;
+				esac
+			fi
+		fi
 
 		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
 		|| test x"${withval}" != xyes \
@@ -2137,9 +2192,14 @@ dnl they are listed near the top by "./configure --help"; however,
 dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
 
+dnl Depends on C++ support being available and enabled
 NUT_ARG_WITH([nutconf], [build and install the nutconf tool (experimental, has compiler/coverage warnings)], [auto])
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
+
+dnl Depends on C++ support being available and enabled
+dnl Does not depend on nutconf or dev explicitly (but warns about inconsistencies)
+NUT_ARG_WITH([dev-libnutconf], [deliver the C++ library behind the nutconf tool and its headers (experimental)], [no])
 
 dnl Activate WITH_UNMAPPED_DATA_POINTS for troubleshooting and evolution?
 dnl Note that production drivers must conform to docs/nut-names.txt
@@ -2462,6 +2522,7 @@ AS_IF([test "${nut_with_modbus}" != "no"], [
 	dnl detection method (if nut_have_libmodbus_usb=="yes")
 	NUT_REPORT_DRV([build Modbus drivers with RTU USB support], [${nut_have_libmodbus_usb}])
 ])
+AM_CONDITIONAL(WITH_MODBUS_USB, [test "${nut_with_modbus}" = "yes" && test "${nut_have_libmodbus_usb}" = yes && test "${nut_with_usb}" = yes && test "${nut_with_modbus_and_usb}" != "no"])
 
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
@@ -2538,7 +2599,8 @@ if test "${nut_with_gpio}" != "no"; then
    nut_with_gpio="${nut_have_gpio}"
 fi
 
-NUT_REPORT_DRIVER([build GPIO driver], [${nut_with_gpio}], [${nut_gpio_lib}],
+dnl NOTE: m4 scriptlet also defines WITH_LIBGPIO_VERSION like 0x00020000 in config.h
+NUT_REPORT_DRIVER([build GPIO driver (library v${GPIO_VERSION})], [${nut_with_gpio}], [${nut_gpio_lib}],
 					[WITH_GPIO], [Define to enable GPIO support])
 
 dnl ----------------------------------------------------------------------
@@ -2885,77 +2947,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
 fi
 dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-6: ${nut_with_nut_monitor}])
 
-dnl Check if we can use distributed or fallback telnetlib module for PyNUTClient
-nut_have_telnetlib_py=""
-nut_have_telnetlib_py2=""
-nut_have_telnetlib_py3=""
-if test x"${nut_with_pynut}" != xno \
-    -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
-; then
-    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
-        AC_MSG_CHECKING([if we can use stock Python2 telnetlib module provided with interpreter ${PYTHON2}])
-        if ${PYTHON2} -c "import telnetlib" \
-        ; then
-            nut_have_telnetlib_py2="yes"
-        else
-            nut_have_telnetlib_py2="no"
-        fi
-        AC_MSG_RESULT([${nut_have_telnetlib_py2}])
-    fi
-
-    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
-        AC_MSG_CHECKING([if we can use stock Python3 telnetlib module for PyNUTClient provided with interpreter ${PYTHON3} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
-        if ${PYTHON3} -c "import telnetlib" \
-        ; then
-            nut_have_telnetlib_py3="yes"
-        else
-            nut_have_telnetlib_py3="no"
-        fi
-        AC_MSG_RESULT([${nut_have_telnetlib_py3}])
-
-        if test x"${nut_have_telnetlib_py3}" = x"no" ; then
-            dnl We have a stashed copy from Python 3.10, so
-            dnl this line essentially checks for presence of
-            dnl a usable interpreter implementation compatible
-            dnl with Python 3.x syntax.
-            AC_MSG_CHECKING([if we can use fallback Python3 nut_telnetlib module for PyNUTClient])
-            if (cd "${srcdir}"/scripts/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
-            ; then
-                nut_have_telnetlib_py3="yes"
-            fi
-            AC_MSG_RESULT([${nut_have_telnetlib_py3}])
-        fi
-    fi
-
-    dnl Test same-ness of pythons with sys.version also?
-    if test -n "${PYTHON_VERSION_INFO_REPORT}" \
-    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
-    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
-    ; then
-        AC_MSG_CHECKING([if we can use stock Python telnetlib module for PyNUTClient provided with interpreter ${PYTHON} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
-        if ${PYTHON} -c "import telnetlib" \
-        ; then
-            nut_have_telnetlib_py="yes"
-        else
-            nut_have_telnetlib_py="no"
-        fi
-        AC_MSG_RESULT([${nut_have_telnetlib_py}])
-
-        if test x"${nut_have_telnetlib_py}" = x"no" ; then
-            dnl See comments above
-            AC_MSG_CHECKING([if we can use fallback Python nut_telnetlib module for PyNUTClient])
-            if (cd "${srcdir}"/scripts/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
-            ; then
-                nut_have_telnetlib_py="yes"
-            fi
-            AC_MSG_RESULT([${nut_have_telnetlib_py}])
-        fi
-    fi
-fi
-
-dnl ${nut_with_pynut}: TODO: arg values to request Python 2, 3 or both
-dnl Note that per block above, nut_have_telnetlib_py* values are definitive
-dnl if checked, or empty if skipped (no such Python, not nut_with_pynut, etc.)
+dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
 AC_MSG_CHECKING([if we can and should install PyNUT module])
 nut_with_pynut_py=""
 nut_with_pynut_py2=""
@@ -2963,16 +2955,33 @@ nut_with_pynut_py3=""
 if test x"${nut_with_pynut}" != xno \
     -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
 ; then
-    if test x"${nut_have_telnetlib_py2}" = x"yes" ; then
-        nut_with_pynut_py2="yes"
+    if test -n "${PYTHON2}" \
+    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON2} -c "import socket" \
+        ; then
+            nut_with_pynut_py2="yes"
+        fi
     fi
 
-    if test x"${nut_have_telnetlib_py3}" = x"yes" ; then
-        nut_with_pynut_py3="yes"
+    if test -n "${PYTHON3}" \
+    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON3} -c "import socket" \
+        ; then
+            nut_with_pynut_py3="yes"
+        fi
     fi
 
-    if test x"${nut_have_telnetlib_py}" = x"yes" ; then
-        nut_with_pynut_py="yes"
+    dnl Test same-ness of pythons with sys.version also?
+    if test -n "${PYTHON}" \
+    && (command -v ${PYTHON} || which ${PYTHON}) >/dev/null 2>/dev/null \
+    && test "${PYTHON}" != "${PYTHON2}" -a "${PYTHON}" != "${PYTHON3}" \
+    ; then
+        if ${PYTHON} -c "import socket" \
+        ; then
+            nut_with_pynut_py="yes"
+        fi
     fi
 fi
 
@@ -3351,7 +3360,11 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		else
 			if test "${can_build_doc_man}" = yes ; then
 				AC_MSG_RESULT(yes)
-				DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+				AS_IF([test x"${nut_doc_build_target_base}" = xman],
+					dnl Use "man-man" target, otherwise Makefile
+					dnl is satisfied that directory "man" exists:
+					[DOC_BUILD_LIST="${DOC_BUILD_LIST} man-man"],
+					[DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"])
 			else
 				AC_MSG_RESULT(no)
 				if test "${nut_doc_build_target_flag}" = "yes" ; then
@@ -3416,6 +3429,7 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 DOC_CHECK_LIST=""
 if test "${nut_with_doc}" = yes ; then
 	for V in $DOC_BUILD_LIST ; do
+		if test x"$V" = xman-man ; then V=man ; fi
 		DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
 	done
 fi
@@ -4507,6 +4521,39 @@ NUT_REPORT_PROGRAM([build and install the nutconf tool (experimental, may lack s
 
 dnl ----------------------------------------------------------------------
 
+dnl Depends on C++, potentially nutconf and dev...
+dnl If not enabled for delivery, the library is built as internal detail
+dnl of the tool (if that is enabled)
+AC_MSG_CHECKING([whether we can and want to deliver the libnutconf library and headers])
+
+AS_CASE(["${nut_with_dev_libnutconf}"],
+		["auto"], [AS_IF([test x"${have_cxx11}" = xyes], [nut_with_dev_libnutconf="yes"], [nut_with_dev_libnutconf="no"])],
+		["yes"], [AS_IF([test x"${have_cxx11}" = xyes], [], [AC_MSG_ERROR([explicit --with-dev-libnutconf=yes can not be satisfied: C++11 support not enabled])])],
+		["no"], [nut_with_dev_libnutconf=no]
+	)
+AC_MSG_RESULT(${nut_with_dev_libnutconf})
+
+AM_CONDITIONAL(WITH_DEV_LIBNUTCONF, test "${nut_with_dev_libnutconf}" = "yes")
+NUT_REPORT_PROGRAM([build and install the deliver the libnutconf library and headers (experimental)],
+					[${nut_with_dev_libnutconf}], [],
+					[WITH_DEV_LIBNUTCONF], [Define to enable delivery of libnutconf developer files])
+
+AS_IF([test x"$nut_with_dev_libnutconf" = x"yes" -a x"${nut_with_dev}" != x"yes"], [
+	AC_MSG_WARN([You are effectively building --with-dev-libnutconf --without-dev, so would only get this library and headers but maybe not others it might need])
+])
+AS_IF([test x"$nut_with_dev_libnutconf" = x"yes" -a x"${nut_with_nutconf}" != x"yes"], [
+	AC_MSG_NOTICE([You are effectively building --with-dev-libnutconf --without-nutconf, so would only get the library and headers but not the tool])
+])
+AS_IF([test x"$nut_with_dev_libnutconf" != x"yes" -a x"${nut_with_nutconf}" = x"yes"], [
+	AC_MSG_NOTICE([You are effectively building --without-dev-libnutconf --with-nutconf, so would only get the tool (library and headers are just its internal detail during build)])
+])
+
+dnl At least the lib and/or the tool delivery are enabled, generate the
+dnl automake rules to build the library (privately or publicly, that depends):
+AM_CONDITIONAL(WITH_LIBNUTCONF, [test x"${nut_with_dev_libnutconf}" = x"yes" -o x"${nut_with_nutconf}" = x"yes"])
+
+dnl ----------------------------------------------------------------------
+
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
 	AS_HELP_STRING([--with-augeas-lenses-dir=PATH], [where to install Augeas configuration-management lenses (/usr/share/augeas/lenses{/dist,/})]),
@@ -4729,36 +4776,12 @@ dnl processor type
 AC_DEFINE_UNQUOTED(CPU_TYPE, ["$target_cpu"], [Define processor type])
 
 dnl Can use valgrind for memory-leak testing, if present
+dnl FIXME: Set to "auto" after ensuring that we pass on all NUT CI farm platforms
+with_valgrind="no"
 AC_PATH_PROGS([VALGRIND], [valgrind], [none])
-dnl Even if the tool is installed, it may be not usable on build platform.
-dnl QEMU may further complicate things, providing CPUs that formally match
-dnl a supported family but crash in practice, or hopefully rejected early:
-dnl valgrind: fatal error: unsupported CPU.
-dnl    Supported CPUs are:
-dnl    * x86 (practically any; Pentium-I or above), AMD Athlon or above)
-dnl    * AMD Athlon64/Opteron
-dnl    * ARM (armv7)
-dnl    * MIPS (mips32 and above; mips64 and above)
-dnl    * PowerPC (most; ppc405 and above)
-dnl    * System z (64bit only - s390x; z990 and above)
-dnl Even if the tool does basically start, on some QEMU systems it crashes
-dnl later (e.g. claims Signal 11 in tear-down after a successful test), so
-dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
-AS_IF([test -n "${VALGRIND}"], [
-	AC_MSG_CHECKING([whether valgrind is usable on current platform])
-	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )],
-		[AS_IF([( ${VALGRIND} /bin/sh -c true >/dev/null 2>/dev/null )],
-			[AC_MSG_RESULT([yes])],
-			[AC_MSG_RESULT([no])
-			 VALGRIND="none"
-			])],
-		[AC_MSG_RESULT([no])
-		 VALGRIND="none"
-		])
-])
-AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
+dnl Caller can provide a specific valgrind implementation to use:
 AC_ARG_WITH(valgrind,
-	AS_HELP_STRING([--with-valgrind=PATH], [whether to use valgrind for memory-leak testing]),
+	AS_HELP_STRING([--with-valgrind=(yes|no|auto|PATH)], [whether to use valgrind for memory-leak testing (no)]),
 [
 	dnl ### echo "Caller said: '${withval}'... Discovered tool: '${VALGRIND}'... "
 	case "${withval}" in
@@ -4786,7 +4809,58 @@ AC_ARG_WITH(valgrind,
 	esac
 ], [])
 
-if test "x${with_valgrind}" = xauto; then
+dnl Even if the tool is installed, it may be not usable on build platform.
+dnl QEMU may further complicate things, providing CPUs that formally match
+dnl a supported family but crash in practice, or hopefully rejected early:
+dnl valgrind: fatal error: unsupported CPU.
+dnl    Supported CPUs are:
+dnl    * x86 (practically any; Pentium-I or above), AMD Athlon or above)
+dnl    * AMD Athlon64/Opteron
+dnl    * ARM (armv7)
+dnl    * MIPS (mips32 and above; mips64 and above)
+dnl    * PowerPC (most; ppc405 and above)
+dnl    * System z (64bit only - s390x; z990 and above)
+dnl Even if the tool does basically start, on some QEMU systems it crashes
+dnl later (e.g. claims Signal 11 in tear-down after a successful test), so
+dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
+dnl In some versions of OpenIndiana it was also seen to fail with SIGILL
+dnl when running `valgrind /bin/sh <whatever>` and even `valgrind /bin/true`
+dnl but succeeded for other programs; and those failures left a log of core
+dnl dump files on the CI build agent:
+dnl    vex x86->IR: unhandled instruction bytes: 0x2E 0x8D 0x74 0x26
+dnl    ==360612== valgrind: Unrecognised instruction at address 0x3ffe291b.
+dnl    ==360612==    at 0x3FFE291B: strchr (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFCEB5B: procenv_user (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFCB34A: setup (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFDBC49: _setup (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFC0D94: _rt_boot (in /lib/ld.so.1)
+dnl    ==360612==    by 0x37FEFE46: ???
+AS_IF([test -n "${VALGRIND}" && test x"${VALGRIND}" != xnone && test "x${with_valgrind}" != xno], [
+	AC_MSG_CHECKING([whether valgrind is usable on current platform])
+	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )], [
+		TESTCMD="/bin/sh -c true"
+		echo 'int main(void) { return 0; }' > test-true.c && \
+		${CC} ${CFLAGS} test-true.c -o test-true && \
+		./test-true && \
+		TESTCMD="./test-true"
+		AS_IF([( ${VALGRIND} $TESTCMD >/dev/null 2>/dev/null )],
+			[AC_MSG_RESULT([yes])],
+			[AC_MSG_RESULT([no])
+			 VALGRIND="none"
+			])
+		rm -f ./test-true ./test-true.c
+		unset TESTCMD
+		],
+		[AC_MSG_RESULT([no])
+		 VALGRIND="none"
+		])
+
+	AS_IF([test "x$VALGRIND" = "xnone" && test "x${with_valgrind}" = "xyes"], [
+		AC_MSG_ERROR([valgrind requested but '${VALGRIND}' is not usable])
+	])
+])
+
+if test "x${with_valgrind}" = "xauto"; then
 	if test "x$VALGRIND" = "xnone"; then
 		with_valgrind="no"
 	else
@@ -4794,7 +4868,8 @@ if test "x${with_valgrind}" = xauto; then
 	fi
 fi
 
-if test "x${with_valgrind}" = xyes; then
+AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
+if test "x${with_valgrind}" = "xyes"; then
 	AC_MSG_RESULT(using ${VALGRIND})
 	AC_MSG_NOTICE([Do not forget to build with debug (e.g. pass '-g' in CFLAGS for GCC) for best results with valgrind tests])
 else
@@ -5200,6 +5275,10 @@ dnl #    some clang versions sanity-check Doxygen style comments, but do not
 dnl #    recognize "\retval" key word. These options try to both ignore the
 dnl #    problematic area, and to add it as recognized (TODO: scripted check
 dnl #    for abilities of the current build's compiler instead)
+dnl # -Wno-missing-include-dirs -- do not break on missing include directories,
+dnl #    whether from user-provided config options, or pkg-config, or our own
+dnl #    ci_build.sh preparations (e.g. -I${top_srcdir}/tmp/include when it
+dnl #    is not populated yet)
 dnl ### Special exclusion picks for clang-medium (same as hard, plus...):
 dnl # -Wno-global-constructors -- using "const something" out of method context
 dnl #    potentially impacts start-up time and may be prone to race conditions
@@ -5245,12 +5324,12 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
@@ -5473,6 +5552,39 @@ dnl Use these at best for tests (e.g. nutconf), not production code:
 AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
 AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
 
+AC_MSG_CHECKING([whether to install External API integration script: Enphase Monitor])
+nut_with_extapi_enphase="no"
+AC_ARG_ENABLE([extapi-enphase],
+	AS_HELP_STRING([--enable-extapi-enphase=(yes|auto|no)], [Enable installation of integration script for External API: Enphase Monitor (default: no)]),
+[
+	case "${enableval}" in
+	yes|"")
+		nut_enable_extapi_enphase="auto"
+		;;
+	auto|no)
+		nut_enable_extapi_enphase="${enableval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --enable-extapi-enphase=${enableval}])
+		;;
+	esac
+], [])
+
+if test x"$nut_enable_extapi_enphase" != xno ; then
+	dnl Depends on usability of further programs and bash version
+	dnl Luckily the script checks that itself, before handling CLI args
+	/usr/bin/env bash "${ABS_TOP_SRCDIR}/scripts/external_apis/enphase/enphase-monitor.in" --help >/dev/null \
+	&& nut_can_extapi_enphase="yes" \
+	|| nut_can_extapi_enphase="no"
+
+	if test x"$nut_enable_extapi_enphase" = xyes && x"$nut_can_extapi_enphase" = xno ; then
+		AC_MSG_ERROR([Caller required installation --enable-extapi-enphase but the system can not run it])
+	fi
+	nut_enable_extapi_enphase="${nut_can_extapi_enphase}"
+fi
+AC_MSG_RESULT([${nut_enable_extapi_enphase}])
+AM_CONDITIONAL(ENABLE_EXTAPI_ENPHASE, test x"$nut_enable_extapi_enphase" = x"yes")
+
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 dnl TOTHINK: Some distributions make the directories below owned
 dnl by "root:${RUN_AS_GROUP}" with 77x permissions. Is it safer?..
@@ -5589,6 +5701,8 @@ dnl We might wipe their specific options below if consistently applying
 dnl debug-friendly options to everything
 AC_MSG_NOTICE([CONFIG_CFLAGS='${CONFIG_CFLAGS}'])
 AC_MSG_NOTICE([CONFIG_CXXFLAGS='${CONFIG_CXXFLAGS}'])
+AC_MSG_NOTICE([CONFIG_CPPFLAGS='${CONFIG_CPPFLAGS}'])
+AC_MSG_NOTICE([CONFIG_LDFLAGS='${CONFIG_LDFLAGS}'])
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
 nut_with_debuginfo_C="${nut_with_debuginfo}"
 nut_with_debuginfo_CXX="${nut_with_debuginfo}"
@@ -5676,6 +5790,7 @@ AC_CONFIG_FILES([
  include/Makefile
  lib/libupsclient.pc
  lib/libnutclient.pc
+ lib/libnutconf.pc
  lib/libnutclientstub.pc
  lib/libnutscan.pc
  lib/Makefile
@@ -5691,6 +5806,8 @@ AC_CONFIG_FILES([
  scripts/augeas/nutupssetconf.aug
  scripts/avahi/nut.service
  scripts/devd/Makefile
+ scripts/external_apis/Makefile
+ scripts/external_apis/enphase/enphase-monitor@.service
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
@@ -5725,6 +5842,7 @@ AC_CONFIG_FILES([
  scripts/udev/nut-ipmipsu.rules
  scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
+ scripts/valgrind/.valgrind.supp
  scripts/Windows/Makefile
  scripts/Windows/Installer/NUT-Installer.xml
  scripts/Makefile
@@ -5744,9 +5862,10 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/HP-UX/postinstall
  scripts/RedHat/upsd
  scripts/RedHat/upsmon
+ scripts/augeas/gen-nutupsconf-aug.py
+ scripts/external_apis/enphase/enphase-monitor
  scripts/python/app/NUT-Monitor-py2gtk2
  scripts/python/app/NUT-Monitor-py3qt5
- scripts/augeas/gen-nutupsconf-aug.py
  scripts/python/module/test_nutclient.py
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
@@ -5761,6 +5880,7 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/Solaris/postremove
  scripts/Solaris/preproto.pl
  scripts/Solaris/nut
+ scripts/valgrind/valgrind.sh
  tools/gitlog2changelog.py
  tools/nut-snmpinfo.py
 ], [

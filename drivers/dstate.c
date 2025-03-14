@@ -47,14 +47,14 @@
 #ifndef WIN32
 	static char	*sockfn = NULL;
 #else
-	static OVERLAPPED connect_overlapped;
+	static OVERLAPPED	connect_overlapped;
 	static char	*pipename = NULL;
 #endif
-	static int	stale = 1, alarm_active = 0, ignorelb = 0;
+	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
-	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
-	static cmdlist_t *cmdhead = NULL;
+	static st_tree_t	*dtree_root = NULL;
+	static cmdlist_t	*cmdhead = NULL;
 
 	struct ups_handler	upsh;
 
@@ -1629,6 +1629,7 @@ void status_init(void)
 	}
 
 	memset(status_buf, 0, sizeof(status_buf));
+	alarm_status = 0;
 }
 
 /* check if a status element has been set, return 0 if not, 1 if yes
@@ -1644,11 +1645,16 @@ int status_get(const char *buf)
 	s = strstr(status_buf, buf);
 	buflen = strlen(buf);
 
-	/* not found */
-	if (!s)
+repeat:
+	/* not found or hit end of line */
+	if (!s || !*s)
 		return 0;
 
-	offset = status_buf - s;
+	offset = s - status_buf;
+#ifdef DEBUG
+	upsdebugx(3, "%s: '%s' in '%s': offset=%" PRIuSIZE" buflen=%" PRIuSIZE" s[buflen]='0x%2X'\n",
+		__func__, buf, status_buf, offset, buflen, s[buflen]);
+#endif
 	if (offset == 0 || status_buf[offset - 1] == ' ') {
 		/* We have hit the start of token */
 		if (s[buflen] == '\0' || s[buflen] == ' ') {
@@ -1658,14 +1664,62 @@ int status_get(const char *buf)
 	}
 
 	/* buf was a substring of some other token */
-	return 0;
+	s = strstr(s + 1, buf);
+	goto repeat;
 }
 
 /* add a status element */
 void status_set(const char *buf)
 {
+#ifdef DEBUG
+	upsdebugx(3, "%s: '%s'\n", __func__, buf);
+#endif
+	if (strstr(buf, " ")) {
+		/* Recurse adding each sub-status one by one (avoid duplicates)
+		 * We frown upon adding "A FEW TOKENS" at once, but in e.g.
+		 * snmp-ups subdrivers with a mapping table this is not easily
+		 * avoidable...
+		 */
+		char	*tmp = xstrdup(buf), *p = tmp, *s = tmp;
+		while (*p) {
+			if (*p == ' ') {
+				*p = '\0';
+				if (s != p) {
+					/* Only recurse to set non-trivial tokens */
+					status_set(s);
+				}
+				p++;
+				s = p;	/* Start of new word... or a consecutive space to ignore on next cycle */
+			} else {
+				p++;
+			}
+		}
+
+		if (s != p) {
+			/* Last valid token did end with (*p=='\0') */
+			status_set(s);
+		}
+
+		free(tmp);
+		return;
+	}
+
 	if (ignorelb && !strcasecmp(buf, "LB")) {
 		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
+		return;
+	}
+
+	if (!strcasecmp(buf, "ALARM")) {
+		/* Drivers really should not raise alarms this way,
+		 * but for the sake of third-party forks, we handle
+		 * the possibility...
+		 */
+		upsdebugx(2, "%s: (almost) ignoring ALARM set as a status", __func__);
+		if (!alarm_status && !alarm_active && strlen(alarm_buf) == 0) {
+			alarm_init();	/* no-op currently, but better be proper about it */
+			alarm_set("[N/A]");
+		}
+		alarm_status++;
 		return;
 	}
 
@@ -1710,6 +1764,32 @@ void status_commit(void)
 		break;
 	}
 
+	/* NOTE: Not sure if any clients rely on ALARM being first if raised,
+	 * but note that if someone also uses status_set("ALARM") we can end
+	 * up with a "[N/A]" alarm value injected (if no other alarm was set)
+	 * and only add the token here so it remains first.
+	 *
+	 * NOTE: alarm_commit() must be executed before status_commit() for
+	 * this report to work!
+	 * * If a driver only called status_set("ALARM") and did not bother
+	 *   with alarm_commit(), the "ups.alarm" value queries would have
+	 *   returned NULL if not for the "sloppy driver" fix below, although
+	 *   the "ups.status" value would report an ALARM token.
+	 * * If a driver properly used alarm_init() and alarm_set(), but then
+	 *   called status_commit() before alarm_commit(), the "ups.status"
+	 *   value would not know to report an ALARM token, as before.
+	 * * If a driver used both status_set("ALARM") and alarm_set() later,
+	 *   the injected "[N/A]" value of the alarm (if that's its complete
+	 *   value) would be overwritten by the explicitly assigned contents,
+	 *   and an explicit alarm_commit() would be required for proper
+	 *   reporting from a non-sloppy driver.
+	 */
+
+	if (!alarm_active && alarm_status && !strcmp(alarm_buf, "[N/A]")) {
+		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and used status_set(\"ALARM\") instead: commit the injected N/A ups.alarm value", __func__);
+		alarm_commit();
+	}
+
 	if (alarm_active) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
 	} else {
@@ -1736,10 +1816,10 @@ void alarm_init(void)
 void alarm_set(const char *buf)
 {
 	int ret;
-	if (strlen(alarm_buf) > 0) {
-		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
+	if (strlen(alarm_buf) < 1 || (alarm_status && !strcmp(alarm_buf, "[N/A]"))) {
+		ret = snprintf(alarm_buf, sizeof(alarm_buf), "%s", buf);
 	} else {
-		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), "%s", buf);
+		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
 	}
 
 	if (ret < 0) {

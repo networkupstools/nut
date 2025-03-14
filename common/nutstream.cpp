@@ -197,6 +197,7 @@ NutStream::status_t NutMemory::putData(const std::string & data) {
  * by packager who knows their system. */
 
 static bool checkExistsWritableDir(const char *s) {
+	DIR	*pd;
 #ifdef DEBUG
 	std::cerr << "checkExistsWritableDir(" << (s ? s : "<null>") << "): ";
 #endif
@@ -207,12 +208,13 @@ static bool checkExistsWritableDir(const char *s) {
 		return false;
 	}
 
-	if (!opendir(s)) {
+	if (!(pd = opendir(s))) {
 #ifdef DEBUG
 		std::cerr << "not a dir" << std::endl;
 #endif
 		return false;
 	}
+	closedir(pd);
 
 	/* POSIX: If the requested access is permitted, access() succeeds
 	 * and shall return 0; otherwise, -1 shall be returned and errno

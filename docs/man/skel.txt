@@ -4,7 +4,7 @@ SKEL(8)
 NAME
 ----
 
-skel - skeleton driver man page
+skel - Skeleton driver man page
 
 SYNOPSIS
 --------

@@ -154,7 +154,7 @@ sysOID. For example:
 
 	snmpwalk -Os -c foobar W.X.Y.Z .1.3.6.1.4.1.705.1 > snmpwalk-Os.log
 
-NOTE: if the OID are only partially resolved (i.e, there are still parts
+NOTE: If the OID are only partially resolved (i.e, there are still parts
 expressed in numeric form), then try using *-M* to point your .mib file.
 
 Then call the script using:

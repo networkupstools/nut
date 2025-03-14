@@ -26,3 +26,6 @@ nut.dict.sorted
 docinfo.xml.in.tmp
 /asciidoc-vars.conf.lastrev.tmp
 .prep-src-docs*
+/.check-pdf
+/.check-html-single
+/.check-html-chunked

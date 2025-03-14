@@ -22,6 +22,7 @@ SUPPORTED HARDWARE
 
 This driver should recognize all serial BCM/XCP-compatible UPSes.
 It has been developed and tested on Powerware PW5115 and PW9120 hardware.
+
 If your UPS has a USB connection, you may also consult the
 linkman:bcmxcp_usb[8] driver documentation.
 
