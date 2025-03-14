@@ -100,7 +100,6 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_initinfo(void)
 {
-	uint16_t FWVersion;
 	uint16_t tab_reg[4];
 	uint64_t PartNumber;
 
@@ -110,9 +109,6 @@ void upsdrv_initinfo(void)
 
 	/* upsh.instcmd = instcmd; */
 	/* upsh.setvar = setvar; */
-
-	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
-	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
 
 	mrir(modbus_ctx, 0x0005, 4, &tab_reg);
 
@@ -663,7 +659,8 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	int r;
+	int r, result;
+	uint16_t FWVersion;
 	upsdebugx(2, "upsdrv_initups");
 
 	modbus_ctx = modbus_new_rtu(device_path, 115200, 'E', 8, 1);
@@ -671,15 +668,45 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
 	r = modbus_set_slave(modbus_ctx, MODBUS_SLAVE_ID);	/* slave ID */
-	if (r < 0) {
+	if (r < 0) 
+	{
 		modbus_free(modbus_ctx);
 		fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d",MODBUS_SLAVE_ID);
 	}
 
-	if (modbus_connect(modbus_ctx) == -1) {
+	if (modbus_connect(modbus_ctx) == -1) 
+	{
 		modbus_free(modbus_ctx);
 		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
 	}
+
+	result = mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+	if(result == -1)
+	{
+		modbus_close(modbus_ctx);
+		modbus_free(modbus_ctx);
+
+		modbus_ctx = modbus_new_rtu(device_path, 19200, 'E', 8, 1);
+		if (modbus_ctx == NULL)
+			fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
+
+		r = modbus_set_slave(modbus_ctx, MODBUS_SLAVE_ID);	/* slave ID */
+		if (r < 0) 
+		{
+			modbus_free(modbus_ctx);
+			fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d",MODBUS_SLAVE_ID);
+		}
+
+		if (modbus_connect(modbus_ctx) == -1) 
+		{
+			modbus_free(modbus_ctx);
+			fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
+		}
+
+		mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+		
+	}
+	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
 
 }
 
