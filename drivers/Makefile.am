@@ -31,27 +31,34 @@ LDADD = $(LDADD_DRIVERS_SERIAL)
 AM_CFLAGS = -I$(top_srcdir)/include
 if WITH_USB
   AM_CFLAGS += $(LIBUSB_CFLAGS)
-endif
+endif WITH_USB
 if WITH_NEON
   AM_CFLAGS += $(LIBNEON_CFLAGS)
-endif
+endif WITH_NEON
 if WITH_LIBPOWERMAN
   AM_CFLAGS += $(LIBPOWERMAN_CFLAGS)
-endif
+endif WITH_LIBPOWERMAN
 if WITH_IPMI
   AM_CFLAGS += $(LIBIPMI_CFLAGS)
-endif
+endif WITH_IPMI
 if WITH_GPIO
   AM_CFLAGS += $(LIBGPIO_CFLAGS)
-endif
+endif WITH_GPIO
 if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
-endif
+endif WITH_MODBUS
 if HAVE_LIBREGEX
   AM_CFLAGS += $(LIBREGEX_CFLAGS)
-endif
+endif HAVE_LIBREGEX
 
-NUTSW_DRIVERLIST = dummy-ups clone clone-outlet apcupsd-ups skel
+# Allow top-level Makefile override NUTSW_DRIVERLIST_DUMMY_UPS="dummy" to run
+# a build scenario without this driver (it is in a different dependency)
+# NOTE: Must be defaulted with EXEEXT to avoid rewrites by automake parser
+# which defeat the purpose of it being optionally built via `make all/drivers`
+# in top level.
+NUTSW_DRIVERLIST_DUMMY_UPS = dummy-ups$(EXEEXT)
+NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
+ clone clone-outlet apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
@@ -87,45 +94,43 @@ EXTRA_PROGRAMS += $(GPIO_DRIVERLIST)
 # construct the list of drivers to build
 if SOME_DRIVERS
  driverexec_PROGRAMS = $(DRIVER_BUILD_LIST)
-else
+else !SOME_DRIVERS
  driverexec_PROGRAMS = $(NUTSW_DRIVERLIST)
 if WITH_SERIAL
   driverexec_PROGRAMS += $(SERIAL_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
-else
+else !WITH_SERIAL
 if WITH_USB
   driverexec_PROGRAMS += $(SERIAL_USB_DRIVERLIST)
-endif
-endif
+endif WITH_USB
+endif !WITH_SERIAL
 if WITH_SNMP
   driverexec_PROGRAMS += $(SNMP_DRIVERLIST)
-endif
+endif WITH_SNMP
 if WITH_USB
    driverexec_PROGRAMS += $(USB_LIBUSB_DRIVERLIST)
-endif
+endif WITH_USB
 if WITH_NEON
    driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
-endif
+endif WITH_NEON
 if WITH_LIBPOWERMAN
    driverexec_PROGRAMS += $(POWERMAN_DRIVERLIST)
-endif
+endif WITH_LIBPOWERMAN
 if WITH_IPMI
    driverexec_PROGRAMS += $(IPMI_DRIVERLIST)
-endif
+endif WITH_IPMI
 if WITH_GPIO
    driverexec_PROGRAMS += $(GPIO_DRIVERLIST)
-endif
+endif WITH_GPIO
 if WITH_MACOSX
    driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
-endif
+endif WITH_MACOSX
 if WITH_LINUX_I2C
    driverexec_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
-endif
+endif WITH_LINUX_I2C
 if WITH_MODBUS
   driverexec_PROGRAMS += $(MODBUS_DRIVERLIST)
-endif
-else
-   driverexec_PROGRAMS += skel
-endif
+endif WITH_MODBUS
+endif !SOME_DRIVERS
 
 # always build upsdrvctl
 sbin_PROGRAMS = upsdrvctl
@@ -207,7 +212,7 @@ if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LIBS)
   dummy_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
-endif
+endif WITH_SSL
 
 # Clone drivers (in NUTSW_DRIVERLIST)
 clone_SOURCES = clone.c
@@ -226,13 +231,13 @@ skel_LDADD = $(LDADD_DRIVERS)
 # USB
 if WITH_LIBUSB_0_1
 LIBUSB_IMPL = libusb0.c
-endif
+endif WITH_LIBUSB_0_1
 if WITH_LIBUSB_1_0
 LIBUSB_IMPL = libusb1.c
-endif
+endif WITH_LIBUSB_1_0
 USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
- openups-hid.c powervar-hid.c delta_ups-hid.c ever-hid.c legrand-hid.c salicru-hid.c
+ openups-hid.c powervar-hid.c delta_ups-hid.c ecoflow-hid.c ever-hid.c legrand-hid.c salicru-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
@@ -266,7 +271,7 @@ mge_shut_LDADD = $(LDADD) -lm
 # by vendor too) to ease maintenance and codebase fork resynchronisations
 snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
  apc-mib.c apc-pdu-mib.c apc-epdu-mib.c \
- baytech-mib.c bestpower-mib.c \
+ baytech-mib.c baytech-rpc3nc-mib.c bestpower-mib.c \
  compaq-mib.c cyberpower-mib.c \
  delta_ups-mib.c \
  eaton-pdu-genesis2-mib.c eaton-pdu-marlin-mib.c eaton-pdu-marlin-helpers.c \
@@ -304,7 +309,7 @@ if WITH_SSL
   netxml_ups_CFLAGS += $(LIBSSL_CFLAGS)
   netxml_ups_LDADD += $(LIBSSL_LIBS)
   netxml_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
-endif
+endif WITH_SSL
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
@@ -314,7 +319,7 @@ powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
 nut_ipmipsu_SOURCES = nut-ipmipsu.c
 if WITH_FREEIPMI
   nut_ipmipsu_SOURCES += nut-libfreeipmi.c
-endif
+endif WITH_FREEIPMI
 # FIXME: Hacky hot-fix for build agents of varying OS generations:
 # Different versions of IPMI libs requested 'unsigned int *' or 'int *' args:
 #nut_ipmipsu_CFLAGS = $(AM_CFLAGS) -Wno-pointer-sign
@@ -338,10 +343,10 @@ adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 # for USB connections. Legacy versions work for Serial and TCP links.
 apc_modbus_SOURCES = apc_modbus.c
 apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
-if WITH_USB
+if WITH_MODBUS_USB
   apc_modbus_SOURCES += $(LIBUSB_IMPL) hidparser.c usb-common.c
   apc_modbus_LDADD += $(LIBUSB_LIBS)
-endif
+endif WITH_MODBUS_USB
 
 # Huawei UPS2000 driver
 # (this is both a Modbus and a serial driver)
@@ -372,19 +377,19 @@ nutdrv_qx_CFLAGS = $(AM_CFLAGS)
 if WITH_SERIAL
 nutdrv_qx_CFLAGS += -DQX_SERIAL
 nutdrv_qx_LDADD += libdummy_serial.la $(SERLIBS)
-endif
+endif WITH_SERIAL
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
 nutdrv_qx_SOURCES += $(LIBUSB_IMPL) usb-common.c
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
-endif
+endif WITH_USB
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
  nutdrv_qx_innovart31.c	\
  nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
- nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_voltronic.c	\
+ nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c nutdrv_qx_voltronic.c	\
  nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c nutdrv_qx_zinto.c	\
- nutdrv_qx_hunnox.c nutdrv_qx_ablerex.c
+ nutdrv_qx_hunnox.c nutdrv_qx_ablerex.c nutdrv_qx_gtec.c
 nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 
 # ----------------------------------------------------------------------
@@ -393,7 +398,7 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 # distributed by "make dist".
 
 dist_noinst_HEADERS = \
- apc_modbus.h apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
+ apc_modbus.h apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h baytech-rpc3nc-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
  generic_gpio_common.h generic_gpio_libgpiod.h	\
@@ -405,14 +410,12 @@ dist_noinst_HEADERS = \
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
- nutdrv_qx_innovart31.h	\
- nutdrv_qx_masterguard.h	\
- nutdrv_qx_mecer.h nutdrv_qx_ablerex.h  \
- nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_hunnox.h	\
+ nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
+ nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  upsdrvquery.h \
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
- apc-pdu-mib.h apc-epdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
+ apc-pdu-mib.h apc-epdu-mib.h ecoflow-hid.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h eaton-ups-pwnm2-mib.h eaton-ups-pxg-mib.h legrand-hid.h \
  hpe-pdu-mib.h hpe-pdu3-cis-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h eaton-pdu-nlogic-mib.h ydn23.h
 
@@ -456,3 +459,6 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # the root Makefile.am takes care of that!
 #clean-local:
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

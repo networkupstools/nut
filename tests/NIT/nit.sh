@@ -489,8 +489,8 @@ EOF
     fi
 
     # Some systems listening on symbolic "localhost" actually
-    # only bind to IPv6, and Python telnetlib resolves IPv4
-    # and fails its connection tests. Others fare well with
+    # only bind to IPv6, and some (Python) client might resolve
+    # IPv4 and fail its connection tests. Others fare well with
     # both addresses in one command.
     for LH in 127.0.0.1 '::1' ; do
         if (

@@ -10,14 +10,14 @@ DESCRIPTION
 -----------
 
 This file attempts to standardize the various files being found
-in different installations, like /etc/default/nut on Debian based
-systems and /etc/sysconfig/ups on RedHat based systems.
+in different installations, like `/etc/default/nut` on Debian based
+systems and `/etc/sysconfig/ups` on RedHat based systems.
 
 Distribution's init script should source this file in order to
 determine which components have to be started.
 
-Blank lines are ignored. Lines with a hash ('#') character at the
-1st position of the line are ignored, too.  They can be used to add
+Blank lines are ignored. Lines with a hash (`#`) character at the
+first position of the line are ignored, too.  They can be used to add
 comments.
 
 IMPORTANT NOTES
@@ -44,7 +44,6 @@ IMPORTANT NOTES
   not in range would be ignored with a warning message).
 
 Refer to the EXAMPLE section for illustrations.
-----------------
 
 DIRECTIVES
 ----------
@@ -105,22 +104,22 @@ should be running.
 *UPSMON_OPTIONS*::
 Optional.  Set upsmon specific options. See linkman:upsmon[8] for
 more details.  It is ignored when 'MODE' above indicates that no
-upsmon should be running.
+`upsmon` should be running.
 
 *POWEROFF_WAIT*::
 Optional.  At the end of an emergency system halt, the upsmon primary
 will signal the UPS to switch off.  This may fail for a number of
 reasons.  Most notably is the case that mains power returns during
 the shutdown process.  See the section "Power races" in
-/usr/share/doc/nut/FAQ.txt.gz.  The system will wait this
+`/usr/share/doc/nut/FAQ.txt.gz`.  The system will wait this
 long for the UPS to cut power, and then reboot.  It should be long
 enough to exhaust the batteries, in case line power continues to be
 unavailable.  On the other hand, it should not be so long that the
 system remains offline for an unreasonable amount of time if line
-power has returned.  See sleep(1) for compatible time syntax.
+power has returned.  See linkmanext:sleep[1] for compatible time syntax.
 If you specify the time in seconds, use the "s" suffix.
 +
-WARNING: this workaround might be dangerous under some circumstances.
+WARNING: This workaround might be dangerous under some circumstances.
 Please read http://bugs.debian.org/358696 for more details.
 
 *POWEROFF_QUIET*::
@@ -148,11 +147,11 @@ the daemons logging to stderr (useful e.g. in NUT Integration Test suite to
 not pollute the OS logs, or in systemd where stderr and syslog both go into
 the same journal). Recognized values:
 +
-[options="header"]
+[options="header",cols="1,3a"]
 |===========================================================================
 | Value       | Description
-| `stderr`    | Disabled and background() keeps stderr attached
-| `none`      | Disabled and background() detaches stderr as usual
+| `stderr`    | Disabled and `background()` keeps `stderr` attached
+| `none`      | Disabled and `background()` detaches `stderr` as usual
 | `default`   | Not disabled
 | unset/other | Not disabled
 |===========================================================================
@@ -201,7 +200,7 @@ EXAMPLE
 INTEGRATION
 -----------
 
-An init script, such as /etc/init.d/nut, is expected to source this
+An init script, such as `/etc/init.d/nut`, is expected to source this
 file in order to determine which components have to be started.
 
 SEE ALSO

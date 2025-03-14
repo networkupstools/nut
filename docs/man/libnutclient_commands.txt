@@ -13,6 +13,7 @@ access library
 SYNOPSIS
 --------
 
+------
 	#include <nutclient.h>
 
 	typedef void* NUTCLIENT_t;
@@ -35,6 +36,7 @@ SYNOPSIS
 		NUTCLIENT_t client,
 		const char* dev, const char* cmd,
 		const char* param="");
+------
 
 DESCRIPTION
 -----------
@@ -49,12 +51,13 @@ The returned strarr must be freed by 'strarr_free'.
 * The *nutclient_has_device_command* function tests if the
   specified command is supported by the device.
 +
-Return 1 is supported and 0 if not.
+Return '1' if supported and '0' if not.
 
 * The *nutclient_get_device_command_description* function
   retrieves the command description, if any.
 +
-The returned string must be freed.
+The returned string must be freed by linkmanext:free[3]
+(see linkman:libnutclient_general[3]).
 
 * The *nutclient_execute_device_command* intends to execute
   the instant command, with an optional parameter.

@@ -12,6 +12,7 @@ library
 SYNOPSIS
 --------
 
+------
 	#include <nutclient.h>
 
 	typedef void* NUTCLIENT_t;
@@ -23,6 +24,7 @@ SYNOPSIS
 	int nutclient_has_device(NUTCLIENT_t client, const char* dev);
 
 	char* nutclient_get_device_description(NUTCLIENT_t client, const char* dev);
+------
 
 DESCRIPTION
 -----------
@@ -32,7 +34,8 @@ These functions allow to manage devices.
 * The *nutclient_get_devices()* function retrieves the list of devices
   monitored by a client.
 +
-The returned strarr must be freed by 'strarr_free'.
+The returned strarr must be freed by 'strarr_free'
+(see linkman:libnutclient_general[3]).
 
 * The *nutclient_has_device()* function tests if a device is monitored
   by a client.
@@ -40,7 +43,7 @@ The returned strarr must be freed by 'strarr_free'.
 * The *nutclient_get_device_description()* function retrieves the device
   description.
 +
-The returned description string must be freed.
+The returned description string must be freed by linkmanext:free[3].
 
 Common arguments:
 

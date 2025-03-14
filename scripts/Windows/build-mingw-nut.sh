@@ -216,7 +216,8 @@ do_build_mingw_nut() {
 		|| echo "NOTE: FAILED to process OPTIONAL cgi-bin directory; was NUT CGI enabled?" >&2
 	fi
 
-	echo "$0: install phase complete ($?)" >&2
+	# If we had fatal errors above, we exited there - so here we are SUCCESSful
+	echo "$0: SUCCESS: install phase complete ($?)" >&2
 	cd ..
 }
 

@@ -9,19 +9,25 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
+include_HEADERS =
 dist_noinst_HEADERS = \
     attribute.h common.h extstate.h proto.h			\
     state.h str.h timehead.h upsconf.h				\
     nut_bool.h nut_float.h nut_stdint.h nut_platform.h		\
-    nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.hpp		\
     wincompat.h
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
-include_HEADERS = parseconf.h
-else
+include_HEADERS += parseconf.h
+if WITH_DEV_LIBNUTCONF
+include_HEADERS += nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.hpp
+else !WITH_DEV_LIBNUTCONF
+dist_noinst_HEADERS += nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.hpp
+endif !WITH_DEV_LIBNUTCONF
+else !WITH_DEV
 dist_noinst_HEADERS += parseconf.h
-endif
+dist_noinst_HEADERS += nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.hpp
+endif !WITH_DEV
 
 # http://www.gnu.org/software/automake/manual/automake.html#Clean
 BUILT_SOURCES = nut_version.h
@@ -70,3 +76,5 @@ FORCE:
 # distribution
 dist-hook:
 	$(AM_V_at)rm -f $(distdir)/nut_version.h
+
+all-libs-local: nut_version.h

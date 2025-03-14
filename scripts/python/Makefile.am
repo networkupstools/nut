@@ -69,8 +69,8 @@ NUT_MONITOR_COMMON = \
 	app/locale/it/LC_MESSAGES/NUT-Monitor.mo \
 	app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
 
-PYNUT_COMMON_CODE = \
-	module/nut_telnetlib.py
+# Reserved for shipping additional modules or scripts "as is"
+PYNUT_COMMON_CODE =
 
 PYNUT_COMMON_MISC = \
 	module/README.adoc

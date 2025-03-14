@@ -10,9 +10,9 @@ DESCRIPTION
 -----------
 
 The Network UPS Tools (NUT) *upsclient* library provides a number of
-useful functions for programs to use when communicating with
+useful functions for client programs to use when communicating with
 linkman:upsd[8].  Many of the low-level socket and protocol details are
-handled automatically when using this interface.
+handled automatically when using this interface, also known as "upscli" API.
 
 State is maintained across calls in an opaque structure called `UPSCONN_t`.
 Callers are expected to create one per connection.  These will be
@@ -27,8 +27,8 @@ Before creating any connection, and in general using any upscli function,
 you must call linkman:upscli_init[3] with proper parameters to initialize
 upscli module.
 
-To register specific host security policy, you must call
-linkman:upscli_add_host_cert[3] before initialize connection to it.
+To register a specific host security policy, you must call
+linkman:upscli_add_host_cert[3] before initializing a connection to it.
 
 In the same way, just before exiting, and after all upscli usage, you must
 call linkman:upscli_cleanup[3] to flush cache files and perform other cleanup.
@@ -69,6 +69,7 @@ also be used to retrieve the error number.  These numbers are defined in
 SEE ALSO
 --------
 
+linkman:nutclient[3],
 linkman:libupsclient-config[1],
 linkman:upscli_init[3], linkman:upscli_cleanup[3],
 linkman:upscli_add_host_cert[3],

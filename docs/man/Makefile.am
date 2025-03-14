@@ -20,9 +20,27 @@
 #EGREP = egrep
 EGREP = grep -E
 
-all:
+SRC_ALL_PAGES =
 
-all-am-local all-local: $(abs_top_builddir)/docs/man/.prep-src-docs
+ALL_TGT =
+if WITH_MANS
+ALL_TGT += all-man
+endif WITH_MANS
+if WITH_HTML_SINGLE
+ALL_TGT += all-html
+else !WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+ALL_TGT += all-html
+endif WITH_HTML_CHUNKED
+endif !WITH_HTML_SINGLE
+
+all: $(abs_top_builddir)/docs/man/.prep-src-docs
+	+@case "$(ALL_TGT)" in \
+	  *all-*) \
+		if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile" ; exit 0 ; fi ; \
+		echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make $(ALL_TGT)' to ensure complex document types (if enabled)" ; \
+		$(MAKE) $(AM_MAKEFLAGS) $(ALL_TGT) ; exit ;; \
+	  esac ; exit 0
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
@@ -92,7 +110,29 @@ SRC_CLIENT_PAGES += nut.exe.txt
 if WITH_MANS
 MAN_CLIENT_PAGES += nut.exe.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
-endif HAVE_WINDOWS
+else !HAVE_WINDOWS
+SRC_ALL_PAGES += nut.exe.txt
+endif !HAVE_WINDOWS
+
+if WITH_NUT_MONITOR
+SRC_CLIENT_PAGES += NUT-Monitor.txt
+if WITH_MANS
+MAN_CLIENT_PAGES += \
+	NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS) \
+	NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS) \
+	NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+
+# Alias page for one text describing two commands:
+NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+	touch $@
+
+NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+	touch $@
+
+endif WITH_MANS
+else !WITH_NUT_MONITOR
+SRC_ALL_PAGES += NUT-Monitor.txt
+endif !WITH_NUT_MONITOR
 
 man@MAN_SECTION_CMD_SYS_BASE@_MANS = $(MAN_CLIENT_PAGES)
 
@@ -112,6 +152,23 @@ HTML_CLIENT_MANS = \
 if HAVE_WINDOWS
 HTML_CLIENT_MANS += nut.exe.html
 endif HAVE_WINDOWS
+
+if WITH_NUT_MONITOR
+HTML_CLIENT_MANS += NUT-Monitor.html
+
+# Can't make this work on all make implementations at once, so disabled for now
+# Anyway it would be the same man-like page for several functions
+HTML_CLIENT_MANS_FICTION = \
+	NUT-Monitor-py2gtk2.html \
+	NUT-Monitor-py3qt5.html
+
+NUT-Monitor-py2gtk2.html: NUT-Monitor.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+NUT-Monitor-py3qt5.html: NUT-Monitor.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+endif WITH_NUT_MONITOR
 
 SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt nutconf.txt
 
@@ -880,7 +937,7 @@ endif
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
-SRC_ALL_PAGES = \
+SRC_ALL_PAGES += \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
 	$(SRC_TOOL_PAGES) \
@@ -1003,12 +1060,13 @@ check-local: check-man-txt check-man-pages
 	@echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
 endif
 
-check-man: check-man-txt check-man-pages check-html-man
+check-man check-man-man: check-man-txt check-man-pages check-html-man
 
 # the "for" loops might better use $^ but it might be not portable
 check-man-html: check-html-man
 
-check-html-man: $(HTML_MANS)
+check-html-man: .check-html-man
+.check-html-man: $(HTML_MANS) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(HTML_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
@@ -1016,12 +1074,14 @@ check-html-man: $(HTML_MANS)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-man sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-man sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
 # Note: many man-pages here have code samples and are mis-identified as C code
 check-man-page: check-man-pages
 
 # Man-pages may be pre-generated (srcdir), or re-built (builddir)
-check-man-pages: $(MAN_MANS)
+check-man-pages: .check-man-pages
+.check-man-pages: $(MAN_MANS) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(MAN_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
@@ -1034,12 +1094,14 @@ check-man-pages: $(MAN_MANS)
 	      echo "BUILDDIR:"; cd "$(abs_builddir)/" && file $$FAILED ; \
 	    ) >&2 ; exit 1; \
 	fi; echo "PASSED man-page sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
 check-man-source: check-man-txt
 
 # Note: (GNU) make can helpfully add VPATH to the short source filenames
 # which we had listed above, so the "case" below handles two possibilities
-check-man-txt: $(SRC_ALL_PAGES)
+check-man-txt: .check-man-txt
+.check-man-txt: $(SRC_ALL_PAGES) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	( cd $(abs_srcdir) ) || exit; \
 	for F in $(SRC_ALL_PAGES) ; do \
@@ -1052,8 +1114,9 @@ check-man-txt: $(SRC_ALL_PAGES)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
-CLEANFILES = *-spellchecked .prep-src-docs *-prepped
+CLEANFILES = *-spellchecked .prep-src-docs *-prepped .check-*
 
 SUFFIXES = .txt-prepped .txt .html .$(MAN_SECTION_CMD_USR) .$(MAN_SECTION_API) .$(MAN_SECTION_CFG) .$(MAN_SECTION_CMD_SYS)
 
@@ -1130,13 +1193,18 @@ DOCBUILD_END = { \
 	 echo "  DOC-MAN-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(ASCIIDOC) --backend=xhtml11 $${A2X_VERBOSE} \
-		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
-		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
-		--attribute nutversion="@PACKAGE_VERSION@" \
-		--attribute srcdir="$(abs_srcdir)/" \
-		--attribute builddir="$(abs_builddir)/" \
-		--attribute top_srcdir="$(abs_top_srcdir)/" \
-		--attribute top_builddir="$(abs_top_builddir)/" \
+		--attribute=localdate="`TZ=UTC date +%Y-%m-%d`" \
+		--attribute=localtime="`TZ=UTC date +%H:%M:%S`" \
+		--attribute=nutversion="@PACKAGE_VERSION@" \
+		--attribute=srcdir="$(abs_srcdir)/" \
+		--attribute=builddir="$(abs_builddir)/" \
+		--attribute=top_srcdir="$(abs_top_srcdir)/" \
+		--attribute=top_builddir="$(abs_top_builddir)/" \
+		--attribute=MAN_SECTION_API_BASE='@MAN_SECTION_API_BASE@' \
+		--attribute=MAN_SECTION_CFG_BASE='@MAN_SECTION_CFG_BASE@' \
+		--attribute=MAN_SECTION_CMD_SYS_BASE='@MAN_SECTION_CMD_SYS_BASE@' \
+		--attribute=MAN_SECTION_CMD_USR_BASE='@MAN_SECTION_CMD_USR_BASE@' \
+		--attribute=NUT_WEBSITE_BASE='@NUT_WEBSITE_BASE@' \
 		-o "$${A2X_OUTDIR}/$(@F)" '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
@@ -1144,13 +1212,13 @@ DOCBUILD_END = { \
 ### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--xsltproc-opts="--nonet" \
-	--attribute mansource="Network UPS Tools" \
-	--attribute manversion="@PACKAGE_VERSION@" \
-	--attribute manmanual="NUT Manual" \
-	--attribute srcdir="$(abs_srcdir)/" \
-	--attribute builddir="$(abs_builddir)/" \
-	--attribute top_srcdir="$(abs_top_srcdir)/" \
-	--attribute top_builddir="$(abs_top_builddir)/" \
+	--attribute=mansource="Network UPS Tools" \
+	--attribute=manversion="@PACKAGE_VERSION@" \
+	--attribute=manmanual="NUT Manual" \
+	--attribute=srcdir="$(abs_srcdir)/" \
+	--attribute=builddir="$(abs_builddir)/" \
+	--attribute=top_srcdir="$(abs_top_srcdir)/" \
+	--attribute=top_builddir="$(abs_top_builddir)/" \
 	--destination-dir="$${A2X_OUTDIR}"
 
 .txt-prepped.$(MAN_SECTION_CMD_USR):
@@ -1266,8 +1334,21 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
 # so should be run from $(abs_builddir) to be safe, as we jump around
 # the build workspace
+# NOTE: For DOCS_NO_MAN case we expect that the top-level Makefile caused
+# parallel runs of several directories, so we can reasonably wait some
+# time for the target file to just appear.
+MAINTAINER_DOCS_PREP_MAN_DELAY = 60
+prep-src-docs: $(abs_top_builddir)/docs/man/.prep-src-docs
 $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
+	 if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then \
+	    if [ "$(MAINTAINER_DOCS_PREP_MAN_DELAY)" -gt 0 ] 2>/dev/null ; then \
+	        echo "  DOCS_NO_MAN     BLOCK: $@ called in docs/man/Makefile : waiting for other thread to complete this target" ; \
+	        W=0 ; while [ "$${W}" -lt "$(MAINTAINER_DOCS_PREP_MAN_DELAY)" ] && ( [ \! -e '$@' ] || [ x"`find $(PREP_SRC) \! -newer '$@' 2>/dev/null`" = x ] ) ; do sleep 1 ; W="`expr $$W + 1`"; done ; \
+	        echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile : waited $$W seconds" ; \
+	    fi ; \
+	    exit 0 ; \
+	 fi ; \
 	 linkroot="$(abs_builddir)" ; \
 	 MAN_SECTIONS_DEFAULT=false ; \
 	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)" = x3581 ] ; then \
@@ -1284,9 +1365,11 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	                fi ;; \
 	        esac ; \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
@@ -1341,9 +1424,11 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \

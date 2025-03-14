@@ -112,6 +112,24 @@ Changes from 2.8.2 to 2.8.3
   and `ondelay` to 120 seconds, in accordance with man page suggestions;
   users with custom settings not divisible by 60 will be loudly warned. [#1394]
 
+- `snmp-ups` subdriver `netvision-mib`: synchronized `netvision_output_info`
+  with the currently available `SOCOMECUPS-MIB.txt`; this can impact some
+  other devices using that MIB (negatively, if the older mappings were
+  indeed correct for any practical cases, and were not a typo). [#2803]
+
+- `nutdrv_qx` fixed `hunnox_protocol()` to honour the optional `novendor`
+  setting for devices that are confused by such query (e.g. DEXP LCD EURO
+  1200VA); it may be remotely possible that some other devices could begin
+  to misbehave due to this fix -- please let us know then. [#2839]
+
+- mge-utalk driver will no longer set non-standard status values `COMMFAULT`
+  and `ALARM` (for a specific status bit); instead, it will set modern
+  `ups.alarm` with values `COMMFAULT` and/or `DEVICEALARM` (and raise
+  an `ALARM` in `ups.status` for either, as standard alarms go). If your
+  clients (e.g. custom parsing scripts) for devices supported by this driver
+  depended on those non-standard tokens in `ups.status`, they would have to
+  be updated to handle the new token values in `ups.alarm` instead. [#2708]
+
 - Added support for `lbrb_log_delay_sec=N` setting to delay propagation of
   `LB` or `LB+RB` state (buggy with APC BXnnnnMI devices/firmwares issued
   circa 2023-2024 which flood the logs with spurious LOWBATT and REPLACEBATT
@@ -157,6 +175,15 @@ Changes from 2.8.2 to 2.8.3
   delivers have caused a library version bump.  New methods have been added
   and one structure (`nutscan_ipmi_t`) updated in a (hopefully) backwards
   compatible manner. [PR #2523, issue #2244 and numerous PRs for it]
+
+- The `nutconf` tool added to main codebase with NUT v2.8.2 release could be
+  packaged as a single program (with just a dependency on `libnutscan`), e.g.
+  the library code with configuration file processing logic was built into it.
+  Starting with NUT v2.8.3, the `libnutconf` may optionally be built as a
+  standalone shared library, to deliver for development of integrations using
+  `--with-dev-libnutconf` option. In this case the `nutconf` tool program would
+  also depend on it for run-time linking. This may have to be considered in
+  packaging recipes. [#2828]
 
 - Internal API change for `sendsignalpid()` and `sendsignalfn()` methods,
   which can impact NUT forks which build using `libcommon.la` and similar

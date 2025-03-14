@@ -35,12 +35,12 @@ upsd_LDFLAGS = $(AM_LDFLAGS)
 if WITH_WRAP
   upsd_CFLAGS += $(LIBWRAP_CFLAGS)
   upsd_LDADD += $(LIBWRAP_LIBS)
-endif
+endif WITH_WRAP
 if WITH_SSL
   upsd_CFLAGS += $(LIBSSL_CFLAGS)
   upsd_LDADD += $(LIBSSL_LIBS)
   upsd_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
-endif
+endif WITH_SSL
 
 # Developer, troubleshooting, or odd automation aid tool:
 if HAVE_WINDOWS
@@ -52,7 +52,7 @@ endif !HAVE_WINDOWS
 if WITH_DEV
 # Have it installed properly
 libexec_PROGRAMS = sockdebug
-endif
+endif WITH_DEV
 
 dummy:
 
