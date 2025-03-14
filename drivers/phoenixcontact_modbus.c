@@ -101,10 +101,7 @@ upsdrv_info_t upsdrv_info = {
 void upsdrv_initinfo(void)
 {
 	uint16_t FWVersion;
-	uint16_t PartNumber1;
-	uint16_t PartNumber2;
-	uint16_t PartNumber3;
-	uint16_t PartNumber4;
+	uint16_t tab_reg[4];
 	uint64_t PartNumber;
 
 	upsdebugx(2, "upsdrv_initinfo");
@@ -115,12 +112,9 @@ void upsdrv_initinfo(void)
 	/* upsh.setvar = setvar; */
 
 	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
-	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion); /*TO BE CHECKED*/
+	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
 
-	mrir(modbus_ctx, 0x0005, 1, &PartNumber1);
-	mrir(modbus_ctx, 0x0006, 1, &PartNumber2);
-	mrir(modbus_ctx, 0x0007, 1, &PartNumber3);
-	mrir(modbus_ctx, 0x0008, 1, &PartNumber4);
+	mrir(modbus_ctx, 0x0005, 4, &tab_reg);
 
 	/*	Method provided from Phoenix Conatct to establish the UPS model:
 		Read registers from 0x0005 to 0x0008 and "concatenate" them with the order
@@ -128,9 +122,9 @@ void upsdrv_initinfo(void)
 		The first 7 most significant digits of the number in dec form are the part number of
 		the UPS.*/
 
-	PartNumber = (PartNumber4 * 65536) + PartNumber3;
-	PartNumber = (PartNumber * 65536) + PartNumber2;
-	PartNumber = (PartNumber * 65536) + PartNumber1;
+	PartNumber = (tab_reg[3] * 65536) + tab_reg[2];
+	PartNumber = (PartNumber * 65536) + tab_reg[1];
+	PartNumber = (PartNumber * 65536) + tab_reg[0];
 
 	while(PartNumber > 10000000)
 	{
