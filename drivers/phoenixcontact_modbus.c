@@ -170,19 +170,19 @@ void upsdrv_initinfo(void)
 	case TRIO_5A_UPS_PARTNUMBER:
 		UPSModel = TRIO_UPS;
 		dstate_setinfo("device.model", TRIO_5A_UPS_DESCRIPTION);
-		break
+		break;
 	case TRIO_2G_5A_UPS_PARTNUMBER:
 		UPSModel = TRIO_2G_UPS;
 		dstate_setinfo("device.model", TRIO_2G_5A_UPS_DESCRIPTION);
-		break
+		break;
 	case TRIO_2G_10A_UPS_PARTNUMBER:
 		UPSModel = TRIO_2G_UPS;
 		dstate_setinfo("device.model", TRIO_2G_10A_UPS_DESCRIPTION);
-		break
+		break;
 	case TRIO_2G_10A_UPS_PARTNUMBER:
 		UPSModel = TRIO_2G_UPS;
 		dstate_setinfo("device.model", TRIO_2G_20A_UPS_DESCRIPTION);
-		break
+		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -581,7 +581,7 @@ void upsdrv_updateinfo(void)
 		if (CHECK_BIT(tab_reg[0], 16))
 			alarm_set("Low Battery (Service)");
 		break;
-	case TRIO_2G_UPS:
+	case TRIO_UPS:
 		mrir(modbus_ctx, 29706, 1, tab_reg);
 
 		if (CHECK_BIT(tab_reg[0], 0))
