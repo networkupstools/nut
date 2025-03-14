@@ -179,7 +179,7 @@ void upsdrv_initinfo(void)
 		UPSModel = TRIO_2G_UPS;
 		dstate_setinfo("device.model", TRIO_2G_10A_UPS_DESCRIPTION);
 		break;
-	case TRIO_2G_10A_UPS_PARTNUMBER:
+	case TRIO_2G_20A_UPS_PARTNUMBER:
 		UPSModel = TRIO_2G_UPS;
 		dstate_setinfo("device.model", TRIO_2G_20A_UPS_DESCRIPTION);
 		break;
