@@ -42,6 +42,7 @@ Changes from 2.8.2 to 2.8.3
   if this is required, a (NUT_)VERSION_FORCED_SEMVER envvar or file can
   help identify the actual NUT release version triplet used on the box.
   Please use it, it immensely helps with community troubleshooting!
+  Documentation about this would be maintained in `docs/nut-versioning.adoc`
   [issue #1949]
 
 - When packaging or custom-building for (Linux) distributions with systemd,

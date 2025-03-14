@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2016-2024 by Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2016-2025 by Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -19,10 +19,20 @@
 ############################################################################
 #
 # For setup check NUT_VERSION* in script source.
+# For more info see docs/nut-versioning.adoc
+#
+# The NUT SEMVER definition mostly follows https://semver.org/ standard
+# except that for development iterations the base version may have up to
+# five dot-separated numeric components (SEMVER triplet for base release,
+# and additional data described below). Unlike standard semver provisions
+# for "pre-release versions" (separated by a minus sign after the triplet),
+# which are "less than" that release for comparisons, the fourth and fifth
+# components (if present) are "greater than" that release and any preceding
+# development iterations made after it.
 #
 # Helper script to determine the project version in a manner similar to
 # what `git describe` produces, but with added numbers after the common
-# triplet of semantically versioned numbers:   X.Y.Z.T.B(-C-gHASH)
+# triplet of semantically versioned numbers:   X.Y.Z.T.B(-C+gHASH)
 #   * X: MAJOR - incompatible API changes
 #   * Y: MINOR - new features and/or API
 #   * Z: PATCH - small bug fixes
@@ -32,11 +42,16 @@
 # is provided by `git describe`:
 #   * C: Commits on branch since previous release tag
 #   * H: Git hash (prefixed by "g" character) of the described commit
+#
 # Note that historically NUT did not diligently follow the semver triplet,
 # primarily because a snapshot of trunk is tested and released, and work
 # moves on with the PATCH part (rarely MINOR one) incremented; no actual
 # patches are released to some sustaining track of an older release lineage.
 # There were large re-designs that got MAJOR up to 2, though.
+#
+# Occasionally there may be tagged pre-releases, which follow the standard
+# semver markup, like `v2.8.0-rc3` (in git), however they would be converted
+# to NUT SEMVER here.
 #
 ############################################################################
 # Checked with bash 3 and 5, dash, ksh, zsh and even busybox sh;
@@ -151,6 +166,9 @@ getver_git() {
     || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9]*.[0-9]*.[0-9]'`"
     # Old stripper (also for possible refspec parts like "tags/"):
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
+    # Follow https://semver.org/#spec-item-10 about build metadata:
+    # it is (a dot-separated list) separated by a plus sign from preceding
+    DESC="`echo "${DESC}" | sed 's/\(-[0-9][0-9]*\)-\(g[0-9a-fA-F][0-9a-fA-F]*\)$/\1+\2/'`"
     if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return 1 ; fi
 
     # How much of the known trunk history is in current HEAD?
@@ -162,11 +180,11 @@ getver_git() {
     if [ x"${BASE}" = x ] ; then echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2 ; DESC=""; return  1; fi
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
-    TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*-g[0-9a-fA-F][0-9a-fA-F]*$//'`"
+    TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
 
     # Commit count since the tag and hash of the HEAD commit;
     # empty e.g. when HEAD is the tagged commit:
-    SUFFIX="`echo "${DESC}" | sed 's/^.*\(-[0-9][0-9]*-g[0-9a-fA-F][0-9a-fA-F]*\)$/\1/'`" && [ x"${SUFFIX}" != x"${TAG}" ] || SUFFIX=""
+    SUFFIX="`echo "${DESC}" | sed 's/^.*\(-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*\)$/\1/'`" && [ x"${SUFFIX}" != x"${TAG}" ] || SUFFIX=""
 
     # 5-digit version, note we strip leading "v" from the expected TAG value
     VER5="${TAG#v}.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${NUT_VERSION_GIT_TRUNK}..HEAD" | wc -l | tr -d ' '`"
@@ -236,6 +254,7 @@ report_output() {
         "SEMVER")	echo "${SEMVER}" ;;
         "IS_RELEASE")	[ x"${SEMVER}" = x"${VER50}" ] && echo true || echo false ;;
         "TAG")  	echo "${TAG}" ;;
+        "TRUNK")  	echo "${NUT_VERSION_GIT_TRUNK-}" ;;
         "SUFFIX")	echo "${SUFFIX}" ;;
         "BASE") 	echo "${BASE}" ;;
         "URL")
