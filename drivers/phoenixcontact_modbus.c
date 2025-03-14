@@ -115,7 +115,7 @@ void upsdrv_initinfo(void)
 	/* upsh.setvar = setvar; */
 
 	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
-	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
+	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion); /*TO BE CHECKED*/
 
 	mrir(modbus_ctx, 0x0005, 1, &PartNumber1);
 	mrir(modbus_ctx, 0x0006, 1, &PartNumber2);
@@ -237,7 +237,7 @@ void upsdrv_updateinfo(void)
 		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
 
 		tab_reg[0] = CHECK_BIT(actual_code_functions, 2); /* Battery mode is the 2nd bit of the register 0x2000 */
-		tab_reg[2] = CHECK_BIT(actual_code_functions, 5); /* Battery charging is the 5th bit of the register 0x2000 */
+		tab_reg[2] = CHECK_BIT(actual_code_functions, 5); /* Battery charging is the 6th bit of the register 0x2000 */
 
 		mrir(modbus_ctx, 0x3001, 1, &actual_alarms1);
 
@@ -250,11 +250,11 @@ void upsdrv_updateinfo(void)
 	case TRIO_2G_UPS:
 		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
 		mrir(modbus_ctx, 0x2002, 1, &actual_code_functions1);
-		mrir(modbus_ctx, 0x3012, 1, &actual_code_functions2);
+		mrir(modbus_ctx, 0x3000, 1, &actual_code_functions2);
 
 		tab_reg[0] = CHECK_BIT(actual_code_functions1, 2);
 		tab_reg[2] = CHECK_BIT(actual_code_functions, 5);
-		tab_reg[1] = CHECK_BIT(actual_code_functions2, 16);
+		tab_reg[1] = CHECK_BIT(actual_code_functions2, 18);
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
@@ -356,6 +356,8 @@ void upsdrv_updateinfo(void)
 		mrir(modbus_ctx, 29749, 5, tab_reg);
 		break;
 	case TRIO_UPS:
+		mrir(modbus_ctx, 29699, 1, tab_reg);
+		break;
 	case TRIO_2G_UPS:
 		/*battery.charge is not available for TRIO and TRIO-2G models*/
 		break;
@@ -389,7 +391,7 @@ void upsdrv_updateinfo(void)
 # pragma GCC diagnostic pop
 #endif
 	}
-	if(UPSModel != TRIO_UPS && UPSModel != TRIO_2G_UPS)
+	if(UPSModel != TRIO_2G_UPS)
 		dstate_setinfo("battery.charge", "%d", tab_reg[0]);
 	/* dstate_setinfo("battery.runtime",tab_reg[1]*60); */ /* also reported on this address, but less accurately */
 
@@ -418,17 +420,17 @@ void upsdrv_updateinfo(void)
 	case TRIO_UPS:
 		mrir(modbus_ctx, 29700, 1, &battery_voltage);
 		tab_reg[0] = battery_voltage;
+
+		/*output.current variable is not available for TRIO model*/
 		break;
 	case TRIO_2G_UPS:
-		mrir(modbus_ctx, 0x200A, 1, &battery_voltage);
-		tab_reg[0] = battery_voltage;
+		/*battery.voltage variable is not available for TRIO-2G model*/
 
 		/*battery.temperature variable is not available for TRIO and TRIO-2G models*/
 
 		/*battery.runtime variable is not available for TRIO and TRIO-2G models*/
 
-		mrir(modbus_ctx, ???????????, 1, &battery_capacity);
-		tab_reg[8] = battery_capacity;
+		/*battery.capacity variable is not available for TRIO and TRIO-2G models*/
 
 		mrir(modbus_ctx, 0x2007, 1, &output_current);
 		tab_reg[6] = output_current;
@@ -464,17 +466,20 @@ void upsdrv_updateinfo(void)
 #endif
 	}
 
-	dstate_setinfo("battery.voltage", "%f", (double) (tab_reg[0]) / 1000.0);
-	if(UPSModel != TRIO_UPS)
-	{		
-		dstate_setinfo("battery.capacity", "%d", tab_reg[8] * 10);
-		dstate_setinfo("output.current", "%f", (double) (tab_reg[6]) / 1000.0);
-
-		if(UPSModel != TRIO_2G_UPS)
+	if(UPSModel != TRIO_2G_UPS)
+	{
+		dstate_setinfo("battery.voltage", "%f", (double) (tab_reg[0]) / 1000.0);
+		if(UPSModel != TRIO_UPS)
 		{
+			dstate_setinfo("battery.capacity", "%d", tab_reg[8] * 10);
 			dstate_setinfo("battery.temperature", "%d", tab_reg[1] - 273);
 			dstate_setinfo("battery.runtime", "%d", tab_reg[3]);
 		}
+	}
+	
+	if(UPSModel != TRIO_UPS)
+	{
+		dstate_setinfo("output.current", "%f", (double) (tab_reg[6]) / 1000.0);
 	}
 	
 
