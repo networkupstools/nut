@@ -35,6 +35,8 @@
 #include "nut_stdint.h"
 #include "upsclient.h"
 
+#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int			tracking_enabled = 0;
@@ -289,6 +291,7 @@ int main(int argc, char **argv)
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
 	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF], *s = NULL;
 	const char	*prog = xbasename(argv[0]);
+	struct timeval tv;
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
 	 * and NUT methods called from it. This line aims to just initialize
@@ -359,7 +362,10 @@ int main(int argc, char **argv)
 
 	ups = xcalloc(1, sizeof(*ups));
 
-	if (upscli_connect(ups, hostname, port, 0) < 0) {
+	tv.tv_sec = NET_TIMEOUT;
+	tv.tv_usec = 0;
+
+	if (upscli_tryconnect(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 

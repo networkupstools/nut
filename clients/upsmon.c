@@ -1045,9 +1045,21 @@ static void setfsd(utype_t *ups)
 	upslogx(LOG_ERR, "FSD set on UPS %s failed: %s", ups->sys, buf);
 }
 
+#ifndef WIN32
+/* handler for alarm when getupsvarfd times out */
+static void read_timeout(int sig)
+{
+	NUT_UNUSED_VARIABLE(sig);
+
+	/* don't do anything here, just return */
+}
+#endif
+
 static void set_alarm(void)
 {
 #ifndef WIN32
+	sa.sa_handler = read_timeout;
+	sigaction(SIGALRM, &sa, NULL);
 	alarm(NET_TIMEOUT);
 #endif
 }
@@ -2406,16 +2418,6 @@ static void set_reload_flag(int sig)
 	reload_flag = 1;
 }
 
-#ifndef WIN32
-/* handler for alarm when getupsvarfd times out */
-static void read_timeout(int sig)
-{
-	NUT_UNUSED_VARIABLE(sig);
-
-	/* don't do anything here, just return */
-}
-#endif
-
 /* install handlers for a few signals */
 static void setup_signals(void)
 {
@@ -2431,11 +2433,6 @@ static void setup_signals(void)
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGQUIT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
-
-	/* handle timeouts */
-
-	sa.sa_handler = read_timeout;
-	sigaction(SIGALRM, &sa, NULL);
 
 	/* deal with the ones from userspace as well */
 
@@ -2468,6 +2465,7 @@ static void update_crittimer(utype_t *ups)
 static int try_connect(utype_t *ups)
 {
 	int	flags = 0, ret;
+	struct timeval tv;
 
 	upsdebugx(1, "Trying to connect to UPS [%s]", ups->sys);
 
@@ -2503,7 +2501,10 @@ static int try_connect(utype_t *ups)
 		flags |= UPSCLI_CONN_CERTVERIF;
 	}
 
-	ret = upscli_connect(&ups->conn, ups->hostname, ups->port, flags);
+	tv.tv_sec = NET_TIMEOUT;
+	tv.tv_usec = 0;
+
+	ret = upscli_tryconnect(&ups->conn, ups->hostname, ups->port, flags, &tv);
 
 	if (ret < 0) {
 		upslogx(LOG_ERR, "UPS [%s]: connect failed: %s",
