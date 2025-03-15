@@ -3418,7 +3418,15 @@ no)
 	;;
 *)
 	if test -n "${DOC_CANNOTBUILD_LIST}"; then
-		AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
+		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | grep -vE '^$'`"
+		for DOCTYPE in ${DOC_BUILD_LIST} ; do
+			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(|=yes)\$" ; then
+				AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
+			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" ; then
+				AC_MSG_NOTICE([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above), skipping])
+				fi
+			fi
+		done
 	fi
 
 	if test -n "${DOC_SKIPBUILD_LIST}"; then
