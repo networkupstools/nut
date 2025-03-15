@@ -3343,7 +3343,15 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		want_disted_doc_man=no
 		if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
 			dnl Test that groff files exist (building from distributed tarball, not git repo)
-			have_disted_doc_man=yes
+			if test x"PLACEHOLDER" = x"`cat "${abs_srcdir}"/docs/man/snmp-ups.8`" ; then
+				dnl REALLY should not happen in real builds,
+				dnl but may be in distcheck-driven sub-builds
+				dnl where the external build agreed to use
+				dnl fake man pages
+				have_disted_doc_man=yes-placeholder
+			else
+				have_disted_doc_man=yes
+			fi
 		fi
 		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test "${nut_doc_build_target_flag}" = "dist-auto"; then
 			want_disted_doc_man=yes
@@ -3352,7 +3360,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
-		if test "${want_disted_doc_man}" = yes && test "${have_disted_doc_man}" = yes ; then
+		if test "${want_disted_doc_man}" = yes && ( test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ) ; then
 			AC_MSG_NOTICE([Requested, and can, install pre-built distributed copies of ${nut_doc_build_target_base} documentation])
 			DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			DOC_INSTALL_DISTED_MANS="yes"
@@ -3375,7 +3383,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 				else
 					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 					if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
-						if test "${have_disted_doc_man}" = yes ; then
+						if test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ; then
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 							DOC_INSTALL_DISTED_MANS="yes"
 						else
@@ -3460,7 +3468,8 @@ AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
 AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 AM_CONDITIONAL(KNOWN_UNABLE_MANS, test "${KNOWN_UNABLE_MANS}" = "yes")
 AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
-NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${DOC_INSTALL_DISTED_MANS}"])
+dnl Reporting have_disted_doc_man not DOC_INSTALL_DISTED_MANS because the former has more values
+NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${have_disted_doc_man}"])
 
 WITH_HTML_SINGLE=no
 SKIP_HTML_SINGLE=no
