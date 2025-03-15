@@ -1529,7 +1529,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     CONFIG_OPTS+=("--with-nutconf=yes")
                     ;;
                 *)
-                    echo "WARNING: Build agent says it can build nutconf, and does not specify a test with prticular C++ revision - so not requiring the experimental feature (auto-try)" >&2
+                    echo "WARNING: Build agent says it can build nutconf, and does not specify a test with particular C++ revision - so not requiring the experimental feature (auto-try)" >&2
                     CONFIG_OPTS+=("--with-nutconf=auto")
                     ;;
             esac
