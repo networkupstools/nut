@@ -20,7 +20,7 @@
 #EGREP = egrep
 EGREP = grep -E
 
-SRC_ALL_PAGES =
+SRC_ALL_PAGES = index.txt
 
 ALL_TGT =
 if WITH_MANS
