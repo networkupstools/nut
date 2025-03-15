@@ -28,7 +28,7 @@
 #EGREP = egrep
 EGREP = grep -E
 
-SRC_ALL_PAGES =
+SRC_ALL_PAGES = index.txt
 
 # Used for dist completeness checks; the actual build products
 # (depending on enabled features) are in MAN_MANS and HTML_MANS.
