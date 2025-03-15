@@ -3436,11 +3436,15 @@ fi
 
 WITH_MANS=no
 SKIP_MANS=no
+KNOWN_UNABLE_MANS=no
 if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null || test "${DOC_INSTALL_DISTED_MANS}" = "yes" ; then
 	WITH_MANS=yes
 fi
 if echo "${DOC_SKIPBUILD_LIST}" | grep -w "man" >/dev/null ; then
 	SKIP_MANS=yes
+fi
+if echo "${DOC_CANNOTBUILD_LIST}" | grep -w "man" >/dev/null ; then
+	KNOWN_UNABLE_MANS=yes
 fi
 dnl Generally WITH_MANS=no is intentionally fatal for "make distcheck"
 dnl But some larger distcheck suites check mans once and then focus on
@@ -3449,6 +3453,7 @@ dnl just mans) instead. Note that for WITH_MANS=yes the SKIP_MANS value
 dnl is effectively ignored by docs/man/Makefile.am at this time.
 AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
 AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
+AM_CONDITIONAL(KNOWN_UNABLE_MANS, test "${KNOWN_UNABLE_MANS}" = "yes")
 AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
 NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${DOC_INSTALL_DISTED_MANS}"])
 

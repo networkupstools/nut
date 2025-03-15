@@ -425,6 +425,13 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
 # (even if faked where lack and can not build them), so that
 # the majority of distcheck logic can pass.
 # See also docs/man/Makefile.am
+if KNOWN_UNABLE_MANS
+if DOC_INSTALL_DISTED_MANS
+distcheck-ci: distcheck
+else !DOC_INSTALL_DISTED_MANS
+distcheck-ci: distcheck-fake-man
+endif !DOC_INSTALL_DISTED_MANS
+else !KNOWN_UNABLE_MANS
 if WITH_MANS
 distcheck-ci: distcheck
 else !WITH_MANS
@@ -438,6 +445,7 @@ distcheck-ci: distcheck-fake-man
 endif !DOC_INSTALL_DISTED_MANS
 endif !HAVE_ASCIIDOC
 endif !WITH_MANS
+endif !KNOWN_UNABLE_MANS
 
 # Here we generate man pages (if absent) or fake them
 # Require other dependencies as usual distcheck does
