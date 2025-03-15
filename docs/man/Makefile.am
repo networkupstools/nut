@@ -110,7 +110,12 @@ LIST_FILES = ( \
 	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files are all present)" >&2 ; else echo "$@: FAILED ($$MISSING files of $$TOTAL are missing, see above)" >&2 ; exit 1 ; fi ; \
 )
 
+if KNOWN_UNABLE_MANS
+FAKE_PAGES_BUMP_SRC = false
+else !KNOWN_UNABLE_MANS
 FAKE_PAGES_BUMP_SRC = true
+endif !KNOWN_UNABLE_MANS
+
 FAKE_FILES = ( \
 	echo "  HELPER	$@" >&2 ; \
 	MISSING=0; \
