@@ -118,6 +118,7 @@ MAINTAINER SANDBOX (to be completed and pushed)
 * commit these finishing touches
 
 * bump the release identification:
+** see `docs/nut-versioning.adoc` for details about NUT SEMVER spec and practice
 ** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
    <exact incremented version> (ex: `2.8.0`), and provide the `VERSION_FORCED`
    and `VERSION_FORCED_SEMVER` files (to same effect but more explicitly and

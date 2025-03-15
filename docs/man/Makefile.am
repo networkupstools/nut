@@ -1214,6 +1214,7 @@ dist-hook:
 	@echo "Fix up manpage source timestamps" && cd $(distdir) && touch $(SRC_ALL_PAGES)
 
 HTML_MANS = \
+	index.html \
 	$(HTML_CONF_MANS) \
 	$(HTML_CLIENT_MANS) \
 	$(HTML_TOOL_MANS) \
@@ -1285,9 +1286,9 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 # Make sure sources are there for out-of-tree builds:
-$(HTML_MANS) $(MAN_MANS) index.html: $(abs_top_builddir)/docs/man/.prep-src-docs
+$(HTML_MANS) $(MAN_MANS): $(abs_top_builddir)/docs/man/.prep-src-docs
 
-all-html html-man: $(HTML_MANS) index.html
+all-html html-man: $(HTML_MANS)
 
 # Have a way to build all man pages, not just those that fit currently
 # configured drivers, daemons, developer aspect, etc.
@@ -1615,7 +1616,7 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # time for the target file to just appear.
 MAINTAINER_DOCS_PREP_MAN_DELAY = 60
 prep-src-docs: $(abs_top_builddir)/docs/man/.prep-src-docs
-$(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
+$(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	@cd "$(@D)" || exit ; \
 	 if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then \
 	    if [ "$(MAINTAINER_DOCS_PREP_MAN_DELAY)" -gt 0 ] 2>/dev/null ; then \

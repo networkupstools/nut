@@ -90,7 +90,7 @@ https://github.com/networkupstools/nut/milestone/11
      them. [#1245]
 
  - SEMVER, know thyself!
-   * development iterations of NUT should now identify with not only the
+   * Development iterations of NUT should now identify with not only the
      semantic version of a preceding release, but with git-derived information
      about the amount of iterations that followed (if available):
      the three-number "semver" would be seen on release snapshots, while
@@ -104,6 +104,7 @@ https://github.com/networkupstools/nut/milestone/11
      upgrades via development snapshots, eventually. A copy of the current
      version information would be embedded into "dist" archives as a
      `VERSION_DEFAULT` file, among provisions for packager tuning. [#1949]
+   * Documentation about this would be maintained in `docs/nut-versioning.adoc`
    * SMF manifests and systemd units now refer to man pages and their online
      variants under `NUT_WEBSITE_BASE` dependent on codebase maturity
      (development or release snapshot); many programs now display such

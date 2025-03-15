@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3334 utf-8
+personal_ws-1.1 en 3340 utf-8
 AAC
 AAS
 ABI
@@ -245,6 +245,7 @@ DES
 DESTDIR
 DEVICEALARM
 DEVNAME
+DEVREL
 DEXP
 DF
 DHEA
@@ -408,6 +409,7 @@ GES
 GETADDRINFO
 GETPID
 GID
+GITREV
 GND
 GNUmakefile
 GObject
@@ -1482,6 +1484,7 @@ advorder
 ae
 aec
 af
+afeb
 aggregator
 ai
 aix
@@ -1942,6 +1945,7 @@ extapi
 extern
 externalConsole
 extradata
+faa
 fabula
 facto
 fallthrough
@@ -2027,6 +2031,7 @@ github
 gitignore
 gitk
 gitlab
+gitlog
 gmail
 gmake
 gmtime
@@ -2738,6 +2743,7 @@ qxflags
 rD
 raritan
 rb
+rc
 rcctl
 readline
 readonly

@@ -724,15 +724,18 @@ configuration file.  It is not active by default.
 Version Numbering
 -----------------
 
-The version numbers work like this: if the middle number is odd, it's a
-development tree, otherwise it is the stable tree.
+The version numbers historically worked like this: if the middle number
+is odd, it's a development tree, otherwise it is the stable tree.
 
 The past stable trees were 1.0, 1.2, 1.4, 2.0, 2.2 and 2.4, with the
 latest such stable tree designated 2.6.  The development trees were 1.1,
 1.3, 1.5, 2.1 and 2.3.  Since the 2.4 release, there is no real separate
 development branch anymore since the code is available through a revision
-control system (namely, Git -- or actually Subversion back then) and its
-snapshots become published releases.
+control system (namely, Git -- or actually Subversion back then), development
+happens in feature branches that are eventually merged into the main trunk,
+and its snapshots become published releases. As a result, subsequent versions
+(2.7 and 2.8) were released without regard for even/odd values of the minor
+version component.
 
 Since 2.7 line of releases, sources are tracked in Git revision control
 system, with the project ecosystem being hosted on GitHub, and any code
@@ -750,6 +753,17 @@ developed feature branch that are unique to it compared to main branch.
 This allows for a reasonably growing version of stable baseline and
 local development, so that experimental packages can be installed as
 upgrades (or well-exposed downgrades).
+
+While the NUT releases retain the semantic versioning three-component
+standard, interim builds (trunk snapshots and development branches)
+can expose a much more complex structure with the amount of commits
+in the trunk since last release, and amount of commits on the branch
+unique to it (not in the trunk). Additional data may include overall
+amount of commits in the current build since last release, and the
+git commit has identifier of the built code base.
+
+More details can be seen in `docs/nut-versioning.adoc` file in the
+NUT source code base.
 
 Backwards and Forwards Compatibility
 ------------------------------------
