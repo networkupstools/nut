@@ -3277,8 +3277,8 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
 			AC_MSG_RESULT(no)
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
@@ -3300,8 +3300,8 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
 			AC_MSG_RESULT(no)
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
@@ -3326,8 +3326,8 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(${can_build_doc_pdf_nonascii_titles})
 		else
 			AC_MSG_RESULT(no)
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
@@ -3368,9 +3368,9 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 					[DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"])
 			else
 				AC_MSG_RESULT(no)
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				KNOWN_UNABLE_MANS=yes
 				if test "${nut_doc_build_target_flag}" = "yes" ; then
-					DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 				else
 					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
