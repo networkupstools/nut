@@ -428,20 +428,26 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
 if KNOWN_UNABLE_MANS
 if DOC_INSTALL_DISTED_MANS
 distcheck-ci: distcheck
+dist-ci: dist
 else !DOC_INSTALL_DISTED_MANS
 distcheck-ci: distcheck-fake-man
+dist-ci: dist-fake-man
 endif !DOC_INSTALL_DISTED_MANS
 else !KNOWN_UNABLE_MANS
 if WITH_MANS
 distcheck-ci: distcheck
+dist-ci: dist
 else !WITH_MANS
 if HAVE_ASCIIDOC
 distcheck-ci: distcheck
+dist-ci: dist
 else !HAVE_ASCIIDOC
 if DOC_INSTALL_DISTED_MANS
 distcheck-ci: distcheck
+dist-ci: dist
 else !DOC_INSTALL_DISTED_MANS
 distcheck-ci: distcheck-fake-man
+dist-ci: dist-fake-man
 endif !DOC_INSTALL_DISTED_MANS
 endif !HAVE_ASCIIDOC
 endif !WITH_MANS
@@ -455,6 +461,13 @@ distcheck-fake-man:
 	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) distcheck
 	@echo "Completed $@: strict distcheck, but with possibly faked pre-built man pages" >&2
+
+dist-fake-man:
+	@echo "Starting $@" >&2
+	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) all
+	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) dist
+	@echo "Completed $@: strict dist, but with possibly faked pre-built man pages" >&2
 
 # Here we allow to skip docs if tools are absent, so "make dist"
 # should not hiccup on lack of the page files (but MAY make them
