@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3339 utf-8
+personal_ws-1.1 en 3340 utf-8
 AAC
 AAS
 ABI
@@ -1822,6 +1822,7 @@ descr
 desde
 designator
 dev
+devclient
 devctl
 devd
 devel
