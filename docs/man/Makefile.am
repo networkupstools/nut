@@ -1339,7 +1339,7 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # time for the target file to just appear.
 MAINTAINER_DOCS_PREP_MAN_DELAY = 60
 prep-src-docs: $(abs_top_builddir)/docs/man/.prep-src-docs
-$(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
+$(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	@cd "$(@D)" || exit ; \
 	 if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then \
 	    if [ "$(MAINTAINER_DOCS_PREP_MAN_DELAY)" -gt 0 ] 2>/dev/null ; then \
