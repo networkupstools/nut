@@ -40,7 +40,7 @@ ACLOCAL_AMFLAGS = -I m4
 # (alas sequential) target recipes. The order matters, as several subdirectories
 # depend on stuff in "common" or tools being built first!
 SUBDIRS = include common clients conf data drivers tools \
-  lib scripts server tests docs
+  lib scripts server tests docs/man docs
 
 # Note: not generated from SUBDIRS, because not all are recursive:
 SUBDIRS_ALL_RECURSIVE = \

@@ -173,7 +173,10 @@ ASCIIDOC_PDF = \
 	cables.pdf \
 	FAQ.pdf
 
-SUBDIRS = man cables
+# Note: "man" subdir is handled separately via all-local and check-local
+# for a few goals, and among SUBDIRs directly from the top-level Makefile
+# due to some potential dependency collisions with parallel builds.
+SUBDIRS = cables
 SUFFIXES = .txt .html .pdf .txt-spellchecked .txt-prepped
 
 # This list is defined by configure script choices and options:
@@ -182,10 +185,14 @@ if WITH_SPELLCHECK
 CHECK_LOCAL_TARGETS += spellcheck
 endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
+	+@cd $(builddir)/man && $(MAKE) $(AM_MAKEFLAGS) check
 
 # Make sure sources are there for out-of-tree builds:
 all-local all-am-local \
 @DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(abs_top_builddir)/docs/.prep-src-docs
+
+all-local:
+	+@cd $(builddir)/man && $(MAKE) $(AM_MAKEFLAGS) all-optional
 
 # This list is defined by configure script choices and options:
 doc: $(abs_top_builddir)/docs/.prep-src-docs @DOC_BUILD_LIST@

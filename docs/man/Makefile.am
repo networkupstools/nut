@@ -72,12 +72,13 @@ endif WITH_HTML_CHUNKED
 endif !WITH_HTML_SINGLE
 
 # Ensure early build by default automake "all" rule, if it gets used.
-BUILT_SOURCES = $(abs_top_builddir)/docs/man/.prep-src-docs
+BUILT_SOURCES = $(abs_top_builddir)/docs/man/.prep-src-docs all-optional
 
-# Note: this intends to override the "all" target that may have been
-# provided by automake, since we want to do nothing in certain cases.
-# Some (older) make implementations can complain about this.
-all: $(abs_top_builddir)/docs/man/.prep-src-docs
+# Note: this intends to be used instead of the "all" target that may have
+# been provided by automake, since we want to do nothing in certain cases.
+# Ideally it would refuse "make all" in certain cases, but we can't override
+# the automake-generated rules in each make implementation we care for.
+all-optional: $(abs_top_builddir)/docs/man/.prep-src-docs
 	+@case "$(ALL_TGT)" in \
 	  ""|" "|"  "|"   ") echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile: No format of man page rendering is enabled" ; exit 0 ;; \
 	  *all-*) \
