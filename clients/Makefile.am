@@ -133,7 +133,8 @@ endif HAVE_WINDOWS
 #   libdir='//lib'
 CLEANFILES += libupsclient-version.h
 libupsclient-version.h: libupsclient.la
-	@dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
+	@echo "  GENERATE-HEADER	$@" ; \
+	 dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
 	 SOFILE_LIBUPSCLIENT="`grep -E '^dlname' '$?' | dlname_filter`" \
 	 || SOFILE_LIBUPSCLIENT="" ; \
 	 if [ x"$${SOFILE_LIBUPSCLIENT-}" = x ] ; then \
