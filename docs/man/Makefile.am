@@ -1482,6 +1482,20 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--attribute=top_builddir="$(abs_top_builddir)/" \
 	--destination-dir="$${A2X_OUTDIR}"
 
+if KNOWN_UNABLE_MANS
+.txt.$(MAN_SECTION_API) .txt-prepped.$(MAN_SECTION_API) \
+.txt.$(MAN_SECTION_CFG) .txt-prepped.$(MAN_SECTION_CFG) \
+.txt.$(MAN_SECTION_CMD_SYS) .txt-prepped.$(MAN_SECTION_CMD_SYS) \
+.txt.$(MAN_SECTION_CMD_USR) .txt-prepped.$(MAN_SECTION_CMD_USR) :
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not functional (even though found)." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed and functional?"; \
+		exit 1; \
+	fi
+
+else !KNOWN_UNABLE_MANS
 .txt-prepped.$(MAN_SECTION_CMD_USR):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_CMD_USR).$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
@@ -1509,6 +1523,7 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
+endif !KNOWN_UNABLE_MANS
 
 else !HAVE_ASCIIDOC
 
