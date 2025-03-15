@@ -454,12 +454,17 @@ endif !WITH_MANS
 endif !KNOWN_UNABLE_MANS
 
 # Here we generate man pages (if absent) or fake them
-# Require other dependencies as usual distcheck does
+# Require other dependencies as usual distcheck does;
+# be sure to pass through caller's DISTCHECK_FLAGS (if any)
 distcheck-fake-man:
 	@echo "Starting $@" >&2
 	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) all
 	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) distcheck
+	+prefix='$${prefix}'; if test x"$(DISTCHECK_FLAGS)" = x ; then \
+		$(MAKE) $(AM_MAKEFLAGS) distcheck ; \
+	 else \
+		$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_FLAGS)" distcheck ; \
+	 fi
 	@echo "Completed $@: strict distcheck, but with possibly faked pre-built man pages" >&2
 
 dist-fake-man:
