@@ -201,6 +201,10 @@ sms_ser_LDADD = $(LDADD) -lm
 bicker_ser_SOURCES = bicker_ser.c
 bicker_ser_LDADD = $(LDADD) -lm
 
+#alezz's blazer_soi
+blazer_soi_SOURCES = blazer.c blazer_soi.c
+blazer_soi_LDADD = $(LDADD) -lm
+
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
 # dummy (in NUTSW_DRIVERLIST)
