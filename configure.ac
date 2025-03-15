@@ -3190,6 +3190,7 @@ NUT_REPORT_FEATURE([requested to build and install documentation], [${nut_with_d
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
 
 DOC_INSTALL_DISTED_MANS=no
+KNOWN_UNABLE_MANS=no
 
 case "${nut_with_doc}" in
 	yes|all|all=yes)
@@ -3367,6 +3368,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 					[DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"])
 			else
 				AC_MSG_RESULT(no)
+				KNOWN_UNABLE_MANS=yes
 				if test "${nut_doc_build_target_flag}" = "yes" ; then
 					DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
@@ -3436,7 +3438,6 @@ fi
 
 WITH_MANS=no
 SKIP_MANS=no
-KNOWN_UNABLE_MANS=no
 if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null || test "${DOC_INSTALL_DISTED_MANS}" = "yes" ; then
 	WITH_MANS=yes
 fi
