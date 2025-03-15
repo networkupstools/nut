@@ -453,13 +453,20 @@ endif !HAVE_ASCIIDOC
 endif !WITH_MANS
 endif !KNOWN_UNABLE_MANS
 
-# Here we generate man pages (if absent) or fake them
-# Require other dependencies as usual distcheck does;
-# be sure to pass through caller's DISTCHECK_FLAGS (if any)
-distcheck-fake-man:
+# Helper for a number of recipes below that explicitly agree to not require
+# always real man pages (but require them to dist => distcheck-something)
+# for CI or developer iterations on environments with incomplete tool kits:
+distcheck-light-DIST_ALL_PAGES:
 	@echo "Starting $@" >&2
 	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) all
 	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
+	@echo "Completed $@: preparation of pre-built man pages for dist tarball, possibly faked" >&2
+
+# Here we generate man pages (if absent) or fake them
+# Require other dependencies as usual distcheck does;
+# be sure to pass through caller's DISTCHECK_FLAGS (if any)
+distcheck-fake-man: distcheck-light-DIST_ALL_PAGES
+	@echo "Starting $@" >&2
 	+prefix='$${prefix}'; if test x"$(DISTCHECK_FLAGS)" = x ; then \
 		$(MAKE) $(AM_MAKEFLAGS) distcheck ; \
 	 else \
@@ -467,20 +474,16 @@ distcheck-fake-man:
 	 fi
 	@echo "Completed $@: strict distcheck, but with possibly faked pre-built man pages" >&2
 
-dist-fake-man:
+dist-fake-man: distcheck-light-DIST_ALL_PAGES
 	@echo "Starting $@" >&2
-	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) all
-	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) dist
 	@echo "Completed $@: strict dist, but with possibly faked pre-built man pages" >&2
 
 # Here we allow to skip docs if tools are absent, so "make dist"
 # should not hiccup on lack of the page files (but MAY make them
 # if it can); be relaxed toward other dependencies.
-distcheck-light:
+distcheck-light: distcheck-light-DIST_ALL_PAGES
 	@echo "Starting $@" >&2
-	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) all
-	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 	@echo "Completed $@: relaxed distcheck, with possibly faked pre-built man pages" >&2
 
@@ -500,7 +503,8 @@ memcheck:
 
 # Make a distcheck (and check in particular) with enabled valgrind and debug info
 # Here we skip docs so "make dist" should not hiccup on lack of the page files
-# (nor try to make them)
+# (nor try to make them); not using simple distcheck-light-DIST_ALL_PAGES step
+# due to custom logic!
 distcheck-valgrind:
 	@echo "Starting $@" >&2
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
