@@ -3394,6 +3394,10 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 done
 rm -rf "${DOCTESTDIR}"
 
+AC_MSG_NOTICE([DOC_BUILD_LIST:       '${DOC_BUILD_LIST}'])
+AC_MSG_NOTICE([DOC_CANNOTBUILD_LIST: '${DOC_CANNOTBUILD_LIST}'])
+AC_MSG_NOTICE([DOC_SKIPBUILD_LIST:   '${DOC_SKIPBUILD_LIST}'])
+
 case "${nut_with_doc}" in
 auto)
 	if test -n "${DOC_BUILD_LIST}"; then
