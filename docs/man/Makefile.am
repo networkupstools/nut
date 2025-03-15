@@ -61,7 +61,12 @@ manusr_DATA =
 
 ALL_TGT =
 if WITH_MANS
+if !KNOWN_UNABLE_MANS
+# Give it our best shot; do not try if we know we would fail
+# Do not distcheck-light-DIST_ALL_PAGES for fake pages either -
+# this is up to caller and use-case
 ALL_TGT += all-man
+endif !KNOWN_UNABLE_MANS
 endif WITH_MANS
 if WITH_HTML_SINGLE
 ALL_TGT += all-html
