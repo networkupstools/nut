@@ -50,7 +50,7 @@
 # endif
 #endif
 
-#define MGE_HID_VERSION		"MGE HID 1.53"
+#define MGE_HID_VERSION		"MGE HID 1.54"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -926,7 +926,8 @@ static const char *eaton_input_eco_mode_check_range(double value)
 		return NULL;
 	}
 
-	/* In case we dont have ECO transfer limit variables but still have ability to enter Bypass/ECO modes,
+	/* In case we don't have ECO transfer limit variables
+	 * but still have ability to enter Bypass/ECO modes,
 	 * will use default limits later in code.
 	 * Possibly reported by debug log for 9SX1000i https://github.com/networkupstools/nut/issues/2685
 	 */
@@ -983,6 +984,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
 	) {
 		upsdebugx(1, "%s: Entering ECO mode due to input conditions being within the transfer limits.", __func__);
+		invmode_set("vendor:mge-hid:ECO");
 		return "ECO"; /* Enter ECO mode */
 	} else {
 		/* Condensed debug messages for out of range voltage and frequency */
@@ -994,16 +996,26 @@ static const char *eaton_input_eco_mode_check_range(double value)
 		}
 		/* Disable ECO mode switching, do not enter ECO mode */
 		dstate_setinfo("input.eco.switchable", "normal");
+		invmode_set("vendor:mge-hid:normal");
 		upsdebugx(1, "%s: Disable ECO mode due to input conditions being outside the transfer limits.", __func__);
 		return NULL;
 	}
+}
+
+/* If we are called, it means the status is on? */
+static const char *eaton_input_ess_mode_report(double value)
+{
+	NUT_UNUSED_VARIABLE(value);
+
+	invmode_set("vendor:mge-hid:ESS");
+	return "ESS";
 }
 
 /* High Efficiency (aka ECO) mode, Energy Saver System (aka ESS) mode makes sense for UPS like (93PM G2, 9395P) */
 static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
 	{ 0, "normal", NULL, NULL },
 	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ECO" = tested on 9E model and working fine */
-	{ 2, "ESS", NULL, NULL },
+	{ 2, "ESS", eaton_input_ess_mode_report, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
