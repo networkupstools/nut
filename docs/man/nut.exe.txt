@@ -20,7 +20,7 @@ DESCRIPTION
 
 *nut.exe* wraps NUT programs to start and stop as a Windows service.
 
-Depending on linkman:nut.conf[5]] setting of 'MODE', it would manage the
+Depending on linkman:nut.conf[5] setting of 'MODE', it would manage the
 bundle of driver(s), linkman:upsd[8] data server and linkman:upsmon[8] client,
 as well as attempt an UPS shutdown command in case of FSD handling, or for
 mere 'netclient' systems it would run just the linkman:upsmon[8] client to
@@ -64,9 +64,9 @@ powershell.exe -Command "Start-Process netsh.exe -ArgumentList
     localport=3493 protocol=tcp\" -Verb RunAs"
 ----
 
-Keep in mind that by default NUT `upsd` only listens on `localhost`, so
-you would need to add some `LISTEN` directives in `upsd.conf` as well
-in this case.
+Keep in mind that by default NUT linkman:upsd[8] only listens on `localhost`,
+so you would need to add some `LISTEN` directives in linkman:upsd.conf[5] as
+well in this case.
 
 OPTIONS
 -------
@@ -108,7 +108,7 @@ Try to stop a Windows service called "Network UPS Tools".
 DIAGNOSTICS
 -----------
 
-*nut.exe* should not interact with console message buffers (stdout, stderr)
+*nut.exe* should not interact with console message buffers (`stdout`, `stderr`)
 much, except when explicitly asked to (e.g. displaying help and NUT version,
 running with verbose debug mode) or when exiting after an attempted service
 initialization while not running in a service context.
