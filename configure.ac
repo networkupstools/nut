@@ -3186,10 +3186,11 @@ dnl is set to 'no', we may still want to build some doc targets manually
 dnl (so enable the Makefile recipes for those targets if tools are available)
 NUT_CHECK_ASCIIDOC
 
-NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
+NUT_REPORT_FEATURE([requested to build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
 
 DOC_INSTALL_DISTED_MANS=no
+KNOWN_UNABLE_MANS=no
 
 case "${nut_with_doc}" in
 	yes|all|all=yes)
@@ -3276,8 +3277,8 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
 			AC_MSG_RESULT(no)
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
@@ -3299,8 +3300,8 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
 			AC_MSG_RESULT(no)
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
@@ -3325,8 +3326,8 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(${can_build_doc_pdf_nonascii_titles})
 		else
 			AC_MSG_RESULT(no)
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
@@ -3342,7 +3343,15 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		want_disted_doc_man=no
 		if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
 			dnl Test that groff files exist (building from distributed tarball, not git repo)
-			have_disted_doc_man=yes
+			if test x"PLACEHOLDER" = x"`cat "${abs_srcdir}"/docs/man/snmp-ups.8`" ; then
+				dnl REALLY should not happen in real builds,
+				dnl but may be in distcheck-driven sub-builds
+				dnl where the external build agreed to use
+				dnl fake man pages
+				have_disted_doc_man=yes-placeholder
+			else
+				have_disted_doc_man=yes
+			fi
 		fi
 		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test "${nut_doc_build_target_flag}" = "dist-auto"; then
 			want_disted_doc_man=yes
@@ -3351,7 +3360,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
-		if test "${want_disted_doc_man}" = yes && test "${have_disted_doc_man}" = yes ; then
+		if test "${want_disted_doc_man}" = yes && ( test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ) ; then
 			AC_MSG_NOTICE([Requested, and can, install pre-built distributed copies of ${nut_doc_build_target_base} documentation])
 			DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			DOC_INSTALL_DISTED_MANS="yes"
@@ -3367,13 +3376,14 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 					[DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"])
 			else
 				AC_MSG_RESULT(no)
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+				KNOWN_UNABLE_MANS=yes
 				if test "${nut_doc_build_target_flag}" = "yes" ; then
-					DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 				else
 					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 					if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
-						if test "${have_disted_doc_man}" = yes ; then
+						if test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ; then
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 							DOC_INSTALL_DISTED_MANS="yes"
 						else
@@ -3392,6 +3402,10 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 done
 rm -rf "${DOCTESTDIR}"
 
+AC_MSG_NOTICE([DOC_BUILD_LIST:       '${DOC_BUILD_LIST}'])
+AC_MSG_NOTICE([DOC_CANNOTBUILD_LIST: '${DOC_CANNOTBUILD_LIST}'])
+AC_MSG_NOTICE([DOC_SKIPBUILD_LIST:   '${DOC_SKIPBUILD_LIST}'])
+
 case "${nut_with_doc}" in
 auto)
 	if test -n "${DOC_BUILD_LIST}"; then
@@ -3404,7 +3418,15 @@ no)
 	;;
 *)
 	if test -n "${DOC_CANNOTBUILD_LIST}"; then
-		AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
+		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | grep -vE '^$'`"
+		for DOCTYPE in ${DOC_BUILD_LIST} ; do
+			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(|=yes)\$" ; then
+				AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
+			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" ; then
+				AC_MSG_NOTICE([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above), skipping])
+				fi
+			fi
+		done
 	fi
 
 	if test -n "${DOC_SKIPBUILD_LIST}"; then
@@ -3421,7 +3443,7 @@ esac
 
 AM_CONDITIONAL(WITH_PDF_NONASCII_TITLES, [test x"$can_build_doc_pdf_nonascii_titles" = xyes])
 
-NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
+NUT_REPORT_FEATURE([would build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
 					[WITH_DOCS], [Define to enable overall documentation generation])
 
 # To cater for less portable make's, precalculate the target list
@@ -3442,6 +3464,9 @@ fi
 if echo "${DOC_SKIPBUILD_LIST}" | grep -w "man" >/dev/null ; then
 	SKIP_MANS=yes
 fi
+if echo "${DOC_CANNOTBUILD_LIST}" | grep -w "man" >/dev/null ; then
+	KNOWN_UNABLE_MANS=yes
+fi
 dnl Generally WITH_MANS=no is intentionally fatal for "make distcheck"
 dnl But some larger distcheck suites check mans once and then focus on
 dnl other aspects of the project, so they can explicitly skip docs (or
@@ -3449,7 +3474,10 @@ dnl just mans) instead. Note that for WITH_MANS=yes the SKIP_MANS value
 dnl is effectively ignored by docs/man/Makefile.am at this time.
 AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
 AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
+AM_CONDITIONAL(KNOWN_UNABLE_MANS, test "${KNOWN_UNABLE_MANS}" = "yes")
 AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
+dnl Reporting have_disted_doc_man not DOC_INSTALL_DISTED_MANS because the former has more values
+NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${have_disted_doc_man}"])
 
 WITH_HTML_SINGLE=no
 SKIP_HTML_SINGLE=no

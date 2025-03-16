@@ -138,6 +138,25 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
    and we suppose this is an interesting case for other projects to draw
    inspiration from for their recipe refactoring. [PR #2825]
 
+ - The `make dist` goal now takes more care to require availability of the man
+   pages to put into the prepared distribution archive. These may come either
+   from the current build, or inherited from its sources (if using a tarball
+   initially) on a platform without tooling required for man page generation.
++
+This requirement compromises usability of `make distcheck` on platforms without
+   such tools from sources without pre-built man pages (e.g. builds from git),
+   so a couple of new goals were introduced in PR #2842:
+   - `make distcheck-fake-man` generates placeholder files named like pre-built
+      man pages for any missing files, just for the purpose of constructing
+      a sane-looking dist archive to `distcheck` strictly otherwise;
+   - `make distcheck-ci` is routed to `distcheck` or `distcheck-fake-man`
+     based on build circumstances (ability to build man pages or presence
+     of pre-built pages, or lack of either);
+   - Similarly, `make dist-ci` is routed to provide a strict or faked tarball;
+   - Earlier defined goals like `distcheck-light` or `distcheck-valgrind` now
+     take advantage of these mechanisms to also produce usable dist archives
+     for their relaxed or purpose-specific tests.
+
  - the `upsnotify()` common code introduced in recent NUT releases (integrating
    with service management frameworks, etc.) was a bit cryptic when it reported
    a *failure to notify* (e.g. when not running as a service currently), fixed
