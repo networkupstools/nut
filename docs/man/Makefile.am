@@ -39,7 +39,7 @@ SRC_ALL_PAGES = index.txt
 # This does not necessarily trigger the build, just allows us
 # to check if they all exist.
 DIST_ALL_MAN_PAGES =
-DIST_ALL_HTML_PAGES =
+DIST_ALL_HTML_PAGES = index.html
 # HTML collection is for nut-website primarily, not for tarballs... so far...
 DIST_ALL_PAGES = $(DIST_ALL_MAN_PAGES)
 
