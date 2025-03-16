@@ -1403,6 +1403,9 @@ all-html html-man: $(HTML_MANS)
 # configured drivers, daemons, developer aspect, etc.
 all-man man-man: $(MAN_MANS)
 
+dist-html: $(DIST_ALL_HTML_PAGES)
+dist-man: $(DIST_ALL_MAN_PAGES)
+
 if WITH_MANS
 if ! SKIP_MANS
 check-local: check-man
