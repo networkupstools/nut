@@ -1329,9 +1329,9 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_BYPASS;
 	else if(str=="NOTBYPASS")
 		return NOTIFY_NOTBYPASS;
-	else if(str=="ECO")
+	else if(str=="ECO")	/* inverter mode, not ups state, for notifications */
 		return NOTIFY_ECO;
-	else if(str=="NOTECO")
+	else if(str=="NOTECO")	/* inverter mode, not ups state, for notifications */
 		return NOTIFY_NOTECO;
 	else if(str=="ALARM")
 		return NOTIFY_ALARM;

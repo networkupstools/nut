@@ -2575,7 +2575,8 @@ static void parse_status(utype_t *ups, char *status, char *inverter_mode)
 	if (!strstr(status, "ALARM"))
 		ups_is_notalarm(ups);
 
-	/* NOTE: ECO Should not be happening as a status or alarm anymore */
+	/* NOTE: ECO Should not be happening as a status or alarm anymore
+	 * but we may still notify about changes in the inverter mode */
 	if (inverter_mode && *inverter_mode && (
 		   !strstr(inverter_mode, ":ECO")
 		|| !strstr(inverter_mode, ":ESS")
