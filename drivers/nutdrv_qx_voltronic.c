@@ -25,7 +25,7 @@
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.09"
+#define VOLTRONIC_VERSION "Voltronic 0.10"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -2192,6 +2192,7 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 
 			if (strchr(enabled, 'e')) {
 				val = eco_mode = "enabled";
+				invmode_set("vendor:voltronic:ECO-inverter-on");
 			} else if (strchr(disabled, 'e')) {
 				val = eco_mode = "disabled";
 			}
@@ -2277,6 +2278,7 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 
 		if (strchr(enabled, 'n')) {
 			val = advanced_eco_mode = "enabled";
+			invmode_set("vendor:voltronic:ECO-inverter-off");
 		} else if (strchr(disabled, 'n')) {
 			val = advanced_eco_mode = "disabled";
 		}
