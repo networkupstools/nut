@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.61"
+#define DRIVER_VERSION	"0.62"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -389,9 +389,9 @@ info_lkp_t bypass_manual_info[] = {
 };
 info_lkp_t eco_mode_info[] = {
 	{ 0, "normal", NULL, NULL },
-    { 1, "ecomode", NULL, NULL },
-    { 2, "essmode", NULL, NULL },
-    { 0, NULL, NULL, NULL }
+	{ 1, "ecomode", NULL, NULL },
+	{ 2, "essmode", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
    off" rather than "being on", so that devices that don't implement
@@ -1251,6 +1251,7 @@ void upsdrv_updateinfo(void)
 #endif
 	/* clear status buffer before beginning */
 	status_init();
+	invmode_init();
 
 	/* Do a full update (polling) every pollfreq
 	 * or upon data change (ie setvar/instcmd) */
@@ -1276,6 +1277,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	ups_status_set();
+	invmode_commit();
 	status_commit();
 
 	dstate_dataok();
@@ -2178,9 +2180,11 @@ static void ups_alarm_set(void)
 	if (ups_status & STATUS(BYPASSMAN)) {
 		alarm_set("Manual bypass mode!");
 	}
-	/*if (ups_status & STATUS(ECOMODE)) {
-		alarm_set("ECO(HE) mode!");
-	}*/ /* disable alarm for eco as we dont want raise alarm ? */
+	if (ups_status & STATUS(ECOMODE)) {
+		invmode_set("vendor:default:ECO");
+		/* disable alarm for ECO as we don't want to raise alarm about it */
+		/* alarm_set("ECO(HE) mode!"); */
+	}
 }
 
 /* Return the current value of ups_status */
@@ -2488,12 +2492,12 @@ static void ups_status_set(void)
 		status_set("BYPASS");		/* on bypass */
 	}
 	if (ups_status & STATUS(ECOMODE)) {
-		status_set("ECO");		/* on ECO(HE) Mode,
+		invmode_set("vendor:default:ECO");	/* on ECO(HE) Mode,
 						 * should not happen
 						 * via ups.status anymore */
 	}
 	if (ups_status & STATUS(ESSMODE)) {
-		status_set("ESS");		/* on ESS Mode,
+		invmode_set("vendor:default:ESS");	/* on ESS Mode,
 						 * should not happen
 						 * via ups.status anymore */
 	}
