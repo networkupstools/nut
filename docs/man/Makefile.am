@@ -17,9 +17,11 @@
 #   files from source tree
 # - Man page lists are collected into several patterns of make variables
 #   (FIXME? to simplify?) :
-#   * INST_MAN_xxx_PAGES: what we would install (if building of man pages,
-#     and perhaps an optional tool building, are enabled);
+#   * INST_MAN_xxx_PAGES, INST_HTML_xxx_PAGES: what we would install
+#     (if building of man/HTML pages, and perhaps an optional tool building,
+#     are enabled);
 #   * MAN_xxx_PAGES: what we actually enable to build and deliver (may be empty);
+#   * HTML_xxx_PAGES: populated most of the time, buildable optionally;
 #   * DIST_ALL_PAGES: all known page file names, to help ensure dist archive
 #     contains everything that any build may want (even if missing tools to
 #     build the docs from scratch, or choosing not to do that for speed).
@@ -242,13 +244,16 @@ endif WITH_MANS
 
 mancfg_DATA += $(MAN_CONF_PAGES)
 
-HTML_CONF_MANS = \
+INST_HTML_CONF_MANS = \
 	nut.conf.html \
 	ups.conf.html \
 	upsd.conf.html \
 	upsd.users.html \
 	upsmon.conf.html \
 	upssched.conf.html
+
+DIST_ALL_HTML_PAGES += $(INST_HTML_CONF_MANS)
+HTML_CONF_MANS = $(INST_HTML_CONF_MANS)
 
 # NOTE: Currently SRC_DRIVERTOOL_PAGES are a separate list to generate
 # a linkman-drivertool-names.txt file, but historically remain part of
@@ -327,7 +332,7 @@ endif !WITH_NUT_MONITOR
 
 mansys_DATA += $(MAN_CLIENT_PAGES)
 
-HTML_CLIENT_MANS = \
+INST_HTML_CLIENT_MANS = \
 	nutupsdrv.html \
 	nut-driver-enumerator.html \
 	upsc.html \
@@ -341,15 +346,17 @@ HTML_CLIENT_MANS = \
 	upssched.html
 
 if HAVE_WINDOWS
-HTML_CLIENT_MANS += nut.exe.html
-endif HAVE_WINDOWS
+INST_HTML_CLIENT_MANS += nut.exe.html
+else !HAVE_WINDOWS
+DIST_ALL_HTML_PAGES += nut.exe.html
+endif !HAVE_WINDOWS
 
 if WITH_NUT_MONITOR
-HTML_CLIENT_MANS += NUT-Monitor.html
+INST_HTML_CLIENT_MANS += NUT-Monitor.html
 
 # Can't make this work on all make implementations at once, so disabled for now
 # Anyway it would be the same man-like page for several functions
-HTML_CLIENT_MANS_FICTION = \
+INST_HTML_CLIENT_MANS_FICTION = \
 	NUT-Monitor-py2gtk2.html \
 	NUT-Monitor-py3qt5.html
 
@@ -359,13 +366,21 @@ NUT-Monitor-py2gtk2.html: NUT-Monitor.html
 NUT-Monitor-py3qt5.html: NUT-Monitor.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
-endif WITH_NUT_MONITOR
+else !WITH_NUT_MONITOR
+
+DIST_ALL_HTML_PAGES += NUT-Monitor.html
+
+endif !WITH_NUT_MONITOR
+
+DIST_ALL_HTML_PAGES += $(INST_HTML_CLIENT_MANS)
+HTML_CLIENT_MANS = $(INST_HTML_CLIENT_MANS)
 
 SRC_TOOL_PAGES = \
 	nut-scanner.txt \
 	nut-recorder.txt \
 	nutconf.txt
 
+# FIXME: Make nut-scanner and nut-conf pages optional (if tool is enabled)?
 INST_MAN_TOOL_PAGES = \
 	nut-scanner.$(MAN_SECTION_CMD_SYS) \
 	nut-recorder.$(MAN_SECTION_CMD_SYS) \
@@ -379,10 +394,14 @@ endif WITH_MANS
 
 mansys_DATA += $(MAN_TOOL_PAGES)
 
-HTML_TOOL_MANS = \
+# FIXME: Make nut-scanner and nut-conf pages optional (if tool is enabled)?
+INST_HTML_TOOL_MANS = \
 	nut-scanner.html \
 	nut-recorder.html \
 	nutconf.html
+
+DIST_ALL_HTML_PAGES += $(INST_HTML_TOOL_MANS)
+HTML_TOOL_MANS = $(INST_HTML_TOOL_MANS)
 
 # CGI (--with-cgi) related manpages
 SRC_CGI_PAGES = \
@@ -415,7 +434,7 @@ mancfg_DATA += $(MAN_CGI_CFG_PAGES)
 mansys_DATA += $(MAN_CGI_CMD_SYS_PAGES)
 endif WITH_CGI
 
-HTML_CGI_MANS = \
+INST_HTML_CGI_MANS = \
 	hosts.conf.html \
 	upsset.conf.html \
 	upsstats.html.html \
@@ -423,6 +442,8 @@ HTML_CGI_MANS = \
 	upsstats.cgi.html \
 	upsimage.cgi.html
 
+DIST_ALL_HTML_PAGES += $(INST_HTML_CGI_MANS)
+HTML_CGI_MANS = $(INST_HTML_CGI_MANS)
 
 # Development (--with-dev) related manpages
 SRC_DEV_PAGES = \
@@ -648,7 +669,7 @@ endif !WITH_PKG_CONFIG
 
 endif WITH_DEV
 
-HTML_DEV_MANS = \
+INST_HTML_DEV_MANS = \
 	upsclient.html \
 	upscli_add_host_cert.html \
 	upscli_cleanup.html \
@@ -703,6 +724,9 @@ HTML_DEV_MANS = \
 	libupsclient-config.html \
 	sockdebug.html \
 	skel.html
+
+DIST_ALL_HTML_PAGES += $(INST_HTML_DEV_MANS)
+HTML_DEV_MANS = $(INST_HTML_DEV_MANS)
 
 # Can't make this work on all make implementations at once, so disabled for now
 # Anyway it would be the same man-like page for several functions
@@ -858,8 +882,9 @@ endif WITH_MANS
 if WITH_SERIAL
 mansys_DATA +=  $(MAN_SERIAL_PAGES)
 endif WITH_SERIAL
+endif ! SOME_DRIVERS
 
-HTML_SERIAL_MANS = \
+INST_HTML_SERIAL_MANS = \
 	al175.html	\
 	apcsmart.html	\
 	apcsmart-old.html	\
@@ -908,10 +933,17 @@ HTML_SERIAL_MANS = \
 
 if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
-HTML_SERIAL_MANS += \
+INST_HTML_SERIAL_MANS += \
 	nhs_ser.html
-endif HAVE_LINUX_SERIAL_H
+else !HAVE_LINUX_SERIAL_H
+DIST_ALL_HTML_PAGES += \
+	nhs_ser.html
+endif !HAVE_LINUX_SERIAL_H
 
+DIST_ALL_HTML_PAGES += $(INST_HTML_SERIAL_MANS)
+
+if ! SOME_DRIVERS
+HTML_SERIAL_MANS = $(INST_HTML_SERIAL_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-snmp)
@@ -928,8 +960,13 @@ endif WITH_MANS
 if WITH_SNMP
 mansys_DATA += $(MAN_SNMP_PAGES)
 endif WITH_SNMP
+endif ! SOME_DRIVERS
 
-HTML_SNMP_MANS = snmp-ups.html
+INST_HTML_SNMP_MANS = snmp-ups.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_SNMP_MANS)
+
+if ! SOME_DRIVERS
+HTML_SNMP_MANS = $(INST_HTML_SNMP_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-usb)
@@ -964,8 +1001,9 @@ endif WITH_MANS
 if WITH_USB
 mansys_DATA += $(MAN_USB_LIBUSB_PAGES)
 endif WITH_USB
+endif ! SOME_DRIVERS
 
-HTML_USB_LIBUSB_MANS = \
+INST_HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	blazer_usb.html	\
 	nutdrv_atcl_usb.html \
@@ -973,6 +1011,11 @@ HTML_USB_LIBUSB_MANS = \
 	riello_usb.html	\
 	tripplite_usb.html \
 	usbhid-ups.html
+
+DIST_ALL_HTML_PAGES += $(INST_HTML_USB_LIBUSB_MANS)
+
+if ! SOME_DRIVERS
+HTML_USB_LIBUSB_MANS = $(INST_HTML_USB_LIBUSB_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-serial / --with-usb)
@@ -995,15 +1038,21 @@ if WITH_USB
 mansys_DATA += $(MAN_SERIAL_USB_PAGES)
 endif WITH_USB
 endif !WITH_SERIAL
+endif ! SOME_DRIVERS
 
-HTML_SERIAL_USB_MANS = \
+INST_HTML_SERIAL_USB_MANS = \
 	nutdrv_qx.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_SERIAL_USB_MANS)
+
+if ! SOME_DRIVERS
+HTML_SERIAL_USB_MANS = $(INST_HTML_SERIAL_USB_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
 INST_MAN_NETXML_PAGES = netxml-ups.$(MAN_SECTION_CMD_SYS)
 DIST_ALL_MAN_PAGES += $(INST_MAN_NETXML_PAGES)
+
 if ! SOME_DRIVERS
 if WITH_MANS
 MAN_NETXML_PAGES = $(INST_MAN_NETXML_PAGES)
@@ -1012,8 +1061,13 @@ endif WITH_MANS
 if WITH_NEON
 mansys_DATA += $(MAN_NETXML_PAGES)
 endif WITH_NEON
+endif ! SOME_DRIVERS
 
-HTML_NETXML_MANS = netxml-ups.html
+INST_HTML_NETXML_MANS = netxml-ups.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_NETXML_MANS)
+
+if ! SOME_DRIVERS
+HTML_NETXML_MANS = $(INST_HTML_NETXML_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-powerman)
@@ -1028,8 +1082,13 @@ endif WITH_MANS
 if WITH_LIBPOWERMAN
 mansys_DATA += $(MAN_POWERMAN_PAGES)
 endif WITH_LIBPOWERMAN
+endif ! SOME_DRIVERS
 
-HTML_POWERMAN_MANS = powerman-pdu.html
+INST_HTML_POWERMAN_MANS = powerman-pdu.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_POWERMAN_MANS)
+
+if ! SOME_DRIVERS
+HTML_POWERMAN_MANS = $(INST_HTML_POWERMAN_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-ipmi)
@@ -1044,8 +1103,13 @@ endif WITH_MANS
 if WITH_IPMI
 mansys_DATA += $(MAN_IPMIPSU_PAGES)
 endif WITH_IPMI
+endif ! SOME_DRIVERS
 
-HTML_IPMIPSU_MANS = nut-ipmipsu.html
+INST_HTML_IPMIPSU_MANS = nut-ipmipsu.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_IPMIPSU_MANS)
+
+if ! SOME_DRIVERS
+HTML_IPMIPSU_MANS = $(INST_HTML_IPMIPSU_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-macosx_ups)
@@ -1060,8 +1124,13 @@ endif WITH_MANS
 if WITH_MACOSX
 mansys_DATA += $(MAN_MACOSX_PAGES)
 endif WITH_MACOSX
+endif ! SOME_DRIVERS
 
-HTML_MACOSX_MANS = macosx-ups.html
+INST_HTML_MACOSX_MANS = macosx-ups.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_MACOSX_MANS)
+
+if ! SOME_DRIVERS
+HTML_MACOSX_MANS = $(INST_HTML_MACOSX_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-modbus)
@@ -1091,14 +1160,19 @@ endif WITH_MANS
 if WITH_MODBUS
 mansys_DATA += $(MAN_MODBUS_PAGES)
 endif WITH_MODBUS
+endif ! SOME_DRIVERS
 
-HTML_MODBUS_MANS = \
+INST_HTML_MODBUS_MANS = \
 	phoenixcontact_modbus.html \
 	generic_modbus.html \
 	huawei-ups2000.html \
 	socomec_jbus.html   \
 	adelsystem_cbi.html \
 	apc_modbus.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_MODBUS_MANS)
+
+if ! SOME_DRIVERS
+HTML_MODBUS_MANS = $(INST_HTML_MODBUS_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-linux_i2c)
@@ -1122,11 +1196,16 @@ endif WITH_MANS
 if WITH_LINUX_I2C
 mansys_DATA += $(MAN_LINUX_I2C_PAGES)
 endif WITH_LINUX_I2C
+endif ! SOME_DRIVERS
 
-HTML_LINUX_I2C_MANS = \
+INST_HTML_LINUX_I2C_MANS = \
 	asem.html \
 	pijuice.html \
 	hwmon_ina219.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_LINUX_I2C_MANS)
+
+if ! SOME_DRIVERS
+HTML_LINUX_I2C_MANS = $(INST_HTML_LINUX_I2C_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-gpio)
@@ -1141,8 +1220,14 @@ endif WITH_MANS
 if WITH_GPIO
 mansys_DATA += $(MAN_GPIO_PAGES)
 endif WITH_GPIO
+endif ! SOME_DRIVERS
 
-HTML_GPIO_MANS = generic_gpio.html
+INST_HTML_GPIO_MANS = \
+	generic_gpio.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_GPIO_MANS)
+
+if ! SOME_DRIVERS
+HTML_GPIO_MANS = $(INST_HTML_GPIO_MANS)
 endif ! SOME_DRIVERS
 
 MAN_MANS =
