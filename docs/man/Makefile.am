@@ -23,6 +23,8 @@
 #   * DIST_ALL_PAGES: all known page file names, to help ensure dist archive
 #     contains everything that any build may want (even if missing tools to
 #     build the docs from scratch, or choosing not to do that for speed).
+#   * DIST_ALL_MAN_PAGES: all known MAN page file names, to help ensure dist archive
+#   * DIST_ALL_HTML_PAGES: all known HTML page file names, to help ensure nut-website
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 #EGREP = egrep
@@ -34,7 +36,10 @@ SRC_ALL_PAGES = index.txt
 # (depending on enabled features) are in MAN_MANS and HTML_MANS.
 # This does not necessarily trigger the build, just allows us
 # to check if they all exist.
-DIST_ALL_PAGES =
+DIST_ALL_MAN_PAGES =
+DIST_ALL_HTML_PAGES =
+# HTML collection is for nut-website primarily, not for tarballs... so far...
+DIST_ALL_PAGES = $(DIST_ALL_MAN_PAGES)
 
 # Possible man page section remapping in some distros:
 MAN_SECTION_API_BASE=@MAN_SECTION_API_BASE@
@@ -63,7 +68,7 @@ ALL_TGT =
 if WITH_MANS
 if !KNOWN_UNABLE_MANS
 # Give it our best shot; do not try if we know we would fail
-# Do not distcheck-light-DIST_ALL_PAGES for fake pages either -
+# Do not distcheck-light-DIST_ALL_MAN_PAGES for fake pages either -
 # this is up to caller and use-case
 ALL_TGT += all-man
 endif !KNOWN_UNABLE_MANS
@@ -179,12 +184,31 @@ distcheck-light-DIST_ALL_PAGES:
 			cd "$(abs_srcdir)" && touch $(SRC_ALL_PAGES) || echo "$@: Well we tried" >&2 ; \
 		fi ; )
 
-# Likewise for HTML renders
+print-DIST_ALL_MAN_PAGES:
+	@echo "$(DIST_ALL_MAN_PAGES)"
+
+check-list-DIST_ALL_MAN_PAGES:
+	@FILENAMES='$(DIST_ALL_MAN_PAGES)' ; $(LIST_FILES)
+
+# If any pages are missing, fake them
+distcheck-light-DIST_ALL_MAN_PAGES:
+	@FILENAMES='$(DIST_ALL_MAN_PAGES)' ; $(FAKE_FILES) || ( \
+		if [ x"$(FAKE_PAGES_BUMP_SRC)" = xtrue ] ; then \
+			cd "$(abs_srcdir)" && touch $(SRC_ALL_PAGES) || echo "$@: Well we tried" >&2 ; \
+		fi ; )
+
+# Likewise for HTML renders (but no fake pages made/needed for dist)
 print-HTML_MANS:
 	@echo "$(HTML_MANS)"
 
 check-list-HTML_MANS:
 	@FILENAMES='$(HTML_MANS)' ; $(LIST_FILES)
+
+print-DIST_ALL_HTML_PAGES:
+	@echo "$(DIST_ALL_HTML_PAGES)"
+
+check-list-DIST_ALL_HTML_PAGES:
+	@FILENAMES='$(DIST_ALL_HTML_PAGES)' ; $(LIST_FILES)
 
 # Likewise for plaintext sources
 print-SRC_ALL_PAGES:
@@ -210,7 +234,7 @@ INST_MAN_CONF_PAGES = \
 	upsmon.conf.$(MAN_SECTION_CFG) \
 	upssched.conf.$(MAN_SECTION_CFG)
 
-DIST_ALL_PAGES += $(INST_MAN_CONF_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_CONF_PAGES)
 
 if WITH_MANS
 MAN_CONF_PAGES = $(INST_MAN_CONF_PAGES)
@@ -258,7 +282,7 @@ INST_MAN_CLIENT_PAGES = \
 	upsrw.$(MAN_SECTION_CMD_SYS) \
 	upssched.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_CLIENT_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_CLIENT_PAGES)
 
 if WITH_MANS
 MAN_CLIENT_PAGES = $(INST_MAN_CLIENT_PAGES)
@@ -270,11 +294,11 @@ SRC_CLIENT_PAGES += nut.exe.txt
 if WITH_MANS
 INST_MAN_CLIENT_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
 else !WITH_MANS
-DIST_ALL_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
+DIST_ALL_MAN_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
 endif !WITH_MANS
 else !HAVE_WINDOWS
 SRC_ALL_PAGES += nut.exe.txt
-DIST_ALL_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
+DIST_ALL_MAN_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
 endif !HAVE_WINDOWS
 
 MAN_CLIENT_PAGES_ADDON_NUT_MONITOR = \
@@ -294,11 +318,11 @@ SRC_CLIENT_PAGES += NUT-Monitor.txt
 if WITH_MANS
 INST_MAN_CLIENT_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
 else !WITH_MANS
-DIST_ALL_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
+DIST_ALL_MAN_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
 endif !WITH_MANS
 else !WITH_NUT_MONITOR
 SRC_ALL_PAGES += NUT-Monitor.txt
-DIST_ALL_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
+DIST_ALL_MAN_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
 endif !WITH_NUT_MONITOR
 
 mansys_DATA += $(MAN_CLIENT_PAGES)
@@ -347,7 +371,7 @@ INST_MAN_TOOL_PAGES = \
 	nut-recorder.$(MAN_SECTION_CMD_SYS) \
 	nutconf.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_TOOL_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_TOOL_PAGES)
 
 if WITH_MANS
 MAN_TOOL_PAGES = $(INST_MAN_TOOL_PAGES)
@@ -379,7 +403,7 @@ INST_MAN_CGI_CMD_SYS_PAGES = \
 	upsstats.cgi.$(MAN_SECTION_CMD_SYS) \
 	upsimage.cgi.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_CGI_CFG_PAGES) $(INST_MAN_CGI_CMD_SYS_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_CGI_CFG_PAGES) $(INST_MAN_CGI_CMD_SYS_PAGES)
 
 if WITH_MANS
 MAN_CGI_CFG_PAGES = $(INST_MAN_CGI_CFG_PAGES)
@@ -606,7 +630,7 @@ INST_MAN_DEV_CMD_USR_PAGES = \
 INST_MAN_DEV_CMD_SYS_PAGES = \
 	sockdebug.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_DEV_API_PAGES) $(INST_MAN_DEV_CMD_USR_PAGES) $(INST_MAN_DEV_CMD_SYS_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_DEV_API_PAGES) $(INST_MAN_DEV_CMD_USR_PAGES) $(INST_MAN_DEV_CMD_SYS_PAGES)
 
 if WITH_MANS
 MAN_DEV_API_PAGES = $(INST_MAN_DEV_API_PAGES)
@@ -817,8 +841,8 @@ INST_MAN_SERIAL_PAGES = \
 	victronups.$(MAN_SECTION_CMD_SYS)	\
 	apcupsd-ups.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_SERIAL_PAGES)
-DIST_ALL_PAGES += nhs_ser.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_MAN_PAGES += $(INST_MAN_SERIAL_PAGES)
+DIST_ALL_MAN_PAGES += nhs_ser.$(MAN_SECTION_CMD_SYS)
 
 if ! SOME_DRIVERS
 if WITH_MANS
@@ -894,7 +918,7 @@ endif ! SOME_DRIVERS
 SRC_SNMP_PAGES = snmp-ups.txt
 INST_MAN_SNMP_PAGES = snmp-ups.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_SNMP_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_SNMP_PAGES)
 
 if ! SOME_DRIVERS
 if WITH_MANS
@@ -929,7 +953,7 @@ INST_MAN_USB_LIBUSB_PAGES = \
 	tripplite_usb.$(MAN_SECTION_CMD_SYS) \
 	usbhid-ups.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_USB_LIBUSB_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_USB_LIBUSB_PAGES)
 
 if ! SOME_DRIVERS
 # NOTE: nut_usb_addvars and blazer-common are not standalone man pages
@@ -958,7 +982,7 @@ SRC_SERIAL_USB_PAGES = \
 INST_MAN_SERIAL_USB_PAGES = \
 	nutdrv_qx.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_SERIAL_USB_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_SERIAL_USB_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
 MAN_SERIAL_USB_PAGES = $(INST_MAN_SERIAL_USB_PAGES)
@@ -979,7 +1003,7 @@ endif ! SOME_DRIVERS
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
 INST_MAN_NETXML_PAGES = netxml-ups.$(MAN_SECTION_CMD_SYS)
-DIST_ALL_PAGES += $(INST_MAN_NETXML_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_NETXML_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
 MAN_NETXML_PAGES = $(INST_MAN_NETXML_PAGES)
@@ -995,7 +1019,7 @@ endif ! SOME_DRIVERS
 # (--with-powerman)
 SRC_POWERMAN_PAGES = powerman-pdu.txt
 INST_MAN_POWERMAN_PAGES = powerman-pdu.$(MAN_SECTION_CMD_SYS)
-DIST_ALL_PAGES += $(INST_MAN_POWERMAN_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_POWERMAN_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
 MAN_POWERMAN_PAGES = $(INST_MAN_POWERMAN_PAGES)
@@ -1011,7 +1035,7 @@ endif ! SOME_DRIVERS
 # (--with-ipmi)
 SRC_IPMIPSU_PAGES = nut-ipmipsu.txt
 INST_MAN_IPMIPSU_PAGES = nut-ipmipsu.$(MAN_SECTION_CMD_SYS)
-DIST_ALL_PAGES += $(INST_MAN_IPMIPSU_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_IPMIPSU_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
 MAN_IPMIPSU_PAGES = $(INST_MAN_IPMIPSU_PAGES)
@@ -1027,7 +1051,7 @@ endif ! SOME_DRIVERS
 # (--with-macosx_ups)
 SRC_MACOSX_PAGES = macosx-ups.txt
 INST_MAN_MACOSX_PAGES = macosx-ups.$(MAN_SECTION_CMD_SYS)
-DIST_ALL_PAGES += $(INST_MAN_MACOSX_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_MACOSX_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
 MAN_MACOSX_PAGES = $(INST_MAN_MACOSX_PAGES)
@@ -1057,7 +1081,7 @@ INST_MAN_MODBUS_PAGES = \
 	adelsystem_cbi.$(MAN_SECTION_CMD_SYS) \
 	apc_modbus.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_MODBUS_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_MODBUS_PAGES)
 
 if ! SOME_DRIVERS
 if WITH_MANS
@@ -1088,7 +1112,7 @@ INST_MAN_LINUX_I2C_PAGES = \
 	pijuice.$(MAN_SECTION_CMD_SYS) \
 	hwmon_ina219.$(MAN_SECTION_CMD_SYS)
 
-DIST_ALL_PAGES += $(INST_MAN_LINUX_I2C_PAGES)
+DIST_ALL_MAN_PAGES += $(INST_MAN_LINUX_I2C_PAGES)
 
 if ! SOME_DRIVERS
 if WITH_MANS
@@ -1387,7 +1411,7 @@ CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG)
 clean-man-pages:
 else !HAVE_ASCIIDOC
 clean-man-pages:
-	@FILENAMES='$(DIST_ALL_PAGES)' ; $(FAKE_FILES_RM)
+	@FILENAMES='$(DIST_ALL_MAN_PAGES)' ; $(FAKE_FILES_RM)
 endif !HAVE_ASCIIDOC
 endif !WITH_MANS
 
