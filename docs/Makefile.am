@@ -177,7 +177,7 @@ ASCIIDOC_PDF = \
 # for a few goals, and among SUBDIRs directly from the top-level Makefile
 # due to some potential dependency collisions with parallel builds.
 SUBDIRS = cables
-SUFFIXES = .txt .html .pdf .txt-spellchecked .txt-prepped
+SUFFIXES = .txt .html .pdf .txt-spellchecked .txt-prepped .adoc-spellchecked .adoc-prepped
 
 # This list is defined by configure script choices and options:
 CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
@@ -632,7 +632,7 @@ DOCBUILD_END = { \
 ### or just touch-files for peace of mind (in-tree builds). Then we
 ### use these path names (truncated "-prepped") now surely located
 ### in the builddir as the sources for rendered docs.
-*.txt-prepped: $(abs_top_builddir)/docs/.prep-src-docs
+*.txt-prepped *.adoc-prepped: $(abs_top_builddir)/docs/.prep-src-docs
 
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;
@@ -646,16 +646,19 @@ DOCBUILD_END = { \
 # to trigger builds by a changed dependency), but at least predictable and
 # not toxic.
 ###.txt.txt-prepped: $(abs_top_builddir)/docs/.prep-src-docs
+###.adoc.adoc-prepped: $(abs_top_builddir)/docs/.prep-src-docs
 
-*.html: common.xsl xhtml.xsl
-.txt-prepped.html:
-	+@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
-	 echo "  DOC-HTML	Generating $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl '$<' || RES=$$? ; \
-	 $(DOCBUILD_END) ; \
-	 case "$(@F)" in \
-	    *ChangeLog*) if [ -s '$(top_builddir)/ChangeLog' ] ; then \
+# NOTE: inference rules can have only one target before the colon (POSIX),
+# so we use helper snippets to share code for *.adoc and *.txt sources
+GENERATE_HTML_SINGLE = ( \
+	A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
+	echo "  DOC-HTML	Generating $@"; \
+	$(DOCBUILD_BEGIN) ; RES=0; \
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl '$<' || RES=$$? ; \
+	$(DOCBUILD_END) ; \
+	case "$(@F)" in \
+	    *ChangeLog*) \
+	        if [ -s '$(top_builddir)/ChangeLog' ] ; then \
 	            $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
 	            if [ "$$RES" != 0 ] ; then \
 	                echo "  DOC-HTML	Generating $@ (retry once)" >&2; \
@@ -667,31 +670,50 @@ DOCBUILD_END = { \
 	                $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
 	            fi ; \
 	        fi ;; \
-	 esac ; \
-	 exit $$RES
+	esac ; \
+	exit $$RES ; \
+)
+
+*.html: common.xsl xhtml.xsl
+.txt-prepped.html:
+	+@$(GENERATE_HTML_SINGLE)
+.adoc-prepped.html:
+	+@$(GENERATE_HTML_SINGLE)
 
 # Note: extra age check here because *.chunked is a directory and not all
 # "make" implementations check its age vs. source files, just always build:
-*.chunked: common.xsl chunked.xsl
-.txt-prepped.chunked:
-	@if [ -d "$@" ] && [ x"`find '$@' -newer "$<" 2>/dev/null`" != x ] ; then \
+GENERATE_HTML_CHUNKED = ( \
+	if [ -d "$@" ] && [ x"`find '$@' -newer "$<" 2>/dev/null`" != x ] ; then \
 	    echo "  DOC-HTML-CHUNKED	SKIP: keep existing $@"; \
 	    exit 0 ; \
-	 fi ; \
-	 A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
-	 echo "  DOC-HTML-CHUNKED	Generating $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl '$<' || RES=$$? ; \
-	 $(DOCBUILD_END) ; exit $$RES
+	fi ; \
+	A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
+	echo "  DOC-HTML-CHUNKED	Generating $@"; \
+	$(DOCBUILD_BEGIN) ; RES=0; \
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl '$<' || RES=$$? ; \
+	$(DOCBUILD_END) ; exit $$RES ; \
+)
+
+*.chunked: common.xsl chunked.xsl
+.txt-prepped.chunked:
+	@$(GENERATE_HTML_CHUNKED)
+.adoc-prepped.chunked:
+	@$(GENERATE_HTML_CHUNKED)
 
 # Note: non-HTML a2x modes may ignore the destination directory
+GENERATE_PDF = ( \
+	A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
+	echo "  DOC-PDF	Generating $@"; \
+	$(DOCBUILD_BEGIN) ; RES=0; \
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
+	$(DOCBUILD_END) ; exit $$RES ; \
+)
+
 *.pdf: docinfo.xml
 .txt-prepped.pdf:
-	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
-	 echo "  DOC-PDF	Generating $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
-	 $(DOCBUILD_END) ; exit $$RES
+	@$(GENERATE_PDF)
+.adoc-prepped.pdf:
+	@$(GENERATE_PDF)
 
 # Used below for spellcheck and for .prep-src-docs
 SPELLCHECK_SRC_DEFAULT = $(ALL_TXT_SRC) \
