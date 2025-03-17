@@ -17,7 +17,7 @@ developer guide or user manual. Most of this information can be applied to
 both automated testing environments and local development workflows.
 
 [[nut-qa]]
-include::nut-qa.txt[leveloffset=+1]
+include::nut-qa.txt[]
 
 Code and recipe analysis
 ------------------------

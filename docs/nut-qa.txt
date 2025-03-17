@@ -1,5 +1,5 @@
 NUT Quality Assurance
-=====================
+---------------------
 
 Recognizing the critical nature of NUT, the NUT Quality Assurance (NQA) effort
 has been established to improve NUT where necessary, and to maintain software
@@ -8,7 +8,7 @@ quality as high as it should be.
 NQA is present in many aspects and areas of NUT.
 
 Documentation
--------------
+~~~~~~~~~~~~~
 
 The documentation toolchain uses
 link:https://asciidoc.org/[AsciiDoc] to output both HTML pages and
@@ -17,8 +17,8 @@ suppresses many redundancies, and optimizes documentation management in
 general.
 
 - The NUT website and HTML documentation are tested for W3C XHTML 1.1 and CSS
-compliance. This can be counter verified by clicking the W3C XHTML 1.1 and CSS
-icons, at the bottom of each page.
+  compliance. This can be counter verified by clicking the W3C XHTML 1.1 and
+  CSS icons, at the bottom of each page.
 
 ////////////////////////////////////////////////////////////////////////////////
 - the manual pages conformance is tested with
@@ -26,19 +26,19 @@ link:http://catb.org/~esr/doclifter/index.html[doclifter] (outdated)
 ////////////////////////////////////////////////////////////////////////////////
 
 - Documentation source files are spell checked, using
-link:http://aspell.net[Aspell], both interactively (using
-'make spellcheck-interactive') and automatically in Buildbot (using
-'make spellcheck').
+  link:http://aspell.net[Aspell], both interactively (using
+  'make spellcheck-interactive') and automatically in Buildbot (using
+  'make spellcheck').
 
-NOTE: A NUT dictionary is also available (docs/nut.dict), providing a
-glossary of terms related to power devices and management, as well as
-partial terms, technical jargon and author names.
+NOTE: A NUT dictionary is also available (as `docs/nut.dict` in NUT sources),
+providing a glossary of terms related to power devices and management, as well
+as partial terms, technical jargon and author names.
 
 Source code
------------
+~~~~~~~~~~~
 
 Use of standards
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 NUT promotes and uses many standards, such as:
 
@@ -54,12 +54,12 @@ NUT promotes and uses many standards, such as:
   * the TCP Wrappers library.
 
 QA tools and metrics
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 NUT's quality is constantly monitored using many tools, like:
 
-- a Revision Control System (link:https://github.com/networkupstools/nut[Git]) to
-track development and ease regression fixes.
+- a Revision Control System (link:https://github.com/networkupstools/nut[Git])
+  to track development and ease regression fixes.
 
 ////////////////////////////////////////////////////////////////////////////////
 Any modification on the NUT source
@@ -140,13 +140,13 @@ It installs NUT packages, configures it with the dummy-ups driver, changes
   provides metrics on NUT source code base and activity.
 
 Runtime quality
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 - NUT provides many link:user-manual.html#NUT_Security[security features] to
-ensure a maximum runtime security level.
+  ensure a maximum runtime security level.
 
 - Packages use several link:http://wiki.debian.org/Hardening[Hardening methods]
-to protect NUT binaries.
+  to protect NUT binaries.
 
 ////////////////////////////////////////////////////////////////////////////////
 FIXME (POST):
