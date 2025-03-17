@@ -26,16 +26,24 @@ Code and recipe analysis
 GNU Autotools distcheck
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+FIXME: Write the chapter text.
+
 Static analysis by compilers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FIXME: Write the chapter text.
 
 [[CI_shellcheck]]
 Shell script checks
 ~~~~~~~~~~~~~~~~~~~
 
+FIXME: Write the chapter text.
+
 [[CI_spellcheck]]
 Documentation spelling checks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FIXME: Write the chapter text.
 
 
 Test automation
@@ -45,20 +53,29 @@ Test automation
 The ci_build.sh script
 ~~~~~~~~~~~~~~~~~~~~~~
 
+FIXME: Write the chapter text.
+
 Test programs in NUT codebase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FIXME: Write the chapter text.
 
 [[NIT]]
 NUT Integration Testing suite (NIT)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+FIXME: Write the chapter text.
 
 [[NUTCI_farm]]
 Continuous Integration (NUT CI farm)
 ------------------------------------
 
+FIXME: Write the chapter intro text.
+
 Multiple FOSS CI providers and technologies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FIXME: Write the chapter text.
 
 Jenkins is the way
 ~~~~~~~~~~~~~~~~~~
@@ -66,13 +83,17 @@ Jenkins is the way
 * https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/
 * https://github.com/jenkins-infra/stories/blob/main/src/user-story/jenkins-is-the-way-for-networkupstools/index.yaml
 
-[[Jenkins-Dynamatrix-Library]]
+[[Jenkins_Dynamatrix_Library]]
 The jenkins-dynamatrix library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-[[Jenkins-Dynamatrix-Pipeline]]
+FIXME: Write the chapter text.
+
+[[Jenkins_Dynamatrix_Pipeline]]
 Jenkinsfile-dynamatrix cases in NUT sources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+FIXME: Write the chapter text.
 
 [[CI_VM_DigitalOcean]]
 Custom NUT CI farm build agents: VMs on DigitalOcean
@@ -85,10 +106,32 @@ Custom NUT CI farm build agents: VMs on DigitalOcean
 Custom NUT CI farm build agents: LXC containers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-include::ci-farm-lxc-setup.txt[leveloffset=+2]
+This section details configuration of LXC containers as build environments
+for NUT CI farm; this approach can also be used on developer workstations.
+
+/////////////////////
+// Note: while docs recommend relative offsets or using them as parameters
+// to the include macro, this is a feature of asciidoctor - not asciidoc-py
+// (older implementation) that we rely on in most operating systems:
+// https://docs.asciidoctor.org/asciidoc/latest/directives/include-with-leveloffset/
+//
+// So we resort to absolute offsets (as explicitly not recommended) in the
+// document itself, that `Title.level` handling in the older code base supports:
+// https://github.com/asciidoc-py/asciidoc-py/blob/main/asciidoc/asciidoc.py#L1775
+/////////////////////
+
+:leveloffset: 1
+
+include::ci-farm-lxc-setup.txt[]
+
+:leveloffset: 0
 
 [[Config_Prereqs]]
 NUT build prerequisites
 -----------------------
 
-include::config-prereqs.txt[leveloffset=+2]
+:leveloffset: 1
+
+include::config-prereqs.txt[]
+
+:leveloffset: 0
