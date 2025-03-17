@@ -110,6 +110,9 @@ DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  new-drivers.txt net-protocol.txt nutdrv_qx-subdrivers.txt	\
  nut-versioning.adoc snmp-subdrivers.txt sock-protocol.txt
 
+QA_GUIDE_DEPS =  nut-qa.txt config-prereqs.txt ci-farm-lxc-setup.txt	\
+ qa-guide.adoc
+
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
  cables/mgeups.txt cables/powerware.txt cables/repotec.txt		\
@@ -124,7 +127,7 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
 
 ALL_TXT_SRC = nut-names.txt daisychain.txt \
  $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
- $(CABLES_DEPS) FAQ.txt nut-qa.txt qa-guide.adoc packager-guide.txt snmp.txt \
+ $(CABLES_DEPS) $(QA_GUIDE_DEPS) FAQ.txt packager-guide.txt snmp.txt \
  release-notes.txt ChangeLog.txt solaris-usb.txt
 
 ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
@@ -511,11 +514,12 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README.adoc ../TODO.adoc \
 	../lib/README.adoc \
 	../tools/nut-scanner/README.adoc
+FULL_QA_GUIDE_DEPS = $(QA_GUIDE_DEPS) $(SHARED_DEPS)
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
-qa-guide.html qa-guide.chunked qa-guide.pdf: qa-guide.adoc asciidoc.conf
+qa-guide.html qa-guide.chunked qa-guide.pdf: $(FULL_QA_GUIDE_DEPS)
 release-notes.html release-notes.chunked release-notes.pdf: release-notes.txt $(top_builddir)/NEWS.adoc-parsed $(top_builddir)/UPGRADING.adoc-parsed asciidoc.conf
 solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.conf
 
