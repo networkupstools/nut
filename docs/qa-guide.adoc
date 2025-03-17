@@ -1,0 +1,94 @@
+NUT Quality Assurance Guide
+===========================
+:Author: Jim_Klimov
+:Author Initials: JK
+
+WARNING: This is a Work In Progress document.
+
+Abstract
+--------
+
+The aim of this document is to describe the different ways we ensure and
+maintain the source code quality of Network UPS Tools, its portability to
+various platforms, and non-regression.
+
+Previous NUT releases may have included parts of this documentation in the
+developer guide or user manual. Most of this information can be applied to
+both automated testing environments and local development workflows.
+
+[[nut-qa]]
+include::nut-qa.txt[leveloffset=+1]
+
+Code and recipe analysis
+------------------------
+
+[[CI_distcheck]]
+GNU Autotools distcheck
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Static analysis by compilers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[[CI_shellcheck]]
+Shell script checks
+~~~~~~~~~~~~~~~~~~~
+
+[[CI_spellcheck]]
+Documentation spelling checks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Test automation
+---------------
+
+[[CI_BUILD_SH]]
+The ci_build.sh script
+~~~~~~~~~~~~~~~~~~~~~~
+
+Test programs in NUT codebase
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[[NIT]]
+NUT Integration Testing suite (NIT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+[[NUTCI_farm]]
+Continuous Integration (NUT CI farm)
+------------------------------------
+
+Multiple FOSS CI providers and technologies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Jenkins is the way
+~~~~~~~~~~~~~~~~~~
+
+* https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/
+* https://github.com/jenkins-infra/stories/blob/main/src/user-story/jenkins-is-the-way-for-networkupstools/index.yaml
+
+[[Jenkins-Dynamatrix-Library]]
+The jenkins-dynamatrix library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[[Jenkins-Dynamatrix-Pipeline]]
+Jenkinsfile-dynamatrix cases in NUT sources
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[[CI_VM_DigitalOcean]]
+Custom NUT CI farm build agents: VMs on DigitalOcean
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Installation of VMs on Digital Ocean
+  - Pick details from https://github.com/networkupstools/nut/issues/2192
+
+[[CI_LXC]]
+Custom NUT CI farm build agents: LXC containers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include::ci-farm-lxc-setup.txt[leveloffset=+2]
+
+[[Config_Prereqs]]
+NUT build prerequisites
+-----------------------
+
+include::config-prereqs.txt[leveloffset=+2]

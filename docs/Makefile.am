@@ -124,7 +124,7 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
 
 ALL_TXT_SRC = nut-names.txt daisychain.txt \
  $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
- $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt \
+ $(CABLES_DEPS) FAQ.txt nut-qa.txt qa-guide.adoc packager-guide.txt snmp.txt \
  release-notes.txt ChangeLog.txt solaris-usb.txt
 
 ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
@@ -148,6 +148,7 @@ ASCIIDOC_HTML_SINGLE = \
 	user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
+	qa-guide.html \
 	release-notes.html \
 	solaris-usb.html \
 	cables.html \
@@ -158,6 +159,7 @@ ASCIIDOC_HTML_CHUNKED = \
 	user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
+	qa-guide.chunked \
 	release-notes.chunked \
 	solaris-usb.chunked \
 	cables.chunked \
@@ -168,6 +170,7 @@ ASCIIDOC_PDF = \
 	user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
+	qa-guide.pdf \
 	release-notes.pdf \
 	solaris-usb.pdf \
 	cables.pdf \
@@ -512,6 +515,7 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
+qa-guide.html qa-guide.chunked qa-guide.pdf: qa-guide.adoc asciidoc.conf
 release-notes.html release-notes.chunked release-notes.pdf: release-notes.txt $(top_builddir)/NEWS.adoc-parsed $(top_builddir)/UPGRADING.adoc-parsed asciidoc.conf
 solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.conf
 
