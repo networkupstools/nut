@@ -57,14 +57,28 @@ This software has been reported to run on:
 - Linux distributions,
 - the BSDs,
 - Apple's OS X,
-- Sun Solaris,
+- Sun Solaris and illumos,
 - SGI IRIX,
 - HP/UX,
 - Tru64 Unix,
-- AIX.
+- AIX,
+- Windows:
+  * There is an older port of the client-side monitoring to Windows called WinNUT.
+    Windows users may be able to build it directly with Cygwin.
+  * Note there are also numerous third-party projects named WinNUT-Client or
+    similar, made over decades by different enthusiasts and community members
+    with a number of technologies underneath. If you run a program that claims
+    such a name, locate and ask its creators for support related to the client.
+  * Since NUT v2.8.1, there is an on-going effort to integrate older platform
+    development of NUT for Windows into the main code base -- allowing to run
+    the whole stack of NUT drivers, data server and clients. Still, as of NUT
+    release v2.8.3, installation is complicated and there are other known
+    imperfections (not all WIN32 code has equivalents to POSIX), tracked under
+    https://github.com/orgs/networkupstools/projects/2/views/1
 
-There is also a port of the client-side monitoring to Windows called WinNUT.
-Windows users may be able to build it directly with Cygwin.
+NUT is also often embedded into third-party projects like OpenWRT (or similar)
+based routers, NAS and other appliances, monitoring systems like Home Assistant,
+and provided or suggested by some UPS vendors as their software companion.
 
 Your system will probably run it too. You just need a good C compiler and
 possibly some more packages to gain access to the serial ports.
