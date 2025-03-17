@@ -87,6 +87,36 @@ installed.
 
 Success reports are welcomed to keep this list accurate.
 
+Given its core position at the heart of your systems' lifecycle, we make
+it a point to have current NUT building and running anywhere, especially
+where older releases did work before (including "abandonware" like the
+servers and OSes from the turn of millennium): if those boxes are still
+alive and in need of power protection, they should be able to get it.
+
+[TIP]
+=====
+If you like how the NUT project helps protect your systems from power
+outages, please consider sponsoring or at least "starring" it on GitHub at
+https://github.com/networkupstools/nut/ - these stars are among metrics
+which the larger potential sponsors consider when choosing how to help
+FOSS projects. Keeping the lights shining in such a large non-regression
+build matrix is a big undertaking!
+
+ifndef::pdf_format[]
+image:https://api.star-history.com/svg?repos=networkupstools/nut&type=Date[link="https://star-history.com/#networkupstools/nut&Date" alt="NUT GitHub Star History Chart"]
+endif::pdf_format[]
+
+See <<acknowledgements-ci-ops,acknowledgements of organizations which help
+with NUT CI and other daily operations>> for an overview of the shared effort.
+=====
+
+As a FOSS project, for over a quarter of a century we welcome contributions
+of both core code (drivers and other features), build recipes and other
+integration elements to make it work on your favourite system, documentation
+revisions to make it more accessible to newcomers, as well as hardware vendor
+cooperation with first-hand driver and protocol submissions, and just about
+anything else you can think of.
+
 
 [[Download_instructions]]
 
