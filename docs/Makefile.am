@@ -980,7 +980,7 @@ PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 # so should be run from $(abs_builddir) to be safe, as we jump around
 # the build workspace
 prep-src-docs: $(abs_top_builddir)/docs/.prep-src-docs
-$(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
+$(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	@cd "$(@D)" || exit ; \
 	 linkroot="$(abs_builddir)" ; \
 	 MAN_SECTIONS_DEFAULT=false ; \
