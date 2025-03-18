@@ -242,6 +242,47 @@ revisions to make it more accessible to newcomers, as well as hardware vendor
 cooperation with first-hand driver and protocol submissions, and just about
 anything else you can think of.
 
+NUT Support Policy
+~~~~~~~~~~~~~~~~~~
+
+The Network UPS Tools project is a community-made open-source effort, primarily
+made and maintained by people donating their spare time.
+
+The support channels are likewise open, with preferred ones being
+link:https://github.com/networkupstools/nut/issues[the NUT project issue
+tracker on GitHub] and the NUT Users mailing list, as detailed at
+https://networkupstools.org/support.html page.
+
+Please keep in mind that any help is provided by community members just like
+yourself, as a best effort, and subject to their availability and experience.
+It is expected that you have read the Frequently Asked Questions, looked at
+the link:https://github.com/networkupstools/nut/wiki[NUT wiki], and have a
+good grasp about the three-layer design and programs involved in a running
+deployment of NUT, for a discussion to be constructive and efficient.
+
+Be patient, polite, and prepare to learn and provide information about your
+NUT deployment (version, configuration, OS...) and the device, to collect
+logs, and to answer any follow-up questions about your situation.
+
+Finally, note that NUT is packaged and delivered by packaging into numerous
+operating systems, appliances and monitoring projects, and may be bundled
+with third-party GUI clients.  It may be wise of end-users to identify such
+cases and ask for help on the most-relevant forum (or several, including the
+NUT support channels).  It is important to highlight that the NUT project
+releases have for a long time been essentially snapshots of better-tested
+code, and we do not normally issue patches to "hot-fix" any older releases.
+
+Any improvements of NUT itself are made in the current code base, same as
+any other feature development, so to receive desired fixes on your system
+(and/or to check that they do solve your particular issue), expect to be
+asked to build the recent development iteration from GitHub or work with
+your appliance vendor to get a software upgrade.
+
+Over time, downstream OS packaging or other integrations which use NUT, may
+issue patches as new package revisions, or new baseline versions of NUT,
+according to *their* release policies. It is not uncommon for distributions,
+especially "stable" flavours, to be a few years behind upstream projects.
+
 
 Installing
 ----------
