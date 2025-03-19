@@ -464,6 +464,8 @@ This requirement compromises usability of `make distcheck` on platforms without
    * `upsd_cleanup()` is now traced, to more easily see that the daemon is
      exiting (and/or start-up has aborted due to configuration or run-time
      issues). Warning about "world readable" files clarified. [#2417]
+   * Failure to `LISTEN` on an invalid host name (e.g. `localhost:3493` or
+     `1.2.3.4/24`) is now logged in a more actionable manner. [#2665]
 
  - nut-scanner:
    * the tool relies on dynamic loading of shared objects (library files)
