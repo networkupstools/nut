@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3341 utf-8
+personal_ws-1.1 en 3347 utf-8
 AAC
 AAS
 ABI
@@ -205,6 +205,7 @@ Checksum
 Christoph
 Chu
 Cichowski
+CipherString
 CircleCI
 Claesson
 CodingStyle
@@ -566,6 +567,7 @@ KRTS
 KSTAR
 KTTS
 Kain
+Kajetan
 Kaminski
 Kanji
 Kazancev
@@ -1069,6 +1071,7 @@ RunAs
 RunUPSCommand
 RxD
 Ryabov
+Rzepecki
 SAI
 SASU
 SCM
@@ -1717,6 +1720,7 @@ cmdname
 cmdparam
 cmds
 cmdvartab
+cnf
 codebase
 codepath
 coldstarts
@@ -2217,6 +2221,7 @@ kVA
 kadets
 kaminski
 kde
+kex
 kext
 keychain
 keygen
@@ -3078,6 +3083,7 @@ tport
 tripplite
 tripplitesu
 troff
+tsa
 tsd
 tty
 ttyACM

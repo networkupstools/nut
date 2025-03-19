@@ -918,6 +918,52 @@ check if a custom build from Git (usually using the `master` branch
 of NUT https://github.com/networkupstools/nut/ repository) has your
 issue fixed by some kind soul already.
 
+== I can't connect with SSL using old NUT on an appliance
+
+Unfortunately, some vendors do not issue new firmwares often, and even more
+rarely do they significantly update any programs inside. It is not uncommon
+to see NUT versions over a decade old delivered with small NAS boxes, for
+example.
+
+This may impact not only NUT protocol compatibility, but also transport
+protocols such as SSL -- as cipher algorithms get outdated over time, and
+ones deemed insecure are no longer handled at all (by default).  This is
+not a problem limited to NUT: old SSH Key Exchange (kex) protocols or old
+HTTPS mechanisms also become hard or impossible to use eventually.
+
+On one hand, you can look into NUT configuration of `DISABLE_WEAK_SSL`.
+
+On another, you can modify configuration of the newer system to allow older
+algorithms as required by the older other system.
+
+For NUT built against OpenSSL, the change would be in `/etc/ssl/openssl.cnf`
+and similar to the diff block below:
+
+----
+--- a/etc/ssl/openssl.cnf
++++ b/etc/ssl/openssl.cnf
+@@ -52,13 +52,6 @@ tsa_policy3 = 1.2.3.4.5.7
+ 
+ [openssl_init]
+ providers = provider_sect
++ssl_conf = ssl_sect
++
++[ssl_sect]
++system_default = system_default_sect
++
++[system_default_sect]
++CipherString = DEFAULT@SECLEVEL=0
+ 
+ # List of providers to load
+ [provider_sect]
+----
+
+Of course, keep in mind that by doing this you degrade your security level.
+If better solutions are possible in your situation, prefer to follow them!
+
+Thanks to Kajetan Rzepecki for doing the research and posting the findings
+in https://github.com/networkupstools/nut/issues/1899
+
 == I built NUT from Git, and it complains about lots of missing files. What happened?
 
 If you are not actively developing a driver, can you use a snapshot instead?
