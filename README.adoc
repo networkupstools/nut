@@ -7,7 +7,7 @@ Network UPS Tools Overview
 //GH_MARKUP_1095//ifndef::top_srcdir[]
 //GH_MARKUP_1095//include::docs/asciidoc-vars.conf[]
 //GH_MARKUP_1095//endif::top_srcdir[]
-//GH_MARKUP_1095_INCLUDE_BEGIN//7e01bd198 (2024-10-20) docs/asciidoc-vars.conf: try defining linksrcdoc macro
+//GH_MARKUP_1095_INCLUDE_BEGIN//a6bd83d48 (2025-03-20) docs/asciidoc-vars.conf: document that linkdoc may have further args
 ifndef::asciidoc-vars-nut-included[]
 :asciidoc-vars-nut-included:	true
 // NOTE: The big block of comments and definitions below comes from
@@ -54,6 +54,10 @@ ifndef::asciidoc-vars-nut-included[]
 //   the command shown. This is also needed to properly display links
 //   to manpages in both GitHub and generated docs without defining an
 //   attribute for each manpage.
+// * `linkmanext` and `linkmanext2` macros repeat the behavior of the default ones.
+//   These macros are intended for system man pages (e.g. HTML links might lead
+//   to a generic internet site, or possibly to a distro-provided library
+//   online or locally).
 //
 // Optional attributes set by callers:
 // * `website-url` (defaulted below) may be used for "historic website"
@@ -113,9 +117,9 @@ ifndef::env-github[]
 //     syntax: {linksrcdoc}<document>
 //     -> linksrcdoc:<document>[]
 :linksrcdoc:	linksrcdoc:
-//   * link to doc -> our macro
-//     syntax: {linkdoc}<document>{ld-s}[<display title>]
-//     -> linkdoc:<document>[<display title>]
+//   * link to doc -> our macro (optional 2/3/4 args)
+//     syntax: {linkdoc}<document>{ld-s}[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
+//     -> linkdoc:<document>[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
 :linkdoc:	linkdoc:
 :ld-s:
 //   * link to single doc -> our macro
@@ -130,6 +134,8 @@ ifndef::env-github[]
 :lm-s:		[
 :lm-c:		,
 :lm-e:		]
+:linkmanext:	https://www.die.net/search/?q=
+:linkmanext2:	https://www.die.net/search/?q=
 endif::env-github[]
 //
 // - on GitHub:
@@ -148,8 +154,8 @@ ifdef::env-github[]
 //     syntax: {linksrcdoc}<document>
 //     -> link:<document>[]
 :linksrcdoc:	link:{top_srcdir}/
-//   * link to doc -> link
-//     syntax: {linkdoc}<document>{ld-s}[<display title>]
+//   * link to doc -> link (FIXME: ignore or use 2/3/4 args; currently they are all pasted as <display title> contents!)
+//     syntax: {linkdoc}<document>{ld-s}[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
 //     -> {website-url}docs/<document>.chunked/index.html[<display title>]
 :linkdoc:	{website-url}docs/
 :ld-s:		.chunked/index.html
@@ -166,6 +172,8 @@ ifdef::env-github[]
 :lm-s:		.html[
 :lm-c:		(
 :lm-e:		)]
+:linkmanext:	https://www.die.net/search/?q=
+:linkmanext2:	https://www.die.net/search/?q=
 endif::env-github[]
 endif::asciidoc-vars-nut-included[]
 //
