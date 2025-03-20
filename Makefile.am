@@ -671,6 +671,7 @@ maintainer-asciidocs:
 	    echo "$@: OVERALL-SKIP: No text files found with GH_MARKUP_1095_INCLUDE_ tags, or obsoleted docs/asciidoc-vars.conf contents";\
 	  else \
 	    echo "$@: OVERALL-UPDATED: You may now want to:"; \
+	    echo "    make spellcheck -ks -j 8 || make spellcheck-interactive"; \
 	    echo "    git add -p $${FILES} && git commit -sm 'Update NUT documentation sources with current docs/asciidoc-vars.conf: $${USEDREV_NOSUBJ}'"; \
 	  fi; \
 	 )
