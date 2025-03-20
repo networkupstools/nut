@@ -14,7 +14,7 @@ if ENABLE_EXTAPI_ENPHASE
 extapi_enphase_datadir = @datadir@/external_apis/enphase
 extapi_enphase_data_DATA = enphase/README.adoc
 
-extapi_enphase_execdir = @libexec@
+extapi_enphase_execdir = @libexecdir@
 extapi_enphase_exec_SCRIPTS = enphase/enphase-monitor
 
 if HAVE_SYSTEMD

@@ -42,6 +42,7 @@ Changes from 2.8.2 to 2.8.3
   if this is required, a (NUT_)VERSION_FORCED_SEMVER envvar or file can
   help identify the actual NUT release version triplet used on the box.
   Please use it, it immensely helps with community troubleshooting!
+  Documentation about this would be maintained in `docs/nut-versioning.adoc`
   [issue #1949]
 
 - When packaging or custom-building for (Linux) distributions with systemd,
@@ -56,6 +57,12 @@ Changes from 2.8.2 to 2.8.3
   should new differentiate `i386` vs. `amd64` and `sparc` vs. `sparcv9`,
   depending on `target_cpu` of the build. If you had any scripts relying
   on the older pattern, they may have to be updated.
+
+- The `make dist` goal now takes more care to require availability of the
+  man pages to put into the prepared distribution archive. Development and CI
+  builds on platforms unable to fulfill this goal can use `make distcheck-ci`
+  (and `make dist-ci`) to fake presence of pre-built man pages with placeholder
+  files, to complete other aspects of `distcheck` validation. [#2842]
 
 - the PyPI distribution of the `PyNUTClient` module tarball should now use a
   lower-cased file name (and immediate versioned directory name inside) to

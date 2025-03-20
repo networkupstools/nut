@@ -255,7 +255,11 @@ import org.nut.dynamatrix.*;
 
     // Imported from jenkins-dynamatrix JSL vars/autotools.groovy:
     // a workaround for the cases of curiously missing MAKE envvar...
-    dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS=\${CONFIG_OPTS:+\\"\$CONFIG_OPTS\\"} )"""
+    // Note that NUT Makefile has a concept of "distcheck-ci" to
+    // cater for documentation files (pre-generated man pages) that
+    // must be present in the dist tarball, but may not be available
+    // or creatable on the build agent - in that case we fake them.
+    dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck-ci DISTCHECK_FLAGS=\${CONFIG_OPTS:+\\"\$CONFIG_OPTS\\"} )"""
 
     // Note: shellcheck/spellcheck/... require autotools currently
     // or need to be redefined with respective BUILD_TYPE

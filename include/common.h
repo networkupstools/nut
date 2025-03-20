@@ -1,7 +1,7 @@
 /* common.h - prototypes for the common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -314,6 +314,34 @@ int sendsignal(const char *progname, const char * sig, int check_current_prognam
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
+
+/*****************************************************************************
+ * String methods for space-separated token lists, used originally in dstate *
+ *****************************************************************************/
+
+/* Return non-zero if "string" contains "token" (case-sensitive),
+ * either surrounded by space character(s) or start/end of "string",
+ * or 0 if that token is not there, or if either string is NULL or empty.
+ */
+int	str_contains_token(const char *string, const char *token);
+
+/* Add "token" to end of string "tgt", if it is not yet there
+ * (prefix it with a space character if "tgt" is not empty).
+ * Return 0 if already there, 1 if token was added successfully,
+ * -1 if we needed to add it but it did not fit under the tgtsize limit,
+ * -2 if either string was NULL or "token" was empty.
+ * NOTE: If token contains space(s) inside, recurse to treat it
+ * as several tokens to add independently.
+ * Optionally calls "callback_always" (if not NULL) after checking
+ * for spaces (and maybe recursing) and before checking if the token
+ * is already there, and/or "callback_unique" (if not NULL) after
+ * checking for uniqueness and going to add a newly seen token.
+ * If such callback returns 0, abort the addition of token and return -3.
+ */
+int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+			    int (*callback_always)(char *, size_t, const char *),
+			    int (*callback_unique)(char *, size_t, const char *)
+);
 
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);

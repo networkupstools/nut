@@ -182,10 +182,11 @@ int main(int argc, char **argv) {
 	status_set("OL BOOST");
 	status_set("ALARM");
 	status_set("OB");
+	status_set("LB");	/* Should be honoured */
 	status_commit();
 
 	valueStr = dstate_getinfo("ups.status");
-	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB LB"));
 	printf(" test for ups.status with explicit ALARM set via status_set() and no extra alarm_set() nor alarm_commit(): '%s'; is ALARM reported?\n", NUT_STRARG(valueStr));
 
 	valueStr = dstate_getinfo("ups.alarm");
@@ -201,12 +202,15 @@ int main(int argc, char **argv) {
 	alarm_init();
 	alarm_commit();
 
+	dstate_setinfo("driver.flag.ignorelb", "enabled");
+
 	status_init();
 	alarm_init();
 	status_set("OL BOOST");
 	alarm_set("[N/A]");
 	alarm_set("[Test alarm 2]");
 	status_set("OB");
+	status_set("LB");	/* Should be ignored */
 	alarm_commit();
 	status_commit();
 
