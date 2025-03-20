@@ -715,7 +715,7 @@ if HAVE_ASPELL
 # their resulting spellcheck verdicts.
 SPELLCHECK_SRC = $(SPELLCHECK_SRC_DEFAULT)
 
-# Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
+# Directory SPELLCHECK_SRC files are relative to. Overridden by other Makefiles.
 SPELLCHECK_SRCDIR = $(srcdir)
 SPELLCHECK_BUILDDIR = $(builddir)
 
@@ -892,6 +892,7 @@ DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(
 # any future re-runs). We also must update all relevant *-spellchecked
 # touch-files after "make spellcheck-sortdict" which updates "nut.dict"
 # file which is a prerequisite for docs checks.
+SPELLCHECK_REPORT_MAYBE_UPDATED_DICT = no
 spellcheck-interactive:
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
 	+@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
@@ -911,12 +912,16 @@ spellcheck-interactive:
 			touch "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; \
 		fi ; \
 	 done
-	@echo "------------------------------------------------------------------------"; \
-	 echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
-	 echo "Use e.g. 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
-	 echo "to review changes (please DO NOT REMOVE LINES that aspell chose to drop,"; \
-	 echo "because other systems might not know these words in their system dictionaries)"; \
-	 echo "------------------------------------------------------------------------"
+	@if [ "$(SPELLCHECK_REPORT_MAYBE_UPDATED_DICT)" != no ] \
+	 || ( [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] && diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting >/dev/null) \
+	 ; then \
+		echo "------------------------------------------------------------------------"; \
+		echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
+		echo "Use e.g. 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
+		echo "to review changes (please DO NOT REMOVE LINES that aspell chose to drop,"; \
+		echo "because other systems might not know these words in their system dictionaries)"; \
+		echo "------------------------------------------------------------------------" ; \
+	 fi
 
 else !HAVE_ASPELL
 # This rule would probably just fail; normally with no ASPELL there are no callers for it
