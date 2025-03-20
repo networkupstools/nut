@@ -601,6 +601,10 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -s $@) || RES=$$? ; \
 	exit $$RES
 
+spellcheck-interactive-quick:
+	+@case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in *"j"*) $(MAKE) $(AM_MAKEFLAGS) -ks spellcheck && exit ;; *) $(MAKE) $(AM_MAKEFLAGS) -ks -j 8 spellcheck && exit ;; esac \
+	 || make spellcheck-interactive
+
 # Note: the "all-docs" and "check-docs" targets may require tools not
 # found by `configure` script (and so avoided by conventional recipes)
 # such as PDF generators, so it should only be called at developer's
@@ -671,7 +675,7 @@ maintainer-asciidocs:
 	    echo "$@: OVERALL-SKIP: No text files found with GH_MARKUP_1095_INCLUDE_ tags, or obsoleted docs/asciidoc-vars.conf contents";\
 	  else \
 	    echo "$@: OVERALL-UPDATED: You may now want to:"; \
-	    echo "    make spellcheck -ks -j 8 || make spellcheck-interactive"; \
+	    echo "    make spellcheck-interactive-quick"; \
 	    echo "    git add -p $${FILES} && git commit -sm 'Update NUT documentation sources with current docs/asciidoc-vars.conf: $${USEDREV_NOSUBJ}'"; \
 	  fi; \
 	 )
