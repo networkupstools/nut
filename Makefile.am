@@ -575,6 +575,8 @@ distclean-local:
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
+# Only require SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes for the last entry
+# (reduce noise for spellcheck-interactive)
 # Maint: grep -l 'SPELLCHECK_' `git grep -lw spellcheck '*.am'`
 spellcheck spellcheck-interactive:
 	+@RES=0; \
@@ -596,7 +598,7 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/scripts/systemd && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/udev && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/upsdrvsvcctl && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -s $@) || RES=$$? ; \
 	exit $$RES
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
