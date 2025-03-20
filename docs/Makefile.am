@@ -772,7 +772,7 @@ SPELLCHECK_RECIPE_DEBUG_STREAM = /dev/null
 # timestamp even if contents remain. If the caller left a copy of
 # the file as "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting",
 # and/or "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive",
-# and the dictionary was not in fact modified, restore the timestamp.
+# and the dictionary was NOT in fact modified, restore the timestamp.
 $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@ from `pwd`)" >&2 ; exit 0; fi; \
@@ -896,6 +896,9 @@ DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting $(NUT_SPELL_DICT).bak-pre-in
 # any future re-runs). We also must update all relevant *-spellchecked
 # touch-files after "make spellcheck-sortdict" which updates "nut.dict"
 # file which is a prerequisite for docs checks.
+# After the (possibly SUBDIR-based) run we may report to the developer
+# that their dictionary was updated and may need a Git recommit - either
+# if it did change, or if caller's SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes.
 SPELLCHECK_REPORT_MAYBE_UPDATED_DICT = no
 spellcheck-interactive:
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive
@@ -917,7 +920,8 @@ spellcheck-interactive:
 		fi ; \
 	 done
 	@if [ "$(SPELLCHECK_REPORT_MAYBE_UPDATED_DICT)" != no ] \
-	 || ( [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] && diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null) \
+	 || ( [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] \
+	      && ! diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ) \
 	 ; then \
 		echo "------------------------------------------------------------------------"; \
 		echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
