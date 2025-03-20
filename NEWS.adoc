@@ -18,6 +18,10 @@ PLANNED: Release notes for NUT 2.8.4 - what's new since 2.8.3
 
 https://github.com/networkupstools/nut/milestone/9
 
+ - `lib/*.pc.in`: propagate `-R/PATH` to NUT library installation location
+   (by default not in system prefix) to help third-party clients link with
+   us automatically. [#2782]
+
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly (porting from 42ITy project)
