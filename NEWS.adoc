@@ -41,10 +41,6 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
- - added `scripts/external_apis` with an example script integrating a
-   non-native protocol with NUT; that example can be installed using
-   `configure --enable-extapi-enphase`. [issue #2807, PR #2813]
-
 PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
 -------------------------------------------------------------
 
@@ -585,6 +581,10 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
  - fixed dynamic linking of Mozilla NSS on systems like Solaris/illumos,
    where the shared objects are not packaged into the common RPATH.
    [issue #2674, PR #2675]
+
+ - added `scripts/external_apis` with an example script integrating a
+   non-native protocol with NUT; that example can be installed using
+   `configure --enable-extapi-enphase`. [issue #2807, PR #2813]
 
  - added `scripts/valgrind` with a helper script and suppression file to
    ignore common third-party problems. [#2511]
