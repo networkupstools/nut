@@ -1096,10 +1096,17 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 		numq = 3;
 	}
 	else
-	if (!strcmp(var, "invmode")) {
+	if (!strcmp(var, "buzzword")) {
 		query[0] = "VAR";
 		query[1] = ups->upsname;
-		query[2] = "output.inverter.mode";
+		query[2] = "ups.mode.buzzwords";
+		numq = 3;
+	}
+	else
+	if (!strcmp(var, "X-buzzword")) {
+		query[0] = "VAR";
+		query[1] = ups->upsname;
+		query[2] = "experimental.ups.mode.buzzwords";
 		numq = 3;
 	}
 	else
@@ -2540,11 +2547,11 @@ static int try_connect(utype_t *ups)
 }
 
 /* deal with the contents of STATUS or ups.status for this ups */
-static void parse_status(utype_t *ups, char *status, char *inverter_mode)
+static void parse_status(utype_t *ups, char *status, char *buzzword, char *buzzwordX)
 {
 	char	*statword, *ptr, other_stat_words[SMALLBUF];
 	int	handled_stat_words = 0, changed_other_stat_words = 0,
-		is_eco_inverter_mode = 0;
+		is_eco_buzzword = 0;
 	st_tree_timespec_t	st_start;
 
 	clear_alarm();
@@ -2576,19 +2583,29 @@ static void parse_status(utype_t *ups, char *status, char *inverter_mode)
 		ups_is_notalarm(ups);
 
 	/* NOTE: ECO Should not be happening as a status or alarm anymore
-	 * but we may still notify about changes in the inverter mode */
-	if (inverter_mode && *inverter_mode && (
-		   !strstr(inverter_mode, ":ECO")
-		|| !strstr(inverter_mode, ":ESS")
-		|| !strstr(inverter_mode, ":HE")
-		|| !strstr(inverter_mode, ":SMART")
+	 * but we may still notify about changes in the ups.mode.buzzword */
+	if (buzzword && *buzzword && (
+		   !strstr(buzzword, ":ECO")
+		|| !strstr(buzzword, ":ESS")
+		|| !strstr(buzzword, ":HE")
+		|| !strstr(buzzword, ":SMART")
 	)) {
-		is_eco_inverter_mode = 1;
-		ups_is_eco(ups);
+		is_eco_buzzword = 1;
+	} else
+	if (buzzwordX && *buzzwordX && (
+		   !strstr(buzzwordX, ":ECO")
+		|| !strstr(buzzwordX, ":ESS")
+		|| !strstr(buzzwordX, ":HE")
+		|| !strstr(buzzwordX, ":SMART")
+	)) {
+		is_eco_buzzword = 1;
 	}
 
-	if (!strstr(status, "ECO") && !is_eco_inverter_mode)
+	if (!strstr(status, "ECO") && !is_eco_buzzword) {
 		ups_is_noteco(ups);
+	} else if (is_eco_buzzword) {
+		ups_is_eco(ups);
+	}
 
 	statword = status;
 	/* Track what status tokens we no longer see */
@@ -2771,9 +2788,9 @@ static void parse_status(utype_t *ups, char *status, char *inverter_mode)
 /* see what the status of the UPS is and handle any changes */
 static void pollups(utype_t *ups)
 {
-	char	status[SMALLBUF], invmode[SMALLBUF];
+	char	status[SMALLBUF], buzzmode[SMALLBUF], buzzmodeX[SMALLBUF];
 	int	pollfail_log = 0;	/* if we throttle, only upsdebugx() but not upslogx() the failures */
-	int	upserror, got_status, got_invmode;
+	int	upserror, got_status, got_buzzmode, got_buzzmodeX;
 
 	/* try a reconnect here */
 	if (!flag_isset(ups->status, ST_CLICONNECTED)) {
@@ -2791,10 +2808,12 @@ static void pollups(utype_t *ups)
 
 	if ((got_status = get_var(ups, "status", status, sizeof(status))))
 		status[0] = '\0';
-	if ((got_invmode = get_var(ups, "invmode", invmode, sizeof(invmode))))
-		invmode[0] = '\0';
+	if ((got_buzzmode = get_var(ups, "buzzword", buzzmode, sizeof(buzzmode))))
+		buzzmode[0] = '\0';
+	if ((got_buzzmodeX = get_var(ups, "X-buzzword", buzzmodeX, sizeof(buzzmodeX))))
+		buzzmodeX[0] = '\0';
 
-	if (got_status == 0 || got_invmode == 0) {
+	if (got_status == 0 || got_buzzmode == 0 || got_buzzmodeX == 0) {
 		clear_alarm();
 
 		/* reset pollfail log throttling */
@@ -2817,7 +2836,7 @@ static void pollups(utype_t *ups)
 		ups->pollfail_log_throttle_state = upserror;
 		ups->pollfail_log_throttle_count = -1;
 
-		parse_status(ups, status, invmode);
+		parse_status(ups, status, buzzmode, buzzmodeX);
 		return;
 	}
 
