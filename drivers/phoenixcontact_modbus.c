@@ -110,7 +110,7 @@ void upsdrv_initinfo(void)
 	/* upsh.instcmd = instcmd; */
 	/* upsh.setvar = setvar; */
 
-	mrir(modbus_ctx, 0x0005, 4, &tab_reg);
+	mrir(modbus_ctx, 0x0005, 4, tab_reg);
 
 	/*	Method provided from Phoenix Conatct to establish the UPS model:
 		Read registers from 0x0005 to 0x0008 and "concatenate" them with the order
@@ -118,9 +118,9 @@ void upsdrv_initinfo(void)
 		The first 7 most significant digits of the number in dec form are the part number of
 		the UPS.*/
 
-	PartNumber = (tab_reg[3] * 65536) + tab_reg[2];
-	PartNumber = (PartNumber * 65536) + tab_reg[1];
-	PartNumber = (PartNumber * 65536) + tab_reg[0];
+	PartNumber = (tab_reg[3] << 16) + tab_reg[2];
+	PartNumber = (PartNumber << 16) + tab_reg[1];
+	PartNumber = (PartNumber << 16) + tab_reg[0];
 
 	while(PartNumber > 10000000)
 	{
