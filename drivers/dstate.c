@@ -52,7 +52,7 @@
 #endif
 	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN],
-			invmode_buf[ST_MAX_VALUE_LEN];
+			buzzmode_buf[ST_MAX_VALUE_LEN];
 	static conn_t	*connhead = NULL;
 	static st_tree_t	*dtree_root = NULL;
 	static cmdlist_t	*cmdhead = NULL;
@@ -1740,31 +1740,31 @@ void status_commit(void)
 	}
 }
 
-/* similar functions for output.inverter.mode, where tracked dynamically
- * (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
-void invmode_init(void)
+/* similar functions for experimental.ups.mode.buzzwords, where tracked
+ * dynamically (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
+void buzzmode_init(void)
 {
-	memset(invmode_buf, 0, sizeof(invmode_buf));
+	memset(buzzmode_buf, 0, sizeof(buzzmode_buf));
 }
 
-int  invmode_get(const char *buf)
+int  buzzmode_get(const char *buf)
 {
-	return str_contains_token(invmode_buf, buf);
+	return str_contains_token(buzzmode_buf, buf);
 }
 
-void invmode_set(const char *buf)
+void buzzmode_set(const char *buf)
 {
-	str_add_unique_token(invmode_buf, sizeof(invmode_buf), buf, NULL, NULL);
+	str_add_unique_token(buzzmode_buf, sizeof(buzzmode_buf), buf, NULL, NULL);
 }
 
-void invmode_commit(void)
+void buzzmode_commit(void)
 {
-	if (!*invmode_buf) {
-		dstate_delinfo("output.inverter.mode");
+	if (!*buzzmode_buf) {
+		dstate_delinfo("experimental.ups.mode.buzzwords");
 		return;
 	}
 
-	dstate_setinfo("output.inverter.mode", "%s", invmode_buf);
+	dstate_setinfo("experimental.ups.mode.buzzwords", "%s", buzzmode_buf);
 }
 
 /* similar handlers for ups.alarm */

@@ -111,12 +111,12 @@ void status_set(const char *buf);
 /* write the temporary status_buf into ups.status */
 void status_commit(void);
 
-/* similar functions for output.inverter.mode, where tracked dynamically
- * (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
-void invmode_init(void);
-int  invmode_get(const char *buf);
-void invmode_set(const char *buf);
-void invmode_commit(void);
+/* similar functions for experimental.ups.mode.buzzwords, where tracked
+ * dynamically (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
+void buzzmode_init(void);
+int  buzzmode_get(const char *buf);
+void buzzmode_set(const char *buf);
+void buzzmode_commit(void);
 
 /* similar functions for ups.alarm */
 void alarm_init(void);
