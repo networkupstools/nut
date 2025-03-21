@@ -71,9 +71,11 @@ This software has been reported to run on:
     such a name, locate and ask its creators for support related to the client.
   * Since NUT v2.8.1, there is an on-going effort to integrate older platform
     development of NUT for Windows into the main code base -- allowing to run
-    the whole stack of NUT drivers, data server and clients. Still, as of NUT
-    release v2.8.3, installation is complicated and there are other known
-    imperfections (not all WIN32 code has equivalents to POSIX), tracked under
+    the whole stack of NUT drivers, data server and same clients as on POSIX
+    platforms (for fancy GUI clients, see linkman:NUT-Monitor[8] or third-party
+    projects). Still, as of NUT release v2.8.3, installation is complicated and
+    there are other known imperfections (not all WIN32 code has equivalents to
+    POSIX); for current details see NUT issues tracked on GitHub under
     https://github.com/orgs/networkupstools/projects/2/views/1
 
 NUT is also often embedded into third-party projects like OpenWRT (or similar)
