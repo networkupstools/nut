@@ -58,6 +58,7 @@ Makefile.in
 *-prepped
 *.usage-report
 *.adoc-parsed
+*.adoc-parsed.*
 *.adoc*.tmp
 *.adoc*.tmp.*
 *.txt*.tmp

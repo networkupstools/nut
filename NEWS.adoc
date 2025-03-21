@@ -41,10 +41,6 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
- - added `scripts/external_apis` with an example script integrating a
-   non-native protocol with NUT; that example can be installed using
-   `configure --enable-extapi-enphase`. [issue #2807, PR #2813]
-
 PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
 -------------------------------------------------------------
 
@@ -464,6 +460,8 @@ This requirement compromises usability of `make distcheck` on platforms without
    * `upsd_cleanup()` is now traced, to more easily see that the daemon is
      exiting (and/or start-up has aborted due to configuration or run-time
      issues). Warning about "world readable" files clarified. [#2417]
+   * Failure to `LISTEN` on an invalid host name (e.g. `localhost:3493` or
+     `1.2.3.4/24`) is now logged in a more actionable manner. [#2665]
 
  - nut-scanner:
    * the tool relies on dynamic loading of shared objects (library files)
@@ -583,6 +581,10 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
  - fixed dynamic linking of Mozilla NSS on systems like Solaris/illumos,
    where the shared objects are not packaged into the common RPATH.
    [issue #2674, PR #2675]
+
+ - added `scripts/external_apis` with an example script integrating a
+   non-native protocol with NUT; that example can be installed using
+   `configure --enable-extapi-enphase`. [issue #2807, PR #2813]
 
  - added `scripts/valgrind` with a helper script and suppression file to
    ignore common third-party problems. [#2511]
