@@ -30,6 +30,7 @@
 
 #define MAX_CGI_STRLEN 128
 #define MAX_PARSE_ARGS 16
+#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
 
 static char	*monhost = NULL;
 static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
@@ -352,6 +353,7 @@ static void ups_connect(void)
 	static ulist_t	*lastups = NULL;
 	char	*newups, *newhost;
 	uint16_t	newport;
+	struct timeval tv;
 
 	/* try to minimize reconnects */
 	if (lastups) {
@@ -398,7 +400,10 @@ static void ups_connect(void)
 		exit(EXIT_FAILURE);
 	}
 
-	if (upscli_connect(&ups, hostname, port, 0) < 0)
+	tv.tv_sec = NET_TIMEOUT;
+	tv.tv_usec = 0;
+
+	if (upscli_tryconnect(&ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0)
 		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n", currups->sys, upscli_strerror(&ups));
 
 	lastups = currups;
