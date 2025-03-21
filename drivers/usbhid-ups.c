@@ -1251,7 +1251,7 @@ void upsdrv_updateinfo(void)
 #endif
 	/* clear status buffer before beginning */
 	status_init();
-	invmode_init();
+	buzzmode_init();
 
 	/* Do a full update (polling) every pollfreq
 	 * or upon data change (ie setvar/instcmd) */
@@ -1277,7 +1277,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	ups_status_set();
-	invmode_commit();
+	buzzmode_commit();
 	status_commit();
 
 	dstate_dataok();
@@ -2181,7 +2181,7 @@ static void ups_alarm_set(void)
 		alarm_set("Manual bypass mode!");
 	}
 	if (ups_status & STATUS(ECOMODE)) {
-		invmode_set("vendor:default:ECO");
+		buzzmode_set("vendor:default:ECO");
 		/* disable alarm for ECO as we don't want to raise alarm about it */
 		/* alarm_set("ECO(HE) mode!"); */
 	}
@@ -2492,12 +2492,12 @@ static void ups_status_set(void)
 		status_set("BYPASS");		/* on bypass */
 	}
 	if (ups_status & STATUS(ECOMODE)) {
-		invmode_set("vendor:default:ECO");	/* on ECO(HE) Mode,
+		buzzmode_set("vendor:default:ECO");	/* on ECO(HE) Mode,
 						 * should not happen
 						 * via ups.status anymore */
 	}
 	if (ups_status & STATUS(ESSMODE)) {
-		invmode_set("vendor:default:ESS");	/* on ESS Mode,
+		buzzmode_set("vendor:default:ESS");	/* on ESS Mode,
 						 * should not happen
 						 * via ups.status anymore */
 	}

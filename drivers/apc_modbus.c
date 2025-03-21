@@ -1480,7 +1480,7 @@ void upsdrv_updateinfo(void)
 
 	alarm_init();
 	status_init();
-	invmode_init();
+	buzzmode_init();
 
 	/* Status Data */
 	if (_apc_modbus_read_registers(modbus_ctx, 0, 27, regbuf)) {
@@ -1508,7 +1508,7 @@ void upsdrv_updateinfo(void)
 			status_set("TEST");
 		}
 		if (value & (1 << 13)) {
-			invmode_set("vendor:apc:HE"); /* High efficiency / ECO mode*/
+			buzzmode_set("vendor:apc:HE"); /* High efficiency / ECO mode*/
 		}
 		if (value & (1 << 21)) {
 			status_set("OVER");
@@ -1565,7 +1565,7 @@ void upsdrv_updateinfo(void)
 
 	alarm_commit();
 	status_commit();
-	invmode_commit();
+	buzzmode_commit();
 	dstate_dataok();
 }
 

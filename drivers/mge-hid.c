@@ -984,7 +984,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
 	) {
 		upsdebugx(1, "%s: Entering ECO mode due to input conditions being within the transfer limits.", __func__);
-		invmode_set("vendor:mge-hid:ECO");
+		buzzmode_set("vendor:mge-hid:ECO");
 		return "ECO"; /* Enter ECO mode */
 	} else {
 		/* Condensed debug messages for out of range voltage and frequency */
@@ -996,7 +996,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 		}
 		/* Disable ECO mode switching, do not enter ECO mode */
 		dstate_setinfo("input.eco.switchable", "normal");
-		invmode_set("vendor:mge-hid:normal");
+		buzzmode_set("vendor:mge-hid:normal");
 		upsdebugx(1, "%s: Disable ECO mode due to input conditions being outside the transfer limits.", __func__);
 		return NULL;
 	}
@@ -1007,7 +1007,7 @@ static const char *eaton_input_ess_mode_report(double value)
 {
 	NUT_UNUSED_VARIABLE(value);
 
-	invmode_set("vendor:mge-hid:ESS");
+	buzzmode_set("vendor:mge-hid:ESS");
 	return "ESS";
 }
 

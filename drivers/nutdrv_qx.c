@@ -3131,7 +3131,7 @@ void	upsdrv_updateinfo(void)
 
 	/* Clear status buffer before beginning */
 	status_init();
-	invmode_init();
+	buzzmode_init();
 
 	/* Do a full update (polling) every pollfreq or upon data change
 	 * (i.e. setvar/instcmd) */
@@ -3184,7 +3184,7 @@ void	upsdrv_updateinfo(void)
 	}
 
 	ups_status_set();
-	invmode_commit();
+	buzzmode_commit();
 	status_commit();
 
 	if (retry > MAXTRIES) {

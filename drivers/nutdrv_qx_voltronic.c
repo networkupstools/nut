@@ -2192,7 +2192,7 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 
 			if (strchr(enabled, 'e')) {
 				val = eco_mode = "enabled";
-				invmode_set("vendor:voltronic:ECO-inverter-on");
+				buzzmode_set("vendor:voltronic:ECO-inverter-on");
 			} else if (strchr(disabled, 'e')) {
 				val = eco_mode = "disabled";
 			}
@@ -2278,7 +2278,7 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 
 		if (strchr(enabled, 'n')) {
 			val = advanced_eco_mode = "enabled";
-			invmode_set("vendor:voltronic:ECO-inverter-off");
+			buzzmode_set("vendor:voltronic:ECO-inverter-off");
 		} else if (strchr(disabled, 'n')) {
 			val = advanced_eco_mode = "disabled";
 		}
