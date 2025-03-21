@@ -1088,14 +1088,14 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 		query[1] = ups->upsname;
 		numq = 2;
 	}
-
+	else
 	if (!strcmp(var, "status")) {
 		query[0] = "VAR";
 		query[1] = ups->upsname;
 		query[2] = "ups.status";
 		numq = 3;
 	}
-
+	else
 	if (!strcmp(var, "alarm")) {
 		/* Opaque string */
 		query[0] = "VAR";

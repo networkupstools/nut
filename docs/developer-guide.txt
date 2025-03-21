@@ -21,6 +21,11 @@ develop new device drivers and client applications.
 include::design.txt[]
 
 
+[[versioning]]
+
+include::nut-versioning.adoc[]
+
+
 [[developers]]
 
 include::developers.txt[]
