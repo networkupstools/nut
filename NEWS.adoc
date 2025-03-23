@@ -387,6 +387,10 @@ This requirement compromises usability of `make distcheck` on platforms without
    * Updated `upsmon` client with setting to toggle whether an `ALARM`
      status can prompt the UPS to become critical in certain situations.
 
+ - New `libupsclient` API methods added, `upscli_str_add_unique_token()` and
+   `upscli_str_contains_token()`, to help C NUT clients process `ups.status` and
+   similarly structured strings same way as NUT core code base. [#2852, #2859]
+
  - upsmon:
    * it was realized that the `POWERDOWNFLAG` must be explicitly set in the
      configuration file, there is no built-in default in the binary program

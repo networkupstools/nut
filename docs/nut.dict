@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3349 utf-8
+personal_ws-1.1 en 3353 utf-8
 AAC
 AAS
 ABI
@@ -2762,6 +2762,8 @@ rebasing
 rebootdelay
 rebranded
 reconnection
+recurses
+recursing
 recv
 redistributors
 reentrancy
@@ -3062,6 +3064,8 @@ testtime
 testuser
 textproc
 tgcware
+tgt
+tgtsize
 tgz
 th
 timeframe

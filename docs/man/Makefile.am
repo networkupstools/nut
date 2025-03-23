@@ -464,6 +464,8 @@ SRC_DEV_PAGES = \
 	upscli_ssl.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
+	upscli_str_add_unique_token.txt \
+	upscli_str_contains_token.txt \
 	libnutclient.txt \
 	libnutclient_commands.txt \
 	libnutclient_devices.txt \
@@ -581,6 +583,8 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_ssl.$(MAN_SECTION_API) \
 	upscli_strerror.$(MAN_SECTION_API) \
 	upscli_upserror.$(MAN_SECTION_API) \
+	upscli_str_add_unique_token.$(MAN_SECTION_API) \
+	upscli_str_contains_token.$(MAN_SECTION_API) \
 	libnutclient.$(MAN_SECTION_API) \
 	libnutclient_commands.$(MAN_SECTION_API) \
 	$(LIBNUTCLIENT_COMMANDS_DEPS) \
@@ -687,6 +691,8 @@ INST_HTML_DEV_MANS = \
 	upscli_ssl.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
+	upscli_str_add_unique_token.html \
+	upscli_str_contains_token.html \
 	libnutclient.html \
 	libnutclient_commands.html \
 	libnutclient_devices.html \
