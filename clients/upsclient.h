@@ -200,21 +200,16 @@ int upscli_ssl(UPSCONN_t *ups);
 #define UPSCLI_CONN_INET6		0x0008	/* IPv6 only */
 #define UPSCLI_CONN_CERTVERIF	0x0010	/* Verify certificates for SSL	*/
 
-#ifndef HAVE_DECLARED_NUT_STR_TOKENIZED
-/* These methods should ease third-party NUT clients' parsing of `ups.status`
- * et al. They are also exposed by NUT internal API (common.h), so macro-guarded
- * here to avoid conflicts in code that includes both headers.
- */
-# define HAVE_DECLARED_NUT_STR_TOKENIZED 1
-/*****************************************************************************
- * String methods for space-separated token lists, used originally in dstate *
- *****************************************************************************/
+/******************************************************************************
+ * String methods for space-separated token lists, used originally in dstate  *
+ * These methods should ease third-party NUT clients' parsing of `ups.status` *
+ ******************************************************************************/
 
 /* Return non-zero if "string" contains "token" (case-sensitive),
  * either surrounded by space character(s) or start/end of "string",
  * or 0 if that token is not there, or if either string is NULL or empty.
  */
-int	str_contains_token(const char *string, const char *token);
+int	upscli_str_contains_token(const char *string, const char *token);
 
 /* Add "token" to end of string "tgt", if it is not yet there
  * (prefix it with a space character if "tgt" is not empty).
@@ -229,11 +224,10 @@ int	str_contains_token(const char *string, const char *token);
  * checking for uniqueness and going to add a newly seen token.
  * If such callback returns 0, abort the addition of token and return -3.
  */
-int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
-			    int (*callback_always)(char *, size_t, const char *),
-			    int (*callback_unique)(char *, size_t, const char *)
+int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+				int (*callback_always)(char *, size_t, const char *),
+				int (*callback_unique)(char *, size_t, const char *)
 );
-#endif	/* HAVE_DECLARED_NUT_STR_TOKENIZED */
 
 
 #ifdef __cplusplus

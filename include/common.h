@@ -315,13 +315,11 @@ int sendsignal(const char *progname, const char * sig, int check_current_prognam
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
 
-#ifndef HAVE_DECLARED_NUT_STR_TOKENIZED
-/* These methods are also exposed by external API (libupsclient.h)
- * to ease third-party NUT clients' parsing of `ups.status` et al.
- */
-# define HAVE_DECLARED_NUT_STR_TOKENIZED 1
 /*****************************************************************************
  * String methods for space-separated token lists, used originally in dstate *
+ * NOTE: These methods are also exposed by external API (via libupsclient.h) *
+ * with the `upscli_` prefix, to ease third-party C NUT clients' parsing of  *
+ * `ups.status` et al.                                                       *
  *****************************************************************************/
 
 /* Return non-zero if "string" contains "token" (case-sensitive),
@@ -347,7 +345,6 @@ int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
 			    int (*callback_always)(char *, size_t, const char *),
 			    int (*callback_unique)(char *, size_t, const char *)
 );
-#endif	/* HAVE_DECLARED_NUT_STR_TOKENIZED */
 
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);
