@@ -3,6 +3,8 @@
  *  Copyright (C)
  *        2003 - 2015 Arnaud Quette <arnaud.quette@free.fr>
  *        2015 - 2024 Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
+ *        2020 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
+ *        2024 - 2025 "DaRK AnGeL" <28630321+masterwishx@users.noreply.github.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
