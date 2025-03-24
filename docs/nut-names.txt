@@ -366,7 +366,7 @@ input: Incoming line/power information
 | input.transfer.high.max     | greatest settable high
                                 voltage transfer point (V)        | 136
 | input.eco.switchable        | Input High Efficiency (aka ECO)
-                                mode switch (0-2)                 | normal
+                                mode switch (opaque string)       | normal
 | input.sensitivity           | Input power sensitivity           | H (high)
 | input.quality               | Input power quality (***
                                 opaque)                           | FF
@@ -839,7 +839,7 @@ of the user manual.
 | outlet.n.status                | Outlet switch status
                                    (on/off)                    | on
 | outlet.n.protect.status        | Outlet protection status
-                                   (0-2)                       | protected
+                                   (opaque string)             | protected
 | outlet.n.alarm                 | Alarms for outlets and PDU,
                                    published in ups.alarm      | outlet 1 low
                                                                  voltage warning
