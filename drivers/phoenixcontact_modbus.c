@@ -241,11 +241,11 @@ void upsdrv_updateinfo(void)
 	case TRIO_2G_UPS:
 		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
 		mrir(modbus_ctx, 0x2002, 1, &actual_code_functions1);
-		mrir(modbus_ctx, 0x3000, 1, &actual_code_functions2);
+		mrir(modbus_ctx, 0x3001, 1, &actual_code_functions2);
 
 		tab_reg[0] = CHECK_BIT(actual_code_functions1, 2);
 		tab_reg[2] = CHECK_BIT(actual_code_functions, 5);
-		tab_reg[1] = CHECK_BIT(actual_code_functions2, 18);
+		tab_reg[1] = CHECK_BIT(actual_code_functions2, 2);
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
