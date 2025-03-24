@@ -294,8 +294,8 @@ static status_lkp_t status_info[] = {
 	{ "boost", STATUS(BOOST) },
 	{ "bypassauto", STATUS(BYPASSAUTO) },
 	{ "bypassman", STATUS(BYPASSMAN) },
-	{ "ecomode", STATUS(ECOMODE) },
-	{ "essmode", STATUS(ESSMODE) },
+	{ "ecomode", STATUS(ECOMODE) },	/* Should not get used (at least not via */
+	{ "essmode", STATUS(ESSMODE) },	/* ups.status), but tracked just in case */
 	{ "off", STATUS(OFF) },
 	{ "cal", STATUS(CALIB) },
 	{ "overheat", STATUS(OVERHEAT) },
@@ -387,6 +387,9 @@ info_lkp_t bypass_manual_info[] = {
 	{ 0, "!bypassman", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
+
+/* Should not get used (at least not via ups.status), but tracked just in case.
+ * Currently referenced in mge-hid.c */
 info_lkp_t eco_mode_info[] = {
 	{ 0, "normal", NULL, NULL },
 	{ 1, "ecomode", NULL, NULL },
