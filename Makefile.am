@@ -575,6 +575,8 @@ distclean-local:
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
+# Only require SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes for the last entry
+# (reduce noise for spellcheck-interactive)
 # Maint: grep -l 'SPELLCHECK_' `git grep -lw spellcheck '*.am'`
 spellcheck spellcheck-interactive:
 	+@RES=0; \
@@ -596,8 +598,12 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/scripts/systemd && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/udev && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/upsdrvsvcctl && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -s $@) || RES=$$? ; \
 	exit $$RES
+
+spellcheck-interactive-quick:
+	+@case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in *"j"*) $(MAKE) $(AM_MAKEFLAGS) -ks spellcheck && exit ;; *) $(MAKE) $(AM_MAKEFLAGS) -ks -j 8 spellcheck && exit ;; esac \
+	 || make spellcheck-interactive
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
 # found by `configure` script (and so avoided by conventional recipes)
@@ -626,12 +632,9 @@ INSTALL.nut UPGRADING NEWS README:
 # definitions), to apply them into the committed document sources.
 # Not bothering about with "make dist" constraints etc. - changes
 # the contents of srcdir directly and intentionally.
-# NOTE: There is a problem with `printf '%s' "${LINE}"` (double-quoted)
-# that causes backslashes to be treated as escape characters, and
-# shell replacements with `${VAR/pat/sub}` are not really portable.
-# To address this, we use the pure POSIX shell `replace_all()`
-# method suggested at https://stackoverflow.com/a/75037170/4715872
-# WARNING: It may succumb to lines ending with asterisk however!
+# NOTE: Using `read -r` per POSIX standard to avoid backslashes
+# being treated as escape characters:
+# https://pubs.opengroup.org/onlinepubs/9699919799/utilities/read.html
 MAINTAINER_ASCIIDOCS_RECIPE_DEBUG_STREAM = /dev/null
 #MAINTAINER_ASCIIDOCS_RECIPE_DEBUG_STREAM = &2
 
@@ -640,22 +643,6 @@ maintainer-asciidocs:
 	 USEDREV_NOSUBJ="`git log -1 --oneline --pretty=format:'%h (%cs)' docs/asciidoc-vars.conf`" || exit ; \
 	 echo "$@: Updating asciidoc text sources with docs/asciidoc-vars.conf as of commit: $${USEDREV}"; \
 	 echo "//GH_MARKUP_1095_INCLUDE_BEGIN//$${USEDREV}" > docs/asciidoc-vars.conf.lastrev.tmp || exit ; \
-	 replace_all() { \
-	   case "$$1" in *"$$2"*) ;; *) echo "$$1" ; return ;; esac ; \
-	   RIGHT="$$1" ; R=''; \
-	   while [ -n "$$RIGHT" ]; do \
-	    echo "LEFT='$$LEFT' RIGHT='$$RIGHT' => R='$$R'" >$(MAINTAINER_ASCIIDOCS_RECIPE_DEBUG_STREAM) ; \
-	    LEFT="$${RIGHT%%$$2*}" ; \
-	    echo "=> LEFT='$$LEFT'" >$(MAINTAINER_ASCIIDOCS_RECIPE_DEBUG_STREAM) ; \
-	    if [ x"$$LEFT" = x"$$RIGHT" ]; then \
-	        R="$$R$$RIGHT" ; \
-	        return ; \
-	    fi ; \
-	    R="$$R$$LEFT$$3" ; \
-	    RIGHT="$${RIGHT#*$$2}" ; \
-	  done ; \
-	  echo "$$R" ; \
-	 } ; \
 	 find . -name '*.adoc' -or -name '*.txt' | ( \
 	  FILES=""; \
 	  while read F ; do \
@@ -663,12 +650,12 @@ maintainer-asciidocs:
 	    || { echo "$@: SKIP: no GH_MARKUP_1095_INCLUDE_* tags: $$F"; continue ; } ; \
 	    rm -f "$${F}"*.tmp || exit ; \
 	    EXT="1.tmp"; \
-	    while IFS='' read LINE ; do \
+	    while IFS='' read -r LINE ; do \
 	        case "$${LINE}" in \
 	            "//GH_MARKUP_1095_INCLUDE_BEGIN"*) EXT="2.tmp" ; continue ;; \
 	            "//GH_MARKUP_1095_INCLUDE_END"*|"////GH_MARKUP_1095_INCLUDE_END"*) EXT="3.tmp" ; continue ;; \
 	        esac ; \
-	        printf '%s\n' "`replace_all "$${LINE}" '\\' '''\\'`" >> "$${F}.$${EXT}" || exit ; \
+	        printf '%s\n' "$${LINE}" >> "$${F}.$${EXT}" || exit ; \
 	    done < "$$F" || { echo "$@: FAILED injection for $${F}" >&2; exit 1; } ; \
 	    if test -s "$${F}.2.tmp" && test -z "`diff "$${F}.2.tmp" docs/asciidoc-vars.conf | tr -d '\n'`" ; then \
 	        rm -f "$${F}"*.tmp ; \
@@ -688,6 +675,7 @@ maintainer-asciidocs:
 	    echo "$@: OVERALL-SKIP: No text files found with GH_MARKUP_1095_INCLUDE_ tags, or obsoleted docs/asciidoc-vars.conf contents";\
 	  else \
 	    echo "$@: OVERALL-UPDATED: You may now want to:"; \
+	    echo "    make spellcheck-interactive-quick"; \
 	    echo "    git add -p $${FILES} && git commit -sm 'Update NUT documentation sources with current docs/asciidoc-vars.conf: $${USEDREV_NOSUBJ}'"; \
 	  fi; \
 	 )
