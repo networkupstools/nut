@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.61"
+#define DRIVER_VERSION	"0.62"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -914,6 +914,10 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* If extradata is empty, use the default value from the HID-to-NUT table */
 	val = extradata ? extradata : hidups_item->dfl;
+	if (!val) {
+		upsdebugx(2, "instcmd: %s requires an explicit parameter\n", cmdname);
+		return STAT_INSTCMD_CONVERSION_FAILED;
+	}
 
 	/* Lookup the new value if needed */
 	if (hidups_item->hid2info != NULL) {
