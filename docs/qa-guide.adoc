@@ -83,7 +83,32 @@ on developer and contributor machines.
 Multiple FOSS CI providers and technologies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-FIXME: Write the chapter text.
+While there are many FOSS-friendly CI offerings, they are usually (and
+reasonably) focused on the OS market leaders -- offering recent releases
+of Linux, Windows and MacOS build agents, and sometimes a way to "bring
+your own device" to cover other systems.  The NUT CI farm does benefit
+from those offerings as well, using GitHub Actions with CodeQL for Linux
+code quality inspection, AppVeyor CI for Windows, and CircleCI for MacOS,
+to name a few.
+
+But on the other hand, being a massively multi-platform effort (and aiming
+to support older boxes that are still alive even if their vendors and/or
+distro versions are not), a comprehensive NUT CI approach requires many
+machines running uncommon operating systems.  This is where custom virtual
+machines help, and more so -- a core set of those hosted in the cloud and
+dedicated to the project, rather than only some resources intermittently
+contributed by community members which come and go.
+
+NOTE: Community-provided builders running on further systems are also
+welcome, and the option is of course supported, as managed by the
+link:https://github.com/networkupstools/jenkins-dynamatrix[Jenkins-Dynamatrix]
+effort which appeared due to such need, and runs the core NUT CI farm.
+
+We have also had historic experience with FOSS CI providers (and community
+members' machines) disappearing, so having NUT CI farm goals covered by
+multiple independent implementations is also a feature beyond having yet
+another set of digital eyes looking at our code quality (which is also a
+goal in itself).
 
 Jenkins is the way
 ~~~~~~~~~~~~~~~~~~

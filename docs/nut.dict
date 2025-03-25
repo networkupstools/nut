@@ -208,6 +208,7 @@ Cichowski
 CipherString
 CircleCI
 Claesson
+CodeQL
 CodingStyle
 Collver
 Colombier
@@ -775,6 +776,7 @@ NOTOTHER
 NQA
 NTP
 NUT's
+NUTCI
 NUTCONF
 NUTClient
 NVA
@@ -2251,6 +2253,7 @@ ld
 ldd
 le
 len
+leveloffset
 lf
 libarchive
 libaugeas
@@ -2890,6 +2893,7 @@ sfr
 sgml
 sgs
 sha
+shellcheck
 shellenv
 shm
 shutdownArguments
