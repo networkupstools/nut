@@ -85,6 +85,26 @@ NUT_MONITOR_COMMON_TEMPLATE = \
 	app/locale/it/it.po \
 	app/locale/ru/ru.po
 
+
+# Craft locale subdirs with "xx_YY.UTF-8" patterned names,
+# and similarly alias the "*.po" files inside, as needed
+# by some platforms but not others to find these files.
+install-data-hook-app-locale-symlinks:
+	@cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
+	 for L in fr it ru ; do \
+	    $(LN_S) "$$L".po "$$L"/"$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8.po || exit ; \
+	    $(LN_S) "$$L" "$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	 done
+
+uninstall-hook-app-locale-symlinks:
+	@RES=0 ; \
+	 cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
+	 for L in fr it ru ; do \
+	    rm -f "$$L"/"$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8.po || RES=$$? ; \
+	    rm -f "$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || RES=$$? ; \
+	 done ; \
+	 exit $$RES
+
 PYNUT_TEMPLATE = \
 	module/setup.py.in \
 	module/PyNUT.py.in \
@@ -120,6 +140,14 @@ if WITH_NUT_MONITOR
 nutmonitordir = $(nut_with_nut_monitor_dir)
 nobase_nutmonitor_DATA = $(NUT_MONITOR_DISPATCHER_NOEXEC) $(NUT_MONITOR_COMMON)
 nobase_nutmonitor_SCRIPTS = $(NUT_MONITOR_DISPATCHER_SCRIPT)
+
+# Runs after the rest of automake install goals
+install-data-hook: install-data-hook-app-locale-symlinks
+
+# Not separated into data/exec
+# TOTHINK: Do we only want to call this recipe when uninstalling a NUT build
+#  that could have installed NUT-Monitor in the first place, or in any case?
+uninstall-hook: uninstall-hook-app-locale-symlinks
 
 if HAVE_MSGFMT
 # Note lack of "$<" below - it is a non-portable GNU Make extension

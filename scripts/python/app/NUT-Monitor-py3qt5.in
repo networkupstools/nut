@@ -694,6 +694,7 @@ David Goncalves <david@lestat.st>
 Translated by:
 David Goncalves <david@lestat.st> - Français
 Daniele Pezzini <hyouko@gmail.com> - Italiano
+Alexey Rodionov <alexey.rodionov@red-soft.ru> - Russian
         """).strip() )
 
     def gui_about_licence( self ) :
