@@ -112,8 +112,8 @@ endif WITH_SSL
 # object .so names would differ)
 
 # libupsclient version information
-libupsclient_la_LDFLAGS = -version-info 6:1:0
-libupsclient_la_LDFLAGS += -export-symbols-regex ^upscli_
+libupsclient_la_LDFLAGS = -version-info 6:2:0
+libupsclient_la_LDFLAGS += -export-symbols-regex '^(upscli_)'
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libupsclient_la_LDFLAGS += -no-undefined

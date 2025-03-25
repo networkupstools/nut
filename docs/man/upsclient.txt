@@ -58,6 +58,19 @@ to disconnect from *upsd* and release any dynamic memory associated
 with the `UPSCONN_t` structure.  Failure to call this function will result
 in memory and file descriptor leaks in your program.
 
+STRING FUNCTIONS
+----------------
+
+To parse the `ups.status` values (check whether a particular token is present)
+you are encouraged to use the linkman:upscli_str_contains_token[3] method.
+
+To collect unique tokens into a string in the same manner a NUT driver does,
+the linkman:upscli_str_add_unique_token[3] can be helpful.
+
+You are welcome to consult the NUT source code base for use of equivalent
+methods to implement such features as `status_init()`, `status_get()`,
+`status_set()` and `status_commit()` methods in its data-processing loops.
+
 ERROR HANDLING
 --------------
 
@@ -79,5 +92,6 @@ linkman:upscli_getvar[3], linkman:upscli_list_next[3],
 linkman:upscli_list_start[3], linkman:upscli_readline[3],
 linkman:upscli_sendline[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
-linkman:upscli_ssl[3], linkman:upscli_strerror[3],
-linkman:upscli_upserror[3]
+linkman:upscli_ssl[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3],
+linkman:upscli_str_add_unique_token[3], linkman:upscli_str_contains_token[3]

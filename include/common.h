@@ -317,6 +317,9 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 
 /*****************************************************************************
  * String methods for space-separated token lists, used originally in dstate *
+ * NOTE: These methods are also exposed by external API (via libupsclient.h) *
+ * with the `upscli_` prefix, to ease third-party C NUT clients' parsing of  *
+ * `ups.status` et al.                                                       *
  *****************************************************************************/
 
 /* Return non-zero if "string" contains "token" (case-sensitive),

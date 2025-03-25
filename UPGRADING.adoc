@@ -77,6 +77,10 @@ Changes from 2.8.2 to 2.8.3
   on having those for translations to be found -- this should be reflected
   in OS packaging recipes as well. [#2845]
 
+- New `libupsclient` API methods added, `upscli_str_add_unique_token()` and
+  `upscli_str_contains_token()`, to help C NUT clients process `ups.status` and
+  similarly structured strings same way as NUT core code base. [#2852, #2859]
+
 - Updated man page generation with `configure` script options to specify that
   manual sections on the target platform differ from (Linux-based) defaults
   hard-coded into page sources; this should allow to simplify NUT packaging

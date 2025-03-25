@@ -106,6 +106,8 @@ Client library
 - linkman:upscli_ssl[3]
 - linkman:upscli_strerror[3]
 - linkman:upscli_upserror[3]
+- linkman:upscli_str_add_unique_token[3]
+- linkman:upscli_str_contains_token[3]
 
 [[devscan]]
 Device discovery library
