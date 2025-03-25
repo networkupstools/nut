@@ -35,4 +35,4 @@ SEE ALSO
 linkman:upscli_fd[3], linkman:upscli_get[3],
 linkman:upscli_readline[3], linkman:upscli_sendline[3],
 linkman:upscli_ssl[3],
-linkman:upscli_strerror[3], linkman:upscli_upserror[3]
+linkman:upscli_upserror[3]

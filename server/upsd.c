@@ -1320,6 +1320,7 @@ char *tracking_get(const char *id)
 		case STAT_UNKNOWN:
 			return "ERR UNKNOWN";
 		case STAT_INVALID:
+		case STAT_CONVERSION_FAILED:
 			return "ERR INVALID-ARGUMENT";
 		case STAT_FAILED:
 			return "ERR FAILED";
