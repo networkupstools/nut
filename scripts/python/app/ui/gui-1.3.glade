@@ -1058,7 +1058,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
     <property name="authors">David Goncalves &lt;david@lestat.st&gt;</property>
     <property name="translator_credits">David Goncalves &lt;david@lestat.st&gt; - Français
-Daniele Pezzini &lt;hyouko@gmail.com&gt; - Italiano</property>
+Daniele Pezzini &lt;hyouko@gmail.com&gt; - Italiano
+Alexey Rodionov &lt;alexey.rodionov@red-soft.ru&gt; - Russian</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox6">
         <property name="visible">True</property>

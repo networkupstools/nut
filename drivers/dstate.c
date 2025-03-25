@@ -818,7 +818,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		char *cmdparam = NULL;
 		char *cmdid = NULL;
 
-		/* Check if <cmdparam> and TRACKING were provided */
+		/* Check if <cmdparam> and/or TRACKING were provided */
 		if (numarg == 3) {
 			cmdparam = arg[2];
 		} else if (numarg == 4 && !strcasecmp(arg[2], "TRACKING")) {
@@ -872,6 +872,17 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 				NUT_STRARG(cmdname));
 		}
 
+		/* Send back execution result (here, STAT_INSTCMD_UNKNOWN)
+		 * if TRACKING was requested.
+		 * Note that in practice we should not get here often: if the
+		 * instcmd was not registered, it may be rejected earlier in
+		 * call stack, or returned by a driver's handler (for unknown
+		 * commands) just a bit above.
+		 */
+		if (cmdid)
+			send_tracking(conn, cmdid, ret);
+
+		/* The command was handled, status is a separate consideration */
 		return 1;
 	}
 

@@ -84,6 +84,10 @@ https://github.com/networkupstools/nut/milestone/11
    * In `cps_fix_report_desc()` we intended to fix-up input and output voltages
      in certain cases against high voltage transfer, we only fixed-up one of
      them. [#1245]
+   * `upsd` should now handle `TRACKING` value of `STAT_CONVERSION_FAILED`
+     introduced in NUT v2.8.2 for the socket protocol (between driver and
+     data server), by returning "ERR INVALID-ARGUMENT", so there is no change
+     for the network protocol definition. [#2182]
 
  - SEMVER, know thyself!
    * Development iterations of NUT should now identify with not only the

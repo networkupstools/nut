@@ -2844,7 +2844,49 @@ if test x"${nut_with_nut_monitor}" != xno ; then
             AC_MSG_RESULT([yes])
         else
             AC_MSG_RESULT([no])
-            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+            case ${target_os} in
+                solaris*|sunos*|SunOS*|illumos*)
+                # At least on OpenIndiana, the pygobject-27 build is only
+                # delivered in a 64-bit variant, while the default link to
+                # the python2.7 script interpreter is 64-bit. This precludes
+                # the use of NUT-Monitor-py2gtk2 which is otherwise possible
+                # (and useful for testing) on the platform.
+                AS_CASE([x"${PYTHON2}"],
+                    [x*" "*], [],
+                    [x/usr/bin/python*], [
+                        AC_MSG_CHECKING([if a Solarish platform-specific build of Python2 fares better])
+                        AS_CASE([x"${PYTHON2}"],
+                            [x/usr/bin/python2], [TRY_PYTHON2_VERS="python2 python2.7 python2.6"],
+                            [x/usr/bin/python], [TRY_PYTHON2_VERS="python python2 python2.7 python2.6"],
+                                                [TRY_PYTHON2_VERS="`basename "${PYTHON2}"`"]
+                        )
+                        TRY_BASEDIR="`dirname "${PYTHON}"`"
+                        for ARCHDIR in 64 amd64 sparcv9 32 i86 sparcv7 sparc ; do
+                            for TRY_VERNAME in $TRY_PYTHON2_VERS ; do
+                                TRY_PYTHON2="${TRY_BASEDIR}/${ARCHDIR}/${TRY_VERNAME}"
+                                if ${TRY_PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
+                                ; then
+                                    nut_with_nut_monitor_py2gtk2="yes"
+                                    AC_MSG_RESULT([yes with ${TRY_PYTHON2}])
+                                    dnl FIXME: Track a separate interpreter variable for NUT-Monitor?
+                                    PYTHON2="${TRY_PYTHON2}"
+                                    break
+                                fi
+                            done
+                            if test x"${nut_with_nut_monitor_py2gtk2}" = x"yes" ; then
+                                break
+                            fi
+                        done
+                        if test x"${nut_with_nut_monitor_py2gtk2}" != x"yes" ; then
+                            AC_MSG_RESULT([no])
+                        fi
+                    ])
+                ;;
+            esac
+
+            if test x"${nut_with_nut_monitor_py2gtk2}" != x"yes" ; then
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+            fi
         fi
     fi
 
@@ -2892,10 +2934,49 @@ if test x"${nut_with_nut_monitor}" != xno ; then
             AC_MSG_RESULT([yes])
         else
             AC_MSG_RESULT([no])
-            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
-                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules in default Python: '${PYTHON2_TEST_MODULES}'"
-            else
-                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules in default Python: '${PYTHON2_TEST_MODULES}'"
+
+            case ${target_os} in
+                solaris*|sunos*|SunOS*|illumos*)
+                # See somments above
+                AS_CASE([x"${PYTHON}"],
+                    [x*" "*], [],
+                    [x/usr/bin/python*], [
+                        AC_MSG_CHECKING([if a Solarish platform-specific build of Python2 fares better])
+                        AS_CASE([x"${PYTHON}"],
+                            [x/usr/bin/python2], [TRY_PYTHON2_VERS="python2 python2.7 python2.6"],
+                            [x/usr/bin/python], [TRY_PYTHON2_VERS="python python2 python2.7 python2.6"],
+                                                [TRY_PYTHON2_VERS="`basename "${PYTHON}"`"]
+                        )
+                        TRY_BASEDIR="`dirname "${PYTHON}"`"
+                        for ARCHDIR in 64 amd64 sparcv9 32 i86 sparcv7 sparc ; do
+                            for TRY_VERNAME in $TRY_PYTHON2_VERS ; do
+                                TRY_PYTHON2="${TRY_BASEDIR}/${ARCHDIR}/${TRY_VERNAME}"
+                                if ${TRY_PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
+                                ; then
+                                    nut_with_nut_monitor_py2gtk2="yes"
+                                    AC_MSG_RESULT([yes with ${TRY_PYTHON2}])
+                                    dnl FIXME: Track a separate interpreter variable for NUT-Monitor?
+                                    PYTHON="${TRY_PYTHON2}"
+                                    break
+                                fi
+                            done
+                            if test x"${nut_with_nut_monitor_py2gtk2}" = x"yes" ; then
+                                break
+                            fi
+                        done
+                        if test x"${nut_with_nut_monitor_py2gtk2}" != x"yes" ; then
+                            AC_MSG_RESULT([no])
+                        fi
+                    ])
+                ;;
+            esac
+
+            if test x"${nut_with_nut_monitor_py2gtk2}" != x"yes" ; then
+                if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                    PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules in default Python: '${PYTHON2_TEST_MODULES}'"
+                else
+                    PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules in default Python: '${PYTHON2_TEST_MODULES}'"
+                fi
             fi
         fi
     fi

@@ -71,6 +71,12 @@ Changes from 2.8.2 to 2.8.3
   OS distribution package recipes that deliver the module separately (e.g.
   as part of Python ecosystem rather than NUT) may have to adjust. [#2773]
 
+- The NUT-Monitor GUI application localization was updated; `make install`
+  should now deliver also `xx_YY.UTF-8` pattern named symbolic links to the
+  short-named directories and files involved, since some platforms insist
+  on having those for translations to be found -- this should be reflected
+  in OS packaging recipes as well. [#2845]
+
 - New `libupsclient` API methods added, `upscli_str_add_unique_token()` and
   `upscli_str_contains_token()`, to help C NUT clients process `ups.status` and
   similarly structured strings same way as NUT core code base. [#2852, #2859]

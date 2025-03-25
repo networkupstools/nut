@@ -32,9 +32,10 @@ or:
 Localization
 ------------
 
-For localized UI, you can also request the locale with different precision like
-`export LANG=fr_FR.UTF-8`, `export LANG=it_IT` or `export LANG=ru`
-(see and feel welcome to improve the choice of languages in `locale` directory).
+For localized UI, on some platforms you can also request the locale with different
+precision like `export LANG=fr_FR.UTF-8`, `export LANG=it_IT` or `export LANG=ru`
+(see and feel welcome to improve the choice of languages in `locale` directory);
+however on some others you are required to use the `xx_YY.UTF-8` spec format.
 
 NOTE: Currently, the localization only fully works for Python 2 client, while
 menu names, dialog field labels, etc. remain in default English wording despite
