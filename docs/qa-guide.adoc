@@ -132,15 +132,7 @@ FIXME: Write the chapter text.
 Custom NUT CI farm build agents: VMs on DigitalOcean
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Installation of VMs on Digital Ocean
-  - Pick details from https://github.com/networkupstools/nut/issues/2192
-
-[[CI_LXC]]
-Custom NUT CI farm build agents: LXC containers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This section details configuration of LXC containers as build environments
-for NUT CI farm; this approach can also be used on developer workstations.
+This section details Installation of VMs on Digital Ocean.
 
 /////////////////////
 // Note: while docs recommend relative offsets or using them as parameters
@@ -152,6 +144,19 @@ for NUT CI farm; this approach can also be used on developer workstations.
 // document itself, that `Title.level` handling in the older code base supports:
 // https://github.com/asciidoc-py/asciidoc-py/blob/main/asciidoc/asciidoc.py#L1775
 /////////////////////
+
+:leveloffset: 1
+
+include::ci-farm-do-setup.adoc[]
+
+:leveloffset: 0
+
+[[CI_LXC]]
+Custom NUT CI farm build agents: LXC containers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This section details configuration of LXC containers as build environments
+for NUT CI farm; this approach can also be used on developer workstations.
 
 :leveloffset: 1
 

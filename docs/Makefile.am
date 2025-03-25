@@ -101,7 +101,7 @@ IMAGE_LOGO_FILES_JENKINS_NUT = \
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
- config-prereqs.txt ci-farm-lxc-setup.txt	\
+ config-prereqs.txt ci-farm-do-setup.adoc ci-farm-lxc-setup.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
@@ -110,8 +110,8 @@ DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  new-drivers.txt net-protocol.txt nutdrv_qx-subdrivers.txt	\
  nut-versioning.adoc snmp-subdrivers.txt sock-protocol.txt
 
-QA_GUIDE_DEPS =  nut-qa.txt config-prereqs.txt ci-farm-lxc-setup.txt	\
- qa-guide.adoc
+QA_GUIDE_DEPS =  nut-qa.txt config-prereqs.txt ci-farm-do-setup.adoc	\
+ ci-farm-lxc-setup.txt qa-guide.adoc
 
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\

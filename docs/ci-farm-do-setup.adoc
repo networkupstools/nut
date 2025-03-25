@@ -1,0 +1,117 @@
+Setting up the non-standard VM farm for NUT CI on DigitalOcean
+--------------------------------------------------------------
+
+Since 2023 the Network UPS Tools employs virtual machines hosted and
+courteously sponsored as part of FOSS support program by
+link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean]
+for a significant part of the NUT CI farm and multi-platform testing.
+
+To that extent, while it is easy to deploy common OS images and manage the
+resulting VMs, there are only so many images and platforms that are officially
+supported by the hosting as general-purpose "DigitalOcean VPS Droplets".
+In particular, while there is half a dozen Linux distributions offered out
+of the box, FreeBSD support was present earlier but abandoned shortly before
+NUT CI farm migration considered this hosting option.
+
+Still, there were community reports of various platforms including *BSD and
+illumos working in practice (sometimes with caveats), which just needed some
+special tinkering to run and to manage.  This chapter details how the NUT CI
+farm VMs were set up on DigitalOcean.
+
+//////////
+// Originally documented at https://github.com/networkupstools/nut/issues/2192
+//////////
+
+OpenIndiana
+~~~~~~~~~~~
+
+DO-NUT-CI-OI VM creation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-OI VM OS transfer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-OI VM preparation as build agent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+
+OmniOS
+~~~~~~
+
+DO-NUT-CI-OO VM creation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-OO VM OS transfer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-OO VM preparation as build agent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+
+FreeBSD
+~~~~~~~
+
+DO-NUT-CI-FREEBSD VM creation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-FREEBSD VM OS transfer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-FREEBSD VM preparation as build agent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+
+OpenBSD
+~~~~~~~
+
+DO-NUT-CI-OPENBSD VM creation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-OPENBSD VM OS transfer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-OPENBSD VM preparation as build agent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+
+Linux
+~~~~~
+
+DO-NUT-CI-LINUX VM creation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-LINUX VM OS transfer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
+
+DO-NUT-CI-LINUX VM preparation as build agent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: Text
