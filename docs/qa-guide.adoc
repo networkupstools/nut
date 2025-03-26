@@ -161,8 +161,53 @@ Documentation spelling checks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [[CI_spellcheck]]
 
-FIXME: Write the chapter text.
+NUT recipes rely on the `aspell` tool (with `aspell-en` dictionary, default
+but different on numerous platforms), and a custom maintained dictionary file
+(specified in `Makefile` variables as `NUT_SPELL_DICT` -- by default, it is
+`${top_srcdir}/docs/nut.dict`) for additional words either unique to NUT or
+quite common but absent in older standard dictionaries on some systems.
+Operations are done according to `LANG` and `LC_ALL` values, both specified
+in `Makefile` variables as `ASPELL_ENV_LANG`, by default `en.UTF-8`.
 
+The "nut-website" generation has similar recipes and relies on integration
+with those provided by the main NUT code base, but maintains its own custom
+dictionary for words only present in the website sources.
+
+The root `Makefile.am` includes recipes which allow developers and maintainers
+to check spelling of all documentation (and/or update the custom dictionary),
+while recipes in numerous subdirectories (where `README.adoc` or other specific
+documentation files exist) have similar goals to check just their files.
+
+The actual implementation of the goals is in `docs/Makefile.am`, and either
+calls the tool if it was detected by the `configure` script, or skips work.
+
+For each checked file, a `*-spellchecked` touch-file is created in respective
+`${builddir}`, so it is not re-checked until the source document, the custom
+dictionary, or the `Makefile` recipe is updated.
+
+The ecosystem of `Makefile.am` files includes the following useful recipes:
+
+* `spellcheck`: passively check that all used words are in some dictionary
+  known to this system, or report errors for unknown words;
+* `spellcheck-interactive`: actively check the documents, and for unknown
+  words start the interactive mode of `aspell` so you can either edit the
+  source text (replace typos with suggested correct spelling), update the
+  custom dictionary, or ignore the hit (to rephrase the paragraph later, etc.)
++
+NOTE: This recipe can update the timestamp of the custom dictionary file,
+causing all documents to become fair game for re-checks of their spelling.
+* `spellcheck-sortdict`: make sure the custom dictionary file is sorted
+  alphanumerically (helpful in case of manual edits) and the word count
+  in the heading line is correct (helpful in case of manual edits or git
+  branch merges).
+
+The root `Makefile.am` also provides some aids for maintainers:
+
+* `spellcheck-interactive-quick`: runs "passive" `spellcheck` in parallel
+  `make` mode, and only if it errors out -- runs `spellcheck-interactive`;
+* `spellcheck-report-dict-usage`: prepares a `nut.dict.usage-report` file
+  to validate that words used in a custom dictionary are actually present
+  in any NUT documentation source file.
 
 Test automation
 ---------------
