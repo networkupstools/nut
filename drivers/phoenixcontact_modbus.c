@@ -101,7 +101,12 @@ upsdrv_info_t upsdrv_info = {
 void upsdrv_initinfo(void)
 {
 	uint16_t tab_reg[4];
-	uint64_t PartNumber;
+	uint64_t PartNumber = 0;
+
+	for(int = 0; i < (sizeof(tab_reg) / sizeof(tab_reg[0]); i++)
+	{
+		tab_reg[i] = 0;
+	}
 
 	upsdebugx(2, "upsdrv_initinfo");
 
