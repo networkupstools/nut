@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3355 utf-8
+personal_ws-1.1 en 3360 utf-8
 AAC
 AAS
 ABI
@@ -1088,6 +1088,7 @@ SDR
 SDT
 SECCTRL
 SELFTEST
+SELFTESTS
 SELinux
 SENTR
 SER

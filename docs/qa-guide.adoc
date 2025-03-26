@@ -101,7 +101,20 @@ Valgrind checks
 ~~~~~~~~~~~~~~~
 [[CI_VALGRIND]]
 
-FIXME: Write the chapter text.
+NUT sources include a helper script and a suppression file which allow
+developers and CI alike to easily run built programs through the popular
+link:https://valgrind.org/[Valgrind] tool and check for memory leaks,
+un-closed file descriptors, and more.
+
+One use-case to cover the population of <<CI_NUT_SELFTESTS,NUT self-test
+programs>> (and the common code they pull in from NUT libraries and drivers)
+is automated as the `make distcheck-valgrind` goal.
+
+:leveloffset: 3
+
+include::../scripts/valgrind/README.adoc[]
+
+:leveloffset: 0
 
 Static analysis by compilers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -132,6 +145,7 @@ FIXME: Write the chapter text.
 
 Test programs in NUT codebase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_NUT_SELFTESTS]]
 
 FIXME: Write the chapter text.
 
