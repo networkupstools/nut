@@ -120,6 +120,15 @@ include::{top_srcdir}/scripts/valgrind/README.adoc[]
 Static analysis by compilers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+As compilers like GCC and LLVM/CLANG evolve, so do their built-in code
+analyzers and warnings.  In fact, this is a large part of the reasoning
+behind using a vast array of systems along with the compilers they have
+(many points of view on the same code discover different issues in it),
+and on another -- behind the certain complexity pattern in NUT's own code
+base, where code recommended by one compiler seems offensive to another
+(so stacks of `pragma` expressions are used to quiesce certain warnings
+around certain lines).
+
 FIXME: Write the chapter text.
 
 For now, see the "Continuous Integration and Automated Builds" chapter
