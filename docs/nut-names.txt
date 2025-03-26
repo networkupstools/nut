@@ -1050,6 +1050,8 @@ to last as part of NUT standard protocol in the long run.
     | Take the UPS out of High Efficiency (aka ECO) mode
 | experimental.ecomode.start.auto   | usbhid-ups => mge-hid (Eaton/MGE)
     | Put UPS in Bypass mode then High Efficiency (aka ECO) mode
+| experimental.ecomode.stop.auto   | usbhid-ups => mge-hid (Eaton/MGE)
+    | Take the UPS out of High Efficiency (aka ECO) mode after exiting Bypass mode
 | experimental.essmode.enable       | usbhid-ups => mge-hid (Eaton/MGE)
     | Put UPS in Energy Saver System (aka ESS) mode
 | experimental.essmode.disable      | usbhid-ups => mge-hid (Eaton/MGE)
