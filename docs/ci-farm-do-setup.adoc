@@ -31,6 +31,21 @@ farm VMs were set up on DigitalOcean.
 // Originally documented at https://github.com/networkupstools/nut/issues/2192
 //////////
 
+Design trade-offs
+~~~~~~~~~~~~~~~~~
+
+Note that some design choices were made because equivalent machines existed
+earlier on Fosshost.org hosting, and filesystem content copies or ZFS snapshot
+transfers were the least disruptive approach (using ZFS wherever possible also
+allows to keep the history of system changes as snapshots, easily replicated
+to offline storage).
+
+It is further important to note that DigitalOcean VMs in recovery mode
+apparently must use the one ISO image provided by DigitalOcean.  At the
+time of this writing it was based on Ubuntu 18.x with ZFS support -- so
+the ZFS pools and datasets on VMs that use them should be created *AND*
+kept with options supported by that version of the filesystem implementation.
+
 OpenIndiana
 ~~~~~~~~~~~
 
