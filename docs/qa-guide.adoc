@@ -129,7 +129,24 @@ Shell script checks
 ~~~~~~~~~~~~~~~~~~~
 [[CI_shellcheck]]
 
-FIXME: Write the chapter text.
+The `make shellcheck` recipe finds files which the `file` tool determines
+to be POSIX or Bourne-Again shell scripts, and runs them through respective
+interpreter's (`bash` or system `/bin/sh`) test mode to validate the syntax
+works.
+
+Given that the `/bin/sh` implementation varies wildly on different systems
+(e.g. Korn shell, BASH, DASH and many others), this goal performed by CI on
+a large number of available platforms makes sure that the lowest-denominator
+syntax we use is actually understood everywhere.
+
+NOTE: At a later time additional tests, perhaps using the `shellcheck` tool,
+can be introduced into the stack.
+
+The `make shellcheck-nde` recipe calls `tests/nut-driver-enumerator-test.sh`
+to self-test the `scripts/upsdrvsvcctl/nut-driver-enumerator.sh.in` against
+an array of `SHELL_PROGS` (e.g. a list of interpreters provided by specific
+CI agents), and make sure that shell-script based processing of `ups.conf`
+in various interpreters provides the exact spelling of expected results.
 
 Documentation spelling checks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
