@@ -703,7 +703,12 @@ void upsdrv_initups(void)
 			fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
 		}
 
-		mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+		r = mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+
+		if(r < 0)
+		{
+			fatalx(EXIT_FAILURE, "UPS does not repond to read requests.");
+		}
 		
 	}
 	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
