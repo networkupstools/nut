@@ -119,6 +119,7 @@ include::{top_srcdir}/scripts/valgrind/README.adoc[]
 
 Static analysis by compilers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_compiler_warnings]]
 
 As compilers like GCC and LLVM/CLANG evolve, so do their built-in code
 analyzers and warnings.  In fact, this is a large part of the reasoning
@@ -129,10 +130,57 @@ base, where code recommended by one compiler seems offensive to another
 (so stacks of `pragma` expressions are used to quiesce certain warnings
 around certain lines).
 
-FIXME: Write the chapter text.
+Pre-set warning options
+^^^^^^^^^^^^^^^^^^^^^^^
 
-For now, see the "Continuous Integration and Automated Builds" chapter
-of `developers.txt` in NUT sources, section "Pre-set warning options".
+The options chosen into pre-sets that can be selected by `configure`
+script options are ones we use for different layers of CI tests.
+
+Values to note include:
+
+* `--enable-Werror(=yes/no)` -- make warnings fatal;
+
+* `--enable-warnings(=.../no)` -- enable certain warning presets:
+
+** `gcc-hard`, `clang-hard`, `gcc-medium`, `clang-medium`, `gcc-minimal`,
+`clang-minimal`, `all` -- actual definitions that are compiler-dependent
+(the latter just adds `-Wall` which may be relatively portable);
+
+** `hard`, `medium` or `minimal` -- if current compiler is detected as
+CLANG or GCC, apply corresponding setting from above (or `all` otherwise);
+
+** `gcc` or `clang` -- apply the set of options (regardless of detected
+compiler) with default "difficulty" hard-coded in `configure` script,
+to tweak as our codebase becomes cleaner;
+
+** `yes`/`auto` (also takes effect if `--enable-warnings` is requested
+without an `=ARG` part) -- if current compiler is detected as CLANG
+or GCC, apply corresponding setting with default "difficulty" from
+above (or `all` otherwise).
+
+Note that for backwards-compatibility reasons and to help filter out
+introduction of blatant errors, builds with compilers that claim GCC
+compatibility can enable a few easy warning presets by default. This
+can be avoided with an explicit argument to `--disable-warnings` (or
+`--enable-warnings=no`).
+
+All levels of warnings pre-sets for GCC in particular do not enforce
+the `-pedantic` mode for builds with C89/C90/ANSI standard revision
+(as guesstimated by `CFLAGS` content), because nowadays it complains
+more about the system and third-party library headers, than about NUT
+codebase quality (and "our offenses" are mostly something not worth
+fixing in this era, such as the use of `__func__` in debug commands).
+If there still are practical use-cases that require builds of NUT on
+pre-C99 compiler toolkits, pull requests are of course welcome -- but
+the maintainer team does not intend to spend much time on that.
+
+Hopefully this warnings pre-set mechanism is extensible enough if we
+would need to add more compilers and/or "difficulty levels" in the
+future.
+
+Finally, note that such pre-set warnings can be mixed with options
+passed through `CFLAGS` or `CXXFLAGS` values to your local `configure`
+run, but it is up to your compiler how it interprets the resulting mix.
 
 Shell script checks
 ~~~~~~~~~~~~~~~~~~~
@@ -219,7 +267,6 @@ include::{top_srcdir}/ci_build.adoc[]
 
 :leveloffset: 0
 
-
 Test programs in NUT codebase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [[CI_NUT_SELFTESTS]]
@@ -240,9 +287,9 @@ include::{top_srcdir}/tests/NIT/README.adoc[]
 :leveloffset: 0
 
 
-Continuous Integration (NUT CI farm)
-------------------------------------
-[[NUTCI_farm]]
+Continuous Integration (NUT CI farm) technologies
+-------------------------------------------------
+[[NUTCI_farm_technologies]]
 
 CI Farm configuration notes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -310,6 +357,154 @@ FIXME: Write the chapter text.
 For now, see the `Jenkinsfile-dynamatrix` in the NUT sources (maybe only git),
 e.g. https://github.com/networkupstools/nut/blob/master/Jenkinsfile-dynamatrix
 for the practical pipeline preparation and hand-off to library implementation.
+
+Jenkins CI
+^^^^^^^^^^
+[[NUT_CI_JENKINS]]
+
+Since mid-2021, the NUT CI farm is implemented by several virtual servers
+courteously provided originally by link:http://fosshost.org[Fosshost] and
+later by
+link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean].
+
+These run various operating systems as build agents, and a Jenkins instance
+to orchestrate the builds of NUT branches and pull requests on those agents.
+
+This is driven by `Jenkinsfile-dynamatrix` and a Jenkins Shared Library called
+link:https://github.com/networkupstools/jenkins-dynamatrix[jenkins-dynamatrix]
+which prepares a matrix of builds across as many operating systems,
+bitnesses/architectures, compilers, make programs and C/C++ revisions
+as it can -- based on the population of currently available build agents
+and capabilities which they expose as agent labels.
+
+This hopefully means that people interested in NUT can contribute to the
+build farm (and ensure NUT is and remains compatible with their platform)
+by running a Jenkins Swarm agent with certain labels, which would dial
+into https://ci.networkupstools.org/ controller. Please contact the NUT
+maintainer if you want to participate in this manner.
+
+The `Jenkinsfile-dynamatrix` recipe allows NUT CI farm to run different sets
+of build scenarios based on various conditions, such as the name of branch
+being built (or PR'ed against), changed files (e.g. C/C++ sources vs. just
+docs), and some build combinations may be not required to succeed.
+
+For example, the main development branch and pull requests against it must
+cleanly pass all specified builds and tests on various platforms with the
+default level of warnings specified in the `configure` script. These are
+balanced to not run too many build scenarios overall, but just a quick and
+sufficiently representative set.
+
+As another example, there is special handling for "fightwarn" pattern in
+the branch names to run many more builds with varying warning levels and
+more variants of intermediate language revisions, and so expose concerns
+deliberately missed by default warnings levels in "master" branch builds
+(the bar moves over time, as some classes of warnings become extinct from
+our codebase).
+
+Further special handling for branches named like `fightwarn.*89.*` regex
+enables more intensive warning levels for a GNU89 build specifically (which
+are otherwise disabled as noisy yet not useful for supported C99+ builds),
+and is intended to help develop fixes for support of this older language
+revision, if anyone would dare.
+
+Many of those unsuccessful build stages are precisely the focus of the
+"fightwarn" effort, and are currently marked as "may fail", so they end
+up as "UNSTABLE" (seen as orange bubbles in the Jenkins BlueOcean UI, or
+orange cells in the tabular list of stages in the legacy UI), rather than
+as "FAILURE" (red bubbles) for build scenarios that were not expected to
+fail and usually represent higher-priority problems that would block a PR.
+
+Developers whose PR builds (or attempts to fix warnings) did not succeed in
+some cell of such build matrix, can look at the individual logs of that cell.
+Beside indication from the compiler about the failure, the end of log text
+includes the command which was executed by CI worker and can be reproduced
+locally by the developer, e.g.:
+----
+22:26:01  FINISHED with exit-code 2 cmd:  (
+22:26:01  [ -x ./ci_build.sh ] || exit
+22:26:01
+22:26:01  eval BUILD_TYPE="default-alldrv" BUILD_WARNOPT="hard" \
+    BUILD_WARNFATAL="yes" MAKE="make"  CC=gcc-10 CXX=g++-10 \
+    CPP=cpp-10 CFLAGS='-std=gnu99 -m64' CXXFLAGS='-std=gnu++11 -m64' \
+    LDFLAGS='-m64' ./ci_build.sh
+22:26:01  )
+----
+or for autotools-driven scenarios (which prep, configure, build and test
+in separate stages -- so for reproducing a failed build you should also
+look at its configuration step separately):
+----
+22:28:18  FINISHED with exit-code 0 cmd:  ( [ -x configure ] || exit; \
+    eval  CC=clang-9 CXX=clang++-9 CPP=clang-cpp-9 CFLAGS='-std=c11 -m64' \
+    CXXFLAGS='-std=c++11 -m64' LDFLAGS='-m64' time ./configure )
+----
+
+To re-run such scenario locally, you can copy the line from `eval` (but
+without the `eval` keyword itself) up to and including the executed script
+or tool, into your shell. Depending on locally available compilers, you
+may have to tweak the `CC`, `CXX` and `CPP` arguments; note that a `CPP`
+may be specified as `/path/to/CC -E` for GCC and CLANG based toolkits
+at least, if they lack a standalone preprocessor program (e.g. IntelCC).
+
+NOTE: While NUT recipes do not currently recognize a separate `CXXCPP`,
+it would follow similar semantics.
+
+Some further details about the NUT CI farm workers are available in
+linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] and
+linkdoc:qa-guide[Custom NUT CI farm build agents: LXC multi-arch
+containers,CI_LXC,docs/ci-farm-lxc-setup.txt] documentation.
+
+AppVeyor CI
+~~~~~~~~~~~
+[[NUT_CI_APPVEYOR]]
+
+Primarily used for building NUT for Windows on Windows instances provided
+in the cloud -- and so ensure non-regression as well as downloadable archives
+with binary installation prototype area, intended for enthusiastic testing
+(proper packaging to follow). NUT for Windows build-ability was re-introduced
+soon after NUT 2.8.0 release.
+
+This relies on a few prerequisite packages and a common NUT configuration,
+as coded in the `appveyor.yml` file in the NUT codebase.
+
+CircleCI
+~~~~~~~~
+[[NUT_CI_CIRCLE]]
+
+Primarily used for building NUT for MacOS on instances provided in the cloud,
+and so ensure non-regression across several Xcode releases.
+
+This relies on a few prerequisite packages and a common NUT configuration,
+as coded in the `.circleci/config.yml` file in the NUT codebase.
+
+Travis CI
+~~~~~~~~~
+[[NUT_CI_TRAVIS]]
+
+See the `.travis.yml` file in project sources for a detailed list of third
+party dependencies and a large matrix of `CFLAGS` and compiler versions
+last known to work or to not (yet) work on operating systems available
+to that CI solution.
+
+[NOTE]
+======
+The cloud Travis CI offering became effectively defunct for
+open-source projects in mid-2021, so the `.travis.yml` file in NUT
+codebase is not actively maintained.
+
+Local private deployments of Travis CI are possible, so if anybody does
+use it and has updated markup to share, they are welcome to post PRs.
+======
+
+The NUT project on GitHub had integration with Travis CI to test a large
+set of compiler and option combinations, covering different versions of
+gcc and clang, C standards, and requiring to pass builds at least in a
+mode without warnings (and checking the other cases where any warnings
+are made fatal).
+
+Continuous Integration (NUT CI farm) build agent preparation
+------------------------------------------------------------
+[[NUTCI_farm_agents]]
 
 Custom NUT CI farm build agents: VMs on DigitalOcean
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
