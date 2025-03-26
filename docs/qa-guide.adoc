@@ -5,6 +5,19 @@ NUT Quality Assurance Guide
 
 WARNING: This is a Work In Progress document.
 
+/////////////////////
+// Note on use of ":leveloffset: N" with absolute values below
+//
+// While docs recommend relative offsets or using them as parameters
+// to the include macro, this is a feature of asciidoctor - not asciidoc-py
+// (older implementation) that we rely on in most operating systems:
+// https://docs.asciidoctor.org/asciidoc/latest/directives/include-with-leveloffset/
+//
+// So we resort to absolute offsets (as explicitly not recommended) in the
+// document itself, that `Title.level` handling in the older code base supports:
+// https://github.com/asciidoc-py/asciidoc-py/blob/main/asciidoc/asciidoc.py#L1775
+/////////////////////
+
 Abstract
 --------
 
@@ -195,17 +208,6 @@ Custom NUT CI farm build agents: VMs on DigitalOcean
 [[CI_VM_DigitalOcean]]
 
 This section details Installation of VMs on Digital Ocean.
-
-/////////////////////
-// Note: while docs recommend relative offsets or using them as parameters
-// to the include macro, this is a feature of asciidoctor - not asciidoc-py
-// (older implementation) that we rely on in most operating systems:
-// https://docs.asciidoctor.org/asciidoc/latest/directives/include-with-leveloffset/
-//
-// So we resort to absolute offsets (as explicitly not recommended) in the
-// document itself, that `Title.level` handling in the older code base supports:
-// https://github.com/asciidoc-py/asciidoc-py/blob/main/asciidoc/asciidoc.py#L1775
-/////////////////////
 
 :leveloffset: 1
 
