@@ -22,9 +22,9 @@ include::nut-qa.txt[]
 Code and recipe analysis
 ------------------------
 
-[[CI_distcheck]]
 GNU Autotools distcheck
 ~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_distcheck]]
 
 FIXME: Write the chapter text.
 
@@ -33,15 +33,15 @@ Static analysis by compilers
 
 FIXME: Write the chapter text.
 
-[[CI_shellcheck]]
 Shell script checks
 ~~~~~~~~~~~~~~~~~~~
+[[CI_shellcheck]]
 
 FIXME: Write the chapter text.
 
-[[CI_spellcheck]]
 Documentation spelling checks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_spellcheck]]
 
 FIXME: Write the chapter text.
 
@@ -49,9 +49,9 @@ FIXME: Write the chapter text.
 Test automation
 ---------------
 
-[[CI_BUILD_SH]]
 The ci_build.sh script
 ~~~~~~~~~~~~~~~~~~~~~~
+[[CI_BUILD_SH]]
 
 FIXME: Write the chapter text.
 
@@ -60,19 +60,19 @@ Test programs in NUT codebase
 
 FIXME: Write the chapter text.
 
-[[NIT]]
 NUT Integration Testing suite (NIT)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[NIT]]
 
 FIXME: Write the chapter text.
 
-[[NUTCI_farm]]
 Continuous Integration (NUT CI farm)
 ------------------------------------
+[[NUTCI_farm]]
 
-[[CI_Farm_Notes]]
 CI Farm configuration notes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_Farm_Notes]]
 
 NOTE: This chapter contains information about NUT CI farm setup tricks
 that were applied at different times by the maintainer team to ensure
@@ -116,21 +116,21 @@ Jenkins is the way
 * https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/
 * https://github.com/jenkins-infra/stories/blob/main/src/user-story/jenkins-is-the-way-for-networkupstools/index.yaml
 
-[[Jenkins_Dynamatrix_Library]]
 The jenkins-dynamatrix library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[[Jenkins_Dynamatrix_Library]]
 
 FIXME: Write the chapter text.
 
-[[Jenkins_Dynamatrix_Pipeline]]
 Jenkinsfile-dynamatrix cases in NUT sources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[[Jenkins_Dynamatrix_Pipeline]]
 
 FIXME: Write the chapter text.
 
-[[CI_VM_DigitalOcean]]
 Custom NUT CI farm build agents: VMs on DigitalOcean
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_VM_DigitalOcean]]
 
 This section details Installation of VMs on Digital Ocean.
 
@@ -151,9 +151,9 @@ include::ci-farm-do-setup.adoc[]
 
 :leveloffset: 0
 
-[[CI_LXC]]
 Custom NUT CI farm build agents: LXC containers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_LXC]]
 
 This section details configuration of LXC containers as build environments
 for NUT CI farm; this approach can also be used on developer workstations.
@@ -164,9 +164,9 @@ include::ci-farm-lxc-setup.txt[]
 
 :leveloffset: 0
 
-[[NUT_Config_Prereqs]]
 Prerequisites for building NUT on different OSes
 ------------------------------------------------
+[[NUT_Config_Prereqs]]
 
 :leveloffset: 1
 
