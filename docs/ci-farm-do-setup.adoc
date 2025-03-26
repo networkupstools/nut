@@ -1,17 +1,26 @@
 Setting up the non-standard VM farm for NUT CI on DigitalOcean
 --------------------------------------------------------------
 
-Since 2023 the Network UPS Tools employs virtual machines hosted and
-courteously sponsored as part of FOSS support program by
-link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean]
-for a significant part of the NUT CI farm and multi-platform testing.
+Since 2023 the Network UPS Tools project employs virtual machines,
+hosted and courteously sponsored as part of FOSS support program by
+link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean],
+for a significant part of the NUT CI farm based on a custom
+link:https://www.jenkins.io/[Jenkins] setup.
+
+Use of complete machines, virtual or not, in the NUT CI farm allows our
+compatibility and non-regression testing to be truly multi-platform,
+spanning various operating system technologies and even (sometimes
+emulated) CPU architectures.
 
 To that extent, while it is easy to deploy common OS images and manage the
 resulting VMs, there are only so many images and platforms that are officially
-supported by the hosting as general-purpose "DigitalOcean VPS Droplets".
+supported by the hosting as general-purpose "DigitalOcean VPS Droplets", and
+work with other operating systems is not easy. But not impossible, either.
+
 In particular, while there is half a dozen Linux distributions offered out
-of the box, FreeBSD support was present earlier but abandoned shortly before
-NUT CI farm migration considered this hosting option.
+of the box, official FreeBSD support was present earlier but abandoned shortly
+before NUT CI farm migration from the defunct Fosshost.org considered this
+hosting option.
 
 Still, there were community reports of various platforms including *BSD and
 illumos working in practice (sometimes with caveats), which just needed some
