@@ -2,6 +2,7 @@ NUT Quality Assurance Guide
 ===========================
 :Author: Jim_Klimov
 :Author Initials: JK
+:top_srcdir: ..
 
 WARNING: This is a Work In Progress document.
 
@@ -112,7 +113,7 @@ is automated as the `make distcheck-valgrind` goal.
 
 :leveloffset: 3
 
-include::../scripts/valgrind/README.adoc[]
+include::{top_srcdir}/scripts/valgrind/README.adoc[]
 
 :leveloffset: 0
 
