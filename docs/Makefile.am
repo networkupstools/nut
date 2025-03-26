@@ -101,7 +101,6 @@ IMAGE_LOGO_FILES_JENKINS_NUT = \
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
- config-prereqs.txt ci-farm-do-setup.adoc ci-farm-lxc-setup.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
