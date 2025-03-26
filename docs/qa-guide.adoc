@@ -122,6 +122,9 @@ Static analysis by compilers
 
 FIXME: Write the chapter text.
 
+For now, see the "Continuous Integration and Automated Builds" chapter
+of `developers.txt` in NUT sources, section "Pre-set warning options".
+
 Shell script checks
 ~~~~~~~~~~~~~~~~~~~
 [[CI_shellcheck]]
@@ -143,6 +146,9 @@ The ci_build.sh script
 [[CI_BUILD_SH]]
 
 FIXME: Write the chapter text.
+
+For now, see the "Continuous Integration and Automated Builds" chapter
+of `developers.txt` in NUT sources, section "ci_build.sh".
 
 Test programs in NUT codebase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
