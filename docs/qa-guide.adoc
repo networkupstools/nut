@@ -26,6 +26,68 @@ GNU Autotools distcheck
 ~~~~~~~~~~~~~~~~~~~~~~~
 [[CI_distcheck]]
 
+The Network UPS Tools project code base is managed by the
+link:https://www.gnu.org/software/automake/manual/html_node/GNU-Build-System.html[GNU
+Build System] colloquially known as "The Autotools", which include `autoconf`,
+`automake` and many other components. Some of their important roles are to
+generate the portable shell `configure` script to detect build environment
+capabilities and other nuances, and to help actually build the project with
+`Makefile` recipes (supported by many implementations of the standard POSIX
+`make` tool) generated from the `Makefile.am` templates by the `automake` tool.
+
+Among the many standard recipes promulgated by the Autotools, `make dist`
+handles creation of archive files with a release (or other) snapshot of a
+software project, which "distribute" all the original or generated files
+needed to build and install that project on a minimally capable end-user
+system (should have a compiler, `make`, and dependency libraries/headers,
+but is not required to have autotools, manual page generation tools, etc.)
+
+The `make distcheck` goal allows to validate that the constructed archive
+is in fact sufficient for such a build (includes all required files), and
+also that the code structure and its recipes properly support out-of-tree
+builds (as used on multi-platform and cross-build environments) without
+contaminating the source code directory structure.
+
+NUT's root `Makefile.am` defines the `DISTCHECK_FLAGS` eventually passed
+to the `configure` script executed as part of `distcheck` validation, and
+the default set of the flags requires to build everything.  This in turn
+constrains the set of systems where this validation can be performed to
+build environments that have all dependency projects installed, have the
+documentation generation tools, etc. in order to make sure that for all
+files that are compiled or otherwise processed by the build routine, we
+actually distribute the sources (implicitly as calculated by programs'
+listed sources, or via explicit `EXTRA_DIST` and similar statements)
+regardless of features enabled or not to be built in the original run.
+
+To avoid this constraint and allow the relevant `distcheck`-like validation
+to happen on environments without "everything and a kitchen sink" installed,
+further recipes are defined by NUT, such as:
+
+* `distcheck-light`: does not *require* the optional features to be built,
+  but just allow them (using `--with-all=auto --with-ssl=auto --with-doc=auto`
+  etc. flags);
+* `distcheck-light-man`: similar to the above, but require validation that
+  manual pages can all be built (do not build PDF or HTML formats, though);
+* `distcheck-fake-man`: for formal validation on systems without documentation
+  processing tools used by NUT recipes, populate the distribution archive
+  with "PLACEHOLDER" contents of missing pre-generated manual pages (such an
+  archive SHOULD NOT be delivered to end-users as a fully functional release),
+  so the validation of *recipes* around pre-built documentation installation
+  can be performed;
+* `distcheck-ci`: based on current build circumstances, dispatch to standard
+  strict `distcheck` or to `distcheck-fake-man`.
+
+Other recipes based on this concept are also defined, including:
+
+* `distcheck-valgrind`: build whatever code we can, and do not waste time on
+  documentation processing (`--with-all=auto --with-ssl=auto --with-doc=skip`),
+  to run the NUT test programs (`make check` in the built environment) through
+  the <<CI_VALGRIND,Valgrind>> memory-checking tool.
+
+Valgrind checks
+~~~~~~~~~~~~~~~
+[[CI_VALGRIND]]
+
 FIXME: Write the chapter text.
 
 Static analysis by compilers
