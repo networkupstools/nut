@@ -324,8 +324,8 @@ include::ci-farm-do-setup.adoc[]
 
 :leveloffset: 0
 
-Custom NUT CI farm build agents: LXC containers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Custom NUT CI farm build agents: LXC multi-arch containers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [[CI_LXC]]
 
 This section details configuration of LXC containers as build environments

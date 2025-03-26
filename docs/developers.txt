@@ -418,7 +418,8 @@ it would follow similar semantics.
 Some further details about the NUT CI farm workers are available in
 linkdoc:qa-guide[Prerequisites for building NUT on
 different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] and
-link:ci-farm-lxc-setup.txt[ci-farm-lxc-setup.txt] documents.
+linkdoc:qa-guide[Custom NUT CI farm build agents: LXC multi-arch
+containers,CI_LXC,docs/ci-farm-lxc-setup.txt] documentation.
 
 AppVeyor CI
 ^^^^^^^^^^^

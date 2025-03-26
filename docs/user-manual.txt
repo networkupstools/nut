@@ -263,8 +263,10 @@ Appendix H: Configure options
 =============================
 
 NOTE: For more information about build environment setup, see chapters about
-linkdoc:qa-guide[Prerequisites for building NUT on different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt]
-and linkdoc:qa-guide[Custom NUT CI farm build agents: LXC containers,CI_LXC,docs/ci-farm-lxc-setup.txt].
+linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] and
+linkdoc:qa-guide[Custom NUT CI farm build agents: LXC multi-arch
+containers,CI_LXC,docs/ci-farm-lxc-setup.txt].
 
 include::configure.txt[]
 
