@@ -1,5 +1,5 @@
-NUT Quality Assurance Guide
-===========================
+NUT Quality Assurance and Build Automation Guide
+================================================
 :Author: Jim_Klimov
 :Author Initials: JK
 :top_srcdir: ..
