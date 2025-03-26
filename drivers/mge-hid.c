@@ -1016,7 +1016,7 @@ static const char *eaton_input_ess_mode_report(double value)
 /* High Efficiency (aka ECO) mode, Energy Saver System (aka ESS) mode makes sense for UPS like (93PM G2, 9395P) */
 static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
 	{ 0, "normal", NULL, NULL },
-	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ECO" = tested on 9E, 9SX model and working fine */
+	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ECO" = tested on 9SX model and working fine, 9E model can stuck in ECO mode https://github.com/networkupstools/nut/issues/2719 */
 	{ 2, "ESS", eaton_input_ess_mode_report, NULL },
 	{ 0, NULL, NULL, NULL }
 };
