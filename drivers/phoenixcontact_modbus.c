@@ -26,7 +26,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
