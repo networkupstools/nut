@@ -416,7 +416,8 @@ NOTE: While NUT recipes do not currently recognize a separate `CXXCPP`,
 it would follow similar semantics.
 
 Some further details about the NUT CI farm workers are available in
-link:config-prereqs.txt[config-prereqs.txt] and
+linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] and
 link:ci-farm-lxc-setup.txt[ci-farm-lxc-setup.txt] documents.
 
 AppVeyor CI
@@ -578,7 +579,8 @@ are using the "MinGW X64" profile for GCC builds (nuances may differ for
 
 Also keep in mind that not all dependencies and tools involved in a
 fully-fledged NUT build are easily available or usable on Windows (e.g.
-the spell checker). See the link:config-prereqs.txt[] for better detailed
+the spell checker). See linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for better detailed
 package lists for different operating systems including Windows, and feel
 welcome to post pull requests with suggestions about new tool-chains that
 might fare better than those already tried and documented.
@@ -1647,8 +1649,9 @@ ensure that after you change a `Makefile.am`, nearby `Makefile.in` and
 
 [NOTE]
 ======
-See the link:config-prereqs.txt[] for better detailed package lists for
-different operating systems.
+See linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for better detailed
+package lists for different operating systems.
 
 See `ci_build.sh` for automating many practical scenarios, for easier
 iterations.
