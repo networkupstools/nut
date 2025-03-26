@@ -212,14 +212,13 @@ The root `Makefile.am` also provides some aids for maintainers:
 Test automation
 ---------------
 
-The ci_build.sh script
-~~~~~~~~~~~~~~~~~~~~~~
+:leveloffset: 2
+
 [[CI_BUILD_SH]]
+include::{top_srcdir}/ci_build.adoc[]
 
-FIXME: Write the chapter text.
+:leveloffset: 0
 
-For now, see the "Continuous Integration and Automated Builds" chapter
-of `developers.txt` in NUT sources, section "ci_build.sh".
 
 Test programs in NUT codebase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

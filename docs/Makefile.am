@@ -110,7 +110,7 @@ DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  nut-versioning.adoc snmp-subdrivers.txt sock-protocol.txt
 
 QA_GUIDE_DEPS =  nut-qa.txt config-prereqs.txt ci-farm-do-setup.adoc	\
- ci-farm-lxc-setup.txt qa-guide.adoc
+ ci-farm-lxc-setup.txt $(top_srcdir)/ci_build.adoc qa-guide.adoc
 
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
