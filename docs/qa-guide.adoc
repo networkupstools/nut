@@ -227,6 +227,8 @@ Test programs in NUT codebase
 
 FIXME: Write the chapter text.
 
+For now, investigate files in the `tests/` directory contents in NUT sources.
+
 /////////////////////////////
 // end of CI_NUT_SELFTESTS //
 /////////////////////////////
@@ -295,11 +297,20 @@ The jenkins-dynamatrix library
 
 FIXME: Write the chapter text.
 
+For now, see https://github.com/networkupstools/jenkins-dynamatrix sources
+(note the README and large comments at start of files may be obsolete, as
+of this writing -- documenting the initial ideas, but the implementation
+might differ from that over time).
+
 Jenkinsfile-dynamatrix cases in NUT sources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 [[Jenkins_Dynamatrix_Pipeline]]
 
 FIXME: Write the chapter text.
+
+For now, see the `Jenkinsfile-dynamatrix` in the NUT sources (maybe only git),
+e.g. https://github.com/networkupstools/nut/blob/master/Jenkinsfile-dynamatrix
+for the practical pipeline preparation and hand-off to library implementation.
 
 Custom NUT CI farm build agents: VMs on DigitalOcean
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
