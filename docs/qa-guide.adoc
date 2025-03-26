@@ -156,11 +156,17 @@ Test programs in NUT codebase
 
 FIXME: Write the chapter text.
 
-NUT Integration Testing suite (NIT)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[[NIT]]
+/////////////////////////////
+// end of CI_NUT_SELFTESTS //
+/////////////////////////////
 
-FIXME: Write the chapter text.
+:leveloffset: 2
+
+[[NIT]]
+include::{top_srcdir}/tests/NIT/README.adoc[]
+
+:leveloffset: 0
+
 
 Continuous Integration (NUT CI farm)
 ------------------------------------
