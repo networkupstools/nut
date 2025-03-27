@@ -15,7 +15,7 @@
 Version="@PACKAGE_VERSION@"
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
-Libs="-L@libdir@ -lupsclient @LIBSSL_LIBS@"
+Libs="-L@libdir@ @LDFLAGS_NUT_RPATH@ -lupsclient @LIBSSL_LIBS@"
 Cflags="-I@includedir@ @LIBSSL_CFLAGS@"
 ConfigFlags="@CONFIG_FLAGS@"
 
