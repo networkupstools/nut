@@ -3667,7 +3667,11 @@ then
     esac
 fi
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
+dnl # NOTE: This also initializes `hardcode_libdir_flag_spec` and
+dnl # `hardcode_libdir_flag_spec_CXX` that we use in LDFLAGS_NUT_RPATH
 LT_INIT
+
 AC_SUBST([LIBTOOL_DEPS])
 GCC="$SAVED_GCC"
 CC="$SAVED_CC"
@@ -4009,7 +4013,11 @@ AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 dnl Only check the option here (and show in help near pkg-config)
 dnl See LDFLAGS_NUT_RPATH determination further below
 NUT_ARG_ENABLE([ldflags-nut-rpath],
-    [Suggest linker flags for NUT library consumers to set RPATH for uncommon location],
+    [Suggest linker flags for NUT C library consumers to set RPATH for uncommon location],
+    [auto])
+
+NUT_ARG_ENABLE([ldflags-nut-rpath-cxx],
+    [Suggest linker flags for NUT C++ library consumers to set RPATH for uncommon location],
     [auto])
 
 dnl Options for Solaris/illumos `make install` and `make package`
@@ -5059,14 +5067,15 @@ NUT_REPORT_SETTING_PATH([System exec-library path],
 
 dnl Check if we want to expose non-standard RPATH to third-party consumers
 dnl of libupsclient etc. Keep verbatim dollar-var here, expand in pkg-config!
-AC_MSG_CHECKING([whether to suggest a LDFLAGS_NUT_RPATH in pkg-config et al, and which])
 LDFLAGS_NUT_RPATH=''
+LDFLAGS_NUT_RPATH_CXX=''
+AC_MSG_CHECKING([whether to suggest a LDFLAGS_NUT_RPATH in pkg-config et al, and which])
 case "${nut_enable_ldflags_nut_rpath}" in
 	no) ;;
 	auto|yes|"")
 		dnl FIXME: for "auto", detect non-std path,
 		dnl  and set "no" if prefix/libdir is common
-		dnl FIXME: detect supported flags
+		dnl FIXME: detect supported flags => via hardcode_libdir_flag_spec
 		dnl FIXME: perhaps prefer the new-ELF tricks for "runpath"
 		dnl  (so LD_LIBRARY_PATH can override the built-in suggestion)
 		if test "${nut_enable_ldflags_nut_rpath}" != no ; then
@@ -5079,6 +5088,27 @@ esac
 AS_IF([test x"${LDFLAGS_NUT_RPATH}" = x],
 	[AC_MSG_RESULT([none])],
 	[AC_MSG_RESULT([yes: ${LDFLAGS_NUT_RPATH}])]
+)
+
+AC_MSG_CHECKING([whether to suggest a LDFLAGS_NUT_RPATH_CXX in pkg-config et al, and which])
+case "${nut_enable_ldflags_nut_rpath_cxx}" in
+	no) ;;
+	auto|yes|"")
+		dnl FIXME: for "auto", detect non-std path,
+		dnl  and set "no" if prefix/libdir is common
+		dnl FIXME: detect supported flags => via hardcode_libdir_flag_spec_CXX
+		dnl FIXME: perhaps prefer the new-ELF tricks for "runpath"
+		dnl  (so LD_LIBRARY_PATH can override the built-in suggestion)
+		if test "${nut_enable_ldflags_nut_rpath_cxx}" != no ; then
+			LDFLAGS_NUT_RPATH_CXX='-R${libdir} -Wl,-rpath,${libdir}'
+		fi
+		;;
+	*) LDFLAGS_NUT_RPATH_CXX="${nut_enable_ldflags_nut_rpath_cxx}" ;;
+esac
+
+AS_IF([test x"${LDFLAGS_NUT_RPATH_CXX}" = x],
+	[AC_MSG_RESULT([none])],
+	[AC_MSG_RESULT([yes: ${LDFLAGS_NUT_RPATH_CXX}])]
 )
 
 dnl checks related to --with-snmp enabled on command-line
@@ -5211,6 +5241,7 @@ AC_SUBST(NUT_WEBSITE_BASE)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBSSL_LDFLAGS_RPATH)
+AC_SUBST(LIBSSL_LDFLAGS_RPATH_CXX)
 AC_SUBST(LIBSSL_REQUIRES)
 AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
