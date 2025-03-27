@@ -1184,7 +1184,7 @@ static const char *eaton_input_eco_mode_auto_on_fun(double value)
 /* Function to stop ECO(HE) Mode automatically instead of manually stoping Bypass and then Online Mode */
 static const char *eaton_input_eco_mode_auto_off_fun(double value)
 {
-	const char *bypass_switch_off_str = NULL;	
+	const char *bypass_switch_off_str = NULL;
 	const char *eco_switchable_str = NULL;
 
 	NUT_UNUSED_VARIABLE(value);
