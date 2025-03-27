@@ -5067,6 +5067,7 @@ NUT_REPORT_SETTING_PATH([System exec-library path],
 
 dnl Check if we want to expose non-standard RPATH to third-party consumers
 dnl of libupsclient etc. Keep verbatim dollar-var here, expand in pkg-config!
+dnl NOTE: hardcode_libdir_flag_spec(_CXX) vars come from LT INIT above
 LDFLAGS_NUT_RPATH=''
 LDFLAGS_NUT_RPATH_CXX=''
 AC_MSG_CHECKING([whether to suggest a LDFLAGS_NUT_RPATH in pkg-config et al, and which])
@@ -5075,11 +5076,15 @@ case "${nut_enable_ldflags_nut_rpath}" in
 	auto|yes|"")
 		dnl FIXME: for "auto", detect non-std path,
 		dnl  and set "no" if prefix/libdir is common
-		dnl FIXME: detect supported flags => via hardcode_libdir_flag_spec
 		dnl FIXME: perhaps prefer the new-ELF tricks for "runpath"
 		dnl  (so LD_LIBRARY_PATH can override the built-in suggestion)
 		if test "${nut_enable_ldflags_nut_rpath}" != no ; then
-			LDFLAGS_NUT_RPATH='-R${libdir} -Wl,-rpath,${libdir}'
+			if test x"${hardcode_libdir_flag_spec}" != x ; then
+				LDFLAGS_NUT_RPATH="`libdir='${libdir}'; eval echo "${hardcode_libdir_flag_spec}"`"
+			else
+				AC_MSG_NOTICE([autotools did not report a way to specify rpath for C])
+				dnl # LDFLAGS_NUT_RPATH='-R${libdir} -Wl,-rpath,${libdir}'
+			fi
 		fi
 		;;
 	*) LDFLAGS_NUT_RPATH="${nut_enable_ldflags_nut_rpath}" ;;
@@ -5096,11 +5101,15 @@ case "${nut_enable_ldflags_nut_rpath_cxx}" in
 	auto|yes|"")
 		dnl FIXME: for "auto", detect non-std path,
 		dnl  and set "no" if prefix/libdir is common
-		dnl FIXME: detect supported flags => via hardcode_libdir_flag_spec_CXX
 		dnl FIXME: perhaps prefer the new-ELF tricks for "runpath"
 		dnl  (so LD_LIBRARY_PATH can override the built-in suggestion)
 		if test "${nut_enable_ldflags_nut_rpath_cxx}" != no ; then
-			LDFLAGS_NUT_RPATH_CXX='-R${libdir} -Wl,-rpath,${libdir}'
+			if test x"${hardcode_libdir_flag_spec_CXX}" != x ; then
+				LDFLAGS_NUT_RPATH_CXX="`libdir='${libdir}'; eval echo "${hardcode_libdir_flag_spec_CXX}"`"
+			else
+				AC_MSG_NOTICE([autotools did not report a way to specify rpath for C++])
+				dnl # LDFLAGS_NUT_RPATH_CXX='-R${libdir} -Wl,-rpath,${libdir}'
+			fi
 		fi
 		;;
 	*) LDFLAGS_NUT_RPATH_CXX="${nut_enable_ldflags_nut_rpath_cxx}" ;;
@@ -5241,7 +5250,6 @@ AC_SUBST(NUT_WEBSITE_BASE)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBSSL_LDFLAGS_RPATH)
-AC_SUBST(LIBSSL_LDFLAGS_RPATH_CXX)
 AC_SUBST(LIBSSL_REQUIRES)
 AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
@@ -5310,6 +5318,7 @@ AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
 AC_SUBST(NUT_MANDIR, [`eval echo "${NUT_MANDIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(LDFLAGS_NUT_RPATH)
+AC_SUBST(LDFLAGS_NUT_RPATH_CXX)
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
 AC_SUBST(PORT)
