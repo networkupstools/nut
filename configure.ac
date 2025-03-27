@@ -4006,6 +4006,11 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
+dnl Only check the option here (and show in help near pkg-config)
+dnl See LDFLAGS_NUT_RPATH determination further below
+NUT_ARG_ENABLE([ldflags-nut-rpath],
+    [Suggest linker flags for NUT library consumers to set RPATH for uncommon location],
+    [auto])
 
 dnl Options for Solaris/illumos `make install` and `make package`
 AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
@@ -5052,6 +5057,29 @@ LIBEXECDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([System exec-library path],
     LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
+dnl Check if we want to expose non-standard RPATH to third-party consumers
+dnl of libupsclient etc. Keep verbatim dollar-var here, expand in pkg-config!
+AC_MSG_CHECKING([whether to suggest a LDFLAGS_NUT_RPATH in pkg-config et al, and which])
+LDFLAGS_NUT_RPATH=''
+case "${nut_enable_ldflags_nut_rpath}" in
+	no) ;;
+	auto|yes|"")
+		dnl FIXME: for "auto", detect non-std path,
+		dnl  and set "no" if prefix/libdir is common
+		dnl FIXME: detect supported flags
+		dnl FIXME: perhaps prefer the new-ELF tricks for "runpath"
+		dnl  (so LD_LIBRARY_PATH can override the built-in suggestion)
+		if test "${nut_enable_ldflags_nut_rpath}" != no ; then
+			LDFLAGS_NUT_RPATH='-R${libdir} -Wl,-rpath,${libdir}'
+		fi
+		;;
+	*) LDFLAGS_NUT_RPATH="${nut_enable_ldflags_nut_rpath}" ;;
+esac
+
+AS_IF([test x"${LDFLAGS_NUT_RPATH}" = x],
+	[AC_MSG_RESULT([none])],
+	[AC_MSG_RESULT([yes: ${LDFLAGS_NUT_RPATH}])]
+)
 
 dnl checks related to --with-snmp enabled on command-line
 
@@ -5250,6 +5278,7 @@ AC_SUBST(PKGCONFIGDIR)
 AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
 AC_SUBST(NUT_MANDIR, [`eval echo "${NUT_MANDIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
+AC_SUBST(LDFLAGS_NUT_RPATH)
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
 AC_SUBST(PORT)
