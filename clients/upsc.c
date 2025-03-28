@@ -274,7 +274,7 @@ int main(int argc, char **argv)
 	}
 
 	if (upscli_set_default_timeout(net_timeout) < 0) {
-		fatalx(EXIT_FAILURE, "Error: invalid network timeout:",
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
 		       net_timeout);
 	}
 
