@@ -404,7 +404,7 @@ const NotifyFlagsStrings::TypeStrings NotifyFlagsStrings::type_str = {
 	"NOTOFF",	// NOTIFY_NOTOFF
 	"BYPASS",	// NOTIFY_BYPASS
 	"NOTBYPASS",	// NOTIFY_NOTBYPASS
-	"ECO\t",	// NOTIFY_ECO (including padding)
+	"ECO\t",	// NOTIFY_ECO (including padding); NOTE: inverter mode, not ups state, for notifications
 	"NOTECO",	// NOTIFY_NOTECO
 	"ALARM",	// NOTIFY_ALARM
 	"NOTALARM",	// NOTIFY_NOTALARM

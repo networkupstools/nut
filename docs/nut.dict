@@ -673,6 +673,7 @@ MKDIRPROG
 MLH
 MMM
 MNU
+MODENAME
 MONITORed
 MOXA
 MPSU
@@ -1356,6 +1357,7 @@ V'ger
 VALIGN
 VARDESC
 VARTYPE
+VENDORNAME
 VER
 VERFW
 VFI
@@ -1653,6 +1655,7 @@ buildtype
 bullseye
 busport
 busybox
+buzzmode
 bv
 bypassOff
 bypassOn
@@ -2177,6 +2180,7 @@ interruptonly
 interruptsize
 intltool
 inverter
+invmode
 io
 ioLogik
 ioLogikE
