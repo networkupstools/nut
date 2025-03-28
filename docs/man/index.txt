@@ -33,6 +33,7 @@ Clients commands
 - linkman:upsc[8]
 - linkman:upscmd[8]
 - linkman:upsrw[8]
+- linkman:NUT-Monitor[8]
 
 Configuration commands
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -46,6 +47,14 @@ CGI programs
 - linkman:upsimage.cgi[8]
 - linkman:upsset.cgi[8]
 - linkman:upsstats.cgi[8]
+
+Platform management
+~~~~~~~~~~~~~~~~~~~
+
+Windows
+^^^^^^^
+
+- linkman:nut.exe[8]
 
 [[Drivers]]
 Driver control:
@@ -97,6 +106,8 @@ Client library
 - linkman:upscli_ssl[3]
 - linkman:upscli_strerror[3]
 - linkman:upscli_upserror[3]
+- linkman:upscli_str_add_unique_token[3]
+- linkman:upscli_str_contains_token[3]
 
 [[devscan]]
 Device discovery library

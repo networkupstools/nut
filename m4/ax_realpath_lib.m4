@@ -111,7 +111,7 @@ AC_DEFUN([AX_REALPATH_LIB],
                                 "${MSYSTEM_PREFIX}/lib" \
                                 "${MINGW_PREFIX}/bin" \
                                 "${MINGW_PREFIX}/lib" \
-                                `${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^libraries: *=/,/,'` \
+                                `${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^@<:@^=@:>@*=,:,' | sed 's,\(@<:@:;@:>@\)\(@<:@A-Z@:>@\):/,:/\2/,g' | tr ':' '\n'` \
                             ; do
                                 if test -s "$D/${myLIBPATH}" 2>/dev/null ; then
                                     myLIBPATH="$D/${myLIBPATH}"

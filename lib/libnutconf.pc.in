@@ -2,9 +2,12 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+sysconfdir=@CONFPATH@
+statepath=@STATEPATH@
+nutuser=@RUN_AS_USER@
 
 Name: libnutconf
 Description: Network UPS Tools configuration management
 Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lnutconf
+Libs: -L${libdir} @LDFLAGS_NUT_RPATH_CXX@ -lnutconf
 Cflags: -I${includedir}

@@ -112,8 +112,8 @@ endif WITH_SSL
 # object .so names would differ)
 
 # libupsclient version information
-libupsclient_la_LDFLAGS = -version-info 6:1:0
-libupsclient_la_LDFLAGS += -export-symbols-regex ^upscli_
+libupsclient_la_LDFLAGS = -version-info 6:2:0
+libupsclient_la_LDFLAGS += -export-symbols-regex '^(upscli_)'
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libupsclient_la_LDFLAGS += -no-undefined
@@ -133,7 +133,8 @@ endif HAVE_WINDOWS
 #   libdir='//lib'
 CLEANFILES += libupsclient-version.h
 libupsclient-version.h: libupsclient.la
-	@dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
+	@echo "  GENERATE-HEADER	$@" ; \
+	 dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
 	 SOFILE_LIBUPSCLIENT="`grep -E '^dlname' '$?' | dlname_filter`" \
 	 || SOFILE_LIBUPSCLIENT="" ; \
 	 if [ x"$${SOFILE_LIBUPSCLIENT-}" = x ] ; then \

@@ -447,10 +447,10 @@ static void setuptcp(stype_t *server)
 
 	if ((v = getaddrinfo(server->addr, server->port, &hints, &res)) != 0) {
 		if (v == EAI_SYSTEM) {
-			fatal_with_errno(EXIT_FAILURE, "getaddrinfo");
+			fatal_with_errno(EXIT_FAILURE, "getaddrinfo('%s')", NUT_STRARG(server->addr));
 		}
 
-		fatalx(EXIT_FAILURE, "getaddrinfo: %s", gai_strerror(v));
+		fatalx(EXIT_FAILURE, "getaddrinfo('%s'): %s", NUT_STRARG(server->addr), gai_strerror(v));
 	}
 
 	for (ai = res; ai; ai = ai->ai_next) {
@@ -1320,6 +1320,7 @@ char *tracking_get(const char *id)
 		case STAT_UNKNOWN:
 			return "ERR UNKNOWN";
 		case STAT_INVALID:
+		case STAT_CONVERSION_FAILED:
 			return "ERR INVALID-ARGUMENT";
 		case STAT_FAILED:
 			return "ERR FAILED";

@@ -202,6 +202,36 @@ int upscli_set_default_timeout(const char *secs);
 #define UPSCLI_CONN_INET6		0x0008	/* IPv6 only */
 #define UPSCLI_CONN_CERTVERIF	0x0010	/* Verify certificates for SSL	*/
 
+/******************************************************************************
+ * String methods for space-separated token lists, used originally in dstate  *
+ * These methods should ease third-party NUT clients' parsing of `ups.status` *
+ ******************************************************************************/
+
+/* Return non-zero if "string" contains "token" (case-sensitive),
+ * either surrounded by space character(s) or start/end of "string",
+ * or 0 if that token is not there, or if either string is NULL or empty.
+ */
+int	upscli_str_contains_token(const char *string, const char *token);
+
+/* Add "token" to end of string "tgt", if it is not yet there
+ * (prefix it with a space character if "tgt" is not empty).
+ * Return 0 if already there, 1 if token was added successfully,
+ * -1 if we needed to add it but it did not fit under the tgtsize limit,
+ * -2 if either string was NULL or "token" was empty.
+ * NOTE: If token contains space(s) inside, recurse to treat it
+ * as several tokens to add independently.
+ * Optionally calls "callback_always" (if not NULL) after checking
+ * for spaces (and maybe recursing) and before checking if the token
+ * is already there, and/or "callback_unique" (if not NULL) after
+ * checking for uniqueness and going to add a newly seen token.
+ * If such callback returns 0, abort the addition of token and return -3.
+ */
+int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+				int (*callback_always)(char *, size_t, const char *),
+				int (*callback_unique)(char *, size_t, const char *)
+);
+
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

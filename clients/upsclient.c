@@ -1883,3 +1883,15 @@ int upscli_set_default_timeout(const char *secs) {
 	return 0;
 }
 
+/* Pick up the methods below from libcommon and expose in the NUT client API */
+int	upscli_str_contains_token(const char *string, const char *token)
+{
+	return str_contains_token(string, token);
+}
+
+int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+				int (*callback_always)(char *, size_t, const char *),
+				int (*callback_unique)(char *, size_t, const char *)
+) {
+	return str_add_unique_token(tgt, tgtsize, token, callback_always, callback_unique);
+}

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3329 utf-8
+personal_ws-1.1 en 3353 utf-8
 AAC
 AAS
 ABI
@@ -205,6 +205,7 @@ Checksum
 Christoph
 Chu
 Cichowski
+CipherString
 CircleCI
 Claesson
 CodingStyle
@@ -245,6 +246,7 @@ DES
 DESTDIR
 DEVICEALARM
 DEVNAME
+DEVREL
 DEXP
 DF
 DHEA
@@ -332,6 +334,7 @@ ESXi
 ETIME
 EUROCASE
 EXtreme
+EcoFlow
 Economou
 EditorConfig
 Edlman
@@ -407,6 +410,7 @@ GES
 GETADDRINFO
 GETPID
 GID
+GITREV
 GND
 GNUmakefile
 GObject
@@ -563,6 +567,7 @@ KRTS
 KSTAR
 KTTS
 Kain
+Kajetan
 Kaminski
 Kanji
 Kazancev
@@ -668,6 +673,7 @@ MKDIRPROG
 MLH
 MMM
 MNU
+MODENAME
 MONITORed
 MOXA
 MPSU
@@ -840,6 +846,7 @@ OpenSSL
 OpenSolaris
 OpenSource
 OpenUPS
+OpenWRT
 Opengear
 Opensource
 Opti
@@ -902,6 +909,7 @@ PULS
 PV
 PWR
 PXG
+PYTHONIOENCODING
 PYTHONPATH
 PaaS
 Pac
@@ -1064,6 +1072,7 @@ RunAs
 RunUPSCommand
 RxD
 Ryabov
+Rzepecki
 SAI
 SASU
 SCM
@@ -1348,6 +1357,7 @@ V'ger
 VALIGN
 VARDESC
 VARTYPE
+VENDORNAME
 VER
 VERFW
 VFI
@@ -1480,6 +1490,7 @@ advorder
 ae
 aec
 af
+afeb
 aggregator
 ai
 aix
@@ -1644,6 +1655,7 @@ buildtype
 bullseye
 busport
 busybox
+buzzmode
 bv
 bypassOff
 bypassOn
@@ -1694,6 +1706,7 @@ chrooting
 chroots
 chunked
 chunking
+chunkname
 chv
 ci
 cidr
@@ -1711,6 +1724,7 @@ cmdname
 cmdparam
 cmds
 cmdvartab
+cnf
 codebase
 codepath
 coldstarts
@@ -1817,6 +1831,7 @@ descr
 desde
 designator
 dev
+devclient
 devctl
 devd
 devel
@@ -1939,6 +1954,7 @@ extapi
 extern
 externalConsole
 extradata
+faa
 fabula
 facto
 fallthrough
@@ -2024,6 +2040,7 @@ github
 gitignore
 gitk
 gitlab
+gitlog
 gmail
 gmake
 gmtime
@@ -2163,6 +2180,7 @@ interruptonly
 interruptsize
 intltool
 inverter
+invmode
 io
 ioLogik
 ioLogikE
@@ -2208,6 +2226,7 @@ kVA
 kadets
 kaminski
 kde
+kex
 kext
 keychain
 keygen
@@ -2720,7 +2739,9 @@ py
 pycparser
 pydoc
 pygments
+pygtk
 pynut
+pyqt
 qDEB
 qa
 qemu
@@ -2733,6 +2754,7 @@ qxflags
 rD
 raritan
 rb
+rc
 rcctl
 readline
 readonly
@@ -2744,6 +2766,8 @@ rebasing
 rebootdelay
 rebranded
 reconnection
+recurses
+recursing
 recv
 redistributors
 reentrancy
@@ -2927,6 +2951,7 @@ squasher
 sr
 src
 srcdir
+srcdoc
 srv
 srw
 ss
@@ -3043,6 +3068,8 @@ testtime
 testuser
 textproc
 tgcware
+tgt
+tgtsize
 tgz
 th
 timeframe
@@ -3066,6 +3093,7 @@ tport
 tripplite
 tripplitesu
 troff
+tsa
 tsd
 tty
 ttyACM

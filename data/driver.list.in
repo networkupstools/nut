@@ -423,6 +423,9 @@
 "Eaton"	"ats"	"5"	"Eaton ATS16"	""	"snmp-ups"
 "Eaton"	"ats"	"5"	"Eaton ATS30"	""	"snmp-ups"
 
+"Ecoflow"	"ups"	"3"	"Delta 3 Plus"	"USB"	"usbhid-ups"
+"Ecoflow"	"ups"	"3"	"River 3 Plus"	"USB"	"usbhid-ups"
+
 "Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"blazer_ser"
 "Effekta"	"ups"	"2"	"RM2000MH"	""	"blazer_ser"
 

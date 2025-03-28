@@ -4,7 +4,7 @@
 	2003		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
-	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,7 +51,8 @@
 	static char	*pipename = NULL;
 #endif
 	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
-	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
+	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN],
+			buzzmode_buf[ST_MAX_VALUE_LEN];
 	static conn_t	*connhead = NULL;
 	static st_tree_t	*dtree_root = NULL;
 	static cmdlist_t	*cmdhead = NULL;
@@ -818,7 +819,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		char *cmdparam = NULL;
 		char *cmdid = NULL;
 
-		/* Check if <cmdparam> and TRACKING were provided */
+		/* Check if <cmdparam> and/or TRACKING were provided */
 		if (numarg == 3) {
 			cmdparam = arg[2];
 		} else if (numarg == 4 && !strcasecmp(arg[2], "TRACKING")) {
@@ -872,6 +873,17 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 				NUT_STRARG(cmdname));
 		}
 
+		/* Send back execution result (here, STAT_INSTCMD_UNKNOWN)
+		 * if TRACKING was requested.
+		 * Note that in practice we should not get here often: if the
+		 * instcmd was not registered, it may be rejected earlier in
+		 * call stack, or returned by a driver's handler (for unknown
+		 * commands) just a bit above.
+		 */
+		if (cmdid)
+			send_tracking(conn, cmdid, ret);
+
+		/* The command was handled, status is a separate consideration */
 		return 1;
 	}
 
@@ -1636,80 +1648,23 @@ void status_init(void)
  * (considering a whole-word token in temporary status_buf) */
 int status_get(const char *buf)
 {
-	char	*s = NULL;
-	size_t	offset = 0, buflen = 0;
-
-	if (!buf || !*buf || !*status_buf)
-		return 0;
-
-	s = strstr(status_buf, buf);
-	buflen = strlen(buf);
-
-repeat:
-	/* not found or hit end of line */
-	if (!s || !*s)
-		return 0;
-
-	offset = s - status_buf;
-#ifdef DEBUG
-	upsdebugx(3, "%s: '%s' in '%s': offset=%" PRIuSIZE" buflen=%" PRIuSIZE" s[buflen]='0x%2X'\n",
-		__func__, buf, status_buf, offset, buflen, s[buflen]);
-#endif
-	if (offset == 0 || status_buf[offset - 1] == ' ') {
-		/* We have hit the start of token */
-		if (s[buflen] == '\0' || s[buflen] == ' ') {
-			/* And we have hit the end of token */
-			return 1;
-		}
-	}
-
-	/* buf was a substring of some other token */
-	s = strstr(s + 1, buf);
-	goto repeat;
+	return str_contains_token(status_buf, buf);
 }
 
 /* add a status element */
-void status_set(const char *buf)
+static int status_set_callback(char *tgt, size_t tgtsize, const char *token)
 {
-#ifdef DEBUG
-	upsdebugx(3, "%s: '%s'\n", __func__, buf);
-#endif
-	if (strstr(buf, " ")) {
-		/* Recurse adding each sub-status one by one (avoid duplicates)
-		 * We frown upon adding "A FEW TOKENS" at once, but in e.g.
-		 * snmp-ups subdrivers with a mapping table this is not easily
-		 * avoidable...
-		 */
-		char	*tmp = xstrdup(buf), *p = tmp, *s = tmp;
-		while (*p) {
-			if (*p == ' ') {
-				*p = '\0';
-				if (s != p) {
-					/* Only recurse to set non-trivial tokens */
-					status_set(s);
-				}
-				p++;
-				s = p;	/* Start of new word... or a consecutive space to ignore on next cycle */
-			} else {
-				p++;
-			}
-		}
-
-		if (s != p) {
-			/* Last valid token did end with (*p=='\0') */
-			status_set(s);
-		}
-
-		free(tmp);
-		return;
+	if (tgt != status_buf || tgtsize != sizeof(status_buf)) {
+		upsdebugx(2, "%s: called for wrong use-case", __func__);
+		return 0;
 	}
 
-	if (ignorelb && !strcasecmp(buf, "LB")) {
+	if (ignorelb && !strcasecmp(token, "LB")) {
 		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
-		return;
+		return 0;
 	}
 
-	if (!strcasecmp(buf, "ALARM")) {
+	if (!strcasecmp(token, "ALARM")) {
 		/* Drivers really should not raise alarms this way,
 		 * but for the sake of third-party forks, we handle
 		 * the possibility...
@@ -1720,20 +1675,19 @@ void status_set(const char *buf)
 			alarm_set("[N/A]");
 		}
 		alarm_status++;
-		return;
+		return 0;
 	}
 
-	if (status_get(buf)) {
-		upsdebugx(2, "%s: status was already set: %s", __func__, buf);
-		return;
-	}
+	/* Proceed adding the token */
+	return 1;
+}
 
-	/* separate with a space if multiple elements are present */
-	if (strlen(status_buf) > 0) {
-		snprintfcat(status_buf, sizeof(status_buf), " %s", buf);
-	} else {
-		snprintfcat(status_buf, sizeof(status_buf), "%s", buf);
-	}
+void status_set(const char *buf)
+{
+#ifdef DEBUG
+	upsdebugx(3, "%s: '%s'\n", __func__, buf);
+#endif
+	str_add_unique_token(status_buf, sizeof(status_buf), buf, status_set_callback, NULL);
 }
 
 /* write the status_buf into the externally visible dstate storage */
@@ -1797,6 +1751,33 @@ void status_commit(void)
 	}
 }
 
+/* similar functions for experimental.ups.mode.buzzwords, where tracked
+ * dynamically (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
+void buzzmode_init(void)
+{
+	memset(buzzmode_buf, 0, sizeof(buzzmode_buf));
+}
+
+int  buzzmode_get(const char *buf)
+{
+	return str_contains_token(buzzmode_buf, buf);
+}
+
+void buzzmode_set(const char *buf)
+{
+	str_add_unique_token(buzzmode_buf, sizeof(buzzmode_buf), buf, NULL, NULL);
+}
+
+void buzzmode_commit(void)
+{
+	if (!*buzzmode_buf) {
+		dstate_delinfo("experimental.ups.mode.buzzwords");
+		return;
+	}
+
+	dstate_setinfo("experimental.ups.mode.buzzwords", "%s", buzzmode_buf);
+}
+
 /* similar handlers for ups.alarm */
 
 void alarm_init(void)
@@ -1815,6 +1796,11 @@ void alarm_init(void)
 #endif
 void alarm_set(const char *buf)
 {
+	/* NOTE: Differs from status_set() since we can add whole sentences
+	 *  here, not just unique tokens. Drivers are encouraged to wrap such
+	 *  sentences into brackets, especially when many alarms raised at once
+	 *  are anticipated, for readability.
+	 */
 	int ret;
 	if (strlen(alarm_buf) < 1 || (alarm_status && !strcmp(alarm_buf, "[N/A]"))) {
 		ret = snprintf(alarm_buf, sizeof(alarm_buf), "%s", buf);
