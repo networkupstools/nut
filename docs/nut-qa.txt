@@ -27,8 +27,8 @@ link:http://catb.org/~esr/doclifter/index.html[doclifter] (outdated)
 
 - Documentation source files are spell checked, using
   link:http://aspell.net[Aspell], both interactively (using
-  'make spellcheck-interactive') and automatically in Buildbot (using
-  'make spellcheck').
+  'make spellcheck-interactive') and automatically in NUT CI
+  farm runs (using 'make spellcheck').
 
 NOTE: A NUT dictionary is also available (as `docs/nut.dict` in NUT sources),
 providing a glossary of terms related to power devices and management, as well
@@ -67,7 +67,7 @@ trees are reported on the link:http://lists.alioth.debian.org/mailman/listinfo/n
 mailing list.
 ////////////////////////////////////////////////////////////////////////////////
 
-- link:http://buildbot.networkupstools.org/public/nut/[Buildbot]
+- OBSOLETE: link:http://buildbot.networkupstools.org/public/nut/[Buildbot]
   for older take on multi-platform builds, and the
 
 - new dedicated Jenkins incarnation of the NUT CI Farm with "legacy UI"
@@ -90,9 +90,10 @@ link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
 mailing list, and fixed quickly.
 ////////////////////////////////////////////////////////////////////////////////
 
-- a project portal with trackers for bugs, feature request, patches and tasks
+- a project portal with trackers for bugs, feature request, patches and tasks,
+  currently at GitHub
 
-- LGTM.COM automatically checking C/C++ and Python code
+- CodeQL (previously LGTM.COM) automatically checking C/C++ and Python code
 
 - Static code analysis:
   * link:https://scan.coverity.com/projects/networkupstools-nut[Coverity Scan overview of NUT]
