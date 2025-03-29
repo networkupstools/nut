@@ -100,17 +100,20 @@ IMAGE_LOGO_FILES_JENKINS_NUT = \
 # Only track here the local deps
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
+# See also conversions included via FULL_USER_MANUAL_DEPS
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
+# See also conversions included via FULL_DEVELOPER_GUIDE_DEPS
 DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt macros.txt new-clients.txt	\
  new-drivers.txt net-protocol.txt nutdrv_qx-subdrivers.txt	\
  nut-versioning.adoc snmp-subdrivers.txt sock-protocol.txt
 
+# See also conversions included via FULL_QA_GUIDE_DEPS
 QA_GUIDE_DEPS =  nut-qa.txt config-prereqs.txt ci-farm-do-setup.adoc	\
- ci-farm-lxc-setup.txt $(top_srcdir)/ci_build.adoc qa-guide.adoc
+ ci-farm-lxc-setup.txt qa-guide.adoc
 
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
@@ -513,7 +516,8 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README.adoc ../TODO.adoc \
 	../lib/README.adoc \
 	../tools/nut-scanner/README.adoc
-FULL_QA_GUIDE_DEPS = $(QA_GUIDE_DEPS) $(SHARED_DEPS)
+FULL_QA_GUIDE_DEPS = $(QA_GUIDE_DEPS) $(SHARED_DEPS) \
+	$(top_builddir)/ci_build.adoc-parsed
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
@@ -725,7 +729,7 @@ GENERATE_PDF = ( \
 # Used below for spellcheck and for .prep-src-docs
 SPELLCHECK_SRC_DEFAULT = $(ALL_TXT_SRC) \
 	asciidoc-vars.conf \
-	../README.adoc ../NEWS.adoc \
+	../ci_build.adoc ../README.adoc ../NEWS.adoc \
 	../INSTALL.nut.adoc ../UPGRADING.adoc \
 	../TODO.adoc ../scripts/ufw/README.adoc \
 	../scripts/augeas/README.adoc ../lib/README.adoc \
