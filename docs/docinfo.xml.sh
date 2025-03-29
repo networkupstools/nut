@@ -6,7 +6,7 @@
 # Note that relying on git tags alone is a chicken-and-egg problem here
 # (the updated file should be part of a new release), so it rather helps
 # catch up with missed entries.
-# Copyright (C) 2023 by Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2023-2025 by Jim Klimov <jimklimov+nut@gmail.com>
 # Licensed under GPLv2+ terms
 
 SCRIPTDIR="`dirname "$0"`" \
@@ -16,9 +16,12 @@ SCRIPTDIR="`dirname "$0"`" \
 
 [ -n "${DOCINFO_XML-}" ] || DOCINFO_XML="${SCRIPTDIR}/docinfo.xml.in"
 
+# NUT v2.6.0 is the oldest release with asciidoc rendered into PDF
+[ -n "${DOCINFO_OLDEST_TAG-}" ] || DOCINFO_OLDEST_TAG="v2.6.0"
+
 generate_tags() {
-    # NUT v2.6.0 is the oldest release with asciidoc rendered into PDF
-    for RELTAG in `git tag -l 'v*' --contains v2.6.0 | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -e 's,-.*$,,' | sort -nr | uniq` ; do
+    # Find commits whose history includes DOCINFO_OLDEST_TAG
+    for RELTAG in `git tag -l 'v*' --contains "${DOCINFO_OLDEST_TAG}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -e 's,-.*$,,' | sort -nr | uniq` ; do
         NUT_RELEASE="`echo "$RELTAG" | sed -e 's,^v,,'`"
         grep "<revnumber>${NUT_RELEASE}</revnumber>" "${DOCINFO_XML}" >/dev/null 2>&1 && continue
 
