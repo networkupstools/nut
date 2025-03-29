@@ -99,8 +99,9 @@ read LINE
 case "$LINE" in
     y|Y|yes|YES)
         mv -f "${DOCINFO_XML}.tmp" "${DOCINFO_XML}"
-        echo "===== FURTHER ACTIONS: You may want to: git add -p `basename "${DOCINFO_XML}"`" >&2
-        echo "...and: make `basename "${DOCINFO_XML}" .in`" >&2
+        echo "===== FURTHER ACTIONS: You may want to edit text between 'revremark' tags and:" >&2
+        echo "    git add -p `basename "${DOCINFO_XML}"`" >&2
+        echo "    make `basename "${DOCINFO_XML}" .in`" >&2
         ;;
     *) echo "NOT APPLYING the change! See '${DOCINFO_XML}.tmp' for investigation!" >&2
 esac
