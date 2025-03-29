@@ -511,6 +511,14 @@ gcc and clang, C standards, and requiring to pass builds at least in a
 mode without warnings (and checking the other cases where any warnings
 are made fatal).
 
+CodeQL
+~~~~~~
+[[NUT_CI_CODEQL]]
+
+(Earlier this role was performed by LGTM.com) Run GitHub Actions for static
+analysis of C, C++ and Python code and recipes, to produce suggestions based
+on common coding flaws and best-practice security patterns.
+
 Continuous Integration (NUT CI farm) build agent preparation
 ------------------------------------------------------------
 [[NUTCI_farm_agents]]
