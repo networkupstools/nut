@@ -41,6 +41,45 @@ NEWTAGS="`generate_tags`"
 #echo "TODO: Add the following DOCINFO tags:" >&2
 #echo "NEWTAGS: $NEWTAGS" >&2
 
+if [ ! -s "${DOCINFO_XML}" ] ; then
+    echo "DOCINFO_XML='${DOCINFO_XML}' did not exist, populating a new one? [Y/N]" >&2
+    read LINE
+    case "$LINE" in
+        y|Y|yes|YES)
+            cat > "${DOCINFO_XML}" << EOF
+<revhistory>
+  <!-- This file was generated and is later maintained with:
+       DOCINFO_XML="${DOCINFO_XML}" DOCINFO_OLDEST_TAG="${DOCINFO_OLDEST_TAG}" ./docinfo.xml.sh
+    -->
+
+EOF
+
+            cat >> "${DOCINFO_XML}" << 'EOF'
+  <!-- Current release of NUT (to be left on top) -->
+  <revision>
+    <revnumber>@PACKAGE_VERSION@ @NUT_SOURCE_GITREV@</revnumber>
+    <date>@now@</date>
+    <authorinitials></authorinitials>
+    <revremark>
+      Current release snapshot of Network UPS Tools (NUT).
+    </revremark>
+  </revision>
+
+  <!-- 'Real' revision history (news on top). The revremarks are based
+       on 'git diff ${RELTAG}..${RELTAG_NEXT} NEWS UPGRADING "*.txt"'
+       with a focus on those changes which impacted documentation.
+    -->
+  <!-- AUTOINSERT LOCATION -->
+</revhistory>
+EOF
+            echo "===== FURTHER ACTIONS: Please add it to git, configure.ac, docs/.gitignore, and docs/Makefile.am" >&2
+            ;;
+        *)  echo "NOT APPLYING the change!" >&2
+            exit 1
+            ;;
+    esac
+fi
+
 # Have to hide and un-hide EOLs (via "|") and escape
 # the leading space to enforce it in "sed a" command
 # (it eats whitespace otherwise).
@@ -60,7 +99,7 @@ read LINE
 case "$LINE" in
     y|Y|yes|YES)
         mv -f "${DOCINFO_XML}.tmp" "${DOCINFO_XML}"
-        echo "You may want to: git add -p `basename "${DOCINFO_XML}"`" >&2
+        echo "===== FURTHER ACTIONS: You may want to: git add -p `basename "${DOCINFO_XML}"`" >&2
         echo "...and: make `basename "${DOCINFO_XML}" .in`" >&2
         ;;
     *) echo "NOT APPLYING the change! See '${DOCINFO_XML}.tmp' for investigation!" >&2
