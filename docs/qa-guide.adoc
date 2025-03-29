@@ -117,6 +117,15 @@ include::{top_srcdir}/scripts/valgrind/README.adoc[]
 
 :leveloffset: 0
 
+cppcheck
+~~~~~~~~
+[[CI_cppcheck]]
+
+The root `Makefile.am` includes a recipe to run a special build of NUT
+analyzed by the `cppcheck` tool (if detected by `configure` script) and
+produce a `cppcheck.xml` report for further tools to use, e.g. visualise
+it by the Jenkins Warnings plugin.
+
 Static analysis by compilers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [[CI_compiler_warnings]]
