@@ -142,8 +142,8 @@ It installs NUT packages, configures it with the dummy-ups driver, changes
 Runtime quality
 ^^^^^^^^^^^^^^^
 
-- NUT provides many link:user-manual.html#NUT_Security[security features] to
-  ensure a maximum runtime security level.
+- NUT provides many linkdoc:user-manual[security features,NUT_Security,docs/security.txt]
+  to ensure a maximum runtime security level.
 
 - Packages use several link:http://wiki.debian.org/Hardening[Hardening methods]
   to protect NUT binaries.
