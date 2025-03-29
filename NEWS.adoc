@@ -93,6 +93,14 @@ https://github.com/networkupstools/nut/milestone/11
      data server), by returning "ERR INVALID-ARGUMENT", so there is no change
      for the network protocol definition. [#2182]
 
+ - Large parts of the NUT User Manual and NUT Developer Guide were relocated
+   into the new NUT Quality Assurance and Build Automation Guide (maintained
+   in `docs/qa-guide.adoc`), accompanied by new chapters written and detailed
+   for this subject; the chapter about `ci_build.sh` script became a separate
+   `ci_build.adoc` document included into the new document. Overall, this guide
+   intended to help the current and future maintainers of NUT itself, as well
+   as to inspire any other projects that investigate similar solutions. [#2832]
+
  - SEMVER, know thyself!
    * Development iterations of NUT should now identify with not only the
      semantic version of a preceding release, but with git-derived information

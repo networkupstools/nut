@@ -223,7 +223,7 @@ Also note the container/system naming without underscore in "x86_64" --
    https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux#Using_pacman_from_the_host_system
    for details.
    On a Debian/Ubuntu host, assumed ready for NUT builds per
-   linkdoc:user-manual[Prerequisites for building NUT on different OSes,Config_Prereqs,docs/config-prereqs.txt],
+   linkdoc:qa-guide[Prerequisites for building NUT on different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt],
    it would start like this:
 +
 ------
@@ -478,8 +478,9 @@ fails to find the group anyway; then we have to "manually" add them.
 Further setup of the containers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See NUT `docs/config-prereqs.txt` about dependency package installation
-for Debian-based Linux systems.
+See linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] about dependency
+package installation for Debian-based Linux systems.
 
 It may be wise to not install e.g. documentation generation tools (or at
 least not the full set for HTML/PDF generation) in each environment, in
@@ -505,7 +506,8 @@ may be not yet configured or still struggling to access the Internet):
 
 Similarly for `yum`-managed systems (CentOS and relatives), though specific
 package names can differ, and additional package repositories may need to
-be enabled first (see link:config-prereqs.txt[config-prereqs.txt] for more
+be enabled first (see linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for more
 details such as recommended package names).
 
 Note that technically `(sudo) chroot ...` can also be used from the CI worker

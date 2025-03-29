@@ -6,7 +6,7 @@
 # Note that relying on git tags alone is a chicken-and-egg problem here
 # (the updated file should be part of a new release), so it rather helps
 # catch up with missed entries.
-# Copyright (C) 2023 by Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2023-2025 by Jim Klimov <jimklimov+nut@gmail.com>
 # Licensed under GPLv2+ terms
 
 SCRIPTDIR="`dirname "$0"`" \
@@ -16,9 +16,12 @@ SCRIPTDIR="`dirname "$0"`" \
 
 [ -n "${DOCINFO_XML-}" ] || DOCINFO_XML="${SCRIPTDIR}/docinfo.xml.in"
 
+# NUT v2.6.0 is the oldest release with asciidoc rendered into PDF
+[ -n "${DOCINFO_OLDEST_TAG-}" ] || DOCINFO_OLDEST_TAG="v2.6.0"
+
 generate_tags() {
-    # NUT v2.6.0 is the oldest release with asciidoc rendered into PDF
-    for RELTAG in `git tag -l 'v*' --contains v2.6.0 | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -e 's,-.*$,,' | sort -nr | uniq` ; do
+    # Find commits whose history includes DOCINFO_OLDEST_TAG
+    for RELTAG in `git tag -l 'v*' --contains "${DOCINFO_OLDEST_TAG}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -e 's,-.*$,,' | sort -nr | uniq` ; do
         NUT_RELEASE="`echo "$RELTAG" | sed -e 's,^v,,'`"
         grep "<revnumber>${NUT_RELEASE}</revnumber>" "${DOCINFO_XML}" >/dev/null 2>&1 && continue
 
@@ -37,6 +40,45 @@ NEWTAGS="`generate_tags`"
 
 #echo "TODO: Add the following DOCINFO tags:" >&2
 #echo "NEWTAGS: $NEWTAGS" >&2
+
+if [ ! -s "${DOCINFO_XML}" ] ; then
+    echo "DOCINFO_XML='${DOCINFO_XML}' did not exist, populating a new one? [Y/N]" >&2
+    read LINE
+    case "$LINE" in
+        y|Y|yes|YES)
+            cat > "${DOCINFO_XML}" << EOF
+<revhistory>
+  <!-- This file was generated and is later maintained with:
+       DOCINFO_XML="${DOCINFO_XML}" DOCINFO_OLDEST_TAG="${DOCINFO_OLDEST_TAG}" ./docinfo.xml.sh
+    -->
+
+EOF
+
+            cat >> "${DOCINFO_XML}" << 'EOF'
+  <!-- Current release of NUT (to be left on top) -->
+  <revision>
+    <revnumber>@PACKAGE_VERSION@ @NUT_SOURCE_GITREV@</revnumber>
+    <date>@now@</date>
+    <authorinitials></authorinitials>
+    <revremark>
+      Current release snapshot of Network UPS Tools (NUT).
+    </revremark>
+  </revision>
+
+  <!-- 'Real' revision history (news on top). The revremarks are based
+       on 'git diff ${RELTAG}..${RELTAG_NEXT} NEWS UPGRADING "*.txt"'
+       with a focus on those changes which impacted documentation.
+    -->
+  <!-- AUTOINSERT LOCATION -->
+</revhistory>
+EOF
+            echo "===== FURTHER ACTIONS: Please add it to git, configure.ac, docs/.gitignore, and docs/Makefile.am" >&2
+            ;;
+        *)  echo "NOT APPLYING the change!" >&2
+            exit 1
+            ;;
+    esac
+fi
 
 # Have to hide and un-hide EOLs (via "|") and escape
 # the leading space to enforce it in "sed a" command
@@ -57,8 +99,9 @@ read LINE
 case "$LINE" in
     y|Y|yes|YES)
         mv -f "${DOCINFO_XML}.tmp" "${DOCINFO_XML}"
-        echo "You may want to: git add -p `basename "${DOCINFO_XML}"`" >&2
-        echo "...and: make `basename "${DOCINFO_XML}" .in`" >&2
+        echo "===== FURTHER ACTIONS: You may want to edit text between 'revremark' tags and:" >&2
+        echo "    git add -p `basename "${DOCINFO_XML}"`" >&2
+        echo "    make `basename "${DOCINFO_XML}" .in`" >&2
         ;;
     *) echo "NOT APPLYING the change! See '${DOCINFO_XML}.tmp' for investigation!" >&2
 esac

@@ -10,6 +10,10 @@ Source code
 ================================================================================
 You should always use PGP/GPG to verify the signatures before using any source code.
 
+///////////
+// FIXME: linkdoc:user-manual[following procedure,verifySourceSig,docs/security.txt]
+///////////
+
 You can use the
 ifdef::website[]
 link:docs/user-manual.chunked/NUT_Security.html#verifySourceSig[following procedure]

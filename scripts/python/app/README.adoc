@@ -71,7 +71,8 @@ Development/Testing notes
 
 As Python2 falls out of favor and packaging scope of different distributions,
 one where both variants of the script can be tested simultaneously as of 2025
-is MSYS2 (on Windows), see `docs/config-prereqs.txt` in NUT sources for more
+is MSYS2 (on Windows), see linkdoc:qa-guide[Prerequisites for building NUT
+on different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for more
 details about general prerequisites for the NUT build in that environment.
 
 Regarding the Python UI support, you would need:

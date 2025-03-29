@@ -875,6 +875,9 @@ tools/gitlog2changelog.py: tools/gitlog2changelog.py.in
 
 # ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes
+# Assume tools are available (and maintainer GPG keys)
+dist-files: dist dist-sig dist-hash
+
 nut-@PACKAGE_VERSION@.tar.gz: dist
 nut-@PACKAGE_VERSION@.tar.gz.sig: dist-sig
 nut-@PACKAGE_VERSION@.tar.gz.md5 nut-@PACKAGE_VERSION@.tar.gz.sha256: dist-hash

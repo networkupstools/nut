@@ -213,7 +213,7 @@ tests>>" section details some more hints about such workflow, including some
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
 
-The <<Config_Prereqs,Prerequisites for building NUT on different OSes>>
+The {linkdoc}qa-guide{ld-s}[NUT Quality Assurance Guide,NUT_Config_Prereqs,docs/config-prereqs.txt]
 document suggests prerequisite packages with tools and dependencies
 available and needed to build and test as much as possible of NUT on
 numerous platforms, written from perspective of CI testing (if you
@@ -471,7 +471,7 @@ ports involved, and to read the production configuration files).
 Pre-requisites
 ^^^^^^^^^^^^^^
 
-The <<Config_Prereqs,Prerequisites for building NUT on different OSes>>
+The {linkdoc}qa-guide{ld-s}[NUT Quality Assurance Guide,NUT_Config_Prereqs,docs/config-prereqs.txt]
 document details tools and dependencies that were added on NUT CI build
 environments, which now cover many operating systems. This should
 provide a decent starting point for the build on yours (PRs to update
@@ -865,7 +865,7 @@ and help would be welcome!
 It should currently be possible to build the codebase in native Windows
 with MSYS2/MinGW and cross-building from Linux with mingw (preferably
 in a Debian/Ubuntu container). Refer to
-link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+link:docs/config-prereqs.txt[Prerequisites for building NUT on different OSes]
 and link:scripts/Windows/README.adoc[scripts/Windows/README.adoc file]
 for respective build environment preparation instructions.
 

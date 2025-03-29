@@ -33,3 +33,9 @@ A sandbox prepared by this script can be used for `upsmon` testing:
     'dummy-admin' "${TESTPASS_UPSMON_PRIMARY}" \
     > "${NUT_CONFPATH}/upsmon.conf"
 ----
+
+The `nit.sh` script supports a lot of environment variables to tune its
+behavior, notably `NIT_CASE`, `NUT_PORT`, `NUT_STATEPATH` and `NUT_CONFPATH`,
+but also many more. See its sources, as well as the top-level `Makefile.am`
+recipe and the `./tests/NIT/tmp/etc/NIT.env` file generated during a test run,
+for more details and examples about the currently supported tunables.
