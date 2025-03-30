@@ -57,6 +57,7 @@
 
 #include "common.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include "timehead.h"
 #include "upsclient.h"
 
@@ -1869,6 +1870,11 @@ int upscli_set_default_timeout(const char *secs) {
 	if (secs) {
 		if (str_to_double(secs, &fsecs, 10) < 1) {
 			return -1;
+		}
+		if (d_equal(fsecs, 0.0)) {
+			upscli_default_timeout.tv_sec = 0;
+			upscli_default_timeout.tv_usec = 0;
+			return 0;
 		}
 		if (fsecs < 0.0) {
 			return -1;
