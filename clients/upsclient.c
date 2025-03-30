@@ -1072,6 +1072,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		ups->upserror = UPSCLI_ERR_UNKNOWN;
 		return -1;
 	}
+
 	for (ai = res; ai != NULL; ai = ai->ai_next) {
 
 		sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
@@ -1157,7 +1158,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			/* match Linux behavior that updates timeout struct */
 			if (timeout != NULL &&
 			    ups->upserror == UPSCLI_ERR_CONNFAILURE &&
-			    ups->syserrno == ETIMEDOUT) {
+			    ups->syserrno == ETIMEDOUT
+			) {
 				break;
 			}
 			continue;
