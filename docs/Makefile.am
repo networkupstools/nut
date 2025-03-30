@@ -387,7 +387,7 @@ man:
 	+@if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOC-NOT-MAN     SKIP: $@ called in docs/Makefile" ; exit 0 ; fi ; \
 	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked .check-* docbook-xsl.css docinfo.xml.in.tmp docinfo-since-v*.xml
+CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked .check-* docbook-xsl.css docinfo.xml.in.tmp docinfo-since-v*.xml* *-docinfo.xml*
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/ChangeLog.adoc
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 # These two "must be" there per autotools standards, so a "make clean"
@@ -571,6 +571,11 @@ docinfo-since-v2.8.3.xml: docinfo.xml
 	 done < "$?" > "$@".tmp \
 	 && mv -f "$@".tmp "$@"
 
+# Some versions of asciidoc ignore the argument of :docinfo: tag
+# and require (TXT_BASE_NAME)-docinfo.xml to exist:
+qa-guide-docinfo.xml: docinfo-since-v2.8.3.xml
+	ln -s $? $@
+
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML. In this case, export the environment
 # variable ASCIIDOC_VERBOSE to "-v", ie:
@@ -636,7 +641,9 @@ DOCBUILD_BEGIN = { \
         case "$${A2X_OUTDIR}" in \
             tmp/pdf.*) ln -s ../../images "./$${A2X_OUTDIR}" ; \
                 case "$(@F)" in \
-                    qa-guide.pdf) ln -s ../../docinfo-since-v2.8.3.xml "./$${A2X_OUTDIR}/docinfo.xml" ;; \
+                    qa-guide.pdf) \
+                        ln -s ../../docinfo-since-v2.8.3.xml "./$${A2X_OUTDIR}/docinfo.xml" ; \
+                        ln -s ../../docinfo-since-v2.8.3.xml "./$${A2X_OUTDIR}/qa-guide-docinfo.xml" ;; \
                 esac \
                 ;; \
         esac; \
@@ -656,7 +663,7 @@ DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         chmod -R u+w "./$${A2X_OUTDIR}" || true; \
         test -d "$@" && rm -rf "$@" || true ; \
-        rm -f "./$${A2X_OUTDIR}/docinfo.xml" || exit ; \
+        rm -f "./$${A2X_OUTDIR}/*docinfo*.xml" || exit ; \
         mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
         mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
         rm -rf "./$${A2X_OUTDIR}" ; \
@@ -746,7 +753,7 @@ GENERATE_PDF = ( \
 )
 
 *.pdf: docinfo.xml
-qa-guide.pdf: docinfo-since-v2.8.3.xml
+qa-guide.pdf: docinfo-since-v2.8.3.xml qa-guide-docinfo.xml
 .txt-prepped.pdf:
 	@$(GENERATE_PDF)
 .adoc-prepped.pdf:
