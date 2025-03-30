@@ -574,7 +574,8 @@ docinfo-since-v2.8.3.xml: docinfo.xml
 # Some versions of asciidoc ignore the argument of :docinfo: tag
 # and require (TXT_BASE_NAME)-docinfo.xml to exist:
 qa-guide-docinfo.xml: docinfo-since-v2.8.3.xml
-	[ -e '$@' ] || $(LN_S) '$?' '$@'
+	@rm -f '$@' || true
+	@$(LN_S) '$?' '$@'
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML. In this case, export the environment
