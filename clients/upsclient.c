@@ -159,7 +159,7 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
 static int upscli_initialized = 0;
 
 /* 0 means no timeout in upscli_connect() */
-static struct timeval upscli_default_timeout = {0};
+static struct timeval upscli_default_timeout = {0, 0};
 
 #ifdef WITH_OPENSSL
 static SSL_CTX	*ssl_ctx;
