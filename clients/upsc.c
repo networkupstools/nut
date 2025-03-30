@@ -227,7 +227,7 @@ int main(int argc, char **argv)
 	uint16_t	port;
 	int	varlist = 0, clientlist = 0, verbose = 0;
 	const char	*prog = xbasename(argv[0]);
-	const char *net_timeout = UPSCLI_DEFAULT_TIMEOUT;
+	const char	*net_timeout = UPSCLI_DEFAULT_TIMEOUT;
 	char	*s = NULL;
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
@@ -252,6 +252,7 @@ int main(int argc, char **argv)
 		fallthrough_case_l:
 			varlist = 1;
 			break;
+
 		case 'c':
 			clientlist = 1;
 			break;
@@ -266,6 +267,7 @@ int main(int argc, char **argv)
 		case 'W':
 			net_timeout = optarg;
 			break;
+
 		case 'h':
 		default:
 			usage(prog);
