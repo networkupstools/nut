@@ -121,6 +121,10 @@ These are writeups by users of the software.
 Video articles are also available:
 
 - link:https://www.youtube.com/watch?v=vyBP7wpN72c[Network UPS Tools (NUT Server) Ultimate Guide] '(Techno Tim)'
+- link:https://www.jeffgeerling.com/blog/2025/nut-on-my-pi-so-my-servers-dont-die[NUT on my Pi, so my servers don't die] '(Jeff Geerling)' also including Home Assistant (HA) examples
+  * link:https://www.youtube.com/watch?v=fLt5YhOubxk&t=207s[Jeff's lab tour due to an outage]
+  * link:https://youtu.be/yFnItLSRpLI[Save your servers! NUT on a Raspberry Pi!]
+  * link:https://github.com/geerlingguy/pi-nut[Ansible PiNUT project] and link:https://github.com/geerlingguy/ansible-role-nut_client[`geerlingguy.nut_client` Ansible role]
 
 News articles and Press releases
 --------------------------------
