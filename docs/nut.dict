@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3439 utf-8
+personal_ws-1.1 en 3441 utf-8
 AAC
 AAS
 ABI
@@ -1903,6 +1903,7 @@ dnl
 dnsmasq
 docbook
 docdir
+docinfo
 docs
 dod
 domxml
@@ -3013,6 +3014,7 @@ sparc
 sparcv
 spectype
 spellcheck
+spellchecked
 splitaddr
 splitname
 squasher

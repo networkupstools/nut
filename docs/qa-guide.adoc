@@ -3,6 +3,7 @@ NUT Quality Assurance and Build Automation Guide
 :Author: Jim_Klimov
 :Author Initials: JK
 :top_srcdir: ..
+:docinfo: docinfo-since-v2.8.3.xml
 
 WARNING: This is a Work In Progress document.
 
@@ -123,7 +124,7 @@ cppcheck
 
 The root `Makefile.am` includes a recipe to run a special build of NUT
 analyzed by the `cppcheck` tool (if detected by `configure` script) and
-produce a `cppcheck.xml` report for further tools to use, e.g. visualise
+produce a `cppcheck.xml` report for further tools to use, e.g. visualize
 it by the Jenkins Warnings plugin.
 
 Static analysis by compilers
