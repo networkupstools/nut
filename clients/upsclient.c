@@ -1864,11 +1864,10 @@ int upscli_ssl(UPSCONN_t *ups)
 }
 
 int upscli_set_default_timeout(const char *secs) {
-	float fsecs;
+	double fsecs;
 
 	if (secs) {
-		/* FIXME: LC_NUMERIC=C for dot floats */
-		if (sscanf(secs, "%f", &fsecs) < 1) {
+		if (str_to_double(secs, &fsecs, 10) < 1) {
 			return -1;
 		}
 		if (fsecs < 0.0) {
