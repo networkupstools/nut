@@ -574,7 +574,7 @@ docinfo-since-v2.8.3.xml: docinfo.xml
 # Some versions of asciidoc ignore the argument of :docinfo: tag
 # and require (TXT_BASE_NAME)-docinfo.xml to exist:
 qa-guide-docinfo.xml: docinfo-since-v2.8.3.xml
-	ln -s $? $@
+	[ -e '$@' ] || $(LN_S) '$?' '$@'
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML. In this case, export the environment
@@ -663,7 +663,7 @@ DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         chmod -R u+w "./$${A2X_OUTDIR}" || true; \
         test -d "$@" && rm -rf "$@" || true ; \
-        rm -f "./$${A2X_OUTDIR}/*docinfo*.xml" || exit ; \
+        rm -f "./$${A2X_OUTDIR}/"*docinfo*.xml* || exit ; \
         mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
         mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
         rm -rf "./$${A2X_OUTDIR}" ; \
