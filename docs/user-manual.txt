@@ -2,8 +2,8 @@
 
 Network UPS Tools User Manual
 _____________________________
-:Author: Russell_Kroll,_Arnaud_Quette_and_Arjen_de_Korte
-:Author Initials: RK, AQ & ADK
+:Author: Russell_Kroll,_Arnaud_Quette,_Arjen_de_Korte_and_Jim Klimov
+:Author Initials: RK, AQ, ADK & JK
 
 Introduction
 ============
