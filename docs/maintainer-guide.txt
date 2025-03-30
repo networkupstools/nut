@@ -1,7 +1,7 @@
 NUT Maintainer Guide
 ____________________
-:Author: Arnaud_Quette
-:Author Initials: AQ
+:Author: Arnaud_Quette_and_Jim_Klimov
+:Author Initials: AQ & JK
 
 Introduction
 ============

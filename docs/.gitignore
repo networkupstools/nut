@@ -15,7 +15,8 @@
 /solaris-usb.xml
 /cables.xml
 /docinfo.xml
-/docinfo-since-v*.xml
+/docinfo-since-v*.xml*
+/*-docinfo.xml*
 /FAQ.xml
 /nut-dmf.xml
 /nut-names.xml
