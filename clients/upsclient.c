@@ -365,6 +365,9 @@ int upscli_init(int certverify, const char *certpath,
 		return -1;
 	}
 
+	upscli_default_timeout.tv_sec = 0;
+	upscli_default_timeout.tv_usec = 0;
+
 #ifdef WITH_OPENSSL
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
