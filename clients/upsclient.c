@@ -155,6 +155,7 @@ typedef struct HOST_CERT_s {
 }	HOST_CERT_t;
 static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
 
+/* Flag for SSL init */
 static int upscli_initialized = 0;
 
 /* 0 means no timeout in upscli_connect() */
@@ -333,7 +334,7 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
-	const char *quiet_init_ssl, *connect_to;
+	const char *quiet_init_ssl;
 #ifdef WITH_OPENSSL
 	long ret;
 	int ssl_mode = SSL_VERIFY_NONE;
@@ -363,16 +364,6 @@ int upscli_init(int certverify, const char *certpath,
 	if (upscli_initialized == 1) {
 		upslogx(LOG_WARNING, "upscli already initialized");
 		return -1;
-	}
-
-	upscli_default_timeout.tv_sec = 0;
-	upscli_default_timeout.tv_usec = 0;
-
-	connect_to = getenv("NUT_DEFAULT_CONNECT_TIMEOUT");
-	if (connect_to) {
-		if (upscli_set_default_timeout(connect_to) < 0) {
-			upsdebugx(1, "NUT_DEFAULT_CONNECT_TIMEOUT='%s' value was not recognized, ignored", connect_to);
-		}
 	}
 
 #ifdef WITH_OPENSSL
@@ -1898,6 +1889,80 @@ int upscli_set_default_timeout(const char *secs) {
 		upscli_default_timeout.tv_sec = 0;
 		upscli_default_timeout.tv_usec = 0;
 	}
+	return 0;
+}
+
+int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, const char *default_secs) {
+	const char	*envvar_secs, *cause = "built-in";
+	int	failed = 0, applied = 0;
+
+	/* First the very default: blocking connections as we always had */
+	upscli_default_timeout.tv_sec = 0;
+	upscli_default_timeout.tv_usec = 0;
+
+	/* Then try a program's built-in default, if any */
+	if (default_secs) {
+		if (upscli_set_default_timeout(default_secs) < 0) {
+			upsdebugx(1, "%s: default_secs='%s' value was not recognized, ignored",
+				__func__, default_secs);
+			failed++;
+		} else {
+			cause = "default_secs";
+			applied++;
+		}
+	}
+
+	/* Then override with envvar setting, if any (and if its value is valid) */
+	envvar_secs = getenv("NUT_DEFAULT_CONNECT_TIMEOUT");
+	if (envvar_secs) {
+		if (upscli_set_default_timeout(envvar_secs) < 0) {
+			upsdebugx(1, "%s: NUT_DEFAULT_CONNECT_TIMEOUT='%s' value was not recognized, ignored",
+				__func__, envvar_secs);
+			failed++;
+		} else {
+			cause = "envvar_secs";
+			applied++;
+		}
+	}
+
+	/* Then override with config-file setting, if any (and if its value is valid) */
+	if (config_secs) {
+		if (upscli_set_default_timeout(config_secs) < 0) {
+			upsdebugx(1, "%s: config_secs='%s' value was not recognized, ignored",
+				__func__, config_secs);
+			failed++;
+		} else {
+			cause = "config_secs";
+			applied++;
+		}
+	}
+
+	/* Then override with command-line setting, if any (and if its value is valid) */
+	if (cli_secs) {
+		if (upscli_set_default_timeout(cli_secs) < 0) {
+			upsdebugx(1, "%s: cli_secs='%s' value was not recognized, ignored",
+				__func__, cli_secs);
+			failed++;
+		} else {
+			cause = "cli_secs";
+			applied++;
+		}
+	}
+
+	upsdebugx(1, "%s: upscli_default_timeout=%" PRIiMAX
+		 ".%06" PRIiMAX " sec assigned from: %s",
+		__func__, (intmax_t)upscli_default_timeout.tv_sec,
+		(intmax_t)upscli_default_timeout.tv_usec, cause);
+
+	/* Some non-built-in value was OK */
+	if (applied)
+		return 0;
+
+	/* None of provided non-built-in values was OK */
+	if (failed)
+		return -1;
+
+	/* At least we have the built-in default and nothing failed */
 	return 0;
 }
 
