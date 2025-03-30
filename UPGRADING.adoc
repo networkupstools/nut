@@ -101,6 +101,14 @@ Changes from 2.8.2 to 2.8.3
   the `NUT_QUIET_INIT_SSL` environment variable to suppress them where the
   cryptography is known to be not set up, so the warnings bring no value. [#2847]
 
+- `lib/*.pc.in`: propagate `-R/PATH` (or equivalent -- as detected by the
+  `configure` script for the currently used compiler and linker toolkits)
+  in `pkg-config` metadata pointing to NUT library installation location
+  (by default not in system prefix) to help third-party clients link with us
+  automatically. If this causes issues, `--disable-ldflags-nut-rpath(-cxx)`
+  options (or `--enable...="..."` with specific linker arguments) can help.
+  [#2782, #2865]
+
 - Updated man page generation with `configure` script options to specify that
   manual sections on the target platform differ from (Linux-based) defaults
   hard-coded into page sources; this should allow to simplify NUT packaging

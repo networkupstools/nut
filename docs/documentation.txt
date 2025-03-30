@@ -31,6 +31,7 @@ Developer Documentation
 
 ifdef::website[]
 - NUT Developer Guide (link:docs/developer-guide.chunked/index.html[online]) (link:docs/developer-guide.pdf[PDF])
+- NUT Quality Assurance Guide (link:docs/qa-guide.chunked/index.html[online]) (link:docs/qa-guide.pdf[PDF])
 - NUT Packager Guide (link:docs/packager-guide.chunked/index.html[online]) (link:docs/packager-guide.pdf[PDF])
 - NUT Release Notes (link:docs/release-notes.chunked/index.html[online]) (link:docs/release-notes.pdf[PDF])
 - NUT Change Log (link:docs/ChangeLog.chunked/index.html[online]) (link:docs/ChangeLog.pdf[PDF])
@@ -41,6 +42,7 @@ ifdef::website[]
 endif::website[]
 ifndef::website[]
 - linkdoc:developer-guide[NUT Developer Guide]
+- linkdoc:qa-guide[NUT Quality Assurance and Build Automation Guide]
 - linkdoc:packager-guide[NUT Packager Guide]
 - linkdoc:release-notes[NUT Release Notes]
 - linkdoc:ChangeLog[NUT Change Log]
@@ -101,6 +103,7 @@ These are writeups by users of the software.
   link:https://github.com/networkupstools/ConfigExamples[ConfigExamples],
   link:https://github.com/networkupstools/TLS-UPSmon[TLS-UPSmon],
   and link:https://github.com/networkupstools/TLS-Shims[TLS-Shims])
+- link:https://dan.langille.org/2020/09/10/nut-testing-the-shutdown-mechanism/[nut – testing the shutdown mechanism] '(Dan Langille)'
 - link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'
 - link:http://blog.shadypixel.com/monitoring-a-ups-with-nut-on-debian-or-ubuntu-linux[Monitoring a UPS with nut on Debian or Ubuntu Linux] '(Avery Fay)'
 - link:http://linux.developpez.com/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] '(Olivier Van Hoof, french)'
@@ -119,6 +122,10 @@ These are writeups by users of the software.
 Video articles are also available:
 
 - link:https://www.youtube.com/watch?v=vyBP7wpN72c[Network UPS Tools (NUT Server) Ultimate Guide] '(Techno Tim)'
+- link:https://www.jeffgeerling.com/blog/2025/nut-on-my-pi-so-my-servers-dont-die[NUT on my Pi, so my servers don't die] '(Jeff Geerling)' also including Home Assistant (HA) examples
+  * link:https://www.youtube.com/watch?v=fLt5YhOubxk&t=207s[Jeff's lab tour due to an outage]
+  * link:https://youtu.be/yFnItLSRpLI[Save your servers! NUT on a Raspberry Pi!]
+  * link:https://github.com/geerlingguy/pi-nut[Ansible PiNUT project] and link:https://github.com/geerlingguy/ansible-role-nut_client[`geerlingguy.nut_client` Ansible role]
 
 News articles and Press releases
 --------------------------------

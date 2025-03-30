@@ -143,7 +143,7 @@ EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 LICENSE-DCO MAINTAINERS
 # Since the renaming of documentation to `*.adoc` extension to help IDE
 # and GitHub UIs to render the source files in a pretty fashion, we need
 # to list them:
-EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc
+EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc ci_build.adoc
 
 # Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
 # but lack NUT magic logic to recreate the `configure` script if someone would
@@ -875,6 +875,9 @@ tools/gitlog2changelog.py: tools/gitlog2changelog.py.in
 
 # ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes
+# Assume tools are available (and maintainer GPG keys)
+dist-files: dist dist-sig dist-hash
+
 nut-@PACKAGE_VERSION@.tar.gz: dist
 nut-@PACKAGE_VERSION@.tar.gz.sig: dist-sig
 nut-@PACKAGE_VERSION@.tar.gz.md5 nut-@PACKAGE_VERSION@.tar.gz.sha256: dist-hash

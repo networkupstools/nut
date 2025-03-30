@@ -14,8 +14,8 @@ against numerous OS distributions on one physical or virtual machine,
 e.g. to cover non-regression with older tool kits while taking advantage
 of new releases.
 
-* For Linux systems, we have notes on link:ci-farm-lxc-setup.txt[Setting
-  up the multi-arch Linux LXC container farm for NUT CI]
+* For Linux systems, we have notes on linkdoc:qa-guide[Custom NUT CI farm
+  build agents: LXC multi-arch containers,CI_LXC,docs/ci-farm-lxc-setup.txt]
 
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
 or SSL implementations (OpenSSL vs. Mozilla NSS) -- no problem installing
@@ -336,7 +336,8 @@ Instructions below apply to both CentOS 6 and 7 (a few nuances for 6 commented).
 For newer distributions, `dnf` may be preferable to `yum`, but otherwise the
 commands are equivalent.
 
-General developer system helpers mentioned in link:ci-farm-lxc-setup.txt[]:
+General developer system helpers mentioned in linkdoc:qa-guide[Custom NUT CI
+farm build agents: LXC multi-arch containers,CI_LXC,docs/ci-farm-lxc-setup.txt]:
 ------
 :; yum update
 

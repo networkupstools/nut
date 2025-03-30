@@ -37,7 +37,8 @@ one-stop solution.
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
 
-The link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+The linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt]
 document suggests prerequisite packages with tools and dependencies
 available and needed to build and test as much as possible of NUT on
 numerous platforms, written from perspective of CI testing (if you
@@ -522,6 +523,32 @@ This feature may however be enabled or disabled implicitly, using
 
 Requires C++11 support to be enabled (available in compiler, not neutered
 by explicit selection of an older standard).
+
+	--enable-ldflags-nut-rpath (yes/no/auto/flags, default: auto)
+	--enable-ldflags-nut-rpath-cxx (yes/no/auto/flags, default: auto)
+
+NUT development files include the `*.pc` metadata for `pkg-config` ecosystem
+and a legacy `libupsclient-config` script, both used to deliver compiler and
+linker options for third-party programs to build against NUT libraries.
+
+There can be a problem during run-time, when NUT is installed into a location
+that the system linker does not know to look into, e.g. the default `--prefix`
+value of `/usr/local/ups`, that the built programs fail to dynamically link
+with the shared objects of NUT libraries, unless deprecated tricks like the
+`LD_LIBRARY_PATH` setting are applied.
+
+These options allow NUT to add linker options, which set "RPATH" in consumer
+binaries, to the announced metadata.  As a result, third-party programs or
+libraries are hard-coded to look for NUT libraries in a certain location, in
+addition to system locations and similar paths added by other dependencies.
+
+By default (in `auto` mode), the `configure` script queries the compiler for
+known system library paths (currently supported with GCC and CLANG builds),
+and checks the NUT `libdir` against that list.  If there is a hit, no extra
+flags are announced; otherwise, the format detected for currently used linker
+by autoconf libtool macros is added to the announced metadata for builds
+against NUT.  If this causes problems, you can either `--disable-...` these
+flags or provide the desired string explicitly.
 
 Options for developers
 ~~~~~~~~~~~~~~~~~~~~~~

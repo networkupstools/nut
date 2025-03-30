@@ -1355,6 +1355,13 @@ if [ -z "$BUILD_TYPE" ] ; then
             shift
             ;;
 
+        --with-docs|--with-docs=*|--with-doc|--with-doc=*)
+            # Note: causes a developer-style build (not CI)
+            # Arg will be passed to configure script as `--with-$1`
+            BUILD_TYPE="`echo "$1" | sed 's,^--with-,,'`"
+            shift
+            ;;
+
         win64|cross-windows-mingw64) BUILD_TYPE="cross-windows-mingw64" ; shift ;;
 
         win32|cross-windows-mingw32) BUILD_TYPE="cross-windows-mingw32" ; shift ;;
