@@ -1248,6 +1248,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags)
 {
 	struct timeval tv = upscli_default_timeout, *ptv = NULL;
 	if (tv.tv_sec != 0 || tv.tv_usec != 0) {
+		/* By default, ptv==NULL for a blocking upscli_tryconnect() */
 		ptv = &tv;
 	}
 	return upscli_tryconnect(ups, host, port, flags, ptv);
