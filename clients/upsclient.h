@@ -1,6 +1,8 @@
 /* upsclient.h - definitions for upsclient functions
 
-   Copyright (C) 2002  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+        2002	Russell Kroll <rkroll@exploits.org>
+        2020 - 2025	Jim Klimov <jimklimov+nu@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -97,6 +99,7 @@ typedef struct {
 
 const char *upscli_strerror(UPSCONN_t *ups);
 
+/* NOTE: effectively only runs once; re-runs quickly skip out */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_cleanup(void);
 
@@ -136,6 +139,7 @@ int upscli_upserror(UPSCONN_t *ups);
 /* returns 1 if SSL mode is active for this connection */
 int upscli_ssl(UPSCONN_t *ups);
 
+/* NOTE: Consumer code should call this after upscli_init() */
 int upscli_set_default_timeout(const char *secs);
 
 /* upsclient error list */

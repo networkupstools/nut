@@ -90,7 +90,8 @@ Changes from 2.8.2 to 2.8.3
   connection establishment timeout in case of name resolution lags or
   unresponsive hosts (notably a problem with `upsmon` contacting many remote
   systems at once). This may potentially impact NUT deployments which somehow
-  relied on the blocking behavior of these clients. [#2847]
+  relied on the blocking behavior of these clients; you can use the
+  `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable to fix this. [#2847]
 
 - Several NUT clients including `upscmd`, `upsrw`, `upsimage`, `upsset`,
   `upsstats`, and `upslog` (during reconnection), did not `UPSCLI_CONN_TRYSSL`

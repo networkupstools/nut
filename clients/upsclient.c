@@ -333,7 +333,7 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
-	const char *quiet_init_ssl;
+	const char *quiet_init_ssl, *connect_to;
 #ifdef WITH_OPENSSL
 	long ret;
 	int ssl_mode = SSL_VERIFY_NONE;
@@ -367,6 +367,13 @@ int upscli_init(int certverify, const char *certpath,
 
 	upscli_default_timeout.tv_sec = 0;
 	upscli_default_timeout.tv_usec = 0;
+
+	connect_to = getenv("NUT_DEFAULT_CONNECT_TIMEOUT");
+	if (connect_to) {
+		if (upscli_set_default_timeout(connect_to) < 0) {
+			upsdebugx(1, "NUT_DEFAULT_CONNECT_TIMEOUT='%s' value was not recognized, ignored", connect_to);
+		}
+	}
 
 #ifdef WITH_OPENSSL
 

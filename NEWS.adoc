@@ -406,7 +406,8 @@ This requirement compromises usability of `make distcheck` on platforms without
      `upslog`, `upsmon`, `upsimage`, `upsset` and `upsstats`) were updated
      to default with a 10-second timeout in case of name resolution lags or
      unresponsive hosts (notably a problem with `upsmon` contacting many
-     remote systems at once). [#2847]
+     remote systems at once). The `NUT_DEFAULT_CONNECT_TIMEOUT` environment
+     variable can be used to modify this timeout for all clients. [#2847]
 
  - Several NUT clients including `upscmd`, `upsrw`, `upsimage`, `upsset`,
    `upsstats`, and `upslog` (during reconnection), did not `UPSCLI_CONN_TRYSSL`
