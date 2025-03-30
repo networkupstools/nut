@@ -408,6 +408,11 @@ This requirement compromises usability of `make distcheck` on platforms without
      unresponsive hosts (notably a problem with `upsmon` contacting many
      remote systems at once). [#2847]
 
+ - Several NUT clients including `upscmd`, `upsrw`, `upsimage`, `upsset`,
+   `upsstats`, and `upslog` (during reconnection), did not `UPSCLI_CONN_TRYSSL`
+   so went plaintext even when secure connections were possible. Fixed to at
+   least try being secure, same way as `upsc` does for a long time. [#2847]
+
  - upsmon:
    * it was realized that the `POWERDOWNFLAG` must be explicitly set in the
      configuration file, there is no built-in default in the binary program

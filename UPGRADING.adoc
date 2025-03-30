@@ -92,6 +92,14 @@ Changes from 2.8.2 to 2.8.3
   systems at once). This may potentially impact NUT deployments which somehow
   relied on the blocking behavior of these clients. [#2847]
 
+- Several NUT clients including `upscmd`, `upsrw`, `upsimage`, `upsset`,
+  `upsstats`, and `upslog` (during reconnection), did not `UPSCLI_CONN_TRYSSL`
+  so went plaintext even when secure connections were possible. Fixed to at
+  least try being secure, same way as `upsc` does for a long time. This may
+  cause console or log messages when SSL can not be initialized, you can use
+  the `NUT_QUIET_INIT_SSL` environment variable to suppress them where the
+  cryptography is known to be not set up, so the warnings bring no value. [#2847]
+
 - Updated man page generation with `configure` script options to specify that
   manual sections on the target platform differ from (Linux-based) defaults
   hard-coded into page sources; this should allow to simplify NUT packaging
