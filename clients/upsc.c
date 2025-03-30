@@ -227,7 +227,7 @@ int main(int argc, char **argv)
 	uint16_t	port;
 	int	varlist = 0, clientlist = 0, verbose = 0;
 	const char	*prog = xbasename(argv[0]);
-	const char	*net_timeout = UPSCLI_DEFAULT_TIMEOUT;
+	const char	*net_timeout = NULL;
 	char	*s = NULL;
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
@@ -275,7 +275,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (upscli_set_default_timeout(net_timeout) < 0) {
+	if (upscli_init_default_timeout(net_timeout, NULL, UPSCLI_DEFAULT_TIMEOUT) < 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
 		       net_timeout);
 	}
