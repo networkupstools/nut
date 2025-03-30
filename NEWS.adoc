@@ -408,6 +408,9 @@ This requirement compromises usability of `make distcheck` on platforms without
      unresponsive hosts (notably a problem with `upsmon` contacting many
      remote systems at once). The `NUT_DEFAULT_CONNECT_TIMEOUT` environment
      variable can be used to modify this timeout for all clients. [#2847]
+   * Symbols exported from `libupsclient` now include `nut_debug_level*` so
+     that NUT clients can be usefully debugged (e.g. using `NUT_DEBUG_LEVEL`
+     environment variable). [#2847]
 
  - Several NUT clients including `upscmd`, `upsrw`, `upsimage`, `upsset`,
    `upsstats`, and `upslog` (during reconnection), did not `UPSCLI_CONN_TRYSSL`
