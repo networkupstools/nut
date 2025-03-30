@@ -349,6 +349,11 @@ int upscli_init(int certverify, const char *certpath,
 	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
+	if (upscli_initialized == 1) {
+		upslogx(LOG_WARNING, "upscli already initialized");
+		return -1;
+	}
+
 	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
 	if (quiet_init_ssl != NULL) {
 		if (*quiet_init_ssl == '\0'
@@ -359,11 +364,6 @@ int upscli_init(int certverify, const char *certpath,
 			upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
 			quiet_init_ssl = NULL;
 		}
-	}
-
-	if (upscli_initialized == 1) {
-		upslogx(LOG_WARNING, "upscli already initialized");
-		return -1;
 	}
 
 #ifdef WITH_OPENSSL
