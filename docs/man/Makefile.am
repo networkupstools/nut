@@ -568,6 +568,7 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
 	upscli_cleanup.$(MAN_SECTION_API) \
 	upscli_connect.$(MAN_SECTION_API) \
+	upscli_tryconnect.$(MAN_SECTION_API) \
 	upscli_disconnect.$(MAN_SECTION_API) \
 	upscli_fd.$(MAN_SECTION_API) \
 	upscli_get.$(MAN_SECTION_API) \
@@ -632,6 +633,9 @@ upscli_readline_timeout.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
 	touch $@
 
 upscli_sendline_timeout.$(MAN_SECTION_API): upscli_sendline.$(MAN_SECTION_API)
+	touch $@
+
+upscli_tryconnect.$(MAN_SECTION_API): upscli_connect.$(MAN_SECTION_API)
 	touch $@
 
 nutscan_scan_ip_range_snmp.$(MAN_SECTION_API): nutscan_scan_snmp.$(MAN_SECTION_API)
@@ -739,6 +743,7 @@ HTML_DEV_MANS = $(INST_HTML_DEV_MANS)
 HTML_DEV_MANS_FICTION = \
 	upscli_readline_timeout.html \
 	upscli_sendline_timeout.html \
+	upscli_tryconnect.html \
 	nutscan_scan_ip_range_snmp.html \
 	nutscan_scan_ip_range_xml_http.html \
 	nutscan_scan_ip_range_nut.html \
@@ -749,6 +754,9 @@ upscli_readline_timeout.html: upscli_readline.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 upscli_sendline_timeout.html: upscli_sendline.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+upscli_tryconnect.html: upscli_connect.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 nutscan_scan_ip_range_snmp.html: nutscan_scan_snmp.html

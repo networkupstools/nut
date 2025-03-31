@@ -93,6 +93,7 @@ Client library
 - linkman:upscli_add_host_cert[3]
 - linkman:upscli_cleanup[3]
 - linkman:upscli_connect[3]
+- linkman:upscli_tryconnect[3]
 - linkman:upscli_disconnect[3]
 - linkman:upscli_fd[3]
 - linkman:upscli_get[3]

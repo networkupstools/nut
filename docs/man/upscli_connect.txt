@@ -4,7 +4,7 @@ UPSCLI_CONNECT(3)
 NAME
 ----
 
-upscli_connect - Open a connection to a NUT upsd data server
+upscli_connect, upscli_tryconnect - Open a connection to a NUT upsd data server
 
 SYNOPSIS
 --------
@@ -12,7 +12,12 @@ SYNOPSIS
 ------
 	#include <upsclient.h>
 
+	/* Open a connection to a NUT upsd data server (blocking by default) */
 	int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
+
+	/* Open a connection to a NUT upsd data server with specified timeout */
+	int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags,
+		struct timeval * timeout);
 ------
 
 DESCRIPTION
@@ -21,6 +26,11 @@ DESCRIPTION
 The *upscli_connect()* function takes the pointer 'ups' to a
 `UPSCONN_t` state structure and opens a TCP connection to the 'host' on
 the given 'port'.
+
+By default this makes a blocking connection attempt (until the system
+transport layer times out the underlying linkmanext:select[2] call).
+For operations with explicit operation-specific timeout please use
+the *upscli_tryconnect()* method instead.
 
 'flags' may be either `UPSCLI_CONN_TRYSSL` to try a SSL
 connection, or `UPSCLI_CONN_REQSSL` to require a SSL connection.
