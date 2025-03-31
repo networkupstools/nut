@@ -1053,6 +1053,7 @@ Note that `PATH` for builds on NetBSD should include `local` and
 ------
 
 NOTE: You may want to reference `ccache` even before all that,
+e.g. in the system-wide `/etc/profile` or build-user's `~/.profile`,
 as detailed below:
 
 ------
@@ -1161,8 +1162,17 @@ binaries and into `/usr/lib/ccache`:
    )
 ------
 
-NOTE: For Jenkins agents, also need to `pkgin install openjdk17` (will be
-in `JAVA_HOME=/usr/pkg/java/openjdk17`).
+NOTE: For Jenkins agents, also need to `pkgin install openjdk21` (will be
+in `JAVA_HOME=/usr/pkg/java/openjdk21`). Note that the location may be not
+exposed in `PATH` by default, so you may want to edit your system-wide
+`/etc/profile` or build user's `~/.profile` with:
+
+------
+JAVA_HOME="/usr/pkg/java/openjdk21"
+export JAVA_HOME
+PATH="${JAVA_HOME}/bin:${PATH}"
+export PATH
+------
 
 OpenIndiana as of releases 2021.10 to 2024.04
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
