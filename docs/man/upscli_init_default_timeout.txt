@@ -42,6 +42,12 @@ order (last valid hit wins):
 Internally, calls linkman:upscli_set_default_timeout[3] for most of the string
 related processing.
 
+The upsclient module tracks if *upscli_init_default_timeout()* function was
+called and succeeded, in order to call it once (if never used) from the
+linkman:upscli_connect[3] or linkman:upscli_init[3] methods.  This allows
+unmodified (legacy) NUT clients to consistently benefit from presence of
+the `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
+
 RETURN VALUE
 ------------
 
@@ -55,4 +61,4 @@ SEE ALSO
 --------
 
 linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
-linkman:upscli_set_default_timeout[3]
+linkman:upscli_set_default_timeout[3], linkman:upscli_init[3]
