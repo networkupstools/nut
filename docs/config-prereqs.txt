@@ -1071,7 +1071,7 @@ you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
 
 ------
 :; pkgin install \
-    git perl curl \
+    git perl curl mozilla-rootcerts-openssl \
     make gmake autoconf automake libltdl libtool \
     cppcheck \
     pkgconf \
