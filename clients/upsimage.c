@@ -47,7 +47,9 @@
 #include "upsimagearg.h"
 
 #define MAX_CGI_STRLEN 64
-#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
+
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static	char	*monhost = NULL, *cmd = NULL;
 
@@ -624,7 +626,7 @@ int main(int argc, char **argv)
 
 	extractcgiargs();
 
-	upscli_init_default_timeout(NULL, NULL, UPSCLI_DEFAULT_TIMEOUT);
+	upscli_init_default_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
 	/* no 'host=' or 'display=' given */
 	if ((!monhost) || (!cmd))

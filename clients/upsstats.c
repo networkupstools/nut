@@ -30,7 +30,9 @@
 
 #define MAX_CGI_STRLEN 128
 #define MAX_PARSE_ARGS 16
-#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
+
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char	*monhost = NULL;
 static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
@@ -1051,7 +1053,7 @@ int main(int argc, char **argv)
 
 	extractcgiargs();
 
-	upscli_init_default_timeout(NULL, NULL, UPSCLI_DEFAULT_TIMEOUT);
+	upscli_init_default_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
 	printf("Content-type: text/html\n");
 	printf("Pragma: no-cache\n");

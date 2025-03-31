@@ -2,7 +2,7 @@
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2012  Arnaud Quette <arnaud.quette@free.fr>
-   Copyright (C) 2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,7 +31,8 @@
 #include "nut_stdint.h"
 #include "upsclient.h"
 
-#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char		*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
@@ -61,8 +62,8 @@ static void usage(const char *prog)
 
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
-	printf("  -W <secs>  - network timeout (default: %s)\n",
-	       UPSCLI_DEFAULT_TIMEOUT);
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
@@ -227,7 +228,7 @@ int main(int argc, char **argv)
 	uint16_t	port;
 	int	varlist = 0, clientlist = 0, verbose = 0;
 	const char	*prog = xbasename(argv[0]);
-	const char	*net_timeout = NULL;
+	const char	*net_connect_timeout = NULL;
 	char	*s = NULL;
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
@@ -265,7 +266,7 @@ int main(int argc, char **argv)
 			exit(EXIT_SUCCESS);
 
 		case 'W':
-			net_timeout = optarg;
+			net_connect_timeout = optarg;
 			break;
 
 		case 'h':
@@ -275,9 +276,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (upscli_init_default_timeout(net_timeout, NULL, UPSCLI_DEFAULT_TIMEOUT) < 0) {
+	if (upscli_init_default_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
-		       net_timeout);
+		       net_connect_timeout);
 	}
 
 	argc -= optind;

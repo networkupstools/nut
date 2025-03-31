@@ -3068,8 +3068,8 @@ static void help(const char *arg_progname)
 	printf("  -6		IPv6 only\n");
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
-	printf("  -W <secs>  - network timeout (default: %s)\n",
-	       UPSCLI_DEFAULT_TIMEOUT);
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
@@ -3337,7 +3337,7 @@ static void init_Inhibitor(const char *prog)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
-	const char	*net_timeout = NULL;
+	const char	*net_connect_timeout = NULL;
 	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
 
 #ifndef WIN32
@@ -3441,7 +3441,7 @@ int main(int argc, char *argv[])
 				opt_af = AF_INET6;
 				break;
 			case 'W':
-				net_timeout = optarg;
+				net_connect_timeout = optarg;
 				break;
 			default:
 				help(argv[0]);
@@ -3472,9 +3472,9 @@ int main(int argc, char *argv[])
 		}	/* else nothing to bother about */
 	}
 
-	if (upscli_init_default_timeout(net_timeout, NULL, UPSCLI_DEFAULT_TIMEOUT) < 0) {
+	if (upscli_init_default_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
-		       net_timeout);
+		       net_connect_timeout);
 	}
 
 	/* Note: "cmd" may be non-trivial to command that instance by

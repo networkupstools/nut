@@ -43,7 +43,9 @@ struct list_t {
 
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
-#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
+
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char	*monups, *username, *password, *function, *upscommand;
 
@@ -1083,7 +1085,7 @@ int main(int argc, char **argv)
 	/* see if the magic string is present in the config file */
 	check_conf();
 
-	upscli_init_default_timeout(NULL, NULL, UPSCLI_DEFAULT_TIMEOUT);
+	upscli_init_default_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
 	/* see if there's anything waiting .. the server my not close STDIN properly */
 	if (1) {

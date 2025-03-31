@@ -35,7 +35,8 @@
 #include "upsclient.h"
 #include "extstate.h"
 
-#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
@@ -67,8 +68,8 @@ static void usage(const char *prog)
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
-	printf("  -W <secs>  - network timeout (default: %s)\n",
-	       UPSCLI_DEFAULT_TIMEOUT);
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 	printf("\n");
 	printf("Call without -s to show all possible read/write variables (same as -l).\n");
@@ -651,7 +652,7 @@ int main(int argc, char **argv)
 	int	i;
 	uint16_t	port;
 	const char	*prog = xbasename(argv[0]);
-	const char	*net_timeout = NULL;
+	const char	*net_connect_timeout = NULL;
 	char	*password = NULL, *username = NULL, *setvar = NULL, *s = NULL;
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
@@ -697,7 +698,7 @@ int main(int argc, char **argv)
 			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
 		case 'W':
-			net_timeout = optarg;
+			net_connect_timeout = optarg;
 			break;
 		case 'h':
 		default:
@@ -706,9 +707,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (upscli_init_default_timeout(net_timeout, NULL, UPSCLI_DEFAULT_TIMEOUT) < 0) {
+	if (upscli_init_default_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
-		       net_timeout);
+		       net_connect_timeout);
 	}
 
 	argc -= optind;
