@@ -143,6 +143,7 @@ int upscli_ssl(UPSCONN_t *ups);
 /* Assign default upscli_connect() from string; return 0 if OK, or
  * return -1 if parsing failed and current value was kept  */
 int upscli_set_default_timeout(const char *secs);
+/* If ptv!=NULL, populate it with a copy of last assigned internal timeout */
 void upscli_get_default_timeout(struct timeval *ptv);
 /* Initialize default upscli_connect() timeout from a number of sources:
  * built-in (0 = blocking), envvar NUT_DEFAULT_CONNECT_TIMEOUT,
