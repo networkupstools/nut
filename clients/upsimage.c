@@ -626,7 +626,7 @@ int main(int argc, char **argv)
 
 	extractcgiargs();
 
-	upscli_init_default_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
 	/* no 'host=' or 'display=' given */
 	if ((!monhost) || (!cmd))

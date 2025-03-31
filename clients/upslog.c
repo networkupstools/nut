@@ -645,9 +645,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (upscli_init_default_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
-		       net_connect_timeout);
+			net_connect_timeout);
 	}
 
 	argc -= optind;

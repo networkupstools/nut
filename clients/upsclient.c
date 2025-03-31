@@ -159,8 +159,8 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
 static int upscli_initialized = 0;
 
 /* 0 means no timeout in upscli_connect() */
-static struct timeval upscli_default_timeout = {0, 0};
-static int upscli_default_timeout_initialized = 0;
+static struct timeval upscli_default_connect_timeout = {0, 0};
+static int upscli_default_connect_timeout_initialized = 0;
 
 #ifdef WITH_OPENSSL
 static SSL_CTX	*ssl_ctx;
@@ -355,11 +355,11 @@ int upscli_init(int certverify, const char *certpath,
 		return -1;
 	}
 
-	if (upscli_default_timeout_initialized == 0) {
+	if (upscli_default_connect_timeout_initialized == 0) {
 		/* There may be an envvar waiting to be parsed */
-		upsdebugx(1, "%s: upscli_default_timeout was not initialized, checking now",
+		upsdebugx(1, "%s: upscli_default_connect_timeout was not initialized, checking now",
 			__func__);
-		upscli_init_default_timeout(NULL, NULL, NULL);
+		upscli_init_default_connect_timeout(NULL, NULL, NULL);
 	}
 
 	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
@@ -1258,16 +1258,16 @@ int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags)
 {
 	struct timeval tv = {0, 0}, *ptv = NULL;
 
-	if (upscli_default_timeout_initialized == 0) {
+	if (upscli_default_connect_timeout_initialized == 0) {
 		/* There may be an envvar waiting to be parsed */
-		upscli_init_default_timeout(NULL, NULL, NULL);
+		upscli_init_default_connect_timeout(NULL, NULL, NULL);
 
 		/* Failed or not (bad envvar), avoid looping messages
 		 * about bad value parsing for every upscli_connect() */
-		upscli_default_timeout_initialized = 1;
+		upscli_default_connect_timeout_initialized = 1;
 	}
 
-	tv = upscli_default_timeout;
+	tv = upscli_default_connect_timeout;
 	if (tv.tv_sec != 0 || tv.tv_usec != 0) {
 		/* By default, ptv==NULL for a blocking upscli_tryconnect() */
 		ptv = &tv;
@@ -1884,7 +1884,7 @@ int upscli_ssl(UPSCONN_t *ups)
 	return 0;
 }
 
-int upscli_set_default_timeout(const char *secs) {
+int upscli_set_default_connect_timeout(const char *secs) {
 	double fsecs;
 
 	if (secs) {
@@ -1892,42 +1892,42 @@ int upscli_set_default_timeout(const char *secs) {
 			return -1;
 		}
 		if (d_equal(fsecs, 0.0)) {
-			upscli_default_timeout.tv_sec = 0;
-			upscli_default_timeout.tv_usec = 0;
+			upscli_default_connect_timeout.tv_sec = 0;
+			upscli_default_connect_timeout.tv_usec = 0;
 			return 0;
 		}
 		if (fsecs < 0.0) {
 			return -1;
 		}
-		upscli_default_timeout.tv_sec = (time_t)fsecs;
+		upscli_default_connect_timeout.tv_sec = (time_t)fsecs;
 		fsecs *= 1000000;
-		upscli_default_timeout.tv_usec =
+		upscli_default_connect_timeout.tv_usec =
 			(suseconds_t)((int)fsecs % 1000000);
 	}
 	else {
-		upscli_default_timeout.tv_sec = 0;
-		upscli_default_timeout.tv_usec = 0;
+		upscli_default_connect_timeout.tv_sec = 0;
+		upscli_default_connect_timeout.tv_usec = 0;
 	}
 	return 0;
 }
 
-void upscli_get_default_timeout(struct timeval *ptv) {
+void upscli_get_default_connect_timeout(struct timeval *ptv) {
 	if (ptv) {
-		*ptv = upscli_default_timeout;
+		*ptv = upscli_default_connect_timeout;
 	}
 }
 
-int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, const char *default_secs) {
+int upscli_init_default_connect_timeout(const char *cli_secs, const char *config_secs, const char *default_secs) {
 	const char	*envvar_secs, *cause = "built-in";
 	int	failed = 0, applied = 0;
 
 	/* First the very default: blocking connections as we always had */
-	upscli_default_timeout.tv_sec = 0;
-	upscli_default_timeout.tv_usec = 0;
+	upscli_default_connect_timeout.tv_sec = 0;
+	upscli_default_connect_timeout.tv_usec = 0;
 
 	/* Then try a program's built-in default, if any */
 	if (default_secs) {
-		if (upscli_set_default_timeout(default_secs) < 0) {
+		if (upscli_set_default_connect_timeout(default_secs) < 0) {
 			upslogx(LOG_WARNING, "%s: default_secs='%s' value was not recognized, ignored",
 				__func__, default_secs);
 			failed++;
@@ -1940,7 +1940,7 @@ int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, c
 	/* Then override with envvar setting, if any (and if its value is valid) */
 	envvar_secs = getenv("NUT_DEFAULT_CONNECT_TIMEOUT");
 	if (envvar_secs) {
-		if (upscli_set_default_timeout(envvar_secs) < 0) {
+		if (upscli_set_default_connect_timeout(envvar_secs) < 0) {
 			upslogx(LOG_WARNING, "%s: NUT_DEFAULT_CONNECT_TIMEOUT='%s' value was not recognized, ignored",
 				__func__, envvar_secs);
 			failed++;
@@ -1952,7 +1952,7 @@ int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, c
 
 	/* Then override with config-file setting, if any (and if its value is valid) */
 	if (config_secs) {
-		if (upscli_set_default_timeout(config_secs) < 0) {
+		if (upscli_set_default_connect_timeout(config_secs) < 0) {
 			upslogx(LOG_WARNING, "%s: config_secs='%s' value was not recognized, ignored",
 				__func__, config_secs);
 			failed++;
@@ -1964,7 +1964,7 @@ int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, c
 
 	/* Then override with command-line setting, if any (and if its value is valid) */
 	if (cli_secs) {
-		if (upscli_set_default_timeout(cli_secs) < 0) {
+		if (upscli_set_default_connect_timeout(cli_secs) < 0) {
 			upslogx(LOG_WARNING, "%s: cli_secs='%s' value was not recognized, ignored",
 				__func__, cli_secs);
 			failed++;
@@ -1974,14 +1974,14 @@ int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, c
 		}
 	}
 
-	upsdebugx(1, "%s: upscli_default_timeout=%" PRIiMAX
+	upsdebugx(1, "%s: upscli_default_connect_timeout=%" PRIiMAX
 		 ".%06" PRIiMAX " sec assigned from: %s",
-		__func__, (intmax_t)upscli_default_timeout.tv_sec,
-		(intmax_t)upscli_default_timeout.tv_usec, cause);
+		__func__, (intmax_t)upscli_default_connect_timeout.tv_sec,
+		(intmax_t)upscli_default_connect_timeout.tv_usec, cause);
 
 	/* Some non-built-in value was OK */
 	if (applied) {
-		upscli_default_timeout_initialized++;
+		upscli_default_connect_timeout_initialized++;
 		return 0;
 	}
 
@@ -1990,7 +1990,7 @@ int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, c
 		return -1;
 
 	/* At least we have the built-in default and nothing failed */
-	upscli_default_timeout_initialized++;
+	upscli_default_connect_timeout_initialized++;
 	return 0;
 }
 

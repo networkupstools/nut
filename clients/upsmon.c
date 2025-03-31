@@ -1059,7 +1059,7 @@ static void set_alarm(void)
 {
 #ifndef WIN32
 	struct timeval tv;
-	upscli_get_default_timeout(&tv);
+	upscli_get_default_connect_timeout(&tv);
 	if (tv.tv_sec == 0) {
 		return;
 	}
@@ -3472,9 +3472,9 @@ int main(int argc, char *argv[])
 		}	/* else nothing to bother about */
 	}
 
-	if (upscli_init_default_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
-		       net_connect_timeout);
+			net_connect_timeout);
 	}
 
 	/* Note: "cmd" may be non-trivial to command that instance by

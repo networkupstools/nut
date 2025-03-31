@@ -104,7 +104,7 @@ int upscli_init(int certverify, const char *certpath, const char *certname, cons
 int upscli_cleanup(void);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);
-/* blocking unless default timeout is specified, see also: upscli_init_default_timeout() */
+/* blocking unless default timeout is specified, see also: upscli_init_default_connect_timeout() */
 int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
 
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl);
@@ -142,9 +142,9 @@ int upscli_ssl(UPSCONN_t *ups);
 
 /* Assign default upscli_connect() from string; return 0 if OK, or
  * return -1 if parsing failed and current value was kept  */
-int upscli_set_default_timeout(const char *secs);
+int upscli_set_default_connect_timeout(const char *secs);
 /* If ptv!=NULL, populate it with a copy of last assigned internal timeout */
-void upscli_get_default_timeout(struct timeval *ptv);
+void upscli_get_default_connect_timeout(struct timeval *ptv);
 /* Initialize default upscli_connect() timeout from a number of sources:
  * built-in (0 = blocking), envvar NUT_DEFAULT_CONNECT_TIMEOUT,
  * or specified strings (may be NULL) most-preferred first.
@@ -153,7 +153,7 @@ void upscli_get_default_timeout(struct timeval *ptv);
  * returns -1 if all provided values were not valid (so the built-in
  * default was applied) - not necessarily fatal, rather useful to report.
  */
-int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, const char *default_secs);
+int upscli_init_default_connect_timeout(const char *cli_secs, const char *config_secs, const char *default_secs);
 
 /* upsclient error list */
 
