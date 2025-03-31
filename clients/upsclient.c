@@ -1180,17 +1180,19 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 				 * but this is not very likely and I am aware of no cases of
 				 * this in practice (editor)
 				 */
-				char	addrstr[INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN];
+				char	addrstr[(INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1];
 				addrstr[0] = '\0';
 				switch (ai->ai_family) {
 					case AF_INET: {
-						struct sockaddr_in *addr_in = (struct sockaddr_in *)ai->ai_addr;
-						inet_ntop(AF_INET, &(addr_in->sin_addr), addrstr, INET_ADDRSTRLEN);
+						struct sockaddr_in addr_in;
+						memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
+						inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, INET_ADDRSTRLEN);
 						break;
 					}
 					case AF_INET6: {
-						struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)ai->ai_addr;
-						inet_ntop(AF_INET6, &(addr_in6->sin6_addr), addrstr, INET6_ADDRSTRLEN);
+						struct sockaddr_in6 addr_in6;
+						memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
+						inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, INET6_ADDRSTRLEN);
 						break;
 					}
 					default:
