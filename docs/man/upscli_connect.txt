@@ -29,7 +29,9 @@ the given 'port'.
 
 By default this makes a blocking connection attempt (until the system
 transport layer times out the underlying linkmanext:select[2] call).
-For operations with explicit operation-specific timeout please use
+A program-wide default timeout for this method can be configured with the
+linkman:upscli_set_default_timeout[3] or linkman:upscli_init_default_timeout[3]
+methods. For operations with explicit operation-specific timeout please use
 the *upscli_tryconnect()* method instead.
 
 'flags' may be either `UPSCLI_CONN_TRYSSL` to try a SSL
@@ -62,4 +64,5 @@ SEE ALSO
 linkman:upscli_disconnect[3], linkman:upscli_fd[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
 linkman:upscli_ssl[3], linkman:upscli_strerror[3],
+linkman:upscli_set_default_timeout[3], linkman:upscli_init_default_timeout[3],
 linkman:upscli_upserror[3]
