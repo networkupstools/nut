@@ -1909,7 +1909,7 @@ int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, c
 	/* Then try a program's built-in default, if any */
 	if (default_secs) {
 		if (upscli_set_default_timeout(default_secs) < 0) {
-			upsdebugx(1, "%s: default_secs='%s' value was not recognized, ignored",
+			upslogx(LOG_WARNING, "%s: default_secs='%s' value was not recognized, ignored",
 				__func__, default_secs);
 			failed++;
 		} else {
@@ -1922,7 +1922,7 @@ int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, c
 	envvar_secs = getenv("NUT_DEFAULT_CONNECT_TIMEOUT");
 	if (envvar_secs) {
 		if (upscli_set_default_timeout(envvar_secs) < 0) {
-			upsdebugx(1, "%s: NUT_DEFAULT_CONNECT_TIMEOUT='%s' value was not recognized, ignored",
+			upslogx(LOG_WARNING, "%s: NUT_DEFAULT_CONNECT_TIMEOUT='%s' value was not recognized, ignored",
 				__func__, envvar_secs);
 			failed++;
 		} else {
@@ -1934,7 +1934,7 @@ int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, c
 	/* Then override with config-file setting, if any (and if its value is valid) */
 	if (config_secs) {
 		if (upscli_set_default_timeout(config_secs) < 0) {
-			upsdebugx(1, "%s: config_secs='%s' value was not recognized, ignored",
+			upslogx(LOG_WARNING, "%s: config_secs='%s' value was not recognized, ignored",
 				__func__, config_secs);
 			failed++;
 		} else {
@@ -1946,7 +1946,7 @@ int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, c
 	/* Then override with command-line setting, if any (and if its value is valid) */
 	if (cli_secs) {
 		if (upscli_set_default_timeout(cli_secs) < 0) {
-			upsdebugx(1, "%s: cli_secs='%s' value was not recognized, ignored",
+			upslogx(LOG_WARNING, "%s: cli_secs='%s' value was not recognized, ignored",
 				__func__, cli_secs);
 			failed++;
 		} else {
