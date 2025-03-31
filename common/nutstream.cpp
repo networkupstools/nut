@@ -244,7 +244,7 @@ static const char* getTmpDirPath() {
 
 #ifdef WIN32
 	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ */
-	static char pathbuf[NUT_PATH_MAX];
+	static char pathbuf[NUT_PATH_MAX + 1];
 	int i;
 #endif
 
@@ -330,7 +330,7 @@ NutFile::NutFile(anonymous_t):
 	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ because
 	 * msvcrt tmpfile() uses C: root dir and lacks permissions to actually
 	 * use it, and mingw tends to call that OS method so far */
-	char filename[NUT_PATH_MAX];
+	char filename[NUT_PATH_MAX + 1];
 	memset(filename, 0, sizeof(filename));
 
 	GetTempFileNameA(m_tmp_dir.c_str(), "nuttemp", 0, filename);

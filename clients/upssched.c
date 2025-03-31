@@ -970,10 +970,10 @@ static void start_daemon(TYPE_FD lockfd)
 	DWORD timeout_ms;
 	HANDLE rfds[32];
 
-	char module[NUT_PATH_MAX];
+	char module[NUT_PATH_MAX + 1];
 	STARTUPINFO sinfo;
 	PROCESS_INFORMATION pinfo;
-	if (!GetModuleFileName(NULL, module, NUT_PATH_MAX)) {
+	if (!GetModuleFileName(NULL, module, sizeof(module))) {
 		fatal_with_errno(EXIT_FAILURE, "Can't retrieve module name");
 	}
 	memset(&sinfo,0,sizeof(sinfo));
@@ -1439,7 +1439,7 @@ static void upssched_err(const char *errmsg)
 
 static void checkconf(void)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 

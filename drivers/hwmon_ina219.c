@@ -50,7 +50,7 @@ upsdrv_info_t upsdrv_info = {
 /**
  * @brief Path usually pointing to /sys/class/hwmon/hwmonX.
  */
-static char ina219_base_path[NUT_PATH_MAX];
+static char ina219_base_path[NUT_PATH_MAX + 1];
 
 /**
  * @brief Threshold for detection of LB status.
@@ -128,7 +128,7 @@ static int file_read_number(const char *path, int *value)
 
 static int detect_ina219(const char *ina219_dir)
 {
-	char namepath[NUT_PATH_MAX];
+	char namepath[NUT_PATH_MAX + 1];
 
 	upsdebugx(3, "checking %s", ina219_dir);
 
@@ -166,7 +166,7 @@ static int scan_hwmon_ina219(const char *sysfs_hwmon_dir)
 	}
 
 	while ((entry = readdir(sysfs)) != NULL) {
-		char hwmon_dir[NUT_PATH_MAX];
+		char hwmon_dir[NUT_PATH_MAX + 1];
 
 		if (entry->d_type != DT_DIR && entry->d_type != DT_LNK) {
 			upsdebugx(3, "path %s/%s is not directory/symlink", sysfs_hwmon_dir,
@@ -204,7 +204,7 @@ static int update_intvar(
 	const char *name,
 	int *value)
 {
-	char path[NUT_PATH_MAX];
+	char path[NUT_PATH_MAX + 1];
 	int ret;
 
 	if (snprintf(path, sizeof(path), "%s/%s", base_path, name) >= NUT_PATH_MAX) {

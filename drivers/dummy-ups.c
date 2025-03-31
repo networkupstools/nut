@@ -2,7 +2,7 @@
 
    Copyright (C)
        2005 - 2015  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
-       2014 - 2024  Jim Klimov <jimklimov+nut@gmail.com>
+       2014 - 2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -280,7 +280,7 @@ void upsdrv_updateinfo(void)
 			/* less stress on the sys */
 			if (ctx == NULL && next_update == -1) {
 				struct stat	fs;
-				char fn[NUT_PATH_MAX];
+				char fn[NUT_PATH_MAX + 1];
 
 				prepare_filepath(fn, sizeof(fn));
 
@@ -446,7 +446,7 @@ void upsdrv_initups(void)
 	}
 	else
 	{
-		char fn[NUT_PATH_MAX];
+		char fn[NUT_PATH_MAX + 1];
 		mode = MODE_NONE;
 
 		if (val) {
@@ -747,7 +747,7 @@ static void upsconf_err(const char *errmsg)
  */
 static int parse_data_file(TYPE_FD arg_upsfd)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	size_t	value_args = 0, counter;
 	time_t	now;
