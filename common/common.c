@@ -672,7 +672,7 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 		size_t	i;
 
 		for (i = 0; buf2[i]; i++) {
-			buf2[i] = tolower(buf2[i]);
+			buf2[i] = tolower((unsigned char)(buf2[i]));
 		}
 
 		if ((s = strstr(buf2, ".exe")) && strcmp(buf2, "nut.exe"))
