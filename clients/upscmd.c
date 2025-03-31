@@ -35,7 +35,7 @@
 #include "nut_stdint.h"
 #include "upsclient.h"
 
-#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
@@ -56,8 +56,6 @@ static void usage(const char *prog)
 	printf("       %s [-l <ups>]\n", prog);
 	printf("       %s [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups> <command> [<value>]\n\n", prog);
 	printf("\n");
-	printf("  -h		display this help text\n");
-	printf("  -V		display the version of this software\n");
 	printf("  -l <ups>	show available commands on UPS <ups>\n");
 	printf("  -u <username>	set username for command authentication\n");
 	printf("  -p <password>	set password for command authentication\n");
@@ -68,6 +66,11 @@ static void usage(const char *prog)
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
 	printf("  [<value>]	Additional data for command - number of seconds, etc.\n");
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout (default: %s)\n",
+	       UPSCLI_DEFAULT_TIMEOUT);
+	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
 
@@ -291,7 +294,7 @@ int main(int argc, char **argv)
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
 	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF], *s = NULL;
 	const char	*prog = xbasename(argv[0]);
-	struct timeval tv;
+	const char	*net_timeout = NULL;
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
 	 * and NUT methods called from it. This line aims to just initialize
@@ -304,7 +307,7 @@ int main(int argc, char **argv)
 	}
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
-	while ((i = getopt(argc, argv, "+lhu:p:t:wV")) != -1) {
+	while ((i = getopt(argc, argv, "+lhu:p:t:wVW:")) != -1) {
 
 		switch (i)
 		{
@@ -338,11 +341,20 @@ int main(int argc, char **argv)
 			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
 
+		case 'W':
+			net_timeout = optarg;
+			break;
+
 		case 'h':
 		default:
 			usage(prog);
 			exit(EXIT_SUCCESS);
 		}
+	}
+
+	if (upscli_init_default_timeout(net_timeout, NULL, UPSCLI_DEFAULT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+		       net_timeout);
 	}
 
 	argc -= optind;
@@ -362,10 +374,7 @@ int main(int argc, char **argv)
 
 	ups = xcalloc(1, sizeof(*ups));
 
-	tv.tv_sec = NET_TIMEOUT;
-	tv.tv_usec = 0;
-
-	if (upscli_tryconnect(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
+	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 

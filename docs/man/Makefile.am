@@ -456,6 +456,7 @@ SRC_DEV_PAGES = \
 	upscli_get.txt \
 	upscli_init.txt \
 	upscli_set_default_timeout.txt \
+	upscli_get_default_timeout.txt \
 	upscli_init_default_timeout.txt \
 	upscli_list_next.txt \
 	upscli_list_start.txt \
@@ -576,6 +577,7 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_get.$(MAN_SECTION_API) \
 	upscli_init.$(MAN_SECTION_API) \
 	upscli_set_default_timeout.$(MAN_SECTION_API) \
+	upscli_get_default_timeout.$(MAN_SECTION_API) \
 	upscli_init_default_timeout.$(MAN_SECTION_API) \
 	upscli_list_next.$(MAN_SECTION_API) \
 	upscli_list_start.$(MAN_SECTION_API) \
@@ -691,6 +693,7 @@ INST_HTML_DEV_MANS = \
 	upscli_get.html \
 	upscli_init.html \
 	upscli_set_default_timeout.html \
+	upscli_get_default_timeout.html \
 	upscli_init_default_timeout.html \
 	upscli_list_next.html \
 	upscli_list_start.html \

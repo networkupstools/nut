@@ -1892,6 +1892,12 @@ int upscli_set_default_timeout(const char *secs) {
 	return 0;
 }
 
+void upscli_get_default_timeout(struct timeval *ptv) {
+	if (ptv) {
+		*ptv = upscli_default_timeout;
+	}
+}
+
 int upscli_init_default_timeout(const char *cli_secs, const char *config_secs, const char *default_secs) {
 	const char	*envvar_secs, *cause = "built-in";
 	int	failed = 0, applied = 0;

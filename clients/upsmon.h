@@ -209,7 +209,7 @@ static struct {
 
 /* various constants */
 
-#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

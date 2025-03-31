@@ -1058,9 +1058,14 @@ static void read_timeout(int sig)
 static void set_alarm(void)
 {
 #ifndef WIN32
+	struct timeval tv;
+	upscli_get_default_timeout(&tv);
+	if (tv.tv_sec == 0) {
+		return;
+	}
 	sa.sa_handler = read_timeout;
 	sigaction(SIGALRM, &sa, NULL);
-	alarm(NET_TIMEOUT);
+	alarm(tv.tv_sec);
 #endif
 }
 
@@ -2479,7 +2484,6 @@ static void update_crittimer(utype_t *ups)
 static int try_connect(utype_t *ups)
 {
 	int	flags = 0, ret;
-	struct timeval tv;
 
 	upsdebugx(1, "Trying to connect to UPS [%s]", ups->sys);
 
@@ -2515,10 +2519,7 @@ static int try_connect(utype_t *ups)
 		flags |= UPSCLI_CONN_CERTVERIF;
 	}
 
-	tv.tv_sec = NET_TIMEOUT;
-	tv.tv_usec = 0;
-
-	ret = upscli_tryconnect(&ups->conn, ups->hostname, ups->port, flags, &tv);
+	ret = upscli_connect(&ups->conn, ups->hostname, ups->port, flags);
 
 	if (ret < 0) {
 		upslogx(LOG_ERR, "UPS [%s]: connect failed: %s",
@@ -3059,14 +3060,17 @@ static void help(const char *arg_progname)
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
-	printf("  -V		display the version of this software\n");
-	printf("  -h		display this help\n");
 	printf("  -K		checks POWERDOWNFLAG (%s), sets exit code to 0 if set\n",
 		powerdownflag ? powerdownflag : "***NOT CONFIGURED***");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout (default: %s)\n",
+	       UPSCLI_DEFAULT_TIMEOUT);
+	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
 
@@ -3333,6 +3337,7 @@ static void init_Inhibitor(const char *prog)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_timeout = NULL;
 	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
 
 #ifndef WIN32
@@ -3371,7 +3376,7 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46")) != -1) {
+	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46W:")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg))) {
@@ -3435,6 +3440,9 @@ int main(int argc, char *argv[])
 			case '6':
 				opt_af = AF_INET6;
 				break;
+			case 'W':
+				net_timeout = optarg;
+				break;
 			default:
 				help(argv[0]);
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -3462,6 +3470,11 @@ int main(int argc, char *argv[])
 				nut_debug_level_args = l;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
+	}
+
+	if (upscli_init_default_timeout(net_timeout, NULL, UPSCLI_DEFAULT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+		       net_timeout);
 	}
 
 	/* Note: "cmd" may be non-trivial to command that instance by

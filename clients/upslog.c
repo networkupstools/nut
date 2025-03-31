@@ -43,7 +43,7 @@
 #include "upslog.h"
 #include "str.h"
 
-#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
 
 #ifdef WIN32
 #include "wincompat.h"
@@ -214,9 +214,11 @@ static void help(const char *prog)
 	printf("		  and it would not imply foregrounding\n");
 	printf("		- Unlike one '-s ups -l file' spec, you can specify many tuples\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
-	printf("  -V		- Display the version of this software\n");
-	printf("  -h		- Display this help text\n");
-
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout (default: %s)\n",
+	       UPSCLI_DEFAULT_TIMEOUT);
+	printf("  -h         - display this help text\n");
 	printf("\n");
 	printf("Some valid format string escapes:\n");
 	printf("\t%%%% insert a single %%\n");
@@ -500,20 +502,20 @@ int main(int argc, char **argv)
 	int	interval = 30, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
 	size_t	monhost_len = 0, loop_count = 0;
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_timeout = NULL;
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
 	struct passwd	*new_uid = NULL;
 	const char	*pidfilebase = prog;
 	/* For legacy single-ups -s/-l args: */
 	static	char *logfn = NULL, *monhost = NULL;
-	struct timeval tv;
 
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
 
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:")) != -1) {
+	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:W:")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
@@ -618,6 +620,10 @@ int main(int argc, char **argv)
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 
+			case 'W':
+				net_timeout = optarg;
+				break;
+
 			case 'p':
 				pidfilebase = optarg;
 				break;
@@ -636,6 +642,11 @@ int main(int argc, char **argv)
 					(char)i);
 
 		}
+	}
+
+	if (upscli_init_default_timeout(net_timeout, NULL, UPSCLI_DEFAULT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+		       net_timeout);
 	}
 
 	argc -= optind;
@@ -760,10 +771,8 @@ int main(int argc, char **argv)
 			);
 
 			conn = xmalloc(sizeof(*conn));
-			tv.tv_sec = NET_TIMEOUT;
-			tv.tv_usec = 0;
 
-			if (upscli_tryconnect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
+			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0) {
 				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
 			}
 
@@ -875,10 +884,8 @@ int main(int argc, char **argv)
 		}
 
 		monhost_ups_current->ups = xmalloc(sizeof(UPSCONN_t));
-		tv.tv_sec = NET_TIMEOUT;
-		tv.tv_usec = 0;
 
-		if (upscli_tryconnect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL, &tv) < 0)
+		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",
 				upscli_strerror(monhost_ups_current->ups));
 
@@ -957,14 +964,12 @@ int main(int argc, char **argv)
 		) {
 			/* reconnect if necessary */
 			if (upscli_fd(monhost_ups_current->ups) < 0) {
-				tv.tv_sec = NET_TIMEOUT;
-				tv.tv_usec = 0;
 
-				upscli_tryconnect(
+				upscli_connect(
 					monhost_ups_current->ups,
 					monhost_ups_current->hostname,
 					monhost_ups_current->port,
-					UPSCLI_CONN_TRYSSL, &tv);
+					UPSCLI_CONN_TRYSSL);
 			}
 
 			run_flist(monhost_ups_current);

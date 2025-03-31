@@ -84,6 +84,7 @@ Changes from 2.8.2 to 2.8.3
   * `upscli_set_default_timeout()` to modify the internal timeout used by
     `upscli_connect()` (default 0 still means blocking connections, positive
     values should time-limit the connection attempts). [#2847]
+  * `upscli_get_default_timeout()` to retrieve internal timeout
 
 - Standard NUT clients including `upsc`, `upscmd`, `upsrw`, `upslog`, `upsmon`,
   `upsimage`, `upsset` and `upsstats`) were updated to default with a 10-second

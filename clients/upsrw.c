@@ -35,7 +35,7 @@
 #include "upsclient.h"
 #include "extstate.h"
 
-#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
@@ -55,8 +55,6 @@ static void usage(const char *prog)
 	printf("\nusage: %s [-h]\n", prog);
 	printf("       %s [-s <variable>] [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups>\n\n", prog);
 	printf("\n");
-	printf("  -h            display this help text\n");
-	printf("  -V            display the version of this software\n");
 	printf("  -s <variable>	specify variable to be changed\n");
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
 	printf("  -l            show all possible read/write variables.\n");
@@ -67,6 +65,11 @@ static void usage(const char *prog)
 	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %d)\n", DEFAULT_TRACKING_TIMEOUT);
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout (default: %s)\n",
+	       UPSCLI_DEFAULT_TIMEOUT);
+	printf("  -h         - display this help text\n");
 	printf("\n");
 	printf("Call without -s to show all possible read/write variables (same as -l).\n");
 
@@ -648,8 +651,8 @@ int main(int argc, char **argv)
 	int	i;
 	uint16_t	port;
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_timeout = NULL;
 	char	*password = NULL, *username = NULL, *setvar = NULL, *s = NULL;
-	struct timeval tv;
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
 	 * and NUT methods called from it. This line aims to just initialize
@@ -662,7 +665,7 @@ int main(int argc, char **argv)
 	}
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
-	while ((i = getopt(argc, argv, "+hls:p:t:u:wV")) != -1) {
+	while ((i = getopt(argc, argv, "+hls:p:t:u:wVW:")) != -1) {
 		switch (i)
 		{
 		case 's':
@@ -693,11 +696,19 @@ int main(int argc, char **argv)
 			print_banner_once(prog, 1);
 			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
+		case 'W':
+			net_timeout = optarg;
+			break;
 		case 'h':
 		default:
 			usage(prog);
 			exit(EXIT_SUCCESS);
 		}
+	}
+
+	if (upscli_init_default_timeout(net_timeout, NULL, UPSCLI_DEFAULT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+		       net_timeout);
 	}
 
 	argc -= optind;
@@ -717,10 +728,7 @@ int main(int argc, char **argv)
 
 	ups = xcalloc(1, sizeof(*ups));
 
-	tv.tv_sec = NET_TIMEOUT;
-	tv.tv_usec = 0;
-
-	if (upscli_tryconnect(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
+	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 

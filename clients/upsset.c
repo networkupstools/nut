@@ -43,7 +43,7 @@ struct list_t {
 
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
-#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+#define UPSCLI_DEFAULT_TIMEOUT "10" /* network timeout in secs */
 
 static char	*monups, *username, *password, *function, *upscommand;
 
@@ -339,18 +339,13 @@ static void loginscreen(void)
 /* try to connect to upsd - generate an error page if it fails */
 static void upsd_connect(void)
 {
-	struct timeval tv;
-
 	if (upscli_splitname(monups, &upsname, &hostname, &port) != 0) {
 		error_page("showsettings", "UPS name is unusable",
 			"Unable to split UPS name [%s]", monups);
 		/* NOTREACHED */
 	}
 
-	tv.tv_sec = NET_TIMEOUT;
-	tv.tv_usec = 0;
-
-	if (upscli_tryconnect(&ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
+	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		error_page("showsettings", "Connect failure",
 			"Unable to connect to %s: %s",
 			monups, upscli_strerror(&ups));
@@ -1087,6 +1082,8 @@ int main(int argc, char **argv)
 
 	/* see if the magic string is present in the config file */
 	check_conf();
+
+	upscli_init_default_timeout(NULL, NULL, UPSCLI_DEFAULT_TIMEOUT);
 
 	/* see if there's anything waiting .. the server my not close STDIN properly */
 	if (1) {

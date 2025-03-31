@@ -12,7 +12,7 @@ SYNOPSIS
 ------
 	#include <upsclient.h>
 
-	int upscli_init_default_timeout(const char *secs);
+	int upscli_set_default_timeout(const char *secs);
 ------
 
 DESCRIPTION
@@ -41,4 +41,4 @@ SEE ALSO
 --------
 
 linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
-linkman:upscli_init_default_timeout[3]
+linkman:upscli_init_default_timeout[3], linkman:upscli_get_default_timeout[3]

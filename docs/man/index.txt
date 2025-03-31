@@ -99,6 +99,7 @@ Client library
 - linkman:upscli_get[3]
 - linkman:upscli_init[3]
 - linkman:upscli_set_default_timeout[3]
+- linkman:upscli_get_default_timeout[3]
 - linkman:upscli_init_default_timeout[3]
 - linkman:upscli_list_next[3]
 - linkman:upscli_list_start[3]
