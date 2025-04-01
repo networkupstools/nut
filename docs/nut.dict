@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3443 utf-8
+personal_ws-1.1 en 3444 utf-8
 AAC
 AAS
 ABI
@@ -1658,6 +1658,7 @@ bitmapped
 bitmask
 bitness
 bitnesses
+bmake
 bn
 bool
 boolean

@@ -1090,8 +1090,9 @@ https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 
 ------
 :; pkgin install \
-    git perl curl mozilla-rootcerts-openssl \
-    make gmake autoconf automake libltdl libtool \
+    git perl curl \
+    mozilla-rootcerts mozilla-rootcerts-openssl \
+    bmake gmake autoconf automake libltdl libtool \
     cppcheck \
     pkgconf \
     gcc7 clang
@@ -1131,7 +1132,7 @@ https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 
 # Select a LUA-5.1 (or possibly 5.2?) version
 :; pkgin install \
-    lua51
+    lua51 # lua52
 
 :; pkgin install \
     bash dash ast-ksh oksh
