@@ -86,15 +86,24 @@ all-recursive: all-fanout-maybe
 
 # Run the standard build if going sequential (or with unknown MAKEFLAGS),
 # or fanout if parallel (presuming GNU/BSD/Sun make at least):
+SUBDIR_MAKE_VERBOSE = 1
 all-fanout-maybe:
 	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
-		echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; exit 0 ; \
+		if [ x"$(SUBDIR_MAKE_VERBOSE)" = x1 ] ; then \
+			echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
+		fi ; \
+		exit 0 ; \
 	  fi ; \
 	  case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
 		*-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*-[jl][0123456789]*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*|*--jobserver*|*--jobs" "[0123456789]*|*--load-average" "[0123456789]*|*--max-load" "[0123456789]*) \
-			echo "  SUBDIR-MAKE       $@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
+			if [ x"$(SUBDIR_MAKE_VERBOSE)" = x1 ] ; then \
+				echo "  SUBDIR-MAKE       $@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
+			fi ; \
 			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs ;; \
-		*)	echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ;; \
+		*) \
+			if [ x"$(SUBDIR_MAKE_VERBOSE)" = x1 ] ; then \
+				echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
+			fi ;; \
 	  esac
 
 # We start with a pass to `make all` in `common` dir because our wild recipes
@@ -162,10 +171,14 @@ endif KEEP_NUT_REPORT
 SUBDIR_TGT_RULE = ( \
 	TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
 	DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
-	echo "  SUBDIR-MAKE       STARTING: 'make $$TGT' in $$DIR ..." ; \
+	if [ x"$(SUBDIR_MAKE_VERBOSE)" = x1 ] ; then \
+		echo "  SUBDIR-MAKE       STARTING: 'make $$TGT' in $$DIR ..." ; \
+	fi ; \
 	cd "$(abs_builddir)/$${DIR}" && \
 	$(MAKE) $(AM_MAKEFLAGS) $${SUBDIR_TGT_MAKEFLAGS-} "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE       FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
-	echo "  SUBDIR-MAKE       SUCCESS: 'make $$TGT' in $$DIR" ; \
+	if [ x"$(SUBDIR_MAKE_VERBOSE)" = x1 ] ; then \
+		echo "  SUBDIR-MAKE       SUCCESS: 'make $$TGT' in $$DIR" ; \
+	fi ; \
 	)
 
 # A way to quickly handle SUBDIRS_ALL_LIBS_LOCAL as dependency for all others
