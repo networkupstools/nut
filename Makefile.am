@@ -169,8 +169,8 @@ endif KEEP_NUT_REPORT
 # target in specified dir is the goal, all as separate targets for this
 # level's Makefile:
 SUBDIR_TGT_RULE = ( \
-	TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
-	DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
+	[ x"$${TGT-}" != x ] || TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
+	[ x"$${DIR-}" != x ] || DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
 	if [ x"$(SUBDIR_MAKE_VERBOSE)" = x1 ] ; then \
 		echo "  SUBDIR-MAKE       STARTING: 'make $$TGT' in $$DIR ..." ; \
 	fi ; \
