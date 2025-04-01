@@ -1181,9 +1181,9 @@ systems, can add dash-number suffixed symlinks to compiler tools (e.g.
 `gcc-7` beside the `gcc` installed by package) near the original
 binaries and into `/usr/lib/ccache`:
 ------
-:; ( cd /usr/bin && for TOOL in cpp gcc g++ ; do \
-        for VER in "-7" "-14" ; do \
-            ln -s "$TOOL" "$TOOL$VER" ; \
+:; ( cd /usr/pkg/bin && for TOOL in cpp gcc g++ ; do \
+        for VER in "7" "14" ; do \
+            ln -fs "../gcc$VER/bin/$TOOL" "${TOOL}-${VER}" ; \
         done ; \
      done )
 
