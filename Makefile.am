@@ -614,9 +614,18 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -s $@) || RES=$$? ; \
 	exit $$RES
 
-# Auto-parallel recipe (if current 'make' implementation supports the "-j N" syntax):
+# Auto-parallel recipe (if current 'make' implementation supports the "-j N"
+# syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
 spellcheck-quick:
-	+@case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in *"j"*) $(MAKE) $(AM_MAKEFLAGS) -ks spellcheck && exit ;; *) $(MAKE) $(AM_MAKEFLAGS) -ks -j 8 spellcheck && exit ;; esac
+	+@case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+		*"j"*) $(MAKE) $(AM_MAKEFLAGS) -ks spellcheck && exit ;; \
+		*) \
+			if ! [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
+				MAXPARMAKES=8 ; \
+			fi ; \
+			$(MAKE) $(AM_MAKEFLAGS) -ks -j $${MAXPARMAKES} spellcheck \
+			&& exit ;; \
+	  esac
 
 # Run auto-parallel recipe, and if something fails - re-run interactively:
 spellcheck-interactive-quick:
