@@ -591,7 +591,42 @@ distclean-local:
 # Only require SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes for the last entry
 # (reduce noise for spellcheck-interactive)
 # Maint: grep -l 'SPELLCHECK_' `git grep -lw spellcheck '*.am'`
-spellcheck spellcheck-interactive:
+SPELLCHECK_DIRS_MOST = \
+	spellcheck/docs \
+	spellcheck/docs/man \
+	spellcheck/conf \
+	spellcheck/data \
+	spellcheck/data/html \
+	spellcheck/scripts \
+	spellcheck/scripts/Solaris \
+	spellcheck/scripts/Windows \
+	spellcheck/scripts/devd \
+	spellcheck/scripts/external_apis \
+	spellcheck/scripts/hotplug \
+	spellcheck/scripts/installer \
+	spellcheck/scripts/python \
+	spellcheck/scripts/systemd \
+	spellcheck/scripts/udev \
+	spellcheck/scripts/upsdrvsvcctl
+
+# Same but with an info notice, so runs alone last
+SPELLCHECK_DIRS_LAST = spellcheck/tests/NIT
+
+SPELLCHECK_DIRS = $(SPELLCHECK_DIRS_MOST) $(SPELLCHECK_DIRS_LAST)
+
+$(SPELLCHECK_DIRS_MOST): prep-src-docs/docs/man prep-src-docs/docs
+	+@$(SUBDIR_TGT_RULE)
+
+$(SPELLCHECK_DIRS_LAST): prep-src-docs/docs/man prep-src-docs/docs $(SPELLCHECK_DIRS_MOST)
+	+@SUBDIR_TGT_MAKEFLAGS="SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes"; \
+	  export SUBDIR_TGT_MAKEFLAGS ; \
+	  $(SUBDIR_TGT_RULE)
+
+# We want to check all files even if some have errors, so sub-make with "-k":
+spellcheck:
+	+@$(MAKE) $(AM_MAKEFLAGS) SUBDIR_MAKE_VERBOSE=0 -ks $(SPELLCHECK_DIRS)
+
+spellcheck-interactive:
 	+@RES=0; \
 	(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
 	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
