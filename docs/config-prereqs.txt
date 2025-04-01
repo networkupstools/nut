@@ -1159,6 +1159,9 @@ Such file was not found in the test system...
 :; pkgin install \
     openipmi
 ------
+
+It still seems to not work for NUT's expectations of FreeIPMI
+(we have basic detection support for OpenIPMI but no code yet).
 ======
 
 Recommended: For compatibility with common setups on other operating
