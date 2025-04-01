@@ -1088,6 +1088,19 @@ https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 (the latter also provides a nice cheat-sheet about `pkgin` operations).
 ======
 
+[NOTE]
+======
+On NetBSD 9.2 the `openpimi` and `net-snmp` packages complain that
+they require either OS ABI 9.0, or that `CHECK_OSABI=no` is set in
+a `pkg_install.conf`. Such file was not found in the test system,
+but can be created in `/etc/` and is honoured by `pkgin`:
+
+----
+:; grep CHECK_OSABI /etc/pkg_install.conf || \
+    ( echo CHECK_OSABI=no >> /etc/pkg_install.conf )
+----
+======
+
 ------
 :; pkgin install \
     git perl curl \
@@ -1151,9 +1164,8 @@ https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 
 [NOTE]
 ======
-(TBD) On NetBSD 9.2 this package complains that it requires
-OS ABI 9.0, or that `CHECK_OSABI=no` is set in `pkg_install.conf`.
-Such file was not found in the test system...
+There seems to be no FreeIPMI for NetBSD, but there's OpenIPMI
+(can help someone implementing actual support for it):
 
 ------
 :; pkgin install \

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3445 utf-8
+personal_ws-1.1 en 3446 utf-8
 AAC
 AAS
 ABI
@@ -2664,6 +2664,7 @@ openipmi
 openjdk
 openlog
 openmp
+openpimi
 openssh
 openssl
 oper
