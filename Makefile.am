@@ -601,9 +601,14 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -s $@) || RES=$$? ; \
 	exit $$RES
 
+# Auto-parallel recipe (if current 'make' implementation supports the "-j N" syntax):
+spellcheck-quick:
+	+@case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in *"j"*) $(MAKE) $(AM_MAKEFLAGS) -ks spellcheck && exit ;; *) $(MAKE) $(AM_MAKEFLAGS) -ks -j 8 spellcheck && exit ;; esac
+
+# Run auto-parallel recipe, and if something fails - re-run interactively:
 spellcheck-interactive-quick:
-	+@case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in *"j"*) $(MAKE) $(AM_MAKEFLAGS) -ks spellcheck && exit ;; *) $(MAKE) $(AM_MAKEFLAGS) -ks -j 8 spellcheck && exit ;; esac \
-	 || make spellcheck-interactive
+	+@$(MAKE) $(AM_MAKEFLAGS) -ks spellcheck-quick \
+	 || $(MAKE) $(AM_MAKEFLAGS) spellcheck-interactive
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
 # found by `configure` script (and so avoided by conventional recipes)
