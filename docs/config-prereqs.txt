@@ -1070,6 +1070,24 @@ resources when generating the `configure` script may be old and its directory
 creation mode is not safe for parallel-`make` installations. If this happens,
 you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
 
+[NOTE]
+======
+Instructions below rely on `pkgin`, an `apt`/`yum`-like front-end tool for
+managing pkgsrc binary packages.  It is available out of the box on the system
+this document describes, but if an e.g. older release lacks it, it can be added
+using the older tooling:
+
+----
+:; PKG_PATH="http://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r|cut -f '1 2' -d.)/All/"
+:; export PKG_PATH
+:; pkg_add pkgin
+----
+
+For more details, see https://www.pkgsrc.org/#index1h1 and
+https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
+(the latter also provides a nice cheat-sheet about `pkgin` operations).
+======
+
 ------
 :; pkgin install \
     git perl curl mozilla-rootcerts-openssl \

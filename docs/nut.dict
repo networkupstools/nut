@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3442 utf-8
+personal_ws-1.1 en 3443 utf-8
 AAC
 AAS
 ABI
@@ -2723,6 +2723,7 @@ pkg
 pkgconf
 pkgconfig
 pkgin
+pkgsrc
 plaintext
 plugin
 pluma
