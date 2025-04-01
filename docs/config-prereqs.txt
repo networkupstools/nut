@@ -1123,9 +1123,10 @@ https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 :; pkgin install \
     asciidoc
 
+# FIXME: Missing packages?
 # For other doc types (PDF, HTML) generation - massive packages (TEX, X11):
-:; pkgin install \
-    source-highlight py39-pygments dblatex
+# :; pkgin install \
+#    source-highlight py39-pygments dblatex
 
 # For CGI graph generation - massive packages (X11):
 :; pkgin install \
