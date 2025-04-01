@@ -1095,7 +1095,7 @@ https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
     bmake gmake autoconf automake libltdl libtool \
     cppcheck \
     pkgconf \
-    gcc7 clang
+    gcc7 gcc14 clang
 
 # See comments below, python version and package naming depends on distro
 :; pkgin install \
@@ -1166,21 +1166,25 @@ systems, can add dash-number suffixed symlinks to compiler tools (e.g.
 binaries and into `/usr/lib/ccache`:
 ------
 :; ( cd /usr/bin && for TOOL in cpp gcc g++ ; do \
-        ln -s "$TOOL" "$TOOL-7" ; \
+        for VER in "-7" "-14" ; do \
+            ln -s "$TOOL" "$TOOL$VER" ; \
+        done ; \
      done )
 
 # Note that the one delivered binary is `clang-13` (in originally described
-# installation; `clang-18` after an update in 2025) and many (unnumbered)
-# symlinks to it. For NUT CI style of support for builds with many
-# compilers, complete the known numbers:
+# installation; `clang-18` after an update in 2025 which auto-removed the
+# older version) and many (unnumbered) symlinks to it. For NUT CI style of
+# support for builds with many compilers, complete the known numbers:
 :; ( cd /usr/pkg/bin && for TOOL in clang-cpp clang++ ; do \
-        ln -s clang-18 "$TOOL-18" ; \
+        for VER in "-18" ; do \
+            ln -s clang-18 "$TOOL$VER" ; \
+        done ; \
      done )
 
 :; pkgin install ccache
 :; ( mkdir -p /usr/lib/ccache && cd /usr/lib/ccache && \
         for TOOL in cpp gcc g++ clang ; do \
-            for VER in "" "-7" ; do \
+            for VER in "" "-7" "-14" ; do \
                 ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
             done ; \
         done ; \
