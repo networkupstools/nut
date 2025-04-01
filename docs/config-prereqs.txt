@@ -1099,11 +1099,21 @@ https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 
 # See comments below, python version and package naming depends on distro
 :; pkgin install \
-    python27 python39
+    python27 python39 python312 python313
 
-;; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.9 python3 ) )
+:; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.13 python3 ) )
 # You can find a list of what is (pre-)installed with:
 #   :; pkgin list | grep -Ei 'perl|python'
+
+# For localization maintenance (currently in Python NUT-Monitor app),
+# provide an `msgfmt` implementation, e.g.:
+#   :; pkgin install gettext
+#
+# To install the Python NUT-Monitor app, you may need some modules:
+# For Python2:
+#   :; pkgin install py27-gtk2
+# For Python3:
+#   :; pkgin install py312-qt5 py313-qt5
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pkgin install \
@@ -1159,11 +1169,12 @@ binaries and into `/usr/lib/ccache`:
         ln -s "$TOOL" "$TOOL-7" ; \
      done )
 
-# Note that the one delivered binary is `clang-13` and many (unnumbered)
+# Note that the one delivered binary is `clang-13` (in originally described
+# installation; `clang-18` after an update in 2025) and many (unnumbered)
 # symlinks to it. For NUT CI style of support for builds with many
 # compilers, complete the known numbers:
 :; ( cd /usr/pkg/bin && for TOOL in clang-cpp clang++ ; do \
-        ln -s clang-13 "$TOOL-13" ; \
+        ln -s clang-18 "$TOOL-18" ; \
      done )
 
 :; pkgin install ccache
@@ -1174,7 +1185,7 @@ binaries and into `/usr/lib/ccache`:
             done ; \
         done ; \
         for TOOL in clang clang++ clang-cpp ; do \
-            for VER in "" "-13" ; do \
+            for VER in "" "-18" ; do \
                 ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
             done ; \
         done ; \
