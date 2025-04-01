@@ -1002,8 +1002,20 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                 CFLAGS="${CFLAGS-} -I/usr/pkg/include"
                 CXXFLAGS="${CXXFLAGS-} -I/usr/pkg/include"
             fi
+
             if [ -d "/usr/pkg/lib/pkgconfig" ] ; then
                 SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:/usr/pkg/lib/pkgconfig"
+            fi
+
+            # A bit hackish to check this outside `configure`, but...
+            if [ -s "/usr/pkg/include/ltdl.h" ] \
+            && [ ! -s "/usr/pkg/lib/pkgconfig/ltdl.pc" ] \
+            && [ ! -s "/usr/pkg/lib/pkgconfig/libltdl.pc" ] \
+            ; then
+                echo "NetBSD: export flags for LibLTDL"
+                # The m4 script clear default CFLAGS/LIBS so benefit from new ones
+                CONFIG_OPTS+=("--with-libltdl-includes=-isystem /usr/pkg/include -I/usr/pkg/include")
+                CONFIG_OPTS+=("--with-libltdl-libs=-L/usr/pkg/lib -lltdl")
             fi
             ;;
     esac
