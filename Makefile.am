@@ -626,28 +626,10 @@ $(SPELLCHECK_DIRS_LAST): prep-src-docs/docs/man prep-src-docs/docs $(SPELLCHECK_
 spellcheck:
 	+@$(MAKE) $(AM_MAKEFLAGS) SUBDIR_MAKE_VERBOSE=0 -ks $(SPELLCHECK_DIRS)
 
+# Tricky TGT to pass sort-of-same rules (and dir list) as spellcheck,
+# but using the correct make target for this goal:
 spellcheck-interactive:
-	+@RES=0; \
-	(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
-	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
-	(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/conf && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/data && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/data/html && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/Solaris && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/Windows && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/devd && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/external_apis && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/hotplug && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/installer && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/python && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/systemd && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/udev && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/upsdrvsvcctl && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
-	(cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -s $@) || RES=$$? ; \
-	exit $$RES
+	+@$(MAKE) $(AM_MAKEFLAGS) SUBDIR_MAKE_VERBOSE=0 TGT='$@' -ks $(SPELLCHECK_DIRS)
 
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
