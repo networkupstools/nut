@@ -623,13 +623,27 @@ $(SPELLCHECK_DIRS_LAST): prep-src-docs/docs/man prep-src-docs/docs $(SPELLCHECK_
 	  $(SUBDIR_TGT_RULE)
 
 # We want to check all files even if some have errors, so sub-make with "-k":
-spellcheck:
-	+@$(MAKE) $(AM_MAKEFLAGS) SUBDIR_MAKE_VERBOSE=0 -ks $(SPELLCHECK_DIRS)
-
 # Tricky TGT to pass sort-of-same rules (and dir list) as spellcheck,
 # but using the correct make target for this goal:
-spellcheck-interactive:
-	+@$(MAKE) $(AM_MAKEFLAGS) SUBDIR_MAKE_VERBOSE=0 TGT='$@' -ks $(SPELLCHECK_DIRS)
+spellcheck spellcheck-interactive:
+	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
+		if [ x"$(SUBDIR_MAKE_VERBOSE)" = x1 ] ; then \
+			echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
+		fi ; \
+		RES=0 ; \
+		(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
+		(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
+		for D in $(SPELLCHECK_DIRS_MOST) ; do \
+			D="`echo "$$D" | sed 's,^spellcheck/,,'`" ; \
+			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+		done ; \
+		for D in $(SPELLCHECK_DIRS_LAST) ; do \
+			D="`echo "$$D" | sed 's,^spellcheck/,,'`" ; \
+			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -s $@) || RES=$$? ; \
+		done ; \
+		exit $$RES ; \
+	  fi ; \
+	  $(MAKE) $(AM_MAKEFLAGS) SUBDIR_MAKE_VERBOSE=0 TGT='$@' -ks $(SPELLCHECK_DIRS)
 
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
