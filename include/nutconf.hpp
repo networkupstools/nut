@@ -266,14 +266,22 @@ public:
 
 	inline void clear()
 	{
+		i = 0;
+		b = false;
 		i.clear();
 		b.clear();
 	}
 
-	inline BoolInt& operator=(const BoolInt& other)
+	inline void clearWithBool01()
 	{
 		clear();
+		bool01 = false;
 		bool01.clear();
+	}
+
+	inline BoolInt& operator=(const BoolInt& other)
+	{
+		clearWithBool01();
 
 		if (other.b.set()) b = other.b;
 		if (other.i.set()) i = other.i;
@@ -286,8 +294,7 @@ public:
 
 	inline BoolInt& operator=(BoolInt&& other)
 	{
-		clear();
-		bool01.clear();
+		clearWithBool01();
 
 		if (other.b.set()) b = other.b;
 		if (other.i.set()) i = other.i;
