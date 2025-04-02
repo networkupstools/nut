@@ -185,7 +185,12 @@ ASCIIDOC_PDF = \
 # for a few goals, and among SUBDIRs directly from the top-level Makefile
 # due to some potential dependency collisions with parallel builds.
 SUBDIRS = cables
-SUFFIXES = .txt .html .pdf .txt-spellchecked .txt-prepped .adoc-spellchecked .adoc-prepped
+SUFFIXES = .txt .html .pdf
+SUFFIXES += .txt-spellchecked-auto .txt-spellchecked .txt-prepped
+SUFFIXES += .adoc-spellchecked-auto .adoc-spellchecked .adoc-prepped
+SUFFIXES += .in-spellchecked-auto .in-spellchecked .in-prepped
+SUFFIXES += .sample-spellchecked-auto .sample-spellchecked .sample-prepped
+SUFFIXES += .conf-spellchecked-auto .conf-spellchecked .conf-prepped
 
 # This list is defined by configure script choices and options:
 CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
@@ -387,7 +392,7 @@ man:
 	+@if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOC-NOT-MAN     SKIP: $@ called in docs/Makefile" ; exit 0 ; fi ; \
 	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked .check-* docbook-xsl.css docinfo.xml.in.tmp docinfo-since-v*.xml* *-docinfo.xml*
+CLEANFILES = *.xml *.html *.pdf *-spellchecked* *-contentchecked* .check-* docbook-xsl.css docinfo.xml.in.tmp docinfo-since-v*.xml* *-docinfo.xml*
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/ChangeLog.adoc
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 # These two "must be" there per autotools standards, so a "make clean"
@@ -896,8 +901,34 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		     exit $$RES; } ; \
 	 touch "$@"
 
+# If NUT_MAKE_SKIP_FANOUT!=true we have a hack to spellcheck certain files more
+# quickly (in parallel). This approach is constrained to files with a known
+# extension and located in same directory as the Makefile that called them
+# (extension-less docs and relative links are built sequentially).
+SPELLCHECK_AUTO_ONE = ( \
+	SPELLCHECK_SRC_ONE="`basename '$?'`" ; \
+	rm -f "$@".failed ; \
+	$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${SPELLCHECK_SRC_ONE}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${SPELLCHECK_SRC_ONE}-spellchecked" \
+	|| { RES=$$? ; touch "$@".failed; exit $$RES; } \
+)
+
+.txt.txt-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
+.adoc.adoc-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
+.in.in-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
+.sample.sample-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
+.conf.conf-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
 spellcheck:
-	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+	@if test "$(SPELLCHECK_ENV_DEBUG)" = detailed ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
@@ -906,13 +937,31 @@ spellcheck:
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
 	+@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	 for docsrc in $(SPELLCHECK_SRC); do \
+	 if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
+		for docsrc in $(SPELLCHECK_SRC); do \
+			if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+				echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+			else true ; fi ; \
+			$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+			|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
+		done ; \
+	 else \
+		SPELLCHECK_AUTO_TGT="`for docsrc in $(SPELLCHECK_SRC); do case "$${docsrc}" in */*) ;; *.adoc|*.txt|*.in|*.conf|*.sample) printf '%s ' "$${docsrc}-spellchecked-auto" ;; esac ; done`" ; \
+		SPELLCHECK_NOEXT_DOCS="`for docsrc in $(SPELLCHECK_SRC); do case "$${docsrc}" in */*) printf '%s ' "$${docsrc}" ;; *.adoc|*.txt|*.in|*.conf|*.sample) ;; *) printf '%s ' "$${docsrc}" ;; esac ; done`" ; \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
-			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+			echo "ASPELL MAKEFILE DEBUG: from `pwd`: SPELLCHECK_NOEXT_DOCS='$${SPELLCHECK_NOEXT_DOCS}' SPELLCHECK_AUTO_TGT='$${SPELLCHECK_AUTO_TGT}'" ; \
 		else true ; fi ; \
-		$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
-		|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
-	 done ; \
+		if [ x"$${SPELLCHECK_AUTO_TGT}" != x ] ; then \
+			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" $${SPELLCHECK_AUTO_TGT} ; \
+			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ] ; then printf '%s ' "$(SPELLCHECK_SRCDIR)/$${docsrc}" ; rm -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ; fi ; done`" ; \
+		fi ; \
+		if [ x"$${SPELLCHECK_NOEXT_DOCS}" != x ] ; then \
+			for docsrc in $${SPELLCHECK_NOEXT_DOCS} ; do \
+				$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+				|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
+			done ; \
+		fi ; \
+	 fi ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
 		echo "FAILED automatic spellcheck for the following sources (relative to `pwd`) using custom dictionary file '$(NUT_SPELL_DICT)': $$FAILED" ; \
