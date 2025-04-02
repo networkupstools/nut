@@ -437,10 +437,14 @@ public:
 			// some compilers are concerned that Settable<Type>._value
 			// may be queried as un-initialized here (for 0/1 equality)
 			// but we are supposed to rule that out with "if set()"...
-			if (i.set() && other.b.set())
-				return ( (other.b && i == 1) || (!other.b && i == 0) );
-			if (b.set() && other.i.set())
-				return ( (b && other.i == 1) || (!b && other.i == 0) );
+			try {
+				if (i.set() && other.b.set())
+					return ( (other.b && i == 1) || (!other.b && i == 0) );
+			} catch (...) {}
+			try {
+				if (b.set() && other.i.set())
+					return ( (b && other.i == 1) || (!b && other.i == 0) );
+			} catch (...) {}
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MAYBE_UNINITIALIZED)
 #pragma GCC diagnostic pop
 #endif
