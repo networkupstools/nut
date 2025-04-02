@@ -645,9 +645,9 @@ spellcheck spellcheck-interactive:
 		done ; \
 		exit $$RES ; \
 	  fi ; \
-	  $(MAKE) $(AM_MAKEFLAGS) SUBDIR_MAKE_VERBOSE=1 TGT='$@' -ks $(SPELLCHECK_DIRS) && exit ; \
+	  $(MAKE) $(AM_MAKEFLAGS) TGT='$@' -ks $(SPELLCHECK_DIRS) && exit ; \
 	  echo "WARNING: FAILED fanned-out attempt in $@, retrying with NUT_MAKE_SKIP_FANOUT" >&2 ; \
-	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SUBDIR_MAKE_VERBOSE=1 TGT='$@' -ks $(SPELLCHECK_DIRS)
+	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true TGT='$@' -ks $(SPELLCHECK_DIRS)
 
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
