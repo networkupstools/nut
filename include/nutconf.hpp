@@ -221,7 +221,9 @@ public:
 	Settable<bool> bool01;
 
 	/** Leave all contents un-set */
-	BoolInt() {}
+	BoolInt() {
+		clearWithBool01();
+	}
 
 	BoolInt(const bool val) {
 		*this = val;
