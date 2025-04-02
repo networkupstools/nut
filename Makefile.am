@@ -625,25 +625,29 @@ $(SPELLCHECK_DIRS_LAST): prep-src-docs/docs/man prep-src-docs/docs $(SPELLCHECK_
 # We want to check all files even if some have errors, so sub-make with "-k":
 # Tricky TGT to pass sort-of-same rules (and dir list) as spellcheck,
 # but using the correct make target for this goal:
+# FIXME: fanned-out recipes tend to fail early despite "make -ks", so for
+#  now we retry with a not-fanned-out attempt to cover most touch-files
 spellcheck spellcheck-interactive:
 	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
+		RES=0 ; \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" = x1 ] ; then \
 			echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
 		fi ; \
-		RES=0 ; \
-		(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
-		(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
+		(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -ks $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
+		(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -ks $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
 		for D in $(SPELLCHECK_DIRS_MOST) ; do \
 			D="`echo "$$D" | sed 's,^spellcheck/,,'`" ; \
-			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) -ks $@) || RES=$$? ; \
 		done ; \
 		for D in $(SPELLCHECK_DIRS_LAST) ; do \
 			D="`echo "$$D" | sed 's,^spellcheck/,,'`" ; \
-			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -s $@) || RES=$$? ; \
+			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -ks $@) || RES=$$? ; \
 		done ; \
 		exit $$RES ; \
 	  fi ; \
-	  $(MAKE) $(AM_MAKEFLAGS) SUBDIR_MAKE_VERBOSE=0 TGT='$@' -ks $(SPELLCHECK_DIRS)
+	  $(MAKE) $(AM_MAKEFLAGS) SUBDIR_MAKE_VERBOSE=1 TGT='$@' -ks $(SPELLCHECK_DIRS) && exit ; \
+	  echo "WARNING: FAILED fanned-out attempt in $@, retrying with NUT_MAKE_SKIP_FANOUT" >&2 ; \
+	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SUBDIR_MAKE_VERBOSE=1 TGT='$@' -ks $(SPELLCHECK_DIRS)
 
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
@@ -660,8 +664,9 @@ spellcheck-quick:
 
 # Run auto-parallel recipe, and if something fails - re-run interactively:
 spellcheck-interactive-quick:
-	+@$(MAKE) $(AM_MAKEFLAGS) -ks spellcheck-quick \
-	 || $(MAKE) $(AM_MAKEFLAGS) spellcheck-interactive
+	+@$(MAKE) $(AM_MAKEFLAGS) spellcheck-quick && exit ; \
+	  echo "WARNING: in $@: make spellcheck-quick failed, retrying with spellcheck-interactive" >&2 ; \
+	  $(MAKE) $(AM_MAKEFLAGS) spellcheck-interactive
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
 # found by `configure` script (and so avoided by conventional recipes)
