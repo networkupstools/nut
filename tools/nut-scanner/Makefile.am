@@ -137,8 +137,8 @@ nut_scanner_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
-  libnutscan_la_LIBADD += $(LIBSSL_LIBS)
-  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+  libnutscan_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
+  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
 endif WITH_SSL
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
