@@ -615,11 +615,12 @@ SPELLCHECK_DIRS_LAST = spellcheck/tests/NIT
 SPELLCHECK_DIRS = $(SPELLCHECK_DIRS_MOST) $(SPELLCHECK_DIRS_LAST)
 
 $(SPELLCHECK_DIRS_MOST): prep-src-docs/docs/man prep-src-docs/docs
-	+@$(SUBDIR_TGT_RULE)
+	+@TGT="$(SPELLCHECK_TGT)"; export TGT; $(SUBDIR_TGT_RULE)
 
 $(SPELLCHECK_DIRS_LAST): prep-src-docs/docs/man prep-src-docs/docs $(SPELLCHECK_DIRS_MOST)
 	+@SUBDIR_TGT_MAKEFLAGS="SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes"; \
-	  export SUBDIR_TGT_MAKEFLAGS ; \
+	  export SUBDIR_TGT_MAKEFLAGS; \
+	  TGT="$(SPELLCHECK_TGT)"; export TGT; \
 	  $(SUBDIR_TGT_RULE)
 
 # We want to check all files even if some have errors, so sub-make with "-k":
@@ -645,9 +646,9 @@ spellcheck spellcheck-interactive:
 		done ; \
 		exit $$RES ; \
 	  fi ; \
-	  $(MAKE) $(AM_MAKEFLAGS) TGT='$@' -ks $(SPELLCHECK_DIRS) && exit ; \
+	  $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_TGT='$@' -ks $(SPELLCHECK_DIRS) && exit ; \
 	  echo "WARNING: FAILED fanned-out attempt in $@, retrying with NUT_MAKE_SKIP_FANOUT" >&2 ; \
-	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true TGT='$@' -ks $(SPELLCHECK_DIRS)
+	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SPELLCHECK_TGT='$@' -ks $(SPELLCHECK_DIRS)
 
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
