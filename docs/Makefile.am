@@ -908,7 +908,7 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 SPELLCHECK_AUTO_ONE = ( \
 	SPELLCHECK_SRC_ONE="`basename '$?'`" ; \
 	rm -f "$@".failed ; \
-	$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${SPELLCHECK_SRC_ONE}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${SPELLCHECK_SRC_ONE}-spellchecked" \
+	$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${SPELLCHECK_SRC_ONE}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${SPELLCHECK_SRC_ONE}-spellchecked" \
 	|| { RES=$$? ; touch "$@".failed; exit $$RES; } \
 )
 
@@ -957,7 +957,7 @@ spellcheck:
 		fi ; \
 		if [ x"$${SPELLCHECK_NOEXT_DOCS}" != x ] ; then \
 			for docsrc in $${SPELLCHECK_NOEXT_DOCS} ; do \
-				$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+				$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
 				|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 			done ; \
 		fi ; \
