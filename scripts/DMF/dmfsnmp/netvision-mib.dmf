@@ -15,11 +15,11 @@
 		<lookup_info oid="1" value=""/>
 		<lookup_info oid="2" value=""/>
 		<lookup_info oid="3" value="OL"/>
-		<lookup_info oid="4" value="OL BYPASS"/>
-		<lookup_info oid="5" value="OB"/>
-		<lookup_info oid="6" value="OL BOOST"/>
-		<lookup_info oid="7" value="OL TRIM"/>
-		<lookup_info oid="8" value="OL"/>
+		<lookup_info oid="4" value=""/>
+		<lookup_info oid="5" value="OL BYPASS"/>
+		<lookup_info oid="6" value="OFF"/>
+		<lookup_info oid="7" value="OL BYPASS"/>
+		<lookup_info oid="8" value="OFF"/>
 		<lookup_info oid="9" value=""/>
 	</lookup>
 	<lookup name="su_convert_to_iso_date_info">
@@ -75,6 +75,6 @@
 		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="battery.voltage" oid=".1.3.6.1.4.1.4555.1.1.1.1.2.5.0"/>
 		<snmp_info default="" flag_ok="yes" multiplier="60.0" name="battery.runtime" oid=".1.3.6.1.4.1.4555.1.1.1.1.2.3.0"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.4555.1.1.1.1.1.1.0" mib_name="netvision" name="netvision" oid=".1.3.6.1.4.1.4555.1.1.1" snmp_info="netvision_mib" version="0.44"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.4555.1.1.1.1.1.1.0" mib_name="netvision" name="netvision" oid=".1.3.6.1.4.1.4555.1.1.1" snmp_info="netvision_mib" version="0.45"/>
 </nut>
 
