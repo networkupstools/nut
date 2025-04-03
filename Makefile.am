@@ -54,6 +54,7 @@ SUBDIRS_ALL_RECURSIVE = \
 	all/tools/nutconf \
 	all-recursive/tools \
 	all/lib \
+	all/scripts/DMF \
 	all-recursive/scripts \
 	all/server \
 	all/tests/NIT \
@@ -401,7 +402,10 @@ all/scripts/Windows:
 	+@$(SUBDIR_TGT_RULE)
 endif !HAVE_MINGW_RESGEN
 
-all-recursive/scripts: all/scripts/Windows
+all/scripts/DMF: all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+all-recursive/scripts: all/scripts/Windows all/scripts/DMF
 	+@$(SUBDIR_TGT_RULE)
 
 # ----------------------------------------------------------------------
