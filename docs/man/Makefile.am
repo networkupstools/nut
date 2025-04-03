@@ -1429,19 +1429,31 @@ all-man man-man: $(MAN_MANS)
 dist-html: $(DIST_ALL_HTML_PAGES)
 dist-man: $(DIST_ALL_MAN_PAGES)
 
+# This list is defined by configure script choices and options:
+CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
+
 if WITH_MANS
 if ! SKIP_MANS
 check-local: check-man
-else
+else SKIP_MANS
 check-local: check-man-txt check-man-pages
 	@echo "Man-page generation was SKIPPED per user request, so pregenerated pages were sanity-checked (if any)" >&2
-endif
-else
+endif SKIP_MANS
+else ! WITH_MANS
 check-local: check-man-txt check-man-pages
 	@echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
-endif
+endif ! WITH_MANS
 
-check-man check-man-man: check-man-txt check-man-pages check-html-man
+TGT_REQUIRE_CHECK_HTML =
+if WITH_HTML_SINGLE
+TGT_REQUIRE_CHECK_HTML += check-html-man
+else !WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+TGT_REQUIRE_CHECK_HTML += check-html-man
+endif WITH_HTML_CHUNKED
+endif !WITH_HTML_SINGLE
+
+check-man check-man-man: check-man-txt check-man-pages $(TGT_REQUIRE_CHECK_HTML)
 
 # the "for" loops might better use $^ but it might be not portable
 check-man-html: check-html-man

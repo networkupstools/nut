@@ -150,6 +150,15 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
    and we suppose this is an interesting case for other projects to draw
    inspiration from for their recipe refactoring. [PR #2825]
 
+ - As an aid for developers and maintainers, a new spell-checking recipe was
+   added to first run non-interactive spelling checks in parallel, and *only*
+   if something fails -- run an interactive check to edit the text and/or the
+   dictionary file. The `make spellcheck` rule now also benefits from the
+   rewritten recipes, as detailed above, to visit directories with text files
+   in parallel. Overall, these changes may save time on multi-CPU systems, if
+   compared to a sequential walk of all texts (or their directories) as was
+   done before. [#2871]
+
  - The `make dist` goal now takes more care to require availability of the man
    pages to put into the prepared distribution archive. These may come either
    from the current build, or inherited from its sources (if using a tarball
