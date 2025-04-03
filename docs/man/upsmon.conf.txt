@@ -300,6 +300,18 @@ to substitute the current value of `ups.alarm`.
 
 NOTALARM;; UPS is no longer in an alarm state (no active alarms)
 
+OVER;; UPS is overloaded
+
+NOTOVER;; UPS is no longer overloaded
+
+TRIM;; UPS is trimming incoming voltage
+
+NOTTRIM;; UPS is no longer trimming incoming voltage
+
+BOOST;; UPS is boosting incoming voltage
+
+NOTBOOST;; UPS is no longer boosting incoming voltage
+
 OTHER;; UPS has at least one unclassified `ups.status` token;
 for this notification, the `message` can contain a second `%s` placeholder
 to substitute the current collection of such tokens.

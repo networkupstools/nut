@@ -412,6 +412,10 @@ This requirement compromises usability of `make distcheck` on platforms without
    * Updated `upsmon` client with setting to toggle whether an `ALARM`
      status can prompt the UPS to become critical in certain situations.
 
+ - The `upsmon` client can now also report entering and exiting the `OVER`
+   (UPS overloaded), `TRIM` and `BOOST` (adjusting for bad input voltage)
+   states. [#1074]
+
  - New `libupsclient` API methods added:
    * `upscli_str_add_unique_token()` and `upscli_str_contains_token()`,
      to help C NUT clients process `ups.status` and similarly structured

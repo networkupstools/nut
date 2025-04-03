@@ -199,7 +199,9 @@ static int try_restore_pollfreq(utype_t *ups) {
 	 * power state that is prone to UPS disappearance.
 	 * Note: ECO mode not considered easily fatal here!
 	 */
-	if (!flag_isset(ups->status, ST_ONBATT | ST_OFF | ST_BYPASS | ST_ALARM | ST_CAL)) {
+	if (!flag_isset(ups->status, ST_ONBATT | ST_OFF | ST_BYPASS | ST_ALARM |
+		ST_CAL | ST_OVER | ST_TRIM | ST_BOOST
+	)) {
 		sleepval = pollfreq;
 		return 1;
 	}
@@ -1278,6 +1280,32 @@ static int is_ups_critical(utype_t *ups)
 			return 1;
 		}
 
+		if (flag_isset(ups->status, ST_OVER)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be overloaded "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (flag_isset(ups->status, ST_TRIM)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be "
+				"trimming incoming voltage "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (flag_isset(ups->status, ST_BOOST)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be "
+				"boosting incoming voltage "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
 		if (ups->bypassstate == 1
 		|| flag_isset(ups->status, ST_BYPASS)) {
 			upslogx(LOG_WARNING,
@@ -1563,6 +1591,81 @@ static void ups_is_notcal(utype_t *ups)
 	}
 }
 
+static void ups_is_over(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_OVER)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !OVER to OVER, so notify */
+
+	do_notify(ups, NOTIFY_OVER, NULL);
+	setflag(&ups->status, ST_OVER);
+}
+
+static void ups_is_notover(utype_t *ups)
+{
+	/* Called when OVER is NOT among known states */
+	if (flag_isset(ups->status, ST_OVER)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTOVER, NULL);
+		clearflag(&ups->status, ST_OVER);
+		try_restore_pollfreq(ups);
+	}
+}
+
+static void ups_is_trim(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_TRIM)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !TRIM to TRIM, so notify */
+
+	do_notify(ups, NOTIFY_TRIM, NULL);
+	setflag(&ups->status, ST_TRIM);
+}
+
+static void ups_is_nottrim(utype_t *ups)
+{
+	/* Called when TRIM is NOT among known states */
+	if (flag_isset(ups->status, ST_TRIM)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTTRIM, NULL);
+		clearflag(&ups->status, ST_TRIM);
+		try_restore_pollfreq(ups);
+	}
+}
+
+static void ups_is_boost(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_BOOST)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !BOOST to BOOST, so notify */
+
+	do_notify(ups, NOTIFY_BOOST, NULL);
+	setflag(&ups->status, ST_BOOST);
+}
+
+static void ups_is_notboost(utype_t *ups)
+{
+	/* Called when BOOST is NOT among known states */
+	if (flag_isset(ups->status, ST_BOOST)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTBOOST, NULL);
+		clearflag(&ups->status, ST_BOOST);
+		try_restore_pollfreq(ups);
+	}
+}
+
 static void ups_fsd(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_FSD)) {		/* no change */
@@ -1601,6 +1704,15 @@ static void drop_connection(utype_t *ups)
 
 	if(flag_isset(ups->status, ST_CAL))
 		upsdebugx(2, "Disconnected UPS [%s] was last seen in status CAL, this UPS might be considered critical later.", ups->sys);
+
+	if(flag_isset(ups->status, ST_OVER))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status OVER, this UPS might be considered critical later.", ups->sys);
+
+	if(flag_isset(ups->status, ST_TRIM))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status TRIM, this UPS might be considered critical later.", ups->sys);
+
+	if(flag_isset(ups->status, ST_BOOST))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status BOOST, this UPS might be considered critical later.", ups->sys);
 
 	/* Note: ECO mode not considered easily fatal here */
 	if(ups->ecostate == 1 || flag_isset(ups->status, ST_ECO))
@@ -2468,11 +2580,12 @@ static void setup_signals(void)
 /* remember the last time the ups was not critical (OB + LB) */
 static void update_crittimer(utype_t *ups)
 {
-	/* if !OB, !LB, or CAL, then it's not critical, so log the time */
-	if ((!flag_isset(ups->status, ST_ONBATT))  ||
-		(!flag_isset(ups->status, ST_LOWBATT)) ||
-		(flag_isset(ups->status, ST_CAL))) {
-
+	/* if !OB, !LB, or maybe any of those but also CAL,
+	 * then it's not critical, so log the time */
+	if ( (!flag_isset(ups->status, ST_ONBATT))
+	 ||  (!flag_isset(ups->status, ST_LOWBATT))
+	 ||  (flag_isset(ups->status, ST_CAL))
+	) {
 		time(&ups->lastnoncrit);
 		return;
 	}
@@ -2583,6 +2696,12 @@ static void parse_status(utype_t *ups, char *status, char *buzzword, char *buzzw
 		ups_is_notbypass(ups);
 	if (!strstr(status, "ALARM"))
 		ups_is_notalarm(ups);
+	if (!strstr(status, "OVER"))
+		ups_is_notover(ups);
+	if (!strstr(status, "TRIM"))
+		ups_is_nottrim(ups);
+	if (!strstr(status, "BOOST"))
+		ups_is_notboost(ups);
 
 	/* NOTE: ECO Should not be happening as a status or alarm anymore
 	 * but we may still notify about changes in the ups.mode.buzzword */
@@ -2662,6 +2781,18 @@ static void parse_status(utype_t *ups, char *status, char *buzzword, char *buzzw
 		}
 		else if (!strcasecmp(statword, "ALARM")) {
 			ups_is_alarm(ups);
+			handled++;
+		}
+		else if (!strcasecmp(statword, "OVER")) {
+			ups_is_over(ups);
+			handled++;
+		}
+		else if (!strcasecmp(statword, "TRIM")) {
+			ups_is_trim(ups);
+			handled++;
+		}
+		else if (!strcasecmp(statword, "BOOST")) {
+			ups_is_boost(ups);
 			handled++;
 		}
 		/* do it last to override any possible OL */
