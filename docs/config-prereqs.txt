@@ -484,6 +484,11 @@ lines if the `mirrorlist` ones do not suffice to find living mirrors (WARNING:
 the `/os/` part of the URL would vary for different repository types).
 ======
 
+For DMF, additionally install `python-pycparser`:
+------
+:; yum install python-pycparser || yum install python3-pycparser
+------
+
 Arch Linux
 ~~~~~~~~~~
 
