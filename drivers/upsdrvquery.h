@@ -2,7 +2,7 @@
                    tracked until a response arrives, returning
                    that line and closing a connection
 
-   Copyright (C) 2023-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2023-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ typedef struct udq_pipe_conn_s {
 	int		newread;	/* Set to 1 to start a new ReadFile, forget old buf */
 #endif	/* WIN32 */
 	char		buf[LARGEBUF];
-	char		sockfn[NUT_PATH_MAX];
+	char		sockfn[NUT_PATH_MAX + 1];
 } udq_pipe_conn_t;
 
 udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn);

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3444 utf-8
+personal_ws-1.1 en 3449 utf-8
 AAC
 AAS
 ABI
@@ -855,6 +855,7 @@ OnLine
 OnTime
 OneAC
 OpenBSD
+OpenIPMI
 OpenIndiana
 OpenPGP
 OpenSSL
@@ -1658,6 +1659,7 @@ bitmapped
 bitmask
 bitness
 bitnesses
+bmake
 bn
 bool
 boolean
@@ -2663,6 +2665,7 @@ openipmi
 openjdk
 openlog
 openmp
+openpimi
 openssh
 openssl
 oper
@@ -2724,6 +2727,7 @@ pkg
 pkgconf
 pkgconfig
 pkgin
+pkgsrc
 plaintext
 plugin
 pluma
@@ -2877,6 +2881,7 @@ rn
 ro
 roadmap
 rootca
+rootcerts
 rootfs
 rootfs'es
 rpath

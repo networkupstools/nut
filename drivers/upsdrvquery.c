@@ -2,7 +2,7 @@
                    tracked until a response arrives, returning
                    that line and closing a connection
 
-   Copyright (C) 2023-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2023-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -158,7 +158,7 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 }
 
 udq_pipe_conn_t *upsdrvquery_connect_drvname_upsname(const char *drvname, const char *upsname) {
-	char	sockname[NUT_PATH_MAX];
+	char	sockname[NUT_PATH_MAX + 1];
 #ifndef WIN32
 	struct stat     fs;
 	snprintf(sockname, sizeof(sockname), "%s/%s-%s",

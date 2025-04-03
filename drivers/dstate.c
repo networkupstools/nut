@@ -1093,7 +1093,7 @@ static void sock_close(void)
 
 char * dstate_init(const char *prog, const char *devname)
 {
-	char	sockname[NUT_PATH_MAX];
+	char	sockname[NUT_PATH_MAX + 1];
 
 #ifndef WIN32
 	/* do this here for now */

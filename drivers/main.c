@@ -4,7 +4,7 @@
    1999			Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
    2017 		Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
-   2017 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
+   2017 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -2019,7 +2019,7 @@ int main(int argc, char **argv)
 
 	const char	* drv_name = NULL;
 	char	* dot = NULL;
-	char	name[NUT_PATH_MAX];
+	char	name[NUT_PATH_MAX + 1];
 #endif
 
 	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
@@ -2608,7 +2608,7 @@ int main(int argc, char **argv)
 	 * deliberately.
 	 */
 	if (cmd || foreground == 0 || foreground == 2 || do_forceshutdown) {
-		char	pidfnbuf[NUT_PATH_MAX];
+		char	pidfnbuf[NUT_PATH_MAX + 1];
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 
@@ -3015,7 +3015,7 @@ sockname_ownership_finished:
 		 */
 		case 2:
 			if (!pidfn) {
-				char	pidfnbuf[NUT_PATH_MAX];
+				char	pidfnbuf[NUT_PATH_MAX + 1];
 				snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 				pidfn = xstrdup(pidfnbuf);
 			}

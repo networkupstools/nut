@@ -412,7 +412,7 @@ static ssize_t powpan_status(status_t *status)
 	}
 
 	for (i = 1; i <= ret; i++) {
-		if (i == ret || isalpha(powpan_answer[i])) {
+		if (i == ret || isalpha((unsigned char)(powpan_answer[i]))) {
 			value[ofs++] = '\0';
 			valid++;
 
