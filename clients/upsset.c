@@ -44,6 +44,9 @@ struct list_t {
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
 
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
+
 static char	*monups, *username, *password, *function, *upscommand;
 
 /* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
@@ -344,7 +347,7 @@ static void upsd_connect(void)
 		/* NOTREACHED */
 	}
 
-	if (upscli_connect(&ups, hostname, port, 0) < 0) {
+	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		error_page("showsettings", "Connect failure",
 			"Unable to connect to %s: %s",
 			monups, upscli_strerror(&ups));
@@ -1081,6 +1084,8 @@ int main(int argc, char **argv)
 
 	/* see if the magic string is present in the config file */
 	check_conf();
+
+	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
 	/* see if there's anything waiting .. the server my not close STDIN properly */
 	if (1) {

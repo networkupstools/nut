@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3446 utf-8
+personal_ws-1.1 en 3449 utf-8
 AAC
 AAS
 ABI
@@ -1750,6 +1750,7 @@ cidr
 cis
 clav
 clepple
+cli
 clicky
 cls
 clueful
@@ -2792,6 +2793,7 @@ psu
 pthread
 pthreads
 pts
+ptv
 pty
 pulizzi
 pw
@@ -3170,6 +3172,7 @@ tport
 tripplite
 tripplitesu
 troff
+tryconnect
 tsa
 tsd
 tty

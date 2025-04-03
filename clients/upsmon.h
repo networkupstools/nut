@@ -4,7 +4,7 @@
      2000  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
      2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-     2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
+     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -209,7 +209,8 @@ static struct {
 
 /* various constants */
 
-#define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

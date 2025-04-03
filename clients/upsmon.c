@@ -1045,10 +1045,27 @@ static void setfsd(utype_t *ups)
 	upslogx(LOG_ERR, "FSD set on UPS %s failed: %s", ups->sys, buf);
 }
 
+#ifndef WIN32
+/* handler for alarm when getupsvarfd times out */
+static void read_timeout(int sig)
+{
+	NUT_UNUSED_VARIABLE(sig);
+
+	/* don't do anything here, just return */
+}
+#endif
+
 static void set_alarm(void)
 {
 #ifndef WIN32
-	alarm(NET_TIMEOUT);
+	struct timeval tv;
+	upscli_get_default_connect_timeout(&tv);
+	if (tv.tv_sec == 0) {
+		return;
+	}
+	sa.sa_handler = read_timeout;
+	sigaction(SIGALRM, &sa, NULL);
+	alarm(tv.tv_sec);
 #endif
 }
 
@@ -2420,16 +2437,6 @@ static void set_reload_flag(int sig)
 	reload_flag = 1;
 }
 
-#ifndef WIN32
-/* handler for alarm when getupsvarfd times out */
-static void read_timeout(int sig)
-{
-	NUT_UNUSED_VARIABLE(sig);
-
-	/* don't do anything here, just return */
-}
-#endif
-
 /* install handlers for a few signals */
 static void setup_signals(void)
 {
@@ -2445,11 +2452,6 @@ static void setup_signals(void)
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGQUIT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
-
-	/* handle timeouts */
-
-	sa.sa_handler = read_timeout;
-	sigaction(SIGALRM, &sa, NULL);
 
 	/* deal with the ones from userspace as well */
 
@@ -3058,14 +3060,17 @@ static void help(const char *arg_progname)
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
-	printf("  -V		display the version of this software\n");
-	printf("  -h		display this help\n");
 	printf("  -K		checks POWERDOWNFLAG (%s), sets exit code to 0 if set\n",
 		powerdownflag ? powerdownflag : "***NOT CONFIGURED***");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
 
@@ -3332,6 +3337,7 @@ static void init_Inhibitor(const char *prog)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_connect_timeout = NULL;
 	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
 
 #ifndef WIN32
@@ -3370,7 +3376,7 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46")) != -1) {
+	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46W:")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg))) {
@@ -3434,6 +3440,9 @@ int main(int argc, char *argv[])
 			case '6':
 				opt_af = AF_INET6;
 				break;
+			case 'W':
+				net_connect_timeout = optarg;
+				break;
 			default:
 				help(argv[0]);
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -3461,6 +3470,11 @@ int main(int argc, char *argv[])
 				nut_debug_level_args = l;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
+	}
+
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+			net_connect_timeout);
 	}
 
 	/* Note: "cmd" may be non-trivial to command that instance by
