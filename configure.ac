@@ -6540,6 +6540,12 @@ AC_SUBST(NUT_AM_EXPORT_CCACHE_PATH)
 PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 
+dnl Stash without optimization option, it breaks pycparser
+CPPFLAGS_DMF="${CPPFLAGS}"
+CFLAGS_DMF="${CFLAGS}"
+AC_SUBST(CPPFLAGS_DMF)
+AC_SUBST(CFLAGS_DMF)
+
 dnl Some binaries, like CPPUNIT tests, have similar flags already added
 dnl We might wipe their specific options below if consistently applying
 dnl debug-friendly options to everything
