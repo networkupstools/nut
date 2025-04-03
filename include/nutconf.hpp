@@ -133,11 +133,28 @@ public:
 	}
 
 	bool operator==(const Type& val)const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
 	{
 		if(!set())
 			return false;
 		else
+		try {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MAYBE_UNINITIALIZED)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+			// some compilers are concerned that Settable<Type>._value
+			// may be queried as un-initialized here (for equality)
+			// but we are supposed to rule that out with "if set()"...
 			return _value == val;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MAYBE_UNINITIALIZED)
+#pragma GCC diagnostic pop
+#endif
+		} catch(...) {
+			throw std::invalid_argument(errMsg_ENOTSET());
+		}
 	}
 
 };
@@ -204,7 +221,9 @@ public:
 	Settable<bool> bool01;
 
 	/** Leave all contents un-set */
-	BoolInt() {}
+	BoolInt() {
+		clearWithBool01();
+	}
 
 	BoolInt(const bool val) {
 		*this = val;
@@ -249,14 +268,22 @@ public:
 
 	inline void clear()
 	{
+		i = 0;
+		b = false;
 		i.clear();
 		b.clear();
 	}
 
-	inline BoolInt& operator=(const BoolInt& other)
+	inline void clearWithBool01()
 	{
 		clear();
+		bool01 = false;
 		bool01.clear();
+	}
+
+	inline BoolInt& operator=(const BoolInt& other)
+	{
+		clearWithBool01();
 
 		if (other.b.set()) b = other.b;
 		if (other.i.set()) i = other.i;
@@ -269,8 +296,7 @@ public:
 
 	inline BoolInt& operator=(BoolInt&& other)
 	{
-		clear();
-		bool01.clear();
+		clearWithBool01();
 
 		if (other.b.set()) b = other.b;
 		if (other.i.set()) i = other.i;
@@ -404,10 +430,24 @@ public:
 			// false if at least one object has neither i nor b
 			// values "set()", or if their numeric values do not
 			// match up as 0 or 1 exactly vs. boolean values.
-			if (i.set() && other.b.set())
-				return ( (other.b && i == 1) || (!other.b && i == 0) );
-			if (b.set() && other.i.set())
-				return ( (b && other.i == 1) || (!b && other.i == 0) );
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MAYBE_UNINITIALIZED)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+			// some compilers are concerned that Settable<Type>._value
+			// may be queried as un-initialized here (for 0/1 equality)
+			// but we are supposed to rule that out with "if set()"...
+			try {
+				if (i.set() && other.b.set())
+					return ( (other.b && i == 1) || (!other.b && i == 0) );
+			} catch (...) {}
+			try {
+				if (b.set() && other.i.set())
+					return ( (b && other.i == 1) || (!b && other.i == 0) );
+			} catch (...) {}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MAYBE_UNINITIALIZED)
+#pragma GCC diagnostic pop
+#endif
 		}
 
 		return false;

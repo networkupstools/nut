@@ -73,8 +73,8 @@ static int	mge_report_deprecation__convert_deci = 1;
 typedef enum {
 	ROOTPARENT = NE_XML_STATEROOT,
 
-	_UNEXPECTED,
-	_PARSEERROR,
+	NETXML_UNEXPECTED,
+	NETXML_PARSEERROR,
 
 	PRODUCT_INFO = 100,	/* "/mgeups/product.xml" */
 
@@ -1150,7 +1150,7 @@ static xml_info_t mge_xml2nut[] = {
 /* A start-element callback for element with given namespace/name. */
 static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts)
 {
-	int	state = _UNEXPECTED;
+	int	state = NETXML_UNEXPECTED;
 	NUT_UNUSED_VARIABLE(userdata);
 	NUT_UNUSED_VARIABLE(nspace);
 

@@ -6,6 +6,7 @@
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2022	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2022 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -4183,7 +4184,7 @@ static void mibconf_err(const char *errmsg)
 /* load *mib.conf into an snmp_info_t structure */
 void read_mibconf(char *mib)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 

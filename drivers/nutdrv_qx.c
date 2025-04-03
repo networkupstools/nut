@@ -3044,7 +3044,7 @@ void	upsdrv_help(void)
 
 		/* lowercase the (ASCII) string */
 		for (p = subdrv_name; *p; ++p)
-			*p = tolower(*p);
+			*p = tolower((unsigned char)(*p));
 
 		if (i>0)
 			printf(", ");

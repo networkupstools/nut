@@ -672,7 +672,7 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 		size_t	i;
 
 		for (i = 0; buf2[i]; i++) {
-			buf2[i] = tolower(buf2[i]);
+			buf2[i] = tolower((unsigned char)(buf2[i]));
 		}
 
 		if ((s = strstr(buf2, ".exe")) && strcmp(buf2, "nut.exe"))
@@ -1012,7 +1012,7 @@ char * getprocname(pid_t pid)
 	 */
 	char	*procname = NULL;
 	size_t	procnamelen = 0;
-	char	pathname[NUT_PATH_MAX];
+	char	pathname[NUT_PATH_MAX + 1];
 	struct stat	st;
 
 #ifdef WIN32
@@ -1469,7 +1469,7 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	size_t	procbasenamelen = 0, progbasenamelen = 0;
 	/* Track where the last dot is in the basename; 0 means none */
 	size_t	procbasenamedot = 0, progbasenamedot = 0;
-	char	procbasename[NUT_PATH_MAX], progbasename[NUT_PATH_MAX];
+	char	procbasename[NUT_PATH_MAX + 1], progbasename[NUT_PATH_MAX + 1];
 
 	if (checkprocname_ignored(__func__)) {
 		ret = -3;
@@ -1661,7 +1661,7 @@ finish:
    depending on the .exe path */
 char * getfullpath(char * relative_path)
 {
-	char buf[NUT_PATH_MAX];
+	char buf[NUT_PATH_MAX + 1];
 	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
 		return NULL;
 	}
@@ -1682,7 +1682,7 @@ char * getfullpath(char * relative_path)
 void writepid(const char *name)
 {
 #ifndef WIN32
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	FILE	*pidf;
 	mode_t	mask;
 
@@ -2217,7 +2217,7 @@ int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
 #ifndef WIN32
 int sendsignal(const char *progname, int sig, int check_current_progname)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
 
@@ -3236,7 +3236,7 @@ const char * rootpidpath(void)
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn) {
 	size_t len = strlen(fn);
-	size_t max = NUT_PATH_MAX;
+	size_t max = NUT_PATH_MAX;	/* no +1 here */
 #ifndef WIN32
 	struct sockaddr_un	ssaddr;
 	max = sizeof(ssaddr.sun_path);
@@ -4036,7 +4036,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	DIR *dp;
 	struct dirent *dirp;
 	char *libname_path = NULL, *libname_alias = NULL;
-	char current_test_path[NUT_PATH_MAX];
+	char current_test_path[NUT_PATH_MAX + 1];
 
 	upsdebugx(3, "%s('%s', %" PRIuSIZE ", '%s', %i): Entering method...",
 		__func__, base_libname, base_libname_length, dirname, index);
