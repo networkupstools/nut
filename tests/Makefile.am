@@ -11,7 +11,9 @@
 
 SUBDIRS = . NIT
 
-all: $(TESTS)
+# Note: a few duplicate mentions are possible here, but a decent make should
+# handle that properly
+all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
@@ -107,14 +109,19 @@ generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
 
 gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
 nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
-gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
-gpiotest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBGPIO_LDFLAGS)
+gpiotest_CFLAGS = $(LIBGPIO_CFLAGS) $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 else !WITH_GPIO
 EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
 endif !WITH_GPIO
 
 CLEANFILES += generic_gpio_libgpiod.c generic_gpio_common.c
 EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
+
+TESTS += driver_methods_utest
+driver_methods_utest_SOURCES = driver_methods_utest.c
+driver_methods_utest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
+driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/drivers/libdummy_mockdrv.la \
@@ -126,7 +133,7 @@ $(top_builddir)/common/libcommon.la: dummy
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
-# These are an optional part of cppunittest, if building WITH_NUTCONF
+# These are an optional part of cppunittest, if building WITH_LIBNUTCONF
 CPPUNITTESTSRC_NUTCONF = nutconf_parser_ut.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
 # The test driver which orchestrates running those tests above
 CPPUNITTESTERSRC = cpputest.cpp
@@ -145,11 +152,6 @@ TESTS += $(TESTS_CXX11)
 # Note: we only build it, but do not run directly (NIT prepares the sandbox)
 check_PROGRAMS += cppnit
 
-if WITH_VALGRIND
-check-local: $(check_PROGRAMS)
-	RES=0; for P in $? ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
-endif WITH_VALGRIND
-
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 ###cppunittest_CXXFLAGS += -I$(top_srcdir)/include -DTOP_SRCDIR="\"$(top_srcdir)\""
 cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
@@ -159,10 +161,10 @@ cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 # Currently nutconf and related codebase causes woes for static analysis
 # so we do not build it unless explicitly asked to.
-if WITH_NUTCONF
+if WITH_LIBNUTCONF
 cppunittest_SOURCES += $(CPPUNITTESTSRC_NUTCONF)
 cppunittest_LDADD += $(top_builddir)/common/libnutconf.la
-endif WITH_NUTCONF
+endif WITH_LIBNUTCONF
 
 cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
@@ -195,6 +197,36 @@ cppnit:
 
 endif !HAVE_CXX11
 
+if HAVE_VALGRIND
+# NOTE: "cppnit", if built, requires running from NIT (with NUT_PORT, etc.)
+# Note that FAILED value begins with a space, so we do not echo another
+memcheck: $(check_PROGRAMS)
+	@RES=0; FAILED=""; \
+	 for P in $? ; do \
+		case "$$P" in \
+			cppnit|cppnit$(EXEEXT)) \
+				if [ "$${NUT_PORT-}" -gt 0 ] 2>/dev/null ; then : ; else \
+					echo "SKIPPED: $(VALGRIND) ./$$P : NUT_PORT not prepared" ; \
+					continue ; \
+				fi ;; \
+		esac ; \
+		'$(top_builddir)/scripts/valgrind/valgrind.sh' "./$$P" \
+		|| { RES=$$? ; \
+			echo "FAILED: '$(top_builddir)/scripts/valgrind/valgrind.sh' './$$P'" >&2; \
+			FAILED="$$FAILED $$P" ; \
+		} ; \
+	 done; \
+	 if [ -n "$$FAILED" ] ; then echo "OVERALL FAILED:$$FAILED" >&2 ; fi ; \
+	 exit $$RES
+else !HAVE_VALGRIND
+memcheck:
+	@echo "SKIPPED $@ : valgrind was not detected on this system by configure script" >&2
+endif !HAVE_VALGRIND
+
+if WITH_VALGRIND
+check-local: memcheck
+endif WITH_VALGRIND
+
 dummy:
 
 BUILT_SOURCES = $(LINKED_SOURCE_FILES)
@@ -206,3 +238,6 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # the root Makefile.am takes care of that!
 #clean-local:
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

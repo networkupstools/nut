@@ -45,6 +45,12 @@ $(top_builddir)/common/libcommon.la: dummy
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else
+# FIXME: this can cause rebuilds of nut_version.h for every mention
+#  (especially if we `configire --enable-force-nut-version-header`,
+#  which is default). This also causes binary build of libupsclient.la
+#  to look up its metadata and generate libupsclient-version.h which
+#  may be a bit of overkill (especially in cross-build cases etc.)
+#  Notably this pops up in `configure && make dist(check)` rituals.
 nut-scanner.c: $(top_builddir)/include/nut_version.h
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
@@ -106,6 +112,10 @@ libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 libnutscan_la_LIBADD = $(NETLIBS)
 libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
 
+# Make sure generated sources are there when needed
+scan_snmp.c: nutscan-snmp.h
+scan_usb.c: nutscan-usb.h
+
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif WITH_LIBLTDL
@@ -145,9 +155,9 @@ libnutscan_la_LDFLAGS += -version-info 2:6:0
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
 if WITH_DMF
-libnutscan_la_LDFLAGS += -export-symbols-regex '^((dmf)?nutscan_|uninit_snmp_device_table|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^((dmf)?nutscan_|uninit_snmp_device_table|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
 else !WITH_DMF
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
 endif !WITH_DMF
 
 libnutscan_la_CFLAGS = \
@@ -181,6 +191,17 @@ nut_scanner_CFLAGS = \
 nut_scanner_LDADD = libnutscan.la
 #FTY-old# nut_scanner_LDADD = $(top_builddir)/common/libcommon.la libnutscan.la $(top_builddir)/common/libcommonstr.la
 
+# Hack to allow correct RPATH/RUNPATH like /usr/lib/mps/64 (Mozilla NSS)
+# to be used on Solaris/illumos and similar platforms. For more details,
+# see https://github.com/networkupstools/nut/issues/2674 but in short -
+# we know the libs and options from pkg-config, and then they are well
+# embedded into libnutscan.la, and then the -R/some/path options are
+# chopped away by libtool when linking the program (while for some reason
+# it adds the libraries wanted by libnutscan.la directly as libs wanted
+# by the program, and ALSO they have a link chain through the shared lib).
+# I'd argue this is a libtool bug, but here's a workaround that works...
+nut_scanner_LDFLAGS = $(AM_LDFLAGS)
+
 if WITH_SNMP
 if WITH_NEON
 nut_scanner_CFLAGS += -I$(top_srcdir)/drivers
@@ -189,7 +210,7 @@ if WITH_DMF
 nut_scanner_CFLAGS += -DWITH_DMFMIB=1
 if WITH_DMF_LUA
 nut_scanner_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
-nut_scanner_LDFLAGS = $(LDFLAGS_DMF_LUA)
+nut_scanner_LDFLAGS += $(LDFLAGS_DMF_LUA)
 else !WITH_DMF_LUA
 nut_scanner_CFLAGS += -DWITH_DMF_LUA=0
 endif !WITH_DMF_LUA
@@ -207,7 +228,8 @@ endif WITH_SNMP
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
-  libnutscan_la_LIBADD += $(LIBSSL_LIBS)
+  libnutscan_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
+  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
 endif WITH_SSL
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
@@ -261,3 +283,6 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # the root Makefile.am takes care of that!
 #clean-local:
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

@@ -33,8 +33,12 @@
 
 #include <modbus.h>
 
-#define DRIVER_NAME "NUT APC Modbus driver"
-#define DRIVER_VERSION "0.10"
+#if defined NUT_MODBUS_HAS_USB
+# define DRIVER_NAME "NUT APC Modbus driver with USB support"
+#else
+# define DRIVER_NAME "NUT APC Modbus driver without USB support"
+#endif
+#define DRIVER_VERSION "0.12"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1476,6 +1480,7 @@ void upsdrv_updateinfo(void)
 
 	alarm_init();
 	status_init();
+	buzzmode_init();
 
 	/* Status Data */
 	if (_apc_modbus_read_registers(modbus_ctx, 0, 27, regbuf)) {
@@ -1503,7 +1508,7 @@ void upsdrv_updateinfo(void)
 			status_set("TEST");
 		}
 		if (value & (1 << 13)) {
-			status_set("HE"); /* High efficiency / ECO mode*/
+			buzzmode_set("vendor:apc:HE"); /* High efficiency / ECO mode*/
 		}
 		if (value & (1 << 21)) {
 			status_set("OVER");
@@ -1560,12 +1565,37 @@ void upsdrv_updateinfo(void)
 
 	alarm_commit();
 	status_commit();
+	buzzmode_commit();
 	dstate_dataok();
 }
 
 void upsdrv_shutdown(void)
 {
-	modbus_write_register(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/*
+	 * WARNING: When using RTU TCP, this driver will probably
+	 * never support shutdowns properly, except on some systems:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
+	/* FIXME: got no direct equivalent in apc_modbus_command_map[]
+	 *  used for instcmd above. Investigate if we can add this
+	 *  combo into that map and name it as an INSTCMD to call by
+	 *  this driver's standard approach.
+	 */
+	modbus_write_register(modbus_ctx,
+		APC_MODBUS_OUTLETCOMMAND_BF_REG,
+		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP
+	);
 }
 
 void upsdrv_help(void)
@@ -1579,8 +1609,10 @@ void upsdrv_makevartable(void)
 #endif /* defined NUT_MODBUS_HAS_USB */
 
 #if defined NUT_MODBUS_HAS_USB
+	upsdebugx(1, "This build of the driver is USB-capable; also Serial and TCP Modbus RTU are supported");
 	addvar(VAR_VALUE, "porttype", "Modbus port type (serial, tcp, usb, default=usb)");
 #else
+	upsdebugx(1, "This build of the driver is not USB-capable, only Serial and TCP Modbus RTU are supported");
 	addvar(VAR_VALUE, "porttype", "Modbus port type (serial, tcp, default=serial)");
 #endif /* defined NUT_MODBUS_HAS_USB */
 	addvar(VAR_VALUE, "slaveid", "Modbus slave id (default=1)");

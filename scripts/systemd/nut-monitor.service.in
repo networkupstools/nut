@@ -1,5 +1,5 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2024 by NUT contirbutors
+# Copyright (C) 2011-2025 by NUT contributors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
@@ -23,6 +23,13 @@ Wants=nut-server.service
 #   Requires=network-online.target
 #   After=network-online.target
 PartOf=nut.target
+
+Documentation=man:upsmon(@MAN_SECTION_CMD_SYS@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsmon.html
+Documentation=man:upsmon.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsmon.conf.html
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 
 [Service]
 EnvironmentFile=-@CONFPATH@/nut.conf

@@ -3,7 +3,7 @@
    Copyright (C)
    2001		Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
-   2017 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
+   2017 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -194,7 +194,7 @@ static void signal_driver_cmd(const ups_t *ups,
 /* TODO: implement WIN32: https://github.com/networkupstools/nut/issues/1916
  * Currently the codepath is not implemented below
  */
-	char	pidfn[SMALLBUF];
+	char	pidfn[NUT_PATH_MAX + 1];
 #endif
 	int	ret;
 
@@ -338,7 +338,7 @@ static void signal_driver(const ups_t *ups) {
 /* handle sending the signal */
 static void stop_driver(const ups_t *ups)
 {
-	char	pidfn[SMALLBUF];
+	char	pidfn[NUT_PATH_MAX + 1];
 	int	ret, i;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
@@ -819,7 +819,7 @@ static void status_driver(const ups_t *ups)
 	 */
 	static int	headerShown = 0;
 #ifndef WIN32
-	char	pidfn[SMALLBUF];
+	char	pidfn[NUT_PATH_MAX + 1];
 	int	cmdret = -1;
 #endif
 	char	bufPid[LARGEBUF], *pidStrFromSocket = NULL,
@@ -1023,7 +1023,7 @@ static void status_driver(const ups_t *ups)
 static void start_driver(const ups_t *ups)
 {
 	char	*argv[10];
-	char	dfn[SMALLBUF], dbg[SMALLBUF];
+	char	dfn[NUT_PATH_MAX + 1], dbg[SMALLBUF];
 	int	ret, arg = 0;
 	int	initial_exec_error = exec_error, initial_exec_timeout = exec_timeout, drv_maxretry = maxretry;
 	struct stat	fs;
@@ -1192,7 +1192,8 @@ static void help(const char *arg_progname)
 
 	printf("\nListing known driver(s):\n");
 	printf("  -l | list		list all device driver confgurations that can be managed\n");
-	printf("  -l | list <ups>	only try to list the specified device driver confgurations (error if unresolved)\n");
+	printf("  -l | list <ups>	only try to list the specified device driver confgurations\n");
+	printf("              		(error out if the device name is unresolved)\n");
 
 	printf("\nSignalling a running driver:\n");
 	printf("  -c <command>		send <command> via signal to running driver(s)\n");
@@ -1237,13 +1238,18 @@ static void help(const char *arg_progname)
 	printf("              		Fields: UPSNAME UPSDRV RUNNING PF_PID S_RESPONSIVE S_PID S_STATUS\n");
 	printf("              		(PF_* = according to PID file, if any; S_* = via socket protocol)\n");
 
+	printf("\n%s", suggest_doc_links(arg_progname, "ups.conf"));
+#if (defined(WITH_SOLARIS_SMF) && WITH_SOLARIS_SMF) || (defined(HAVE_SYSTEMD) && HAVE_SYSTEMD)
+	printf("NOTE: On this system you should prefer upsdrvsvcctl and nut-driver-enumerator\n");
+#endif
+
 	exit(EXIT_SUCCESS);
 }
 
 static void shutdown_driver(const ups_t *ups)
 {
 	char	*argv[9];
-	char	dfn[SMALLBUF];
+	char	dfn[NUT_PATH_MAX + 1];
 	int	arg = 0;
 
 	upsdebugx(1, "Shutdown UPS: %s", ups->upsname);
@@ -1673,7 +1679,8 @@ int main(int argc, char **argv)
 					"maxstartdelay but now waitpid() returns %" PRIdMAX
 					" and status bits 0x%.*X",
 					tmp->upsname, (intmax_t)tmp->pid,
-					(intmax_t)waitret, (int)(2*sizeof(wstat)), wstat);
+					(intmax_t)waitret, (int)(2*sizeof(wstat)),
+					(unsigned int)wstat);
 
 				if (waitret == tmp->pid) {
 					upsdebugx(1,

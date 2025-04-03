@@ -159,9 +159,9 @@ static inline void ydn23_lchecksum(uint16_t dlen, char *out)
 
 	/* Sum all four 4 bits */
 	lenchk += lelen & 0x000f;
-	lenchk += lelen & 0x00f0;
-	lenchk += lelen & 0x0f00;
-	lenchk += lelen & 0xf000;
+	lenchk += (lelen & 0x00f0) >> 4;
+	lenchk += (lelen & 0x0f00) >> 8;
+	lenchk += (lelen & 0xf000) >> 12;
 
 	lenchk %= 16;
 	lenchk = ~lenchk + 1;
@@ -181,7 +181,7 @@ static inline void ydn23_checksum(const char *buf, size_t len, char* out)
 		sum += buf[i];
 	sum %= 65536;
 
-	snprintf(fbuf, 7, "%04X", (uint16_t) ~sum + 1);
+	snprintf(fbuf, 7, "%04X", (unsigned int)((uint16_t) ~sum + 1));
 	memcpy(out, fbuf, 5);
 }
 

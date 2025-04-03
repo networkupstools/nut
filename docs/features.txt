@@ -161,7 +161,7 @@ Monitoring diagrams
 These are the most common situations for monitoring UPS hardware. Other ways
 are possible, but they are mostly variations of these four.
 
-NOTE: these examples show serial communications for simplicity, but USB or
+NOTE: These examples show serial communications for simplicity, but USB or
 SNMP or any other monitoring is also possible.
 
 "Simple" configuration

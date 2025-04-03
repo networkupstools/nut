@@ -2,7 +2,7 @@
                    tracked until a response arrives, returning
                    that line and closing a connection
 
-   Copyright (C) 2023-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2023-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -158,7 +158,7 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 }
 
 udq_pipe_conn_t *upsdrvquery_connect_drvname_upsname(const char *drvname, const char *upsname) {
-	char	sockname[SMALLBUF];
+	char	sockname[NUT_PATH_MAX + 1];
 #ifndef WIN32
 	struct stat     fs;
 	snprintf(sockname, sizeof(sockname), "%s/%s-%s",
@@ -238,6 +238,11 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	struct timeval	start, now, presleep;
 #endif
 
+	upsdebugx(5, "%s: tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}%s",
+		__func__, (intmax_t)tv.tv_sec, (intmax_t)tv.tv_usec,
+		tv.tv_sec < 0 || tv.tv_usec < 0 ? " (unlimited timeout)" : ""
+		);
+
 	if (!conn || INVALID_FD(conn->sockfd)) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
 			upslog_with_errno(LOG_ERR, "socket not initialized");
@@ -248,7 +253,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	FD_ZERO(&rfds);
 	FD_SET(conn->sockfd, &rfds);
 
-	if (select(conn->sockfd + 1, &rfds, NULL, NULL, &tv) < 0) {
+	if (select(conn->sockfd + 1, &rfds, NULL, NULL, tv.tv_sec < 0 || tv.tv_usec < 0 ? NULL : &tv) < 0) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
 			upslog_with_errno(LOG_ERR, "select with socket");
 		/* upsdrvquery_close(conn); */

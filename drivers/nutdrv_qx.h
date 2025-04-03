@@ -189,6 +189,12 @@ void	update_status(const char *nutvalue);
 	/* Let subdrivers reference this: for devices that report "battery.voltage" of a single cell/pack, optionally multiply that into representing the whole assembly */
 int qx_multiply_battvolt(item_t *item, char *value, const size_t valuelen);
 
+	/* Convert kilo-values to their full representation */
+int qx_multiply_x1000(item_t *item, char *value, const size_t valuelen);
+
+	/* Convert minutes to seconds */
+int qx_multiply_m2s(item_t *item, char *value, const size_t valuelen);
+
 /* Data for processing status values */
 #define	STATUS(x)	((unsigned int)1U<<x)
 

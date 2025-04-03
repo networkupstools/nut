@@ -82,7 +82,8 @@ enum {
    STAT_HANDLED = 0,	/* completed successfully (NUT_SUCCESS or "OK") */
    STAT_UNKNOWN,	/* unspecified error (NUT_ERR_UNKNOWN) */
    STAT_INVALID,	/* invalid command/setvar (NUT_ERR_INVALID_ARGUMENT) */
-   STAT_FAILED		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+   STAT_FAILED,		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+   STAT_CONVERSION_FAILED	/* STAT_INSTCMD_CONVERSION_FAILED / STAT_SET_CONVERSION_FAILED in drivers/upshandler.h => "ERR INVALID-ARGUMENT" same as STAT_INVALID */
 };
 
 /* Commands and settings status tracking functions */
