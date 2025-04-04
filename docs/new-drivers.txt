@@ -251,6 +251,24 @@ Internally, an `ALARM` value would be added (typically as first in the list)
 if the `ups.alarm` is currently not empty. For more details, see below in
 `alarm_set()` description.
 
+[NOTE]
+======
+The NUT data server `upsd` initially sets `ups.status` to a value of `WAIT`
+when first connecting to a NUT driver using the socket protocol, and issues
+a `DUMPALL` command.  This temporary `WAIT` status gets overwritten whenever
+any relevant information update from a driver arrives, typically either as
+part of its own initialization, or of the regular polling loop.
+
+This may seem roughly similar to a "Data stale" situation; however, the NUT
+clients like `upsmon` should not infer anything for shutdown decisions from
+this lack of initial connection, like they do for *loss* of connection during
+a known critical power situation.
+
+For some more detailed insight into the NUT driver's current state machine
+position (as reported by the driver after communications are established),
+see also `driver.state`.
+======
+
 Anything else will not be recognized by the usual clients expecting a
 particular NUT standard release.  New tokens may appear over time, but
 driver developers should coordinate with the nut-upsdev list before creating
