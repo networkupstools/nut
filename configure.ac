@@ -3667,7 +3667,11 @@ then
     esac
 fi
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
+dnl # NOTE: This also initializes `hardcode_libdir_flag_spec` and
+dnl # `hardcode_libdir_flag_spec_CXX` that we use in LDFLAGS_NUT_RPATH
 LT_INIT
+
 AC_SUBST([LIBTOOL_DEPS])
 GCC="$SAVED_GCC"
 CC="$SAVED_CC"
@@ -4006,6 +4010,15 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
+dnl Only check the option here (and show in help near pkg-config)
+dnl See LDFLAGS_NUT_RPATH determination further below
+NUT_ARG_ENABLE([ldflags-nut-rpath],
+    [Suggest linker flags for NUT C library consumers to set RPATH for uncommon location],
+    [auto])
+
+NUT_ARG_ENABLE([ldflags-nut-rpath-cxx],
+    [Suggest linker flags for NUT C++ library consumers to set RPATH for uncommon location],
+    [auto])
 
 dnl Options for Solaris/illumos `make install` and `make package`
 AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
@@ -5052,6 +5065,130 @@ LIBEXECDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([System exec-library path],
     LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
+AC_MSG_CHECKING([whether NUT libdir='${LIBDIR}' is among common search paths])
+DEFAULT_SEARCH_DIRS="`LANG=C LC_ALL=C ${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^@<:@^=@:>@*=,,'`" 2>/dev/null || DEFAULT_SEARCH_DIRS=""
+NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS=""
+NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT=""
+if test x"${DEFAULT_SEARCH_DIRS}" = x ; then
+	NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS="got empty list"
+	NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT="could not detect default library search paths"
+else
+	AS_CASE(["${target_os}"],
+		[*mingw*], [ dnl # At least tooling on MSYS2 semi-native builds can return
+			dnl # semicolon-separated paths with possibly "C:/mingw..." spelling
+			DEFAULT_SEARCH_DIRS="`echo ":$DEFAULT_SEARCH_DIRS" | sed 's,\(@<:@:;@:>@\)\(@<:@A-Z@:>@\):/,:/\2/,g' | tr ':' '\n' | sed 's,/*$,,'`"
+			],
+			[DEFAULT_SEARCH_DIRS="`echo "$DEFAULT_SEARCH_DIRS" | tr ':' '\n' | sed 's,/*$,,'`"]
+	)
+
+	NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS="no"
+	NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT="NUT libdir is not among common search paths"
+	dnl # FIXME: ARCH subdirs on some platforms
+
+	dnl # If NUT libdir does not exist, it is not systemic right away
+	if test -d "${LIBDIR}" ; then
+		LIBDIR_REALPATH="`cd "${LIBDIR}" && pwd`" || LIBDIR_REALPATH="${LIBDIR}"
+		LIBDIR_REALPATH="`echo "${LIBDIR_REALPATH}" | sed 's,/*$,,'`"
+		for D in ${DEFAULT_SEARCH_DIRS} ; do
+			if test x"$D" = x"${LIBDIR_REALPATH}" ; then
+				NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS="yes"
+				NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT="NUT libdir is among common search paths"
+				break
+			else
+				D_REALPATH="`cd "${D}" 2>/dev/null && pwd`" && \
+				if test x"${D_REALPATH}" = x"${LIBDIR_REALPATH}" ; then
+					NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS="yes"
+					NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT="NUT libdir is among common search paths"
+					break
+				fi
+			fi
+		done
+	fi
+fi
+AC_MSG_RESULT([${NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS}])
+dnl # if test x"${DEFAULT_SEARCH_DIRS}" != x ; then
+dnl # 	AC_MSG_NOTICE([Checked paths: ${DEFAULT_SEARCH_DIRS}])
+dnl # fi
+
+dnl Check if we want to expose non-standard RPATH to third-party consumers
+dnl of libupsclient etc. Keep verbatim dollar-var here, expand in pkg-config!
+dnl NOTE: hardcode_libdir_flag_spec(_CXX) vars come from LT INIT above
+dnl For "auto", we check for non-std path and set "no" if prefix/libdir *is* common
+LDFLAGS_NUT_RPATH=''
+LDFLAGS_NUT_RPATH_CXX=''
+AC_MSG_CHECKING([whether to suggest a LDFLAGS_NUT_RPATH in pkg-config et al, and which])
+RPATH_CIRCUMSTANCE=''
+case "${nut_enable_ldflags_nut_rpath}" in
+	no) ;;
+	auto|yes|"")
+		dnl FIXME: perhaps prefer the new-ELF tricks for "runpath"
+		dnl  (so LD_LIBRARY_PATH can override the built-in suggestion)
+		if test "${nut_enable_ldflags_nut_rpath}" = auto ; then
+			RPATH_CIRCUMSTANCE="${NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT}"
+			case "${NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS}" in
+				"got empty list"|no)	;; dnl # keep "auto"
+				yes)	nut_enable_ldflags_nut_rpath=no ;;
+			esac
+		fi
+		if test "${nut_enable_ldflags_nut_rpath}" != no ; then
+			if test x"${hardcode_libdir_flag_spec}" != x ; then
+				LDFLAGS_NUT_RPATH="`libdir='${libdir}'; eval echo "${hardcode_libdir_flag_spec}"`"
+			else
+				RPATH_CIRCUMSTANCE="autotools did not report a way to specify rpath for C"
+				dnl # LDFLAGS_NUT_RPATH='-R${libdir} -Wl,-rpath,${libdir}'
+			fi
+		fi
+		;;
+	*) LDFLAGS_NUT_RPATH="${nut_enable_ldflags_nut_rpath}" ;;
+esac
+
+AS_IF([test x"${LDFLAGS_NUT_RPATH}" = x],
+	[AC_MSG_RESULT([none])
+	 AS_IF([test x"${RPATH_CIRCUMSTANCE}" != x], [
+	    AC_MSG_NOTICE([Reason: ${RPATH_CIRCUMSTANCE}])])
+	],
+	[AC_MSG_RESULT([yes: ${LDFLAGS_NUT_RPATH}])
+	 AS_IF([test x"${RPATH_CIRCUMSTANCE}" != x], [
+	    AC_MSG_NOTICE([Warning: ${RPATH_CIRCUMSTANCE}])])
+	]
+)
+
+AC_MSG_CHECKING([whether to suggest a LDFLAGS_NUT_RPATH_CXX in pkg-config et al, and which])
+RPATH_CIRCUMSTANCE=''
+case "${nut_enable_ldflags_nut_rpath_cxx}" in
+	no) ;;
+	auto|yes|"")
+		dnl FIXME: perhaps prefer the new-ELF tricks for "runpath"
+		dnl  (so LD_LIBRARY_PATH can override the built-in suggestion)
+		if test "${nut_enable_ldflags_nut_rpath_cxx}" = auto ; then
+			RPATH_CIRCUMSTANCE="${NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT}"
+			case "${NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS}" in
+				"got empty list"|no)	;; dnl # keep "auto"
+				yes)	nut_enable_ldflags_nut_rpath_cxx=no ;;
+			esac
+		fi
+		if test "${nut_enable_ldflags_nut_rpath_cxx}" != no ; then
+			if test x"${hardcode_libdir_flag_spec_CXX}" != x ; then
+				LDFLAGS_NUT_RPATH_CXX="`libdir='${libdir}'; eval echo "${hardcode_libdir_flag_spec_CXX}"`"
+			else
+				RPATH_CIRCUMSTANCE="autotools did not report a way to specify rpath for C++"
+				dnl # LDFLAGS_NUT_RPATH_CXX='-R${libdir} -Wl,-rpath,${libdir}'
+			fi
+		fi
+		;;
+	*) LDFLAGS_NUT_RPATH_CXX="${nut_enable_ldflags_nut_rpath_cxx}" ;;
+esac
+
+AS_IF([test x"${LDFLAGS_NUT_RPATH_CXX}" = x],
+	[AC_MSG_RESULT([none])
+	 AS_IF([test x"${RPATH_CIRCUMSTANCE}" != x], [
+	    AC_MSG_NOTICE([Reason: ${RPATH_CIRCUMSTANCE}])])
+	],
+	[AC_MSG_RESULT([yes: ${LDFLAGS_NUT_RPATH_CXX}])
+	 AS_IF([test x"${RPATH_CIRCUMSTANCE}" != x], [
+	    AC_MSG_NOTICE([Warning: ${RPATH_CIRCUMSTANCE}])])
+	]
+)
 
 dnl checks related to --with-snmp enabled on command-line
 
@@ -5250,6 +5387,8 @@ AC_SUBST(PKGCONFIGDIR)
 AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
 AC_SUBST(NUT_MANDIR, [`eval echo "${NUT_MANDIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
+AC_SUBST(LDFLAGS_NUT_RPATH)
+AC_SUBST(LDFLAGS_NUT_RPATH_CXX)
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
 AC_SUBST(PORT)

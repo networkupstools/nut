@@ -382,6 +382,7 @@ set | sort -n """
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [[~/OS_DISTRO=netbsd/]]	// commented in detail below
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
@@ -426,6 +427,7 @@ set | sort -n """
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [[~/OS_DISTRO=netbsd/]]	// commented in detail below
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
@@ -485,6 +487,10 @@ set | sort -n """
                     // requires a few pkg-config and CFLAGS pre-sets which are
                     // done in ci_build.sh and defeat the purpose of this stage.
                     // So it is easier and more honest to just skip it.
+                    + [[~/OS_DISTRO=netbsd/]]
+                    // NetBSD version on the build agent has issues with pkgsrc
+                    // (lacking -R for some libs) so autotools builds are tricky;
+                    // ci_build.sh imposes some fixes - so see notes for macos.
                 ], body)
             }, // getParStages
         //'bodyParStages': {}

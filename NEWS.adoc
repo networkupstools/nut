@@ -18,6 +18,10 @@ PLANNED: Release notes for NUT 2.8.4 - what's new since 2.8.3
 
 https://github.com/networkupstools/nut/milestone/9
 
+ - `lib/*.pc.in`: propagate `-R/PATH` to NUT library installation location
+   (by default not in system prefix) to help third-party clients link with
+   us automatically. [#2782]
+
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly (porting from 42ITy project)
@@ -89,6 +93,14 @@ https://github.com/networkupstools/nut/milestone/11
      data server), by returning "ERR INVALID-ARGUMENT", so there is no change
      for the network protocol definition. [#2182]
 
+ - Large parts of the NUT User Manual and NUT Developer Guide were relocated
+   into the new NUT Quality Assurance and Build Automation Guide (maintained
+   in `docs/qa-guide.adoc`), accompanied by new chapters written and detailed
+   for this subject; the chapter about `ci_build.sh` script became a separate
+   `ci_build.adoc` document included into the new document. Overall, this guide
+   intended to help the current and future maintainers of NUT itself, as well
+   as to inspire any other projects that investigate similar solutions. [#2832]
+
  - SEMVER, know thyself!
    * Development iterations of NUT should now identify with not only the
      semantic version of a preceding release, but with git-derived information
@@ -137,6 +149,15 @@ Overall, NUT CI farm build times got 25%+ shorter (which is important as
    CI hosting coupled with the weak machines provided in their free layer),
    and we suppose this is an interesting case for other projects to draw
    inspiration from for their recipe refactoring. [PR #2825]
+
+ - As an aid for developers and maintainers, a new spell-checking recipe was
+   added to first run non-interactive spelling checks in parallel, and *only*
+   if something fails -- run an interactive check to edit the text and/or the
+   dictionary file. The `make spellcheck` rule now also benefits from the
+   rewritten recipes, as detailed above, to visit directories with text files
+   in parallel. Overall, these changes may save time on multi-CPU systems, if
+   compared to a sequential walk of all texts (or their directories) as was
+   done before. [#2871]
 
  - The `make dist` goal now takes more care to require availability of the man
    pages to put into the prepared distribution archive. These may come either
@@ -391,9 +412,31 @@ This requirement compromises usability of `make distcheck` on platforms without
    * Updated `upsmon` client with setting to toggle whether an `ALARM`
      status can prompt the UPS to become critical in certain situations.
 
- - New `libupsclient` API methods added, `upscli_str_add_unique_token()` and
-   `upscli_str_contains_token()`, to help C NUT clients process `ups.status` and
-   similarly structured strings same way as NUT core code base. [#2852, #2859]
+ - New `libupsclient` API methods added:
+   * `upscli_str_add_unique_token()` and `upscli_str_contains_token()`,
+     to help C NUT clients process `ups.status` and similarly structured
+     strings same way as NUT core code base. [#2852, #2859]
+   * `upscli_connect()` was previously always blocking; now this is sort of
+     optional, with new `upscli_set_default_connect_timeout()` able to change
+     the implicit timeout from default zero (meaning blocking) to a positive
+     value (or back to 0). Several NUT clients (`upsc`, `upscmd`, `upsrw`,
+     `upslog`, `upsmon`, `upsimage`, `upsset` and `upsstats`) were updated
+     to default with a 10-second timeout in case of name resolution lags or
+     unresponsive hosts (notably a problem with `upsmon` contacting many
+     remote systems at once). The `NUT_DEFAULT_CONNECT_TIMEOUT` environment
+     variable can be used to modify this timeout for all clients. Further
+     new methods here include `upscli_get_default_connect_timeout()` to
+     retrieve a copy of the last stored timeout, and
+     `upscli_init_default_connect_timeout()` to initialize the value from
+     a number of sources with different priorities. [#2847]
+   * Symbols exported from `libupsclient` now include `nut_debug_level*` so
+     that NUT clients can be usefully debugged (e.g. using `NUT_DEBUG_LEVEL`
+     environment variable). [#2847]
+
+ - Several NUT clients including `upscmd`, `upsrw`, `upsimage`, `upsset`,
+   `upsstats`, and `upslog` (during reconnection), did not `UPSCLI_CONN_TRYSSL`
+   so went plaintext even when secure connections were possible. Fixed to at
+   least try being secure, same way as `upsc` does for a long time. [#2847]
 
  - upsmon:
    * it was realized that the `POWERDOWNFLAG` must be explicitly set in the

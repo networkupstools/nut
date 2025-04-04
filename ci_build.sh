@@ -992,6 +992,32 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                 echo "in your terminal or shell profile, it can help with auto-detection of some features!"
             fi
             ;;
+        *netbsd*)
+            # At least as of NetBSD-9.2 installed in 2022 and updated in 2025,
+            # there are issues with some pkgsrc-delivered dependencies not
+            # linking well. For more details see
+            # https://github.com/networkupstools/nut/pull/2870#issuecomment-2768590518
+            if [ -d "/usr/pkg/lib" -a -d "/usr/pkg/include" ] ; then
+                LDFLAGS="${LDFLAGS-} -R/usr/pkg/lib"
+                CFLAGS="${CFLAGS-} -I/usr/pkg/include"
+                CXXFLAGS="${CXXFLAGS-} -I/usr/pkg/include"
+            fi
+
+            if [ -d "/usr/pkg/lib/pkgconfig" ] ; then
+                SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:/usr/pkg/lib/pkgconfig"
+            fi
+
+            # A bit hackish to check this outside `configure`, but...
+            if [ -s "/usr/pkg/include/ltdl.h" ] \
+            && [ ! -s "/usr/pkg/lib/pkgconfig/ltdl.pc" ] \
+            && [ ! -s "/usr/pkg/lib/pkgconfig/libltdl.pc" ] \
+            ; then
+                echo "NetBSD: export flags for LibLTDL"
+                # The m4 script clear default CFLAGS/LIBS so benefit from new ones
+                CONFIG_OPTS+=("--with-libltdl-includes=-isystem /usr/pkg/include -I/usr/pkg/include")
+                CONFIG_OPTS+=("--with-libltdl-libs=-L/usr/pkg/lib -lltdl")
+            fi
+            ;;
     esac
 
     if [ -n "${OVERRIDE_PKG_CONFIG_PATH-}" ] ; then
@@ -1352,6 +1378,13 @@ if [ -z "$BUILD_TYPE" ] ; then
             # Note: causes a developer-style build (not CI)
             # Arg will be passed to configure script as `--with-$1`
             BUILD_TYPE="$1"
+            shift
+            ;;
+
+        --with-docs|--with-docs=*|--with-doc|--with-doc=*)
+            # Note: causes a developer-style build (not CI)
+            # Arg will be passed to configure script as `--with-$1`
+            BUILD_TYPE="`echo "$1" | sed 's,^--with-,,'`"
             shift
             ;;
 

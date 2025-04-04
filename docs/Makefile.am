@@ -100,15 +100,20 @@ IMAGE_LOGO_FILES_JENKINS_NUT = \
 # Only track here the local deps
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
+# See also conversions included via FULL_USER_MANUAL_DEPS
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
- config-prereqs.txt ci-farm-lxc-setup.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
+# See also conversions included via FULL_DEVELOPER_GUIDE_DEPS
 DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt macros.txt new-clients.txt	\
  new-drivers.txt net-protocol.txt nutdrv_qx-subdrivers.txt	\
  nut-versioning.adoc snmp-subdrivers.txt sock-protocol.txt
+
+# See also conversions included via FULL_QA_GUIDE_DEPS
+QA_GUIDE_DEPS =  nut-qa.txt config-prereqs.txt ci-farm-do-setup.adoc	\
+ ci-farm-lxc-setup.txt qa-guide.adoc
 
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
@@ -124,7 +129,7 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
 
 ALL_TXT_SRC = nut-names.txt daisychain.txt \
  $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
- $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt \
+ $(CABLES_DEPS) $(QA_GUIDE_DEPS) FAQ.txt packager-guide.txt snmp.txt \
  release-notes.txt ChangeLog.txt solaris-usb.txt
 
 ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
@@ -148,6 +153,7 @@ ASCIIDOC_HTML_SINGLE = \
 	user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
+	qa-guide.html \
 	release-notes.html \
 	solaris-usb.html \
 	cables.html \
@@ -158,6 +164,7 @@ ASCIIDOC_HTML_CHUNKED = \
 	user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
+	qa-guide.chunked \
 	release-notes.chunked \
 	solaris-usb.chunked \
 	cables.chunked \
@@ -168,6 +175,7 @@ ASCIIDOC_PDF = \
 	user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
+	qa-guide.pdf \
 	release-notes.pdf \
 	solaris-usb.pdf \
 	cables.pdf \
@@ -177,7 +185,12 @@ ASCIIDOC_PDF = \
 # for a few goals, and among SUBDIRs directly from the top-level Makefile
 # due to some potential dependency collisions with parallel builds.
 SUBDIRS = cables
-SUFFIXES = .txt .html .pdf .txt-spellchecked .txt-prepped .adoc-spellchecked .adoc-prepped
+SUFFIXES = .txt .html .pdf
+SUFFIXES += .txt-spellchecked-auto .txt-spellchecked .txt-prepped
+SUFFIXES += .adoc-spellchecked-auto .adoc-spellchecked .adoc-prepped
+SUFFIXES += .in-spellchecked-auto .in-spellchecked .in-prepped
+SUFFIXES += .sample-spellchecked-auto .sample-spellchecked .sample-prepped
+SUFFIXES += .conf-spellchecked-auto .conf-spellchecked .conf-prepped
 
 # This list is defined by configure script choices and options:
 CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
@@ -379,7 +392,7 @@ man:
 	+@if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOC-NOT-MAN     SKIP: $@ called in docs/Makefile" ; exit 0 ; fi ; \
 	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked .check-* docbook-xsl.css docinfo.xml.in.tmp
+CLEANFILES = *.xml *.html *.pdf *-spellchecked* *-contentchecked* .check-* docbook-xsl.css docinfo.xml.in.tmp docinfo-since-v*.xml* *-docinfo.xml*
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/ChangeLog.adoc
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 # These two "must be" there per autotools standards, so a "make clean"
@@ -508,10 +521,13 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README.adoc ../TODO.adoc \
 	../lib/README.adoc \
 	../tools/nut-scanner/README.adoc
+FULL_QA_GUIDE_DEPS = $(QA_GUIDE_DEPS) $(SHARED_DEPS) \
+	$(top_builddir)/ci_build.adoc-parsed
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
+qa-guide.html qa-guide.chunked qa-guide.pdf: $(FULL_QA_GUIDE_DEPS)
 release-notes.html release-notes.chunked release-notes.pdf: release-notes.txt $(top_builddir)/NEWS.adoc-parsed $(top_builddir)/UPGRADING.adoc-parsed asciidoc.conf
 solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.conf
 
@@ -542,6 +558,30 @@ $(top_builddir)/docs/ChangeLog.html $(top_builddir)/docs/ChangeLog.chunked $(top
 		echo "  DOC-CHANGELOG-RENDER-WRAPPER	`pwd`/$(@F): SUCCESS" ; \
 	  fi
 
+# Assume revisions are sorted in the file, from newest to oldest
+# MAINTAINER FIXME: While cutting release 2.8.3, update OLDEST_REL here
+# FIXME: If we ever get more than one file to chomp this way, make it a snippet
+docinfo-since-v2.8.3.xml: docinfo.xml
+	@OLDEST_REL="2.8.2"; \
+	 IN_REVISION=false ; OLDEST_SEEN=false ; \
+	 while read LINE ; do \
+		case "$${LINE}" in \
+			*'<revision>'*) if ! $$OLDEST_SEEN ; then IN_REVISION=true ; fi ;; \
+			*'<revnumber>'"$${OLDEST_REL}"'</revnumber>'*) if $$IN_REVISION ; then echo '<revision>'; OLDEST_SEEN=true ; fi ; echo "$$LINE" ;; \
+			*'<revnumber>'*'</revnumber>'*) if ! $$OLDEST_SEEN ; then if $$IN_REVISION ; then echo '<revision>'; fi ; echo "$$LINE" ; fi ;; \
+			*'</revision>'*) if $$IN_REVISION ; then echo "$$LINE" ; fi ; IN_REVISION=false ;; \
+			*'</revhistory>'*) echo "$$LINE" ;; \
+			*) if ! $$OLDEST_SEEN || $$IN_REVISION ; then echo "$$LINE" ; fi ;; \
+		esac ; \
+	 done < "$?" > "$@".tmp \
+	 && mv -f "$@".tmp "$@"
+
+# Some versions of asciidoc ignore the argument of :docinfo: tag
+# and require (TXT_BASE_NAME)-docinfo.xml to exist:
+qa-guide-docinfo.xml: docinfo-since-v2.8.3.xml
+	@rm -f '$@' || true
+	@$(LN_S) '$?' '$@'
+
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML. In this case, export the environment
 # variable ASCIIDOC_VERBOSE to "-v", ie:
@@ -549,13 +589,14 @@ $(top_builddir)/docs/ChangeLog.html $(top_builddir)/docs/ChangeLog.chunked $(top
 # Note: `(top_)srcdir` and `(top_)builddir` must end with a path
 # separator, or be empty -- so in all cases letting the resulting
 # string resolve meaningfully in the filesystem during docs build.
+A2X_DOCINFO_DIR=$(builddir)
 A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --attribute=icons \
     --xsltproc-opts="--nonet" \
     --xsltproc-opts="--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
     --xsltproc-opts="--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
     --xsltproc-opts="--stringparam nut.nutversion \"$(PACKAGE_VERSION)\"" \
-    --attribute=docinfodir="$(builddir)" \
+    --attribute=docinfodir="$${A2X_DOCINFO_DIR}" \
     --attribute=iconsdir="$(srcdir)/images" \
     --attribute=badges \
     --attribute=external_title \
@@ -604,7 +645,13 @@ DOCBUILD_BEGIN = { \
         test -d "$@" && rm -rf "$@" || true ; \
         _CWD="`pwd`" && (cd '$(abs_builddir)' && $(MKDIR_P) "$${_CWD}/$${A2X_OUTDIR}") || exit ; \
         case "$${A2X_OUTDIR}" in \
-            tmp/pdf.*) ln -s ../../images "./$${A2X_OUTDIR}" ;; \
+            tmp/pdf.*) ln -s ../../images "./$${A2X_OUTDIR}" ; \
+                case "$(@F)" in \
+                    qa-guide.pdf) \
+                        ln -s ../../docinfo-since-v2.8.3.xml "./$${A2X_OUTDIR}/docinfo.xml" ; \
+                        ln -s ../../docinfo-since-v2.8.3.xml "./$${A2X_OUTDIR}/qa-guide-docinfo.xml" ;; \
+                esac \
+                ;; \
         esac; \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
@@ -622,6 +669,7 @@ DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         chmod -R u+w "./$${A2X_OUTDIR}" || true; \
         test -d "$@" && rm -rf "$@" || true ; \
+        rm -f "./$${A2X_OUTDIR}/"*docinfo*.xml* || exit ; \
         mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
         mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
         rm -rf "./$${A2X_OUTDIR}" ; \
@@ -705,11 +753,13 @@ GENERATE_PDF = ( \
 	A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	echo "  DOC-PDF	Generating $@"; \
 	$(DOCBUILD_BEGIN) ; RES=0; \
+	if [ -s "$${A2X_OUTDIR}/docinfo.xml" ] ; then A2X_DOCINFO_DIR="$${A2X_OUTDIR}"; fi ; \
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
 	$(DOCBUILD_END) ; exit $$RES ; \
 )
 
 *.pdf: docinfo.xml
+qa-guide.pdf: docinfo-since-v2.8.3.xml qa-guide-docinfo.xml
 .txt-prepped.pdf:
 	@$(GENERATE_PDF)
 .adoc-prepped.pdf:
@@ -718,7 +768,7 @@ GENERATE_PDF = ( \
 # Used below for spellcheck and for .prep-src-docs
 SPELLCHECK_SRC_DEFAULT = $(ALL_TXT_SRC) \
 	asciidoc-vars.conf \
-	../README.adoc ../NEWS.adoc \
+	../ci_build.adoc ../README.adoc ../NEWS.adoc \
 	../INSTALL.nut.adoc ../UPGRADING.adoc \
 	../TODO.adoc ../scripts/ufw/README.adoc \
 	../scripts/augeas/README.adoc ../lib/README.adoc \
@@ -851,8 +901,34 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		     exit $$RES; } ; \
 	 touch "$@"
 
+# If NUT_MAKE_SKIP_FANOUT!=true we have a hack to spellcheck certain files more
+# quickly (in parallel). This approach is constrained to files with a known
+# extension and located in same directory as the Makefile that called them
+# (extension-less docs and relative links are built sequentially).
+SPELLCHECK_AUTO_ONE = ( \
+	SPELLCHECK_SRC_ONE="`basename '$?'`" ; \
+	rm -f "$@".failed ; \
+	$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${SPELLCHECK_SRC_ONE}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${SPELLCHECK_SRC_ONE}-spellchecked" \
+	|| { RES=$$? ; touch "$@".failed; exit $$RES; } \
+)
+
+.txt.txt-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
+.adoc.adoc-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
+.in.in-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
+.sample.sample-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
+.conf.conf-spellchecked-auto:
+	+@$(SPELLCHECK_AUTO_ONE)
+
 spellcheck:
-	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+	@if test "$(SPELLCHECK_ENV_DEBUG)" = detailed ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
@@ -861,13 +937,31 @@ spellcheck:
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
 	+@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	 for docsrc in $(SPELLCHECK_SRC); do \
+	 if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
+		for docsrc in $(SPELLCHECK_SRC); do \
+			if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+				echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+			else true ; fi ; \
+			$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+			|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
+		done ; \
+	 else \
+		SPELLCHECK_AUTO_TGT="`for docsrc in $(SPELLCHECK_SRC); do case "$${docsrc}" in */*) ;; *.adoc|*.txt|*.in|*.conf|*.sample) printf '%s ' "$${docsrc}-spellchecked-auto" ;; esac ; done`" ; \
+		SPELLCHECK_NOEXT_DOCS="`for docsrc in $(SPELLCHECK_SRC); do case "$${docsrc}" in */*) printf '%s ' "$${docsrc}" ;; *.adoc|*.txt|*.in|*.conf|*.sample) ;; *) printf '%s ' "$${docsrc}" ;; esac ; done`" ; \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
-			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+			echo "ASPELL MAKEFILE DEBUG: from `pwd`: SPELLCHECK_NOEXT_DOCS='$${SPELLCHECK_NOEXT_DOCS}' SPELLCHECK_AUTO_TGT='$${SPELLCHECK_AUTO_TGT}'" ; \
 		else true ; fi ; \
-		$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
-		|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
-	 done ; \
+		if [ x"$${SPELLCHECK_AUTO_TGT}" != x ] ; then \
+			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" $${SPELLCHECK_AUTO_TGT} ; \
+			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ] ; then printf '%s ' "$(SPELLCHECK_SRCDIR)/$${docsrc}" ; rm -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ; fi ; done`" ; \
+		fi ; \
+		if [ x"$${SPELLCHECK_NOEXT_DOCS}" != x ] ; then \
+			for docsrc in $${SPELLCHECK_NOEXT_DOCS} ; do \
+				$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+				|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
+			done ; \
+		fi ; \
+	 fi ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
 		echo "FAILED automatic spellcheck for the following sources (relative to `pwd`) using custom dictionary file '$(NUT_SPELL_DICT)': $$FAILED" ; \

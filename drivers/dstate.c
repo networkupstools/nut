@@ -51,7 +51,8 @@
 	static char	*pipename = NULL;
 #endif
 	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
-	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
+	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN],
+			buzzmode_buf[ST_MAX_VALUE_LEN];
 	static conn_t	*connhead = NULL;
 	static st_tree_t	*dtree_root = NULL;
 	static cmdlist_t	*cmdhead = NULL;
@@ -1092,7 +1093,7 @@ static void sock_close(void)
 
 char * dstate_init(const char *prog, const char *devname)
 {
-	char	sockname[NUT_PATH_MAX];
+	char	sockname[NUT_PATH_MAX + 1];
 
 #ifndef WIN32
 	/* do this here for now */
@@ -1748,6 +1749,33 @@ void status_commit(void)
 	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);
 	}
+}
+
+/* similar functions for experimental.ups.mode.buzzwords, where tracked
+ * dynamically (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
+void buzzmode_init(void)
+{
+	memset(buzzmode_buf, 0, sizeof(buzzmode_buf));
+}
+
+int  buzzmode_get(const char *buf)
+{
+	return str_contains_token(buzzmode_buf, buf);
+}
+
+void buzzmode_set(const char *buf)
+{
+	str_add_unique_token(buzzmode_buf, sizeof(buzzmode_buf), buf, NULL, NULL);
+}
+
+void buzzmode_commit(void)
+{
+	if (!*buzzmode_buf) {
+		dstate_delinfo("experimental.ups.mode.buzzwords");
+		return;
+	}
+
+	dstate_setinfo("experimental.ups.mode.buzzwords", "%s", buzzmode_buf);
 }
 
 /* similar handlers for ups.alarm */

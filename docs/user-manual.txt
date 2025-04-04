@@ -2,8 +2,8 @@
 
 Network UPS Tools User Manual
 _____________________________
-:Author: Russell_Kroll,_Arnaud_Quette_and_Arjen_de_Korte
-:Author Initials: RK, AQ & ADK
+:Author: Russell_Kroll,_Arnaud_Quette,_Arjen_de_Korte_and_Jim Klimov
+:Author Initials: RK, AQ, ADK & JK
 
 Introduction
 ============
@@ -262,9 +262,11 @@ include::cables.txt[]
 Appendix H: Configure options
 =============================
 
-NOTE: For more information about build environment setup, see chapters
-below about <<Config_Prereqs,Configuration prerequisites>>
-and <<CI_Farm_Notes,CI Farm configuration notes>>.
+NOTE: For more information about build environment setup, see chapters about
+linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] and
+linkdoc:qa-guide[Custom NUT CI farm build agents: LXC multi-arch
+containers,CI_LXC,docs/ci-farm-lxc-setup.txt].
 
 include::configure.txt[]
 
@@ -281,23 +283,3 @@ Appendix J: Project history
 ===========================
 
 include::history.txt[]
-
-
-[[Config_Prereqs]]
-Appendix K: Prerequisites for building NUT on different OSes
-============================================================
-
-include::config-prereqs.txt[]
-
-
-[[CI_Farm_Notes]]
-Appendix L: CI Farm configuration notes
-=======================================
-
-NOTE: This chapter contains information about NUT CI farm setup tricks
-that were applied at different times by the maintainer team to ensure
-regular builds and tests of the codebase.  Whether these are used in
-daily production today or not, similar setup should be possible locally
-on developer and contributor machines.
-
-include::ci-farm-lxc-setup.txt[]

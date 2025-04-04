@@ -58,6 +58,12 @@ queries), you can export an environment variable `NUT_QUIET_INIT_SSL`
 with string values `"true"`, `"TRUE"` or `"1"`, to avoid logging these
 messages and just emit them as debug stream (at verbosity 1 or higher).
 
+As part of general initialization, *upscli_init()* function can call the
+linkman:upscli_init_default_connect_timeout[3] method (if it was never used
+before): this allows unmodified (legacy) NUT clients to consistently benefit
+from presence of the `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable for
+linkman:upscli_connect[3] attempts to be not blocking (as per default).
+
 You can call linkman:upscli_add_host_cert[3] to register specific host
 security policy before initialize connections to them.
 
@@ -73,7 +79,8 @@ SEE ALSO
 --------
 
 linkman:upscli_add_host_cert[3], linkman:upscli_cleanup[3],
-linkman:upscli_disconnect[3], linkman:upscli_fd[3],
+linkman:upscli_connect[3], linkman:upscli_disconnect[3],
+linkman:upscli_init_default_connect_timeout[3], linkman:upscli_fd[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
 linkman:upscli_ssl[3], linkman:upscli_strerror[3],
 linkman:upscli_upserror[3]

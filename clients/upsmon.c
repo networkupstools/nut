@@ -1045,10 +1045,27 @@ static void setfsd(utype_t *ups)
 	upslogx(LOG_ERR, "FSD set on UPS %s failed: %s", ups->sys, buf);
 }
 
+#ifndef WIN32
+/* handler for alarm when getupsvarfd times out */
+static void read_timeout(int sig)
+{
+	NUT_UNUSED_VARIABLE(sig);
+
+	/* don't do anything here, just return */
+}
+#endif
+
 static void set_alarm(void)
 {
 #ifndef WIN32
-	alarm(NET_TIMEOUT);
+	struct timeval tv;
+	upscli_get_default_connect_timeout(&tv);
+	if (tv.tv_sec == 0) {
+		return;
+	}
+	sa.sa_handler = read_timeout;
+	sigaction(SIGALRM, &sa, NULL);
+	alarm(tv.tv_sec);
 #endif
 }
 
@@ -1093,6 +1110,20 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 		query[0] = "VAR";
 		query[1] = ups->upsname;
 		query[2] = "ups.status";
+		numq = 3;
+	}
+	else
+	if (!strcmp(var, "buzzword")) {
+		query[0] = "VAR";
+		query[1] = ups->upsname;
+		query[2] = "ups.mode.buzzwords";
+		numq = 3;
+	}
+	else
+	if (!strcmp(var, "X-buzzword")) {
+		query[0] = "VAR";
+		query[1] = ups->upsname;
+		query[2] = "experimental.ups.mode.buzzwords";
 		numq = 3;
 	}
 	else
@@ -2406,16 +2437,6 @@ static void set_reload_flag(int sig)
 	reload_flag = 1;
 }
 
-#ifndef WIN32
-/* handler for alarm when getupsvarfd times out */
-static void read_timeout(int sig)
-{
-	NUT_UNUSED_VARIABLE(sig);
-
-	/* don't do anything here, just return */
-}
-#endif
-
 /* install handlers for a few signals */
 static void setup_signals(void)
 {
@@ -2431,11 +2452,6 @@ static void setup_signals(void)
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGQUIT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
-
-	/* handle timeouts */
-
-	sa.sa_handler = read_timeout;
-	sigaction(SIGALRM, &sa, NULL);
 
 	/* deal with the ones from userspace as well */
 
@@ -2533,10 +2549,11 @@ static int try_connect(utype_t *ups)
 }
 
 /* deal with the contents of STATUS or ups.status for this ups */
-static void parse_status(utype_t *ups, char *status)
+static void parse_status(utype_t *ups, char *status, char *buzzword, char *buzzwordX)
 {
 	char	*statword, *ptr, other_stat_words[SMALLBUF];
-	int	handled_stat_words = 0, changed_other_stat_words = 0;
+	int	handled_stat_words = 0, changed_other_stat_words = 0,
+		is_eco_buzzword = 0;
 	st_tree_timespec_t	st_start;
 
 	clear_alarm();
@@ -2564,10 +2581,33 @@ static void parse_status(utype_t *ups, char *status)
 		ups_is_notoff(ups);
 	if (!strstr(status, "BYPASS"))
 		ups_is_notbypass(ups);
-	if (!strstr(status, "ECO"))
-		ups_is_noteco(ups);
 	if (!strstr(status, "ALARM"))
 		ups_is_notalarm(ups);
+
+	/* NOTE: ECO Should not be happening as a status or alarm anymore
+	 * but we may still notify about changes in the ups.mode.buzzword */
+	if (buzzword && *buzzword && (
+		   !strstr(buzzword, ":ECO")
+		|| !strstr(buzzword, ":ESS")
+		|| !strstr(buzzword, ":HE")
+		|| !strstr(buzzword, ":SMART")
+	)) {
+		is_eco_buzzword = 1;
+	} else
+	if (buzzwordX && *buzzwordX && (
+		   !strstr(buzzwordX, ":ECO")
+		|| !strstr(buzzwordX, ":ESS")
+		|| !strstr(buzzwordX, ":HE")
+		|| !strstr(buzzwordX, ":SMART")
+	)) {
+		is_eco_buzzword = 1;
+	}
+
+	if (!strstr(status, "ECO") && !is_eco_buzzword) {
+		ups_is_noteco(ups);
+	} else if (is_eco_buzzword) {
+		ups_is_eco(ups);
+	}
 
 	statword = status;
 	/* Track what status tokens we no longer see */
@@ -2615,6 +2655,8 @@ static void parse_status(utype_t *ups, char *status)
 			handled++;
 		}
 		else if (!strcasecmp(statword, "ECO")) {
+			/* NOTE: ECO Should not be happening
+			 * as a status or alarm anymore */
 			ups_is_eco(ups);
 			handled++;
 		}
@@ -2748,9 +2790,9 @@ static void parse_status(utype_t *ups, char *status)
 /* see what the status of the UPS is and handle any changes */
 static void pollups(utype_t *ups)
 {
-	char	status[SMALLBUF];
+	char	status[SMALLBUF], buzzmode[SMALLBUF], buzzmodeX[SMALLBUF];
 	int	pollfail_log = 0;	/* if we throttle, only upsdebugx() but not upslogx() the failures */
-	int	upserror;
+	int	upserror, got_status, got_buzzmode, got_buzzmodeX;
 
 	/* try a reconnect here */
 	if (!flag_isset(ups->status, ST_CLICONNECTED)) {
@@ -2766,7 +2808,14 @@ static void pollups(utype_t *ups)
 
 	set_alarm();
 
-	if (get_var(ups, "status", status, sizeof(status)) == 0) {
+	if ((got_status = get_var(ups, "status", status, sizeof(status))))
+		status[0] = '\0';
+	if ((got_buzzmode = get_var(ups, "buzzword", buzzmode, sizeof(buzzmode))))
+		buzzmode[0] = '\0';
+	if ((got_buzzmodeX = get_var(ups, "X-buzzword", buzzmodeX, sizeof(buzzmodeX))))
+		buzzmodeX[0] = '\0';
+
+	if (got_status == 0 || got_buzzmode == 0 || got_buzzmodeX == 0) {
 		clear_alarm();
 
 		/* reset pollfail log throttling */
@@ -2789,7 +2838,7 @@ static void pollups(utype_t *ups)
 		ups->pollfail_log_throttle_state = upserror;
 		ups->pollfail_log_throttle_count = -1;
 
-		parse_status(ups, status);
+		parse_status(ups, status, buzzmode, buzzmodeX);
 		return;
 	}
 
@@ -3011,14 +3060,17 @@ static void help(const char *arg_progname)
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
-	printf("  -V		display the version of this software\n");
-	printf("  -h		display this help\n");
 	printf("  -K		checks POWERDOWNFLAG (%s), sets exit code to 0 if set\n",
 		powerdownflag ? powerdownflag : "***NOT CONFIGURED***");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
 
@@ -3285,6 +3337,7 @@ static void init_Inhibitor(const char *prog)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_connect_timeout = NULL;
 	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
 
 #ifndef WIN32
@@ -3323,7 +3376,7 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46")) != -1) {
+	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46W:")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg))) {
@@ -3387,6 +3440,9 @@ int main(int argc, char *argv[])
 			case '6':
 				opt_af = AF_INET6;
 				break;
+			case 'W':
+				net_connect_timeout = optarg;
+				break;
 			default:
 				help(argv[0]);
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -3414,6 +3470,11 @@ int main(int argc, char *argv[])
 				nut_debug_level_args = l;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
+	}
+
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+			net_connect_timeout);
 	}
 
 	/* Note: "cmd" may be non-trivial to command that instance by

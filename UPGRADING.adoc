@@ -77,9 +77,38 @@ Changes from 2.8.2 to 2.8.3
   on having those for translations to be found -- this should be reflected
   in OS packaging recipes as well. [#2845]
 
-- New `libupsclient` API methods added, `upscli_str_add_unique_token()` and
-  `upscli_str_contains_token()`, to help C NUT clients process `ups.status` and
-  similarly structured strings same way as NUT core code base. [#2852, #2859]
+- New `libupsclient` API methods added:
+  * `upscli_str_add_unique_token()` and `upscli_str_contains_token()`,
+    to help C NUT clients process `ups.status` and similarly structured
+    strings same way as NUT core code base. [#2852, #2859]
+  * `upscli_set_default_connect_timeout()` to modify the internal timeout
+    used by `upscli_connect()` (default 0 still means blocking connections,
+    positive values should time-limit the connection attempts), and
+    `upscli_get_default_connect_timeout()` to retrieve its copy. [#2847]
+
+- Standard NUT clients including `upsc`, `upscmd`, `upsrw`, `upslog`, `upsmon`,
+  `upsimage`, `upsset` and `upsstats`) were updated to default with a 10-second
+  connection establishment timeout in case of name resolution lags or
+  unresponsive hosts (notably a problem with `upsmon` contacting many remote
+  systems at once). This may potentially impact NUT deployments which somehow
+  relied on the blocking behavior of these clients; you can use the
+  `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable to fix this. [#2847]
+
+- Several NUT clients including `upscmd`, `upsrw`, `upsimage`, `upsset`,
+  `upsstats`, and `upslog` (during reconnection), did not `UPSCLI_CONN_TRYSSL`
+  so went plaintext even when secure connections were possible. Fixed to at
+  least try being secure, same way as `upsc` does for a long time. This may
+  cause console or log messages when SSL can not be initialized, you can use
+  the `NUT_QUIET_INIT_SSL` environment variable to suppress them where the
+  cryptography is known to be not set up, so the warnings bring no value. [#2847]
+
+- `lib/*.pc.in`: propagate `-R/PATH` (or equivalent -- as detected by the
+  `configure` script for the currently used compiler and linker toolkits)
+  in `pkg-config` metadata pointing to NUT library installation location
+  (by default not in system prefix) to help third-party clients link with us
+  automatically. If this causes issues, `--disable-ldflags-nut-rpath(-cxx)`
+  options (or `--enable...="..."` with specific linker arguments) can help.
+  [#2782, #2865]
 
 - Updated man page generation with `configure` script options to specify that
   manual sections on the target platform differ from (Linux-based) defaults

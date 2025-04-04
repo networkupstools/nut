@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.41"
+#define DRIVER_VERSION	"0.42"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -3044,7 +3044,7 @@ void	upsdrv_help(void)
 
 		/* lowercase the (ASCII) string */
 		for (p = subdrv_name; *p; ++p)
-			*p = tolower(*p);
+			*p = tolower((unsigned char)(*p));
 
 		if (i>0)
 			printf(", ");
@@ -3131,6 +3131,7 @@ void	upsdrv_updateinfo(void)
 
 	/* Clear status buffer before beginning */
 	status_init();
+	buzzmode_init();
 
 	/* Do a full update (polling) every pollfreq or upon data change
 	 * (i.e. setvar/instcmd) */
@@ -3183,6 +3184,7 @@ void	upsdrv_updateinfo(void)
 	}
 
 	ups_status_set();
+	buzzmode_commit();
 	status_commit();
 
 	if (retry > MAXTRIES) {

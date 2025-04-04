@@ -455,6 +455,9 @@ SRC_DEV_PAGES = \
 	upscli_fd.txt \
 	upscli_get.txt \
 	upscli_init.txt \
+	upscli_set_default_connect_timeout.txt \
+	upscli_get_default_connect_timeout.txt \
+	upscli_init_default_connect_timeout.txt \
 	upscli_list_next.txt \
 	upscli_list_start.txt \
 	upscli_readline.txt \
@@ -568,10 +571,14 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
 	upscli_cleanup.$(MAN_SECTION_API) \
 	upscli_connect.$(MAN_SECTION_API) \
+	upscli_tryconnect.$(MAN_SECTION_API) \
 	upscli_disconnect.$(MAN_SECTION_API) \
 	upscli_fd.$(MAN_SECTION_API) \
 	upscli_get.$(MAN_SECTION_API) \
 	upscli_init.$(MAN_SECTION_API) \
+	upscli_set_default_connect_timeout.$(MAN_SECTION_API) \
+	upscli_get_default_connect_timeout.$(MAN_SECTION_API) \
+	upscli_init_default_connect_timeout.$(MAN_SECTION_API) \
 	upscli_list_next.$(MAN_SECTION_API) \
 	upscli_list_start.$(MAN_SECTION_API) \
 	upscli_readline.$(MAN_SECTION_API) \
@@ -634,6 +641,9 @@ upscli_readline_timeout.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
 upscli_sendline_timeout.$(MAN_SECTION_API): upscli_sendline.$(MAN_SECTION_API)
 	touch $@
 
+upscli_tryconnect.$(MAN_SECTION_API): upscli_connect.$(MAN_SECTION_API)
+	touch $@
+
 nutscan_scan_ip_range_snmp.$(MAN_SECTION_API): nutscan_scan_snmp.$(MAN_SECTION_API)
 	touch $@
 
@@ -682,6 +692,9 @@ INST_HTML_DEV_MANS = \
 	upscli_fd.html \
 	upscli_get.html \
 	upscli_init.html \
+	upscli_set_default_connect_timeout.html \
+	upscli_get_default_connect_timeout.html \
+	upscli_init_default_connect_timeout.html \
 	upscli_list_next.html \
 	upscli_list_start.html \
 	upscli_readline.html \
@@ -739,6 +752,7 @@ HTML_DEV_MANS = $(INST_HTML_DEV_MANS)
 HTML_DEV_MANS_FICTION = \
 	upscli_readline_timeout.html \
 	upscli_sendline_timeout.html \
+	upscli_tryconnect.html \
 	nutscan_scan_ip_range_snmp.html \
 	nutscan_scan_ip_range_xml_http.html \
 	nutscan_scan_ip_range_nut.html \
@@ -749,6 +763,9 @@ upscli_readline_timeout.html: upscli_readline.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 upscli_sendline_timeout.html: upscli_sendline.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+upscli_tryconnect.html: upscli_connect.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 nutscan_scan_ip_range_snmp.html: nutscan_scan_snmp.html
@@ -1412,19 +1429,31 @@ all-man man-man: $(MAN_MANS)
 dist-html: $(DIST_ALL_HTML_PAGES)
 dist-man: $(DIST_ALL_MAN_PAGES)
 
+# This list is defined by configure script choices and options:
+CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
+
 if WITH_MANS
 if ! SKIP_MANS
 check-local: check-man
-else
+else SKIP_MANS
 check-local: check-man-txt check-man-pages
 	@echo "Man-page generation was SKIPPED per user request, so pregenerated pages were sanity-checked (if any)" >&2
-endif
-else
+endif SKIP_MANS
+else ! WITH_MANS
 check-local: check-man-txt check-man-pages
 	@echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
-endif
+endif ! WITH_MANS
 
-check-man check-man-man: check-man-txt check-man-pages check-html-man
+TGT_REQUIRE_CHECK_HTML =
+if WITH_HTML_SINGLE
+TGT_REQUIRE_CHECK_HTML += check-html-man
+else !WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+TGT_REQUIRE_CHECK_HTML += check-html-man
+endif WITH_HTML_CHUNKED
+endif !WITH_HTML_SINGLE
+
+check-man check-man-man: check-man-txt check-man-pages $(TGT_REQUIRE_CHECK_HTML)
 
 # the "for" loops might better use $^ but it might be not portable
 check-man-html: check-html-man

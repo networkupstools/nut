@@ -9,5 +9,5 @@ nutuser=@RUN_AS_USER@
 Name: libnutscan
 Description: Power devices discovery with Network UPS Tools
 Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lnutscan
+Libs: -L${libdir} @LDFLAGS_NUT_RPATH@ -lnutscan
 Cflags: -I${includedir}

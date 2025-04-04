@@ -3,7 +3,7 @@
    Copyright (C)
    2001		Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
-   2017 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
+   2017 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -194,7 +194,7 @@ static void signal_driver_cmd(const ups_t *ups,
 /* TODO: implement WIN32: https://github.com/networkupstools/nut/issues/1916
  * Currently the codepath is not implemented below
  */
-	char	pidfn[NUT_PATH_MAX];
+	char	pidfn[NUT_PATH_MAX + 1];
 #endif
 	int	ret;
 
@@ -338,7 +338,7 @@ static void signal_driver(const ups_t *ups) {
 /* handle sending the signal */
 static void stop_driver(const ups_t *ups)
 {
-	char	pidfn[NUT_PATH_MAX];
+	char	pidfn[NUT_PATH_MAX + 1];
 	int	ret, i;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
@@ -819,7 +819,7 @@ static void status_driver(const ups_t *ups)
 	 */
 	static int	headerShown = 0;
 #ifndef WIN32
-	char	pidfn[NUT_PATH_MAX];
+	char	pidfn[NUT_PATH_MAX + 1];
 	int	cmdret = -1;
 #endif
 	char	bufPid[LARGEBUF], *pidStrFromSocket = NULL,
@@ -1023,7 +1023,7 @@ static void status_driver(const ups_t *ups)
 static void start_driver(const ups_t *ups)
 {
 	char	*argv[10];
-	char	dfn[NUT_PATH_MAX], dbg[SMALLBUF];
+	char	dfn[NUT_PATH_MAX + 1], dbg[SMALLBUF];
 	int	ret, arg = 0;
 	int	initial_exec_error = exec_error, initial_exec_timeout = exec_timeout, drv_maxretry = maxretry;
 	struct stat	fs;
@@ -1249,7 +1249,7 @@ static void help(const char *arg_progname)
 static void shutdown_driver(const ups_t *ups)
 {
 	char	*argv[9];
-	char	dfn[NUT_PATH_MAX];
+	char	dfn[NUT_PATH_MAX + 1];
 	int	arg = 0;
 
 	upsdebugx(1, "Shutdown UPS: %s", ups->upsname);

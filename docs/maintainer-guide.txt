@@ -1,7 +1,7 @@
 NUT Maintainer Guide
 ____________________
-:Author: Arnaud_Quette
-:Author Initials: AQ
+:Author: Arnaud_Quette_and_Jim_Klimov
+:Author Initials: AQ & JK
 
 Introduction
 ============
@@ -197,7 +197,7 @@ MAINTAINER SANDBOX (to be completed and pushed)
    NOTE: for `nut` submodule be sure to refer to the tagged commit, not to
    the subsequent "in-development" codebase.
 ** in `source` submodule add a copy of tarball, checksum and hash files for
-   download: `make dist{,-hash,-sig}`
+   download: `make dist{,-hash,-sig}` (or since NUT v2.8.3, `make dist-files`)
 *** for a `new-X.Y.Z.txt` file use the `NEWS.adoc` with a stripped title
     (see existing files)
 ** `git tag` the website release
