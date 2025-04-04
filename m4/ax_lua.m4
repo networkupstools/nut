@@ -197,8 +197,13 @@ AC_DEFUN([AX_PROG_LUA],
   AC_ARG_VAR([LUA], [The Lua interpreter, e.g. /usr/bin/lua5.1])
 
   dnl Find a Lua interpreter.
-  m4_define_default([_AX_LUA_INTERPRETER_LIST],
-    [lua lua5.3 lua53 lua5.2 lua52 lua5.1 lua51 lua50])
+  m4_if([$1], [],
+  [ dnl Order default "lua" first, then try versions
+    m4_define_default([_AX_LUA_INTERPRETER_LIST],
+      [lua lua5.3 lua53 lua5.2 lua52 lua5.1 lua51 lua50])],
+  [ dnl Order preferred version first (e.g. avoid header version mismatch later)
+    m4_define_default([_AX_LUA_INTERPRETER_LIST],
+      [lua$1 lua lua5.3 lua53 lua5.2 lua52 lua5.1 lua51 lua50])])
 
   m4_if([$1], [],
   [ dnl No version check is needed. Find any Lua interpreter.
