@@ -1273,30 +1273,31 @@ static int is_ups_critical(utype_t *ups)
 	if (ups->commstate == 0) {
 		/* Note: ECO mode not considered easily fatal here */
 
+		/* FIXME: Consider equivalents of alarmcritical for over/trim/boost? */
 		if (flag_isset(ups->status, ST_OVER)) {
 			upslogx(LOG_WARNING,
 				"UPS [%s] was last known to be overloaded "
-				"and currently is not communicating, assuming dead",
+				"and currently is not communicating, "
+				"but we make no assumptions if it is dead now",
 				ups->sys);
-			return 1;
 		}
 
 		if (flag_isset(ups->status, ST_TRIM)) {
 			upslogx(LOG_WARNING,
 				"UPS [%s] was last known to be "
 				"trimming incoming voltage "
-				"and currently is not communicating, assuming dead",
+				"and currently is not communicating, "
+				"but we make no assumptions if it is dead now",
 				ups->sys);
-			return 1;
 		}
 
 		if (flag_isset(ups->status, ST_BOOST)) {
 			upslogx(LOG_WARNING,
 				"UPS [%s] was last known to be "
 				"boosting incoming voltage "
-				"and currently is not communicating, assuming dead",
+				"and currently is not communicating, "
+				"but we make no assumptions if it is dead now",
 				ups->sys);
-			return 1;
 		}
 
 		if (ups->alarmstate == 1
