@@ -4,14 +4,16 @@ UPSCLI_LIST_START(3)
 NAME
 ----
 
-upscli_list_start - begin multi-item retrieval from a UPS
+upscli_list_start - Begin multi-item retrieval from a UPS
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_list_start(UPSCONN_t *ups, size_t numq, const char **query)
+	int upscli_list_start(UPSCONN_t *ups, size_t numq, const char **query)
+------
 
 DESCRIPTION
 -----------
@@ -72,7 +74,7 @@ When this happens, linkman:upscli_upserror[3] will return
 RETURN VALUE
 ------------
 
-The *upscli_list_start()* function returns 0 on success, or -1 if an
+The *upscli_list_start()* function returns '0' on success, or '-1' if an
 error occurs.
 
 SEE ALSO

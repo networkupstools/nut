@@ -10,9 +10,9 @@ DESCRIPTION
 -----------
 
 The Network UPS Tools (NUT) *upsclient* library provides a number of
-useful functions for programs to use when communicating with
+useful functions for client programs to use when communicating with
 linkman:upsd[8].  Many of the low-level socket and protocol details are
-handled automatically when using this interface.
+handled automatically when using this interface, also known as "upscli" API.
 
 State is maintained across calls in an opaque structure called `UPSCONN_t`.
 Callers are expected to create one per connection.  These will be
@@ -27,8 +27,8 @@ Before creating any connection, and in general using any upscli function,
 you must call linkman:upscli_init[3] with proper parameters to initialize
 upscli module.
 
-To register specific host security policy, you must call
-linkman:upscli_add_host_cert[3] before initialize connection to it.
+To register a specific host security policy, you must call
+linkman:upscli_add_host_cert[3] before initializing a connection to it.
 
 In the same way, just before exiting, and after all upscli usage, you must
 call linkman:upscli_cleanup[3] to flush cache files and perform other cleanup.
@@ -58,6 +58,19 @@ to disconnect from *upsd* and release any dynamic memory associated
 with the `UPSCONN_t` structure.  Failure to call this function will result
 in memory and file descriptor leaks in your program.
 
+STRING FUNCTIONS
+----------------
+
+To parse the `ups.status` values (check whether a particular token is present)
+you are encouraged to use the linkman:upscli_str_contains_token[3] method.
+
+To collect unique tokens into a string in the same manner a NUT driver does,
+the linkman:upscli_str_add_unique_token[3] can be helpful.
+
+You are welcome to consult the NUT source code base for use of equivalent
+methods to implement such features as `status_init()`, `status_get()`,
+`status_set()` and `status_commit()` methods in its data-processing loops.
+
 ERROR HANDLING
 --------------
 
@@ -69,6 +82,7 @@ also be used to retrieve the error number.  These numbers are defined in
 SEE ALSO
 --------
 
+linkman:nutclient[3],
 linkman:libupsclient-config[1],
 linkman:upscli_init[3], linkman:upscli_cleanup[3],
 linkman:upscli_add_host_cert[3],
@@ -78,5 +92,6 @@ linkman:upscli_getvar[3], linkman:upscli_list_next[3],
 linkman:upscli_list_start[3], linkman:upscli_readline[3],
 linkman:upscli_sendline[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
-linkman:upscli_ssl[3], linkman:upscli_strerror[3],
-linkman:upscli_upserror[3]
+linkman:upscli_ssl[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3],
+linkman:upscli_str_add_unique_token[3], linkman:upscli_str_contains_token[3]

@@ -1,9 +1,14 @@
 SMS Brazil Protocols
 ====================
 
-Using the PowerView as source, there is a folder, called `protocols` inside the installed directory, e.g. `"C:\Alerta24h\SMS_Power_View\resource"`. There are 4 protocol files (`monofasico.xml`, `trifasico.xml`, `upsilon.xml` and `voltronic.xml`), and one file called `verificaProtocolo.xml`.
+Using the PowerView (accompanying UPS application for Windows) as source,
+there is a folder, called `protocols` inside the installed directory, e.g.
+`"C:\Alerta24h\SMS_Power_View\resource"`. There are 4 protocol files
+(`monofasico.xml`, `trifasico.xml`, `upsilon.xml` and `voltronic.xml`),
+and one file called `verificaProtocolo.xml`.
 
-The file `verificaProtocolo.xml` has serial/USB commands to be sent, to detect the UPS device.
+The file `verificaProtocolo.xml` has serial/USB commands to be sent,
+to detect the UPS device.
 
 The file contents are:
 

@@ -1,4 +1,4 @@
-/* nutdrv_qx_blazer-common.h - Common functions/settings for nutdrv_qx_{mecer,megatec,megatec-old,mustek,q1,voltronic-qs,zinto}.{c,h}
+/* nutdrv_qx_blazer-common.h - Common functions/settings for nutdrv_qx_{innovart31,mecer,megatec,megatec-old,mustek,q1,q2,q6,voltronic-qs,zinto}.{c,h}
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>

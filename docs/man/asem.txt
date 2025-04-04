@@ -4,7 +4,7 @@ ASEM(8)
 NAME
 ----
 
-asem - driver for UPS in ASEM PB1300
+asem - Driver for UPS in ASEM PB1300
 
 SYNOPSIS
 --------
@@ -25,10 +25,11 @@ Likely other I2C devices from the same manufacturer will work too,
 since this is a "custom" charger.
 
 Seems that there are two versions of the charger. Older one is based on
-Max1667, newer one is a custom solution. Both are on I2C address 0x09.
-To be compatible with both versions, the driver just reads bit 15 of
-address 0x13 which yields online/on battery status.
-Battery monitor is a BQ2060 at address 0x0B.
+Max1667, newer one is a custom solution. Both are on I2C address *0x09*.
+To be compatible with both versions, the driver just reads *bit 15* of
+address *0x13* which yields online/on battery status.
+
+Battery monitor is a BQ2060 at address *0x0B*.
 
 EXTRA ARGUMENTS
 ---------------
@@ -49,11 +50,11 @@ Set the high battery threshold to 'num' volts.
 INSTALLATION
 ------------
 
-This driver is specific to the Linux I2C API, and requires the lm_sensors
-libi2c-dev or its equivalent to compile.
+This driver is specific to the Linux I2C API, and requires the libi2c-dev
+library and headers from lm_sensors project, or its equivalent, to compile.
 
 Beware that the SystemIO memory used by the I2C controller is reserved
-by ACPI. If only a native I2C driver (e.g. i2c_i801, as of 3.5.X Linux
+by ACPI. If only a native I2C driver (e.g. `i2c_i801`, as of 3.5.X Linux
 kernels) is available, then you'll need to relax the ACPI resources check.
 For example, you can boot with the `acpi_enforce_resources=lax` option.
 

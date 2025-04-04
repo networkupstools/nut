@@ -27,10 +27,10 @@ jobs:
       with:
         fetch-depth: 0
         fetch-tags: true
-    - name: Set up Python 3.10
+    - name: Set up Python 3.13
       uses: actions/setup-python@v3
       with:
-        python-version: '3.10'
+        python-version: '3.13'
     - name: Extract python interpreter path name
       id: pythoncmd
       run: >-

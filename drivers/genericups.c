@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.40"
+#define DRIVER_VERSION	"1.41"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -310,11 +310,15 @@ static void set_ups_type(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	flags, ret;
 
 	if (upstype == -1) {
 		upslogx(LOG_ERR, "No upstype set - see help text / man page!");
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	        return;
 	}
 
@@ -322,7 +326,8 @@ void upsdrv_shutdown(void)
 
 	if (flags == -1) {
 		upslogx(LOG_ERR, "No shutdown command defined for this model!");
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	        return;
 	}
 
@@ -331,7 +336,8 @@ void upsdrv_shutdown(void)
 #ifndef WIN32
 #ifndef HAVE_TCSENDBREAK
 		upslogx(LOG_ERR, "Need to send a BREAK, but don't have tcsendbreak!");
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	        return;
 #endif
 #endif
@@ -340,7 +346,8 @@ void upsdrv_shutdown(void)
 
 		if (ret != 0) {
 			upslog_with_errno(LOG_ERR, "tcsendbreak");
-			set_exit_flag(-1);
+			if (handling_upsdrv_shutdown > 0)
+				set_exit_flag(EF_EXIT_FAILURE);
 		}
 
 		return;
@@ -354,7 +361,8 @@ void upsdrv_shutdown(void)
 
 	if (ret != 0) {
 		upslog_with_errno(LOG_ERR, "ioctl TIOCMSET");
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	        return;
 	}
 
@@ -434,8 +442,8 @@ void upsdrv_initups(void)
 	}
 
 	/*
-	 See if the user wants to override the output signal definitions
-	 this must be done here, since we might go to upsdrv_shutdown()
+	 See if the user wants to override the output signal definitions?
+	 This must be done here, since we might go to upsdrv_shutdown()
 	 immediately. Input signal definition override is handled in
 	 upsdrv_initinfo()
 	 */

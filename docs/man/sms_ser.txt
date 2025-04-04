@@ -15,8 +15,8 @@ SYNOPSIS
 
 NOTE: This man page only documents the hardware-specific features
 of the sms_ser driver.  For information about the core driver, see
-linkman:nutupsdrv[8], and for the technical background check in
-doc/sms-brazil-protocol.txt.
+linkman:nutupsdrv[8], and for the technical background check the
+`docs/sms-brazil-protocol.txt` file in NUT sources.
 
 NOTE: Given the proximity of this protocol to Megatec Qx family,
 this driver may later become part of `nutdrv_qx` collection.
@@ -28,7 +28,8 @@ SUPPORTED HARDWARE
 sms_ser supports only the "sms 1phase" SMS Product, as described in
 the `monofasico.xml` file delivered with the device.
 
-Other SMS protocols for their other products are not supported.
+Other SMS protocols (for their other products) are not supported by
+this driver.
 
 
 AUTHOR

@@ -7,7 +7,7 @@ Network UPS Tools Overview
 //GH_MARKUP_1095//ifndef::top_srcdir[]
 //GH_MARKUP_1095//include::docs/asciidoc-vars.conf[]
 //GH_MARKUP_1095//endif::top_srcdir[]
-//GH_MARKUP_1095_INCLUDE_BEGIN//7c5e90132 (2023-09-13) docs/asciidoc-vars.conf: fence against re-definitions of website-url and (top_)(src|build)dir attributes
+//GH_MARKUP_1095_INCLUDE_BEGIN//a6bd83d48 (2025-03-20) docs/asciidoc-vars.conf: document that linkdoc may have further args
 ifndef::asciidoc-vars-nut-included[]
 :asciidoc-vars-nut-included:	true
 // NOTE: The big block of comments and definitions below comes from
@@ -39,6 +39,8 @@ ifndef::asciidoc-vars-nut-included[]
 // with shortened names). For our classic documentation renditions, they
 // should resolve to properly defined macros from `docs/asciidoc.conf`
 // (usually named same as the variables defined here, for simplicity):
+// * `linksrcdoc` allows to refer to a source of documentation file
+//   relative to the root of NUT code base.
 // * `linkdoc` allows to refer to a file under `docs/` directory (or
 //   its nut-website rendition).
 // * `xref` substitutes the asciidoc shorthand '<< >>' syntax with
@@ -52,6 +54,10 @@ ifndef::asciidoc-vars-nut-included[]
 //   the command shown. This is also needed to properly display links
 //   to manpages in both GitHub and generated docs without defining an
 //   attribute for each manpage.
+// * `linkmanext` and `linkmanext2` macros repeat the behavior of the default ones.
+//   These macros are intended for system man pages (e.g. HTML links might lead
+//   to a generic internet site, or possibly to a distro-provided library
+//   online or locally).
 //
 // Optional attributes set by callers:
 // * `website-url` (defaulted below) may be used for "historic website"
@@ -97,7 +103,7 @@ ifndef::top_builddir[]
 endif::top_builddir[]
 //
 //
-// Address links on GitHub vs docs
+// Address links on GitHub vs. docs
 // (note: 'env-github' attribute is set on GitHub)
 //
 // - when generating docs:
@@ -108,8 +114,12 @@ ifndef::env-github[]
 :xref:		xref:
 :x-s:
 //   * link to doc -> our macro
-//     syntax: {linkdoc}<document>{ld-s}[<display title>]
-//     -> linkdoc:<document>[<display title>]
+//     syntax: {linksrcdoc}<document>
+//     -> linksrcdoc:<document>[]
+:linksrcdoc:	linksrcdoc:
+//   * link to doc -> our macro (optional 2/3/4 args)
+//     syntax: {linkdoc}<document>{ld-s}[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
+//     -> linkdoc:<document>[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
 :linkdoc:	linkdoc:
 :ld-s:
 //   * link to single doc -> our macro
@@ -124,6 +134,8 @@ ifndef::env-github[]
 :lm-s:		[
 :lm-c:		,
 :lm-e:		]
+:linkmanext:	https://www.die.net/search/?q=
+:linkmanext2:	https://www.die.net/search/?q=
 endif::env-github[]
 //
 // - on GitHub:
@@ -138,8 +150,12 @@ ifdef::env-github[]
 //     -> {website-url}docs/user-manual.chunked/<id>.html[<caption>]
 :xref:		{website-url}docs/user-manual.chunked/
 :x-s:		.html
-//   * link to doc -> link
-//     syntax: {linkdoc}<document>{ld-s}[<display title>]
+//   * link to doc -> our macro
+//     syntax: {linksrcdoc}<document>
+//     -> link:<document>[]
+:linksrcdoc:	link:{top_srcdir}/
+//   * link to doc -> link (FIXME: ignore or use 2/3/4 args; currently they are all pasted as <display title> contents!)
+//     syntax: {linkdoc}<document>{ld-s}[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
 //     -> {website-url}docs/<document>.chunked/index.html[<display title>]
 :linkdoc:	{website-url}docs/
 :ld-s:		.chunked/index.html
@@ -156,6 +172,8 @@ ifdef::env-github[]
 :lm-s:		.html[
 :lm-c:		(
 :lm-e:		)]
+:linkmanext:	https://www.die.net/search/?q=
+:linkmanext2:	https://www.die.net/search/?q=
 endif::env-github[]
 endif::asciidoc-vars-nut-included[]
 //
@@ -231,6 +249,47 @@ integration elements to make it work on your favourite system, documentation
 revisions to make it more accessible to newcomers, as well as hardware vendor
 cooperation with first-hand driver and protocol submissions, and just about
 anything else you can think of.
+
+NUT Support Policy
+~~~~~~~~~~~~~~~~~~
+
+The Network UPS Tools project is a community-made open-source effort, primarily
+made and maintained by people donating their spare time.
+
+The support channels are likewise open, with preferred ones being
+link:https://github.com/networkupstools/nut/issues[the NUT project issue
+tracker on GitHub] and the NUT Users mailing list, as detailed at
+https://networkupstools.org/support.html page.
+
+Please keep in mind that any help is provided by community members just like
+yourself, as a best effort, and subject to their availability and experience.
+It is expected that you have read the Frequently Asked Questions, looked at
+the link:https://github.com/networkupstools/nut/wiki[NUT wiki], and have a
+good grasp about the three-layer design and programs involved in a running
+deployment of NUT, for a discussion to be constructive and efficient.
+
+Be patient, polite, and prepare to learn and provide information about your
+NUT deployment (version, configuration, OS...) and the device, to collect
+logs, and to answer any follow-up questions about your situation.
+
+Finally, note that NUT is packaged and delivered by packaging into numerous
+operating systems, appliances and monitoring projects, and may be bundled
+with third-party GUI clients.  It may be wise of end-users to identify such
+cases and ask for help on the most-relevant forum (or several, including the
+NUT support channels).  It is important to highlight that the NUT project
+releases have for a long time been essentially snapshots of better-tested
+code, and we do not normally issue patches to "hot-fix" any older releases.
+
+Any improvements of NUT itself are made in the current code base, same as
+any other feature development, so to receive desired fixes on your system
+(and/or to check that they do solve your particular issue), expect to be
+asked to build the recent development iteration from GitHub or work with
+your appliance vendor to get a software upgrade.
+
+Over time, downstream OS packaging or other integrations which use NUT, may
+issue patches as new package revisions, or new baseline versions of NUT,
+according to *their* release policies. It is not uncommon for distributions,
+especially "stable" flavours, to be a few years behind upstream projects.
 
 
 Installing
@@ -436,11 +495,14 @@ UPS Shutdowns
 
 upsdrvctl can also shut down (power down) all of your UPS hardware.
 
-WARNING: if you play around with this command, expect your filesystems
+[WARNING]
+=========
+If you play around with this command, expect your filesystems
 to die.  Don't power off your computers unless they're ready for it:
 
 	/usr/local/ups/sbin/upsdrvctl shutdown
 	/usr/local/ups/sbin/upsdrvctl shutdown sparky
+=========
 
 You should read the {xref}UPS_shutdown{x-s}[Configuring automatic UPS shutdowns]
 chapter to learn more about when to use this feature.  If called at the wrong
@@ -588,6 +650,7 @@ not have any effect on your system.
 
 A driver that supports read/write variables will give results like this:
 
+----
 	$ upsrw sparky@localhost
 
 	( many skipped )
@@ -600,12 +663,15 @@ A driver that supports read/write variables will give results like this:
 	Option: "0"
 
 	( more skipped )
+----
 
 On the other hand, one that doesn't support them won't print anything:
 
+----
 	$ upsrw fenton@gearbox
 
 	( nothing )
+----
 
 `upsrw` requires administrator powers to change settings in the hardware.
 Refer to {linkman2}upsd.users{lm-s}upsd.users{lm-c}5{lm-e} for information on defining
@@ -621,6 +687,7 @@ hardware/drivers support them.
 
 Use the -l command to list them, like this:
 
+----
 	$ upscmd -l sparky@localhost
 	Instant commands supported on UPS [sparky@localhost]:
 
@@ -629,6 +696,7 @@ Use the -l command to list them, like this:
 	calibrate.start - Start run time calibration
 	calibrate.stop - Stop run time calibration
 	...
+----
 
 `upscmd` requires administrator powers to start instant commands.
 To define users and passwords in `upsd`, see
@@ -705,15 +773,18 @@ configuration file.  It is not active by default.
 Version Numbering
 -----------------
 
-The version numbers work like this: if the middle number is odd, it's a
-development tree, otherwise it is the stable tree.
+The version numbers historically worked like this: if the middle number
+is odd, it's a development tree, otherwise it is the stable tree.
 
 The past stable trees were 1.0, 1.2, 1.4, 2.0, 2.2 and 2.4, with the
 latest such stable tree designated 2.6.  The development trees were 1.1,
 1.3, 1.5, 2.1 and 2.3.  Since the 2.4 release, there is no real separate
 development branch anymore since the code is available through a revision
-control system (namely, Git -- or actually Subversion back then) and its
-snapshots become published releases.
+control system (namely, Git -- or actually Subversion back then), development
+happens in feature branches that are eventually merged into the main trunk,
+and its snapshots become published releases. As a result, subsequent versions
+(2.7 and 2.8) were released without regard for even/odd values of the minor
+version component.
 
 Since 2.7 line of releases, sources are tracked in Git revision control
 system, with the project ecosystem being hosted on GitHub, and any code
@@ -723,6 +794,25 @@ approach and custom NUT CI testing on multiple platforms.
 Major release jumps are mostly due to large changes to the features
 list.  There have also been a number of architectural changes which
 may not be noticeable to most users, but which can impact developers.
+
+Since NUT v2.8.2 or so, development iterations have additional version
+components, to account for the amount of commits on the main branch
+(`master`) since the last known Git tag, and amount of commits on the
+developed feature branch that are unique to it compared to main branch.
+This allows for a reasonably growing version of stable baseline and
+local development, so that experimental packages can be installed as
+upgrades (or well-exposed downgrades).
+
+While the NUT releases retain the semantic versioning three-component
+standard, interim builds (trunk snapshots and development branches)
+can expose a much more complex structure with the amount of commits
+in the trunk since last release, and amount of commits on the branch
+unique to it (not in the trunk). Additional data may include overall
+amount of commits in the current build since last release, and the
+git commit has identifier of the built code base.
+
+More details can be seen in `docs/nut-versioning.adoc` file in the
+NUT source code base.
 
 Backwards and Forwards Compatibility
 ------------------------------------

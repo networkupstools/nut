@@ -84,11 +84,11 @@ executes "instant poweroff"
 INSTALLATION
 ------------
 
-This driver is not built by default. You can build it by installing
+This driver may be not built by default. You can build it by installing
 libmodbus and running `configure --with-modbus=yes`.
 
 You also need to give proper permissions on the local serial device
-file (/dev/ttyUSB0 for example) to allow the run-time NUT driver user
+file (`/dev/ttyUSB0` for example) to allow the run-time NUT driver user
 account to access it.
 
 AUTHOR

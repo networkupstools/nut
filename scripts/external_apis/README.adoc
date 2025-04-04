@@ -1,0 +1,15 @@
+NUT external API integration scripts
+====================================
+
+These directories hold scripts that help integrate NUT with external APIs
+not yet natively supported.  These may include REST API, Web-based JSON,
+or any other protocol that doesn't have a supported NUT driver but a
+prototype to interact with the device can be easily scripted.  They
+are useful both for adding the integration to an existing install, or
+as a starting point for creating new integrations.
+
+- `enphase`: web-API based integration with Enphase's locally hosted
+  IQ Gateway.
++
+Supports web-based login and token management, and maps JSON data
+  to files consumed by the linkman:dummy-ups[8] driver.

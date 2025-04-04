@@ -1,0 +1,39 @@
+UPSCLI_STR_CONTAINS_TOKEN(3)
+============================
+
+NAME
+----
+
+upscli_str_contains_token - Verify that an unique token is present in the string
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	int	upscli_str_contains_token(const char *string, const char *token);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_str_contains_token*() function takes the pointer 'tgt' to a
+caller-provided `const char *` buffer, comprised of unique tokens separated
+by single space characters (ASCII '0x20'), and the pointer 'token' to a
+presumed-contiguous token value that should be found in the 'tgt' buffer.
+
+RETURN VALUE
+------------
+
+The *upscli_str_contains_token*() function returns a numeric code:
+
+* 'non-zero' if the 'token' value was found in 'tgt' buffer (possibly
+  surrounded by space characters, or being at start/end of the string);
+* '0' if 'token' was not found, or if either 'token' or 'tgt' string
+  was `NULL` or empty.
+
+SEE ALSO
+--------
+
+linkman:upscli_str_add_unique_token[3]

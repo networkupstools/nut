@@ -9,9 +9,11 @@ upscli_cleanup - Clean-up upsclient module after usage.
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_cleanup(void);
+	int upscli_cleanup(void);
+------
 
 DESCRIPTION
 -----------
@@ -22,7 +24,7 @@ used internally in upsclient module.
 RETURN VALUE
 ------------
 
-The *upscli_cleanup()* function returns 1 on success, or -1 if an error
+The *upscli_cleanup()* function returns '1' on success, or '-1' if an error
 occurs.
 
 SEE ALSO

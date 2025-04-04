@@ -40,10 +40,19 @@ Driver control:
 *rules*='value'::
 A string consisting of sub-strings. Each sub-string describes GPIO line
 states conversion formula to specific NUT state, like
-`nut_state=[^]line_num[logical_operation[^]line_num]...;`. Not (^) , and (&) , or
-(|)operations are supported for now. nut_state should correspond to NUT
-state, line_num to GPIO line number connected to UPS open collector pin.
++
+----
+nut_state=[^]line_num[logical_operation[^]line_num]...;
+----
++
+The logical "Not" (`^`), "And" (`&`), and "Or" (`|`) operations are
+supported for now.
++
+The `nut_state` should correspond to NUT state, and `line_num` to the
+GPIO line number connected to UPS open collector pin.
++
 CyberShield CSN27U12V describes pins as:
++
 |===
 |Battery state|State details|GPIO line
 |ON BATTERY|*Low* when operating from utility line
@@ -59,13 +68,16 @@ CyberShield CSN27U12V describes pins as:
 
 *Open* when operating from a battery with < 20% capacity|3
 |===
-and rules might be defined as
-
-`rules = "OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6;"`
-
-assuming battery pin connection to GPIO lines as listed in table. Expecting simple formula
-to be used for each state, extra may increase state reliability and may need to be
-checked on each specific UPS.
+and then the 'rules' value might be defined as
++
+----
+rules = "OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6;"
+----
++
+assuming battery pin connection to GPIO lines as listed in table.
++
+Expecting simple formula to be used for each state, extra may increase
+state reliability and may need to be checked on each specific UPS.
 
 Battery Charge:
 ~~~~~~~~~~~~~~
@@ -97,15 +109,16 @@ This driver does not support shutdown command.
 INSTALLATION
 ------------
 
-This driver is not built by default. You can build it by installing
+This driver may be not built by default. You can build it by installing
 libgpiod and running `configure --with-gpio=yes`.
 
 You also need to give proper permissions on the local serial device
-file (/dev/gpiochip0 for example) to allow the run-time NUT driver user
-account to access it, like by adding the following rule to Linux rules.d directory:
+file (`/dev/gpiochip0` for example) to allow the run-time NUT driver user
+account to access it, like by adding the following rule to Linux `rules.d`
+directory:
 
   SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c '\
-  chown -R nut:nut /dev/gpiochip0 && chmod -R 700 /dev/gpiochip0\
+  chown -R nut:nut /dev/gpiochip0 && chmod -R 700 /dev/gpiochip0'
 
 AUTHOR
 ------

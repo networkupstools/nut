@@ -29,7 +29,7 @@
 #define APCC_MIB_VERSION	"1.60"
 
 #define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
-/* FIXME: Find a better oid_auto_check vs sysOID for this one? */
+/* FIXME: Find a better oid_auto_check vs. sysOID for this one? */
 #define APC_UPS_SYSOID	APC_UPS_DEVICE_MODEL
 
 /* Other APC sysOID:

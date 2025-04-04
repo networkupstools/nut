@@ -1,7 +1,7 @@
 Configuration notes
 ===================
 
-This chapter describe most of the configuration and use aspects of NUT,
+This chapter describes most of the configuration and use aspects of NUT,
 including establishing communication with the device and configuring safe
 shutdowns when the UPS battery runs out of power.
 
@@ -9,12 +9,19 @@ There are many programs and <<Features,features>> in this
 package.  You should check out the <<Overview,NUT Overview>>
 and other accompanying documentation to see how it all works.
 
-NOTE: NUT does not currently provide proper graphical configuration tools.
+[NOTE]
+======
+NUT does not currently provide proper graphical configuration tools.
 However, there is now support for linkdoc:developer-guide[Augeas,augeas_user],
 which will enable the easier creation of configuration tools.
+
+The linkman:nutconf[8] tool should also help with programmatic manipulation
+of various NUT configuration files.
+
 Moreover, linkman:nut-scanner[8] is available to discover supported devices
 (USB, SNMP, Eaton XML/HTTP and IPMI) and NUT servers (using Avahi or the
 classic connection method).
+======
 
 Details about the configuration files
 -------------------------------------
@@ -124,7 +131,7 @@ of the bundled services, which are enabled on a particular deployment.
 Driver configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-Create one section per UPS in 'ups.conf'
+Create one section per UPS in linkman:ups.conf[5] file.
 
 NOTE: The default path for a source installation is `/usr/local/ups/etc`,
 while packaged installation will vary.
@@ -159,14 +166,16 @@ You must still set this value, but it does not matter what you set
 it to; a common and good practice is to set 'port' to *auto*, but you
 can put whatever you like.
 
-If you only own one USB UPS, the driver will find it automatically.
+If you only own one USB UPS, the driver will find it automatically
+if it matches the identifiers are built into that driver.
 
 If you own more than one, refer to the driver's manual page for more
-information on matching a specific device.
+information on matching a specific device, or trying specific subdriver
+or protocol options with a currently unknown device.
 ======
 
-NOTE: On Windows systems, the second serial port (COM2), equivalent to
-"/dev/ttyS1" on Linux, would be "\\\\.\\COM2".
+NOTE: On Windows systems, the second serial port (`COM2`), equivalent to
+`/dev/ttyS1` on Linux, would be `\\\\.\\COM2`.
 
 References: linkman:ups.conf[5],
 linkman:nutupsdrv[8],
@@ -180,13 +189,13 @@ linkman:usbhid-ups[8]
 
 
 [[Starting_drivers]]
-Starting the driver(s)
-~~~~~~~~~~~~~~~~~~~~~~
+Starting the driver(s) in legacy operating systems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Generally, you can just start the driver(s) for your hardware (all sections
 defined in 'ups.conf') using the following command:
 
-	upsdrvctl start
+	:; upsdrvctl start
 
 Make sure the driver doesn't report any errors.  It should show a
 few details about the hardware and then enter the background.  You
@@ -214,6 +223,7 @@ user account your driver starts as.
 After making changes, try the <<Ownership, Ownership and permissions>>
 step again.
 
+[[Starting_drivers_NDE]]
 Driver(s) as a service
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -327,8 +337,15 @@ the user you created in the preparation process.
 The suggested configuration is to `chown` it to `root`, `chgrp` it to the
 group you created, then make it readable by the group.
 
-	chown root:nut upsd.conf upsd.users
-	chmod 0640 upsd.conf upsd.users
+NOTE: If you installed NUT from source and used `make install-as-root`,
+or if your distribution packaging did, the sample configuration files
+would have the suggested ownership and permissions assigned, so if you
+use e.g. `cp -pf upsd.users.sample upsd.users` (as `root`) to start out
+with some annotated comments and adapt that to your deployment, the
+copied files should also get the expected safe permissions.
+
+	:; chown root:nut upsd.conf upsd.users
+	:; chmod 0640 upsd.conf upsd.users
 
 References: man pages: linkman:upsd.conf[5],
 linkman:upsd.users[5],
@@ -340,7 +357,7 @@ Starting the data server
 
 Start the network data server:
 
-	upsd
+	:; upsd
 
 Make sure it is able to connect to the driver(s) on your system.
 A successful run looks like this:
@@ -391,7 +408,7 @@ Status data
 Make sure that the UPS is providing good status data.
 You can use the `upsc` command-line client for this:
 
-	upsc myupsname@localhost ups.status
+	:; upsc myupsname@localhost ups.status
 
 You should see just one line in response:
 
@@ -411,7 +428,7 @@ All data
 
 Look at all of the status data which is being monitored.
 
-	upsc myupsname@localhost
+	:; upsc myupsname@localhost
 
 What happens now depends on the kind of device and driver you have.
 In the list, you should see `ups.status` with the same value you got
@@ -559,8 +576,8 @@ become sufficiently charged.
 
    - generates a `NOTIFY_SHUTDOWN` event
    - waits `FINALDELAY` seconds -- typically `5`
-   - creates the `POWERDOWNFLAG` file in its local filesystem --
-     usually `/etc/killpower`
+   - creates the `POWERDOWNFLAG` file in its local filesystem -- usually
+     `/etc/killpower`, or `/run/nut/killpower` in a temporary file system
    - calls the `SHUTDOWNCMD`
 
 7. On most systems, `init` takes over, kills your processes, syncs and
@@ -616,12 +633,12 @@ Reload `upsd`.  Depending on your configuration, you may be able to
 do this without stopping the `upsd` daemon process (if it had saved
 a PID file earlier):
 
-	upsd -c reload
+	:; upsd -c reload
 
 If that doesn't work (check the syslog), just restart it:
 
-	upsd -c stop
-	upsd
+	:; upsd -c stop
+	:; upsd
 
 For systems with integrated service management (Linux systemd,
 illumos/Solaris SMF) their corresponding `reload` or `refresh`
@@ -660,8 +677,15 @@ The recommended setting is to have it owned by `root:nut`, then make it
 readable by the group and not by the world.  This file contains passwords
 that could be used by an attacker to start a shutdown, so keep it secure.
 
-	chown root:nut upsmon.conf
-	chmod 0640 upsmon.conf
+NOTE: If you installed NUT from source and used `make install-as-root`,
+or if your distribution packaging did, the sample configuration files
+would have the suggested ownership and permissions assigned, so if you
+use e.g. `cp -pf upsmon.conf.sample upsmon.conf` (as `root`) to start out
+with some annotated comments and adapt that to your deployment, the
+copied files should also get the expected safe permissions.
+
+	:; chown root:nut upsmon.conf
+	:; chmod 0640 upsmon.conf
 
 This step has been placed early in the process so you secure this file
 before adding sensitive data in the next step.
@@ -717,7 +741,7 @@ which does customized local shutdown tasks before calling `init` or
 Start upsmon
 ^^^^^^^^^^^^
 
-	upsmon
+	:; upsmon
 
 If it complains about something, then check your configuration.
 
@@ -785,6 +809,9 @@ as an example:
 
 ------------------------------------------------------------------------------
 
+A more elaborate example can be found in NUT sources, e.g.:
+https://github.com/networkupstools/nut/blob/master/scripts/systemd/nutshutdown.in
+
 [WARNING]
 ==============================================================================
 - Be careful that `upsdrvctl shutdown` command will probably power off
@@ -817,14 +844,14 @@ restarts when power returns.
 The first step is to see how `upsdrvctl` will behave without actually
 turning off the power. To do so, use the `-t` argument:
 
-	upsdrvctl -t shutdown
+	:; upsdrvctl -t shutdown
 
 It will display the sequence without actually calling the drivers.
 
 
 You can finally test a forced shutdown sequence (FSD) using:
 
-	upsmon -c fsd
+	:; upsmon -c fsd
 
 This will execute a full shutdown sequence, as presented in
 <<Shutdown_design,Shutdown design>>, starting from the 3rd step.
@@ -864,6 +891,12 @@ will latch the FSD state (so it won't be usable after resuming) and so
 will the `upsmon` client.  Some drivers may work after resuming, but many
 don't and some UPS devices will require re-initialization, so it's best not
 to keep them running either.
+
+NOTE: Starting with NUT v2.8.3, there is some growing support for system-wide
+sleep on some platforms (e.g. to catch the "going to sleep" event and make
+a note of it in the daemons, to take the least-surprise corrective actions
+after a significant change in system clock readings), but the warnings in
+previous paragraph may still apply.
 
 After stopping NUT driver, server and client you'll have to send the UPS
 the command to shutdown only if the `POWERDOWNFLAG` is present.  Note

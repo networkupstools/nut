@@ -230,7 +230,7 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 			if (area_length > (int)UINT8_MAX) {
 				libfreeipmi_cleanup();
 				fatal_with_errno(EXIT_FAILURE,
-					"nut_ipmi_open: got area_length %d is too large for libfreeipmi",
+					"nut_ipmi_open: got area_length %u is too large for libfreeipmi",
 					area_length);
 			}
 
@@ -794,7 +794,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 		if (tmp_entity_id == entity_id
 			&& tmp_entity_instance == entity_instance)
 		{
-			upsdebugx (1, "Found record id = %u for device id %u",
+			upsdebugx (1, "Found record id = %u for device id %i",
 				record_id, ipmi_dev->ipmi_id);
 
 			/* Add it to the tracked list */
@@ -817,7 +817,7 @@ cleanup:
 #endif /* HAVE_FREEIPMI_11X_12X */
 
 	if (ipmi_dev->sensors_count > INT_MAX) {
-		upsdebugx(1, "%s: Found %i sensors which is too many",
+		upsdebugx(1, "%s: Found %u sensors which is too many",
 			__func__, ipmi_dev->sensors_count);
 	}
 	return (int)ipmi_dev->sensors_count;

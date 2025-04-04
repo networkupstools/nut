@@ -1,0 +1,611 @@
+Setting up the non-standard VM farm for NUT CI on DigitalOcean
+--------------------------------------------------------------
+
+Since 2023 the Network UPS Tools project employs virtual machines,
+hosted and courteously sponsored as part of FOSS support program by
+link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean],
+for a significant part of the NUT CI farm based on a custom
+link:https://www.jenkins.io/[Jenkins] setup.
+
+Use of complete machines, virtual or not, in the NUT CI farm allows our
+compatibility and non-regression testing to be truly multi-platform,
+spanning various operating system technologies and even (sometimes
+emulated) CPU architectures.
+
+To that extent, while it is easy to deploy common OS images and manage the
+resulting VMs, there are only so many images and platforms that are officially
+supported by the hosting as general-purpose "DigitalOcean VPS Droplets", and
+work with other operating systems is not easy. But not impossible, either.
+
+In particular, while there is half a dozen Linux distributions offered out
+of the box, official FreeBSD support was present earlier but abandoned shortly
+before NUT CI farm migration from the defunct Fosshost.org considered this
+hosting option.
+
+Still, there were community reports of various platforms including *BSD and
+illumos working in practice (sometimes with caveats), which just needed some
+special tinkering to run and to manage.  This chapter details how the NUT CI
+farm VMs were set up on DigitalOcean.
+
+//////////
+// Originally documented at https://github.com/networkupstools/nut/issues/2192
+//////////
+
+Design trade-offs
+~~~~~~~~~~~~~~~~~
+
+Note that some design choices were made because equivalent machines existed
+earlier on Fosshost.org hosting, and filesystem content copies or ZFS snapshot
+transfers were the least disruptive approach (using ZFS wherever possible also
+allows to keep the history of system changes as snapshots, easily replicated
+to offline storage).
+
+It is further important to note that DigitalOcean VMs in recovery mode
+apparently must use the one ISO image provided by DigitalOcean.  At the
+time of this writing it was based on Ubuntu 18.04 LTS with ZFS support -- so
+the ZFS pools and datasets on VMs that use them should be created *AND*
+kept with options supported by that version of the filesystem implementation.
+
+Another note regards pricing: resources that "exist" are billed, whether they
+run or not (e.g. turned-off VMs still reserve CPU/RAM to be able to run on
+demand, dormant storage for custom images is used even if they are not active
+filesystems, etc.)
+
+As of this writing, the hourly prices are applied for resources spawned and
+destroyed within a calendar  month. After a monthly-rate total price for the
+item is reached, that is applied instead.
+
+OS images
+^^^^^^^^^
+
+Some links will be in OS-specific chapters below; further reading for this
+effort included:
+
+* link:https://www.digitalocean.com/blog/custom-images[]
+* link:https://ptribble.blogspot.com/2021/04/running-tribblix-on-digital-ocean.html[]
+  -- notes on custom image creation, may involve
+  link:https://github.com/illumos/metadata-agent[]
+* link:https://bsd-cloud-image.org/[] -- A collection of pre-built *BSD
+  cloud images
+
+According to the fine print in the scary official docs, DigitalOcean VMs
+can only use "custom images" in one of a number of virtual HDD formats,
+which should carry an ext3/ext4 filesystem for DigitalOcean addons to
+barge into for management.
+
+In practice, uploading other images (OpenIndiana Hipster "cloud" image,
+OmniOS, FreeBSD) from your workstation or by providing an URL to an image
+file on the Internet (see links in this document for some collections)
+sort of works.  While the upload status remained "pending", a VM could
+often be made with it soon... but in other cases you have to wait a
+surprisingly long time, some 15-20 minutes, and additional images
+suddenly become "Uploaded".
+
+* The initial theory was that we exceeded some limit and after ending the
+  setups with one custom image, it can be nuked and then another used in
+  its place; in practice this seems to be not true -- just the storage
+  information refresh (perhaps propagation from cache to committed) can lag.
+* Note that your budget would be invoiced for storage of custom images too.
+  If you use stock ISOs once, it makes sense to remove them later.
+* There is also an option to use pre-installed operating systems, so you
+  can dynamically create and destroy VMs with minimal work after creation
+  (e.g. with Jenkins cloud plugins to spawn workers according to labels);
+  in this case you may want to retain (eventually update) the golden image.
+* It may be that not *all* non-standard images are supported, but those with
+  `cloud-init` or similar tools (see
+  https://www.digitalocean.com/blog/custom-images for details).
+
+Networking
+^^^^^^^^^^
+
+FIXME: Private net, DO-given IPs
+
+One limitation seen with "custom images" is that IPv6 is not offered
+to those VMs.
+
+Generally all VMs get random (hopefully persistent) public IPv4 addresses
+from various subnets. It is possible to also request an interconnect VLAN
+for one project's VMs co-located in same data center and have it attached
+(with virtual IP addresses) to an additional network interface on each of
+your VMs: it is supposed to be faster and free (regarding traffic quotas).
+
+* For the Jenkins controller which talks to the world (and enjoys an
+  off-hosting backup at a maintainer's home server) having substantial
+  monthly traffic quota is important.
+* For the set of builders hosted on DigitalOcean, which would primarily
+  talk to the controller in the common VLAN -- not so much (just OS
+  upgrades? maybe GitHub?)
+
+One more potential caveat: while DigitalOcean provides VPC network segments
+for free inter-communications of a group of droplets, it assigns IP addresses
+to those and does not let any others be used by the guest.  This causes some
+hassle when importing a set of VMs which used different IP addresses on their
+inter-communications VLAN originally (on another hosting).
+
+Common notes for illumos VMs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The original OpenIndiana Hipster and OmniOS VMs were configured with the
+https://github.com/jimklimov/illumos-splitroot-scripts methodology and
+scripting, so there are quite a few datasets dedicated to their purposes
+instead of a large one.
+
+There are known issues about VM reboot:
+
+* Per https://www.illumos.org/issues/14526 and personal and community
+  practice, it seems that "slow reboot" for illumos VMs on QEMU-6.x
+  (and on DigitalOcean) misbehaves and hangs, ultimately the virtual
+  hardware is not power-cycled.
+* A power-off/on cycle through UI (and probably REST API) does work.
+* It took about 2 hours for `rebooting...` to take place in fact.
+  At least, the machine would not be stuck for eternity in case of
+  unattended crashes.
+* Other kernels (Linux, BSD, ...) are not impacted by this, it seems.
+
+Wondering if there are QEMU HW watchdogs on DigitalOcean that we could use...
+
+Using the DigitalOcean Recovery ISO
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As noted above, for installation and subsequent management DigitalOcean's
+recovery ISO must be used when booting the VM, which is based on Ubuntu and
+includes ZFS support.  It was used a lot both initially and over the years,
+so deserves a dedicated chapter.
+
+To boot into the recovery environment, you should power off the VM (see the
+Power left-menu item in DigitalOcean web dashboard, and "Turn off Droplet"),
+then go into the Recovery menu and select "Boot from Recovery ISO" and power
+on the Droplet.  When you are finished with recovery mode operations, repeat
+this routine but select "Boot from Hard Drive" instead.
+
+NOTE: Sometimes you might be able to change the boot device in advance
+(it takes time to apply the setting change) and power-cycle the VM later.
+
+The recovery live image allows to install APT packages, such as `mc` (file
+manager and editor) and `mbuffer` (to optimize `zfs-send`/`zfs-recv` traffic).
+When the image boots, it offers a menu which walks through adding SSH public
+keys (can import ones from e.g. GitHub by username).
+
+Note that if your client system uses `screen`, `tmux` or `byobu`, the new SSH
+connections would get the menu again. To get a shell right away, interactive
+or for scripting like `rsync` and `zfs recv` counterparts, you should
+`export TERM=vt220` from your `screen` session (the latter proved useful
+in any case for independence of the long replication run from connectivity
+of my laptop to Fosshost/DigitalOcean VMs).
+
+* SSH keys can be imported with a `ssh-import-id-gh` helper script provided
+in the image:
++
+----
+#recovery# ssh-import-id-gh jimklimov
+2023-12-10 21:32:18,069 INFO Already authorized ['2048',
+    'SHA256:Q/ouGDQn0HUZKVEIkHnC3c+POG1r03EVeRr81yP/TEoQ',
+    'jimklimov@github/10826393', '[RSA]']
+...
+----
+* More can be pasted into `~/.ssh/authorized_keys` later;
+* The real SSH session is better than the (VNC-based web-wrapped) Rescue
+  Console, which is much less responsive and also lacks mouse and copy-paste
+  integration with your browser;
+* On your SSH client side (e.g. in the `screen` session on original VM which
+  would send a lot of data), you can add non-default (e.g. one-time) keys of
+  the SSH server of the recovery environment with:
++
+----
+#origin# eval `ssh-agent`
+#origin# ssh-add ~/.ssh/id_rsa_custom_key
+----
+
+Make the recovery userland convenient:
+----
+#recovery# apt install mc mbuffer
+----
+* `mc`, `mcview` and `mcedit` are just very convenient to manage systems
+  and to manipulate files;
+* ZFS send/receive traffic is quite bursty, with long quiet times as it
+  investigates the source or target pools respectively, and busy streaming
+  times with data.
++
+Using an `mbuffer` on at least one side (ideally both to smooth out network
+  latency) is recommended to have something useful happen when at least one
+  of the sides has the bulk data streaming phase.
+
+
+OpenIndiana
+~~~~~~~~~~~
+
+Helpful links for this part of the quest:
+
+* https://openindiana.org/downloads/ => see
+  link:https://dlc.openindiana.org/isos/hipster/20231027/OI-hipster-cloudimage.img.gz[]
+  -- OI distro-provided cloud images (detailed at
+  link:https://www.openindiana.org/announcements/openindiana-hipster-2023-04-announcement/[]
+  release notes, though not at later ones)
+
+DO-NUT-CI-OI VM creation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Initial attempt, using the OpenIndiana cloud image ISO:
+
+The OI image could be loaded... but that's it -- the logo is visible on the
+DigitalOcean Recovery Console, as well as some early boot-loader lines ending
+with a list of supported consoles.  I assume it went into the `ttya` (serial)
+console as one is present in the hardware list, but DigitalOcean UI does not
+make it accessible and I did not find quickly if there are any REST API or SSH
+tunnel into serial ports.
+
+NOTE: The web console did not come up quickly enough after a VM (re-)boot
+for any interaction with the early seconds of ISO image loader's uptime,
+if it even offers any.
+
+It *probably* booted and auto-installed, since I could see an `rpool/swap`
+twice the size of VM RAM later on, and the `rpool` occupied the whole VM disk
+(created with auto-sizing).
+
+The VM can however be rebooted with a (DO-provided) Recovery ISO, based
+at that time on Ubuntu 18.04 LTS with ZFS support -- which was sufficient
+to send over the existing VM contents from original OI VM on Fosshost.
+See above about booting and preparing that environment.
+
+DO-NUT-CI-OI VM OS transfer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As the practically useful VM already existed at Fosshost.org, and a quick shot
+failed at making a new one from scratch, in order to only transfer local zones
+(containers), a decision was made to transfer the whole ZFS pool via snapshots
+using the Recovery ISO.
+
+First, following up from the first experiment above: I can import the ZFS pool
+created by cloud-OI image into the Linux Recovery CD session:
+
+* Check known pools:
++
+----
+#recovery# zpool import
+   pool: rpool
+       id: 7186602345686254327
+  state: ONLINE
+ status: The pool was last accessed by another system.
+ action: The pool can be imported using its name or numeric identifier and the `-f' flag.
+     see: http://zfsonlinux.org/msg/ZFS-8000-EY
+ config:
+        rpool ONLINE
+           vda ONLINE
+----
+* Import without mounting (`-N`), using an alternate root if we decide to
+  mount something later (`-R /a`), and ignoring possible markers that the
+  pool was not unmounted so might be used by another storage user (`-f`):
++
+----
+#recovery# zpool import -R /a -N -f rpool
+----
+* List what we see here:
++
+----
+#recovery# zfs list
+NAME                  USED  AVAIL  REFER  MOUNTPOINT
+rpool                34.1G   276G   204K  /rpool
+rpool/ROOT           1.13G   276G   184K  legacy
+rpool/ROOT/c936500e  1.13G   276G  1.13G  legacy
+rpool/export          384K   276G   200K  /export
+rpool/export/home     184K   276G   184K  /export/home
+rpool/swap           33.0G   309G   104K  -
+----
+
+The import and subsequent inspection above showed that the kernel core-dump
+area was missing, compared to the original VM... so adding per best practice:
+
+* Check settings wanted by the installed machine for the `rpool/dump` dataset:
++
+----
+#origin# zfs get -s local all rpool/dump
+NAME        PROPERTY                        VALUE                           SOURCE
+rpool/dump  volsize                         1.46G                           local
+rpool/dump  checksum                        off                             local
+rpool/dump  compression                     off                             local
+rpool/dump  refreservation                  none                            local
+rpool/dump  dedup                           off                             local
+----
+* Apply to the new VM:
++
+----
+#recovery# zfs create -V 2G -o checksum=off -o compression=off \
+    -o refreservation=none -o dedup=off rpool/dump
+----
+
+To receive ZFS streams from the running OI into the freshly prepared cloud-OI
+image, it wanted the ZFS features to be enabled (all were disabled by default)
+since some are used in the replication stream:
+
+* Check what is there initially (on the new VM):
++
+----
+#recovery# zpool get all
+NAME   PROPERTY                       VALUE                          SOURCE
+rpool  size                           320G                           -
+rpool  capacity                       0%                             -
+rpool  altroot                        -                              default
+rpool  health                         ONLINE                         -
+rpool  guid                           7186602345686254327            -
+rpool  version                        -                              default
+rpool  bootfs                         rpool/ROOT/c936500e            local
+rpool  delegation                     on                             default
+rpool  autoreplace                    off                            default
+rpool  cachefile                      -                              default
+rpool  failmode                       wait                           default
+rpool  listsnapshots                  off                            default
+rpool  autoexpand                     off                            default
+rpool  dedupditto                     0                              default
+rpool  dedupratio                     1.00x                          -
+rpool  free                           318G                           -
+rpool  allocated                      1.13G                          -
+rpool  readonly                       off                            -
+rpool  ashift                         12                             local
+rpool  comment                        -                              default
+rpool  expandsize                     -                              -
+rpool  freeing                        0                              -
+rpool  fragmentation                  -                              -
+rpool  leaked                         0                              -
+rpool  multihost                      off                            default
+rpool  feature@async_destroy          disabled                       local
+rpool  feature@empty_bpobj            disabled                       local
+rpool  feature@lz4_compress           disabled                       local
+rpool  feature@multi_vdev_crash_dump  disabled                       local
+rpool  feature@spacemap_histogram     disabled                       local
+rpool  feature@enabled_txg            disabled                       local
+rpool  feature@hole_birth             disabled                       local
+rpool  feature@extensible_dataset     disabled                       local
+rpool  feature@embedded_data          disabled                       local
+rpool  feature@bookmarks              disabled                       local
+rpool  feature@filesystem_limits      disabled                       local
+rpool  feature@large_blocks           disabled                       local
+rpool  feature@large_dnode            disabled                       local
+rpool  feature@sha512                 disabled                       local
+rpool  feature@skein                  disabled                       local
+rpool  feature@edonr                  disabled                       local
+rpool  feature@userobj_accounting     disabled                       local
+----
+* Enable all features this pool knows about (list depends on both ZFS module
+  versions which created the pool and which are running now):
++
+----
+#recovery# zpool get all | grep feature@ | awk '{print $2}' | \
+    while read F ; do zpool set $F=enabled rpool ; done
+----
+
+On the original VM, stop any automatic snapshot services like
+link:https://www.znapzend.org[ZnapZend] or `zfs-auto-snapshot`, and manually
+snapshot all datasets recursively so that whole data trees can be easily sent
+over (note that we then remove some snaps like for `swap`/`dump` areas which
+otherwise waste a lot of space over time with blocks of obsolete swap data
+held by the pool for possible dataset rollback):
+----
+#origin# zfs snapshot -r rpool@20231210-01
+#origin# zfs destroy rpool/swap@20231210-01&
+#origin# zfs destroy rpool/dump@20231210-01&
+----
+
+On the receiving VM, move existing cloudy `rpool/ROOT` out of the way, if we
+would not use it anyway, so the new one from the original VM can land (for
+kicks, we can `zfs rename` the cloud-image's boot environment back into the
+fold after replication is complete).  Also prepare to maximally compress the
+received root filesystem data, so it does not occupy too much in the new home
+(this is not something we write too often, so slower `gzip-9` writes can be
+tolerated):
+----
+#recovery# zfs rename rpool/ROOT{,x} ; \
+    while ! zfs set compression=gzip-9 rpool/ROOT ; do sleep 0.2 || break ; done
+----
+
+Send over the data (from the prepared `screen` session on the origin server);
+first make sure all options are correct while using a dry-run mode, e.g.:
+----
+### Do not let other work of the origin server preempt the replication
+#origin# renice -n -20 $$
+
+#origin# zfs send -Lce -R rpool/ROOT@20231210-01 | mbuffer | \
+    ssh root@recovery "mbuffer | zfs recv -vFnd rpool"
+----
+* Then remove `-n` from `zfs recv` after initial experiments confirm it would
+  receive what you want and where you want it, and re-run.
+
+With sufficiently large machines and slow source hosting, expect some hours
+for the transfer.
+
+* I saw 4-8Mb/s in the streaming phase for large increments, and quite a bit
+  of quiet time during enumeration of even almost-empty regular snapshots
+  made by link:https://www.znapzend.org[ZnapZend] -- low-level work with
+  ZFS metadata has a cost.
+
+Note that one of the benefits of ZFS (and the non-automatic snapshots used
+here) is that it is easy to catch-up later to send the data which the original
+server would generate and write *during* the replication.  You can keep it
+actually working until the last minutes of the migration.
+
+After the large initial transfers complete, follow-up with a pass to stop
+the original services (e.g. whole `zones` either from OS default grouping
+or as wrapped by https://github.com/jimklimov/illumos-smf-zones scripting)
+and replicate any new information created on origin server during this
+transfer (and/or human outage for the time it would take you to focus on
+this task again, after the computers were busy for many hours...)
+
+NOTE: The original VM had ZnapZend managing regular ZFS snapshots and their
+off-site backups.  As the old machine would no longer be doing anything of
+consequence, keep the service there disable and also turn off the tunnel to
+off-site backup -- this serves to not confuse your remote systems as an admin.
+The new VM clone would just resume the same snapshot history, poured to the
+same off-site backup target.
+
+* `rsync` the `rpool/boot/` from old machine to new, which is a directory
+  right in the `rpool` dataset and has boot-loader configs; update `menu.lst`
+  for GRUB boot-loader settings;
+* run `zpool set bootfs=...` to enable the transplanted root file system;
+* `touch reconfigure` in the new rootfs (to pick up changed hardware on boot);
+* be ready to fiddle with `/etc/dladm/datalink.conf` (if using virtual links,
+  etherstubs, etc.), as well as `/etc/hostname*`, `/etc/defaultrouter` etc.
+* revise the loader settings regarding the console to use (should be `text`
+  first here on DigitalOcean) -- see in `/boot/solaris/bootenv.rc` and/or
+  `/boot/defaults/loader.conf`
+* reboot into production mode to see if it all actually "works" :)
+
+If the new VM does boot correctly, log into it and:
+
+* Revive the `znapzend` retention schedules: they have a configuration source
+  value of `received` in ZFS properties of the replica, so are ignored by the
+  tool. See `znapzendzetup list` on the original machine to get a list of
+  datasets to check on the replica, e.g.:
++
+----
+:; zfs get -s received all rpool/{ROOT,export,export/home/abuild/.ccache,zones{,-nosnap}} \
+    | grep znapzend | while read P K V S ; do zfs set $K="$V" $P & done
+----
+* re-enable `znapzend` and `zones` SMF services on the new VM;
+* check about `cloud-init` integration services; the `metadata-agent` seems
+  buildable and installable, it logged the SSH keys on console after service
+  manifest import (details elaborated in links above).
+
+DO-NUT-CI-OI VM preparation as build agent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As of this writing, the NUT CI Jenkins controller runs on DigitalOcean -- and
+feels a lot snappier in browsing and SSH management than the older Fosshost.org
+VMs.  Despite the official demise of the platform, they were alive and used as
+build agents for the newly re-hosted Jenkins controller for over a year until
+somebody or something put them to rest: the container with the old production
+Jenkins controller was set to not-auto-booting, and container with worker was
+attached to the new controller.
+
+The Jenkins SSH Build Agent setups involved here were copied on the controller
+(as XML files) and then updated to tap into the different "host" and "port"
+(so that the original definitions can in time be used for replicas on DO),
+and due to trust settings -- the `~jenkins/.ssh/known_hosts` file on the new
+controller had to be updated with the "new" remote system fingerprints.
+Otherwise, the migration went smooth.
+
+Similarly, existing Jenkins swarm agents from community PCs had to be taught
+the new DNS name (some had it in `/etc/hosts`), but otherwise connected OK.
+
+OmniOS
+~~~~~~
+
+Helpful links for this part of the quest:
+
+* https://omnios.org/download => see
+  link:https://downloads.omnios.org/media/lts/omnios-r151046.cloud.vmdk[] (LTS)
+  or link:https://downloads.omnios.org/media/stable/omnios-r151048.cloud.vmdk[] (recent stable)
+  or daily "bloody" images like
+  link:https://downloads.omnios.org/media/bloody/omnios-bloody-20231209.cloud.vmdk[]
+
+DO-NUT-CI-OO VM preparation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Added replicas of more existing VMs: OmniOS (relatively straightforward with the
+OI image).
+
+The original OmniOS VM used ZFS, so its contents were sent-received similarly
+to the OI VM explained above.
+
+
+FreeBSD
+~~~~~~~
+
+Helpful links for this part of the quest:
+
+* https://www.adminbyaccident.com/freebsd/how-to-upload-a-freebsd-custom-image-on-digitalocean/
+
+DO-NUT-CI-FREEBSD VM preparation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Added replicas of more existing VMs: FreeBSD 12 (needed to use a seed image,
+tried an OpenIndiana image first but did not cut it -- the ZFS options in its
+`rpool` were too new, so the older build of the BSD loader was not too eager
+to find the pool).
+
+The original FreeBSD VM used ZFS, so its contents were sent-received similarly
+to the OI VM explained above.
+
+* The (older version of?) FreeBSD loader rejected a `gzip-9` compressed
+  `zroot/ROOT` location, so care had to be taken to first disable compression
+  (only on the original system's tree of root filesystem datasets). The last
+  applied ZFS properties are used for the replication stream.
+
+
+OpenBSD
+~~~~~~~
+
+Helpful links for this part of the quest:
+
+* link:https://dev.to/nabbisen/custom-openbsd-droplet-on-digitalocean-4a9o[] --
+  how to piggyback OpenBSD via FreeBSD images (no longer offered by default on DO)
+
+DO-NUT-CI-OPENBSD VM creation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Added a replica of OpenBSD 6.5 VM as an example of relatively dated system in
+the CI farm, which went decently well as a `dd` stream of the local VM's vHDD
+into DO recovery console session:
+----
+#tgt-recovery# mbuffer -4 -I 12340 > /dev/vda
+
+#src# dd if=/dev/rsd0c | time nc myHostingIP 12340
+----
+...followed by a reboot and subsequent adaptation of `/etc/myname` and
+`/etc/hostname.vio*` files.
+
+I did not check if the DigitalOcean recovery image can directly mount BSD UFS
+partitions, as it sufficed to log into the pre-configured system.
+
+One caveat was that it was originally installed with X11, but DigitalOcean
+web-console did not pass through the mouse nor advanced keyboard shortcuts.
+So `rcctl disable xenodm` (to reduce the attack surface and resource waste).
+
+FWIW, `openbsd-7.3-2023-04-22.qcow2` "custom image" did not seem to boot.
+At least, no activity on display and the IP address did not go up.
+
+Linux
+~~~~~
+
+Helpful links for this part of the quest:
+
+* link:https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/Debian%20Bookworm%20Root%20on%20ZFS.html[]
+  -- first steps for moving our older Linux VM onto ZFS root
+
+DO-NUT-CI-LINUX VM creation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Spinning up the Debian-based Linux builder (with many containers for various
+Linux systems) with ZFS, to be consistent across the board, was an adventure.
+
+* DigitalOcean rescue CD is Ubuntu 18.04 based, it has an older ZFS version
+  so instructions from
+  https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/Debian%20Stretch%20Root%20on%20ZFS.html
+  have to be used particularly to `zpool create bpool` (with the dumbed-down
+  options for GRUB to be able to read that boot-pool);
+* For the rest of the system,
+  https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/Debian%20Bookworm%20Root%20on%20ZFS.html
+  is relevant for current distro (Debian 12) and is well-written;
+* Note that while in many portions the "MBR or (U)EFI" boot is a choice of
+  either one command to copy-paste or another, the spot about installing GRUB
+  actually requires both (MBR for disk to be generally bootable, and EFI to
+  proceed with that implementation);
+* If the (recovery) console with the final OS is too "tall" in the Web-UI,
+  so the lower rows are hidden by the DO banner with IP address, and you
+  can't see the commands you are typing, try `clear ; stty size` to check
+  the current display size (was 128x48 for me) and `stty rows 45` to reduce
+  it a bit. Running a full-screen program like `mc` helps gauge if you got
+  it right.
+
+DO-NUT-CI-LINUX VM OS transfer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After the root pool was prepared and the large tree of datasets defined
+to handle the numerous LXC containers, `abuild` home directory, and other
+important locations of the original system, `rsync -avPHK` worked well to
+transfer the data.
+
+DO-NUT-CI-LINUX VM preparation as build agent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Numerous containers with an array of Linux distributions are used as either
+Jenkins SSH build agents or swarm agents, as documented in chapters about
+LXC containers.

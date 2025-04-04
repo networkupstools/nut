@@ -21,7 +21,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Ever UPS driver (serial)"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -33,6 +33,9 @@ upsdrv_info_t upsdrv_info = {
 };
 
 static	unsigned char	upstype = 0;
+
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 static void init_serial(void)
 {
@@ -86,6 +89,15 @@ void upsdrv_initinfo(void)
 {
 	dstate_setinfo("ups.mfr", "Ever");
 	dstate_setinfo("ups.model", "%s", GetTypeUpsName());
+
+	/* commands ----------------------------------------------- */
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("load.off");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 void upsdrv_updateinfo(void)
@@ -143,7 +155,7 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 
-	dstate_setinfo("input.voltage", "%03ld", lineV);
+	dstate_setinfo("input.voltage", "%03lu", lineV);
 	dstate_setinfo("battery.voltage", "%03.2f", (double)acuV /10.0);
 
 	fVal=((double)acuV-95.0)*100.0;
@@ -161,20 +173,46 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	NUT_UNUSED_VARIABLE(extra);
+
+	/* FIXME: Which one is this - "load.off",
+	 * "shutdown.stayoff" or "shutdown.return"? */
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "load.off"))
+	{
+		if (!Code(2)) {
+			upslog_with_errno(LOG_INFO, "Code failed");
+			return STAT_INSTCMD_UNKNOWN;
+		}
+		ser_send_char(upsfd, 28);
+		ser_send_char(upsfd, 1);  /* 1.28 sec */
+		if (!Code(1)) {
+			upslog_with_errno(LOG_INFO, "Code failed");
+			return STAT_INSTCMD_UNKNOWN;
+		}
+		ser_send_char(upsfd, 13);
+		ser_send_char(upsfd, 8);
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 void upsdrv_shutdown(void)
 {
-	if (!Code(2)) {
-		upslog_with_errno(LOG_INFO, "Code failed");
-		return;
-	}
-	ser_send_char(upsfd, 28);
-	ser_send_char(upsfd, 1);  /* 1.28 sec */
-	if (!Code(1)) {
-		upslog_with_errno(LOG_INFO, "Code failed");
-		return;
-	}
-	ser_send_char(upsfd, 13);
-	ser_send_char(upsfd, 8);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("load.off", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

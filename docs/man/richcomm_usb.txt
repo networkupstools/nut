@@ -23,8 +23,8 @@ SUPPORTED HARDWARE
 The Richcomm dry-contact to USB solution is a generic interface that is
 used to upgrade an existing (RS-232) contact closure UPS interface to USB.
 As such, all the limitations of the underlying contact closure interface
-apply.  This means that you will only get the essentials in ups.status: OL,
-OB, and LB.  See also linkman:genericups[8].
+apply.  This means that you will only get the essentials in `ups.status`:
+`OL`, `OB`, and `LB`.  See also linkman:genericups[8].
 
 ////////
 TODO: Uncomment after solving https://github.com/networkupstools/nut/issues/1768

@@ -2,11 +2,33 @@ NUT design document
 ===================
 
 This software is designed around a layered scheme with drivers, a
-server and clients.   These layers communicate with text-based
+data server, and clients.   These layers communicate with text-based
 protocols for easier maintenance and diagnostics.
 
 The layering
 ------------
+
+The NUT driver(s) and the data server run on the same system, which
+has some communications media connected to the power device (e.g. a
+serial or USB link, a local IPMI interface, or a network interface
+in the engineering VLAN).  While each driver program talks the device
+vendor-defined protocol over such media, it also talks the local
+NUT Socket protocol to the local data server.
+
+Clients connect to the data server using the common NUT Network protocol
+over TCP, whether on `localhost` or remotely.
+
+One most notable client is `upsmon`, which is responsible for shutdown
+of the system it runs on, when the power situation becomes critical.
+Design-wise, it normally splits into two daemons to minimize security
+risks: one remains with 'root' privileges and is only used to start
+the configured `SHUTDOWNCMD` when the time comes, and the other half
+drops privileges and does the bulk of work.
+
+NOTE: There were requests for enhancement to also implement connectivity
+using the common NUT Network protocol using local sockets, so clients
+running on the same machine as the data server would not have to always
+use the TCP/IP stack; however this is currently not implemented.
 
 image:images/nut_layering.png[NUT layering]
 
@@ -197,8 +219,8 @@ delay the driver or server when waiting for a lock.
 In April 2003, the entire state management subsystem was removed and
 replaced with a single local socket.  The drivers listen for
 connections and push updates asynchronously to any listeners.  They also
-recognize a few commands.  Drivers also dampen updates, and only push
-them out when something actually changes.
+recognize a few commands.  Drivers also dampen the flow of updates, and
+only push them out when something actually changes.
 
 As a result, `upsd` no longer has to poll any files on the disk, and can
 just `select()` all of its file descriptors (fds) and wait for activity.
@@ -210,3 +232,15 @@ Drivers used to call `setinfo()` to change the local array, and then would
 call `writeinfo()` to push the array onto the disk, or into the
 mmap/shared memory space.  This introduced a lag since many drivers poll
 quite a few variables during an update.
+
+By 2013 much of the work on NUT for Windows branch (based off the NUT v2.6.5
+release) was completed, adding named pipes as the equivalent to local sockets
+as well as to cross-program signals.  This work got a face-lift and was merged
+into the main code base about a decade later, in 2022.
+
+In April 2023 (eventually released with NUT v2.8.1 and enhanced/fixed in
+later releases), a new use-case was added: interactions of two instances
+of a driver program over the local socket, as an alternative to signals
+for the already-running driver to reload configuration, exit and make way
+for a new instance of the driver daemon, or command the UPS to kill power
+without the overhead of a new connection made by such new instance.

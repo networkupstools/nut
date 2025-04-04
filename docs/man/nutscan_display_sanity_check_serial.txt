@@ -11,21 +11,23 @@ specified `nutscan_device_t` structure on stdout.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- void nutscan_display_sanity_check_serial(nutscan_device_t * device);
+	void nutscan_display_sanity_check_serial(nutscan_device_t * device);
+------
 
 DESCRIPTION
 -----------
 
 The *nutscan_display_sanity_check_serial()* function analyzes "serial"
 optional field in all NUT devices in 'device', and in case of duplicate
-or otherwise seemingly invalid values, prints comments to stdout.
+or otherwise seemingly invalid values, prints comments to `stdout`.
 It displays them in a way that it can be directly copied into the
-'ups.conf' file.
+`ups.conf` file.
 
 It is called from *nutscan_display_ups_conf_with_sanity_check()* to
-provide an aggregate content for 'ups.conf' file in one shot.
+provide an aggregate content for `ups.conf` file in one shot.
 
 SEE ALSO
 --------

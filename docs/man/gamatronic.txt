@@ -20,7 +20,7 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-Various - Rebuilt to work with Gamatronic UPS Units, but should recognize any
+Various -- Rebuilt to work with Gamatronic UPS Units, but should recognize any
 UPS that speaks the SEC protocol at 1200-19200 bps.
 
 EXTRA ARGUMENTS

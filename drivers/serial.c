@@ -85,7 +85,7 @@ static void ser_open_error(const char *port)
 			group->gr_name, (int) fs.st_gid);
 #endif
 
-	printf("     Mode of port: %04o\n\n", (int) fs.st_mode & 07777);
+	printf("     Mode of port: %04o\n\n", (unsigned int) fs.st_mode & 07777);
 
 	printf("Things to try:\n\n");
 	printf(" - Use another port (with the right permissions)\n\n");

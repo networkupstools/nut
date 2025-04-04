@@ -4,15 +4,17 @@ UPSCLI_SPLITNAME(3)
 NAME
 ----
 
-upscli_splitname - split a UPS definition into its components
+upscli_splitname - Split a UPS definition into its components
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_splitname(const char *buf, char **upsname,
-				char **hostname, int *port)
+	int upscli_splitname(const char *buf, char **upsname,
+		char **hostname, int *port)
+------
 
 DESCRIPTION
 -----------
@@ -25,26 +27,26 @@ number into 'port'.
 FORMATTING
 ----------
 
-A UPS definition is specified according to this format:
+An UPS definition is specified according to this format:
 
 	<upsname>[@<hostname>[:<port>]]
 
 When the UPS name is not given, this function will print an error to
-stderr and return -1 without changing anything.
+`stderr` and return '-1' without changing anything.
 
 Definitions without an explicit port value receive the default value of
-3493.  The default hostname is "localhost".
+'3493'.  The default hostname is "localhost".
 
 MEMORY USAGE
 ------------
 
-You must *free*(3) the pointers to 'upsname' and 'hostname'
+You must linkmanext:free[3] the pointers to 'upsname' and 'hostname'
 when you are done with them to avoid memory leaks.
 
 RETURN VALUE
 ------------
 
-The *upscli_splitname()* function returns 0 on success, or -1 if an
+The *upscli_splitname()* function returns '0' on success, or '-1' if an
 error occurs.
 
 SEE ALSO

@@ -1,6 +1,6 @@
 The jenkins-nut resources (images and CSS) were prepared for
 deployment of https://ci.networkupstools.org
-(C) 2021 by Jim Klimov <jimklimov@gmail.com>
+(C) 2021-2024 by Jim Klimov <jimklimov+nut@gmail.com>
 
 Customized Jenkins+NUT logo derived from NUT resources and
 https://www.jenkins.io/images/logos/hyderabad/hyderabad256.png

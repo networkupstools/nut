@@ -468,7 +468,7 @@ static void upsd_user_err(const char *errmsg)
 
 void user_load(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 
 	curr_user = NULL;

@@ -1,7 +1,7 @@
 /* common.h - prototypes for the common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -208,6 +208,13 @@ extern const char *UPS_VERSION;
  * have an end-of-line char of its own. */
 const char *describe_NUT_VERSION_once(void);
 
+/* Return a buffer with a (possibly multiline) string that can be printed
+ * as part of program help/usage message. Caller should not free() the buffer.
+ * Optional "progconf" allows to suggest config file(s) to study as well.
+ * NOTE: the string in buffer starts with text and ends with one EOL char.
+ */
+const char *suggest_doc_links(const char *progname, const char *progconf);
+
 /* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
  * hide the NUT tool name+version banners; show them by default */
 int banner_is_disabled(void);
@@ -308,6 +315,37 @@ int sendsignal(const char *progname, const char * sig, int check_current_prognam
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
 
+/*****************************************************************************
+ * String methods for space-separated token lists, used originally in dstate *
+ * NOTE: These methods are also exposed by external API (via libupsclient.h) *
+ * with the `upscli_` prefix, to ease third-party C NUT clients' parsing of  *
+ * `ups.status` et al.                                                       *
+ *****************************************************************************/
+
+/* Return non-zero if "string" contains "token" (case-sensitive),
+ * either surrounded by space character(s) or start/end of "string",
+ * or 0 if that token is not there, or if either string is NULL or empty.
+ */
+int	str_contains_token(const char *string, const char *token);
+
+/* Add "token" to end of string "tgt", if it is not yet there
+ * (prefix it with a space character if "tgt" is not empty).
+ * Return 0 if already there, 1 if token was added successfully,
+ * -1 if we needed to add it but it did not fit under the tgtsize limit,
+ * -2 if either string was NULL or "token" was empty.
+ * NOTE: If token contains space(s) inside, recurse to treat it
+ * as several tokens to add independently.
+ * Optionally calls "callback_always" (if not NULL) after checking
+ * for spaces (and maybe recursing) and before checking if the token
+ * is already there, and/or "callback_unique" (if not NULL) after
+ * checking for uniqueness and going to add a newly seen token.
+ * If such callback returns 0, abort the addition of token and return -3.
+ */
+int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+			    int (*callback_always)(char *, size_t, const char *),
+			    int (*callback_unique)(char *, size_t, const char *)
+);
+
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);
 
@@ -402,6 +440,7 @@ typedef enum eupsnotify_state {
 	NOTIFY_STATE_STATUS,	/* Send a text message per "fmt" below */
 	NOTIFY_STATE_WATCHDOG	/* Ping the framework that we are still alive */
 } upsnotify_state_t;
+const char *str_upsnotify_state(upsnotify_state_t state);
 /* Note: here fmt may be null, then the STATUS message would not be sent/added */
 int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
@@ -536,6 +575,25 @@ char * get_libname(const char* base_libname);
 /** @brief (Minimum) Size that a string must have to hold a UUID4 (i.e. UUID4 length + the terminating null character). */
 #define UUID4_LEN	37
 
+#define NUT_PATH_MAX	SMALLBUF
+#if (defined(PATH_MAX)) && PATH_MAX > NUT_PATH_MAX
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	PATH_MAX
+#endif
+#if (defined(MAX_PATH)) && MAX_PATH > NUT_PATH_MAX
+/* PATH_MAX is the POSIX equivalent for Microsoft's MAX_PATH */
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	MAX_PATH
+#endif
+#if (defined(UNIX_PATH_MAX)) && UNIX_PATH_MAX > NUT_PATH_MAX
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	UNIX_PATH_MAX
+#endif
+#if (defined(MAXPATHLEN)) && MAXPATHLEN > NUT_PATH_MAX
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	MAXPATHLEN
+#endif
+
 /* Provide declarations for getopt() global variables */
 
 #ifdef NEED_GETOPT_H
@@ -558,6 +616,15 @@ extern int optind;
 #	define seteuid(x) setresuid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #	define setegid(x) setresgid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #endif
+
+/* Several NUT programs define their set_exit_flag(int) methods
+ * which accept a signal code or similar parameter. Commonly they
+ * also accept a few negative values summarized below, to just
+ * exit (typically after completing a processing loop) with one
+ * of C standard exit codes.
+ */
+#define EF_EXIT_FAILURE	-1	/* eventually exit(EXIT_FAILURE); */
+#define EF_EXIT_SUCCESS	-2	/* eventually exit(EXIT_SUCCESS); */
 
 #ifdef WIN32
 /* FIXME : this might not be the optimal mapping between syslog and ReportEvent*/

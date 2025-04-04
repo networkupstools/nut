@@ -1,0 +1,560 @@
+NUT Quality Assurance and Build Automation Guide
+================================================
+:Author: Jim_Klimov
+:Author Initials: JK
+:top_srcdir: ..
+:docinfo: docinfo-since-v2.8.3.xml
+
+WARNING: This is a Work In Progress document.
+
+/////////////////////
+// Note on use of ":leveloffset: N" with absolute values below
+//
+// While docs recommend relative offsets or using them as parameters
+// to the include macro, this is a feature of asciidoctor - not asciidoc-py
+// (older implementation) that we rely on in most operating systems:
+// https://docs.asciidoctor.org/asciidoc/latest/directives/include-with-leveloffset/
+//
+// So we resort to absolute offsets (as explicitly not recommended) in the
+// document itself, that `Title.level` handling in the older code base supports:
+// https://github.com/asciidoc-py/asciidoc-py/blob/main/asciidoc/asciidoc.py#L1775
+/////////////////////
+
+Abstract
+--------
+
+The aim of this document is to describe the different ways we ensure and
+maintain the source code quality of Network UPS Tools, its portability to
+various platforms, and non-regression.
+
+Previous NUT releases may have included parts of this documentation in the
+developer guide or user manual. Most of this information can be applied to
+both automated testing environments and local development workflows.
+
+[[nut-qa]]
+include::nut-qa.txt[]
+
+Code and recipe analysis
+------------------------
+
+GNU Autotools distcheck
+~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_distcheck]]
+
+The Network UPS Tools project code base is managed by the
+link:https://www.gnu.org/software/automake/manual/html_node/GNU-Build-System.html[GNU
+Build System] colloquially known as "The Autotools", which include `autoconf`,
+`automake` and many other components. Some of their important roles are to
+generate the portable shell `configure` script to detect build environment
+capabilities and other nuances, and to help actually build the project with
+`Makefile` recipes (supported by many implementations of the standard POSIX
+`make` tool) generated from the `Makefile.am` templates by the `automake` tool.
+
+Among the many standard recipes promulgated by the Autotools, `make dist`
+handles creation of archive files with a release (or other) snapshot of a
+software project, which "distribute" all the original or generated files
+needed to build and install that project on a minimally capable end-user
+system (should have a compiler, `make`, and dependency libraries/headers,
+but is not required to have autotools, manual page generation tools, etc.)
+
+The `make distcheck` goal allows to validate that the constructed archive
+is in fact sufficient for such a build (includes all required files), and
+also that the code structure and its recipes properly support out-of-tree
+builds (as used on multi-platform and cross-build environments) without
+contaminating the source code directory structure.
+
+NUT's root `Makefile.am` defines the `DISTCHECK_FLAGS` eventually passed
+to the `configure` script executed as part of `distcheck` validation, and
+the default set of the flags requires to build everything.  This in turn
+constrains the set of systems where this validation can be performed to
+build environments that have all dependency projects installed, have the
+documentation generation tools, etc. in order to make sure that for all
+files that are compiled or otherwise processed by the build routine, we
+actually distribute the sources (implicitly as calculated by programs'
+listed sources, or via explicit `EXTRA_DIST` and similar statements)
+regardless of features enabled or not to be built in the original run.
+
+To avoid this constraint and allow the relevant `distcheck`-like validation
+to happen on environments without "everything and a kitchen sink" installed,
+further recipes are defined by NUT, such as:
+
+* `distcheck-light`: does not *require* the optional features to be built,
+  but just allow them (using `--with-all=auto --with-ssl=auto --with-doc=auto`
+  etc. flags);
+* `distcheck-light-man`: similar to the above, but require validation that
+  manual pages can all be built (do not build PDF or HTML formats, though);
+* `distcheck-fake-man`: for formal validation on systems without documentation
+  processing tools used by NUT recipes, populate the distribution archive
+  with "PLACEHOLDER" contents of missing pre-generated manual pages (such an
+  archive SHOULD NOT be delivered to end-users as a fully functional release),
+  so the validation of *recipes* around pre-built documentation installation
+  can be performed;
+* `distcheck-ci`: based on current build circumstances, dispatch to standard
+  strict `distcheck` or to `distcheck-fake-man`.
+
+Other recipes based on this concept are also defined, including:
+
+* `distcheck-valgrind`: build whatever code we can, and do not waste time on
+  documentation processing (`--with-all=auto --with-ssl=auto --with-doc=skip`),
+  to run the NUT test programs (`make check` in the built environment) through
+  the <<CI_VALGRIND,Valgrind>> memory-checking tool.
+
+Valgrind checks
+~~~~~~~~~~~~~~~
+[[CI_VALGRIND]]
+
+NUT sources include a helper script and a suppression file which allow
+developers and CI alike to easily run built programs through the popular
+link:https://valgrind.org/[Valgrind] tool and check for memory leaks,
+un-closed file descriptors, and more.
+
+One use-case to cover the population of <<CI_NUT_SELFTESTS,NUT self-test
+programs>> (and the common code they pull in from NUT libraries and drivers)
+is automated as the `make distcheck-valgrind` goal.
+
+:leveloffset: 3
+
+include::{top_srcdir}/scripts/valgrind/README.adoc[]
+
+:leveloffset: 0
+
+cppcheck
+~~~~~~~~
+[[CI_cppcheck]]
+
+The root `Makefile.am` includes a recipe to run a special build of NUT
+analyzed by the `cppcheck` tool (if detected by `configure` script) and
+produce a `cppcheck.xml` report for further tools to use, e.g. visualize
+it by the Jenkins Warnings plugin.
+
+Static analysis by compilers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_compiler_warnings]]
+
+As compilers like GCC and LLVM/CLANG evolve, so do their built-in code
+analyzers and warnings.  In fact, this is a large part of the reasoning
+behind using a vast array of systems along with the compilers they have
+(many points of view on the same code discover different issues in it),
+and on another -- behind the certain complexity pattern in NUT's own code
+base, where code recommended by one compiler seems offensive to another
+(so stacks of `pragma` expressions are used to quiesce certain warnings
+around certain lines).
+
+Pre-set warning options
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The options chosen into pre-sets that can be selected by `configure`
+script options are ones we use for different layers of CI tests.
+
+Values to note include:
+
+* `--enable-Werror(=yes/no)` -- make warnings fatal;
+
+* `--enable-warnings(=.../no)` -- enable certain warning presets:
+
+** `gcc-hard`, `clang-hard`, `gcc-medium`, `clang-medium`, `gcc-minimal`,
+`clang-minimal`, `all` -- actual definitions that are compiler-dependent
+(the latter just adds `-Wall` which may be relatively portable);
+
+** `hard`, `medium` or `minimal` -- if current compiler is detected as
+CLANG or GCC, apply corresponding setting from above (or `all` otherwise);
+
+** `gcc` or `clang` -- apply the set of options (regardless of detected
+compiler) with default "difficulty" hard-coded in `configure` script,
+to tweak as our codebase becomes cleaner;
+
+** `yes`/`auto` (also takes effect if `--enable-warnings` is requested
+without an `=ARG` part) -- if current compiler is detected as CLANG
+or GCC, apply corresponding setting with default "difficulty" from
+above (or `all` otherwise).
+
+Note that for backwards-compatibility reasons and to help filter out
+introduction of blatant errors, builds with compilers that claim GCC
+compatibility can enable a few easy warning presets by default. This
+can be avoided with an explicit argument to `--disable-warnings` (or
+`--enable-warnings=no`).
+
+All levels of warnings pre-sets for GCC in particular do not enforce
+the `-pedantic` mode for builds with C89/C90/ANSI standard revision
+(as guesstimated by `CFLAGS` content), because nowadays it complains
+more about the system and third-party library headers, than about NUT
+codebase quality (and "our offenses" are mostly something not worth
+fixing in this era, such as the use of `__func__` in debug commands).
+If there still are practical use-cases that require builds of NUT on
+pre-C99 compiler toolkits, pull requests are of course welcome -- but
+the maintainer team does not intend to spend much time on that.
+
+Hopefully this warnings pre-set mechanism is extensible enough if we
+would need to add more compilers and/or "difficulty levels" in the
+future.
+
+Finally, note that such pre-set warnings can be mixed with options
+passed through `CFLAGS` or `CXXFLAGS` values to your local `configure`
+run, but it is up to your compiler how it interprets the resulting mix.
+
+Shell script checks
+~~~~~~~~~~~~~~~~~~~
+[[CI_shellcheck]]
+
+The `make shellcheck` recipe finds files which the `file` tool determines
+to be POSIX or Bourne-Again shell scripts, and runs them through respective
+interpreter's (`bash` or system `/bin/sh`) test mode to validate the syntax
+works.
+
+Given that the `/bin/sh` implementation varies wildly on different systems
+(e.g. Korn shell, BASH, DASH and many others), this goal performed by CI on
+a large number of available platforms makes sure that the lowest-denominator
+syntax we use is actually understood everywhere.
+
+NOTE: At a later time additional tests, perhaps using the `shellcheck` tool,
+can be introduced into the stack.
+
+The `make shellcheck-nde` recipe calls `tests/nut-driver-enumerator-test.sh`
+to self-test the `scripts/upsdrvsvcctl/nut-driver-enumerator.sh.in` against
+an array of `SHELL_PROGS` (e.g. a list of interpreters provided by specific
+CI agents), and make sure that shell-script based processing of `ups.conf`
+in various interpreters provides the exact spelling of expected results.
+
+Documentation spelling checks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_spellcheck]]
+
+NUT recipes rely on the `aspell` tool (with `aspell-en` dictionary, default
+but different on numerous platforms), and a custom maintained dictionary file
+(specified in `Makefile` variables as `NUT_SPELL_DICT` -- by default, it is
+`${top_srcdir}/docs/nut.dict`) for additional words either unique to NUT or
+quite common but absent in older standard dictionaries on some systems.
+Operations are done according to `LANG` and `LC_ALL` values, both specified
+in `Makefile` variables as `ASPELL_ENV_LANG`, by default `en.UTF-8`.
+
+The "nut-website" generation has similar recipes and relies on integration
+with those provided by the main NUT code base, but maintains its own custom
+dictionary for words only present in the website sources.
+
+The root `Makefile.am` includes recipes which allow developers and maintainers
+to check spelling of all documentation (and/or update the custom dictionary),
+while recipes in numerous subdirectories (where `README.adoc` or other specific
+documentation files exist) have similar goals to check just their files.
+
+The actual implementation of the goals is in `docs/Makefile.am`, and either
+calls the tool if it was detected by the `configure` script, or skips work.
+
+For each checked file, a `*-spellchecked` touch-file is created in respective
+`${builddir}`, so it is not re-checked until the source document, the custom
+dictionary, or the `Makefile` recipe is updated.
+
+The ecosystem of `Makefile.am` files includes the following useful recipes:
+
+* `spellcheck`: passively check that all used words are in some dictionary
+  known to this system, or report errors for unknown words;
+* `spellcheck-interactive`: actively check the documents, and for unknown
+  words start the interactive mode of `aspell` so you can either edit the
+  source text (replace typos with suggested correct spelling), update the
+  custom dictionary, or ignore the hit (to rephrase the paragraph later, etc.)
++
+NOTE: This recipe can update the timestamp of the custom dictionary file,
+causing all documents to become fair game for re-checks of their spelling.
+* `spellcheck-sortdict`: make sure the custom dictionary file is sorted
+  alphanumerically (helpful in case of manual edits) and the word count
+  in the heading line is correct (helpful in case of manual edits or git
+  branch merges).
+
+The root `Makefile.am` also provides some aids for maintainers:
+
+* `spellcheck-interactive-quick`: runs "passive" `spellcheck` in parallel
+  `make` mode, and only if it errors out -- runs `spellcheck-interactive`;
+* `spellcheck-report-dict-usage`: prepares a `nut.dict.usage-report` file
+  to validate that words used in a custom dictionary are actually present
+  in any NUT documentation source file.
+
+Test automation
+---------------
+
+:leveloffset: 2
+
+[[CI_BUILD_SH]]
+include::{top_srcdir}/ci_build.adoc[]
+
+:leveloffset: 0
+
+Test programs in NUT codebase
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_NUT_SELFTESTS]]
+
+FIXME: Write the chapter text.
+
+For now, investigate files in the `tests/` directory contents in NUT sources.
+
+/////////////////////////////
+// end of CI_NUT_SELFTESTS //
+/////////////////////////////
+
+:leveloffset: 2
+
+[[NIT]]
+include::{top_srcdir}/tests/NIT/README.adoc[]
+
+:leveloffset: 0
+
+
+Continuous Integration (NUT CI farm) technologies
+-------------------------------------------------
+[[NUTCI_farm_technologies]]
+
+CI Farm configuration notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_Farm_Notes]]
+
+NOTE: This chapter contains information about NUT CI farm setup tricks
+that were applied at different times by the maintainer team to ensure
+regular builds and tests of the codebase.  Whether these are used in
+daily production today or not, similar setup should be possible locally
+on developer and contributor machines.
+
+Multiple FOSS CI providers and technologies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While there are many FOSS-friendly CI offerings, they are usually (and
+reasonably) focused on the OS market leaders -- offering recent releases
+of Linux, Windows and MacOS build agents, and sometimes a way to "bring
+your own device" to cover other systems.  The NUT CI farm does benefit
+from those offerings as well, using GitHub Actions with CodeQL for Linux
+code quality inspection, AppVeyor CI for Windows, and CircleCI for MacOS,
+to name a few.
+
+But on the other hand, being a massively multi-platform effort (and aiming
+to support older boxes that are still alive even if their vendors and/or
+distro versions are not), a comprehensive NUT CI approach requires many
+machines running uncommon operating systems.  This is where custom virtual
+machines help, and more so -- a core set of those hosted in the cloud and
+dedicated to the project, rather than only some resources intermittently
+contributed by community members which come and go.
+
+NOTE: Community-provided builders running on further systems are also
+welcome, and the option is of course supported, as managed by the
+link:https://github.com/networkupstools/jenkins-dynamatrix[Jenkins-Dynamatrix]
+effort which appeared due to such need, and runs the core NUT CI farm.
+
+We have also had historic experience with FOSS CI providers (and community
+members' machines) disappearing, so having NUT CI farm goals covered by
+multiple independent implementations is also a feature beyond having yet
+another set of digital eyes looking at our code quality (which is also a
+goal in itself).
+
+Jenkins is the way
+~~~~~~~~~~~~~~~~~~
+
+* https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/
+* https://github.com/jenkins-infra/stories/blob/main/src/user-story/jenkins-is-the-way-for-networkupstools/index.yaml
+
+The jenkins-dynamatrix library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[[Jenkins_Dynamatrix_Library]]
+
+FIXME: Write the chapter text.
+
+For now, see https://github.com/networkupstools/jenkins-dynamatrix sources
+(note the README and large comments at start of files may be obsolete, as
+of this writing -- documenting the initial ideas, but the implementation
+might differ from that over time).
+
+Jenkinsfile-dynamatrix cases in NUT sources
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[[Jenkins_Dynamatrix_Pipeline]]
+
+FIXME: Write the chapter text.
+
+For now, see the `Jenkinsfile-dynamatrix` in the NUT sources (maybe only git),
+e.g. https://github.com/networkupstools/nut/blob/master/Jenkinsfile-dynamatrix
+for the practical pipeline preparation and hand-off to library implementation.
+
+Jenkins CI
+^^^^^^^^^^
+[[NUT_CI_JENKINS]]
+
+Since mid-2021, the NUT CI farm is implemented by several virtual servers
+courteously provided originally by link:http://fosshost.org[Fosshost] and
+later by
+link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean].
+
+These run various operating systems as build agents, and a Jenkins instance
+to orchestrate the builds of NUT branches and pull requests on those agents.
+
+This is driven by `Jenkinsfile-dynamatrix` and a Jenkins Shared Library called
+link:https://github.com/networkupstools/jenkins-dynamatrix[jenkins-dynamatrix]
+which prepares a matrix of builds across as many operating systems,
+bitnesses/architectures, compilers, make programs and C/C++ revisions
+as it can -- based on the population of currently available build agents
+and capabilities which they expose as agent labels.
+
+This hopefully means that people interested in NUT can contribute to the
+build farm (and ensure NUT is and remains compatible with their platform)
+by running a Jenkins Swarm agent with certain labels, which would dial
+into https://ci.networkupstools.org/ controller. Please contact the NUT
+maintainer if you want to participate in this manner.
+
+The `Jenkinsfile-dynamatrix` recipe allows NUT CI farm to run different sets
+of build scenarios based on various conditions, such as the name of branch
+being built (or PR'ed against), changed files (e.g. C/C++ sources vs. just
+docs), and some build combinations may be not required to succeed.
+
+For example, the main development branch and pull requests against it must
+cleanly pass all specified builds and tests on various platforms with the
+default level of warnings specified in the `configure` script. These are
+balanced to not run too many build scenarios overall, but just a quick and
+sufficiently representative set.
+
+As another example, there is special handling for "fightwarn" pattern in
+the branch names to run many more builds with varying warning levels and
+more variants of intermediate language revisions, and so expose concerns
+deliberately missed by default warnings levels in "master" branch builds
+(the bar moves over time, as some classes of warnings become extinct from
+our codebase).
+
+Further special handling for branches named like `fightwarn.*89.*` regex
+enables more intensive warning levels for a GNU89 build specifically (which
+are otherwise disabled as noisy yet not useful for supported C99+ builds),
+and is intended to help develop fixes for support of this older language
+revision, if anyone would dare.
+
+Many of those unsuccessful build stages are precisely the focus of the
+"fightwarn" effort, and are currently marked as "may fail", so they end
+up as "UNSTABLE" (seen as orange bubbles in the Jenkins BlueOcean UI, or
+orange cells in the tabular list of stages in the legacy UI), rather than
+as "FAILURE" (red bubbles) for build scenarios that were not expected to
+fail and usually represent higher-priority problems that would block a PR.
+
+Developers whose PR builds (or attempts to fix warnings) did not succeed in
+some cell of such build matrix, can look at the individual logs of that cell.
+Beside indication from the compiler about the failure, the end of log text
+includes the command which was executed by CI worker and can be reproduced
+locally by the developer, e.g.:
+----
+22:26:01  FINISHED with exit-code 2 cmd:  (
+22:26:01  [ -x ./ci_build.sh ] || exit
+22:26:01
+22:26:01  eval BUILD_TYPE="default-alldrv" BUILD_WARNOPT="hard" \
+    BUILD_WARNFATAL="yes" MAKE="make"  CC=gcc-10 CXX=g++-10 \
+    CPP=cpp-10 CFLAGS='-std=gnu99 -m64' CXXFLAGS='-std=gnu++11 -m64' \
+    LDFLAGS='-m64' ./ci_build.sh
+22:26:01  )
+----
+or for autotools-driven scenarios (which prep, configure, build and test
+in separate stages -- so for reproducing a failed build you should also
+look at its configuration step separately):
+----
+22:28:18  FINISHED with exit-code 0 cmd:  ( [ -x configure ] || exit; \
+    eval  CC=clang-9 CXX=clang++-9 CPP=clang-cpp-9 CFLAGS='-std=c11 -m64' \
+    CXXFLAGS='-std=c++11 -m64' LDFLAGS='-m64' time ./configure )
+----
+
+To re-run such scenario locally, you can copy the line from `eval` (but
+without the `eval` keyword itself) up to and including the executed script
+or tool, into your shell. Depending on locally available compilers, you
+may have to tweak the `CC`, `CXX` and `CPP` arguments; note that a `CPP`
+may be specified as `/path/to/CC -E` for GCC and CLANG based toolkits
+at least, if they lack a standalone preprocessor program (e.g. IntelCC).
+
+NOTE: While NUT recipes do not currently recognize a separate `CXXCPP`,
+it would follow similar semantics.
+
+Some further details about the NUT CI farm workers are available in
+linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] and
+linkdoc:qa-guide[Custom NUT CI farm build agents: LXC multi-arch
+containers,CI_LXC,docs/ci-farm-lxc-setup.txt] documentation.
+
+AppVeyor CI
+~~~~~~~~~~~
+[[NUT_CI_APPVEYOR]]
+
+Primarily used for building NUT for Windows on Windows instances provided
+in the cloud -- and so ensure non-regression as well as downloadable archives
+with binary installation prototype area, intended for enthusiastic testing
+(proper packaging to follow). NUT for Windows build-ability was re-introduced
+soon after NUT 2.8.0 release.
+
+This relies on a few prerequisite packages and a common NUT configuration,
+as coded in the `appveyor.yml` file in the NUT codebase.
+
+CircleCI
+~~~~~~~~
+[[NUT_CI_CIRCLE]]
+
+Primarily used for building NUT for MacOS on instances provided in the cloud,
+and so ensure non-regression across several Xcode releases.
+
+This relies on a few prerequisite packages and a common NUT configuration,
+as coded in the `.circleci/config.yml` file in the NUT codebase.
+
+Travis CI
+~~~~~~~~~
+[[NUT_CI_TRAVIS]]
+
+See the `.travis.yml` file in project sources for a detailed list of third
+party dependencies and a large matrix of `CFLAGS` and compiler versions
+last known to work or to not (yet) work on operating systems available
+to that CI solution.
+
+[NOTE]
+======
+The cloud Travis CI offering became effectively defunct for
+open-source projects in mid-2021, so the `.travis.yml` file in NUT
+codebase is not actively maintained.
+
+Local private deployments of Travis CI are possible, so if anybody does
+use it and has updated markup to share, they are welcome to post PRs.
+======
+
+The NUT project on GitHub had integration with Travis CI to test a large
+set of compiler and option combinations, covering different versions of
+gcc and clang, C standards, and requiring to pass builds at least in a
+mode without warnings (and checking the other cases where any warnings
+are made fatal).
+
+CodeQL
+~~~~~~
+[[NUT_CI_CODEQL]]
+
+(Earlier this role was performed by LGTM.com) Run GitHub Actions for static
+analysis of C, C++ and Python code and recipes, to produce suggestions based
+on common coding flaws and best-practice security patterns.
+
+Continuous Integration (NUT CI farm) build agent preparation
+------------------------------------------------------------
+[[NUTCI_farm_agents]]
+
+Custom NUT CI farm build agents: VMs on DigitalOcean
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_VM_DigitalOcean]]
+
+This section details Installation of VMs on Digital Ocean.
+
+:leveloffset: 1
+
+include::ci-farm-do-setup.adoc[]
+
+:leveloffset: 0
+
+Custom NUT CI farm build agents: LXC multi-arch containers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[CI_LXC]]
+
+This section details configuration of LXC containers as build environments
+for NUT CI farm; this approach can also be used on developer workstations.
+
+:leveloffset: 1
+
+include::ci-farm-lxc-setup.txt[]
+
+:leveloffset: 0
+
+Prerequisites for building NUT on different OSes
+------------------------------------------------
+[[NUT_Config_Prereqs]]
+
+:leveloffset: 1
+
+include::config-prereqs.txt[]
+
+:leveloffset: 0

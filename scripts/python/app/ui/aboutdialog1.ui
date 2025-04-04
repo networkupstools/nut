@@ -31,12 +31,17 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>&lt;h1&gt;NUT-Monitor 1.3.1&lt;/h1&gt;
-&lt;p&gt;GUI to manage devices connected a NUT server.&lt;/p&gt;
-&lt;p&gt;For more information about NUT (Network UPS Tools) please visit the author's website.&lt;/p&gt;
-&lt;p style=&quot;margin-bottom: 1.5em&quot;&gt;https://www.networkupstools.org&lt;/p&gt;
-&lt;p style=&quot; font-size:8pt;&quot;&gt;Copyright (c) 2010 David Goncalves&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://www.lestat.st/informatique/projets/nut-monitor-en&quot;&gt;http://www.lestat.st&lt;/a&gt;&lt;/p&gt;</string>
+         <string>&lt;h1&gt;NUT-Monitor 2.0.2&lt;/h1&gt;
+&lt;p&gt;GUI to manage devices connected to a NUT server.&lt;br/&gt;
+Provided with NUT version @PACKAGE_VERSION@.&lt;/p&gt;
+&lt;p style=&quot; font-size:8pt;&quot;&gt;Copyright (C) 2010 David Goncalves&lt;br/&gt;
+Copyright (C) since 2010 by NUT Community&lt;/p&gt;
+&lt;p&gt;For more information about NUT (Network UPS Tools)&lt;br/&gt;
+please visit the project web-site:&lt;/p&gt;
+&lt;p style=&quot;margin-bottom: 1.5em&quot;&gt;&lt;a href=&quot;@NUT_WEBSITE_BASE@&quot;&gt;@NUT_WEBSITE_BASE@&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;For more information about the GUI please visit&lt;br/&gt;
+the author's web-site:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.lestat.st/en/informatique/projets/nut-monitor&quot;&gt;https://www.lestat.st&lt;/a&gt;&lt;/p&gt;</string>
         </property>
         <property name="textFormat">
          <enum>Qt::RichText</enum>

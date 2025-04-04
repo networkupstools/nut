@@ -26,4 +26,4 @@ int nut_setenv(const char *name, const char *value, int overwrite)
 	rv = putenv(buffer); /* man putenv, do not free(buffer) */
 	return (rv);
 }
-#endif
+#endif	/* !HAVE_SETENV */

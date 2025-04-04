@@ -12,6 +12,7 @@ Miscellaneous functions in Network UPS Tools high-level client access library
 SYNOPSIS
 --------
 
+------
 	#include <nutclient.h>
 
 	typedef void* NUTCLIENT_t;
@@ -31,32 +32,35 @@ SYNOPSIS
 	void nutclient_device_master(NUTCLIENT_t client, const char* dev);
 
 	void nutclient_device_forced_shutdown(NUTCLIENT_t client, const char* dev);
+------
 
 DESCRIPTION
 -----------
 
-The *nutclient_authenticate()* function authenticates the user.
+* The *nutclient_authenticate()* function authenticates the user.
 
-* 'login' is the user name.
+  - 'login' is the user name.
 
-* 'passwd' is the user password.
+  - 'passwd' is the user password.
 
-The *nutclient_logout()* function disconnects gracefully from the server.
+* The *nutclient_logout()* function disconnects gracefully from the server.
 
-The *nutclient_device_login()* function logs the fact that a system
-is drawing power from this UPS.
+* The *nutclient_device_login()* function logs the fact that a system
+  is drawing power from this UPS.
 
-The *nutclient_get_device_num_logins()* function retrieves the number of
-clients which have been logged for this device.
+* The *nutclient_get_device_num_logins()* function retrieves the number of
+  clients which have been logged for this device.
 
-The *nutclient_device_master()* and *nutclient_device_primary()* (note:
-the former is obsoleted since NUT v2.8.0 in favor of the latter) functions
-make sure that primary-mode functions like FSD are available if necessary.
+* The *nutclient_device_master()* and *nutclient_device_primary()* (note:
+  the former is obsoleted since NUT v2.8.0 in favor of the latter) functions
+  make sure that primary-mode functions like FSD are available if necessary.
 
-The *nutclient_device_forced_shutdown()* function sets the "forced shutdown"
-flag on the device.
+* The *nutclient_device_forced_shutdown()* function sets the "forced shutdown"
+  (FSD) flag on the device.
 
-'dev' is the device name.
+Common arguments:
+
+* 'dev' is the device name.
 
 SEE ALSO
 --------

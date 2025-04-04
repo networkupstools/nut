@@ -4,6 +4,9 @@
 /cppnit
 /cppnit.log
 /cppnit.trs
+/driver_methods_utest
+/driver_methods_utest.log
+/driver_methods_utest.trs
 /gpiotest
 /gpiotest.log
 /gpiotest.trs

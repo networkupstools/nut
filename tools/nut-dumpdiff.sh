@@ -13,7 +13,7 @@
 #
 
 if [ $# = 2 ] && [ -s "$1" ] && [ -s "$2" ]; then
-    echo "=== $0: comparing '$1' (-) vs '$2' (+)" >&2
+    echo "=== $0: comparing '$1' (-) vs. '$2' (+)" >&2
 else
     echo "=== $0: aborting: requires two filenames to compare as arguments" >&2
     exit 1

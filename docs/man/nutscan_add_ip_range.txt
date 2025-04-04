@@ -10,27 +10,28 @@ and ending addresses) to a `nutscan_ip_range_list_t` structure.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- /* One IP address range: */
- typedef struct nutscan_ip_range_s {
-    char * start_ip;
-    char * end_ip;
-    struct nutscan_ip_range_s * next;
- } nutscan_ip_range_t;
+	/* One IP address range: */
+	typedef struct nutscan_ip_range_s {
+		char * start_ip;
+		char * end_ip;
+		struct nutscan_ip_range_s * next;
+	} nutscan_ip_range_t;
 
- /* List of IP address ranges and helper data: */
- typedef struct nutscan_ip_range_list_s {
-    nutscan_ip_range_t * ip_ranges;		/* Actual linked list of entries, first entry */
-    nutscan_ip_range_t * ip_ranges_last;	/* Pointer to end of list for quicker additions */
-    size_t ip_ranges_count;			/* Counter of added entries */
- } nutscan_ip_range_list_t;
+	/* List of IP address ranges and helper data: */
+	typedef struct nutscan_ip_range_list_s {
+		nutscan_ip_range_t * ip_ranges;		/* Actual linked list of entries, first entry */
+		nutscan_ip_range_t * ip_ranges_last;	/* Pointer to end of list for quicker additions */
+		size_t ip_ranges_count;			/* Counter of added entries */
+	} nutscan_ip_range_list_t;
 
-
- size_t nutscan_add_ip_range(
-    nutscan_ip_range_list_t *irl,
-    char * start_ip,
-    char * end_ip);
+	size_t nutscan_add_ip_range(
+		nutscan_ip_range_list_t *irl,
+		char * start_ip,
+		char * end_ip);
+------
 
 DESCRIPTION
 -----------
@@ -42,9 +43,9 @@ or 0 in case of non-fatal errors.
 
 This function skips work if:
 
-* the structure pointer is `NULL` (0 is returned);
-* neither `start_ip` nor `end_ip` were provided, i.e. they have `NULL` values
-  (current list length from the structure is returned);
+* the structure pointer is `NULL` ('0' is returned);
+* neither `start_ip` nor `end_ip` were provided, i.e. they both have `NULL`
+  values (current list length from the structure is returned);
 * failed to allocate the entry (fatal).
 
 If only one of `start_ip` or `end_ip` values was provided (not `NULL`), a

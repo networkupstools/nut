@@ -30,6 +30,7 @@ Installation:
   on Debian-like systems, or `brew install --cask macfuse@dev` on MacOS with
   Homebrew community packaging.
 * Download and build the `execfuse` daemon:
++
 ----
 :; git clone https://github.com/vi/execfuse
 :; cd execfuse

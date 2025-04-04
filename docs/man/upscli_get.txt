@@ -4,15 +4,21 @@ UPSCLI_GET(3)
 NAME
 ----
 
-upscli_get - retrieve data from an UPS
+upscli_get - Retrieve data from an UPS
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_get(UPSCONN_t *ups, size_t numq, const char **query,
-			size_t *numa, char ***answer)
+	int upscli_get(
+		UPSCONN_t *ups,
+		size_t numq,
+		const char **query,
+		size_t *numa,
+		char ***answer)
+------
 
 DESCRIPTION
 -----------
@@ -29,7 +35,7 @@ The number of usable answer components will be returned in 'numa'.
 USES
 ----
 
-This function implements the "GET" command in the protocol.
+This function implements the "GET" command in the NUT protocol.
 As a result, you can use it to request many different things
 from the server.
 
@@ -82,10 +88,12 @@ ERROR CHECKING
 --------------
 
 This function will check your query against the response from
-linkman:upsd[8].  For example, if you send "VAR" "su700" "ups.status",
+linkman:upsd[8] data server.
+
+For example, if you send `"VAR"` `"su700"` `"ups.status"`,
 it will expect to see those at the beginning of the response.
 
-If the results from *upsd* do not pass this case-insensitive test
+If the results from `upsd` do not pass this case-insensitive test
 against your request, this function will return an error.   When this
 happens, linkman:upscli_upserror[3] will return 'UPSCLI_ERR_PROTOCOL'.
 
@@ -93,7 +101,7 @@ ANSWER ARRAY LIFETIME
 ---------------------
 
 The pointers contained within the 'answer' array are only valid
-until the next call to a 'upsclient' function which references them.
+until the next call to an 'upsclient' function which references them.
 If you need to use data from multiple calls, you must copy it somewhere
 else first.
 
@@ -109,7 +117,7 @@ Any access after that point is also undefined.
 RETURN VALUE
 ------------
 
-The *upscli_get()* function returns 0 on success, or -1 if an
+The *upscli_get()* function returns '0' on success, or '-1' if an
 error occurs.
 
 If *upsd* disconnects, you may need to handle or ignore `SIGPIPE`
@@ -119,10 +127,12 @@ the library writes to the disconnected socket.
 The following code in your initialization function will allow the
 *upscli_get()* call to return an error in that case:
 
-   #include <signal.h>
-   ...
-   signal (SIGPIPE, SIG_IGN);
-   ...
+------
+	#include <signal.h>
+	...
+	signal (SIGPIPE, SIG_IGN);
+	...
+------
 
 SEE ALSO
 --------

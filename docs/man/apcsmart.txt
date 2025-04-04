@@ -62,11 +62,14 @@ those are pretty fuzzy):
 	it through *NUT* is to purchase a "legacy communications card" --
 	part #AP9620 (google 'AP9620' for more details). Or if that's not
 	an option, rely on official software.
-	+
-	UPDATE: later releases of *apcupsd* claimed support for new APC
++
+--
+.UPDATE:
+Later releases of *apcupsd* claimed support for new APC
 	protocols, so it is worth checking if *apcupsd* software would
 	work with your device, and *apcupsd-ups* NUT driver would handle
 	it as part of NUT-managed ecosystem.
+--
 
 Microsol models::
     Several Microsol serial models sold in Brazil have been rebranded
@@ -82,7 +85,7 @@ Microsol models::
 
 Another thing to remember is that Smart protocol is not USB protocol.
 If you have UPS with both USB and serial ports, then depending on how
-you connect it, you will need either apcsmart or usbhid-ups driver.
+you connect it, you will need either `apcsmart` or `usbhid-ups` driver.
 
 CABLING
 -------
@@ -104,11 +107,11 @@ wiring.
 
 You can specify alternate cable in linkman:ups.conf[5]:
 
-*cable*=940-0095B
+    *cable*=940-0095B
 
 Alternatively, you can also provide it on the command line using:
 
--x *cable*=940-0095B
+    -x *cable*=940-0095B
 
 TTY MODES
 ---------
@@ -119,11 +122,11 @@ obscure serial cards or serial-USB converters that could cause problems
 as well. You can use 'ttymode=' option to force non-canonical discipline
 in linkman:ups.conf[5]:
 
-*ttymode*=raw
+    *ttymode*=raw
 
 Alternatively, you can also provide it on the command line using:
 
--x *ttymode*=raw
+    -x *ttymode*=raw
 
 NOTE: Any other value will make the driver work in the canonical mode.
 
@@ -177,17 +180,19 @@ command if your UPS supports it (and is not too old, see below).
         The behaviour is -- unfortunately -- similarly primitive to *S*.
 		The UPS unconditionally wakes up after $$nnn*6$$ minutes:
 		*it doesn't care if the power returned !*
-		If nnn = 000, then UPS will do precisely nothing.
-		On those models you're better specifying nnn > 0, if you can
++
+NOTE: If 'nnn = 000', then UPS will do precisely nothing.
+		On those models you should better specify 'nnn > 0', if you can
 		estimate the kind of power problems that might be happening
 		in your environment.
-        Another thing to consider with "old" models -- you might lose the
++
+Another thing to consider with "old" models -- you might lose the
         connection with the UPS, until it wakes up (with *S*, the serial
         connection is kept alive).
 
     "new" models: ::
         All the usual variables defined in EEPROM are respected (see *S*).
-        Additionally, if nnn > 0, the $$nnn*6$$ minutes are added to EEPROM
+        Additionally, if 'nnn > 0', the $$nnn*6$$ minutes are added to EEPROM
         defined delay. UPS will not power up if it's running on batteries,
         contrary to what "old" models used to do -- the combined delay is
 		counted from the moment of power return.
@@ -286,22 +291,22 @@ in driver's section of linkman:ups.conf[5]. When such option is in effect,
 the core driver will ignore LB state as reported by specific driver and
 start shutdown basing the decision _only_ on two conditions:
 
-battery.charge < battery.charge.low
+    battery.charge < battery.charge.low
 
 *OR*
 
-battery.runtime < battery.runtime.low
+    battery.runtime < battery.runtime.low
 
 Of course -- if any of the variables are not available, the appropriate
 condition is not checked. If you want to explicitly disable one of the
 conditions, simply override the right hand variable causing the condition
 to always evaluate to false (you can even provide negative numbers).
 
-APC UPSes don't have battery.charge.low -- you will have to define it
+APC UPSes don't have `battery.charge.low` -- you will have to define it
 if you want to use such condition (prefix the variable with `override.`
 or `default.`).
 
-"New" units have battery.runtime.low, but depending on battery quality,
+"New" units have `battery.runtime.low`, but depending on battery quality,
 firmware version, calibration and UPS load -- this variable can be
 underestimated quite a bit -- especially right after going into OB state.
 This in turn can cause LB to be asserted, which under normal conditions
@@ -320,7 +325,7 @@ Simple example:
 This would cause apcsmart to go into shutdown _only_ if detected
 battery charge < 15%. Runtime condition is always false in this example.
 
-You could ask -- why bother ? Well, the reason is already hinted above.
+You could ask -- why bother? Well, the reason is already hinted above.
 APC units can be very picky about the batteries, and their firmware can
 underestimate the remaining runtime (especially right after going into
 OB state). *ignorelb* option and *$$override.*$$* let you remain in
@@ -391,14 +396,12 @@ AUTHORS AND HISTORY
 -------------------
 
 Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk> (drawing
-heavily on the original `apcsmart` driver by Russell Kroll).
+heavily on the original `apcsmart` driver by Russell Kroll) wrote a
+driver called `newapc` for a time, which was renamed in the 1.5 series.
 
-This driver was called `newapc` for a time and was renamed in
-the 1.5 series.
-
-In 2.6.2 it was renamed to `apcsmart-old`, being superseded by
-updated version with new features, which is maintained by Michal
-Soltys <soltys@ziu.info>
+In 2.6.2 that driver was renamed finally to `apcsmart-old`, being superseded
+by this updated version with new features which currently holds the
+`apcsmart` name, and is maintained by Michal Soltys <soltys@ziu.info>.
 
 SEE ALSO
 --------

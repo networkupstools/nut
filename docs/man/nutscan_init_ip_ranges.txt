@@ -10,9 +10,11 @@ structure (and optionally create one in the first place).
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- nutscan_ip_range_list_t * nutscan_init_ip_ranges(nutscan_ip_range_list_t *irl);
+	nutscan_ip_range_list_t * nutscan_init_ip_ranges(nutscan_ip_range_list_t *irl);
+------
 
 DESCRIPTION
 -----------
@@ -27,7 +29,7 @@ as it may have garbage from stack after allocation.
 The caller must free the contents of the structure after completing its use
 by calling `nutscan_free_ip_ranges` (after which the structure can be re-used),
 and explicitly `free()` the structure object itself if it was allocated
-dynamically (e.g. by calling `nutscan_init_ip_ranges(NULL)`).
+dynamically (e.g. by originally calling `nutscan_init_ip_ranges(NULL)`).
 
 NOTES
 -----

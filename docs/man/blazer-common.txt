@@ -89,7 +89,7 @@ Setting this flag will make the driver skip this step.
 *protocol =* 'string'::
 
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values 'megatec', 'megatec/old', 'mustek' and 'zinto'.
+Supported values are 'megatec', 'megatec/old', 'mustek' and 'zinto'.
 
 *runtimecal =* 'value,value,value,value'::
 

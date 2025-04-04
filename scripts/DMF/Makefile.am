@@ -276,9 +276,9 @@ if WITH_REGENERATE_DMF_SNMP
 	    ( cd "$(@D)" && \
 	      LANG=C LC_ALL=C TZ=UTC \
 	      CC='$(CC)' CXX='$(CXX)' CPP='$(CPP)' LD='$(LD)' \
-	      CFLAGS="$(DMFTOOLS_CFLAGS) $(CFLAGS) $(AM_CFLAGS)" \
+	      CFLAGS="$(DMFTOOLS_CFLAGS) $(CFLAGS_DMF) $(AM_CFLAGS)" \
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
-	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
+	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS_DMF) $(AM_CPPFLAGS)" \
 	      ABS_BUILDDIR="$(abs_builddir)" \
 	      DEBUG="$(V)" \
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" "$@" \

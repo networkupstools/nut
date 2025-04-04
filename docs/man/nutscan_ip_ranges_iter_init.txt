@@ -10,11 +10,13 @@ a `nutscan_ip_range_list_iter_t` structure.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- char * nutscan_ip_ranges_iter_init(
-    nutscan_ip_range_list_iter_t *irliter,
-    const nutscan_ip_range_list_t *irl);
+	char * nutscan_ip_ranges_iter_init(
+		nutscan_ip_range_list_iter_t *irliter,
+		const nutscan_ip_range_list_t *irl);
+------
 
 DESCRIPTION
 -----------
@@ -34,6 +36,7 @@ This function skips work if:
 
 Returns the first IP address from the first registered IP address range.
 Subsequent addresses can be returned by `nutscan_ip_ranges_iter_inc()`.
+The caller SHOULD NOT free this string while iterating.
 
 NOTES
 -----

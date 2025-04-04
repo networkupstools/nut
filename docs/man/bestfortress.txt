@@ -32,7 +32,7 @@ This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
 *baudrate*='num'::
-Set the speed of the serial connection - 1200, 2400, 4800 or 9600.
+Set the speed of the serial connection -- 1200, 2400, 4800 or 9600.
 
 *max_load*='VA'::
 Set the full-scale value of the *ups.load* variable.

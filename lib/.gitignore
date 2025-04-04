@@ -1,5 +1,6 @@
 /libnutclient.pc
 /libnutclientstub.pc
+/libnutconf.pc
 /libnutscan.pc
 /libupsclient-config
 /libupsclient.pc

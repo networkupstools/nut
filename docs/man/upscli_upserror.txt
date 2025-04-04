@@ -9,9 +9,11 @@ upscli_upserror - Get current error number for connection
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_upserror(UPSCONN_t *ups);
+	int upscli_upserror(UPSCONN_t *ups);
+------
 
 DESCRIPTION
 -----------
@@ -31,7 +33,7 @@ RETURN VALUE
 ------------
 
 The *upscli_upserror*() function returns one of the `UPSCLI_ERR_*`
-values from `upsclient.h`, or 0 if no error has occurred.
+values from `upsclient.h`, or '0' if no error has occurred.
 
 SEE ALSO
 --------

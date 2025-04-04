@@ -42,6 +42,8 @@ let ups_global   = "chroot"
                  | "user"
                  | "group"
                  | "debug_min"
+                 | "STATEPATH"
+                 | "statepath"
 
 (* This expression did involve a lot of courtship around the parser *)
 let ups_fields_re = /(default|override)\.[^:=#\r\t\n \/]+/
@@ -57,6 +59,7 @@ let ups_fields   = "driver"
                  | "user"
                  | "group"
                  | "debug_min"
+                 | "LIBUSB_DEBUG"
 @SPECIFIC_DRV_VARS@
 
 let ups_entry    = IniFile.indented_entry (ups_global|ups_fields|ups_fields_re) ups_sep ups_comment

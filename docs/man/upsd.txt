@@ -4,7 +4,7 @@ UPSD(8)
 NAME
 ----
 
-upsd - UPS information server
+upsd - Network UPS Tools data server
 
 SYNOPSIS
 --------
@@ -16,8 +16,8 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-*upsd* is responsible for serving the data from the drivers to the clients.  It
-connects to each driver and maintains a local cache of the current state.
+*upsd* is responsible for serving the data from the drivers to the clients.
+It connects to each driver and maintains a local cache of the current state.
 Queries from the clients are served from this cache, so delays are minimal.
 
 It also conveys administrative messages from the clients back to the drivers,
@@ -27,7 +27,10 @@ Communication between *upsd* and clients is handled on a TCP port.
 Configuration details for this port are described in linkman:upsd.conf[8].
 
 This program is essential, and must be running at all times to actually
-make any use out of the drivers and clients.
+make any use out of the drivers and clients (except for final UPS power-off
+commands just before your server goes down, which NUT driver programs can
+do alone when called as `drivername -k` in a shutdown hook or late ordered
+SysV init script).
 
 Controls in the configuration files allow you to limit access to the
 server, but you should also use a firewall for extra protection.  Client
@@ -66,18 +69,17 @@ upsd will run in the background, regardless of debugging settings.
 Display the help text.
 
 *-r* 'directory'::
-upsd will *chroot*(2) to 'directory' shortly after startup
-and before parsing any configuration files with this option set.  You
-can use this to create a "jail" for greater security.
+upsd will linkmanext:chroot[2] to 'directory' shortly after startup
+and before parsing any configuration files with this option set.
+You can use this to create a "jail" for greater security.
 +
 You must coordinate this with your drivers, as upsd must be able to find
 the state path within 'directory'.  See linkman:upsdrvctl[8] and
 linkman:nutupsdrv[8].
 
 *-u* 'user'::
-Switch to user 'user' after startup if started as root.  This
-overrides whatever you may have compiled in with `configure
---with-user`.
+Switch to user 'user' after startup if started as root.
+This overrides whatever you may have compiled in with `configure --with-user`.
 
 *-V*::
 Display the version of the program.
@@ -87,8 +89,9 @@ RELOADING
 
 upsd can reload its configuration files without shutting down the process
 if you send it a SIGHUP or start it again with `-c reload`.  This only works
-if the background process is able to read those files, and if the daemon did
-save a PID file when it started.
+if the background process is able to read those files (permissions, `chroot`
+jail), and if the daemon did save a PID file when it started (for the `reload`
+command to find the older instance).
 
 [NOTE]
 ======
@@ -101,15 +104,17 @@ distribution uses NUT-provided unit definitions, `systemctl reload upsd`
 may also work.
 ======
 
-If you think that upsd can't reload, check your syslog for error messages.
+If you think that `upsd` can't reload, check your syslog for error messages.
 If it's complaining about not being able to read the files, then you need
 to adjust your system to make it possible.  Either change the permissions
-on the files, or run upsd as another user that will be able to read them.
+on the files, or run `upsd` as another user that will be able to read them,
+or restart it fully (may be needed e.g. if running in a `chroot` jail).
 
-DO NOT make your upsd.conf or upsd.users world-readable, as those files
-hold important authentication information.  In the wrong hands, it could
-be used by some evil person to spoof your primary-mode upsmon and command
-your systems to shut down.
+DO NOT make your linkman:upsd.conf[5] or linkman:upsd.users[5] files
+world-readable, as they hold important authentication information.
+In the wrong hands, it could be used by some evil person to spoof
+your primary-mode `upsmon` and command your systems to shut down,
+for example.
 
 DIAGNOSTICS
 -----------
@@ -137,15 +142,17 @@ If the server is build with tcp-wrappers support enabled, it will check if
 the NUT username is allowed to connect from the client address through the
 `/etc/hosts.allow` and `/etc/hosts.deny` files. Note that this will
 only be done for commands that require to be logged into the server. Further
-details are described in *hosts_access*(5).
+details are described in linkmanext:hosts_access[5].
 
 FILES
 -----
 
-The general upsd configuration file is linkman:upsd.conf[5].  The
-administrative functions like SET and INSTCMD for users are defined and
-controlled in linkman:upsd.users[5].  UPS definitions are found in
-linkman:ups.conf[5].
+The general `upsd` configuration file is linkman:upsd.conf[5].
+
+The administrative functions like `SET` and `INSTCMD` for users, and various
+`upsmon` roles, are defined and controlled in linkman:upsd.users[5].
+
+UPS definitions are found in linkman:ups.conf[5] (shared with actual drivers).
 
 ENVIRONMENT VARIABLES
 ---------------------
@@ -167,6 +174,16 @@ The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
 *upsd* and drivers store .pid files.  If this variable is not set,
 *upsd* and drivers use either *NUT_STATEPATH* if set, or ALTPIDPATH if set,
 or otherwise the built-in default *STATEPATH*.
+
+*NUT_QUIET_INIT_UPSNOTIFY=true* can be used to prevent daemons which can
+notify service management frameworks (such as systemd) about passing
+their lifecycle milestones from emitting such notifications (including
+those about lack of system support for such modern features, once per run).
+
+*NUT_QUIET_INIT_BANNER=true* can be used to suppress NUT tool name and
+version banner. NOT recommended for services due to adverse troubleshooting
+impact, but may be helpful in shell profiles or scripts which process NUT
+tool outputs.
 
 SEE ALSO
 --------

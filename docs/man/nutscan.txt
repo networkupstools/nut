@@ -22,7 +22,7 @@ DISCOVERY FUNCTIONS
 
 First, include the required header file:
 
- #include <nut-scan.h>
+    #include <nut-scan.h>
 
 Then, to discover new devices, use the appropriate function:
 

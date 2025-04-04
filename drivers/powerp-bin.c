@@ -34,7 +34,7 @@
 #include "nut_stdint.h"
 #include "nut_float.h"
 
-#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.60"
+#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.61"
 
 typedef struct {
 	unsigned char	start;

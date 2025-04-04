@@ -9,5 +9,5 @@ nutuser=@RUN_AS_USER@
 Name: libnutclientstub
 Description: Stub for UPS monitoring with Network UPS Tools (primarily for C++ tests)
 Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lnutclientstub
+Libs: -L${libdir} @LDFLAGS_NUT_RPATH@ -lnutclientstub
 Cflags: -I${includedir}

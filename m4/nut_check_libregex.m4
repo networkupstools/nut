@@ -8,13 +8,18 @@ AC_DEFUN([NUT_CHECK_LIBREGEX],
 [
 if test -z "${nut_have_libregex_seen}"; then
 	nut_have_libregex_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	REQUIRES_ORIG="${REQUIRES}"
 	CFLAGS=""
 	LIBS=""
+	REQUIRES=""
+	depCFLAGS=""
+	depLIBS=""
+	depREQUIRES=""
 
 	dnl Actually did not see it in any systems' pkg-config info...
 	dnl Part of standard footprint?
@@ -40,17 +45,21 @@ if test -z "${nut_have_libregex_seen}"; then
 	)
 
 	AS_IF([test x"$LIBREGEX_VERSION" != xnone && test x"$LIBREGEX_MODULE" != x],
-		[CFLAGS="`$PKG_CONFIG --silence-errors --cflags "${LIBREGEX_MODULE}" 2>/dev/null`"
-		 LIBS="`$PKG_CONFIG --silence-errors --libs "${LIBREGEX_MODULE}" 2>/dev/null`"
-		 REQUIRES="${LIBREGEX_MODULE}"
+		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags "${LIBREGEX_MODULE}" 2>/dev/null`"
+		 depLIBS="`$PKG_CONFIG --silence-errors --libs "${LIBREGEX_MODULE}" 2>/dev/null`"
+		 depREQUIRES="${LIBREGEX_MODULE}"
 		],
-		[CFLAGS=""
-		 LIBS=""
-		 REQUIRES=""
+		[depCFLAGS=""
+		 depLIBS=""
+		 depREQUIRES=""
 		]
 	)
 
 	dnl Check if libregex is usable
+	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
+	LIBS="${LIBS_ORIG} ${depLIBS}"
+	REQUIRES="${REQUIRES_ORIG} ${depREQUIRES}"
+
 	AC_LANG_PUSH([C])
 	dnl # With USB we can match desired devices by regex
 	dnl # (and currently have no other use for the library);
@@ -76,9 +85,16 @@ if test -z "${nut_have_libregex_seen}"; then
 		])
 	])
 
+	dnl Collect possibly updated dependencies after AC SEARCH LIBS:
+	AS_IF([test x"${LIBS}" != x"${LIBS_ORIG} ${depLIBS}"], [
+		AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
+			depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
+		])
+	])
+
 	AS_IF([test x"${nut_have_regex}" = xyes], [
-		LIBREGEX_CFLAGS="${CFLAGS}"
-		LIBREGEX_LIBS="${LIBS}"
+		LIBREGEX_CFLAGS="${depCFLAGS}"
+		LIBREGEX_LIBS="${depLIBS}"
 		AC_DEFINE(HAVE_LIBREGEX, 1,
 			[Define to 1 for build where we can support general regex matching.])
 		], [
@@ -90,6 +106,10 @@ if test -z "${nut_have_libregex_seen}"; then
 	AM_CONDITIONAL(HAVE_LIBREGEX, test x"${nut_have_regex}" = xyes)
 
 	AC_LANG_POP([C])
+
+	unset depCFLAGS
+	unset depLIBS
+	unset depREQUIRES
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

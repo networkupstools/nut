@@ -77,7 +77,7 @@ if test -n "$DELAY" && test "$DELAY" -ge 0 ; then true; else DELAY=120; fi
 DELAYON="`expr $DELAY + 10`"
 
 # TODO: Here we want to refine the list to only MONITORed UPSes that power us
-# and/or take into account the killpower flag-file (upsmon master vs slave
+# and/or take into account the killpower flag-file (upsmon master vs. slave
 # and/or `upsmon -k` status)
 # Convert to parsing of "ipp-status -p" which reports all needed details
 upslist="`"$NUT_UPSC" -l`"

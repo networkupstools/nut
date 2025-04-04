@@ -91,25 +91,26 @@ There is no default for the hostname, but the default port is 161.
 *mibs*='--list'::
 A special option which allows to list the currently known MIB-to-NUT mappings
 and exit the driver binary, intended for command-line usage like this:
++
 ----
-$ snmp-ups -a snmp-test -x mibs=--list
+:; snmp-ups -a snmp-test -x mibs=--list
 ----
 
 *mibs*='name'::
-Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED
+Set MIB compliance (default='auto', allowed entries: refer to SUPPORTED
 HARDWARE above).
 +
 With "auto", the driver will try a select set of SNMP objects until it finds
 one that the device responds to.
 +
-Note that since NUT 2.6.2, snmp-ups has a new method that uses sysObjectID
+Note that since NUT 2.6.2, snmp-ups has a new method that uses `sysObjectID`
 (which is a pointer to the preferred MIB of the device) to detect supported
 devices.  This renders void the *requirement* to use the "mibs" option.
 
 *community*='name'::
-Set community name (default = public).
-Note that a RW community name is required to change UPS settings and
-send commands (as for a powerdown).
+Set community name (default is 'public') for SNMPv1 and SNMPv2c connections.
+Note that an RW capable community name is required to change UPS settings and
+send commands (such as for a power-down).
 
 *snmp_version*='version'::
 Set SNMP version (default = v1, allowed: v2c, v3)

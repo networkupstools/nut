@@ -66,7 +66,7 @@ technology change (hybrid chain with UPS and PDU for example).
 Devices status handling
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-To be clarified...
+FIXME: To be clarified...
 
 
 Devices alarms handling
@@ -77,7 +77,7 @@ which may evolve into `device.X.alarm`. If any of the devices has an alarm,
 the main `ups.status` will publish an `ALARM` flag. This flag is be cleared
 once all devices have no alarms anymore.
 
-NOTE: ups.alarm behavior is not yet defined (all devices alarms vs. list of
+NOTE: `ups.alarm` behavior is not yet defined (all devices alarms vs. list of
 device(s) that have alarms vs. nothing?)
 
 Example
@@ -115,7 +115,7 @@ one master and two slaves:
 Information for developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: these details are dedicated to the `snmp-ups` driver!
+NOTE: These details are dedicated to the `snmp-ups` driver!
 
 In order to enable daisychain support for a range of devices, developers
 have to do two things:
@@ -193,11 +193,11 @@ driver:
 
 * `device_alarm_init()`: clear the current alarm buffer
 * `device_alarm_commit(const int device_number)`: commit the current alarm
-buffer to "device.<device_number>.ups.alarm", and increase the count of
-alarms. If the current alarms buffer is empty, the count of alarm is
-decreased, and the variable "device.<device_number>.ups.alarm" is removed
-from publication. Once the alarm count reaches "0", the main (device.0)
-ups.status will also remove the "ALARM" flag.
+  buffer to `device.<device_number>.ups.alarm`, and increase the count of
+  alarms. If the current alarms buffer is empty, the count of alarm is
+  decreased, and the variable `device.<device_number>.ups.alarm` is removed
+  from publication. Once the alarm count reaches "0", the main (`device.0`)
+  `ups.status` will also remove the "ALARM" flag.
 
 [NOTE]
 ======

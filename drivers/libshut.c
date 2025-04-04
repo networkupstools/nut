@@ -750,7 +750,7 @@ static int libshut_set_report(
 	upsdebugx(1,
 		"Entering libshut_set_report (report %x, "
 		"len %" PRI_NUT_USB_CTRL_CHARBUFSIZE ")",
-		ReportId, ReportSize);
+		(unsigned int)ReportId, ReportSize);
 
 	if ((uintmax_t)ReportSize > (uintmax_t)INT_MAX) {
 		upsdebugx(1, "%s: ReportSize exceeds INT_MAX", __func__);

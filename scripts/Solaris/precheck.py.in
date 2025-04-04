@@ -18,6 +18,20 @@ else:
     platform = commands.getoutput('uname -s')
     architecture = commands.getoutput('uname -p')
 
+# Newer python makes this a binary byte stream, convert into string:
+if platform is not str:
+    platform = platform.decode('utf-8')
+
+if architecture is not str:
+    architecture = architecture.decode('utf-8')
+
+# Strip end-of-line, if present:
+platform = platform.strip()
+architecture = architecture.strip()
+
+target_os='@target_os@'.lower()
+target_cpu='@target_cpu@'.lower()
+
 # checkinstall script creation
 fp=open("checkinstall","w")
 # Note: same arch is relevant for different bitnesses that
@@ -28,21 +42,42 @@ if platform == "SunOS" and architecture == "i386":
 	fp.write("expected_architecture=i386\n")
 elif platform == "SunOS" and architecture == "sparc":
 	fp.write("expected_architecture=sparc\n")
+else:
+	sys.stderr.write("WARNING: Failed to detect expected_architecture! platform='%s' (expected 'SunOS') architecture='%s' (expected 'i386' or 'sparc')!\n" % (platform, architecture))
+
+if 'solaris' in target_os or 'illumos' in target_os:
+	if target_cpu == 'x86_64' or target_cpu == 'amd64':
+		fp.write("expected_isa=amd64\n")
+	elif target_cpu == 'i686' or target_cpu == 'i386':
+		fp.write("expected_isa=i386\n")
+	elif target_cpu == 'sparcv9':
+		fp.write("expected_isa=sparcv9\n")
+	elif target_cpu == 'sparcv7' or target_cpu == 'sparc':
+		fp.write("expected_isa=sparc\n")
+	else:
+		fp.write("expected_isa=''\n")
+else:
+	fp.write("expected_isa=''\n")
 
 fp.write("platform=\"`uname -s`\"\n")
 fp.write("architecture=\"`uname -p`\"\n\n")
 
-fp.write("if [ \"${platform}\" -eq \"${expected_platform}\" ]; then\n")
-fp.write("\tif [ \"${architecture}\" -eq \"${expected_architecture}\" ]; then\n")
-fp.write("\t\techo \"Checkinstall complete\"\n")
-fp.write("\telse\n")
-fp.write("\t\techo \"This is not Solaris $architecture machine: platform='${platform}' expected_platform='${expected_platform}'\"\n")
-fp.write("\t\texit 1\n")
+fp.write("if [ \"${platform}\" = \"${expected_platform}\" ]; then\n")
+fp.write("\tif [ \"${architecture}\" = \"${expected_architecture}\" ]; then\n")
+fp.write("\t\tif [ -n \"${expected_isa}\" ]; then\n")
+fp.write("\t\t\tfor I in `isainfo` ; do if [ \"${I}\" = \"${expected_isa}\" ]; then\n")
+fp.write("\t\t\t\techo \"Checkinstall complete\"\n")
+fp.write("\t\t\t\texit 0\n")
+fp.write("\t\t\tfi; done\n")
+fp.write("\t\t\techo \"This is not a compatible Solaris machine: architecture='${architecture}' expected_architecture='${expected_architecture}' expected_isa='${expected_isa} (local isainfo=`isainfo`)'\"\n")
+fp.write("\t\t\texit 1\n")
+fp.write("\t\telse\n")
+fp.write("\t\t\techo \"Checkinstall complete\"\n")
+fp.write("\t\t\texit 0\n")
+fp.write("\t\tfi\n")
 fp.write("\tfi\n")
-fp.write("else\n")
-fp.write("\techo \"This is not Solaris machine: architecture='${architecture}' expected_architecture='${expected_architecture}'\"\n")
-fp.write("\texit 1\n")
 fp.write("fi\n")
-fp.write("exit 0\n")
+fp.write("echo \"This is not Solaris machine: architecture='${architecture}' expected_architecture='${expected_architecture}' expected_isa='${expected_isa}'\"\n")
+fp.write("exit 1\n")
 
 fp.close()

@@ -43,7 +43,7 @@
 #include "nut_float.h"
 
 #define DRIVER_NAME	"UPScode II UPS driver"
-#define DRIVER_VERSION	"0.92"
+#define DRIVER_VERSION	"0.93"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -876,6 +876,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	upslogx(LOG_EMERG, "Shutting down...");
 
 	/* send shutdown command twice, just to be sure */

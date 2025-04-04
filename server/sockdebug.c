@@ -144,6 +144,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "  or   %s apcsmart-ttyS1\n",
 			argv[0]);
 		fprintf(stderr, "  for socket files placed in the standard location\n");
+
+		fprintf(stderr, "\n%s", suggest_doc_links(prog, NULL));
+
 		exit(EXIT_SUCCESS);
 	}
 

@@ -22,8 +22,9 @@ SUPPORTED HARDWARE
 
 This driver supports some Liebert UPS equipment with a contact-closure
 interface.  This includes the UPStation GXT2 with their contact-closure
-cable.  The smart mode ("Multilink") cable is not supported by this
-driver.
+cable.
+
+The smart mode ("Multilink") cable is NOT supported by this driver.
 
 EXTRA ARGUMENTS
 ---------------

@@ -1,4 +1,7 @@
 <revhistory>
+  <!-- This file was generated and is later maintained with:
+       DOCINFO_XML="docs/docinfo.xml.in" DOCINFO_OLDEST_TAG="v2.6.0" ./docs/docinfo.xml.sh
+    -->
 
   <!-- Current release of NUT (to be left on top) -->
   <revision>

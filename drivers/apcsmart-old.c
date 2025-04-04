@@ -25,7 +25,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver (old)"
-#define DRIVER_VERSION	"2.33"
+#define DRIVER_VERSION	"2.34"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -1063,6 +1063,9 @@ static void upsdrv_shutdown_advanced(long status)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	char	temp[32];
 	ssize_t	ret;
 	long	status;

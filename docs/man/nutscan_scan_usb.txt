@@ -9,19 +9,21 @@ nutscan_scan_usb - Scan NUT compatible USB devices.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts);
+	nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts);
+------
 
-NOTE
-----
-
+[NOTE]
+======
 Before `libnutscan` version 2.5.0 there was no argument:
 
  nutscan_device_t * nutscan_scan_usb(void);
 
 After the API update to have an argument, equivalent default activity can
 be achieved by passing `NULL` value for the argument.
+======
 
 DESCRIPTION
 -----------

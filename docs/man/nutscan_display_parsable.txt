@@ -10,15 +10,17 @@ structure on stdout.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- void nutscan_display_parsable(nutscan_device_t * device);
+	void nutscan_display_parsable(nutscan_device_t * device);
+------
 
 DESCRIPTION
 -----------
 
 The *nutscan_display_parsable()* function displays all NUT devices in
-'device' to stdout. It displays them in a way that can be easily parsed
+'device' to `stdout`. It displays them in a way that can be easily parsed,
 which is:
 
     <driver type>:driver="<driver name>",port="<port type>"[,<optional parameter 1>="<optional data 1>",<optional parameter 2>="<optional data 2>",...]
@@ -31,7 +33,7 @@ which is:
 
 Note that this format is for machine consumption, so is not associated
 with sanity checks that may be used along with display method for the
-'ups.conf' file format.
+`ups.conf` file format.
 
 SEE ALSO
 --------

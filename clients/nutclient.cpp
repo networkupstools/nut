@@ -295,7 +295,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 	snprintf(sport, sizeof(sport), "%" PRIuMAX, static_cast<uintmax_t>(port));
 
 	memset(&hints, 0, sizeof(hints));
-	/* TODO? Port IPv4 vs IPv6 detail from upsclient.c */
+	/* TODO? Port IPv4 vs. IPv6 detail from upsclient.c */
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;

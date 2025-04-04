@@ -10,17 +10,19 @@ nutscan_display_ups_conf_with_sanity_check - Display the specified
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device);
+	void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device);
+------
 
 DESCRIPTION
 -----------
 
 The *nutscan_display_ups_conf_with_sanity_check()* function displays
-all NUT devices in 'device' to stdout, and follows up with comments
+all NUT devices in 'device' to `stdout`, and follows up with comments
 about sanity-check violations (if any). It displays them in a way that
-it can be directly copied into the 'ups.conf' file.
+it can be directly copied into the `ups.conf` file.
 
 SEE ALSO
 --------

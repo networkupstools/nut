@@ -53,11 +53,12 @@ Makefile.in
 /ltmain.sh
 /missing
 /test-driver
-*-contentchecked
-*-spellchecked
+*-contentchecked*
+*-spellchecked*
 *-prepped
 *.usage-report
 *.adoc-parsed
+*.adoc-parsed.*
 *.adoc*.tmp
 *.adoc*.tmp.*
 *.txt*.tmp

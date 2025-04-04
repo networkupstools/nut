@@ -10,9 +10,11 @@ structure into a string buffer that can be further printed into logs.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- const char * nutscan_stringify_ip_ranges(nutscan_ip_range_list_t *irl);
+	const char * nutscan_stringify_ip_ranges(nutscan_ip_range_list_t *irl);
+------
 
 DESCRIPTION
 -----------
@@ -24,6 +26,8 @@ or a range as `start_ip .. end_ip`.
 
 Returns a pointer to internal statically allocated buffer which would be
 overwritten by subsequent calls, but does not have to be freed by caller.
+
+WARNING: Callers should use semaphores if accessing this function in multi-thread context!
 
 NOTES
 -----

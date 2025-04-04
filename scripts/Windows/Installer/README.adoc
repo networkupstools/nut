@@ -26,8 +26,9 @@ Please see the documentation provided with the NUT sources about prerequisites
 needed for semi-native builds (on Windows using MinGW x64 and MSYS2 projects)
 and cross-builds (on Linux with mingw64 packages):
 
-* linkdoc:/docs/config-prereqs.txt
-* linkdoc:/scripts/Windows/README.adoc
+* linkdoc:qa-guide[Prerequisites for building NUT on different
+  OSes,NUT_Config_Prereqs,docs/config-prereqs.txt]
+* linkdoc:scripts/Windows/README.adoc[]
 
 With these dependencies in place, the common NUT `ci_build.sh` script can be
 used to wrap the typical configuration, build and installation procedures.

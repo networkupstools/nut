@@ -86,12 +86,22 @@ N: Mark Powell
 E: medp@primagraphics.co.uk
 D: Ported to SunOS4
 
+N: Evgeny "Jim" Klimov
+E: jimklimov+nut@gmail.com
+D: Primary coordinator ; author of numerous CI recipes, tests and OS
+D: integration scripts - including NDE (NUT Driver Enumerator), NIT
+D: (NUT Integration Test suite) and Jenkins-Dynamatrix, to name a few.
+D: Also automake/autoconf/m4 scripting, asciidoc documentation.
+D: More of a bug-fixer, warnings-squasher and portability maintainer,
+D: rather than e.g. specifically a driver developer.
+P: 4096R/7043DCF7 B834 59F7 76B9 0224 988F 36C0 DE01 84DA 7043 DCF7
+
 N: Arnaud Quette
 E: aquette.dev@gmail.com
 E: arnaud.quette@mgeups.com
 E: aquette@debian.org
 W: http://arnaud.quette.free.fr/
-D: Primary coordinator ; author of snmp-ups, mge-shut, usbhid-ups ;
+D: Previous primary coordinator ; author of snmp-ups, mge-shut, usbhid-ups ;
 D: co author of mge-utalk, hidups, SNMP UPS Agent ; contributor to blazer,
 D: bestferrups, nut core, and many others ; coordination with MGE UPS
 D: SYSTEMS, linux-usb developers (for hidups), Net SNMP and packagers

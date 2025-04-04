@@ -75,7 +75,7 @@ static void upsconf_err(const char *errmsg)
  */
 int read_upsconf(int fatal_errors)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	ups_section = NULL;

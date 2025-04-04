@@ -4,14 +4,16 @@ UPSCLI_STRERROR(3)
 NAME
 ----
 
-upscli_strerror - return string describing error condition
+upscli_strerror - Return a string describing error condition
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- const char *upscli_strerror(UPSCONN_t *ups);
+	const char *upscli_strerror(UPSCONN_t *ups);
+------
 
 DESCRIPTION
 -----------
@@ -25,7 +27,7 @@ RETURN VALUE
 ------------
 
 The *upscli_strerror*() function returns a description of the error,
-or an unknown error message if the error code is not recognized.
+or an "unknown error" message if the error code is not recognized.
 
 SEE ALSO
 --------
@@ -33,4 +35,4 @@ SEE ALSO
 linkman:upscli_fd[3], linkman:upscli_get[3],
 linkman:upscli_readline[3], linkman:upscli_sendline[3],
 linkman:upscli_ssl[3],
-linkman:upscli_strerror[3], linkman:upscli_upserror[3]
+linkman:upscli_upserror[3]

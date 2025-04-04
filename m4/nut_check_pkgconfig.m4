@@ -85,7 +85,7 @@ AC_DEFUN([NUT_CHECK_PKGCONFIG],
 		[AS_IF([test x"$have_PKG_CONFIG_MACROS" = xno],
 			[AC_MSG_WARN([pkg-config macros are needed to look for further dependencies, but in some cases pkg-config program can be used directly])])
 
-		 AC_MSG_CHECKING([for pkg-config envvar PKG_CONFIG_PATH (if passed to configure script)])
+		 AC_MSG_CHECKING([for pkg-config envvar PKG_CONFIG_PATH (if passed to configure script or exported in shell session)])
 		 AC_MSG_RESULT([${PKG_CONFIG_PATH}])
 
 		 AC_MSG_CHECKING([for pkg-config reported pc_path])

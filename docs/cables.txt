@@ -129,6 +129,7 @@ T700, T1000, T1500, T1500j, T700h, T1000h, T1500h, R1500, R1500j,
 R1500h, T2000, T2000j, T2400h, T2400h-NA, R3000 / R3000j, R3000h,
 R3000h-International, R3000h-NA, R6000h-NA, R6000i, R6000j.
 
+----
  UPS         PC  9 pin connector
 
   1 --------- 3
@@ -137,6 +138,7 @@ R3000h-International, R3000h-NA, R6000h-NA, R6000i, R6000j.
   4 --------- 5   |
               6 -/
   6 --------- 7
+----
 
 Contributed by Kjell Claesson and Arnaud Quette.
 

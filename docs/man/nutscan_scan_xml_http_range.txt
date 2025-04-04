@@ -9,19 +9,21 @@ nutscan_scan_xml_http_range - Scan network for XML/HTTP devices.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
- #include <unistd.h> /* useconds_t */
+------
+	#include <nut-scan.h>
+	#include <unistd.h> /* useconds_t */
 
- nutscan_device_t * nutscan_scan_xml_http_range(
-        const char * start_ip,
-        const char * end_ip,
-        useconds_t usec_timeout,
-        nutscan_xml_t * sec)
+	nutscan_device_t * nutscan_scan_xml_http_range(
+		const char * start_ip,
+		const char * end_ip,
+		useconds_t usec_timeout,
+		nutscan_xml_t * sec)
 
- nutscan_device_t * nutscan_scan_ip_range_xml_http(
-        nutscan_ip_range_list_t * irl,
-        useconds_t usec_timeout,
-        nutscan_xml_t * sec)
+	nutscan_device_t * nutscan_scan_ip_range_xml_http(
+		nutscan_ip_range_list_t * irl,
+		useconds_t usec_timeout,
+		nutscan_xml_t * sec)
+------
 
 DESCRIPTION
 -----------
@@ -34,8 +36,10 @@ respective function does this by issuing a broadcast message on all
 currently configured network interfaces.
 
 Otherwise, the former queries every IP ranging from 'start_ip' to 'stop_ip',
-where 'stopIP' is optional; the latter can walk several IP address ranges
-represented by a `nutscan_ip_range_list_t` structure.
+, where 'startIP' is mandatory and 'stopIP' is optional (one 'startIP' address
+is scanned if 'stopIP' is NULL); while the latter can walk several IP address
+ranges represented by a `nutscan_ip_range_list_t` structure.
+
 Those IP arguments may be either IPv4 or IPv6 addresses or host names.
 
 It waits up to 'usec_timeout' microseconds for a response from potential

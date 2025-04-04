@@ -162,7 +162,7 @@ static void cgilib_err(const char *errmsg)
 
 int checkhost(const char *host, char **desc)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	if (!host)

@@ -4,14 +4,16 @@ UPSCLI_DISCONNECT(3)
 NAME
 ----
 
-upscli_disconnect - disconnect from a UPS server
+upscli_disconnect - Disconnect from a UPS server
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_disconnect(UPSCONN_t *ups);
+	int upscli_disconnect(UPSCONN_t *ups);
+------
 
 DESCRIPTION
 -----------
@@ -28,7 +30,7 @@ file descriptors.
 RETURN VALUE
 ------------
 
-The *upscli_disconnect()* function returns 0 on success, or -1 if an
+The *upscli_disconnect()* function returns '0' on success, or '-1' if an
 error occurs.
 
 SEE ALSO

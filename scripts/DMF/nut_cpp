@@ -9,7 +9,7 @@
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #    Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
-#    Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+#    Copyright (C) 2022 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 
 # Note: on MacOS you would really want 'clang -E' here,
@@ -61,6 +61,7 @@ sed \
     -e 's/(__typeof_*'"${SPACETAB}"'*([^()]*))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*(('"${SPACETAB}"'*__[A-Za-z0-9_-]*__'"${SPACETAB}"'*([^()]*)))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((__aligned__([^()]*([^()]*))))'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute__'"${SPACETAB}"'*((__malloc__,'"${SPACETAB}"'*__alloc_size__'"${SPACETAB}"'*([0-9]*)))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((aligned([0-9]*)))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((alloc_size([0-9]*)))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((alloc_size([0-9]*,[0-9]*)))'"${SPACETAB}"'*/ /g' \
@@ -73,6 +74,7 @@ sed \
     -e 's/__attribute__'"${SPACETAB}"'*((__deprecated__("[^"]*")))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((__warning__'"${SPACETAB}"'*('"${SPACETAB}"'*"[^"]*"'"${SPACETAB}"'*"[^"]*")))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*__DARWIN_ALIAS([^()]*)'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute_malloc__\([ ;]\)/\1/g' \
     -e 's/__inline__/inline/g' \
     -e 's/__signed__/signed/g' \
     -e 's/__unsigned__/unsigned/g' \

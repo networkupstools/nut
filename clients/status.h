@@ -45,6 +45,10 @@ static struct {
 	{ "BOOST",	"VOLTAGE BOOST",	1	},
 	{ "CAL",	"CALIBRATION",		1	},
 	{ "BYPASS",	"BYPASS",		2	},
+	/* NOTE: "ECO" should not be happening as a status
+	 * or alarm anymore... in NUT core code base */
+	{ "ECO",	"ECO",			1	},
+	{ "ALARM",	"ALARM",		2	},
 	{ NULL,		NULL,			0	}
 };
 

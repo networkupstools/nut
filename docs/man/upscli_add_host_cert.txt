@@ -9,18 +9,23 @@ upscli_add_host_cert - Register a security rule for an host.
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- void upscli_add_host_cert(const char* hostname, const char* certname,
-			int certverify, int forcessl);
+	void upscli_add_host_cert(
+		const char* hostname,
+		const char* certname,
+		int certverify,
+		int forcessl);
+------
 
 DESCRIPTION
 -----------
 
-The *upscli_add_host_cert()* function register a security rule associated
+The *upscli_add_host_cert()* function registers a security rule associated
 to the 'hostname'. All connections to this host use this rule.
 
-The rule is composed of the certificate name 'certname 'expected for
+The rule is composed of the certificate name 'certname' expected for
 the host, 'certverify' if the certificate must be validated for the host
 and 'forcessl' if a secured connection must be used to connect to the host.
 

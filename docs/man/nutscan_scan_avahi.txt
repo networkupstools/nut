@@ -9,10 +9,12 @@ nutscan_scan_avahi - Scan network for NUT services via mDNS
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
- #include <unistd.h> /* useconds_t */
+------
+	#include <nut-scan.h>
+	#include <unistd.h> /* useconds_t */
 
- nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout);
+	nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout);
+------
 
 DESCRIPTION
 -----------

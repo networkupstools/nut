@@ -27,7 +27,7 @@
 #include <string.h>
 
 #define DRIVER_NAME	"ISBMEX UPS driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -52,6 +52,9 @@ upsdrv_info_t	upsdrv_info = {
 /*#define ENDCHAR	'&'*/
 #define MAXTRIES 15
 /* #define IGNCHARS	""	*/
+
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 static float lagrange(unsigned int vbyte)
 {
@@ -145,6 +148,15 @@ void upsdrv_initinfo(void)
 
 	/* addinfo(INFO_, "", 0, 0); */
 	/*printf("Using %s %s on %s\n", getdata(INFO_MFR), getdata(INFO_MODEL), device_path);*/
+
+	/* commands ----------------------------------------------- */
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("shutdown.stayoff");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 static const char *getpacket(int *we_know){
@@ -346,30 +358,61 @@ void upsdrv_updateinfo(void)
 	return;
 }
 
-void upsdrv_shutdown(void)
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
 {
-	/* shutdown is supported on models with
-	 * contact closure. Some ISB models with serial
-	 * support support contact closure, some don't.
-	 * If yours does support it, then a 12V signal
-	 * on pin 9 does the trick (only when ups is
-	 * on OB condition) */
-	/*
-	 * here try to do the pin 9 trick, if it does not
-	 * work, else:*/
-/*
-	upslogx(LOG_ERR, "Shutdown only supported with the Generic Driver, type 6 and special cable");
-	//upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
-*/
-	int i;
-	for(i=0;i<=5;i++)
+	NUT_UNUSED_VARIABLE(extra);
+
+	/* FIXME: Which one is this - "load.off",
+	 * "shutdown.stayoff" or "shutdown.return"? */
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
-		ser_send_char(upsfd, '#');
-		usleep(50000);
+		int i;
+
+		/* shutdown is supported on models with
+		 * contact closure. Some ISB models with serial
+		 * support support contact closure, some don't.
+		 * If yours does support it, then a 12V signal
+		 * on pin 9 does the trick (only when ups is
+		 * on OB condition) */
+		/*
+		 * here try to do the pin 9 trick, if it does not
+		 * work, else:*/
+/*
+		upslogx(LOG_ERR, "Shutdown only supported with the Generic Driver, type 6 and special cable");
+		//upslogx(LOG_ERR, "shutdown not supported");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+*/
+
+		for (i = 0; i <= 5; i++)
+		{
+			ser_send_char(upsfd, '#');
+			usleep(50000);
+		}
+
+		return STAT_INSTCMD_HANDLED;
 	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
 }
 
+void upsdrv_shutdown(void)
+{
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	int	ret = do_loop_shutdown_commands("shutdown.stayoff", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
+}
 
 void upsdrv_help(void)
 {
