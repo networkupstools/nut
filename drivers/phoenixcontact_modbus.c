@@ -102,8 +102,9 @@ void upsdrv_initinfo(void)
 {
 	uint16_t tab_reg[4];
 	uint64_t PartNumber = 0;
+	size_t i;
 
-	for(int i = 0; i < (sizeof(tab_reg) / sizeof(tab_reg[0])); i++)
+	for (i = 0; i < (sizeof(tab_reg) / sizeof(tab_reg[0])); i++)
 	{
 		tab_reg[i] = 0;
 	}
