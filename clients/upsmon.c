@@ -1272,13 +1272,6 @@ static int is_ups_critical(utype_t *ups)
 
 	if (ups->commstate == 0) {
 		/* Note: ECO mode not considered easily fatal here */
-		if (flag_isset(ups->status, ST_CAL)) {
-			upslogx(LOG_WARNING,
-				"UPS [%s] was last known to be calibrating "
-				"and currently is not communicating, assuming dead",
-				ups->sys);
-			return 1;
-		}
 
 		if (flag_isset(ups->status, ST_OVER)) {
 			upslogx(LOG_WARNING,
@@ -1306,15 +1299,6 @@ static int is_ups_critical(utype_t *ups)
 			return 1;
 		}
 
-		if (ups->bypassstate == 1
-		|| flag_isset(ups->status, ST_BYPASS)) {
-			upslogx(LOG_WARNING,
-				"UPS [%s] was last known to be on BYPASS "
-				"and currently is not communicating, assuming dead",
-				ups->sys);
-			return 1;
-		}
-
 		if (ups->alarmstate == 1
 		|| flag_isset(ups->status, ST_ALARM)) {
 			if (alarmcritical == 1) {
@@ -1332,6 +1316,23 @@ static int is_ups_critical(utype_t *ups)
 					"dead as the upsmon ALARMCRITICAL option was disabled.",
 					ups->sys);
 			}
+		}
+
+		if (flag_isset(ups->status, ST_CAL)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be calibrating "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (ups->bypassstate == 1
+		|| flag_isset(ups->status, ST_BYPASS)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be on BYPASS "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
 		}
 
 		if (ups->offstate == 1
