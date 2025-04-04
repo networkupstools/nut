@@ -15,6 +15,7 @@ if test -z "${nut_ax_realpath_lib_prereq_seen}"; then
     nut_ax_realpath_lib_prereq_seen=yes
 
     AC_REQUIRE([NUT_COMPILER_FAMILY])dnl
+    AC_REQUIRE([AX_REALPATH])dnl
     AS_CASE(["${target_os}"],
         [*mingw*], [
             AS_IF([test x"${DLLTOOL-}" = x],
@@ -113,6 +114,8 @@ AC_DEFUN([AX_REALPATH_LIB],
                                 "${MINGW_PREFIX}/lib" \
                                 `${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^@<:@^=@:>@*=,:,' | sed 's,\(@<:@:;@:>@\)\(@<:@A-Z@:>@\):/,:/\2/,g' | tr ':' '\n'` \
                             ; do
+                                dnl NOTE: Here we check myLIBPATH detected above,
+                                dnl in fallback below we would retry with a myLIBNAME
                                 if test -s "$D/${myLIBPATH}" 2>/dev/null ; then
                                     myLIBPATH="$D/${myLIBPATH}"
                                     break
@@ -129,6 +132,37 @@ AC_DEFUN([AX_REALPATH_LIB],
                 || myLIBPATH=""
             ]
         )
+
+        AS_IF([test -z "${myLIBPATH}"], [
+            for TOKEN in $CFLAGS $LDFLAGS $LIBS ; do
+                D=""
+                case "$TOKEN" in
+                    -R*|-L*) D="`echo "$TOKEN" | sed 's,^-[RL],,'`" ;;
+                    -Wl,-R*) D="`echo "$TOKEN" | sed 's,^-Wl\,-R,,'`" ;;
+                    -Wl,-rpath,*) D="`echo "$TOKEN" | sed 's,^-Wl\,-rpath\,,,'`" ;;
+                esac
+                if test -z "$D" || ! test -d "$D" ; then continue ; fi
+                if test -s "$D/${myLIBNAME}" 2>/dev/null ; then
+                    myLIBPATH="$D/${myLIBNAME}"
+                    break
+                fi
+            done
+            unset D
+        ])
+
+        AS_IF([test -z "${myLIBPATH}"], [
+            for D in \
+                "/usr/${target}/bin" \
+                "/usr/${target}/lib" \
+                `${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^@<:@^=@:>@*=,:,' | sed 's,\(@<:@:;@:>@\)\(@<:@A-Z@:>@\):/,:/\2/,g' | tr ':' '\n'` \
+            ; do
+                if test -s "$D/${myLIBNAME}" 2>/dev/null ; then
+                    myLIBPATH="$D/${myLIBNAME}"
+                    break
+                fi
+            done
+            unset D
+        ])
 
         AS_IF([test -z "${myLIBPATH}" && test x"${LD}" != x -a x"${LD}" != xfalse], [
             AS_CASE(["${target_os}"],
