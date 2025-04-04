@@ -212,6 +212,24 @@ UPS has one or more active alarms (look at `ups.alarm` for details).
 *NOTALARM*::
 UPS is no longer in an alarm state (no active alarms).
 
+*OVER*::
+UPS is overloaded.
+
+*NOTOVER*::
+UPS is no longer overloaded.
+
+*TRIM*::
+UPS is trimming incoming voltage.
+
+*NOTTRIM*::
+UPS is no longer trimming incoming voltage.
+
+*BOOST*::
+UPS is boosting incoming voltage.
+
+*NOTBOOST*::
+UPS is no longer boosting incoming voltage.
+
 *OTHER*::
 UPS has at least one unclassified status token.
 

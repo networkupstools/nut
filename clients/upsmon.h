@@ -42,6 +42,9 @@
 #define ST_ECO         (1 << 10)      /* UPS is in ECO (High Efficiency) mode or similar tweak, e.g. Energy Saver System mode */
 #define ST_ALARM       (1 << 11)      /* UPS has at least one active alarm        */
 #define ST_OTHER       (1 << 12)      /* UPS has at least one unclassified status token */
+#define ST_OVER        (1 << 13)      /* UPS is overloaded                        */
+#define ST_TRIM        (1 << 14)      /* UPS is trimming incoming voltage         */
+#define ST_BOOST       (1 << 15)      /* UPS is boosting incoming voltage         */
 
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"
@@ -111,7 +114,7 @@ typedef struct {
 #define NOTIFY_NOCOMM	8	/* UPS hasn't been contacted in a while	*/
 #define NOTIFY_NOPARENT	9	/* privileged parent process died       */
 #define NOTIFY_CAL	10	/* UPS is performing calibration        */
-#define NOTIFY_NOTCAL	11	/* UPS is performing calibration        */
+#define NOTIFY_NOTCAL	11	/* UPS is not anymore performing calibration */
 #define NOTIFY_OFF	12	/* UPS is administratively OFF or asleep*/
 #define NOTIFY_NOTOFF	13	/* UPS is not anymore administratively OFF or asleep*/
 #define NOTIFY_BYPASS	14	/* UPS is administratively on bypass    */
@@ -119,7 +122,13 @@ typedef struct {
 #define NOTIFY_ECO	16	/* UPS is in ECO mode or similar        */
 #define NOTIFY_NOTECO	17	/* UPS is not anymore in ECO mode or similar */
 #define NOTIFY_ALARM	18	/* UPS has at least one active alarm    */
-#define NOTIFY_NOTALARM	19	/* UPS has no active alarms    */
+#define NOTIFY_NOTALARM	19	/* UPS has no active alarms             */
+#define NOTIFY_OVER	20	/* UPS is overloaded                    */
+#define NOTIFY_NOTOVER	21	/* UPS is not anymore overloaded        */
+#define NOTIFY_TRIM	22	/* UPS is trimming incoming voltage (called "buck" in some hardware) */
+#define NOTIFY_NOTTRIM	23	/* UPS is not anymore trimming incoming voltage */
+#define NOTIFY_BOOST	24	/* UPS is boosting incoming voltage     */
+#define NOTIFY_NOTBOOST	25	/* UPS is not anymore boosting incoming voltage */
 
 /* Special handling below */
 #define NOTIFY_OTHER	28	/* UPS has at least one unclassified status token */
@@ -183,6 +192,13 @@ static struct {
 	{ NOTIFY_ALARM,    "ALARM",    NULL, "UPS %s: one or more active alarms: [%s]", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTALARM, "NOTALARM", NULL, "UPS %s is no longer in an alarm state (no active alarms)", NOTIFY_DEFAULT },
 
+	{ NOTIFY_OVER,     "OVER",     NULL, "UPS %s: overloaded", NOTIFY_DEFAULT },
+	{ NOTIFY_NOTOVER,  "NOTOVER",  NULL, "UPS %s: no longer overloaded", NOTIFY_DEFAULT },
+	{ NOTIFY_TRIM,     "TRIM",     NULL, "UPS %s: trimming incoming voltage", NOTIFY_DEFAULT },
+	{ NOTIFY_NOTTRIM,  "NOTTRIM",  NULL, "UPS %s: no longer trimming incoming voltage", NOTIFY_DEFAULT },
+	{ NOTIFY_BOOST,    "BOOST",    NULL, "UPS %s: boosting incoming voltage", NOTIFY_DEFAULT },
+	{ NOTIFY_NOTBOOST, "NOTBOOST", NULL, "UPS %s: no longer boosting incoming voltage", NOTIFY_DEFAULT },
+	
 	/* Special handling, two string placeholders!
 	 * Reported when status_tokens tree changes (and is not empty in the end) */
 	{ NOTIFY_OTHER,    "OTHER",    NULL, "UPS %s: has at least one unclassified status token: [%s]", NOTIFY_DEFAULT },
