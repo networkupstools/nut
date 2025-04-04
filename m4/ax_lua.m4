@@ -202,8 +202,12 @@ AC_DEFUN([AX_PROG_LUA],
     m4_define_default([_AX_LUA_INTERPRETER_LIST],
       [lua lua5.3 lua53 lua5.2 lua52 lua5.1 lua51 lua50])],
   [ dnl Order preferred version first (e.g. avoid header version mismatch later)
+    _LUA_NODOT="`echo "$1" | sed 's,\.,,'`"
+    AS_IF([test x"$1" = x"${_LUA_NODOT}"],
+      [_LUA_NODOT=''], dnl no-op
+      [_LUA_NODOT="lua${_LUA_NODOT}"]) dnl Retry without the dot in version
     m4_define_default([_AX_LUA_INTERPRETER_LIST],
-      [lua$1 lua lua5.3 lua53 lua5.2 lua52 lua5.1 lua51 lua50])])
+      [lua$1 ${_LUA_NODOT} lua lua5.3 lua53 lua5.2 lua52 lua5.1 lua51 lua50])])
 
   m4_if([$1], [],
   [ dnl No version check is needed. Find any Lua interpreter.
