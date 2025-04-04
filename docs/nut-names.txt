@@ -268,7 +268,10 @@ ups: General unit information
                           note below)                  | line-interactive
 | experimental.ups.mode.buzzwords
                         | UPS mode details, not
-                          classified (opaque string)   | vendor:eaton:ECO
+                          classified (opaque string,
+                          presumably comprised of
+                          space-separated tokens;
+                          see the note below)          | vendor:eaton:ECO
 | ups.watchdog.status   | UPS watchdog status
                           (enabled or disabled)        | disabled
 | ups.start.auto        | UPS starts when mains is
