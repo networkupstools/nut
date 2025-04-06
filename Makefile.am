@@ -478,6 +478,14 @@ distcheck-light-DIST_ALL_PAGES:
 	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
 	@echo "Completed $@: preparation of pre-built man pages for dist tarball, possibly faked" >&2
 
+# In some recipes we `configure --with-docs=skip`, so "make dist" should not
+# hiccup on lack of the page files (nor try to make them); not using simple
+# distcheck-light-DIST_ALL_PAGES step due to custom logic!
+distcheck-light-DIST_ALL_PAGES-docs-skipped:
+	@echo "Starting $@" >&2
+	+@cd $(abs_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) FAKE_PAGES_BUMP_SRC=false distcheck-light-DIST_ALL_PAGES
+	@echo "Completed $@: preparation of pre-built man pages for dist tarball, possibly faked" >&2
+
 # Here we generate man pages (if absent) or fake them
 # Require other dependencies as usual distcheck does;
 # be sure to pass through caller's DISTCHECK_FLAGS (if any)
@@ -521,10 +529,9 @@ memcheck:
 # Here we skip docs so "make dist" should not hiccup on lack of the page files
 # (nor try to make them); not using simple distcheck-light-DIST_ALL_PAGES step
 # due to custom logic!
-distcheck-valgrind:
+distcheck-valgrind: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	@echo "Starting $@" >&2
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
-	+@cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) FAKE_PAGES_BUMP_SRC=false distcheck-light-DIST_ALL_PAGES
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 	@echo "Completed $@: relaxed distcheck, without man pages ('pre-built' placeholders in dist archive), running tests under valgrind" >&2
 else !HAVE_VALGRIND
