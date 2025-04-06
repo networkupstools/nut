@@ -103,7 +103,7 @@ if test -z "${nut_have_lua_seen}"; then
 	dnl FIXME: If we do not have a suitable version while pieces
 	dnl  seem to exist, it may be because we found one version
 	dnl  in pkg-config and another as the interpreter, so headers
-	dno  check fails.
+	dnl  check fails.
 
 	if test "${nut_have_lua}" = "yes"; then
 		dnl AC_MSG_NOTICE([DEBUG: LUA:      CFLAGS='${CFLAGS}'])
