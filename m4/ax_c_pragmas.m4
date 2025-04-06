@@ -1256,7 +1256,9 @@ return 0;
   dnl alleged formatting string overflow (seems like a false
   dnl positive in that case). Require the full macro there
   dnl by default.
-  dnl AC_MSG_NOTICE([CC_VERSION='$CC_VERSION'])
+  AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CC_VERSION='$CC_VERSION'])
+  ])
   AS_IF([test x"$nut_enable_NUT_STRARG_always" = xauto], [
     nut_enable_NUT_STRARG_always=no
     AS_IF([test "${CLANGCC}" = "yes"], [
