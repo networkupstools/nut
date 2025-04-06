@@ -564,43 +564,43 @@ memcheck distcheck-valgrind:
 	@echo "SKIPPED $@ : valgrind was not detected on this system by configure script" >&2
 endif !HAVE_VALGRIND
 
-distcheck-dmf-features-REGEN_NO:
+distcheck-dmf-features-REGEN_NO: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_NO_FLAGS)" distcheck \
 	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_NO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
-distcheck-dmf-features-LTDL_YES:
+distcheck-dmf-features-LTDL_YES: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_YES_FLAGS)" distcheck \
 	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_YES_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
-distcheck-dmf-features-LTDL_NO:
+distcheck-dmf-features-LTDL_NO: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_NO_FLAGS)" distcheck \
 	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_NO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
-distcheck-dmf-features-LUA_YES:
+distcheck-dmf-features-LUA_YES: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YES_FLAGS)" distcheck \
 	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YES_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
-distcheck-dmf-features-LUA_YESNO:
+distcheck-dmf-features-LUA_YESNO: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS)" distcheck \
 	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
-distcheck-dmf-features-LUA_NO:
+distcheck-dmf-features-LUA_NO: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_NO_FLAGS)" distcheck \
 	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_NO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
-distcheck-dmf-features-REGEN_YES:
+distcheck-dmf-features-REGEN_YES: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_YES_FLAGS)" distcheck \
 	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_YES_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 # Intentionally done as one rule, to avoid parallelization and conflicts
-distcheck-dmf-features:
+distcheck-dmf-features: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" distcheck-dmf-features-REGEN_NO
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" distcheck-dmf-features-LTDL_YES
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" distcheck-dmf-features-LTDL_NO
@@ -612,21 +612,21 @@ distcheck-dmf-features:
 
 # Just test the common useful case of enabling (requiring) everything
 # related to DMF at once
-distcheck-dmf-all-yes:
+distcheck-dmf-all-yes: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck \
 	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_ALL" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
-distcheck-dmf-no:
+distcheck-dmf-no: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_NO)" distcheck \
 	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_NO" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
-distcheck-dmf-warnings:
+distcheck-dmf-warnings: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS) --enable-Werror --enable-warnings" DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck
 	echo "PASSED $@ suite!"
 
-distcheck-dmf:
+distcheck-dmf: distcheck-light-DIST_ALL_PAGES-docs-skipped
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" distcheck-light-man
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" distcheck-dmf-features
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" distcheck-dmf-warnings
