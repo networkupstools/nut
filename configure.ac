@@ -132,6 +132,10 @@ AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
 AC_CANONICAL_TARGET
 NUT_CHECK_OS
 
+NUT_ARG_ENABLE([configure-debug],
+    [Request that this run of the configure script reports more details about values it discovered, primarily for developer troubleshooting],
+    [no])
+
 dnl Further below we shuffle variants of these values possibly stripped of
 dnl warnings or with added further values. Here we save the most-original copy
 dnl so it can be passed e.g. to "make distcheck" the way the caller intended.
@@ -201,8 +205,10 @@ dnl we need Autoconf 2.61 or better to enable features of Posix that are extensi
 dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
 dnl UPDATE: As tested on CentOS 6, its "autoconf-2.63-5.1.el6.noarch" also suffices.
 dnl But OpenBSD 6.5 requires autoconf-2.65 and automake-1.13 or newer...
-dnl AC_MSG_NOTICE([CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
-dnl AC_MSG_NOTICE([CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
+])
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
@@ -228,8 +234,10 @@ AC_PROG_CXX_C_O
 CFLAGS_AFTER_ACPROG="${CFLAGS-}"
 CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"
 
-dnl AC_MSG_NOTICE([CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
-dnl AC_MSG_NOTICE([CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
+])
 
 dnl # LEGACY DEFAULT FALLBACK which NUT had since 2005 or before:
 dnl # if autoconf does not set any options, use default/moderate optimizations
@@ -831,9 +839,11 @@ dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
 
 dnl Note: DO NOT AC_DEFINE the "FULL" items: they are generally multi-line.
-dnl NUT_REPORT_TARGET([CC_VERSION_FULL],  ["${CC_VERSION_FULL}"],  [Version and other details of C compiler])
-dnl NUT_REPORT_TARGET([CXX_VERSION_FULL], ["${CXX_VERSION_FULL}"], [Version and other details of C++ compiler])
-dnl NUT_REPORT_TARGET([CPP_VERSION_FULL], ["${CPP_VERSION_FULL}"], [Version and other details of C preprocessor])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    NUT_REPORT_TARGET([CC_VERSION_FULL],  ["${CC_VERSION_FULL}"],  [Version and other details of C compiler])
+    NUT_REPORT_TARGET([CXX_VERSION_FULL], ["${CXX_VERSION_FULL}"], [Version and other details of C++ compiler])
+    NUT_REPORT_TARGET([CPP_VERSION_FULL], ["${CPP_VERSION_FULL}"], [Version and other details of C preprocessor])
+])
 NUT_REPORT_TARGET([CC_VERSION],  ["${CC_VERSION}"],  [Compact version of C compiler])
 NUT_REPORT_TARGET([CXX_VERSION], ["${CXX_VERSION}"], [Compact version of C++ compiler])
 NUT_REPORT_TARGET([CPP_VERSION], ["${CPP_VERSION}"], [Compact version of C preprocessor])
@@ -1407,7 +1417,9 @@ LN_S_R="cp -pR"
 if test "$as_ln_s" = "ln -s" ; then
     _abs_srcdir="`cd "${srcdir}" && pwd`" || _abs_srcdir=""
     _abs_builddir="`pwd`"
-    dnl AC_MSG_NOTICE([srcdir='${srcdir}' _abs_srcdir='${_abs_srcdir}' _abs_builddir='${_abs_builddir}'])
+    AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+        AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) srcdir='${srcdir}' _abs_srcdir='${_abs_srcdir}' _abs_builddir='${_abs_builddir}'])
+    ])
     if test x"${_abs_srcdir}" = x"${_abs_builddir}" ; then
         LN_S_R="ln"
     else
@@ -1415,7 +1427,9 @@ if test "$as_ln_s" = "ln -s" ; then
         dnl devices they are mounted from (first column in df output):
         _fs_srcdir="`df "${_abs_srcdir}" | tail -1 | awk '{print $1}'`" || fs_srcdir="XXXs"
         _fs_builddir="`df "${_abs_builddir}" | tail -1 | awk '{print $1}'`" || fs_builddir="XXXb"
-        dnl AC_MSG_NOTICE([_fs_srcdir='${_fs_srcdir}' _fs_builddir='${_fs_builddir}'])
+        AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+            AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) _fs_srcdir='${_fs_srcdir}' _fs_builddir='${_fs_builddir}'])
+        ])
         if test x"${_fs_srcdir}" = x"${_fs_builddir}" ; then
             LN_S_R="ln"
         else
@@ -1746,7 +1760,10 @@ printf("%ld ", GetAdaptersAddresses(AF_INET6, GAA_FLAG_SKIP_ANYCAST, NULL, buf, 
                 ])
                 AS_IF([test x"${ac_cv_func_GetAdaptersAddresses}" = xyes],
                     [AC_DEFINE([HAVE_GETADAPTERSADDRESSES], 1, [defined if system has the GetAdaptersAddresses() method])],
-                    [dnl AC_MSG_WARN([WIN32 library routine GetAdaptersAddresses() not found])
+                    [
+                     AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+                        AC_MSG_WARN([WIN32 library routine GetAdaptersAddresses() not found])
+                     ])
                      AS_CASE([${target_os}],
                          [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
                          )
@@ -1794,7 +1811,10 @@ printf("%ld ", GetAdaptersInfo(buf, &bufsz))
                 ])
                 AS_IF([test x"${ac_cv_func_GetAdaptersInfo}" = xyes],
                     [AC_DEFINE([HAVE_GETADAPTERSINFO], 1, [defined if system has the GetAdaptersInfo() method])],
-                    [dnl AC_MSG_WARN([WIN32 library routine GetAdaptersInfo() not found])
+                    [
+                     AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+                         AC_MSG_WARN([WIN32 library routine GetAdaptersInfo() not found])
+                     ])
                      AS_CASE([${target_os}],
                          [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
                          )
@@ -1990,14 +2010,22 @@ AC_ARG_WITH(drivers,
 			for DRV in $DRIVER_BUILD_LIST ; do
 
 				DRV_HITS=""
-				dnl #DEVEL-DEBUG# AC_MSG_NOTICE([= Checking DRV="$DRV"])
+				AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+					AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) = Checking DRV="$DRV"])
+				])
 				for DRVLIST_NAME in $DRVLIST_NAMES; do
-					dnl #DEVEL-DEBUG# AC_MSG_NOTICE([== Checking DRVLIST_NAME="$DRVLIST_NAME"])
+					AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+						AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) == Checking DRVLIST_NAME="$DRVLIST_NAME"])
+					])
 					eval DRVLIST="\${$DRVLIST_NAME}"
-					dnl #DEVEL-DEBUG# AC_MSG_NOTICE([== Contents DRVLIST="$DRVLIST"])
+					AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+						AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) == Contents DRVLIST="$DRVLIST"])
+					])
 
 					for DN in $DRVLIST ; do
-						dnl #DEVEL-DEBUG# AC_MSG_NOTICE([=== Checking DN="$DN"])
+						AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+							AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) === Checking DN="$DN"])
+						])
 						AS_IF([test x"$DN" = x"$DRV"], [
 							DRV_HITS="$DRV_HITS $DRVLIST_NAME"
 							AS_CASE(["$DRVLIST_NAME"],
@@ -2848,7 +2876,9 @@ dnl TODO: Add a way to define this path? will have app/ maybe module/ inside...
 nut_with_nut_monitor_dir="${datarootdir}/nut-monitor"
 
 PYTHON_FAILED_TEST_DETAILS=""
-dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-1: ${nut_with_nut_monitor}])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor-1: ${nut_with_nut_monitor}])
+])
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl While we might just install for "yes" request, in hopes user would
     dnl get their Python ecosystem in place later, we need some criteria to
@@ -2863,7 +2893,9 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         esac
     fi
 fi
-dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-2: ${nut_with_nut_monitor}])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor-2: ${nut_with_nut_monitor}])
+])
 
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl Note: no double-quoting for use, the command string may be multi-token
@@ -3016,9 +3048,11 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         fi
     fi
 
-    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-3: ${nut_with_nut_monitor}])
-    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor_py2gtk2: ${nut_with_nut_monitor_py2gtk2}])
-    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor_py3qt5: ${nut_with_nut_monitor_py3qt5}])
+    AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+        AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor-3: ${nut_with_nut_monitor}])
+        AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor_py2gtk2: ${nut_with_nut_monitor_py2gtk2}])
+        AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor_py3qt5: ${nut_with_nut_monitor_py3qt5}])
+    ])
     dnl Can we satisfy any NUT-Monitor installation request?
     if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" ; then
         case "${nut_with_nut_monitor}" in
@@ -3035,7 +3069,9 @@ if test x"${nut_with_nut_monitor}" != xno ; then
 fi
 
 AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
-dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-4: ${nut_with_nut_monitor}])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor-4: ${nut_with_nut_monitor}])
+])
 case "${nut_with_nut_monitor}" in
     "no") if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
             AC_MSG_RESULT([${nut_with_nut_monitor}: ${PYTHON_FAILED_TEST_DETAILS}])
@@ -3046,7 +3082,9 @@ case "${nut_with_nut_monitor}" in
     *) AC_MSG_RESULT([${nut_with_nut_monitor}]) ;;
 esac
 
-dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-5: ${nut_with_nut_monitor}])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor-5: ${nut_with_nut_monitor}])
+])
 if test x"${nut_with_nut_monitor}" != xno ; then
     if (command -v desktop-file-install || which desktop-file-install) >/dev/null 2>/dev/null ; then
         case "${nut_with_nut_monitor}" in
@@ -3061,7 +3099,9 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         esac
     fi
 fi
-dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-6: ${nut_with_nut_monitor}])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor-6: ${nut_with_nut_monitor}])
+])
 
 dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
 AC_MSG_CHECKING([if we can and should install PyNUT module])
@@ -3518,9 +3558,11 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 done
 rm -rf "${DOCTESTDIR}"
 
-AC_MSG_NOTICE([DOC_BUILD_LIST:       '${DOC_BUILD_LIST}'])
-AC_MSG_NOTICE([DOC_CANNOTBUILD_LIST: '${DOC_CANNOTBUILD_LIST}'])
-AC_MSG_NOTICE([DOC_SKIPBUILD_LIST:   '${DOC_SKIPBUILD_LIST}'])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:       '${DOC_BUILD_LIST}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_CANNOTBUILD_LIST: '${DOC_CANNOTBUILD_LIST}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:   '${DOC_SKIPBUILD_LIST}'])
+])
 
 case "${nut_with_doc}" in
 auto)
@@ -5143,9 +5185,9 @@ else
 	fi
 fi
 AC_MSG_RESULT([${NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS}])
-dnl # if test x"${DEFAULT_SEARCH_DIRS}" != x ; then
-dnl # 	AC_MSG_NOTICE([Checked paths: ${DEFAULT_SEARCH_DIRS}])
-dnl # fi
+AS_IF([test x"${nut_enable_configure_debug}" = xyes && test x"${DEFAULT_SEARCH_DIRS}" != x], [
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Checked paths: ${DEFAULT_SEARCH_DIRS}])
+])
 
 dnl Check if we want to expose non-standard RPATH to third-party consumers
 dnl of libupsclient etc. Keep verbatim dollar-var here, expand in pkg-config!
@@ -6549,10 +6591,12 @@ AC_SUBST(CFLAGS_DMF)
 dnl Some binaries, like CPPUNIT tests, have similar flags already added
 dnl We might wipe their specific options below if consistently applying
 dnl debug-friendly options to everything
-AC_MSG_NOTICE([CONFIG_CFLAGS='${CONFIG_CFLAGS}'])
-AC_MSG_NOTICE([CONFIG_CXXFLAGS='${CONFIG_CXXFLAGS}'])
-AC_MSG_NOTICE([CONFIG_CPPFLAGS='${CONFIG_CPPFLAGS}'])
-AC_MSG_NOTICE([CONFIG_LDFLAGS='${CONFIG_LDFLAGS}'])
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CONFIG_CFLAGS='${CONFIG_CFLAGS}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CONFIG_CXXFLAGS='${CONFIG_CXXFLAGS}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CONFIG_CPPFLAGS='${CONFIG_CPPFLAGS}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CONFIG_LDFLAGS='${CONFIG_LDFLAGS}'])
+])
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
 nut_with_debuginfo_C="${nut_with_debuginfo}"
 nut_with_debuginfo_CXX="${nut_with_debuginfo}"
@@ -6740,7 +6784,9 @@ m4_foreach_w([SCRIPTFILE], [
 ], [
  dnl Autoconf substitutes the token above specified in plain text,
  dnl e.g. the brace below is empty and bracket gives verbatim varname
- dnl AC_MSG_NOTICE([Script: SCRIPTFILE brace:(${SCRIPTFILE}) bracket:([SCRIPTFILE])])
+ AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Script: SCRIPTFILE brace:(${SCRIPTFILE}) bracket:([SCRIPTFILE])])
+ ])
  AC_CONFIG_FILES(SCRIPTFILE, chmod +x "SCRIPTFILE")
 ])
 
