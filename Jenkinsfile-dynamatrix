@@ -373,7 +373,10 @@ set | sort -n """
                     'CSTDVARIANT': ['gnu']
                     ],
 
-                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'excludeCombos': 'merge' ],
+                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace', 'excludeCombos': 'merge' ],
+                dynamatrixAxesCommonEnv: [
+                    ['CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules']
+                    ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
                     dynacfgPipeline.axisCombos_STRICT_C
@@ -416,12 +419,14 @@ set | sort -n """
                 mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace', 'excludeCombos': 'merge' ],
                 dynamatrixAxesCommonEnv: [
                     //['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall\\ -Wextra\\ -Werror', 'CXXFLAGS=-Wall\\ -Wextra\\ -Werror']
-                    ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall']
+                    ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall',
+                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules'
+                    ]
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
                     dynacfgPipeline.axisCombos_STRICT_C,
-                    [~/C.*FLAGS=.+Werror/]
+                    //[~/C.*FLAGS=.+Werror/]
                     ],
                 runAllowedFailure: true,
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
