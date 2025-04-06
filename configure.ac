@@ -5065,6 +5065,9 @@ LIBEXECDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([System exec-library path],
     LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
+dnl ----------------------------------------------------------------------
+dnl Check if NUT recipe metadata should propagate an uncommon RPATH
+
 AC_MSG_CHECKING([whether NUT libdir='${LIBDIR}' is among common search paths])
 DEFAULT_SEARCH_DIRS="`LANG=C LC_ALL=C ${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^@<:@^=@:>@*=,,'`" 2>/dev/null || DEFAULT_SEARCH_DIRS=""
 NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS=""
@@ -5190,6 +5193,7 @@ AS_IF([test x"${LDFLAGS_NUT_RPATH_CXX}" = x],
 	]
 )
 
+dnl ----------------------------------------------------------------------
 dnl checks related to --with-snmp enabled on command-line
 
 dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
