@@ -505,6 +505,7 @@ distcheck-light-DIST_ALL_PAGES:
 # distcheck-light-DIST_ALL_PAGES step due to custom logic!
 distcheck-light-DIST_ALL_PAGES-docs-skipped:
 	@echo "Starting $@" >&2
+	+@cd $(abs_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) prep-src-docs
 	+@cd $(abs_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) FAKE_PAGES_BUMP_SRC=false distcheck-light-DIST_ALL_PAGES
 	@echo "Completed $@: preparation of pre-built man pages for dist tarball, possibly faked" >&2
 
