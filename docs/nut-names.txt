@@ -195,8 +195,16 @@ ups: General unit information
 [options="header"]
 |===============================================================================
 | Name                  | Description                  | Example value
-| ups.status            | UPS status                   | <<_status_data,OL>>
-| ups.alarm             | UPS alarms                   | OVERHEAT
+| ups.status            | UPS status (opaque string comprised
+                          of space-separated tokens; many of
+                          those are ascribed certain meanings)
+                                                       | <<_status_data,OL>>
+| ups.alarm             | UPS alarms (opaque string, may be
+                          a collection of whole sentences;
+                          separate entries may be enclosed
+                          in brackets for convenience, but
+                          this standard does not require it)
+                                                       | OVERHEAT [EEPROM Error]
 | ups.time              | Internal UPS clock time
                           (opaque string)              | 12:34
 | ups.date              | Internal UPS clock date
@@ -260,7 +268,10 @@ ups: General unit information
                           note below)                  | line-interactive
 | experimental.ups.mode.buzzwords
                         | UPS mode details, not
-                          classified (opaque string)   | vendor:eaton:ECO
+                          classified (opaque string,
+                          presumably comprised of
+                          space-separated tokens;
+                          see the note below)          | vendor:eaton:ECO
 | ups.watchdog.status   | UPS watchdog status
                           (enabled or disabled)        | disabled
 | ups.start.auto        | UPS starts when mains is

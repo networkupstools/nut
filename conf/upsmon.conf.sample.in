@@ -334,9 +334,17 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 # NOTIFYMSG ECO		"UPS %s: in ECO mode (as defined by vendor)"
 # NOTIFYMSG NOTECO	"UPS %s: no longer in ECO mode (as defined by vendor)"
+#
 # NOTIFYMSG ALARM	"UPS %s: one or more active alarms: [%s]"
 # or NOTIFYMSG ALARM	"UPS %s: one or more active alarms (check ups.alarm)"
 # NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
+#
+# NOTIFYMSG OVER	"UPS %s: overloaded"
+# NOTIFYMSG NOTOVER	"UPS %s: no longer overloaded"
+# NOTIFYMSG TRIM	"UPS %s: trimming incoming voltage"
+# NOTIFYMSG NOTTRIM	"UPS %s: no longer trimming incoming voltage"
+# NOTIFYMSG BOOST	"UPS %s: boosting incoming voltage"
+# NOTIFYMSG NOTBOOST	"UPS %s: no longer boosting incoming voltage"
 #
 # Special handling is provided for surprise tokens seen in ups.status, which
 # are not in the standard NUT dictionary (but some drivers are known to use);

@@ -1337,6 +1337,18 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_ALARM;
 	else if(str=="NOTALARM")
 		return NOTIFY_NOTALARM;
+	else if(str=="OVER")
+		return NOTIFY_OVER;
+	else if(str=="NOTOVER")
+		return NOTIFY_NOTOVER;
+	else if(str=="TRIM")
+		return NOTIFY_TRIM;
+	else if(str=="NOTTRIM")
+		return NOTIFY_NOTTRIM;
+	else if(str=="BOOST")
+		return NOTIFY_BOOST;
+	else if(str=="NOTBOOST")
+		return NOTIFY_NOTBOOST;
 	else if(str=="OTHER")
 		return NOTIFY_OTHER;
 	else if(str=="NOTOTHER")

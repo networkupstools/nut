@@ -26,7 +26,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
@@ -101,7 +101,13 @@ upsdrv_info_t upsdrv_info = {
 void upsdrv_initinfo(void)
 {
 	uint16_t tab_reg[4];
-	uint64_t PartNumber;
+	uint64_t PartNumber = 0;
+	size_t i;
+
+	for (i = 0; i < (sizeof(tab_reg) / sizeof(tab_reg[0])); i++)
+	{
+		tab_reg[i] = 0;
+	}
 
 	upsdebugx(2, "upsdrv_initinfo");
 
@@ -703,7 +709,12 @@ void upsdrv_initups(void)
 			fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
 		}
 
-		mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+		r = mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+
+		if(r < 0)
+		{
+			fatalx(EXIT_FAILURE, "UPS does not repond to read requests.");
+		}
 		
 	}
 	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
