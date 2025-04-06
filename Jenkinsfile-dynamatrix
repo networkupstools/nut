@@ -397,7 +397,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          branchRegexTarget: ~/fightwarn/,
-         // NOTE: For fightwarn, we want some schenarios that would always build to test
+         // NOTE: For fightwarn, we want some scenarios that would always build to test
          //appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
