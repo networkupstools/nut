@@ -139,7 +139,15 @@ MAINTAINER SANDBOX (to be completed and pushed)
    visibly) in the local workspace to be added to the `dist` archive tarball
    file (DO NOT add them to git to avoid confusion later, or revert any such
    addition after the release -- still has a chance to confuse e.g. branches
-   made from release tag later)
+   made from release tag later):
++
+----
+# Generally may be the nuanced NUT SEMVER; is a triplet for releases
+:; echo 'NUT_VERSION_FORCED="2.8.3"' > VERSION_FORCED
+
+# Should always be a triplet
+:; echo 'NUT_VERSION_FORCED_SEMVER="2.8.3"' > VERSION_FORCED_SEMVER
+----
 *** Note that since NUT v2.8.3 this script dictates the version propagated by
     the `configure` script, so direct changes of `AC_INIT` there are no longer
     needed
