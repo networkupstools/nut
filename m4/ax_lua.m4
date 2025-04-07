@@ -567,14 +567,13 @@ AC_DEFUN([AX_LUA_HEADERS],
          test "x$LUA_INCLUDE" != 'x'],
     [m4_default([$2], [AC_MSG_ERROR([cannot find headers for specified LUA_INCLUDE])])
        AC_MSG_WARN([cannot find headers for specified LUA_INCLUDE])
-       return 1
+       ax_header_version_match="no"
     ])
 
   dnl Test the final result and run user code.
   AS_IF([test "x$ax_header_version_match" = 'xyes'], [$1],
     [m4_default([$2], [AC_MSG_ERROR([cannot find Lua includes])])
      AC_MSG_WARN([cannot find Lua includes])
-     return 1
     ])
 ])
 
@@ -616,7 +615,7 @@ AC_DEFUN([AX_LUA_LIBS],
     AS_IF([test "x$_ax_found_lua_libs" != 'xyes'],
       [m4_default([$2], [AC_MSG_ERROR([cannot find libs for specified LUA_LIB])])
        AC_MSG_WARN([cannot find libs for specified LUA_LIB])
-       return 1
+       _ax_found_lua_libs=no
       ])
   ],
   [ dnl First search for extra libs.
@@ -660,7 +659,6 @@ AC_DEFUN([AX_LUA_LIBS],
   AS_IF([test "x$_ax_found_lua_libs" = 'xyes'], [$1],
     [m4_default([$2], [AC_MSG_ERROR([cannot find Lua libs])])
      AC_MSG_WARN([cannot find Lua libs])
-     return 1
     ])
 ])
 
