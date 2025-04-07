@@ -5,7 +5,7 @@
 
             \author Vaclav Krpec <VaclavKrpec@Eaton.com>
 
-        Copyright (C) 2024
+        Copyright (C) 2024-2025
 
             \author Jim Klimov <jimklimov+nut@gmail.com>
 

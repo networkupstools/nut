@@ -5,7 +5,7 @@
 
         Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
-    Copyright (C) 2024 NUT Community
+    Copyright (C) 2024-2025 NUT Community
 
         Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
