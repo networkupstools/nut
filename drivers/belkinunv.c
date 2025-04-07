@@ -502,6 +502,8 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 		close(fd);
 		return ERROR_FD_SER;
 	}
+#else
+	NUT_WIN32_INCOMPLETE_DETAILED("port locking");
 #endif
 
 	/* sleep at least 0.25 seconds for the UPS to wake up. Belkin's own
