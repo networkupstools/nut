@@ -403,7 +403,8 @@ all/scripts/Windows:
 	+@$(SUBDIR_TGT_RULE)
 endif !HAVE_MINGW_RESGEN
 
-all/scripts/DMF: all-libs-local/common
+# May rely on dstate.o as well as common libs
+all/scripts/DMF: all-libs-local/drivers all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
 all-recursive/scripts: all/scripts/Windows all/scripts/DMF
