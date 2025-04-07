@@ -915,6 +915,18 @@ for Windows, please see link:docs/config-prereqs.txt and/or
 link:scripts/Windows/README.adoc files. Note this is rather experimental
 at this point.
 
+If using USB drivers, such as `usbhid-ups`, `nutdrv_qx` or `blazer_usb`,
+you may benefit from the link:http://zadig.akeo.ie/[Zadig] tool to pin
+the low-level drivers needed for LibUSB and further NUT to interact with
+the hardware.  Otherwise, OS-provided (e.g. "HID Battery") or third-party
+drivers may attach and "steal" bytes from the data stream needed by LibUSB
+rendering it invalid.
+
+NOTE: For more details, see
+link:https://github.com/networkupstools/nut/issues/1690[NUT issue #1690] and
+the link:https://github.com/networkupstools/nut/wiki/NUT-for-Windows[NUT for
+Windows] article on NUT GitHub Wiki.
+
 
 Runtime configuration
 ~~~~~~~~~~~~~~~~~~~~~
