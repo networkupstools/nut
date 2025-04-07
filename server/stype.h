@@ -25,7 +25,7 @@
 
 #ifndef WIN32
 #include <netdb.h>
-#endif
+#endif	/* !WIN32 */
 
 #ifndef NI_MAXHOST
 #define NI_MAXHOST      1025
@@ -47,7 +47,7 @@ typedef struct stype_s {
 	TYPE_FD_SOCK	sock_fd;
 #ifdef WIN32
 	HANDLE  Event;
-#endif
+#endif	/* WIN32 */
 	struct stype_s	*next;
 } stype_t;
 

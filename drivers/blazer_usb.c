@@ -34,7 +34,7 @@
 #include "blazer.h"
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
 #define DRIVER_VERSION	"0.21"
@@ -517,7 +517,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 # if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
 # endif
-#endif
+#endif	/* !WIN32 */
 	default:
 		break;
 	}

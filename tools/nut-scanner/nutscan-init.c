@@ -46,7 +46,7 @@
 # if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
 #  include <winsock2.h>
 # endif
-#endif
+#endif	/* WIN32 */
 
 /* Flags for code paths we can support in this run (libs available or not
  * needed). For consistency, only set non-zero values via nutscan_init() call.
@@ -155,7 +155,7 @@ void nutscan_init(void)
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
 	atexit((void(*)(void))WSACleanup);
-#endif
+#endif	/* WIN32 */
 
 	/* Optional filter to not walk things twice */
 	nut_prepare_search_paths();

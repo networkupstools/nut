@@ -6784,9 +6784,14 @@ m4_foreach_w([SCRIPTFILE], [
 ], [
  dnl Autoconf substitutes the token above specified in plain text,
  dnl e.g. the brace below is empty and bracket gives verbatim varname
- AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
-     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Script: SCRIPTFILE brace:(${SCRIPTFILE}) bracket:([SCRIPTFILE])])
- ])
+ dnl However on at least NetBSD it ends up as a flawed expansion
+ dnl (varname with a slash) due to this generated shell code:
+ dnl   printf ... "Script: lib/libupsclient-config brace:(${lib/libupsclient-config}) bracket:(SCRIPTFILE)"
+ dnl so this block remains commented away until specific troubleshooting
+ dnl is needed by any developers (locally on their systems!)
+ dnl AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+ dnl     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Script: SCRIPTFILE brace:(${SCRIPTFILE}) bracket:([SCRIPTFILE])])
+ dnl ])
  AC_CONFIG_FILES(SCRIPTFILE, chmod +x "SCRIPTFILE")
 ])
 

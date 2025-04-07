@@ -30,9 +30,9 @@
 #ifndef WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "upsd.h"
 #include "neterr.h"

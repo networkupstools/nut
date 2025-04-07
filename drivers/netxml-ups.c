@@ -50,7 +50,7 @@
 #ifdef WIN32 /* FIXME ?? skip alarm handling */
 #define HAVE_NE_SET_CONNECT_TIMEOUT  1
 #define HAVE_NE_SOCK_CONNECT_TIMEOUT 1
-#endif
+#endif	/* WIN32 */
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -283,10 +283,11 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("driver.version.data", "%s", subdriver->version);
 
 		if (testvar("subscribe") && (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK)) {
-/* TODO: port extrafd to Windows */
 #ifndef WIN32
 			extrafd = ne_sock_fd(sock);
-#endif
+#else	/* WIN32 */
+			NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
 			time(&lastheard);
 		}
 
@@ -342,19 +343,23 @@ void upsdrv_updateinfo(void)
 			ne_sock_close(sock);
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
-/* TODO: port extrafd to Windows */
 #ifndef WIN32
 				extrafd = ne_sock_fd(sock);
-#endif
+#else	/* WIN32 */
+				NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
 				time(&lastheard);
 				return;
 			}
 
 			dstate_datastale();
-/* TODO: port extrafd to Windows */
+
 #ifndef WIN32
 			extrafd = ERROR_FD;
-#endif
+#else	/* WIN32 */
+			NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
+
 			return;
 		}
 	}
@@ -661,9 +666,9 @@ void upsdrv_initups(void)
 	if (!nut_debug_level) {
 #ifndef WIN32
 		fp = fopen("/dev/null", "w");
-#else
+#else	/* WIN32 */
 		fp = fopen("nul", "w");
-#endif
+#endif	/* WIN32 */
 	} else {
 		fp = stderr;
 	}

@@ -27,7 +27,7 @@
 #include <grp.h>
 #include <pwd.h>
 #include <sys/ioctl.h>
-#endif
+#endif	/* !WIN32 */
 #include <ctype.h>
 #include <sys/file.h>
 #include <sys/types.h>
@@ -50,7 +50,7 @@ static void ser_open_error(const char *port)
 #ifndef WIN32
 	struct	passwd	*user;
 	struct	group	*group;
-#endif
+#endif	/* !WIN32 */
 
 	printf("\n");
 
@@ -64,7 +64,7 @@ static void ser_open_error(const char *port)
 		fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 	}
 
-/* TODO */
+/* TODO NUT_WIN32_INCOMPLETE? */
 #ifndef WIN32
 	user = getpwuid(getuid());
 
@@ -83,7 +83,7 @@ static void ser_open_error(const char *port)
 	if (group)
 		printf("Serial port group: %s (%d)\n",
 			group->gr_name, (int) fs.st_gid);
-#endif
+#endif	/* !WIN32 */
 
 	printf("     Mode of port: %04o\n\n", (unsigned int) fs.st_mode & 07777);
 
@@ -103,9 +103,9 @@ static void lock_set(TYPE_FD_SER fd, const char *port)
 	if (INVALID_FD_SER(fd)) {
 #ifndef WIN32
 		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: fd = %d", fd);
-#else
+#else	/* WIN32 */
 		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: struct = %p", fd);
-#endif
+#endif	/* WIN32 */
 	}
 
 	if (do_lock_port == 0)
@@ -222,13 +222,13 @@ static int ser_set_control(TYPE_FD_SER fd, int line, int state)
 		return ioctl(fd, TIOCMBIC, &line);
 	}
 }
-#endif
+#endif	/* !WIN32 */
 
 int ser_set_dtr(TYPE_FD_SER fd, int state)
 {
 #ifndef WIN32
 	return ser_set_control(fd, TIOCM_DTR, state);
-#else
+#else	/* WIN32 */
 	DWORD action;
 
 	if (state == 0) {
@@ -244,14 +244,14 @@ int ser_set_dtr(TYPE_FD_SER fd, int state)
 	}
 
 	return -1;
-#endif
+#endif	/* WIN32 */
 }
 
 int ser_set_rts(TYPE_FD_SER fd, int state)
 {
 #ifndef WIN32
 	return ser_set_control(fd, TIOCM_RTS, state);
-#else
+#else	/* WIN32 */
 	DWORD action;
 
 	if(state == 0) {
@@ -265,7 +265,7 @@ int ser_set_rts(TYPE_FD_SER fd, int state)
 		return 0;
 	}
 	return -1;
-#endif
+#endif	/* WIN32 */
 }
 
 #ifndef WIN32
@@ -277,42 +277,42 @@ static int ser_get_control(TYPE_FD_SER fd, int line)
 
 	return (flags & line);
 }
-#endif
+#endif	/* !WIN32 */
 
 int ser_get_dsr(TYPE_FD_SER fd)
 {
 #ifndef WIN32
 	return ser_get_control(fd, TIOCM_DSR);
-#else
+#else	/* WIN32 */
 	int flags;
 
 	w32_getcomm(fd->handle, &flags);
 	return (flags & TIOCM_DSR);
-#endif
+#endif	/* WIN32 */
 }
 
 int ser_get_cts(TYPE_FD_SER fd)
 {
 #ifndef WIN32
 	return ser_get_control(fd, TIOCM_CTS);
-#else
+#else	/* WIN32 */
 	int flags;
 
 	w32_getcomm(fd->handle, &flags);
 	return (flags & TIOCM_CTS);
-#endif
+#endif	/* WIN32 */
 }
 
 int ser_get_dcd(TYPE_FD_SER fd)
 {
 #ifndef WIN32
 	return ser_get_control(fd, TIOCM_CD);
-#else
+#else	/* WIN32 */
 	int flags;
 
 	w32_getcomm(fd->handle, &flags);
 	return (flags & TIOCM_CD);
-#endif
+#endif	/* WIN32 */
 }
 
 int ser_close(TYPE_FD_SER fd, const char *port)
@@ -320,9 +320,9 @@ int ser_close(TYPE_FD_SER fd, const char *port)
 	if (INVALID_FD_SER(fd)) {
 #ifndef WIN32
 		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", fd, port);
-#else
+#else	/* WIN32 */
 		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: struct=%p port=%s", fd, port);
-#endif
+#endif	/* WIN32 */
 	}
 
 	if (close(fd) != 0)

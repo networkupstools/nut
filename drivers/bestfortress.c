@@ -234,12 +234,12 @@ static int upssend(const char *fmt,...) {
 	for (p = buf; *p && sent < INT_MAX - 1; p++) {
 #ifndef WIN32
 		if (write(upsfd, p, 1) != 1)
-#else
+#else	/* WIN32 */
 		DWORD bytes_written;
 		BOOL res;
 		res = WriteFile(upsfd, p, 1, &bytes_written,NULL);
 		if (res == 0 || bytes_written == 0)
-#endif
+#endif	/* WIN32 */
 			return -1;
 
 		/* Note: LGTM.com analysis warns that here

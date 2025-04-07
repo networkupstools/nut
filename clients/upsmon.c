@@ -4,7 +4,7 @@
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
      2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-     2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
+     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@
 # include <sys/socket.h>
 # include <unistd.h>
 # include <fcntl.h>
-#else
-# include <wincompat.h>
-#endif
+#else	/* WIN32 */
+# include "wincompat.h"
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -138,11 +138,11 @@ static	int	userfsd = 0, pipefd[2];
 	 * into two upsmon processes for some more security? */
 #ifndef WIN32
 static	int	use_pipe = 1;
-#else
+#else	/* WIN32 */
 	/* Do not fork in WIN32 */
 static	int	use_pipe = 0;
 static HANDLE   mutex = INVALID_HANDLE_VALUE;
-#endif
+#endif	/* WIN32 */
 
 static	utype_t	*firstups = NULL;
 
@@ -152,7 +152,7 @@ static int 	opt_af = AF_UNSPEC;
 	/* signal handling things */
 static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
-#endif
+#endif	/* !WIN32 */
 
 #ifdef HAVE_SYSTEMD
 # define SERVICE_UNIT_NAME "nut-monitor.service"
@@ -222,7 +222,7 @@ static void wall(const char *text)
 
 	fprintf(wf, "%s\n", text);
 	pclose(wf);
-#else
+#else	/* WIN32 */
 #	define MESSAGE_CMD "message.exe"
 	char * command;
 
@@ -240,7 +240,7 @@ static void wall(const char *text)
 		upslog_with_errno(LOG_NOTICE, "Can't invoke wall");
 	}
 	free(command);
-#endif
+#endif	/* WIN32 */
 }
 
 #ifdef WIN32
@@ -290,7 +290,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 	free(data);
 	return 1;
 }
-#endif
+#endif	/* WIN32 */
 
 static void notify(const char *notice, unsigned int flags, const char *ntype,
 			const char *upsname)
@@ -298,7 +298,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 #ifndef WIN32
 	char	exec[LARGEBUF];
 	int	ret;
-#endif
+#endif	/* !WIN32 */
 
 	upsdebugx(6, "%s: sending notification for [%s]: type %s with flags 0x%04x: %s",
 		__func__, upsname ? upsname : "upsmon itself", ntype, flags, notice);
@@ -359,7 +359,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 	upsdebugx(6, "%s (child): exiting after notifications", __func__);
 
 	exit(EXIT_SUCCESS);
-#else
+#else	/* WIN32 */
 	async_notify_t * data;
 	time_t t;
 
@@ -379,7 +379,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 			0,	/* Creation flags */
 			NULL	/* thread id */
 		      );
-#endif
+#endif	/* WIN32 */
 }
 
 static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
@@ -945,7 +945,7 @@ static void doshutdown(void)
 #ifndef WIN32
 		if (geteuid() != 0)
 			upslogx(LOG_WARNING, "Not root, shutdown may fail");
-#endif
+#endif	/* !WIN32 */
 
 		set_pdflag();
 
@@ -973,7 +973,7 @@ static void doshutdown(void)
 				Sleep(2000);
 			}
 		}
-#endif
+#endif	/* WIN32 */
 
 		sret = system(shutdowncmd);
 
@@ -1055,7 +1055,7 @@ static void read_timeout(int sig)
 
 	/* don't do anything here, just return */
 }
-#endif
+#endif	/* !WIN32 */
 
 static void set_alarm(void)
 {
@@ -1068,7 +1068,9 @@ static void set_alarm(void)
 	sa.sa_handler = read_timeout;
 	sigaction(SIGALRM, &sa, NULL);
 	alarm(tv.tv_sec);
-#endif
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 }
 
 static void clear_alarm(void)
@@ -1083,7 +1085,9 @@ static void clear_alarm(void)
 #  pragma GCC diagnostic pop
 # endif
 	alarm(0);
-#endif
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 }
 
 static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
@@ -2125,9 +2129,9 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		free(powerdownflag);
 #ifndef WIN32
 		powerdownflag = xstrdup(arg[1]);
-#else
+#else	/* WIN32 */
 		powerdownflag = filter_path(arg[1]);
-#endif
+#endif	/* WIN32 */
 
 		if (reload_flag == 0)
 			upslogx(LOG_INFO, "Using power down flag file %s",
@@ -2475,7 +2479,7 @@ static void sigpipe(int sig)
 {
 	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing after signal %i...", sig);
 }
-#endif
+#endif	/* !WIN32 */
 
 /* SIGQUIT, SIGTERM handler */
 static void set_exit_flag(int sig)
@@ -2535,7 +2539,7 @@ static void upsmon_cleanup(void)
 		ReleaseMutex(mutex);
 		CloseHandle(mutex);
 	}
-#endif
+#endif	/* WIN32 */
 }
 
 static void user_fsd(int sig)
@@ -2574,9 +2578,9 @@ static void setup_signals(void)
 
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGCMD_RELOAD, &sa, NULL);
-#else
+#else	/* WIN32 */
 	pipe_create(UPSMON_PIPE_NAME);
-#endif
+#endif	/* WIN32 */
 }
 
 /* remember the last time the ups was not critical (OB + LB) */
@@ -3189,7 +3193,7 @@ static void help(const char *arg_progname)
 	printf("		 - stop: stop monitoring and exit\n");
 #ifndef WIN32
 	printf("  -P <pid>	send the signal above to specified PID (bypassing PID file)\n");
-#endif
+#endif	/* !WIN32 */
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
@@ -3258,7 +3262,7 @@ static void runparent(int fd)
 	close(fd);
 	exit(EXIT_SUCCESS);
 }
-#endif
+#endif	/* !WIN32 */
 
 /* fire up the split parent/child scheme */
 static void start_pipe(void)
@@ -3290,7 +3294,8 @@ static void start_pipe(void)
 
 	/* prevent pipe leaking to NOTIFYCMD */
 	set_close_on_exec(pipefd[1]);
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
+	/* NOTE: Not applicable to WIN32 - no parent/child split */
 }
 
 static void delete_ups(utype_t *target)
@@ -3476,7 +3481,7 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 	pid_t	oldpid = -1;
 	int	cmd = 0;
-#else
+#else	/* WIN32 */
 	const char * cmd = NULL;
 	DWORD ret;
 
@@ -3498,7 +3503,7 @@ int main(int argc, char *argv[])
 	else {
 		prog = drv_name;
 	}
-#endif
+#endif	/* WIN32 */
 
 	print_banner_once(prog, 0);
 
@@ -3531,7 +3536,7 @@ int main(int argc, char *argv[])
 				if ((oldpid = parsepid(optarg)) < 0)
 					help(argv[0]);
 				break;
-#endif
+#endif	/* !WIN32 */
 			case 'D':
 				nut_debug_level++;
 				nut_debug_level_args++;
@@ -3798,7 +3803,7 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 		/* Note: upsmon does not fork in WIN32 */
 		upslogx(LOG_INFO, "Warning: running as one big root process by request (upsmon -p)");
-#endif
+#endif	/* !WIN32 */
 
 		writepid(prog);
 	}
@@ -3823,7 +3828,7 @@ int main(int argc, char *argv[])
 		struct timeval	start, end, now;
 #ifndef WIN32
 		struct timeval	prev;
-#endif
+#endif	/* !WIN32 */
 		double	dt = 0;
 		int	sleep_overhead_tolerance = 5;
 
@@ -4013,7 +4018,7 @@ int main(int argc, char *argv[])
 		gettimeofday(&end, NULL);
 		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %.06f",
 			sleepval, difftimeval(end, start));
-#else
+#else	/* WIN32 */
 		maxhandle = 0;
 		memset(&handles, 0, sizeof(handles));
 
@@ -4080,7 +4085,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-#endif
+#endif	/* WIN32 */
 
 		/* General-purpose handling of time jumps for OSes/run-times
 		 * without NUT direct support for suspend/inhibit */

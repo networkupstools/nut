@@ -1,9 +1,13 @@
 /*
     nutconf.hpp - Nut configuration file manipulation API
 
-    Copyright (C)
-	2012	Emilien Kia <emilien.kia@gmail.com>
-	2024	Jim Klimov <jimklimov+nut@gmail.com>
+    Copyright (C) 2012 Eaton
+
+        Author: Emilien Kia <emilien.kia@gmail.com>
+
+    Copyright (C) 2024-2025 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

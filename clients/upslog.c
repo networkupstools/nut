@@ -48,13 +48,13 @@
 
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 	static	int	reopen_flag = 0, exit_flag = 0;
 	static	size_t	max_loops = 0;
 #ifndef WIN32
 	static	sigset_t	nut_upslog_sigmask;
-#endif
+#endif	/* !WIN32 */
 	/* NOTE: The logbuffer is reused for each loop cycle (each device)
 	 * and the logformat is one for all "systems" in this program run */
 	static	char	logbuffer[LARGEBUF], *logformat = NULL;
@@ -154,7 +154,7 @@ static void set_print_now_flag(int sig)
 
 	/* no need to do anything, the signal will cause sleep to be interrupted */
 }
-#endif
+#endif	/* !WIN32 */
 
 /* handlers: reload on HUP, exit on INT/QUIT/TERM */
 static void setup_signals(void)
@@ -181,7 +181,9 @@ static void setup_signals(void)
 	sa.sa_handler = set_print_now_flag;
 	if (sigaction(SIGUSR1, &sa, NULL) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGUSR1 handler");
-#endif
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 }
 
 static void help(const char *prog)
@@ -552,9 +554,9 @@ int main(int argc, char **argv)
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
 #ifndef WIN32
 					monhost_ups_current->logtarget = add_logfile(strsep(&m_arg, ","));
-#else
+#else	/* WIN32 */
 					monhost_ups_current->logtarget = add_logfile(filter_path(strsep(&m_arg, ",")));
-#endif
+#endif	/* WIN32 */
 					monhost_ups_current->ups = NULL;
 					if (m_arg) /* Had a third comma - also unexpected! */
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
@@ -568,9 +570,9 @@ int main(int argc, char **argv)
 			case 'l':
 #ifndef WIN32
 				logfn = optarg;
-#else
+#else	/* WIN32 */
 				logfn = filter_path(optarg);
-#endif
+#endif	/* WIN32 */
 				break;
 
 			case 'i':
@@ -665,9 +667,9 @@ int main(int argc, char **argv)
 		monhost = argv[0];
 #ifndef WIN32
 		logfn = argv[1];
-#else
+#else	/* WIN32 */
 		logfn = filter_path(argv[1]);
-#endif
+#endif	/* WIN32 */
 		interval = atoi(argv[2]);
 	}
 

@@ -28,11 +28,11 @@
 # include <pwd.h>
 # include <grp.h>
 # include <sys/un.h>
-#else
-# include <wincompat.h>
+#else	/* WIN32 */
+# include "wincompat.h"
 # include <processthreadsapi.h>
 # include <psapi.h>
-#endif
+#endif	/* WIN32 */
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>	/* readlink */
@@ -775,9 +775,9 @@ void open_syslog(const char *progname)
 		break;
 # endif	/* HAVE_SETLOGMASK && HAVE_DECL_LOG_UPTO */
 	}
-#else
+#else	/* WIN32 */
 	EventLogName = progname;
-#endif	/* WIND32 */
+#endif	/* WIN32 */
 }
 
 /* close ttys and become a daemon */
@@ -794,7 +794,7 @@ void background(void)
 
 	if ((pid = fork()) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
-#endif
+#endif	/* !WIN32 */
 
 	if (!syslog_disabled)
 		/* not disabled: NUT_DEBUG_SYSLOG is unset or invalid */
@@ -870,7 +870,9 @@ void background(void)
 # ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
 # endif
-#endif	/* not WIN32 */
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 
 	upslogx(LOG_INFO, "Startup successful");
 }
@@ -891,8 +893,9 @@ struct passwd *get_user_pwent(const char *name)
 		fatalx(EXIT_FAILURE, "OS user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
-#else
+#else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(name);
+	/* NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE(); */
 #endif /* WIN32 */
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN) )
@@ -967,10 +970,11 @@ void become_user(struct passwd *pw)
 
 	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
 		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
-#else
+#else	/* WIN32 */
+	/* NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE(); */
 	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
 		pw ? pw->pw_name : "<null>");
-#endif
+#endif	/* WIN32 */
 }
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
@@ -992,16 +996,17 @@ void chroot_start(const char *path)
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
 
-#else
+#else	/* WIN32 */
+	/* NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE(); */
 	upsdebugx(1, "Can not chroot into %s: not implemented on this platform", path);
-#endif
+#endif	/* WIN32 */
 
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
 
 #ifndef WIN32
 	upsdebugx(1, "chrooted into %s", path);
-#endif
+#endif	/* !WIN32 */
 }
 
 char * getprocname(pid_t pid)
@@ -1081,7 +1086,7 @@ char * getprocname(pid_t pid)
 			LocalFree(WinBuf);
 		}
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (stat("/proc", &st) == 0 && ((st.st_mode & S_IFMT) == S_IFDIR)) {
 		upsdebugx(3, "%s: /proc is an accessible directory, investigating", __func__);
@@ -1414,7 +1419,7 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
 		if (progname[i] == '/'
 #ifdef WIN32
 		||  progname[i] == '\\'
-#endif
+#endif	/* WIN32 */
 		) {
 			progbasenamelen = 0;
 			progbasenamedot = 0;
@@ -1531,7 +1536,7 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 			goto finish;
 		}
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* TOTHINK: Developer builds wrapped with libtool may be prefixed
 	 * by "lt-" in the filename. Should we re-enter (or wrap around)
@@ -1681,7 +1686,7 @@ char * getfullpath(char * relative_path)
 
 	return(xstrdup(buf));
 }
-#endif
+#endif	/* WIN32 */
 
 /* drop off a pidfile for this process */
 void writepid(const char *name)
@@ -1710,9 +1715,10 @@ void writepid(const char *name)
 	}
 
 	umask(mask);
-#else
+#else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(name);
-#endif
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 }
 
 /* send sig to pid, returns -1 for error, or
@@ -1888,18 +1894,19 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 
 	return 0;
-#else
+#else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(pid);
 	NUT_UNUSED_VARIABLE(sig);
 	NUT_UNUSED_VARIABLE(progname);
 	NUT_UNUSED_VARIABLE(check_current_progname);
 	/* Windows builds use named pipes, not signals per se */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
 	upslogx(LOG_ERR,
 		"%s: not implemented for Win32 and "
 		"should not have been called directly!",
 		__func__);
 	return -1;
-#endif
+#endif	/* WIN32 */
 }
 
 /* parses string buffer into a pid_t if it passes
@@ -2228,7 +2235,7 @@ int sendsignal(const char *progname, int sig, int check_current_progname)
 
 	return sendsignalfn(fn, sig, progname, check_current_progname);
 }
-#else
+#else	/* WIN32 */
 int sendsignal(const char *progname, const char * sig, int check_current_progname)
 {
 	/* progname is used as the pipe name for WIN32
@@ -2236,20 +2243,20 @@ int sendsignal(const char *progname, const char * sig, int check_current_prognam
 	 */
 	return sendsignalfn(progname, sig, NULL, check_current_progname);
 }
-#endif
+#endif	/* WIN32 */
 
 const char *xbasename(const char *file)
 {
 #ifndef WIN32
 	const char *p = strrchr(file, '/');
-#else
+#else	/* WIN32 */
 	const char *p = strrchr(file, '\\');
 	const char *r = strrchr(file, '/');
 	/* if not found, try '/' */
 	if( r > p ) {
 		p = r;
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (p == NULL)
 		return file;
@@ -2934,7 +2941,7 @@ void nut_report_config_flags(void)
 		);
 #ifdef WIN32
 		fflush(stderr);
-#endif
+#endif	/* WIN32 */
 	}
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
@@ -3057,7 +3064,7 @@ vupslog_too_long:
 #ifdef WIN32
 		LPVOID WinBuf;
 		DWORD WinErr = GetLastError();
-#endif
+#endif	/* WIN32 */
 
 		snprintfcat(buf, bufsize, ": %s", strerror(errno_orig));
 
@@ -3075,7 +3082,7 @@ vupslog_too_long:
 
 		snprintfcat(buf, bufsize, " [%s]", (char *)WinBuf);
 		LocalFree(WinBuf);
-#endif
+#endif	/* WIN32 */
 	}
 
 	/* Note: nowadays debug level can be changed during run-time,
@@ -3109,7 +3116,7 @@ vupslog_too_long:
 		}
 #ifdef WIN32
 		fflush(stderr);
-#endif
+#endif	/* WIN32 */
 	}
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(priority, "%s", buf);
@@ -3133,7 +3140,7 @@ const char * confpath(void)
 		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_ETC);
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* We assume, here and elsewhere, that
 	 * at least CONFPATH is always defined */
@@ -3159,7 +3166,7 @@ const char * dflt_statepath(void)
 		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_VAR_RUN);
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* We assume, here and elsewhere, that
 	 * at least STATEPATH is always defined */
@@ -3192,7 +3199,7 @@ const char * altpidpath(void)
 			/* fall back to built-in pathname relative to binary/workdir */
 			path = getfullpath(PATH_VAR_RUN);
 		}
-#endif
+#endif	/* WIN32 */
 	}
 
 	if ( (path != NULL) && (*path != '\0') )
@@ -3228,7 +3235,7 @@ const char * rootpidpath(void)
 		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_ETC);
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* We assume, here and elsewhere, that
 	 * at least PIDPATH is always defined */
@@ -3245,7 +3252,7 @@ void check_unix_socket_filename(const char *fn) {
 #ifndef WIN32
 	struct sockaddr_un	ssaddr;
 	max = sizeof(ssaddr.sun_path);
-#endif
+#endif	/* WIN32 */
 
 	if (len < max)
 		return;
@@ -3625,7 +3632,7 @@ void *xmalloc(size_t size)
 #ifdef WIN32
 	/* FIXME: This is what (x)calloc() is for! */
 	memset(p, 0, size);
-#endif
+#endif	/* WIN32 */
 
 	return p;
 }
@@ -3640,7 +3647,7 @@ void *xcalloc(size_t number, size_t size)
 #ifdef WIN32
 	/* FIXME: calloc() above should have initialized this already! */
 	memset(p, 0, size * number);
-#endif
+#endif	/* WIN32 */
 
 	return p;
 }
@@ -3694,7 +3701,7 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d
 
 	return read(fd, buf, buflen);
 }
-#else
+#else	/* WIN32 */
 ssize_t select_read(serial_handler_t *fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	/* This function is only called by serial drivers right now */
@@ -3716,7 +3723,7 @@ ssize_t select_read(serial_handler_t *fd, void *buf, const size_t buflen, const 
 
 	return res;
 }
-#endif
+#endif	/* WIN32 */
 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
@@ -3742,7 +3749,7 @@ ssize_t select_write(const int fd, const void *buf, const size_t buflen, const t
 
 	return write(fd, buf, buflen);
 }
-#else
+#else	/* WIN32 */
 /* Note: currently not implemented de-facto for Win32 */
 ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
@@ -3751,10 +3758,13 @@ ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen,
 	NUT_UNUSED_VARIABLE(buflen);
 	NUT_UNUSED_VARIABLE(d_sec);
 	NUT_UNUSED_VARIABLE(d_usec);
-	upsdebugx(1, "WARNING: method %s() is not implemented yet for WIN32", __func__);
+
+	NUT_WIN32_INCOMPLETE_LOGWARN();
+	/* upsdebugx(1, "WARNING: method %s() is not implemented yet for WIN32", __func__); */
+
 	return 0;
 }
-#endif
+#endif	/* WIN32 */
 
 /* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
  * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
@@ -3839,7 +3849,7 @@ static const char * search_paths_builtin[] = {
 	 * Perhaps a decent fallback idea for all platforms, not just WIN32.
 	 */
 	".",
-#endif
+#endif	/* WIN32 */
 	NULL
 };
 
@@ -4027,7 +4037,7 @@ void upsdebugx_report_search_paths(int level, int report_search_paths_builtin) {
 	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
 		upsdebugx(level, "\tWindows via %s:\t%s", varname, s);
 	}
-#endif
+#endif	/* WIN32 */
 }
 
 static char * get_libname_in_dir(const char* base_libname, size_t base_libname_length, const char* dirname, int index) {
@@ -4343,9 +4353,10 @@ void set_close_on_exec(int fd) {
 # ifdef WIN32
 	/* Find a way, if possible at all (WIN32: get INT fd from the HANDLE?) */
 	NUT_UNUSED_VARIABLE(fd);
-# else
+	NUT_WIN32_INCOMPLETE();
+# else	/* !WIN32 */
 	fcntl(fd, F_SETFD, FD_CLOEXEC);
-# endif
+# endif	/* !WIN32 */
 #endif
 }
 

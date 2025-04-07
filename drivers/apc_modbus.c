@@ -1020,11 +1020,11 @@ static void _apc_modbus_handle_error(modbus_t *ctx)
 	if (wsa_error == WSAETIMEDOUT) {
 		flush = 1;
 	}
-#else
+#else	/* !WIN32 */
 	if (errno == ETIMEDOUT) {
 		flush = 1;
 	}
-#endif /* WIN32 */
+#endif /* !WIN32 */
 
 	if (flush > 0 && flush_retries++ < 5) {
 		usleep(1000000);

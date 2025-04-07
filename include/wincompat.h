@@ -28,6 +28,19 @@
 #include "common.h"
 #include <limits.h>
 
+/* Used in ifdef code blocks that were not yet implemented as part of
+ * the NUT for Windows upstreaming as a first-class citizen code base.
+ * For more details, see:
+ *   https://github.com/networkupstools/nut/wiki/NUT-for-Windows
+ *   https://github.com/orgs/networkupstools/projects/2/views/1
+ *   https://github.com/networkupstools/nut/issues?q=+label%3AWindows-not-on-par-with-POSIX+sort%3Aupdated-desc+
+ */
+#define NUT_WIN32_INCOMPLETE_DETAILED(str)	upsdebugx(1, "%s:%s::%s() : this method was not fully ported for WIN32: %s", __FILE__, __LINE__, __func__, NUT_STRARG(str))
+#define NUT_WIN32_INCOMPLETE()	upsdebugx(1, "%s:%s::%s() : this method was not fully ported for WIN32", __FILE__, __LINE__, __func__)
+#define NUT_WIN32_INCOMPLETE_LOGWARN()	upslogx(LOG_WARNING, "%s:%s::%s() : this method was not fully ported for WIN32", __FILE__, __LINE__, __func__)
+/* These use-cases need to be revised, maybe hushed later: */
+#define NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE()	NUT_WIN32_INCOMPLETE_DETAILED("may be not applicable to the platform")
+
 /* This value is defined in the error.h file of the libusb-win32 sources
  * FIXME: Should only be relevant for builds WITH_LIBUSB_0_1 - #ifdef it so?
  * Conflicts with e.g. /msys64/mingw64/include/errno.h which defines it as 138

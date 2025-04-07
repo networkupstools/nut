@@ -29,9 +29,9 @@
 #include <sys/stat.h>
 #ifndef WIN32
 #include <sys/wait.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "proto.h"
 #include "common.h"
@@ -50,9 +50,9 @@ typedef struct {
 	int	exceeded_timeout;
 #ifndef WIN32
 	pid_t	pid;
-#else
+#else	/* WIN32 */
 	int	pid;	/* for WIN32 used just as a flag that this UPS was started by this tool in this run */
-#endif
+#endif	/* WIN32 */
 	void	*next;
 }	ups_t;
 
@@ -91,12 +91,12 @@ int	exit_flag = 0;
 #ifndef WIN32
 static int	reload_flag = 0;
 static time_t	last_dangerous_reload = 0;
-#endif
+#endif	/* !WIN32 */
 #ifndef WIN32
 static int	signal_flag = 0;
-#else
+#else	/* WIN32 */
 static char	*signal_flag = NULL;
-#endif
+#endif	/* WIN32 */
 
 void do_upsconf_args(char *arg_upsname, char *var, char *val)
 {
@@ -185,9 +185,9 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 static void signal_driver_cmd(const ups_t *ups,
 #ifndef WIN32
 	int cmd
-#else
+#else	/* WIN32 */
 	const char *cmd
-#endif
+#endif	/* WIN32 */
 )
 {
 #ifndef WIN32
@@ -195,14 +195,14 @@ static void signal_driver_cmd(const ups_t *ups,
  * Currently the codepath is not implemented below
  */
 	char	pidfn[NUT_PATH_MAX + 1];
-#endif
+#endif	/* !WIN32 */
 	int	ret;
 
 #ifndef WIN32
 	if (cmd == SIGCMD_RELOAD_OR_ERROR || cmd == SIGCMD_EXIT)
-#else
+#else	/* WIN32 */
 	if (cmd && (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR) || !strcmp(cmd, SIGCMD_EXIT)))
-#endif
+#endif	/* WIN32 */
 	{
 		/* not a signal, use socket protocol */
 		char buf[LARGEBUF], cmdbuf[LARGEBUF];
@@ -211,16 +211,16 @@ static void signal_driver_cmd(const ups_t *ups,
 
 #ifndef WIN32
 		if (cmd == SIGCMD_RELOAD_OR_ERROR)
-#else
+#else	/* WIN32 */
 		if (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
-#endif
+#endif	/* WIN32 */
 			cmdname = "reload-or-error";
 		else
 #ifndef WIN32
 		if (cmd == SIGCMD_EXIT)
-#else
+#else	/* WIN32 */
 		if (!strcmp(cmd, SIGCMD_EXIT))
-#endif
+#endif	/* WIN32 */
 			cmdname = "exit";
 
 		upsdebugx(1, "Signalling UPS [%s]: driver.%s",
@@ -256,17 +256,17 @@ socket_error:
 
 #ifndef WIN32
 /* TODO: implement WIN32: https://github.com/networkupstools/nut/issues/1916 */
-/* handle generally signalling the UPS */
+/* NUT_WIN32_INCOMPLETE : handle generally signalling the UPS */
 	/* Real signals */
-#ifndef WIN32
+# ifndef WIN32
 	upsdebugx(1, "Signalling UPS [%s]: %d (%s)",
 		ups->upsname, cmd, strsignal(cmd));
-#else
+# else	/* WIN32 */
 	upsdebugx(1, "Signalling UPS [%s]: %s",
 		ups->upsname, cmd);
-#endif
+# endif	/* WIN32 */
 
-#ifndef WIN32
+# ifndef WIN32
 	if (ups->pid == -1) {
 		struct stat	fs;
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
@@ -294,9 +294,9 @@ socket_error:
 		 */
 		snprintf(pidfn, sizeof(pidfn), "PID %" PRIdMAX, (intmax_t)ups->pid);
 	}
-#else
+# else	/* WIN32 */
 	snprintf(pidfn, sizeof(pidfn), "%s-%s", ups->driver, ups->upsname);
-#endif
+# endif	/* WIN32 */
 
 	upsdebugx(2, "Sending signal to %s", pidfn);
 
@@ -305,7 +305,7 @@ socket_error:
 
 	/* Hush the fopen(pidfile) message but let "real errors" be seen */
 	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
-#ifndef WIN32
+# ifndef WIN32
 	if (ups->pid == -1) {
 		ret = sendsignalfn(pidfn, cmd, ups->driver, 0);
 	} else {
@@ -317,9 +317,9 @@ socket_error:
 				pidfn, ret);
 		}
 	}
-#else
+# else	/* WIN32 */
 	ret = sendsignal(pidfn, cmd, 0);
-#endif
+# endif	/* WIN32 */
 	/* Restore the signal errors verbosity */
 	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 
@@ -327,6 +327,8 @@ socket_error:
 		upslog_with_errno(LOG_ERR, "Signalling %s failed: %d", pidfn, ret);
 		exec_error++;
 	}
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_LOGWARN();
 #endif	/* WIN32: https://github.com/networkupstools/nut/issues/1916 */
 }
 
@@ -370,9 +372,9 @@ static void stop_driver(const ups_t *ups)
 		 */
 		snprintf(pidfn, sizeof(pidfn), "PID %" PRIdMAX, (intmax_t)ups->pid);
 	}
-#else
+#else	/* WIN32 */
 	snprintf(pidfn, sizeof(pidfn), "%s-%s", ups->driver, ups->upsname);
-#endif
+#endif	/* WIN32 */
 
 	upsdebugx(2, "Sending signal to %s", pidfn);
 
@@ -392,9 +394,9 @@ static void stop_driver(const ups_t *ups)
 			goto clean_return;
 		}
 	}
-#else
+#else	/* WIN32 */
 	ret = sendsignal(pidfn, COMMAND_STOP, 0);
-#endif
+#endif	/* WIN32 */
 
 	if (ret < 0) {
 #ifndef WIN32
@@ -408,10 +410,10 @@ static void stop_driver(const ups_t *ups)
 				goto clean_return;
 			}
 		}
-#else
+#else	/* WIN32 */
 		upsdebugx(2, "Stopping %s failed, retrying again", pidfn);
 		ret = sendsignal(pidfn, COMMAND_STOP, 0);
-#endif
+#endif	/* WIN32 */
 		if (ret < 0) {
 			upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
 			exec_error++;
@@ -430,9 +432,9 @@ static void stop_driver(const ups_t *ups)
 			}
 			ret = sendsignalpid(ups->pid, 0, ups->driver, 0);
 		}
-#else
+#else	/* WIN32 */
 		ret = sendsignalfn(pidfn, 0, ups->driver, 0);
-#endif
+#endif	/* WIN32 */
 		if (ret != 0) {
 			upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
 			goto clean_return;
@@ -451,10 +453,11 @@ static void stop_driver(const ups_t *ups)
 		}
 		ret = sendsignalpid(ups->pid, SIGKILL, ups->driver, 0);
 	}
-#else
+#else	/* WIN32 */
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying again", pidfn);
 	ret = sendsignal(pidfn, COMMAND_STOP, 0);
-#endif
+#endif	/* WIN32 */
+
 	if (ret == 0) {
 		for (i = 0; i < 5 ; i++) {
 #ifndef WIN32
@@ -467,9 +470,9 @@ static void stop_driver(const ups_t *ups)
 				}
 				ret = sendsignalpid(ups->pid, 0, ups->driver, 0);
 			}
-#else
+#else	/* WIN32 */
 			ret = sendsignalfn(pidfn, 0, ups->driver, 0);
-#endif
+#endif	/* WIN32 */
 			if (ret != 0) {
 				upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
 				/* While a TERMinated driver cleans up,
@@ -500,18 +503,18 @@ void set_exit_flag(const int sig)
 static void set_signal_flag(const
 #ifndef WIN32
 	int
-#else
+#else	/* WIN32 */
 	char *
-#endif
+#endif	/* WIN32 */
 	sig
 ) {
 	/* non-const, so some casting trickery */
 	signal_flag = (
 #ifndef WIN32
 		int
-#else
+#else	/* WIN32 */
 		char *
-#endif
+#endif	/* WIN32 */
 		)sig;
 }
 
@@ -519,19 +522,19 @@ static void reset_signal_flag(void)
 {
 #ifndef WIN32
 	set_signal_flag(0);
-#else
+#else	/* WIN32 */
 	set_signal_flag(NULL);
-#endif
+#endif	/* WIN32 */
 }
 
 #ifndef WIN32
-/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upsd and upsmon */
+/* TODO NUT_WIN32_INCOMPLETE : Equivalent for WIN32 - see SIGCMD_RELOAD in upsd and upsmon */
 static void set_reload_flag(const
 #ifndef WIN32
 	int
-#else
+#else	/* WIN32 */
 	char *
-#endif
+#endif	/* WIN32 */
 	sig
 ) {
 	set_signal_flag(sig);
@@ -563,13 +566,13 @@ static void set_reload_flag(const
 	upsdebugx(1, "%s: raising reload flag due to signal %d (%s) => reload_flag=%d",
 		__func__, sig, strsignal(sig), reload_flag);
 }
-#endif
+#endif	/* !WIN32 */
 
 static void setup_signals(void)
 {
 #ifndef WIN32
 	struct sigaction	sa;
-#endif
+#endif	/* !WIN32 */
 
 	set_exit_flag(0);
 	reset_signal_flag();
@@ -608,6 +611,8 @@ static void setup_signals(void)
 	sa.sa_handler = set_signal_flag;
 	sigaction(SIGCMD_DATA_DUMP, &sa, NULL); /* SIGURG or SIGWINCH something else on obscure systems */
 # endif
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
 #endif	/* WIN32 */
 }
 
@@ -619,7 +624,7 @@ static void waitpid_timeout(const int sig)
 	/* do nothing */
 	return;
 }
-#endif
+#endif	/* !WIN32 */
 
 /* print out a command line at the given debug level. */
 static void debugcmdline(int level, const char *msg, char *const argv[])
@@ -746,7 +751,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	/* shouldn't get here normally */
 	upsdebugx(1, "%s: execv returned %d", __func__, ret);
 	fatal_with_errno(EXIT_FAILURE, "execv");
-#else
+#else	/* WIN32 */
 	BOOL	ret;
 	DWORD	res;
 	DWORD	exit_code = 0;
@@ -802,7 +807,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	}
 
 	return;
-#endif
+#endif	/* WIN32 */
 }
 
 static void list_driver(const ups_t *ups)
@@ -821,7 +826,7 @@ static void status_driver(const ups_t *ups)
 #ifndef WIN32
 	char	pidfn[NUT_PATH_MAX + 1];
 	int	cmdret = -1;
-#endif
+#endif	/* !WIN32 */
 	char	bufPid[LARGEBUF], *pidStrFromSocket = NULL,
 		bufStatus[LARGEBUF], *statusStrFromSocket = NULL;
 	int	pidAlive = -1,
@@ -850,7 +855,7 @@ static void status_driver(const ups_t *ups)
 	}
 	upsdebugx(4, "%s: pidfn=%s pidFromFile=%" PRIiMAX " cmdret=%d pidAlive=%d",
 		__func__, pidfn, (intmax_t)pidFromFile, cmdret, pidAlive);
-#else
+#else	/* WIN32 */
 /*	// FIXME: We actually have no probing signals over pipe so far,
 	// and sending 0 (NULL here) is proven unsafe
 	// Instead we will try below with PID learned from pipe
@@ -858,7 +863,8 @@ static void status_driver(const ups_t *ups)
 	cmdret = sendsignal(pidfn, COMMAND_RELOAD, 1);
 	upsdebugx(4, "%s: pipe pidfn=%s cmdret=%d", __func__, pidfn, cmdret);
  */
-#endif
+	NUT_WIN32_INCOMPLETE_DETAILED("no probing signals over pipe yet");
+#endif	/* WIN32 */
 
 	/* Hush the fopen(socketfile) in upsdrvquery_connect_drvname_upsname() */
 	nut_upsdrvquery_debug_level = 0;
@@ -913,7 +919,7 @@ static void status_driver(const ups_t *ups)
 #ifdef WIN32
 			/* Allow a new read to happen later */
 			conn->newread = 1;
-#endif
+#endif	/* WIN32 */
 
 			upsdebugx(3, "%s: upsdrvquery_write DUMPSTATUS", __func__);
 			if (upsdrvquery_write(conn, "DUMPSTATUS\n") >= 0
@@ -1032,9 +1038,9 @@ static void start_driver(const ups_t *ups)
 
 #ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
-#else
+#else	/* WIN32 */
 	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
-#endif
+#endif	/* WIN32 */
 	ret = stat(dfn, &fs);
 
 	if (ret < 0)
@@ -1205,7 +1211,7 @@ static void help(const char *arg_progname)
 	printf("              		- reload: re-read configuration files, ignoring changed\n");
 	printf("              		  values which require a driver restart (can not be changed\n");
 	printf("              		  on the fly)\n");
-#endif /* WIN32 */
+#endif /* !WIN32 */
 	printf("              		- reload-or-error: re-read configuration files, ignoring but\n");
 	printf("              		  counting changed values which require a driver restart (can\n");
 	printf("              		  not be changed on the fly), and return a success/fail code\n");
@@ -1221,7 +1227,7 @@ static void help(const char *arg_progname)
 	printf("              		- reload-or-exit: re-read configuration files (exit the old\n");
 	printf("              		  driver instance if needed, so an external caller like the\n");
 	printf("              		  systemd or SMF frameworks would start another copy)\n");
-#endif /* WIN32 */
+#endif /* !WIN32 */
 	printf("              		- exit: tell the currently running driver instance to just exit\n");
 	printf("              		  (so an external caller like the new driver instance, or the\n");
 	printf("              		  systemd or SMF frameworks would start another copy)\n");
@@ -1256,9 +1262,9 @@ static void shutdown_driver(const ups_t *ups)
 
 #ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
-#else
+#else	/* WIN32 */
 	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
-#endif
+#endif	/* WIN32 */
 
 	argv[arg++] = dfn;
 	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
@@ -1500,7 +1506,10 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "reload-or-exit", strlen(optarg))) {
 					signal_flag = SIGCMD_RELOAD_OR_EXIT;
 				}
-#endif	/* WIN32: https://github.com/networkupstools/nut/issues/1916 */
+#else	/* WIN32 */
+				/* https://github.com/networkupstools/nut/issues/1916 */
+				NUT_WIN32_INCOMPLETE_DETAILED("driver.reload* instant commands");
+#endif	/* WIN32 */
 
 				/* bad command given */
 				if (!signal_flag) {
@@ -1518,7 +1527,7 @@ int main(int argc, char **argv)
 					upsdebugx(1, "Will send request for command '%s' (internal code %d) "
 						"to already-running driver (if any) and exit",
 						optarg, signal_flag);
-#else
+#else	/* WIN32 */
 				upsdebugx(1, "Will send request '%s' for command '%s' "
 					"to already-running driver (if any) and exit",
 					signal_flag, optarg);
@@ -1605,9 +1614,9 @@ int main(int argc, char **argv)
 
 #ifndef WIN32
 	driverpath = xstrdup(DRVPATH);	/* set default */
-#else
+#else	/* WIN32 */
 	driverpath = getfullpath(NULL); /* Relative path in WIN32 */
-#endif
+#endif	/* WIN32 */
 
 	atexit(exit_cleanup);
 
@@ -1663,7 +1672,7 @@ int main(int argc, char **argv)
 	if (exec_timeout) {
 #ifndef WIN32
 		ups_t	*tmp = upstable;
-#endif
+#endif	/* !WIN32 */
 		upsdebugx(1, "upsdrvctl: got some timeouts with preceding operations, revising them now");
 #ifndef WIN32
 		while (tmp) {
@@ -1763,6 +1772,7 @@ int main(int argc, char **argv)
 		setup_signals();
 		while (!exit_flag) {
 #ifndef WIN32
+			/* FIXME : NUT_WIN32_INCOMPLETE */
 			ups_t	*tmp = upstable, *next;
 			/* Track if any child process has stopped (due to
 			 * an error, normal exit, signal...) to kill others
@@ -1838,7 +1848,7 @@ int main(int argc, char **argv)
 				reset_signal_flag();
 				upsdebugx(1, "upsdrvctl: handling signal: finished");
 			}
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
 
 			sleep(1);
 		}

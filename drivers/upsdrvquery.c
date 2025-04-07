@@ -31,9 +31,9 @@
 #include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "common.h"
 #include "upsdrvquery.h"
@@ -97,7 +97,7 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 		free(conn);
 		return NULL;
 	}
-#else
+#else	/* WIN32 */
 	BOOL	result = WaitNamedPipe(sockfn, NMPWAIT_USE_DEFAULT_WAIT);
 
 	if (result == FALSE) {
@@ -169,7 +169,7 @@ udq_pipe_conn_t *upsdrvquery_connect_drvname_upsname(const char *drvname, const 
 			upslog_with_errno(LOG_ERR, "Can't open %s", sockname);
 		return NULL;
 	}
-#else
+#else	/* WIN32 */
 	snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", drvname, upsname);
 #endif  /* WIN32 */
 
@@ -204,7 +204,7 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 #ifndef WIN32
 	if (VALID_FD(conn->sockfd))
 		close(conn->sockfd);
-#else
+#else	/* WIN32 */
 	if (VALID_FD(conn->overlapped.hEvent)) {
 		CloseHandle(conn->overlapped.hEvent);
 	}
@@ -232,11 +232,11 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	ssize_t	ret;
 #ifndef WIN32
 	fd_set	rfds;
-#else
+#else	/* WIN32 */
 	DWORD	bytesRead = 0;
 	BOOL	res = FALSE;
 	struct timeval	start, now, presleep;
-#endif
+#endif	/* WIN32 */
 
 	upsdebugx(5, "%s: tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}%s",
 		__func__, (intmax_t)tv.tv_sec, (intmax_t)tv.tv_usec,
@@ -267,7 +267,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 
 	memset(conn->buf, 0, sizeof(conn->buf));
 	ret = read(conn->sockfd, conn->buf, sizeof(conn->buf));
-#else
+#else	/* WIN32 */
 /*
 	if (nut_debug_level > 0 || nut_upsdrvquery_debug_level > 0)
 		upslog_with_errno(LOG_ERR, "Support for this platform is not currently implemented");
@@ -376,7 +376,7 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 	size_t	buflen = strlen(buf);
 #ifndef WIN32
 	ssize_t	ret;
-#else
+#else	/* WIN32 */
 	DWORD	bytesWritten = 0;
 	BOOL	result = FALSE;
 #endif  /* WIN32 */
@@ -399,7 +399,7 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 	}
 
 	return ret;
-#else
+#else	/* WIN32 */
 	result = WriteFile(conn->sockfd, buf, buflen, &bytesWritten, NULL);
 	if (result == 0 || bytesWritten != (DWORD)buflen) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
@@ -449,7 +449,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 #ifdef WIN32
 		/* Allow a new read to happen later */
 		conn->newread = 1;
-#endif
+#endif	/* WIN32 */
 
 		buf = conn->buf;
 		while (buf && *buf) {
@@ -580,7 +580,7 @@ ssize_t upsdrvquery_request(
 #ifdef WIN32
 		/* Allow a new read to happen later */
 		conn->newread = 1;
-#endif
+#endif	/* WIN32 */
 
 		buf = conn->buf;
 		while (buf && *buf) {

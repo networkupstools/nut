@@ -28,7 +28,7 @@
 /* this include is needed on AIX to have errno stored in thread local storage */
 #  include <pthread.h>
 # endif
-#endif
+#endif	/* !WIN32 */
 
 #include <errno.h>
 #include <stdio.h>
@@ -53,7 +53,7 @@
 # define W32_NETWORK_CALL_OVERRIDE
 # include "wincompat.h"
 # undef W32_NETWORK_CALL_OVERRIDE
-#endif
+#endif	/* WIN32 */
 
 #include "common.h"
 #include "nut_stdint.h"
@@ -1023,13 +1023,13 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 #ifndef WIN32
 	long			fd_flags;
-#else
+#else	/* WIN32 */
 	HANDLE event = NULL;
 	unsigned long argp;
 
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
-#endif
+#endif	/* WIN32 */
 	if (!ups) {
 		return -1;
 	}
@@ -1108,7 +1108,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags |= O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-#else
+#else	/* WIN32 */
 			event = CreateEvent(NULL, /* Security */
 					FALSE, /* auto-reset */
 					FALSE, /* initial state */
@@ -1117,15 +1117,15 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			/* Associate socket event to the socket via its Event object */
 			WSAEventSelect( sock_fd, event, FD_CONNECT );
 			CloseHandle(event);
-#endif
+#endif	/* WIN32 */
 		}
 
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
 #ifndef WIN32
 			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
-#else
+#else	/* WIN32 */
 			if(errno == WSAEWOULDBLOCK) {
-#endif
+#endif	/* WIN32 */
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
 				select(sock_fd+1,NULL,&wfds,NULL,
@@ -1211,10 +1211,10 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-#else
+#else	/* WIN32 */
 			argp = 0;
 			ioctlsocket(sock_fd, FIONBIO, &argp);
-#endif
+#endif	/* WIN32 */
 		}
 
 		ups->fd = sock_fd;
