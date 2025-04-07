@@ -842,6 +842,16 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 	}
 
+#ifdef WIN32
+	upsdebugx(0, "Please check your Windows Device Manager: "
+		"perhaps the UPS was recognized by default OS\n"
+		"driver such as HID UPS Battery (hidbatt.sys, "
+		"hidusb.sys or similar). It could have been\n"
+		"\"restored\" by Windows Update. You can try "
+		"https://zadig.akeo.ie/ to handle it with\n"
+		"either WinUSB, libusb0.sys or libusbK.sys.");
+#endif	/* WIN32 */
+
 	return -1;
 }
 
