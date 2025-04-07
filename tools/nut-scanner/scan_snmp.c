@@ -279,7 +279,12 @@ int nutscan_unload_snmp_library(void)
 #endif
 }
 
-/* Visible externally */
+/* Visible externally, part of libnutscan exported symbols (even if not implemented) */
+#if ! WITH_DMFMIB
+/* Not shown by header, so make it non-static here */
+void uninit_snmp_device_table(void);
+#endif
+
 void uninit_snmp_device_table(void) {
 #if WITH_DMFMIB
 	if (snmp_device_table == snmp_device_table_dmf)
@@ -288,6 +293,8 @@ void uninit_snmp_device_table(void) {
 		mibdmf_parser_destroy(&dmfnutscan_snmp_dmp);
 	snmp_device_table_dmf = NULL;
 	dmfnutscan_snmp_dmp = NULL;
+#else
+	upsdebugx(1, "%s: not implemented in this build (without DMF support)", __func__);
 #endif /* if WITH_DMFMIB */
 
 }
