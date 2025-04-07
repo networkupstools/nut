@@ -386,9 +386,11 @@ if test -z "${nut_have_libusb_seen}"; then
 		nut_with_usb="${nut_have_libusb}"
 	fi
 
-	dnl AC_MSG_NOTICE([DEBUG: nut_have_libusb='${nut_have_libusb}'])
-	dnl AC_MSG_NOTICE([DEBUG: nut_with_usb='${nut_with_usb}'])
-	dnl AC_MSG_NOTICE([DEBUG: nut_usb_lib='${nut_usb_lib}'])
+	AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+		AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_have_libusb='${nut_have_libusb}'])
+		AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_usb='${nut_with_usb}'])
+		AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_usb_lib='${nut_usb_lib}'])
+	])
 
 	dnl Note: AC_DEFINE specifies a verbatim "value" so we pre-calculate it!
 	dnl Source code should be careful to use "#if" and not "#ifdef" when

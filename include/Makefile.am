@@ -66,8 +66,17 @@ nut_version.h: @FORCE_NUT_VERSION@
 	    fi ; \
 	 } > "$@.tmp" ; \
 	 echo "NUT_VERSION: \"$$NUT_VERSION\"  NUT_VERSION_IS_RELEASE:$$GITREV_IS_RELEASE  NUT_VERSION_SEMVER: \"$$GITREV_SEMVER\""
-	-test -f "$@" || cp "$@.tmp" "$@"
-	-cmp -s "$@.tmp" "$@" || cp "$@.tmp" "$@"
+	@if test -f "$@" && test -s "$@" ; then \
+		if cmp -s "$@.tmp" "$@" ; then \
+			echo "  GENERATE-HEADER	$@ did not change" ; \
+		else \
+			echo "  GENERATE-HEADER	$@ got changed" ; \
+			cp "$@.tmp" "$@" ; \
+		fi ; \
+	 else \
+		echo "  GENERATE-HEADER	$@ was absent"; \
+		cp "$@.tmp" "$@" ; \
+	 fi
 	-rm -f "$@.tmp"
 
 FORCE:

@@ -1471,7 +1471,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     optional_prepare_compiler_family
 
-    CONFIG_OPTS=()
+    CONFIG_OPTS=(--enable-configure-debug)
     COMMON_CFLAGS=""
     EXTRA_CFLAGS=""
     EXTRA_CPPFLAGS=""
@@ -2418,6 +2418,7 @@ bindings)
     # enable whatever is auto-detectable (except docs), and highlight
     # any warnings if we can.
     CONFIG_OPTS=(--enable-Wcolor \
+        --enable-configure-debug \
         --enable-warnings --enable-Werror \
         --enable-keep_nut_report_feature \
         --with-all=auto --with-cgi=auto --with-serial=auto \

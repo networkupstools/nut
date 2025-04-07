@@ -592,6 +592,10 @@ tools in recent compiler generations.  The `auto` value enables the flag
 for certain compiler versions known to complain about some of our use
 cases -- even though those seem to be false positives.
 
+	--enable-configure-debug
+
+Cause the `configure` script run to report some internal values of variables as
+it goes through making of choices, to help recipe developers troubleshoot it.
 
 I want it all!
 ~~~~~~~~~~~~~~
