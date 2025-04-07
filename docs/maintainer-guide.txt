@@ -202,8 +202,9 @@ MAINTAINER SANDBOX (to be completed and pushed)
 :; git push upstream && git push --tags upstream
 ----
 
-* `make dist` (if you did not `make distcheck` above or had some changes since
-  then) to store the source tarball, checksum and signature files
+* `make dist-files` (especially if you did not `make distcheck` above,
+  or had some changes since then) to store the source tarball, checksum
+  and signature files
 
 * post-release update of the "in-development" codebase:
 ** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
