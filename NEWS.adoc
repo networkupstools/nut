@@ -13,8 +13,8 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 
-PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
--------------------------------------------------------------
+Release notes for NUT 2.8.3 - what's new since 2.8.2
+----------------------------------------------------
 
 https://github.com/networkupstools/nut/milestone/11
 
