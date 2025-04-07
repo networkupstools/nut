@@ -233,7 +233,8 @@ all-libs-local/tests: all-libs-local/common
 ### LIB-Requires-ext: drivers/libserial-nutscan.la
 ### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
 ### Requires-int: libnutscan.la
-all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/clients
+### Note: indirectly (ltdl) may use installed libupsclient.so
+all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
 # Handle all SUBDIRS_ALL_RECURSIVE in a way that dependencies can be specified,
