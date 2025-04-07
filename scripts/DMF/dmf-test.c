@@ -32,7 +32,7 @@
 
 #ifdef WIN32
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include <errno.h>
 #include <dirent.h>
