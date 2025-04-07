@@ -413,7 +413,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 #ifndef WIN32
 	struct sigaction oldact;
 	int change_action_handler = 0;
-#endif
+#endif	/* !WIN32 */
 	char *current_port_name = NULL;
 	char **serial_ports_list;
 	int  current_port_nb;
@@ -454,7 +454,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # pragma GCC diagnostic pop
 #endif
 	}
-#endif
+#endif	/* !WIN32 */
 
 	/* port(s) iterator */
 	current_port_nb = 0;
@@ -672,7 +672,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # pragma GCC diagnostic pop
 #endif
 	}
-#endif /* WIN32 */
+#endif /* !WIN32 */
 
 	/* free everything... */
 	i = 0;

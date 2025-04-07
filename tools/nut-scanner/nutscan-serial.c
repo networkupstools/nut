@@ -32,15 +32,15 @@
 #include "common.h"
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #ifdef WIN32
 /* Windows: all serial port names start with "COM" */
 #define SERIAL_PORT_PREFIX "COM"
-#else
+#else	/* !WIN32 */
 /* Unix: all serial port names start with "/dev/tty" */
 #define SERIAL_PORT_PREFIX "/dev/tty"
-#endif
+#endif	/* !WIN32 */
 
 #define ERR_OUT_OF_BOUND "Serial port range out of bound (must be 0 to 9 or a to z depending on your system)"
 

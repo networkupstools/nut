@@ -31,10 +31,10 @@
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <sys/un.h>
-#else
+#else	/* WIN32 */
 # include <strings.h>
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "common.h"
 #include "dstate.h"
@@ -46,10 +46,10 @@
 	static TYPE_FD	sockfd = ERROR_FD;
 #ifndef WIN32
 	static char	*sockfn = NULL;
-#else
+#else	/* WIN32 */
 	static OVERLAPPED	connect_overlapped;
 	static char	*pipename = NULL;
-#endif
+#endif	/* WIN32 */
 	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN],
 			buzzmode_buf[ST_MAX_VALUE_LEN];
@@ -120,7 +120,7 @@ static void sock_fail(const char *fn)
 	printf("\n");
 	fatalx(EXIT_FAILURE, "Exiting.");
 }
-#endif
+#endif	/* !WIN32 */
 
 static TYPE_FD sock_open(const char *fn)
 {
@@ -206,7 +206,7 @@ static TYPE_FD sock_open(const char *fn)
 	if (!getenv("NUT_QUIET_INIT_LISTENER"))
 		upslogx(LOG_INFO, "Listening on named pipe %s", fn);
 
-#endif
+#endif	/* WIN32 */
 
 	return fd;
 }
@@ -216,15 +216,15 @@ static void sock_disconnect(conn_t *conn)
 #ifndef WIN32
 	upsdebugx(3, "%s: disconnecting socket %d", __func__, (int)conn->fd);
 	close(conn->fd);
-#else
-	/* FIXME not sure if this is the right way to close a connection */
+#else	/* WIN32 */
+	/* FIXME NUT_WIN32_INCOMPLETE not sure if this is the right way to close a connection */
 	if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
 	upsdebugx(3, "%s: disconnecting named pipe handle %p", __func__, conn->fd);
 	DisconnectNamedPipe(conn->fd);
-#endif
+#endif	/* WIN32 */
 
 	upsdebugx(5, "%s: finishing parsing context", __func__);
 	pconf_finish(&conn->ctx);
@@ -292,7 +292,7 @@ static void send_to_all(const char *fmt, ...)
 
 #ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
-#else
+#else	/* WIN32 */
 		DWORD bytesWritten = 0;
 		BOOL  result = FALSE;
 
@@ -305,18 +305,18 @@ static void send_to_all(const char *fmt, ...)
 		else  {
 			ret = (ssize_t)bytesWritten;
 		}
-#endif
+#endif	/* WIN32 */
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
 			upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
 				"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
 				__func__, buflen, (int)conn->fd, ret);
-#else
+#else	/* WIN32 */
 			upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
 				"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
 				__func__, buflen, conn->fd, ret);
-#endif
+#endif	/* WIN32 */
 			upsdebugx(6, "%s: failed write: %s", __func__, buf);
 
 			sock_disconnect(conn);
@@ -348,7 +348,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #ifdef WIN32
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
-#endif
+#endif	/* WIN32 */
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -389,7 +389,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 #ifndef WIN32
 	ret = write(conn->fd, buf, buflen);
-#else
+#else	/* WIN32 */
 	result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 	if( result == 0 ) {
 		ret = 0;
@@ -397,7 +397,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	else  {
 		ret = (ssize_t)bytesWritten;
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
@@ -405,15 +405,17 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		upsdebug_with_errno(1, "%s: had to throttle down to retry "
 			"writing %" PRIuSIZE " bytes to socket %d (ret=%" PRIiSIZE ") : %s",
 			__func__, buflen, (int)conn->fd, ret, buf);
-#else
+#else	/* WIN32 */
 		upsdebug_with_errno(1, "%s: had to throttle down to retry "
 			"writing %" PRIuSIZE " bytes to handle %p (ret=%" PRIiSIZE ") : %s",
 			__func__, buflen, conn->fd, ret, buf);
-#endif
+#endif	/* WIN32 */
+
 		usleep(200);
+
 #ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
-#else
+#else	/* WIN32 */
 		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 		if( result == 0 ) {
 			ret = 0;
@@ -421,7 +423,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		else  {
 			ret = (ssize_t)bytesWritten;
 		}
-#endif
+#endif	/* WIN32 */
 		if (ret == (ssize_t)buflen) {
 			upsdebugx(1, "%s: throttling down helped", __func__);
 		}
@@ -432,11 +434,11 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
 			"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
 			__func__, buflen, (int)conn->fd, ret);
-#else
+#else	/* WIN32 */
 		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
 			"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
 			__func__, buflen, conn->fd, ret);
-#endif
+#endif	/* WIN32 */
 		upsdebugx(6, "%s: failed write: %s", __func__, buf);
 		sock_disconnect(conn);
 
@@ -457,11 +459,11 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
 			"(ret=%" PRIiSIZE "): %s",
 			__func__, buflen, conn->fd, ret, buf);
-#else
+#else	/* WIN32 */
 		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to handle %p succeeded "
 			"(ret=%" PRIiSIZE "): %s",
 			__func__, buflen, conn->fd, ret, buf);
-#endif
+#endif	/* WIN32 */
 	}
 
 	return 1;	/* OK */
@@ -476,11 +478,11 @@ static void sock_connect(TYPE_FD sock)
 	int	fd;
 
 	struct sockaddr_un sa;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
+# if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int	salen;
-#else
+# else
 	socklen_t	salen;
-#endif
+# endif
 	salen = sizeof(sa);
 	fd = accept(sock, (struct sockaddr *) &sa, &salen);
 
@@ -577,7 +579,7 @@ static void sock_connect(TYPE_FD sock)
 	ReadFile (conn->fd, conn->buf,
 		sizeof(conn->buf) - 1, /* -1 to be sure to have a trailling 0 */
 		NULL, &(conn->read_overlapped));
-#endif
+#endif	/* WIN32 */
 
 	conn->nobroadcast = 0;
 	conn->readzero = 0;
@@ -593,9 +595,9 @@ static void sock_connect(TYPE_FD sock)
 
 #ifndef WIN32
 	upsdebugx(3, "%s: new connection on fd %d", __func__, fd);
-#else
+#else	/* WIN32 */
 	upsdebugx(3, "%s: new connection on handle %p", __func__, sock);
-#endif
+#endif	/* WIN32 */
 
 }
 
@@ -703,7 +705,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
 #ifdef WIN32
 	char *sockfn = pipename;	/* Just for the report below; not a global var in WIN32 builds */
-#endif
+#endif	/* WIN32 */
 
 	upsdebugx(6, "%s: Driver on %s is now handling %s with %" PRIuSIZE " args",
 		__func__, sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
@@ -716,9 +718,9 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		send_to_one(conn, "OK Goodbye\n");
 #ifndef WIN32
 		upsdebugx(2, "%s: received LOGOUT on socket %d, will be disconnecting", __func__, (int)conn->fd);
-#else
+#else	/* WIN32 */
 		upsdebugx(2, "%s: received LOGOUT on handle %p, will be disconnecting", __func__, conn->fd);
-#endif
+#endif	/* WIN32 */
 		/* Let the system flush the reply somehow (or the other
 		 * side to just see it) before we drop the pipe */
 		usleep(1000000);
@@ -779,9 +781,9 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		conn->nobroadcast = 1;
 #ifndef WIN32
 		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
-#else
+#else	/* WIN32 */
 		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
-#endif
+#endif	/* WIN32 */
 		upsdebugx(1, "%s: %s requested NOBROADCAST mode",
 			__func__, buf);
 		return 1;
@@ -798,9 +800,9 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		}
 #ifndef WIN32
 		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
-#else
+#else	/* WIN32 */
 		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
-#endif
+#endif	/* WIN32 */
 		upsdebugx(1,
 			"%s: %s requested %sBROADCAST mode",
 			__func__, buf,
@@ -1001,7 +1003,7 @@ static void sock_read(conn_t *conn)
 	} else {
 		conn->readzero = 0;
 	}
-#else
+#else	/* WIN32 */
 	char *buf = conn->buf;
 	DWORD bytesRead;
 	BOOL res;
@@ -1018,7 +1020,7 @@ static void sock_read(conn_t *conn)
 		set_exit_flag(1);
 		return;
 	}
-#endif
+#endif	/* WIN32 */
 
 	for (i = 0; i < ret; i++) {
 
@@ -1056,7 +1058,7 @@ static void sock_read(conn_t *conn)
 	/* Restart async read */
 	memset(conn->buf,0,sizeof(conn->buf));
 	ReadFile(conn->fd,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
-#endif
+#endif	/* WIN32 */
 }
 
 static void sock_close(void)
@@ -1072,10 +1074,10 @@ static void sock_close(void)
 			free(sockfn);
 			sockfn = NULL;
 		}
-#else
+#else	/* WIN32 */
 		FlushFileBuffers(sockfd);
 		CloseHandle(sockfd);
-#endif
+#endif	/* WIN32 */
 
 		sockfd = ERROR_FD;
 	}
@@ -1111,19 +1113,19 @@ char * dstate_init(const char *prog, const char *devname)
 	} else {
 		snprintf(sockname, sizeof(sockname), "%s/%s", dflt_statepath(), prog);
 	}
-#else
+#else	/* WIN32 */
 	/* upsname (and so devname) is now mandatory so no need to test it */
 	snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, devname);
 	pipename = xstrdup(sockname);
-#endif
+#endif	/* WIN32 */
 
 	sockfd = sock_open(sockname);
 
 #ifndef WIN32
 	upsdebugx(2, "%s: sock %s open on fd %d", __func__, sockname, sockfd);
-#else
+#else	/* WIN32 */
 	upsdebugx(2, "%s: sock %s open on handle %p", __func__, sockname, sockfd);
-#endif
+#endif	/* WIN32 */
 
 	/* NOTE: Caller must free this string */
 	return xstrdup(sockname);
@@ -1315,7 +1317,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 		return 1;
 	}
 */
-#endif
+#endif	/* WIN32 */
 
 	return overrun;
 }

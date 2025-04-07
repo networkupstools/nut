@@ -3,7 +3,7 @@
 
     Copyright (C)
         2012	Vaclav Krpec <VaclavKrpec@Eaton.com>
-        2024	Jim Klimov <jimklimov+nut@gmail.com>
+        2024-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ extern "C" {
 #ifndef WIN32
 # include <sys/select.h>
 # include <sys/wait.h>
-#else
+#else	/* WIN32 */
 # if !(defined random) && !(defined HAVE_RANDOM)
    /* WIN32 names it differently: */
 #  define random() rand()
@@ -357,7 +357,7 @@ static uint16_t getFreePort() {
 		// well, at least attempted
 		wsaStarted = 1;
 	}
-#endif
+#endif	/* WIN32 */
 	while (tries > 0) {
 		uint16_t port = 10000 + static_cast<uint16_t>(reallyRandom() % 40000);
 		nut::NutSocket::Address addr(127, 0, 0, 1, port);
@@ -413,9 +413,10 @@ bool NutSocketUnitTest::Writer::run() {
 
 void NutSocketUnitTest::test() {
 #ifdef WIN32
-	/* FIXME: get Process working in the first place */
+	/* FIXME NUT_WIN32_INCOMPLETE:
+	 *  get Process working in the first place */
 	std::cout << "NutSocketUnitTest::test(): skipped on this platform" << std::endl;
-#else
+#else	/* !WIN32 */
 	// Fork writer
 	pid_t writer_pid = ::fork();
 
@@ -470,7 +471,7 @@ void NutSocketUnitTest::test() {
 	std::stringstream msg_writer_exit;
 	msg_writer_exit << "Got writer_exit=" << writer_exit << ", expected 0";
 	CPPUNIT_ASSERT_MESSAGE(msg_writer_exit.str(), 0    == writer_exit);
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
 }
 
 

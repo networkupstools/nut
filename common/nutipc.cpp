@@ -5,7 +5,7 @@
 
         Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
-    Copyright (C) 2024 NUT Community
+    Copyright (C) 2024-2025 NUT Community
 
         Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
@@ -72,10 +72,11 @@ pid_t Process::getPPID()
 #ifdef WIN32
 	/* FIXME: Detect HAVE_GETPPID in configure; throw exceptions here?..
 	 * NOTE: Does not seem to be currently used in nutconf codebase. */
+	/* NUT_WIN32_INCOMPLETE(); */
 	return -1;
-#else
+#else	/* !WIN32 */
 	return getppid();
-#endif
+#endif	/* !WIN32 */
 }
 
 
@@ -245,8 +246,9 @@ int Signal::send(Signal::enum_t signame, pid_t pid)
 	e << "Can't send signal " << sig << " to PID " << pid <<
 			": not implemented on this platform yet";
 
+	/* NUT_WIN32_INCOMPLETE(); */
 	throw std::logic_error(e.str());
-#else
+#else	/* !WIN32 */
 	int status = ::kill(pid, sig);
 
 	if (0 == status)
@@ -260,7 +262,7 @@ int Signal::send(Signal::enum_t signame, pid_t pid)
 	e << "Can't send invalid signal " << sig;
 
 	throw std::logic_error(e.str());
-#endif
+#endif	/* !WIN32 */
 }
 
 
@@ -300,6 +302,9 @@ int NutSignal::send(NutSignal::enum_t signame, const std::string & process) {
 
 	// FIXME: What about ALTPIDPATH (for non-root daemons)
 	// and shouldn't we also consider it (e.g. try/catch)?
+	/* FIXME NUT_WIN32_INCOMPLETE : Actually modern Windows supports both
+	 *  slashes, but revise this code so we do not mix them (maybe enforce a
+	 *  specific one - e.g. some other code does replace / with \ in common.c) */
 	pid_file += rootpidpath();
 	pid_file += '/';
 	pid_file += process;

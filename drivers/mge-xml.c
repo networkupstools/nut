@@ -37,7 +37,7 @@
 
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #define MGE_XML_VERSION		"MGEXML/0.36"
 

@@ -43,7 +43,7 @@ int nutscan_unload_neon_library(void);
 # include <netinet/in.h>
 # include <sys/select.h>
 # define SOCK_OPT_CAST
-#else
+#else	/* WIN32 */
 # define SOCK_OPT_CAST (char*)
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */

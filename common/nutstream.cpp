@@ -1,9 +1,13 @@
 /*
     nutstream.cpp - NUT stream
 
-    Copyright (C)
-        2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
-        2024	Jim Klimov <jimklimov+nut@gmail.com>
+    Copyright (C) 2012 Eaton
+
+        Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
+
+    Copyright (C) 2024-2025 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -246,7 +250,7 @@ static const char* getTmpDirPath() {
 	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ */
 	static char pathbuf[NUT_PATH_MAX + 1];
 	int i;
-#endif
+#endif	/* WIN32 */
 
 	if (checkExistsWritableDir(s = ::altpidpath()))
 		return s;
@@ -259,7 +263,7 @@ static const char* getTmpDirPath() {
 	i = GetTempPathA(sizeof(pathbuf), pathbuf);
 	if ((i > 0) && (i < NUT_PATH_MAX) && checkExistsWritableDir(pathbuf))
 		return (const char *)pathbuf;
-#endif
+#endif	/* WIN32 */
 
 	if (checkExistsWritableDir(s = ::getenv("TMPDIR")))
 		return s;
@@ -280,14 +284,14 @@ static const char* getTmpDirPath() {
 		return s;
 	if (checkExistsWritableDir(s = "/c/Windows/Temp"))
 		return s;
-#else
+#else	/* !WIN32 */
 	if (checkExistsWritableDir(s = "/dev/shm"))
 		return s;
 	if (checkExistsWritableDir(s = "/run"))
 		return s;
 	if (checkExistsWritableDir(s = "/var/run"))
 		return s;
-#endif
+#endif	/* !WIN32 */
 
 	/* May be applicable to WIN32 depending on emulation environment/mapping */
 	if (checkExistsWritableDir(s = "/tmp"))
@@ -345,12 +349,12 @@ NutFile::NutFile(anonymous_t):
 	/* If it were not "const" we might assign it. But got no big need to.
 	 *   m_name = std::string(filename);
 	 */
-#else
+#else	/* !WIN32 */
 	/* TOTHINK: How to make this use m_tmp_dir? Is it possible generally?  */
 	/* Safer than tmpnam() but we don't know the filename here.
 	 * Not that we need it, system should auto-delete it. */
 	m_impl = ::tmpfile();
-#endif
+#endif	/* !WIN32 */
 
 	if (nullptr == m_impl) {
 		int err_code = errno;
@@ -363,7 +367,7 @@ NutFile::NutFile(anonymous_t):
 		e << ": tried using temporary location " << m_tmp_dir;
 		if (filename[0] != '\0')
 			e << ": OS suggested filename " << filename;
-#endif
+#endif	/* WIN32 */
 
 		throw std::runtime_error(e.str());
 	}
@@ -504,7 +508,8 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 	 * similar when using absolute POSIX-style paths. Do we need a private
 	 * converter?.. Would an end user have MSYS installed at all?
 	 */
-#endif
+	/* NUT_WIN32_INCOMPLETE_DETAILED("might work, might fail"); */
+#endif	/* WIN32 */
 
 	mode_str = strAccessMode(mode);
 	m_impl = ::fopen(m_name.c_str(), mode_str);
@@ -789,8 +794,9 @@ void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
 	e << "Unix sockets not implemented for this platform yet: " << path;
 //			addr.str() << ":" << path;
 
+	/* NUT_WIN32_INCOMPLETE(); */
 	throw std::logic_error(e.str());
-#else
+#else	/* !WIN32 */
 	struct sockaddr_un * un_addr = reinterpret_cast<struct sockaddr_un *>(::malloc(sizeof(struct sockaddr_un)));
 
 	if (nullptr == un_addr)
@@ -807,7 +813,7 @@ void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
 
 	addr.m_sock_addr = reinterpret_cast<struct sockaddr *>(un_addr);
 	addr.m_length    = sizeof(*un_addr);
-#endif
+#endif	/* !WIN32 */
 }
 
 
@@ -997,7 +1003,6 @@ std::string NutSocket::Address::str() const {
 
 	switch (m_sock_addr->sa_family) {
 #ifndef WIN32
-		/* FIXME: Add support for pipes on Windows? */
 		case AF_UNIX: {
 			struct sockaddr_un * addr = reinterpret_cast<struct sockaddr_un *>(m_sock_addr);
 
@@ -1005,7 +1010,10 @@ std::string NutSocket::Address::str() const {
 
 			break;
 		}
-#endif
+#else	/* WIN32 */
+		/* FIXME: Add support for pipes on Windows? */
+		/* NUT_WIN32_INCOMPLETE(); */
+#endif	/* WIN32 */
 
 		case AF_INET: {
 			struct sockaddr_in * addr = reinterpret_cast<struct sockaddr_in *>(m_sock_addr);

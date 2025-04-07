@@ -845,9 +845,9 @@ int main(int argc, char **argv)
 	return EXIT_SUCCESS;
 }
 
-#else
+#else	/* !WIN32 */
 
 /* Just avoid: ISO C forbids an empty translation unit [-Werror=pedantic] */
 int main (int argc, char ** argv);
 
-#endif  /* WIN32 */
+#endif  /* !WIN32 */

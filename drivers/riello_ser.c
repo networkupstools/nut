@@ -31,7 +31,7 @@
 
 #ifdef WIN32
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "main.h"
 #include "serial.h"
@@ -119,7 +119,7 @@ static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 		return -2;			/* timeout */
 
 	if (FD_ISSET (upsfd, &readfs)) {
-#else
+#else	/* WIN32 */
 		DWORD timeout;
 		COMMTIMEOUTS TOut;
 
@@ -130,19 +130,19 @@ static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 		TOut.ReadTotalTimeoutMultiplier = 0;
 		TOut.ReadTotalTimeoutConstant = timeout;
 		SetCommTimeouts(upsfd, &TOut);
-#endif
+#endif	/* WIN32 */
 
 		ssize_t now;
 #ifndef WIN32
 		now = read (upsfd, bytes, size - (size_t)readen);
-#else
+#else	/* WIN32 */
 		/* FIXME? for some reason this compiles, but the first
 		 * arg to the method should be serial_handler_t* - not
 		 * a HANDLE as upsfd is (in main.c)... then again, many
 		 * other drivers seem to use it just fine...
 		 */
 		now = w32_serial_read(upsfd, bytes, size - (size_t)readen, timeout);
-#endif
+#endif	/* WIN32 */
 
 		if (now < 0) {
 			return -1;
@@ -155,7 +155,7 @@ static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 	else {
 		return -1;
 	}
-#endif
+#endif	/* !WIN32 */
 	return readen;
 }
 

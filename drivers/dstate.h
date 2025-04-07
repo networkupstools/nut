@@ -33,7 +33,7 @@
 
 #ifdef WIN32
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
@@ -48,7 +48,7 @@ typedef struct conn_s {
 #ifdef WIN32
 	char    buf[LARGEBUF];
 	OVERLAPPED read_overlapped;
-#endif
+#endif	/* WIN32 */
 	PCONF_CTX_t	ctx;
 	struct conn_s	*prev;
 	struct conn_s	*next;

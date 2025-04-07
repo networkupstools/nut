@@ -5,7 +5,7 @@
 
         Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
-    Copyright (C) 2024 NUT Community
+    Copyright (C) 2024-2025 NUT Community
 
         Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
@@ -43,9 +43,9 @@ extern "C" {
 
 #ifndef WIN32
 # include <sys/wait.h>
-#else
-# include <wincompat.h>
-#endif
+#else	/* WIN32 */
+# include "wincompat.h"
+#endif	/* WIN32 */
 
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
@@ -313,13 +313,14 @@ Process::Child<M>::Child(M main)
 
 	e << "Can't fork: not implemented on this platform yet";
 
+	/* NUT_WIN32_INCOMPLETE(); */
 	throw std::logic_error(e.str());
-#else
+#else	/* !WIN32 */
 	m_pid = ::fork();
 
 	if (!m_pid)
 		::exit(main());
-#endif
+#endif	/* !WIN32 */
 }
 
 
@@ -337,8 +338,9 @@ int Process::Child<M>::wait()
 	e << "Can't wait for PID " << m_pid <<
 		": not implemented on this platform yet";
 
+	/* NUT_WIN32_INCOMPLETE(); */
 	throw std::logic_error(e.str());
-#else
+#else	/* !WIN32 */
 	if (m_exited)
 		return m_exit_code;
 
@@ -359,7 +361,7 @@ int Process::Child<M>::wait()
 	m_exit_code = WEXITSTATUS(m_exit_code);
 
 	return m_exit_code;
-#endif
+#endif	/* !WIN32 */
 }
 
 
@@ -401,7 +403,7 @@ class Signal {
 		VTALRM = SIGVTALRM,  /** Virtual alarm clock               */
 		XCPU   = SIGXCPU,    /** CPU time limit exceeded           */
 		XFSZ   = SIGXFSZ,    /** File size limit exceeded          */
-#endif
+#endif	/* !WIN32 */
 	} enum_t;  // end of typedef enum
 
 	/** Signal list */
@@ -767,8 +769,9 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 
 	e << "Can't prepare signal handling thread: not implemented on this platform yet";
 
+	/* NUT_WIN32_INCOMPLETE(); */
 	throw std::logic_error(e.str());
-#else
+#else	/* !WIN32 */
 	// At most one instance per process allowed
 	if (-1 != s_comm_pipe[1])
 		throw std::logic_error(
@@ -824,7 +827,7 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 			throw std::runtime_error(e.str());
 		}
 	}
-#endif
+#endif	/* !WIN32 */
 }
 
 
