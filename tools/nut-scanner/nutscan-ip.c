@@ -32,7 +32,7 @@
 #ifndef WIN32
 # include <sys/socket.h>
 # include <netdb.h>
-#else
+#else	/* WIN32 */
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
 # include <ws2tcpip.h>
@@ -41,7 +41,7 @@
 #  define AI_NUMERICSERV NI_NUMERICSERV
 # endif
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 static void increment_IPv6(struct in6_addr * addr)
 {

@@ -24,9 +24,9 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 #include "upsclient.h"

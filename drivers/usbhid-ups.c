@@ -42,7 +42,7 @@
 #include "common.h"
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 /* include all known subdrivers */
 #include "mge-hid.h"
@@ -2047,7 +2047,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 # if EPROTO && WITH_LIBUSB_0_1
 		case -EPROTO:		/* Protocol error */
 # endif
-#endif
+#endif	/* !WIN32 */
 		case LIBUSB_ERROR_PIPE:      /* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */

@@ -35,7 +35,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif
+#endif	/* !WIN32 */
 
 #include "timehead.h"
 
@@ -108,10 +108,10 @@ extern nut_ctype_t	*firstclient;
 #ifndef WIN32
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
-#else
+#else	/* WIN32 */
 #define SIGCMD_STOP    COMMAND_STOP
 #define SIGCMD_RELOAD  COMMAND_RELOAD
-#endif
+#endif	/* WIN32 */
 
 /* awkward way to make a string out of a numeric constant */
 

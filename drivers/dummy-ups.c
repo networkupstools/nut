@@ -36,7 +36,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#endif
+#endif	/* !WIN32 */
 
 #include <sys/stat.h>
 #include <string.h>
@@ -239,7 +239,7 @@ static int prepare_filepath(char *fn, size_t buflen)
 	if (device_path[0] == '/'
 #ifdef WIN32
 	||  device_path[1] == ':'	/* "C:\..." */
-#endif
+#endif	/* WIN32 */
 	) {
 		/* absolute path */
 		return snprintf(fn, buflen, "%s", device_path);
@@ -294,12 +294,12 @@ void upsdrv_updateinfo(void)
 				 * the data without complications.
 				 */
 				if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &fs)) && 0 != stat (fn, &fs))
-#else
+#else	/* WIN32 */
 				/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
 				 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 				 */
 				if (0 != stat (fn, &fs))
-#endif
+#endif	/* WIN32 */
 				{
 					upsdebugx(2, "%s: MODE_DUMMY_ONCE: Can't stat %s currently", __func__, fn);
 					/* retry ASAP until we get a file */
@@ -538,12 +538,13 @@ void upsdrv_initups(void)
 		 * complications.
 		 */
 		if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &datafile_stat)) && 0 != stat (fn, &datafile_stat))
-#else
+#else	/* WIN32 */
 		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+		 * NUT_WIN32_INCOMPLETE?
 		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 		 */
 		if (0 != stat (fn, &datafile_stat))
-#endif
+#endif	/* WIN32 */
 		{
 			upsdebugx(2, "%s: Can't stat %s (%s) currently", __func__, device_path, fn);
 		} else {

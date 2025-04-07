@@ -164,7 +164,7 @@ static const char *getpacket(int *we_know){
 	fd_set readfds;
 	struct timeval tv;
 	int ret;
-#endif
+#endif	/* !WIN32 */
 	int bytes_per_packet=0;
 	static const char *packet_id=NULL;
 	static char buf[256];
@@ -191,7 +191,7 @@ static const char *getpacket(int *we_know){
 	}
 
 	r = read(upsfd,buf,255);
-#else
+#else	/* WIN32 */
 	r = select_read(upsfd,buf,255,5,0);
 	if (r <= 0) {
 		s = "Nothing received from UPS. Check cable conexion";
@@ -199,7 +199,7 @@ static const char *getpacket(int *we_know){
 		D(printf("%s\n",s);)
 		return NULL;
 	}
-#endif
+#endif	/* WIN32 */
 	D(printf("%" PRIiSIZE " bytes read: ",r);)
 
 	buf[r]=0;
@@ -216,12 +216,12 @@ static const char *getpacket(int *we_know){
 		 * and r is smaller, so 255-r is positive */
 		assert (r <= 255);
 		rr = read(upsfd, buf+r, (size_t)(255-r));
-#else
+#else	/* WIN32 */
 		rr = select_read(upsfd,buf+r,255-r,2,0);
 		if (rr <= 0) {
 			return NULL;
 		}
-#endif
+#endif	/* WIN32 */
 		r += rr;
 		if (r < bytes_per_packet) return NULL;
 	}

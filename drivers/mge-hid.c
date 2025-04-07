@@ -50,7 +50,7 @@
 #   define LDOUBLE double
 #  endif
 # endif
-#endif
+#endif	/* WIN32 */
 
 #define MGE_HID_VERSION		"MGE HID 1.54"
 

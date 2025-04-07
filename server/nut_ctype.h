@@ -73,7 +73,7 @@ typedef struct nut_ctype_s {
 	struct nut_ctype_s	*next;
 #ifdef WIN32
 	HANDLE Event;
-#endif
+#endif	/* WIN32 */
 } nut_ctype_t;
 
 #ifdef __cplusplus

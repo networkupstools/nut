@@ -150,9 +150,9 @@ typedef struct {
 
 #ifdef WIN32
 #define NOTIFY_DEFAULT	NOTIFY_SYSLOG
-#else
+#else	/* !WIN32 */
 #define NOTIFY_DEFAULT	(NOTIFY_SYSLOG | NOTIFY_WALL)
-#endif
+#endif	/* !WIN32 */
 
 /* This is only used in upsmon.c, but might it also have external consumers?..
  * To move or not to move?..
@@ -217,11 +217,11 @@ static struct {
 #define SIGCMD_FSD	SIGUSR1
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
-#else
+#else	/* WIN32 */
 #define SIGCMD_FSD	COMMAND_FSD
 #define SIGCMD_STOP	COMMAND_STOP
 #define SIGCMD_RELOAD	COMMAND_RELOAD
-#endif
+#endif	/* WIN32 */
 
 /* various constants */
 

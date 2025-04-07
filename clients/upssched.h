@@ -22,7 +22,7 @@ typedef struct conn_s {
 #ifdef WIN32
 	char		buf[LARGEBUF];
 	OVERLAPPED	read_overlapped;
-#endif
+#endif	/* WIN32 */
 	PCONF_CTX_t	ctx;
 	struct conn_s	*next;
 } conn_t;

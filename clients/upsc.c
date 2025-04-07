@@ -26,7 +26,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#endif
+#endif	/* !WIN32 */
 
 #include "nut_stdint.h"
 #include "upsclient.h"

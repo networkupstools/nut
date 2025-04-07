@@ -41,7 +41,7 @@ extern "C" {
 #include <sys/types.h>
 #ifndef WIN32
 # include <sys/socket.h>
-#else
+#else	/* WIN32 */
 # if HAVE_WINSOCK2_H
 #  include <winsock2.h>
 # endif
@@ -52,7 +52,7 @@ extern "C" {
  * similar to nutclient.cpp; do not call wincompat.h!
  * FIXME: refactor to reuse the C++ adaptation?
  */
-#endif
+#endif	/* WIN32 */
 }
 
 /* See include/common.h for details behind this */
@@ -338,10 +338,11 @@ class NutFile: public NutStream {
 	inline static const std::string & path_sep() {
 		static std::string pathsep =
 #ifdef WIN32
+			/* FIXME NUT_WIN32_INCOMPLETE : Actually modern Windows supports both slashes */
 			"\\";
-#else
+#else	/* !WIN32 */
 			"/";
-#endif
+#endif	/* !WIN32 */
 		return pathsep;
 	}
 

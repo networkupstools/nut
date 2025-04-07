@@ -541,14 +541,14 @@ void upsdrv_initups(void)
 		if (i < 3) {
 #ifdef WIN32
 			sleep(5);
-#else
+#else	/* !WIN32 */
 			if (sleep(5) == 0) {
-#endif
+#endif	/* !WIN32 */
 				usb_comm_fail("Can't open USB device, retrying ...");
 				continue;
 #ifndef WIN32
 			}
-#endif
+#endif	/* !WIN32 */
 		}
 
 		fatalx(EXIT_FAILURE,
