@@ -88,13 +88,16 @@ fi
 # can, use a NUT_VERSION_FORCED variable or a VERSION_FORCED file with
 # higher priority than auto-detection attempts. Unfortunately, some
 # appliances tag all software the same with their firmware version;
-# if this is required, a (NUT_)VERSION_FORCED_SEMVER envvar or file can
-# help identify the actual NUT release version triplet used on the box.
+# if this is required, a NUT_VERSION_FORCED(_SEMVER) envvar from the
+# caller environment, or a file setting it reproducibly, can help
+# identify the actual NUT release version triplet used on the box.
 # Please use it, it immensely helps with community troubleshooting!
 if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+    # Should set NUT_VERSION_FORCED=X.Y.Z(.a.b...)
     . "${abs_top_srcdir}/VERSION_FORCED" || exit
 fi
 if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+    # Should set NUT_VERSION_FORCED_SEMVER=X.Y.Z
     . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
 fi
 if [ -n "${NUT_VERSION_FORCED-}" ] ; then
