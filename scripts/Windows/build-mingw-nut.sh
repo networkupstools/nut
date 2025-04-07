@@ -14,7 +14,7 @@ DLLLDD_SOURCED=true . "${SCRIPTDIR}/dllldd.sh"
 
 # This should match the tarball and directory name,
 # if a stable version is used:
-[ -n "$VER_OPT" ] || VER_OPT=2.8.2
+[ -n "$VER_OPT" ] || VER_OPT=2.8.3
 DEBUG=true
 
 # default to 32bits build
