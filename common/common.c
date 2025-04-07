@@ -28,11 +28,11 @@
 # include <pwd.h>
 # include <grp.h>
 # include <sys/un.h>
-#else
-# include <wincompat.h>
+#else	/* WIN32 */
+# include "wincompat.h"
 # include <processthreadsapi.h>
 # include <psapi.h>
-#endif
+#endif	/* WIN32 */
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>	/* readlink */

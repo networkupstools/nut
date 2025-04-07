@@ -4,7 +4,7 @@
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
      2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-     2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
+     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@
 # include <sys/socket.h>
 # include <unistd.h>
 # include <fcntl.h>
-#else
-# include <wincompat.h>
-#endif
+#else	/* WIN32 */
+# include "wincompat.h"
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 #include "upsclient.h"

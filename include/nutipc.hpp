@@ -43,9 +43,9 @@ extern "C" {
 
 #ifndef WIN32
 # include <sys/wait.h>
-#else
-# include <wincompat.h>
-#endif
+#else	/* WIN32 */
+# include "wincompat.h"
+#endif	/* WIN32 */
 
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
