@@ -7,7 +7,7 @@
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #    Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
-#    Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+#    Copyright (C) 2022 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 
 from __future__ import print_function
@@ -469,6 +469,7 @@ def s_json2c (fout, MIB_name, js):
 #include "snmp-ups.h"
 
 #include "nut_float.h"
+#include "nut_stdint.h"
 
 // for setvar field
 int input_phases, output_phases, bypass_phases;
@@ -573,7 +574,7 @@ int main (void) {
         fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].oid_value != 0 && %(k)s_TEST [i].info_value != NULL; i++) {
         if (do_debug)
-            fprintf (stderr, "[%%zi] ", i);
+            fprintf (stderr, "[%%" PRIuSIZE "] ", i);
         assert (%(k)s [i].oid_value == %(k)s_TEST [i].oid_value);
         assert (%(k)s [i].info_value && %(k)s_TEST [i].info_value);
         assert (streq (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
@@ -587,7 +588,7 @@ int main (void) {
         fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].info_type != NULL; i++) {
         if (do_debug)
-            fprintf (stderr, "[%%zi] ", i);
+            fprintf (stderr, "[%%" PRIuSIZE "] ", i);
         assert (streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type));
         assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
         assert (d_equal(%(k)s [i].info_len, %(k)s_TEST [i].info_len));
@@ -596,9 +597,9 @@ int main (void) {
         assert (%(k)s [i].flags == %(k)s_TEST [i].flags);
         if (%(k)s [i].oid2info != %(k)s_TEST [i].oid2info) {
             if (do_debug)
-                fprintf (stderr, "%(k)s[%%zi].oid2info     =<%%p>\\n", i, (void*)%(k)s[i].oid2info);
+                fprintf (stderr, "%(k)s[%%" PRIuSIZE "].oid2info     =<%%p>\\n", i, (void*)%(k)s[i].oid2info);
             if (do_debug)
-                fprintf (stderr, "%(k)s_TEST[%%zi].oid2info=<%%p>\\n", i, (void*)%(k)s_TEST[i].oid2info);
+                fprintf (stderr, "%(k)s_TEST[%%" PRIuSIZE "].oid2info=<%%p>\\n", i, (void*)%(k)s_TEST[i].oid2info);
             return 1;
         }
         // assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
