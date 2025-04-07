@@ -19,6 +19,19 @@
     -->
   <!-- AUTOINSERT LOCATION -->
   <revision>
+    <revnumber>2.8.3</revnumber>
+    <date>2025-04-07</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Some changes to docs and recipes, libusbclient API and functionality.
+        Updated NUT SEMVER definition and added scripting around it.
+        Groundwork for vendor-defined status and INSTCMD buzzwords like "ECO".
+        Fixed some regressions and added improvements for certain new device
+        series.
+    </revremark>
+  </revision>
+
+  <revision>
     <revnumber>2.8.2</revnumber>
     <date>2024-04-01</date>
     <authorinitials>JK</authorinitials>

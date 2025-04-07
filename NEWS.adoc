@@ -45,8 +45,8 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
-PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
--------------------------------------------------------------
+Release notes for NUT 2.8.3 - what's new since 2.8.2
+----------------------------------------------------
 
 https://github.com/networkupstools/nut/milestone/11
 

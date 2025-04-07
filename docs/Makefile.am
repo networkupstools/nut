@@ -559,10 +559,9 @@ $(top_builddir)/docs/ChangeLog.html $(top_builddir)/docs/ChangeLog.chunked $(top
 	  fi
 
 # Assume revisions are sorted in the file, from newest to oldest
-# MAINTAINER FIXME: While cutting release 2.8.3, update OLDEST_REL here
 # FIXME: If we ever get more than one file to chomp this way, make it a snippet
 docinfo-since-v2.8.3.xml: docinfo.xml
-	@OLDEST_REL="2.8.2"; \
+	@OLDEST_REL="2.8.3"; \
 	 IN_REVISION=false ; OLDEST_SEEN=false ; \
 	 while read LINE ; do \
 		case "$${LINE}" in \
