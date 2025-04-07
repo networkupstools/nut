@@ -114,13 +114,15 @@ implementations).
 |`abs_top_srcdir`	| Top source directory	| `/home/abuild/nut`
 |`abs_top_builddir`	| Top build directory (defaults to `abs_top_srcdir`)
 			| `/home/abuild/.builds/linux/nut`
-|`NUT_VERSION_FORCED`	| Set `NUT_VERSION_DEFAULT` to this value and
-			  enforce `NUT_VERSION_PREFER_GIT=false`. Usually sourced
+|`NUT_VERSION_FORCED`	| Set `NUT_VERSION_DEFAULT` (extended NUT SEMVER,
+			  may be just a triplet) to this value and enforce
+			  `NUT_VERSION_PREFER_GIT=false`. Usually sourced
 			  from `${abs_top_srcdir}/VERSION_FORCED` (if present)
-			| `2.8.3`
-|`NUT_VERSION_FORCED_SEMVER`	| Set `SEMVER` to this value regardless of
-			  `NUT_VERSION_PREFER_GIT` setting. Usually sourced from
-			  `${abs_top_srcdir}/VERSION_FORCED_SEMVER` (if present)
+			| `2.8.3.2379`
+|`NUT_VERSION_FORCED_SEMVER`	| Set `SEMVER` (exactly a triplet) to this value
+			  regardless of `NUT_VERSION_PREFER_GIT` setting. Usually
+			  sourced from `${abs_top_srcdir}/VERSION_FORCED_SEMVER`
+			  (if present)
 			| `2.8.3`
 |`NUT_VERSION_DEFAULT`	| Usually sourced from either
 			  `${abs_top_builddir}/VERSION_DEFAULT` (if present)
