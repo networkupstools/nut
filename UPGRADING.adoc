@@ -24,8 +24,6 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.2 to 2.8.3
 ---------------------------
 
-- PLANNED: Keep track of any further API clean-up?
-
 - NUT development snapshots can now have more version components than the
   standard semantic versioning triplet, optionally adding the amount of
   commits on the development trunk since previous release, and the amount
