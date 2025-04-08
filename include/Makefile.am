@@ -65,7 +65,7 @@ nut_version.h: @FORCE_NUT_VERSION@
 	    else \
 	        echo "#define NUT_VERSION_IS_RELEASE 0" ; \
 	    fi ; \
-	 } > "$@.tmp" ; \
+	 } > "$@.tmp" && \
 	 echo "NUT_VERSION: \"$$NUT_VERSION\"  NUT_VERSION_IS_RELEASE:$$GITREV_IS_RELEASE  NUT_VERSION_SEMVER: \"$$GITREV_SEMVER\""
 	@if test -f "$@" && test -s "$@" ; then \
 		if cmp -s "$@.tmp" "$@" ; then \
