@@ -132,7 +132,7 @@ endif HAVE_WINDOWS
 #   dlname='libupsclient-6.dll'
 #   library_names='libupsclient.dll.a'
 #   libdir='//lib'
-CLEANFILES += libupsclient-version.h
+CLEANFILES += libupsclient-version.h libupsclient-version.h.tmp
 libupsclient-version.h: libupsclient.la
 	@echo "  GENERATE-HEADER	$@" ; \
 	 dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
@@ -144,7 +144,19 @@ libupsclient-version.h: libupsclient.la
 	 else \
 	    printf "#ifndef SOFILE_LIBUPSCLIENT\n# define SOFILE_LIBUPSCLIENT \"%s\"\n#endif\n\n" "$${SOFILE_LIBUPSCLIENT}" ; \
 	    printf "#ifndef SOPATH_LIBUPSCLIENT\n# define SOPATH_LIBUPSCLIENT \"%s/%s\"\n#endif\n\n" "@LIBDIR@" "$${SOFILE_LIBUPSCLIENT}" ; \
-	 fi > "$@"
+	 fi > "$@".tmp
+	@if test -f "$@" && test -s "$@" ; then \
+		if cmp -s "$@.tmp" "$@" ; then \
+			echo "  GENERATE-HEADER	$@ did not change" ; \
+		else \
+			echo "  GENERATE-HEADER	$@ got changed" ; \
+			cp "$@.tmp" "$@" ; \
+		fi ; \
+	 else \
+		echo "  GENERATE-HEADER	$@ was absent"; \
+		cp "$@.tmp" "$@" ; \
+	 fi
+	-rm -f "$@.tmp"
 
 if HAVE_CXX11
 # libnutclient version information and build
