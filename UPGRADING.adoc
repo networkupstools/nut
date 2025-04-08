@@ -24,8 +24,6 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.2 to 2.8.3
 ---------------------------
 
-- PLANNED: Keep track of any further API clean-up?
-
 - NUT development snapshots can now have more version components than the
   standard semantic versioning triplet, optionally adding the amount of
   commits on the development trunk since previous release, and the amount
@@ -253,6 +251,7 @@ Changes from 2.8.2 to 2.8.3
   so "make noise" or "bring invaluable insights" to logs or terminal;
   they can generally be used for services and init scripts via `nut.conf`:
   * See `NUT_IGNORE_CHECKPROCNAME` and `NUT_DEBUG_SYSLOG` above. [#1915]
+  * See `NUT_DEFAULT_CONNECT_TIMEOUT` above. [#2847]
   * A `NUT_QUIET_INIT_BANNER` envvar (presence or "true" value) prevents
     tool name and NUT version banner from being printed out when programs
     start. [issues #1789 vs. #316]
