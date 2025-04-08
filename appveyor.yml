@@ -16,6 +16,8 @@ branches:
   # whitelist
   only:
     - master
+    - FTY
+    - fightwarn
     - /Windows/
 
 platform: x64
