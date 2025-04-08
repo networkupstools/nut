@@ -232,9 +232,12 @@ all-libs-local/tests: all-libs-local/common
 ### Delivers: libnutscan.la
 ### LIB-Requires-ext: drivers/libserial-nutscan.la
 ### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
+### HDR-Requires-ext: clients/libupsclient-version.h
 ### Requires-int: libnutscan.la
 ### Note: indirectly (ltdl) may use installed libupsclient.so
-all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/common
+###       however does directly use libupsclient-version.h
+###       for hints to find it at run-time
+all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/common all-libs-local/clients
 	+@$(SUBDIR_TGT_RULE)
 
 # Handle all SUBDIRS_ALL_RECURSIVE in a way that dependencies can be specified,
