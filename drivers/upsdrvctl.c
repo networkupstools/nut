@@ -69,7 +69,7 @@ static int	waitfordrivers = 1;
 	/* timer - keeps us from getting stuck if a driver hangs
 	 * NOTE: Default value is also documented in man page
 	 */
-static int	maxstartdelay = 45;
+static int	maxstartdelay = 75;
 
 	/* counter - try that many time(s) to start the driver if it fails to
 	 * Named "retry" but is actually a max attempts count, should be at least 1.

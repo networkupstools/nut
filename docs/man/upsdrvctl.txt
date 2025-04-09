@@ -135,7 +135,7 @@ time-frame, further attempts may be executed by using the 'maxretry' and
 especially to speed up parallel start of many drivers.
 +
 See linkman:ups.conf[5] about these options. Built-in defaults are:
-'maxstartdelay=45' (sec), 'maxretry=1' (meaning one attempt at starting),
+'maxstartdelay=75' (sec), 'maxretry=1' (meaning one attempt at starting),
 'retrydelay=5' (sec).
 
 *stop*::
