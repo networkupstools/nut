@@ -350,6 +350,9 @@ void upsdrv_initups(void)
 
 	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
+	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
+	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
+
 	upsdebugx(3, "VendorID: %04x", hd->VendorID);
 	upsdebugx(3, "ProductID: %04x", hd->ProductID);
 
