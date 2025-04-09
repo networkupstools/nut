@@ -26,15 +26,17 @@
 # expect a populated /dev during bootup.
 
 [Unit]
-Description=Wait for udev To Complete Device Initialization
+Description=Wait for udev To Complete Device Initialization before USB-capable NUT drivers start
 Documentation=man:systemd-udev-settle.service(8)
 DefaultDependencies=no
 Wants=systemd-udevd.service
 After=systemd-udev-trigger.service
-Before=sysinit.target
+Before=nut-driver.target
 ConditionPathIsReadWrite=/sys
 
 [Service]
+# FIXME: Find a way to re-trigger this service for changes in USB/Serial/...
+#  devices that may need permissions for NUT to be applied.
 Type=oneshot
 TimeoutSec=180
 RemainAfterExit=yes
