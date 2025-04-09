@@ -44,6 +44,15 @@ somewhat inconveniently named *protocol* (for the Qx dialect) and *subdriver*
 dialect modules as *subdrivers*, and actually the modular source code of
 `nutdrv_qx` also does.
 
+NOTE: Due to the amount of supported Qx dialects, and the time it takes
+to query for relevant combinations of commands and wait for a reply or
+absence thereof, in order to detect hardware/firmware support of some
+particular way for the driver to communicate with the device, automatic
+`nutdrv_qx` driver initialization may take about a minute.
+It is recommended to store the detected and reported `protocol` and/or
+`subdriver` values into your linkman:ups.conf[5] file to speed up later
+driver start-ups and avoid possible service timeouts.
+
 The <<_internet_resources,NUT compatibility table>> lists all the known
 supported models. Keep in mind, however, that other models not listed
 there may also be supported, but haven't been tested or reported back.
