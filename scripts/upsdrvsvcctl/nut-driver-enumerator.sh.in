@@ -109,7 +109,7 @@ fi
 ### Also can tune whether a driver "Wants" another service (would consider
 ### ordering if that one is enabled, but live if it is disabled), or if it
 ### "Requires" that (would cause that to start).
-DEPSVC_USB_SYSTEMD="systemd-udev.service systemd-udev-settle.service"
+DEPSVC_USB_SYSTEMD="systemd-udevd.service systemd-udev-settle.service"
 DEPREQ_USB_SYSTEMD="Wants"
 DEPSVC_NET_FULL_SYSTEMD="network-online.target systemd-resolved.service ifplugd.service"
 DEPREQ_NET_FULL_SYSTEMD="Wants"
