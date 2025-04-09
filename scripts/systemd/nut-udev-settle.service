@@ -31,8 +31,10 @@ Documentation=man:systemd-udev-settle.service(8)
 DefaultDependencies=no
 Wants=systemd-udevd.service
 After=systemd-udev-trigger.service
-Before=nut-driver.target
 ConditionPathIsReadWrite=/sys
+
+# Used when/if requested by specific nut-driver@.service instances.
+# No auto-start or dependency otherwise.
 
 [Service]
 # FIXME: Find a way to re-trigger this service for changes in USB/Serial/...
