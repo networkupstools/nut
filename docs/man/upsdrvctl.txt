@@ -129,8 +129,14 @@ NOTE: `upsdrvctl` can not manage devices not listed in `ups.conf`
 (such as test drivers started with `-s TMP` option).
 
 *start*::
-Start the UPS driver(s). In case of failure, further attempts may be executed
-by using the 'maxretry' and 'retrydelay' options -- see linkman:ups.conf[5].
+Start the UPS driver(s). In case of failure to start within 'maxstartdelay'
+time-frame, further attempts may be executed by using the 'maxretry' and
+'retrydelay' values. Conversely, the 'nowait' global option can be used,
+especially to speed up parallel start of many drivers.
++
+See linkman:ups.conf[5] about these options. Built-in defaults are:
+'maxstartdelay=75' (sec), 'maxretry=1' (meaning one attempt at starting),
+'retrydelay=5' (sec).
 
 *stop*::
 Stop the UPS driver(s).  This does not send commands to the UPS.

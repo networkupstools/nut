@@ -47,6 +47,8 @@ typedef struct {
 	char	*port;
 	int	sdorder;
 	int	maxstartdelay;
+	int	maxretry;
+	int	retrydelay;
 	int	exceeded_timeout;
 #ifndef WIN32
 	pid_t	pid;
@@ -64,13 +66,20 @@ static int	maxsdorder = 0, testmode = 0, exec_error = 0, exec_timeout = 0;
 	/* Should we wait for driver (1) or "parallelize" drivers start (0) */
 static int	waitfordrivers = 1;
 
-	/* timer - keeps us from getting stuck if a driver hangs */
-static int	maxstartdelay = 45;
+	/* timer - keeps us from getting stuck if a driver hangs
+	 * NOTE: Default value is also documented in man page
+	 */
+static int	maxstartdelay = 75;
 
-	/* counter - retry that many time(s) to start the driver if it fails to */
+	/* counter - try that many time(s) to start the driver if it fails to
+	 * Named "retry" but is actually a max attempts count, should be at least 1.
+	 * NOTE: Default value is also documented in man page
+	 */
 static int	maxretry = 1;
 
-	/* timer - delay between each restart attempt of the driver(s) */
+	/* timer - delay between each restart attempt of the driver(s)
+	 * NOTE: Default value is also documented in man page
+	 */
 static int	retrydelay = 5;
 
 	/* Directory where driver executables live */
@@ -112,8 +121,13 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 			driverpath = xstrdup(val);
 		}
 
-		if (!strcmp(var, "maxretry"))
+		if (!strcmp(var, "maxretry")) {
 			maxretry = atoi(val);
+			if (maxretry < 0) {
+				upsdebugx(0, "NOTE: invalid 'maxretry' setting ignored: %s", NUT_STRARG(val));
+				maxretry = 1;
+			}
+		}
 
 		if (!strcmp(var, "retrydelay"))
 			retrydelay = atoi(val);
@@ -147,6 +161,18 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 			if (!strcmp(var, "maxstartdelay"))
 				tmp->maxstartdelay = atoi(val);
 
+			if (!strcmp(var, "maxretry")) {
+				tmp->maxretry = atoi(val);
+				if (maxretry < 0) {
+					upsdebugx(0, "NOTE: invalid 'maxretry' setting ignored for %s: %s",
+						tmp->upsname, NUT_STRARG(val));
+					tmp->maxretry = -1;	/* use global value by default */
+				}
+			}
+
+			if (!strcmp(var, "retrydelay"))
+				tmp->retrydelay = atoi(val);
+
 			if (!strcmp(var, "sdorder")) {
 				tmp->sdorder = atoi(val);
 
@@ -168,6 +194,8 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 	tmp->next = NULL;
 	tmp->sdorder = 0;
 	tmp->maxstartdelay = -1;	/* use global value by default */
+	tmp->maxretry = -1;	/* use global value by default */
+	tmp->retrydelay = -1;	/* use global value by default */
 	tmp->exceeded_timeout = 0;
 
 	if (!strcmp(var, "driver"))
@@ -1031,10 +1059,19 @@ static void start_driver(const ups_t *ups)
 	char	*argv[10];
 	char	dfn[NUT_PATH_MAX + 1], dbg[SMALLBUF];
 	int	ret, arg = 0;
-	int	initial_exec_error = exec_error, initial_exec_timeout = exec_timeout, drv_maxretry = maxretry;
+	int	initial_exec_error = exec_error, initial_exec_timeout = exec_timeout, drv_maxretry = maxretry, drv_retrydelay = retrydelay;
 	struct stat	fs;
 
 	upsdebugx(1, "Starting UPS: %s", ups->upsname);
+
+	/* Use the local retry settings, if available */
+	if (ups->retrydelay >= 0) {
+		drv_retrydelay = ups->retrydelay;
+	}
+
+	if (ups->maxretry >= 0) {
+		drv_maxretry = ups->maxretry;
+	}
 
 #ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
@@ -1167,8 +1204,8 @@ static void start_driver(const ups_t *ups)
 		else {
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
-				if (retrydelay >= 0)
-					sleep ((unsigned int)retrydelay);
+				if (drv_retrydelay >= 0)
+					sleep ((unsigned int)drv_retrydelay);
 		}
 	}
 }
@@ -1347,7 +1384,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 		    )
 		) {
 			upslogx(LOG_WARNING,
-				"Starting \"all\" drivers but requested the %s!"
+				"Starting \"all\" drivers but requested the %s! "
 				"This request will not wait for driver(s) to complete "
 				"their initialization%s.",
 				(nut_foreground_passthrough > 0
@@ -1685,25 +1722,28 @@ int main(int argc, char **argv)
 
 				upsdebugx(1,
 					"Driver [%s] PID %" PRIdMAX " initially exceeded "
-					"maxstartdelay but now waitpid() returns %" PRIdMAX
-					" and status bits 0x%.*X",
+					"maxstartdelay %d sec but now waitpid() returns %"
+					PRIdMAX " and status bits 0x%.*X",
 					tmp->upsname, (intmax_t)tmp->pid,
+					(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay),
 					(intmax_t)waitret, (int)(2*sizeof(wstat)),
 					(unsigned int)wstat);
 
 				if (waitret == tmp->pid) {
 					upsdebugx(1,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay but has finished by now",
-						tmp->upsname, (intmax_t)tmp->pid);
+						"maxstartdelay %d sec but has finished by now",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					tmp->exceeded_timeout = 0;
 				} else
 				if (waitret == 0) {
 					/* Special behavior for WNOHANG */
 					upslogx(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and is still starting",
-						tmp->upsname, (intmax_t)tmp->pid);
+						"maxstartdelay %d sec and is still starting",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					/* TOTHINK: Should this "timeout" cause an error
 					 * exit code, if this is the only problem?
 					 * Maybe as a special case - if this is the only
@@ -1716,31 +1756,37 @@ int main(int argc, char **argv)
 				if (waitret == -1) {
 					upslog_with_errno(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and we got an error asking it again",
-						tmp->upsname, (intmax_t)tmp->pid);
+						"maxstartdelay %d sec and we got an error asking it again",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					exec_error++;
 				} else
 				if (WIFEXITED(wstat) == 0) {
 					upslogx(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and has exited abnormally by now",
-						tmp->upsname, (intmax_t)tmp->pid);
+						"maxstartdelay %d sec and has exited abnormally by now",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					exec_error++;
 				} else
 				/* the rest only work when WIFEXITED is nonzero */
 				if (WEXITSTATUS(wstat) != 0) {
 					upslogx(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and has failed to start by now "
+						"maxstartdelay %d sec and has failed to start by now "
 						"(exit status=%d)",
-						tmp->upsname, (intmax_t)tmp->pid, WEXITSTATUS(wstat));
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay),
+						WEXITSTATUS(wstat));
 					exec_error++;
 				} else
 				if (WIFSIGNALED(wstat)) {
 					upslog_with_errno(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and has died after signal %d by now",
-						tmp->upsname, (intmax_t)tmp->pid, WTERMSIG(wstat));
+						"maxstartdelay %d sec and has died after signal %d by now",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay),
+						WTERMSIG(wstat));
 					exec_error++;
 				}
 			}
