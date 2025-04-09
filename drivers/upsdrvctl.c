@@ -47,6 +47,8 @@ typedef struct {
 	char	*port;
 	int	sdorder;
 	int	maxstartdelay;
+	int	maxretry;
+	int	retrydelay;
 	int	exceeded_timeout;
 #ifndef WIN32
 	pid_t	pid;
@@ -159,6 +161,18 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 			if (!strcmp(var, "maxstartdelay"))
 				tmp->maxstartdelay = atoi(val);
 
+			if (!strcmp(var, "maxretry")) {
+				tmp->maxretry = atoi(val);
+				if (maxretry < 0) {
+					upsdebugx(0, "NOTE: invalid 'maxretry' setting ignored for %s: %s",
+						tmp->upsname, NUT_STRARG(val));
+					tmp->maxretry = -1;	/* use global value by default */
+				}
+			}
+
+			if (!strcmp(var, "retrydelay"))
+				tmp->retrydelay = atoi(val);
+
 			if (!strcmp(var, "sdorder")) {
 				tmp->sdorder = atoi(val);
 
@@ -180,6 +194,8 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 	tmp->next = NULL;
 	tmp->sdorder = 0;
 	tmp->maxstartdelay = -1;	/* use global value by default */
+	tmp->maxretry = -1;	/* use global value by default */
+	tmp->retrydelay = -1;	/* use global value by default */
 	tmp->exceeded_timeout = 0;
 
 	if (!strcmp(var, "driver"))
@@ -1043,10 +1059,19 @@ static void start_driver(const ups_t *ups)
 	char	*argv[10];
 	char	dfn[NUT_PATH_MAX + 1], dbg[SMALLBUF];
 	int	ret, arg = 0;
-	int	initial_exec_error = exec_error, initial_exec_timeout = exec_timeout, drv_maxretry = maxretry;
+	int	initial_exec_error = exec_error, initial_exec_timeout = exec_timeout, drv_maxretry = maxretry, drv_retrydelay = retrydelay;
 	struct stat	fs;
 
 	upsdebugx(1, "Starting UPS: %s", ups->upsname);
+
+	/* Use the local retry settings, if available */
+	if (ups->retrydelay >= 0) {
+		drv_retrydelay = ups->retrydelay;
+	}
+
+	if (ups->maxretry >= 0) {
+		drv_maxretry = ups->maxretry;
+	}
 
 #ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
@@ -1179,8 +1204,8 @@ static void start_driver(const ups_t *ups)
 		else {
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
-				if (retrydelay >= 0)
-					sleep ((unsigned int)retrydelay);
+				if (drv_retrydelay >= 0)
+					sleep ((unsigned int)drv_retrydelay);
 		}
 	}
 }

@@ -339,6 +339,16 @@ They would not be actively killed by `upsdrvctl` after this timeout expires.
 +
 The default is 45 seconds.
 
+*maxretry*::
+Optional.  This can be set as a global variable above your first UPS
+definition and it can also be set in a UPS section.  See explanation
+above, in the global section.
+
+*retrydelay*::
+Optional.  This can be set as a global variable above your first UPS
+definition and it can also be set in a UPS section.  See explanation
+above, in the global section.
+
 *synchronous*::
 
 Optional.  Same as the global directive of the same name, but this is
