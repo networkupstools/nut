@@ -1691,25 +1691,28 @@ int main(int argc, char **argv)
 
 				upsdebugx(1,
 					"Driver [%s] PID %" PRIdMAX " initially exceeded "
-					"maxstartdelay but now waitpid() returns %" PRIdMAX
-					" and status bits 0x%.*X",
+					"maxstartdelay %d sec but now waitpid() returns %"
+					PRIdMAX " and status bits 0x%.*X",
 					tmp->upsname, (intmax_t)tmp->pid,
+					(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay),
 					(intmax_t)waitret, (int)(2*sizeof(wstat)),
 					(unsigned int)wstat);
 
 				if (waitret == tmp->pid) {
 					upsdebugx(1,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay but has finished by now",
-						tmp->upsname, (intmax_t)tmp->pid);
+						"maxstartdelay %d sec but has finished by now",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					tmp->exceeded_timeout = 0;
 				} else
 				if (waitret == 0) {
 					/* Special behavior for WNOHANG */
 					upslogx(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and is still starting",
-						tmp->upsname, (intmax_t)tmp->pid);
+						"maxstartdelay %d sec and is still starting",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					/* TOTHINK: Should this "timeout" cause an error
 					 * exit code, if this is the only problem?
 					 * Maybe as a special case - if this is the only
@@ -1722,31 +1725,37 @@ int main(int argc, char **argv)
 				if (waitret == -1) {
 					upslog_with_errno(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and we got an error asking it again",
-						tmp->upsname, (intmax_t)tmp->pid);
+						"maxstartdelay %d sec and we got an error asking it again",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					exec_error++;
 				} else
 				if (WIFEXITED(wstat) == 0) {
 					upslogx(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and has exited abnormally by now",
-						tmp->upsname, (intmax_t)tmp->pid);
+						"maxstartdelay %d sec and has exited abnormally by now",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					exec_error++;
 				} else
 				/* the rest only work when WIFEXITED is nonzero */
 				if (WEXITSTATUS(wstat) != 0) {
 					upslogx(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and has failed to start by now "
+						"maxstartdelay %d sec and has failed to start by now "
 						"(exit status=%d)",
-						tmp->upsname, (intmax_t)tmp->pid, WEXITSTATUS(wstat));
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay),
+						WEXITSTATUS(wstat));
 					exec_error++;
 				} else
 				if (WIFSIGNALED(wstat)) {
 					upslog_with_errno(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay and has died after signal %d by now",
-						tmp->upsname, (intmax_t)tmp->pid, WTERMSIG(wstat));
+						"maxstartdelay %d sec and has died after signal %d by now",
+						tmp->upsname, (intmax_t)tmp->pid,
+						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay),
+						WTERMSIG(wstat));
 					exec_error++;
 				}
 			}
