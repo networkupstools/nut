@@ -647,6 +647,7 @@ upsconf_getDriverMedia() {
                     printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
             esac
             ;;
+        # FIXME: other modbus? sysfs like INA219? GPIO? Other local devices?
         *)  printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
     esac
 }
@@ -956,6 +957,7 @@ systemd_registerInstance() {
             DEPSVC="$DEPSVC_SERIAL_SYSTEMD"
             DEPREQ="$DEPREQ_SERIAL_SYSTEMD" ;;
         '') ;;
+        # FIXME: modbus? sysfs like INA219? GPIO? Other local devices?
         *)  echo "WARNING: Unexpected NUT media type ignored: '${_MED}'" >&2 ;;
     esac
     if [ -n "$DEPSVC" ]; then
