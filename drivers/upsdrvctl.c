@@ -69,7 +69,8 @@ static int	waitfordrivers = 1;
 	 */
 static int	maxstartdelay = 45;
 
-	/* counter - retry that many time(s) to start the driver if it fails to
+	/* counter - try that many time(s) to start the driver if it fails to
+	 * Named "retry" but is actually a max attempts count, should be at least 1.
 	 * NOTE: Default value is also documented in man page
 	 */
 static int	maxretry = 1;
@@ -118,8 +119,13 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 			driverpath = xstrdup(val);
 		}
 
-		if (!strcmp(var, "maxretry"))
+		if (!strcmp(var, "maxretry")) {
 			maxretry = atoi(val);
+			if (maxretry < 0) {
+				upsdebugx(0, "NOTE: invalid 'maxretry' setting ignored: %s", NUT_STRARG(val));
+				maxretry = 1;
+			}
+		}
 
 		if (!strcmp(var, "retrydelay"))
 			retrydelay = atoi(val);
