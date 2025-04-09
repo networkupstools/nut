@@ -31,7 +31,7 @@ endif !WITH_DEV
 
 # http://www.gnu.org/software/automake/manual/automake.html#Clean
 BUILT_SOURCES = nut_version.h
-CLEANFILES = nut_version.h
+CLEANFILES = nut_version.h nut_version.h.tmp*
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # magic to include Git version information in NUT version string
@@ -39,6 +39,7 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 nut_version.h: @FORCE_NUT_VERSION@
 	@echo "  GENERATE-HEADER	$@" ; \
+	 RES=0; \
 	 GITREV="`$(top_srcdir)/tools/gitlog2version.sh`" || GITREV=""; \
 	 GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE $(top_srcdir)/tools/gitlog2version.sh 2>/dev/null`" || GITREV_IS_RELEASE="false"; \
 	 GITREV_SEMVER="`NUT_VERSION_QUERY=SEMVER $(top_srcdir)/tools/gitlog2version.sh 2>/dev/null`" || GITREV_SEMVER=""; \
@@ -64,20 +65,22 @@ nut_version.h: @FORCE_NUT_VERSION@
 	    else \
 	        echo "#define NUT_VERSION_IS_RELEASE 0" ; \
 	    fi ; \
-	 } > "$@.tmp" && \
-	 echo "NUT_VERSION: \"$$NUT_VERSION\"  NUT_VERSION_IS_RELEASE:$$GITREV_IS_RELEASE  NUT_VERSION_SEMVER: \"$$GITREV_SEMVER\""
-	@if test -f "$@" && test -s "$@" ; then \
-		if cmp -s "$@.tmp" "$@" ; then \
+	 } > "$@.tmp.$$$$" && \
+	 echo "NUT_VERSION: \"$$NUT_VERSION\"  NUT_VERSION_IS_RELEASE:$$GITREV_IS_RELEASE  NUT_VERSION_SEMVER: \"$$GITREV_SEMVER\"" && \
+	 if test -f "$@" && test -s "$@" ; then \
+		if cmp -s "$@.tmp.$$$$" "$@" ; then \
 			echo "  GENERATE-HEADER	$@ did not change" ; \
 		else \
 			echo "  GENERATE-HEADER	$@ got changed" ; \
-			cp "$@.tmp" "$@" ; \
+			cp "$@.tmp.$$$$" "$@" ; \
 		fi ; \
 	 else \
 		echo "  GENERATE-HEADER	$@ was absent"; \
-		cp "$@.tmp" "$@" ; \
-	 fi
-	-rm -f "$@.tmp"
+		cp "$@.tmp.$$$$" "$@" ; \
+	 fi \
+	 || RES=$$? ; \
+	 rm -f "$@.tmp.$$$$" ; \
+	 exit $$RES
 
 FORCE:
 

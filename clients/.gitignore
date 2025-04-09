@@ -1,5 +1,5 @@
 /libupsclient-version.h
-/libupsclient-version.h.tmp
+/libupsclient-version.h.tmp*
 /upsimage.cgi
 /upsset.cgi
 /upsstats.cgi
