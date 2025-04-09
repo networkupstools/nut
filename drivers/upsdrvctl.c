@@ -64,13 +64,19 @@ static int	maxsdorder = 0, testmode = 0, exec_error = 0, exec_timeout = 0;
 	/* Should we wait for driver (1) or "parallelize" drivers start (0) */
 static int	waitfordrivers = 1;
 
-	/* timer - keeps us from getting stuck if a driver hangs */
+	/* timer - keeps us from getting stuck if a driver hangs
+	 * NOTE: Default value is also documented in man page
+	 */
 static int	maxstartdelay = 45;
 
-	/* counter - retry that many time(s) to start the driver if it fails to */
+	/* counter - retry that many time(s) to start the driver if it fails to
+	 * NOTE: Default value is also documented in man page
+	 */
 static int	maxretry = 1;
 
-	/* timer - delay between each restart attempt of the driver(s) */
+	/* timer - delay between each restart attempt of the driver(s)
+	 * NOTE: Default value is also documented in man page
+	 */
 static int	retrydelay = 5;
 
 	/* Directory where driver executables live */
@@ -1347,7 +1353,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 		    )
 		) {
 			upslogx(LOG_WARNING,
-				"Starting \"all\" drivers but requested the %s!"
+				"Starting \"all\" drivers but requested the %s! "
 				"This request will not wait for driver(s) to complete "
 				"their initialization%s.",
 				(nut_foreground_passthrough > 0
