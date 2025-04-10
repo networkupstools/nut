@@ -411,7 +411,11 @@ endif !HAVE_MINGW_RESGEN
 # uses as a dmf-reindex tool; currently tied (if snmp+neon+smf are enabled)
 # into all-libs-local/tools/nut-scanner goal.
 # TODO: Finer-grained dependency?
-all/scripts/DMF: all-libs-local/drivers all-libs-local/common all-libs-local/tools/nut-scanner
+DMF_DEP_NUTSCAN =
+if WITH_REGENERATE_DMF_NUTSCAN
+DMF_DEP_NUTSCAN += all-libs-local/tools/nut-scanner
+endif WITH_REGENERATE_DMF_NUTSCAN
+all/scripts/DMF: all-libs-local/drivers all-libs-local/common $(DMF_DEP_NUTSCAN)
 	+@$(SUBDIR_TGT_RULE)
 
 all-recursive/scripts: all/scripts/Windows all/scripts/DMF
