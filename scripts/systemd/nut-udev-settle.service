@@ -37,9 +37,11 @@ ConditionPathIsReadWrite=/sys
 # No auto-start or dependency otherwise.
 
 [Service]
-# FIXME: Find a way to re-trigger this service for changes in USB/Serial/...
-#  devices that may need permissions for NUT to be applied.
 Type=oneshot
 TimeoutSec=180
-RemainAfterExit=yes
+# We want to re-trigger this service during NUT driver restarts
+# (maybe several at once) as we reconnect after e.g. USB bus reset,
+# for changes in USB/Serial/... devices that may need permissions
+# for NUT to be applied. So we do not want it to remain "active".
+#RemainAfterExit=yes
 ExecStart=udevadm settle
