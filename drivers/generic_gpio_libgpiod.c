@@ -78,7 +78,8 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner);
  */
 static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfdlocal, int inner) {
 	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfdlocal->lib_data);
-	upsdebugx(5, "reserve_lines_libgpiod runOptions 0x%x, inner %d", gpioupsfdlocal->runOptions, inner);
+	upsdebugx(5, "reserve_lines_libgpiod runOptions 0x%x, inner %d",
+		(unsigned int)gpioupsfdlocal->runOptions, inner);
 
 	if(((gpioupsfdlocal->runOptions&ROPT_REQRES) != 0) == inner) {
 #if WITH_LIBGPIO_VERSION < 0x00020000
