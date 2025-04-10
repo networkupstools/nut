@@ -5732,11 +5732,15 @@ with_regenerate_dmf_nutscan=no
 AC_MSG_CHECKING(whether we will regenerate DMF collection of mappings for nut-scanner SNMP mode)
 case "${want_regenerate_dmf_nutscan}" in
 	yes)
+		if test "${with_dmf}${with_snmp}${with_neon}" = yesyesyes ; then
 			AC_MSG_RESULT(yes)
 			with_regenerate_dmf_nutscan=yes
+		else
+			AC_MSG_ERROR([Requested to regenerate DMF collection of mappings for nut-scanner SNMP mode, but not enabled with DMF, SNMP and/or NEON])
+		fi
 		;;
 	auto)
-		if test "${with_regenerate_dmf_snmp}" = yes ; then
+		if test "${with_regenerate_dmf_snmp}${with_dmf}${with_snmp}${with_neon}" = yesyesyesyes ; then
 			AC_MSG_RESULT(yes)
 			with_regenerate_dmf_nutscan=yes
 		else

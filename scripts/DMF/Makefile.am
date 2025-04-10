@@ -352,7 +352,7 @@ DMFLNK_CMD = ( \
 # prebuilt and distributed as source, the gmake VPATH should figure that out.
 # This may cause harmless "circular dependency" notices during in-tree builds.
 # We try to use the .PHONY target to quiesce the warnings below.
-# However, the dmf-reindexer is currently hardcoded to use only one directory,
+# However, the dmf-reindex tool is currently hardcoded to use only one directory,
 # so we copy stuff below just in case (if needed).
 .PHONY: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated \
         $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated
@@ -615,16 +615,16 @@ endif !WITH_VALGRIND
 
 # Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
 # But some data should be prepopulated there before we run leak tests etc.
-if WITH_DMF
+if WITH_REGENERATE_DMF_NUTSCAN
 run-dmf-test: dmf-test $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && ls -la && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-test
 
 run-dmf-reindex: dmf-reindex $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && ls -la && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(DMF_REINDEX)
-else !WITH_DMF
+else !WITH_REGENERATE_DMF_NUTSCAN
 run-dmf-test run-dmf-reindex:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
-endif !WITH_DMF
+endif !WITH_REGENERATE_DMF_NUTSCAN
 
 if WITH_DMF
 if WITH_LUA

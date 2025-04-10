@@ -70,10 +70,9 @@ else !WITH_DMF_LUA
  LDFLAGS_DMF_LUA =
 endif !WITH_DMF_LUA
 
-if WITH_NEON
-if WITH_SNMP
-if WITH_DMF
+if WITH_REGENERATE_DMF_NUTSCAN
 # Note: this does not require WITH_DMFMIB specifically, just the abilities
+#  WITH_DMF WITH_NEON WITH_SNMP
  nut-scanner-reindex-dmfsnmp.c: $(top_builddir)/include/nut_version.h $(top_srcdir)/include/dmfsnmp.h
 
  bin_PROGRAMS += nut-scanner-reindex-dmfsnmp
@@ -95,9 +94,7 @@ endif WITH_DMF_LUA
 if ! WITH_LIBLTDL
  nut_scanner_reindex_dmfsnmp_LDADD += $(LIBNEON_LIBS)
 endif ! WITH_LIBLTDL
-endif WITH_DMF
-endif WITH_SNMP
-endif WITH_NEON
+endif WITH_REGENERATE_DMF_NUTSCAN
 
 # Note: we only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_NUT_SCANNER
@@ -285,13 +282,9 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 #	$(AM_V_at)rm -rf $(builddir)/.deps
 
 EXTRA_PROGS =
-if WITH_NEON
-if WITH_SNMP
-if WITH_DMF
+if WITH_REGENERATE_DMF_NUTSCAN
 EXTRA_PROGS += nut-scanner-reindex-dmfsnmp
-endif
-endif
-endif
+endif WITH_REGENERATE_DMF_NUTSCAN
 
 # Helper for only the enabled libs to get built:
 all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES) $(EXTRA_PROGS)
