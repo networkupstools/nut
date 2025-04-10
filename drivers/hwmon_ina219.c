@@ -37,7 +37,7 @@
 #define BATTERY_CHARGE_LOW                  15
 
 #define DRIVER_NAME                         "hwmon-INA219 UPS driver"
-#define DRIVER_VERSION                      "0.02"
+#define DRIVER_VERSION                      "0.03"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -394,7 +394,7 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("device.description", "%s",
 			"Bidirectional Current/Power Monitor With I2C Interface");
 
-	dstate_setinfo("battery.charge.low", "%d", battery_charge_low);
+	dstate_setinfo("battery.charge.low", "%u", battery_charge_low);
 }
 
 static unsigned int battery_charge_compute(void)
@@ -452,7 +452,7 @@ void upsdrv_updateinfo(void)
 
 	dstate_setinfo("battery.voltage", "%.3f", voltage / 1000.0);
 	dstate_setinfo("battery.current", "%.3f", current / 1000.0);
-	dstate_setinfo("battery.charge", "%d", charge);
+	dstate_setinfo("battery.charge", "%u", charge);
 
 	if (charge <= battery_charge_low && current > 0)
 		dstate_setinfo("battery.runtime", "%d", 60); // 1 minute
