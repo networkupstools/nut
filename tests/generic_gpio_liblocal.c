@@ -229,9 +229,9 @@ void gpiod_request_config_set_consumer(struct gpiod_request_config *config,
 
 int gpiod_line_request_get_values(struct gpiod_line_request *request,
 				  enum gpiod_line_value *values) {
-	NUT_UNUSED_VARIABLE(request);
 	unsigned int	i;
 	int	pinPos = 1;
+	NUT_UNUSED_VARIABLE(request);
 
 	if(errReqFor_line_get_value_bulk) {
 		errReqFor_line_get_value_bulk=0;
