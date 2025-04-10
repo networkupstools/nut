@@ -284,5 +284,14 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 #clean-local:
 #	$(AM_V_at)rm -rf $(builddir)/.deps
 
+EXTRA_PROGS =
+if WITH_NEON
+if WITH_SNMP
+if WITH_DMF
+EXTRA_PROGS += nut-scanner-reindex-dmfsnmp
+endif
+endif
+endif
+
 # Helper for only the enabled libs to get built:
-all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES) $(EXTRA_PROGS)

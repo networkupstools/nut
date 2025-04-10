@@ -407,9 +407,11 @@ all/scripts/Windows:
 endif !HAVE_MINGW_RESGEN
 
 # May rely on dstate.o as well as common libs
-# Also relies on (builds if needed) nut-scanner-reindex-dmfsnmp that it uses as a dmf-reindex tool
+# Also relies on (builds if needed) the nut-scanner-reindex-dmfsnmp which it
+# uses as a dmf-reindex tool; currently tied (if snmp+neon+smf are enabled)
+# into all-libs-local/tools/nut-scanner goal.
 # TODO: Finer-grained dependency?
-all/scripts/DMF: all-libs-local/drivers all-libs-local/common all/tools/nut-scanner
+all/scripts/DMF: all-libs-local/drivers all-libs-local/common all-libs-local/tools/nut-scanner
 	+@$(SUBDIR_TGT_RULE)
 
 all-recursive/scripts: all/scripts/Windows all/scripts/DMF
