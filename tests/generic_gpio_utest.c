@@ -331,9 +331,9 @@ int main(int argc, char **argv) {
 				 * because scanf() does not support asterisk for
 				 * width specifier; have to create it on the fly.
 				 */
-				snprintf(fmt, sizeof(fmt), "%%%us", NUT_GPIO_CHIPNAMEBUF-1);
+				snprintf(fmt, sizeof(fmt), "%%%us", (unsigned int)NUT_GPIO_CHIPNAMEBUF-1);
 				fEof=fscanf(testData, fmt, chipNameLocal);
-				snprintf(fmt, sizeof(fmt), "%%%us", NUT_GPIO_SUBTYPEBUF-1);
+				snprintf(fmt, sizeof(fmt), "%%%us", (unsigned int)NUT_GPIO_SUBTYPEBUF-1);
 				fEof=fscanf(testData, fmt, subType);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
