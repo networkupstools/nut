@@ -308,7 +308,7 @@ else
     LD_LIBRARY_PATH_CLIENT="${LD_LIBRARY_PATH_ORIG}"
 fi
 
-for PROG in upsd upsc dummy-ups upsmon ; do
+for PROG in upsd upsc dummy-ups upsmon upslog upssched ; do
     (command -v ${PROG}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
 done
 
