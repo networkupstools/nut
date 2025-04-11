@@ -557,7 +557,7 @@ EOF
     fi
 }
 
-### upsmon.conf: ##################################################
+### upsmon.conf and upssched.conf: ##################################################
 
 updatecfg_upsmon_supplies() {
     NUMSUP="${1-}"
@@ -607,11 +607,19 @@ generatecfg_upsmon_trivial() {
         fi
     ) || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
+    sed \
+        -e 's,[@]TOP_BUILDDIR[@],'"${TOP_BUILDDIR}"',g' \
+        -e 's,[@]TOP_SRCDIR[@],'"${TOP_SRCDIR}"',g' \
+        -e 's,[@]NUT_CONFPATH[@],'"${NUT_CONFPATH}"',g' \
+        -e 's,[@]NUT_STATEPATH[@],'"${NUT_STATEPATH}"',g' \
+    < "${TOP_SRCDIR-}/tests/NIT/upssched.conf.in" > "$NUT_CONFPATH/upssched.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: upssched.conf"
+
     if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsmon.conf' so unprivileged daemons (after de-elevation) may read it"
-        chmod 644 "$NUT_CONFPATH/upsmon.conf"
+        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsmon.conf' and '$NUT_CONFPATH/upssched.conf' so unprivileged daemons (after de-elevation) may read them"
+        chmod 644 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
     else
-        chmod 640 "$NUT_CONFPATH/upsmon.conf"
+        chmod 640 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
     fi
 
     if [ $# -gt 0 ] ; then
