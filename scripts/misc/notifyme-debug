@@ -17,5 +17,9 @@
 printf '%s\t[%s]\t%s\t[%s]:\t%s\t(%s tokens)\n' "`date -u`" "`id`" "${NOTIFYTYPE-}" "${UPSNAME-}" "$*" "$#" >> "${TEMPDIR}/notifyme-`id -u`.log"
 
 if [ -n "${TOP_BUILDDIR}" -a -x "${TOP_BUILDDIR}/clients/upssched" ] ; then
+	if [ -n "${NUT_DEBUG_LEVEL_UPSSCHED}" ] ; then
+		NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSSCHED}"
+		export NUT_DEBUG_LEVEL
+	fi
 	"${TOP_BUILDDIR}/clients/upssched"
 fi
