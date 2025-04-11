@@ -887,6 +887,12 @@ static void start_daemon(TYPE_FD lockfd)
 	close(lockfd);
 	writepid(prog);
 
+	/* Whatever upsmon envvars were set when this daemon started, would be
+	 * irrelevant and only confusing at the moment a particular timer causes
+	 * CMDSCRIPT to run */
+	unsetenv("NOTIFYTYPE");
+	unsetenv("UPSNAME");
+
 	/* now watch for activity */
 	upsdebugx(2, "Timer daemon waiting for connections on pipefd %d",
 		pipefd);
