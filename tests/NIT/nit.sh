@@ -17,6 +17,8 @@
 #	DEBUG=true	to print debug messages, running processes, etc.
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
 #	NUT_DEBUG_MIN=3	to set (minimum) debug level for drivers, upsd...
+#	NUT_DEBUG_LEVEL_UPSSCHED=3	to set debug level for particular
+#			NUT daemons or tools
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
 #	NUT_FOREGROUND_WITH_PID=true	default foregrounding is without
 #			PID files, this option tells daemons to save them
@@ -65,6 +67,15 @@ export NUT_QUIET_INIT_UPSNOTIFY
 # Avoid noise in syslog and OS console
 NUT_DEBUG_SYSLOG="stderr"
 export NUT_DEBUG_SYSLOG
+
+# Stash the originally requested value so we can fiddle with envvars (if set)
+# per daemon, like NUT_DEBUG_LEVEL_UPSD, NUT_DEBUG_LEVEL_UPSMON,
+# NUT_DEBUG_LEVEL_UPSLOG, NUT_DEBUG_LEVEL_UPSSCHED, NUT_DEBUG_LEVEL_DRIVERS,
+# or per tool, like NUT_DEBUG_LEVEL_UPSC (not in all cases),
+# NUT_DEBUG_LEVEL_NUT_SCANNER
+NUT_DEBUG_LEVEL_ORIG="${NUT_DEBUG_LEVEL-}"
+# Whether from env or set in script per prog, let it be known to children:
+export NUT_DEBUG_LEVEL
 
 NUT_DEBUG_PID="true"
 export NUT_DEBUG_PID
@@ -207,7 +218,22 @@ runcmd() {
     CMDOUT=""
     CMDERR=""
 
+    # FIXME: Consider EXEEXT?
+    case "$0" in
+        upsc|*/upsc)
+            if [ -n "${NUT_DEBUG_LEVEL_UPSC-}" ]; then
+                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSC}"
+            fi
+            ;;
+        nut-scanner|*/nut-scanner)
+            if [ -n "${NUT_DEBUG_LEVEL_NUT_SCANNER-}" ]; then
+                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_NUT_SCANNER}"
+            fi
+            ;;
+    esac
+
     "$@" > "${NUT_STATEPATH}/runcmd.out" 2>"${NUT_STATEPATH}/runcmd.err" || CMDRES=$?
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     CMDOUT="`cat "${NUT_STATEPATH}/runcmd.out"`"
     CMDERR="`cat "${NUT_STATEPATH}/runcmd.err"`"
 
@@ -762,6 +788,9 @@ PASSED=0
 testcase_upsd_no_configs_at_all() {
     log_separator
     log_info "[testcase_upsd_no_configs_at_all] Test UPSD without configs at all"
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
     upsd ${ARG_FG}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
@@ -771,12 +800,16 @@ testcase_upsd_no_configs_at_all() {
         log_info "[testcase_upsd_no_configs_at_all] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 }
 
 testcase_upsd_no_configs_driver_file() {
     log_separator
     log_info "[testcase_upsd_no_configs_driver_file] Test UPSD without driver config file"
     generatecfg_upsd_trivial
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
     upsd ${ARG_FG}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
@@ -786,6 +819,7 @@ testcase_upsd_no_configs_driver_file() {
         log_info "[testcase_upsd_no_configs_driver_file] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 }
 
 testcase_upsd_no_configs_in_driver_file() {
@@ -793,6 +827,9 @@ testcase_upsd_no_configs_in_driver_file() {
     log_info "[testcase_upsd_no_configs_in_driver_file] Test UPSD without drivers defined in config file"
     generatecfg_upsd_trivial
     generatecfg_ups_trivial
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
     upsd ${ARG_FG}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
@@ -802,6 +839,7 @@ testcase_upsd_no_configs_in_driver_file() {
         log_info "[testcase_upsd_no_configs_in_driver_file] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 }
 
 upsd_start_loop() {
@@ -811,8 +849,12 @@ upsd_start_loop() {
         return 0
     fi
 
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
     upsd ${ARG_FG} &
     PID_UPSD="$!"
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSD as PID $PID_UPSD"
     sleep 2
     # Due to a busy port, server could have died by now
@@ -841,8 +883,12 @@ upsd_start_loop() {
         log_warn "[${TESTCASE}] Port ${NUT_PORT} is ${PORT_WORD}listening and UPSD PID $PID_UPSD is not alive, will sleep and retry"
 
         sleep 10
+        if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+        fi
         upsd ${ARG_FG} &
         PID_UPSD="$!"
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
         log_warn "[${TESTCASE}] Tried to start UPSD again, now as PID $PID_UPSD"
         sleep 5
     done
@@ -988,6 +1034,9 @@ sandbox_start_drivers() {
     sandbox_generate_configs
 
     log_info "Starting dummy-ups driver(s) for sandbox"
+    if [ -n "${NUT_DEBUG_LEVEL_DRIVERS-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_DRIVERS}"
+    fi
     #upsdrvctl ${ARG_FG} start dummy &
     dummy-ups -a dummy ${ARG_FG} &
     PID_DUMMYUPS="$!"
@@ -1002,6 +1051,7 @@ sandbox_start_drivers() {
         PID_DUMMYUPS2="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
     fi
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 
     sleep 5
 
@@ -1086,8 +1136,12 @@ testcase_sandbox_start_upsd_after_drivers() {
 
     # Not calling upsd_start_loop() here, before drivers
     # If the server starts, fine; if not - we retry below
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
     upsd ${ARG_FG} &
     PID_UPSD="$!"
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
 
     sandbox_start_drivers
@@ -1219,8 +1273,12 @@ testcase_sandbox_upsc_query_timer() {
     log_info "Starting upslog daemon"
     rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
     # Start as foregrounded always, so we have a PID to kill easily:
+    if [ -n "${NUT_DEBUG_LEVEL_UPSLOG-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSLOG}"
+    fi
     upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
     PID_UPSLOG="$!"
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 
     # TODO: Any need to convert to runcmd()?
     OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
@@ -1569,8 +1627,14 @@ upsmon_start_loop() {
         return 0
     fi
 
+    if [ -n "${NUT_DEBUG_LEVEL_UPSMON-}" ]; then
+        # Note: This is inherited into children of UPSMON process too,
+        # but the sample script honours NUT_DEBUG_LEVEL_UPSSCHED if set
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSMON}"
+    fi
     upsmon ${ARG_FG} &
     PID_UPSMON="$!"
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSMON as PID $PID_UPSMON"
     sleep 2
     # Due to severe config errors, client could have died by now
