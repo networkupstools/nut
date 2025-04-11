@@ -187,17 +187,22 @@ This requirement compromises usability of `make distcheck` on platforms without
    prevent the socket name from being unilaterally printed out when NUT
    drivers start. [#2764]
 
- - The `upsdrvctl` should now warn if executed on systems where NUT was
-   built with support for service management frameworks like systemd or SMF,
-   so nut-driver service units prepared by `nut-driver-enumerator` would
-   conflict with manually-executed driver programs. This warning can be
-   hushed by exporting a `NUT_QUIET_INIT_NDE_WARNING` environment variable
-   with any value.
-
- - Extended `upsdrvctl` with a `list` operation (or `-l` option) to report
-   manageable device configuration names (possible `<ups>` arguments to
-   `start`, `stop` etc. operations), or to confirm a single name that it
-   is known, and a `status` operation for more information. [#2567]
+ - The `upsdrvctl` tool improvements:
+   * It should now warn if executed on systems where NUT was built with
+     support for service management frameworks like systemd or SMF, so
+     nut-driver service units prepared by `nut-driver-enumerator` would
+     conflict with manually-executed driver programs. This warning can
+     be hushed by exporting a `NUT_QUIET_INIT_NDE_WARNING` environment
+     variable with any value.
+   * Extended `upsdrvctl` with a `list` operation (or `-l` option) to report
+     manageable device configuration names (possible `<ups>` arguments to
+     `start`, `stop` etc. operations), or to confirm a single name that it
+     is known, and a `status` operation for more information. [#2567]
+   * Fixed support of `maxstartdelay` at the level of driver section in
+     `ups.conf`; added support of `maxretry` and `retrydelay` at this
+     level; bumped the default `maxstartdelay` from 45 to 75 seconds to
+     accommodate for longer device initialization (e.g. due to support of
+     more Megatec Qx dialects by `nutdrv_qx`). [#2885, #2888]
 
  - riello_ser updates:
    * added `localcalculation` option to compute `battery.runtime` and
@@ -471,6 +476,9 @@ This requirement compromises usability of `make distcheck` on platforms without
      suspending the `upsmon` process, etc. [#2597]
    * Introduced delivery of default systemd presets (lists of enabled/disabled
      units). [#2721]
+   * A `nut-udev-settle.service` was introduced to replace dependency on the
+     `systemd-udev-settle.service` which is deprecated and causes warnings on
+     some systems. It was shown to benefit NUT use-cases however. [#2638]
 
  - gamatronic driver revised for safer memory operations; this was reported
    to have fixed a Segmentation Fault seen in earlier NUT releases with

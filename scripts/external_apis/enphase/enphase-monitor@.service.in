@@ -25,9 +25,9 @@ User=@RUN_AS_USER@
 ### ExecStartPre=/bin/cp @CONFPATH@/enphase-%I.default /dev/shm/nut/enphase-%I.seq
 # First run once to scrap obsolete data from the existing file
 # Replace -s with -x to start in nocomms (no network APIs) below:
-ExecStartPre=@libexec@/enphase-monitor -s %I
+ExecStartPre=@NUT_LIBEXECDIR@/enphase-monitor -s %I
 # Start as the continuously running service
-ExecStart=@libexec@/enphase-monitor %I
+ExecStart=@NUT_LIBEXECDIR@/enphase-monitor %I
 Type=exec
 # Restart really always, do not stop trying:
 StartLimitInterval=0

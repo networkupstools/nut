@@ -92,16 +92,23 @@ NUT_MONITOR_COMMON_TEMPLATE = \
 install-data-hook-app-locale-symlinks:
 	@cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
 	 for L in fr it ru ; do \
-	    $(LN_S) "$$L".po "$$L"/"$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8.po || exit ; \
-	    $(LN_S) "$$L" "$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	    UTF8_NAME="$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	    UTF8_POFILE="$${L}/$${UTF8_NAME}.po" || exit ; \
+	    UTF8_SUBDIR="$${UTF8_NAME}" || exit ; \
+	    rm -f "$${UTF8_POFILE}" || true ; rm -f "$${UTF8_SUBDIR}" || true ; \
+	    $(LN_S) "$$L".po "$${UTF8_POFILE}" || exit ; \
+	    $(LN_S) "$$L" "$${UTF8_SUBDIR}" || exit ; \
 	 done
 
 uninstall-hook-app-locale-symlinks:
 	@RES=0 ; \
 	 cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
 	 for L in fr it ru ; do \
-	    rm -f "$$L"/"$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8.po || RES=$$? ; \
-	    rm -f "$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || RES=$$? ; \
+	    UTF8_NAME="$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	    UTF8_POFILE="$${L}/$${UTF8_NAME}.po" || exit ; \
+	    UTF8_SUBDIR="$${UTF8_NAME}" || exit ; \
+	    rm -f "$${UTF8_POFILE}" || RES=$$? ; \
+	    rm -f "$${UTF8_SUBDIR}" || RES=$$? ; \
 	 done ; \
 	 exit $$RES
 

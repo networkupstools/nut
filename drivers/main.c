@@ -1303,6 +1303,15 @@ static int main_arg(char *var, char *val)
 	if (!strcmp(var, "sdorder"))
 		return 1;	/* handled */
 
+	if (!strcmp(var, "maxstartdelay"))
+		return 1;	/* handled */
+
+	if (!strcmp(var, "maxretry"))
+		return 1;	/* handled */
+
+	if (!strcmp(var, "retrydelay"))
+		return 1;	/* handled */
+
 	/* only for upsd (at the moment) - ignored here */
 	if (!strcmp(var, "desc"))
 		return 1;	/* handled */

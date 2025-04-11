@@ -1218,6 +1218,7 @@ install-as-root:
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-monitor.service nut-server.service || true ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-driver.service || true ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-driver.target || true ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-udev-settle.service || true ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut.target || true ; \
 		fi ; \
 		if $(WITH_SOLARIS_SMF) || $(WITH_SOLARIS_INIT) ; then \
@@ -1329,8 +1330,8 @@ install-as-root:
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all || exit ; \
 			else \
 				echo "$@: Apply systemd enabled/disabled service defaults" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ disable nut.target nut-driver.target nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
+				@SYSTEMD_SYSTEMCTL_PROGRAM@ disable nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
+				@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 			fi ; \
 			echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart udev && applied_udev=true || true ; \
