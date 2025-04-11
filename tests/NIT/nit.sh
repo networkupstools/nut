@@ -242,6 +242,9 @@ case "${SRCDIR}" in
     *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
 esac
 
+# Make these paths known to e.g. upsmon/upssched and handler scripts they call
+export BUILDDIR TOP_BUILDDIR SRCDIR TOP_SRCDIR
+
 # No fuss about LD_LIBRARY_PATH: for most of the (client) binaries that
 # need it, the PATH entries below would contain libtool wrapper scripts;
 # for other builds we use system default or caller's env. One exception

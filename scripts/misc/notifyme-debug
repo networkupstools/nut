@@ -15,3 +15,7 @@
 [ -n "${TEMPDIR-}" ] || { [ -d "/dev/shm" && TEMPDIR="/dev/shm" || TEMPDIR="/tmp" ; }
 
 printf '%s\t[%s]\t%s\t[%s]:\t%s\t(%s tokens)\n' "`date -u`" "`id`" "${NOTIFYTYPE-}" "${UPSNAME-}" "$*" "$#" >> "${TEMPDIR}/notifyme-`id -u`.log"
+
+if [ -n "${TOP_BUILDDIR}" -a -x "${TOP_BUILDDIR}/clients/upssched" ] ; then
+	"${TOP_BUILDDIR}/clients/upssched"
+fi
