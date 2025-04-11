@@ -389,6 +389,15 @@ This requirement compromises usability of `make distcheck` on platforms without
    (UPS overloaded), `TRIM` and `BOOST` (adjusting for bad input voltage)
    states. [#1074]
 
+ - Revised `upssched` timer handler that can be called from `upsmon` as its
+   `NOTIFYCMD` to not report confusing environment variable values of
+   `NOTIFYTYPE` and `UPSNAME` from the original call when a timer eventually
+   fires -- these values are irrelevant at that distant future. The NIT (NUT
+   Integration Tests) suite was extended to configure and call this tool,
+   facilitating its development and troubleshooting. Also the `upssched`
+   timer daemon part can now save its PID file (so that NIT can terminate
+   it after tests). [#2890]
+
  - New `libupsclient` API methods added:
    * `upscli_str_add_unique_token()` and `upscli_str_contains_token()`,
      to help C NUT clients process `ups.status` and similarly structured
