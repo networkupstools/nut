@@ -216,7 +216,8 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 #if WITH_LIBGPIO_VERSION >= 0x00020000
 	gpioRc=gpiod_line_request_get_values(libgpiod_data->request, gpioupsfdlocal->upsLinesStates);
 	if(gpioRc==0) {
-		for(int i=0; i < gpioupsfdlocal->upsLinesCount; i++) {
+		int i;
+		for(i=0; i < gpioupsfdlocal->upsLinesCount; i++) {
 			gpioupsfdlocal->upsLinesStates[i] = libgpiod_data->values[i];
 		}
 	}
