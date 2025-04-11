@@ -39,6 +39,10 @@ enable nut-driver.target
 # I don't think a template can be activated/deactivated; anyhow
 # this is NDE's bread and butter at run-time:
 #enable nut-driver@.service
+# The nut-udev-settle.service would be used by USB/Serial/... drivers
+# wrapped by NDE, and so referenced there if needed. It should not
+# auto-start if not used by any driver:
+enable nut-udev-settle.service
 
 # Activate the "upsd" data server, to represent drivers on the network.
 # Requires "ups.conf", "upsd.conf", "upsd.users":

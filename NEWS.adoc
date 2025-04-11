@@ -476,6 +476,9 @@ This requirement compromises usability of `make distcheck` on platforms without
      suspending the `upsmon` process, etc. [#2597]
    * Introduced delivery of default systemd presets (lists of enabled/disabled
      units). [#2721]
+   * A `nut-udev-settle.service` was introduced to replace dependency on the
+     `systemd-udev-settle.service` which is deprecated and causes warnings on
+     some systems. It was shown to benefit NUT use-cases however. [#2638]
 
  - gamatronic driver revised for safer memory operations; this was reported
    to have fixed a Segmentation Fault seen in earlier NUT releases with
