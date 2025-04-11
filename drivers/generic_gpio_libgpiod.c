@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"GPIO UPS driver (API " WITH_LIBGPIO_VERSION_STR ")"
-#define DRIVER_VERSION	"1.03"
+#define DRIVER_VERSION	"1.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -78,7 +78,8 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner);
  */
 static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfdlocal, int inner) {
 	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfdlocal->lib_data);
-	upsdebugx(5, "reserve_lines_libgpiod runOptions 0x%x, inner %d", gpioupsfdlocal->runOptions, inner);
+	upsdebugx(5, "reserve_lines_libgpiod runOptions 0x%x, inner %d",
+		(unsigned int)gpioupsfdlocal->runOptions, inner);
 
 	if(((gpioupsfdlocal->runOptions&ROPT_REQRES) != 0) == inner) {
 #if WITH_LIBGPIO_VERSION < 0x00020000
@@ -150,8 +151,11 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 		upslogx(LOG_NOTICE, "GPIO chip [%s] opened", gpioupsfdlocal->chipName);
 		gpioupsfdlocal->chipLinesCount = gpiod_chip_num_lines(libgpiod_data->gpioChipHandle);
 #else	/* #if WITH_LIBGPIO_VERSION >= 0x00020000 */
+		struct gpiod_chip_info *chipInfo;
+		struct gpiod_line_settings *lineSettings;
+
 		upslogx(LOG_NOTICE, "GPIO chip [%s] opened, api version 2", gpioupsfdlocal->chipName);
-		struct gpiod_chip_info *chipInfo = gpiod_chip_get_info(libgpiod_data->gpioChipHandle);
+		chipInfo = gpiod_chip_get_info(libgpiod_data->gpioChipHandle);
 		gpioupsfdlocal->chipLinesCount = gpiod_chip_info_get_num_lines(chipInfo);
 		gpiod_chip_info_free(chipInfo);
 #endif	/* WITH_LIBGPIO_VERSION */
@@ -178,7 +182,7 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 		);
 #else	/* #if WITH_LIBGPIO_VERSION >= 0x00020000 */
 		libgpiod_data->values = xcalloc(gpioupsfdlocal->upsLinesCount, sizeof(*libgpiod_data->values));
-		struct gpiod_line_settings *lineSettings = gpiod_line_settings_new();
+		lineSettings = gpiod_line_settings_new();
 		libgpiod_data->lineConfig = gpiod_line_config_new();
 		libgpiod_data->config = gpiod_request_config_new();
 		if(!lineSettings || !libgpiod_data->lineConfig || !libgpiod_data->config) {
@@ -212,7 +216,8 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 #if WITH_LIBGPIO_VERSION >= 0x00020000
 	gpioRc=gpiod_line_request_get_values(libgpiod_data->request, gpioupsfdlocal->upsLinesStates);
 	if(gpioRc==0) {
-		for(int i=0; i < gpioupsfdlocal->upsLinesCount; i++) {
+		int i;
+		for(i=0; i < gpioupsfdlocal->upsLinesCount; i++) {
 			gpioupsfdlocal->upsLinesStates[i] = libgpiod_data->values[i];
 		}
 	}

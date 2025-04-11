@@ -106,8 +106,8 @@ recommended for build agents with immutable system areas, etc.
 Build prerequisites to make NUT from scratch on various Operating Systems
 -------------------------------------------------------------------------
 
-Debian 10/11/12
-~~~~~~~~~~~~~~~
+Debian 10/11/12/13
+~~~~~~~~~~~~~~~~~~
 
 Being a popular baseline among Linux distributions, Debian is an
 important build target. Related common operating systems include
@@ -197,7 +197,11 @@ metadata about recently published package revisions:
 # provide an `msgfmt` implementation, e.g.:
 #   :; apt-get install gettext
 #
-# To install the Python NUT-Monitor app, you may need some modules:
+# To install the Python NUT-Monitor app, you may need some modules.
+# Ideally, they would be packaged, named according to major Python version:
+#   :; apt-get install python3-pyqt5
+#
+# If not packaged for your distro:
 #   :; apt-get install pip
 # For Python3:
 #   :; python3 -m pip install PyQt5 configparser
@@ -213,6 +217,12 @@ metadata about recently published package revisions:
 # For CGI graph generation - massive packages (X11):
 :; apt-get install \
     libgd-dev
+
+# Debian 13 serves metadata needed for NUT to find where to install the
+# service unit files in a separate development package; earlier distro
+# releases did not seem to require it explicitly:
+:; apt-get install \
+    systemd-dev
 
 # Optionally for sd_notify integration:
 :; apt-get install \
@@ -274,7 +284,7 @@ complete environments):
     qemu-user-static
 ------
 
-NOTE: For Jenkins agents, also need to `apt-get install openjdk-17-jdk-headless`.
+NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`.
 You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 

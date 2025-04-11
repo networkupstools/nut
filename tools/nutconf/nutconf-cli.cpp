@@ -590,7 +590,8 @@ void Options::dump(std::ostream & stream) const {
 
 
 Options::Options(char * const argv[], int argc): m_last(nullptr) {
-	for (int i = 1; i < argc; ++i) {
+	int i;
+	for (i = 1; i < argc; ++i) {
 		const std::string arg(argv[i]);
 
 		// Empty string is the current option argument, too
