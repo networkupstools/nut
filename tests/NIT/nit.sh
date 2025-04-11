@@ -395,10 +395,14 @@ stop_daemons() {
         PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
     fi
 
-    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PID_UPSSCHED" ] ; then
+    if [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
+        PID_UPSSCHED_NOW="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+    fi
+
+    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
         log_info "Stopping test daemons"
-        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED 2>/dev/null || return 0
-        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED || true
+        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
+        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW || true
     fi
 
     PID_UPSD=""
@@ -407,6 +411,8 @@ stop_daemons() {
     PID_DUMMYUPS=""
     PID_DUMMYUPS1=""
     PID_DUMMYUPS2=""
+
+    unset PID_UPSSCHED_NOW
 }
 
 trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ x"${TESTDIR}" != x"${BUILDDIR}/tmp" ] && [ x"${TESTDIR}" != x"$TESTDIR_CALLER" ] ; then rm -rf "${TESTDIR}" ; else rm -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ; fi ;; esac; exit $RES;' 0 1 2 3 15
@@ -1780,6 +1786,10 @@ fi
 if [ -n "${DEBUG_SLEEP-}" ] ; then
     if [ "${DEBUG_SLEEP-}" -gt 0 ] ; then : ; else
         DEBUG_SLEEP=60
+    fi
+
+    if [ -z "$PID_UPSSCHED" ] && [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
+        PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
     fi
 
     log_separator
