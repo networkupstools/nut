@@ -552,8 +552,12 @@ DMFTESTS_COMMON_CFLAGS = \
 # e.g.:
 #   /usr/include/features.h:397:4: error: #warning _FORTIFY_SOURCE
 #      requires compiling with optimization (-O) [-Werror=cpp]
-DMFTESTS_COMMON_CFLAGS += \
-	-D_FORTIFY_SOURCE=2 -O2
+# NOTE: On Debian 13 with clang-19 this causes rejection of *printf() methods:
+#  dmfcore.c:697:6: error: 'snprintf' was marked unused but was used
+#      [-Werror,-Wused-but-marked-unused]
+#  697 |  snprintf(file_path, NUT_PATH_MAX + 1, "%s/%s", dir_name, dirp->d_name);
+#DMFTESTS_COMMON_CFLAGS += \
+#	-D_FORTIFY_SOURCE=2 -O2
 
 # Overlaps with warning levels NUT offers nowardays; should be
 # used via configure flags (some compilers in NUT CI farm do not
