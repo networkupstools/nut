@@ -11,7 +11,7 @@
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 - 2017 Jim Klimov <EvgenyKlimov@eaton.com>
- * Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ * Copyright (C) 2024 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -680,8 +680,8 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 		      strstr(dirp->d_name + fname_len - 4, ".DMF") ) )
 		{
 			i++;
-			if(strlen(dir_name) + strlen(dirp->d_name) < PATH_MAX_SIZE){
-				char *file_path = (char *) calloc(PATH_MAX_SIZE, sizeof(char));
+			if(strlen(dir_name) + strlen(dirp->d_name) < NUT_PATH_MAX){
+				char *file_path = (char *) calloc(NUT_PATH_MAX + 1, sizeof(char));
 				if (!file_path)
 				{
 					upslogx(LOG_ERR, "dqmfcore_parse_dir(): calloc() failed");
@@ -694,7 +694,7 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
-					snprintf(file_path, PATH_MAX_SIZE, "%s/%s", dir_name, dirp->d_name);
+					snprintf(file_path, NUT_PATH_MAX + 1, "%s/%s", dir_name, dirp->d_name);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
 #pragma GCC diagnostic pop
 #endif

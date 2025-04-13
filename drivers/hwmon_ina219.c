@@ -35,8 +35,9 @@
 
 #define SYSFS_HWMON_DIR                     "/sys/class/hwmon"
 #define BATTERY_CHARGE_LOW                  15
+
 #define DRIVER_NAME                         "hwmon-INA219 UPS driver"
-#define DRIVER_VERSION                      "0.01"
+#define DRIVER_VERSION                      "0.03"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -49,7 +50,7 @@ upsdrv_info_t upsdrv_info = {
 /**
  * @brief Path usually pointing to /sys/class/hwmon/hwmonX.
  */
-static char ina219_base_path[PATH_MAX];
+static char ina219_base_path[NUT_PATH_MAX + 1];
 
 /**
  * @brief Threshold for detection of LB status.
@@ -127,7 +128,7 @@ static int file_read_number(const char *path, int *value)
 
 static int detect_ina219(const char *ina219_dir)
 {
-	char namepath[PATH_MAX];
+	char namepath[NUT_PATH_MAX + 1];
 
 	upsdebugx(3, "checking %s", ina219_dir);
 
@@ -165,7 +166,7 @@ static int scan_hwmon_ina219(const char *sysfs_hwmon_dir)
 	}
 
 	while ((entry = readdir(sysfs)) != NULL) {
-		char hwmon_dir[PATH_MAX];
+		char hwmon_dir[NUT_PATH_MAX + 1];
 
 		if (entry->d_type != DT_DIR && entry->d_type != DT_LNK) {
 			upsdebugx(3, "path %s/%s is not directory/symlink", sysfs_hwmon_dir,
@@ -203,10 +204,10 @@ static int update_intvar(
 	const char *name,
 	int *value)
 {
-	char path[PATH_MAX];
+	char path[NUT_PATH_MAX + 1];
 	int ret;
 
-	if (snprintf(path, sizeof(path), "%s/%s", base_path, name) >= PATH_MAX) {
+	if (snprintf(path, sizeof(path), "%s/%s", base_path, name) >= NUT_PATH_MAX) {
 		errno = ENAMETOOLONG;
 		upslog_with_errno(LOG_ERR, "snprintf(%s/%s) has failed", base_path, name);
 		return -ENAMETOOLONG;
@@ -393,7 +394,7 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("device.description", "%s",
 			"Bidirectional Current/Power Monitor With I2C Interface");
 
-	dstate_setinfo("battery.charge.low", "%d", battery_charge_low);
+	dstate_setinfo("battery.charge.low", "%u", battery_charge_low);
 }
 
 static unsigned int battery_charge_compute(void)
@@ -451,7 +452,7 @@ void upsdrv_updateinfo(void)
 
 	dstate_setinfo("battery.voltage", "%.3f", voltage / 1000.0);
 	dstate_setinfo("battery.current", "%.3f", current / 1000.0);
-	dstate_setinfo("battery.charge", "%d", charge);
+	dstate_setinfo("battery.charge", "%u", charge);
 
 	if (charge <= battery_charge_low && current > 0)
 		dstate_setinfo("battery.runtime", "%d", 60); // 1 minute
@@ -462,8 +463,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

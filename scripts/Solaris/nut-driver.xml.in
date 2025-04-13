@@ -2,14 +2,14 @@
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <!--
 #
-# Copyright 2016 - 2024 Jim Klimov
+# Copyright 2016-2024 Jim Klimov
 # Template manifest for instantiated NUT drivers
 #
 -->
 
 <service_bundle type='manifest' name='nut-driver'>
 
-	<service name='system/power/nut-driver' type='service' version='4'>
+	<service name='system/power/nut-driver' type='service' version='5'>
 
 	<!--
 	  Wait for all local and usr filesystem to be mounted - project is
@@ -127,10 +127,12 @@
 				</loctext>
 			</common_name>
 			<documentation>
-				<manpage title='upsdrvctl' section='8'
-				manpath='/usr/share/man' />
-				<manpage title='ups.conf' section='5'
-				manpath='/usr/share/man' />
+				<doc_link name='upsdrvsvcctl online'	uri='@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html' />
+				<manpage title='upsdrvsvcctl'		section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
+				<doc_link name='ups.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/ups.conf.html' />
+				<manpage title='ups.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+				<doc_link name='nut.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/nut.conf.html' />
+				<manpage title='nut.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 			</documentation>
 		</template>
 	</service>

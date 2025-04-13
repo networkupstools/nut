@@ -100,12 +100,18 @@ if test -z "${nut_have_lua_seen}"; then
 	if test "${nut_have_lua}" = "yes"; then
 		AX_LUA_LIBS([nut_have_lua=yes], [nut_have_lua=no])
 	fi
+	dnl FIXME: If we do not have a suitable version while pieces
+	dnl  seem to exist, it may be because we found one version
+	dnl  in pkg-config and another as the interpreter, so headers
+	dnl  check fails.
 
 	if test "${nut_have_lua}" = "yes"; then
-		dnl AC_MSG_NOTICE([DEBUG: LUA:      CFLAGS='${CFLAGS}'])
-		dnl AC_MSG_NOTICE([DEBUG: LUA: LUA_INCLUDE='${LUA_INCLUDE}'])
-		dnl AC_MSG_NOTICE([DEBUG: LUA:        LIBS='${LIBS}'])
-		dnl AC_MSG_NOTICE([DEBUG: LUA:     LUA_LIB='${LUA_LIB}'])
+		AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+			AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) LUA:      CFLAGS='${CFLAGS}'])
+			AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) LUA: LUA_INCLUDE='${LUA_INCLUDE}'])
+			AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) LUA:        LIBS='${LIBS}'])
+			AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) LUA:     LUA_LIB='${LUA_LIB}'])
+		])
 		AS_IF([test x"${CFLAGS}" != x], [LIBLUA_CFLAGS="${CFLAGS}"], [LIBLUA_CFLAGS="${LUA_INCLUDE}"])
 		AS_IF([test x"${LIBS}" != x], [LIBLUA_LIBS="${LIBS}"], [LIBLUA_LIBS="${LUA_LIB}"])
 

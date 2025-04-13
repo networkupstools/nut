@@ -1,11 +1,11 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2024 by NUT contirbutors
+# Copyright (C) 2011-2025 by NUT contributors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
 
 # A rather blunt solution for system sleeping support, for cases where
-# we can not use a native libssytemd "inhibitor interface". This helps
+# we can not use a native libsystemd "inhibitor interface". This helps
 # avoid NUT shutting down a woken-up system just because its power state
 # was critical before the sleep, and a next-read timestamp was not seen
 # (deemed to be a stale UPS, meaning lost comms during critical state,

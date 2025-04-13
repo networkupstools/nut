@@ -13,7 +13,7 @@
 #       is to just pick out some strings relevant for tracking config changes.
 #
 # Copyright (C) 2016-2020 Eaton
-# Copyright (C) 2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2020-2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -109,8 +109,11 @@ fi
 ### Also can tune whether a driver "Wants" another service (would consider
 ### ordering if that one is enabled, but live if it is disabled), or if it
 ### "Requires" that (would cause that to start).
-DEPSVC_USB_SYSTEMD="systemd-udev.service systemd-udev-settle.service"
+DEPSVC_USB_SYSTEMD="systemd-udevd.service nut-udev-settle.service"
 DEPREQ_USB_SYSTEMD="Wants"
+# Serial drivers may rely on USB dongles or even custom-owned real ports:
+DEPSVC_SERIAL_SYSTEMD="systemd-udevd.service nut-udev-settle.service"
+DEPREQ_SERIAL_SYSTEMD="Wants"
 DEPSVC_NET_FULL_SYSTEMD="network-online.target systemd-resolved.service ifplugd.service"
 DEPREQ_NET_FULL_SYSTEMD="Wants"
 DEPSVC_NET_LOCAL_SYSTEMD="network.target"
@@ -172,6 +175,11 @@ if [ -z "${TIMEOUT_CMD+x}" ]; then
     fi
 fi
 
+# Should be populated by configure script during NUT build:
+NUT_WEBSITE_BASE='@NUT_WEBSITE_BASE@'
+# Fallback, no trailing slash!
+[ -n "${NUT_WEBSITE_BASE-}" ] || NUT_WEBSITE_BASE='https://www.networkupstools.org'
+
 # Cache needed bits of ups.conf to speed up later parsing. Note that these
 # data are needed for most operations, and populated by upslist_readFile()
 UPSCONF_DATA=""
@@ -195,6 +203,7 @@ hook_validInstanceSuffixName=""
 hook_getSavedDeviceName=""
 hook_findSavedDeviceName=""
 hook_setSavedDeviceName=""
+hook_setDocLink=""
 hook_getSavedMD5=""
 hook_setSavedMD5=""
 hook_restart_upsd=""
@@ -213,6 +222,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_getSavedDeviceName="smf_getSavedDeviceName"
         hook_findSavedDeviceName="smf_findSavedDeviceName"
         hook_setSavedDeviceName="smf_setSavedDeviceName"
+        hook_setDocLink="smf_setDocLink"
         hook_getSavedMD5="smf_getSavedMD5"
         hook_setSavedMD5="smf_setSavedMD5"
         hook_restart_upsd="smf_restart_upsd"
@@ -230,6 +240,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_getSavedDeviceName="systemd_getSavedDeviceName"
         hook_findSavedDeviceName="systemd_findSavedDeviceName"
         hook_setSavedDeviceName="systemd_setSavedDeviceName"
+        hook_setDocLink="systemd_setDocLink"
         hook_getSavedMD5="systemd_getSavedMD5"
         hook_setSavedMD5="systemd_setSavedMD5"
         hook_restart_upsd="systemd_restart_upsd"
@@ -247,6 +258,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_getSavedDeviceName="selftest_NOOP"
         hook_findSavedDeviceName="selftest_NOOP"
         hook_setSavedDeviceName="selftest_NOOP"
+        hook_setDocLink="selftest_NOOP"
         hook_getSavedMD5="selftest_NOOP"
         hook_setSavedMD5="selftest_NOOP"
         hook_restart_upsd="selftest_NOOP"
@@ -635,6 +647,7 @@ upsconf_getDriverMedia() {
                     printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
             esac
             ;;
+        # FIXME: other modbus? sysfs like INA219? GPIO? Other local devices?
         *)  printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
     esac
 }
@@ -739,6 +752,7 @@ smf_registerInstance() {
     smf_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
     # Save original device (config section) name to speed up some searches
     smf_setSavedDeviceName "$SVCINST" "$DEVICE"
+    smf_setDocLink "$SVCINST" "$DEVICE"
 
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
     if [ "$AUTO_START" = yes ] ; then
@@ -761,7 +775,7 @@ smf_listInstances_raw() {
 }
 smf_listInstances() {
     # Chop twice, in case there is a leading "svc:/...."
-    smf_listInstances_raw | sed -e 's/^.*://' -e 's/^.*://' | sort -n
+    smf_listInstances_raw | sed -e 's/^.*://' -e 's/^.*://' | sort -k1n -k1
 }
 smf_getSavedMD5() {
     # Query service instance $1
@@ -853,6 +867,42 @@ smf_setSavedDeviceName() {
     [ -n "$1" ] || return # No-op for global section
     smf_setSavedUniq "nut-driver:$1" "nut-driver-enumerator-generated-devicename" "DEVICE" astring "$2"
 }
+smf_setDocLink() {
+    # Save documentation links for driver of device (config section) named $2
+    # into service instance $1
+    [ -n "$1" ] || return # No-op for global section
+    __TARGET_FMRI="nut-driver:$1"
+    __DRV="`upsconf_getDriver "$2"`"
+
+### Sample:
+#tm_common_name                                           template
+#tm_common_name/C                                         ustring  "physical network interface autoconfiguration"
+#tm_doc_Network_Auto-Magic_OpenSolaris_Project_Page       template
+#tm_doc_Network_Auto-Magic_OpenSolaris_Project_Page/name  astring  "Network Auto-Magic OpenSolaris Project Page"
+#tm_doc_Network_Auto-Magic_OpenSolaris_Project_Page/uri   astring  http://hub.opensolaris.org/bin/view/Project+nwam/
+#tm_man_nwamd8                                            template
+#tm_man_nwamd8/manpath                                    astring  /usr/share/man
+#tm_man_nwamd8/section                                    astring  8
+#tm_man_nwamd8/title                                      astring  nwamd
+
+    __PG="tm_doc_${__DRV}_Page"
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" delprop "${__PG}" 2>/dev/null || true
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" addpg "${__PG}" template && \
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/name" = "astring:" "\"${__DRV} online\"" && \
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/uri" = "astring:" "${NUT_WEBSITE_BASE}/docs/man/${__DRV}.html"
+    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property group '${__PG}' for online docs">&2 ; return 1 ; }
+
+    __PG="tm_man_${__DRV}@MAN_SECTION_CMD_SYS@"
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" delprop "${__PG}" 2>/dev/null || true
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" addpg "${__PG}" template && \
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/manpath" = "astring:" "@NUT_MANDIR@" && \
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/section" = "astring:" "@MAN_SECTION_CMD_SYS@" && \
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/title" = "astring:" "${__DRV}"
+    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property group '${__PG}' for local docs">&2 ; return 1 ; }
+
+    unset __DRV __PG __TARGET_FMRI
+    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the device doc links">&2 ; return 1 ; }
+}
 smf_restart_upsd() {
     echo "Reloading or restarting NUT data server to make sure it knows new configuration..."
     /usr/sbin/svcadm enable "nut-server" 2>/dev/null
@@ -903,8 +953,11 @@ systemd_registerInstance() {
         network)
             DEPSVC="$DEPSVC_NET_FULL_SYSTEMD"
             DEPREQ="$DEPREQ_NET_FULL_SYSTEMD" ;;
-        serial) ;;
+        serial)
+            DEPSVC="$DEPSVC_SERIAL_SYSTEMD"
+            DEPREQ="$DEPREQ_SERIAL_SYSTEMD" ;;
         '') ;;
+        # FIXME: modbus? sysfs like INA219? GPIO? Other local devices?
         *)  echo "WARNING: Unexpected NUT media type ignored: '${_MED}'" >&2 ;;
     esac
     if [ -n "$DEPSVC" ]; then
@@ -924,6 +977,7 @@ EOF
 
     systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
     systemd_setSavedDeviceName "$SVCINST" "$DEVICE"
+    systemd_setDocLink "$SVCINST" "$DEVICE"
 
     if [ "$AUTO_START" = yes ] ; then
         systemd_refreshSupervizor || echo "WARNING: Somehow managed to fail systemd_refreshSupervizor()" >&2
@@ -948,7 +1002,7 @@ systemd_listInstances_raw() {
     /bin/systemctl show 'nut-driver@*' -p Id | grep -E '=nut-driver' | sed 's,^Id=,,'
 }
 systemd_listInstances() {
-    systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
+    systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -k1n -k1
 }
 systemd_getSavedMD5() {
     # Query service instance $1 or global section
@@ -992,6 +1046,21 @@ systemd_setSavedDeviceName() {
 [Service]
 Environment='DEVICE="$2"'
 EOF
+    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the device name">&2 ; return 1 ; }
+}
+systemd_setDocLink() {
+    # Save documentation links for driver of device (config section) named $2
+    # into service instance $1
+    [ -n "$1" ] || return # No-op for global section
+    PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-doclink.conf"
+    mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
+    __DRV="`upsconf_getDriver "$2"`"
+    cat > "${PROPFILE}" << EOF
+[Unit]
+Documentation=man:${__DRV}(@MAN_SECTION_CMD_SYS@)
+Documentation=${NUT_WEBSITE_BASE}/docs/man/${__DRV}.html
+EOF
+    unset __DRV
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the device name">&2 ; return 1 ; }
 }
 systemd_setSavedMD5() {
@@ -1119,7 +1188,7 @@ upslist_readFile() {
 
     if [ "${#UPSCONF_DATA}" != 0 ] ; then
         # Note that section-name brackets should contain a single token
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | grep -E '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | grep -E '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -k1n -k1)" \
             || UPSLIST_FILE=""
         if [ "${#UPSLIST_FILE}" = 0 ] ; then
             echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2
@@ -1732,6 +1801,11 @@ $0 --show-device-config-value DEV KEY [KEY...]
         If several keys or flags are requested, their values are reported
         one per line in the same order (including empty lines for missing
         values); any missing value yields a non-zero exit code.
+
+For more information please Read The Fine Manual ('man nut-driver-enumerator')
+and/or see
+        ${NUT_WEBSITE_BASE}/docs/man/nut-driver-enumerator.html
+Also check documentation of ups.conf and upsdrvsvcctl
 EOF
 }
 

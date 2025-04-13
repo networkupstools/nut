@@ -42,14 +42,6 @@
  *
  */
 
-#ifndef PATH_MAX_SIZE
-# ifdef PATH_MAX
-#  define PATH_MAX_SIZE PATH_MAX
-# else
-#  define PATH_MAX_SIZE 1024
-# endif
-#endif
-
 typedef enum {
 	ERR = -1,
 	OK,

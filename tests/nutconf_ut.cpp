@@ -3,7 +3,7 @@
 
     Copyright (C)
         2012	Vaclav Krpec <VaclavKrpec@Eaton.com>
-        2024    Jim Klimov <jimklimov+nut@gmail.com>
+        2024-2025    Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -59,8 +59,10 @@
 #  pragma GCC diagnostic ignored "-Wold-style-cast"
 # endif
 #endif
-#ifdef __clang__
-# pragma clang diagnostic push "-Wdeprecated-declarations"
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
+# ifdef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#  pragma clang diagnostic push "-Wdeprecated-declarations"
+# endif
 #endif
 
 #include <cppunit/extensions/HelperMacros.h>
@@ -194,6 +196,7 @@ void NutConfigUnitTest::testNutConfiguration() {
 
 void NutConfigUnitTest::testUpsmonConfiguration() {
 	nut::UpsmonConfiguration config;
+	nut::BoolInt	*tmpPtr = nullptr;
 
 	// Note: this file gets generated from a .in template
 	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_BUILDDIR "/conf/upsmon.conf.sample");
@@ -210,10 +213,10 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 	// Hm, maybe we need typed constructors to init
 	// the values for test? ("new" weirdness below
 	// is due to Settable<> formal type mismatch)
-	config.shutdownExit  = (*(new nut::BoolInt()) << "true");
+	config.shutdownExit  = (*(tmpPtr = new nut::BoolInt()) << "true"); delete tmpPtr;
 	config.oblbDuration  = -1;
-	config.certVerify    = (*(new nut::BoolInt()) << false);
-	config.forceSsl      = (*(new nut::BoolInt()) << "1");
+	config.certVerify    = (*(tmpPtr = new nut::BoolInt()) << false); delete tmpPtr;
+	config.forceSsl      = (*(tmpPtr = new nut::BoolInt()) << "1"); delete tmpPtr;
 
 	config.certIdent.certName    = "My test cert";
 	config.certIdent.certDbPass  = "DbPwd!";
@@ -221,14 +224,14 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 	nut::CertHost certHost;
 	certHost.host        = "remote:3493";
 	certHost.certName    = "NUT server cert";
-	certHost.certVerify  = (*(new nut::BoolInt()) << "true");
-	certHost.forceSsl    = (*(new nut::BoolInt()) << 0);
+	certHost.certVerify  = (*(tmpPtr = new nut::BoolInt()) << "true"); delete tmpPtr;
+	certHost.forceSsl    = (*(tmpPtr = new nut::BoolInt()) << 0); delete tmpPtr;
 	config.certHosts.push_back(certHost);
 
 	certHost.host        = "localhost:13493";
 	certHost.certName    = "My NUT server cert";
-	certHost.certVerify  = (*(new nut::BoolInt()) << "false");
-	certHost.forceSsl    = (*(new nut::BoolInt()) << false);
+	certHost.certVerify  = (*(tmpPtr = new nut::BoolInt()) << "false"); delete tmpPtr;
+	certHost.forceSsl    = (*(tmpPtr = new nut::BoolInt()) << false); delete tmpPtr;
 	config.certHosts.push_back(certHost);
 
 	// Note: More config data points come from the file loaded above
@@ -426,7 +429,7 @@ void NutConfigUnitTest::testUpsdUsersConfiguration() {
 //   [-Werror,-Wweak-vtables]
 NutConfigUnitTest::~NutConfigUnitTest() {}
 
-#ifdef __clang__
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
 # pragma clang diagnostic pop
 #endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC)

@@ -94,7 +94,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Belkin 'Universal UPS' driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -452,7 +452,7 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 	struct termios tios;
 #ifndef WIN32
 	struct flock flock;
-#endif
+#endif	/* !WIN32 */
 	char buf[128];
 	ssize_t r;
 
@@ -492,7 +492,6 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 		return ERROR_FD_SER;
 	}
 
-/* TODO: port to WIN32 */
 #ifndef WIN32
 	/* lock the port */
 	memset(&flock, 0, sizeof(flock));
@@ -502,7 +501,10 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 		close(fd);
 		return ERROR_FD_SER;
 	}
-#endif
+#else	/* WIN32 */
+	/* TODO: port to WIN32 */
+	NUT_WIN32_INCOMPLETE_DETAILED("port locking");
+#endif	/* WIN32 */
 
 	/* sleep at least 0.25 seconds for the UPS to wake up. Belkin's own
 	   software sleeps 1 second, so that's what we do, too. */
@@ -518,11 +520,11 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 
 #ifndef WIN32
 	r = read(fd, buf, 127);
-#else
+#else	/* WIN32 */
 /* WIN32 : w32_serial_read is blocking, using select_read with 0ms timeout
  * is non-blocking */
 	r = select_read(fd, buf, 127, 0, 0);
-#endif
+#endif	/* WIN32 */
 
 	if (r == -1 && errno != EAGAIN) {
 		close(fd);
@@ -543,11 +545,11 @@ static int belkin_std_upsread(TYPE_FD_SER fd, unsigned char *buf, int n) {
 	while (count < n) {
 #ifndef WIN32
 		r = read(fd, &buf[count], (size_t)(n-count));
-#else
+#else	/* WIN32 */
 		/* WIN32 : w32_serial_read is blocking, using select_read
 		 * with 0ms timeout is non-blocking */
 		r = select_read(fd, buf, (size_t)(n-count), 0, 0);
-#endif
+#endif	/* WIN32 */
 		if (r==-1 && errno==EAGAIN) {
 			/* non-blocking i/o, no data available */
 			usleep(100000);
@@ -1166,6 +1168,9 @@ void upsdrv_updateinfo(void)
 /* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* Note: this UPS cannot (apparently) be put into "soft
 	   shutdown" mode; thus the -k option should not normally be
 	   used; instead, a workaround using the "-x wait" option
@@ -1180,9 +1185,13 @@ void upsdrv_shutdown(void)
 
 	   Don't use this! Use the solution involving the "-x wait"
 	   option instead, as suggested on the belkinunv(8) man
-	   page. */
+	   page.
+	 */
 
-	upslogx(LOG_WARNING, "You are using the -k option, which is broken for this driver.\nShutting down for 10 minutes and hoping for the best");
+	upslogx(LOG_WARNING,
+		"You are using the -k option, which is broken for this driver.\n"
+		"Check belkinunv(8) man page about '-x wait' option instead.\n"
+		"Shutting down for 10 minutes and hoping for the best");
 
 	belkin_nut_write_int(REG_RESTARTTIMER, 10);  /* 10 minutes */
 	belkin_nut_write_int(REG_SHUTDOWNTIMER, 1);  /* 1 second */

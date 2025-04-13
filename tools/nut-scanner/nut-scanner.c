@@ -49,7 +49,7 @@
 # include <netdb.h>
 # include <sys/ioctl.h>
 # include <net/if.h>
-#else
+#else	/* WIN32 */
 # if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
 #  include <winsock2.h>
 # endif
@@ -62,7 +62,7 @@
 #  define AI_NUMERICSERV NI_NUMERICSERV
 # endif
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 
@@ -1202,6 +1202,8 @@ static void show_usage(const char *arg_progname)
 	printf("  -a, --available: Display available bus that can be scanned\n");
 	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
 	printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
+
+	printf("\n%s", suggest_doc_links(arg_progname, "ups.conf"));
 }
 
 int main(int argc, char *argv[])

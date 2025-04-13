@@ -28,10 +28,10 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif
+#endif	/* !WIN32 */
 
 #define DRIVER_NAME	"Clone outlet UPS driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -72,12 +72,12 @@ static PCONF_CTX_t	sock_ctx;
 static time_t	last_poll = 0, last_heard = 0, last_ping = 0;
 
 #ifndef WIN32
-/* TODO: Why not built in WIN32? */
+/* TODO NUT_WIN32_INCOMPLETE : Why not built in WIN32? */
 static time_t	last_connfail = 0;
-#else
+#else	/* WIN32 */
 static char     	read_buf[SMALLBUF];
 static OVERLAPPED	read_overlapped;
-#endif
+#endif	/* WIN32 */
 
 static int parse_args(size_t numargs, char **arg)
 {
@@ -253,7 +253,7 @@ static TYPE_FD sstate_connect(void)
 
 	/* continued below... */
 #else /* WIN32 */
-	char		pipename[SMALLBUF];
+	char		pipename[NUT_PATH_MAX];
 	BOOL		result = FALSE;
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s/%s", dflt_statepath(), device_path);
@@ -293,7 +293,7 @@ static TYPE_FD sstate_connect(void)
 	ReadFile(fd, read_buf,
 		sizeof(read_buf) - 1, /*-1 to be sure to have a trailling 0 */
 		NULL, &(read_overlapped));
-#endif
+#endif	/* WIN32 */
 
 	/* sstate_connect() continued for both platforms: */
 	pconf_init(&sock_ctx, NULL);
@@ -321,9 +321,9 @@ static void sstate_disconnect(void)
 
 #ifndef WIN32
 	close(upsfd);
-#else
+#else	/* WIN32 */
 	CloseHandle(upsfd);
-#endif
+#endif	/* WIN32 */
 
 	upsfd = ERROR_FD;
 }
@@ -339,7 +339,7 @@ static int sstate_sendline(const char *buf)
 
 #ifndef WIN32
 	ret = write(upsfd, buf, strlen(buf));
-#else
+#else	/* WIN32 */
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 
@@ -351,7 +351,7 @@ static int sstate_sendline(const char *buf)
 	else {
 		ret = (int)bytesWritten;
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (ret == (int)strlen(buf)) {
 		return 0;
@@ -387,7 +387,7 @@ static int sstate_readline(void)
 				return -1;
 		}
 	}
-#else
+#else	/* WIN32 */
 	if (INVALID_FD(upsfd)) {
 		return -1;	/* failed */
 	}
@@ -397,7 +397,7 @@ static int sstate_readline(void)
 	DWORD bytesRead;
 	GetOverlappedResult(upsfd, &read_overlapped, &bytesRead, FALSE);
 	ret = bytesRead;
-#endif
+#endif	/* WIN32 */
 
 	for (i = 0; i < ret; i++) {
 
@@ -512,11 +512,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* replace with a proper shutdown function */
-/*
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
- */
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 

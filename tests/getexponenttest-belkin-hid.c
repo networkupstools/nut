@@ -126,7 +126,7 @@ static int RunBuiltInTests(char *argv[]) {
 				continue;
 		}
 
-		printf("Test #%" PRIiSIZE "  \t", i + 1);
+		printf("Test #%" PRIuSIZE "  \t", i + 1);
 		value = strtod(valueStr, NULL);
 		if (d_equal(value, testData[i].expectedValue) && d_equal(mult, testData[i].expectedMult)) {
 			printf("%s\tGOT value %9g\tmult %6g PASS\n",

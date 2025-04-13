@@ -28,12 +28,15 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 #include "upsclient.h"
+
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
@@ -54,20 +57,25 @@ static void usage(const char *prog)
 	printf("       %s [-l <ups>]\n", prog);
 	printf("       %s [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups> <command> [<value>]\n\n", prog);
 	printf("\n");
-	printf("  -h		display this help text\n");
-	printf("  -V		display the version of this software\n");
 	printf("  -l <ups>	show available commands on UPS <ups>\n");
 	printf("  -u <username>	set username for command authentication\n");
 	printf("  -p <password>	set password for command authentication\n");
 	printf("  -w            wait for the completion of command by the driver\n");
 	printf("                and return its actual result from the device\n");
-	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %u)\n", DEFAULT_TRACKING_TIMEOUT);
+	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %d)\n", DEFAULT_TRACKING_TIMEOUT);
 	printf("\n");
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
 	printf("  [<value>]	Additional data for command - number of seconds, etc.\n");
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
+
+	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }
 
 static void print_cmd(char *cmdname)
@@ -195,6 +203,9 @@ static void do_cmd(char **argv, const int argc)
 	) {
 		/* reply as usual */
 		fprintf(stderr, "%s\n", buf);
+		upsdebugx(1, "%s: 'OK' only means the NUT data server accepted the request as valid, "
+			"but as we did not wait for result, we do not know if it was handled in fact.",
+			__func__);
 		return;
 	}
 
@@ -282,10 +293,22 @@ int main(int argc, char **argv)
 	uint16_t	port;
 	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
-	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];
+	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF], *s = NULL;
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_connect_timeout = NULL;
 
-	while ((i = getopt(argc, argv, "+lhu:p:t:wV")) != -1) {
+	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
+	 * and NUT methods called from it. This line aims to just initialize
+	 * the subsystem, and set initial timestamp. Debugging the client is
+	 * primarily of use to developers, so is not exposed via `-D` args.
+	 */
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+	}
+	upsdebugx(1, "Starting NUT client: %s", prog);
+
+	while ((i = getopt(argc, argv, "+lhu:p:t:wVW:")) != -1) {
 
 		switch (i)
 		{
@@ -319,11 +342,20 @@ int main(int argc, char **argv)
 			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
 
+		case 'W':
+			net_connect_timeout = optarg;
+			break;
+
 		case 'h':
 		default:
 			usage(prog);
 			exit(EXIT_SUCCESS);
 		}
+	}
+
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+			net_connect_timeout);
 	}
 
 	argc -= optind;
@@ -343,7 +375,7 @@ int main(int argc, char **argv)
 
 	ups = xcalloc(1, sizeof(*ups));
 
-	if (upscli_connect(ups, hostname, port, 0) < 0) {
+	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 
@@ -459,6 +491,6 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
-        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */

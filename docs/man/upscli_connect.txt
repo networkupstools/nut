@@ -4,14 +4,21 @@ UPSCLI_CONNECT(3)
 NAME
 ----
 
-upscli_connect - Open a connection to a NUT upsd
+upscli_connect, upscli_tryconnect - Open a connection to a NUT upsd data server
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
+	/* Open a connection to a NUT upsd data server (blocking by default) */
+	int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
+
+	/* Open a connection to a NUT upsd data server with specified timeout */
+	int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags,
+		struct timeval * timeout);
+------
 
 DESCRIPTION
 -----------
@@ -19,6 +26,21 @@ DESCRIPTION
 The *upscli_connect()* function takes the pointer 'ups' to a
 `UPSCONN_t` state structure and opens a TCP connection to the 'host' on
 the given 'port'.
+
+By default this makes a blocking connection attempt (until the system
+transport layer times out the underlying linkmanext:select[2] call).
+A program-wide default timeout for this method can be configured with
+the linkman:upscli_set_default_connect_timeout[3] or
+linkman:upscli_init_default_connect_timeout[3] methods.
+For operations with explicit operation-specific timeout please use
+the *upscli_tryconnect()* method instead.
+
+NOTE: As part of general initialization, both the linkman:upscli_init[3]
+function or the first call to *upscli_connect()* function, can call the
+linkman:upscli_init_default_connect_timeout[3] method (if it was never used before):
+this allows unmodified (legacy) NUT clients to consistently benefit from
+presence of the `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable for
+linkman:upscli_connect[3] attempts to be not blocking (as per default).
 
 'flags' may be either `UPSCLI_CONN_TRYSSL` to try a SSL
 connection, or `UPSCLI_CONN_REQSSL` to require a SSL connection.
@@ -42,12 +64,15 @@ RETURN VALUE
 ------------
 
 The *upscli_connect()* function modifies the `UPSCONN_t` structure and
-returns 0 on success, or -1 if an error occurs.
+returns '0' on success, or '-1' if an error occurs.
 
 SEE ALSO
 --------
 
-linkman:upscli_disconnect[3], linkman:upscli_fd[3],
+linkman:upscli_disconnect[3], linkman:upscli_fd[3], linkman:upscli_init[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
 linkman:upscli_ssl[3], linkman:upscli_strerror[3],
+linkman:upscli_get_default_connect_timeout[3],
+linkman:upscli_set_default_connect_timeout[3],
+linkman:upscli_init_default_connect_timeout[3],
 linkman:upscli_upserror[3]

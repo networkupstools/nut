@@ -48,7 +48,7 @@ int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.83"
+#define DRIVER_VERSION	"0.84"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -814,7 +814,19 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	ser_send(upsfd,"%s",SHUTDOWN);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* FIXME: before loop_shutdown_commands(), code directly called
+	 *  here was identical to "shutdown.reboot", while the driver
+	 *  shutdown should more reasonably be "shutdown.return" (when
+	 *  wall power is back) or "shutdown.stayoff". All of these are
+	 *  implemented in instcmd() here nominally (not sure if named
+	 *  correctly - better re-check on hardware).
+	 */
+	int	ret = do_loop_shutdown_commands("shutdown.reboot", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

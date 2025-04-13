@@ -35,10 +35,10 @@
 #include "nut_libusb.h"
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.48"
+#define USB_DRIVER_VERSION	"0.50"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -318,13 +318,13 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 
 #ifdef WIN32
 	busses = usb_get_busses();
-#else
+#else	/* !WIN32 */
 	/* libusb built-in; not sure why original NUT for WIN32
 	 * code differed or if it is actually better? Or why
 	 * this was not tackled in a few other files for USB?..
 	 */
 	busses = usb_busses;
-#endif
+#endif	/* !WIN32 */
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
@@ -494,7 +494,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 			 * attached driver... From libhid */
 #ifdef WIN32
 			usb_set_configuration(udev, 1);
-#endif
+#endif	/* WIN32 */
 			retries = 3;
 			while ((ret = usb_claim_interface(udev, usb_subdriver.hid_rep_index)) < 0) {
 				upsdebugx(2, "failed to claim USB device: %s",
@@ -676,7 +676,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				upsdebugx(2, "Warning: report descriptor too short "
 					"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 					", got %d)", rdlen, res);
-#else
+#else	/* WIN32 */
 				/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
 				upsdebugx(0, "Warning: report descriptor too short "
 					"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
@@ -730,6 +730,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 		}
 	}
 
+	/* If we got here, we did not return a successfully chosen device above */
 	*udevp = NULL;
 	upsdebugx(2, "libusb0: No appropriate HID device found");
 	fflush(stdout);
@@ -737,7 +738,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 	if (count_open_attempts == 0) {
 		upslogx(LOG_WARNING,
 			"libusb0: Could not open any HID devices: "
-			"no USB buses found");
+			"no USB buses (or devices) found");
 	}
 	else
 	if (count_open_errors > 0
@@ -746,7 +747,24 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 		upslogx(LOG_WARNING,
 			"libusb0: Could not open any HID devices: "
 			"insufficient permissions on everything");
+		if (count_open_attempts > count_open_errors) {
+			upslogx(LOG_WARNING,
+				"libusb0: except %d devices "
+				"tried but not matching the "
+				"requested criteria",
+				count_open_attempts - count_open_errors);
+		}
 	}
+
+#ifdef WIN32
+	upsdebugx(0, "Please check your Windows Device Manager: "
+		"perhaps the UPS was recognized by default OS\n"
+		"driver such as HID UPS Battery (hidbatt.sys, "
+		"hidusb.sys or similar). It could have been\n"
+		"\"restored\" by Windows Update. You can try "
+		"https://zadig.akeo.ie/ to handle it with\n"
+		"either WinUSB, libusb0.sys or libusbK.sys.");
+#endif	/* WIN32 */
 
 	return -1;
 }
@@ -788,7 +806,7 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 # endif
 		upsdebugx(2, "%s: %s", desc, usb_strerror());
 		return 0;
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
 
 	case 0: 	/** TOTHINK: Should this (probably LIBUSB_SUCCESS) be quiet? */
 	default:	/* Undetermined, log only */
@@ -828,7 +846,7 @@ static int nut_libusb_get_report(
 
 #ifdef WIN32
 	errno = -ret;
-#endif
+#endif	/* WIN32 */
 
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
@@ -863,7 +881,7 @@ static int nut_libusb_set_report(
 
 #ifdef WIN32
 	errno = -ret;
-#endif
+#endif	/* WIN32 */
 
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
@@ -900,7 +918,7 @@ static int nut_libusb_get_string(
 
 #ifdef WIN32
 	errno = -ret;
-#endif
+#endif	/* WIN32 */
 
 	/** 0 can be seen as an empty string, or as a success for
 	 * logging below - also tends to happen */
@@ -938,7 +956,7 @@ static int nut_libusb_get_interrupt(
 
 #ifdef WIN32
 	errno = -ret;
-#endif
+#endif	/* WIN32 */
 
 	/* Clear stall condition */
 	if (ret == -EPIPE) {

@@ -1,9 +1,13 @@
 /*
     nutconf.cpp - configuration API
 
-    Copyright (C)
-        2012	Emilien Kia <emilien.kia@gmail.com>
-        2024	Jim Klimov <jimklimov+nut@gmail.com>
+    Copyright (C) 2012 Eaton
+
+        Author: Emilien Kia <emilien.kia@gmail.com>
+
+    Copyright (C) 2024-2025 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -927,7 +931,7 @@ bool GenericConfiguration::writeTo(NutStream & ostream) const
 }
 
 
-bool GenericConfiguration::get(const std::string & section, const std::string & entry, ConfigParamList & params) const
+bool GenericConfiguration::get(const std::string & section, const std::string & entry, ConfigParamList & params, bool caseSensitive) const
 {
 	// Get section
 	SectionMap::const_iterator section_iter = sections.find(section);
@@ -938,9 +942,22 @@ bool GenericConfiguration::get(const std::string & section, const std::string & 
 	const GenericConfigSection::EntryMap & entries = section_iter->second.entries;
 
 	GenericConfigSection::EntryMap::const_iterator entry_iter = entries.find(entry);
-	if (entry_iter == entries.end())
-		return false;
+	if (entry_iter == entries.end()) {
+		if (caseSensitive)
+			return false;
 
+		// Another pass, maybe slower and inefficient, for case-insensitive matching
+		// We are already at one end of the entries, so scroll back to beginning
+		GenericConfigSection::EntryMap::const_iterator entry_begin = entries.begin();
+		for (; entry_iter != entry_begin; entry_iter--) {
+			if (!(::strcasecmp(entry_iter->first.c_str(), entry.c_str())))
+				goto found;
+		}
+
+		return false;
+	}
+
+found:
 	// Provide parameters values
 	params = entry_iter->second.values;
 
@@ -1025,13 +1042,13 @@ void GenericConfiguration::removeSection(const std::string & section)
 }
 
 
-std::string GenericConfiguration::getStr(const std::string & section, const std::string & entry) const
+std::string GenericConfiguration::getStr(const std::string & section, const std::string & entry, bool caseSensitive) const
 {
 	std::string str;
 
 	ConfigParamList params;
 
-	if (!get(section, entry, params))
+	if (!get(section, entry, params, caseSensitive))
 		return str;
 
 	if (params.empty())
@@ -1316,6 +1333,30 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_BYPASS;
 	else if(str=="NOTBYPASS")
 		return NOTIFY_NOTBYPASS;
+	else if(str=="ECO")	/* inverter mode, not ups state, for notifications */
+		return NOTIFY_ECO;
+	else if(str=="NOTECO")	/* inverter mode, not ups state, for notifications */
+		return NOTIFY_NOTECO;
+	else if(str=="ALARM")
+		return NOTIFY_ALARM;
+	else if(str=="NOTALARM")
+		return NOTIFY_NOTALARM;
+	else if(str=="OVER")
+		return NOTIFY_OVER;
+	else if(str=="NOTOVER")
+		return NOTIFY_NOTOVER;
+	else if(str=="TRIM")
+		return NOTIFY_TRIM;
+	else if(str=="NOTTRIM")
+		return NOTIFY_NOTTRIM;
+	else if(str=="BOOST")
+		return NOTIFY_BOOST;
+	else if(str=="NOTBOOST")
+		return NOTIFY_NOTBOOST;
+	else if(str=="OTHER")
+		return NOTIFY_OTHER;
+	else if(str=="NOTOTHER")
+		return NOTIFY_NOTOTHER;
 	else if(str=="SUSPEND_STARTING")
 		return NOTIFY_SUSPEND_STARTING;
 	else if(str=="SUSPEND_FINISHED")

@@ -76,7 +76,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 			name);
 		return;
 	}
-#endif
+#endif	/* WIN32 */
 	temp->sock_fd = sstate_connect(temp);
 
 	/* preload this to the current time to avoid false staleness */
@@ -119,9 +119,9 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 
 #ifndef WIN32
 		close(temp->sock_fd);
-#else
+#else	/* WIN32 */
 		CloseHandle(temp->sock_fd);
-#endif
+#endif	/* WIN32 */
 		temp->sock_fd = ERROR_FD;
 		temp->dumpdone = 0;
 
@@ -247,7 +247,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		if (sp && strcmp(sp, arg[1])) {
 			/* Only warn if the two strings are not equal */
 			upslogx(LOG_WARNING,
-				"Ignoring STATEPATH='%s' from configuration file, "
+				"Ignoring STATEPATH='%s' from upsd.conf configuration file, "
 				"in favor of NUT_STATEPATH='%s' environment variable",
 				NUT_STRARG(arg[1]), NUT_STRARG(sp));
 		}
@@ -357,7 +357,7 @@ static void upsd_conf_err(const char *errmsg)
 
 void load_upsdconf(int reloading)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 
@@ -443,8 +443,26 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 {
 	ups_t	*temp;
 
-	/* no "global" stuff for us */
+	/* almost no "global" stuff for us */
 	if (!upsname) {
+
+		/* STATEPATH <dir> (may be lower-case) */
+		if (!strcasecmp(var, "STATEPATH")) {
+			const char *sp = getenv("NUT_STATEPATH");
+			if (sp && strcmp(sp, val)) {
+				/* Only warn if the two strings are not equal */
+				upslogx(LOG_WARNING,
+					"Ignoring STATEPATH='%s' from ups.conf configuration file, "
+					"in favor of NUT_STATEPATH='%s' environment variable",
+					NUT_STRARG(val), NUT_STRARG(sp));
+			}
+			free(statepath);
+			statepath = xstrdup(sp ? sp : val);
+			/* This setting source keeps priority
+			 * to best match up with the drivers */
+			setenv("NUT_STATEPATH", statepath, 1);
+		}
+
 		return;
 	}
 
@@ -479,7 +497,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 void upsconf_add(int reloading)
 {
 	ups_t	*tmp = upstable, *next;
-	char	statefn[SMALLBUF];
+	char	statefn[NUT_PATH_MAX];
 
 	if (!tmp) {
 		upslogx(LOG_WARNING, "Warning: no UPS definitions in ups.conf");
@@ -553,9 +571,9 @@ static void delete_ups(upstype_t *target)
 			if (VALID_FD(ptr->sock_fd))
 #ifndef WIN32
 				close(ptr->sock_fd);
-#else
+#else	/* WIN32 */
 				CloseHandle(ptr->sock_fd);
-#endif
+#endif	/* WIN32 */
 
 			/* release memory */
 			sstate_infofree(ptr);
@@ -581,7 +599,7 @@ static void delete_ups(upstype_t *target)
 /* see if we can open a file */
 static int check_file(const char *fn)
 {
-	char	chkfn[SMALLBUF];
+	char	chkfn[NUT_PATH_MAX];
 	FILE	*f;
 
 	snprintf(chkfn, sizeof(chkfn), "%s/%s", confpath(), fn);

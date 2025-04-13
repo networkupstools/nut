@@ -151,7 +151,11 @@ for line in fin:
     # Match the author line and extract the part we want
     # (Don't use startswith to allow Author override inside commit message.)
     elif "Author:" in line:
-        authorList = re.split(": ", line, 1)
+        if sys.version_info >= (3, 13, ):
+            authorList = re.split(": ", line, maxsplit=1)
+        else:
+            authorList = re.split(": ", line, 1)
+
         try:
             author = authorList[1]
             author = author[0 : len(author) - fin_chop]
@@ -169,7 +173,11 @@ for line in fin:
 
     # Match the date line
     elif line.startswith("Date:"):
-        dateList = re.split(":   ", line, 1)
+        if sys.version_info >= (3, 13, ):
+            dateList = re.split(":   ", line, maxsplit=1)
+        else:
+            dateList = re.split(":   ", line, 1)
+
         try:
             date = dateList[1]
             date = date[0 : len(date) - fin_chop]
@@ -213,7 +221,11 @@ for line in fin:
         continue
     # Collect the files for this commit. FIXME: Still need to add +/- to files
     elif authorFound and dateFound and messageFound:
-        fileList = re.split(r' \| ', line, 2)
+        if sys.version_info >= (3, 13, ):
+            fileList = re.split(r' \| ', line, maxsplit=2)
+        else:
+            fileList = re.split(r' \| ', line, 2)
+
         if len(fileList) > 1:
             if len(files) > 0:
                 files = files + ", " + fileList[0].strip()

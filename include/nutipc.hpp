@@ -5,7 +5,7 @@
 
         Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
-    Copyright (C) 2024 NUT Community
+    Copyright (C) 2024-2025 NUT Community
 
         Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
@@ -43,9 +43,9 @@ extern "C" {
 
 #ifndef WIN32
 # include <sys/wait.h>
-#else
-# include <wincompat.h>
-#endif
+#else	/* WIN32 */
+# include "wincompat.h"
+#endif	/* WIN32 */
 
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
@@ -313,13 +313,14 @@ Process::Child<M>::Child(M main)
 
 	e << "Can't fork: not implemented on this platform yet";
 
+	/* NUT_WIN32_INCOMPLETE(); */
 	throw std::logic_error(e.str());
-#else
+#else	/* !WIN32 */
 	m_pid = ::fork();
 
 	if (!m_pid)
 		::exit(main());
-#endif
+#endif	/* !WIN32 */
 }
 
 
@@ -337,8 +338,9 @@ int Process::Child<M>::wait()
 	e << "Can't wait for PID " << m_pid <<
 		": not implemented on this platform yet";
 
+	/* NUT_WIN32_INCOMPLETE(); */
 	throw std::logic_error(e.str());
-#else
+#else	/* !WIN32 */
 	if (m_exited)
 		return m_exit_code;
 
@@ -359,7 +361,7 @@ int Process::Child<M>::wait()
 	m_exit_code = WEXITSTATUS(m_exit_code);
 
 	return m_exit_code;
-#endif
+#endif	/* !WIN32 */
 }
 
 
@@ -401,7 +403,7 @@ class Signal {
 		VTALRM = SIGVTALRM,  /** Virtual alarm clock               */
 		XCPU   = SIGXCPU,    /** CPU time limit exceeded           */
 		XFSZ   = SIGXFSZ,    /** File size limit exceeded          */
-#endif
+#endif	/* !WIN32 */
 	} enum_t;  // end of typedef enum
 
 	/** Signal list */
@@ -600,13 +602,22 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 		FD_SET(rfd, &rfds);
 
 		// Poll on signal pipe
-		// Note that direct blocking read could be also used;
-		// however, select allows timeout specification
-		// which might come handy...
+		// Note that a straightforward blocking read could be
+		// also used.  However, select allows specifying a
+		// timeout, which could be useful in the future (but
+		// is not used in the current code).
 		int fdno = ::select(FD_SETSIZE, &rfds, nullptr, nullptr, nullptr);
 
-		// TBD: Die or recover on error?
+		// -1 is an error, but EINTR means the system call was
+		// interrupted.  System calls are expected to be
+		// interrupted on signal delivery; some systems
+		// restart them, and some don't.  Getting EINTR is
+		// therefore not actually an error, and the standard
+		// approach is to retry.
 		if (-1 == fdno) {
+			if (errno == EINTR)
+				continue;
+
 			std::stringstream e;
 
 			e << "Poll on communication pipe read end ";
@@ -633,6 +644,12 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 			throw std::runtime_error(e.str());
 		}
 
+		// POSIX probably does not prohibit reading some but
+		// not all of the multibyte message.  However, it is
+		// unlikely that an implementation using write and
+		// read on int-sized or smaller objects will split
+		// them.  For now our strategy is to hope this does
+		// not happen.
 		assert(sizeof(word) == read_out);
 
 		command_t command = static_cast<command_t>(word);
@@ -646,6 +663,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 				::pthread_exit(nullptr);
 
 			case HT_SIGNAL:
+				{	// scoping
 				// Read signal number
 				read_out = ::read(rfd, &word, sizeof(word));
 
@@ -665,6 +683,37 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 
 				// Handle signal
 				handler(sig);
+				}	// scoping
+				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* Must not occur thanks to enum.
+			 * But otherwise we can see
+			 *   error: 'switch' missing 'default' label [-Werror,-Wswitch-default]
+			 * from some overly zealous compilers.
+			 */
+			default:
+				throw std::logic_error("INTERNAL ERROR: Unexpected default case reached");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		}
 	}
 
@@ -720,8 +769,9 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 
 	e << "Can't prepare signal handling thread: not implemented on this platform yet";
 
+	/* NUT_WIN32_INCOMPLETE(); */
 	throw std::logic_error(e.str());
-#else
+#else	/* !WIN32 */
 	// At most one instance per process allowed
 	if (-1 != s_comm_pipe[1])
 		throw std::logic_error(
@@ -777,7 +827,7 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 			throw std::runtime_error(e.str());
 		}
 	}
-#endif
+#endif	/* !WIN32 */
 }
 
 

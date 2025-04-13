@@ -3,7 +3,7 @@
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
-	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 
 #ifdef WIN32
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
@@ -48,7 +48,7 @@ typedef struct conn_s {
 #ifdef WIN32
 	char    buf[LARGEBUF];
 	OVERLAPPED read_overlapped;
-#endif
+#endif	/* WIN32 */
 	PCONF_CTX_t	ctx;
 	struct conn_s	*prev;
 	struct conn_s	*next;
@@ -110,6 +110,13 @@ void status_set(const char *buf);
 
 /* write the temporary status_buf into ups.status */
 void status_commit(void);
+
+/* similar functions for experimental.ups.mode.buzzwords, where tracked
+ * dynamically (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
+void buzzmode_init(void);
+int  buzzmode_get(const char *buf);
+void buzzmode_set(const char *buf);
+void buzzmode_commit(void);
 
 /* similar functions for ups.alarm */
 void alarm_init(void);

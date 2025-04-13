@@ -276,9 +276,9 @@ if WITH_REGENERATE_DMF_SNMP
 	    ( cd "$(@D)" && \
 	      LANG=C LC_ALL=C TZ=UTC \
 	      CC='$(CC)' CXX='$(CXX)' CPP='$(CPP)' LD='$(LD)' \
-	      CFLAGS="$(DMFTOOLS_CFLAGS) $(CFLAGS) $(AM_CFLAGS)" \
+	      CFLAGS="$(DMFTOOLS_CFLAGS) $(CFLAGS_DMF) $(AM_CFLAGS)" \
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
-	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
+	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS_DMF) $(AM_CPPFLAGS)" \
 	      ABS_BUILDDIR="$(abs_builddir)" \
 	      DEBUG="$(V)" \
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" "$@" \
@@ -352,7 +352,7 @@ DMFLNK_CMD = ( \
 # prebuilt and distributed as source, the gmake VPATH should figure that out.
 # This may cause harmless "circular dependency" notices during in-tree builds.
 # We try to use the .PHONY target to quiesce the warnings below.
-# However, the dmf-reindexer is currently hardcoded to use only one directory,
+# However, the dmf-reindex tool is currently hardcoded to use only one directory,
 # so we copy stuff below just in case (if needed).
 .PHONY: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated \
         $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated
@@ -552,8 +552,12 @@ DMFTESTS_COMMON_CFLAGS = \
 # e.g.:
 #   /usr/include/features.h:397:4: error: #warning _FORTIFY_SOURCE
 #      requires compiling with optimization (-O) [-Werror=cpp]
-DMFTESTS_COMMON_CFLAGS += \
-	-D_FORTIFY_SOURCE=2 -O2
+# NOTE: On Debian 13 with clang-19 this causes rejection of *printf() methods:
+#  dmfcore.c:697:6: error: 'snprintf' was marked unused but was used
+#      [-Werror,-Wused-but-marked-unused]
+#  697 |  snprintf(file_path, NUT_PATH_MAX + 1, "%s/%s", dir_name, dirp->d_name);
+#DMFTESTS_COMMON_CFLAGS += \
+#	-D_FORTIFY_SOURCE=2 -O2
 
 # Overlaps with warning levels NUT offers nowardays; should be
 # used via configure flags (some compilers in NUT CI farm do not
@@ -615,16 +619,16 @@ endif !WITH_VALGRIND
 
 # Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
 # But some data should be prepopulated there before we run leak tests etc.
-if WITH_DMF
+if WITH_REGENERATE_DMF_NUTSCAN
 run-dmf-test: dmf-test $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && ls -la && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-test
 
 run-dmf-reindex: dmf-reindex $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && ls -la && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(DMF_REINDEX)
-else !WITH_DMF
+else !WITH_REGENERATE_DMF_NUTSCAN
 run-dmf-test run-dmf-reindex:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
-endif !WITH_DMF
+endif !WITH_REGENERATE_DMF_NUTSCAN
 
 if WITH_DMF
 if WITH_LUA

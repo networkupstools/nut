@@ -382,9 +382,9 @@ static int nut_usb_get_string(
 	ret = nut_usb_get_string_descriptor(udev, StringIdx, langid, buffer, sizeof(buffer));
 	if (ret < 0) {
 #ifdef WIN32
-		/* only for libusb0 ? */
+		/* FIXME NUT_WIN32_INCOMPLETE? : only for libusb0 ? */
 		errno = -ret;
-#endif
+#endif	/* WIN32 */
 		return ret;
 	}
 

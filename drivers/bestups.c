@@ -29,7 +29,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Best UPS driver"
-#define DRIVER_VERSION	"1.09"
+#define DRIVER_VERSION	"1.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -319,6 +319,9 @@ static int ups_on_line(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	printf("The UPS will shut down in approximately one minute.\n");
 
 	if (ups_on_line())

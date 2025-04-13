@@ -53,12 +53,17 @@ extern bool_t	 	use_interrupt_pipe;	/* Set to FALSE if interrupt reports should 
 /* Parameters default values */
 #define DEFAULT_LOWBATT		"30"	/* percentage of battery charge to consider the UPS in low battery state  */
 #define DEFAULT_ONDELAY		"30"	/* Delay between return of utility power */
-					/* and powering up of load, in seconds */
+					/* and powering up of load, in seconds (as string!) */
 					/* CAUTION: ondelay > offdelay */
-#define DEFAULT_OFFDELAY	"20"	/* Delay before power off, in seconds */
+#define DEFAULT_OFFDELAY	"20"	/* Delay before power off, in seconds (as string!) */
 #define DEFAULT_POLLFREQ	30	/* Polling interval, in seconds */
 					/* The driver will wait for Interrupt */
 					/* and do "light poll" in the meantime */
+
+/* Parameters default values for CyberPower HID */
+#define DEFAULT_POLLFREQ_CPS	12	/* Polling interval, in seconds, default for CPS devices */
+#define DEFAULT_ONDELAY_CPS	"120"	/* Delay between return of utility power, default for CPS devices */
+#define DEFAULT_OFFDELAY_CPS	"60"	/* Delay before power off, default for CPS devices */
 
 #ifndef MAX_STRING_SIZE
 #define MAX_STRING_SIZE	128
@@ -92,6 +97,7 @@ extern info_lkp_t trim_info[];
 extern info_lkp_t boost_info[];
 extern info_lkp_t bypass_auto_info[];
 extern info_lkp_t bypass_manual_info[];
+extern info_lkp_t eco_mode_info[];
 extern info_lkp_t off_info[];
 extern info_lkp_t calibration_info[];
 extern info_lkp_t nobattery_info[];
@@ -142,6 +148,8 @@ typedef enum {
 	BOOST,		/* SmartBoost */
 	BYPASSAUTO,	/* on automatic bypass */
 	BYPASSMAN,	/* on manual/service bypass */
+	ECOMODE,    /* High Efficiency (aka ECO Mode) */
+	ESSMODE,    /* Energy Saver System (aka ESS Mode) */
 	OFF,		/* ups is off */
 	CALIB,		/* calibration */
 	OVERHEAT,	/* overheat; Belkin, TrippLite */

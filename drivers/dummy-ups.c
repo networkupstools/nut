@@ -2,7 +2,7 @@
 
    Copyright (C)
        2005 - 2015  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
-       2014 - 2023  Jim Klimov <jimklimov+nut@gmail.com>
+       2014 - 2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#endif
+#endif	/* !WIN32 */
 
 #include <sys/stat.h>
 #include <string.h>
@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -239,7 +239,7 @@ static int prepare_filepath(char *fn, size_t buflen)
 	if (device_path[0] == '/'
 #ifdef WIN32
 	||  device_path[1] == ':'	/* "C:\..." */
-#endif
+#endif	/* WIN32 */
 	) {
 		/* absolute path */
 		return snprintf(fn, buflen, "%s", device_path);
@@ -280,7 +280,7 @@ void upsdrv_updateinfo(void)
 			/* less stress on the sys */
 			if (ctx == NULL && next_update == -1) {
 				struct stat	fs;
-				char fn[SMALLBUF];
+				char fn[NUT_PATH_MAX + 1];
 
 				prepare_filepath(fn, sizeof(fn));
 
@@ -294,12 +294,12 @@ void upsdrv_updateinfo(void)
 				 * the data without complications.
 				 */
 				if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &fs)) && 0 != stat (fn, &fs))
-#else
+#else	/* WIN32 */
 				/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
 				 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 				 */
 				if (0 != stat (fn, &fs))
-#endif
+#endif	/* WIN32 */
 				{
 					upsdebugx(2, "%s: MODE_DUMMY_ONCE: Can't stat %s currently", __func__, fn);
 					/* retry ASAP until we get a file */
@@ -382,9 +382,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -442,7 +446,7 @@ void upsdrv_initups(void)
 	}
 	else
 	{
-		char fn[SMALLBUF];
+		char fn[NUT_PATH_MAX + 1];
 		mode = MODE_NONE;
 
 		if (val) {
@@ -534,12 +538,13 @@ void upsdrv_initups(void)
 		 * complications.
 		 */
 		if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &datafile_stat)) && 0 != stat (fn, &datafile_stat))
-#else
+#else	/* WIN32 */
 		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+		 * NUT_WIN32_INCOMPLETE?
 		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 		 */
 		if (0 != stat (fn, &datafile_stat))
-#endif
+#endif	/* WIN32 */
 		{
 			upsdebugx(2, "%s: Can't stat %s (%s) currently", __func__, device_path, fn);
 		} else {
@@ -743,7 +748,7 @@ static void upsconf_err(const char *errmsg)
  */
 static int parse_data_file(TYPE_FD arg_upsfd)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	size_t	value_args = 0, counter;
 	time_t	now;
