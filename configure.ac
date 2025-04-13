@@ -1465,7 +1465,7 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_TYPE_LONG_LONG_INT
 ])
 
-AC_REPLACE_FUNCS(setenv strerror atexit)
+AC_REPLACE_FUNCS(setenv unsetenv strerror atexit)
 
 case ${target_os} in
    solaris2* )
