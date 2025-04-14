@@ -569,6 +569,19 @@ binaries that the package would put into an obscure location like
 would refer to new locations specified by the current build, so such old
 binaries would just consume disk space but not run.
 
+It is recommended to first try installing into a prototyping area, so you
+can review which files get delivered and perhaps which locations you may
+have to tune for a more tightly tailored replacement of an older (packaged)
+installation, in case whole swathes of files that you expect to be present
+in the current system (libraries, drivers, docs) are not getting installed
+by the new build into same path names:
+
+----
+:; rm -rf /tmp/nut ; make DESTDIR=/tmp/nut install -j 8
+:; (cd /tmp/nut && find . | sort) | while read N ; \
+   do [ -e "/$N" ] || echo "=== MISSING: /$N" >&2 ; done
+----
+
 Replacing any NUT deployment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
