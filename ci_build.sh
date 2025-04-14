@@ -2532,7 +2532,8 @@ bindings)
 
     #$MAKE all || \
     $MAKE $PARMAKE_FLAGS all || exit
-    if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
+    build_to_only_catch_errors_check
+    ### if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
 
     case "$CI_OS_NAME" in
         windows*)
