@@ -90,6 +90,15 @@ MAINTAINER SANDBOX (to be completed and pushed)
   and nut-website building and checking, and with maintainer GPG keys in
   the chain
 
+NOTE: DO NOT RUSH to issue the release right away. There are always some
+last-minute discoveries and days/weeks of delays before a perfect release
+does ultimately happen. Use `vX.Y.Z-rcN` tags until completely certain that
+a release is final (perhaps by tagging the last RC with `vX.Y.Z` later).
+Note that some third-party tools like PyPI repo do not permit replacing
+artifacts associated with a particular release version/tag, and changing
+Git tags on public repositories is generally considered as a bad practice.
+So best to avoid it in the first place.
+
 * clean up "in-development" bits from files (which we would revert after
   release), e.g.:
 ** TODO etc. referring planned future in the `NEWS.adoc` and `UPDATING.adoc`
