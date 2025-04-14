@@ -6231,3 +6231,13 @@ AS_IF([test -s "${ABS_TOP_SRCDIR}/install-sh" && grep -w MKDIRPROG "${ABS_TOP_SR
 		 AC_MSG_WARN([=====================================================])
 	])
 ])
+
+AS_IF([test x"${NUT_VERSION_DEPLOYED-}" = x"<reenter>"], [
+	AC_MSG_NOTICE([==========================================================])
+	AC_MSG_NOTICE([You have configured a build for "in-place" replacement])
+	AC_MSG_NOTICE([of an existing NUT installation. You are advised to first])
+	AC_MSG_NOTICE([install into a temporary DESTDIR and verify the fliesystem])
+	AC_MSG_NOTICE([layout of the new build against what you already have.])
+	AC_MSG_NOTICE([Check INSTALL.nut.adoc for practical details and example.])
+	AC_MSG_NOTICE([==========================================================])
+])
