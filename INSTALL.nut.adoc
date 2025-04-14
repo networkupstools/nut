@@ -206,7 +206,7 @@ To build NUT from a Git checkout you may need some additional tools
 (referenced just a bit below) and run `./autogen.sh` to generate the
 needed files. For common developer iterations, porting to new platforms,
 or in-place testing, running the `./ci_build.sh` script can be helpful.
-The "<<Installing_inplace,Building NUT for in‐place upgrades or non‐disruptive
+The "<<Installing_inplace,Building NUT for in-place upgrades or non-disruptive
 tests>>" section details some more hints about such workflow, including some
 `systemd` integration.
 
@@ -271,8 +271,8 @@ do this, you will have problems later on when you try to start upsd.
 Build and install
 ~~~~~~~~~~~~~~~~~
 
-NOTE: See also <<Installing_inplace,Building NUT for in‐place upgrades
-or non‐disruptive tests>>.
+NOTE: See also <<Installing_inplace,Building NUT for in-place upgrades
+or non-disruptive tests>>.
 
 [[Configuration]]
 Configuration
@@ -429,7 +429,7 @@ You are now ready to configure NUT, and start testing and using it.
 You can jump directly to the <<Configuration_notes,NUT configuration>>.
 
 [[Installing_inplace]]
-Building NUT for in‐place upgrades or non‐disruptive tests
+Building NUT for in-place upgrades or non-disruptive tests
 ----------------------------------------------------------
 
 NOTE: The NUT GitHub Wiki article at
