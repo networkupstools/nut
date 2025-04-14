@@ -805,9 +805,17 @@ at run time.
 	--datadir=PATH
 
 Change the data directory, i.e., where architecture independent
-read-only data is installed.  By default this is `<prefix>/share`,
-i.e. `/usr/local/ups/share`.  At the moment, this directory only
-holds two files -- the optional `cmdvartab` and `driver.list`.
+read-only data for the currently built project is installed.
+By GNU Autotools default, this is `<prefix>/share` (same as the
+system-wide "data root" which we also consult for third-party data
+such as Augeas lens delivery locations), i.e. `/usr/local/ups/share`.
++
+Typically this is reconfigured to a `'${datarootdir}/nut'` value.
++
+At the moment, this directory only holds two files by default -- the
+optional `cmdvartab` and `driver.list`, but may hold additional data
+on certain systems (e.g. FreeBSD quirks, Solaris SMF or init methods,
+sometimes documentation).
 
 	--mandir=PATH
 
