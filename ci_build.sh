@@ -1169,6 +1169,15 @@ build_to_only_catch_errors_check() {
         return 0
     fi
 
+    # Lots of tedious touch-files to make, better run it in parallel separately.
+    # May report absence of "aspell" but would not fail in that case (just noise).
+    if grep "WITH_SPELLCHECK_TRUE=''" config.log >/dev/null 2>/dev/null ; then
+        echo "`date`: Starting a '$MAKE spellcheck-quick' first"
+        $CI_TIME $MAKE $MAKE_FLAGS_QUIET spellcheck-quick \
+        && echo "`date`: SUCCESS" \
+        || return $?
+    fi
+
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME $MAKE $MAKE_FLAGS_QUIET check \
     && echo "`date`: SUCCESS" \
