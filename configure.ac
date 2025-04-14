@@ -4120,7 +4120,7 @@ AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
 
-dnl NOTE: Be sure to customize e.g.  --datarootdir=/usr/share/nut to install
+dnl NOTE: Be sure to customize e.g.  --datadir=/usr/share/nut to install
 dnl these scripts not into default location as e.g. /usr/share/solaris-smf
 AC_MSG_CHECKING(whether to install Solaris SMF files)
 solarissmf="auto"
