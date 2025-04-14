@@ -398,7 +398,7 @@ optional_prepare_compiler_family() {
 
     if [ -n "$CPP" ] ; then
         # Note: can be a multi-token name like "clang -E" or just not a full pathname
-        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
+        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null || { RES=$?; echo "FAILED to look up CPP='$CPP'" >&2 ; exit $RES; } ) && export CPP
     else
         # Avoid "cpp" directly as it may be too "traditional"
         case "$COMPILER_FAMILY" in
