@@ -116,6 +116,20 @@ So best to avoid it in the first place.
 :; git commit -sm 'NEWS.adoc, UPGRADING.adoc, docs/docinfo.xml.in: finalize text before NUT v2.8.0 release'
 ----
 
+* revise the lists of symbols exported by shared libraries delivered by NUT:
+  some changes may be seen right in the respective `Makefile.am`, but since
+  we use regular expressions, the set of method names may change between
+  releases implicitly. Use `nm` or similar tools to review symbols exposed
+  on an older build and the newer ones. For version bump algorithm consult
+  https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+  (since we are likely to change common source code between releases, the
+  "revision" is likely to increment always, to reflect that the library was
+  rebuilt from different sources -- unless we bump "current" instead and
+  reset "revision" to 0 due to new symbols).
++
+TODO: Maintain proper library scripts (maybe in Git) with exact lists of
+symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
+
 * revise the contents of `NEWS.adoc` and `UPDATING.adoc` files; verify that
   any recent changes to drivers (including `main.c` and other major impact
   from common code) and sub-drivers (`*-hid.c` for `usbhid-ups`, `*-mib.c`
