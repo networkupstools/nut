@@ -4,20 +4,20 @@ UPSMON.CONF(5)
 NAME
 ----
 
-upsmon.conf - Configuration for Network UPS Tools upsmon
+upsmon.conf - Configuration for Network UPS Tools upsmon client
 
 DESCRIPTION
 -----------
 
 This file's primary job is to define the systems that linkman:upsmon[8]
-will monitor and to tell it how to shut down the system when necessary.
-It will contain passwords, so keep it secure.  Ideally, only the upsmon
+will monitor, and to tell it how to shut down the system when necessary.
+It will contain passwords, so keep it secure.  Ideally, only the `upsmon`
 process should be able to read it.
 
 A minimal configuration should include at least one `MONITOR` instruction,
-`MINSUPPLIES` (may be 0 if this system is only monitoring other NUT servers),
-and a `POWERDOWNFLAG` if this machine is a "primary" system connected to
-the UPS and drives its late-shutdown power-off command in an emergency.
+`MINSUPPLIES` (may be '0' if this system is only monitoring other NUT servers),
+and a `POWERDOWNFLAG` if this machine is a "primary" system connected to the
+UPS and drives its late-shutdown power-off command in case of an emergency.
 
 Additionally, other optional configuration values can be set in this
 file.
@@ -27,6 +27,20 @@ IMPORTANT NOTES
 
 * Contents of this file should be pure ASCII (character codes
   not in range would be ignored with a warning message).
+* Balance the run-time user permissions to access the file (and perhaps the
+  directory it is in) for only `upsmon` to be able to read it; write access
+  is not needed. It is common to use `chown root:nut` and `chmod 640` to
+  set up acceptable file permissions.
+  - Packages (and build recipes) typically prepare one set of user and
+    group accounts for NUT. Custom builds with minimal configuration might
+    even use `nobody:nogroup` or similar, which is inherently insecure.
+  - On systems with extra security concerns, NUT drivers, data server,
+    and any other monitoring, logging, etc. clients, should run as separate
+    user accounts. This would need some daemons to use customized  `user`,
+    `group`, `RUN_AS_USER` and/or `RUN_AS_GROUP` settings to override the
+    single built-in value.
+  - Keep in mind the security of also any backup copies of this file,
+    e.g. the archive files it might end up in.
 
 CONFIGURATION DIRECTIVES
 ------------------------
@@ -286,6 +300,18 @@ to substitute the current value of `ups.alarm`.
 
 NOTALARM;; UPS is no longer in an alarm state (no active alarms)
 
+OVER;; UPS is overloaded
+
+NOTOVER;; UPS is no longer overloaded
+
+TRIM;; UPS is trimming incoming voltage
+
+NOTTRIM;; UPS is no longer trimming incoming voltage
+
+BOOST;; UPS is boosting incoming voltage
+
+NOTBOOST;; UPS is no longer boosting incoming voltage
+
 OTHER;; UPS has at least one unclassified `ups.status` token;
 for this notification, the `message` can contain a second `%s` placeholder
 to substitute the current collection of such tokens.
@@ -301,7 +327,7 @@ de-activating obsolete UPS readings to avoid an unfortunate shutdown
 
 By default, upsmon sends walls global messages to all logged in users)
 via `/bin/wall` and writes to the syslog when things happen.
-Except for Windows where upsmon only writes to the syslog by default.
+Except for Windows where upsmon only writes to the Event Log by default.
 You can change this.
 +
 Examples:
@@ -490,7 +516,7 @@ Some "secondary" systems with workloads that take considerable time
 to stop (e.g. virtual machines or large databases) can benefit from
 reporting (by virtue of logging off the data server) that they are
 ready for the "primary" system to begin its own shutdown and eventually
-to tell the UPS to cut the power - not as soon as they have triggered
+to tell the UPS to cut the power -- not as soon as they have triggered
 their own shutdown, but at a later point (e.g. when the upsmon service
 is stopped AFTER the heavier workloads).
 +

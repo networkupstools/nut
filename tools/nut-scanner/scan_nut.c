@@ -329,7 +329,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 #ifndef WIN32
 	struct sigaction oldact;
 	int change_action_handler = 0;
-#endif
+#endif	/* !WIN32 */
 	struct scan_nut_arg *nut_arg;
 
 #ifdef HAVE_PTHREAD
@@ -431,7 +431,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 # pragma GCC diagnostic pop
 #endif
 	}
-#endif
+#endif	/* !WIN32 */
 
 	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
 
@@ -719,7 +719,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 # pragma GCC diagnostic pop
 #endif
 	}
-#endif
+#endif	/* !WIN32 */
 
 	return nutscan_rewind_device(dev_ret);
 }

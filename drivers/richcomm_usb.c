@@ -591,11 +591,11 @@ void upsdrv_initups(void)
 
 #ifndef WIN32
 		if ((i < 32) && (sleep(5) == 0)) {
-#else
-/*FIXME*/
+#else	/* WIN32 */
+/* FIXME NUT_WIN32_INCOMPLETE? */
 		sleep(5);
 		if ((i < 32)) {
-#endif
+#endif	/* WIN32 */
 			usb_comm_fail("Can't open USB device, retrying ...");
 			continue;
 		}

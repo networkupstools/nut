@@ -329,6 +329,7 @@
 "Deltec"	"ups"	"4"	"PRM 450/700/1000/1500"	""	"upscode2"
 
 "DEXP"	"ups"	"2"	"MIX 850VA"	"USB"	"blazer_usb langid_fix=0x0409 runtimecal=240,100,720,50 default.battery.voltage.high=2.27 default.battery.voltage.low=1.72"	# https://github.com/networkupstools/nut/issues/721
+"DEXP"	"ups"	"2"	"LCD EURO 1200VA"	"USB"	"driver=nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 langid_fix=0x0409 protocol=hunnox subdriver=hunnox novendor norating noscanlangid default.battery.voltage.high=28.6 default.battery.voltage.low=21.4"	# https://github.com/networkupstools/nut/pull/2839
 
 "Digital Loggers"	"pdu"	"1"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
@@ -421,6 +422,9 @@
 "Eaton"	"ups"	"5"	"Management Card Contact"	"Config 3 - Cable 66033"	"genericups upstype=7"
 "Eaton"	"ats"	"5"	"Eaton ATS16"	""	"snmp-ups"
 "Eaton"	"ats"	"5"	"Eaton ATS30"	""	"snmp-ups"
+
+"Ecoflow"	"ups"	"3"	"Delta 3 Plus"	"USB"	"usbhid-ups"
+"Ecoflow"	"ups"	"3"	"River 3 Plus"	"USB"	"usbhid-ups"
 
 "Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"blazer_ser"
 "Effekta"	"ups"	"2"	"RM2000MH"	""	"blazer_ser"
@@ -517,6 +521,7 @@
 "Gtec"	"ups"	"2"	"AP160N-1K / AP160LCD-1K-KS / AP160N-2K / AP160LCD-2K-KS / AP160N-3K / AP160LCD-3K-KS / AP160N-6K-PDU / AP160N-10K-PDU"	"USB port"	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-10K-31-00 / ZP120N-10K-31-07 / ZP120N-10K-31-09 / ZP120N-10K-31-99 / ZP120N-20K"	"Serial port"	"blazer_ser"
 "Gtec"	"ups"	"2"	"AP160N-1K / AP160LCD-1K-KS / AP160N-2K / AP160LCD-2K-KS / AP160N-3K / AP160LCD-3K-KS / AP160N-6K-PDU / AP160N-10K-PDU"	"Serial port"	"blazer_ser"
+"Gtec"	"ups"	"3"	"ZP120N"	"USB"	"nutdrv_qx with subdriver=gtec protocol=gtec"
 
 "Guardian"	"ups"	"2"	"LCD 1500 AP (IGA1500LCD)"	"Serial"	"nutdrv_qx"
 

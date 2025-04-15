@@ -57,7 +57,7 @@
 #include <ctype.h>
 #ifndef WIN32
 #include <sys/ioctl.h>
-#endif
+#endif	/* !WIN32 */
 #include "timehead.h"
 #include "main.h"
 #include "serial.h"
@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.97"
+#define DRIVER_VERSION	"0.98"
 
 
 /* driver description structure */
@@ -169,7 +169,7 @@ void upsdrv_initups(void)
 	char buf[BUFFLEN];
 #ifndef WIN32
 	int RTS = TIOCM_RTS;
-#endif
+#endif	/* !WIN32 */
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
@@ -181,14 +181,14 @@ void upsdrv_initups(void)
 
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
-#else
+#else	/* WIN32 */
 	if (testvar ("oldmac")) {
 		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,CLRRTS);
 	}
 	else {
 		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,SETRTS);
 	}
-#endif
+#endif	/* WIN32 */
 	enable_ups_comm();
 
 	/* Try to set "Low Battery Level" (if supported and given) */
@@ -775,7 +775,8 @@ static int get_ups_status(void)
 		if (exit_flag != 0)
 			return FALSE;
 
-		/* must clear status buffer before each round */
+		/* must clear alarm and status buffers before each round */
+		alarm_init();
 		status_init();
 
 		/* system status */
@@ -803,11 +804,10 @@ static int get_ups_status(void)
 			}
 			/* buf[2] not used */
 			if (buf[1] == '1')
-				status_set("COMMFAULT"); /* self-invented */
+				alarm_set("COMMFAULT"); /* self-invented */
 				/* FIXME: better to call datastale()?! */
 			if (buf[0] == '1')
-				status_set("ALARM");     /* self-invented */
-				/* FIXME: better to use ups.alarm */
+				alarm_set("DEVICEALARM");     /* self-invented */
 		}  /* if strlen */
 
 		/* battery status */
@@ -866,6 +866,7 @@ static int get_ups_status(void)
 
 	} while ( !ok && tries++ < MAXTRIES );
 
+	alarm_commit();
 	status_commit();
 
 	return ok;

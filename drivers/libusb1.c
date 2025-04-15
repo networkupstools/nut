@@ -292,7 +292,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #ifdef WIN32
 	struct usb_bus *busses;
 	busses = usb_get_busses();
-#endif
+#endif	// WIN32
  */
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
@@ -537,10 +537,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 		/* Then, try the explicit detach method.
 		 * This function is available on FreeBSD 10.1-10.3 */
-#ifdef WIN32
+# ifdef WIN32
 		/* TODO: Align with libusb1 - initially from Windows branch made against libusb0 */
 		libusb_set_configuration(udev, 1);
-#endif
+# endif	/* WIN32 */
 
 		retries = 3;
 		while ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
@@ -754,7 +754,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #ifndef WIN32
 			upsdebugx(2, "Warning: report descriptor too short "
 				"(expected %d, got %d)", rdlen, res);
-#else
+#else	/* WIN32 */
 			/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
 			upsdebugx(0, "Warning: report descriptor too short "
 				"(expected %d, got %d)", rdlen, res);
@@ -842,6 +842,16 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 	}
 
+#ifdef WIN32
+	upsdebugx(0, "Please check your Windows Device Manager: "
+		"perhaps the UPS was recognized by default OS\n"
+		"driver such as HID UPS Battery (hidbatt.sys, "
+		"hidusb.sys or similar). It could have been\n"
+		"\"restored\" by Windows Update. You can try "
+		"https://zadig.akeo.ie/ to handle it with\n"
+		"either WinUSB, libusb0.sys or libusbK.sys.");
+#endif	/* WIN32 */
+
 	return -1;
 }
 
@@ -889,7 +899,7 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 # endif
 		upsdebugx(2, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
 		return 0;
-#endif /* WIN32 */
+#endif	/* !WIN32 */
 
 	case LIBUSB_SUCCESS:         /** TOTHINK: Should this be quiet? */
 	case LIBUSB_ERROR_OTHER:     /** Other error */

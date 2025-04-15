@@ -1,6 +1,12 @@
 /* nutclient.cpp - nutclient C++ library implementation
 
-   Copyright (C) 2012  Emilien Kia <emilien.kia@gmail.com>
+    Copyright (C) 2012 Eaton
+
+        Author: Emilien Kia <emilien.kia@gmail.com>
+
+    Copyright (C) 2024-2025 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,7 +41,7 @@
 /* this include is needed on AIX to have errno stored in thread local storage */
 #  include <pthread.h>
 # endif
-#endif
+#endif	/* !WIN32 */
 
 #include <errno.h>
 #include <string.h>
@@ -118,7 +124,7 @@ static inline int sktclose(int fh)
 #    define AIX_NBCONNECT_0(status) (0)
 #  endif  /* end of AIX WA for non-blocking connect */
 
-#endif /* WIN32 */
+#endif /* !WIN32 */
 /* End of Windows/Linux Socket compatibility layer */
 
 
@@ -275,13 +281,13 @@ void Socket::connect(const std::string& host, uint16_t port)
 
 #ifndef WIN32
 	long			fd_flags;
-#else
+#else	/* WIN32 */
 	HANDLE event = NULL;
 	unsigned long argp;
 
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
-#endif
+#endif	/* WIN32 */
 
 	_sock = INVALID_SOCKET;
 
@@ -327,9 +333,9 @@ void Socket::connect(const std::string& host, uint16_t port)
 			throw nut::NutException("Out of memory");
 #ifndef WIN32
 		case EAI_SYSTEM:
-#else
+#else	/* WIN32 */
 		case WSANO_RECOVERY:
-#endif
+#endif	/* WIN32 */
 			if (_debugConnect) std::cerr <<
 				"[D2] Socket::connect(): " <<
 				"connect not successful: " <<
@@ -384,7 +390,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags |= O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-#else
+#else	/* WIN32 */
 			event = CreateEvent(NULL, /* Security */
 					FALSE, /* auto-reset */
 					FALSE, /* initial state */
@@ -393,7 +399,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 			/* Associate socket event to the socket via its Event object */
 			WSAEventSelect( sock_fd, event, FD_CONNECT );
 			CloseHandle(event);
-#endif
+#endif	/* WIN32 */
 		}
 
 		if (_debugConnect) std::cerr <<
@@ -413,9 +419,9 @@ void Socket::connect(const std::string& host, uint16_t port)
 
 #ifndef WIN32
 			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
-#else
+#else	/* WIN32 */
 			if(errno == WSAEWOULDBLOCK) {
-#endif
+#endif	/* WIN32 */
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
 				select(sock_fd+1, nullptr, &wfds, nullptr,
@@ -492,10 +498,10 @@ void Socket::connect(const std::string& host, uint16_t port)
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-#else
+#else	/* WIN32 */
 			argp = 0;
 			ioctlsocket(sock_fd, FIONBIO, &argp);
-#endif
+#endif	/* WIN32 */
 		}
 
 		if (_debugConnect) std::cerr <<
@@ -512,14 +518,14 @@ void Socket::connect(const std::string& host, uint16_t port)
 
 #ifndef WIN32
 	if (_sock < 0) {
-#else
+#else	/* WIN32 */
 	if (_sock == INVALID_SOCKET) {
 		/* In tracing one may see 18446744073709551615 = "-1" after
 		 * conversion from 'long long unsigned int' to 'int'
 		 * 64-bit WINSOCK API with UINT_PTR , see gory details at e.g.
 		 * https://github.com/openssl/openssl/issues/7282#issuecomment-430633656
 		 */
-#endif
+#endif	/* WIN32 */
 		if (_debugConnect) std::cerr <<
 			"[D2] Socket::connect(): " <<
 			"invalid _sock = " << _sock <<

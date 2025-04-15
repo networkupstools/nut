@@ -1,6 +1,8 @@
 /* upsclient.h - definitions for upsclient functions
 
-   Copyright (C) 2002  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+        2002	Russell Kroll <rkroll@exploits.org>
+        2020 - 2025	Jim Klimov <jimklimov+nu@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -97,10 +99,12 @@ typedef struct {
 
 const char *upscli_strerror(UPSCONN_t *ups);
 
+/* NOTE: effectively only runs once; re-runs quickly skip out */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_cleanup(void);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);
+/* blocking unless default timeout is specified, see also: upscli_init_default_connect_timeout() */
 int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
 
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl);
@@ -135,6 +139,21 @@ int upscli_upserror(UPSCONN_t *ups);
 
 /* returns 1 if SSL mode is active for this connection */
 int upscli_ssl(UPSCONN_t *ups);
+
+/* Assign default upscli_connect() from string; return 0 if OK, or
+ * return -1 if parsing failed and current value was kept  */
+int upscli_set_default_connect_timeout(const char *secs);
+/* If ptv!=NULL, populate it with a copy of last assigned internal timeout */
+void upscli_get_default_connect_timeout(struct timeval *ptv);
+/* Initialize default upscli_connect() timeout from a number of sources:
+ * built-in (0 = blocking), envvar NUT_DEFAULT_CONNECT_TIMEOUT,
+ * or specified strings (may be NULL) most-preferred first.
+ * Returns 0 if any provided value was valid and applied,
+ * or if none were provided so the built-in default was applied;
+ * returns -1 if all provided values were not valid (so the built-in
+ * default was applied) - not necessarily fatal, rather useful to report.
+ */
+int upscli_init_default_connect_timeout(const char *cli_secs, const char *config_secs, const char *default_secs);
 
 /* upsclient error list */
 
@@ -199,6 +218,36 @@ int upscli_ssl(UPSCONN_t *ups);
 #define UPSCLI_CONN_INET		0x0004	/* IPv4 only */
 #define UPSCLI_CONN_INET6		0x0008	/* IPv6 only */
 #define UPSCLI_CONN_CERTVERIF	0x0010	/* Verify certificates for SSL	*/
+
+/******************************************************************************
+ * String methods for space-separated token lists, used originally in dstate  *
+ * These methods should ease third-party NUT clients' parsing of `ups.status` *
+ ******************************************************************************/
+
+/* Return non-zero if "string" contains "token" (case-sensitive),
+ * either surrounded by space character(s) or start/end of "string",
+ * or 0 if that token is not there, or if either string is NULL or empty.
+ */
+int	upscli_str_contains_token(const char *string, const char *token);
+
+/* Add "token" to end of string "tgt", if it is not yet there
+ * (prefix it with a space character if "tgt" is not empty).
+ * Return 0 if already there, 1 if token was added successfully,
+ * -1 if we needed to add it but it did not fit under the tgtsize limit,
+ * -2 if either string was NULL or "token" was empty.
+ * NOTE: If token contains space(s) inside, recurse to treat it
+ * as several tokens to add independently.
+ * Optionally calls "callback_always" (if not NULL) after checking
+ * for spaces (and maybe recursing) and before checking if the token
+ * is already there, and/or "callback_unique" (if not NULL) after
+ * checking for uniqueness and going to add a newly seen token.
+ * If such callback returns 0, abort the addition of token and return -3.
+ */
+int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+				int (*callback_always)(char *, size_t, const char *),
+				int (*callback_unique)(char *, size_t, const char *)
+);
+
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

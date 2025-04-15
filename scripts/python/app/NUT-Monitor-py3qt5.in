@@ -32,6 +32,10 @@
 #
 # 2023-11-27 Laurent Bigonville - Version 2.0.1
 #            Set the DesktopFileName
+#
+# 2025-03-15 Jim Klimov - Version 2.0.2
+#            Revise localisation, inject PACKAGE_VERSION and NUT_WEBSITE_BASE
+#            into the About dialog contents
 
 
 import PyQt5.uic
@@ -74,6 +78,9 @@ except Exception as ignored:
 	### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
 	import PyNUT
 
+# We would seek locale files relative to script dir
+os.chdir(os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
+# print(os.getcwd())
 
 class interface :
 
@@ -234,7 +241,11 @@ class interface :
         self.__app.exec()
 
     def __find_res_file( self, ftype, filename ) :
+        # print("%s ~ %s => '%s' '%s'\n" % (os.getcwd(), os.path.dirname( sys.argv[0] ), ftype, filename))
         filename = os.path.join( ftype, filename )
+        # We would be in script dir
+        if os.path.exists(filename):
+            return filename
         # TODO: Skip checking application directory if installed
         path = os.path.join( os.path.dirname( sys.argv[0] ), filename )
         if os.path.exists(path):
@@ -248,6 +259,10 @@ class interface :
         filename = 'nut-monitor.png'
 
         # TODO: Skip checking application directory if installed
+        path = os.path.join( "icons", "256x256", filename )
+        if os.path.exists(path):
+            return path
+
         path = os.path.join( os.path.dirname( sys.argv[0] ), "icons", "256x256", filename )
         if os.path.exists(path):
             return path
@@ -641,6 +656,19 @@ class interface :
 
         dialog = PyQt5.uic.loadUi( dialog_ui_file )
         dialog.icon.setPixmap( QPixmap( self.__find_icon_file() ) )
+        ### sys.stderr.write("gui_about_dialog(): dialog=%s\n" % str(dir(dialog)))
+        ### sys.stderr.write("gui_about_dialog(): label=%s\n" % str(dir(dialog.label)))
+        ### sys.stderr.write("gui_about_dialog(): text=%s\n" % str(dir(dialog.label.text)))
+        s = dialog.label.text()
+        ### sys.stderr.write("gui_about_dialog(): s (original) ='%s'\n" % s)
+        s = _(s)
+        ### sys.stderr.write("gui_about_dialog(): s (localized) ='%s'\n" % s)
+        s = (s
+             .replace('%s%s%s' % ("@", "PACKAGE_VERSION", "@"), '@PACKAGE_VERSION@')
+             .replace('%s%s%s' % ("@", "NUT_WEBSITE_BASE", "@"), '@NUT_WEBSITE_BASE@')
+            )
+        ### sys.stderr.write("gui_about_dialog(): s (rewritten) ='%s'\n" % s)
+        dialog.label.setText(s)
 
         credits_button = QPushButton( dialog )
         credits_button.setText( _("C&redits") )
@@ -650,7 +678,7 @@ class interface :
         licence_button = QPushButton( dialog )
         licence_button.setText( _("&Licence") )
         licence_button.clicked.connect( self.gui_about_licence )
-        
+
         dialog.buttonBox.addButton( credits_button, QDialogButtonBox.HelpRole )
         dialog.buttonBox.addButton( licence_button, QDialogButtonBox.HelpRole )
 
@@ -666,11 +694,13 @@ David Goncalves <david@lestat.st>
 Translated by:
 David Goncalves <david@lestat.st> - Français
 Daniele Pezzini <hyouko@gmail.com> - Italiano
+Alexey Rodionov <alexey.rodionov@red-soft.ru> - Russian
         """).strip() )
 
     def gui_about_licence( self ) :
         QMessageBox.about( None, _("Licence"), _("""
 Copyright (C) 2010 David Goncalves <david@lestat.st>
+Copyright (C) since 2010 by NUT Community
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -815,7 +845,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
         # Try to resize the main window...
         self.__widgets["main_window"].adjustSize()
-    
+
     #-------------------------------------------------------------------
     # Disconnect from the UPS
     def disconnect_from_ups( self, widget=None ) :

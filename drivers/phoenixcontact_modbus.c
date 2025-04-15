@@ -26,7 +26,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.08"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
@@ -52,11 +52,25 @@
 #define QUINT4_40A_UPS_PARTNUMBER 2907078
 #define QUINT4_40A_UPS_DESCRIPTION "QUINT4-UPS/24DC/24DC/40/USB"
 
+#define TRIO_5A_UPS_PARTNUMBER 2866611
+#define TRIO_5A_UPS_DESCRIPTION "TRIO-UPS/1AC/24DC/5"
+
+#define TRIO_2G_5A_UPS_PARTNUMBER 2907160
+#define TRIO_2G_5A_UPS_DESCRIPTION "TRIO-UPS-2G/1AC/24DC/5"
+
+#define TRIO_2G_10A_UPS_PARTNUMBER 2907161
+#define TRIO_2G_10A_UPS_DESCRIPTION "TRIO-UPS-2G/1AC/24DC/10"
+
+#define TRIO_2G_20A_UPS_PARTNUMBER 1105556
+#define TRIO_2G_20A_UPS_DESCRIPTION "TRIO-UPS-2G/1AC/24DC/20"
+
 typedef enum
 {
 	NONE,
 	QUINT_UPS,
-	QUINT4_UPS
+	QUINT4_UPS,
+	TRIO_UPS,
+	TRIO_2G_UPS
 } models;
 
 /* Variables */
@@ -86,12 +100,14 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_initinfo(void)
 {
-	uint16_t FWVersion;
-	uint16_t PartNumber1;
-	uint16_t PartNumber2;
-	uint16_t PartNumber3;
-	uint16_t PartNumber4;
-	uint64_t PartNumber;
+	uint16_t tab_reg[4];
+	uint64_t PartNumber = 0;
+	size_t i;
+
+	for (i = 0; i < (sizeof(tab_reg) / sizeof(tab_reg[0])); i++)
+	{
+		tab_reg[i] = 0;
+	}
 
 	upsdebugx(2, "upsdrv_initinfo");
 
@@ -100,13 +116,7 @@ void upsdrv_initinfo(void)
 	/* upsh.instcmd = instcmd; */
 	/* upsh.setvar = setvar; */
 
-	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
-	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
-
-	mrir(modbus_ctx, 0x0005, 1, &PartNumber1);
-	mrir(modbus_ctx, 0x0006, 1, &PartNumber2);
-	mrir(modbus_ctx, 0x0007, 1, &PartNumber3);
-	mrir(modbus_ctx, 0x0008, 1, &PartNumber4);
+	mrir(modbus_ctx, 0x0005, 4, tab_reg);
 
 	/*	Method provided from Phoenix Conatct to establish the UPS model:
 		Read registers from 0x0005 to 0x0008 and "concatenate" them with the order
@@ -114,9 +124,9 @@ void upsdrv_initinfo(void)
 		The first 7 most significant digits of the number in dec form are the part number of
 		the UPS.*/
 
-	PartNumber = (PartNumber4 * 65536) + PartNumber3;
-	PartNumber = (PartNumber * 65536) + PartNumber2;
-	PartNumber = (PartNumber * 65536) + PartNumber1;
+	PartNumber = (tab_reg[3] << 16) + tab_reg[2];
+	PartNumber = (PartNumber << 16) + tab_reg[1];
+	PartNumber = (PartNumber << 16) + tab_reg[0];
 
 	while(PartNumber > 10000000)
 	{
@@ -153,6 +163,22 @@ void upsdrv_initinfo(void)
 		UPSModel = QUINT4_UPS;
 		dstate_setinfo("device.model", QUINT4_40A_UPS_DESCRIPTION);
 		break;
+	case TRIO_5A_UPS_PARTNUMBER:
+		UPSModel = TRIO_UPS;
+		dstate_setinfo("device.model", TRIO_5A_UPS_DESCRIPTION);
+		break;
+	case TRIO_2G_5A_UPS_PARTNUMBER:
+		UPSModel = TRIO_2G_UPS;
+		dstate_setinfo("device.model", TRIO_2G_5A_UPS_DESCRIPTION);
+		break;
+	case TRIO_2G_10A_UPS_PARTNUMBER:
+		UPSModel = TRIO_2G_UPS;
+		dstate_setinfo("device.model", TRIO_2G_10A_UPS_DESCRIPTION);
+		break;
+	case TRIO_2G_20A_UPS_PARTNUMBER:
+		UPSModel = TRIO_2G_UPS;
+		dstate_setinfo("device.model", TRIO_2G_20A_UPS_DESCRIPTION);
+		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -187,8 +213,11 @@ void upsdrv_updateinfo(void)
 {
 	uint16_t tab_reg[64];
 	uint16_t actual_code_functions;
+	uint16_t actual_code_functions1;
+	uint16_t actual_code_functions2;
 	uint16_t actual_alarms = 0;
 	uint16_t actual_alarms1 = 0;
+	uint16_t actual_alarms2 = 0;
 	uint16_t battery_voltage;
 	uint16_t battery_temperature;
 	uint16_t battery_runtime;
@@ -205,14 +234,24 @@ void upsdrv_updateinfo(void)
 		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
 
 		tab_reg[0] = CHECK_BIT(actual_code_functions, 2); /* Battery mode is the 2nd bit of the register 0x2000 */
-		tab_reg[2] = CHECK_BIT(actual_code_functions, 5); /* Battery charging is the 5th bit of the register 0x2000 */
+		tab_reg[2] = CHECK_BIT(actual_code_functions, 5); /* Battery charging is the 6th bit of the register 0x2000 */
 
 		mrir(modbus_ctx, 0x3001, 1, &actual_alarms1);
 
 		tab_reg[1] = CHECK_BIT(actual_alarms1, 2); /* Battery discharged is the 2nd bit of the register 0x3001 */
 		break;
+	case TRIO_UPS:
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29697, 3, tab_reg); /* LB is actually called "shutdown event" on this ups */
+		break;
+	case TRIO_2G_UPS:
+		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
+		mrir(modbus_ctx, 0x2002, 1, &actual_code_functions1);
+		mrir(modbus_ctx, 0x3001, 1, &actual_code_functions2);
+
+		tab_reg[0] = CHECK_BIT(actual_code_functions1, 2);
+		tab_reg[2] = CHECK_BIT(actual_code_functions, 5);
+		tab_reg[1] = CHECK_BIT(actual_code_functions2, 2);
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
@@ -262,11 +301,15 @@ void upsdrv_updateinfo(void)
 
 	switch (UPSModel)
 	{
+	case TRIO_2G_UPS:
 	case QUINT4_UPS:
 		mrir(modbus_ctx, 0x2006, 1, tab_reg);
 		break;
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29745, 1, tab_reg);
+		break;
+	case TRIO_UPS:
+		mrir(modbus_ctx, 29702, 1, tab_reg);
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
@@ -309,6 +352,12 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29749, 5, tab_reg);
 		break;
+	case TRIO_UPS:
+		/*battery.charge is not available for TRIO and TRIO-2G models*/
+		break;
+	case TRIO_2G_UPS:
+		/*battery.charge is not available for TRIO and TRIO-2G models*/
+		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
@@ -339,8 +388,8 @@ void upsdrv_updateinfo(void)
 # pragma GCC diagnostic pop
 #endif
 	}
-
-	dstate_setinfo("battery.charge", "%d", tab_reg[0]);
+	if(UPSModel != TRIO_2G_UPS && UPSModel != TRIO_UPS)
+		dstate_setinfo("battery.charge", "%d", tab_reg[0]);
 	/* dstate_setinfo("battery.runtime",tab_reg[1]*60); */ /* also reported on this address, but less accurately */
 
 	switch (UPSModel)
@@ -365,6 +414,24 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29792, 10, tab_reg);
 		break;
+	case TRIO_UPS:
+		mrir(modbus_ctx, 29700, 1, &battery_voltage);
+		tab_reg[0] = battery_voltage;
+
+		/*output.current variable is not available for TRIO model*/
+		break;
+	case TRIO_2G_UPS:
+		/*battery.voltage variable is not available for TRIO-2G model*/
+
+		/*battery.temperature variable is not available for TRIO and TRIO-2G models*/
+
+		/*battery.runtime variable is not available for TRIO and TRIO-2G models*/
+
+		/*battery.capacity variable is not available for TRIO and TRIO-2G models*/
+
+		mrir(modbus_ctx, 0x2007, 1, &output_current);
+		tab_reg[6] = output_current;
+		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
@@ -396,11 +463,22 @@ void upsdrv_updateinfo(void)
 #endif
 	}
 
-	dstate_setinfo("battery.voltage", "%f", (double) (tab_reg[0]) / 1000.0);
-	dstate_setinfo("battery.temperature", "%d", tab_reg[1] - 273);
-	dstate_setinfo("battery.runtime", "%d", tab_reg[3]);
-	dstate_setinfo("battery.capacity", "%d", tab_reg[8] * 10);
-	dstate_setinfo("output.current", "%f", (double) (tab_reg[6]) / 1000.0);
+	if(UPSModel != TRIO_2G_UPS)
+	{
+		dstate_setinfo("battery.voltage", "%f", (double) (tab_reg[0]) / 1000.0);
+		if(UPSModel != TRIO_UPS)
+		{
+			dstate_setinfo("battery.capacity", "%d", tab_reg[8] * 10);
+			dstate_setinfo("battery.temperature", "%d", tab_reg[1] - 273);
+			dstate_setinfo("battery.runtime", "%d", tab_reg[3]);
+		}
+	}
+	
+	if(UPSModel != TRIO_UPS)
+	{
+		dstate_setinfo("output.current", "%f", (double) (tab_reg[6]) / 1000.0);
+	}
+	
 
 	/* ALARMS */
 
@@ -447,6 +525,31 @@ void upsdrv_updateinfo(void)
 			alarm_set("Low Battery (Service)");
 
 		break;
+	case TRIO_2G_UPS:
+		tab_reg[0] = 0;
+		actual_alarms = 0;
+		actual_alarms1 = 0;
+
+		mrir(modbus_ctx, 0x3000, 1, &actual_alarms);
+		mrir(modbus_ctx, 0x3001, 1, &actual_alarms1);
+		mrir(modbus_ctx, 0x3012, 1, &actual_alarms2);
+
+		if (CHECK_BIT(actual_alarms, 10))
+			alarm_set("End of life (Voltage)");
+
+		if (CHECK_BIT(actual_alarms, 3))
+			alarm_set("No Battery");
+
+		if (CHECK_BIT(actual_alarms1, 8))
+			alarm_set("Overload Cutoff");
+
+		if (CHECK_BIT(actual_alarms1, 17))
+			alarm_set("Low Battery (Voltage)");
+
+		if (CHECK_BIT(actual_alarms1, 14))
+			alarm_set("Low Battery (Service)");
+		
+		break;
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29840, 1, tab_reg);
 
@@ -473,6 +576,18 @@ void upsdrv_updateinfo(void)
 			alarm_set("Low Battery (Time)");
 		if (CHECK_BIT(tab_reg[0], 16))
 			alarm_set("Low Battery (Service)");
+		break;
+	case TRIO_UPS:
+		mrir(modbus_ctx, 29706, 1, tab_reg);
+
+		if (CHECK_BIT(tab_reg[0], 0))
+			alarm_set("End of life (Time)");
+		if (CHECK_BIT(tab_reg[0], 2))
+			alarm_set("End of life (Voltage)");
+		if (CHECK_BIT(tab_reg[0], 1))
+			alarm_set("No Battery");
+		if (CHECK_BIT(tab_reg[0], 3))
+			alarm_set("Low Battery (Voltage)");
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
@@ -550,7 +665,8 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	int r;
+	int r, result;
+	uint16_t FWVersion;
 	upsdebugx(2, "upsdrv_initups");
 
 	modbus_ctx = modbus_new_rtu(device_path, 115200, 'E', 8, 1);
@@ -558,15 +674,50 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
 	r = modbus_set_slave(modbus_ctx, MODBUS_SLAVE_ID);	/* slave ID */
-	if (r < 0) {
+	if (r < 0) 
+	{
 		modbus_free(modbus_ctx);
 		fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d",MODBUS_SLAVE_ID);
 	}
 
-	if (modbus_connect(modbus_ctx) == -1) {
+	if (modbus_connect(modbus_ctx) == -1) 
+	{
 		modbus_free(modbus_ctx);
 		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
 	}
+
+	result = mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+	if(result == -1)
+	{
+		modbus_close(modbus_ctx);
+		modbus_free(modbus_ctx);
+
+		modbus_ctx = modbus_new_rtu(device_path, 19200, 'E', 8, 1);
+		if (modbus_ctx == NULL)
+			fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
+
+		r = modbus_set_slave(modbus_ctx, MODBUS_SLAVE_ID);	/* slave ID */
+		if (r < 0) 
+		{
+			modbus_free(modbus_ctx);
+			fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d",MODBUS_SLAVE_ID);
+		}
+
+		if (modbus_connect(modbus_ctx) == -1) 
+		{
+			modbus_free(modbus_ctx);
+			fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
+		}
+
+		r = mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+
+		if(r < 0)
+		{
+			fatalx(EXIT_FAILURE, "UPS does not repond to read requests.");
+		}
+		
+	}
+	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
 
 }
 

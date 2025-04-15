@@ -25,20 +25,13 @@
 
 #include "nutdrv_qx_innovart31.h"
 
-#define INNOVART31_VERSION "INNOVART31 0.01"
+#define INNOVART31_VERSION "INNOVART31 0.02"
 
-/* Internal function: used to convert kilo-values to their full representation */
-static int innovart31_x1000(item_t *item, char *value, const size_t valuelen) {
-	float s = 0;
+/* Support functions */
+static int	innovart31_claim(void);
+static void	innovart31_initups(void);
+static void	innovart31_initinfo(void);
 
-	if (sscanf(item->value, "%f", &s) != 1) {
-		upsdebugx(2, "unparsable ss.ss %s", item->value);
-		return -1;
-	}
-
-	snprintf(value, valuelen, "%.2f", s * 1000.0);
-	return 0;
-}
 /* qx2nut lookup table */
 static item_t	innovart31_qx2nut[] = {
 
@@ -50,19 +43,15 @@ static item_t	innovart31_qx2nut[] = {
 	 */
 
 	/* Common parameters */
-	{ "input.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	1,	5,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "input.L1-N.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	1,	5,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "input.L2-N.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	7,	11,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "input.L3-N.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	13,	17,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "input.frequency",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	19,	22,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "output.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	24,	28,	"%.1f",	0,	NULL,	NULL,	NULL },
-/*	{ "output.L1-N.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	24,	28,	"%.1f",	0,	NULL,	NULL,	NULL },
-	{ "output.L2-N.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	30,	34,	"%.1f",	0,	NULL,	NULL,	NULL },
-	{ "output.L3-N.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	36,	40,	"%.1f",	0,	NULL,	NULL,	NULL },*/
 	{ "output.frequency",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	42,	45,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "ups.load",			0,	NULL,	"Q6\r",	"",	110,	'(',	"",	47,	49,	"%.0f",	0,	NULL,	NULL,	NULL },
 	{ "ups.temperature",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	71,	74,	"%.1f",	0,	NULL,	NULL,	NULL },
-	{ "battery.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	59,	63,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
+	{ "battery.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	59,	63,	"%.1f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 	{ "battery.runtime",			0,	NULL,	"Q6\r",	"",	110,	'(',	"",	76,	80,	"%.0f",	0,	NULL,	NULL,	NULL },
 	{ "battery.charge",			0,	NULL,	"Q6\r",	"",	110,	'(',	"",	82,	84,	"%.0f",	0,	NULL,	NULL,	NULL },
 
@@ -75,8 +64,8 @@ static item_t	innovart31_qx2nut[] = {
 
 	/* Output consumption parameters */
 	{ "output.current",		0,	NULL,	"WA\r",	"",	80,	'(',	"",	49,	53,	"%.1f",	0,	NULL,	NULL,	NULL },
-	{ "ups.realpower",		0,	NULL,	"WA\r",	"",	80,	'(',	"",	37,	41,	"%.1f",	0,	NULL,	NULL,	innovart31_x1000 },
-	{ "ups.power",		0,	NULL,	"WA\r",	"",	80,	'(',	"",	43,	47,	"%.1f",	0,	NULL,	NULL,	innovart31_x1000 },
+	{ "ups.realpower",		0,	NULL,	"WA\r",	"",	80,	'(',	"",	37,	41,	"%.1f",	0,	NULL,	NULL,	qx_multiply_x1000 },
+	{ "ups.power",		0,	NULL,	"WA\r",	"",	80,	'(',	"",	43,	47,	"%.1f",	0,	NULL,	NULL,	qx_multiply_x1000 },
 
 	/*
 	 * > [BPS\r]
@@ -87,9 +76,6 @@ static item_t	innovart31_qx2nut[] = {
 
 	/* Bypass parameters */
 	{ "input.bypass.voltage",		0,	NULL,	"BPS\r",	"",	24,	'(',	"",	1,	5,	"%.1f",	0,	NULL,	NULL,	NULL },
-/*	{ "input.bypass.L1-N.voltage",		0,	NULL,	"BPS\r",	"",	24,	'(',	"",	1,	5,	"%.1f",	0,	NULL,	NULL,	NULL },
-	{ "input.bypass.L2-N.voltage",		0,	NULL,	"BPS\r",	"",	24,	'(',	"",	7,	11,	"%.1f",	0,	NULL,	NULL,	NULL },
-	{ "input.bypass.L3-N.voltage",		0,	NULL,	"BPS\r",	"",	24,	'(',	"",	13,	17,	"%.1f",	0,	NULL,	NULL,	NULL },*/
 	{ "input.bypass.frequency",		0,	NULL,	"BPS\r",	"",	24,	'(',	"",	19,	22,	"%.1f",	0,	NULL,	NULL,	NULL },
 
 	/*
@@ -165,8 +151,8 @@ static item_t	innovart31_qx2nut[] = {
 /* Testing table */
 #ifdef TESTING
 static testing_t	innovart31_testing[] = {
-	{ "Q1\r",	"(215.0 195.0 230.0 014 49.0 22.7 30.0 00000000\r",	-1 },
 	{ "Q6\r",	"(227.0 225.6 230.0 50.0 229.9 000.0 000.0 49.9 007 000 000 327.8 000.0 23.0 06932 100 32 00000000 00000000 11\r",	-1 },
+	{ "Q1\r",	"(215.0 195.0 230.0 014 49.0 22.7 30.0 00000000\r",	-1 },
 	{ "WA\r",	"(001.4 000.0 000.0 001.4 000.0 000.0 001.4 001.4 006.5 000.0 000.0 007 00000000\r",	-1 },
 	{ "BPS\r",	"(230.4 000.0 000.0 49.9\r",	-1 },
 	{ "F\r",	"#230.0 087 288.0 50.0\r",	-1 },
@@ -184,10 +170,53 @@ static testing_t	innovart31_testing[] = {
 };
 #endif	/* TESTING */
 
+/* == Support functions == */
+
+/* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0 */
+static int	innovart31_claim(void)
+{
+	/* We need Q6, Q1, WA, BPS, F, FW? and SASV07? to use this subdriver */
+	struct {
+		char	*var;
+		char	*cmd;
+	} mandatory[] = {
+		{ "input.L1-N.voltage", "Q6" },
+		{ "ups.type", "Q1" },
+		{ "output.current", "WA" },
+		{ "input.bypass.voltage", "BPS" },
+		{ "input.voltage.nominal", "F" },
+		{ "ups.firmware", "FW?" },
+		{ "ups.serial", "SASV07?" },
+		{ NULL, NULL}
+	};
+	int vari;
+	char *sp;
+	item_t *item;
+
+	for (vari = 0; mandatory[vari].var; vari++) {
+		sp = mandatory[vari].var;
+		item = find_nut_info(sp, 0, 0);
+
+		/* Don't know what happened */
+		if (!item)
+			return 0;
+
+		/* No reply/Unable to get value */
+		if (qx_process(item, NULL))
+			return 0;
+
+		/* Unable to process value */
+		if (ups_infoval_set(item) != 1)
+			return 0;
+	}
+
+	return 1;
+}
+
 /* Subdriver-specific initups */
 static void	innovart31_initups(void)
 {
-	blazer_initups(innovart31_qx2nut);
+	blazer_initups_light(innovart31_qx2nut);
 }
 
 /* Subdriver-specific initinfo */
@@ -201,11 +230,11 @@ static void	innovart31_initinfo(void)
 /* Subdriver interface */
 subdriver_t	innovart31_subdriver = {
 	INNOVART31_VERSION,
-	blazer_claim,
+	innovart31_claim,
 	innovart31_qx2nut,
 	innovart31_initups,
 	innovart31_initinfo,
-	blazer_makevartable,
+	blazer_makevartable_light,
 	"ACK",
 	"NAK\r",
 #ifdef TESTING

@@ -99,7 +99,7 @@
 # ifdef _WIN32_WINNT
 #  undef _WIN32_WINNT
 # endif
-#endif
+#endif	/* WIN32 */
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER)
 # pragma GCC diagnostic push
