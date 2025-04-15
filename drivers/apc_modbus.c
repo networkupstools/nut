@@ -38,7 +38,7 @@
 #else
 # define DRIVER_NAME "NUT APC Modbus driver without USB support"
 #endif
-#define DRIVER_VERSION "0.11"
+#define DRIVER_VERSION "0.12"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1020,11 +1020,11 @@ static void _apc_modbus_handle_error(modbus_t *ctx)
 	if (wsa_error == WSAETIMEDOUT) {
 		flush = 1;
 	}
-#else
+#else	/* !WIN32 */
 	if (errno == ETIMEDOUT) {
 		flush = 1;
 	}
-#endif /* WIN32 */
+#endif /* !WIN32 */
 
 	if (flush > 0 && flush_retries++ < 5) {
 		usleep(1000000);
@@ -1480,6 +1480,7 @@ void upsdrv_updateinfo(void)
 
 	alarm_init();
 	status_init();
+	buzzmode_init();
 
 	/* Status Data */
 	if (_apc_modbus_read_registers(modbus_ctx, 0, 27, regbuf)) {
@@ -1507,7 +1508,7 @@ void upsdrv_updateinfo(void)
 			status_set("TEST");
 		}
 		if (value & (1 << 13)) {
-			status_set("HE"); /* High efficiency / ECO mode*/
+			buzzmode_set("vendor:apc:HE"); /* High efficiency / ECO mode*/
 		}
 		if (value & (1 << 21)) {
 			status_set("OVER");
@@ -1564,6 +1565,7 @@ void upsdrv_updateinfo(void)
 
 	alarm_commit();
 	status_commit();
+	buzzmode_commit();
 	dstate_dataok();
 }
 

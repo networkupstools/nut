@@ -24,8 +24,6 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.2 to 2.8.3
 ---------------------------
 
-- PLANNED: Keep track of any further API clean-up?
-
 - NUT development snapshots can now have more version components than the
   standard semantic versioning triplet, optionally adding the amount of
   commits on the development trunk since previous release, and the amount
@@ -42,12 +40,17 @@ Changes from 2.8.2 to 2.8.3
   if this is required, a (NUT_)VERSION_FORCED_SEMVER envvar or file can
   help identify the actual NUT release version triplet used on the box.
   Please use it, it immensely helps with community troubleshooting!
+  Documentation about this would be maintained in `docs/nut-versioning.adoc`
   [issue #1949]
 
 - When packaging or custom-building for (Linux) distributions with systemd,
   you can now take advantage of `nut-systemd.preset` file to enable or
   disable certain NUT units by default; its comments document each choice.
   [issue #2721]
+
+- A `nut-udev-settle.service` was introduced to replace dependency on the
+  `systemd-udev-settle.service` which is deprecated and causes warnings on
+  some systems. It was shown to benefit NUT use-cases however. [#2638]
 
 - Reference packages prepared by `make package` should now separate the
   `PACKAGE_VERSION` from the platform-dependent prefix by a dash character
@@ -57,12 +60,57 @@ Changes from 2.8.2 to 2.8.3
   depending on `target_cpu` of the build. If you had any scripts relying
   on the older pattern, they may have to be updated.
 
+- The `make dist` goal now takes more care to require availability of the
+  man pages to put into the prepared distribution archive. Development and CI
+  builds on platforms unable to fulfill this goal can use `make distcheck-ci`
+  (and `make dist-ci`) to fake presence of pre-built man pages with placeholder
+  files, to complete other aspects of `distcheck` validation. [#2842]
+
 - the PyPI distribution of the `PyNUTClient` module tarball should now use a
   lower-cased file name (and immediate versioned directory name inside) to
   match the requirements of link:https://peps.python.org/pep-0625/[PEP-0625].
   The Python module name (and its directory) should remain camel-cased.
   OS distribution package recipes that deliver the module separately (e.g.
   as part of Python ecosystem rather than NUT) may have to adjust. [#2773]
+
+- The NUT-Monitor GUI application localization was updated; `make install`
+  should now deliver also `xx_YY.UTF-8` pattern named symbolic links to the
+  short-named directories and files involved, since some platforms insist
+  on having those for translations to be found -- this should be reflected
+  in OS packaging recipes as well. [#2845]
+
+- New `libupsclient` API methods added:
+  * `upscli_str_add_unique_token()` and `upscli_str_contains_token()`,
+    to help C NUT clients process `ups.status` and similarly structured
+    strings same way as NUT core code base. [#2852, #2859]
+  * `upscli_set_default_connect_timeout()` to modify the internal timeout
+    used by `upscli_connect()` (default 0 still means blocking connections,
+    positive values should time-limit the connection attempts), and
+    `upscli_get_default_connect_timeout()` to retrieve its copy. [#2847]
+
+- Standard NUT clients including `upsc`, `upscmd`, `upsrw`, `upslog`, `upsmon`,
+  `upsimage`, `upsset` and `upsstats`) were updated to default with a 10-second
+  connection establishment timeout in case of name resolution lags or
+  unresponsive hosts (notably a problem with `upsmon` contacting many remote
+  systems at once). This may potentially impact NUT deployments which somehow
+  relied on the blocking behavior of these clients; you can use the
+  `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable to fix this. [#2847]
+
+- Several NUT clients including `upscmd`, `upsrw`, `upsimage`, `upsset`,
+  `upsstats`, and `upslog` (during reconnection), did not `UPSCLI_CONN_TRYSSL`
+  so went plaintext even when secure connections were possible. Fixed to at
+  least try being secure, same way as `upsc` does for a long time. This may
+  cause console or log messages when SSL can not be initialized, you can use
+  the `NUT_QUIET_INIT_SSL` environment variable to suppress them where the
+  cryptography is known to be not set up, so the warnings bring no value. [#2847]
+
+- `lib/*.pc.in`: propagate `-R/PATH` (or equivalent -- as detected by the
+  `configure` script for the currently used compiler and linker toolkits)
+  in `pkg-config` metadata pointing to NUT library installation location
+  (by default not in system prefix) to help third-party clients link with us
+  automatically. If this causes issues, `--disable-ldflags-nut-rpath(-cxx)`
+  options (or `--enable...="..."` with specific linker arguments) can help.
+  [#2782, #2865]
 
 - Updated man page generation with `configure` script options to specify that
   manual sections on the target platform differ from (Linux-based) defaults
@@ -112,6 +160,24 @@ Changes from 2.8.2 to 2.8.3
   and `ondelay` to 120 seconds, in accordance with man page suggestions;
   users with custom settings not divisible by 60 will be loudly warned. [#1394]
 
+- `snmp-ups` subdriver `netvision-mib`: synchronized `netvision_output_info`
+  with the currently available `SOCOMECUPS-MIB.txt`; this can impact some
+  other devices using that MIB (negatively, if the older mappings were
+  indeed correct for any practical cases, and were not a typo). [#2803]
+
+- `nutdrv_qx` fixed `hunnox_protocol()` to honour the optional `novendor`
+  setting for devices that are confused by such query (e.g. DEXP LCD EURO
+  1200VA); it may be remotely possible that some other devices could begin
+  to misbehave due to this fix -- please let us know then. [#2839]
+
+- mge-utalk driver will no longer set non-standard status values `COMMFAULT`
+  and `ALARM` (for a specific status bit); instead, it will set modern
+  `ups.alarm` with values `COMMFAULT` and/or `DEVICEALARM` (and raise
+  an `ALARM` in `ups.status` for either, as standard alarms go). If your
+  clients (e.g. custom parsing scripts) for devices supported by this driver
+  depended on those non-standard tokens in `ups.status`, they would have to
+  be updated to handle the new token values in `ups.alarm` instead. [#2708]
+
 - Added support for `lbrb_log_delay_sec=N` setting to delay propagation of
   `LB` or `LB+RB` state (buggy with APC BXnnnnMI devices/firmwares issued
   circa 2023-2024 which flood the logs with spurious LOWBATT and REPLACEBATT
@@ -158,6 +224,15 @@ Changes from 2.8.2 to 2.8.3
   and one structure (`nutscan_ipmi_t`) updated in a (hopefully) backwards
   compatible manner. [PR #2523, issue #2244 and numerous PRs for it]
 
+- The `nutconf` tool added to main codebase with NUT v2.8.2 release could be
+  packaged as a single program (with just a dependency on `libnutscan`), e.g.
+  the library code with configuration file processing logic was built into it.
+  Starting with NUT v2.8.3, the `libnutconf` may optionally be built as a
+  standalone shared library, to deliver for development of integrations using
+  `--with-dev-libnutconf` option. In this case the `nutconf` tool program would
+  also depend on it for run-time linking. This may have to be considered in
+  packaging recipes. [#2828]
+
 - Internal API change for `sendsignalpid()` and `sendsignalfn()` methods,
   which can impact NUT forks which build using `libcommon.la` and similar
   libraries.  Added new last argument with `const char *progname` (may be
@@ -180,6 +255,7 @@ Changes from 2.8.2 to 2.8.3
   so "make noise" or "bring invaluable insights" to logs or terminal;
   they can generally be used for services and init scripts via `nut.conf`:
   * See `NUT_IGNORE_CHECKPROCNAME` and `NUT_DEBUG_SYSLOG` above. [#1915]
+  * See `NUT_DEFAULT_CONNECT_TIMEOUT` above. [#2847]
   * A `NUT_QUIET_INIT_BANNER` envvar (presence or "true" value) prevents
     tool name and NUT version banner from being printed out when programs
     start. [issues #1789 vs. #316]

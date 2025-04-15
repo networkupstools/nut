@@ -5,13 +5,19 @@
 # a single simple call.
 #
 # Copyright (C):
-#   2022-2024 Jim Klimov <jimklimov+nut@gmail.com>
+#   2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
 
 # Currently we have issues using localization for py3qt5 variant,
 # so if both seem functional, the wrapper would call py2gtk2:
-PREFER_PY2=true
+case "${PREFER_PY2-}" in
+    true|false) ;;
+    "") PREFER_PY2=true ;;
+    *)  echo "Unsupported value of PREFER_PY2='$PREFER_PY2', defaulting to 'true'" >&2
+        PREFER_PY2=true
+        ;;
+esac
 
 # Detect which variant of NUT-Monitor we can run on the local system:
 [ -s "$0"-py2gtk2 -a -x "$0"-py2gtk2 ] && PYTHON_PY2GTK2_SHEBANG="`head -1 "$0"-py2gtk2 | sed 's,^#!,,'`" || PYTHON_PY2GTK2_SHEBANG=""
@@ -56,15 +62,19 @@ done
 
 if [ -n "$PYTHON_PY2GTK2" ] && [ -n "$PYTHON_PY3QT5" ] ; then
     if $PREFER_PY2 ; then
+        echo "Starting $0-py2gtk2 variant..." >&2
         exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
     else
+        echo "Starting $0-py3qt5 variant..." >&2
         exec $PYTHON_PY3QT5 "$0"-py3qt5 "$@"
     fi
 else
     if [ -n "$PYTHON_PY2GTK2" ] ; then
+        echo "Starting $0-py2gtk2 variant..." >&2
         exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
     fi
     if [ -n "$PYTHON_PY3QT5" ] ; then
+        echo "Starting $0-py3qt5 variant..." >&2
         exec $PYTHON_PY3QT5 "$0"-py3qt5 "$@"
     fi
 fi

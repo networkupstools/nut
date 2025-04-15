@@ -43,7 +43,7 @@
 # ifndef ECANCELED
 #  define ECANCELED ERROR_CANCELLED
 # endif
-#endif
+#endif	/* WIN32 */
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

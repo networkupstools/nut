@@ -6,6 +6,7 @@
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2022	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2022 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -51,6 +52,7 @@
 #include "raritan-pdu-mib.h"
 #include "raritan-px2-mib.h"
 #include "baytech-mib.h"
+#include "baytech-rpc3nc-mib.h"
 #include "compaq-mib.h"
 #include "bestpower-mib.h"
 #include "cyberpower-mib.h"
@@ -101,6 +103,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_epdu,		/* This struct comes from : apc-epdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
 	&baytech,			/* This struct comes from : baytech-mib.c */
+	&baytech_rpc3nc,		/* This struct comes from : baytech-rpc3nc-mib.c */
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
 	&compaq,			/* This struct comes from : compaq-mib.c */
 	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
@@ -174,7 +177,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.32"
+#define DRIVER_VERSION	"1.33"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -4181,7 +4184,7 @@ static void mibconf_err(const char *errmsg)
 /* load *mib.conf into an snmp_info_t structure */
 void read_mibconf(char *mib)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 

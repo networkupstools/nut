@@ -7,7 +7,7 @@ Installation instructions
 //GH_MARKUP_1095//ifndef::top_srcdir[]
 //GH_MARKUP_1095//include::docs/asciidoc-vars.conf[]
 //GH_MARKUP_1095//endif::top_srcdir[]
-//GH_MARKUP_1095_INCLUDE_BEGIN//7e01bd198 (2024-10-20) docs/asciidoc-vars.conf: try defining linksrcdoc macro
+//GH_MARKUP_1095_INCLUDE_BEGIN//a6bd83d48 (2025-03-20) docs/asciidoc-vars.conf: document that linkdoc may have further args
 ifndef::asciidoc-vars-nut-included[]
 :asciidoc-vars-nut-included:	true
 // NOTE: The big block of comments and definitions below comes from
@@ -54,6 +54,10 @@ ifndef::asciidoc-vars-nut-included[]
 //   the command shown. This is also needed to properly display links
 //   to manpages in both GitHub and generated docs without defining an
 //   attribute for each manpage.
+// * `linkmanext` and `linkmanext2` macros repeat the behavior of the default ones.
+//   These macros are intended for system man pages (e.g. HTML links might lead
+//   to a generic internet site, or possibly to a distro-provided library
+//   online or locally).
 //
 // Optional attributes set by callers:
 // * `website-url` (defaulted below) may be used for "historic website"
@@ -113,9 +117,9 @@ ifndef::env-github[]
 //     syntax: {linksrcdoc}<document>
 //     -> linksrcdoc:<document>[]
 :linksrcdoc:	linksrcdoc:
-//   * link to doc -> our macro
-//     syntax: {linkdoc}<document>{ld-s}[<display title>]
-//     -> linkdoc:<document>[<display title>]
+//   * link to doc -> our macro (optional 2/3/4 args)
+//     syntax: {linkdoc}<document>{ld-s}[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
+//     -> linkdoc:<document>[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
 :linkdoc:	linkdoc:
 :ld-s:
 //   * link to single doc -> our macro
@@ -130,6 +134,8 @@ ifndef::env-github[]
 :lm-s:		[
 :lm-c:		,
 :lm-e:		]
+:linkmanext:	https://www.die.net/search/?q=
+:linkmanext2:	https://www.die.net/search/?q=
 endif::env-github[]
 //
 // - on GitHub:
@@ -148,8 +154,8 @@ ifdef::env-github[]
 //     syntax: {linksrcdoc}<document>
 //     -> link:<document>[]
 :linksrcdoc:	link:{top_srcdir}/
-//   * link to doc -> link
-//     syntax: {linkdoc}<document>{ld-s}[<display title>]
+//   * link to doc -> link (FIXME: ignore or use 2/3/4 args; currently they are all pasted as <display title> contents!)
+//     syntax: {linkdoc}<document>{ld-s}[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
 //     -> {website-url}docs/<document>.chunked/index.html[<display title>]
 :linkdoc:	{website-url}docs/
 :ld-s:		.chunked/index.html
@@ -166,6 +172,8 @@ ifdef::env-github[]
 :lm-s:		.html[
 :lm-c:		(
 :lm-e:		)]
+:linkmanext:	https://www.die.net/search/?q=
+:linkmanext2:	https://www.die.net/search/?q=
 endif::env-github[]
 endif::asciidoc-vars-nut-included[]
 //
@@ -178,6 +186,12 @@ Packagers have done an excellent and hard work at improving NUT integration
 into their operating system.  On the other hand, distributions and appliances
 tend to package "official releases" of projects such as NUT, and so do not
 deliver latest and greatest fixes, new drivers, bugs and other features.
+
+Stable distributions also tend to deliver minor fixes to the version of
+third-party software (like NUT) a particular release of the operating
+system has initially delivered, so those release lines can be years behind
+development in terms of new features (or bug fixes, if they are not trivial
+to patch into the old code base snapshot used to create the package).
 
 [[Installing_source]]
 Installing from source
@@ -199,7 +213,7 @@ tests>>" section details some more hints about such workflow, including some
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
 
-The <<Config_Prereqs,Prerequisites for building NUT on different OSes>>
+The {linkdoc}qa-guide{ld-s}[NUT Quality Assurance Guide,NUT_Config_Prereqs,docs/config-prereqs.txt]
 document suggests prerequisite packages with tools and dependencies
 available and needed to build and test as much as possible of NUT on
 numerous platforms, written from perspective of CI testing (if you
@@ -299,6 +313,8 @@ Build the programs
 This will build the NUT client and server programs and the
 selected drivers. It will also build any other features that were
 selected during <<Configuration,configuration>> step above.
+
+NOTE: NUT is regularly tested with GNU, BSD and Sun implementations of `make`.
 
 
 Installation
@@ -403,7 +419,7 @@ drivers; this should allow you to follow the below
 instructions. However, don't forget to set up the correct
 permissions later!).
 
-NOTE: if you are using something like udev or devd, make sure
+NOTE: If you are using something like udev or devd, make sure
 these permissions stay set across a reboot.  If they revert to the
 old values, your drivers may fail to start.
 
@@ -455,7 +471,7 @@ ports involved, and to read the production configuration files).
 Pre-requisites
 ^^^^^^^^^^^^^^
 
-The <<Config_Prereqs,Prerequisites for building NUT on different OSes>>
+The {linkdoc}qa-guide{ld-s}[NUT Quality Assurance Guide,NUT_Config_Prereqs,docs/config-prereqs.txt]
 document details tools and dependencies that were added on NUT CI build
 environments, which now cover many operating systems. This should
 provide a decent starting point for the build on yours (PRs to update
@@ -480,16 +496,21 @@ copy the proposed-source URL of that "from" part.
 For example, in some PR this says `jimklimov:issue-1234` and links to
 `https://github.com/jimklimov/nut/tree/issue-1234`.
 For manual git-cloning, just paste that URL into the shell and replace
-the `/tree/` with "`-b`" CLI option for branch selection, like this:
+the `/tree/` with "`-b`" CLI option for branch selection; it also helps
+to keep the workspace directory name dedicated to that PR, like this:
 
 	:; cd /tmp
 	### Checkout https://github.com/jimklimov/nut/tree/issue-1234
-	:; git clone https://github.com/jimklimov/nut -b issue-1234
+	:; git clone https://github.com/jimklimov/nut -b issue-1234 nut-issue-1234
+	:; cd nut-issue-1234
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build (common instructions below)
 
 Testing with CI helper
 ~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: this uses the `ci_build.sh` script to arrange some rituals and
+NOTE: This uses the `ci_build.sh` script to arrange some rituals and
 settings, in this case primarily to default the choice of drivers to
 auto-detection of what can be built, and to skip building documentation.
 Also note that this script supports many other scenarios for CI and
@@ -501,6 +522,9 @@ An "in-place" _testing_ build and run would probably go along these lines:
 	:; cd /tmp
 	:; git clone -b master https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./ci_build.sh inplace
 	### Temporarily stop your original drivers
 	:; ./drivers/nutdrv_qx -a DEVNAME_FROM_UPS_CONF -d1 -DDDDDD \
@@ -555,6 +579,9 @@ This goes similar to usual build and install from Git:
 	:; cd /tmp
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	:; make -j 4 all && make -j 4 check && sudo make install
@@ -583,6 +610,9 @@ symlinks) and to get them started:
 	:; cd /tmp
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	:; make -j 4 all && make -j 4 check && \
@@ -635,6 +665,9 @@ e.g.:
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
 	:; git checkout -b issue-1234 ### your PR branch name, arbitrary
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	### Iterate your code changes (e.g. PR draft), build and install with:
@@ -644,6 +677,13 @@ e.g.:
 	    sudo systemd-tmpfiles --create && \
 	    sudo systemctl restart \
 	        nut-driver-enumerator.service nut-monitor nut-server
+
+Note that to contribute your work back to upstream NUT codebase, you would
+need to create a "fork" of https://github.com/networkupstools/nut on GitHub,
+then `git remote add USERNAME https://github.com/USERNAME/nut`, maybe refresh
+the workspace index with `git fetch --all`, and finally `git push USERNAME`
+(possibly follow further instructions from `git` tooling) to create the
+pull request. For more details, see `docs/developers.txt` in NUT sources.
 
 Next steps after an in-place upgrade
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -668,7 +708,7 @@ Debian, Ubuntu and other derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official Debian packager is part of the NUT Team.
+The official Debian packager used to be part of the NUT Team.
 
 Using your preferred method (apt-get, aptitude, Synaptic, ...), install
 the 'nut' package, and optionally the following:
@@ -825,7 +865,7 @@ and help would be welcome!
 It should currently be possible to build the codebase in native Windows
 with MSYS2/MinGW and cross-building from Linux with mingw (preferably
 in a Debian/Ubuntu container). Refer to
-link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+link:docs/config-prereqs.txt[Prerequisites for building NUT on different OSes]
 and link:scripts/Windows/README.adoc[scripts/Windows/README.adoc file]
 for respective build environment preparation instructions.
 
@@ -874,6 +914,18 @@ For suggestions about setting up the NUT build environment variants
 for Windows, please see link:docs/config-prereqs.txt and/or
 link:scripts/Windows/README.adoc files. Note this is rather experimental
 at this point.
+
+If using USB drivers, such as `usbhid-ups`, `nutdrv_qx` or `blazer_usb`,
+you may benefit from the link:http://zadig.akeo.ie/[Zadig] tool to pin
+the low-level drivers needed for LibUSB and further NUT to interact with
+the hardware.  Otherwise, OS-provided (e.g. "HID Battery") or third-party
+drivers may attach and "steal" bytes from the data stream needed by LibUSB
+rendering it invalid.
+
+NOTE: For more details, see
+link:https://github.com/networkupstools/nut/issues/1690[NUT issue #1690] and
+the link:https://github.com/networkupstools/nut/wiki/NUT-for-Windows[NUT for
+Windows] article on NUT GitHub Wiki.
 
 
 Runtime configuration

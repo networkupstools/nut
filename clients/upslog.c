@@ -43,15 +43,18 @@
 #include "upslog.h"
 #include "str.h"
 
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
+
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 	static	int	reopen_flag = 0, exit_flag = 0;
 	static	size_t	max_loops = 0;
 #ifndef WIN32
 	static	sigset_t	nut_upslog_sigmask;
-#endif
+#endif	/* !WIN32 */
 	/* NOTE: The logbuffer is reused for each loop cycle (each device)
 	 * and the logformat is one for all "systems" in this program run */
 	static	char	logbuffer[LARGEBUF], *logformat = NULL;
@@ -151,7 +154,7 @@ static void set_print_now_flag(int sig)
 
 	/* no need to do anything, the signal will cause sleep to be interrupted */
 }
-#endif
+#endif	/* !WIN32 */
 
 /* handlers: reload on HUP, exit on INT/QUIT/TERM */
 static void setup_signals(void)
@@ -178,7 +181,9 @@ static void setup_signals(void)
 	sa.sa_handler = set_print_now_flag;
 	if (sigaction(SIGUSR1, &sa, NULL) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGUSR1 handler");
-#endif
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 }
 
 static void help(const char *prog)
@@ -212,9 +217,11 @@ static void help(const char *prog)
 	printf("		  and it would not imply foregrounding\n");
 	printf("		- Unlike one '-s ups -l file' spec, you can specify many tuples\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
-	printf("  -V		- Display the version of this software\n");
-	printf("  -h		- Display this help text\n");
-
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -h         - display this help text\n");
 	printf("\n");
 	printf("Some valid format string escapes:\n");
 	printf("\t%%%% insert a single %%\n");
@@ -498,6 +505,7 @@ int main(int argc, char **argv)
 	int	interval = 30, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
 	size_t	monhost_len = 0, loop_count = 0;
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_connect_timeout = NULL;
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
 	struct passwd	*new_uid = NULL;
@@ -510,7 +518,7 @@ int main(int argc, char **argv)
 
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:")) != -1) {
+	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:W:")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
@@ -546,9 +554,9 @@ int main(int argc, char **argv)
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
 #ifndef WIN32
 					monhost_ups_current->logtarget = add_logfile(strsep(&m_arg, ","));
-#else
+#else	/* WIN32 */
 					monhost_ups_current->logtarget = add_logfile(filter_path(strsep(&m_arg, ",")));
-#endif
+#endif	/* WIN32 */
 					monhost_ups_current->ups = NULL;
 					if (m_arg) /* Had a third comma - also unexpected! */
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
@@ -562,9 +570,9 @@ int main(int argc, char **argv)
 			case 'l':
 #ifndef WIN32
 				logfn = optarg;
-#else
+#else	/* WIN32 */
 				logfn = filter_path(optarg);
-#endif
+#endif	/* WIN32 */
 				break;
 
 			case 'i':
@@ -615,6 +623,10 @@ int main(int argc, char **argv)
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 
+			case 'W':
+				net_connect_timeout = optarg;
+				break;
+
 			case 'p':
 				pidfilebase = optarg;
 				break;
@@ -635,6 +647,11 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+			net_connect_timeout);
+	}
+
 	argc -= optind;
 	argv += optind;
 
@@ -650,9 +667,9 @@ int main(int argc, char **argv)
 		monhost = argv[0];
 #ifndef WIN32
 		logfn = argv[1];
-#else
+#else	/* WIN32 */
 		logfn = filter_path(argv[1]);
-#endif
+#endif	/* WIN32 */
 		interval = atoi(argv[2]);
 	}
 
@@ -757,6 +774,7 @@ int main(int argc, char **argv)
 			);
 
 			conn = xmalloc(sizeof(*conn));
+
 			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0) {
 				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
 			}
@@ -869,6 +887,7 @@ int main(int argc, char **argv)
 		}
 
 		monhost_ups_current->ups = xmalloc(sizeof(UPSCONN_t));
+
 		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",
 				upscli_strerror(monhost_ups_current->ups));
@@ -948,11 +967,12 @@ int main(int argc, char **argv)
 		) {
 			/* reconnect if necessary */
 			if (upscli_fd(monhost_ups_current->ups) < 0) {
+
 				upscli_connect(
 					monhost_ups_current->ups,
 					monhost_ups_current->hostname,
 					monhost_ups_current->port,
-					0);
+					UPSCLI_CONN_TRYSSL);
 			}
 
 			run_flist(monhost_ups_current);

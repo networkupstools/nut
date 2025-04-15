@@ -19,7 +19,8 @@
 
 #ifndef WIN32
 #include <sys/ioctl.h>
-#endif
+#endif	/* !WIN32 */
+
 #include "serial.h"
 #include "timehead.h"
 

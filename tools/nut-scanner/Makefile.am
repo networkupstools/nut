@@ -41,6 +41,12 @@ $(top_builddir)/common/libcommon.la: dummy
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else
+# FIXME: this can cause rebuilds of nut_version.h for every mention
+#  (especially if we `configire --enable-force-nut-version-header`,
+#  which is default). This also causes binary build of libupsclient.la
+#  to look up its metadata and generate libupsclient-version.h which
+#  may be a bit of overkill (especially in cross-build cases etc.)
+#  Notably this pops up in `configure && make dist(check)` rituals.
 nut-scanner.c: $(top_builddir)/include/nut_version.h
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
@@ -61,6 +67,10 @@ libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
 libnutscan_la_LIBADD = $(NETLIBS)
 libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
+
+# Make sure generated sources are there when needed
+scan_snmp.c: nutscan-snmp.h
+scan_usb.c: nutscan-usb.h
 
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
@@ -127,8 +137,8 @@ nut_scanner_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
-  libnutscan_la_LIBADD += $(LIBSSL_LIBS)
-  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+  libnutscan_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
+  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
 endif WITH_SSL
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
@@ -182,3 +192,6 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # the root Makefile.am takes care of that!
 #clean-local:
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

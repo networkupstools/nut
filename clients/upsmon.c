@@ -4,7 +4,7 @@
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
      2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-     2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
+     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@
 # include <sys/socket.h>
 # include <unistd.h>
 # include <fcntl.h>
-#else
-# include <wincompat.h>
-#endif
+#else	/* WIN32 */
+# include "wincompat.h"
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -138,11 +138,11 @@ static	int	userfsd = 0, pipefd[2];
 	 * into two upsmon processes for some more security? */
 #ifndef WIN32
 static	int	use_pipe = 1;
-#else
+#else	/* WIN32 */
 	/* Do not fork in WIN32 */
 static	int	use_pipe = 0;
 static HANDLE   mutex = INVALID_HANDLE_VALUE;
-#endif
+#endif	/* WIN32 */
 
 static	utype_t	*firstups = NULL;
 
@@ -152,7 +152,7 @@ static int 	opt_af = AF_UNSPEC;
 	/* signal handling things */
 static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
-#endif
+#endif	/* !WIN32 */
 
 #ifdef HAVE_SYSTEMD
 # define SERVICE_UNIT_NAME "nut-monitor.service"
@@ -199,7 +199,9 @@ static int try_restore_pollfreq(utype_t *ups) {
 	 * power state that is prone to UPS disappearance.
 	 * Note: ECO mode not considered easily fatal here!
 	 */
-	if (!flag_isset(ups->status, ST_ONBATT | ST_OFF | ST_BYPASS | ST_ALARM | ST_CAL)) {
+	if (!flag_isset(ups->status, ST_ONBATT | ST_OFF | ST_BYPASS | ST_ALARM |
+		ST_CAL | ST_OVER | ST_TRIM | ST_BOOST
+	)) {
 		sleepval = pollfreq;
 		return 1;
 	}
@@ -220,7 +222,7 @@ static void wall(const char *text)
 
 	fprintf(wf, "%s\n", text);
 	pclose(wf);
-#else
+#else	/* WIN32 */
 #	define MESSAGE_CMD "message.exe"
 	char * command;
 
@@ -238,7 +240,7 @@ static void wall(const char *text)
 		upslog_with_errno(LOG_NOTICE, "Can't invoke wall");
 	}
 	free(command);
-#endif
+#endif	/* WIN32 */
 }
 
 #ifdef WIN32
@@ -288,7 +290,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 	free(data);
 	return 1;
 }
-#endif
+#endif	/* WIN32 */
 
 static void notify(const char *notice, unsigned int flags, const char *ntype,
 			const char *upsname)
@@ -296,7 +298,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 #ifndef WIN32
 	char	exec[LARGEBUF];
 	int	ret;
-#endif
+#endif	/* !WIN32 */
 
 	upsdebugx(6, "%s: sending notification for [%s]: type %s with flags 0x%04x: %s",
 		__func__, upsname ? upsname : "upsmon itself", ntype, flags, notice);
@@ -357,7 +359,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 	upsdebugx(6, "%s (child): exiting after notifications", __func__);
 
 	exit(EXIT_SUCCESS);
-#else
+#else	/* WIN32 */
 	async_notify_t * data;
 	time_t t;
 
@@ -377,7 +379,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 			0,	/* Creation flags */
 			NULL	/* thread id */
 		      );
-#endif
+#endif	/* WIN32 */
 }
 
 static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
@@ -943,7 +945,7 @@ static void doshutdown(void)
 #ifndef WIN32
 		if (geteuid() != 0)
 			upslogx(LOG_WARNING, "Not root, shutdown may fail");
-#endif
+#endif	/* !WIN32 */
 
 		set_pdflag();
 
@@ -971,7 +973,7 @@ static void doshutdown(void)
 				Sleep(2000);
 			}
 		}
-#endif
+#endif	/* WIN32 */
 
 		sret = system(shutdowncmd);
 
@@ -1045,11 +1047,30 @@ static void setfsd(utype_t *ups)
 	upslogx(LOG_ERR, "FSD set on UPS %s failed: %s", ups->sys, buf);
 }
 
+#ifndef WIN32
+/* handler for alarm when getupsvarfd times out */
+static void read_timeout(int sig)
+{
+	NUT_UNUSED_VARIABLE(sig);
+
+	/* don't do anything here, just return */
+}
+#endif	/* !WIN32 */
+
 static void set_alarm(void)
 {
 #ifndef WIN32
-	alarm(NET_TIMEOUT);
-#endif
+	struct timeval tv;
+	upscli_get_default_connect_timeout(&tv);
+	if (tv.tv_sec == 0) {
+		return;
+	}
+	sa.sa_handler = read_timeout;
+	sigaction(SIGALRM, &sa, NULL);
+	alarm(tv.tv_sec);
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 }
 
 static void clear_alarm(void)
@@ -1064,7 +1085,9 @@ static void clear_alarm(void)
 #  pragma GCC diagnostic pop
 # endif
 	alarm(0);
-#endif
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 }
 
 static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
@@ -1088,14 +1111,28 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 		query[1] = ups->upsname;
 		numq = 2;
 	}
-
+	else
 	if (!strcmp(var, "status")) {
 		query[0] = "VAR";
 		query[1] = ups->upsname;
 		query[2] = "ups.status";
 		numq = 3;
 	}
-
+	else
+	if (!strcmp(var, "buzzword")) {
+		query[0] = "VAR";
+		query[1] = ups->upsname;
+		query[2] = "ups.mode.buzzwords";
+		numq = 3;
+	}
+	else
+	if (!strcmp(var, "X-buzzword")) {
+		query[0] = "VAR";
+		query[1] = ups->upsname;
+		query[2] = "experimental.ups.mode.buzzwords";
+		numq = 3;
+	}
+	else
 	if (!strcmp(var, "alarm")) {
 		/* Opaque string */
 		query[0] = "VAR";
@@ -1239,21 +1276,32 @@ static int is_ups_critical(utype_t *ups)
 
 	if (ups->commstate == 0) {
 		/* Note: ECO mode not considered easily fatal here */
-		if (flag_isset(ups->status, ST_CAL)) {
+
+		/* FIXME: Consider equivalents of alarmcritical for over/trim/boost? */
+		if (flag_isset(ups->status, ST_OVER)) {
 			upslogx(LOG_WARNING,
-				"UPS [%s] was last known to be calibrating "
-				"and currently is not communicating, assuming dead",
+				"UPS [%s] was last known to be overloaded "
+				"and currently is not communicating, "
+				"but we make no assumptions if it is dead now",
 				ups->sys);
-			return 1;
 		}
 
-		if (ups->bypassstate == 1
-		|| flag_isset(ups->status, ST_BYPASS)) {
+		if (flag_isset(ups->status, ST_TRIM)) {
 			upslogx(LOG_WARNING,
-				"UPS [%s] was last known to be on BYPASS "
-				"and currently is not communicating, assuming dead",
+				"UPS [%s] was last known to be "
+				"trimming incoming voltage "
+				"and currently is not communicating, "
+				"but we make no assumptions if it is dead now",
 				ups->sys);
-			return 1;
+		}
+
+		if (flag_isset(ups->status, ST_BOOST)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be "
+				"boosting incoming voltage "
+				"and currently is not communicating, "
+				"but we make no assumptions if it is dead now",
+				ups->sys);
 		}
 
 		if (ups->alarmstate == 1
@@ -1273,6 +1321,23 @@ static int is_ups_critical(utype_t *ups)
 					"dead as the upsmon ALARMCRITICAL option was disabled.",
 					ups->sys);
 			}
+		}
+
+		if (flag_isset(ups->status, ST_CAL)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be calibrating "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (ups->bypassstate == 1
+		|| flag_isset(ups->status, ST_BYPASS)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be on BYPASS "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
 		}
 
 		if (ups->offstate == 1
@@ -1532,6 +1597,81 @@ static void ups_is_notcal(utype_t *ups)
 	}
 }
 
+static void ups_is_over(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_OVER)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !OVER to OVER, so notify */
+
+	do_notify(ups, NOTIFY_OVER, NULL);
+	setflag(&ups->status, ST_OVER);
+}
+
+static void ups_is_notover(utype_t *ups)
+{
+	/* Called when OVER is NOT among known states */
+	if (flag_isset(ups->status, ST_OVER)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTOVER, NULL);
+		clearflag(&ups->status, ST_OVER);
+		try_restore_pollfreq(ups);
+	}
+}
+
+static void ups_is_trim(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_TRIM)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !TRIM to TRIM, so notify */
+
+	do_notify(ups, NOTIFY_TRIM, NULL);
+	setflag(&ups->status, ST_TRIM);
+}
+
+static void ups_is_nottrim(utype_t *ups)
+{
+	/* Called when TRIM is NOT among known states */
+	if (flag_isset(ups->status, ST_TRIM)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTTRIM, NULL);
+		clearflag(&ups->status, ST_TRIM);
+		try_restore_pollfreq(ups);
+	}
+}
+
+static void ups_is_boost(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_BOOST)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !BOOST to BOOST, so notify */
+
+	do_notify(ups, NOTIFY_BOOST, NULL);
+	setflag(&ups->status, ST_BOOST);
+}
+
+static void ups_is_notboost(utype_t *ups)
+{
+	/* Called when BOOST is NOT among known states */
+	if (flag_isset(ups->status, ST_BOOST)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTBOOST, NULL);
+		clearflag(&ups->status, ST_BOOST);
+		try_restore_pollfreq(ups);
+	}
+}
+
 static void ups_fsd(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_FSD)) {		/* no change */
@@ -1570,6 +1710,15 @@ static void drop_connection(utype_t *ups)
 
 	if(flag_isset(ups->status, ST_CAL))
 		upsdebugx(2, "Disconnected UPS [%s] was last seen in status CAL, this UPS might be considered critical later.", ups->sys);
+
+	if(flag_isset(ups->status, ST_OVER))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status OVER, this UPS might be considered critical later.", ups->sys);
+
+	if(flag_isset(ups->status, ST_TRIM))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status TRIM, this UPS might be considered critical later.", ups->sys);
+
+	if(flag_isset(ups->status, ST_BOOST))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status BOOST, this UPS might be considered critical later.", ups->sys);
 
 	/* Note: ECO mode not considered easily fatal here */
 	if(ups->ecostate == 1 || flag_isset(ups->status, ST_ECO))
@@ -1980,9 +2129,9 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		free(powerdownflag);
 #ifndef WIN32
 		powerdownflag = xstrdup(arg[1]);
-#else
+#else	/* WIN32 */
 		powerdownflag = filter_path(arg[1]);
-#endif
+#endif	/* WIN32 */
 
 		if (reload_flag == 0)
 			upslogx(LOG_INFO, "Using power down flag file %s",
@@ -2330,7 +2479,7 @@ static void sigpipe(int sig)
 {
 	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing after signal %i...", sig);
 }
-#endif
+#endif	/* !WIN32 */
 
 /* SIGQUIT, SIGTERM handler */
 static void set_exit_flag(int sig)
@@ -2390,7 +2539,7 @@ static void upsmon_cleanup(void)
 		ReleaseMutex(mutex);
 		CloseHandle(mutex);
 	}
-#endif
+#endif	/* WIN32 */
 }
 
 static void user_fsd(int sig)
@@ -2405,16 +2554,6 @@ static void set_reload_flag(int sig)
 
 	reload_flag = 1;
 }
-
-#ifndef WIN32
-/* handler for alarm when getupsvarfd times out */
-static void read_timeout(int sig)
-{
-	NUT_UNUSED_VARIABLE(sig);
-
-	/* don't do anything here, just return */
-}
-#endif
 
 /* install handlers for a few signals */
 static void setup_signals(void)
@@ -2432,11 +2571,6 @@ static void setup_signals(void)
 	sigaction(SIGQUIT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 
-	/* handle timeouts */
-
-	sa.sa_handler = read_timeout;
-	sigaction(SIGALRM, &sa, NULL);
-
 	/* deal with the ones from userspace as well */
 
 	sa.sa_handler = user_fsd;
@@ -2444,19 +2578,20 @@ static void setup_signals(void)
 
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGCMD_RELOAD, &sa, NULL);
-#else
+#else	/* WIN32 */
 	pipe_create(UPSMON_PIPE_NAME);
-#endif
+#endif	/* WIN32 */
 }
 
 /* remember the last time the ups was not critical (OB + LB) */
 static void update_crittimer(utype_t *ups)
 {
-	/* if !OB, !LB, or CAL, then it's not critical, so log the time */
-	if ((!flag_isset(ups->status, ST_ONBATT))  ||
-		(!flag_isset(ups->status, ST_LOWBATT)) ||
-		(flag_isset(ups->status, ST_CAL))) {
-
+	/* if !OB, !LB, or maybe any of those but also CAL,
+	 * then it's not critical, so log the time */
+	if ( (!flag_isset(ups->status, ST_ONBATT))
+	 ||  (!flag_isset(ups->status, ST_LOWBATT))
+	 ||  (flag_isset(ups->status, ST_CAL))
+	) {
 		time(&ups->lastnoncrit);
 		return;
 	}
@@ -2533,10 +2668,11 @@ static int try_connect(utype_t *ups)
 }
 
 /* deal with the contents of STATUS or ups.status for this ups */
-static void parse_status(utype_t *ups, char *status)
+static void parse_status(utype_t *ups, char *status, char *buzzword, char *buzzwordX)
 {
 	char	*statword, *ptr, other_stat_words[SMALLBUF];
-	int	handled_stat_words = 0, changed_other_stat_words = 0;
+	int	handled_stat_words = 0, changed_other_stat_words = 0,
+		is_eco_buzzword = 0;
 	st_tree_timespec_t	st_start;
 
 	clear_alarm();
@@ -2564,10 +2700,39 @@ static void parse_status(utype_t *ups, char *status)
 		ups_is_notoff(ups);
 	if (!strstr(status, "BYPASS"))
 		ups_is_notbypass(ups);
-	if (!strstr(status, "ECO"))
-		ups_is_noteco(ups);
 	if (!strstr(status, "ALARM"))
 		ups_is_notalarm(ups);
+	if (!strstr(status, "OVER"))
+		ups_is_notover(ups);
+	if (!strstr(status, "TRIM"))
+		ups_is_nottrim(ups);
+	if (!strstr(status, "BOOST"))
+		ups_is_notboost(ups);
+
+	/* NOTE: ECO Should not be happening as a status or alarm anymore
+	 * but we may still notify about changes in the ups.mode.buzzword */
+	if (buzzword && *buzzword && (
+		   !strstr(buzzword, ":ECO")
+		|| !strstr(buzzword, ":ESS")
+		|| !strstr(buzzword, ":HE")
+		|| !strstr(buzzword, ":SMART")
+	)) {
+		is_eco_buzzword = 1;
+	} else
+	if (buzzwordX && *buzzwordX && (
+		   !strstr(buzzwordX, ":ECO")
+		|| !strstr(buzzwordX, ":ESS")
+		|| !strstr(buzzwordX, ":HE")
+		|| !strstr(buzzwordX, ":SMART")
+	)) {
+		is_eco_buzzword = 1;
+	}
+
+	if (!strstr(status, "ECO") && !is_eco_buzzword) {
+		ups_is_noteco(ups);
+	} else if (is_eco_buzzword) {
+		ups_is_eco(ups);
+	}
 
 	statword = status;
 	/* Track what status tokens we no longer see */
@@ -2615,11 +2780,25 @@ static void parse_status(utype_t *ups, char *status)
 			handled++;
 		}
 		else if (!strcasecmp(statword, "ECO")) {
+			/* NOTE: ECO Should not be happening
+			 * as a status or alarm anymore */
 			ups_is_eco(ups);
 			handled++;
 		}
 		else if (!strcasecmp(statword, "ALARM")) {
 			ups_is_alarm(ups);
+			handled++;
+		}
+		else if (!strcasecmp(statword, "OVER")) {
+			ups_is_over(ups);
+			handled++;
+		}
+		else if (!strcasecmp(statword, "TRIM")) {
+			ups_is_trim(ups);
+			handled++;
+		}
+		else if (!strcasecmp(statword, "BOOST")) {
+			ups_is_boost(ups);
 			handled++;
 		}
 		/* do it last to override any possible OL */
@@ -2748,9 +2927,9 @@ static void parse_status(utype_t *ups, char *status)
 /* see what the status of the UPS is and handle any changes */
 static void pollups(utype_t *ups)
 {
-	char	status[SMALLBUF];
+	char	status[SMALLBUF], buzzmode[SMALLBUF], buzzmodeX[SMALLBUF];
 	int	pollfail_log = 0;	/* if we throttle, only upsdebugx() but not upslogx() the failures */
-	int	upserror;
+	int	upserror, got_status, got_buzzmode, got_buzzmodeX;
 
 	/* try a reconnect here */
 	if (!flag_isset(ups->status, ST_CLICONNECTED)) {
@@ -2766,7 +2945,14 @@ static void pollups(utype_t *ups)
 
 	set_alarm();
 
-	if (get_var(ups, "status", status, sizeof(status)) == 0) {
+	if ((got_status = get_var(ups, "status", status, sizeof(status))))
+		status[0] = '\0';
+	if ((got_buzzmode = get_var(ups, "buzzword", buzzmode, sizeof(buzzmode))))
+		buzzmode[0] = '\0';
+	if ((got_buzzmodeX = get_var(ups, "X-buzzword", buzzmodeX, sizeof(buzzmodeX))))
+		buzzmodeX[0] = '\0';
+
+	if (got_status == 0 || got_buzzmode == 0 || got_buzzmodeX == 0) {
 		clear_alarm();
 
 		/* reset pollfail log throttling */
@@ -2789,7 +2975,7 @@ static void pollups(utype_t *ups)
 		ups->pollfail_log_throttle_state = upserror;
 		ups->pollfail_log_throttle_count = -1;
 
-		parse_status(ups, status);
+		parse_status(ups, status, buzzmode, buzzmodeX);
 		return;
 	}
 
@@ -3007,18 +3193,21 @@ static void help(const char *arg_progname)
 	printf("		 - stop: stop monitoring and exit\n");
 #ifndef WIN32
 	printf("  -P <pid>	send the signal above to specified PID (bypassing PID file)\n");
-#endif
+#endif	/* !WIN32 */
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
-	printf("  -V		display the version of this software\n");
-	printf("  -h		display this help\n");
 	printf("  -K		checks POWERDOWNFLAG (%s), sets exit code to 0 if set\n",
 		powerdownflag ? powerdownflag : "***NOT CONFIGURED***");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
 
@@ -3073,7 +3262,7 @@ static void runparent(int fd)
 	close(fd);
 	exit(EXIT_SUCCESS);
 }
-#endif
+#endif	/* !WIN32 */
 
 /* fire up the split parent/child scheme */
 static void start_pipe(void)
@@ -3105,7 +3294,8 @@ static void start_pipe(void)
 
 	/* prevent pipe leaking to NOTIFYCMD */
 	set_close_on_exec(pipefd[1]);
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
+	/* NOTE: Not applicable to WIN32 - no parent/child split */
 }
 
 static void delete_ups(utype_t *target)
@@ -3285,12 +3475,13 @@ static void init_Inhibitor(const char *prog)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_connect_timeout = NULL;
 	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
 
 #ifndef WIN32
 	pid_t	oldpid = -1;
 	int	cmd = 0;
-#else
+#else	/* WIN32 */
 	const char * cmd = NULL;
 	DWORD ret;
 
@@ -3312,7 +3503,7 @@ int main(int argc, char *argv[])
 	else {
 		prog = drv_name;
 	}
-#endif
+#endif	/* WIN32 */
 
 	print_banner_once(prog, 0);
 
@@ -3323,7 +3514,7 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46")) != -1) {
+	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46W:")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg))) {
@@ -3345,7 +3536,7 @@ int main(int argc, char *argv[])
 				if ((oldpid = parsepid(optarg)) < 0)
 					help(argv[0]);
 				break;
-#endif
+#endif	/* !WIN32 */
 			case 'D':
 				nut_debug_level++;
 				nut_debug_level_args++;
@@ -3387,6 +3578,9 @@ int main(int argc, char *argv[])
 			case '6':
 				opt_af = AF_INET6;
 				break;
+			case 'W':
+				net_connect_timeout = optarg;
+				break;
 			default:
 				help(argv[0]);
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -3414,6 +3608,11 @@ int main(int argc, char *argv[])
 				nut_debug_level_args = l;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
+	}
+
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+			net_connect_timeout);
 	}
 
 	/* Note: "cmd" may be non-trivial to command that instance by
@@ -3604,7 +3803,7 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 		/* Note: upsmon does not fork in WIN32 */
 		upslogx(LOG_INFO, "Warning: running as one big root process by request (upsmon -p)");
-#endif
+#endif	/* !WIN32 */
 
 		writepid(prog);
 	}
@@ -3629,7 +3828,7 @@ int main(int argc, char *argv[])
 		struct timeval	start, end, now;
 #ifndef WIN32
 		struct timeval	prev;
-#endif
+#endif	/* !WIN32 */
 		double	dt = 0;
 		int	sleep_overhead_tolerance = 5;
 
@@ -3819,7 +4018,7 @@ int main(int argc, char *argv[])
 		gettimeofday(&end, NULL);
 		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %.06f",
 			sleepval, difftimeval(end, start));
-#else
+#else	/* WIN32 */
 		maxhandle = 0;
 		memset(&handles, 0, sizeof(handles));
 
@@ -3886,7 +4085,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-#endif
+#endif	/* WIN32 */
 
 		/* General-purpose handling of time jumps for OSes/run-times
 		 * without NUT direct support for suspend/inhibit */

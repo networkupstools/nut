@@ -3,7 +3,7 @@
 
     Copyright (C)
         2012	Vaclav Krpec <VaclavKrpec@Eaton.com>
-        2024    Jim Klimov <jimklimov+nut@gmail.com>
+        2024-2025    Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -196,6 +196,7 @@ void NutConfigUnitTest::testNutConfiguration() {
 
 void NutConfigUnitTest::testUpsmonConfiguration() {
 	nut::UpsmonConfiguration config;
+	nut::BoolInt	*tmpPtr = nullptr;
 
 	// Note: this file gets generated from a .in template
 	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_BUILDDIR "/conf/upsmon.conf.sample");
@@ -212,10 +213,10 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 	// Hm, maybe we need typed constructors to init
 	// the values for test? ("new" weirdness below
 	// is due to Settable<> formal type mismatch)
-	config.shutdownExit  = (*(new nut::BoolInt()) << "true");
+	config.shutdownExit  = (*(tmpPtr = new nut::BoolInt()) << "true"); delete tmpPtr;
 	config.oblbDuration  = -1;
-	config.certVerify    = (*(new nut::BoolInt()) << false);
-	config.forceSsl      = (*(new nut::BoolInt()) << "1");
+	config.certVerify    = (*(tmpPtr = new nut::BoolInt()) << false); delete tmpPtr;
+	config.forceSsl      = (*(tmpPtr = new nut::BoolInt()) << "1"); delete tmpPtr;
 
 	config.certIdent.certName    = "My test cert";
 	config.certIdent.certDbPass  = "DbPwd!";
@@ -223,14 +224,14 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 	nut::CertHost certHost;
 	certHost.host        = "remote:3493";
 	certHost.certName    = "NUT server cert";
-	certHost.certVerify  = (*(new nut::BoolInt()) << "true");
-	certHost.forceSsl    = (*(new nut::BoolInt()) << 0);
+	certHost.certVerify  = (*(tmpPtr = new nut::BoolInt()) << "true"); delete tmpPtr;
+	certHost.forceSsl    = (*(tmpPtr = new nut::BoolInt()) << 0); delete tmpPtr;
 	config.certHosts.push_back(certHost);
 
 	certHost.host        = "localhost:13493";
 	certHost.certName    = "My NUT server cert";
-	certHost.certVerify  = (*(new nut::BoolInt()) << "false");
-	certHost.forceSsl    = (*(new nut::BoolInt()) << false);
+	certHost.certVerify  = (*(tmpPtr = new nut::BoolInt()) << "false"); delete tmpPtr;
+	certHost.forceSsl    = (*(tmpPtr = new nut::BoolInt()) << false); delete tmpPtr;
 	config.certHosts.push_back(certHost);
 
 	// Note: More config data points come from the file loaded above

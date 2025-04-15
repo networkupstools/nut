@@ -2,9 +2,9 @@
  * nhs_ser.c - NUT support for NHS Nobreaks, senoidal line
  *
  *
- * Copyright (C) 2024 - Lucas Willian Bocchi <lucas@lucas.inf.br>
+ * Copyright (C) 2024   Lucas Willian Bocchi <lucas@lucas.inf.br>
  *     Initial Release (as nhs-nut.c)
- * Copyright (C) 2024 - Jim Klimov <jimklimov+nut@gmail.com>
+ * Copyright (C) 2024 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
  *     Codebase adjusted to NUT standards
  *
  * This program is free software; you can redistribute it and/or modify
@@ -224,7 +224,7 @@ static unsigned int	max_checktime = 6000000;	/* max wait time: 6 seconds */
 static unsigned int	send_extended = 0;
 static int		bwritten = 0;
 static unsigned char	datapacket[DATAPACKETSIZE];
-static char		porta[NUT_PATH_MAX] = DEFAULTPORT;
+static char		porta[NUT_PATH_MAX + 1] = DEFAULTPORT;
 static int		baudrate = DEFAULTBAUD;
 static float		minpower = 0;
 static float		maxpower = 0;

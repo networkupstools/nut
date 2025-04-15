@@ -641,6 +641,7 @@ float strtof(const char *nptr, char **endptr)
 		return 0;
 	}
 
+	/* FIXME: LC_NUMERIC=C for dot floats */
 	i = sscanf(nptr, "%f", &d);
 	if (i < 1) {
 		errno = EINVAL;

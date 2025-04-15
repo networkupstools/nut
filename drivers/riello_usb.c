@@ -436,7 +436,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	case -EPROTO:		/* Protocol error */
 # endif
 		break;
-#endif
+#endif	/* !WIN32 */
 
 	default:
 		break;

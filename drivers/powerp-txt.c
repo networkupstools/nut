@@ -36,7 +36,7 @@
 
 #include <ctype.h>
 
-#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.61"
+#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.62"
 
 typedef struct {
 	float          i_volt;
@@ -267,13 +267,13 @@ static void powpan_initinfo(void)
 	if (powpan_command("P3\r") > 0) {
 
 		if ((s = strtok(&powpan_answer[1], ",")) != NULL) {
-			dstate_setinfo("battery.voltage.nominal", "%g", strtod(s, NULL));
+			dstate_setinfo("battery.voltage.nominal", "%f", strtod(s, NULL));
 		}
 		if ((s = strtok(NULL, ",")) != NULL) {
 			dstate_setinfo("battery.packs", "%li", strtol(s, NULL, 10));
 		}
 		if ((s = strtok(NULL, ",")) != NULL) {
-			dstate_setinfo("battery.capacity", "%g", strtod(s, NULL));
+			dstate_setinfo("battery.capacity", "%f", strtod(s, NULL));
 		}
 	}
 
@@ -412,7 +412,7 @@ static ssize_t powpan_status(status_t *status)
 	}
 
 	for (i = 1; i <= ret; i++) {
-		if (i == ret || isalpha(powpan_answer[i])) {
+		if (i == ret || isalpha((unsigned char)(powpan_answer[i]))) {
 			value[ofs++] = '\0';
 			valid++;
 
@@ -502,7 +502,7 @@ static int powpan_updateinfo(void)
 	if (status.has_b_volt) {
 		dstate_setinfo("battery.voltage", "%.1f", status.b_volt);
 		if (status.b_volt > 20.0 && status.b_volt < 28.0) {
-			dstate_setinfo("battery.voltage.nominal", "%g", 24.0);
+			dstate_setinfo("battery.voltage.nominal", "%f", 24.0);
 		}
 	}
 	if (status.has_o_freq) {

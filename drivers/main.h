@@ -8,7 +8,7 @@
 #include "extstate.h"
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 /* public functions & variables from main.c, documented in detail there */
 extern const char	*progname, *upsname, *device_name;
@@ -180,10 +180,10 @@ void setup_signals(void);
 #   pragma warn "This OS lacks SIGURG and SIGWINCH, will not handle SIGCMD_DATA_DUMP"
 #  endif
 # endif
-#else
-/* FIXME: handle WIN32 builds for other signals too */
+#else	/* WIN32 */
+/* FIXME NUT_WIN32_INCOMPLETE : handle WIN32 builds for other signals too */
 # define SIGCMD_EXIT                    "driver.exit"
-# define SIGCMD_RELOAD_OR_ERROR         "driver.reload-or-error"
+# define SIGCMD_RELOAD_OR_ERROR         "driver.reload-or-error"	/* NUT_WIN32_INCOMPLETE */
 #endif	/* WIN32 */
 
 #endif /* NUT_MAIN_H_SEEN */

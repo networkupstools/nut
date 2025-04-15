@@ -23,9 +23,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #ifdef HAVE_POLL_H
 # include <poll.h> /* nfds_t */
@@ -196,14 +196,14 @@ static int getdata(void)
 	int ret = -1;
 #ifndef WIN32
 	int fd_flags;
-#else
+#else	/* WIN32 */
 	/* Note: while the code below uses "pollfd" for simplicity as it is
 	 * available in mingw headers (although poll() method usually is not),
 	 * WIN32 builds use WaitForMultipleObjects(); see also similar code
 	 * in upsd.c for networking.
 	 */
 	HANDLE event = NULL;
-#endif
+#endif	/* WIN32 */
 
 	state_get_timestamp((st_tree_timespec_t *)&start);
 
@@ -243,7 +243,7 @@ static int getdata(void)
 		ret = -1;
 		goto getdata_return;
 	}
-#else
+#else	/* WIN32 */
 	event = CreateEvent(
 		NULL,  /* Security */
 		FALSE, /* auto-reset */
@@ -252,7 +252,7 @@ static int getdata(void)
 
 	/* Associate socket event to the socket via its Event object */
 	WSAEventSelect( p.fd, event, FD_CONNECT );
-#endif
+#endif	/* WIN32 */
 
 	p.events=POLLIN;
 
@@ -263,9 +263,9 @@ static int getdata(void)
 	/* TODO: double-check for poll() in configure script */
 #ifndef WIN32
 	while(poll(&p,1,15000)==1)
-#else
+#else	/* WIN32 */
 	while (WaitForMultipleObjects(1, &event, FALSE, 15000) == WAIT_TIMEOUT)
-#endif
+#endif	/* WIN32 */
 	{
 		if(read(p.fd,&n,2)!=2)
 		{
@@ -294,9 +294,9 @@ static int getdata(void)
 
 #ifndef WIN32
 		if(poll(&p,1,15000)!=1)break;
-#else
+#else	/* WIN32 */
 		if (WaitForMultipleObjects(1, &event, FALSE, 15000) != WAIT_OBJECT_0) break;
-#endif
+#endif	/* WIN32 */
 
 		if(read(p.fd,bfr,(size_t)x)!=x)
 		{
@@ -334,7 +334,7 @@ getdata_return:
 #ifdef WIN32
 	if (event != NULL)
 		CloseHandle(event);
-#endif
+#endif	/* WIN32 */
 
 	/* Remove any unprotected entries not refreshed in this run */
 	for(x=0;nut_data[x].info_type;x++)
@@ -389,7 +389,7 @@ void upsdrv_initups(void)
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
 	atexit((void(*)(void))WSACleanup);
-#endif
+#endif	/* WIN32 */
 
 	if(device_path&&*device_path)
 	{

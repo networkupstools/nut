@@ -13,7 +13,7 @@
 #       is to just pick out some strings relevant for tracking config changes.
 #
 # Copyright (C) 2016-2020 Eaton
-# Copyright (C) 2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2020-2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -109,8 +109,11 @@ fi
 ### Also can tune whether a driver "Wants" another service (would consider
 ### ordering if that one is enabled, but live if it is disabled), or if it
 ### "Requires" that (would cause that to start).
-DEPSVC_USB_SYSTEMD="systemd-udev.service systemd-udev-settle.service"
+DEPSVC_USB_SYSTEMD="systemd-udevd.service nut-udev-settle.service"
 DEPREQ_USB_SYSTEMD="Wants"
+# Serial drivers may rely on USB dongles or even custom-owned real ports:
+DEPSVC_SERIAL_SYSTEMD="systemd-udevd.service nut-udev-settle.service"
+DEPREQ_SERIAL_SYSTEMD="Wants"
 DEPSVC_NET_FULL_SYSTEMD="network-online.target systemd-resolved.service ifplugd.service"
 DEPREQ_NET_FULL_SYSTEMD="Wants"
 DEPSVC_NET_LOCAL_SYSTEMD="network.target"
@@ -644,6 +647,7 @@ upsconf_getDriverMedia() {
                     printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
             esac
             ;;
+        # FIXME: other modbus? sysfs like INA219? GPIO? Other local devices?
         *)  printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
     esac
 }
@@ -771,7 +775,7 @@ smf_listInstances_raw() {
 }
 smf_listInstances() {
     # Chop twice, in case there is a leading "svc:/...."
-    smf_listInstances_raw | sed -e 's/^.*://' -e 's/^.*://' | sort -n
+    smf_listInstances_raw | sed -e 's/^.*://' -e 's/^.*://' | sort -k1n -k1
 }
 smf_getSavedMD5() {
     # Query service instance $1
@@ -949,8 +953,11 @@ systemd_registerInstance() {
         network)
             DEPSVC="$DEPSVC_NET_FULL_SYSTEMD"
             DEPREQ="$DEPREQ_NET_FULL_SYSTEMD" ;;
-        serial) ;;
+        serial)
+            DEPSVC="$DEPSVC_SERIAL_SYSTEMD"
+            DEPREQ="$DEPREQ_SERIAL_SYSTEMD" ;;
         '') ;;
+        # FIXME: modbus? sysfs like INA219? GPIO? Other local devices?
         *)  echo "WARNING: Unexpected NUT media type ignored: '${_MED}'" >&2 ;;
     esac
     if [ -n "$DEPSVC" ]; then
@@ -995,7 +1002,7 @@ systemd_listInstances_raw() {
     /bin/systemctl show 'nut-driver@*' -p Id | grep -E '=nut-driver' | sed 's,^Id=,,'
 }
 systemd_listInstances() {
-    systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
+    systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -k1n -k1
 }
 systemd_getSavedMD5() {
     # Query service instance $1 or global section
@@ -1181,7 +1188,7 @@ upslist_readFile() {
 
     if [ "${#UPSCONF_DATA}" != 0 ] ; then
         # Note that section-name brackets should contain a single token
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | grep -E '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | grep -E '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -k1n -k1)" \
             || UPSLIST_FILE=""
         if [ "${#UPSLIST_FILE}" = 0 ] ; then
             echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2

@@ -69,8 +69,8 @@ NUT_MONITOR_COMMON = \
 	app/locale/it/LC_MESSAGES/NUT-Monitor.mo \
 	app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
 
-PYNUT_COMMON_CODE = \
-	module/nut_telnetlib.py
+# Reserved for shipping additional modules or scripts "as is"
+PYNUT_COMMON_CODE =
 
 PYNUT_COMMON_MISC = \
 	module/README.adoc
@@ -84,6 +84,33 @@ NUT_MONITOR_COMMON_TEMPLATE = \
 	app/locale/fr/fr.po \
 	app/locale/it/it.po \
 	app/locale/ru/ru.po
+
+
+# Craft locale subdirs with "xx_YY.UTF-8" patterned names,
+# and similarly alias the "*.po" files inside, as needed
+# by some platforms but not others to find these files.
+install-data-hook-app-locale-symlinks:
+	@cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
+	 for L in fr it ru ; do \
+	    UTF8_NAME="$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	    UTF8_POFILE="$${L}/$${UTF8_NAME}.po" || exit ; \
+	    UTF8_SUBDIR="$${UTF8_NAME}" || exit ; \
+	    rm -f "$${UTF8_POFILE}" || true ; rm -f "$${UTF8_SUBDIR}" || true ; \
+	    $(LN_S) "$$L".po "$${UTF8_POFILE}" || exit ; \
+	    $(LN_S) "$$L" "$${UTF8_SUBDIR}" || exit ; \
+	 done
+
+uninstall-hook-app-locale-symlinks:
+	@RES=0 ; \
+	 cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
+	 for L in fr it ru ; do \
+	    UTF8_NAME="$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	    UTF8_POFILE="$${L}/$${UTF8_NAME}.po" || exit ; \
+	    UTF8_SUBDIR="$${UTF8_NAME}" || exit ; \
+	    rm -f "$${UTF8_POFILE}" || RES=$$? ; \
+	    rm -f "$${UTF8_SUBDIR}" || RES=$$? ; \
+	 done ; \
+	 exit $$RES
 
 PYNUT_TEMPLATE = \
 	module/setup.py.in \
@@ -120,6 +147,14 @@ if WITH_NUT_MONITOR
 nutmonitordir = $(nut_with_nut_monitor_dir)
 nobase_nutmonitor_DATA = $(NUT_MONITOR_DISPATCHER_NOEXEC) $(NUT_MONITOR_COMMON)
 nobase_nutmonitor_SCRIPTS = $(NUT_MONITOR_DISPATCHER_SCRIPT)
+
+# Runs after the rest of automake install goals
+install-data-hook: install-data-hook-app-locale-symlinks
+
+# Not separated into data/exec
+# TOTHINK: Do we only want to call this recipe when uninstalling a NUT build
+#  that could have installed NUT-Monitor in the first place, or in any case?
+uninstall-hook: uninstall-hook-app-locale-symlinks
 
 if HAVE_MSGFMT
 # Note lack of "$<" below - it is a non-portable GNU Make extension

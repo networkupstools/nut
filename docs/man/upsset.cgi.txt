@@ -70,6 +70,10 @@ linkman:upscmd[8].
 ACCESS CONTROL
 --------------
 
+It sends commands and settings via the server linkman:upsd[8] to your driver,
+which manages the hardware for you.  You must use credentials defined in
+linkman:upsd.users[5] file on that data server with appropriate permissions.
+
 upsset will only talk to linkman:upsd[8] servers that have been defined
 in your linkman:hosts.conf[8].  If it complains about "Access to that host
 is not authorized", check your hosts.conf first.

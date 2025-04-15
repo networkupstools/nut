@@ -37,9 +37,9 @@ int nutscan_unload_snmp_library(void);
 
 #ifndef WIN32
 # include <sys/socket.h>
-#else
+#else	/* WIN32 */
 # undef _WIN32_WINNT
-#endif
+#endif	/* WIN32 */
 
 #include <string.h>
 #include <stdio.h>

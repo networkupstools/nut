@@ -2,7 +2,7 @@
 
    Copyright (C) 2001	Russell Kroll <rkroll@exploits.org>
 	2005	 	Arnaud Quette <arnaud.quette@free.fr>
-	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ char * strptime(const char *buf, const char *fmt, struct tm *tm);
 # else
 #  include <string.h> /* memcpy */
 static inline struct tm *localtime_r( const time_t *timer, struct tm *buf ) {
-	/* Note: not thread-safe per se! */
+	/* Note NUT_WIN32_INCOMPLETE : not thread-safe per se! */
 	struct tm *tmp = localtime (timer);
 	memcpy(buf, tmp, sizeof(struct tm));
 	return buf;
@@ -68,10 +68,10 @@ static inline struct tm *localtime_r( const time_t *timer, struct tm *buf ) {
 # else
 #  include <string.h> /* memcpy */
 static inline struct tm *gmtime_r( const time_t *timer, struct tm *buf ) {
-        /* Note: not thread-safe per se! */
-        struct tm *tmp = gmtime (timer);
-        memcpy(buf, tmp, sizeof(struct tm));
-        return buf;
+	/* Note NUT_WIN32_INCOMPLETE : not thread-safe per se! */
+	struct tm *tmp = gmtime (timer);
+	memcpy(buf, tmp, sizeof(struct tm));
+	return buf;
 }
 # endif
 #endif

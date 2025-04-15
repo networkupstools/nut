@@ -14,8 +14,9 @@ Use `snprintf()`.  It's even provided with a compatibility module if the
 target system doesn't have it natively.
 
 If you use `snprintf()` to load some value into a buffer, make sure you
-provide the format string.  Don't use user-provided format strings,
-since that's an easy way to open yourself up to an exploit.
+provide the format string.  Don't use user-provided format strings without
+delicate verification, since that's an easy way to open yourself up to an
+exploit.
 
 Don't use `strcat()`.  We have a neat wrapper for `snprintf()` called
 `snprintfcat()` that allows you to append to `char *` with a format
@@ -25,15 +26,17 @@ Error reporting
 ~~~~~~~~~~~~~~~
 
 Don't call `syslog()` directly.  Use `upslog_with_errno()` and `upslogx()`.
-They may write to the syslog, stderr, or both as appropriate.  This
-means you don't have to worry about whether you're running in the
+They may also write to the `syslog`, `stderr`, or both as appropriate.
+This means you don't have to worry about whether you're running in the
 background or not.
 
 The `upslog_with_errno()` routine prints your message plus the string
-expansion of `errno`. The `upslogx()` just prints the message.
+expansion of current `errno` value. The `upslogx()` just prints the message.
 
 `fatal_with_errno()` and `fatalx()` work the same way, but they
-also `exit(EXIT_FAILURE)` afterwards. Don't call `exit()` directly.
+also `exit(arg)` afterwards, where `arg` is the first argument of the
+`fatal*()` method -- typically `EXIT_FAILURE` or `EXIT_SUCCESS`.
+In most cases, you should not call `exit()` directly.
 
 Debugging information
 ~~~~~~~~~~~~~~~~~~~~~
@@ -186,8 +189,14 @@ It was also seen that cross-builds (e.g. NUT for Windows using mingw on
 Linux) may be unable to define `WIN32` and/or find symbols for linking
 when using a strict-C language standard.
 
-The C++ support expects C++11 or newer (not really configured or tested
-for older C++98 or C++03), modulo features that were deprecated in later
+///////////
+EDITOR NOTE: plus-plus sequences are seen by asciidoc as opening/closing
+tags of "literal" markup, so have to be escaped. But only pairs (the last
+standalone copy in a paragraph should NOT be escaped!)
+///////////
+
+The C\++ support expects C\++11 or newer (not really configured or tested
+for older C\++98 or C\++03), modulo features that were deprecated in later
 language revisions (C++14 onwards) as highlighted by warnings from newer
 compilers.
 
@@ -218,289 +227,15 @@ To ease and automate the build scenarios which were deemed important for
 quality assurance and non-regression checks of NUT, several solutions
 were introduced over time.
 
-Build automation tools and scripts
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-ci_build.sh
-^^^^^^^^^^^
-
-This script was originally introduced (following ZeroMQ/ZProject example)
-to automate CI builds, by automating certain scenarios driven by exported
-environment variables to set particular `configure` options and `make`
-some targets (chosen by the `BUILD_TYPE` envvar). It can also be used
-locally to avoid much typing to re-run those scenarios during development.
-
-Developers can directly use the scripts involved in CI builds to fix
-existing code on their workstations or to ensure support for new
-compilers and C standard revisions, e.g. save a local file like this
-to call the common script with pre-sets:
-
-	$ cat _fightwarn-gcc10-gnu17.sh
-	#!/bin/sh
-
-	BUILD_TYPE=default-all-errors \
-	CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" \
-	CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" \
-	CC=gcc-10 CXX=g++-10 \
-		./ci_build.sh
-
-...and then execute it to prepare a workspace, after which you can go
-fixing bugs file-by-file running a `make` after each save to confirm
-your solutions and uncover the next issue to address :-)
-
-Helpfully, the NUT CI farm build logs report the configuration used for
-each executed stage, so if some build combination fails -- you can just
-scroll to the end of that section and copy-paste the way to reproduce
-an issue locally (on an OS similar to that build case).
-
-Note that while spelling out sets of warnings can help in a quest to
-fix certain bugs during development (if only by removing noise from
-classes of warnings not relevant to the issue one is working on), there
-is a reasonable set of warnings which NUT codebase actively tries to
-be clean about (and checks in CI), detailed in the next section.
-
-For the `ci_build.sh` usage like above, one can instead pass the setting
-via `BUILD_WARNOPT=...`, and require that all emitted warnings are fatal
-for their build, e.g.:
-
-	$ cat _fightwarn-clang9-gnu11.sh
-	#!/bin/sh
-
-	BUILD_TYPE=default-all-errors \
-	BUILD_WARNOPT=hard BUILD_WARNFATAL=yes \
-	CFLAGS="-std=gnu11" \
-	CXXFLAGS="-std=gnu++11" \
-	CC=clang-9 CXX=clang++-9 CPP=clang-cpp \
-		./ci_build.sh
-
-Finally, for refactoring effort geared particularly for fighting the
-warnings which exist in current codebase, the script contains some
-presets (which would evolve along with codebase quality improvements)
-as `BUILD_TYPE=fightwarn-gcc`, `BUILD_TYPE=fightwarn-clang` or plain
-`BUILD_TYPE=fightwarn`:
-
-	BUILD_TYPE=fightwarn-clang ./ci_build.sh
-
-As a rule of thumb, new contributions must not emit any warnings when
-built in GNU99 mode with a `minimal` "difficulty" level of warnings.
-Technically they must survive the part of test matrix across the several
-platforms tested by NUT CI and marked in project settings as required
-to pass, to be accepted for a pull request merge.
-
-Developers aiming to post successful pull requests to improve NUT can
-pass the `--enable-warnings` option to the `configure` script in local
-builds to see how that behaves and ensure that at least in some set-up
-their contribution is viable. Note that different compiler versions and
-vendors (gcc/clang/...), building against different OS and third-party
-dependencies, with different CPU architectures and different language
-specification revisions, might all complain about different issues --
-and catching this in as diverse range of set-ups as possible is why we
-have CI tests.
-
-It can be beneficial for serial developers to set up a local BuildBot,
-Travis or a Jenkins instance with a matrix test job, to test their local
-git repository branches with whatever systems they have available.
-
-* https://github.com/networkupstools/nut/issues/823
-
-While `autoconf` tries its best to provide portable shell code, sometimes
-there are builds of system shell that just fail under stress. If you are
-seeing random failures of `./configure` script in different spots with
-the same inputs, try telling `./ci_build.sh` to loop configuring until
-success (instead of quickly failing), and/or tell `./configure` to use
-another shell at least for the system call-outs, with options like these:
-
-	SHELL=/bin/bash CONFIG_SHELL=/bin/bash CI_SHELL_IS_FLAKY=true \
-	./ci_build.sh
-
-Jenkins CI
-^^^^^^^^^^
-
-Since mid-2021, the NUT CI farm is implemented by several virtual servers
-courteously provided by link:http://fosshost.org[Fosshost] and later by
-link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean].
-
-These run various operating systems as build agents, and a Jenkins instance
-to orchestrate the builds of NUT branches and pull requests on those agents.
-
-This is driven by `Jenkinsfile-dynamatrix` and a Jenkins Shared Library called
-link:https://github.com/networkupstools/jenkins-dynamatrix[jenkins-dynamatrix]
-which prepares a matrix of builds across as many operating systems,
-bitnesses/architectures, compilers, make programs and C/C++ revisions
-as it can -- based on the population of currently available build agents
-and capabilities which they expose as agent labels.
-
-This hopefully means that people interested in NUT can contribute to the
-build farm (and ensure NUT is and remains compatible with their platform)
-by running a Jenkins Swarm agent with certain labels, which would dial
-into https://ci.networkupstools.org/ controller. Please contact the NUT
-maintainer if you want to participate in this manner.
-
-The `Jenkinsfile-dynamatrix` recipe allows NUT CI farm to run different sets
-of build scenarios based on various conditions, such as the name of branch
-being built (or PR'ed against), changed files (e.g. C/C++ sources vs. just
-docs), and some build combinations may be not required to succeed.
-
-For example, the main development branch and pull requests against it must
-cleanly pass all specified builds and tests on various platforms with the
-default level of warnings specified in the `configure` script. These are
-balanced to not run too many build scenarios overall, but just a quick and
-sufficiently representative set.
-
-As another example, there is special handling for "fightwarn" pattern in
-the branch names to run many more builds with varying warning levels and
-more variants of intermediate language revisions, and so expose concerns
-deliberately missed by default warnings levels in "master" branch builds
-(the bar moves over time, as some classes of warnings become extinct from
-our codebase).
-
-Further special handling for branches named like `fightwarn.*89.*` regex
-enables more intensive warning levels for a GNU89 build specifically (which
-are otherwise disabled as noisy yet not useful for supported C99+ builds),
-and is intended to help develop fixes for support of this older language
-revision, if anyone would dare.
-
-Many of those unsuccessful build stages are precisely the focus of the
-"fightwarn" effort, and are currently marked as "may fail", so they end
-up as "UNSTABLE" (seen as orange bubbles in the Jenkins BlueOcean UI, or
-orange cells in the tabular list of stages in the legacy UI), rather than
-as "FAILURE" (red bubbles) for build scenarios that were not expected to
-fail and usually represent higher-priority problems that would block a PR.
-
-Developers whose PR builds (or attempts to fix warnings) did not succeed in
-some cell of such build matrix, can look at the individual logs of that cell.
-Beside indication from the compiler about the failure, the end of log text
-includes the command which was executed by CI worker and can be reproduced
-locally by the developer, e.g.:
-----
-22:26:01  FINISHED with exit-code 2 cmd:  (
-22:26:01  [ -x ./ci_build.sh ] || exit
-22:26:01
-22:26:01  eval BUILD_TYPE="default-alldrv" BUILD_WARNOPT="hard" \
-    BUILD_WARNFATAL="yes" MAKE="make"  CC=gcc-10 CXX=g++-10 \
-    CPP=cpp-10 CFLAGS='-std=gnu99 -m64' CXXFLAGS='-std=gnu++11 -m64' \
-    LDFLAGS='-m64' ./ci_build.sh
-22:26:01  )
-----
-or for autotools-driven scenarios (which prep, configure, build and test
-in separate stages -- so for reproducing a failed build you should also
-look at its configuration step separately):
-----
-22:28:18  FINISHED with exit-code 0 cmd:  ( [ -x configure ] || exit; \
-    eval  CC=clang-9 CXX=clang++-9 CPP=clang-cpp-9 CFLAGS='-std=c11 -m64' \
-    CXXFLAGS='-std=c++11 -m64' LDFLAGS='-m64' time ./configure )
-----
-
-To re-run such scenario locally, you can copy the line from `eval` (but
-without the `eval` keyword itself) up to and including the executed script
-or tool, into your shell. Depending on locally available compilers, you
-may have to tweak the `CC`, `CXX` and `CPP` arguments; note that a `CPP`
-may be specified as `/path/to/CC -E` for GCC and CLANG based toolkits
-at least, if they lack a standalone preprocessor program (e.g. IntelCC).
-
-NOTE: While NUT recipes do not currently recognize a separate `CXXCPP`,
-it would follow similar semantics.
-
-Some further details about the NUT CI farm workers are available in
-link:config-prereqs.txt[config-prereqs.txt] and
-link:ci-farm-lxc-setup.txt[ci-farm-lxc-setup.txt] documents.
-
-AppVeyor CI
-^^^^^^^^^^^
-
-Primarily used for building NUT for Windows on Windows instances provided
-in the cloud -- and so ensure non-regression as well as downloadable archives
-with binary installation prototype area, intended for enthusiastic testing
-(proper packaging to follow). NUT for Windows build-ability was re-introduced
-soon after NUT 2.8.0 release.
-
-This relies on a few prerequisite packages and a common NUT configuration,
-as coded in the `appveyor.yml` file in the NUT codebase.
-
-CircleCI
-^^^^^^^^
-
-Primarily used for building NUT for MacOS on instances provided in the cloud,
-and so ensure non-regression across several Xcode releases.
-
-This relies on a few prerequisite packages and a common NUT configuration,
-as coded in the `.circleci/config.yml` file in the NUT codebase.
-
-Travis CI
-^^^^^^^^^
-
-See the `.travis.yml` file in project sources for a detailed list of third
-party dependencies and a large matrix of `CFLAGS` and compiler versions
-last known to work or to not (yet) work on operating systems available
-to that CI solution.
-
-[NOTE]
-======
-The cloud Travis CI offering became effectively defunct for
-open-source projects in mid-2021, so the `.travis.yml` file in NUT
-codebase is not actively maintained.
-
-Local private deployments of Travis CI are possible, so if anybody does
-use it and has updated markup to share, they are welcome to post PRs.
-======
-
-The NUT project on GitHub has integration with Travis CI to test a large
-set of compiler and option combinations, covering different versions of
-gcc and clang, C standards, and requiring to pass builds at least in a
-mode without warnings (and checking the other cases where any warnings
-are made fatal).
-
-Pre-set warning options
-~~~~~~~~~~~~~~~~~~~~~~~
-
-The options chosen into pre-sets that can be selected by `configure`
-script options are ones we use for different layers of CI tests.
-
-Values to note include:
-
-* `--enable-Werror(=yes/no)` -- make warnings fatal;
-
-* `--enable-warnings(=.../no)` -- enable certain warning presets:
-
-** `gcc-hard`, `clang-hard`, `gcc-medium`, `clang-medium`, `gcc-minimal`,
-   `clang-minimal`, `all` -- actual definitions that are compiler-dependent
-   (the latter just adds `-Wall` which may be relatively portable);
-
-** `hard`, `medium` or `minimal` -- if current compiler is detected as
-   CLANG or GCC, apply corresponding setting from above (or `all` otherwise);
-
-** `gcc` or `clang` -- apply the set of options (regardless of detected
-   compiler) with default "difficulty" hard-coded in `configure` script,
-   to tweak as our codebase becomes cleaner;
-
-** `yes`/`auto` (also takes effect if `--enable-warnings` is requested
-   without an `=ARG` part) -- if current compiler is detected as CLANG
-   or GCC, apply corresponding setting with default "difficulty" from
-   above (or `all` otherwise).
-
-Note that for backwards-compatibility reasons and to help filter out
-introduction of blatant errors, builds with compilers that claim GCC
-compatibility can enable a few easy warning presets by default. This
-can be avoided with an explicit argument to `--disable-warnings` (or
-`--enable-warnings=no`).
-
-All levels of warnings pre-sets for GCC in particular do not enforce
-the `-pedantic` mode for builds with C89/C90/ANSI standard revision
-(as guesstimated by `CFLAGS` content), because nowadays it complains
-more about the system and third-party library headers, than about NUT
-codebase quality (and "our offenses" are mostly something not worth
-fixing in this era, such as the use of `__func__` in debug commands).
-If there still are practical use-cases that require builds of NUT on
-pre-C99 compiler toolkits, pull requests are of course welcome -- but
-the maintainer team does not intend to spend much time on that.
-
-Hopefully this warnings pre-set mechanism is extensible enough if we
-would need to add more compilers and/or "difficulty levels" in the
-future.
-
-Finally, note that such pre-set warnings can be mixed with options
-passed through `CFLAGS` or `CXXFLAGS` values to your local `configure`
-run, but it is up to your compiler how it interprets the resulting mix.
+For more information, and perhaps inspiration for building a similar
+solution, please see the *NUT Quality Assurance and Build Automation Guide*,
+and specifically its chapters on
+linkdoc:qa-guide[Static analysis by compilers,CI_compiler_warnings],
+linkdoc:qa-guide[ci_build.sh script,CI_BUILD_SH,ci_build.adoc],
+linkdoc:qa-guide[Continuous Integration (NUT CI farm)
+technologies,NUTCI_farm_technologies] and
+linkdoc:qa-guide[Continuous Integration (NUT CI farm)
+build agent preparation,NUTCI_farm_agents].
 
 Integrated Development Environments (IDEs) and debugging NUT
 ------------------------------------------------------------
@@ -536,9 +271,9 @@ directory of a project (such as NUT codebase). While `.gitignore` rules
 can take care of not adding your local configuration into the SCM, these
 locations can be wiped by a careless `git clean -fdX`. You are advised
 to explore configuring your IDE to store project configurations outside
-the source codebase location, or to track such directories as `nbproject`
-or `nb-cache` as a separate Git repository (not necessarily a submodule
-of NUT nor really diligently tracked) to avoid such surprises.
+the source codebase location, or to track such subdirectories as `nbproject`
+or `nb-cache` or `.idea` as a separate Git repository (not necessarily a
+submodule of NUT nor really diligently tracked) to avoid such surprises.
 
 IDE notes on Windows
 ~~~~~~~~~~~~~~~~~~~~
@@ -564,7 +299,8 @@ are using the "MinGW X64" profile for GCC builds (nuances may differ for
 
 Also keep in mind that not all dependencies and tools involved in a
 fully-fledged NUT build are easily available or usable on Windows (e.g.
-the spell checker). See the link:config-prereqs.txt[] for better detailed
+the spell checker). See linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for better detailed
 package lists for different operating systems including Windows, and feel
 welcome to post pull requests with suggestions about new tool-chains that
 might fare better than those already tried and documented.
@@ -935,8 +671,8 @@ touch.  If your function or variable names start pushing important code
 off the right margin of the screen, expect them to meet the byte
 chainsaw sooner or later.
 
-All types defined with typedef should end in `_t`, because this is
-easier to read, and it enables tools (such as indent and emacs) to
+All types defined with `typedef` should end in `_t`, because this is
+easier to read, and it enables tools (such as `indent` and `emacs`) to
 display the source code correctly.
 
 Indenting with tabs vs. spaces
@@ -1015,8 +751,8 @@ used in that file will probably be dropped.  If it's something we really
 need, it will be grudgingly reformatted before being included.
 
 When in doubt, have a look at Linus's take on this topic in the Linux
-kernel -- Documentation/CodingStyle.  He's done a far better job of
-explaining this.
+kernel -- link:https://github.com/torvalds/linux/blob/master/Documentation/process/coding-style.rst[Documentation/CodingStyle].
+He's done a far better job of explaining this.
 
 Line breaks
 ~~~~~~~~~~~
@@ -1057,7 +793,7 @@ Whenever a function needs to satisfy a particular API, it can end up
 taking arguments that are not used in practice (think a too-trivial
 signal handler). While some compilers offer the facility of decorations
 like `__attribute__(unused)`, this proved not to be a portable solution.
-Also the abilities of newer C++ standard revisions are of no help to
+Also the abilities of newer C/C++ standard revisions are of no help to
 the vast range of existing systems that run NUT today and expect to be
 able to do so tomorrow (hence the required C99+ support noted above).
 
@@ -1094,15 +830,21 @@ configuration toggle in the GUI. Others may need a plugin, see more at
 https://editorconfig.org/#pre-installed page. There are also command-line
 tools to verify and/or enforce compliance of source files to configuration.
 
+NOTE: A long-standing plan is to define a `clang-format` specification
+for all the different nuances like where we do and don't want spaces
+around parentheses, how to align multi-line conditional expressions, etc.
+in a way that most of the current NUT code base would already conform.
+Taking the first step is the hardest part, so PRs are welcome :)
+
 You can go a long way towards converting your source code to the NUT
 coding style by piping it through the following command:
 
-	indent -kr -i8 -T FILE -l1000 -nhnl
+	:; indent -kr -i8 -T FILE -l1000 -nhnl
 
 This next command does a reasonable job of converting most C++ style
 comments (but not URLs and DOCTYPE strings):
 
-	sed 's#\(^\|[ \t]\)//[ \t]*\(.*\)[ \t]*#/* \2 */#'
+	:; sed 's#\(^\|[ \t]\)//[ \t]*\(.*\)[ \t]*#/* \2 */#'
 
 Emacs users can adjust how tabs are displayed. For example, it is
 possible to set a tab stop to be 3 spaces, rather than the usual 8.
@@ -1262,13 +1004,16 @@ in the vicinity gets a visit.
 Memory leak checking
 ~~~~~~~~~~~~~~~~~~~~
 
-We can't say enough good things about valgrind.  If you do anything with
-dynamic memory in your code, you need to use this.  Just compile with
-`gcc -g` and start the program inside `valgrind`.  Run it through the
-suspected area and then exit cleanly.  valgrind will tell you if you've
-done anything dodgy like freeing regions twice, reading uninitialized
-memory, or if you've leaked memory anywhere.
+We can't say enough good things about valgrind.
 
+If you do anything with dynamic memory in your code, you need to use this.
+Just compile with `gcc -g` and start the program inside `valgrind`.
+Run it through the suspected area and then exit cleanly.  Then valgrind
+will tell you if you've done anything dodgy like freeing regions twice,
+leaving files open, reading uninitialized memory, or if you've leaked
+memory anywhere.
+
+For NUT, there are prepared integrations like `configure --with-valgrind`.
 See also `scripts/valgrind` in NUT sources for a helper tool and resource
 files to suppress common third-party problems.
 
@@ -1288,7 +1033,7 @@ Current preference for suggesting changes is to open a pull request on
 GitHub for the https://github.com/networkupstools/nut/ project.
 
 For some cases, small patches that arrive by mailing list in unified
-format (`diff -u`) as plain text attachments with no HTML and a brief
+format (`diff -Naur`) as plain text attachments with no HTML and a brief
 summary at the top are easy to handle, but sadly also easy to overlook.
 
 If a patch is sent to the nut-upsdev mailing list, it stands a better
@@ -1298,10 +1043,11 @@ for others, or if it is a large change, your best bet is to submit a
 pull request or create an
 link:https://github.com/networkupstools/nut/issues[issue on GitHub].
 
-The issue tracker allows us to track the patches over a longer period
-of time, and it is less likely that a patch will fall through the cracks.
+The issue tracker allows us to track the patches, and related discussion
+for clarifications or a review process, over a longer period of time,
+and it is less likely that a patch will fall through the cracks.
 Posting a reminder to the developers (via the nut-upsdev list) about a
-patch on GitHub is fair game.
+patch on GitHub is fair game, if the maintainers do not react in a few days.
 
 Patch cohesion
 --------------
@@ -1343,9 +1089,9 @@ welcome an entry in the link:docs/acknowledgements.txt[] file as well,
 to track and know the industry players who help make NUT better and more
 useful.
 
-It is nice to update the link:NEWS[] file for significant development
+It is nice to update the link:NEWS.adoc[] file for significant development
 to be seen as part of next release, as well as to update the
-link:UPGRADING[] file for potentially breaking changes and similar
+link:UPGRADING.adoc[] file for potentially breaking changes and similar
 heads-up notes for third-party teams (distribution packagers, clients
 and bindings, etc.)
 
@@ -1353,9 +1099,9 @@ Source code management
 ----------------------
 
 We currently use a Git repository hosted at GitHub to track changes to
-the NUT source code. This allows you to clone the repository (or fork,
-in GitHub parlance), make changes, and post them online for peer review
-prior to integration.
+the NUT source code. This allows you to "fork" the repository (in GitHub
+parlance), "clone" it to your workstation(s), make a new "branch" with
+your changes, and post them back online for peer review prior to integration.
 
 To obtain permission to commit directly to the common upstream NUT repository,
 you must be prepared to spend a fair amount of time contributing to the
@@ -1392,11 +1138,11 @@ Git access
 
 Anonymous Git checkouts are possible:
 
-	git clone git://github.com/networkupstools/nut.git
+	:; git clone git://github.com/networkupstools/nut.git
 
 or
 
-	git clone https://github.com/networkupstools/nut.git
+	:; git clone https://github.com/networkupstools/nut.git
 
 if it is necessary to get around a pesky firewall that blocks the native
 Git protocol.
@@ -1404,7 +1150,16 @@ Git protocol.
 For a quicker checkout (when you don't need the entire repository history),
 you can limit the depth of the clone:
 
-	git clone --depth 1 git://github.com/networkupstools/nut.git
+	:; git clone --depth 1 git://github.com/networkupstools/nut.git
+
+
+OPTIONALLY you can then fetch known git tags, so semantic versions look
+better (based off a recent release, see
+linkdoc:developer-guide[NUT Versioning,versioning,docs/nut-versioning.adoc]
+for more details):
+
+	:; cd nut
+	:; git fetch --tags --all
 
 Mercurial (hg) access
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1431,7 +1186,7 @@ Be aware that the examples in the GitHub blog post might result in a
 checkout that includes all of the current branches, as well as the trunk.
 You are most likely interested in a command line similar to the following:
 
-	svn co https://github.com/networkupstools/nut/trunk nut-trunk-svn
+	:; svn co https://github.com/networkupstools/nut/trunk nut-trunk-svn
 
 Ignoring generated files
 ------------------------
@@ -1462,8 +1217,8 @@ that title is used throughout git.
 
 If your commit is just a change to one component, such as the HCL, upsd or a
 specific driver, prefix your commit message in a way that matches similar
-commits. This helps when searching the repository or tracking down a
-regression.
+commits (typically with the file name(s), check `git log` for inspiration).
+This helps when searching the repository or tracking down a regression.
 
 Referring to previous commits can be tricky. If you are referring to the
 immediate parent of a given commit, it suffices to say "the previous commit".
@@ -1502,6 +1257,7 @@ configuration option.
 For more details see:
 
 * https://github.com/networkupstools/nut/issues/1994
+* https://github.com/networkupstools/nut/wiki/Code-contributions,-PRs,-PGP-and-DCO
 * https://stackoverflow.com/questions/1962094/what-is-the-sign-off-feature-in-git-for
 * https://stackoverflow.com/questions/15015894/git-add-signed-off-by-line-using-format-signoff-not-working
 
@@ -1549,35 +1305,40 @@ If you haven't created a commit out of your local changes yet, and you want to
 fetch the latest code, you can also use +git stash+ before pulling, then +git
 stash pop+ to apply your saved changes.
 
-Here is an example workflow:
+Here is an example workflow (using a slightly older `git` command-line syntax,
+so it works verbatim on more platforms):
 
 ------------------------------------------------------------------------------
-	git clone -o central git://github.com/networkupstools/nut.git
+	:; git clone -o central git://github.com/networkupstools/nut.git
 
-	cd nut
-	git remote add -f username git://github.com/username/nut.git
+	:; cd nut
+	:; git remote add -f USERNAME git://github.com/USERNAME/nut.git
 
-	git checkout master
-	git branch my-new-feature
-	git checkout my-new-feature
+	### OPTIONALLY you can then fetch known git tags, so semantic
+	### versions look better (based off a recent release):
+	:; git fetch --tags --all
+
+	:; git checkout master
+	:; git branch my-new-feature
+	:; git checkout my-new-feature
 
 	# Hack away
 
-	git add changed-file.c
-	git commit -s
+	:; git add changed-file.c
+	:; git commit -s
 
 	# Fix a typo in a file or commit message:
 
-	git commit -s -a --amend
+	:; git commit -s -a --amend
 
 	# Someone committed something to the central repository. Fetch it.
 
-	git fetch central
-	git rebase central/master
+	:; git fetch central
+	:; git rebase central/master
 
 	# Publish your branch to your GitHub repository:
 
-	git push username my-new-feature
+	:; git push USERNAME my-new-feature
 ------------------------------------------------------------------------------
 
 If you are new to Git, but are familiar with SVN, some of the following links
@@ -1608,8 +1369,9 @@ ensure that after you change a `Makefile.am`, nearby `Makefile.in` and
 
 [NOTE]
 ======
-See the link:config-prereqs.txt[] for better detailed package lists for
-different operating systems.
+See linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for better detailed
+package lists for different operating systems.
 
 See `ci_build.sh` for automating many practical scenarios, for easier
 iterations.
@@ -1627,7 +1389,8 @@ Even if you do not use your distribution's packages of NUT, installing the
 distribution's list of build dependencies for NUT can reduce the amount of
 trial-and-error when installing dependencies. For instance, in Debian, you
 can run `apt-get build-dep nut` to install all of the auto* tools as well
-as any development libraries and headers.
+as any development libraries and headers -- as known for the version of NUT
+packaged with the OS distribution release you are using.
 
 After running `./autogen.sh`, you can pass your local configuration
 options to `./configure` and run `make` from the top-level directory.
@@ -1654,9 +1417,12 @@ There is also `make distcheck`, which runs an even stricter set of
 tests than `make distcheck-light`, but will not work unless you have all
 of the optional third-party libraries and features installed.
 
-Finally note, that since 2017 the GitHub upstream project is monitored
+Finally note, that since 2017 the GitHub upstream project was monitored
 by Travis CI (in addition to earlier multi-platform buildbots which
-occasionally do not work), replaced since 2021 by a dedicated NUT CI farm.
+occasionally did not work), replaced since 2021 by a dedicated NUT CI farm
+and a number of free cloud CI resources to test some 200-300 scenarios
+with different combinations of build environments and tooling implementations.
+
 This means that if your posted improvements are based on current NUT
 "master" branch, the resulting pull request should get tested for a number of
 scenarios automatically. If your code adds a substantial feature, consider

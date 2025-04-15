@@ -10,13 +10,19 @@ This methodology (and Windows support in general) are currently experimental,
 so pull requests are welcome to tie up some loose ends (add more prerequisites,
 test and fix programs, re-enable some code just commented away by `ifdef`'s...)
 
-NOTE: It is possible to prepare a Windows machine with tools and prerequisites
-for building NUT natively, using the MSYS2 environment, as detailed in the
-`docs/config-prereqs.txt` file, and easily handled by NUT common `ci_build.sh`
-script with default parameters. Most prerequisites are already packaged in that
-environment, but notably net-snmp is missing -- however it can be built from
-source following this document. Possibly, the instructions below would converge
-in that document over time to keep it simple.
+[NOTE]
+======
+It is possible to prepare a Windows machine with tools and prerequisites
+for building NUT natively, using the MSYS2 environment, as detailed in
+linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt], and easily handled
+by NUT common `ci_build.sh` script with default parameters.
+
+Most prerequisites are already packaged in that environment, but notably
+`net-snmp` is missing -- however it can be built from source following this
+document. Possibly, the instructions below would converge in that document
+over time to keep it simple.
+======
 
 For additional reference about prerequisite preparation and further ideas for
 the NUT for Windows effort, please see detailed report in the mailing list:
@@ -81,7 +87,8 @@ dependencies as detailed below.
 [NOTE]
 ======
 Be sure to install NUT build prerequisites and toolkits, as detailed
-in `docs/config-prereqs.txt` file.
+in linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt].
 
 If builds complain similarly to
 ----
@@ -111,11 +118,13 @@ When using the compilation approach, you would typically use the following
 and `PREFIX` values:
 
 - prefer either to
++
 ------
 :; export ARCH="x86_64-w64-mingw32"
 ------
 +
 or
++
 ------
 :; export ARCH="i686-w64-mingw32"
 ------
@@ -128,6 +137,7 @@ or
   the `wget -c` used below would skip downloads that are already completed)
 
 - for either-`ARCH` build environment further set:
++
 ------
 :; export HOST_FLAG="--host=$ARCH"
 :; PREFIX="/usr/$ARCH"
@@ -171,6 +181,7 @@ or
 ------
 
 - on Debian/Ubuntu style systems also:
++
 ------
 :; BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
 ------
@@ -178,6 +189,7 @@ or
     Hints for Redhat-style systems are wanted.
 
 - also export the following compilation flags:
++
 ------
 :; export CFLAGS="$CFLAGS -D_POSIX=1 -I${PREFIX}/include/"
 :; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I${PREFIX}/include/"
@@ -187,6 +199,7 @@ or
 
 - prepare the download and build area, e.g. to match copy-paste instructions
 below, it would be like:
++
 ------
 :; DLDIR=~/nut-win-deps
 :; WSDIR="$DLDIR"/"$ARCH"
@@ -599,9 +612,10 @@ https://notroj.github.io/neon/neon-0.32.5.tar.gz or newer (PR was merged after
 libneon 0.32.4 release).
 
 NOTE: Ability to `make docs` here relies on presence of `xmlto` program.
-In NUT CI workers prepared according to `docs/config-prereqs.txt` this should
-be among dependencies for `asciidoc`; beware that with prerequisites it has
-quite a large installation footprint. Alternately check PR #69, or consult
+In NUT CI workers prepared according to linkdoc:qa-guide[Prerequisites for
+building NUT on different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] this
+should be among dependencies for `asciidoc`; beware that with prerequisites it
+has quite a large installation footprint. Alternately check PR #69, or consult
 the Makefiles for current `install` target definition to run its job without
 `install-docs` part (example posted below).
 

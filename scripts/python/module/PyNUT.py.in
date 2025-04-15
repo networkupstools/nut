@@ -61,14 +61,10 @@
 #            since Python 3.11/3.13), so we can fall back on a privately
 #            stashed copy until a better solution is developed.
 #
+# 2025-01-31 cgar <github.com/cgarz> - Version 1.8.0
+#            Removed telnetlib dependency. Switched to using socket directly.
 
-try:
-    import telnetlib
-except ModuleNotFoundError:
-    import os
-    if "true" == os.getenv('DEBUG', 'false'):
-        print( "[DEBUG] Fall back to private copy of telnetlib for PyNUTClient\n" )
-    import nut_telnetlib as telnetlib
+import socket
 
 class PyNUTError( Exception ) :
     """ Base class for custom exceptions """
@@ -84,9 +80,10 @@ class PyNUTClient :
     __password    = None
     __timeout     = None
     __srv_handler = None
+    __recv_leftover = b''
 
-    __version     = "1.7.0"
-    __release     = "2024-07-01"
+    __version     = "1.8.0"
+    __release     = "2025-02-07"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
@@ -110,7 +107,7 @@ timeout  : Timeout used to wait for network response
         self.__port     = port
         self.__login    = login
         self.__password = password
-        self.__timeout  = 5
+        self.__timeout  = timeout
 
         self.__connect()
 
@@ -118,9 +115,26 @@ timeout  : Timeout used to wait for network response
     def __del__( self ) :
         """ Class destructor method """
         try :
-            self.__srv_handler.write( b"LOGOUT\n" )
+            self.__srv_handler.send( b"LOGOUT\n" )
         except :
             pass
+
+    def __read_until(self, finished_reading_data):
+        data = self.__recv_leftover
+        while True:
+            data_end_index = data.find(finished_reading_data)
+            if data_end_index == -1:
+                data += self.__srv_handler.recv(50)  # nut_telnetlib.py uses 50
+            else:
+                break
+        data_end_index += len(finished_reading_data)
+
+        if data_end_index == len(data):
+            self.__recv_leftover = b''
+        else:
+            self.__recv_leftover = data[data_end_index:]
+            data = data[:data_end_index]
+        return data
 
     def __connect( self ) :
         """ Connects to the defined server
@@ -131,23 +145,26 @@ if something goes wrong.
         if self.__debug :
             print( "[DEBUG] Connecting to host" )
 
-        self.__srv_handler = telnetlib.Telnet( self.__host, self.__port )
+        self.__srv_handler = socket.create_connection(
+            (self.__host, self.__port),
+            self.__timeout
+        )
 
         if self.__login != None :
-            self.__srv_handler.write( ("USERNAME %s\n" % self.__login).encode('ascii') )
-            result = self.__srv_handler.read_until( b"\n", self.__timeout )
+            self.__srv_handler.send( ("USERNAME %s\n" % self.__login).encode('ascii') )
+            result = self.__read_until( b"\n" )
             if result[:2] != b"OK" :
                 raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         if self.__password != None :
-            self.__srv_handler.write( ("PASSWORD %s\n" % self.__password).encode('ascii') )
-            result = self.__srv_handler.read_until( b"\n", self.__timeout )
+            self.__srv_handler.send( ("PASSWORD %s\n" % self.__password).encode('ascii') )
+            result = self.__read_until( b"\n" )
             if result[:2] != b"OK" :
                 if result == b"ERR INVALID-ARGUMENT\n" :
                     # Quote the password (if it has whitespace etc)
                     # TODO: Escape special chard like NUT does?
-                    self.__srv_handler.write( ("PASSWORD \"%s\"\n" % self.__password).encode('ascii') )
-                    result = self.__srv_handler.read_until( b"\n", self.__timeout )
+                    self.__srv_handler.send( ("PASSWORD \"%s\"\n" % self.__password).encode('ascii') )
+                    result = self.__read_until( b"\n" )
                     if result[:2] != b"OK" :
                         raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
                 else:
@@ -165,12 +182,12 @@ which is of little concern for Python2 but is important in Python3
         if self.__debug :
             print( "[DEBUG] GetUPSList from server" )
 
-        self.__srv_handler.write( b"LIST UPS\n" )
-        result = self.__srv_handler.read_until( b"\n" )
-        if result != b"BEGIN LIST UPS\n" :
+        self.__srv_handler.send( b"LIST UPS\n" )
+        result = self.__read_until( b"\n" )
+        if result != b"BEGIN LIST UPS\n":
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
-        result = self.__srv_handler.read_until( b"END LIST UPS\n" )
+        result = self.__read_until( b"END LIST UPS\n" )
         ups_list = {}
 
         for line in result.split( b"\n" ) :
@@ -205,13 +222,13 @@ available vars.
         if self.__debug :
             print( "[DEBUG] GetUPSVars called..." )
 
-        self.__srv_handler.write( ("LIST VAR %s\n" % ups).encode('ascii') )
-        result = self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( ("LIST VAR %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
         if result != ("BEGIN LIST VAR %s\n" % ups).encode('ascii') :
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         ups_vars   = {}
-        result     = self.__srv_handler.read_until( ("END LIST VAR %s\n" % ups).encode('ascii') )
+        result     = self.__read_until( ("END LIST VAR %s\n" % ups).encode('ascii') )
         offset     = len( ("VAR %s " % ups ).encode('ascii') )
         end_offset = 0 - ( len( ("END LIST VAR %s\n" % ups).encode('ascii') ) + 1 )
 
@@ -231,12 +248,12 @@ The result is True (reachable) or False (unreachable)
         if self.__debug :
             print( "[DEBUG] CheckUPSAvailable called..." )
 
-        self.__srv_handler.write( ("LIST CMD %s\n" % ups).encode('ascii') )
-        result = self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( ("LIST CMD %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
         if result != ("BEGIN LIST CMD %s\n" % ups).encode('ascii') :
             return False
 
-        self.__srv_handler.read_until( ("END LIST CMD %s\n" % ups).encode('ascii') )
+        self.__read_until( ("END LIST CMD %s\n" % ups).encode('ascii') )
         return True
 
     def GetUPSCommands( self, ups="" ) :
@@ -248,13 +265,13 @@ of the command as value
         if self.__debug :
             print( "[DEBUG] GetUPSCommands called..." )
 
-        self.__srv_handler.write( ("LIST CMD %s\n" % ups).encode('ascii') )
-        result = self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( ("LIST CMD %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
         if result != ("BEGIN LIST CMD %s\n" % ups).encode('ascii') :
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         ups_cmds   = {}
-        result     = self.__srv_handler.read_until( ("END LIST CMD %s\n" % ups).encode('ascii') )
+        result     = self.__read_until( ("END LIST CMD %s\n" % ups).encode('ascii') )
         offset     = len( ("CMD %s " % ups).encode('ascii') )
         end_offset = 0 - ( len( ("END LIST CMD %s\n" % ups).encode('ascii') ) + 1 )
 
@@ -263,8 +280,8 @@ of the command as value
 
             # For each var we try to get the available description
             try :
-                self.__srv_handler.write( ("GET CMDDESC %s %s\n" % ( ups, var )).encode('ascii') )
-                temp = self.__srv_handler.read_until( b"\n" )
+                self.__srv_handler.send( ("GET CMDDESC %s %s\n" % ( ups, var )).encode('ascii') )
+                temp = self.__read_until( b"\n" )
                 if temp[:7] != b"CMDDESC" :
                     raise PyNUTError
                 else :
@@ -285,12 +302,12 @@ The result is presented as a dictionary containing 'key->val' pairs
         if self.__debug :
             print( "[DEBUG] GetUPSVars from '%s'..." % ups )
 
-        self.__srv_handler.write( ("LIST RW %s\n" % ups).encode('ascii') )
-        result = self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( ("LIST RW %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
         if ( result != ("BEGIN LIST RW %s\n" % ups).encode('ascii') ) :
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
-        result     = self.__srv_handler.read_until( ("END LIST RW %s\n" % ups).encode('ascii') )
+        result     = self.__read_until( ("END LIST RW %s\n" % ups).encode('ascii') )
         offset     = len( ("VAR %s" % ups).encode('ascii') )
         end_offset = 0 - ( len( ("END LIST RW %s\n" % ups).encode('ascii') ) + 1 )
         rw_vars    = {}
@@ -313,8 +330,8 @@ The variable must be a writable value (cf GetRWVars) and you must have the prope
 rights to set it (maybe login/password).
         """
 
-        self.__srv_handler.write( ("SET VAR %s %s %s\n" % ( ups, var, value )).encode('ascii') )
-        result = self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( ("SET VAR %s %s %s\n" % ( ups, var, value )).encode('ascii') )
+        result = self.__read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
@@ -329,8 +346,8 @@ Returns OK on success or raises an error
         if self.__debug :
             print( "[DEBUG] RunUPSCommand called..." )
 
-        self.__srv_handler.write( ("INSTCMD %s %s\n" % ( ups, command )).encode('ascii') )
-        result = self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( ("INSTCMD %s %s\n" % ( ups, command )).encode('ascii') )
+        result = self.__read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
@@ -355,12 +372,12 @@ of connection.
                 print( "[DEBUG] DeviceLogin: %s is not a valid UPS" % ups )
             raise PyNUTError( "ERR UNKNOWN-UPS" )
 
-        self.__srv_handler.write( ("LOGIN %s\n" % ups).encode('ascii') )
-        result = self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( ("LOGIN %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
         if ( result.startswith( ("User %s@" % self.__login).encode('ascii')) and result.endswith (("[%s]\n" % ups).encode('ascii')) ):
             # User dummy-user@127.0.0.1 logged into UPS [dummy]
             # Read next line then
-            result = self.__srv_handler.read_until( b"\n" )
+            result = self.__read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
@@ -378,13 +395,13 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
         if self.__debug :
             print( "[DEBUG] PRIMARY called..." )
 
-        self.__srv_handler.write( ("PRIMARY %s\n" % ups).encode('ascii') )
-        result = self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( ("PRIMARY %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
         if ( result != b"OK PRIMARY-GRANTED\n" ) :
             if self.__debug :
                 print( "[DEBUG] Retrying: MASTER called..." )
-            self.__srv_handler.write( ("MASTER %s\n" % ups).encode('ascii') )
-            result = self.__srv_handler.read_until( b"\n" )
+            self.__srv_handler.send( ("MASTER %s\n" % ups).encode('ascii') )
+            result = self.__read_until( b"\n" )
             if ( result != b"OK MASTER-GRANTED\n" ) :
                 if self.__debug :
                     print( "[DEBUG] Primary level functions are not available" )
@@ -392,8 +409,8 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 
         if self.__debug :
             print( "[DEBUG] FSD called..." )
-        self.__srv_handler.write( ("FSD %s\n" % ups).encode('ascii') )
-        result = self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( ("FSD %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
         if ( result == b"OK FSD-SET\n" ) :
             return( "OK" )
         else :
@@ -406,8 +423,8 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
         if self.__debug :
             print( "[DEBUG] HELP called..." )
 
-        self.__srv_handler.write( b"HELP\n" )
-        return self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( b"HELP\n" )
+        return self.__read_until( b"\n" )
 
     def ver(self) :
         """ Send VER command
@@ -416,8 +433,8 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
         if self.__debug :
             print( "[DEBUG] VER called..." )
 
-        self.__srv_handler.write( b"VER\n" )
-        return self.__srv_handler.read_until( b"\n" )
+        self.__srv_handler.send( b"VER\n" )
+        return self.__read_until( b"\n" )
 
     def ListClients( self, ups = None ) :
         """ Returns the list of connected clients from the NUT server
@@ -435,12 +452,12 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list o
             raise PyNUTError( "ERR UNKNOWN-UPS" )
 
         if ups:
-            self.__srv_handler.write( ("LIST CLIENT %s\n" % ups).encode('ascii') )
+            self.__srv_handler.send( ("LIST CLIENT %s\n" % ups).encode('ascii') )
         else:
             # NOTE: Currently NUT does not support just listing all clients
             # (not providing an "ups" argument) => NUT_ERR_INVALID_ARGUMENT
-            self.__srv_handler.write( b"LIST CLIENT\n" )
-        result = self.__srv_handler.read_until( b"\n" )
+            self.__srv_handler.send( b"LIST CLIENT\n" )
+        result = self.__read_until( b"\n" )
         if ( (ups and result != ("BEGIN LIST CLIENT %s\n" % ups).encode('ascii')) or (ups is None and result != b"BEGIN LIST CLIENT\n") ):
             if ups is None and (result == b"ERR INVALID-ARGUMENT\n") :
                 # For ups==None, list all upses, list their clients
@@ -458,11 +475,11 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list o
 
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
-        if ups :
-            result = self.__srv_handler.read_until( ("END LIST CLIENT %s\n" % ups).encode('ascii') )
+        if ups:
+            result = self.__read_until( ("END LIST CLIENT %s\n" % ups).encode('ascii') )
         else:
             # Should not get here with current NUT:
-            result = self.__srv_handler.read_until( b"END LIST CLIENT\n" )
+            result = self.__read_until( b"END LIST CLIENT\n" )
         ups_list = {}
 
         for line in result.split( b"\n" ):

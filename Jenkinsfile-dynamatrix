@@ -117,7 +117,7 @@ import org.nut.dynamatrix.*;
         //'stageNameFunc': null,
         //'dynamatrixAxesLabels': [~/^OS_.+/, 'MAKE'],
         'dynamatrixAxesLabels': ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
-        'single': '( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; \${MAKE} shellcheck )',
+        'single': '( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; \${MAKE} -j 4 shellcheck )',
         'multi': '(cd tests && SERVICE_FRAMEWORK="selftest" SHELL_PROGS="$SHELL_PROGS" ./nut-driver-enumerator-test.sh )',
         'multiLabel': 'SHELL_PROGS',
         'skipShells': [ 'zsh', 'tcsh', 'csh' ]
@@ -214,7 +214,7 @@ import org.nut.dynamatrix.*;
     if ( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) {
         // For our main branches we want all builds in full,
         // to keep reference for warnings-ng up to date, so do
-        // not limit ny appliesToChangedFilesRegex categories
+        // not limit any appliesToChangedFilesRegex categories
 
         // Be sure to not make noise in long-lived branches'
         // overview pages by enabling quick analysis publishing
@@ -255,7 +255,11 @@ import org.nut.dynamatrix.*;
 
     // Imported from jenkins-dynamatrix JSL vars/autotools.groovy:
     // a workaround for the cases of curiously missing MAKE envvar...
-    dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS=\${CONFIG_OPTS:+\\"\$CONFIG_OPTS\\"} )"""
+    // Note that NUT Makefile has a concept of "distcheck-ci" to
+    // cater for documentation files (pre-generated man pages) that
+    // must be present in the dist tarball, but may not be available
+    // or creatable on the build agent - in that case we fake them.
+    dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; if [ x"\${MAKE_OPTS-}" = x ]; then MAKE_OPTS="-j 4"; fi ; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck-ci DISTCHECK_FLAGS=\${CONFIG_OPTS:+\\"\$CONFIG_OPTS\\"} )"""
 
     // Note: shellcheck/spellcheck/... require autotools currently
     // or need to be redefined with respective BUILD_TYPE
@@ -369,7 +373,10 @@ set | sort -n """
                     'CSTDVARIANT': ['gnu']
                     ],
 
-                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'excludeCombos': 'merge' ],
+                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace', 'excludeCombos': 'merge' ],
+                dynamatrixAxesCommonEnv: [
+                    ['CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules']
+                    ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
                     dynacfgPipeline.axisCombos_STRICT_C
@@ -378,6 +385,7 @@ set | sort -n """
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [[~/OS_DISTRO=netbsd/]]	// commented in detail below
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
@@ -389,7 +397,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          branchRegexTarget: ~/fightwarn/,
-         // NOTE: For fightwarn, we want some schenarios that would always build to test
+         // NOTE: For fightwarn, we want some scenarios that would always build to test
          //appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
@@ -411,17 +419,20 @@ set | sort -n """
                 mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace', 'excludeCombos': 'merge' ],
                 dynamatrixAxesCommonEnv: [
                     //['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall\\ -Wextra\\ -Werror', 'CXXFLAGS=-Wall\\ -Wextra\\ -Werror']
-                    ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall']
+                    ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall',
+                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules'
+                    ]
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
                     dynacfgPipeline.axisCombos_STRICT_C,
-                    [~/C.*FLAGS=.+Werror/]
+                    //[~/C.*FLAGS=.+Werror/]
                     ],
                 runAllowedFailure: true,
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [[~/OS_DISTRO=netbsd/]]	// commented in detail below
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
@@ -481,6 +492,10 @@ set | sort -n """
                     // requires a few pkg-config and CFLAGS pre-sets which are
                     // done in ci_build.sh and defeat the purpose of this stage.
                     // So it is easier and more honest to just skip it.
+                    + [[~/OS_DISTRO=netbsd/]]
+                    // NetBSD version on the build agent has issues with pkgsrc
+                    // (lacking -R for some libs) so autotools builds are tricky;
+                    // ci_build.sh imposes some fixes - so see notes for macos.
                 ], body)
             }, // getParStages
         //'bodyParStages': {}

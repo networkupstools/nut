@@ -6,7 +6,7 @@
 # https://www.appveyor.com/docs/build-configuration/
 # https://www.appveyor.com/docs/windows-images-software/
 
-version: 2.8.2.{build}-{branch}
+version: 2.8.3.{build}-{branch}
 
 # base image
 image: Visual Studio 2022
@@ -16,6 +16,8 @@ branches:
   # whitelist
   only:
     - master
+    - FTY
+    - fightwarn
     - /Windows/
 
 platform: x64
@@ -110,7 +112,7 @@ after_test:
         set MSYSTEM=MINGW64
         REM Oh the joys of shell scripting with strings passed through CMD:
         REM Note: currently Python installation path with MSYS is buggy [#1584]
-        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; ) ; date -u'
+        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; rm -rf ./.inst/NUT-for-Windows-x86_64-SNAPSHOT || true ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; ) ; date -u'
         cd .inst
         7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
   - cmd: |
