@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# NOTE: bash syntax (non-POSIX script) is used below!
+#
 # script to cross compile NUT for Windows from Linux using MinGW-w64
 # http://mingw-w64.sourceforge.net/
 
@@ -9,15 +12,9 @@ SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 
 DLLLDD_SOURCED=true . "${SCRIPTDIR}/dllldd.sh"
 
-# default to update source then build
-WINDIR=$(pwd)
-TOP_DIR=$WINDIR/../..
-BUILD_DIR=$WINDIR/nut_build
-INSTALL_DIR=$WINDIR/nut_install
-
 # This should match the tarball and directory name,
 # if a stable version is used:
-[ -n "$VER_OPT" ] || VER_OPT=2.8.0
+[ -n "$VER_OPT" ] || VER_OPT=2.8.3
 DEBUG=true
 
 # default to 32bits build
@@ -25,24 +22,60 @@ DEBUG=true
 # those DLLs should correspond to same architecture selection
 cmd=all32
 if [ -n "$1" ] ; then
-	cmd=$1
+	cmd="$1"
 fi
 
+if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
+	ARCH="x86_64-w64-mingw32"
+	if [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
+		ARCH="i686-w64-mingw32"
+	fi
+else
+	echo "Usage:"
+	echo "		$0 [all64 | b64 | all32 | b32]"
+	echo "		Default: 'all32'"
+	echo "Optionally export SOURCEMODE=[stable|dist|out-of-tree]"
+	case "${cmd}" in
+		-h|--help|help) exit 0 ;;
+		*) exit 1 ;;
+	esac
+fi
+
+# These paths are somewhat related:
+[ -n "${WINDIR-}" ] || WINDIR="$(pwd)"
+[ -n "${TOP_DIR-}" ] || TOP_DIR="$WINDIR/../.."
+
+# These may be located elsewhere:
+[ -n "${BUILD_DIR-}" ] || BUILD_DIR="$WINDIR/nut_build_${ARCH}"
+[ -n "${INSTALL_DIR-}" ] || INSTALL_DIR="$WINDIR/nut_install_${ARCH}"
+
+# Convenience symlink to find the latest completed build workspace and
+# installed results; not used by the script other than updating the symlink:
+[ -n "${BUILD_DIR_SYMLINK-}" ] || BUILD_DIR_SYMLINK="$WINDIR/nut_build"
+[ -n "${INSTALL_DIR_SYMLINK-}" ] || INSTALL_DIR_SYMLINK="$WINDIR/nut_install"
+
+rm -rf "$BUILD_DIR" "$INSTALL_DIR" "$BUILD_DIR_SYMLINK" "$INSTALL_DIR_SYMLINK"
+if [ x"$BUILD_DIR" != x"$BUILD_DIR_SYMLINK" ] ; then
+	ln -fsr "$BUILD_DIR" "$BUILD_DIR_SYMLINK"
+fi
+if [ x"$INSTALL_DIR" != x"$INSTALL_DIR_SYMLINK" ] ; then
+	ln -fsr "$INSTALL_DIR" "$INSTALL_DIR_SYMLINK"
+fi
+
+CONFIGURE_SCRIPT="./configure"
 [ -n "$SOURCEMODE" ] || SOURCEMODE="out-of-tree"
 
-rm -rf $BUILD_DIR $INSTALL_DIR
-CONFIGURE_SCRIPT="./configure"
 case "$SOURCEMODE" in
 stable)
 # FIXME
 # Stable version (download the latest stable archive)
 	VER_OPT_SHORT="`echo "$VER_OPT" | awk -F. '{print $1"."$2}'`"
-	if [ ! -s nut-$VER_OPT.tar.gz ] ; then
-		wget https://www.networkupstools.org/source/$VER_OPT_SHORT/nut-$VER_OPT.tar.gz
+	if [ ! -s "nut-$VER_OPT.tar.gz" ] ; then
+		wget "https://www.networkupstools.org/source/$VER_OPT_SHORT/nut-$VER_OPT.tar.gz"
 	fi
-	rm -rf nut-$VER_OPT
-	tar -xzf nut-$VER_OPT.tar.gz
-	mv nut-$VER_OPT $BUILD_DIR
+	rm -rf "nut-$VER_OPT"
+	tar -xzf "nut-$VER_OPT.tar.gz"
+	mv "nut-$VER_OPT" "$BUILD_DIR"
 	;;
 dist)
 	# In-place version (no download)
@@ -50,10 +83,10 @@ dist)
 	rm -f nut-?.?.?*.tar.gz
 	[ -s Makefile ] || { ./autogen.sh && ./configure; }
 	make dist
-	SRC_ARCHIVE=$(ls -1 nut-?.?.?*.tar.gz | sort -n | tail -1)
+	SRC_ARCHIVE="$(ls -1 nut-?.?.?*.tar.gz | sort -n | tail -1)"
 	cd scripts/Windows
-	tar -xzf ../../$SRC_ARCHIVE
-	mv nut-?.?.?* $BUILD_DIR
+	tar -xzf "../../$SRC_ARCHIVE"
+	mv nut-?.?.?* "$BUILD_DIR"
 	;;
 out-of-tree)
 	CONFIGURE_SCRIPT="../../../configure"
@@ -65,22 +98,17 @@ out-of-tree)
 		make distclean
 	fi
 	cd scripts/Windows
-	mkdir -p $BUILD_DIR
+	mkdir -p "$BUILD_DIR"
 	;;
 esac
-
-cd $BUILD_DIR || exit
 
 if [ -z "$INSTALL_WIN_BUNDLE" ]; then
 	echo "NOTE: You might want to export INSTALL_WIN_BUNDLE=true to use main NUT Makefile"
 	echo "recipe for DLL co-bundling (default: false to use logic maintained in $0"
 fi >&2
 
-if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
-	ARCH="x86_64-w64-mingw32"
-	if [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
-		ARCH="i686-w64-mingw32"
-	fi
+do_build_mingw_nut() {
+	cd "$BUILD_DIR" || exit
 
 	HOST_FLAG="--host=$ARCH"
 	# --build needs to be specified, beside of --host, to avoid Warning
@@ -98,8 +126,11 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	# Note: _WIN32_WINNT>=0x0600 is needed for inet_ntop in mingw headers
 	# and the value 0xffff is anyway forced into some components at least
 	# by netsnmp cflags.
-	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
-	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
+	# _POSIX_THREAD_SAFE_FUNCTIONS whould help with localtime_r() gmtime_r()
+	# on recent mingw releases (as of 2019), per
+	# https://stackoverflow.com/questions/18551409/localtime-r-support-on-mingw
+	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
+	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
 	export LDFLAGS+=" -L${ARCH_PREFIX}/lib/"
 
 	KEEP_NUT_REPORT_FEATURE_FLAG=""
@@ -109,18 +140,34 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
+	# FIXME: Implement support for --without-pkg-config in m4 and use it
+	RES_CFG=0
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
-	    PKG_CONFIG_PATH=${ARCH_PREFIX}/lib/pkgconfig \
-	    --without-pkg-config --with-all=auto \
+	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
+	    --with-all=auto \
+	    --with-doc="man=auto html-single=auto html-chunked=skip pdf=skip" \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
 	    --with-augeas-lenses-dir=/augeas-lenses \
 	    --enable-Werror \
-	|| exit
-	echo "$0: configure phase complete ($?)" >&2
+	|| RES_CFG=$?
+	echo "$0: configure phase complete ($RES_CFG)" >&2
+	[ x"$RES_CFG" = x0 ] || exit $RES_CFG
 
+	echo "Configuration finished, starting make" >&2
+	if [ -n "$PARMAKE_FLAGS" ]; then
+		echo "For parallel builds, '$PARMAKE_FLAGS' options would be used" >&2
+	fi
+	if [ -n "$MAKEFLAGS" ]; then
+		echo "Generally, MAKEFLAGS='$MAKEFLAGS' options would be passed" >&2
+	fi
+
+	# FIXME: parameterize ${MAKE} ?
 	make 1>/dev/null || exit
+	make doc 1>/dev/null || exit
+	make -k man-man html-man 1>/dev/null || true
+	(cd docs && make check) 1>/dev/null || exit
 	echo "$0: build phase complete ($?)" >&2
 
 	if [ "x$INSTALL_WIN_BUNDLE" = xtrue ] ; then
@@ -144,31 +191,34 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		# (maybe even do "cp -pf" if some system dislikes "ln"); also
 		# on a modern Windows one could go to their installed "sbin" to
 		#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
-		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
-		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../cgi-bin/) || true
+		(cd "$INSTALL_DIR/bin" && ln libupsclient*.dll ../sbin/)
+		(cd "$INSTALL_DIR/cgi-bin" 2>/dev/null && ln ../bin/libupsclient*.dll ./) \
+		|| echo "NOTE: FAILED to process OPTIONAL cgi-bin directory; was NUT CGI enabled?" >&2
+
+		echo "NOTE: Adding third-party dependency libraries for each installed program" >&2
+		echo "      Do not worry about lack of libnut* and libups* in system locations" >&2
 
 		# Cover dependencies for nut-scanner (not pre-linked)
 		# Note: lib*snmp*.dll not listed below, it is
 		# statically linked into binaries that use it
-		(cd $INSTALL_DIR/bin && cp -pf ${ARCH_PREFIX}/bin/{libgnurx,libusb,libltdl}*.dll .) || true
-		(cd $INSTALL_DIR/bin && cp -pf ${ARCH_PREFIX}/lib/libwinpthread*.dll .) || true
+		(cd "$INSTALL_DIR/bin" && cp -pf "${ARCH_PREFIX}/bin"/{libgnurx,libusb,libltdl}*.dll .) || true
+		(cd "$INSTALL_DIR/bin" && cp -pf "${ARCH_PREFIX}/lib"/libwinpthread*.dll .) || true
 
 		# Steam-roll over all executables/libs we have here and copy
 		# over resolved dependencies from the cross-build environment:
-		(cd $INSTALL_DIR && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
+		(cd "$INSTALL_DIR" && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
 
 		# Hardlink libraries for sbin (alternative: all bins in one dir):
-		(cd $INSTALL_DIR/sbin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+		(cd "$INSTALL_DIR/sbin" && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 
 		# Hardlink libraries for cgi-bin if present:
-		(cd $INSTALL_DIR/cgi-bin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+		(cd "$INSTALL_DIR/cgi-bin" 2>/dev/null && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) \
+		|| echo "NOTE: FAILED to process OPTIONAL cgi-bin directory; was NUT CGI enabled?" >&2
 	fi
 
-	echo "$0: install phase complete ($?)" >&2
+	# If we had fatal errors above, we exited there - so here we are SUCCESSful
+	echo "$0: SUCCESS: install phase complete ($?)" >&2
 	cd ..
-else
-	echo "Usage:"
-	echo "		$0 [all64 | b64 | all32 | b32]"
-	echo "		Default: 'all32'"
-	echo "Optionally export SOURCEMODE=[stable|dist|out-of-tree]"
-fi
+}
+
+do_build_mingw_nut

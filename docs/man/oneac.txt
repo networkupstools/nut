@@ -6,10 +6,14 @@ NAME
 
 oneac - Driver for Oneac UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*oneac* -h
+
+*oneac* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 oneac driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -102,11 +106,11 @@ Writable Variables
 
 See linkman:upsrw[8] to see what variables are writable for the UPS.
 
-NOTE: If your UPS supports writing battery.runtime.low, the new set value
-is to be entered in minutes (up to 99) but the reported value is reported
-in seconds (set value * 60).
+NOTE: If your UPS supports writing `battery.runtime.low`, the new set value
+is to be entered in minutes (up to '99') but the reported value is reported
+in seconds (set 'value * 60').
 
-NOTE: If your UPS supports input.transfer.low and input.transfer.high,
+NOTE: If your UPS supports `input.transfer.low` and `input.transfer.high`,
 those values are used to create an allowable output range.  The UPS
 will do what it can to keep the output voltage value within the
 defined range (for example: tap change or switch to inverter).

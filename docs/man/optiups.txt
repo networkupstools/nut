@@ -6,10 +6,14 @@ NAME
 
 optiups - Driver for Opti-UPS (Viewsonic) UPS and Zinto D (ONLINE-USV) equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*optiups* -h
+
+*optiups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 optiups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 

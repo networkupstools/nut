@@ -1,0 +1,56 @@
+NUTSCAN_SCAN_NUT_SIMULATION(3)
+==============================
+
+NAME
+----
+
+nutscan_scan_nut_simulation - Scan your sysconfig directory for NUT simulation devices.
+
+SYNOPSIS
+--------
+
+------
+	#include <nut-scan.h>
+	#include <unistd.h> /* useconds_t */
+
+	nutscan_device_t * nutscan_scan_nut_simulation();
+------
+
+DESCRIPTION
+-----------
+
+The *nutscan_scan_nut_simulation()* function tries to detect available NUT
+simulation devices, by finding `*.dev` and `*.seq` files in your "sysconfig"
+directory.
+
+You MUST call linkman:nutscan_init[3] before using this function.
+
+BUGS
+----
+
+This function currently uses the built-in location of the "sysconfig"
+directory, and does not consider an override with `NUT_CONFPATH` environment
+variable accepted by most of the NUT code base.
+
+RETURN VALUE
+------------
+
+The *nutscan_scan_nut_simulation()* function returns a pointer to a
+`nutscan_device_t` structure containing all found devices or NULL if an
+error occurs or no device is found.
+
+SEE ALSO
+--------
+
+linkman:nutscan_init[3],
+linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
+linkman:nutscan_scan_snmp[3], linkman:nutscan_scan_avahi[3],
+linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_nut[3],
+linkman:nutscan_display_sanity_check[3],
+linkman:nutscan_display_sanity_check_serial[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
+linkman:nutscan_display_ups_conf[3],
+linkman:nutscan_display_parsable[3], linkman:nutscan_new_device[3],
+linkman:nutscan_free_device[3], linkman:nutscan_add_option_to_device[3],
+linkman:nutscan_add_device_to_device[3], linkman:nutscan_scan_eaton_serial[3],
+linkman:nutscan_cidr_to_ip[3]

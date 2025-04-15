@@ -34,13 +34,16 @@
 
 #include "powerp-txt.h"
 
-#define POWERPANEL_TEXT_VERSION "Powerpanel-Text 0.5"
+#include <ctype.h>
+
+#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.62"
 
 typedef struct {
 	float          i_volt;
 	float          o_volt;
 	int            o_load;
 	int            b_chrg;
+	unsigned char  has_u_temp;
 	int            u_temp;
 	float          i_freq;
 	unsigned char  flags[2];
@@ -50,8 +53,6 @@ typedef struct {
 	float          o_freq;
 	unsigned char  has_runtime;
 	int            runtime;
-	int            c_unknwn;
-	float          q_unknwn;
 } status_t;
 
 static long	ondelay = 1;	/* minutes */
@@ -261,23 +262,25 @@ static void powpan_initinfo(void)
 	/*
 	 * WRITE P3\r
 	 * READ #12.0,002,008.0,00\r
+	 *      #12,2x1,12,0,1,8\r		(CST135XLU)
 	 */
 	if (powpan_command("P3\r") > 0) {
 
 		if ((s = strtok(&powpan_answer[1], ",")) != NULL) {
-			dstate_setinfo("battery.voltage.nominal", "%g", strtod(s, NULL));
+			dstate_setinfo("battery.voltage.nominal", "%f", strtod(s, NULL));
 		}
 		if ((s = strtok(NULL, ",")) != NULL) {
 			dstate_setinfo("battery.packs", "%li", strtol(s, NULL, 10));
 		}
 		if ((s = strtok(NULL, ",")) != NULL) {
-			dstate_setinfo("battery.capacity", "%g", strtod(s, NULL));
+			dstate_setinfo("battery.capacity", "%f", strtod(s, NULL));
 		}
 	}
 
 	/*
 	 * WRITE P2\r
 	 * READ #1200,0720,120,47,63\r
+	 *      #1350,810,120,57,63,11.3\r		(CST135XLU)
 	 */
 	if (powpan_command("P2\r") > 0) {
 
@@ -301,6 +304,7 @@ static void powpan_initinfo(void)
 	/*
 	 * WRITE P1\r
 	 * READ #120,138,088,20\r
+	 *      #120,139,100,0,300\r		(CST135XLU)
 	 */
 	if (powpan_command("P1\r") > 0) {
 
@@ -381,101 +385,97 @@ static void powpan_initinfo(void)
 static ssize_t powpan_status(status_t *status)
 {
 	ssize_t	ret;
+	ssize_t i;
+	ssize_t valid = 0;
+	int code = -1;
+	char value[32];
+	ssize_t ofs = 0;
+	char seen_i_freq = 0;
 
-	ser_flush_io(upsfd);
+	memset(status, 0, sizeof(status_t));
 
 	/*
 	 * WRITE D\r
 	 * READ #I119.0O119.0L000B100T027F060.0S..\r
 	 *      #I118.0O118.0L029B100F060.0R0218S..\r
-	 *      01234567890123456789012345678901234
-	 *      0         1         2         3
+	 *      #I118.1O118.1L13B100V27.5F60.0HF60.0R65Q1.4S\x80\x84\xc0\x88\x80W\r		(CST135XLU)
+	 *      01234567890123456789012345678901234567890123
+	 *      0         1         2         3         4
 	 */
-	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
+	ret = powpan_command("D\r");
+	if (ret <= 0)
+		return -1;
 
-	if (ret < 0) {
-		upsdebug_with_errno(3, "send");
+	if (powpan_answer[0] != '#') {
+		upsdebugx(2, "Expected start character '#', but got '%c'", powpan_answer[0]);
 		return -1;
 	}
 
-	if (ret == 0) {
-		upsdebug_with_errno(3, "send: timeout");
-		return -1;
-	}
+	for (i = 1; i <= ret; i++) {
+		if (i == ret || isalpha((unsigned char)(powpan_answer[i]))) {
+			value[ofs++] = '\0';
+			valid++;
 
-	upsdebug_hex(3, "send", "D\r", 2);
+			switch (code) {
+				case 'I':
+					status->i_volt = strtof(value, NULL);
+					break;
+				case 'O':
+					status->o_volt = strtof(value, NULL);
+					break;
+				case 'L':
+					status->o_load = strtol(value, NULL, 10);
+					break;
+				case 'B':
+					status->b_chrg = strtol(value, NULL, 10);
+					break;
+				case 'V':
+					status->b_volt = strtof(value, NULL);
+					status->has_b_volt = 1;
+					break;
+				case 'T':
+					status->u_temp = strtol(value, NULL, 10);
+					status->has_u_temp = 1;
+					break;
+				case 'F':
+					status->i_freq = strtof(value, NULL);
+					seen_i_freq = 1;
+					break;
+				case 'H':
+					status->o_freq = strtof(value, NULL);
+					status->has_o_freq = 1;
+					break;
+				case 'R':
+					status->runtime = strtol(value, NULL, 10);
+					status->has_runtime = 1;
+					break;
+				case 'S':
+					memcpy(&status->flags, value, 2);
+					break;
+				default:
+					/* We didn't really find valid data */
+					valid--;
+					break;
+			}
 
-	usleep(200000);
+			code = powpan_answer[i];
+			ofs = 0;
 
-	ret = ser_get_buf_len(upsfd, powpan_answer, 35, SER_WAIT_SEC, SER_WAIT_USEC);
+			/*
+				* Depending on device/firmware, the output frequency is coded as
+				* either an H, HF, or a second F (seen once transfered to battery)
+				*/
+			if (seen_i_freq && code == 'F')
+				code = 'H';
 
-	if (ret < 0) {
-		upsdebug_with_errno(3, "read");
-		upsdebug_hex(4, "  \\_", powpan_answer, 35);
-		return -1;
-	}
-
-	if (ret == 0) {
-		upsdebugx(3, "read: timeout");
-		upsdebug_hex(4, "  \\_", powpan_answer, 35);
-		return -1;
-	}
-
-	upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
-
-	ret = sscanf(powpan_answer, "#I%fO%fL%dB%dT%dF%fS%2c\r",
-		&status->i_volt, &status->o_volt, &status->o_load,
-		&status->b_chrg, &status->u_temp, &status->i_freq,
-		status->flags);
-
-	if (ret >= 7) {
-		status->has_b_volt = 0;
-		status->has_o_freq = 0;
-		status->has_runtime = 0;
-	} else {
-
-		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dF%fR%dS%2c\r",
-			&status->i_volt, &status->o_volt, &status->o_load,
-			&status->b_chrg, &status->i_freq, &status->runtime,
-			status->flags);
-
-		if (ret >= 7) {
-			status->has_b_volt = 0;
-			status->has_o_freq = 0;
-			status->has_runtime = 1;
+			continue;
 		}
 
-	}
-	if (ret < 7) {
-		ret = ser_get_buf_len(upsfd, powpan_answer+35, 23, SER_WAIT_SEC, SER_WAIT_USEC);
-
-		if (ret < 0) {
-			upsdebug_with_errno(3, "read");
-			upsdebug_hex(4, "  \\_", powpan_answer+35, 23);
-			return -1;
-		}
-
-		if (ret == 0) {
-			upsdebugx(3, "read: timeout");
-			upsdebug_hex(4, "  \\_", powpan_answer+35, 23);
-			return -1;
-		}
-
-		upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
-
-		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dV%fT%dF%fH%fR%dC%dQ%fS%2c\r",
-		&status->i_volt, &status->o_volt, &status->o_load,
-		&status->b_chrg, &status->b_volt, &status->u_temp,
-		&status->i_freq, &status->o_freq, &status->runtime,
-		&status->c_unknwn, &status->q_unknwn, status->flags);
-		status->has_b_volt = 1;
-		status->has_o_freq = 1;
-		status->has_runtime = 1;
-		dstate_setinfo("battery.voltage.nominal", "%g", 72.0);
-		dstate_setinfo("output.voltage.nominal", "%g", 120.0);
+		value[ofs++] = powpan_answer[i];
 	}
 
-	if (ret < 7) {
+	/* if we didn't get at least 3 values consider it a failure */
+	if (valid < 3) {
 		upsdebugx(4, "Parsing status string failed");
 		return -1;
 	}
@@ -495,10 +495,15 @@ static int powpan_updateinfo(void)
 	dstate_setinfo("output.voltage", "%.1f", status.o_volt);
 	dstate_setinfo("ups.load", "%d", status.o_load);
 	dstate_setinfo("input.frequency", "%.1f", status.i_freq);
-	dstate_setinfo("ups.temperature", "%d", status.u_temp);
+	if (status.has_u_temp) {
+		dstate_setinfo("ups.temperature", "%d", status.u_temp);
+	}
 	dstate_setinfo("battery.charge", "%d", status.b_chrg);
 	if (status.has_b_volt) {
 		dstate_setinfo("battery.voltage", "%.1f", status.b_volt);
+		if (status.b_volt > 20.0 && status.b_volt < 28.0) {
+			dstate_setinfo("battery.voltage.nominal", "%f", 24.0);
+		}
 	}
 	if (status.has_o_freq) {
 		dstate_setinfo("output.frequency", "%.1f", status.o_freq);
@@ -567,6 +572,7 @@ static ssize_t powpan_initups(void)
 		/*
 		 * WRITE P4\r
 		 * READ #BC1200     ,1.600,000000000000,CYBER POWER
+		 *      #CST135XLU,BF01403AAH2,CR7EV2002320,CyberPower Systems Inc.,,,
 		 *      01234567890123456789012345678901234567890123456
 		 *      0         1         2         3         4
 		 */

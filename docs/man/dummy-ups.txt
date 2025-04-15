@@ -4,12 +4,16 @@ DUMMY-UPS(8)
 NAME
 ----
 
-dummy-ups - Driver for multi-purpose UPS emulation
+dummy-ups - Driver for multi-purpose UPS emulation or relay
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the specific features of the
+*dummy-ups* -h
+
+*dummy-ups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the
 *dummy-ups* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -28,11 +32,13 @@ Dummy Mode
 
 In this mode, *dummy-ups* looks like a standard NUT device driver to
 linkman:upsd[8] and allows one to change any value for testing purposes.
+
 It is both interactive, controllable through the linkman:upsrw[1] and
 linkman:upscmd[1] commands (or equivalent graphical tool), and batchable
-through script files. It can be configured, launched and used as any other
-"real" NUT driver. This mode is mostly useful for development and testing
-purposes.
+through script files.
+
+It can be configured, launched and used as any other "real" NUT driver.
+This mode is mostly useful for development and testing purposes.
 
 NOTE: See below about the differences of `dummy-once` vs. `dummy-loop`
 modes -- the former may be more suitable for "interactive" uses and tests.
@@ -41,12 +47,15 @@ Repeater Mode
 ~~~~~~~~~~~~~
 
 In this mode, *dummy-ups* acts as a NUT client, simply forwarding data.
+
 This can be useful for supervision purposes. This mode can also allow some
 load sharing between several `upsd` instances communicating with ultimate
 NUT clients, with a "central" one using a point-to-point communication with
-the UPS. This arrangement can also help with networked UPSes, whose network
-management cards can be overwhelmed with a farm of servers directly polling
-SNMP or other protocols every few seconds.
+the actual UPS or ePDU device.
+
+This arrangement can also help with networked UPSes, whose network management
+cards can be overwhelmed with a whole farm of servers directly polling SNMP or
+other networked protocols every few seconds.
 
 ////////////////////////////////////////
 Future intention: Meta mode to aggregate several drivers as one device
@@ -66,10 +75,15 @@ override the mode of operation which would be otherwise guessed by the driver.
 Dummy Mode
 ~~~~~~~~~~
 
-In this context, `port` in the `ups.conf` block defines a file name for the
-*dummy-ups* to read data from. This can either be an absolute or a relative
-path name. In the latter case the NUT sysconfig directory (i.e. `/etc/nut`,
-`/usr/local/ups/etc`, ...) is prepended.
+In this context, `port` in the `ups.conf` block specifies a "definition file"
+name for the *dummy-ups* to read data from. This can either be an absolute or
+a relative path name. In the latter case the NUT sysconfig directory (i.e.
+`/etc/nut`, `/usr/local/ups/etc`, ...) is prepended.
+
+NOTE: The "sysconfig" location is built-in according to `configure` script
+arguments, but can be tuned at run time by `NUT_CONFPATH` environment variable.
+See the `tests/NIT/nit.sh` script in NUT sources, which heavily relies on this
+driver, for more examples.
 
 Since NUT v2.8.0 two aspects of this mode are differentiated:
 
@@ -111,6 +125,7 @@ not be impacted.
 
 For instance:
 
+----
 	[dummy1]
 		driver = dummy-ups
 		port = evolution500.seq
@@ -120,12 +135,14 @@ For instance:
 		driver = dummy-ups
 		port = epdu-managed.dev
 		desc = "dummy-ups in dummy-once mode"
+----
 
-This file is generally named `something.dev` or `something.seq`. It contains
-a list of all valid variables and associated values (you can later use `upsrw`
+This definition file, specified by the `port` argument in the example above,
+is generally named `something.dev` or `something.seq`. It contains a list of
+all valid variables and associated values (you can later use `upsrw`
 only to modify values of these variables), and has the same format as an
-linkman:upsc[8] dump (`<varname>: <value>`). So you can easily create
-definition files from an existing UPS using `upsc > file.dev`.
+linkman:upsc[8] data dump (`<varname>: <value>`). This means you can easily
+create definition files from an existing UPS using `upsc > file.dev`.
 
 Note that the Network UPS project provides an extensive
 link:https://www.networkupstools.org/ddl/index.html[DDL (Devices Dumps Library)]
@@ -140,8 +157,8 @@ available: `device.*`, `driver.*`, `ups.mfr`, `ups.model`, `ups.status`
 as filled by the driver itself.
 
 Some sample definition files are available in the `data` directory of the
-NUT source tree, and generally in the sysconfig or share directory of your
-system distribution.
+NUT source tree, and generally in the "sysconfig" or "share" directory of
+your system distribution.
 
 Since *dummy-ups* will usually loop on reading this file, you can dynamically
 modify it with some external process to "interact" with the driver.
@@ -169,12 +186,13 @@ and, in particular, forget any values you could have just set with `upsrw`.
 
 Note that to avoid CPU overload with an infinite loop, the driver "sleeps"
 a bit between file-reading cycles (currently this delay is hardcoded to one
-second), independently of (and/or in addition to) any `TIMER` keywords.
+second), independently of (and/or in addition to) any `TIMER` keywords and
+possibly the common `pollinterval` setting.
 
 Repeater Mode
 ~~~~~~~~~~~~~
 
-In this context, `port` in the `ups.conf` block is the name of a remote UPS,
+In this context, `port` in the `ups.conf` block is the name of the target UPS,
 using the NUT format, i.e.:
 
 	<upsname>@<hostname>[:<port>]
@@ -187,13 +205,19 @@ For instance:
 		desc = "dummy-ups in repeater mode"
 
 Unlike UPS specifications in the rest of NUT, the `@hostname` portion is not
-optional - it is the `@` character which enables Repeater Mode. To refer to an
+optional -- it is the `@` character which enables Repeater Mode. To refer to an
 UPS on the same host as *dummy-ups*, use `port = upsname@localhost`.
 
 Note that to avoid CPU overload with an infinite loop, the driver "sleeps" a
 bit between data-requesting cycles (currently this delay is hardcoded to one
 second), so propagation of data updates available to a remote `upsd` may lag
 by this much.
+
+Beware that any error encountered at repeater mode startup (e.g. when not
+all target UPS to be repeated or their `upsd` instances are connectable
+yet) will by default cause the *dummy-ups* driver to terminate prematurely.
+This behaviour can be changed by setting the `repeater_disable_strict_start`
+flag, making such errors non-fatal.
 
 INTERACTION
 -----------
@@ -224,7 +248,9 @@ for interaction.
 *dummy-ups* is useful for NUT client development, and other testing purposes.
 
 It also helps the NUT Quality Assurance effort, by automating some tests on
-the NUT framework.
+the NUT framework and the NIT (NUT Integration Test suite). See the
+`tests/NIT/nit.sh` script in NUT sources, which heavily relies on this
+driver, for more examples.
 
 It now offers a repeater mode. This will help in building the Meta UPS approach,
 which allows one to build a virtual device, composed of several other devices
@@ -269,15 +295,20 @@ linkman:upsrw[1],
 linkman:ups.conf[5],
 linkman:nutupsdrv[8]
 
-Clone driver:
-~~~~~~~~~~~~~
+Clone drivers:
+~~~~~~~~~~~~~~
 
 The "repeater" mode of 'dummy-ups' driver is in some ways similar to the
-'clone' driver, which sits on top of another driver socket, and allows
-users to group clients to a particular outlet of a device and deal with
-this output as if it were a normal UPS.
+'clone' and 'clone-outlet' drivers, which sit on top of another driver
+socket (or named Windows pipe) locally, and allow users to group clients
+to a particular outlet of a device and deal with this output as if it
+were a normal UPS.  Notably, in this mode the 'dummy-ups' driver is a
+client to the networked NUT protocol and can relay information of local
+or remotely served devices, and requires a running NUT data server 'upsd'
+to represent the "real" device for this to work.
 
-linkman:clone[8]
+linkman:clone[8],
+linkman:clone-outlet[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~

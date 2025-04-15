@@ -132,7 +132,7 @@ static double blazer_load(const char *ptr, char **endptr)
 
 /*
  * The battery voltage will quickly return to at least the nominal value after
- * discharging them. For overlapping battery.voltage.low/high ranges therefor
+ * discharging them. For overlapping battery.voltage.low/high ranges therefore
  * choose the one with the highest multiplier.
  */
 static double blazer_packs(const char *ptr, char **endptr)
@@ -150,7 +150,7 @@ static double blazer_packs(const char *ptr, char **endptr)
 
 	for (i = 0; packs[i] > 0; i++) {
 
-		if (packs[i] * batt.volt.act > 1.2 * batt.volt.nom) {
+		if (packs[i] * batt.volt.act > 1.25 * batt.volt.nom) {
 			continue;
 		}
 
@@ -554,7 +554,7 @@ void blazer_makevartable(void)
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
 
-	addvar(VAR_FLAG, "protocol", "Preselect communication protocol (skip autodetection)");
+	addvar(VAR_VALUE, "protocol", "Preselect communication protocol (skip autodetection)");
 }
 
 
@@ -851,17 +851,18 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	retry;
 
 	/* Stop pending shutdowns */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
 		break;
-
 	}
 
 	if (retry > MAXTRIES) {
@@ -870,16 +871,17 @@ void upsdrv_shutdown(void)
 
 	/* Shutdown */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
 		upslogx(LOG_ERR, "Shutting down in %ld seconds", offdelay);
-		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }

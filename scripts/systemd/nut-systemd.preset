@@ -1,0 +1,69 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2011-2025 by NUT contributors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
+# This file enables a default selection of NUT systemd units,
+# reasonable for a typical server with one or a few UPS devices
+# (their drivers, NDE, and data server), and the upsmon client.
+# Adapt to your system as needed.
+
+# There are several separate variants of NDE usage to process the
+# "ups.conf" file and create/update/remove `nut-driver@.service`
+# unit instances:
+# * Manual run of `nut-driver-enumerator.sh (--reconfigure)`
+# * Single run at system start-up (nut-driver-enumerator.service unit)
+# ** perhaps additionally upon edits of the file (path unit),
+#    if it works (may get ignored on busy systems)
+# * Daemon mode that runs once to update the nut-driver population,
+#   and then loops to to pick up any subsequent changes (maybe more
+#   reliably than the filesystem notification processing would allow).
+# ** nut-driver-enumerator-daemon.service provides the daemon
+# ** nut-driver-enumerator-daemon-activator.* units optionally
+#    reload it if "ups.conf" is edited (if the path unit does work)
+#    and apply changes without waiting for the inter-loop sleep.
+# Typical systems do not monitor hordes of devices with a dynamically
+# changing population of those (e.g. data center monitoring appliances),
+# so the daemon mode is an overkill for these smaller use-cases.
+disable nut-driver-enumerator-daemon-activator.path
+disable nut-driver-enumerator-daemon-activator.service
+disable nut-driver-enumerator-daemon.service
+enable nut-driver-enumerator.path
+enable nut-driver-enumerator.service
+
+# Activate systemd unit instances prepared by NDE (service above
+# or a manual run of the script), each wrapping one NUT driver.
+# Requires "ups.conf" with corresponding section for the device:
+enable nut-driver.target
+# I don't think a template can be activated/deactivated; anyhow
+# this is NDE's bread and butter at run-time:
+#enable nut-driver@.service
+# The nut-udev-settle.service would be used by USB/Serial/... drivers
+# wrapped by NDE, and so referenced there if needed. It should not
+# auto-start if not used by any driver:
+enable nut-udev-settle.service
+
+# Activate the "upsd" data server, to represent drivers on the network.
+# Requires "ups.conf", "upsd.conf", "upsd.users":
+enable nut-server.service
+
+# Activate the "upsmon" client to shut down the local system.
+# Can run on same or different system as the data server.
+# Requires "upsmon.conf":
+enable nut-monitor.service
+
+# Pull in activated units, to orchestrate their starting or stopping
+# in one command:
+enable nut.target
+
+# OPTIONAL: Normally NUT programs are built to use the native libsystemd
+# "inhibitor interface" to gracefully handle clock jumps when the server
+# sleeps and later wakes up. If this is not possible for whatever reason,
+# this "sleep hook" unit provides a workaround (stop/start nut.target):
+disable nut-sleep.service
+
+# OPTIONAL: Log snapshots of UPS state into a file (or stdout to
+# systemd journal); needs an "upslog.conf" file defining tuples like
+#   UPSLOG_ARGS="-m ups,file -m ups,file..."
+disable nut-logger.service

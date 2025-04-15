@@ -4,6 +4,9 @@
 /cppnit
 /cppnit.log
 /cppnit.trs
+/driver_methods_utest
+/driver_methods_utest.log
+/driver_methods_utest.trs
 /gpiotest
 /gpiotest.log
 /gpiotest.trs
@@ -13,6 +16,15 @@
 /nutlogtest
 /nutlogtest.log
 /nutlogtest.trs
+/nuttimetest
+/nuttimetest.log
+/nuttimetest.trs
+/nutbooltest
+/nutbooltest.log
+/nutbooltest.trs
+/getexponenttest-belkin-hid
+/getexponenttest-belkin-hid.log
+/getexponenttest-belkin-hid.trs
 /getvaluetest
 /getvaluetest.log
 /getvaluetest.trs

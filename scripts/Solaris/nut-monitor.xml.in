@@ -2,14 +2,14 @@
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <!--
 #
-# Copyright 2016-2017 Jim Klimov
-# Service for NUT upsmon
+# Copyright 2016-2024 Jim Klimov
+# Service for NUT upsmon client (to drive OS shutdown when power is critical)
 #
 -->
 
 <service_bundle type='manifest' name='nut-monitor'>
 
-	<service name='system/power/nut-monitor' type='service' version='1'>
+	<service name='system/power/nut-monitor' type='service' version='2'>
 
 	<!--
 	  Configure a default instance for the service since it doesn't
@@ -112,14 +112,16 @@
 		<template>
 			<common_name>
 				<loctext xml:lang='C'>
-				NUT ups monitoring service
+				NUT UPS monitoring client service (to drive OS shutdown when power is critical)
 				</loctext>
 			</common_name>
 			<documentation>
-				<manpage title='upsmon' section='8'
-				manpath='/usr/share/man' />
-				<manpage title='upsmon.conf' section='5'
-				manpath='/usr/share/man' />
+				<doc_link name='upsmon online'		uri='@NUT_WEBSITE_BASE@/docs/man/upsmon.html' />
+				<manpage title='upsmon'			section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
+				<doc_link name='upsmon.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/upsmon.conf.html' />
+				<manpage title='upsmon.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+				<doc_link name='nut.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/nut.conf.html' />
+				<manpage title='nut.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 			</documentation>
 		</template>
 	</service>

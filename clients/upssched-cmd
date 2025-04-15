@@ -1,16 +1,29 @@
 #! /bin/sh
 #
 # This script should be called by upssched via the CMDSCRIPT directive.
-# 
+#
 # Here is a quick example to show how to handle a bunch of possible
 # timer names with the help of the case structure.
 #
-# This script may be replaced with another program without harm.
+# This script may be replaced with another program without harm
+# (just be sure to avoid clashes with package-delivered files
+# which might overwrite your custom changes).
 #
 # The first argument passed to your CMDSCRIPT is the name of the timer
-# from your AT lines.
+# from your AT lines in upssched.conf.
 
-case $1 in
+# Feel free to remove or comment away these lines when you actually
+# customize the script for your deployment:
+echo "`date -u`: $0: THIS IS A SAMPLE SCRIPT, PLEASE TAILOR IT FOR YOUR DEPLOYMENT OF NUT!" >&2
+logger -t upssched-cmd "THIS IS A SAMPLE SCRIPT, PLEASE TAILOR IT FOR YOUR DEPLOYMENT OF NUT!"
+
+printf "`date -u`: UPSNAME='%s'\tNOTIFYTYPE='%s'\targs=%s\n" "$UPSNAME" "$NOTIFYTYPE" "$@" >&2
+printf "UPSNAME='%s' NOTIFYTYPE='%s' args=%s\n" "$UPSNAME" "$NOTIFYTYPE" "$@" | logger -t upssched-cmd-received-NOTIFYTYPE
+
+#set
+
+# Handle received timer names, as defined in your upssched.conf (example):
+case "$1" in
 	onbattwarn)
 		# Send a notification mail
 		echo "The UPS has been on battery for awhile" \

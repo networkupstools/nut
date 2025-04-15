@@ -1,0 +1,102 @@
+NUT-Monitor(8)
+==============
+
+NAME
+----
+
+NUT-Monitor, NUT-Monitor-py2gtk2, NUT-Monitor-py3qt5 - Python UI Client for NUT
+
+SYNOPSIS
+--------
+
+*NUT-Monitor-py2gtk2*
+
+*NUT-Monitor-py3qt5*
+
+[PREFER_PY2=true] [PYTHON2=python2.7] [PYTHON3=python3.14w] *NUT-Monitor*
+
+DESCRIPTION
+-----------
+
+These programs comprise the NUT-Monitor Python UI Client for NUT with
+two similar implementations for major Python UI ecosystems still seen
+in practical deployments. For communications with a NUT data server,
+both rely on the 'PyNUTClient' module (compatible with both Python 2.x
+and 3.x) provided by NUT sources that can be installed by your packaging
+as part of NUT; also releases of the module are published as a PyPI package.
+
+* `NUT-Monitor-py2gtk2` is an implementation that relies on a Python 2.x
+  interpreter (tested with 2.6 or 2.7 generation) and GTK2 UI library;
+
+* `NUT-Monitor-py3qt5` is an implementation that relies on a Python 3.x
+  interpreter and QT5 UI library;
+
+* `NUT-Monitor` is a shell script to pick at run-time the best implementation.
+  In older NUT releases, this was the file name used by the Python 2.x variant
+  directly.
+
+Note that depending on your distribution's packaging choices, you may lack
+the `NUT-Monitor` shell script and just have one set of the desktop window
+manager integration files directly for one particular implementation of the
+actual Python UI client.
+
+For each individual run, the UI client can connect to a single NUT data server
+and a device on it.  This can use either anonymous read-only connections (like
+linkman:upsc[8]), or authenticated connections (see linkman:upsd.users[5])
+which can also issue commands to the driver (like linkman:upscmd[8]) and
+set supported variables (like linkman:upsrw[8]) -- propagated to the device,
+where applicable.
+
+The Python UI client can be used on a system different from the NUT data
+server (the one connected to the actual UPS by communications media and
+running the NUT driver(s)), and may be using a different OS platform
+(including Windows).
+
+NOTE: Do not confuse this graphical NUT client with an unfortunately named
+`nut-monitor` service in some packaged distributions, as the name of (or an
+alias to) the service wrapping the linkman:upsmon[8] client daemon for your
+system shutdown.
+
+
+EXTRA ARGUMENTS
+---------------
+
+These scripts do not support command-line arguments, but the `NUT-Monitor`
+shell script can be influence by environment variables `PYTHON2` and/or
+`PYTHON3` to provide the program name (or full path name) of your preferred
+version for the respective implementation of the Python interpreter. This
+program would be tried first when probing for available prerequisites.
+
+The `PREFER_PY2=true` or `PREFER_PY2=false` environment variable value
+can be used to select the implementation of the client to use if both
+ecosystems are usable on the current system.
+
+Note that the implementation for Python 2.x / GTK2 is slightly better
+regarding localization; functionally they should be equivalent.
+
+
+AUTHORS
+-------
+
+* David Goncalves <david@lestat.st> -- original Python 2.x / GTK2 version
+  of the script and the PyNUTClient module
+
+* Luke Dashjr <luke-jr+git@utopios.org> -- conversion to Python 3.x / QT5
+
+* Jim Klimov <jimklimov+nut@gmail.com> -- wrapper script to choose one of
+  the implementations, occasional fixes, PyPI packaging for the module
+
+SEE ALSO
+--------
+
+linkman:upsc[8],
+linkman:upscmd[8],
+linkman:upsrw[8],
+linkman:upsd.users[5]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* Releases of PyNUTClient module (packaged from NUT code base):
+  https://pypi.org/project/pynutclient/

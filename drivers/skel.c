@@ -22,7 +22,7 @@
 /* #define IGNCHARS	""	*/
 
 #define DRIVER_NAME	"Skeleton UPS driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -32,6 +32,9 @@ upsdrv_info_t upsdrv_info = {
 	DRV_STABLE,
 	{ NULL }
 };
+
+/* Forward decls */
+/*static int instcmd(const char *cmdname, const char *extra);*/
 
 void upsdrv_initinfo(void)
 {
@@ -44,6 +47,9 @@ void upsdrv_initinfo(void)
 	/* dstate_setinfo("device.mfr", "skel manufacturer"); */
 	/* dstate_setinfo("device.model", "longrun 15000"); */
 
+	/* commands ----------------------------------------------- */
+	/*dstate_addcmd("shutdown.return");*/
+	/*dstate_addcmd("test.battery.stop);*/
 
 	/* upsh.instcmd = instcmd; */
 }
@@ -96,14 +102,19 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
 	   it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
+
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */
@@ -121,7 +132,12 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		ser_send_buf(upsfd, ...);
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 */

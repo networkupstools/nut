@@ -57,7 +57,7 @@
 #include <ctype.h>
 #ifndef WIN32
 #include <sys/ioctl.h>
-#endif
+#endif	/* !WIN32 */
 #include "timehead.h"
 #include "main.h"
 #include "serial.h"
@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.95"
+#define DRIVER_VERSION	"0.98"
 
 
 /* driver description structure */
@@ -169,7 +169,7 @@ void upsdrv_initups(void)
 	char buf[BUFFLEN];
 #ifndef WIN32
 	int RTS = TIOCM_RTS;
-#endif
+#endif	/* !WIN32 */
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
@@ -181,14 +181,14 @@ void upsdrv_initups(void)
 
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
-#else
+#else	/* WIN32 */
 	if (testvar ("oldmac")) {
 		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,CLRRTS);
 	}
 	else {
 		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,SETRTS);
 	}
-#endif
+#endif	/* WIN32 */
 	enable_ups_comm();
 
 	/* Try to set "Low Battery Level" (if supported and given) */
@@ -477,8 +477,29 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	char buf[BUFFLEN];
-	/*  static time_t lastcmd = 0; */
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	char	buf[BUFFLEN];
+	/* static time_t	lastcmd = 0; */
+
+	/* We can enter this method either by handling of INSTCMD (whether it
+	 * was called by user, or by ourselves here via loop method), or by
+	 * handling of `drivername -k`. Avoid infinite loops with this flag
+	 * here and with handling_instcmd_shutdown above.
+	 */
+	static char	already_shutting_down = 0;
+
+	if (already_shutting_down)
+		return;
+
+	already_shutting_down = 1;
+
+	/* Here we are if handling explicit INSTCMD to shut down,
+	 * or this method was called and works to handle default
+	 * "sdcommands", or is recursively called with a custom
+	 * value of "sdcommands" pointing here.
+	 */
 	memset(buf, 0, sizeof(buf));
 
 	if (sdtype == SD_RETURN) {
@@ -488,8 +509,8 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_INFO, "UPS response to Automatic Restart was %s", buf);
 	}
 
-	/* Only call the effective shutoff if restart is ok */
-	/* or if we need only a stayoff... */
+	/* Only call the effective shutoff if restart is ok,
+	 * or if we need (caller asked for) only a stayoff... */
 	if (!strcmp(buf, "OK") || (sdtype == SD_STAYOFF)) {
 		/* shutdown UPS */
 		mge_command(buf, sizeof(buf), "Sx 0");
@@ -498,8 +519,13 @@ void upsdrv_shutdown(void)
 	}
 /*	if(strcmp(buf, "OK")) */
 
-	/* call the cleanup to disable/close the comm link */
-	upsdrv_cleanup();
+	if (handling_upsdrv_shutdown > 0) {
+		/* call the cleanup to disable/close the comm link */
+		upsdrv_cleanup();
+	} else {
+		/* Reset the flags if driver is not going down */
+		already_shutting_down = 0;
+	}
 }
 
 /* --------------------------------------------------------------- */
@@ -749,7 +775,8 @@ static int get_ups_status(void)
 		if (exit_flag != 0)
 			return FALSE;
 
-		/* must clear status buffer before each round */
+		/* must clear alarm and status buffers before each round */
+		alarm_init();
 		status_init();
 
 		/* system status */
@@ -777,11 +804,10 @@ static int get_ups_status(void)
 			}
 			/* buf[2] not used */
 			if (buf[1] == '1')
-				status_set("COMMFAULT"); /* self-invented */
+				alarm_set("COMMFAULT"); /* self-invented */
 				/* FIXME: better to call datastale()?! */
 			if (buf[0] == '1')
-				status_set("ALARM");     /* self-invented */
-				/* FIXME: better to use ups.alarm */
+				alarm_set("DEVICEALARM");     /* self-invented */
 		}  /* if strlen */
 
 		/* battery status */
@@ -840,6 +866,7 @@ static int get_ups_status(void)
 
 	} while ( !ok && tries++ < MAXTRIES );
 
+	alarm_commit();
 	status_commit();
 
 	return ok;
@@ -956,7 +983,9 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 	bytes_rcvd = ser_get_line(upsfd, reply, replylen,
 		MGE_REPLY_ENDCHAR, MGE_REPLY_IGNCHAR, 3, 0);
 
-	upsdebugx(4, "mge_command: received %" PRIiSIZE " byte(s)", bytes_rcvd);
+	upsdebugx(4, "mge_command: sent %" PRIiSIZE
+		", received %" PRIiSIZE " byte(s)",
+		bytes_sent, bytes_rcvd);
 
 	return bytes_rcvd;
 }

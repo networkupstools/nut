@@ -4,12 +4,16 @@ IVTSCD(8)
 NAME
 ----
 
-ivtscd - driver for the IVT Solar Controller Device
+ivtscd - Driver for the IVT Solar Controller Device
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*ivtscd* -h
+
+*ivtscd* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 *ivtscd* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 

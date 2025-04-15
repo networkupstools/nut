@@ -32,10 +32,9 @@
 
 #include "powerp-bin.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 
-#include <math.h>
-
-#define POWERPANEL_BIN_VERSION "Powerpanel-Binary 0.5"
+#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.61"
 
 typedef struct {
 	unsigned char	start;
@@ -430,7 +429,7 @@ static ssize_t powpan_status(status_t *status)
 	/*
 	 * WRITE D\r
 	 * READ #VVL.CTF.....\r
-        *      01234567890123
+	 *      01234567890123
 	 */
 	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
 
@@ -545,7 +544,7 @@ static int powpan_updateinfo(void)
 	}
 
 	/* !OB && !TEST */
-	if (!(status.flags[0] & 0x84)) {
+	if (!(status.flags[0] & 0x84) && status.o_volt) {
 
 		if (status.o_volt < 0.5 * status.i_volt) {
 			upsdebugx(2, "%s: output voltage too low", __func__);

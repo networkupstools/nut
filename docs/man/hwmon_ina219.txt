@@ -1,0 +1,141 @@
+HWMON_INA219(8)
+===============
+
+NAME
+----
+
+hwmon_ina219 - Driver for UPS based on INA219
+
+SYNOPSIS
+--------
+
+*hwmon_ina219* -h
+
+*hwmon_ina219* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the *hwmon_ina219*
+driver. For information about the core driver, see linkman:nutupsdrv[8].
+
+The driver implements reading of current and voltage from INA219 by using hwmon
+sysfs API of the Linux Kernel. There is no other UPS-like logic in there. Based
+on the measurements of the battery voltage and charging current, the driver
+makes assumptions of the current state of the system.
+
+SUPPORTED HARDWARE
+------------------
+
+The *hwmon_ina219* driver is based on setup with Raspberry PI Compute Module 4
+and its baseboard Waveshare CM4-POE-UPS-BASE.
+
+EXTRA ARGUMENTS
+---------------
+
+The required parameter for this driver:
+
+*port*='hwmon-dir'::
+Path to appropriate /sys/hwmon/hwmonX or 'auto' to detect automatically.
+
+Optional parameters:
+
+*default.battery.charge.low*='low-battery-threshold'::
+Threshold for low battery state (in percent).
+
+*default.battery.voltage.nominal*='voltage-value'::
+Nominal voltage (V) value of utilized batteries, used to derive their low
+and high watermark settings (see below). Default: 3.6.
++
+Known pre-sets include: `3.6`, `3.7`, `3.8`, `3.85`.
+
+*default.battery.voltage.low*='voltage-value'::
+Low voltage (V) value of used batteries. Practically, it denotes depleted
+batteries. If not given, it is derived from the *battery.voltage.nominal*.
+
+*default.battery.voltage.high*='voltage-value'::
+High voltage (V) value of used batteries. Practically, it denotes fully
+charged batteries. If not given, it is derived from the
+*battery.voltage.nominal*.
+
+INSTALLATION
+------------
+
+This driver is specific to the Linux hwmon API.
+
+When using with the Waveshare CM4-POE-UPS-BASE baseboard, there are few steps
+to be done to enable access to the INA219 circuit:
+
+. edit boot/config.txt:
++
+----
+  dtparam=i2c_vc=on
+  dtoverlay=i2c-ina219
+----
+
+. create a new device tree overlay file i2c-ina219.dts:
++
+----
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2835";
+
+    fragment@0 {
+        target = <&i2c_csi_dsi>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            ina219@43 {
+                status = "okay";
+                compatible = "ti,ina219";
+                reg = <0x43>;
+                shunt-resistor = <100000>;  // R100
+            };
+        };
+    };
+};
+----
+
+. convert i2c-ina219.dts to dtbo and place it into /boot/overlays:
++
+----
+$ dtc -@ -I dts -O dtb -o /boot/overlays/i2c-ina219.dtbo i2c-ina219.dts
+----
+
+. configure hwmon_ina219 UPS driver for NUT (ups.conf):
++
+----
+[ina219]
+driver = hwmon_ina219
+port = auto
+----
+
+KNOWN ISSUES AND BUGS
+---------------------
+
+The driver shutdown function is not implemented.
+
+AUTHORS
+-------
+
+Andrew Anderson <aander07@gmail.com>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* Initial pull requests adding this driver:
+** https://github.com/networkupstools/nut/pull/2430
+** https://github.com/networkupstools/nut/issues/2378
+
+* Baseboard with INA219: https://www.waveshare.com/wiki/CM4-POE-UPS-BASE
+* TI INA219: https://www.ti.com/lit/ds/symlink/ina219.pdf
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -1,0 +1,53 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2011-2025 by NUT contributors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
+[Unit]
+# This unit starts via nut-driver-enumerator-daemon-activator.path
+# activation due to changes in ups.conf file, and triggers a reload
+# of the nut-driver-enumerator-daemon.service so that one quickly
+# re-processes the new configuration state.
+# NOTE: This unit is intentionally not installed as PartOf/WantedBy
+# anything, as it is only meant to be triggered by the path unit.
+Description=Network UPS Tools - enumeration of configure-file devices into systemd unit instances (FS event-based activator for daemonized mode)
+Conflicts=nut-driver-enumerator.service nut-driver-enumerator.path
+After=local-fs.target
+#Before=nut-driver.target
+#PartOf=nut.target
+
+Documentation=man:nut-driver-enumerator(@MAN_SECTION_CMD_SYS@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut-driver-enumerator.html
+Documentation=man:ups.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+Documentation=man:upsdrvsvcctl(@MAN_SECTION_CMD_SYS@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
+[Service]
+### Script needs privileges to restart units
+#User=@RUN_AS_USER@
+#Group=@RUN_AS_GROUP@
+User=root
+Type=oneshot
+# Non-blocking systemd message posting should not take long,
+# or should be aborted and retried if it does (system bugs)
+TimeoutStartSec=10s
+# If some process is writing the ups.conf file, it can be interpreted in
+# some conditions by .path unit as many events requiring it to start -
+# and eventually this gets throttled as a quickly started-restarted unit.
+# While it should be permitted for manual start (likely .path trigger too)
+# after interval expiration, this might race-condition to not detect some
+# latest update into the configuration file if it happens after the main
+# script loop has slurped intermediate state of device config.
+# Note: Using the older but still supported Service/StartLimitInterval
+# see https://lists.freedesktop.org/archives/systemd-devel/2017-July/039255.html
+# for broader compatibility.
+StartLimitInterval=0
+ExecStart=/bin/systemctl reload-or-restart --no-block nut-driver-enumerator-daemon.service
+
+[Install]
+### No install, see comment above
+#WantedBy=nut.target

@@ -67,7 +67,7 @@
 #endif
 
 #define DRIVER_NAME	"ASEM"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.15"
 
 /* Valid on ASEM PB1300 UPS */
 #define BQ2060_ADDRESS	0x0B
@@ -80,7 +80,7 @@
 
 #define ACCESS_DEVICE(fd, address) \
 	if (ioctl(fd, I2C_SLAVE, address) < 0) { \
-		fatal_with_errno(EXIT_FAILURE, "Failed to acquire bus access and/or talk to i2c slave 0x%02X", address); \
+		fatal_with_errno(EXIT_FAILURE, "Failed to acquire bus access and/or talk to i2c slave 0x%02X", (unsigned int)address); \
 	}
 
 static unsigned long lb_threshold = LOW_BATTERY_THRESHOLD;
@@ -202,7 +202,7 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 	online = (i2c_status & 0x8000) != 0;
-	upsdebugx(3, "Charger status 0x%02X, online %d", i2c_status, online);
+	upsdebugx(3, "Charger status 0x%02X, online %d", (unsigned int)i2c_status, online);
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
 # pragma GCC diagnostic push
@@ -222,7 +222,7 @@ void upsdrv_updateinfo(void)
 		upslogx(LOG_ERR, "Could not read bq2060 status word at address 0x16");
 		return;
 	}
-	upsdebugx(3, "bq2060 status 0x04%X", i2c_status);
+	upsdebugx(3, "bq2060 status 0x04%X", (unsigned int)i2c_status);
 	/* Busy, leave data as stale, try next time */
 	if (i2c_status & 0x0001) {
 		dstate_datastale();
@@ -232,7 +232,7 @@ void upsdrv_updateinfo(void)
 	/* Error, leave data as stale, try next time */
 	if (i2c_status & 0x000F) {
 		dstate_datastale();
-		upslogx(LOG_WARNING, "bq2060 returned error code 0x%02X", i2c_status & 0x000F);
+		upslogx(LOG_WARNING, "bq2060 returned error code 0x%02X", (unsigned int)i2c_status & 0x000F);
 		return;
 	}
 
@@ -326,6 +326,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
@@ -333,7 +336,8 @@ void upsdrv_shutdown(void)
 
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */

@@ -1,7 +1,9 @@
 /*
-* clone-outlet.c: clone outlet UPS driver
+* clone-outlet.c: clone an UPS, treating its outlet as if it were an UPS
+*                 (monitoring only)
 *
 * Copyright (C) 2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+* Copyright (C) 2024 - Jim Klimov <jimklimov+nut@gmail.com>
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -26,10 +28,10 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif
+#endif	/* !WIN32 */
 
-#define DRIVER_NAME	"clone outlet UPS Driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_NAME	"Clone outlet UPS driver"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -67,20 +69,20 @@ static struct {
 static int	dumpdone = 0;
 
 static PCONF_CTX_t	sock_ctx;
-static time_t	last_heard = 0, last_ping = 0;
+static time_t	last_poll = 0, last_heard = 0, last_ping = 0;
 
-#ifdef WIN32
+#ifndef WIN32
+/* TODO NUT_WIN32_INCOMPLETE : Why not built in WIN32? */
+static time_t	last_connfail = 0;
+#else	/* WIN32 */
 static char     	read_buf[SMALLBUF];
 static OVERLAPPED	read_overlapped;
-#else
-/* TODO: Why not built in WIN32? */
-static time_t	last_connfail = 0;
-#endif
+#endif	/* WIN32 */
 
 static int parse_args(size_t numargs, char **arg)
 {
 	if (numargs < 1) {
-		return 0;
+		goto skip_out;
 	}
 
 	if (!strcasecmp(arg[0], "PONG")) {
@@ -105,7 +107,7 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (numargs < 2) {
-		return 0;
+		goto skip_out;
 	}
 
 	/* DELINFO <var> */
@@ -115,7 +117,7 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (numargs < 3) {
-		return 0;
+		goto skip_out;
 	}
 
 	/* SETINFO <varname> <value> */
@@ -147,6 +149,24 @@ static int parse_args(size_t numargs, char **arg)
 		return 1;
 	}
 
+skip_out:
+	if (nut_debug_level > 0) {
+		char	buf[LARGEBUF];
+		size_t	i;
+		int	len = -1;
+
+		memset(buf, 0, sizeof(buf));
+		for (i = 0; i < numargs; i++) {
+			len = snprintfcat(buf, sizeof(buf), "[%s] ", arg[i]);
+		}
+		if (len > 0) {
+			buf[len - 1] = '\0';
+		}
+
+		upsdebugx(3, "%s: ignored protocol line with %" PRIuSIZE " keyword(s): %s",
+			__func__, numargs, numargs < 1 ? "<empty>" : buf);
+	}
+
 	return 0;
 }
 
@@ -154,11 +174,11 @@ static int parse_args(size_t numargs, char **arg)
 static TYPE_FD sstate_connect(void)
 {
 	TYPE_FD	fd;
+	const char	*dumpcmd = "DUMPALL\n";
 
 #ifndef WIN32
 	ssize_t	ret;
 	int	len;
-	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
@@ -233,8 +253,7 @@ static TYPE_FD sstate_connect(void)
 
 	/* continued below... */
 #else /* WIN32 */
-	char		pipename[SMALLBUF];
-	const char	*dumpcmd = "DUMPALL\n";
+	char		pipename[NUT_PATH_MAX];
 	BOOL		result = FALSE;
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s/%s", dflt_statepath(), device_path);
@@ -274,7 +293,7 @@ static TYPE_FD sstate_connect(void)
 	ReadFile(fd, read_buf,
 		sizeof(read_buf) - 1, /*-1 to be sure to have a trailling 0 */
 		NULL, &(read_overlapped));
-#endif
+#endif	/* WIN32 */
 
 	/* sstate_connect() continued for both platforms: */
 	pconf_init(&sock_ctx, NULL);
@@ -302,9 +321,9 @@ static void sstate_disconnect(void)
 
 #ifndef WIN32
 	close(upsfd);
-#else
+#else	/* WIN32 */
 	CloseHandle(upsfd);
-#endif
+#endif	/* WIN32 */
 
 	upsfd = ERROR_FD;
 }
@@ -320,19 +339,19 @@ static int sstate_sendline(const char *buf)
 
 #ifndef WIN32
 	ret = write(upsfd, buf, strlen(buf));
-#else
+#else	/* WIN32 */
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 
-	result = WriteFile (upsfd,buf,strlen(buf),&bytesWritten,NULL);
+	result = WriteFile (upsfd, buf, strlen(buf), &bytesWritten, NULL);
 
-	if( result == 0 ) {
+	if (result == 0) {
 		ret = 0;
 	}
-	else  {
+	else {
 		ret = (int)bytesWritten;
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (ret == (int)strlen(buf)) {
 		return 0;
@@ -368,7 +387,7 @@ static int sstate_readline(void)
 				return -1;
 		}
 	}
-#else
+#else	/* WIN32 */
 	if (INVALID_FD(upsfd)) {
 		return -1;	/* failed */
 	}
@@ -378,7 +397,7 @@ static int sstate_readline(void)
 	DWORD bytesRead;
 	GetOverlappedResult(upsfd, &read_overlapped, &bytesRead, FALSE);
 	ret = bytesRead;
-#endif
+#endif	/* WIN32 */
 
 	for (i = 0; i < ret; i++) {
 
@@ -449,6 +468,18 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
+	time_t	now = time(NULL);
+	double	d;
+
+	/* Throttle tight loops to avoid CPU burn, e.g. when the socket to driver
+	 * is not in fact connected, so a select() somewhere is not waiting much */
+	if (last_poll > 0 && (d = difftime(now, last_poll)) < 1.0) {
+		upsdebugx(5, "%s: too little time (%g sec) has passed since last cycle, throttling",
+			__func__, d);
+		usleep(500000);
+		now = time(NULL);
+	}
+
 	if (sstate_dead(15)) {
 		sstate_disconnect();
 		extrafd = upsfd = sstate_connect();
@@ -474,16 +505,20 @@ void upsdrv_updateinfo(void)
 
 	upsdebugx(3, "%s: power state not critical", getval("prefix"));
 	dstate_setinfo("ups.status", "%s", ups.status);
+
+	last_poll = now;
 }
 
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* replace with a proper shutdown function */
-/*
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
- */
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 

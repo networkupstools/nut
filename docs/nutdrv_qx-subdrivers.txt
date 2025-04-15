@@ -11,6 +11,33 @@ It consists of a core driver that handles most of the work of talking to the har
 
 Adding support for a new UPS device is easy, because it requires only the creation of a new sub-driver.
 
+[NOTE]
+======
+Due to historic reasons, there is a bit of a mess with terminology here:
+among the set of driver parameters passed on command-line or via `ups.conf`,
+the `subdriver` value is for Serial-over-USB dialect ("usbsubdriver" in code),
+and the `protocol` value is for Qx dialect (but referred to as "subdriver"
+in most of the documentation, and variable names in the code itself)..
+
+An additional set of source code files named `nutdrv_qx_subdrivername.{c,h}`
+defines a `subdriver_t` entry that is listed as in `subdrivers_list` array in
+the main `nutdrv_qx.c` file.  However, in `ups.conf` this entity is referred
+to via the communication `protocol` keyword, if the end-user wants to pick
+one explicitly (bypassing auto-detection).
+
+Confusingly, there *is* also an optional USB `subdriver` setting (available
+when the driver is built with USB support), for "Serial-over-USB subdriver
+selection", corresponding to entries in the `usbsubdriver` array and several
+`usbsubdrvname_command()` methods defined directly in `nutdrv_qx.c`.
+
+There are also methods called `usbsubdrvname_subdriver()` which are called
+via `qx_usb_id[]` array for USB VendorID/ProductID/iManufacturer/iProduct
+based matching, and typically set the `subdriver_command` variable to point
+to the corresponding `usbsubdrvname_command()` method when auto-detection
+happens.  Otherwise, this variable is set according to a text name requested
+in the `subdriver` driver parameter.
+======
+
 
 Creating a subdriver
 ~~~~~~~~~~~~~~~~~~~~
@@ -960,6 +987,176 @@ Return the currently processed status so that it can be checked with one of the 
 If you need to edit the current status call this function with one of the NUT status (all but +OB+ are supported, simply set it as not +OL+); prefix them with an exclamation mark if you want to clear them from the status (e.g. +!OL+).
 
 
+Armac Subdriver
+~~~~~~~~~~~~~~~
+
+Armac subdriver is based on reverse engineering of Power Manager II software by
+Richcomm Technologies written in 2005 that is still (as of 2023) being
+distributed as a valid software for freshly sold UPS of various manufacturers.
+It uses commands as defined for Megatec protocol - but has a different
+communication mechanism.
+
+It uses two types of USB interrupt transfers:
+- 4 bytes to send a command (usually single transfer).
+- 6 byte chunk to read a reply (multiple transfers).
+
+Transfers are similar to those of the richcomm nut driver, but the transferred
+data is not short binary commands. Instead, serial text data is overlaid in
+these transfers in a way that creates a badly made USB serial interface.  UPS
+reply looks similar to this:
+
+ 0  1  2  3  4  5
+HL 00 00 00 00 00
+
+HL is a control byte. Its high nibble meaning is unknown. It changes between
+two possible values during transmission. Low nibble encodes number of bytes
+that have a meaning in the transaction. For example there are 5 bytes that
+might contain ASCII serial data, but only some might be valid, and other might
+be random, stale buffer data, etc.
+
+What follows is set of observed transmissions by various UPSes gathered from
+Github issues.
+
+Transfer dumps
+^^^^^^^^^^^^^^
+
+#### Vultech V2000
+
+----
+419.987514     [D4] armac command Q1
+419.988307     [D4] armac cleanup ret i=0 ret=6 ctrl=c0
+420.119402     [D4] read: ret 6 buf 81: 28 30 31 30 30  >(0100<
+420.130383     [D4] read: ret 6 buf c1: 32 30 31 30 30  >20100<
+420.141408     [D4] read: ret 6 buf 82: 33 33 31 30 30  >33100<
+420.152201     [D4] read: ret 6 buf c3: 2e 30 20 30 30  >.0 00<
+420.153237     [D4] read: ret 6 buf 82: 30 30 20 30 30  >00 00<
+420.164299     [D4] read: ret 6 buf c1: 30 30 20 30 30  >00 00<
+420.175293     [D4] read: ret 6 buf 82: 2e 30 20 30 30  >.0 00<
+420.186358     [D4] read: ret 6 buf c3: 20 32 33 30 30  > 2300<
+420.190322     [D4] read: ret 6 buf 83: 33 2e 30 30 30  >3.000<
+420.194323     [D4] read: ret 6 buf c1: 20 2e 30 30 30  > .000<
+420.205358     [D4] read: ret 6 buf 81: 30 2e 30 30 30  >0.000<
+420.216318     [D4] read: ret 6 buf c2: 31 34 30 30 30  >14000<
+420.227445     [D4] read: ret 6 buf 83: 20 34 39 30 30  > 4900<
+420.228334     [D4] read: ret 6 buf c2: 2e 30 39 30 30  >.0900<
+420.239461     [D4] read: ret 6 buf 81: 20 30 39 30 30  > 0900<
+420.250411     [D4] read: ret 6 buf c2: 32 37 39 30 30  >27900<
+420.261405     [D4] read: ret 6 buf 83: 2e 30 20 30 30  >.0 00<
+420.265468     [D4] read: ret 6 buf c3: 32 30 2e 30 30  >20.00<
+420.269465     [D4] read: ret 6 buf 81: 38 30 2e 30 30  >80.00<
+420.280322     [D4] read: ret 6 buf c1: 20 30 2e 30 30  > 0.00<
+420.291469     [D4] read: ret 6 buf 82: 30 30 2e 30 30  >00.00<
+420.302465     [D4] read: ret 6 buf c3: 30 30 31 30 30  >00100<
+420.303511     [D4] read: ret 6 buf 82: 00 30 31 30 30  >          <- This has 0x00 and '0', will be read as "00"
+420.303515     [D3] found null byte in status bits at 43 byte, assuming 0.
+420.314425     [D4] read: ret 6 buf c1: 31 30 31 30 30  >10100<    <- this has '1'
+420.325432     [D4] read: ret 6 buf 81: 0d 30 31 30 30  >.0100<    <- and this finishes with `\r`.
+420.325442     [D3] armac command Q1 response read: '(233.0 000.0 233.0 014 49.0 27.0 20.8 00001001'
+----
+
+----
+1.185164     [D4] armac command ID
+1.316257     [D4] read: ret 6 buf c1: 23 31 00 30 30  >#1
+1.327309     [D4] read: ret 6 buf 81: 20 31 00 30 30  > 1
+1.338264     [D4] read: ret 6 buf c2: 20 20 00 30 30  >
+1.349151     [D4] read: ret 6 buf 83: 20 20 20 30 30  >   00<
+1.360277     [D4] read: ret 6 buf c2: 20 20 20 30 30  >   00<
+1.371322     [D4] read: ret 6 buf 83: 20 20 20 30 30  >   00<
+1.382265     [D4] read: ret 6 buf c3: 20 20 20 30 30  >   00<
+1.393156     [D4] read: ret 6 buf 82: 20 20 20 30 30  >   00<
+1.404324     [D4] read: ret 6 buf c3: 20 20 20 30 30  >   00<
+1.415342     [D4] read: ret 6 buf 83: 20 20 20 30 30  >   00<
+1.426292     [D4] read: ret 6 buf c2: 20 20 20 30 30  >   00<
+1.437203     [D4] read: ret 6 buf 83: 20 20 20 30 30  >   00<
+1.448328     [D4] read: ret 6 buf c3: 56 34 2e 30 30  >V4.00<
+1.459293     [D4] read: ret 6 buf 82: 31 30 2e 30 30  >10.00<
+1.470274     [D4] read: ret 6 buf c3: 20 20 20 30 30  >   00<
+1.481208     [D4] read: ret 6 buf 82: 20 20 20 30 30  >   00<
+1.492261     [D4] read: ret 6 buf c1: 0d 20 20 30 30  >
+1.492270     [D3] armac command ID response read: '#                           V4.10     '
+----
+
+----
+4.749667     [D4] armac command F
+4.876638     [D4] read: ret 6 buf 81: 23 31 00 30 30  >#1
+4.887614     [D4] read: ret 6 buf c1: 32 31 00 30 30  >21
+4.898644     [D4] read: ret 6 buf 82: 32 30 00 30 30  >20
+4.909595     [D4] read: ret 6 buf c3: 2e 30 20 30 30  >.0 00<
+4.920648     [D4] read: ret 6 buf 82: 30 30 20 30 30  >00 00<
+4.931629     [D4] read: ret 6 buf c3: 35 20 32 30 30  >5 200<
+4.942601     [D4] read: ret 6 buf 83: 34 2e 30 30 30  >4.000<
+4.953666     [D4] read: ret 6 buf c2: 30 20 30 30 30  >0 000<
+4.964535     [D4] read: ret 6 buf 83: 35 30 2e 30 30  >50.00<
+4.975540     [D4] read: ret 6 buf c2: 30 0d 2e 30 30  >0
+4.975546     [D3] armac command F response read: '#220.0 005 24.00 50.0'
+----
+
+#### Armac R/2000I/PSW
+
+----
+112.966856     [D4] armac command Q1
+112.968197     [D4] armac cleanup ret i=0 ret=6 ctrl=c0         <- Cleanups required.
+113.091193     [D4] read: ret 6 buf 81: 28 30 0d 2e 30  >(0     <- Usually 1-3 bytes available in transfer.
+113.103211     [D4] read: ret 6 buf c1: 30 30 0d 2e 30  >00
+113.115180     [D4] read: ret 6 buf 82: 30 30 0d 2e 30  >00
+113.117144     [D4] read: ret 6 buf c3: 2e 30 20 2e 30  >.0 .0<
+113.120150     [D4] read: ret 6 buf 81: 31 30 20 2e 30  >10 .0<
+113.132178     [D4] read: ret 6 buf c1: 34 30 20 2e 30  >40 .0<
+113.144159     [D4] read: ret 6 buf 82: 30 2e 20 2e 30  >0. .0<
+113.146149     [D4] read: ret 6 buf c3: 30 20 32 2e 30  >0 2.0<
+113.149173     [D4] read: ret 6 buf 81: 32 20 32 2e 30  >2 2.0<
+113.161167     [D4] read: ret 6 buf c1: 37 20 32 2e 30  >7 2.0<
+113.173159     [D4] read: ret 6 buf 82: 2e 30 32 2e 30  >.02.0<
+113.175157     [D4] read: ret 6 buf c3: 20 30 30 2e 30  > 00.0<
+113.178158     [D4] read: ret 6 buf 81: 32 30 30 2e 30  >200.0<
+113.190157     [D4] read: ret 6 buf c1: 20 30 30 2e 30  > 00.0<
+113.202161     [D4] read: ret 6 buf 82: 30 30 30 2e 30  >000.0<
+113.204154     [D4] read: ret 6 buf c3: 2e 30 20 2e 30  >.0 .0<
+113.207150     [D4] read: ret 6 buf 81: 34 30 20 2e 30  >40 .0<
+113.219174     [D4] read: ret 6 buf c1: 36 30 20 2e 30  >60 .0<
+113.231165     [D4] read: ret 6 buf 82: 2e 38 20 2e 30  >.8 .0<
+113.233157     [D4] read: ret 6 buf c3: 20 35 36 2e 30  > 56.0<
+113.237149     [D4] read: ret 6 buf 81: 2e 35 36 2e 30  >.56.0<
+113.249168     [D4] read: ret 6 buf c1: 30 35 36 2e 30  >056.0<
+113.261155     [D4] read: ret 6 buf 83: 20 31 30 2e 30  > 10.0<
+113.263151     [D4] read: ret 6 buf c2: 30 30 30 2e 30  >000.0<
+113.266152     [D4] read: ret 6 buf 81: 31 30 30 2e 30  >100.0<
+113.278161     [D4] read: ret 6 buf c1: 30 30 30 2e 30  >000.0<  <- No Null bytes.
+113.290155     [D4] read: ret 6 buf 82: 30 30 30 2e 30  >000.0<
+113.292159     [D4] read: ret 6 buf c1: 0d 30 30 2e 30  >
+113.292169     [D3] armac command Q1 response read: '(000.0 140.0 227.0 002 00.0 46.8 56.0 10001000'
+----
+
+Next query would return 0x80 control byte - 0 available bytes. This used to
+terminate transmission, but some UPS don't work like that.
+
+
+#### Armac R/3000I/PF1
+
+----
+0.083301     [D4] armac command Q1
+0.164847     [D4] read: ret 6 buf a6: 28 32 34 31 2e  >(241.<
+0.184839     [D4] read: ret 6 buf 86: 35 20 30 30 30  >5 000<
+0.205851     [D4] read: ret 6 buf a6: 2e 30 20 32 33  >.0 23<
+0.226849     [D4] read: ret 6 buf 86: 30 2e 33 20 30  >0.3 0<
+0.247859     [D4] read: ret 6 buf a6: 30 30 20 34 39  >00 49<
+0.268862     [D4] read: ret 6 buf 86: 2e 39 20 32 2e  >.9 2.<
+0.289857     [D4] read: ret 6 buf a6: 32 35 20 34 38  >25 48<
+0.309866     [D4] read: ret 6 buf 86: 2e 30 20 30 30  >.0 00<
+0.330863     [D4] read: ret 6 buf a6: 30 30 30 30 30  >00000<
+0.827913     [D4] read: ret 6 buf 83: 31 0d 30 30 30  >1 000<
+0.827927     [D3] armac command Q1 response read: '(241.5 000.0 230.3 000 49.9 2.25 48.0 00000001'
+0.827954     [D4] armac command ID
+1.394985     [D4] read: ret 6 buf a5: 4e 41 4b 0d 30  >NAK  <
+1.395001     [D3] armac command ID response read: 'NAK'
+----
+
+This UPS sends higher nibble set to 6 often, which exceeds available bytes.
+Maybe means that more are available. Its serial-USB bridge is probably faster.
+We read 5 bytes in case 6 nibble is sent. End of transmission is marked by `\r`,
+no 0 nibble is sent.
+
+
 Notes
 ~~~~~
 
@@ -974,12 +1171,15 @@ You can then recompile +nutdrv_qx+, and start experimenting with the new subdriv
 For more details, have a look at the currently available subdrivers:
 
 - +nutdrv_qx_bestups.+{+c+,+h+}
+- +nutdrv_qx_innovart31.+{+c+,+h+}
 - +nutdrv_qx_masterguard.+{+c+,+h+}
 - +nutdrv_qx_mecer.+{+c+,+h+}
 - +nutdrv_qx_megatec.+{+c+,+h+}
 - +nutdrv_qx_megatec-old.+{+c+,+h+}
 - +nutdrv_qx_mustek.+{+c+,+h+}
 - +nutdrv_qx_q1.+{+c+,+h+}
+- +nutdrv_qx_q2.+{+c+,+h+}
+- +nutdrv_qx_q6.+{+c+,+h+}
 - +nutdrv_qx_voltronic.+{+c+,+h+}
 - +nutdrv_qx_voltronic-qs.+{+c+,+h+}
 - +nutdrv_qx_voltronic-qs-hex.+{+c+,+h+}

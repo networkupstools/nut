@@ -1,3 +1,14 @@
+# Network UPS Tools: generators and other tools
+
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_NAMESPACE@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_BASEDIR@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_DIR@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
+
 # SUBDIRS are explicitly a listing of all the directories that make
 # must recurse into BEFORE processing the current directory.
 #
@@ -9,12 +20,12 @@
 # to have nutscan-{usb,snmp}.h built before going into the nut-scanner
 # sub-directory. For good measure we also call this from nut-scanner's
 # make, to handle developer workflow (editing the *.c sources this uses).
-SUBDIRS = . nut-scanner
+SUBDIRS = . nut-scanner nutconf
 
 PYTHON = @PYTHON@
 
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh nut-dumpdiff.sh \
-  gitlog2changelog.py.in nut-snmpinfo.py.in driver-list-format.sh
+  gitlog2changelog.py.in gitlog2version.sh nut-snmpinfo.py.in driver-list-format.sh
 
 # These files are generated for nut-scanner builds (and cleaned as any others),
 # and can change as respective SNMP/USB subdriver sources are iterated by a
@@ -41,6 +52,9 @@ GENERATED_USB_OS_FILES += $(top_builddir)/scripts/udev/nut-usbups.rules.in
 # BSD devd output file
 GENERATED_USB_OS_FILES += $(top_builddir)/scripts/devd/nut-usb.conf.in
 
+# FreeBSD quirks output file
+GENERATED_USB_OS_FILES += $(top_builddir)/scripts/devd/nut-usb.quirks
+
 # UPower output file
 # Note: unlike others above, this one is currently tracked in Git
 GENERATED_USB_OS_FILES += $(top_builddir)/scripts/upower/95-upower-hid.hwdb
@@ -60,7 +74,7 @@ nut-scanner-deps-usb: $(GENERATED_USB_FILES)
 
 # The distributed nut-snmpinfo.py.in template is assumed to only differ from
 # a generated nut-snmpinfo.py by the @PYTHON@ shebang.
-$(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
+$(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c $(top_srcdir)/tools/nut-snmpinfo.py.in
 	@if [ -n "$(PYTHON)" ] && [ x"no" != x"$(PYTHON)" ] && $(PYTHON) -c 1; then \
 		echo "Regenerating the SNMP helper files in SRC dir with '$(PYTHON)'."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
@@ -101,7 +115,7 @@ $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
 	 fi
 	@touch "$@"
 
-$(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c
+$(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c $(top_srcdir)/tools/nut-usbinfo.pl
 	@if perl -e 1; then \
 		echo "Regenerating the USB helper files in SRC dir."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \

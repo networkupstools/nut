@@ -23,15 +23,33 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #ifdef HAVE_POLL_H
 # include <poll.h> /* nfds_t */
 #else
 typedef unsigned long int nfds_t;
-#endif
+
+# ifndef POLLRDNORM
+#  define POLLRDNORM	0x0100
+# endif
+# ifndef POLLRDBAND
+#  define POLLRDBAND	0x0200
+# endif
+# ifndef POLLIN
+#  define POLLIN	(POLLRDNORM | POLLRDBAND)
+# endif
+# if ! HAVE_STRUCT_POLLFD
+typedef struct pollfd {
+  SOCKET fd;
+  short  events;
+  short  revents;
+} pollfd_t;
+#  define HAVE_STRUCT_POLLFD 1
+# endif
+#endif	/* !HAVE_POLL_H */
 
 #include "main.h"
 #include "apcupsd-ups.h"
@@ -39,7 +57,7 @@ typedef unsigned long int nfds_t;
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.70"
+#define DRIVER_VERSION	"0.73"
 
 #define POLL_INTERVAL_MIN 10
 
@@ -174,32 +192,36 @@ static int getdata(void)
 	char *data;
 	struct pollfd p;
 	char bfr[1024];
+	st_tree_timespec_t start;
+	int ret = -1;
 #ifndef WIN32
 	int fd_flags;
-#else
+#else	/* WIN32 */
 	/* Note: while the code below uses "pollfd" for simplicity as it is
 	 * available in mingw headers (although poll() method usually is not),
 	 * WIN32 builds use WaitForMultipleObjects(); see also similar code
 	 * in upsd.c for networking.
 	 */
 	HANDLE event = NULL;
-#endif
+#endif	/* WIN32 */
 
-	for(x=0;nut_data[x].info_type;x++)
-		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
-			dstate_delinfo(nut_data[x].info_type);
+	state_get_timestamp((st_tree_timespec_t *)&start);
 
-	if (INVALID_FD_SOCK( p.fd = socket(AF_INET, SOCK_STREAM, 0) ))
+	if (INVALID_FD_SOCK( (p.fd = socket(AF_INET, SOCK_STREAM, 0)) ))
 	{
 		upsdebugx(1,"socket error");
-		return -1;
+		/* return -1; */
+		ret = -1;
+		goto getdata_return;
 	}
 
 	if(connect(p.fd,(struct sockaddr *)&host,sizeof(host)))
 	{
 		upsdebugx(1,"can't connect to apcupsd");
-		close(p.fd);
-		return -1;
+		/* close(p.fd);
+		return -1; */
+		ret = -1;
+		goto getdata_return;
 	}
 
 #ifndef WIN32
@@ -207,17 +229,21 @@ static int getdata(void)
 	fd_flags = fcntl(p.fd, F_GETFL);
 	if (fd_flags == -1) {
 		upsdebugx(1,"unexpected fcntl(fd, F_GETFL) failure");
-		close(p.fd);
-		return -1;
+		/* close(p.fd);
+		return -1; */
+		ret = -1;
+		goto getdata_return;
 	}
 	fd_flags |= O_NONBLOCK;
 	if(fcntl(p.fd, F_SETFL, fd_flags) == -1)
 	{
 		upsdebugx(1,"unexpected fcntl(fd, F_SETFL, fd_flags|O_NONBLOCK) failure");
-		close(p.fd);
-		return -1;
+		/* close(p.fd);
+		return -1; */
+		ret = -1;
+		goto getdata_return;
 	}
-#else
+#else	/* WIN32 */
 	event = CreateEvent(
 		NULL,  /* Security */
 		FALSE, /* auto-reset */
@@ -226,7 +252,7 @@ static int getdata(void)
 
 	/* Associate socket event to the socket via its Event object */
 	WSAEventSelect( p.fd, event, FD_CONNECT );
-#endif
+#endif	/* WIN32 */
 
 	p.events=POLLIN;
 
@@ -237,27 +263,21 @@ static int getdata(void)
 	/* TODO: double-check for poll() in configure script */
 #ifndef WIN32
 	while(poll(&p,1,15000)==1)
-#else
+#else	/* WIN32 */
 	while (WaitForMultipleObjects(1, &event, FALSE, 15000) == WAIT_TIMEOUT)
-#endif
+#endif	/* WIN32 */
 	{
 		if(read(p.fd,&n,2)!=2)
 		{
 			upsdebugx(1,"apcupsd communication error");
-			close(p.fd);
-#ifdef WIN32
-			CloseHandle(event);
-#endif
-			return -1;
+			ret = -1;
+			goto getdata_return;
 		}
 
 		if(!(x=ntohs(n)))
 		{
-			close(p.fd);
-#ifdef WIN32
-			CloseHandle(event);
-#endif
-			return 0;
+			ret = 0;
+			goto getdata_return;
 		}
 		else if(x<0||x>=(int)sizeof(bfr))
 		/* Note: LGTM.com suggests "Comparison is always false because x >= 0"
@@ -268,27 +288,21 @@ static int getdata(void)
 		 */
 		{
 			upsdebugx(1,"apcupsd communication error");
-			close(p.fd);
-#ifdef WIN32
-			CloseHandle(event);
-#endif
-			return -1;
+			ret = -1;
+			goto getdata_return;
 		}
 
 #ifndef WIN32
 		if(poll(&p,1,15000)!=1)break;
-#else
+#else	/* WIN32 */
 		if (WaitForMultipleObjects(1, &event, FALSE, 15000) != WAIT_OBJECT_0) break;
-#endif
+#endif	/* WIN32 */
 
 		if(read(p.fd,bfr,(size_t)x)!=x)
 		{
 			upsdebugx(1,"apcupsd communication error");
-			close(p.fd);
-#ifdef WIN32
-			CloseHandle(event);
-#endif
-			return -1;
+			ret = -1;
+			goto getdata_return;
 		}
 
 		bfr[x]=0;
@@ -296,21 +310,15 @@ static int getdata(void)
 		if(!(item=strtok(bfr," \t:\r\n")))
 		{
 			upsdebugx(1,"apcupsd communication error");
-			close(p.fd);
-#ifdef WIN32
-			CloseHandle(event);
-#endif
-			return -1;
+			ret = -1;
+			goto getdata_return;
 		}
 
 		if(!(data=strtok(NULL,"\r\n")))
 		{
 			upsdebugx(1,"apcupsd communication error");
-			close(p.fd);
-#ifdef WIN32
-			CloseHandle(event);
-#endif
-			return -1;
+			ret = -1;
+			goto getdata_return;
 		}
 		while(*data==' '||*data=='\t'||*data==':')data++;
 
@@ -318,11 +326,22 @@ static int getdata(void)
 	}
 
 	upsdebugx(1,"unexpected connection close by apcupsd");
-	close(p.fd);
+	ret = -1;
+
+getdata_return:
+	if (VALID_FD_SOCK(p.fd))
+		close(p.fd);
 #ifdef WIN32
-	CloseHandle(event);
-#endif
-	return -1;
+	if (event != NULL)
+		CloseHandle(event);
+#endif	/* WIN32 */
+
+	/* Remove any unprotected entries not refreshed in this run */
+	for(x=0;nut_data[x].info_type;x++)
+		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
+			dstate_delinfo_olderthan(nut_data[x].info_type, &start);
+
+	return ret;
 }
 
 void upsdrv_initinfo(void)
@@ -331,7 +350,7 @@ void upsdrv_initinfo(void)
 	if(getdata())fatalx(EXIT_FAILURE,"can't communicate with apcupsd!");
 	else dstate_dataok();
 
-	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
+	poll_interval = (poll_interval < POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_updateinfo(void)
@@ -339,14 +358,18 @@ void upsdrv_updateinfo(void)
 	if(getdata())upslogx(LOG_ERR,"can't communicate with apcupsd!");
 	else dstate_dataok();
 
-	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
+	poll_interval = (poll_interval < POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
@@ -366,7 +389,7 @@ void upsdrv_initups(void)
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
 	atexit((void(*)(void))WSACleanup);
-#endif
+#endif	/* WIN32 */
 
 	if(device_path&&*device_path)
 	{

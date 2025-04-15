@@ -1,0 +1,162 @@
+APC_MODBUS(8)
+=============
+
+NAME
+----
+
+apc_modbus - Driver for APC Smart-UPS Modbus protocol
+
+SYNOPSIS
+--------
+
+*apc_modbus* -h
+
+*apc_modbus* -a 'UPS_NAME' ['OPTIONS']
+
+SUPPORTED HARDWARE
+------------------
+
+Generally this driver should work for all the APC Modbus UPS devices. Some
+devices might expose more than is currently supported, like multiple phases.
+A general rule of thumb is that APC devices (or firmware versions) released
+after 2010 are more likely to support Modbus than the USB HID standard.
+
+Tested with the following hardware:
+
+ - SMT1500 (Smart-UPS 1500, Firmware 9.6)
+ - SMX750  (Smart-UPS X 750, Firmware 10.1)
+ - SMX1500 (Smart-UPS X 1500, Firmware 15.0)
+
+Note that you will have to enable Modbus communication. In the front panel of
+the UPS, go to Advanced Menu mode, under Configuration and enable Modbus.
+
+NOTE: This driver was tested with Serial, TCP and USB interfaces for Modbus.
+Notably, the Serial ports are not available on all devices nowadays; the TCP
+support may require a purchase of an additional network management card; and
+the USB support *currently* requires a non-standard build of libmodbus (pull
+request against the upstream library is pending, as of at the time of this
+publication) as a pre-requisite to building NUT with this part of the support.
+For more details (including how to build the custom library and NUT with it)
+please see link:https://github.com/networkupstools/nut/pull/2063[NUT PR #2063]
+
+NOTE: As currently published, this driver supports reading information from
+the UPS. Implementation of support to write (set modifiable variables or send
+commands) is expected with a later release. This can impact the host shutdown
+routines in particular (no ability to actively tell the UPS to power off or
+cycle in the end). As a workaround, you can try integrating `apctest` (from
+the "apcupsd" project) with a "Test to kill power" into your late-shutdown
+procedure, if needed.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver also supports the following optional settings:
+
+include::nut_usb_addvars.txt[]
+
+*porttype*='value'::
+Set the type of the port used. Available values are serial for RS232/485 based
+connections, tcp for TCP/IP connections and usb for USB connections.
+
+*port*='value'::
+Depending on the port type you can select a port here. For usb only auto is
+supported, for serial you can pass a device path like /dev/ttyS0 and for tcp you
+can pass a hostname with optional port like example.com:502.
+
+*baudrate*='num'::
+Set the speed of the serial connection. The default baudrate is 9600.
+
+*parity*='value'::
+Set the parity of the serial connection. Available values are N for none, E for
+even and O for odd. The default parity is N (none).
+
+*databits*='num'::
+Set the data bits of the serial connection. The default databits is 8.
+
+*stopbits*='num'::
+Set the stop bits of the serial connection. The default stopbits is 1.
+
+*slaveid*='num'::
+Set the Modbus slave id. The default slave id is 1.
+
+*response_timeout_ms*='num'::
+Set the Modbus response timeout. The default timeout is set by libmodbus. It can
+be good to set a higher timeout on TCP connections with high latency.
+
+BUGS
+----
+
+This driver relies on advanced features of `libmodbus` to talk Modbus protocol
+over USB specifically (Serial and TCP are part of common library codebase).
+At the time of this writing, the common library project is just expecting a
+merge of the pull request with this ability.
+
+For the time being, if your OS distribution does not ship the required feature
+set, you may have to build your own `libmodbus` and subsequently (re-)build NUT
+against this library, as detailed in the NUT GitHub Wiki at
+https://github.com/networkupstools/nut/wiki/APC-UPS-with-Modbus-protocol
+
+The short sequence may be like follows:
+------
+cd ~/
+git clone -b rtu_usb https://github.com/networkupstools/libmodbus
+cd libmodbus
+./autogen.sh
+./configure --with-libusb --prefix=/path/to/prefix
+make install
+------
+
+[NOTE]
+======
+* you may need to `make && sudo make install` if you want to place this library
+  files' variant into a system path (like `--prefix=/usr/local/ups` to match
+  NUT defaults -- this activity would need privilege elevation via `sudo`),
+  and not into your home directory or some `/tmp` location.
+* conversely, you may want to
+  `./configure --with-libusb --enable-static --disable-shared --prefix=/path/to/prefix`
+  and only build and install a static `libmodbus.a` (can well be installed into
+  `/tmp` or similarly short-lived location), so that the customized Modbus+USB
+  logic gets built directly into `apc_modbus` binary program and there would be
+  no potential run-time conflict with a dynamic library file available elsewhere
+  in the system.
+======
+
+------
+cd ~/
+git clone https://github.com/networkupstools/nut
+cd nut
+./autogen.sh
+./configure --with-drivers=apc_modbus --with-usb --with-modbus \
+   --with-modbus-includes=-I/path/to/prefix/include/modbus \
+   --with-modbus-libs="-L/path/to/prefix/lib -lmodbus"
+make
+------
+
+[NOTE]
+======
+* Other NUT `configure` options may be needed for proper behavior, such as
+`--prefix`, `--with-sysconfdir`, `--with-user` and `--with-group` to match
+your packaged or otherwise preceding NUT installation.
+======
+
+The `./configure --enable-inplace-runtime` may be a good start to inherit
+build configuration from an existing NUT deployment, as further detailed at
+https://github.com/networkupstools/nut/wiki/Building-NUT-for-in%E2%80%90place-upgrades-or-non%E2%80%90disruptive-tests
+
+AUTHORS
+-------
+
+* Axel Gembe <axel@gembe.net>
+
+SEE ALSO
+--------
+
+The core driver
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8], linkman:ups.conf[5]
+
+Internet resources
+~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

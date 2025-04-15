@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Copyright (C) 2024-2025 by Jim Klimov <jimklimov+nut@gmail.com>
+# NOTE: If there are system problems to suppress, re-run the test with
+#    --gen-suppressions=all option, and update the .valgrind.supp file.
+
+SCRIPTDIR="`dirname "$0"`"
+SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
+
+LTEXEC=""
+[ -n "${LIBTOOL-}" ] || LIBTOOL="`command -v glibtool`" 2>/dev/null
+[ -n "${LIBTOOL-}" ] || LIBTOOL="`command -v libtool`" 2>/dev/null
+[ -z "${LIBTOOL}"  ] || LTEXEC="${LIBTOOL} --mode=execute "
+
+# Allow to run un-parsed "sh ${top_srcdir}/scripts/valgrind/valgrind.sh.in"
+# with reasonable success:
+[ -n "${VALGRIND-}" ] || case '@VALGRIND@' in [@]*|none) ;; *) VALGRIND='@VALGRIND@' ;; esac
+[ -n "${VALGRIND-}" ] || VALGRIND="valgrind"
+
+# TODO: Also wrap tool=callgrind e.g. via $0 symlink name?
+
+exec ${LTEXEC} \
+${VALGRIND} \
+	--tool=memcheck --verbose \
+	--leak-check=full --show-reachable=yes --error-exitcode=1 --show-error-list=yes \
+	--trace-children=yes --track-fds=yes --show-leak-kinds=all --track-origins=yes \
+	--suppressions="${SCRIPTDIR}/.valgrind.supp" \
+	${VALGRIND_OPTIONS-} \
+	"$@"

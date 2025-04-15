@@ -44,7 +44,7 @@
 #define MAX_SHUTDOWN_DELAY_LEN 5
 
 #define DRIVER_NAME	"MICRODOWELL UPS driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -213,7 +213,7 @@ static void SendCmdToSerial(unsigned char *Buff, size_t Len)
 
 static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned char *RetBuffer)
 {
-	#define TMP_BUFF_LEN	1024
+#	define TMP_BUFF_LEN	1024
 	unsigned char InpBuff[TMP_BUFF_LEN+1] ;
 	unsigned char TmpBuff[3] ;
 	int i, ErrCode ;
@@ -761,13 +761,13 @@ int instcmd(const char *cmdname, const char *extra)
 		if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 			{
 			p += 3 ;	/* 'p' points to received data */
-			upslogx(LOG_INFO, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%u)", OutBuff[2], ups.ShutdownDelay, 0) ;
-			upsdebugx(3, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%u): %s", OutBuff[2], ups.ShutdownDelay, 0, PrintErr(ups.ErrCode));
+			upslogx(LOG_INFO, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%d)", OutBuff[2], ups.ShutdownDelay, 0) ;
+			upsdebugx(3, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%d): %s", OutBuff[2], ups.ShutdownDelay, 0, PrintErr(ups.ErrCode));
 			}
 		else
 			{
-			upsdebugx(1, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%u): %s", OutBuff[2], ups.ShutdownDelay, 0, PrintErr(ups.ErrCode));
-			upslogx(LOG_ERR, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%u)", OutBuff[2], ups.ShutdownDelay, 0) ;
+			upsdebugx(1, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%d): %s", OutBuff[2], ups.ShutdownDelay, 0, PrintErr(ups.ErrCode));
+			upslogx(LOG_ERR, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%d)", OutBuff[2], ups.ShutdownDelay, 0) ;
 			}
 		return STAT_INSTCMD_HANDLED;
 		}
@@ -916,11 +916,11 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("battery.packs", "%d", ups.BatteryNumber) ;
 
 	/* Register the available variables. */
-	dstate_setinfo("ups.delay.start", "%d", ups.WakeUpDelay);
+	dstate_setinfo("ups.delay.start", "%u", ups.WakeUpDelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", MAX_START_DELAY_LEN);
 
-	dstate_setinfo("ups.delay.shutdown", "%d", ups.ShutdownDelay);
+	dstate_setinfo("ups.delay.shutdown", "%u", ups.ShutdownDelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", MAX_SHUTDOWN_DELAY_LEN);
 
@@ -944,10 +944,13 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	unsigned char OutBuff[20] ;
-	unsigned char InpBuff[260] ;
-	unsigned char *p ;
-	unsigned char BatteryFlag=0 ;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	unsigned char	OutBuff[20];
+	unsigned char	InpBuff[260];
+	unsigned char	*p;
+	unsigned char	BatteryFlag = 0;
 
 	OutBuff[0] = CMD_GET_STATUS ;   /* get UPS status */
 	if ((p = CmdSerial(OutBuff, LEN_GET_STATUS, InpBuff)) != NULL)

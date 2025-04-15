@@ -26,6 +26,9 @@
  * Reference of the derivative work: blazer driver
  */
 
+#include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
+
 #include <string.h>
 
 #include "main.h"
@@ -67,14 +70,12 @@ uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t che
 				size--;
 				CRC_Word = 0x554D;
 				while(size--) {
-					pom  = (CRC_Word ^ *buff) & 0x00ff;
-					pom  = (pom ^ (pom << 4)) & 0x00ff;
-					/* Thanks to &0xff above, pom is at most 255 --
-					 * so shifted by 8 bits is still uint16_t range
+					pom = (CRC_Word ^ *buff) & 0x00ff;
+					pom = (pom ^ (pom << 4)) & 0x00ff;
+					/* Thanks to &0x00ff above, pom is at most 255 --
+					 * so shifted by 8 bits is still uint16_t range:
 					 */
-					pom  = (uint16_t)(pom << 8);
-					pom ^= (pom << 3);
-					pom ^= (pom >> 4);
+					pom = (pom << 8) ^ (pom << 3) ^ (pom >> 4);
 					CRC_Word = (CRC_Word >> 8) ^ pom;
 					buff++;
 				}
@@ -84,6 +85,8 @@ uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t che
 				for (i=1; i<size; i++)
 					CRC_Word += buff[i];
 			}
+			break;
+		default:
 			break;
 	}
 	return(CRC_Word);
@@ -124,6 +127,8 @@ uint8_t riello_test_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t chec
 			suma += (buff[size-2]-0x30);
 			if (suma != CRC_Word)
 				return(1);
+			break;
+		default:
 			break;
 	}
 	return(0);
@@ -914,7 +919,7 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->StatusCode[2] |= 0x01;
 }
 
-void riello_init_serial()
+void riello_init_serial(void)
 {
 	wait_packet = 1;
 	buf_ptr_length = 0;
@@ -943,6 +948,8 @@ uint8_t riello_header(uint8_t type, uint8_t a, uint8_t* length)
 			if ((buf_ptr_length==0) && (LAST_DATA[5]>0x20) && (LAST_DATA[4]==0x2))
 				return(1);
 			break;
+		default:
+			break;
 	}
 	return(0);
 }
@@ -962,6 +969,8 @@ uint8_t riello_tail(uint8_t type, uint8_t length)
 			if (LAST_DATA[5] == 0x03)
 				return(1);
 			break;
+		default:
+			break;
 	}
 	return(0);
 }
@@ -972,6 +981,8 @@ uint8_t riello_test_nak(uint8_t type, uint8_t* buffer)
 		case DEV_RIELLOGPSER:
 			if (buffer[3] == 0x15)
 				return(1);
+			break;
+		default:
 			break;
 	}
 	return(0);

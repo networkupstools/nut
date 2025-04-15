@@ -6,10 +6,14 @@ NAME
 
 victronups - Driver for IMV/Victron UPS unit Match, Match Lite, NetUps
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the the
+*victronups* -h
+
+*victronups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the the
 victronups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -20,7 +24,7 @@ The victronups driver should recognize all Victron models that use a serial
 protocol at 1200 bps.  These include Match Lite, Match and the NetUps line.
 
 The Match Lite line may only report a handful of variables.  This is
-usually not a bug - they just don't support anything else.
+usually not a bug -- they just don't support anything else.
 
 CABLING
 -------

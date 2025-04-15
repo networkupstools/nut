@@ -5,7 +5,7 @@ dnl do the checking only once.
 
 AC_DEFUN([NUT_CHECK_PKGCONFIG],
 [
-AS_IF([test -z "${nut_have_pkg_config_seen}"], [
+  AS_IF([test -z "${nut_have_pkg_config_seen}"], [
 	nut_have_pkg_config_seen=yes
 
 	dnl Note that PKG_CONFIG may be a filename, path,
@@ -83,8 +83,43 @@ AS_IF([test -z "${nut_have_pkg_config_seen}"], [
 		 PKG_CONFIG="false"
 		],
 		[AS_IF([test x"$have_PKG_CONFIG_MACROS" = xno],
-			[AC_MSG_WARN([pkg-config macros are needed to look for further dependencies, but in some cases pkg-config program can be used directly])]
-		)]
+			[AC_MSG_WARN([pkg-config macros are needed to look for further dependencies, but in some cases pkg-config program can be used directly])])
+
+		 AC_MSG_CHECKING([for pkg-config envvar PKG_CONFIG_PATH (if passed to configure script or exported in shell session)])
+		 AC_MSG_RESULT([${PKG_CONFIG_PATH}])
+
+		 AC_MSG_CHECKING([for pkg-config reported pc_path])
+		 myPKG_CONFIG_PC_PATH="`pkg-config --variable pc_path pkg-config`" || myPKG_CONFIG_PC_PATH=""
+		 AC_MSG_RESULT([${myPKG_CONFIG_PC_PATH}])
+
+		 dnl # The piece below is inspired by https://github.com/wxWidgets/wxWidgets/commit/7899850496ba2707c41cc534b51d14ac5b9fdbba
+		 dnl When cross-compiling for another system from Linux, don't use .pc files on
+		 dnl the build system, they are at best useless and can be harmful (e.g. they
+		 dnl may define options inappropriate for the cross-build, resulting in the
+		 dnl failure of all the subsequent tests).
+		 dnl
+		 dnl However do use .pc files for the host libraries that can be found by the
+		 dnl host-specific pkg-config if it was found by PKG_PROG_PKG_CONFIG above.
+		 AS_IF([test x"$build" != x"$host"], [
+			AS_CASE(["$PKG_CONFIG"],
+				[*/"$host"-pkg-config], [],
+				[AC_MSG_WARN([Not using native pkg-config when cross-compiling.])
+
+				 dnl pkg.m4 forbids the use of PKG_XXX, so undo it here
+				 dnl to avoid autoconf errors.
+				 m4_pattern_allow([PKG_CONFIG_LIBDIR])
+
+				 dnl If pkg-config libdir is already defined, we suppose that
+				 dnl callers know what they're doing and leave it alone, but
+				 dnl if not, set it to a path in which no .pc files will be found.
+				 AS_IF([test x"$PKG_CONFIG_LIBDIR" = x], [
+					AC_MSG_WARN([Exporting a hack PKG_CONFIG_LIBDIR to avoid search for .pc files in host paths])
+					PKG_CONFIG_LIBDIR=/dev/null
+					export PKG_CONFIG_LIBDIR
+					])
+				])
+			])
+		]
 	)
 
   ]) dnl if nut_have_pkg_config_seen

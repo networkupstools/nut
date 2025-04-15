@@ -1,0 +1,44 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2011-2025 by NUT contributors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
+[Unit]
+# This unit starts early in system lifecycle to set up nut-driver instances
+# and stays running as a loop to pick up any subsequent changes maybe more
+# reliably than the filesystem notification processing would allow.
+# End-user may also restart this unit after editing ups.conf to automatically
+# un-register or add new instances as appropriate.
+Description=Network UPS Tools - enumeration of configure-file devices into systemd unit instances (daemonized mode)
+Conflicts=nut-driver-enumerator.service nut-driver-enumerator.path
+After=local-fs.target
+Before=nut-driver.target
+PartOf=nut.target
+
+Documentation=man:nut-driver-enumerator(@MAN_SECTION_CMD_SYS@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut-driver-enumerator.html
+Documentation=man:ups.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+Documentation=man:upsdrvsvcctl(@MAN_SECTION_CMD_SYS@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
+[Service]
+### Script needs privileges to restart units
+#User=@RUN_AS_USER@
+#Group=@RUN_AS_GROUP@
+User=root
+# it is expected that this process has to fork the daemon before systemd
+# starts follow-up units; it should not be a problem for those
+Type=forking
+Restart=always
+Environment=REPORT_RESTART_42=no
+ExecStart=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon-after
+# Note: this is an async event, actual reconfiguration may take some time to
+# complete after this signal.
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=nut.target

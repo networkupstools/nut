@@ -1,0 +1,20 @@
+NUT USB integration resources for FreeBSD devd
+==============================================
+
+On FreeBSD, the `devd` subsystem has a similar role to `udev` on Linux.
+
+NOTE: Some FreeBSD based systems rely on "quirks" instead.
+
+The `devd.conf` file defines actions to perform when devices are plugged in.
+
+The `tools/nut-usbinfo.pl` script (under NUT source tree root) generates
+the `nut-usb.conf.in` here by processing USB macros in all of the drivers.
+In this case, the defined action for each matching UPS is to change the
+permissions such that the NUT drivers can access the USB device nodes
+without requiring root privileges.
+
+You may need to restart `devd` and re-plug in the UPS (or reboot) after
+installation of the file in order to trigger the actions.
+
+The format of this configuration file should work with `devd` on FreeBSD 9.0
+and 9.1, at the very least.

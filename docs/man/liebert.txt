@@ -6,10 +6,14 @@ NAME
 
 liebert - Driver for Liebert contact-closure UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*liebert* -h
+
+*liebert* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 liebert driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -18,8 +22,9 @@ SUPPORTED HARDWARE
 
 This driver supports some Liebert UPS equipment with a contact-closure
 interface.  This includes the UPStation GXT2 with their contact-closure
-cable.  The smart mode ("Multilink") cable is not supported by this
-driver.
+cable.
+
+The smart mode ("Multilink") cable is NOT supported by this driver.
 
 EXTRA ARGUMENTS
 ---------------

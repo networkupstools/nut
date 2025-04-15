@@ -43,18 +43,18 @@
 
 #include <sys/types.h>
 #ifndef WIN32
-#include <sys/wait.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
-#else
-#include "wincompat.h"
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#endif
+# include <sys/wait.h>
+# include <sys/socket.h>
+# include <sys/un.h>
+# include <netinet/in.h>
+# include <unistd.h>
+# include <fcntl.h>
+# include <poll.h>
+#else	/* WIN32 */
+# include "wincompat.h"
+# include <winsock2.h>
+# include <ws2tcpip.h>
+#endif	/* WIN32 */
 
 #include "upssched.h"
 #include "timehead.h"
@@ -71,12 +71,12 @@ static conn_t	*connhead = NULL;
 static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
 
 /* ups name and notify type (string) as received from upsmon */
-static const	char	*upsname, *notify_type;
+static const	char	*upsname, *notify_type, *prog = NULL;
 
 #ifdef WIN32
 static OVERLAPPED connect_overlapped;
-#define BUF_LEN 512
-#endif
+# define BUF_LEN 512
+#endif	/* WIN32 */
 
 #define PARENT_STARTED		-2
 #define PARENT_UNNECESSARY	-3
@@ -108,14 +108,14 @@ static void exec_cmd(const char *cmd)
 			upslogx(LOG_ERR, "Execute command failure: %s", buf);
 		}
 	}
-#else
+#else	/* WIN32 */
 	if(err != -1) {
 		upslogx(LOG_INFO, "Execute command \"%s\" OK", buf);
 	}
 	else {
 		upslogx(LOG_ERR, "Execute command failure : %s", buf);
 	}
-#endif
+#endif	/* WIN32 */
 
 	return;
 }
@@ -286,9 +286,12 @@ static void us_serialize(int op)
 			ret = read(pipefd[0], &ch, 1);
 			close(pipefd[0]);
 			break;
+
+		default:
+			break;
 	}
 }
-#endif
+#endif	/* !WIN32 */
 
 static TYPE_FD open_sock(void)
 {
@@ -361,7 +364,7 @@ static TYPE_FD open_sock(void)
 
 	/* Wait for a connection */
 	ConnectNamedPipe(fd,&connect_overlapped);
-#endif
+#endif /* WIN32 */
 
 	return fd;
 }
@@ -424,10 +427,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		if (VALID_FD(conn->fd)) {
 #ifndef WIN32
 			close(conn->fd);
-#else
+#else	/* WIN32 */
 			FlushFileBuffers(conn->fd);
 			CloseHandle(conn->fd);
-#endif
+#endif	/* WIN32 */
 			conn->fd = ERROR_FD;
 		}
 
@@ -447,7 +450,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 		return 0;	/* failed */
 	}
-#else
+#else	/* WIN32 */
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 
@@ -482,7 +485,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 		return 0;	/* failed */
 	}
-#endif
+#endif /* WIN32 */
 
 	return 1;	/* OK */
 }
@@ -495,11 +498,11 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	int	ret;
 	conn_t	*tmp, *last;
 	struct	sockaddr_un	saddr;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
+# if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int			salen;
-#else
+# else
 	socklen_t	salen;
-#endif
+# endif
 
 	salen = sizeof(saddr);
 	acc = accept(sockfd, (struct sockaddr *) &saddr, &salen);
@@ -625,7 +628,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	upsdebugx(3, "new connection on handle %p", acc);
 
 	pconf_init(&conn->ctx, NULL);
-#endif
+#endif /* WIN32 */
 
 	return acc;
 }
@@ -683,13 +686,14 @@ static int sock_read(conn_t *conn)
 		 * fit in the US_MAX_READ length limit - at worst we would
 		 * "return 0", and continue with pconf_char() next round.
 		 */
+		size_t numarg;
 #ifndef WIN32
 		errno = 0;
 		ret = read(conn->fd, &ch, 1);
 
 		if (ret > 0)
-			upsdebugx(6, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'; errno=%d: %s",
-				conn->fd, ret, ch, errno, strerror(errno));
+			upsdebug_with_errno(6, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'",
+				conn->fd, ret, ch);
 
 		if (ret < 1) {
 
@@ -719,15 +723,13 @@ static int sock_read(conn_t *conn)
 				|| (poll(&pfd, 1, 0) <= 0)
 				||  errno
 				) {
-					upsdebugx(4, "read() from fd %d returned 0; errno=%d: %s",
-						conn->fd, errno, strerror(errno));
+					upsdebug_with_errno(4, "read() from fd %d returned 0", conn->fd);
 					return -1;	/* connection closed, probably */
 				}
 				if (i == (US_MAX_READ - 1)) {
-					upsdebugx(4, "read() from fd %d returned 0 "
+					upsdebug_with_errno(4, "read() from fd %d returned 0 "
 						"too many times in a row, aborting "
-						"sock_read(); errno=%d: %s",
-						conn->fd, errno, strerror(errno));
+						"sock_read()", conn->fd);
 					return -1;	/* connection closed, probably */
 				}
 				continue;
@@ -737,7 +739,7 @@ static int sock_read(conn_t *conn)
 			upsdebugx(6, "Ending sock_read(): some other problem");
 			return -1;	/* error */
 		}
-#else
+#else	/* WIN32 */
 		DWORD bytesRead;
 		GetOverlappedResult(conn->fd, &conn->read_overlapped, &bytesRead,FALSE);
 		if( bytesRead < 1 ) {
@@ -752,7 +754,8 @@ static int sock_read(conn_t *conn)
 		/* Restart async read */
 		memset(conn->buf,0,sizeof(conn->buf));
 		ReadFile(conn->fd,conn->buf,1,NULL,&(conn->read_overlapped));
-#endif
+#endif /* WIN32 */
+
 		ret = pconf_char(&conn->ctx, ch);
 
 		if (ret == 0)	/* nothing to parse yet */
@@ -768,7 +771,7 @@ static int sock_read(conn_t *conn)
 
 		/* try to use it, and complain about unknown commands */
 		upsdebugx(3, "Ending sock_read() on a good note: try to use command:");
-		for (size_t numarg = 0; numarg < conn->ctx.numargs; numarg++)
+		for (numarg = 0; numarg < conn->ctx.numargs; numarg++)
 			upsdebugx(3, "\targ %" PRIuSIZE ": %s", numarg, conn->ctx.arglist[numarg]);
 		if (!sock_arg(conn)) {
 			log_unknown(conn->ctx.numargs, conn->ctx.arglist);
@@ -778,10 +781,8 @@ static int sock_read(conn_t *conn)
 		return 1;	/* we did some work */
 	}
 
-	upsdebugx(6, "sock_read() from fd %d returned nothing "
-		"(maybe still collecting the command line); "
-		"errno=%d: %s",
-		conn->fd, errno, strerror(errno));
+	upsdebug_with_errno(6, "sock_read() from fd %d returned nothing "
+		"(maybe still collecting the command line); ", conn->fd);
 
 	return 0;	/* fell out without parsing anything */
 }
@@ -814,7 +815,7 @@ static void start_daemon(TYPE_FD lockfd)
 	/* child */
 
 	/* make fds 0-2 (typically) point somewhere defined */
-#ifdef HAVE_DUP2
+# ifdef HAVE_DUP2
 	/* system can close (if needed) and (re-)open a specific FD number */
 	if (1) { /* scoping */
 		TYPE_FD devnull = open("/dev/null", O_RDWR);
@@ -835,8 +836,8 @@ static void start_daemon(TYPE_FD lockfd)
 
 		close(devnull);
 	}
-#else
-# ifdef HAVE_DUP
+# else /* not HAVE_DUP2 */
+#  ifdef HAVE_DUP
 	/* opportunistically duplicate to the "lowest-available" FD number */
 	close(STDIN_FILENO);
 	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
@@ -853,7 +854,7 @@ static void start_daemon(TYPE_FD lockfd)
 		if (dup(STDIN_FILENO) != STDERR_FILENO)
 			fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDERR");
 	}
-# else
+#  else /* not HAVE_DUP */
 	close(STDIN_FILENO);
 	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
 		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
@@ -869,9 +870,10 @@ static void start_daemon(TYPE_FD lockfd)
 		if (open("/dev/null", O_RDWR) != STDERR_FILENO)
 			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
 	}
-# endif
-#endif
+#  endif /* not HAVE_DUP */
+# endif /* not HAVE_DUP2 */
 
+	/* Still in child, non-WIN32 - work as timer daemon (infinite loop) */
 	pipefd = open_sock();
 
 	if (nut_debug_level)
@@ -883,6 +885,13 @@ static void start_daemon(TYPE_FD lockfd)
 	/* drop the lock now that the background is running */
 	unlink(lockfn);
 	close(lockfd);
+	writepid(prog);
+
+	/* Whatever upsmon envvars were set when this daemon started, would be
+	 * irrelevant and only confusing at the moment a particular timer causes
+	 * CMDSCRIPT to run */
+	unsetenv("NOTIFYTYPE");
+	unsetenv("UPSNAME");
 
 	/* now watch for activity */
 	upsdebugx(2, "Timer daemon waiting for connections on pipefd %d",
@@ -959,7 +968,7 @@ static void start_daemon(TYPE_FD lockfd)
 			if (d > 0 && d < 0.2) {
 				d = (1.0 - d) * 1000000.0;
 				upsdebugx(5, "Enforcing a throttling sleep: %f usec", d);
-				usleep(d);
+				usleep((useconds_t)d);
 			}
 		}
 	}
@@ -969,14 +978,14 @@ static void start_daemon(TYPE_FD lockfd)
 	DWORD timeout_ms;
 	HANDLE rfds[32];
 
-	char module[MAX_PATH];
+	char module[NUT_PATH_MAX + 1];
 	STARTUPINFO sinfo;
 	PROCESS_INFORMATION pinfo;
-	if( !GetModuleFileName(NULL,module,MAX_PATH) ) {
+	if (!GetModuleFileName(NULL, module, sizeof(module))) {
 		fatal_with_errno(EXIT_FAILURE, "Can't retrieve module name");
 	}
 	memset(&sinfo,0,sizeof(sinfo));
-	if(!CreateProcess(module, NULL, NULL,NULL,FALSE,0,NULL,NULL,&sinfo,&pinfo)) {
+	if (!CreateProcess(module, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &sinfo, &pinfo)) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create child process");
 	}
 	pipefd = open_sock();
@@ -987,6 +996,13 @@ static void start_daemon(TYPE_FD lockfd)
 	/* drop the lock now that the background is running */
 	CloseHandle(lockfd);
 	DeleteFile(lockfn);
+	writepid(prog);
+
+	/* Whatever upsmon envvars were set when this daemon started, would be
+	 * irrelevant and only confusing at the moment a particular timer causes
+	 * CMDSCRIPT to run */
+	unsetenv("NOTIFYTYPE");
+	unsetenv("UPSNAME");
 
 	/* now watch for activity */
 
@@ -1047,7 +1063,7 @@ static void start_daemon(TYPE_FD lockfd)
 
 		checktimers();
 	}
-#endif
+#endif /* WIN32 */
 }
 
 /* --- 'client' functions --- */
@@ -1099,7 +1115,7 @@ static TYPE_FD try_connect(void)
 	if (VALID_FD(pipefd))
 		return pipefd;
 
-#endif
+#endif /* WIN32 */
 
 	return ERROR_FD;
 }
@@ -1108,9 +1124,9 @@ static TYPE_FD get_lock(const char *fn)
 {
 #ifndef WIN32
 	return open(fn, O_RDONLY | O_CREAT | O_EXCL, 0);
-#else
+#else	/* WIN32 */
 	return CreateFile(fn,GENERIC_ALL,0,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
-#endif
+#endif	/* WIN32 */
 }
 
 /* try to connect to bg process, and start one if necessary */
@@ -1147,9 +1163,9 @@ static TYPE_FD check_parent(const char *cmd, const char *arg2)
 		/* blow this away in case we crashed before */
 #ifndef WIN32
 		unlink(lockfn);
-#else
+#else	/* WIN32 */
 		DeleteFile(lockfn);
-#endif
+#endif	/* WIN32 */
 
 		/* give the other one a chance to start it, then try again */
 		usleep(250000);
@@ -1169,9 +1185,9 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 	int	ret_s;
 	struct	timeval tv;
 	fd_set	fdread;
-#else
+#else	/* WIN32 */
 	DWORD bytesWritten = 0;
-#endif
+#endif	/* WIN32 */
 	TYPE_FD pipefd;
 
 	/* insanity */
@@ -1236,7 +1252,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			switch(ret_s) {
 				/* select error */
 				case -1:
-					upslogx(LOG_DEBUG, "parent select error: %s", strerror(errno));
+					upslog_with_errno(LOG_DEBUG, "parent select error");
 					break;
 
 				/* nothing to read */
@@ -1288,7 +1304,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			CloseHandle(pipefd);
 			continue;
 		}
-#endif
+#endif /* WIN32 */
 
 		if (!strncmp(buf, "OK", 2))
 			return;		/* success */
@@ -1396,9 +1412,9 @@ static int conf_arg(size_t numargs, char **arg)
 	if (!strcmp(arg[0], "PIPEFN")) {
 #ifndef WIN32
 		pipefn = xstrdup(arg[1]);
-#else
+#else	/* WIN32 */
 		pipefn = xstrdup("\\\\.\\pipe\\upssched");
-#endif
+#endif	/* WIN32 */
 		return 1;
 	}
 
@@ -1406,9 +1422,9 @@ static int conf_arg(size_t numargs, char **arg)
 	if (!strcmp(arg[0], "LOCKFN")) {
 #ifndef WIN32
 		lockfn = xstrdup(arg[1]);
-#else
+#else	/* WIN32 */
 		lockfn = filter_path(arg[1]);
-#endif
+#endif	/* WIN32 */
 		return 1;
 	}
 
@@ -1438,8 +1454,9 @@ static void upssched_err(const char *errmsg)
 
 static void checkconf(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
+	int	numerrors = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upssched.conf", confpath());
 
@@ -1454,6 +1471,7 @@ static void checkconf(void)
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
 				fn, ctx.linenum, ctx.errmsg);
+			numerrors++;
 			continue;
 		}
 
@@ -1471,8 +1489,17 @@ static void checkconf(void)
 				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
+			numerrors++;
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
+	}
+
+
+	/* FIXME: Per legacy behavior, we silently went on.
+	 * Maybe should abort on unusable configs?
+	 */
+	if (numerrors) {
+		upslogx(LOG_ERR, "Encountered %d config errors, those entries were ignored", numerrors);
 	}
 
 	pconf_finish(&ctx);
@@ -1493,14 +1520,20 @@ static void help(const char *arg_progname)
 
 	nut_report_config_flags();
 
+	printf("\n%s", suggest_doc_links(arg_progname, "upsmon.conf"));
+
 	exit(EXIT_SUCCESS);
 }
 
 
 int main(int argc, char **argv)
 {
-	const char	*prog = xbasename(argv[0]);
 	int i;
+
+	if (argc > 0)
+		prog = xbasename(argv[0]);
+	if (!prog)
+		prog = "upssched";
 
 	while ((i = getopt(argc, argv, "+DVh")) != -1) {
 		switch (i) {
@@ -1518,6 +1551,11 @@ int main(int argc, char **argv)
 				/* just show the optional CONFIG_FLAGS banner */
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
+
+			default:
+				fatalx(EXIT_FAILURE,
+					"Error: unknown option -%c. Try -h for help.",
+					(char)i);
 		}
 	}
 

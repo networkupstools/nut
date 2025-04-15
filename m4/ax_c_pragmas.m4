@@ -117,6 +117,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
   dnl In most cases, GCC pragmas are usable by both; in a few others, direct
   dnl use of `#ifdef __clang__` suffices.
   AS_IF([test "${CLANG}" = "yes"], [
+      AC_CACHE_CHECK([for pragma CLANG diagnostic ignored "-Wdeprecated-declarations"],
+        [ax_cv__pragma__clang__diags_ignored_deprecated_declarations],
+        [AC_COMPILE_IFELSE(
+          [AC_LANG_PROGRAM([[void func(void) {
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+}
+    ]], [])],
+          [ax_cv__pragma__clang__diags_ignored_deprecated_declarations=yes],
+          [ax_cv__pragma__clang__diags_ignored_deprecated_declarations=no]
+        )]
+      )
+      AS_IF([test "$ax_cv__pragma__clang__diags_ignored_deprecated_declarations" = "yes"],[
+        AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS], 1, [define if your compiler has #pragma clang diagnostic ignored "-Wdeprecated-declarations"])
+      ])
+
+      AC_CACHE_CHECK([for pragma CLANG diagnostic ignored "-Wdeprecated-declarations" (outside functions)],
+        [ax_cv__pragma__clang__diags_ignored_deprecated_declarations_besidefunc],
+        [AC_COMPILE_IFELSE(
+          [AC_LANG_PROGRAM([[#pragma clang diagnostic ignored "-Wdeprecated-declarations"]], [])],
+          [ax_cv__pragma__clang__diags_ignored_deprecated_declarations_besidefunc=yes],
+          [ax_cv__pragma__clang__diags_ignored_deprecated_declarations_besidefunc=no]
+        )]
+      )
+      AS_IF([test "$ax_cv__pragma__clang__diags_ignored_deprecated_declarations_besidefunc" = "yes"],[
+        AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS_BESIDEFUNC], 1, [define if your compiler has #pragma clang diagnostic ignored "-Wdeprecated-declarations" (outside functions)])
+      ])
+
       AC_CACHE_CHECK([for pragma CLANG diagnostic ignored "-Wunreachable-code-return"],
         [ax_cv__pragma__clang__diags_ignored_unreachable_code_return],
         [AC_COMPILE_IFELSE(
@@ -146,6 +173,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
   ]) dnl Special pragma support testing for clang
 
   dnl Test common pragmas for GCC (and compatible) compilers
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wpedantic"],
+    [ax_cv__pragma__gcc__diags_ignored_pedantic],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wpedantic"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_pedantic=yes],
+      [ax_cv__pragma__gcc__diags_ignored_pedantic=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_pedantic" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_PEDANTIC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wpedantic"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wpedantic" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_pedantic_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wpedantic"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_pedantic_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_pedantic_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_pedantic_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_PEDANTIC_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wpedantic" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunused-function"],
     [ax_cv__pragma__gcc__diags_ignored_unused_function],
     [AC_COMPILE_IFELSE(
@@ -159,6 +213,36 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
   )
   AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_unused_function" = "yes"],[
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_FUNCTION], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunused-function"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunused-parameter"],
+    [ax_cv__pragma__gcc__diags_ignored_unused_parameter],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_unused_parameter=yes],
+      [ax_cv__pragma__gcc__diags_ignored_unused_parameter=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_unused_parameter" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunused-parameter"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wdeprecated-declarations"],
+    [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations=yes],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_deprecated_declarations" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wdeprecated-declarations"])
   ])
 
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat-nonliteral"],
@@ -647,6 +731,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wextra-semi-stmt" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Waddress"],
+    [ax_cv__pragma__gcc__diags_ignored_address],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Waddress"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_address=yes],
+      [ax_cv__pragma__gcc__diags_ignored_address=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_address" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Waddress"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Waddress" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_address_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Waddress"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_address_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_address_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_address_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Waddress" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-align"],
     [ax_cv__pragma__gcc__diags_ignored_cast_align],
     [AC_COMPILE_IFELSE(
@@ -672,6 +783,34 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
   )
   AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_cast_align_besidefunc" = "yes"],[
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-align" (outside functions)])
+  ])
+
+  dnl https://reviews.llvm.org/D134831
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-function-type-strict"],
+    [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict=yes],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-function-type-strict"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-function-type-strict" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wcast-function-type-strict"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-function-type-strict" (outside functions)])
   ])
 
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wstrict-prototypes"],
@@ -787,6 +926,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wc++98-compat" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wmaybe-uninitialized"],
+    [ax_cv__pragma__gcc__diags_ignored_maybe_uninitialized],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_maybe_uninitialized=yes],
+      [ax_cv__pragma__gcc__diags_ignored_maybe_uninitialized=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_maybe_uninitialized" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MAYBE_UNINITIALIZED], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wmaybe-uninitialized" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_maybe_uninitialized_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_maybe_uninitialized_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_maybe_uninitialized_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_maybe_uninitialized_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MAYBE_UNINITIALIZED_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wmaybe-uninitialized" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wglobal-constructors"],
     [ax_cv__pragma__gcc__diags_ignored_global_constructors],
     [AC_COMPILE_IFELSE(
@@ -839,6 +1005,90 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
   )
   AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_exit_time_destructors_besidefunc" = "yes"],[
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wexit-time-destructors" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wsuggest-override" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_suggest_override_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wsuggest-override"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_suggest_override_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_suggest_override_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_suggest_override_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wsuggest-override" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wsuggest-destructor-override" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_suggest_destructor_override_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wsuggest-destructor-override"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_suggest_destructor_override_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_suggest_destructor_override_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_suggest_destructor_override_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wsuggest-destructor-override" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wweak-vtables" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_weak_vtables_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wweak-vtables"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_weak_vtables_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_weak_vtables_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_weak_vtables_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wweak-vtables" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wdeprecated-dynamic-exception-spec" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_deprecated_dynamic_exception_spec_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wdeprecated-dynamic-exception-spec"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_dynamic_exception_spec_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_dynamic_exception_spec_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_deprecated_dynamic_exception_spec_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wdeprecated-dynamic-exception-spec" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wextra-semi" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_extra_semi_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wextra-semi"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_extra_semi_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_extra_semi_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_extra_semi_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wextra-semi" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wold-style-cast" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_old_style_cast_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wold-style-cast"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_old_style_cast_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_old_style_cast_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_old_style_cast_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wold-style-cast" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_zero_as_null_pointer_constant_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_zero_as_null_pointer_constant_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_zero_as_null_pointer_constant_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_zero_as_null_pointer_constant_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ZERO_AS_NULL_POINTER_CONSTANT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant" (outside functions)])
   ])
 
   AC_LANG_POP([C++])
@@ -936,9 +1186,20 @@ fi
 ])
 
 AC_DEFUN([AX_C_PRINTF_STRING_NULL], [
+dnl The following code crashes on some libc implementations (e.g. Solaris 8)
+dnl TODO: We may need to update NUT codebase to use NUT_STRARG() macro more
+dnl often and consistently, or find a way to tweak upsdebugx() etc. varargs.
+
 if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
   nut_have_ax_c_printf_string_null_seen="yes"
   AC_REQUIRE([AX_RUN_OR_LINK_IFELSE])dnl
+
+  dnl Here we do not care if the compiler formally complains about
+  dnl undefined behavior of printf("%s", NULL) as long as it works
+  dnl in practice (compiler or libc implement a sane fallback):
+  myWARN_CFLAGS=""
+  AS_IF([test "${GCC}" = "yes" || test "${CLANGCC}" = "yes"],
+    [myWARN_CFLAGS="-Wno-format-truncation -Wno-format-overflow"])
 
   dnl ### To be sure, bolt the language
   AC_LANG_PUSH([C])
@@ -952,30 +1213,79 @@ if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
 ], [[
 char buf[128];
 char *s = NULL;
+/* The following line may issue pedantic static analysis warnings (ignored);
+ * it may also crash (segfault) during a run on some systems - hence the test.
+ */
 int res = snprintf(buf, sizeof(buf), "%s", s);
 buf[sizeof(buf)-1] = '\0';
 if (res < 0) {
-    fprintf(stderr, "FAILED to snprintf() a NULL string argument\n");
+    fprintf(stderr, "FAILED to snprintf() a variable NULL string argument\n");
     return 1;
 }
 if (buf[0] == '\0') {
-    fprintf(stderr, "RETURNED empty string from snprintf() with a NULL string argument\n");
+    fprintf(stderr, "RETURNED empty string from snprintf() with a variable NULL string argument\n");
     return 0;
 }
 if (strstr(buf, "null") == NULL) {
-    fprintf(stderr, "RETURNED some string from snprintf() with a NULL string argument: '%s'\n", buf);
+    fprintf(stderr, "RETURNED some string from snprintf() with a variable NULL string argument: '%s'\n", buf);
     return 0;
 }
-fprintf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a NULL string argument: '%s'\n", buf);
+fprintf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a variable NULL string argument: '%s'\n", buf);
+
+res = printf("%s", NULL);
+if (res < 0) {
+    fprintf(stderr, "FAILED to printf() an explicit NULL string argument (to stdout)\n");
+    return 1;
+}
 return 0;
             ]])],
-        [ax_cv__printf_string_null=yes],
-        [ax_cv__printf_string_null=no]
+        [ax_cv__printf_string_null=yes
+        ],
+        [ax_cv__printf_string_null=no
+        ],
+        [${myWARN_CFLAGS}]
     )]
   )
+  unset myWARN_CFLAGS
 
-  AS_IF([test "$ax_cv__printf_string_null" = "yes"],[
-    AC_DEFINE([HAVE_PRINTF_STRING_NULL], 1, [define if your libc can printf("%s", NULL) sanely])
+  NUT_ARG_ENABLE([NUT_STRARG-always],
+    [Enable NUT_STRARG macro to handle NULL string printing even if system libraries seem to support it natively],
+    [auto])
+
+  dnl gcc-13.2.0 and gcc-13.3.0 were seen to complain about
+  dnl alleged formatting string overflow (seems like a false
+  dnl positive in that case). Require the full macro there
+  dnl by default.
+  AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CC_VERSION='$CC_VERSION'])
+  ])
+  AS_IF([test x"$nut_enable_NUT_STRARG_always" = xauto], [
+    nut_enable_NUT_STRARG_always=no
+    AS_IF([test "${CLANGCC}" = "yes"], [
+        true dnl no-op at the moment
+dnl        AS_CASE(["$CC_VERSION"],
+dnl            [*" "18.*], [nut_enable_NUT_STRARG_always=yes]
+dnl        )
+        ],[
+        AS_IF([test "${GCC}" = "yes"], [
+            AS_CASE(["$CC_VERSION"],
+                [*" "13.*], [nut_enable_NUT_STRARG_always=yes]
+            )
+        ])
+    ])
+    AS_IF([test x"$nut_enable_NUT_STRARG_always" = xyes],
+        [AC_MSG_NOTICE([Automatically enabled NUT_STRARG-always due to compiler version used])])
+  ])
+
+  AS_IF([test "$ax_cv__printf_string_null" = "yes" && test x"$nut_enable_NUT_STRARG_always" != xyes],[
+    AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
+    AC_DEFINE([REQUIRE_NUT_STRARG], [0],
+      [Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your libc requires workarounds to print NULL values.])
+  ],[
+    AM_CONDITIONAL([REQUIRE_NUT_STRARG], [true])
+    AC_DEFINE([REQUIRE_NUT_STRARG], [1],
+      [Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your libc requires workarounds to print NULL values.])
+    AC_MSG_WARN([Your C library requires workarounds to print NULL values; if something crashes with a segmentation fault (especially during verbose debug) - that may be why])
   ])
 
   AC_LANG_POP([C])

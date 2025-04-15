@@ -31,9 +31,10 @@ extern "C" {
 
 /* Some compilers and/or C libraries do not handle printf("%s", NULL) correctly */
 #ifndef NUT_STRARG
-# ifdef HAVE_PRINTF_STRING_NULL
-#  define NUT_STRARG(x) x
+# if (defined REQUIRE_NUT_STRARG) && (REQUIRE_NUT_STRARG == 0)
+#  define NUT_STRARG(x) (x)
 # else
+/* Is required, or not defined => err on safe side */
 #  define NUT_STRARG(x) (x?x:"(null)")
 # endif
 #endif

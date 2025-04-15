@@ -25,31 +25,33 @@
  */
 
 #include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
 
 #include <string.h>
 
 #ifdef WIN32
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+
 /*
-// The serial driver has no need for HID structures/code currently
-// (maybe there is/was a plan for sharing something between siblings).
-// Note that HID is tied to libusb or libshut definitions at the moment.
+ * // The serial driver has no need for HID structures/code currently
+ * // (maybe there is/was a plan for sharing something between siblings).
+ * // Note that HID is tied to libusb or libshut definitions at the moment.
 #include "hidparser.h"
 #include "hidtypes.h"
-*/
-#include "common.h" /* for upsdebugx() etc */
+ */
+
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.12"
 
-#define DEFAULT_OFFDELAY   5
-#define DEFAULT_BOOTDELAY  5
+#define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
+#define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -73,6 +75,15 @@ static unsigned int offdelay = DEFAULT_OFFDELAY;
 static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 
 static TRielloData DevData;
+
+/* Flag for estimation of battery.runtime and battery.charge */
+static int localcalculation = 0;
+static int localcalculation_logged = 0;
+/* NOTE: Do not change these default, they refer to battery.voltage.nominal=12.0
+ * and used in related maths later */
+static double batt_volt_nom = 12.0;
+static double batt_volt_low = 10.4;
+static double batt_volt_high = 13.0;
 
 /**********************************************************************
  * char_read (char *bytes, size_t size, int read_timeout)
@@ -108,7 +119,7 @@ static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 		return -2;			/* timeout */
 
 	if (FD_ISSET (upsfd, &readfs)) {
-#else
+#else	/* WIN32 */
 		DWORD timeout;
 		COMMTIMEOUTS TOut;
 
@@ -119,19 +130,19 @@ static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 		TOut.ReadTotalTimeoutMultiplier = 0;
 		TOut.ReadTotalTimeoutConstant = timeout;
 		SetCommTimeouts(upsfd, &TOut);
-#endif
+#endif	/* WIN32 */
 
 		ssize_t now;
 #ifndef WIN32
 		now = read (upsfd, bytes, size - (size_t)readen);
-#else
+#else	/* WIN32 */
 		/* FIXME? for some reason this compiles, but the first
 		 * arg to the method should be serial_handler_t* - not
 		 * a HANDLE as upsfd is (in main.c)... then again, many
 		 * other drivers seem to use it just fine...
 		 */
 		now = w32_serial_read(upsfd, bytes, size - (size_t)readen, timeout);
-#endif
+#endif	/* WIN32 */
 
 		if (now < 0) {
 			return -1;
@@ -144,7 +155,7 @@ static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 	else {
 		return -1;
 	}
-#endif
+#endif	/* !WIN32 */
 	return readen;
 }
 
@@ -207,7 +218,7 @@ static void riello_serialcomm(uint8_t* arg_bufIn, uint8_t typedev)
 	}
 }
 
-static int get_ups_nominal()
+static int get_ups_nominal(void)
 {
 	uint8_t length;
 
@@ -240,7 +251,7 @@ static int get_ups_nominal()
 	return 0;
 }
 
-static int get_ups_status()
+static int get_ups_status(void)
 {
 	uint8_t numread, length;
 
@@ -280,7 +291,7 @@ static int get_ups_status()
 	return 0;
 }
 
-static int get_ups_extended()
+static int get_ups_extended(void)
 {
 	uint8_t length;
 
@@ -314,7 +325,7 @@ static int get_ups_extended()
 }
 
 /* Not static, exposed via header. Not used though, currently... */
-int get_ups_statuscode()
+int get_ups_statuscode(void)
 {
 	uint8_t length;
 
@@ -347,7 +358,7 @@ int get_ups_statuscode()
 	return 0;
 }
 
-static int get_ups_sentr()
+static int get_ups_sentr(void)
 {
 	uint8_t length;
 
@@ -679,7 +690,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int start_ups_comm()
+static int start_ups_comm(void)
 {
 	uint8_t length;
 
@@ -727,6 +738,7 @@ static int start_ups_comm()
 void upsdrv_initinfo(void)
 {
 	int ret;
+	const char *valN = NULL, *valL = NULL, *valH = NULL;
 
 	ret = start_ups_comm();
 
@@ -736,6 +748,15 @@ void upsdrv_initinfo(void)
 		fatalx(EXIT_FAILURE, "Bad checksum or NACK");
 	else
 		upsdebugx(2, "Communication with UPS established");
+
+	if (testvar("localcalculation")) {
+		localcalculation = 1;
+		upsdebugx(1, "Will guesstimate battery charge and runtime "
+			"instead of trusting device readings (if any); "
+			"consider also setting default.battery.voltage.low "
+			"and default.battery.voltage.high for this device");
+	}
+	dstate_setinfo("driver.parameter.localcalculation", "%d", localcalculation);
 
 	if (typeRielloProtocol == DEV_RIELLOGPSER)
 		riello_parse_gi(&bufIn[0], &DevData);
@@ -747,15 +768,15 @@ void upsdrv_initinfo(void)
 		input_monophase = 1;
 	else {
 		input_monophase = 0;
-		dstate_setinfo("input.phases", "%u", 3);
-		dstate_setinfo("input.phases", "%u", 3);
-		dstate_setinfo("input.bypass.phases", "%u", 3);
+		dstate_setinfo("input.phases", "%d", 3);
+		dstate_setinfo("input.phases", "%d", 3);
+		dstate_setinfo("input.bypass.phases", "%d", 3);
 	}
 	if ((DevData.Identif_bytes[0] == '1') || (DevData.Identif_bytes[0] == '3'))
 		output_monophase = 1;
 	else {
 		output_monophase = 0;
-		dstate_setinfo("output.phases", "%u", 3);
+		dstate_setinfo("output.phases", "%d", 3);
 	}
 
 	dstate_setinfo("device.mfr", "RPS S.p.a.");
@@ -768,13 +789,33 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.serial", "%s", (unsigned char*) DevData.Identification);
 	dstate_setinfo("ups.firmware", "%s", (unsigned char*) DevData.Version);
 
+	/* Is it set by user default/override configuration?
+	 * NOTE: "valN" is also used for a check just below.
+	 */
+	valN = dstate_getinfo("battery.voltage.nominal");
+	if (valN) {
+		batt_volt_nom = strtod(valN, NULL);
+		upsdebugx(1, "Using battery.voltage.nominal=%.1f "
+			"likely coming from user configuration",
+			batt_volt_nom);
+	}
+
 	if (typeRielloProtocol == DEV_RIELLOGPSER) {
 		if (get_ups_nominal() == 0) {
 			dstate_setinfo("ups.realpower.nominal", "%u", DevData.NomPowerKW);
 			dstate_setinfo("ups.power.nominal", "%u", DevData.NomPowerKVA);
 			dstate_setinfo("output.voltage.nominal", "%u", DevData.NominalUout);
 			dstate_setinfo("output.frequency.nominal", "%.1f", DevData.NomFout/10.0);
-			dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat);
+
+			/* Is it set by user default/override configuration (see just above)? */
+			if (valN) {
+				upsdebugx(1, "...instead of battery.voltage.nominal=%u "
+					"reported by the device", DevData.NomUbat);
+			} else {
+				dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat);
+				batt_volt_nom = (double)DevData.NomUbat;
+			}
+
 			dstate_setinfo("battery.capacity", "%u", DevData.NomBatCap);
 		}
 	}
@@ -784,11 +825,94 @@ void upsdrv_initinfo(void)
 			dstate_setinfo("ups.power.nominal", "%u", DevData.NomPowerKVA);
 			dstate_setinfo("output.voltage.nominal", "%u", DevData.NominalUout);
 			dstate_setinfo("output.frequency.nominal", "%.1f", DevData.NomFout/10.0);
-			dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat);
+
+			/* Is it set by user default/override configuration (see just above)? */
+			if (valN) {
+				upsdebugx(1, "...instead of battery.voltage.nominal=%u "
+					"reported by the device", DevData.NomUbat);
+			} else {
+				dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat);
+				batt_volt_nom = (double)DevData.NomUbat;
+			}
+
 			dstate_setinfo("battery.capacity", "%u", DevData.NomBatCap);
+		} else {
+			/* TOTHINK: Check the momentary reading of battery.voltage
+			 * or would it be too confusing (especially if it is above
+			 * 12V and might correspond to a discharged UPS when the
+			 * driver starts up after an outage?)
+			 * NOTE: DevData.Ubat would be scaled by 10!
+			 */
+			if (!valN) {
+				/* The nominal was not already set by user configuration... */
+				upsdebugx(1, "Using built-in default battery.voltage.nominal=%.1f",
+					batt_volt_nom);
+				dstate_setinfo("battery.voltage.nominal", "%.1f", batt_volt_nom);
+			}
 		}
 	}
 
+	/* We have a nominal voltage by now - either from user configuration
+	 * or from the device itself (or initial defaults for 12V). Do we have
+	 * any low/high range from HW/FW or defaults from ups.conf? */
+	valL = dstate_getinfo("battery.voltage.low");
+	valH = dstate_getinfo("battery.voltage.high");
+
+	{	/* scoping */
+		/* Pick a suitable low/high range (or keep built-in default).
+		 * The factor may be a count of battery packs in the UPS.
+		 */
+		int times12 = batt_volt_nom / 12;
+		if (times12 > 1) {
+			/* Scale up the range for 24V (X=2) etc. */
+			upsdebugx(3, "%s: Using %i times the voltage range of 12V PbAc battery",
+				__func__, times12);
+			batt_volt_low  *= times12;
+			batt_volt_high *= times12;
+		}
+	}
+
+	if (!valL && !valH) {
+		/* Both not set (NULL) => pick by nominal (X times 12V above). */
+		upsdebugx(3, "Neither battery.voltage.low=%.1f "
+			"nor battery.voltage.high=%.1f is set via "
+			"driver configuration or by device; keeping "
+			"at built-in default value (aligned "
+			"with battery.voltage.nominal=%.1f)",
+			batt_volt_low, batt_volt_high, batt_volt_nom);
+	} else {
+		if (valL) {
+			batt_volt_low = strtod(valL, NULL);
+			upsdebugx(2, "%s: Using battery.voltage.low=%.1f from device or settings",
+				__func__, batt_volt_low);
+		}
+
+		if (valH) {
+			batt_volt_high = strtod(valH, NULL);
+			upsdebugx(2, "%s: Using battery.voltage.high=%.1f from device or settings",
+				__func__, batt_volt_high);
+		}
+
+		/* If just one of those is set, then what? */
+		if (valL || valH) {
+			upsdebugx(1, "WARNING: Only one of battery.voltage.low=%.1f "
+				"or battery.voltage.high=%.1f is set via "
+				"driver configuration; keeping the other "
+				"at built-in default value (aligned "
+				"with battery.voltage.nominal=%.1f)",
+				batt_volt_low, batt_volt_high, batt_volt_nom);
+		} else {
+			upsdebugx(1, "Both of battery.voltage.low=%.1f "
+				"or battery.voltage.high=%.1f are set via "
+				"driver configuration; not aligning "
+				"with battery.voltage.nominal=%.1f",
+				batt_volt_low, batt_volt_high, batt_volt_nom);
+		}
+	}
+
+	/* Whatever the origin, make the values known via dstate */
+	dstate_setinfo("battery.voltage.low",  "%.1f", batt_volt_low);
+	dstate_setinfo("battery.voltage.high", "%.1f", batt_volt_high);
 
 	/* commands ----------------------------------------------- */
 	dstate_addcmd("load.off");
@@ -820,6 +944,12 @@ void upsdrv_updateinfo(void)
 	uint8_t getextendedOK;
 	static int countlost = 0;
 	int stat;
+	unsigned int battcharge;
+	float battruntime;
+	float upsloadfactor;
+#ifdef RIELLO_DYNAMIC_BATTVOLT_INFO
+	const char *val = NULL;
+#endif
 
 	upsdebugx(1, "countlost %d",countlost);
 
@@ -832,10 +962,13 @@ void upsdrv_updateinfo(void)
 		}
 	}
 
-	if (typeRielloProtocol == DEV_RIELLOGPSER)
+	if (typeRielloProtocol == DEV_RIELLOGPSER) {
 		stat = get_ups_status();
-	else
+		upsdebugx(1, "get_ups_status() %d", stat );
+	} else {
 		stat = get_ups_sentr();
+		upsdebugx(1, "get_ups_sentr() %d", stat );
+	}
 
 	if (stat < 0) {
 		if (countlost < COUNTLOST)
@@ -860,13 +993,75 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
 	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
 
-	if ((DevData.BatCap < 0xFFFF) &&  (DevData.BatTime < 0xFFFF)) {
-		dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-		dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+#ifdef RIELLO_DYNAMIC_BATTVOLT_INFO
+	/* Can be set via default.* or override.* driver options
+	 * if not served by the device HW/FW */
+	val = dstate_getinfo("battery.voltage.low");
+	if (val) {
+		batt_volt_low = strtod(val, NULL);
 	}
 
-	if (DevData.Tsystem < 0xFF)
+	val = dstate_getinfo("battery.voltage.high");
+	if (val) {
+		batt_volt_high = strtod(val, NULL);
+	}
+#endif
+
+	if (localcalculation) {
+		/* NOTE: at this time "localcalculation" is a configuration toggle.
+		 * Maybe later it can be replaced by a common "runtimecal" setting. */
+		/* Considered "Ubat" physical range here (e.g. 10.7V to 12.9V) is
+		 * seen as "107" or "129" integers in the DevData properties: */
+		uint16_t	Ubat_low  = batt_volt_low  * 10;	/* e.g. 107 */
+		uint16_t	Ubat_high = batt_volt_high * 10;	/* e.g. 129 */
+		static int batt_volt_logged = 0;
+
+		if (!batt_volt_logged) {
+			upsdebugx(0, "\nUsing battery.voltage.low=%.1f and "
+				"battery.voltage.high=%.1f for \"localcalculation\" "
+				"guesstimates of battery.charge and battery.runtime",
+				batt_volt_low, batt_volt_high);
+			batt_volt_logged = 1;
+		}
+
+		battcharge = ((DevData.Ubat <= Ubat_high) && (DevData.Ubat >= Ubat_low))
+			? (((DevData.Ubat - Ubat_low)*100) / (Ubat_high - Ubat_low))
+			: ((DevData.Ubat < Ubat_low) ? 0 : 100);
+		battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
+		upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
+
+		dstate_setinfo("battery.charge", "%u", battcharge);
+		dstate_setinfo("battery.runtime", "%.0f", battruntime/upsloadfactor);
+	}
+	else {
+		if (!localcalculation_logged) {
+			upsdebugx(0, "\nIf you don't see values for battery.charge and "
+				"battery.runtime or values are incorrect,"
+				"try setting \"localcalculation\" flag in \"ups.conf\" "
+				"options section for this driver!\n");
+			localcalculation_logged = 1;
+		}
+		if ((DevData.BatCap < 0xFFFF) && (DevData.BatTime < 0xFFFF)) {
+			/* Use values reported by the driver unless they are marked
+			 * invalid/unknown by HW/FW (all bits in the word are set).
+			 */
+			dstate_setinfo("battery.charge", "%u", DevData.BatCap);
+			dstate_setinfo("battery.runtime", "%u", (unsigned int)DevData.BatTime*60);
+		}
+	}
+
+	if (DevData.Tsystem == 255) {
+		/* Use values reported by the driver unless they are marked
+		 * invalid/unknown by HW/FW (all bits in the word are set).
+		 */
+		/*dstate_setinfo("ups.temperature", "%u", 0);*/
+		upsdebugx(4, "Reported temperature value is 0xFF, "
+			"probably meaning \"-1\" for error or "
+			"missing sensor - ignored");
+	}
+	else if (DevData.Tsystem < 0xFF) {
 		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+	}
 
 	if (input_monophase) {
 		dstate_setinfo("input.voltage", "%u", DevData.Uinp1);
@@ -893,7 +1088,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("output.L1.power.percent", "%u", DevData.Pout1);
 		dstate_setinfo("output.L2.power.percent", "%u", DevData.Pout2);
 		dstate_setinfo("output.L3.power.percent", "%u", DevData.Pout3);
-		dstate_setinfo("ups.load", "%u", (DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
+		dstate_setinfo("ups.load", "%u", (unsigned int)(DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
 	}
 
 	status_init();
@@ -968,6 +1163,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 	int	retry;
 
@@ -986,7 +1184,8 @@ void upsdrv_shutdown(void)
 	upsdebugx(2, "upsdrv Shutdown execute");
 
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
+		/* By default, abort a previously requested shutdown
+		 * (if any) and schedule a new one from this moment. */
 		if (riello_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
@@ -996,12 +1195,14 @@ void upsdrv_shutdown(void)
 		}
 
 		upslogx(LOG_ERR, "Shutting down");
-		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 
@@ -1030,6 +1231,8 @@ void upsdrv_makevartable(void)
 
 	/* allow '-x foo=<some value>' */
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
+
+	addvar(VAR_FLAG, "localcalculation", "Calculate battery charge and runtime locally");
 }
 
 void upsdrv_initups(void)

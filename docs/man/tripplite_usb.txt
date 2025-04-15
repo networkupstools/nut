@@ -18,13 +18,13 @@ SUPPORTED HARDWARE
 
 This driver should work with older Tripp Lite UPSes which are detected
 as USB HID-class devices, but are not true HID Power-Device Class devices.
-So far, the devices supported by `tripplite_usb` have product ID 0001,
+So far, the devices supported by `tripplite_usb` have product ID '0001',
 and the newer units (such as those with "LCD" in the model name) with
-product ID 2001 require the linkman:usbhid-ups[8] driver instead.
+product ID '2001' require the linkman:usbhid-ups[8] driver instead.
 
 Please report success or failure to the nut-upsuser mailing list.
 A key piece of information is the protocol number, returned in
-`ups.firmware.aux`.  Also, be sure to turn on debugging ('-DDD')
+`ups.firmware.aux`.  Also, be sure to turn on debugging (`-DDD`)
 for more informative log messages.
 
 If your Tripp Lite UPS uses a serial port, you may wish to investigate
@@ -41,7 +41,7 @@ This driver has been tested with the following models:
  * SMART3000RM2U
 
 If you have used Tripp Lite's PowerAlert software to connect to your UPS,
-there is a good chance that 'tripplite_usb' will work if it uses one of the
+there is a good chance that `tripplite_usb` will work if it uses one of the
 following protocols:
 
  * Protocol 0004
@@ -62,6 +62,14 @@ This driver supports the following optional settings in the linkman:ups.conf[5]
 file (or with '-x' on the command line):
 
 include::nut_usb_addvars.txt[]
+
+- `-x upsid="12345"`
+
+Select a specific UPS by its unique UPS ID. The argument is a regular expression
+that must match the UPS ID string. This allows for precise identification of UPS
+devices when multiple devices of the same make and model are connected.
+See below regarding how to read and write the ups id (unit id) using linkman:upsrw[8].
+
 
 [NOTE]
 .Notes for `tripplite_usb` driver handling of common USB matching settings:
@@ -110,7 +118,7 @@ changed at runtime by linkman:upsrw[8].
 
 *ups.id*::
 
-Some SMARTPRO models feature an ID that can be set and retrieved.
+Some SMARTPRO models feature an Unit ID (ups.id) that can be set and retrieved.
 If your UPS supports this feature, this variable will be listed in
 the output of linkman:upsrw[8].
 
@@ -143,10 +151,10 @@ same time, since they have different USB Product ID strings. If you have two
 SMART1500RM2U units, you would have to find which USB bus and device number
 each unit is on (via lsusb(8)).
 
-Some of the SMART*2U models have an ID number, but because this ID is not
-exposed as a USB string descriptor, there is no easy way to use this ID to
-distinguish between multiple UPS units on a single machine. The UPS would need
-to be claimed by the driver in order to read this ID.
+Some of the SMART*2U models have a configurable Unit ID number, and you can now use the `upsid`
+config argument to uniquely specify which UPS a given driver instance should control.
+This allows for precise identification of UPS devices when multiple devices are connected.
+To retrieve or set the upsid use the linkman:upsrw[8] utility.
 
 AUTHORS
 -------
@@ -154,7 +162,7 @@ AUTHORS
 Written by Charles Lepple, based on the linkman:tripplite[8] driver
 by Rickard E. (Rik) Faith and Nicholas Kain.
 
-Please do not email the authors directly - use the nut-upsdev mailing list.
+Please do not email the authors directly -- use the nut-upsdev mailing list.
 
 A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley
 Feldman (http://www.bradleyloritheo.com)

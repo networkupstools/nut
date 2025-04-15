@@ -9,9 +9,15 @@ upsset.conf - Configuration for Network UPS Tools upsset.cgi
 DESCRIPTION
 -----------
 
-This file only does one job--it lets you convince linkman:upsset.cgi[8]
+This file only does one job -- it lets you convince linkman:upsset.cgi[8]
 that your system's CGI directory is secure.  The program will not run
 until this file has been properly defined.
+
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
 
 SECURITY REQUIREMENTS
 ---------------------
@@ -20,26 +26,30 @@ linkman:upsset.cgi[8] allows you to try login name and password combinations.
 There is no rate limiting, as the program shuts down between every request.
 Such is the nature of CGI programs.
 
+Credentials are provided to `upsset.cgi` as part of your browsing session,
+so it is highly recommended to set up HTTPS on the web server; ways to do
+so are outside the scope of this document.
+
 Normally, attackers would not be able to access your linkman:upsd[8] server
-directly as it would be protected by the LISTEN directives in
-your linkman:upsd.conf[5] file, tcp-wrappers (if available when NUT was built),
+directly, as it would be protected by the LISTEN directives in your
+linkman:upsd.conf[5] file, tcp-wrappers (if available when NUT was built),
 and hopefully local firewall settings in your OS.
 
-*upsset* runs on your web server, so upsd will see it as a connection from
+*upsset* runs on your web server, so `upsd` will see it as a connection from
 a host on an internal network.  It doesn't know that the connection is
-actually coming from someone on the outside.  This is why you must
+actually initiated by someone further outside.  This is why you must
 secure it.
 
-On Apache, you can use the .htaccess file or put the directives in your
-httpd.conf.  It looks something like this, assuming the .htaccess
+On Apache, you can use the `.htaccess` file or put the directives in your
+`httpd.conf`.  It looks something like this, assuming the `.htaccess`
 method for older Apache releases:
 
 	<Files upsset.cgi>
-	deny from all
-	allow from your.network.addresses
+		deny from all
+		allow from your.network.addresses
 	</Files>
 
-You will probably have to set "AllowOverride Limit" for this directory
+You will probably have to set `AllowOverride Limit` for this directory
 in your server-level configuration file as well.
 
 Modern Apache enjoys a more detailed syntax, like this:
@@ -63,7 +73,7 @@ you may add the following directive to this file:
 
 	I_HAVE_SECURED_MY_CGI_DIRECTORY
 
-If you lie to the program and someone beats on your upsd through your
+If you lie to the program and someone beats on your `upsd` through your
 web server, don't blame me.
 
 SEE ALSO

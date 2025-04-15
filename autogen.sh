@@ -24,6 +24,8 @@ else
 	DEBUG=false
 fi
 
+NUT_VERSION_QUERY=UPDATE_FILE "`dirname $0`"/tools/gitlog2version.sh
+
 if [ -n "${PYTHON-}" ] ; then
 	# May be a name/path of binary, or one with args - check both
 	(command -v "$PYTHON") \
@@ -39,6 +41,10 @@ else
 	PYTHON=""
 	# FIXME: Use something like TAB-completion to find every name on PATH?
 	for P in python python3 python2 \
+		python-3.14 python3.14 \
+		python-3.13 python3.13 \
+		python-3.12 python3.12 \
+		python-3.11 python3.11 \
 		python-3.10 python3.10 \
 		python-3.9 python3.9 \
 		python-3.7 python3.7 \
@@ -90,12 +96,21 @@ fi
 #    grep -i '">' tools/nut-usbinfo.pl
 # * List the names involved:
 #    grep -E 'output.*=' tools/nut-usbinfo.pl
+# Also check that the last re-generation is newer than the sources involved
+# (stay on top of CI rebuilds, development, Git branch switching...)
+# Someone please tell me why GNU `find dir -newer X -name Y -o -name Z` does
+# not filter away layer by layer, but rather finds the names Z and beyond
+# (same for the other way around)? Anyway, dumbed down for the most trivial
+# `find` implementations out there...
 if [ ! -f scripts/udev/nut-usbups.rules.in -o \
      ! -f scripts/hotplug/libhid.usermap -o \
      ! -f scripts/upower/95-upower-hid.hwdb -o \
      ! -f scripts/devd/nut-usb.conf.in -o \
-     ! -f tools/nut-scanner/nutscan-usb.h ]
-then
+     ! -f scripts/devd/nut-usb.quirks -o \
+     ! -f tools/nut-scanner/nutscan-usb.h ] \
+|| [ -n "`find drivers -newer scripts/hotplug/libhid.usermap | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+|| [ -n "`find drivers -not -newer tools/nut-usbinfo.pl | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+; then
 	if perl -e 1; then
 		VERBOSE_FLAG_PERL=""
 		if $DEBUG ; then
@@ -147,6 +162,23 @@ if ( command -v dos2unix ) 2>/dev/null >/dev/null ; then
 	fi
 fi >&2
 
+# Required by autoconf for non-"foreign" projects;
+# is tracked as a NEWS.adoc for us however.
+[ -f NEWS ] || { echo "Please see NEWS.adoc for actual contents" > NEWS; }
+[ -f README ] || { echo "Please see README.adoc for actual contents" > README; }
+
+# Try to serve a fresh one at least when we remake from scratch like this
+# Note to not do it forcefully during `configure` or rebuild
+rm -f include/nut_version.h || true
+
+echo "----------------------------------------------------------------------"
+echo "Please note that on some systems the routine below can complain that "
+echo "  > configure.ac: warning: AC_INIT: not a literal: m4_esyscmd_s(...)"
+echo "but still does the right thing about PACKAGE_VERSION and PACKAGE_URL settings."
+echo "Check if your distro provides an 'autoconf-archive' package and if it helps."
+echo "Please post an issue in NUT bug tracker with platform details if it does not."
+echo "----------------------------------------------------------------------"
+
 echo "Calling autoreconf..."
 AUTOTOOL_RES=0
 if $DEBUG ; then
@@ -160,16 +192,19 @@ fi
 
 [ "$AUTOTOOL_RES" = 0 ] && [ -s configure ] && [ -x configure ] \
 || { cat << EOF
+----------------------------------------------------------------------
 FAILED: did not generate an executable configure script!
 
 # Note: on some systems "autoreconf", "automake" et al are dispatcher
 # scripts, and need you to explicitly say which version you want, e.g.
 #    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.13
 # If you get issues with AC_DISABLE_STATIC make sure you have libtool.
+#
 # If it complains about "too few" or "excess" "arguments to builtin ifdef",
 # check the configure.ac line it refers to and un-comment (or comment away)
 # the third argument for AM_SILENT_RULES check, or comment away the whole
 # "ifdef" block if your autotools still would not grok it.
+----------------------------------------------------------------------
 EOF
 	exit 1
 } >&2
@@ -198,13 +233,20 @@ else
 	CONFIG_SHELL="`head -1 configure | sed 's,^#!,,'`"
 fi
 
-# NOTE: Unquoted, may be multi-token
+# NOTE: Unquoted CONFIG_SHELL, may be multi-token
 $CONFIG_SHELL -n configure 2>/dev/null >/dev/null \
-|| { echo "FAILED: configure script did not pass shell interpreter syntax checks with $CONFIG_SHELL" >&2
+|| {
+	echo "----------------------------------------------------------------------" >&2
+	echo "FAILED: configure script did not pass shell interpreter syntax checks with $CONFIG_SHELL" >&2
 	echo "NOTE: If you are using an older OS release, try executing the script with" >&2
 	echo "a more functional shell implementation (dtksh, bash, dash...)" >&2
 	echo "You can re-run this script with a CONFIG_SHELL in environment" >&2
+	echo "----------------------------------------------------------------------" >&2
 	exit 1
 }
 
-echo "The generated configure script passed shell interpreter syntax checks"
+echo "----------------------------------------------------------------------"
+echo "SUCCESS: The generated configure script passed shell interpreter syntax checks"
+echo "Please proceed by running './configure --with-many-desired-options'"
+echo "For details check './configure --help' or docs/configure.txt in NUT sources"
+echo "----------------------------------------------------------------------"

@@ -1,2 +1,12 @@
 /PyNUT.py
 /test_nutclient.py
+/setup.py
+/PyNUTClient
+/PyNUTClient.egg-info
+/build
+/dist
+/src
+/.tox
+/README.txt
+/.pypi-*
+/LICENSE-GPL3

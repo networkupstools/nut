@@ -1,9 +1,9 @@
 #!/usr/bin/env perl
-#   Current Version : 1.4
+#   Current Version : 1.5
 #   Copyright (C) 2008 - 2012 dloic (loic.dardant AT gmail DOT com)
 #   Copyright (C) 2008 - 2015 Arnaud Quette <arnaud.quette@free.fr>
 #   Copyright (C) 2013 - 2014 Charles Lepple <clepple+nut@gmail.com>
-#   Copyright (C) 2014 - 2022 Jim Klimov <jimklimov+nut@gmail.com>
+#   Copyright (C) 2014 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   Based on the usbdevice.pl script, made for the Ubuntu Media Center
 #   for the final use of the LIRC project.
@@ -28,6 +28,7 @@
 # - manage deps in Makefile.am
 
 use File::Find;
+use Cwd;
 use strict;
 
 
@@ -52,6 +53,9 @@ my $outputUdev="$TOP_BUILDDIR/scripts/udev/nut-usbups.rules.in";
 
 # BSD devd output file
 my $output_devd="$TOP_BUILDDIR/scripts/devd/nut-usb.conf.in";
+
+# FreeBSD/pfSense/... quirks output file
+my $output_freebsd_quirks="$TOP_BUILDDIR/scripts/devd/nut-usb.quirks";
 
 # UPower output file
 my $outputUPower="$TOP_BUILDDIR/scripts/upower/95-upower-hid.hwdb";
@@ -84,6 +88,9 @@ my %vendorName;
 
 ################# MAIN #################
 
+if ($ENV{"DEBUG"}) {
+	print stderr "main(): finding in scanPath=" . $scanPath . "\n";
+}
 find({wanted=>\&find_usbdevs, preprocess=>sub{sort @_}}, $scanPath);
 &gen_usb_files;
 
@@ -118,6 +125,14 @@ sub gen_usb_files
 	print $out_devd '# This file is generated and installed by the Network UPS Tools package.'."\n";
 	print $out_devd "# Homepage: https://www.networkupstools.org/\n\n";
 
+	my $out_freebsd_quirks = do {local *OUT_FREEBSD_QUIRKS};
+	open $out_freebsd_quirks, ">$output_freebsd_quirks" || die "error $output_freebsd_quirks : $!";
+	print $out_freebsd_quirks '# This file is generated and installed by the Network UPS Tools package.'."\n";
+	print $out_freebsd_quirks "# Homepage: https://www.networkupstools.org/\n";
+	print $out_freebsd_quirks "# Contents should be added to /boot/loader.conf.local (watch out for unique quirk numbers!)\n";
+	print $out_freebsd_quirks "# Inspired by 'Notes on USB quirks' under https://forum.netgate.com/topic/183961/nut-package-2-8-1-and-above\n";
+	print $out_freebsd_quirks "# and https://github.com/freebsd/freebsd-src/blob/main/sys/dev/usb/quirk/usb_quirk.c\n\n";
+
 	# UPower file header
 	my $outUPower = do {local *OUT_UPOWER};
 	open $outUPower, ">$outputUPower" || die "error $outputUPower : $!";
@@ -139,7 +154,9 @@ sub gen_usb_files
 	# Device scanner header
 	my $outDevScanner = do {local *OUT_DEV_SCANNER};
 	open $outDevScanner, ">$outputDevScanner" || die "error $outputDevScanner : $!";
-	print $outDevScanner '/* nutscan-usb'.$GPL_header."\n */\n\n";
+	print $outDevScanner "/* nutscan-usb.h - header with USB identifiers known to NUT drivers\n";
+	print $outDevScanner " * This file was automatically generated during NUT build by 'tools/nut-usbinfo.pl'\n *";
+	print $outDevScanner $GPL_header."\n */\n\n";
 	print $outDevScanner "#ifndef DEVSCAN_USB_H\n#define DEVSCAN_USB_H\n\n";
 	print $outDevScanner "#include \"nut_stdint.h\"\t/* for uint16_t etc. */\n\n";
 	print $outDevScanner "#include <limits.h>\t/* for PATH_MAX in usb.h etc. */\n\n";
@@ -168,9 +185,10 @@ sub gen_usb_files
 	print $outDevScanner " typedef usb_dev_handle libusb_device_handle;\n";
 	print $outDevScanner "#endif\n";
 	# vid, pid, driver
-	print $outDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n} usb_device_id_t;\n\n";
+	print $outDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n\tchar*\talt_driver_names;\n} usb_device_id_t;\n\n";
 	print $outDevScanner "/* USB IDs device table */\nstatic usb_device_id_t usb_device_table[] = {\n\n";
 
+	my $entryNumber = 0;
 	# generate the file in alphabetical order (first for VendorID, then for ProductID)
 	foreach my $vendorId (sort { lc $a cmp lc $b } keys  %vendorName)
 	{
@@ -189,6 +207,10 @@ sub gen_usb_files
 			print $out_devd "\n# ".$vendorName{$vendorId}."\n";
 		}
 
+		# FreeBSD quirks vendor header
+		if ($vendorName{$vendorId}) {
+			print $out_freebsd_quirks "\n# ".$vendorName{$vendorId}."\n";
+		}
 
 		# UPower vendor header flag
 		my $upowerVendorHasDevices = 0;
@@ -201,24 +223,29 @@ sub gen_usb_files
 			print $outHotplug "         0x00            0x00            0x00            0x00               0x00               0x00000000\n";
 
 			# udev device entry
-			print $outUdev "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
+			print $outUdev "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"drivers"}."\n";
 			print $outUdev "ATTR{idVendor}==\"".removeHexPrefix($vendorId);
 			print $outUdev "\", ATTR{idProduct}==\"".removeHexPrefix($productId)."\",";
 			print $outUdev ' MODE="664", GROUP="@RUN_AS_GROUP@"'."\n";
 
 			# devd device entry
-			print $out_devd "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
+			print $out_devd "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"drivers"}."\n";
 			print $out_devd "notify 100 {\n\tmatch \"system\"\t\t\"USB\";\n";
 			print $out_devd "\tmatch \"subsystem\"\t\"DEVICE\";\n";
 			print $out_devd "\tmatch \"type\"\t\t\"ATTACH\";\n";
 			print $out_devd "\tmatch \"vendor\"\t\t\"$vendorId\";\n";
-			#
 			print $out_devd "\tmatch \"product\"\t\t\"$productId\";\n";
 			print $out_devd "\taction \"chgrp \@RUN_AS_GROUP\@ /dev/\$cdev; chmod g+rw /dev/\$cdev\";\n";
 			print $out_devd "};\n";
 
+			# FreeBSD quirks device entry
+			# e.g. hw.usb.quirk.1="0x051d 0x0003 0x0000 0xffff UQ_HID_IGNORE"
+			print $out_freebsd_quirks "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"drivers"}."\n";
+			print $out_freebsd_quirks "hw.usb.quirk." . $entryNumber . "=\"" . $vendorId . " " . $productId . " 0x0000 0xffff UQ_HID_IGNORE\"\n";
+
 			# UPower device entry (only for USB/HID devices!)
-			if ($vendor{$vendorId}{$productId}{"driver"} eq "usbhid-ups")
+			if ($vendor{$vendorId}{$productId}{"driver"} eq "usbhid-ups" ||
+				$vendor{$vendorId}{$productId}{"driver"} eq "apc_modbus")
 			{
 				if (!$upowerVendorHasDevices) {
 					if ($vendorName{$vendorId}) {
@@ -230,7 +257,20 @@ sub gen_usb_files
 			}
 
 			# Device scanner entry
-			print $outDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\" },\n";
+			print $outDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\", ";
+			if (index($vendor{$vendorId}{$productId}{"drivers"}, " ") != -1) {
+				my $otherDrivers = $vendor{$vendorId}{$productId}{"drivers"};
+				$otherDrivers =~ s/$vendor{$vendorId}{$productId}{"driver"}//;
+				$otherDrivers =~ s/  / /;
+				$otherDrivers =~ s/^ //;
+				$otherDrivers =~ s/ $//;
+				print $outDevScanner "\"".$otherDrivers."\"";
+			} else {
+				print $outDevScanner "NULL";
+			}
+			print $outDevScanner " },\n";
+
+			$entryNumber++;
 		}
 
 		if ($upowerVendorHasDevices) {
@@ -245,13 +285,29 @@ sub gen_usb_files
 	print $outUdev "\n".'LABEL="nut-usbups_rules_end"'."\n";
 
 	# Device scanner footer
-	print $outDevScanner "\n\t/* Terminating entry */\n\t{ 0, 0, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
+	print $outDevScanner "\n\t/* Terminating entry */\n\t{ 0, 0, NULL, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
 }
 
 sub find_usbdevs
 {
+	if ($ENV{"DEBUG"}) {
+		print stderr "find_usbdevs(): pwd='" . Cwd::cwd() . "' nameFile='" . $_ . "'\n";
+	}
+
 	# maybe there's an option to turn off all .* files, but anyway this is stupid
-	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.orig$/);
+	# Note that on some platforms "." and ".." do also pop up;
+	# take care to NOT prune (avoid recursion into) the "." one:
+	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.(orig|o|la|lo|exe)$/) || ($_ eq '.libs') || ($_ eq '.deps') || ($_ eq '..');
+	return $File::Find::prune = 0 if ($_ eq '.');
+
+	if (-d $_) {
+		# FIXME: in current NUT vanilla code we do not support subdirs
+		#  with driver sources, so skip any subdirs we see for now.
+		#  Eventually we might want to chdir, recurse and return info
+		#  with prefixed dirname.
+		print stderr "find_usbdevs(): SKIP: nameFile='" . $_ . "' is a directory\n";
+		return $File::Find::prune = 1;
+	}
 
 	my $nameFile=$_;
 	my $lastComment="";
@@ -311,6 +367,9 @@ sub find_usbdevs
 				}
 			}
 
+			$VendorID=lc($VendorID);
+			$ProductID=lc($ProductID);
+
 			# store data (to be optimized)
 			# and don't overwrite actual vendor names with empty values
 			if( (!$vendorName{$VendorID}) or (($vendorName{$VendorID} eq "") and ($VendorName ne "")) )
@@ -320,23 +379,84 @@ sub find_usbdevs
 			$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
 			# process the driver name
 			my $driver=$nameFile;
-			if($nameFile=~/(.+)-hid\.c/) {
+			my $preferDriver=1;
+			if($nameFile=~/(.+)-hid\.c$/) {
 				$driver="usbhid-ups";
 			}
 			# generic matching rule *.c => *
 			elsif ($nameFile =~ /(.+)\.c$/) {
 				$driver=$1;
 			}
+			elsif ($nameFile =~ /(.+)\.(orig|bak|tmp)/) {
+				return;
+			}
+			elsif ($nameFile =~ /(.+)_(BACKUP|LOCAL|REMOTE|BASE)_\d*/) {
+				return;
+			}
 			else {
-				die "Unknown driver type: $nameFile";
+				warn "Unknown driver type: $nameFile";
+				next;
 			}
-			if ($vendor{$VendorID}{$ProductID}{"driver"} && $ENV{"DEBUG"}) {
-				print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
-					"was already related to driver '" .
-					$vendor{$VendorID}{$ProductID}{"driver"} .
-					"' and changing to '$driver'\n";
+			if ($vendor{$VendorID}{$ProductID}{"driver"}) {
+				if ($driver ne $vendor{$VendorID}{$ProductID}{"driver"}) {
+					# FIXME: Prefer apc_modbus to usbhid-ups in builds
+					# with libmodbus versions which support USB
+					if ($vendor{$VendorID}{$ProductID}{"driver"} eq "usbhid-ups"
+					||  $vendor{$VendorID}{$ProductID}{"driver"} eq "nutdrv_qx"
+					|| (index($vendor{$VendorID}{$ProductID}{"driver"}, "blazer_") == 0 && $driver ne "nutdrv_qx")
+					) {
+						# This newly seen driver is not as cool
+						# as the one we already saw earlier.
+						$preferDriver = 0;
+					}
+				}
+				if ($ENV{"DEBUG"}) {
+					if ($preferDriver) {
+						print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
+							"was already related to driver '" .
+							$vendor{$VendorID}{$ProductID}{"driver"} .
+							"' and changing to '$driver' as latest hit\n";
+					} else {
+						print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
+							"was already related to driver '" .
+							$vendor{$VendorID}{$ProductID}{"driver"} .
+							"' and now also to '$driver'; keeping original as more preferred\n";
+					}
+				}
+
+				# \Q \E magic is only since perl 5.16 so preferring index instead:
+				if ($ENV{"DEBUG"}) {
+					print STDERR "nut-usbinfo.pl: checking " .
+						"list='" . $vendor{$VendorID}{$ProductID}{"drivers"} . "'" .
+						" l1=" . (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver . " ")) .
+						" l2=" . (index($vendor{$VendorID}{$ProductID}{"drivers"}, $driver . " ")) .
+						" l3=" . (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver)) .
+						" l4=" . (length($vendor{$VendorID}{$ProductID}{"drivers"}) - length($driver) - 1) .
+						"\n";
+				}
+
+				if (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver . " ") > -1
+				||  index($vendor{$VendorID}{$ProductID}{"drivers"}, $driver . " ") == 0
+				||  (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver) == length($vendor{$VendorID}{$ProductID}{"drivers"}) - length($driver) - 1
+				     && index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver) > -1)
+				) {
+					if ($ENV{"DEBUG"}) {
+						print STDERR "nut-usbinfo.pl: driver '$driver' was already listed for VendorID=$VendorID ProductID=$ProductID\n";
+					}
+				} else {
+					$vendor{$VendorID}{$ProductID}{"drivers"} .= " " . $driver;
+					if ($ENV{"DEBUG"}) {
+						print STDERR "nut-usbinfo.pl: added '$driver' to list for VendorID=$VendorID ProductID=$ProductID, now: " . $vendor{$VendorID}{$ProductID}{"drivers"} . "\n";
+					}
+				}
+			} else {
+				# First hit
+				$vendor{$VendorID}{$ProductID}{"drivers"} = $driver;
 			}
-			$vendor{$VendorID}{$ProductID}{"driver"}=$driver;
+
+			if ($preferDriver) {
+				$vendor{$VendorID}{$ProductID}{"driver"} = $driver;
+			}
 		}
 	}
 }

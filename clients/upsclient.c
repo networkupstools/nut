@@ -3,6 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2020 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,7 +28,7 @@
 /* this include is needed on AIX to have errno stored in thread local storage */
 #  include <pthread.h>
 # endif
-#endif
+#endif	/* !WIN32 */
 
 #include <errno.h>
 #include <stdio.h>
@@ -52,34 +53,35 @@
 # define W32_NETWORK_CALL_OVERRIDE
 # include "wincompat.h"
 # undef W32_NETWORK_CALL_OVERRIDE
-#endif
+#endif	/* WIN32 */
 
 #include "common.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include "timehead.h"
 #include "upsclient.h"
 
 /* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
 #if (defined NUT_PLATFORM_SOLARIS)
-	#define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
+#	define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
 #else
-	#define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
+#	define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
 #endif  /* end of Solaris/i386 WA for non-blocking connect */
 
 /* WA for AIX bug: non-blocking connect sets errno to 0 */
 #if (defined NUT_PLATFORM_AIX)
-	#define AIX_NBCONNECT_0(status) (0 == (status))
+#	define AIX_NBCONNECT_0(status) (0 == (status))
 #else
-	#define AIX_NBCONNECT_0(status) (0)
+#	define AIX_NBCONNECT_0(status) (0)
 #endif  /* end of AIX WA for non-blocking connect */
 
 #ifdef WITH_NSS
-	#include <prerror.h>
-	#include <prinit.h>
-	#include <pk11func.h>
-	#include <prtypes.h>
-	#include <ssl.h>
-	#include <private/pprio.h>
+#	include <prerror.h>
+#	include <prinit.h>
+#	include <pk11func.h>
+#	include <prtypes.h>
+#	include <ssl.h>
+#	include <private/pprio.h>
 #endif /* WITH_NSS */
 
 #define UPSCLIENT_MAGIC 0x19980308
@@ -153,8 +155,12 @@ typedef struct HOST_CERT_s {
 }	HOST_CERT_t;
 static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
 
-
+/* Flag for SSL init */
 static int upscli_initialized = 0;
+
+/* 0 means no timeout in upscli_connect() */
+static struct timeval upscli_default_connect_timeout = {0, 0};
+static int upscli_default_connect_timeout_initialized = 0;
 
 #ifdef WITH_OPENSSL
 static SSL_CTX	*ssl_ctx;
@@ -329,6 +335,7 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
+	const char *quiet_init_ssl;
 #ifdef WITH_OPENSSL
 	long ret;
 	int ssl_mode = SSL_VERIFY_NONE;
@@ -343,7 +350,19 @@ int upscli_init(int certverify, const char *certpath,
 	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-	const char *quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
+	if (upscli_initialized == 1) {
+		upslogx(LOG_WARNING, "upscli already initialized");
+		return -1;
+	}
+
+	if (upscli_default_connect_timeout_initialized == 0) {
+		/* There may be an envvar waiting to be parsed */
+		upsdebugx(1, "%s: upscli_default_connect_timeout was not initialized, checking now",
+			__func__);
+		upscli_init_default_connect_timeout(NULL, NULL, NULL);
+	}
+
+	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
 	if (quiet_init_ssl != NULL) {
 		if (*quiet_init_ssl == '\0'
 			|| (strncmp(quiet_init_ssl, "true", 4)
@@ -353,11 +372,6 @@ int upscli_init(int certverify, const char *certpath,
 			upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
 			quiet_init_ssl = NULL;
 		}
-	}
-
-	if (upscli_initialized == 1) {
-		upslogx(LOG_WARNING, "upscli already initialized");
-		return -1;
 	}
 
 #ifdef WITH_OPENSSL
@@ -618,6 +632,9 @@ const char *upscli_strerror(UPSCONN_t *ups)
 			upscli_errlist[ups->upserror].str,
 			ups->pc_ctx.errmsg);
 		return ups->errbuf;
+
+	default:
+		break;
 	}
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -678,8 +695,9 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
 		 * but smaller systems with 16-bits might be endangered :)
 		 */
+		int iret;
 		assert(buflen <= INT_MAX);
-		int iret = SSL_read(ups->ssl, buf, (int)buflen);
+		iret = SSL_read(ups->ssl, buf, (int)buflen);
 		assert(iret <= SSIZE_MAX);
 		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
@@ -762,8 +780,9 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
 		 * but smaller systems with 16-bits might be endangered :)
 		 */
+		int iret;
 		assert(buflen <= INT_MAX);
-		int iret = SSL_write(ups->ssl, buf, (int)buflen);
+		iret = SSL_write(ups->ssl, buf, (int)buflen);
 		assert(iret <= SSIZE_MAX);
 		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
@@ -906,6 +925,10 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		return -1;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	if (verifycert) {
 		status = SSL_AuthCertificateHook(ups->ssl,
 			(SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
@@ -935,6 +958,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		nss_error("upscli_sslinit / SSL_HandshakeCallback");
 		return -1;
 	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	cert = upscli_find_host_cert(ups->host);
 	if (cert != NULL && cert->certname != NULL) {
@@ -997,13 +1023,13 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 #ifndef WIN32
 	long			fd_flags;
-#else
+#else	/* WIN32 */
 	HANDLE event = NULL;
 	unsigned long argp;
 
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
-#endif
+#endif	/* WIN32 */
 	if (!ups) {
 		return -1;
 	}
@@ -1014,6 +1040,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 	ups->fd = -1;
 
 	if (!host) {
+		upslogx(LOG_WARNING, "%s: Host not specified", __func__);
 		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 		return -1;
 	}
@@ -1039,16 +1066,21 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		case EAI_AGAIN:
 			continue;
 		case EAI_NONAME:
+			upslogx(LOG_WARNING, "%s: Host not found: '%s'", __func__, NUT_STRARG(host));
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 			return -1;
 		case EAI_MEMORY:
+			upslogx(LOG_WARNING, "%s: Insufficient memory", __func__);
 			ups->upserror = UPSCLI_ERR_NOMEM;
 			return -1;
 		case EAI_SYSTEM:
 			ups->syserrno = errno;
 			break;
+		default:
+			break;
 		}
 
+		upslog_with_errno(LOG_WARNING, "%s: Unknown error happened during getaddrinfo()", __func__);
 		ups->upserror = UPSCLI_ERR_UNKNOWN;
 		return -1;
 	}
@@ -1076,7 +1108,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags |= O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-#else
+#else	/* WIN32 */
 			event = CreateEvent(NULL, /* Security */
 					FALSE, /* auto-reset */
 					FALSE, /* initial state */
@@ -1085,15 +1117,15 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			/* Associate socket event to the socket via its Event object */
 			WSAEventSelect( sock_fd, event, FD_CONNECT );
 			CloseHandle(event);
-#endif
+#endif	/* WIN32 */
 		}
 
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
 #ifndef WIN32
 			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
-#else
+#else	/* WIN32 */
 			if(errno == WSAEWOULDBLOCK) {
-#endif
+#endif	/* WIN32 */
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
 				select(sock_fd+1,NULL,&wfds,NULL,
@@ -1112,6 +1144,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 				else {
 					/* Timeout */
 					v = -1;
+					ups->upserror = UPSCLI_ERR_CONNFAILURE;
+					ups->syserrno = ETIMEDOUT;
 					break;
 				}
 			}
@@ -1132,6 +1166,42 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 		if (v < 0) {
 			close(sock_fd);
+			/* if timeout, break out so client can continue */
+			/* match Linux behavior that updates timeout struct */
+			if (timeout != NULL &&
+			    ups->upserror == UPSCLI_ERR_CONNFAILURE &&
+			    ups->syserrno == ETIMEDOUT
+			) {
+				/* https://stackoverflow.com/a/29147085/4715872
+				 * obviously INET6_ADDRSTRLEN is expected to be larger
+				 * than INET_ADDRSTRLEN, but this may be required in case
+				 * if for some unexpected reason IPv6 is not supported, and
+				 * INET6_ADDRSTRLEN is defined as 0
+				 * but this is not very likely and I am aware of no cases of
+				 * this in practice (editor)
+				 */
+				char	addrstr[(INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1];
+				addrstr[0] = '\0';
+				switch (ai->ai_family) {
+					case AF_INET: {
+						struct sockaddr_in addr_in;
+						memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
+						inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, INET_ADDRSTRLEN);
+						break;
+					}
+					case AF_INET6: {
+						struct sockaddr_in6 addr_in6;
+						memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
+						inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, INET6_ADDRSTRLEN);
+						break;
+					}
+					default:
+						break;
+				}
+				upslogx(LOG_WARNING, "%s: Connection to host timed out: '%s'",
+					__func__, *addrstr ? addrstr : NUT_STRARG(host));
+				break;
+			}
 			continue;
 		}
 
@@ -1141,10 +1211,10 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-#else
+#else	/* WIN32 */
 			argp = 0;
 			ioctlsocket(sock_fd, FIONBIO, &argp);
-#endif
+#endif	/* WIN32 */
 		}
 
 		ups->fd = sock_fd;
@@ -1161,7 +1231,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 	pconf_init(&ups->pc_ctx, NULL);
 
-	ups->host = strdup(host);
+	ups->host = xstrdup(host);
 
 	if (!ups->host) {
 		ups->upserror = UPSCLI_ERR_NOMEM;
@@ -1197,7 +1267,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		} else if (tryssl && ret == 0) {
 			if (certverify != 0) {
 				upslogx(LOG_NOTICE, "Can not connect to NUT server %s in SSL and "
-				"certificate is needed, disconnect", host);
+					"certificate is needed, disconnect", host);
 				upscli_disconnect(ups);
 				return -1;
 			}
@@ -1216,7 +1286,23 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags)
 {
-	return upscli_tryconnect(ups,host,port,flags,NULL);
+	struct timeval tv = {0, 0}, *ptv = NULL;
+
+	if (upscli_default_connect_timeout_initialized == 0) {
+		/* There may be an envvar waiting to be parsed */
+		upscli_init_default_connect_timeout(NULL, NULL, NULL);
+
+		/* Failed or not (bad envvar), avoid looping messages
+		 * about bad value parsing for every upscli_connect() */
+		upscli_default_connect_timeout_initialized = 1;
+	}
+
+	tv = upscli_default_connect_timeout;
+	if (tv.tv_sec != 0 || tv.tv_usec != 0) {
+		/* By default, ptv==NULL for a blocking upscli_tryconnect() */
+		ptv = &tv;
+	}
+	return upscli_tryconnect(ups, host, port, flags, ptv);
 }
 
 /* map upsd error strings back to upsclient internal numbers */
@@ -1604,7 +1690,7 @@ ssize_t upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 /* split upsname[@hostname[:port]] into separate components */
 int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t *port)
 {
-	char	*s, tmp[SMALLBUF], *last = NULL;
+	char	*sat, *ssc, tmp[SMALLBUF], *last = NULL;
 
 	/* paranoia */
 	if ((!buf) || (!upsname) || (!hostname) || (!port)) {
@@ -1616,17 +1702,42 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t 
 		return -1;
 	}
 
-	s = strchr(tmp, '@');
+	sat = strchr(tmp, '@');
+	ssc = strchr(tmp, ':');
 
-	if ((*upsname = strdup(strtok_r(tmp, "@", &last))) == NULL) {
-		fprintf(stderr, "upscli_splitname: strdup failed\n");
+	/* someone passed a "@hostname" string? */
+	if (sat == tmp) {
+		fprintf(stderr, "upscli_splitname: got empty upsname string\n");
 		return -1;
 	}
 
+	if ((*upsname = xstrdup(strtok_r(tmp, "@", &last))) == NULL) {
+		fprintf(stderr, "upscli_splitname: xstrdup failed\n");
+		return -1;
+	}
+
+	/* someone passed a "@hostname" string (take two)? */
+	if (!**upsname) {
+		fprintf(stderr, "upscli_splitname: got empty upsname string\n");
+		return -1;
+	}
+
+/*
+	fprintf(stderr, "upscli_splitname3: got buf='%s', tmp='%s', upsname='%s', possible hostname:port='%s'\n",
+		NUT_STRARG(buf), NUT_STRARG(tmp), NUT_STRARG(*upsname), NUT_STRARG((sat ? sat+1 : sat)));
+ */
+
 	/* only a upsname is specified, fill in defaults */
-	if (s == NULL) {
-		if ((*hostname = strdup("localhost")) == NULL) {
-			fprintf(stderr, "upscli_splitname: strdup failed\n");
+	if (sat == NULL) {
+		if (ssc) {
+			/* TOTHINK: Consult isdigit(ssc+1) to shortcut
+			 *  `upsname:port` into `upsname@localhost:port`? */
+			fprintf(stderr, "upscli_splitname: port specified, but not a hostname\n");
+			return -1;
+		}
+
+		if ((*hostname = xstrdup("localhost")) == NULL) {
+			fprintf(stderr, "upscli_splitname: xstrdup failed\n");
 			return -1;
 		}
 
@@ -1634,7 +1745,13 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t 
 		return 0;
 	}
 
-	return upscli_splitaddr(s+1, hostname, port);
+	/* someone passed a "upsname@" string? */
+	if (!(*(sat+1))) {
+		fprintf(stderr, "upscli_splitname: got the @ separator and then an empty hostname[:port] string\n");
+		return -1;
+	}
+
+	return upscli_splitaddr(sat+1, hostname, port);
 }
 
 /* split hostname[:port] into separate components */
@@ -1653,14 +1770,28 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 		return -1;
 	}
 
+	s = strchr(tmp, '@');
+
+	/* someone passed a "@hostname" string? */
+	if (s) {
+		fprintf(stderr, "upscli_splitaddr: wrong call? "
+			"Got upsname@hostname[:port] string where "
+			"only hostname[:port] was expected: %s\n", buf);
+		/* let it pass, but probably fail later */
+	}
+
 	if (*tmp == '[') {
+		/* NOTE: Brackets are required for colon-separated IPv6
+		 * addresses, to differentiate from a port number. For
+		 * example, `[1234:5678]:3493` would seem right.
+		 */
 		if (strchr(tmp, ']') == NULL) {
 			fprintf(stderr, "upscli_splitaddr: missing closing bracket in [domain literal]\n");
 			return -1;
 		}
 
-		if ((*hostname = strdup(strtok_r(tmp+1, "]", &last))) == NULL) {
-			fprintf(stderr, "upscli_splitaddr: strdup failed\n");
+		if ((*hostname = xstrdup(strtok_r(tmp+1, "]", &last))) == NULL) {
+			fprintf(stderr, "upscli_splitaddr: xstrdup failed\n");
 			return -1;
 		}
 
@@ -1672,8 +1803,8 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 	} else {
 		s = strchr(tmp, ':');
 
-		if ((*hostname = strdup(strtok_r(tmp, ":", &last))) == NULL) {
-			fprintf(stderr, "upscli_splitaddr: strdup failed\n");
+		if ((*hostname = xstrdup(strtok_r(tmp, ":", &last))) == NULL) {
+			fprintf(stderr, "upscli_splitaddr: xstrdup failed\n");
 			return -1;
 		}
 
@@ -1781,4 +1912,127 @@ int upscli_ssl(UPSCONN_t *ups)
 #endif /* WITH_SSL */
 
 	return 0;
+}
+
+int upscli_set_default_connect_timeout(const char *secs) {
+	double fsecs;
+
+	if (secs) {
+		if (str_to_double(secs, &fsecs, 10) < 1) {
+			return -1;
+		}
+		if (d_equal(fsecs, 0.0)) {
+			upscli_default_connect_timeout.tv_sec = 0;
+			upscli_default_connect_timeout.tv_usec = 0;
+			return 0;
+		}
+		if (fsecs < 0.0) {
+			return -1;
+		}
+		upscli_default_connect_timeout.tv_sec = (time_t)fsecs;
+		fsecs *= 1000000;
+		upscli_default_connect_timeout.tv_usec =
+			(suseconds_t)((int)fsecs % 1000000);
+	}
+	else {
+		upscli_default_connect_timeout.tv_sec = 0;
+		upscli_default_connect_timeout.tv_usec = 0;
+	}
+	return 0;
+}
+
+void upscli_get_default_connect_timeout(struct timeval *ptv) {
+	if (ptv) {
+		*ptv = upscli_default_connect_timeout;
+	}
+}
+
+int upscli_init_default_connect_timeout(const char *cli_secs, const char *config_secs, const char *default_secs) {
+	const char	*envvar_secs, *cause = "built-in";
+	int	failed = 0, applied = 0;
+
+	/* First the very default: blocking connections as we always had */
+	upscli_default_connect_timeout.tv_sec = 0;
+	upscli_default_connect_timeout.tv_usec = 0;
+
+	/* Then try a program's built-in default, if any */
+	if (default_secs) {
+		if (upscli_set_default_connect_timeout(default_secs) < 0) {
+			upslogx(LOG_WARNING, "%s: default_secs='%s' value was not recognized, ignored",
+				__func__, default_secs);
+			failed++;
+		} else {
+			cause = "default_secs";
+			applied++;
+		}
+	}
+
+	/* Then override with envvar setting, if any (and if its value is valid) */
+	envvar_secs = getenv("NUT_DEFAULT_CONNECT_TIMEOUT");
+	if (envvar_secs) {
+		if (upscli_set_default_connect_timeout(envvar_secs) < 0) {
+			upslogx(LOG_WARNING, "%s: NUT_DEFAULT_CONNECT_TIMEOUT='%s' value was not recognized, ignored",
+				__func__, envvar_secs);
+			failed++;
+		} else {
+			cause = "envvar_secs";
+			applied++;
+		}
+	}
+
+	/* Then override with config-file setting, if any (and if its value is valid) */
+	if (config_secs) {
+		if (upscli_set_default_connect_timeout(config_secs) < 0) {
+			upslogx(LOG_WARNING, "%s: config_secs='%s' value was not recognized, ignored",
+				__func__, config_secs);
+			failed++;
+		} else {
+			cause = "config_secs";
+			applied++;
+		}
+	}
+
+	/* Then override with command-line setting, if any (and if its value is valid) */
+	if (cli_secs) {
+		if (upscli_set_default_connect_timeout(cli_secs) < 0) {
+			upslogx(LOG_WARNING, "%s: cli_secs='%s' value was not recognized, ignored",
+				__func__, cli_secs);
+			failed++;
+		} else {
+			cause = "cli_secs";
+			applied++;
+		}
+	}
+
+	upsdebugx(1, "%s: upscli_default_connect_timeout=%" PRIiMAX
+		 ".%06" PRIiMAX " sec assigned from: %s",
+		__func__, (intmax_t)upscli_default_connect_timeout.tv_sec,
+		(intmax_t)upscli_default_connect_timeout.tv_usec, cause);
+
+	/* Some non-built-in value was OK */
+	if (applied) {
+		upscli_default_connect_timeout_initialized++;
+		return 0;
+	}
+
+	/* None of provided non-built-in values was OK */
+	if (failed)
+		return -1;
+
+	/* At least we have the built-in default and nothing failed */
+	upscli_default_connect_timeout_initialized++;
+	return 0;
+}
+
+/* Pick up the methods below from libcommon and expose in the NUT client API */
+int	upscli_str_contains_token(const char *string, const char *token)
+{
+	return str_contains_token(string, token);
+}
+
+int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+				int (*callback_always)(char *, size_t, const char *),
+				int (*callback_unique)(char *, size_t, const char *)
+) {
+	return str_add_unique_token(tgt, tgtsize, token, callback_always, callback_unique);
 }

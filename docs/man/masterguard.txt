@@ -6,10 +6,14 @@ NAME
 
 masterguard - Driver for Masterguard UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*masterguard* -h
+
+*masterguard* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 masterguard driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 

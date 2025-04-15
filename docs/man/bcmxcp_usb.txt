@@ -7,14 +7,19 @@ NAME
 bcmxcp_usb - Experimental driver for UPSes supporting the BCM/XCP protocol
 over USB
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
-bcmxcp_usb driver.  For information about the core driver, see
+*bcmxcp_usb* -h
+
+*bcmxcp_usb* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+`bcmxcp_usb` driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
-This driver is a variant of the serial driver bcmxcp and uses the same
-core code.
+
+NOTE: This driver is a variant of the serial driver linkman:bcmxcp[8] and
+uses the same core code.
 
 SUPPORTED HARDWARE
 ------------------
@@ -80,16 +85,18 @@ EXPERIMENTAL DRIVER
 -------------------
 
 This driver has been tagged experimental, even if it has been reported
-to be stable. Thus it is not suitable for production systems and it is
-not built by default. This is mainly due to the fact that it is a
+to be stable. Thus it is not suitable for production systems and it may
+be not built by default. This is mainly due to the fact that it is a
 new driver.
 
 INSTALLATION
 ------------
 
-This driver is not built by default.  You can build it by using
-"configure --with-usb=yes". Note that it will also install other USB
-drivers.
+This driver may be not built by default.  You can require building it
+by using `./configure --with-usb=yes` (note that it will also install
+other USB drivers), or `./configure --with-drivers=bcmxcp_usb`. Either
+way, you would need libusb-dev (libraries and headers package) or
+equivalent for other platforms.
 
 You also need to install manually the hotplug files (libhidups and
 libhid.usermap), generally in etc/hotplug/usb/, to address the

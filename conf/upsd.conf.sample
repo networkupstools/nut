@@ -7,6 +7,9 @@
 # Each entry below provides usage and default value.
 #
 # For more information, refer to upsd.conf manual page.
+#
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
 
 # =======================================================================
 # MAXAGE <seconds>
@@ -45,11 +48,33 @@
 # to start if zero device sections were found in ups.conf. This is the default.
 
 # =======================================================================
+# ALLOW_NOT_ALL_LISTENERS <Boolean>
+# ALLOW_NOT_ALL_LISTENERS true
+#
+# Normally upsd requires that all `LISTEN` directives can be honoured at the
+# moment the daemon starts. If your LAN IP address (or host name) used in one
+# of the `LISTEN` directives may be not always accessible, and for some reason
+# do not want to just `LISTEN *` on the wildcard interface, but e.g. you still
+# want to use `upsmon` on `localhost`, this option can help. Note you would
+# have to restart `upsd` to pick up the `LISTEN`ed IP address if it appears
+# later.
+#
+# Boolean values 'true', 'yes', 'on' and '1' mean that the server would not
+# refuse to start if it can listen on at least one interface.
+#
+# Boolean values 'false', 'no', 'off' and '0' mean that the server should
+# refuse to start if it can not LISTEN on each and every (non-localhost)
+# interface found in upsd.conf. This is the default.
+
+# =======================================================================
 # STATEPATH <path>
 # STATEPATH /var/run/nut
 #
 # Tell upsd to look for the driver state sockets in 'path' rather
 # than the default that was compiled into the program.
+# Note that the drivers must use the same path, so `upsd` would prefer the
+# same-named setting from `ups.conf` global section, if present, over its own.
+# Environment variable NUT_STATEPATH set by caller can override this setting.
 
 # =======================================================================
 # LISTEN <IP address or name> [<port>]
@@ -64,6 +89,13 @@
 # Note that it is not true for Windows platforms. You shouldn't use IPv6 in
 # your configuration files unless you have IPv6 installed.
 #
+# As a special case, `LISTEN * <port>` (with an asterisk) will try
+# to listen on "ANY" IP address for both IPv6 (::0) and IPv4 (0.0.0.0),
+# subject to `upsd` command-line arguments, or system configuration.
+# Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
+# and does not allow to disable this mode, then there may be one listening
+# socket to handle both address families.
+#
 # One or more LISTEN statements give the IP address (or name that
 # resolves to such an address) for upsd to listen on, optionally with
 # a port number.
@@ -74,6 +106,12 @@
 #
 # This will only be read at startup of upsd.  If you make changes here,
 # you'll need to restart upsd, as reload will have no effect.
+#
+# Please note that older NUT releases could have been using the IPv4-mapped
+# IPv6 addressing (sometimes also known as "dual-stack") mode, if provided
+# by the system. Current versions (since NUT v2.8.1 release) explicitly try
+# to restrict their listening sockets to only support one address family on
+# each socket, and so avoid IPv4-mapped mode where possible.
 
 # =======================================================================
 # MAXCONN <connections>

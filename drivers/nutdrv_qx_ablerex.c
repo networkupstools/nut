@@ -32,35 +32,45 @@ static int Q5_Vbc = -1;
 static int ablerexQ5Vb = -1;
 
 static int ablerex_Q5(item_t *item, char *value, const size_t valuelen) {
-/*
-	int RawValue = 0;
+	int	Q5_Fout, Q5_Vb, Q5_O_Cur, Q5_Err;
+#ifdef ABLEREX_WITH_Q5_InvW
+	int	Q5_InvW;
+#endif
+#ifdef ABLEREX_WITH_RawValue
+	int	RawValue = ((int)(unsigned char)item->value[0]) * 256 + (unsigned char)item->value[1];
+#endif
 
-	RawValue  = (unsigned char)item->value[0] * 256 + (unsigned char)item->value[1];
+/* // real code below, this is for dev-testing
+	ablerexQ5Vb = ((int)(unsigned char)buf[7]) * 256 + (unsigned char)buf[8];
+	Q5_Vbc = ((int)(unsigned char)buf[9]) * 256 + (unsigned char)buf[10];
 */
 
-	//ablerexQ5Vb = (unsigned char)buf[7] * 256 + (unsigned char)buf[8];
-	//Q5_Vbc = (unsigned char)buf[9] * 256 + (unsigned char)buf[10];
 	upsdebugx(2, "Q51: %d %d %d %d %d %d", item->answer[0], item->answer[1], item->answer[2], item->answer[3], item->answer[4], item->answer[5]);
 	upsdebugx(2, "Q52: %d %d %d %d %d %d", item->answer[6], item->answer[7], item->answer[8], item->answer[9], item->answer[10], item->answer[11]);
 	upsdebugx(2, "Q53: %d %d %d %d", item->answer[12], item->answer[13], item->answer[14], item->answer[15]);
 
-	int Q5_Fout = (unsigned char)item->answer[1] * 256 + (unsigned char)item->answer[2];
-	int Q5_Vb = (unsigned char)item->answer[7] * 256 + (unsigned char)item->answer[8];
+	Q5_Fout = (unsigned char)item->answer[1] * 256 + (unsigned char)item->answer[2];
+	Q5_Vb = (unsigned char)item->answer[7] * 256 + (unsigned char)item->answer[8];
 	Q5_Vbc = (unsigned char)item->answer[9] * 256 + (unsigned char)item->answer[10];
-	//int Q5_InvW = (unsigned char)item->answer[11] * 256 + (unsigned char)item->answer[12];
-	int Q5_Err = (unsigned char)item->answer[13] * 256 + (unsigned char)item->answer[14];
-	int Q5_O_Cur = (unsigned char)item->answer[15] * 256 + (unsigned char)item->answer[16];
+#ifdef ABLEREX_WITH_Q5_InvW
+	Q5_InvW = (unsigned char)item->answer[11] * 256 + (unsigned char)item->answer[12];
+#endif
+	Q5_Err = (unsigned char)item->answer[13] * 256 + (unsigned char)item->answer[14];
+	Q5_O_Cur = (unsigned char)item->answer[15] * 256 + (unsigned char)item->answer[16];
 
 	ablerexQ5Vb = Q5_Vb;
 	upsdebugx(2, "Q5: %.1f %d %.1f", 0.1 * Q5_Fout, Q5_Err, 0.1 * Q5_O_Cur);
 	upsdebugx(2, "Q5Vb: %d Vbc %d", Q5_Vb, Q5_Vbc);
+#ifdef ABLEREX_WITH_Q5_InvW
+	upsdebugx(2, "Q5_InvW: %d", Q5_InvW);
+#endif
 	dstate_setinfo("output.frequency", "%.1f", 0.1 * Q5_Fout);
 	dstate_setinfo("ups.alarm", "%d", Q5_Err);
 	dstate_setinfo("output.current", "%.1f", 0.1 * Q5_O_Cur);
 
 	snprintf(value, valuelen, "%.1f", Q5_Fout * 0.1);
 
-/*
+#ifdef ABLEREX_WITH_RawValue
 	switch (item->from)
 	{
 	case 1:
@@ -77,16 +87,19 @@ static int ablerex_Q5(item_t *item, char *value, const size_t valuelen) {
 		break;
 
 	default:
-		//Don't know what happened
+		/* Don't know what happened */
 		return -1;
 	}
-*/
+#endif
 
 	return 0;
 }
 
 static int ablerex_battery(item_t *item, char *value, const size_t valuelen) {
-	double BattV = 0.0;
+	double	BattV = 0.0;
+	double	nomBattV = 0.0;
+	double	battvoltact = 0.0;
+
 	BattV = strtod(item->value, NULL);
 	upsdebugx(2, "battvoltact2: %.2f", BattV);
 	if (!dstate_getinfo("battery.voltage.nominal"))
@@ -95,12 +108,11 @@ static int ablerex_battery(item_t *item, char *value, const size_t valuelen) {
 		return 0;
 	}
 
-	double nomBattV = 0.0;
 	nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
 	upsdebugx(2, "battvoltact1: %.2f", nomBattV);
-	//return 0;
-
-	double battvoltact = 0.0;
+/*
+ *	//return 0;
+ */
 
 	if (ablerexQ5Vb > 0) {
 		battvoltact = ablerexQ5Vb * nomBattV / 1200;
@@ -160,8 +172,10 @@ static int ablerex_battery_charge(double BattIn)
 			}
 		}
 	} else {
-		//double nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
-		//double battV = BattIn / (nomBattV / 12);
+/*
+ *		//double nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
+ *		//double battV = BattIn / (nomBattV / 12);
+ */
 
 		for (i = 0; offlineC[i] > 0; i++) {
 			if (BattIn >= offlineP[i]) {
@@ -174,7 +188,10 @@ static int ablerex_battery_charge(double BattIn)
 }
 
 static int ablerex_batterycharge(item_t *item, char *value, const size_t valuelen) {
-	double BattV = 0.0;
+	double	BattV = 0.0;
+	double	nomBattV = 0.0;
+	int	BattP;
+
 	BattV = strtod(item->value, NULL);
 	upsdebugx(2, "battvoltc2: %.2f", BattV);
 	if (!dstate_getinfo("battery.voltage.nominal"))
@@ -183,16 +200,19 @@ static int ablerex_batterycharge(item_t *item, char *value, const size_t valuele
 		return 0;
 	}
 
-	double nomBattV = 0.0;
 	nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
 	upsdebugx(2, "battvv1: %.2f", nomBattV);
-	//return 0;
+/*
+ *	//return 0;
+ */
 
 	if (BattV > 3.0) {
 		BattV = BattV / (nomBattV / 12);
 	}
-	int BattP = ablerex_battery_charge(BattV);
-	//dstate_setinfo("battery.charge", "%.0f", BattP);
+	BattP = ablerex_battery_charge(BattV);
+/*
+ *	//dstate_setinfo("battery.charge", "%.0f", BattP);
+ */
 
 	snprintf(value, valuelen, "%d", BattP);
 	upsdebugx(2, "battcharge: %d", BattP);
@@ -301,10 +321,12 @@ static int	ablerex_process_status_bits(item_t *item, char *value, const size_t v
 			status_set("RB");
 		}
 
-		double vout = strtod(dstate_getinfo("output.voltage"), NULL);
+		{ /* scope */
+			double vout = strtod(dstate_getinfo("output.voltage"), NULL);
 
-		if (vout < 50.0) {
-			status_set("OFF");
+			if (vout < 50.0) {
+				status_set("OFF");
+			}
 		}
 		break;
 
@@ -364,9 +386,13 @@ static item_t	ablerex_qx2nut[] = {
 	/* Ablerex */
 	{ "output.frequency",	0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	18,	"%.1f",	0,	NULL,	NULL,	ablerex_Q5 },
 	{ "battery.runtime",	0,	NULL,	"At\r",	"",	0,	'(',	"",	0,	0,	"%d",	0,	NULL,	NULL,	ablerex_At },
-	//{ "ups.alarm",		0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	14,	"%.0f",	0,	QX_FLAG_QUICK_POLL,	NULL,	ablerex_Q5 },
+/*
+ *	//{ "ups.alarm",		0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	14,	"%.0f",	0,	QX_FLAG_QUICK_POLL,	NULL,	ablerex_Q5 },
+ */
 	{ "ups.test.result",	0,	NULL,	"TR\r",	"",	0,	'#',	"",	0,	0,	"%s",	0,	NULL,	NULL,	ablerex_TR },
-	//{ "output.current",		0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	16,	"%.1f",	0,	QX_FLAG_QUICK_POLL,	NULL,	ablerex_Q5 },
+/*
+ *	//{ "output.current",		0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	16,	"%.1f",	0,	QX_FLAG_QUICK_POLL,	NULL,	ablerex_Q5 },
+ */
 
 	/*
 	 * > [I\r]

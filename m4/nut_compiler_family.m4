@@ -2,6 +2,9 @@ dnl detect if current compiler is clang or gcc (or...)
 
 AC_DEFUN([NUT_COMPILER_FAMILY],
 [
+if test -z "${nut_compiler_family_seen}"; then
+  nut_compiler_family_seen=yes
+
   CC_VERSION_FULL="`LANG=C LC_ALL=C $CC --version 2>&1`"   || CC_VERSION_FULL=""
   CXX_VERSION_FULL="`LANG=C LC_ALL=C $CXX --version 2>&1`" || CXX_VERSION_FULL=""
   CPP_VERSION_FULL="`LANG=C LC_ALL=C $CPP --version 2>&1`" || CPP_VERSION_FULL=""
@@ -86,6 +89,7 @@ AC_DEFUN([NUT_COMPILER_FAMILY],
   AS_IF([test "x$CC_VERSION" = x],  [CC_VERSION="`echo "${CC_VERSION_FULL}" | head -1`"])
   AS_IF([test "x$CXX_VERSION" = x], [CXX_VERSION="`echo "${CXX_VERSION_FULL}" | head -1`"])
   AS_IF([test "x$CPP_VERSION" = x], [CPP_VERSION="`echo "${CPP_VERSION_FULL}" | head -1`"])
+fi
 ])
 
 AC_DEFUN([NUT_CHECK_COMPILE_FLAG],
@@ -97,28 +101,52 @@ dnl so seemingly try to parse the method without args:
 
 dnl Note: per https://stackoverflow.com/questions/52557417/how-to-check-support-compile-flag-in-autoconf-for-clang
 dnl the -Werror below is needed to detect "warnings" about unsupported options
+dnl NOTE: this option should not be passed via the fourth argument of the macro,
+dnl or it ends up in the flags too, possibly during the "pop"; have to use the
+dnl GOOD_FLAG instead :\
     COMPILERFLAG="$1"
 
 dnl We also try to run an actual build since tools called from that might
 dnl complain if they are forwarded unknown flags accepted by the front-end.
-    SAVED_CFLAGS="$CFLAGS"
-    SAVED_CXXFLAGS="$CXXFLAGS"
+    NUT_SAVED_CFLAGS="$CFLAGS"
+    NUT_SAVED_CXXFLAGS="$CXXFLAGS"
+    AC_MSG_NOTICE([Starting check compile flag for '${COMPILERFLAG}'; now CFLAGS='${CFLAGS}' and CXXFLAGS='${CXXFLAGS}'])
 
     AC_LANG_PUSH([C])
+    GOOD_FLAG=no
     AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
-        [CFLAGS="$CFLAGS ${COMPILERFLAG}"
+        [CFLAGS="-Werror $NUT_SAVED_CFLAGS ${COMPILERFLAG}"
+         AC_MSG_CHECKING([whether the flag '${COMPILERFLAG}' is still supported in CC linker mode])
          AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-            [], [CFLAGS="$SAVED_CFLAGS"])
-        ], [], [-Werror])
+            [GOOD_FLAG=yes],[])
+         AC_MSG_RESULT([${GOOD_FLAG}])
+        ], [], [])
     AC_LANG_POP([C])
+    AS_IF([test x"${GOOD_FLAG}" = xyes],
+        [CFLAGS="$NUT_SAVED_CFLAGS ${COMPILERFLAG}"],
+        [CFLAGS="$NUT_SAVED_CFLAGS"]
+    )
+    AC_MSG_NOTICE([${GOOD_FLAG} for C '${COMPILERFLAG}'; now CFLAGS=${CFLAGS}])
 
     AC_LANG_PUSH([C++])
+    GOOD_FLAG=no
     AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
-        [CXXFLAGS="$CXXFLAGS ${COMPILERFLAG}"
+        [CXXFLAGS="-Werror $NUT_SAVED_CXXFLAGS ${COMPILERFLAG}"
+         AC_MSG_CHECKING([whether the flag '${COMPILERFLAG}' is still supported in CXX linker mode])
          AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-            [], [CXXFLAGS="$SAVED_CXXFLAGS"])
-        ], [], [-Werror])
+            [GOOD_FLAG=yes],[])
+         AC_MSG_RESULT([${GOOD_FLAG}])
+        ], [], [])
     AC_LANG_POP([C++])
+    AS_IF([test x"${GOOD_FLAG}" = xyes],
+        [CXXFLAGS="$NUT_SAVED_CXXFLAGS ${COMPILERFLAG}"],
+        [CXXFLAGS="$NUT_SAVED_CXXFLAGS"]
+    )
+    AC_MSG_NOTICE([${GOOD_FLAG} for C++ '${COMPILERFLAG}'; now CXXFLAGS=${CXXFLAGS}])
+
+    unset NUT_SAVED_CXXFLAGS
+    unset NUT_SAVED_CFLAGS
+    unset GOOD_FLAG
 ])
 
 AC_DEFUN([NUT_COMPILER_FAMILY_FLAGS],
@@ -175,22 +203,25 @@ dnl    AS_IF([test "x$GXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning"])
 
 dnl # There should be no need to include standard system paths (and possibly
 dnl # confuse the compiler assumptions - along with its provided headers)...
-dnl # ideally; in practice however cppunit, net-snmp and some system include
-dnl # files do cause grief to picky compiler settings (more so from third
-dnl # party packages shipped via /usr/local/... namespace):
-    AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
-dnl #        CFLAGS="-isystem /usr/include $CFLAGS"
-        AS_IF([test -d /usr/local/include],
-            [CFLAGS="-isystem /usr/local/include $CFLAGS"])
-        AS_IF([test -d /usr/pkg/include],
-            [CFLAGS="-isystem /usr/pkg/include $CFLAGS"])
-    ])
-    AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
-dnl #        CXXFLAGS="-isystem /usr/include $CXXFLAGS"
-        AS_IF([test -d /usr/local/include],
-            [CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"])
-        AS_IF([test -d /usr/pkg/include],
-            [CXXFLAGS="-isystem /usr/pkg/include $CXXFLAGS"])
+dnl # ideally; in practice however cppunit, net-snmp, openssl-3 and some
+dnl # system include files do cause grief to picky compiler settings (more
+dnl # so from third party packages shipped via /usr/local/... namespace);
+dnl # see also e.g. nut_check_libopenssl.m4 for component-specific locations:
+    AS_IF([test "x$cross_compiling" != xyes], [
+        AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
+dnl #            CFLAGS="-isystem /usr/include $CFLAGS"
+            AS_IF([test -d /usr/local/include],
+                [CFLAGS="-isystem /usr/local/include $CFLAGS"])
+            AS_IF([test -d /usr/pkg/include],
+                [CFLAGS="-isystem /usr/pkg/include $CFLAGS"])
+        ])
+        AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
+dnl #           CXXFLAGS="-isystem /usr/include $CXXFLAGS"
+            AS_IF([test -d /usr/local/include],
+                [CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"])
+            AS_IF([test -d /usr/pkg/include],
+                [CXXFLAGS="-isystem /usr/pkg/include $CXXFLAGS"])
+        ])
     ])
 
 dnl # Default to avoid noisy warnings on older compilers
@@ -205,7 +236,7 @@ dnl # Some distributions and platforms also have problems
 dnl # building in "strict C" mode, so for the GNU-compatible
 dnl # compilers we default to the GNU C/C++ dialects.
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
-        [AS_CASE(["${CFLAGS}"], [-std=*], [],
+        [AS_CASE(["${CFLAGS}"], [*"-std="*|*"-ansi"*], [],
             [AC_LANG_PUSH([C])
              AX_CHECK_COMPILE_FLAG([-std=gnu99],
                 [AC_MSG_NOTICE([Defaulting C standard support to GNU C99 on a GCC or CLANG compatible compiler])
@@ -218,7 +249,7 @@ dnl # compilers we default to the GNU C/C++ dialects.
 dnl # Note: this might upset some very old compilers
 dnl # but then by default we wouldn't build C++ parts
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
-        [AS_CASE(["${CXXFLAGS}"], [-std=*], [],
+        [AS_CASE(["${CXXFLAGS}"], [*"-std="*|*"-ansi"*], [],
             [AC_LANG_PUSH([C++])
              AX_CHECK_COMPILE_FLAG([-std=gnu++11],
                 [AC_MSG_NOTICE([Defaulting C++ standard support to GNU C++11 on a GCC or CLANG compatible compiler])
@@ -244,7 +275,7 @@ dnl # Some distributions and platforms also have problems
 dnl # building in "strict C" mode, so for the GNU-compatible
 dnl # compilers we default to the GNU C/C++ dialects.
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
-        [AS_CASE(["${CFLAGS}"], [*-std=*], [],
+        [AS_CASE(["${CFLAGS}"], [*"-std="*|*"-ansi"*], [],
             [AC_LANG_PUSH([C])
              AX_CHECK_COMPILE_FLAG([-std=gnu99],
                 [AC_MSG_NOTICE([Defaulting C standard support to GNU C99 on a GCC or CLANG compatible compiler])
@@ -257,7 +288,7 @@ dnl # compilers we default to the GNU C/C++ dialects.
 dnl # Note: this might upset some very old compilers
 dnl # but then by default we wouldn't build C++ parts
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
-        [AS_CASE(["${CXXFLAGS}"], [*-std=*], [],
+        [AS_CASE(["${CXXFLAGS}"], [*"-std="*|*"-ansi"*], [],
             [AC_LANG_PUSH([C++])
              AX_CHECK_COMPILE_FLAG([-std=gnu++11],
                 [AC_MSG_NOTICE([Defaulting C++ standard support to GNU C++11 on a GCC or CLANG compatible compiler])

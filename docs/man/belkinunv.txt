@@ -6,15 +6,19 @@ NAME
 
 belkinunv - Driver for Belkin "Universal UPS" and compatible
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*belkinunv* -h
+
+*belkinunv* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 belkin driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
-This driver only supports serial connections. If your UPS has a USB port,
-please consult the Hardware Compatibility List (HCL) to see which of
+NOTE: This driver only supports serial connections. If your UPS has a USB
+port, please consult the Hardware Compatibility List (HCL) to see which of
 the USB drivers you should use.
 
 SUPPORTED HARDWARE
@@ -39,7 +43,7 @@ One problem with the Belkin Universal UPS is that it cannot enter a
 soft shutdown (shut down the load until AC power returns) unless the
 batteries are completely depleted. Thus, one cannot just shut off the
 UPS after operating system shutdown; it will not come back on when the
-power comes back on. Therefore, the belkinunv driver should never be
+power comes back on. Therefore, the *belkinunv* driver should never be
 used with the *-k* option. Instead, the *-x wait* option is
 provided as a workaround.
 
@@ -50,7 +54,7 @@ to return, and then exits with status 0.
 
 This is meant to be used in a shutdown script as follows: during a
 shutdown, after all filesystems have been remounted read-only, and
-just before the system would normally be halted: check /etc/killpower
+just before the system would normally be halted: check `/etc/killpower`
 (or similar) to see if this shutdown was caused by linkman:upsmon[8],
 and if yes, call *belkinunv -x wait*. If AC power comes back on,
 *belkinunv* exits, and things should be arranged so that the
@@ -288,7 +292,7 @@ read-only, and just before the computer halts. Note that
 *belkinunv* must be installed in a directory which is still
 readable at that point.
 
-
+----
  # NEAR END OF SHUTDOWN SCRIPT:
  # if shutdown was caused by UPS, perform Belkin UPS workaround.
  if [ -f /etc/killpower ] || /usr/sbin/upsmon -K ; then
@@ -299,13 +303,14 @@ readable at that point.
     echo "Power is back. Rebooting..."
     reboot
  fi
+----
 
 And here is an example of how to use *belkinunv* in the startup
 script. These commands should go near the beginning of the startup
 script, before any file systems are mounted read/write, and before any
 file system integrity checks are done.
 
-
+----
  # NEAR BEGINNING OF STARTUP SCRIPT:
  # if we are recovering from a power failure, wait for the UPS to
  # charge to a comfortable level before writing anything to disk
@@ -313,6 +318,7 @@ file system integrity checks are done.
     echo "Waiting for UPS battery charge to reach 60%..."
     /usr/bin/belkinunv -x wait=60 -x nohang /dev/ttyS1
  fi
+----
 
 EXIT STATUS
 -----------

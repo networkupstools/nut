@@ -9,6 +9,8 @@
    generally covers all Megatec/Qx protocol family and aggregates
    device support from such legacy drivers over time.
 
+   FIXME: `if(DEBUG) print(...)` ==> `upsdebugx()`
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
@@ -29,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.26"
+#define DRIVER_VERSION	"0.28"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -52,6 +54,9 @@ upsdrv_info_t upsdrv_info = {
 static int     type;
 static char    name[31];
 static char    firmware[6];
+
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 /********************************************************************
  *
@@ -164,7 +169,7 @@ static void parseFlags( char *flags )
  ********************************************************************/
 static void query1( char *buf )
 {
-	#define WORDMAXLEN 255
+#	define WORDMAXLEN 255
 	char    value[WORDMAXLEN];
 	char    word[WORDMAXLEN];
 	char    *newPOS;
@@ -238,7 +243,7 @@ static void query1( char *buf )
  ********************************************************************/
 static void query3( char *buf )
 {
-	#define WORDMAXLEN 255
+#	define WORDMAXLEN 255
 	char    value[WORDMAXLEN];
 	char    word[WORDMAXLEN];
 	char    *newPOS;
@@ -460,6 +465,11 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.start");
 	*/
 
+	dstate_addcmd("shutdown.return");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
+
 	if( strlen( name ) > 0 )
 		dstate_setinfo("ups.model", "%s", name);
 	if( strlen( firmware ) > 0 )
@@ -529,6 +539,25 @@ void upsdrv_updateinfo(void)
 	}
 }
 
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	NUT_UNUSED_VARIABLE(extra);
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "shutdown.return"))
+	{
+		/* ups will come up within a minute if utility is restored */
+		ser_send_pace(upsfd, UPS_PACE, "%s", "S.2R0001\x0D" );
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 /********************************************************************
  *
  * Called if the driver wants to shutdown the UPS.
@@ -540,8 +569,12 @@ void upsdrv_updateinfo(void)
  ********************************************************************/
 void upsdrv_shutdown(void)
 {
-	/* ups will come up within a minute if utility is restored */
-	ser_send_pace(upsfd, UPS_PACE, "%s", "S.2R0001\x0D" );
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /********************************************************************

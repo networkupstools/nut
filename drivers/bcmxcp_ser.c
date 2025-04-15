@@ -197,7 +197,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		res = ser_get_char(upsfd, my_buf + (4 + length), 1, 0);
 
 		if (res != 1) {
-			ser_comm_fail("Receive error (checksum): %" PRIxSIZE "!!!\n", res);
+			ser_comm_fail("Receive error (checksum): %" PRIiSIZE "!!!\n", res);
 			return -1;
 		}
 
@@ -270,7 +270,7 @@ ssize_t command_write_sequence(unsigned char *command, size_t command_length, un
 	return bytes_read;
 }
 
-void upsdrv_comm_good()
+void upsdrv_comm_good(void)
 {
 	ser_comm_good();
 }
