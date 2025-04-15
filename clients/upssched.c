@@ -71,7 +71,7 @@ static conn_t	*connhead = NULL;
 static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
 
 /* ups name and notify type (string) as received from upsmon */
-static const	char	*upsname, *notify_type;
+static const	char	*upsname, *notify_type, *prog = NULL;
 
 #ifdef WIN32
 static OVERLAPPED connect_overlapped;
@@ -873,6 +873,7 @@ static void start_daemon(TYPE_FD lockfd)
 #  endif /* not HAVE_DUP */
 # endif /* not HAVE_DUP2 */
 
+	/* Still in child, non-WIN32 - work as timer daemon (infinite loop) */
 	pipefd = open_sock();
 
 	if (nut_debug_level)
@@ -884,6 +885,13 @@ static void start_daemon(TYPE_FD lockfd)
 	/* drop the lock now that the background is running */
 	unlink(lockfn);
 	close(lockfd);
+	writepid(prog);
+
+	/* Whatever upsmon envvars were set when this daemon started, would be
+	 * irrelevant and only confusing at the moment a particular timer causes
+	 * CMDSCRIPT to run */
+	unsetenv("NOTIFYTYPE");
+	unsetenv("UPSNAME");
 
 	/* now watch for activity */
 	upsdebugx(2, "Timer daemon waiting for connections on pipefd %d",
@@ -988,6 +996,13 @@ static void start_daemon(TYPE_FD lockfd)
 	/* drop the lock now that the background is running */
 	CloseHandle(lockfd);
 	DeleteFile(lockfn);
+	writepid(prog);
+
+	/* Whatever upsmon envvars were set when this daemon started, would be
+	 * irrelevant and only confusing at the moment a particular timer causes
+	 * CMDSCRIPT to run */
+	unsetenv("NOTIFYTYPE");
+	unsetenv("UPSNAME");
 
 	/* now watch for activity */
 
@@ -1513,8 +1528,12 @@ static void help(const char *arg_progname)
 
 int main(int argc, char **argv)
 {
-	const char	*prog = xbasename(argv[0]);
 	int i;
+
+	if (argc > 0)
+		prog = xbasename(argv[0]);
+	if (!prog)
+		prog = "upssched";
 
 	while ((i = getopt(argc, argv, "+DVh")) != -1) {
 		switch (i) {
