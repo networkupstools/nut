@@ -174,7 +174,7 @@ esac
 
 # Just in case we get blanks from CI - consider them as not-set:
 if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
-    if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] \
+    if [ "$1" = spellcheck -o "$1" = spellcheck-interactive -o "$1" = spellcheck-quick -o "$1" = spellcheck-interactive-quick ] \
     && (command -v gmake) >/dev/null 2>/dev/null \
     ; then
         # GNU make processes quiet mode better, which helps with spellcheck use-case
@@ -398,7 +398,7 @@ optional_prepare_compiler_family() {
 
     if [ -n "$CPP" ] ; then
         # Note: can be a multi-token name like "clang -E" or just not a full pathname
-        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
+        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null || { RES=$?; echo "FAILED to look up CPP='$CPP'" >&2 ; exit $RES; } ) && export CPP
     else
         # Avoid "cpp" directly as it may be too "traditional"
         case "$COMPILER_FAMILY" in
@@ -1169,6 +1169,15 @@ build_to_only_catch_errors_check() {
         return 0
     fi
 
+    # Lots of tedious touch-files to make, better run it in parallel separately.
+    # May report absence of "aspell" but would not fail in that case (just noise).
+    if grep "WITH_SPELLCHECK_TRUE=''" config.log >/dev/null 2>/dev/null ; then
+        echo "`date`: Starting a '$MAKE spellcheck-quick' first"
+        $CI_TIME $MAKE $MAKE_FLAGS_QUIET spellcheck-quick \
+        && echo "`date`: SUCCESS" \
+        || return $?
+    fi
+
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME $MAKE $MAKE_FLAGS_QUIET check \
     && echo "`date`: SUCCESS" \
@@ -1394,7 +1403,7 @@ if [ -z "$BUILD_TYPE" ] ; then
 
         win|windows|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
 
-        spellcheck|spellcheck-interactive)
+        spellcheck|spellcheck-interactive|spellcheck-quick|spellcheck-interactive-quick)
             # Note: this is a little hack to reduce typing
             # and scrolling in (docs) developer iterations.
             case "$CI_OS_NAME" in
@@ -1424,7 +1433,7 @@ if [ -z "$BUILD_TYPE" ] ; then
                 if [ "$1" = spellcheck-interactive ] ; then
                     echo "Only CI-building 'spellcheck', please do the interactive part manually if needed" >&2
                 fi
-                BUILD_TYPE="default-spellcheck"
+                BUILD_TYPE="default-spellcheck-quick"
                 shift
             fi
             ;;
@@ -1446,7 +1455,7 @@ echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
 
 case "$BUILD_TYPE" in
-default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
+default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-spellcheck|default-spellcheck-quick|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -1611,7 +1620,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             CONFIG_OPTS+=("--disable-spellcheck")
             DO_DISTCHECK=no
             ;;
-        "default-spellcheck"|"default-shellcheck")
+        "default-spellcheck"|"default-spellcheck-quick"|"default-shellcheck")
             CONFIG_OPTS+=("--with-all=no")
             CONFIG_OPTS+=("--with-libltdl=no")
             CONFIG_OPTS+=("--with-doc=man=skip")
@@ -1860,14 +1869,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             echo "=== Exiting after the custom-build target '$MAKE $BUILD_TGT' succeeded OK"
             exit 0
             ;;
-        "default-spellcheck")
+        "default-spellcheck"|"default-spellcheck-quick")
             [ -z "$CI_TIME" ] || echo "`date`: Trying to spellcheck documentation of the currently tested project..."
             # Note: use the root Makefile's spellcheck recipe which goes into
             # sub-Makefiles known to check corresponding directory's doc files.
             # Note: no PARMAKE_FLAGS here - better have this output readably
             # ordered in case of issues (in sequential replay below).
             ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
-              $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
+              $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS "`echo "$BUILD_TYPE" | sed 's,^default-,,'`" >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
             ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to give more context first:" >&2
@@ -2523,7 +2532,8 @@ bindings)
 
     #$MAKE all || \
     $MAKE $PARMAKE_FLAGS all || exit
-    if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
+    build_to_only_catch_errors_check
+    ### if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
 
     case "$CI_OS_NAME" in
         windows*)
