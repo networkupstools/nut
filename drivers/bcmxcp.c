@@ -2216,8 +2216,10 @@ void upsdrv_help(void)
 {
 }
 
-/* list flags and values that you want to receive via -x */
-void upsdrv_makevartable(void)
+/* list flags and values that you want to receive via -x
+ * or ups.conf to all bcmxcp* family of drivers
+ */
+void bcmxcp_makevartable(void)
 {
 	/* NOTE: The USB variant of this driver currently does not
 	 * involve nut_usb_addvars() method like others do. When
