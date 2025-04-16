@@ -4,35 +4,60 @@ UPSD.CONF(5)
 NAME
 ----
 
-upsd.conf - Configuration for Network UPS Tools upsd
+upsd.conf - Configuration for Network UPS Tools upsd data server
 
 DESCRIPTION
 -----------
 
-upsd uses this file to control access to the server and set some other
-miscellaneous configuration values.  This file contains details on
-access controls, so keep it secure.  Ideally, only the upsd process
+linkman:upsd[8] uses this file to control access to the server and set some
+other miscellaneous configuration values.  This file contains details on
+access controls, so keep it secure.  Ideally, only the `upsd` process
 should be able to read it.
+
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
+* Balance the run-time user permissions to access the file (and perhaps the
+  directory it is in) for only `upsd` to be able to read it; write access
+  is not needed. It is common to use `chown root:nut` and `chmod 640`
+  to set up acceptable file permissions.
+  - Packages (and build recipes) typically prepare one set of user and
+    group accounts for NUT. Custom builds with minimal configuration might
+    even use `nobody:nogroup` or similar, which is inherently insecure.
+  - On systems with extra security concerns, NUT drivers and data server
+    should run as separate user accounts which would be members of one
+    same group for shared access to local Unix socket files and the
+    directory they are in, but different groups for configuration file
+    access. This would need some daemons to use customized `user`, `group`,
+    `RUN_AS_USER` and/or `RUN_AS_GROUP` settings to override the single
+    built-in value.
+  - Note that the monitoring, logging, etc. clients are networked-only.
+    They do not need access to these files and directories, and can run
+    as an independent user and group altogether.
+  - Keep in mind the security of also any backup copies of this file,
+    e.g. the archive files it might end up in.
 
 CONFIGURATION DIRECTIVES
 ------------------------
 
-"MAXAGE 'seconds'"::
+*MAXAGE 'seconds'*::
 
-upsd usually allows a driver to stop responding for up to 15 seconds
+`upsd` usually allows a driver to stop responding for up to 15 seconds
 before declaring the data "stale".  If your driver takes a very long
-time to process updates but is otherwise operational, you can use MAXAGE
-to make upsd wait longer.
+time to process updates but is otherwise operational, you can use `MAXAGE`
+to make `upsd` wait longer.
 +
 Most users should leave this at the default value.
 
-"TRACKINGDELAY 'seconds'"::
+*TRACKINGDELAY 'seconds'*::
 
 When instant commands and variables setting status tracking is enabled, status
 execution information are kept during this amount of time, and then cleaned up.
 This defaults to 3600 (1 hour).
 
-"ALLOW_NO_DEVICE 'Boolean'"::
+*ALLOW_NO_DEVICE 'Boolean'*::
 
 Normally upsd requires that at least one device section is defined in ups.conf
 when the daemon starts, to serve its data.  For automatically managed services
@@ -48,12 +73,38 @@ unless the calling environment sets a same-named variable to enforce a value
 for the current run. One way this can happen is somebody un-commenting it in
 the 'nut.conf' file used by init-scripts and service unit method scripts.
 
-"STATEPATH 'path'"::
+*ALLOW_NOT_ALL_LISTENERS 'Boolean'*::
 
-Tell upsd to look for the driver state sockets in 'path' rather
+Normally upsd requires that all `LISTEN` directives can be honoured at the
+moment the daemon starts. If your LAN IP address (or host name) used in one
+of the `LISTEN` directives may be not always accessible, and for some reason
+do not want to just `LISTEN *` on the wildcard interface, but e.g. you still
+want to use `upsmon` on `localhost`, this option can help. Note you would
+have to restart `upsd` to pick up the `LISTEN`'ed IP address if it appears
+later.
++
+Boolean values 'true', 'yes', 'on' and '1' mean that the server would not
+refuse to start if it can listen on at least one interface.
++
+Boolean values 'false', 'no', 'off' and '0' mean that the server should
+refuse to start if it can not LISTEN on each and every (non-localhost)
+interface found in upsd.conf. This is the default, unless the calling
+environment sets a same-named variable to enforce a value for the current run.
+One way this can happen is somebody un-commenting it in the 'nut.conf' file
+used by init-scripts and service unit method scripts.
+
+*STATEPATH 'path'*::
+
+Tell `upsd` to look for the driver state sockets in 'path' rather
 than the default that was compiled into the program.
++
+Note that the drivers must use the same path, so `upsd` would prefer the
+same-named setting from `ups.conf` global section, if present, over its own.
++
+Environment variable `NUT_STATEPATH` set by caller (e.g. init script
+or service method) can override this setting.
 
-"LISTEN 'interface' 'port'"::
+*LISTEN 'interface' 'port'*::
 
 Bind a listening port to the interface specified by its Internet address or
 name.  This may be useful on hosts with multiple interfaces.
@@ -62,16 +113,22 @@ on many systems.
 +
 Optionally listen on TCP port 'port' instead of the default value which was
 compiled into the code.  This overrides any value you may have set with
-'configure --with-port'.  If you don't change it with configure or this value,
-upsd will listen on port 3493 for this interface.
+`configure --with-port`.  If you don't change it with configure or this value,
+`upsd` will listen on port '3493' for this interface.
 +
-Multiple LISTEN addresses may be specified.  The default is to bind to
-127.0.0.1 if no LISTEN addresses are specified (and ::1 if IPv6 support is
-compiled in).
+Multiple `LISTEN` addresses may be specified.  The default is to bind to
+`127.0.0.1` if no `LISTEN` addresses are specified (and also `::1` if IPv6
+support is compiled in).
 +
-To listen on all available interfaces, you may also use '0.0.0.0' for IPv4 and
-and '::' for IPv6.
-
+To listen on all available interfaces and configured IP addresses of your
+system, you may also use `::` for IPv6 and `0.0.0.0` for IPv4, respectively.
+As a special case, a single `LISTEN * <port>` directive (with an asterisk) will
+try to listen on both IPv6 (`::0`) and IPv4 (`0.0.0.0`) wild-card IP addresses,
+subject to `upsd` command-line arguments or system configuration.
+Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
+and does not allow to disable this mode, then there may be one listening
+socket to handle both address families.
++
 	LISTEN 127.0.0.1
 	LISTEN 192.168.50.1
 	LISTEN myhostname.mydomain
@@ -79,64 +136,79 @@ and '::' for IPv6.
 	LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
 +
 This parameter will only be read at startup.  You'll need to restart
-(rather than reload) upsd to apply any changes made here.
+(rather than merely reload) `upsd` to apply any changes made here.
++
+Please note that older NUT releases could have been using the IPv4-mapped
+IPv6 addressing (sometimes also known as "dual-stack") mode, if provided
+by the system. Current versions (since NUT v2.8.1 release) explicitly try
+to restrict their listening sockets to only support one address family on
+each socket, and so avoid IPv4-mapped mode where possible.
 
-"MAXCONN 'connections'"::
+*MAXCONN 'connections'*::
 
 This defaults to maximum number allowed on your system.  Each UPS, each
-LISTEN address and each client count as one connection.  If the server
+`LISTEN` address and each client count as one connection.  If the server
 runs out of connections, it will no longer accept new incoming client
 connections.  Only set this if you know exactly what you're doing.
 
-"CERTFILE 'certificate file'"::
+*CERTFILE 'certificate file'*::
 
 When compiled with SSL support with OpenSSL backend, you can enter the
 certificate file here.
++
 The certificates must be in PEM format and must be sorted starting with
 the subject's certificate (server certificate), followed by intermediate
-CA certificates (if applicable_ and the highest level (root) CA. It should
-end with the server key. See 'docs/security.txt' or the Security chapter of
-NUT user manual for more information on the SSL support in NUT.
+CA certificates (if applicable) and the highest level (root) CA. It should
+end with the server key. See `docs/security.txt` in NUT sources, or the
+Security chapter of NUT user manual, for more information on the SSL
+support in NUT.
 
-"CERTPATH 'certificate database'"::
+*CERTPATH 'certificate database'*::
 
 When compiled with SSL support with NSS backend, you can enter the
 certificate path here.
++
 Certificates are stored in a dedicated database (data split in 3 files).
 Specify the path of the database directory.
 
-"CERTIDENT 'certificate name' 'database password'"::
+*CERTIDENT 'certificate name' 'database password'*::
 
 When compiled with SSL support with NSS backend, you can specify the
 certificate name to retrieve from database to authenticate itself and
 the password required to access certificate related private key.
++
+NOTE: Be sure to enclose "certificate name" in double-quotes if you
+are using a value with spaces in it.
 
-"CERTREQUEST 'certificate request level'"::
+*CERTREQUEST 'certificate request level'*::
 
 When compiled with SSL support with NSS backend and client certificate
-validation (disabled by default, see 'docs/security.txt'),
-you can specify if upsd requests or requires client's' certificates.
-Possible values are :
+validation (disabled by default, see `docs/security.txt` in NUT sources),
+you can specify if `upsd` requests or requires clients' certificates.
++
+Possible values are:
++
 - '0' to not request to clients to provide any certificate
 - '1' to require to all clients a certificate
 - '2' to require to all clients a valid certificate
 
-"DISABLE_WEAK_SSL 'BOOLEAN'"::
+*DISABLE_WEAK_SSL 'BOOLEAN'*::
 
-Tell upsd to disable older/weak SSL/TLS protocols and ciphers.
+Tell `upsd` to disable older/weak SSL/TLS protocols and ciphers.
 With relatively recent versions of OpenSSL or NSS it will be restricted
 to TLSv1.2 or better.
++
 Unless you have really ancient clients, you probably want to enable this.
 Currently disabled by default to ensure compatibility with existing setups.
 
-"DEBUG_MIN 'INTEGER'"::
+*DEBUG_MIN 'INTEGER'*::
 
 Optionally specify a minimum debug level for `upsd` data daemon, e.g. for
 troubleshooting a deployment, without impacting foreground or background
 running mode directly. Command-line option `-D` can only increase this
 verbosity level.
 +
-NOTE: if the running daemon receives a `reload` command, presence of the
+NOTE: If the running daemon receives a `reload` command, presence of the
 `DEBUG_MIN NUMBER` value in the configuration file can be used to tune
 debugging verbosity in the running service daemon (it is recommended to
 comment it away or set the minimum to explicit zero when done, to avoid
@@ -155,4 +227,4 @@ linkman:upsd[8], linkman:nutupsdrv[8], linkman:upsd.users[5]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -26,9 +26,10 @@
 #include "main.h"
 #include "serial.h"
 #include "belkin.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.28"
 
 static ssize_t init_communication(void);
 static ssize_t get_belkin_reply(char *buf);
@@ -120,7 +121,7 @@ static ssize_t get_belkin_reply(char *buf)
 	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 2, 0);
 
 	if (ret != 7) {
-		ser_comm_fail("Initial read returned %zd bytes", ret);
+		ser_comm_fail("Initial read returned %" PRIiSIZE " bytes", ret);
 		return -1;
 	}
 
@@ -147,7 +148,7 @@ static ssize_t get_belkin_reply(char *buf)
 	upsdebugx(3, "Received: %s", buf);
 
 	if (ret != cnt) {
-		ser_comm_fail("Second read returned %zd bytes, expected %ld", ret, cnt);
+		ser_comm_fail("Second read returned %" PRIiSIZE " bytes, expected %ld", ret, cnt);
 		return -1;
 	}
 
@@ -168,7 +169,7 @@ static ssize_t do_broken_rat(char *buf)
 	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 2, 0);
 
 	if (ret != 7) {
-		ser_comm_fail("Initial read returned %zd bytes", ret);
+		ser_comm_fail("Initial read returned %" PRIiSIZE " bytes", ret);
 		return -1;
 	}
 
@@ -200,7 +201,7 @@ static ssize_t do_broken_rat(char *buf)
 	upsdebugx(3, "Received: %s", buf);
 
 	if (ret != cnt) {
-		ser_comm_fail("Second read returned %zd bytes, expected %ld", ret, cnt);
+		ser_comm_fail("Second read returned %" PRIiSIZE " bytes, expected %ld", ret, cnt);
 		return -1;
 	}
 
@@ -351,25 +352,12 @@ void upsdrv_updateinfo(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	ssize_t	res;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	res = init_communication();
-	if (res < 0) {
-		printf("Detection failed.  Trying a shutdown command anyway.\n");
-	}
-
-	/* tested on a F6C525-SER: this works when OL and OB */
-
-	/* shutdown type 2 (UPS system) */
-	send_belkin_command(CONTROL, "SDT", "2");
-
-	/* SDR means "do SDT and SDA, then reboot after n minutes" */
-	send_belkin_command(CONTROL, "SDR", "1");
-
-	printf("UPS should power off load in 5 seconds\n");
-
-	/* shutdown in 5 seconds */
-	send_belkin_command(CONTROL, "SDA", "5");
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* handle "beeper.disable" */
@@ -428,6 +416,30 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "beeper.enable")) {
 		send_belkin_command(CONTROL,BUZZER,BUZZER_ON);
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcasecmp(cmdname, "shutdown.return")) {
+		ssize_t	res;
+
+		res = init_communication();
+		if (res < 0) {
+			printf("Detection failed.  Trying a shutdown command anyway.\n");
+		}
+
+		/* tested on a F6C525-SER: this works when OL and OB */
+
+		/* shutdown type 2 (UPS system) */
+		send_belkin_command(CONTROL, "SDT", "2");
+
+		/* SDR means "do SDT and SDA, then reboot after n minutes" */
+		send_belkin_command(CONTROL, "SDR", "1");
+
+		printf("UPS should power off load in 5 seconds\n");
+
+		/* shutdown in 5 seconds */
+		send_belkin_command(CONTROL, "SDA", "5");
+
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -529,6 +541,7 @@ void upsdrv_initinfo(void)
 
 	dstate_addcmd("beeper.disable");
 	dstate_addcmd("beeper.enable");
+	dstate_addcmd("shutdown.return");
 	dstate_addcmd("load.off");
 	dstate_addcmd("load.on");
 	dstate_addcmd("test.battery.start.quick");

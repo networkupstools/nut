@@ -31,7 +31,7 @@
 #include <modbus.h>
 
 #define DRIVER_NAME	"Socomec jbus driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.09"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -53,11 +53,11 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_initinfo(void)
 {
-	upsdebugx(2, "upsdrv_initinfo");
-
 	uint16_t tab_reg[12];
 	int r;
 	
+	upsdebugx(2, "upsdrv_initinfo");
+
 	dstate_setinfo("device.mfr", "socomec jbus");
 	dstate_setinfo("device.model", "Socomec Generic");
 
@@ -80,7 +80,7 @@ void upsdrv_initinfo(void)
 
 	if (tab_reg[1]) {
 		upsdebugx(2, "read UPS Power %d (kVA * 10)", tab_reg[1]);
-		dstate_setinfo("ups.power", "%u", tab_reg[1]*100 );
+		dstate_setinfo("ups.power", "%u", (unsigned int)(tab_reg[1]*100) );
 	}
 
 	/* known Socomec Models */
@@ -117,11 +117,11 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	upsdebugx(2, "upsdrv_updateinfo");
-
 	uint16_t tab_reg[64];
 	int r;
 	
+	upsdebugx(2, "upsdrv_updateinfo");
+
 	status_init();
 
 	/* ups configuration */
@@ -378,13 +378,13 @@ void upsdrv_updateinfo(void)
 	}
 
 	dstate_setinfo("battery.charge", "%u", tab_reg[4] );
-	dstate_setinfo("battery.capacity", "%u", (tab_reg[5]/10) );
+	dstate_setinfo("battery.capacity", "%u", (unsigned int)(tab_reg[5]/10) );
 	dstate_setinfo("battery.voltage", "%.2f", (double) (tab_reg[20]) / 10);
 	dstate_setinfo("battery.current", "%.2f", (double) (tab_reg[24]) / 10 );
 	dstate_setinfo("battery.runtime", "%u", tab_reg[23] );
 
-	dstate_setinfo("input.bypass.frequency", "%u", (tab_reg[18]/10) );
-	dstate_setinfo("output.frequency", "%u", (tab_reg[19]/10) );
+	dstate_setinfo("input.bypass.frequency", "%u", (unsigned int)(tab_reg[18]/10) );
+	dstate_setinfo("output.frequency", "%u", (unsigned int)(tab_reg[19]/10) );
 
 	if (tab_reg[22] != 0xFFFF) {
 		dstate_setinfo("ambient.1.present", "yes");
@@ -427,11 +427,14 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* replace with a proper shutdown function */
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

@@ -19,7 +19,11 @@
 
 #include "config.h" /* must be first */
 
+#ifndef WIN32
 #include <sys/ioctl.h>
+#else	/* WIN32 */
+#include "wincompat.h"
+#endif	/* WIN32 */
 
 #include "main.h"
 #include "serial.h"
@@ -27,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.38"
+#define DRIVER_VERSION	"1.41"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -218,7 +222,11 @@ void upsdrv_updateinfo(void)
 {
 	int	flags, ol, bl, rb, bypass, ret;
 
+#ifndef WIN32
 	ret = ioctl(upsfd, TIOCMGET, &flags);
+#else	/* WIN32 */
+	ret = w32_getcomm( upsfd, &flags );
+#endif	/* WIN32 */
 
 	if (ret != 0) {
 		upslog_with_errno(LOG_INFO, "ioctl failed");
@@ -302,37 +310,62 @@ static void set_ups_type(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	flags, ret;
 
 	if (upstype == -1) {
-		fatalx(EXIT_FAILURE, "No upstype set - see help text / man page!");
+		upslogx(LOG_ERR, "No upstype set - see help text / man page!");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+	        return;
 	}
 
 	flags = upstab[upstype].line_sd;
 
 	if (flags == -1) {
-		fatalx(EXIT_FAILURE, "No shutdown command defined for this model!");
+		upslogx(LOG_ERR, "No shutdown command defined for this model!");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+	        return;
 	}
 
 	if (flags == TIOCM_ST) {
 
-#ifndef HAVE_TCSENDBREAK
-		fatalx(EXIT_FAILURE, "Need to send a BREAK, but don't have tcsendbreak!");
-#endif
+#ifndef WIN32
+# ifndef HAVE_TCSENDBREAK
+		upslogx(LOG_ERR, "Need to send a BREAK, but don't have tcsendbreak!");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+	        return;
+# endif
+#else	/* WIN32 */
+		NUT_WIN32_INCOMPLETE_DETAILED("Need to send a BREAK at this point, but not addressed for WIN32 yet");
+#endif	/* WIN32 */
 
 		ret = tcsendbreak(upsfd, 4901);
 
 		if (ret != 0) {
-			fatal_with_errno(EXIT_FAILURE, "tcsendbreak");
+			upslog_with_errno(LOG_ERR, "tcsendbreak");
+			if (handling_upsdrv_shutdown > 0)
+				set_exit_flag(EF_EXIT_FAILURE);
 		}
 
 		return;
 	}
 
+#ifndef WIN32
 	ret = ioctl(upsfd, TIOCMSET, &flags);
+#else	/* WIN32 */
+	ret = w32_setcomm(upsfd,&flags);
+#endif	/* WIN32 */
 
 	if (ret != 0) {
-		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
+		upslog_with_errno(LOG_ERR, "ioctl TIOCMSET");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+	        return;
 	}
 
 	if (getval("sdtime")) {
@@ -411,8 +444,8 @@ void upsdrv_initups(void)
 	}
 
 	/*
-	 See if the user wants to override the output signal definitions
-	 this must be done here, since we might go to upsdrv_shutdown()
+	 See if the user wants to override the output signal definitions?
+	 This must be done here, since we might go to upsdrv_shutdown()
 	 immediately. Input signal definition override is handled in
 	 upsdrv_initinfo()
 	 */
@@ -426,7 +459,11 @@ void upsdrv_initups(void)
 		upsdebugx(2, "parse_output_signals: SD overridden with %s\n", v);
 	}
 
+#ifndef WIN32
 	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm)) {
+#else	/* WIN32 */
+	if (w32_setcomm(upsfd,&upstab[upstype].line_norm)) {
+#endif	/* WIN32 */
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
 	}
 }
@@ -435,4 +472,3 @@ void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
-

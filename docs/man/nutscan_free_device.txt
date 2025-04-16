@@ -10,9 +10,11 @@ nutscan_free_device - Free a `nutscan_device_t` structure created by
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- void nutscan_free_device(nutscan_device_t * device);
+	void nutscan_free_device(nutscan_device_t * device);
+------
 
 DESCRIPTION
 -----------
@@ -32,6 +34,7 @@ SEE ALSO
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
 linkman:nutscan_display_ups_conf[3], linkman:nutscan_display_parsable[3],
 linkman:nutscan_new_device[3], linkman:nutscan_add_option_to_device[3],
 linkman:nutscan_add_device_to_device[3]

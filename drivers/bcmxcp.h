@@ -2,8 +2,8 @@
  * bcmxcp.h -- header for BCM/XCP module
  */
 
-#ifndef _POWERWARE_H
-#define _POWERWARE_H
+#ifndef NUT_BCMXCP_H_SEEN
+#define NUT_BCMXCP_H_SEEN 1
 
 #include "timehead.h"
 
@@ -622,5 +622,4 @@ typedef enum ebool { FALSE, TRUE } bool_t;
 typedef int bool_t;
 #endif
 
-#endif /*_POWERWARE_H */
-
+#endif	/* NUT_BCMXCP_H_SEEN */

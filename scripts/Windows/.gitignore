@@ -1,0 +1,9 @@
+.wininit.c.swp
+*.exe
+winevent.h
+winevent.rc
+MSG00409.bin
+/nut_build_*/
+/nut_install_*/
+/nut_build
+/nut_install

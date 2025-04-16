@@ -4,7 +4,7 @@ NUT-RECORDER(8)
 NAME
 ----
 
-nut-recorder - utility to record device status and values changes
+nut-recorder - Utility to record device status and values changes
 
 SYNOPSIS
 --------
@@ -15,10 +15,10 @@ DESCRIPTION
 -----------
 
 *nut-recorder* is an utility to record sequences from running devices (such as
-power failures, or any other value changes) from upsd, and dump it in a .seq
-format.
+power failures, or any other value changes) from linkman:upsd[8] data server,
+and dump it in a `.seq` format.
 
-The .seq file can then be used by the linkman:dummy-ups[8] driver
+The `.seq` file can then be used by the linkman:dummy-ups[8] driver
 to replay the sequence.
 
 OPTIONS
@@ -44,7 +44,7 @@ EXAMPLES
 
 To record data from 'ups1@host1' every 10 seconds:
 
-	$ nut-recorder ups1@host1' ups1-output.seq 10
+	:; nut-recorder ups1@host1' ups1-output.seq 10
 	. . .
 	battery.charge: 100.0
 	battery.voltage: 13.9
@@ -74,7 +74,12 @@ The dummy-ups driver:
 
 linkman:dummy-ups[8]
 
+The logging daemon:
+~~~~~~~~~~~~~~~~~~~
+
+linkman:upslog[8]
+
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -7,7 +7,7 @@
  * device support from such legacy drivers over time.
  *
  * A document describing the protocol implemented by this driver can be
- * found online at http://www.networkupstools.org/ups-protocols/megatec.html
+ * found online at https://www.networkupstools.org/ups-protocols/megatec.html
  *
  * Copyright (C)
  *   2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -88,7 +88,7 @@ static const struct {
 
 /*
  * Do whatever we think is needed when we read a battery voltage from the UPS.
- * Basically all it does now, is guestimating the battery charge, but this
+ * Basically all it does now, is guesstimating the battery charge, but this
  * could be extended.
  */
 static double blazer_battery(const char *ptr, char **endptr)
@@ -132,7 +132,7 @@ static double blazer_load(const char *ptr, char **endptr)
 
 /*
  * The battery voltage will quickly return to at least the nominal value after
- * discharging them. For overlapping battery.voltage.low/high ranges therefor
+ * discharging them. For overlapping battery.voltage.low/high ranges therefore
  * choose the one with the highest multiplier.
  */
 static double blazer_packs(const char *ptr, char **endptr)
@@ -150,7 +150,7 @@ static double blazer_packs(const char *ptr, char **endptr)
 
 	for (i = 0; packs[i] > 0; i++) {
 
-		if (packs[i] * batt.volt.act > 1.2 * batt.volt.nom) {
+		if (packs[i] * batt.volt.act > 1.25 * batt.volt.nom) {
 			continue;
 		}
 
@@ -554,7 +554,7 @@ void blazer_makevartable(void)
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
 
-	addvar(VAR_FLAG, "protocol", "Preselect communication protocol (skip autodetection)");
+	addvar(VAR_VALUE, "protocol", "Preselect communication protocol (skip autodetection)");
 }
 
 
@@ -616,7 +616,7 @@ static void blazer_initbattery(void)
 		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
 		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
 
-		upslogx(LOG_INFO, "Using 'guestimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
+		upslogx(LOG_INFO, "Using 'guesstimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
 	}
 
 	val = getval("runtimecal");
@@ -680,7 +680,7 @@ static void blazer_initbattery(void)
 	if (val) {
 		load.low = strtod(val, NULL) / 100;
 
-		if ((load.low <= 0) || (load.low > 1)) {
+		if ((load.low < 0) || (load.low > 1)) {
 			fatalx(EXIT_FAILURE, "Idle load out of range [0..100]");
 		}
 
@@ -850,21 +850,19 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	retry;
 
 	/* Stop pending shutdowns */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
 		break;
-
 	}
 
 	if (retry > MAXTRIES) {
@@ -873,14 +871,17 @@ void upsdrv_shutdown(void)
 
 	/* Shutdown */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down in %ld seconds", offdelay);
-
+		upslogx(LOG_ERR, "Shutting down in %ld seconds", offdelay);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
+		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }

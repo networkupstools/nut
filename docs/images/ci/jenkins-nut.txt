@@ -1,6 +1,6 @@
 The jenkins-nut resources (images and CSS) were prepared for
 deployment of https://ci.networkupstools.org
-(C) 2021 by Jim Klimov <jimklimov@gmail.com>
+(C) 2021-2024 by Jim Klimov <jimklimov+nut@gmail.com>
 
 Customized Jenkins+NUT logo derived from NUT resources and
 https://www.jenkins.io/images/logos/hyderabad/hyderabad256.png
@@ -16,7 +16,11 @@ downscaled image for the Jenkins dashboard banner. There are
 variants in several resolutions available, and options with a
 larger or smaller NUT logo served on the Jenkins butler's plate.
 
-The fosshost.org_Host_Dark_56px.png was downscaled from resources
+The fosshost_org_Host_Dark_56px.png was downscaled from resources
 at https://fosshost.org/media/ to fit into the Jenkins dashboard
 banner and remain readable. Thanks to Fosshost for providing the
 machines involved in the new NUT CI farm!
+
+Logos of CI hosting companies and other organizations which help
+the NUT project in daily operations were downloaded in 2023 for
+the Acknowledgements chapter in the top-level `README.adoc`.

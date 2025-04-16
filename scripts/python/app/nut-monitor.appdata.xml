@@ -2,6 +2,7 @@
 <!-- Copyright 2014 Arnaud Quette <arnaud.quette@free.fr> -->
 <component type="desktop-application">
  <id>nut-monitor.desktop</id>
+ <launchable type="desktop-id">nut-monitor.desktop</launchable>
  <metadata_license>CC0-1.0</metadata_license>
  <project_license>GPL-3.0+</project_license>
  <name>NUT Monitor</name>
@@ -23,12 +24,12 @@
    <li>Favorites, to store different devices</li>
    <li>Display all device variables</li>
    <li>Modify writable variables on UPS and devices</li>
-   <li>Support English and French</li>
+   <li>Supports English, Russian and French localization (Python2 version only at the moment)</li>
   </ul>
   <p>
    NUT Monitor requires that you have a running NUT system, that you can
    connect to, either locally or remotely.
-   For more information on NUT: http://www.networkupstools.org/
+   For more information on NUT: https://www.networkupstools.org/
   </p>
  </description>
  <screenshots>

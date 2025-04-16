@@ -38,8 +38,9 @@ TEMPLATES
 ---------
 
 The web page that is displayed is actually a template containing
-commands to upsstats which are replaced by status information.  The
-default file used for the overview is upsstats.html.
+commands to `upsstats` which are replaced by status information.
+
+The default file used for the overview of devices is `upsstats.html`.
 
 When monitoring a single UPS, the file displayed is
 `upsstats-single.html`.
@@ -60,4 +61,4 @@ linkman:upsimage.cgi[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

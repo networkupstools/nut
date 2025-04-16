@@ -4,12 +4,16 @@ MACOSX-UPS(8)
 NAME
 ----
 
-macosx-ups - monitor for Mac OS X built-in UPS and battery driver
+macosx-ups - Monitor for Mac OS X built-in UPS and battery driver
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*macosx-ups* -h
+
+*macosx-ups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 *macosx-ups* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -29,8 +33,8 @@ EXTRA ARGUMENTS
 
 *port*=auto::
 Due to changes in the way that Mac OS X lists power sources, the *port*
-parameter no longer has any effect. The rest of NUT still requires a value here,
-and our traditional "don't care" value is `auto`.
+parameter no longer has any effect. The rest of NUT still requires a value
+here, and our traditional "don't care" value is `auto`.
 
 *model*='regex'::
 Likewise, if you have more than one UPS, it may be necessary to specify a
@@ -41,8 +45,8 @@ DIAGNOSTICS
 -----------
 
 If the driver cannot find an UPS, first open System Preferences and see if
-there is an "UPS" tab on the Energy Saver panel. If so, re-run the driver with
-the *-D* flag to list the names of the power sources found.
+there is an "UPS" tab on the Energy Saver panel. If so, re-run the driver
+with the `-D` flag to list the names of the power sources found.
 
 KNOWN ISSUES AND BUGS
 ---------------------
@@ -50,12 +54,12 @@ KNOWN ISSUES AND BUGS
 This driver is a monitoring-only driver, and cannot shut down an UPS on its
 own. However, this should not be a problem in practice: it is monitoring the
 built-in Mac OS X UPS driver, which has configuration options for several
-shutdown scenarios. Consult the Energy Saver control panel or *pmset*(8) for
-more information.
+shutdown scenarios. Consult the Energy Saver control panel or
+linkmanext:pmset[8] for more information.
 
 The default distribution of *apcupsd* installs a kernel extension which
 prevents Mac OS X from attaching to the UPS. In order to use this driver after
-installing apcupsd, you must first run the `apcupsd-uninstall` script and
+installing `apcupsd`, you must first run the `apcupsd-uninstall` script and
 reboot.
 
 Note that other UPS monitoring solutions may show more detail than what is
@@ -72,7 +76,9 @@ Charles Lepple <clepple+nut at gmail.com>
 SEE ALSO
 --------
 
-linkman:usbhid-ups[8], *pmset*(8), *regex*(3)
+linkman:usbhid-ups[8],
+linkmanext:pmset[8],
+linkmanext:regex[3]
 
 The core driver:
 ~~~~~~~~~~~~~~~~
@@ -82,5 +88,5 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * The apcupsd home page: http://www.apcupsd.org/

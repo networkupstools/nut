@@ -68,7 +68,7 @@ typedef enum {
 	VRANGE,		/* voltage out of range */
 	FRANGE,		/* frequency out of range */
 	FUSEFAULT,	/* fuse fault */
-	CAL		/* calibrating */
+	CALIB		/* calibrating */
 } status_bit_t;
 
 extern uint32_t	ups_status;

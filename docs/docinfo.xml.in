@@ -1,22 +1,189 @@
 <revhistory>
+  <!-- This file was generated and is later maintained with:
+       DOCINFO_XML="docs/docinfo.xml.in" DOCINFO_OLDEST_TAG="v2.6.0" ./docs/docinfo.xml.sh
+    -->
 
-  <!-- Current release of NUT (to be left on top)-->
+  <!-- Current release of NUT (to be left on top) -->
+<!--
   <revision>
-    <revnumber>@PACKAGE_VERSION@</revnumber>
+    <revnumber>@PACKAGE_VERSION@ @NUT_SOURCE_GITREV@</revnumber>
     <date>@now@</date>
     <authorinitials></authorinitials>
     <revremark>
-      Current release of Network UPS Tools (NUT).
+      Current release snapshot of Network UPS Tools (NUT).
+    </revremark>
+  </revision>
+-->
+
+  <!-- 'Real' revision history (news on top). The revremarks are based
+       on 'git diff ${RELTAG}..${RELTAG_NEXT} NEWS UPGRADING "*.txt"'
+       with a focus on those changes which impacted documentation.
+    -->
+  <!-- AUTOINSERT LOCATION -->
+  <revision>
+    <revnumber>2.8.3</revnumber>
+    <date>2025-04-07</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Some changes to docs and recipes, libusbclient API and functionality.
+        Updated NUT SEMVER definition and added scripting around it.
+        Groundwork for vendor-defined status and INSTCMD buzzwords like "ECO".
+        Fixed some regressions and added improvements for certain new device
+        series.
     </revremark>
   </revision>
 
-  <!-- 'Real' revision history (news on top) -->
+  <revision>
+    <revnumber>2.8.2</revnumber>
+    <date>2024-04-01</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Some changes to docs and recipes, libnutscan API and functionality.
+        Added nutconf (library and tool). Fixed some regressions and added
+        improvements for certain new device series.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.8.1</revnumber>
+    <date>2023-10-31</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Some changes to API, docs and recipes, in particular to simplify local
+        builds and tests (e.g. to help end-users check if current NUT codebase
+        trunk has already fixed an issue they see with a packaged installation).
+        Revived NUT for Windows effort, further improved other OS integrations.
+        NUT became reference for "UPS management protocol", Informational RFC 9271.
+        Documentation files refactored to ease maintenance.
+        More drivers and new driver categories introduced.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.8.0</revnumber>
+    <date>2022-04-26</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Change of maintainer.
+        Many changes to API, docs (both style and content), and recipes,
+        with a stress on non-regression test-ability, run-time debug-ability,
+        general codebase maintainability, as well as OS integrations (notably
+        nut-driver-enumerator for systemd and SMF service instance maintenance).
+        Added a lot in area of CI support and documented pre-requisite package
+        lists for numerous platforms, and CI agent set-up. Added libusb-1.x
+        support and many new driver categories (and drivers), and daisychain
+        device connection support. Instant commands enhanced with TRACKING to
+        enable protocol-based waiting for completion of a particular INSTCMD
+        or SET operation.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.7.4</revnumber>
+    <date>2016-03-09</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark>
+        NUT variables namespace updated, in particular for outlet groups,
+        alarms and thresholds, ATS devices, and battery.charger.status to
+        supersede CHRG and DISCHRG flags published in ups.status readings.
+        NUT network protocol extended with NUMBER type; some API changes.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.7.3</revnumber>
+    <date>2015-04-22</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark>
+        Documentation revised, including some API changes.
+        Added NUT DDL links.
+        NUT variables namespace updated.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.7.2</revnumber>
+    <date>2014-04-17</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark>
+        The nut-website project was offloaded into a separate repository.
+        FreeDesktop HAL support was removed (obsoleted in GNOME consumer).
+        Introduced nutdrv_atcl_usb driver.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.7.1</revnumber>
+    <date>2013-11-19</date>
+    <authorinitials>CL</authorinitials>
+    <revremark>
+        NUT source codebase migrated from SVN to Git (and from Debian
+        infrastructure to GitHub source code hosting). jNut binding
+        split into a separate project. Introduced libnutclient (C++
+        binding), al175, apcupsd-ups and nutdrv_qx drivers, Mozilla
+        NSS support for simpler licensing than OpenSSL, and a newer
+        apcsmart implementation.
+        Documentation support enhanced with a spell checker, contents
+        massively updated to reflect project changes.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.5</revnumber>
+    <date>2012-08-08</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark>
+        New macosx-ups driver, new implementation of mge-shut driver.
+        NUT variables namespace updated. Docs cleaned up and revised.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.4</revnumber>
+    <date>2012-05-31</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark>
+        New NUT network protocol commands (LIST CLIENTS, LIST RANGE and
+        NETVER), and socket protocol commands (ADDRANGE, DELRANGE).
+        NUT variables namespace updated. Introduced nut-recorder tool.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.3</revnumber>
+    <date>2012-01-04</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark>
+        No substantial changes to documentation.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.2</revnumber>
+    <date>2011-09-15</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark>
+        Introduced nut-scanner tool and nut-ipmipsu driver,
+        systemd support, and a new apcsmart implementation.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.1</revnumber>
+    <date>2011-06-01</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark>
+        Introduced default.* and override.* optional settings in ups.conf,
+        an ups.efficiency report, and outlet.0 special handling.
+    </revremark>
+  </revision>
+
   <revision>
     <revnumber>2.6.0</revnumber>
     <date>2011-01-14</date>
-    <authorinitials></authorinitials>
+    <authorinitials>AQ</authorinitials>
     <revremark>
-      First release of AsciiDoc documentation for Network UPS Tools (NUT).
+        First release of AsciiDoc documentation for Network UPS Tools (NUT).
     </revremark>
   </revision>
 

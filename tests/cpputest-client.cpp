@@ -6,7 +6,8 @@
    as opposed to nutclienttest.cpp which unit-tests the class API etc.
    in isolated-binary fashion.
 
-   Copyright (C) 2022  Jim Klimov <jimklimov@gmail.com>
+   Copyright (C)
+	2022-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,8 +26,13 @@
 
 #include "common.h"
 
-/* Current CPPUnit offends the honor of C++98 */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
+#include <stdexcept>
+#include <cstdint>
+#include <cstdlib>
+#include <stdlib.h>
+
+/* Current CPPUnit offends the honor of C++98 and maybe later versions */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC)
 #pragma GCC diagnostic push
 # ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS
 #  pragma GCC diagnostic ignored "-Wglobal-constructors"
@@ -34,13 +40,35 @@
 # ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS
 #  pragma GCC diagnostic ignored "-Wexit-time-destructors"
 # endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wsuggest-override"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wsuggest-destructor-override"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wweak-vtables"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wdeprecated-dynamic-exception-spec"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wextra-semi"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+# endif
+#endif
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
+# ifdef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#  pragma clang diagnostic push "-Wdeprecated-declarations"
+# endif
 #endif
 
 #include <cppunit/extensions/HelperMacros.h>
-#include <stdexcept>
-#include <cstdint>
-#include <cstdlib>
-#include <stdlib.h>
 
 namespace nut {
 
@@ -52,6 +80,7 @@ class NutActiveClientTest : public CppUnit::TestFixture
 	CPPUNIT_TEST_SUITE( NutActiveClientTest );
 		CPPUNIT_TEST( test_query_ver );
 		CPPUNIT_TEST( test_list_ups );
+		CPPUNIT_TEST( test_list_ups_clients );
 		CPPUNIT_TEST( test_auth_user );
 		CPPUNIT_TEST( test_auth_primary );
 	CPPUNIT_TEST_SUITE_END();
@@ -70,6 +99,7 @@ public:
 
 	void test_query_ver();
 	void test_list_ups();
+	void test_list_ups_clients();
 	void test_auth_user();
 	void test_auth_primary();
 };
@@ -209,6 +239,68 @@ void NutActiveClientTest::test_list_ups() {
 	catch(nut::NutException& ex)
 	{
 		std::cerr << "[D] Could not device list: " << ex.what() << std::endl;
+		noException = false;
+	}
+
+	c.logout();
+	c.disconnect();
+
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed to list UPS with TcpClient: threw NutException",
+		noException);
+}
+
+void NutActiveClientTest::test_list_ups_clients() {
+	nut::TcpClient c("localhost", NUT_PORT);
+	std::map<std::string, std::set<std::string>> deviceClients;
+	bool noException = true;
+
+	try {
+		c.authenticate(NUT_USER, NUT_PASS);
+		std::cerr << "[D] Authenticated without exceptions" << std::endl;
+		/* Note: no high hopes here, credentials are checked by server
+		 * when running critical commands, not at auth request itself */
+	}
+	catch(nut::NutException& ex)
+	{
+		std::cerr << "[D] Could not authenticate as a simple user: " << ex.what() << std::endl;
+		/* no failure here */
+	}
+
+	try {
+		c.deviceLogin(NUT_PRIMARY_DEVICE);
+	}
+	catch(nut::NutException& ex)
+	{
+		std::cerr << "[D] Could not log into primary device (envvars not set?) so test below should return empty client lists: " << ex.what() << std::endl;
+		/* no failure here */
+	}
+
+	try {
+		deviceClients = c.listDeviceClients();
+		std::cerr << "[D] Got device client list (" << deviceClients.size() << "): [";
+		for (std::map<std::string, std::set<std::string>>::iterator itM = deviceClients.begin();
+			itM != deviceClients.end(); itM++
+		) {
+			if (itM != deviceClients.begin()) {
+				std::cerr << "," << std::endl;
+			}
+			std::cerr << "{ \"" << itM->first << "\" : ";
+			for (std::set<std::string>::iterator it = itM->second.begin();
+				it != itM->second.end(); it++
+			) {
+				if (it != itM->second.begin()) {
+					std::cerr << ", ";
+				}
+				std::cerr << '"' << *it << '"';
+			}
+			std::cerr << " }";
+		}
+		std::cerr << " ]" << std::endl;
+	}
+	catch(nut::NutException& ex)
+	{
+		std::cerr << "[D] Could not device client list: " << ex.what() << std::endl;
 		noException = false;
 	}
 
@@ -410,6 +502,9 @@ void NutActiveClientTest::test_auth_primary() {
 
 } // namespace nut {}
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
-#pragma GCC diagnostic pop
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC)
+# pragma GCC diagnostic pop
 #endif

@@ -3,7 +3,7 @@
  * do not crash).
  *
  * Copyright (C)
- *	2020	Jim Klimov <jimklimov@gmail.com>
+ *	2020-2024	Jim Klimov <jimklimov@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+#include "config.h"
 #include "common.h"
 
 int main(void) {
@@ -29,17 +31,19 @@ int main(void) {
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wformat-overflow"
 #endif
-    upsdebugx(0, "D: checking with libc handling of NULL: '%s' vs '%s'", s1, s2);
+
+    upsdebugx(0, "D: checking with libc handling of NULL (can segfault for some libc implementations):");
+    upsdebugx(0, "D:   '%s' vs. '%s'", s1, s2);
 
 /* This explicitly does not work with -Wformat, due to verbatim NULL without a var:
  * nutlogtest.c:20:5: error: reading through null pointer (argument 4) [-Werror=format=]
- * and also due to (void*) vs (char*) in naive case:
- *   upsdebugx(0, "D: '%s' vs '%s'", NUT_STRARG(NULL), NULL);
+ * and also due to (void*) vs. (char*) in naive case:
+ *   upsdebugx(0, "D: '%s' vs. '%s'", NUT_STRARG(NULL), NULL);
  * but with casting the explicit NULL remains:
- *   upsdebugx(0, "D: '%s' vs '%s'", NUT_STRARG((char *)NULL), (char *)NULL);
+ *   upsdebugx(0, "D: '%s' vs. '%s'", NUT_STRARG((char *)NULL), (char *)NULL);
  */
 
-    upsdebugx(0, "D: checking with NUT_STRARG macro: '%s' vs '%s'", NUT_STRARG(s2), s2);
+    upsdebugx(0, "D: checking with NUT_STRARG macro: '%s' vs. '%s'", NUT_STRARG(s2), s2);
 
 #ifdef NUT_STRARG
 #undef NUT_STRARG
@@ -52,10 +56,10 @@ int main(void) {
  *   ../include/common.h:155:41: warning: '%s' directive argument is null [-Wformat-overflow=]
  *   <...snip...>
  *   nutlogtest.c:45:63: note: format string is defined here
- *      45 |     upsdebugx(0, "D: checking with NUT_STRARG macro: '%s' vs '%s'", NUT_STRARG(s2), s2);
+ *      45 |     upsdebugx(0, "D: checking with NUT_STRARG macro: '%s' vs. '%s'", NUT_STRARG(s2), s2);
  *         |                                                               ^~
  */
-    upsdebugx(0, "D: checking that macro wrap trick works: '%s' vs '%s'", NUT_STRARG(s2), s2);
+    upsdebugx(0, "D: checking that macro wrap trick works: '%s' vs. '%s'", NUT_STRARG(s2), s2);
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW)
 #  pragma GCC diagnostic pop

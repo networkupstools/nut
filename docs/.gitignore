@@ -11,9 +11,12 @@
 /user-manual.xml
 /developer-guide.xml
 /packager-guide.xml
+/qa-guide.xml
 /solaris-usb.xml
 /cables.xml
 /docinfo.xml
+/docinfo-since-v*.xml*
+/*-docinfo.xml*
 /FAQ.xml
 /nut-dmf.xml
 /nut-names.xml
@@ -23,3 +26,9 @@ nut.dict.sorted
 /*.bak
 /*.bak-*
 /tmp/
+docinfo.xml.in.tmp
+/asciidoc-vars.conf.lastrev.tmp
+.prep-src-docs*
+/.check-pdf
+/.check-html-single
+/.check-html-chunked

@@ -6,6 +6,11 @@
 #ifndef HAVE_STRERROR
 
 #include <errno.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h> /* for snprintf() */
+#else
+# include "proto.h"
+#endif
 
 char *strerror(int errnum)
 {
@@ -232,8 +237,10 @@ char *strerror(int errnum)
         return "Invalid slot";
 #endif
 #if defined (EDEADLOCK)
+# if (!defined(EDEADLK)) || EDEADLK != EDEADLOCK
       case EDEADLOCK:
         return "File locking deadlock error";
+# endif
 #endif
 #if defined (EBFONT)
       case EBFONT:

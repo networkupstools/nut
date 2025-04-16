@@ -25,20 +25,26 @@
  */
 
 #ifndef UPSD_H_SEEN
-#define UPSD_H_SEEN
+#define UPSD_H_SEEN 1
 
 #include "attribute.h"
 
 #include "common.h"
 
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif	/* !WIN32 */
 
 #include "timehead.h"
 
 #include <sys/file.h>
-#include <poll.h> /* nfds_t */
+#ifdef HAVE_POLL_H
+# include <poll.h> /* nfds_t */
+#else
+typedef unsigned long int nfds_t;
+#endif
 
 #include "parseconf.h"
 #include "nut_ctype.h"
@@ -76,7 +82,8 @@ enum {
    STAT_HANDLED = 0,	/* completed successfully (NUT_SUCCESS or "OK") */
    STAT_UNKNOWN,	/* unspecified error (NUT_ERR_UNKNOWN) */
    STAT_INVALID,	/* invalid command/setvar (NUT_ERR_INVALID_ARGUMENT) */
-   STAT_FAILED		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+   STAT_FAILED,		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+   STAT_CONVERSION_FAILED	/* STAT_INSTCMD_CONVERSION_FAILED / STAT_SET_CONVERSION_FAILED in drivers/upshandler.h => "ERR INVALID-ARGUMENT" same as STAT_INVALID */
 };
 
 /* Commands and settings status tracking functions */
@@ -91,16 +98,20 @@ int tracking_disable(void);
 int tracking_is_enabled(void);
 
 /* declarations from upsd.c */
-extern int		maxage, tracking_delay, allow_no_device;
+extern int		maxage, tracking_delay, allow_no_device, allow_not_all_listeners;
 extern nfds_t		maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
 extern nut_ctype_t	*firstclient;
 
 /* map commands onto signals */
-
+#ifndef WIN32
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
+#else	/* WIN32 */
+#define SIGCMD_STOP    COMMAND_STOP
+#define SIGCMD_RELOAD  COMMAND_RELOAD
+#endif	/* WIN32 */
 
 /* awkward way to make a string out of a numeric constant */
 

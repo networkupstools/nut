@@ -27,14 +27,14 @@
 
 /* Mozilla NSS */
 #ifdef WITH_NSS
-	#include <nss.h>
-	#include <ssl.h>
+#	include <nss.h>
+#	include <ssl.h>
 #endif
 
 /* OpenSSL */
 #ifdef WITH_OPENSSL
-	#include <openssl/err.h>
-	#include <openssl/ssl.h>
+#	include <openssl/err.h>
+#	include <openssl/ssl.h>
 #endif
 
 #include "parseconf.h"
@@ -48,7 +48,7 @@ extern "C" {
 /* client structure */
 typedef struct nut_ctype_s {
 	char	*addr;
-	int	sock_fd;
+	TYPE_FD_SOCK	sock_fd;
 	time_t	last_heard;
 	char	*loginups;
 	char	*password;
@@ -71,6 +71,9 @@ typedef struct nut_ctype_s {
 	/* doubly linked list */
 	struct nut_ctype_s	*prev;
 	struct nut_ctype_s	*next;
+#ifdef WIN32
+	HANDLE Event;
+#endif	/* WIN32 */
 } nut_ctype_t;
 
 #ifdef __cplusplus

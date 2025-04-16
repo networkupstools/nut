@@ -4,7 +4,8 @@ Module: NutUpsdConf
 
 Author: Raphael Pinson <raphink@gmail.com>
         Frederic Bohe  <fredericbohe@eaton.com>
-        Arnaud Quette <arnaud.quette@gmail.com>
+        Arnaud Quette  <arnaud.quette@gmail.com>
+        Jim Klimov     <jimklimov+nut@gmail.com>
 
 About: License
   This file is licensed under the GPL.
@@ -37,29 +38,63 @@ let word     = /[^"#; \t\n]+/
 let empty    = Util.empty
 let comment  = Util.comment
 let path     = word
+(* TOTHINK: What if we have spaces? Is "word" good? *)
+let certname = word
+let dbpass   = word
 
+let upsd_debug_min = [ opt_spc . key "DEBUG_MIN" . sep_spc . store num  . eol ]
 let upsd_maxage    = [ opt_spc . key "MAXAGE"    . sep_spc . store num  . eol ]
 let upsd_trackingdelay = [ opt_spc . key "TRACKINGDELAY"    . sep_spc . store num  . eol ]
 let upsd_allow_no_device = [ opt_spc . key "ALLOW_NO_DEVICE"    . sep_spc . store num  . eol ]
+let upsd_allow_not_all_listeners = [ opt_spc . key "ALLOW_NOT_ALL_LISTENERS"    . sep_spc . store num  . eol ]
+let upsd_disable_weak_ssl = [ opt_spc . key "DISABLE_WEAK_SSL"    . sep_spc . store num  . eol ]
 let upsd_statepath = [ opt_spc . key "STATEPATH" . sep_spc . store path . eol ]
 let upsd_listen    = [ opt_spc . key "LISTEN"    . sep_spc 
                           . [ label "interface" . store ip ]
                           . [ sep_spc . label "port" . store num]? ]
 let upsd_listen_list = upsd_listen . eol 
-let upsd_maxconn  = [ opt_spc . key "MAXCONN"    . sep_spc . store num  . eol ]
+let upsd_maxconn  = [ opt_spc . key "MAXCONN"  . sep_spc . store num  . eol ]
 let upsd_certfile = [ opt_spc . key "CERTFILE" . sep_spc . store path . eol ]
+let upsd_certpath = [ opt_spc . key "CERTPATH" . sep_spc . store path . eol ]
+let upsd_certident = [ opt_spc . key "CERTIDENT" . sep_spc
+                          . [ label "certname" . store certname ]
+                          . [ sep_spc . label "dbpass" . store dbpass ] . eol ]
+let upsd_certrequest = [ opt_spc . key "CERTREQUEST"    . sep_spc . store num  . eol ]
 
 (************************************************************************
+ * DEBUG_MIN level
  * MAXAGE seconds
  * TRACKINGDELAY seconds
  * ALLOW_NO_DEVICE Boolean
+ * ALLOW_NOT_ALL_LISTENERS Boolean
+ * DISABLE_WEAK_SSL Boolean
  * STATEPATH path
  * LISTEN interface port
- *    Multiple LISTEN addresses may be specified. The default is to bind to 0.0.0.0 if no LISTEN addresses are specified.
- *    LISTEN 127.0.0.1 LISTEN 192.168.50.1 LISTEN ::1 LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+ *    Multiple lines each with one LISTEN address (or host name) and an optional
+ *    port may be specified. The default is to bind to IPv4 and IPv6 "localhost"
+ *    addresses (subject to CLI options `-4` or `-6` constraining IP version,
+ *    or system configuration or support), if no LISTEN addresses are specified.
+ *    LISTEN 127.0.0.1
+ *    LISTEN 192.168.50.1
+ *    LISTEN ::1
+ *    LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+ * MAXCONN count
+ * CERTFILE path
+ *    Single certificate file (SSL with OpenSSL)
+ * CERTPATH path
+ *    Path to certificate database split into 3 files (SSL with NSS)
+ * CERTIDENT certname dbpass
+ *    Certificate identity to use by the server, and database password
+ *    as needed to read it (SSL with NSS)
+ * CERTREQUEST level
+ *    Request or require client cert? (SSL with NSS)
+ *    Possible values are :
+ *    - 0 to not request to clients to provide any certificate
+ *    - 1 to require to all clients a certificate
+ *    - 2 to require to all clients a valid certificate
  *
  *************************************************************************)
-let upsd_other  =  upsd_maxage | upsd_trackingdelay | upsd_allow_no_device | upsd_statepath | upsd_listen_list | upsd_maxconn | upsd_certfile
+let upsd_other  =  upsd_debug_min | upsd_maxage | upsd_trackingdelay | upsd_allow_no_device | upsd_allow_not_all_listeners | upsd_disable_weak_ssl | upsd_statepath | upsd_listen_list | upsd_maxconn | upsd_certfile | upsd_certpath | upsd_certident | upsd_certrequest
 
 let upsd_lns    = (upsd_other|comment|empty)*
 

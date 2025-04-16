@@ -2,8 +2,8 @@
 
 Network UPS Tools User Manual
 _____________________________
-:Author: Russell_Kroll,_Arnaud_Quette_and_Arjen_de_Korte
-:Author Initials: RK, AQ & ADK
+:Author: Russell_Kroll,_Arnaud_Quette,_Arjen_de_Korte_and_Jim Klimov
+:Author Initials: RK, AQ, ADK & JK
 
 Introduction
 ============
@@ -15,7 +15,7 @@ Units and Solar Controllers.
 NUT provides many control and monitoring <<Features,features>>, with a uniform
 control and management interface.
 
-More than 140 different manufacturers, and several thousands of models are
+More than 170 different manufacturers, and several thousands of models are
 <<HCL,compatible>>.
 
 This software is the combined effort of many
@@ -33,7 +33,7 @@ If you wish to discover how everything came together, have a look at the
 
 [[Overview]]
 
-include::../README[]
+include::../README.adoc[]
 
 
 [[Features]]
@@ -57,14 +57,30 @@ This software has been reported to run on:
 - Linux distributions,
 - the BSDs,
 - Apple's OS X,
-- Sun Solaris,
+- Sun Solaris and illumos,
 - SGI IRIX,
 - HP/UX,
 - Tru64 Unix,
-- AIX.
+- AIX,
+- Windows:
+  * There is an older port of the client-side monitoring to Windows called WinNUT.
+    Windows users may be able to build it directly with Cygwin.
+  * Note there are also numerous third-party projects named WinNUT-Client or
+    similar, made over decades by different enthusiasts and community members
+    with a number of technologies underneath. If you run a program that claims
+    such a name, locate and ask its creators for support related to the client.
+  * Since NUT v2.8.1, there is an on-going effort to integrate older platform
+    development of NUT for Windows into the main code base -- allowing to run
+    the whole stack of NUT drivers, data server and same clients as on POSIX
+    platforms (for fancy GUI clients, see linkman:NUT-Monitor[8] or third-party
+    projects). Still, as of NUT release v2.8.3, installation is complicated and
+    there are other known imperfections (not all WIN32 code has equivalents to
+    POSIX); for current details see NUT issues tracked on GitHub under
+    https://github.com/orgs/networkupstools/projects/2/views/1
 
-There is also a port of the client-side monitoring to Windows called WinNUT.
-Windows users may be able to build it directly with Cygwin.
+NUT is also often embedded into third-party projects like OpenWRT (or similar)
+based routers, NAS and other appliances, monitoring systems like Home Assistant,
+and provided or suggested by some UPS vendors as their software companion.
 
 Your system will probably run it too. You just need a good C compiler and
 possibly some more packages to gain access to the serial ports.
@@ -72,6 +88,78 @@ Other features, such as USB / SNMP / whatever, will also need extra software
 installed.
 
 Success reports are welcomed to keep this list accurate.
+
+Given its core position at the heart of your systems' lifecycle, we make
+it a point to have current NUT building and running anywhere, especially
+where older releases did work before (including "abandonware" like the
+servers and OSes from the turn of millennium): if those boxes are still
+alive and in need of power protection, they should be able to get it.
+
+[TIP]
+=====
+If you like how the NUT project helps protect your systems from power
+outages, please consider sponsoring or at least "starring" it on GitHub at
+https://github.com/networkupstools/nut/ - these stars are among metrics
+which the larger potential sponsors consider when choosing how to help
+FOSS projects. Keeping the lights shining in such a large non-regression
+build matrix is a big undertaking!
+
+ifndef::pdf_format[]
+image:https://api.star-history.com/svg?repos=networkupstools/nut&type=Date[link="https://star-history.com/#networkupstools/nut&Date" alt="NUT GitHub Star History Chart"]
+endif::pdf_format[]
+
+See <<acknowledgements-ci-ops,acknowledgements of organizations which help
+with NUT CI and other daily operations>> for an overview of the shared effort.
+=====
+
+As a FOSS project, for over a quarter of a century we welcome contributions
+of both core code (drivers and other features), build recipes and other
+integration elements to make it work on your favourite system, documentation
+revisions to make it more accessible to newcomers, as well as hardware vendor
+cooperation with first-hand driver and protocol submissions, and just about
+anything else you can think of.
+
+
+NUT Support Policy
+~~~~~~~~~~~~~~~~~~
+
+The Network UPS Tools project is a community-made open-source effort, primarily
+made and maintained by people donating their spare time.
+
+The support channels are likewise open, with preferred ones being
+link:https://github.com/networkupstools/nut/issues[the NUT project issue
+tracker on GitHub] and the NUT Users mailing list, as detailed at
+https://networkupstools.org/support.html page.
+
+Please keep in mind that any help is provided by community members just like
+yourself, as a best effort, and subject to their availability and experience.
+It is expected that you have read the Frequently Asked Questions, looked at
+the link:https://github.com/networkupstools/nut/wiki[NUT wiki], and have a
+good grasp about the three-layer design and programs involved in a running
+deployment of NUT, for a discussion to be constructive and efficient.
+
+Be patient, polite, and prepare to learn and provide information about your
+NUT deployment (version, configuration, OS...) and the device, to collect
+logs, and to answer any follow-up questions about your situation.
+
+Finally, note that NUT is packaged and delivered by packaging into numerous
+operating systems, appliances and monitoring projects, and may be bundled
+with third-party GUI clients.  It may be wise of end-users to identify such
+cases and ask for help on the most-relevant forum (or several, including the
+NUT support channels).  It is important to highlight that the NUT project
+releases have for a long time been essentially snapshots of better-tested
+code, and we do not normally issue patches to "hot-fix" any older releases.
+
+Any improvements of NUT itself are made in the current code base, same as
+any other feature development, so to receive desired fixes on your system
+(and/or to check that they do solve your particular issue), expect to be
+asked to build the recent development iteration from GitHub or work with
+your appliance vendor to get a software upgrade.
+
+Over time, downstream OS packaging or other integrations which use NUT, may
+issue patches as new package revisions, or new baseline versions of NUT,
+according to *their* release policies. It is not uncommon for distributions,
+especially "stable" flavours, to be a few years behind upstream projects.
 
 
 [[Download_instructions]]
@@ -81,7 +169,7 @@ include::download.txt[]
 
 [[_installation_instructions]]
 
-include::../INSTALL.nut[]
+include::{builddir}../INSTALL.nut.adoc-parsed[]
 
 
 [[Configuration_notes]]
@@ -147,7 +235,7 @@ include::nut-names.txt[]
 Appendix D: Hardware Compatibility List
 =======================================
 
-Refer to the link:http://www.networkupstools.org/stable-hcl.html[online HCL].
+Refer to the link:https://www.networkupstools.org/stable-hcl.html[online HCL].
 
 
 Appendix E: Documentation
@@ -174,9 +262,11 @@ include::cables.txt[]
 Appendix H: Configure options
 =============================
 
-NOTE: For more information about build environment setup, see chapters
-below about <<Config_Prereqs,Configuration prerequisites>>
-and <<CI_Farm_Notes,CI Farm configuration notes>>.
+NOTE: For more information about build environment setup, see chapters about
+linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] and
+linkdoc:qa-guide[Custom NUT CI farm build agents: LXC multi-arch
+containers,CI_LXC,docs/ci-farm-lxc-setup.txt].
 
 include::configure.txt[]
 
@@ -185,7 +275,7 @@ include::configure.txt[]
 Appendix I: Upgrading notes
 ===========================
 
-include::../UPGRADING[]
+include::{builddir}../UPGRADING.adoc-parsed[]
 
 
 [[Project_History]]
@@ -193,23 +283,3 @@ Appendix J: Project history
 ===========================
 
 include::history.txt[]
-
-
-[[Config_Prereqs]]
-Appendix K: Prerequisites for building NUT on different OSes
-============================================================
-
-include::config-prereqs.txt[]
-
-
-[[CI_Farm_Notes]]
-Appendix L: CI Farm configuration notes
-=======================================
-
-NOTE: This chapter contains information about NUT CI farm setup tricks
-that were applied at different times by the maintainer team to ensure
-regular builds and tests of the codebase.  Whether these are used in
-daily production today or not, similar setup should be possible locally
-on developer and contributor machines.
-
-include::ci-farm-lxc-setup.txt[]

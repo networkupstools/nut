@@ -1,22 +1,118 @@
 #!@PYTHON@
 # Copyright 2008 Marcus D. Hanwell <marcus@cryos.org>
 # Minor changes for NUT by Charles Lepple
+# Subsequent maintenance for NUT by Jim Klimov (since 2021)
 # Distributed under the terms of the GNU General Public License v2 or later
 
-import string, re, os
+import re
+import os
 from textwrap import TextWrapper
 import sys
+import subprocess
 
-rev_range = ''
+# Python 3 compatibility hack
+try:
+    try:
+        import unicode
+    except:
+        # Maybe built-in?
+        pass
+    unicode('')
+except NameError as ex:
+    #DEBUG# sys.stderr.write("Using 'str' as 'unicode': %s\n" % str(ex))
+    #DEBUG# sys.stderr.flush()
+    unicode = str
+
+try:
+    import unicodedata
+except:
+    pass
+
+rev_range = "HEAD"
 
 if len(sys.argv) > 1:
     base = sys.argv[1]
-    rev_range = '%s..HEAD' % base
+    rev_range = "%s..HEAD" % base
 
 # Execute git log with the desired command line options.
-fin = os.popen('git log --summary --stat --no-merges --date=short %s' % rev_range, 'r')
-# Create a ChangeLog file in the current directory.
-fout = open('ChangeLog', 'w')
+# Support Python2 and Python3 (esp. 3.6 and earlier) semantics
+# with regard to utf-8 content support (avois ascii decoding in Py3)
+fin_mode = 0
+# Remove trailing end of line? spitlines() in py3 variant takes care of them
+fin_chop = 0
+try:
+    p = subprocess.Popen(
+        [
+            "git",
+            "log",
+            "--pretty=medium",
+            "--summary",
+            "--stat",
+            "--no-merges",
+            "--date=short",
+            ("%s" % rev_range),
+        ],
+        encoding="utf-8",
+        close_fds=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    fin, ferr = p.communicate()
+    if p.wait() != 0:
+        print("ERROR getting git changelog")
+        sys.exit(1)
+    fin = fin.splitlines()
+    fin_mode = 3
+except TypeError:
+    fin = os.popen(
+        "git log --pretty=medium --summary --stat --no-merges --date=short %s"
+        % rev_range,
+        "r",
+    )
+    fin_mode = 2
+    fin_chop = 1
+
+# Create a ChangeLog file in the current directory by default.
+CHANGELOG_FILE = "ChangeLog"
+try:
+    # e.g. point from Makefile to a builddir (caller ensures it exists)
+    if os.environ.get("CHANGELOG_FILE", None) is not None:
+        CHANGELOG_FILE = os.environ.get("CHANGELOG_FILE")
+except Exception as ignored:
+    pass
+
+if CHANGELOG_FILE == "-":
+    fout = sys.stdout
+else:
+    if fin_mode == 3:
+        fout = open(CHANGELOG_FILE, "w", encoding="UTF-8")
+    else:
+        fout = open(CHANGELOG_FILE, "w")
+
+# By default we collect information from a commit and output it as soon as
+# we have enough. Part of it is best-effort grouping of a series of commits
+# made by the same author on the same day, if they follow each other.
+# The alternative is to expend memory to collect all git log entries into a
+# dictionary first (key = date+author, value = list of entries) and only
+# print the output in the end of processing. This costs more resources, so
+# is not default behavior.
+requireGroupByDateAuthor = False
+try:
+    tmpEnvVar = os.environ.get("CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR", None)
+    if str(tmpEnvVar).lower() == "true":
+        requireGroupByDateAuthor = True
+except Exception as ignored:
+    pass
+
+cachedContent = None
+if requireGroupByDateAuthor:
+    try:
+        from collections import defaultdict
+        cachedContent = defaultdict(list)
+    except Exception as x:
+        print("Failed to init requireGroupByDateAuthor processing as defaultdict(list), trying simple dict(): " + str(x))
+        requireGroupByDateAuthor = False
+        cachedContent = dict()
 
 # Set up the loop variables in order to locate the blocks we want
 authorFound = False
@@ -28,12 +124,21 @@ messageNL = False
 files = ""
 prevAuthorLine = ""
 
-wrapper = TextWrapper(initial_indent="\t", subsequent_indent="\t  ")
+# Legacy default: keep as is
+authorMustBeASCII = False
+authorMustBeASCII_inverse_setting = str(os.environ.get("WITH_PDF_NONASCII_TITLES", "")).upper()
+if authorMustBeASCII_inverse_setting in ["YES", "TRUE"]:
+    authorMustBeASCII = False
+elif authorMustBeASCII_inverse_setting in ["NO", "FALSE"]:
+    authorMustBeASCII = True
+
+# See also: https://github.com/python/cpython/blob/main/Lib/textwrap.py
+wrapper = TextWrapper(initial_indent="\t", subsequent_indent="\t  ", break_on_hyphens=False, break_long_words=False)
 
 # The main part of the loop
 for line in fin:
     # The commit line marks the start of a new commit object.
-    if line.startswith('commit'):
+    if line.startswith("commit"):
         # Start all over again...
         authorFound = False
         dateFound = False
@@ -45,42 +150,65 @@ for line in fin:
         continue
     # Match the author line and extract the part we want
     # (Don't use startswith to allow Author override inside commit message.)
-    elif 'Author:' in line:
-        authorList = re.split(': ', line, 1)
+    elif "Author:" in line:
+        if sys.version_info >= (3, 13, ):
+            authorList = re.split(": ", line, maxsplit=1)
+        else:
+            authorList = re.split(": ", line, 1)
+
         try:
             author = authorList[1]
-            author = author[0:len(author)-1]
+            author = author[0 : len(author) - fin_chop]
+            if authorMustBeASCII:
+                try:
+                    if isinstance(author, str) and unicode != str:
+                        author = unicodedata.normalize(u'NFKD', unicode(author, "utf-8")).encode('ascii', 'ignore').decode('utf8')
+                    else:
+                        author = unicodedata.normalize(u'NFKD', author).encode('ascii', 'ignore').decode('utf8')
+                except Exception as e:
+                    print("Could not unicodedata.normalize() author '%s': %s" % (author, str(e)))
             authorFound = True
         except:
-            print ("Could not parse authorList = '%s'" % (line))
+            print("Could not parse authorList = '%s'" % (line))
 
     # Match the date line
-    elif line.startswith('Date:'):
-        dateList = re.split(':   ', line, 1)
+    elif line.startswith("Date:"):
+        if sys.version_info >= (3, 13, ):
+            dateList = re.split(":   ", line, maxsplit=1)
+        else:
+            dateList = re.split(":   ", line, 1)
+
         try:
             date = dateList[1]
-            date = date[0:len(date)-1]
+            date = date[0 : len(date) - fin_chop]
             dateFound = True
         except:
-            print ("Could not parse dateList = '%s'" % (line))
+            print("Could not parse dateList = '%s'" % (line))
     # The Fossil-IDs are ignored:
-    elif line.startswith('    Fossil-ID:') or line.startswith('    [[SVN:'):
+    elif line.startswith("    Fossil-ID:") or line.startswith("    [[SVN:"):
         continue
     # The svn-id lines are ignored
-    elif '    git-svn-id:' in line:
+    elif "    git-svn-id:" in line:
         continue
     # The sign off line is ignored too
-    elif 'Signed-off-by' in line:
+    elif "Signed-off-by" in line:
         continue
     # Extract the actual commit message for this commit
-    elif authorFound & dateFound & messageFound == False:
-        # Find the commit message if we can
-        if len(line) == 1:
+    elif authorFound and dateFound and messageFound is False:
+        # Find the commit message if we can (including the optional
+        # details after the title and a blank line)
+        # FIXME: Detect end of message by /^#/ to allow for longer essays
+        #  in the detailed comments part?
+        # FIXME: Some such comments include asciidoc-ish markup, notably
+        #  bullet lists - do not concatenate those into one block but do
+        #  actually pass them as sub-lists (indented, and perhaps not
+        #  starting with an asterisk which we use for this document).
+        if len(line) == fin_chop:
             if messageNL:
                 messageFound = True
             else:
                 messageNL = True
-        elif len(line) == 4:
+        elif len(line) == 3 + fin_chop:
             messageFound = True
         else:
             if len(message) == 0:
@@ -88,37 +216,72 @@ for line in fin:
             else:
                 message = message + " " + line.strip()
     # If this line is hit all of the files have been stored for this commit
-    elif re.search('files? changed', line):
+    elif re.search("files? changed", line):
         filesFound = True
         continue
     # Collect the files for this commit. FIXME: Still need to add +/- to files
-    elif authorFound & dateFound & messageFound:
-        fileList = re.split(' \| ', line, 2)
+    elif authorFound and dateFound and messageFound:
+        if sys.version_info >= (3, 13, ):
+            fileList = re.split(r' \| ', line, maxsplit=2)
+        else:
+            fileList = re.split(r' \| ', line, 2)
+
         if len(fileList) > 1:
             if len(files) > 0:
                 files = files + ", " + fileList[0].strip()
             else:
                 files = fileList[0].strip()
+
     # All of the parts of the commit have been found - write out the entry
-    if authorFound & dateFound & messageFound & filesFound:
+    if authorFound and dateFound and messageFound and filesFound:
         # First the author line, only outputted if it is the first for that
-        # author on this day
+        # author on this day.
+        # WARNING: In case of git rebase commit shuffling, merges of dormant
+        # branches, etc. we are not guaranteed to have all dates in the list
+        # nicely ordered. In fact, the same date+author can be repeated if
+        # there were commits with other metadata in git history between those
+        # (e.g. many PRs from a few authors merged during one day). While we
+        # could cache each section by authorLine and only output in the end,
+        # it can require a lot of memory - so by default we do not.
         authorLine = date + "  " + author
-        if len(prevAuthorLine) == 0:
-            fout.write(authorLine + "\n\n")
-        elif authorLine == prevAuthorLine:
-            pass
+        if requireGroupByDateAuthor:
+            if authorLine not in cachedContent:
+                cachedContent[authorLine] = list()
         else:
-            fout.write("\n" + authorLine + "\n\n")
+            if len(prevAuthorLine) == 0:
+                fout.write(authorLine + "\n\n")
+            elif authorLine == prevAuthorLine:
+                pass
+            else:
+                fout.write("\n" + authorLine + "\n\n")
 
         # Assemble the actual commit message line(s) and limit the line length
         # to 80 characters.
-        commitLine = "* " + files + ": " + message
+        # Avoid printing same (or equivalent) filename lists twice, if commit
+        # message starts with them.
+        if message.startswith(files + ":"):
+            commitLine = "* " + message
+        else:
+            namesF = None
+            namesM = None
+            try:
+                namesM = sorted(re.split(r"[ ,]", message.split(":")[0]))
+                namesF = sorted(re.split(r"[ ,]", files))
+            except:
+                pass
 
-        # Write out the commit line
-        fout.write(wrapper.fill(commitLine) + "\n")
+            if namesM is not None and namesM == namesF:
+                commitLine = "* " + message
+            else:
+                commitLine = "* " + files + ": " + message
 
-        #Now reset all the variables ready for a new commit block.
+        if requireGroupByDateAuthor:
+            cachedContent[authorLine].append(commitLine)
+        else:
+            # Write out the commit line, wrapped for length
+            fout.write(wrapper.fill(commitLine) + "\n")
+
+        # Now reset all the variables ready for a new commit block.
         authorFound = False
         dateFound = False
         messageFound = False
@@ -128,6 +291,26 @@ for line in fin:
         files = ""
         prevAuthorLine = authorLine
 
+if requireGroupByDateAuthor:
+    # We did not print anything before, flush it out now;
+    # most recent date first (alphanumerically reverse)
+    counter = 0
+    for authorLine in sorted(cachedContent, reverse=True):
+        if counter == 0:
+            fout.write(authorLine + "\n\n")
+        else:
+            fout.write("\n" + authorLine + "\n\n")
+
+        # Use original list append order
+        for commitLine in cachedContent[authorLine]:
+            fout.write(wrapper.fill(commitLine) + "\n")
+
+        counter = counter + 1
+
 # Close the input and output lines now that we are finished.
-fin.close()
+if fin_mode == 3:
+    p.stdout.close()
+    p.stderr.close()
+else:
+    fin.close()
 fout.close()

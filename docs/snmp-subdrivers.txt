@@ -154,7 +154,7 @@ sysOID. For example:
 
 	snmpwalk -Os -c foobar W.X.Y.Z .1.3.6.1.4.1.705.1 > snmpwalk-Os.log
 
-NOTE: if the OID are only partially resolved (i.e, there are still parts
+NOTE: If the OID are only partially resolved (i.e, there are still parts
 expressed in numeric form), then try using *-M* to point your .mib file.
 
 Then call the script using:
@@ -202,10 +202,11 @@ structure to be precise), and will not implement any useful functionality
 (in particular, it will be unable to shut down the UPS). In the beginning,
 it simply attempts to monitor some UPS variables. To make this driver useful,
 you must examine the NUT variables of the form "unmapped.*" in the
-hid_info_t data structure, and map them to actual NUT variables and
+hid_info_t data structure (commonly wrapped into `snmp_info_default()`
+macros for portability), and map them to actual NUT variables and
 instant commands. There are currently no step-by-step instructions for
-how to do this. Please look at the files to see how the currently implemented
-subdrivers are written:
+how to do this. Please look at the source files to see how the currently
+implemented SNMP subdrivers are written:
 
 - apc-mib.c/h
 - baytech-mib.c/h
@@ -224,7 +225,8 @@ To help you, above each entry in <LDRIVER>-mib.c, there is a comment that
 displays the textual OID name. For example, the following entry:
 
 	/* upsMIB.upsObjects.upsIdent.upsIdentModel = STRING: "Dell UPS Tower 1920W HV" */
-	{ "unmapped.upsidentmodel", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2254.2.4.1.1.0", NULL, SU_FLAG_OK, NULL },
+	snmp_info_default("ups.model", ST_FLAG_STRING, SU_INFOSIZE,
+	    ".1.3.6.1.4.1.2254.2.4.1.1.0", NULL, SU_FLAG_OK, NULL),
 
 Many times, only the first field will need to be modified, to map to an actual
 NUT variable name.
@@ -237,6 +239,12 @@ In the above example, the right NUT variable is obviously "device.model".
 
 The MIB definition file (.mib) also contains some description of these OIDs,
 along with the possible enumerated values.
+
+NOTE: To test existing data points (including those not yet translated
+to standard NUT mappings conforming to <<nut-names,NUT command and
+variable naming scheme>>), you can use custom drivers built after you
+`./configure --with-unmapped-data-points`.
+Production driver builds must not include any non-standard names.
 
 ////////////////////////////////////////////////////////////////////////////////
 FIXME:

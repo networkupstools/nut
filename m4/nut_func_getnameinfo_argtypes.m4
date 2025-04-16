@@ -23,7 +23,7 @@ AC_DEFUN([NUT_FUNC_GETNAMEINFO_ARGTYPES], [
     nut_cv_func_getnameinfo_args="unknown"
     for gni_arg1 in 'const struct sockaddr *' 'struct sockaddr *' 'void *'; do
       for gni_arg2 in 'socklen_t' 'size_t' 'int'; do
-        for gni_arg46 in 'socklen_t' 'size_t' 'int' 'unsigned int'; do
+        for gni_arg46 in 'socklen_t' 'size_t' 'int' 'unsigned int' 'DWORD'; do
           for gni_arg7 in 'int' 'unsigned int'; do
             AC_COMPILE_IFELSE([
               AC_LANG_PROGRAM([

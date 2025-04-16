@@ -29,7 +29,7 @@ Packaging is a final aim for software. It eases and completes the
 software integration into an OS, and allows users to have an easy
 software installation and support out of the box.
 
-NOTE: making NUT packaging more uniform should help its documentation,
+NOTE: Making NUT packaging more uniform should help its documentation,
 support and maintenance across the supported OSes.
 
 ------------------------------------------------------------------------
@@ -171,12 +171,14 @@ FIXME: make a dependency graph
 - <<pkg-libupsclient1,libupsclient1>>
 - <<pkg-libupsclient1-dev,libupsclient1-dev>>
 - <<pkg-nut-cgi,nut-cgi>>
+- <<pkg-nut-scanner,nut-scanner>>
 - <<pkg-nut-powerman-pdu,nut-powerman-pdu>>
 - <<pkg-nut-snmp,nut-snmp>>
 - <<pkg-nut-xml,nut-xml>>
 - <<pkg-nut-ipmi,nut-ipmi>>
 - <<pkg-nut-modbus,nut-modbus>>
 
+- <<pkg-nut-gpio,nut-gpio>> (currently platform-dependent)
 - <<pkg-nut-linux-i2c,nut-linux-i2c>> (platform-dependent)
 - <<pkg-nut-macosx-ups,nut-macosx-ups>> (platform-dependent)
 
@@ -244,6 +246,16 @@ nut-cgi
 - Size:
 - Deps:
 
+[[pkg-nut-scanner]]
+nut-scanner
+^^^^^^^^^^^
+- Desc:
+- Files:
+- Size:
+- Deps:
+
+NOTE: hard third-party dependency on `libltdl`; recommends `libsnmp`, `libneon`,
+and the `libusb` variant (0.1 or 1.0) it was built against.
 
 [[pkg-nut-powerman-pdu]]
 nut-powerman-pdu
@@ -281,6 +293,14 @@ nut-ipmi
 nut-modbus
 ^^^^^^^^^^
 - Desc:
+- Files:
+- Size:
+- Deps:
+
+[[pkg-nut-gpio]]
+nut-gpio
+^^^^^^^^
+- Desc: (currently platform-dependent)
 - Files:
 - Size:
 - Deps:
@@ -360,18 +380,22 @@ nut-server
 		E) nut-cgi
 
 			Deps:
-			Files: snmp-ups and powernet + manpages
+			Files: snmp-ups and powernet + man pages
 
 		F) nut-doc:
 
 			Deps:
-			Files: dummycons + manpage
+			Files: dummycons + man page
 
 		G) nut-dev:
 
 			Deps:
 			Files: upsmon, upsc, upscmd, upsrw
 
+		H) nut-scanner:
+
+			Deps: hard dependency on `libltdl`; recommends `libsnmp`, `libneon`, and the `libusb` variant (0.1 or 1.0) it was built against.
+			Files: nut-scanner tool and libnutscan + man pages
 
 
 Note: "nut" can be a meta package
@@ -386,6 +410,8 @@ TO BE CONTINUED
 
 Configuration option
 ^^^^^^^^^^^^^^^^^^^^
+
+Example:
 
 name= "ups" or "nut"
 ./configure \
@@ -405,5 +431,12 @@ html-path
             --with-cgi \
             --without-ssl
 ...
+
+NOTE: For packaging (OS distribution or in-house) it is recommended to
+primarily `./configure --with-all` and then excise `--without-something`
+explicitly for items not supported on your platform, so you do not miss
+out on new NUT features as they come with new releases. Some may require
+that you update your build environment with new third-party dependencies,
+so a broken build of a new NUT release would let you know how to act.
 
 ------------------------------------------------------------------------

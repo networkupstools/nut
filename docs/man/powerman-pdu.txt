@@ -33,8 +33,8 @@ This driver doesn't support any optional settings.
 INSTALLATION
 ------------
 
-This driver is not built by default.  You can build it by using
-"configure --with-powerman=yes".
+This driver may be not built by default.  You can build it by installing
+prerequisites and using `configure --with-powerman=yes`.
 
 UPS COMMANDS
 ------------
@@ -69,9 +69,9 @@ The port used to reach 'powermand' is optional if the default port is used.
 KNOWN ISSUES
 ------------
 
-In the current NUT version (2.4.1), ups.status is still exposed, with the value
-"WAIT". Some other values from the
-ups collection are also exposed.
+In the current NUT version as of this writing (2.4.1), `ups.status` is still
+exposed, with the value "WAIT". Some other values from the `ups` collection
+are also exposed.
 
 AUTHOR
 ------
@@ -89,5 +89,5 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * The PowerMan home page: https://github.com/chaos/powerman

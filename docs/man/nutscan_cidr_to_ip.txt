@@ -9,9 +9,11 @@ nutscan_cidr_to_ip - Convert a CIDR IP to a range of IP address.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip);
+	int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip);
+------
 
 DESCRIPTION
 -----------
@@ -21,13 +23,14 @@ the CIDR format given as a string in 'cidr', to two IPs in strings
 pointed by 'start_ip' and 'stop_ip' which can be used as input
 parameters in the scanning functions of the libnutscan API.
 
-It is the caller's responsibility to free 'start_ip' and 'stop_ip' strings.
+It is the caller's responsibility to linkmanext:free[3] the 'start_ip'
+and 'stop_ip' strings.
 
 RETURN VALUE
 ------------
 
-The *nutscan_cidr_to_ip()* function returns 0 if an error occurred
-(invalid 'cidr' address) or 1 if successful.
+The *nutscan_cidr_to_ip()* function returns '0' if an error occurred
+(invalid 'cidr' address) or '1' if successful.
 
 NOTES
 -----
@@ -40,4 +43,5 @@ SEE ALSO
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
 linkman:nutscan_display_parsable[3], linkman:nutscan_display_ups_conf[3]

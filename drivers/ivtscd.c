@@ -21,10 +21,11 @@
 #include "config.h"
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 #include "attribute.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -115,7 +116,7 @@ static ssize_t ivt_status(void)
 	ret = sscanf(reply, "R:%f;%f;%f;%f;%f;%f;%f;", &battery.voltage.act, &battery.current.act, &battery.temperature,
 					&battery.voltage.min, &battery.voltage.max, &battery.current.min, &battery.current.max);
 
-	upsdebugx(3, "Parsed %zd parameters from reply", ret);
+	upsdebugx(3, "Parsed %" PRIiSIZE " parameters from reply", ret);
 	return ret;
 }
 
@@ -181,12 +182,17 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
-	while (1) {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
+	/* FIXME: This driver (and solar device?) does not seem to
+	 *  really support a shutdown. It also blocks in this method
+	 *  until battery.voltage.act becomes(?) greater than nominal,
+	 *  meaning power is back, and then exits the driver.
+	 *  All in all, looks odd.
+	 */
+	while (1) {
 		if (ivt_status() < 7) {
 			continue;
 		}
@@ -195,7 +201,11 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Power is back!");
+		/* Hmmm, why was this an exit-case before? fatalx(EXIT_SUCCESS...) */
+		upslogx(LOG_ERR, "Power is back!");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
+		return;
 	}
 }
 

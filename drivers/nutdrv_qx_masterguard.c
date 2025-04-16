@@ -24,6 +24,7 @@
 
 #include "nutdrv_qx_masterguard.h"
 #include <stddef.h>
+#include "nut_stdint.h"
 
 #define MASTERGUARD_VERSION "Masterguard 0.02"
 
@@ -353,9 +354,9 @@ static int masterguard_output_voltages(item_t *item, char *value, const size_t v
 	strncpy(value, item->value, valuelen); /* save before strtok mangles it */
 	for (w = strtok(item->value, sep); w; w = strtok(NULL, sep)) {
 		n++;
-		upsdebugx(4, "output voltage #%zu: %s", n, w);
+		upsdebugx(4, "output voltage #%" PRIuSIZE ": %s", n, w);
 		if ((masterguard_e_outvolts = realloc(masterguard_e_outvolts, n * sizeof(info_rw_t))) == NULL) {
-			upsdebugx(1, "output voltages: allocating #%zu failed", n);
+			upsdebugx(1, "output voltages: allocating #%" PRIuSIZE " failed", n);
 			return -1;
 		}
 		strncpy(masterguard_e_outvolts[n - 1].value, w, SMALLBUF - 1);
@@ -363,7 +364,7 @@ static int masterguard_output_voltages(item_t *item, char *value, const size_t v
 	}
 	/* need to do this seperately in case the loop is run zero times */
 	if ((masterguard_e_outvolts = realloc(masterguard_e_outvolts, (n + 1) * sizeof(info_rw_t))) == NULL) {
-		upsdebugx(1, "output voltages: allocating terminator after #%zu failed", n);
+		upsdebugx(1, "output voltages: allocating terminator after #%" PRIuSIZE " failed", n);
 		return -1;
 	}
 	masterguard_e_outvolts[n].value[0] = '\0';
@@ -443,10 +444,10 @@ static int masterguard_fault(item_t *item, char *value, const size_t valuelen) {
 
 /* add slave address (from masterguard_my_slaveaddr) to commands that require it */
 static int masterguard_add_slaveaddr(item_t *item, char *command, const size_t commandlen) {
+	size_t l;
+
 	NUT_UNUSED_VARIABLE(item);
 	NUT_UNUSED_VARIABLE(commandlen);
-
-	size_t l;
 
 	l = strlen(command);
 	if (strncmp(command + l - 4, ",XX\r", 4) != 0) {
@@ -464,12 +465,12 @@ static int masterguard_add_slaveaddr(item_t *item, char *command, const size_t c
 /* helper, not to be called directly from table */
 /*!! use parameter from the value field instead of ups.delay.{shutdown,return}?? */
 static int masterguard_shutdown(item_t *item, char *value, const size_t valuelen, const int stayoff) {
-	NUT_UNUSED_VARIABLE(item);
-
 	long offdelay;
 	char *p;
 	const char *val, *name;
 	char offstr[3];
+
+	NUT_UNUSED_VARIABLE(item);
 
 	offdelay = strtol((val = dstate_getinfo(name = "ups.delay.shutdown")), &p, 10);
 	if (*p != '\0') goto ill;
@@ -510,15 +511,16 @@ static int masterguard_shutdown_stayoff(item_t *item, char *value, const size_t 
 }
 
 static int masterguard_test_battery(item_t *item, char *value, const size_t valuelen) {
-	NUT_UNUSED_VARIABLE(item);
-
 	long duration;
 	char *p;
+
+	NUT_UNUSED_VARIABLE(item);
 
 	if (value[0] == '\0') {
 		upsdebugx(2, "battery test: no duration");
 		return -1;
 	}
+
 	duration = strtol(value, &p, 10);
 	if (*p != '\0') goto ill;
 	if (duration == 10) {
@@ -616,6 +618,8 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 			break;
 		case 's':
 			snprintf(value, valuelen, item->command, s);
+			break;
+		default:
 			break;
 	}
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -935,11 +939,11 @@ static int masterguard_claim(void) {
 	item_t *item;
 	/* mandatory values */
 	char *mandatory[] = {
-		"series",		/* SKIP */
+		"experimental.series",	/* SKIP */
 		"device.model",		/* minimal number of battery packs */
 		"ups.power.nominal",	/* load computation */
 		"ups.id",		/* slave address */
-		"output_voltages",	/* output voltages enum */
+		"experimental.output_voltages",	/* output voltages enum */
 #if 0
 		"battery.packs",	/* battery voltage computation */
 #endif

@@ -8,8 +8,8 @@ NUT (the GNU General Public License).
 If none of these suits you for technical or legal reasons, you can
 implement one easily using the <<net-protocol,Network protocol information>>.
 
-The latter approach has been used to create the Python 'PyNUT' module, the
-Nagios 'check_ups' plugin (and probably others), which can serve as a
+The latter approach has been used to create the Python 'PyNUTClient' module,
+the Nagios 'check_ups' plugin (and probably others), which can serve as a
 reference.
 
 C / C++
@@ -40,7 +40,7 @@ functions documentation referenced in the same file.
 
 Clients like upsc are provided as examples of how to retrieve data using the
 upsclient functions.
-link:http://www.networkupstools.org/projects.html[Other programs] not included
+link:https://www.networkupstools.org/projects.html[Other programs] not included
 in this package may also use this library, such as wmnut.
 
 High level library: libnutclient

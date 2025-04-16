@@ -5,8 +5,11 @@ This chapter will present the process of creating a new driver to support
 another device.
 
 Since NUT already supports many major power device protocols through
-several generic drivers (genericups, usbhid-ups, snmp-ups, blazer_* and
-nutdrv_qx), creation of new drivers has become rare.
+several generic drivers (`genericups`, `usbhid-ups`, `snmp-ups`, `blazer_*`
+and `nutdrv_qx`), creation of new drivers has become rare.
+
+NOTE: We have yet to unify modbus drivers under same umbrella like `nutdrv_qx`
+covering the Megatec Qx protocol family.
 
 So most of the time, this process will be limited to completing one of these
 generic drivers.
@@ -95,7 +98,7 @@ This structure tracks several description information about the driver:
               - DRV_COMPLETE: this is the gold level! It implies that 100 % of
               the protocol is implemented, and a full QA pass.
  * *subdrv_info*: array of upsdrv_info_t for sub driver(s) information. For
-   example, this is used by usbhid-ups.
+              example, this is used by usbhid-ups.
 
 This information is currently used for the startup banner printing and tests.
 
@@ -121,7 +124,9 @@ and it doesn't appear to be connected, display an error and exit. This
 is the last time your driver is allowed to bail out.
 
 This is usually a good place to create variables like `ups.mfr`,
-`ups.model`, `ups.serial`, and other "one time only" items.
+`ups.model`, `ups.serial`, determine and declare supported instant
+commands (maybe model-dependent, typically for all devices supported
+by the driver), and other "one time only" items.
 
 upsdrv_updateinfo
 ~~~~~~~~~~~~~~~~~
@@ -159,6 +164,14 @@ fails.  If the UPS does not shut down the load, then the user is
 vulnerable to a race if the power comes back on during the shutdown
 process.
 
+This method should not directly `exit()` the driver program (neither
+should it call `fatalx()` nor `fatal_with_errno()` methods).  It can
+`upslogx(LOG_ERR, ...)` or `upslog_with_errno(LOG_ERR, ...)`, and then
+`set_exit_flag(N)` if required, using values `EF_EXIT_FAILURE` (`-1`)
+for eventual `exit(EXIT_FAILURE)` and `EF_EXIT_SUCCESS` (`-2`) for
+`exit(EXIT_SUCCESS)`, which would be handled in the standard driver
+loop or in `forceshutdown()` method of `main.c`.
+
 Data types
 ----------
 
@@ -195,7 +208,7 @@ Setting flags
 ~~~~~~~~~~~~~
 
 Some variables have special properties.  They can be writable, and some
-are strings.  The ST_FLAG_* values can be used to tell upsd more about
+are strings.  The `ST_FLAG_*` values can be used to tell upsd more about
 what it can do.
 
 	dstate_setflags("input.transfer.high", ST_FLAG_RW);
@@ -207,7 +220,11 @@ UPS status flags like on line (OL) and on battery (OB) live in
 ups.status.  Don't manipulate this by hand.  There are functions which
 will do this for you.
 
-	status_init() -- before doing anything else
+	status_init()   -- before doing anything else (clear internal buffers,
+	                   etc.)
+
+	status_get(val) -- optionally check if a status word had been set
+	                   since the most-recent status_init()
 
 	status_set(val) -- add a status word (OB, OL, etc)
 
@@ -230,9 +247,42 @@ Possible values for status_set:
 	BOOST   -- UPS is boosting incoming voltage
 	FSD     -- Forced Shutdown (restricted use, see the note below)
 
-Anything else will not be recognized by the usual clients.  Coordinate
-with the nut-upsdev list before creating something new, since there will be
-duplication and ugliness otherwise.
+Internally, an `ALARM` value would be added (typically as first in the list)
+if the `ups.alarm` is currently not empty. For more details, see below in
+`alarm_set()` description.
+
+[NOTE]
+======
+The NUT data server `upsd` initially sets `ups.status` to a value of `WAIT`
+when first connecting to a NUT driver using the socket protocol, and issues
+a `DUMPALL` command.  This temporary `WAIT` status gets overwritten whenever
+any relevant information update from a driver arrives, typically either as
+part of its own initialization, or of the regular polling loop.
+
+This may seem roughly similar to a "Data stale" situation; however, the NUT
+clients like `upsmon` should not infer anything for shutdown decisions from
+this lack of initial connection, like they do for *loss* of connection during
+a known critical power situation.
+
+For some more detailed insight into the NUT driver's current state machine
+position (as reported by the driver after communications are established),
+see also `driver.state`.
+======
+
+Anything else will not be recognized by the usual clients expecting a
+particular NUT standard release.  New tokens may appear over time, but
+driver developers should coordinate with the nut-upsdev list before creating
+something new, since there will be duplication and ugliness otherwise.
+It is possible that eventually, due to hardware and software design evolution,
+some concepts would be superseded by others.  Fundamental meanings of the
+flags listed above should not change (but these flags may become no longer
+issued by the current NUT drivers; then may still be used e.g. in forks or
+older packaged builds).
+
+Clients however MUST accept any space-separated tokens in `ups.status`
+without error or crash, and MUST treat those defined above with the
+ascribed meanings, but MAY ignore unidentified tokens (quietly by default,
+or acknowledge the skip with a debug log message).
 
 [NOTE]
 ==============================================================================
@@ -252,10 +302,25 @@ met. Otherwise, setting status to `OB LB` should be preferred.
 variable naming scheme,nut-names] for more information.
 ==============================================================================
 
+Similar functionality can be supported for `experimental.ups.mode.buzzwords`,
+where it is tracked dynamically (e.g. due to ECO/ESS/HE/Smart or similar
+marketing buzzword modes supported by the device), using the following
+methods in the processing loop:
+
+	buzzmode_init()   -- before doing anything else (clear internal buffers,
+	                     etc.)
+
+	buzzmode_get(val) -- optionally check if an UPS mode buzzword had been
+	                     set since the most-recent buzzmode_init()
+
+	buzzmode_set(val) -- add an UPS mode buzzword (vendor:eaton:ECO, etc.)
+
+	buzzmode_commit() -- push out the update
+
 UPS alarms
 ----------
 
-These work like ups.status, and have three special functions which you
+These work like `ups.status`, and have three special functions which you
 must use to manage them.
 
 	alarm_init() -- before doing anything else
@@ -312,124 +377,144 @@ Serial port handling
 --------------------
 
 Drivers which use serial port functions should include serial.h and use
-these functions whenever possible:
+these functions (and cross-platform data types) whenever possible:
 
-	- int ser_open(const char *port)
+	- TYPE_FD
++
+Cross-platform data type to represent a serial-port connection.
 
+	- ERROR_FD_SER
++
+Macro value representing an invalid serial-port connection.
+
+	- VALID_FD_SER(TYPE_FD_SER fd)
++
+This macro evaluates to `true` if `fd` currently has a "valid" value
+(e.g. represents a connected device). You should invalidate the `fd`
+when you initialize the variable or close the connection, by assigning
+`fd = ERROR_FD`.
+
+	- INVALID_FD_SER(TYPE_FD_SER fd)
++
+This macro evaluates to `true` if `fd` does not currently have a
+"valid" value.
+
+	- TYPE_FD_SER ser_open(const char *port)
++
 This opens the port and locks it if possible, using one of fcntl, lockf,
 or uu_lock depending on what may be available.  If something fails, it
 calls fatal for you.  If it succeeds, it always returns the fd that was
 opened.
 
-	- int ser_open_nf(const char *port)
-
+	- TYPE_FD_SER ser_open_nf(const char *port)
++
 This is a non-fatal version of ser_open(), that does not call fatal if
 something fails.
 
-	- int ser_set_speed(int fd, const char *port, speed_t speed)
-
+	- int ser_set_speed(TYPE_FD_SER fd, const char *port, speed_t speed)
++
 This sets the speed of the port and also does some basic configuring
 with tcgetattr and tcsetattr.  If you have a special serial
 configuration (other than 8N1), then this may not be what you want.
-
++
 The port name is provided again here so failures in tcgetattr() provide
 a useful error message.  This is the only place that will generate a
 message if someone passes a non-serial port /dev entry to your driver,
 so it needs the extra detail.
 
-	- int ser_set_speed_nf(int fd, const char *port, speed_t speed)
-
+	- int ser_set_speed_nf(TYPE_FD_SER fd, const char *port, speed_t speed)
++
 This is a non-fatal version of ser_set_speed(), that does not call fatal
 if something fails.
 
-	- int ser_set_dtr(int fd, int state)
-	- int ser_set_rts(int fd, int state)
-
+	- int ser_set_dtr(TYPE_FD_SER fd, int state)
+	- int ser_set_rts(TYPE_FD_SER fd, int state)
++
 These functions can be used to set the modem control lines to provide
 cable power on the RS232 interface. Use state = 0 to set the line to 0
 and any other value to set it to 1.
 
-	- int ser_get_dsr(int fd)
-	- int ser_get_cts(int fd)
-	- int ser_get_dcd(int fd)
-
+	- int ser_get_dsr(TYPE_FD_SER fd)
+	- int ser_get_cts(TYPE_FD_SER fd)
+	- int ser_get_dcd(TYPE_FD_SER fd)
++
 These functions read the state of the modem control lines. They will
 return 0 if the line is logic 0 and a non-zero value if the line is
 logic 1.
 
-	- int ser_close(int fd, const char *port)
-
+	- int ser_close(TYPE_FD_SER fd, const char *port)
++
 This function unlocks the port if possible and closes the fd.  You
 should call this in your upsdrv_cleanup handler.
 
-	- ssize_t ser_send_char(int fd, unsigned char ch)
-
+	- ssize_t ser_send_char(TYPE_FD_SER fd, unsigned char ch)
++
 This attempts to write one character and returns the return value from
 write.  You could call write directly, but using this function allows
 for future error handling in one place.
 
-	- ssize_t ser_send_pace(int fd, useconds_t d_usec,
+	- ssize_t ser_send_pace(TYPE_FD_SER fd, useconds_t d_usec,
 	                        const char *fmt, ...)
-
++
 If you need to send a formatted buffer with an intercharacter delay, use
 this function.  There are a number of UPS controllers which can't take
 commands at the full speed that would normally be possible at a given
 bit rate.  Adding a small delay usually turns a flaky UPS into a solid
 one.
-
++
 The return value is the number of characters that was sent to the port,
-or -1 if something failed.
+or '-1' if something failed.
 
-	- ssize_t ser_send(int fd, const char *fmt, ...)
-
+	- ssize_t ser_send(TYPE_FD_SER fd, const char *fmt, ...)
++
 Like ser_send_pace, but without a delay.  Only use this if you're sure
 that your UPS can handle characters at the full line rate.
 
-	- ssize_t ser_send_buf(int fd, const void *buf, size_t buflen)
-
+	- ssize_t ser_send_buf(TYPE_FD_SER fd, const void *buf, size_t buflen)
++
 This sends a raw buffer to the fd.  It is typically used for binary
 transmissions.  It returns the results of the call to write.
 
-	- ssize_t ser_send_buf_pace(int fd, useconds_t d_usec,
+	- ssize_t ser_send_buf_pace(TYPE_FD_SER fd, useconds_t d_usec,
 	                            const void *buf, size_t buflen)
-
++
 This is just ser_send_buf with an intercharacter delay.
 
-	- ssize_t ser_get_char(int fd, void *ch, time_t d_sec, useconds_t d_usec)
-
+	- ssize_t ser_get_char(TYPE_FD_SER fd, void *ch, time_t d_sec, useconds_t d_usec)
++
 This will wait up to d_sec seconds + d_usec microseconds for one
 character to arrive, storing it at ch.  It returns 1 on success, -1
 if something fails and 0 on a timeout.
-
-NOTE: the delay value must not be too large, or your driver will not get
++
+NOTE: The delay value must not be too large, or your driver will not get
 back to the usual idle loop in main in time to answer the PINGs from
 upsd.  That will cause an oscillation between staleness and normal
 behavior.
 
-	- ssize_t ser_get_buf(int fd, void *buf, size_t buflen,
+	- ssize_t ser_get_buf(TYPE_FD_SER fd, void *buf, size_t buflen,
 	                      time_t d_sec, useconds_t d_usec)
-
++
 Like ser_get_char, but this one reads up to buflen bytes storing all of
 them in buf.  The buffer is zeroed regardless of success or failure.  It
 returns the number of bytes read, -1 on failure and 0 on a timeout.
-
++
 This is essentially a single read() function with a timeout.
 
-	- ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen,
+	- ssize_t ser_get_buf_len(TYPE_FD_SER fd, void *buf, size_t buflen,
 	                          time_t d_sec, useconds_t d_usec)
-
++
 Like ser_get_buf, but this one waits for buflen bytes to arrive,
 storing all of them in buf.  The buffer is zeroed regardless of success
 or failure.  It returns the number of bytes read, -1 on failure
 and 0 on a timeout.
-
++
 This should only be used for binary reads.  See ser_get_line for
 protocols that are terminated by characters like CR or LF.
 
-	- ssize_t ser_get_line(int fd, void *buf, size_t buflen,
+	- ssize_t ser_get_line(TYPE_FD_SER fd, void *buf, size_t buflen,
 	                       char endchar, const char *ignset,
 	                       time_t d_sec, useconds_t d_usec)
-
++
 This is the reading function you should use if your UPS tends to send
 responses like "OK\r" or "1234\n".  It reads up to buflen bytes and
 stores them in buf, but it will return immediately if it encounters
@@ -437,80 +522,80 @@ endchar.  The endchar will not be stored in the buffer.  It will also
 return if it manages to collect a full buffer before reaching the
 endchar.  It returns the number of bytes stored in the buffer, -1 on
 failure and 0 on a timeout.
-
++
 If the character matches the ignset with strchr(), it will not be added
 to the buffer.  If you don't need to ignore any characters, just pass it
 an empty string -- `""`.
-
++
 The buffer is always cleared and is always `null`-terminated.  It does
 this by reading at most `(buflen - 1)` bytes.
-
-NOTE: any other data which is read after the endchar in the serial
++
+NOTE: Any other data which is read after the endchar in the serial
 buffer will be lost forever.  As a result, you should not use this
 unless your UPS uses a polled protocol.
-
++
 Let's say your endchar is `\n` and your UPS sends `"OK\n1234\nabcd\n"`.
 This function will `read()` all of that, find the first `\n`, and stop
 there.  Your driver will get `"OK"`, and the rest is gone forever.
-
++
 This also means that you should not "pipeline" commands to the UPS.
 Send a query, then read the response, then send the next query.
 
-	- ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen,
+	- ssize_t ser_get_line_alert(TYPE_FD_SER fd, void *buf, size_t buflen,
 	                             char endchar, const char *ignset,
 	                             const char *alertset,
 	                             void handler(char ch),
 	                             time_t d_sec, useconds_t d_usec)
-
++
 This is just like ser_get_line, but it allows you to specify a set of
 alert characters which may be received at any time.  They are not added
 to the buffer, and this function will call your handler function,
 passing the character as an argument.
-
++
 Implementation note: this function actually does all of the work, and
 ser_get_line is just a wrapper that sets an empty alertset and a NULL
 handler.
 
-	- ssize_t ser_flush_in(int fd, const char *ignset, int verbose)
-
+	- ssize_t ser_flush_in(TYPE_FD_SER fd, const char *ignset, int verbose)
++
 This function will drain the input buffer.  If verbose is set to a
 positive number, then it will announce the characters which have been
 read in the syslog.  You should not set verbose unless debugging is
 enabled, since it could be very noisy.
-
++
 This function returns the number of characters which were read, so you
 can check for extra bytes by looking for a nonzero return value.  Zero
 will also be returned if the read fails for some reason.
 
-	- int ser_flush_io(int fd)
-
+	- int ser_flush_io(TYPE_FD_SER fd)
++
 This function drains both the in- and output buffers. Return zero on
 success.
 
 	- void ser_comm_fail(const char *fmt, ...)
-
++
 Call this whenever your serial communications fail for some reason.  It
 takes a format string, so you can use variables and other things to
 clarify the error.  This function does built-in rate-limiting so you
 can't spam the syslog.
-
++
 By default, it will write 10 messages, then it will stop and only write
 1 in 100.  This allows the driver to keep calling this function while
 the problem persists without filling the logs too quickly.
-
++
 In the old days, drivers would report a failure once, and then would be
 silent until things were fixed again.  Users had to figure out what was
 happening by finding that single error message, or by looking at the
 repeated complaints from upsd or the clients.
-
++
 If your UPS frequently fails to acknowledge polls and this is a known
 situation, you should make a couple of attempts before calling this
 function.
-
-NOTE: this does not call dstate_datastale.  You still need to do that.
++
+NOTE: This does not call dstate_datastale.  You still need to do that.
 
 	- void ser_comm_good(void)
-
++
 This will clear the error counter and write a "re-established" message
 to the syslog after communications have been lost.  Your driver should
 call this whenever it has successfully contacted the UPS.  A good place
@@ -557,20 +642,22 @@ Function
 
 	- is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 	                          USBDevice_t *device)
-
++
 Call this in your device opening / matching function. Pass your usb_device_id_t
 list structure, and a set of VendorID, DeviceID, as well as Vendor, Product and
 Serial strings, possibly also Bus, bcdDevice (device release number) and Device
 name on the bus strings, in the USBDevice_t fields describing the specific piece
 of hardware you are inspecting.
-
++
 This function returns one of the following value:
-
-- NOT_SUPPORTED (0),
-- POSSIBLY_SUPPORTED (1,  returned when the VendorID is matched, but the
-DeviceID is unknown),
-- or SUPPORTED (2).
-
++
+--
+		* NOT_SUPPORTED (0),
+		* POSSIBLY_SUPPORTED (1, returned when the VendorID is matched,
+		  but the DeviceID is unknown),
+		* or SUPPORTED (2).
+--
++
 For implementation examples, refer to the various USB drivers, and search for
 the above patterns.
 
@@ -693,6 +780,12 @@ Instant commands
 If your hardware and driver can support a command, register it.
 
 	dstate_addcmd("load.on");
+
+Don't forget to define the implementation for such commands in a common
+method, and register that your driver has an instant command handler at
+all -- with a line in `upsdrv_initinfo()` like:
+
+	upsh.instcmd = blazer_instcmd;
 
 Delays and ser_* functions
 --------------------------

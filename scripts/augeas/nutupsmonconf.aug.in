@@ -4,6 +4,7 @@ Module: NutUpsmonConf
 
 Author: Raphael Pinson <raphink@gmail.com>
         Frederic Bohe  <fredericbohe@eaton.com>
+        Jim Klimov     <jimklimov+nut@gmail.com>
 
 About: License
   This file is licensed under the GPL.
@@ -31,6 +32,9 @@ let del_spc  = Util.del_opt_ws ""
 let sep_spc  = Util.del_ws_spc
 let eol      = Util.eol
 let num      = /[0-9]+/
+let num_signed = /[+-]?[0-9]+/
+let bool      = /([01]|yes|no|true|false|on|off|ok)/
+let num_bool  = /([0-9]+|yes|no|true|false|on|off|ok)/
 let word     = /[^"#; \t\n]+/
 let empty    = Util.empty
 let comment  = Util.comment
@@ -42,6 +46,8 @@ let quoted_string = del "\"" "\"" . store /[^"\n]+/ . del "\"" "\""
  * There might be a cleaner way to write this
  *  but I'm stuck with (hostname | hostname . port)?
  *)
+(* Disregard named ports, we use numbers *)
+let hostspec   = /([^ \t\n:]+|[^ \t\n:]+:[0-9]+)/
 let hostname   = [ label "hostname" . store /[^ \t\n:]+/ ]
 let port       = [ label "port"     . store num ]
 let identifier = [ label "upsname" . store /[^ \t\n@]+/ ]
@@ -59,27 +65,48 @@ let upsmon_num_re = "DEADTIME"
                   | "POLLFREQALERT"
                   | "RBWARNTIME"
 
+let upsmon_num_signed_re = "DEBUG_MIN"
+                  | "POLLFAIL_LOG_THROTTLE_MAX"
+                  | "OFFDURATION"
+                  | "OBLBDURATION"
+
+let upsmon_num_bool_re = "SHUTDOWNEXIT"
+
+let upsmon_bool_re = "CERTVERIFY"
+                  | "FORCESSL"
+
 let upsmon_num    = [ del_spc . key upsmon_num_re . sep_spc . store num . eol ]
+
+let upsmon_num_signed    = [ del_spc . key upsmon_num_signed_re . sep_spc . store num_signed . eol ]
+
+let upsmon_num_bool      = [ del_spc . key upsmon_num_bool_re . sep_spc . store num_bool . eol ]
+
+let upsmon_bool          = [ del_spc . key upsmon_bool_re . sep_spc . store bool . eol ]
 
 let upsmon_word   = [ del_spc . key "RUN_AS_USER" . sep_spc . store word . eol ]
 
 let upsmon_file_re = "NOTIFYCMD"
                   | "POWERDOWNFLAG"
                   | "SHUTDOWNCMD"
+                  | "CERTFILE"
+                  | "CERTPATH"
 
 let sto_to_eol = IniFile.sto_to_eol
-(* here we should support both quoted and not quotted
+(* here we should support both quoted and not quoted
  * string but I can't manage to find the right way of doing this
  *)
 let upsmon_file   = [ del_spc . key upsmon_file_re . sto_to_eol . eol ]
 
 (* MONITOR system powervalue username password type *)
+let upsmon_monitor_type_re     = /(master|primary|slave|secondary)/
+
+(* TOTHINK: What if we have spaces? Is "word" good? *)
 let upsmon_monitor = [ del_spc . key "MONITOR" . sep_spc
                          . [ label "system"     . identifier ] . sep_spc
                          . [ label "powervalue" . store num  ] . sep_spc
                          . [ label "username"   . store word ] . sep_spc
                          . [ label "password"   . store word ] . sep_spc
-                         . [ label "type"       . store word ] . eol  ]
+                         . [ label "type"       . store upsmon_monitor_type_re ] . eol  ]
 
 let upsmon_notify_type = "ONLINE"
 			| "ONBATT"
@@ -91,12 +118,32 @@ let upsmon_notify_type = "ONLINE"
 			| "REPLBATT"
 			| "NOCOMM"
 			| "NOPARENT"
+			| "CAL"
+			| "NOTCAL"
+			| "OFF"
+			| "NOTOFF"
+			| "BYPASS"
+			| "NOTBYPASS"
+			| "ECO"
+			| "NOTECO"
+			| "ALARM"
+			| "NOTALARM"
+			| "OVER"
+			| "NOTOVER"
+			| "TRIM"
+			| "NOTTRIM"
+			| "BOOST"
+			| "NOTBOOST"
+			| "OTHER"
+			| "NOTOTHER"
+			| "SUSPEND_STARTING"
+			| "SUSPEND_FINISHED"
 
 let upsmon_notify = [ del_spc . key "NOTIFYMSG" . sep_spc
                          . [ label "type" . store upsmon_notify_type . sep_spc ]
                          . [ label "message" . quoted_string ] . eol ]
 
- let flags = "IGNORE"
+let flags = "IGNORE"
 		| "SYSLOG"
 		| "WALL"
 		| "EXEC"
@@ -112,7 +159,23 @@ let upsmon_notify_flag = [ counter "record"
 			. [ label "type" . store upsmon_notify_type . sep_spc ]
 			. record+ . eol ]
 
-let upsmon_record = upsmon_num|upsmon_word|upsmon_file|upsmon_monitor|upsmon_notify|upsmon_notify_flag
+(* TOTHINK: What if we have spaces? Is "word" good? *)
+let certname = word
+let dbpass   = word
+let upsmon_certident = [ del_spc . key "CERTIDENT" . sep_spc
+                          . [ label "certname" . store certname ]
+                          . [ sep_spc . label "dbpass" . store dbpass ] . eol ]
+
+(* we can have an array of these *)
+let upsmon_certhost = [ del_spc . key "CERTHOST" . sep_spc
+                          . [ label "hostspec" . store hostspec ]
+                          . [ sep_spc . label "certname" . store certname ]
+                          . [ sep_spc . label "certverify" . store num_bool ]
+                          . [ sep_spc . label "forcessl" . store num_bool ] . eol ]
+
+let upsmon_certhost_list = upsmon_certhost . eol
+
+let upsmon_record = upsmon_num|upsmon_num_signed|upsmon_num_bool|upsmon_bool|upsmon_word|upsmon_file|upsmon_monitor|upsmon_notify|upsmon_notify_flag|upsmon_certident|upsmon_certhost_list
 
 let upsmon_lns    = (upsmon_record|comment|empty)*
 

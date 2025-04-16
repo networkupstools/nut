@@ -23,6 +23,7 @@
 #define NUT_UPSTYPE_H_SEEN 1
 
 #include "parseconf.h"
+#include "common.h"
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -33,10 +34,13 @@ extern "C" {
 /* structure for the linked list of each UPS that we track */
 typedef struct upstype_s {
 	char			*name;
-	char			*fn;
+	char			*fn;	/* base filename of UPS socket (or part of pipe name in WIN32) as "drivername-upsname" */
 	char			*desc;
-
-	int			sock_fd;
+	TYPE_FD			sock_fd;
+#ifdef WIN32
+	char 			buf[SMALLBUF];
+	OVERLAPPED		read_overlapped;
+#endif	/* WIN32 */
 	int			stale;
 	int			dumpdone;
 	int			data_ok;

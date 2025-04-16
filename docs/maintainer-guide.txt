@@ -1,10 +1,14 @@
 NUT Maintainer Guide
 ____________________
-:Author: Arnaud_Quette
-:Author Initials: AQ
+:Author: Arnaud_Quette_and_Jim_Klimov
+:Author Initials: AQ & JK
 
 Introduction
 ============
+
+//////////////////////////////////////////////////////////////////////////////
+NOTE: This file is currently not delivered in tarballs nor spellchecked.
+//////////////////////////////////////////////////////////////////////////////
 
 ...
 
@@ -43,7 +47,7 @@ These are the general rules that apply to mailing list moderation:
     to store the file(s).
 
 - other (ie report or request requiring more than 1 mail): REJECT with a
-message explaining the reason. The following can serve as a base:
+  message explaining the reason. The following can serve as a base:
 
 	Dear XXX,
 	Your message to the nut-upsXXX mailing was rejected because you must
@@ -66,27 +70,216 @@ Release process
 
 New process:
 - we will only work on the trunk for the day to day bugfixing and
-standard modifications (what was mostly happening in Testing
-currently),
+  standard modifications (what was mostly happening in Testing
+  currently),
 - the trunk will be used to generate the testing releases (only using
-the tags, after a small freeze period),
+  the tags, after a small freeze period),
 - bigger changes, invasive modifications and cutting edge developments
-will have to be addressed in separate branches, until stabilization.
-When things are ok and validated to enter the trunk, merging these
-branches into the trunk can happen.
+  will have to be addressed in separate branches, until stabilization.
+  When things are ok and validated to enter the trunk, merging these
+  branches into the trunk can happen.
+
 I insist on the *validation* to enter the trunk, since some changes
 might have to wait for major releases, to match our current release
 process.
 
-SANDBOX (to be completed and pushed)
+MAINTAINER SANDBOX (to be completed and pushed)
 
-* update version to <incremented version> (ex: 2.7.3) in nut/configure.ac
-* create a GPG-signed tag v<incremented version> (ex: v2.7.3)
-* `make dist`
-* maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.7.3.1)
+* be sure to proceed with the below steps on a system provisioned with all
+  possible build prerequisites for NUT, especially regarding documentation
+  and nut-website building and checking, and with maintainer GPG keys in
+  the chain
+
+NOTE: DO NOT RUSH to issue the release right away. There are always some
+last-minute discoveries and days/weeks of delays before a perfect release
+does ultimately happen. Use `vX.Y.Z-rcN` tags until completely certain that
+a release is final (perhaps by tagging the last RC with `vX.Y.Z` later).
+Note that some third-party tools like PyPI repo do not permit replacing
+artifacts associated with a particular release version/tag, and changing
+Git tags on public repositories is generally considered as a bad practice.
+So best to avoid it in the first place.
+
+* clean up "in-development" bits from files (which we would revert after
+  release), e.g.:
+** TODO etc. referring planned future in the `NEWS.adoc` and `UPDATING.adoc`
+   files - except for the upcoming release
+** DO NOT yet remove "PLANNED:" from the new release section title
+** comment away the top-most (auto-resolved) NUT version and build date
+   in `docs/docinfo.xml.in` -- DO NOT add (or at least commit) an entry
+   for the actual fixed release version and date just yet
+** NOTE: The `docs/docinfo.xml.sh` script can help update the list for
+   existing git tags, if some were skipped before. This can be used to
+   cheat a bit about adding the new entry (with a draft tag).
+** commit this change (to add a revert-commit after the release tag), e.g.:
++
+----
+:; git commit -sm 'NEWS.adoc, UPGRADING.adoc, docs/docinfo.xml.in: finalize text before NUT v2.8.0 release'
+----
+
+* revise the lists of symbols exported by shared libraries delivered by NUT:
+  some changes may be seen right in the respective `Makefile.am`, but since
+  we use regular expressions, the set of method names may change between
+  releases implicitly. Use `nm` or similar tools to review symbols exposed
+  on an older build and the newer ones. For version bump algorithm consult
+  https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+  (since we are likely to change common source code between releases, the
+  "revision" is likely to increment always, to reflect that the library was
+  rebuilt from different sources -- unless we bump "current" instead and
+  reset "revision" to 0 due to new symbols).
++
+TODO: Maintain proper library scripts (maybe in Git) with exact lists of
+symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
+
+* revise the contents of `NEWS.adoc` and `UPDATING.adoc` files; verify that
+  any recent changes to drivers (including `main.c` and other major impact
+  from common code) and sub-drivers (`*-hid.c` for `usbhid-ups`, `*-mib.c`
+  for `snmp-ups`, `nutdrv_qx_*` etc.) have been reflected in bumps to their
+  `DRIVER_VERSION` or equivalent macros
+** ideally maintained during development, as features are getting merged for
+   community testing and future development baseline in the master branch
+** this is the good time to remove the `PLANNED` status from the upcoming
+   release info section title and commit it separately, e.g.:
++
+----
+:; git commit -sm 'NEWS.adoc: remove "PLANNED" from section title before NUT v2.8.0 release'
+----
+* NOTE that the `ChangeLog` file is currently not tracked in SCM
+* update this document: `docs/maintainer-guide.txt` as it inevitably requires
+* commit these finishing touches
+
+* add an entry in `docs/docinfo.xml.in` for the actual fixed release version
+   and date, focusing on what was changed since last release documentation-wise;
++
+----
+:; git commit -sm 'docs/docinfo.xml.in: add docs increment summary for NUT v2.8.0 release'
+----
+
+* bump the release identification (consider committing as one commit later on):
+** see `docs/nut-versioning.adoc` for details about NUT SEMVER spec and practice
+** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
+   <exact incremented version> (ex: `2.8.0`), and provide the `VERSION_FORCED`
+   and `VERSION_FORCED_SEMVER` files (to same effect but more explicitly and
+   visibly) in the local workspace to be added to the `dist` archive tarball
+   file (DO NOT add them to git to avoid confusion later, or revert any such
+   addition after the release -- still has a chance to confuse e.g. branches
+   made from release tag later):
++
+----
+# Generally may be the nuanced NUT SEMVER; is a triplet for releases
+:; echo 'NUT_VERSION_FORCED="2.8.3"' > VERSION_FORCED
+
+# Should always be a triplet
+:; echo 'NUT_VERSION_FORCED_SEMVER="2.8.3"' > VERSION_FORCED_SEMVER
+----
+*** Note that since NUT v2.8.3 this script dictates the version propagated by
+    the `configure` script, so direct changes of `AC_INIT` there are no longer
+    needed
+** revise `.github/workflows/PyNUTClient.yml` for fallback `TAG_NAME` naming
+** revise `appveyor.yml` for branch naming
+** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
+** commit with a relevant release message, e.g.:
++
+----
+:; git commit -sm 'Update versions for release of NUT v2.8.0'
+----
+
+* last-minute update against possible master-branch changes (and be sure to
+  apply the release-version changes described above to your local copy of
+  the `master` branch, even if originally staged in another):
++
+----
+:; git fetch --all && git rebase upstream/master -i --autosquash
+----
+* run the last-minute build to be sure the release is sane (no typos in any
+  recently changed document files, etc.) with `./ci_build.sh` or full ritual:
++
+----
+:; rm -f Makefile configure
+:; ./autogen.sh && \
+   ./configure --with-all --with-dev --with-doc --enable-spellcheck \
+      --enable-warnings --enable-Werror --enable-maintainer-mode && \
+   make -j 8 all && \
+   make -j 8 spellcheck && \
+   make -j 8 distcheck
+----
+* create an annotated GPG-signed tag v<incremented version> (ex: `v2.8.0`):
++
+----
+:; git tag -asm 'Release NUT v2.8.0' v2.8.0
+----
+** in case of second thoughts, `git tag -d v2.8.0` and retry later
+** try to avoid adding signed tags later (ex. v2.8.0-signed) to avoid the
+   mess in GitHub release URLs (or do amend that post-factum), for more
+   details see e.g. https://github.com/networkupstools/nut/issues/1971
+* don't forget to push not only the code, but also the tag:
++
+----
+:; git push upstream && git push --tags upstream
+----
+
+* `make dist-files` (especially if you did not `make distcheck` above,
+  or had some changes since then) to store the source tarball, checksum
+  and signature files
+
+* post-release update of the "in-development" codebase:
+** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
+   <incremented version>.1 (ex: `2.8.0.1`); remove the `VERSION_FORCED`
+   and `VERSION_FORCED_SEMVER` files
+** `git revert` the commit which cleaned up "in-development" bits above
+** Possibly resolve relevant merge conflicts for the changed context,
+   e.g. the changed "PLANNED" status of the now-issued release info
+
 * push commits and tag
-* update nut/ and ddl/ submodules in nut-website/ (this should update the website's version as well)
-* add download hashes for tarball
 
+* Update `nut-website`:
+** rendering should auto-update by NUT CI farm based on source changes,
+   but in case of urgency -- can be expedited with a prepared workstation
+   (see README of that project) or from the NUT CI farm agent directly
+** add an entry to `news.txt`
+** update `nut` and `ddl` submodules in nut-website/ to refer to latest info
+   as of current release (this should update the website's version as well).
+   NOTE: for `nut` submodule be sure to refer to the tagged commit, not to
+   the subsequent "in-development" codebase.
+** in `source` submodule add a copy of tarball, checksum and hash files for
+   download: `make dist{,-hash,-sig}` (or since NUT v2.8.3, `make dist-files`)
+*** for a `new-X.Y.Z.txt` file use the `NEWS.adoc` with a stripped title
+    (see existing files)
+** `git tag` the website release
+** generate and publish a "historic" sub-site snapshot (currently manually,
+   check comments in nut-website's `ci_build.sh` script and/or its README file)
+** update `nut` submodule to current commit ("in-development" codebase), and
+   the `historic/index.txt` to refer to the snapshot for reference (users of
+   specific-version packages)
+** generate and publish the usual website revision (by CI or manually)
+** Note that it may be needed to manually copy the new tarball-related files,
+   `new-X.Y.Z.txt`, change log, and maintainer keys (if updated), into the
+   rendered website repository, even if using the CI scripted publication.
+
+* check that the website renders properly (a few minutes after publication)
+** re-check the tarball signature according to current `security.txt` document
+   on an empty VM/container/chroot/user-home setup, to make sure that the GPG
+   instructions fit the reality (needed maintainer keys are published, etc.)
+
+* draft and publish a GitHub release based on the signed tag
+** attach the same copy of tarball, checksum and hash files as for nut-website
+
+* Make sure that the PyNUT module for the tagged release got published to
+  the main PyPI repository, as a build associated with the NUT release
+  version. This *should* be ensured by the GitHub actions, but the curent
+  workflow definition uses both `paths` and `branches`/`tags` triggers and
+  this may cause a release to be skipped if the PyNUT sources did not change.
+  The `scripts/python/module/Makefile.am` recipes automate the needed actions
+  to happen from a prepared maintainer's operating environment.
+
+* announce on mailing list, IRC, etc.
+
+* update https://en.wikipedia.org/wiki/Network_UPS_Tools
+
+* create a GitHub issue label for the new release, e.g. at
+  https://github.com/networkupstools/nut/labels?q=impact :
+----
+impacts-release-2.8.0
+Issues reported against NUT release 2.8.0 (maybe vanilla or with minor packaging tweaks)
+----
 
 //////////////////////////////////////////////////////////////////////////////

@@ -9,9 +9,11 @@ upscli_fd - Get file descriptor for connection
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_fd(UPSCONN_t *ups);
+	int upscli_fd(UPSCONN_t *ups);
+------
 
 DESCRIPTION
 -----------
@@ -29,7 +31,7 @@ RETURN VALUE
 The *upscli_fd()* function returns the file descriptor, which
 may be any non-negative number.
 
-It returns -1 if an error occurs.
+It returns '-1' if an error occurs.
 
 SEE ALSO
 --------

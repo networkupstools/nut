@@ -76,6 +76,8 @@
  *
  */
 
+#include "config.h" /* should be first */
+
 #include "common.h"
 
 #include <ctype.h>
@@ -182,7 +184,7 @@ static void addchar(PCONF_CTX_t *ctx)
 	/* CVE-2012-2944: only allow the subset of ASCII charset from Space to ~ */
 	if ((ctx->ch < 0x20) || (ctx->ch > 0x7f)) {
 		fprintf(stderr, "addchar: discarding invalid character (0x%02x)!\n",
-				ctx->ch);
+				(unsigned int)ctx->ch);
 		return;
 	}
 
@@ -452,7 +454,7 @@ int pconf_file_begin(PCONF_CTX_t *ctx, const char *fn)
 	}
 
 	/* prevent fd leaking to child processes */
-	fcntl(fileno(ctx->f), F_SETFD, FD_CLOEXEC);
+	set_close_on_exec(fileno(ctx->f));
 
 	return 1;	/* OK */
 }
@@ -482,6 +484,9 @@ static void parse_char(PCONF_CTX_t *ctx)
 
 		case STATE_COLLECTLITERAL:
 			ctx->state = collectliteral(ctx);
+			break;
+
+		default:
 			break;
 	}	/* switch */
 }

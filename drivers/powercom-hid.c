@@ -4,6 +4,7 @@
  *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +26,7 @@
 #include "powercom-hid.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.6"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.71"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -52,6 +53,14 @@ static usb_device_id_t powercom_usb_device_table[] = {
 };
 
 static char powercom_scratch_buf[32];
+
+/* Original subdriver code until version 0.7 sent shutdown commands
+ * in a wrong byte order than is needed by devices seen in the field
+ * in 2024. Just in case there are different firmwares, we provide
+ * a toggle to use old behavior. Maybe it was just a bug and nobody
+ * needs this fall-back...
+ */
+static char powercom_sdcmd_byte_order_fallback = 0;
 
 static const char *powercom_startup_fun(double value)
 {
@@ -92,7 +101,14 @@ static const char *powercom_shutdown_fun(double value)
 {
 	uint16_t	i = value;
 
-	snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * (i & 0x00FF) + (i >> 8));
+	if (powercom_sdcmd_byte_order_fallback) {
+		/* Legacy behavior */
+		snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * (i & 0x00FF) + (i >> 8));
+	} else {
+		/* New default */
+		snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * (i >> 8) + (i & 0x00FF));
+	}
+
 	upsdebugx(3, "%s: value = %.0f, buf = %s", __func__, value, powercom_scratch_buf);
 
 	return powercom_scratch_buf;
@@ -112,8 +128,16 @@ static double powercom_shutdown_nuf(const char *value)
 
 	val = (uint16_t)iv;
 	val = val ? val : 1;    /* 0 sets the maximum delay */
-	command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
-	command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
+	if (powercom_sdcmd_byte_order_fallback) {
+		/* Legacy behavior */
+		command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
+		command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
+	} else {
+		/* New default */
+		command = ((uint16_t)((val / 60) << 8)) + (uint16_t)(val % 60);
+		command |= 0x0040;	/* AC RESTART NORMAL ENABLE */
+	}
+
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
 
 	return command;
@@ -137,8 +161,16 @@ static double powercom_stayoff_nuf(const char *value)
 
 	val = (uint16_t)iv;
 	val = val ? val : 1;    /* 0 sets the maximum delay */
-	command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
-	command |= 0x8000;	/* AC RESTART NORMAL DISABLE */
+	if (powercom_sdcmd_byte_order_fallback) {
+		/* Legacy behavior */
+		command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
+		command |= 0x8000;	/* AC RESTART NORMAL DISABLE */
+	} else {
+		/* New default */
+		command = ((uint16_t)((val / 60) << 8)) + (uint16_t)(val % 60);
+		command |= 0x0080;	/* AC RESTART NORMAL DISABLE */
+	}
+
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
 
 	return command;
@@ -370,21 +402,25 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", 0, NULL },
 	{ "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
-	{ "battery.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
+	{ "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
 	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
-/*	{ "unmapped.ups.battery.delaybeforestartup", 0, 0, "UPS.Battery.DelayBeforeStartup", NULL, "%.0f", 0, NULL }, */
-/*	{ "unmapped.ups.battery.initialized", 0, 0, "UPS.Battery.Initialized", NULL, "%.0f", 0, NULL }, */
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "unmapped.ups.battery.delaybeforestartup", 0, 0, "UPS.Battery.DelayBeforeStartup", NULL, "%.0f", 0, NULL },
+	{ "unmapped.ups.battery.initialized", 0, 0, "UPS.Battery.Initialized", NULL, "%.0f", 0, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, powercom_beeper_info },
 	{ "ups.beeper.status", 0, 0, "UPS.AudibleAlarmControl", NULL, "%s", 0, powercom_beeper_info },
 	{ "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
 	{ "ups.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
 	{ "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", 0, test_read_info },
-/*	{ "unmapped.ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
-/*	{ "unmapped.ups.powersummary.iproduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
-/*	{ "unmapped.ups.powersummary.iserialnumber", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
-/*	{ "unmapped.ups.iname", 0, 0, "UPS.iName", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
-/*	{ "unmapped.ups.powersummary.ioeminformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "unmapped.ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	{ "unmapped.ups.powersummary.iproduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	{ "unmapped.ups.powersummary.iserialnumber", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	{ "unmapped.ups.iname", 0, 0, "UPS.iName", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	{ "unmapped.ups.powersummary.ioeminformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 /* The implementation of the HID path UPS.PowerSummary.DelayBeforeStartup is unconventional:
  * Read:
@@ -422,10 +458,12 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.1f", 0, NULL },
 
-/*	{ "unmapped.ups.powercom1", 0, 0, "UPS.POWERCOM1", NULL, "%.0f", 0, NULL }, broken pipe */
-/*	{ "unmapped.ups.powercom2", 0, 0, "UPS.POWERCOM2", NULL, "%.0f", 0, NULL }, broken pipe */
-/* 	{ "unmapped.ups.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL }, */
-/*	{ "unmapped.ups.shutdownimminent", 0, 0, "UPS.ShutdownImminent", NULL, "%.0f", 0, NULL }, */
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "unmapped.ups.powercom1", 0, 0, "UPS.POWERCOM1", NULL, "%.0f", 0, NULL }, /* broken pipe */
+	{ "unmapped.ups.powercom2", 0, 0, "UPS.POWERCOM2", NULL, "%.0f", 0, NULL }, /* broken pipe */
+	{ "unmapped.ups.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL },
+	{ "unmapped.ups.shutdownimminent", 0, 0, "UPS.ShutdownImminent", NULL, "%.0f", 0, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* instcmds */
 	{ "beeper.toggle", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
@@ -442,12 +480,16 @@ static hid_info_t powercom_hid2nut[] = {
 
 	{ "ups.serial", 0, 0, "PowercomUPS.PowercomSerialNumber", NULL, "%s", 0, stringid_conversion },
 	{ "ups.mfr", 0, 0, "PowercomUPS.PowercomManufacturerName", NULL, "%s", 0, stringid_conversion },
-/*	{ "UPS.DesignCapacity", 0, 0, "PowercomUPS.PowercomDesignCapacity", NULL, "%.0f", 0, NULL }, is always 255 */
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "UPS.DesignCapacity", 0, 0, "PowercomUPS.PowercomDesignCapacity", NULL, "%.0f", 0, NULL }, /* is always 255 */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 	{ "ups.mfr.date", 0, 0, "PowercomUPS.PowercomManufacturerDate", NULL, "%s", 0, date_conversion },
 	{ "battery.temperature", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomTemperature", NULL, "%.0f", 0, NULL },
 	{ "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", 0, NULL },	
 	{ "battery.charge", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomVoltage", NULL, "%.0f", 0, NULL },
-/*	{ "UPS.BatterySystem.SpecificationInfo", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomSpecificationInfo", NULL, "%.0f", 0, NULL }, */
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "UPS.BatterySystem.SpecificationInfo", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomSpecificationInfo", NULL, "%.0f", 0, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 	{ "input.frequency", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomFrequency", NULL, "%.0f", 0, NULL },
 	{ "input.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
 	{ "output.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
@@ -462,7 +504,9 @@ static hid_info_t powercom_hid2nut[] = {
 	 * bit 6  Disable NO LOAD SHUTDOWN (1 = ACTIVE)
 	 * bit 7  0
 	 */
-/*	{ "UPS.PowerConverter.Output.InternalChargeController", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, "%.0f", 0, NULL }, */
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "UPS.PowerConverter.Output.InternalChargeController", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, "%.0f", 0, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_upsfail_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_replacebatt_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_test_conversion },
@@ -477,7 +521,9 @@ static hid_info_t powercom_hid2nut[] = {
 	 * bit 6  X
 	 * bit 7  SD mode display
 	 */
-/*	{ "UPS.PowerConverter.Output.PrimaryBatterySupport", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, "%.0f", 0, NULL }, */
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "UPS.PowerConverter.Output.PrimaryBatterySupport", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, "%.0f", 0, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_online_conversion },
 	/* Low battery status may not work */
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_lowbatt_conversion },
@@ -486,7 +532,9 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_overload_conversion },
 	{ "output.frequency", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomFrequency", NULL, "%.0f", 0, NULL },
 	{ "ups.test.result", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomTest", NULL, "%s", 0, test_read_info },
-/*	{ "UPS.PowerConverter.ShutdownRequested", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomShutdownRequested", NULL, "%.0f", 0, NULL }, */
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "UPS.PowerConverter.ShutdownRequested", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomShutdownRequested", NULL, "%.0f", 0, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 	{ "ups.delay.shutdown", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomDelayBeforeShutdown", NULL, "%.0f", 0, NULL },
 	{ "ups.delay.start", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomDelayBeforeStartup", NULL, "%.0f", 0, NULL },
 	{ "load.off", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomDelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
@@ -524,8 +572,9 @@ static int powercom_claim(HIDDevice_t *hd)
 		}
 		/* by default, reject, unless the productid option is given */
 		if (getval("productid")) {
-			return 1;
+			goto accept;
 		}
+		/* report and reject */
 		possibly_supported("PowerCOM", hd);
 		return 0;
 
@@ -534,12 +583,17 @@ static int powercom_claim(HIDDevice_t *hd)
 			interrupt_only = 1;
 			interrupt_size = 8;
 		}
-		return 1;
+		goto accept;
 
 	case NOT_SUPPORTED:
 	default:
 		return 0;
 	}
+
+accept:
+	powercom_sdcmd_byte_order_fallback = testvar("powercom_sdcmd_byte_order_fallback");
+
+	return 1;
 }
 
 subdriver_t powercom_subdriver = {

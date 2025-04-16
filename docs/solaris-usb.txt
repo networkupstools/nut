@@ -229,3 +229,185 @@ with code which was successfully used when developing this documentation:
 Binaries from builds made in OpenIndiana using the recipe from
 https://github.com/OpenIndiana/oi-userland/pull/5382[PR #5382]
 above were successfully directly used on contemporary OmniOS CE as well.
+
+Troubleshooting and reconnecting
+--------------------------------
+
+So... your setup worked nicely, and then one day you see the console flooded
+with messages like the following:
+
+    Broadcast Message from nut (???) on n54l Mon May  9 12:05:59...
+    Communications with UPS innotech@localhost lost
+
+    Broadcast Message from nut (???) on n54l Mon May  9 12:10:55...
+    UPS innotech@localhost is unavailable
+
+Unfortunately, some devices "get stuck" on USB level (whether in the chips,
+in the OS driver layer, libusb or NUT driver) and their NUT drivers have
+to be restarted to regain monitoring, as opposed to intermittent losses
+of connectivity that software recovers from automatically.
+
+As in all systems, you should stop all programs using the connection,
+including NUT driver instances that might have been started beside the
+wrapping service (SMF). It may be possible to just start the new driver
+instance at this point, but if it still does not see the device -- you
+have to re-initialize the connection on the OS level.
+
+As a symptom, attempts to start the NUT driver with elevated debug verbosity
+would not even see the device details:
+----
+   0.000606     [D1] Saving PID 5187 into /var/run/nut/nutdrv_qx-innotech.pid
+   0.000727     [D1] upsdrv_initups...
+   0.012065     [D2] Checking device 1 of 2 (0665/5161)
+   0.012303     [D1] Failed to open device (0665/5161), skipping: Other error
+   0.012394     [D2] Checking device 2 of 2 (099A/610A)
+...
+   0.020364     [D2] Trying to match device
+   0.020586     [D3] match_function_regex: matching a device...
+   0.020839     [D2] match_function_regex: failed match of VendorID:  99a
+   0.021061     [D2] Device does not match - skipping
+   0.021371     [D2] libusb1: No appropriate HID device found
+Network UPS Tools - Generic Q* USB/Serial driver 0.32 (2.8.0-20-g535395363)
+USB communication driver (libusb 1.0) 0.43
+   0.021720     libusb1: Could not open any HID devices: insufficient permissions on everything
+   0.021821     No supported devices found. Please check your device availability with 'lsusb'
+and make sure you have an up-to-date version of NUT. If this does not help,
+try running the driver with at least 'subdriver', 'vendorid' and 'productid'
+options specified. Please refer to the man page for details about these options
+(man 8 nutdrv_qx).
+
+Driver failed to start (exit status=1)
+Network UPS Tools - UPS driver controller 2.8.0-20-g535395363
+[ May  9 03:10:01 Method "start" exited with status 1. ]
+----
+
+NOTE: Details of the service instance life-cycle for the NUT driver may be
+seen in its SMF log, e.g. by `less /var/svc/log/*innotech*log`, and to see
+in-vivo debugs as the service starts in production mode, use `debug_min = 3`
+in the `/etc/nut/ups.conf` file (in global context or in driver section).
+
+Recycle the USB connection
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In case of Solaris/illumos systems, first stop the respective nut-driver
+instance, e.g.:
+
+----
+:; svcadm disable -ts nut-driver:innotech
+
+:; ps -ef | grep -Ei 'nut|ups' ; svcs -p innotech
+    root 10522     1   0   May 06 ?           0:00 /usr/sbin/upsmon
+    root 16927     1   0   Feb 25 ?           1:20 /usr/lib/nut/bin/nutdrv_qx -a innotech
+     nut 10257     1   0   May 06 ?           0:39 /usr/sbin/upsd
+    root 16985 15379   0 11:27:36 pts/1       0:00 grep -Ei nut|ups
+     nut 10524 10522   0   May 06 ?           0:25 /usr/sbin/upsmon
+STATE          STIME    FMRI
+offline         11:26:49 svc:/system/power/nut-driver:innotech
+
+# In the ps listing above, a driver daemon is seen that was started as
+# the root user beside the actual service. It has to be stopped too:
+:; kill -9 16927
+----
+
+To unconfigure and disconnect the USB link on the OS level, you will
+need its attachment point identifier. If you don't know your system's
+current layout (it can change with device re-enumeration due to hot
+plugging and/or reboots), you can execute `cfgadm -lv`, look for
+the "Information" field resembling your UPS brand, and make note of
+its "Ap_Id". You can also query a single device to confirm a guess
+or your earlier records:
+----
+:; cfgadm -lv usb10/1
+
+Ap_Id                          Receptacle   Occupant     Condition
+Information
+When         Type         Busy     Phys_Id
+
+usb10/1                        connected    configured   ok
+Mfg: INNO TECH  Product: USB to Serial  NConfigs: 1  Config: 0  : 20100826
+unavailable  usb-input    n        /devices/pci@0,0/pci103c,1609@13:1
+----
+
+Disconnect the device; note that if something (typically a program with
+an open connection) still has a hold on the device, the system would
+fail to complete the command:
+----
+:; cfgadm -c disconnect usb10/1
+
+Disconnect the device: /devices/pci@0,0/pci103c,1609@13:1
+This operation will suspend activity on the USB device
+Continue (yes/no)? yes
+cfgadm: Hardware specific failure: Cannot issue devctl
+  to ap_id: /devices/pci@0,0/pci103c,1609@13:1
+----
+
+If that is the case, run `ps` per above and make sure all NUT driver
+daemons are stopped (the data server `upsd` and client upsmon should
+be inconsequential in this regard).
+
+Normally, the reconnection should work like this:
+----
+:; cfgadm -c unconfigure usb10/1
+Unconfigure the device: /devices/pci@0,0/pci103c,1609@13:1
+This operation will suspend activity on the USB device
+Continue (yes/no)? yes
+
+:; cfgadm -c disconnect usb10/1
+Disconnect the device: /devices/pci@0,0/pci103c,1609@13:1
+This operation will suspend activity on the USB device
+Continue (yes/no)? yes
+
+:; cfgadm -lv usb10/1
+Ap_Id                          Receptacle   Occupant     Condition  Information
+When         Type         Busy     Phys_Id
+
+usb10/1                        disconnected unconfigured ok
+unavailable  unknown      n        /devices/pci@0,0/pci103c,1609@13:1
+
+:; cfgadm -c configure usb10/1
+cfgadm: Hardware specific failure: Cannot issue devctl
+  to ap_id: /devices/pci@0,0/pci103c,1609@13:1
+
+# Despite the error above, the device is seen now:
+:; cfgadm -lv usb10/1         
+Ap_Id                          Receptacle   Occupant     Condition  
+Information
+When         Type         Busy     Phys_Id
+
+usb10/1                        connected    configured   ok         
+Mfg: INNO TECH  Product: USB to Serial  NConfigs: 1  Config: 0  : 20100826
+unavailable  usb-input    n        /devices/pci@0,0/pci103c,1609@13:1
+
+# ... and the driver can start:
+:; svcadm enable innotech
+----
+
+When everything gets recovered, you should see it:
+
+    Broadcast Message from nut (???) on n54l Mon May  9 12:12:30...
+    Communications with UPS innotech@localhost established
+
+and `upsc innotech@localhost` would tell you what it sees :)
+
+Regular auto-recovery via crontab
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Additional tricks that can help involve `crontab` for regular automated
+checks if the device got lost. One is just an attempt to "clear" the
+service if its earlier startup failed (repetitively) so SMF gave up:
+
+----
+* * * * * svcadm clear innotech 2>&1 | grep -v 'is not in a maintenance'
+----
+
+Another is more complicated and involves some custom scripting:
+
+----
+0,5,10,15,20,25,30,35,40,45,50,55 * * * * MODE=optional /etc/nut/reset-ups-usb-solaris.sh
+----
+
+...where the script would be a copy (customized to your device(s) and
+connection points!) of `reset-ups-usb-solaris.sh.sample` from either
+`scripts/Solaris/` directory in the NUT sources, or a copy which may be
+available in your system, e.g. under the `/usr/share/nut/solaris-init/`
+data directory.

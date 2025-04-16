@@ -4,7 +4,7 @@ UPSSTATS.HTML(5)
 NAME
 ----
 
-upsstats.html - HTML template for Network UPS Tools upsstats
+upsstats.html - HTML template for web-based Network UPS Tools upsstats
 
 DESCRIPTION
 -----------
@@ -17,16 +17,20 @@ FORMATTING
 ----------
 
 Commands can be placed anywhere on a line, but must start and end with `@`.
+
 Any extra characters before or after the commands will be passed through
-unchanged.  It is allowed to use more than one command on a single line,
-as long as each command has its own start and end character.  If you need
-to use the `@` sign, use &#64; to prevent it from being treated as a start
-character.
+unchanged.
+
+It is allowed to use more than one command on a single line, as long as
+each command has its own start and end character.
+
+If you need to use the `@` sign, use HTML entity ++\&#64;++ to prevent it
+from being treated as a start character.
 
 BLOCK CONTROL
 -------------
 
-Some commands begin blocks - sections of the template that will be
+Some commands begin blocks -- sections of the template that will be
 included, excluded, or repeated depending on certain parameters.
 
 BLOCK CONTROL - ITERATION
@@ -90,8 +94,8 @@ OTHER COMMANDS
 Insert the ambient temperature in the current temperature scale.
 
 *@DATE* 'format'*@*::
-Insert the current date and time.  The format string is passed to strftime,
-so almost anything is possible.  See *strftime*(3) for possible values.
+Insert the current date and time.  The format string is passed to `strftime`,
+so almost anything is possible.  See linkmanext:strftime[3] for possible values.
 
 *@DEGREES@*::
 Insert the entity for degrees (&deg;) and either C or F depending on
@@ -111,7 +115,7 @@ current UPS.  This is only useful within a FOREACHUPS block.
 Insert an IMG SRC to linkman:upsimage.cgi[8] for one of these
 status variables:
 
-	battery.charge;; Battery charge - a percentage
+	battery.charge;; Battery charge -- a percentage
 
 	battery.voltage;; The charge on the battery in volts
 
@@ -141,13 +145,13 @@ status variables:
 
 	output.L3.power.percent;; UPS load, L3 (3phase)
 
-	ups.load;; UPS load - percentage
+	ups.load;; UPS load -- percentage
 
 	ups.temperature;; UPS temperature
 
 'extra' is where you can put additional definitions.  Right now
 the valid definitions are colors for various parts of the bars drawn
-by upsimage.cgi.  Possible color names are:
+by linkman:upsimage.cgi[8].  Possible color names are:
 
 	back_col;; background color
 
@@ -169,8 +173,8 @@ by upsimage.cgi.  Possible color names are:
 
 	bar_col;; the color of the bar in the middle
 
-All colors are hex triplets - 0xff0000 is red, 0x00ff00 is green, and
-0x0000ff is blue.
+All colors are hex triplets -- e.g. `0xff0000` is red, `0x00ff00` is green,
+and `0x0000ff` is blue.
 
 Examples:
 
@@ -184,7 +188,7 @@ has been set by the browser.  This needs to be in the HEAD section of
 the page.
 
 *@STATUS@*::
-Expand the abbreviations in the ups.status variable - OL becomes
+Expand the abbreviations in the ups.status variable -- OL becomes
 "On line", OB becomes "On battery", and so on.
 
 *@STATUSCOLOR@*::
@@ -222,8 +226,8 @@ OTHER TEMPLATES
 ---------------
 
 linkman:upsstats.cgi[8] will also open a file called `upsstats-single.html`
-if you call it with "host=" set in the URL.  That file uses the same
-rules and techniques documented here.
+if you call it with `host=` set in the query URL.  That file uses the same
+rules and techniques as documented here.
 
 SEE ALSO
 --------
@@ -233,4 +237,4 @@ linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

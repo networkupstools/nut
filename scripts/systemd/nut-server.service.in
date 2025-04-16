@@ -1,3 +1,9 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2011-2025 by NUT contributors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
 [Unit]
 Description=Network UPS Tools - power devices information server
 After=local-fs.target network.target nut-driver.target
@@ -8,8 +14,10 @@ Wants=nut-driver.target
 # The `upsd` is a networked service (even if bound to a `localhost`)
 # so it requires that the OS has some notion of networking already.
 # Extending the unit does not require *this* file to be edited, you
-# can instead drop in an additional piece of configuration, e.g. add
-# a `/etc/systemd/system/nut-server.service.d/network.conf` with:
+# can instead drop in an additional piece of configuration, e.g. to
+# require that NUT data server only starts after external networking
+# is configured (usable IP addresses appear in the system) you can
+# add a `/etc/systemd/system/nut-server.service.d/network.conf` with:
 #   [Unit]
 #   Requires=network-online.target
 #   After=network-online.target
@@ -17,13 +25,53 @@ Requires=network.target
 Before=nut-monitor.service
 PartOf=nut.target
 
+Documentation=man:upsd(@MAN_SECTION_CMD_SYS@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsd.html
+Documentation=man:ups.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+Documentation=man:upsd.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsd.conf.html
+Documentation=man:upsd.users(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsd.users.html
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
 [Service]
+# A busy server can be monitoring a lot of devices as well as replying
+# to many clients. The "infinity" definition is actually capped by OS
+# settings and hard-coded defaults; typically can be 65535+ nowadays.
+# On 64-bit distros this can well be set into hundreds of thousands
+# as well (though note each connection has a CPU and RAM overhead
+# so one can strike physical limits upon deployment and/or bring the
+# poorly sized system to a crawl, or worse). On a running system you
+# can check /proc/$MAINPID/limits for active ulimits of the process.
+# From my experiments, up to 1048576 can be set, but any larger value
+# falls back to 65536. The systemd definition of "infinity" is 65536
+# too (or maybe it falls back to that); though this may be OS/distro
+# limitation and not systemd fault specifically.
+#LimitNOFILE=infinity
+#LimitNOFILE=65535
+LimitNOFILE=1048576
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
-# Note: foreground mode by default skips writing a PID file (and
-# needs Type=simple); can use "-FF" here to create one anyway:
-ExecStart=@SBINDIR@/upsd -F
+# Note: foreground mode "-F" by default skips writing a PID file (and
+# needs default Type=simple); we can use "-FF" here to create the file
+# anyway, so that old "upsd -c reload" works rather than systemd action:
+ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
+ExecStart=@SBINDIR@/upsd @SYSTEMD_DAEMON_ARGS_UPSD@
 ExecReload=@SBINDIR@/upsd -c reload -P $MAINPID
+ExecStartPost=-/bin/grep -E 'Units|Max open files' /proc/${MAINPID}/limits
+# No tracking for PIDFile path and service attribute here (it might not
+# even exist).
+# If "-FF" or background-daemon mode is used, so that PID file exists
+# and "upsd -c stop" in particular can be used from command-line or
+# legacy scripts, it causes a clean and intentional exit of the daemon.
+# Then systemd should not revive it - hence restart it only on failure:
+Restart=on-failure
+Type=@SYSTEMD_DAEMON_TYPE_UPSD@
+@SYSTEMD_DAEMON_WATCHDOG_UPSD@
+@SYSTEMD_DAEMON_NOTIFYACCESS_UPSD@
 
 [Install]
 WantedBy=nut.target
+Alias=upsd.service

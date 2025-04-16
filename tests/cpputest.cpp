@@ -2,7 +2,7 @@
 
    Copyright (C)
 	2012	Emilien Kia <emilienkia-guest@alioth.debian.org>
-	2020	Jim Klimov <jimklimov@gmail.com>
+	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,13 +19,66 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
+
 #include <stdexcept>
+#include <cstdlib>
+
+/* Current CPPUnit offends the honor of C++98 and maybe later versions */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ZERO_AS_NULL_POINTER_CONSTANT_BESIDEFUNC)
+#pragma GCC diagnostic push
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS
+#  pragma GCC diagnostic ignored "-Wglobal-constructors"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS
+#  pragma GCC diagnostic ignored "-Wexit-time-destructors"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wsuggest-override"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wsuggest-destructor-override"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wweak-vtables"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wdeprecated-dynamic-exception-spec"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wextra-semi"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ZERO_AS_NULL_POINTER_CONSTANT_BESIDEFUNC
+/* Note: this silencer is only needed here due to test bodies */
+#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+# endif
+#endif
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
+# ifdef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#  pragma clang diagnostic push "-Wdeprecated-declarations"
+# endif
+#endif
+
 #include <cppunit/TestResult.h>
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/TextTestProgressListener.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
-#include "common.h"
+
+extern "C" {
+#include "timehead.h"
+
+/* Let tests also see this flag */
+extern bool verbose;
+}
+
+bool verbose = false;
 
 // Inspired by https://stackoverflow.com/a/66702001
 class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
@@ -39,17 +92,18 @@ class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
 //   [-Werror,-Wweak-vtables]
 void MyCustomProgressTestListener::startTest(CppUnit::Test *test) {
     //fprintf(stderr, "starting test %s\n", test->getName().c_str());
-    std::cerr << "starting test " << test->getName() << std::endl;
+    std::cerr << "starting test " << (test == nullptr ? "<null>" : test->getName()) << std::endl << std::flush;
 }
 
 int main(int argc, char* argv[])
 {
-  bool verbose = false;
   if (argc > 1) {
     if (strcmp("-v", argv[1]) == 0 || strcmp("--verbose", argv[1]) == 0 ) {
       verbose = true;
     }
   }
+
+  ::srand(static_cast<unsigned int>(::time(nullptr)));
 
   /* Get the top level suite from the registry */
   std::cerr << "D: Getting test suite..." << std::endl;
@@ -68,7 +122,8 @@ int main(int argc, char* argv[])
   if (verbose) {
     /* Add a listener to report test names */
     std::cerr << "D: Setting test runner listener for test names..." << std::endl;
-    MyCustomProgressTestListener progress;
+    /* Only allocate when needed; static to avoid freeing */
+    static MyCustomProgressTestListener progress;
     runner.eventManager().addListener(&progress);
   }
 
@@ -91,3 +146,10 @@ int main(int argc, char* argv[])
     "'" << ( wasSucessful ? "true" : "false" ) << "'" << std::endl;
   return wasSucessful ? 0 : 1;
 }
+
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ZERO_AS_NULL_POINTER_CONSTANT_BESIDEFUNC)
+# pragma GCC diagnostic pop
+#endif

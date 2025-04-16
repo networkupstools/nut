@@ -29,7 +29,7 @@
 #include "IOKit/ps/IOPSKeys.h"
 
 #define DRIVER_NAME	"Mac OS X UPS meta-driver"
-#define DRIVER_VERSION	"1.3"
+#define DRIVER_VERSION	"1.42"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -109,7 +109,7 @@ void upsdrv_initinfo(void)
 {
 	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
-	char device_name[80] = "";
+	char device_name_buf[80] = "";
 	CFStringRef device_type_cfstr, device_name_cfstr;
 	CFPropertyListRef power_dictionary;
 	CFNumberRef max_capacity;
@@ -136,13 +136,13 @@ void upsdrv_initinfo(void)
 
 	CFRetain(device_name_cfstr);
 
-	CFStringGetCString(device_name_cfstr, device_name, sizeof(device_name), kCFStringEncodingUTF8);
-	upsdebugx(2, "Got name: %s", device_name);
+	CFStringGetCString(device_name_cfstr, device_name_buf, sizeof(device_name_buf), kCFStringEncodingUTF8);
+	upsdebugx(2, "Got name: %s", device_name_buf);
 
 	CFRelease(device_name_cfstr);
 
-	dstate_setinfo("device.model", "%s", device_name);
-	dstate_setinfo("ups.model", "%s", device_name);
+	dstate_setinfo("device.model", "%s", device_name_buf);
+	dstate_setinfo("ups.model", "%s", device_name_buf);
 
 	max_capacity = CFDictionaryGetValue(power_dictionary, CFSTR(kIOPSMaxCapacityKey));
 	if(max_capacity) {
@@ -152,7 +152,7 @@ void upsdrv_initinfo(void)
 		CFRelease(max_capacity);
 
 		upsdebugx(3, "Max Capacity = %.f units (usually 100)", max_capacity_value);
-		if(max_capacity_value != 100) {
+		if(max_capacity_value != 100.0) {
 			upsdebugx(1, "Max Capacity: %f != 100", max_capacity_value);
 		}
 	}
@@ -168,7 +168,8 @@ void upsdrv_updateinfo(void)
 	CFNumberRef battery_voltage, battery_runtime;
 	CFNumberRef current_capacity;
 	CFBooleanRef is_charging;
-	double max_capacity_value = 100.0, current_capacity_value;
+	/* double max_capacity_value = 100.0; */
+	double current_capacity_value;
 
 	upsdebugx(1, "upsdrv_updateinfo()");
 
@@ -198,7 +199,7 @@ void upsdrv_updateinfo(void)
 
 	/* Retrieve CHRG state */
 	is_charging = CFDictionaryGetValue(power_dictionary, CFSTR(kIOPSIsChargingKey));
-        if(is_charging) {
+	if(is_charging) {
 		Boolean is_charging_value;
 
 		is_charging_value = CFBooleanGetValue(is_charging);
@@ -251,7 +252,7 @@ void upsdrv_updateinfo(void)
 	/* TODO: it should be possible to set poll_interval (and maxage in the
 	 * server) to an absurdly large value, and use notify(3) to get
 	 * updates.
-         */
+	 */
 
 	/*
 	 * poll_interval = 2;
@@ -262,19 +263,23 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
 	   it doesn't respond at first if possible */
 
 	/* NOTE: Mac OS X already has shutdown routines - this driver is more
-           for monitoring and notification purposes. Still, there is a key that
-           might be useful to set in SystemConfiguration land. */
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	   for monitoring and notification purposes. Still, there is a key that
+	   might be useful to set in SystemConfiguration land. */
+
+	/* replace with a proper shutdown function */
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */
@@ -347,11 +352,11 @@ void upsdrv_initups(void)
 	CFIndex num_keys, index;
 	CFDictionaryRef power_dictionary;
 	CFTypeRef power_blob;
-	CFStringRef potential_key, potential_model;
+	CFStringRef potential_key, potential_model = NULL;
 	char *model_name; /* regex(3) */
 	char potential_model_name[256];
-        regex_t model_regex;
-	int ret;
+	regex_t model_regex;
+	int ret = 0;
 
 	upsdebugx(3, "upsdrv_initups(): Power Sources blob:");
 	/* upsfd = ser_open(device_path); */
@@ -363,15 +368,18 @@ void upsdrv_initups(void)
 
 	if(nut_debug_level >= 3) CFShow(power_blob);
 
-/* The CFDictionary through 10.9 has changed to a CFArray, so this part is no longer applicable: */
+/* The CFDictionary through 10.9 has changed to a CFArray,
+ * so this part is no longer applicable: */
 #if 0
+	/* Note: original value of device_name is derived from
+	 * device_path (value of port parameter) in main.c */
 	if(!strcmp(device_name, "auto")) {
 		device_name = "/UPS";
 	}
 
 	upsdebugx(2, "Matching power supply key names against regex '%s'", device_name);
 
-        ret = regcomp(&name_regex, device_name, REG_EXTENDED|REG_NOSUB|REG_ICASE);
+	ret = regcomp(&name_regex, device_name, REG_EXTENDED|REG_NOSUB|REG_ICASE);
 
 	if(ret) {
 		fatalx(EXIT_FAILURE,

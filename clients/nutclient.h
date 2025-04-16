@@ -18,7 +18,7 @@
 */
 
 #ifndef NUTCLIENT_HPP_SEEN
-#define NUTCLIENT_HPP_SEEN
+#define NUTCLIENT_HPP_SEEN 1
 
 /* Begin of C++ nutclient library declaration */
 #ifdef __cplusplus
@@ -60,7 +60,7 @@ public:
 	NutException(const std::string& msg):_msg(msg){}
 	NutException(const NutException&) = default;
 	NutException& operator=(NutException& rhs) = default;
-	virtual ~NutException() override;
+	virtual ~NutException() noexcept override;
 	virtual const char * what() const noexcept override {return this->_msg.c_str();}
 	virtual std::string str() const noexcept {return this->_msg;}
 private:
@@ -76,7 +76,7 @@ public:
 	SystemException();
 	SystemException(const SystemException&) = default;
 	SystemException& operator=(SystemException& rhs) = default;
-	virtual ~SystemException() override;
+	virtual ~SystemException() noexcept override;
 private:
 	static std::string err();
 };
@@ -91,7 +91,7 @@ public:
 	IOException(const std::string& msg):NutException(msg){}
 	IOException(const IOException&) = default;
 	IOException& operator=(IOException& rhs) = default;
-	virtual ~IOException() override;
+	virtual ~IOException() noexcept override;
 };
 
 /**
@@ -103,7 +103,7 @@ public:
 	UnknownHostException():IOException("Unknown host"){}
 	UnknownHostException(const UnknownHostException&) = default;
 	UnknownHostException& operator=(UnknownHostException& rhs) = default;
-	virtual ~UnknownHostException() override;
+	virtual ~UnknownHostException() noexcept override;
 };
 
 /**
@@ -115,7 +115,7 @@ public:
 	NotConnectedException():IOException("Not connected"){}
 	NotConnectedException(const NotConnectedException&) = default;
 	NotConnectedException& operator=(NotConnectedException& rhs) = default;
-	virtual ~NotConnectedException() override;
+	virtual ~NotConnectedException() noexcept override;
 };
 
 /**
@@ -127,7 +127,7 @@ public:
 	TimeoutException():IOException("Timeout"){}
 	TimeoutException(const TimeoutException&) = default;
 	TimeoutException& operator=(TimeoutException& rhs) = default;
-	virtual ~TimeoutException() override;
+	virtual ~TimeoutException() noexcept override;
 };
 
 /**
@@ -329,6 +329,12 @@ public:
 	 * \return Number of logged-in users.
 	 */
 	virtual int deviceGetNumLogins(const std::string& dev) = 0;
+	/**
+	 * Who did a deviceLogin() to this dev?
+	 * \param dev Device name.
+	 * \return List of clients e.g. {'127.0.0.1', 'admin-workstation.local.domain'}
+	 */
+	virtual std::set<std::string> deviceGetClients(const std::string& dev) = 0;
 	/* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
 	 * For the sake of old/new server/client interoperability,
 	 * practical implementations should try to use one and fall
@@ -337,6 +343,12 @@ public:
 	virtual void deviceMaster(const std::string& dev) = 0;
 	virtual void devicePrimary(const std::string& dev) = 0;
 	virtual void deviceForcedShutdown(const std::string& dev) = 0;
+
+	/**
+	 * Lists all clients of all devices (which have at least one client)
+	 * \return Map with device names vs. list of their connected clients
+	 */
+	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) = 0;
 
 	/**
 	 * Retrieve the result of a tracking ID.
@@ -389,9 +401,15 @@ public:
 
 	/**
 	 * Connect to the server.
-	 * Host name and ports must have already set (usefull for reconnection).
+	 * Host name and ports must have already set (useful for reconnection).
 	 */
 	void connect();
+
+	/**
+	 * Enable or disable std::cerr tracing of internal Socket operations
+	 * during connect() processing. Primarily for developer troubleshooting.
+	 */
+	void setDebugConnect(bool d);
 
 	/**
 	 * Test if the connection is active.
@@ -454,6 +472,9 @@ public:
 	virtual void devicePrimary(const std::string& dev) override;
 	virtual void deviceForcedShutdown(const std::string& dev) override;
 	virtual int deviceGetNumLogins(const std::string& dev) override;
+	virtual std::set<std::string> deviceGetClients(const std::string& dev) override;
+
+	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) override;
 
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 
@@ -619,6 +640,10 @@ public:
 	 * Login current client's user for the device.
 	 */
 	void login();
+	/**
+	 * Who did a login() to this dev?
+	 */
+	std::set<std::string> getClients();
 	/* FIXME: Protocol update needed to handle master/primary alias
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
