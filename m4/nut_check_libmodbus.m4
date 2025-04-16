@@ -242,12 +242,10 @@ modbus_set_byte_timeout(ctx, to_sec, to_usec);])
 
 	AS_IF([test x"${nut_have_libmodbus}" = x"yes"],
 		[LIBMODBUS_CFLAGS="${depCFLAGS}"
-		 LIBMODBUS_LIBS="${depLIBS}"]
-	)
-
-	AS_IF([test x"${nut_have_libmodbus_usb}" = x"yes"],
-		[AC_DEFINE([NUT_MODBUS_HAS_USB], 1, [Define to use libmodbus USB backend])]
-	)
+		 LIBMODBUS_LIBS="${depLIBS}"
+		 AS_IF([test x"${nut_have_libmodbus_usb}" = x"yes"],
+			[AC_DEFINE([NUT_MODBUS_HAS_USB], 1, [Define to use libmodbus USB backend])])
+	])
 
 	unset depCFLAGS
 	unset depLIBS
