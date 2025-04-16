@@ -29,7 +29,7 @@
 #include <sys/stat.h>
 #ifndef WIN32
 #include <sys/ioctl.h>
-#endif
+#endif	/* !WIN32 */
 #include <sys/types.h>
 
 /* nut includes */

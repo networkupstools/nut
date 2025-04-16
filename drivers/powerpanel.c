@@ -36,7 +36,7 @@ static subdriver_t *subdriver[] = {
 };
 
 #define DRIVER_NAME	"CyberPower text/binary protocol UPS driver"
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.30"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -102,6 +102,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	i, ret = -1;
 
 	/*
@@ -118,7 +121,6 @@ void upsdrv_shutdown(void)
 	 * we can't read status or it is telling us we're on battery.
 	 */
 	for (i = 0; i < MAXTRIES; i++) {
-
 		ret = subdriver[mode]->updateinfo();
 		if (ret >= 0) {
 			break;

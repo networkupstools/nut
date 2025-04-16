@@ -1,9 +1,9 @@
 #!/usr/bin/env perl
-#   Current Version : 1.4
+#   Current Version : 1.5
 #   Copyright (C) 2008 - 2012 dloic (loic.dardant AT gmail DOT com)
 #   Copyright (C) 2008 - 2015 Arnaud Quette <arnaud.quette@free.fr>
 #   Copyright (C) 2013 - 2014 Charles Lepple <clepple+nut@gmail.com>
-#   Copyright (C) 2014 - 2023 Jim Klimov <jimklimov+nut@gmail.com>
+#   Copyright (C) 2014 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   Based on the usbdevice.pl script, made for the Ubuntu Media Center
 #   for the final use of the LIRC project.
@@ -28,6 +28,7 @@
 # - manage deps in Makefile.am
 
 use File::Find;
+use Cwd;
 use strict;
 
 
@@ -87,6 +88,9 @@ my %vendorName;
 
 ################# MAIN #################
 
+if ($ENV{"DEBUG"}) {
+	print stderr "main(): finding in scanPath=" . $scanPath . "\n";
+}
 find({wanted=>\&find_usbdevs, preprocess=>sub{sort @_}}, $scanPath);
 &gen_usb_files;
 
@@ -279,8 +283,24 @@ sub gen_usb_files
 
 sub find_usbdevs
 {
+	if ($ENV{"DEBUG"}) {
+		print stderr "find_usbdevs(): pwd='" . Cwd::cwd() . "' nameFile='" . $_ . "'\n";
+	}
+
 	# maybe there's an option to turn off all .* files, but anyway this is stupid
-	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.orig$/);
+	# Note that on some platforms "." and ".." do also pop up;
+	# take care to NOT prune (avoid recursion into) the "." one:
+	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.(orig|o|la|lo|exe)$/) || ($_ eq '.libs') || ($_ eq '.deps') || ($_ eq '..');
+	return $File::Find::prune = 0 if ($_ eq '.');
+
+	if (-d $_) {
+		# FIXME: in current NUT vanilla code we do not support subdirs
+		#  with driver sources, so skip any subdirs we see for now.
+		#  Eventually we might want to chdir, recurse and return info
+		#  with prefixed dirname.
+		print stderr "find_usbdevs(): SKIP: nameFile='" . $_ . "' is a directory\n";
+		return $File::Find::prune = 1;
+	}
 
 	my $nameFile=$_;
 	my $lastComment="";
@@ -353,15 +373,22 @@ sub find_usbdevs
 			# process the driver name
 			my $driver=$nameFile;
 			my $preferDriver=1;
-			if($nameFile=~/(.+)-hid\.c/) {
+			if($nameFile=~/(.+)-hid\.c$/) {
 				$driver="usbhid-ups";
 			}
 			# generic matching rule *.c => *
 			elsif ($nameFile =~ /(.+)\.c$/) {
 				$driver=$1;
 			}
+			elsif ($nameFile =~ /(.+)\.(orig|bak|tmp)/) {
+				return;
+			}
+			elsif ($nameFile =~ /(.+)_(BACKUP|LOCAL|REMOTE|BASE)_\d*/) {
+				return;
+			}
 			else {
-				die "Unknown driver type: $nameFile";
+				warn "Unknown driver type: $nameFile";
+				next;
 			}
 			if ($vendor{$VendorID}{$ProductID}{"driver"}) {
 				if ($driver ne $vendor{$VendorID}{$ProductID}{"driver"}) {

@@ -6,6 +6,7 @@
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2022	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2022 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -51,6 +52,7 @@
 #include "raritan-pdu-mib.h"
 #include "raritan-px2-mib.h"
 #include "baytech-mib.h"
+#include "baytech-rpc3nc-mib.h"
 #include "compaq-mib.h"
 #include "bestpower-mib.h"
 #include "cyberpower-mib.h"
@@ -101,6 +103,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_epdu,		/* This struct comes from : apc-epdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
 	&baytech,			/* This struct comes from : baytech-mib.c */
+	&baytech_rpc3nc,		/* This struct comes from : baytech-rpc3nc-mib.c */
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
 	&compaq,			/* This struct comes from : compaq-mib.c */
 	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
@@ -174,7 +177,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.30"
+#define DRIVER_VERSION	"1.33"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -259,8 +262,10 @@ void upsdrv_initinfo(void)
 			&& !(su_info_p->flags & SU_OUTLET_GROUP))
 		{
 			/* first check that this OID actually exists */
+
 			/* FIXME: daisychain commands support! */
 			su_addcmd(su_info_p);
+
 /*
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
@@ -339,40 +344,44 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/*
-	This driver will probably never support this. In order to
-	be any use, the driver should be called near the end of
-	the system halt script. By that time we in all likelyhood
-	we won't have network capabilities anymore, so we could
-	never send this command to the UPS. This is not an error,
-	but a limitation of the interface used.
-	*/
+	 * WARNING:
+	 * This driver will probably never support this properly:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+	char	*cmd_used = NULL;
 
 	upsdebugx(1, "%s...", __func__);
 
 	/* set shutdown and autostart delay */
 	set_delays();
 
-	/* Try to shutdown with delay */
-	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try shutdown.reboot */
-	if (su_instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try load.off.delay */
-	if (su_instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
+	/* By default:
+	 * - Try to shutdown with delay
+	 * - If the above doesn't work, try shutdown.reboot
+	 * - If the above doesn't work, try load.off.delay
+	 * - Finally, try shutdown.stayoff
+	 */
+	if (do_loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_INFO, "Shutdown successful with '%s'", NUT_STRARG(cmd_used));
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
@@ -610,6 +619,7 @@ void upsdrv_initups(void)
 		}
 		printf("\nOverall this driver has loaded %d MIB-to-NUT mapping tables\n", i);
 		exit(EXIT_SUCCESS);
+		/* fatalx(EXIT_FAILURE, "Marking the exit code as failure since the driver is not started now"); */
 	}
 
 	/* init SNMP library, etc... */
@@ -1144,7 +1154,6 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			break;
 		}
 
-
 		if (!((status == STAT_SUCCESS) && (response->errstat == SNMP_ERR_NOERROR))) {
 			if (mibname == NULL) {
 				/* We are probing for proper mib - ignore errors */
@@ -1164,7 +1173,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 			/* Error throttling otherwise */
 			numerr++;
-			upsdebugx(4, "%s: numerr++ (total=%i)", __func__, numerr);
+			upsdebugx(4, "%s: numerr++ (total=%u)", __func__, numerr);
 
 			if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
 				upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
@@ -2174,7 +2183,7 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 #else
 	NUT_UNUSED_VARIABLE(oid2info);
 	upsdebugx(1, "%s: no mapping function for this OID string value (%s)", __func__, (char*)value);
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 	return NULL;
 }
 
@@ -2194,7 +2203,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 
 	/* Otherwise, use the simple values mapping */
 	for (info_lkp = oid2info; (info_lkp != NULL) &&
@@ -2921,8 +2930,9 @@ bool_t daisychain_init(void)
 			if (devices_count == -1) {
 #endif /* WITH_SNMP_LKP_FUN */
 
-				if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE)
+				if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE) {
 					upsdebugx(1, "There are %ld device(s) present", devices_count);
+				}
 				else
 				{
 					upsdebugx(1, "Error: can't get the number of device(s) present!");
@@ -3312,7 +3322,7 @@ bool_t snmp_ups_walk(int mode)
 
 #ifdef COUNT_ITERATIONS
 			/* check stale elements only on each PN_STALE_RETRY iteration. */
-	 		if ((su_info_p->flags & SU_FLAG_STALE) &&
+			if ((su_info_p->flags & SU_FLAG_STALE) &&
 					(iterations % SU_STALE_RETRY) != 0)
 				continue;
 #endif
@@ -4174,7 +4184,7 @@ static void mibconf_err(const char *errmsg)
 /* load *mib.conf into an snmp_info_t structure */
 void read_mibconf(char *mib)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 

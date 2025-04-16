@@ -132,12 +132,12 @@
 
 #include "main.h"
 #include "nut_libusb.h"
-#include <math.h>
+#include "nut_float.h"
 #include <ctype.h>
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.35"
+#define DRIVER_VERSION	"0.39"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -330,7 +330,7 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
 	char *value = getval("upsid");
-	int config_unit_id = 0;
+	long config_unit_id = 0;
 	ssize_t ret;
 	unsigned char u_msg[] = "U";
 	unsigned char u_value[9];
@@ -340,10 +340,13 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 	NUT_UNUSED_VARIABLE(rdbuf);
 	NUT_UNUSED_VARIABLE(rdlen);
 
-	/* Read ups id from the ups.conf */
-    if (value != NULL) {
-        config_unit_id = atoi(value);
-    }
+	/* If upsid is not defined in the config, return 1 (null behavior - match any device),
+	 * otherwise read it from the device and match against what was asked in ups.conf */
+	if (value == NULL) {
+		return 1;
+	} else {
+		config_unit_id = atol(value);
+	}
 
 	/* Read ups id from the device */
 	if (tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_SMART_0004) {
@@ -352,14 +355,22 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 		if (ret <= 0) {
 			upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
 		} else {
-			unit_id = (int)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
+			/* Translating from two bytes (unsigned chars), so via uint16_t */
+			unit_id = (uint16_t)((uint16_t)(u_value[1]) << 8) | (uint16_t)(u_value[2]);
+			upsdebugx(1, "Retrieved Unit ID: %ld", unit_id);
 		}
 	}
 
-    /* Check if the ups ids match */
+	/* Check if the ups ids match */
 	if (config_unit_id == unit_id) {
+		upsdebugx(1, "Retrieved Unit ID (%ld) matches the configured one (%ld)",
+			unit_id, config_unit_id);
 		return 1;
 	} else {
+		upsdebugx(1, "Retrieved Unit ID (%ld) does not match the configured one (%ld). "
+			"Do you have several compatible UPSes? Otherwise, please check if the ID "
+			"was set in the previous life of your device (can use upsrw to set another"
+			"value).", unit_id, config_unit_id);
 		return 0;
 	}
 }
@@ -773,12 +784,12 @@ static int soft_shutdown(void)
 	/* FIXME: Assumes memory layout / endianness? */
 	cmd_N[2] = (unsigned char)(offdelay & 0x00FF);
 	cmd_N[1] = (unsigned char)(offdelay >> 8);
-	upsdebugx(3, "soft_shutdown(offdelay=%d): N", offdelay);
+	upsdebugx(3, "soft_shutdown(offdelay=%u): N", offdelay);
 
 	ret = send_cmd(cmd_N, sizeof(cmd_N), buf, sizeof(buf));
 
 	if(ret != 8) {
-		upslogx(LOG_ERR, "Could not set offdelay to %d", offdelay);
+		upslogx(LOG_ERR, "Could not set offdelay to %u", offdelay);
 		return ret;
 	}
 
@@ -832,7 +843,7 @@ static int control_outlet(int outlet_id, int state)
 	switch(tl_model) {
 		case TRIPP_LITE_SMARTPRO:   /* tested */
 		case TRIPP_LITE_SMART_0004: /* untested */
-			snprintf(k_cmd, sizeof(k_cmd)-1, "N%02X", 5);
+			snprintf(k_cmd, sizeof(k_cmd)-1, "N%02X", (unsigned int)5);
 			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
 			snprintf(k_cmd, sizeof(k_cmd)-1, "K%d%d", outlet_id, state & 1);
 			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
@@ -956,7 +967,7 @@ static int setvar(const char *varname, const char *val)
 		int ival = atoi(val);
 		if (ival >= 0) {
 			offdelay = (unsigned int)ival;
-			dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+			dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 			return STAT_SET_HANDLED;
 		} else {
 			upslogx(LOG_NOTICE, "FAILED to set '%s' to %d", varname, ival);
@@ -1250,7 +1261,12 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	soft_shutdown();
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_updateinfo(void)
@@ -1482,6 +1498,8 @@ void upsdrv_updateinfo(void)
 				case '0':
 					dstate_setinfo("input.frequency.nominal", "%d", 50);
 					break;
+				default:
+					break;
 			}
 		}
 
@@ -1491,7 +1509,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		if( tl_model == TRIPP_LITE_SMART_3005 ) {
-			dstate_setinfo("ups.temperature", "%d",
+			dstate_setinfo("ups.temperature", "%u",
 				(unsigned)(hex2d(t_value+1, 1)));
 		} else {
 			/* I'm guessing this is a calibration constant of some sort. */
@@ -1601,9 +1619,9 @@ void upsdrv_makevartable(void)
 		MAX_VOLT);
 	addvar(VAR_VALUE, "battery_max", msg);
 
-	// allow -x upsid=X
+	/* allow -x upsid=X */
 	snprintf(msg, sizeof msg, "UPS ID (Unit ID) (default=%d)", DEFAULT_UPSID);
-    addvar(VAR_VALUE, "upsid", msg);
+	addvar(VAR_VALUE, "upsid", msg);
 
 #if 0
 	snprintf(msg, sizeof msg, "Set start delay, in seconds (default=%d).",

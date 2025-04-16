@@ -45,10 +45,13 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 	pthread_mutex_init(&dev_mutex, NULL);
 #endif /* HAVE_PTHREAD */
 
-	upsdebugx(1,"Scanning: %s", CONFPATH);
+	upsdebugx(1, "Scanning: %s", CONFPATH);
 
 	if ((dp = opendir(CONFPATH)) == NULL) {
-		fatal_with_errno(EXIT_FAILURE, "Failed to open %s", CONFPATH);
+		upsdebug_with_errno(1, "%s: Failed to open %s",
+			__func__, CONFPATH);
+		upsdebugx(0, "Failed to open %s, skip NUT simulation scan",
+			CONFPATH);
 		return NULL;
 	}
 
@@ -63,7 +66,7 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 
 		/* Filter on '.dev' and '.seq' extensions' */
 		if ((strcmp(ext, ".dev") == 0) || (strcmp(ext, ".seq") == 0)) {
-			upsdebugx(1,"Found simulation file: %s", dirp->d_name);
+			upsdebugx(1, "Found simulation file: %s", dirp->d_name);
 
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT_SIMULATION;

@@ -1,16 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.15
+# Version: 0.16
 #
 # See also: docs/snmp-subdrivers.txt
 #
 # Copyright (C)
 # 2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
 # 2015 - 2022 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-# 2011 - 2022 Jim Klimov <jimklimov+nut@gmail.com>
+# 2011 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -206,16 +206,16 @@ generate_C() {
 
 	#include "${HFILE}"
 
-	#define ${UDRIVER}_MIB_VERSION  "0.1"
+	#define ${UDRIVER}_MIB_VERSION  "0.01"
 
 	#define ${UDRIVER}_SYSOID       "${DEVICE_SYSOID}"
 
 	/* To create a value lookup structure (as needed on the 2nd line of the example
 	 * below), use the following kind of declaration, outside of the present snmp_info_t[]:
 	 * static info_lkp_t onbatt_info[] = {
-	 * 	{ 1, "OB" },
-	 * 	{ 2, "OL" },
-	 * 	{ 0, NULL }
+	 * 	info_lkp_default(1, "OB"),
+	 * 	info_lkp_default(2, "OL"),
+	 * 	info_lkp_sentinel
 	 * };
 	 */
 
@@ -223,7 +223,7 @@ generate_C() {
 	static snmp_info_t ${LDRIVER}_mib[] = {
 
 		/* Data format:
-		 * { info_type, info_flags, info_len, OID, dfl, flags, oid2info },
+		 * snmp_info_default(info_type, info_flags, info_len, OID, dfl, flags, oid2info),
 		 *
 		 *	info_type:	NUT INFO_ or CMD_ element name
 		 *	info_flags:	flags to set in addinfo
@@ -234,15 +234,15 @@ generate_C() {
 		 *	oid2info: lookup table between OID and NUT values
 		 *
 		 * Example:
-		 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-		 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info },
+		 * snmp_info_default("input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL),
+		 * snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info),
 		 *
 		 * To create a value lookup structure (as needed on the 2nd line), use the
 		 * following kind of declaration, outside of the present snmp_info_t[]:
 		 * static info_lkp_t onbatt_info[] = {
-		 * 	{ 1, "OB" },
-		 * 	{ 2, "OL" },
-		 * 	{ 0, NULL }
+		 * 	info_lkp_default(1, "OB"),
+		 * 	info_lkp_default(2, "OL"),
+		 * 	info_lkp_sentinel
 		 * };
 		 */
 
@@ -253,9 +253,9 @@ generate_C() {
 
 	# Same file, indented text (TABs not stripped):
 	cat >> "$CFILE" <<EOF
-	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+	snmp_info_default("device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL),
 
 /* Please revise values discovered by data walk for mappings to
  * docs/nut-names.txt and group the rest under the ifdef below:
@@ -279,7 +279,7 @@ EOF
 		fi
 		# get the matching numeric OID
 		NUM_OID="`sed -n "${LINENB}p" "${NUMWALKFILE}" | cut -d' ' -f1`"
-		printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL },\n"
+		printf "\t/* ${FULL_STR_OID} */\n\tsnmp_info_default(\"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL),\n"
 	done < "${STRWALKFILE}" >> "${CFILE}"
 
 	# append footer (TABs not stripped):
@@ -287,7 +287,7 @@ EOF
 #endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL }
+	snmp_info_sentinel
 };
 
 mib2nut_info_t  ${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_DEVICE_SYSOID };

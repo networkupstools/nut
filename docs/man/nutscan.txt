@@ -22,7 +22,7 @@ DISCOVERY FUNCTIONS
 
 First, include the required header file:
 
- #include <nut-scan.h>
+    #include <nut-scan.h>
 
 Then, to discover new devices, use the appropriate function:
 
@@ -68,6 +68,9 @@ linkman:nutscan_display_parsable[3], linkman:nutscan_display_ups_conf[3],
 linkman:nutscan_new_device[3], linkman:nutscan_free_device[3],
 linkman:nutscan_add_device_to_device[3],
 linkman:nutscan_add_option_to_device[3],
+linkman:nutscan_init_ip_ranges[3],
+linkman:nutscan_free_ip_ranges[3],
+linkman:nutscan_add_ip_range[3],
 linkman:nutscan_cidr_to_ip[3]
 
 Internet resources:

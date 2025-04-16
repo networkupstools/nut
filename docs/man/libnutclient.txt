@@ -9,9 +9,11 @@ libnutclient - Network UPS Tools high-level client access library
 SYNOPSIS
 --------
 
+------
 	#include <nutclient.h>
+------
 
-	Refer to this file for more information.
+Refer to this file for more information.
 
 
 DESCRIPTION
@@ -21,8 +23,8 @@ The Network UPS Tools (NUT) *nutclient* library provides a number of
 useful functions for programs to use when communicating with
 linkman:upsd[8]. It provides high-level representation of NUT data
 through client connection, devices, variables and commands.
-Unlike linkman:upsclient[3], all low-level protocol details are
-hidden.
+Unlike linkman:upsclient[3] (also known as "upscli" API), here all
+low-level protocol details are hidden.
 
 State is maintained across calls in an opaque structure called `NUTCLIENT_t`.
 Callers are expected to create one per client connection.  These will be

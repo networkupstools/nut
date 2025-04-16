@@ -1,0 +1,62 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2011-2025 by NUT contributors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
+[Unit]
+Description=Network UPS Tools - optional logging daemon (for status collection and analysis)
+# Log UPS values to a file for later collection and analysis
+After=local-fs.target network.target nut-server.service
+# Note: We do not specify Requires nut-server.service because
+# the `upsd` daemon(s) may be running on a different machine
+# (connected to the UPSes) than this client program.
+# The "Wants" directive would try to start the nut-server but
+# would not abort if that attempt fails for whatever reason.
+Wants=nut-server.service
+# Extending the unit does not require *this* file to be edited, you
+# can instead drop in an additional piece of configuration, e.g. to
+# require the logging client to only start after external networking
+# is configured (usable IP addresses appear in the system) you can
+# add a `/etc/systemd/system/nut-logger.service.d/network.conf` with:
+#   [Unit]
+#   Requires=network-online.target
+#   After=network-online.target
+PartOf=nut.target
+### not enabled by default, but ordered if enabled by user:
+Before=nut.target
+
+Documentation=man:upslog(8)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upslog.html
+Documentation=man:nut.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
+# Should contain UPSLOG_ARGS=... (or a systemd drop-in could provide it)
+# with a series of `-m upsname@server,logfile` definitions, where `logfile`
+# may be `-` for stdout. See about more variants in man page.
+ConditionPathExists=@CONFPATH@/upslog.conf
+
+[Service]
+EnvironmentFile=-@CONFPATH@/nut.conf
+EnvironmentFile=@CONFPATH@/upslog.conf
+SyslogIdentifier=%N
+ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
+ExecStartPre=/bin/test -n "${UPSLOG_ARGS}"
+ExecStart=@BINDIR@/upslog @SYSTEMD_DAEMON_ARGS_UPSLOG@ $UPSLOG_ARGS
+# NOTE: SIGHUP is supported to re-open the log file,
+# which is the default systemd ReloadSignal (only
+# sent by systemd 253 and newer)
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=@PIDPATH@/upslog.pid
+# With this program, the PID file always exists and "kill -TERM" in particular
+# can be used from command-line or some legacy scripts, it causes a clean and
+# intentional exit of the daemon (some other signals are also supported).
+# Then systemd should not revive it - hence restart it only on failure:
+Restart=on-failure
+Type=@SYSTEMD_DAEMON_TYPE_UPSLOG@
+@SYSTEMD_DAEMON_WATCHDOG_UPSLOG@
+@SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG@
+
+[Install]
+# WantedBy=nut.target ### not enabled by default
+Alias=upslog.service

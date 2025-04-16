@@ -1,0 +1,132 @@
+NUT.EXE(8)
+==========
+
+NAME
+----
+
+nut.exe - NUT for Windows wrapper for all-in-one service
+
+SYNOPSIS
+--------
+
+*nut.exe* {-h | /?}
+
+*nut.exe* ['OPTIONS']
+
+*nut.exe* (as a service implementation)
+
+DESCRIPTION
+-----------
+
+*nut.exe* wraps NUT programs to start and stop as a Windows service.
+
+Depending on linkman:nut.conf[5] setting of 'MODE', it would manage the
+bundle of driver(s), linkman:upsd[8] data server and linkman:upsmon[8] client,
+as well as attempt an UPS shutdown command in case of FSD handling, or for
+mere 'netclient' systems it would run just the linkman:upsmon[8] client to
+monitor remote UPS device(s) and initiate the OS shut down on the local
+Windows system as applicable.
+
+Beside launching or stopping a set of the NUT programs in certain cases,
+this helper program also allows to register (or un-register) itself as a
+Windows service. To actually manage the service from command line you can
+execute the Windows `net` command, e.g.:
+
+----
+net stop "Network UPS Tools"
+net start "Network UPS Tools"
+----
+
+You can also execute `nut start` to automatically register the service
+(if not yet registered) and start it, and `nut stop` to stop the service
+(if registered and running).
+
+Note that for a Windows machine to act as a NUT data server for further
+clients, you may have to add Windows Firewall rules to allow incoming
+connections (by default to port `3493/tcp`), e.g. using PowerShell to
+elevate (alternately right-click a "Command Prompt" shortcut and select
+"Run as administrator"), and execute `netsh` to actually configure the
+needed "Advanced Firewall" rule:
+
+----
+REM Elevate to administrator status then run netsh to add firewall rule.
+REM Recommended to adapt "LocalIP" to expected listeners of this server,
+REM and "RemoteIP" to your single or comma-separated subnet(s) in CIDR
+REM notation, specific client IP address(es), or ranges of address(es)
+REM (dash-separated, as IP1-IP2).
+
+REM The following goes as one long command line:
+
+powershell.exe -Command "Start-Process netsh.exe -ArgumentList
+  \"advfirewall firewall add rule name=NUT-upsd-data-server
+    dir=in action=allow localip=ANY remoteip=ANY
+    program=%ProgramFiles%\NUT\sbin\upsd.exe
+    localport=3493 protocol=tcp\" -Verb RunAs"
+----
+
+Keep in mind that by default NUT linkman:upsd[8] only listens on `localhost`,
+so you would need to add some `LISTEN` directives in linkman:upsd.conf[5] as
+well in this case.
+
+OPTIONS
+-------
+
+*nut.exe* is currently launched with no arguments when it is intended to
+run as the implementation of a registered Windows service; it would error
+out otherwise.
+
+*/?*::
+Display the help text and exit.
+
+*-h*::
+Display the help text and exit.
+
+*-V*::
+Display NUT version and exit.
+
+*-D*::
+Raise the debug level.  Use this multiple times for additional details.
+The non-trivial debug level would be passed down to launched NUT programs.
+Primarily useful for troubleshooting with the non-service mode.
+
+*-I*::
+Install as a Windows service called "Network UPS Tools".
+
+*-U*::
+Uninstall the Windows service.
+
+*-N*::
+Run once in non-service mode (for troubleshooting).
+
+*start*::
+Install as a Windows service called "Network UPS Tools" (if not yet done),
+and try to start this service.
+
+*stop*::
+Try to stop a Windows service called "Network UPS Tools".
+
+DIAGNOSTICS
+-----------
+
+*nut.exe* should not interact with console message buffers (`stdout`, `stderr`)
+much, except when explicitly asked to (e.g. displaying help and NUT version,
+running with verbose debug mode) or when exiting after an attempted service
+initialization while not running in a service context.
+
+Most of normal logging from *nut.exe* goes to the Windows Event Log.
+
+Launched NUT programs may emit messages of their own; their fate when no
+console is attached is questionable.
+
+SEE ALSO
+--------
+
+linkman:nut.conf[5], linkman:ups.conf[5], linkman:nutupsdrv[8],
+linkman:upsd[8], linkman:upsd.conf[5], linkman:upsd.users[5],
+linkman:upsmon[8], linkman:upsmon.conf[5]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+

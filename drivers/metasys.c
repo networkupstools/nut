@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -868,11 +868,16 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	unsigned char command[10], answer[10];
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	unsigned char	command[10], answer[10];
 
 	/* Ensure that the ups is configured for automatically
 	   restart after a complete battery discharge
-	   and when the power comes back after a shutdown */
+	   and when the power comes back after a shutdown.
+	   Similar code to "shutdown.restart" but different timeouts.
+	 */
 	if (! autorestart) {
 		command[0]=UPS_SET_TIMES_ON_BATTERY;
 		command[1]=0x00;					/* max time on  */
@@ -885,7 +890,7 @@ void upsdrv_shutdown(void)
 		command_write_sequence(command, 6, answer);
 	}
 
-	/* shedule a shutdown in 120 seconds */
+	/* schedule a shutdown in 120 seconds */
 	command[0]=UPS_SET_SCHEDULING;
 	command[1]=0x96;					/* remaining  */
 	command[2]=0x00;					/* time		 */
@@ -939,7 +944,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			command[5]=0x01;					/* autorestart after battery depleted enabled */
 			command_write_sequence(command, 6, answer);
 		}
-		/* shedule a shutdown in 30 seconds */
+		/* schedule a shutdown in 30 seconds */
 		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0x1e;					/* remaining  */
 		command[2]=0x00;					/* time		 */
@@ -955,7 +960,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		/* shedule a shutdown in 30 seconds with no restart (-1) */
+		/* schedule a shutdown in 30 seconds with no restart (-1) */
 		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0x1e;					/* remaining  */
 		command[2]=0x00;					/* time		 */

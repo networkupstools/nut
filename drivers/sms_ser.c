@@ -31,7 +31,7 @@
 #define ENDCHAR '\r'
 
 #define DRIVER_NAME "SMS Brazil UPS driver"
-#define DRIVER_VERSION "1.00"
+#define DRIVER_VERSION "1.02"
 
 #define QUERY_SIZE 7
 #define BUFFER_SIZE 18
@@ -54,13 +54,14 @@ upsdrv_info_t upsdrv_info = {
 void sms_parse_features(uint8_t *rawvalues, SmsData *results) {
     char tbattery[6];
     char frequency[4];
+    int i;
 
     memset(results->voltageRange, 0, sizeof(results->voltageRange));
     memset(results->currentRange, 0, sizeof(results->currentRange));
     memset(tbattery, 0, sizeof(tbattery));
     memset(frequency, 0, sizeof(frequency));
 
-    for (int i = 1; i < BUFFER_SIZE - 2; i++) {
+    for (i = 1; i < BUFFER_SIZE - 2; i++) {
         if (i <= 7) {
             snprintfcat(results->voltageRange, 14, "%c", rawvalues[i]);
         } else if (i <= 10) {
@@ -79,10 +80,12 @@ void sms_parse_features(uint8_t *rawvalues, SmsData *results) {
 void sms_parse_information(uint8_t *rawvalues, SmsData *results) {
     /* Count from 1 to ignore first char and remove 2 from BUFFER_SIZE
      *  to compensate the start and ignore '\r' from end. */
+    int i;
+
     memset(results->model, 0, sizeof(results->model));
     memset(results->version, 0, sizeof(results->version));
 
-    for (int i = 1; i < BUFFER_SIZE - 2; i++) {
+    for (i = 1; i < BUFFER_SIZE - 2; i++) {
         if (i <= 12) {
             snprintfcat(results->model, 24, "%c", rawvalues[i]);
         } else {
@@ -511,6 +514,9 @@ void upsdrv_updateinfo(void) {
 }
 
 void upsdrv_shutdown(void) {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
     /* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
     int retry;
 
@@ -528,6 +534,8 @@ void upsdrv_shutdown(void) {
     upsdebugx(2, "upsdrv Shutdown execute");
 
     for (retry = 1; retry <= MAXTRIES; retry++) {
+        /* By default, abort a previously requested shutdown
+         * (if any) and schedule a new one from this moment. */
         if (sms_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
             continue;
         }
@@ -537,12 +545,14 @@ void upsdrv_shutdown(void) {
         }
 
         upslogx(LOG_ERR, "Shutting down");
-        set_exit_flag(-2); /* EXIT_SUCCESS */
+        if (handling_upsdrv_shutdown > 0)
+            set_exit_flag(EF_EXIT_SUCCESS);
         return;
     }
 
     upslogx(LOG_ERR, "Shutdown failed!");
-    set_exit_flag(-1);
+    if (handling_upsdrv_shutdown > 0)
+        set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void) {

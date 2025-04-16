@@ -35,7 +35,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.08"
+#define DRIVER_VERSION  "0.11"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -234,12 +234,12 @@ static int upssend(const char *fmt,...) {
 	for (p = buf; *p && sent < INT_MAX - 1; p++) {
 #ifndef WIN32
 		if (write(upsfd, p, 1) != 1)
-#else
+#else	/* WIN32 */
 		DWORD bytes_written;
 		BOOL res;
 		res = WriteFile(upsfd, p, 1, &bytes_written,NULL);
 		if (res == 0 || bytes_written == 0)
-#endif
+#endif	/* WIN32 */
 			return -1;
 
 		/* Note: LGTM.com analysis warns that here
@@ -401,13 +401,13 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 	if (low_batt)
-		status_set("LB ");
+		status_set("LB");
 	else if (trimming)
 		status_set("TRIM");
 	else if (boosting)
 		status_set("BOOST");
 	else
-		status_set(is_online ? (is_off ? "OFF " : "OL ") : "OB ");
+		status_set(is_online ? (is_off ? "OFF" : "OL") : "OB");
 
 	/* setinfo(INFO_STATUS, "%s%s",
 	 *	(util < lownorm) ? "BOOST ", "",
@@ -514,24 +514,16 @@ static int upsdrv_setvar (const char *var, const char * data) {
  */
 void upsdrv_shutdown(void)
 {
-	const	char	*grace;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = -1;
 
 	upsdebugx(2, "%s: begin", __func__);
 
-	grace = dstate_getinfo("ups.delay.shutdown");
-	if (!grace) {
-		upsdebugx(1, "%s: ups.delay.shutdown is NULL!", __func__);
-		/* Pick a different value than 20 so we can see it in the logs. */
-		grace = "30";
-	}
-
-	upslogx(LOG_CRIT, "%s: OFF/restart in %s seconds", __func__, grace);
-
-	/* Start again, overriding front panel setting. */
-	autorestart (1);
-
-	upssend ("OFF%s\r", grace);
-	/* I'm nearly dead, Jim */
+	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 
 	upsdebugx(2, "%s: end", __func__);
 }
@@ -546,8 +538,26 @@ static int instcmd (const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	else if (!strcasecmp(cmdname, "shutdown.return")) {
+		const	char	*grace;
+
 		upsdebugx(2, "%s: %s: start", __func__, cmdname);
-		upsdrv_shutdown();
+
+		grace = dstate_getinfo("ups.delay.shutdown");
+		if (!grace) {
+			upsdebugx(1, "%s: ups.delay.shutdown is NULL!", __func__);
+			/* Pick a different value than 20 so we can see it in the logs. */
+			grace = "30";
+		}
+
+		upslogx(LOG_CRIT, "%s: OFF/restart in %s seconds", __func__, grace);
+
+		/* Start again, overriding front panel setting. */
+		autorestart (1);
+
+		upssend ("OFF%s\r", grace);
+		/* I'm nearly dead, Jim */
+
+		upsdebugx(2, "%s: %s: end", __func__, cmdname);
 		return STAT_INSTCMD_HANDLED;
 	}
 	/* \todo Software error or user error? */

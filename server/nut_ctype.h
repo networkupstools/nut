@@ -27,14 +27,14 @@
 
 /* Mozilla NSS */
 #ifdef WITH_NSS
-	#include <nss.h>
-	#include <ssl.h>
+#	include <nss.h>
+#	include <ssl.h>
 #endif
 
 /* OpenSSL */
 #ifdef WITH_OPENSSL
-	#include <openssl/err.h>
-	#include <openssl/ssl.h>
+#	include <openssl/err.h>
+#	include <openssl/ssl.h>
 #endif
 
 #include "parseconf.h"
@@ -73,7 +73,7 @@ typedef struct nut_ctype_s {
 	struct nut_ctype_s	*next;
 #ifdef WIN32
 	HANDLE Event;
-#endif
+#endif	/* WIN32 */
 } nut_ctype_t;
 
 #ifdef __cplusplus

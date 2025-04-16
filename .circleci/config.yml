@@ -17,13 +17,17 @@ jobs:
     parameters:
       XCODE_VER:
         type: string
-        default: "12.5.1"
+        # https://circleci.com/docs/using-macos/#supported-xcode-versions-silicon
+        default: "13.4.1"
       CC:
         type: string
         default: "" # e.g. "clang"
       CXX:
         type: string
         default: "" # e.g. "clang++"
+      CPP:
+        type: string
+        default: "" # e.g. "clang -E"
       CC_STDVER:
         type: string
         default: "" # e.g. "-std=gnu17"
@@ -39,15 +43,27 @@ jobs:
       BREW_MORE:
         type: string
         default: "" # e.g. "avahi" for all-driver tests
+      #HOMEBREW_PREFIX:
+        # Detected below at run-time
+        # See https://docs.brew.sh/Installation :
+        # * /opt/homebrew for Apple Silicon,
+        # * /usr/local for macOS Intel and
+        # * /home/linuxbrew/.linuxbrew for Linux
+        # TODO: Find a way to select one of the values based on the platform?
+        #type: string
+        #default: "/opt/homebrew" # since July 2024 CircleCI only serves Apple Silicon instances
+        #default: "/usr/local" # was when CircleCI builders had x86
 
     environment:
       CC: << parameters.CC >>
       CXX: << parameters.CXX >>
+      CPP: << parameters.CPP >>
       CC_STDVER: << parameters.CC_STDVER >>
       CXX_STDVER: << parameters.CXX_STDVER >>
       BUILD_TYPE: << parameters.BUILD_TYPE >>
       CI_BUILDDIR: << parameters.CI_BUILDDIR >>
       BREW_MORE: << parameters.BREW_MORE >>
+      #HOMEBREW_PREFIX: << parameters.HOMEBREW_PREFIX >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -65,24 +81,67 @@ jobs:
 
       # Note: MacOS default /bin/bash 3.x is too old for ci_build.sh
       # Brew brings /usr/local/bin/bash 5.x as of this writing
-      # TODO: Are Binutils needed?
+      # We also reinstall/relink openssl@3 because asciidoc deps pull
+      # in openssl@1 and MAYBE they conflict (cause lack of exposed
+      # symlinks).
       - run:
           name: "homebrew"
           command: |-
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
-            brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl $BREW_MORE #binutils
+            brew install ccache bash libtool binutils autoconf automake git m4 \
+                pkg-config aspell asciidoc docbook-xsl cppunit gd \
+                libusb neon net-snmp \
+                nss openssl \
+                libmodbus freeipmi powerman $BREW_MORE
+            #brew reinstall openssl@3
+            if ps -ef | grep -v grep | grep sshd ; then
+                brew install mc
+                ifconfig -a || true
+            fi
 
-#      - run:
-#          name: "homebrew-libtool"
-#          command: |-
-#            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
-#            brew unlink libtool && brew link libtool
-#            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+      # https://github.com/Homebrew/legacy-homebrew/issues/15488
+      - run:
+          name: "homebrew-relink"
+          command: |-
+            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+            brew unlink libtool && brew link libtool
+            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+            brew info openssl
+            #brew info openssl@3
+            #brew info openssl@1.1
+            #command -v pkg-config || true
+            #pkg-config --list-all || true
+            #HOMEBREW_PREFIX="`brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`"
+            #ls -la "${HOMEBREW_PREFIX}/lib/pkgconfig" || true
+            #ls -la "${HOMEBREW_PREFIX}/include/openssl" || true
+            #ls -la "${HOMEBREW_PREFIX}/include/openssl"/* || true
+            #find "${HOMEBREW_PREFIX}"/Cellar/openssl* -ls || true
+            pkg-config --libs --cflags nss
+            pkg-config --libs --cflags openssl || {
+                brew unlink openssl && brew link --force openssl
+                pkg-config --libs --cflags openssl ; }
+            brew unlink net-snmp && brew link --force net-snmp
 
       - restore_cache:
           keys:
             - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
             - ccache-master-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+
+      # Help SEMVER look right (optionally)
+      - run:
+          name: "fetch git tags"
+          command: git fetch --tags || true
+
+      # Fail fast if we had a problem with prerequisites - this
+      # situation would likely impact all build branches anyway.
+      # Requires a Personal API token in the building account:
+      # https://support.circleci.com/hc/en-us/articles/360052058811-Exit-Build-Early-if-Any-Test-Fails
+      - run:
+          name: Fail Fast
+          when: on_fail
+          command: |-
+            echo "Canceling workflow as a step resulted in failure"
+            curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${CIRCLE_TOKEN}"
 
 #      - run:
 #          name: "check shell"
@@ -99,14 +158,16 @@ jobs:
       # uses of sem_init() and sem_destroy() in nut-scanner.c)
       # NOTE: CANBUILD_NIT_TESTS=yes to check if single-executor environments
       # do not have a problem with it.
+      # NOTE: python3.11 is available but broken on some of the workers
+      # (no homebrew dirs in search path)
       - run:
           name: "ci_build"
           command: |-
-            CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
+            HOMEBREW_PREFIX="`brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`" \
             CANBUILD_NIT_TESTS=yes \
-            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations" \
-            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
-            LDFLAGS="-L/usr/local/lib" \
+            CFLAGS="$CC_STDVER" \
+            CXXFLAGS="$CXX_STDVER" \
+            PYTHON=python3.11 \
             ./ci_build.sh
 
       - run:
@@ -125,6 +186,13 @@ jobs:
             - ~/.ccache
           key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
 
+      - store_artifacts:
+          path: config.log
+
+      - store_artifacts:
+          path: config.nut_report_feature.log
+
+
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
@@ -132,37 +200,58 @@ workflows:
     jobs:
       # Note: while "ccache" lists hordes of symlinks to gcc-XXX versions,
       # in practice these toolkits are not installed (by default)
+      # or actually identify as clang
 
 ### This scenario is a subset of fightwarn-all below (modulo C standard),
 ### so disabled to not waste time from free CircleCI allowance limit:
 #      - osx-xcode:
-#          name: "gnu17-clang-xcode12_5_1-default-all-errors"
-#          XCODE_VER: "12.5.1"
+#          name: "gnu17-clang-xcode13_4_1-default-all-errors"
+#          XCODE_VER: "13.4.1"
 #          CC: "clang"
 #          CXX: "clang++"
 #          CC_STDVER: "-std=gnu17"
 #          CXX_STDVER: "-std=gnu++17"
 
+#      - osx-xcode:
+#          name: "gnu11-gcc-xcode13_4_1-out-of-tree"
+#          CC: "gcc"
+#          CXX: "g++"
+#          CC_STDVER: "-std=gnu11"
+#          CXX_STDVER: "-std=gnu++11"
+#          # Try an out-of-tree build:
+#          CI_BUILDDIR: "obj"
+
+#      - osx-xcode:
+#          name: "c99-cxx11-gcc-xcode13_4_1-default-distcheck"
+#          CC: "gcc"
+#          CXX: "g++"
+#          CC_STDVER: "-std=c99"
+#          CXX_STDVER: "-std=c++11"
+#          # Try usual and distchecked build:
+#          BUILD_TYPE: "default"
+
       - osx-xcode:
-          name: "gnu11-gcc-xcode12_5_1-out-of-tree"
-          CC: "gcc"
-          CXX: "g++"
+          name: "gnu11-clang-xcode13_4_1-out-of-tree"
+          CC: "clang"
+          CXX: "clang++"
+          CPP: "clang -E"
           CC_STDVER: "-std=gnu11"
           CXX_STDVER: "-std=gnu++11"
           # Try an out-of-tree build:
           CI_BUILDDIR: "obj"
 
       - osx-xcode:
-          name: "c99-cxx11-gcc-xcode12_5_1-default-distcheck"
-          CC: "gcc"
-          CXX: "g++"
+          name: "c99-cxx11-clang-xcode13_4_1-default-distcheck"
+          CC: "clang"
+          CXX: "clang++"
+          CPP: "clang -E"
           CC_STDVER: "-std=c99"
           CXX_STDVER: "-std=c++11"
           # Try usual and distchecked build:
           BUILD_TYPE: "default"
 
       - osx-xcode:
-          name: "stdDefault-xcode12_5_1-fightwarn-all"
+          name: "stdDefault-xcode13_4_1-fightwarn-all"
           # Run "default-all-errors" with both compiler families,
           # using their default C/C++ standard for current release:
           BUILD_TYPE: "fightwarn-all"
@@ -170,8 +259,8 @@ workflows:
 ### This does not work due to missing dependencies built for MacOS in homebrew:
 ### TODO? Evaluate other packagers (MacPorts, fink...)?
 #      - osx-xcode:
-#          name: "c17-clang-xcode12_5_1-alldrv"
-#          XCODE_VER: "12.5.1"
+#          name: "c17-clang-xcode13_4_1-alldrv"
+#          XCODE_VER: "13.4.1"
 #          CC: "clang"
 #          CXX: "clang++"
 #          CC_STDVER: "-std=c17"

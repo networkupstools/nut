@@ -108,9 +108,13 @@ SETFLAGS
 
 Note that this command takes a variable number of arguments, as multiple
 flags are supported.  Also note that they are not crammed together in
-"", since "RW STRING" would mean something completely different.
+"" quotes, since "RW STRING" would mean something completely different.
 
 This also replaces any previous flags for a given variable.
+
+Currently supported flags include `RW`, `STRING` and `NUMBER`
+(detailed in the NUT Network Protocol documentation); unrecognized values
+are quietly ignored.
 
 ADDCMD
 ~~~~~~
@@ -125,6 +129,19 @@ DELCMD
 	DELCMD <cmdname>
 
 	DELCMD load.on
+
+PID
+~~~
+
+	PID <id>
+
+	PID 12345
+
+	PID "StrangeOS process identifier"
+
+Response to `GETPID` query, where we serve platform-specific process
+identifier. On POSIX and many other platforms this would be a numeric
+value, but most generally it should be treated as an opaque string.
 
 DUMPDONE
 ~~~~~~~~
@@ -144,6 +161,14 @@ PONG
 This is sent in response to a PING from the server.  It is only used as
 a sanity check to make sure that the driver has not gotten stuck
 somewhere.
+
+OK
+~~
+
+	OK Goodbye
+
+This is sent in response to a LOGOUT from the server (or more likely from
+a sibling driver or `upsdrvctl` program).
 
 DATAOK
 ~~~~~~
@@ -236,6 +261,14 @@ NOTE:
 TRACKING was set to ON on upsd. In this case, driver will later return
 the execution status, using TRACKING.
 
+GETPID
+~~~~~~
+
+The server (or sibling driver instances, or `upsdrvctl` tool) can use
+this to request the platform-specific process identifier of the driver
+process. On POSIX and many other platforms this would be a numeric value,
+but most generally it should be treated as an opaque string.
+
 DUMPALL
 ~~~~~~~
 
@@ -249,6 +282,27 @@ result, the same parsing happens either way.
 The server can tell when it has a full copy of the data by waiting for
 DUMPDONE.  That special response from the driver is sent once the entire
 set has been transmitted.
+
+DUMPVALUE
+~~~~~~~~~
+
+	DUMPVALUE <varname>
+
+	DUMPVALUE driver.version
+
+Only request the value of specified variable name (and its additional
+metadata in other lines), same as when `DUMPALL` iterates all such names.
+
+The NUT data server or other socket-protocol client should parse the
+response line by line, looking for the SETINFO line to get the value;
+if a DUMPDONE is seen first, the value was not available in the driver.
+
+DUMPSTATUS
+~~~~~~~~~~
+
+	DUMPSTATUS
+
+Effectively an alias to `DUMPVALUE ups.status`.
 
 NOBROADCAST
 ~~~~~~~~~~~
@@ -265,6 +319,17 @@ enables that -- unless disabled by providing an optional zero or negative
 numeric argument. Note that initial default is to receive everything, so
 this command may be useful for connections that disabled broadcasts at
 some point.
+
+LOGOUT
+~~~~~~
+
+Primarily used by communications between driver processes and/or `upsdrvctl`,
+this command allows clients to gracefully close connection to the NUT driver
+which acts as the server on the socket/pipe, avoiding noisy logs about sudden
+disconnection.
+
+	LOGOUT
+	OK Goodbye
 
 Design notes
 ------------

@@ -17,9 +17,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include <ctype.h>
-
 #include "common.h"
+
+#include <ctype.h>
+#include <stdio.h>
+
 #include "cgilib.h"
 #include "parseconf.h"
 
@@ -160,7 +162,7 @@ static void cgilib_err(const char *errmsg)
 
 int checkhost(const char *host, char **desc)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	if (!host)

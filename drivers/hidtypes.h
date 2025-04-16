@@ -35,6 +35,7 @@ extern "C" {
 #include <sys/types.h>
 
 #include "nut_stdint.h"
+#include "nut_bool.h"
 
 /*
  * Constants
@@ -308,6 +309,8 @@ typedef struct {
 
 	long		LogMin;				/* Logical Min			*/
 	long		LogMax;				/* Logical Max			*/
+	bool		assumed_LogMax;			/* Logical Max assumed (e.g. "-1" initially)?	*/
+
 	long		PhyMin;				/* Physical Min			*/
 	long		PhyMax;				/* Physical Max			*/
 	int8_t		have_PhyMin;			/* Physical Min defined?		*/

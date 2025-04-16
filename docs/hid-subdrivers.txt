@@ -39,7 +39,7 @@ beeper enabled/disabled/muted status) can be read and written. These
 variables are usually grouped together and arranged in a hierarchical
 tree shape, similar to directories in a file system. This tree is
 called the "usage" tree. For example, here is part of the usage tree
-for a typical APC device. Variable components are separated by ".".
+for a typical APC device. Variable components are separated by `.`.
 Typical values for each variable are also shown for illustrative
 purposes.
 
@@ -179,14 +179,14 @@ You should save this information to a file, e.g.:
 You can now create an initial "stub" subdriver for your device by using
 helper script `scripts/subdriver/gen-usbhid-subdriver.sh`.
 
-NOTE: this only creates a driver code "stub" which needs to be further
+NOTE: This only creates a driver code "stub" which needs to be further
 customized to be actually useful (see "Customization" below).
 
 Use the script as follows:
 
 	scripts/subdriver/gen-usbhid-subdriver.sh < /tmp/info
 
-where /tmp/info is the file where you previously saved the debugging
+where `/tmp/info` is the file where you previously saved the debugging
 information.
 
 This script prompts you for a name for the subdriver; use only letters
@@ -380,7 +380,7 @@ typedef struct
 {
   uint8_t  reportId;                                 // Report ID = 0x01 (1)
                                                      // Collection: CA:UPS CP:OutletSystem CP:Outlet
-  int8_t   POW_UPSOutletSystemOutletSwitchable;      // Usage 0x0084006C: Switchable, Value =  to 
+  int8_t   POW_UPSOutletSystemOutletSwitchable;      // Usage 0x0084006C: Switchable, Value =  to
   int8_t   POW_UPSOutletSystemOutletDelayBeforeStartup; // Usage 0x00840056: Delay Before Startup, Value = -1 to 60
   int8_t   POW_UPSOutletSystemOutletDelayBeforeShutdown; // Usage 0x00840057: Delay Before Shutdown, Value = -1 to 60
   int8_t   POW_UPSOutletSystemOutletDelayBeforeReboot; // Usage 0x00840055: Delay Before Reboot, Value = -1 to 60

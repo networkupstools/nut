@@ -11,7 +11,7 @@ This chapter will present you these mechanisms, by increasing order of security
 level. This means that the more security you need, the more mechanisms you will
 have to apply.
 
-NOTE: you may want to have a look at NUT Quality Assurance, since some
+NOTE: You may want to have a look at NUT Quality Assurance, since some
 topics are related to NUT security and reliability.
 
 
@@ -187,7 +187,7 @@ During the initial
 <<NUT_user_creation,NUT user creation>>, we have created a
 monitoring user for `upsmon`.
 
-You can also create an 'administrator' user with full power using:
+You can also create an `administrator` user in NUT with full power using:
 
 	[administrator]
 		password = mypass
@@ -275,7 +275,7 @@ If the server is build with tcp-wrappers support enabled, it will check if the
 NUT username is allowed to connect from the client address through the
 `/etc/hosts.allow` and `/etc/hosts.deny` files.
 
-NOTE: this will only be done for commands that require the user to be logged
+NOTE: This will only be done for commands that require the user to be logged
 into the server.
 
 `hosts.allow`:
@@ -295,10 +295,10 @@ Configuring SSL
 
 SSL is available as a build option (`--with-ssl`).
 
-It encrypts sessions between upsd and clients, and can also be used to
+It encrypts sessions between `upsd` and clients, and can also be used to
 authenticate servers.
 
-This means that stealing port 3493 from upsd will no longer net you interesting
+This means that stealing port 3493 from `upsd` will no longer net you interesting
 passwords.
 
 Several things must happen before this will work, however. This chapter will
@@ -375,18 +375,18 @@ Example:
 	cp upsd.crt /usr/local/ups/etc/certs/0123abcd.0
 
 If you already have a file with that name in there, increment the
-0 until you get a unique filename that works.
+`0` part until you get a unique filename that works.
 
-If you have multiple client systems (like upsmon instances in
+If you have multiple client systems (like `upsmon` instances in
 secondary mode), be sure to install this file on them as well.
 
 We recommend making a directory under your existing confpath to
 keep everything in the same place.  Remember the path you created,
-since you will need to put it in upsmon.conf later.
+since you will need to put it in `upsmon.conf` later.
 
 It must not be writable by unprivileged users, since someone could
-insert a new client certificate and fool upsmon into trusting a
-fake upsd.
+insert a new client certificate and fool `upsmon` into trusting a
+fake `upsd`.
 
 Create the combined file for upsd
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -398,12 +398,12 @@ To do so, use the below commands:
 	chmod 0640 upsd.pem
 
 This file must be kept secure, since anyone possessing it could
-pretend to be upsd and harvest authentication data if they get a
+pretend to be `upsd` and harvest authentication data if they get a
 hold of port 3493.
 
-Having it be owned by 'root' and readable by group 'nut' allows upsd
+Having it owned by `root` and readable by group `nut` allows `upsd`
 to read the file without being able to change the contents.  This
-is done to minimize the impact if someone should break into upsd.
+is done to minimize the impact if someone should break into `upsd`.
 NUT reads the key and certificate files after dropping privileges
 and forking.
 
@@ -439,13 +439,13 @@ Restart upsd
 It should come back up without any complaints.  If it says something
 about keys or certificates, then you probably missed a step.
 
-If you run upsd as a separate user id (like nutsrv), make sure that
-user can read the upsd.pem file.
+If you run `upsd` as a separate user id (like `nutsrv`), make sure that
+user can read the `upsd.pem` file.
 
 Point upsmon at the certificates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Edit your upsmon.conf, and tell it where the CERTPATH is:
+Edit your `upsmon.conf`, and tell it where the `CERTPATH` is:
 
 	CERTPATH <path>
 
@@ -456,27 +456,27 @@ Example:
 Recommended: make upsmon verify all connections with certificates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Put this in upsmon.conf:
+Put this in `upsmon.conf`:
 
 	CERTVERIFY 1
 
-Without this, there is no guarantee that the upsd is the right host.
+Without this, there is no guarantee that the `upsd` is the right host.
 Enabling this greatly reduces the risk of man in the middle attacks.
 
 This effectively forces the use of SSL, so don't use this unless
-all of your upsd hosts are ready for SSL and have their certificates
+all of your `upsd` hosts are ready for SSL and have their certificates
 in order.
 
 Recommended: force upsmon to use SSL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Again in upsmon.conf:
+Again in `upsmon.conf`:
 
 	FORCESSL 1
 
 If you don't use `CERTVERIFY 1`, then this will at least make sure
 that nobody can sniff your sessions without a large effort.  Setting
-this will make upsmon drop connections if the remote upsd doesn't
+this will make `upsmon` drop connections if the remote `upsd` doesn't
 support SSL, so don't use it unless all of them have it running.
 
 NSS backend usage
@@ -510,12 +510,12 @@ Certificates should be signed by a certification authorities (CAs).
 Following commands are typical samples, contact your SSL guru or security
 officer to follow your company procedures.
 
-.Generate a server certificate for upsd:
+.Generate a server certificate for `upsd`:
 - Create a directory where store the certificate database: `mkdir cert_db`
 - Create the certificate database : `certutil -N -d cert_db`
 - Import the CA certificate:
 	`certutil -A -d cert_db -n "My Root CA" -t "TC,," -a -i rootca.crt`
-- Create a server certificate request (here called 'My nut server'):
+- Create a server certificate request (here called "My nut server"):
 	`certutil -R -d cert_db -s "CN=My nut server,O=MyCompany,ST=MyState,C=US" -a -o server.req`
 - Make your CA sign the certificate (produces server.crt)
 - Import the signed certificate into server database:
@@ -542,8 +542,8 @@ an "official" certificate authority.
 	`certutil -N -d CA_db`
 - Generate a certificate for CA:
 	`certutil -S -d CA_db -n "My Root CA" -s "CN=My CA,O=MyCompany,ST=MyState,C=US" -t "CT,," -x -2`
-(Do not forget to answer 'Yes' to the question 'Is this a CA certificate [y/N]?')
-- Extract the CA certificate to be able to import it in upsd (or upsmon)
+(Do not forget to answer `Yes` to the question "Is this a CA certificate [y/N]?")
+- Extract the CA certificate to be able to import it in `upsd` (or `upsmon`)
 certificate database:
 	`certutil -L -d CA_db -n "My Root CA" -a -o rootca.crt`
 - Sign a certificate request with the CA certificate (simulate a real CA
@@ -562,14 +562,14 @@ database .db files) to the right place, such as `/usr/local/ups/etc/`:
 upsd (required): certificate database and self certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Edit the upsd.conf to tell where find the certificate database:
+Edit the `upsd.conf` to tell where find the certificate database:
 
 	CERTPATH /usr/local/ups/etc/cert_db
 
 Also tell which is the certificate to send to clients to authenticate itself
 and the password to decrypt private key associated to certificate:
 
-	CERTIDENT 'certificate name' 'database password'
+	CERTIDENT "certificate name" "database password"
 
 NOTE: Generally, the certificate name is the server domain name, but is not
 a hard rule. The certificate can be named as useful.
@@ -583,7 +583,7 @@ NUT with `WITH_CLIENT_CERTIFICATE_VALIDATION` defined:
 	make CFLAGS="-DWITH_CLIENT_CERTIFICATE_VALIDATION"
 
 UPSD can accept three levels of client authentication. Just specify it with
-the directive `CERTREQUEST` with the corresponding value in the upsd.conf
+the directive `CERTREQUEST` with the corresponding value in the `upsd.conf`
 file:
 
 - NO: no client authentication.
@@ -593,28 +593,29 @@ If the client does not send any certificate, the connection is closed.
 - REQUIRE: a certificate is requested to the client and if it is not valid
 (no validation chain) the connection is closed.
 
-Like CA certificates, you can add many 'trusted' client and CA certificates
+Like CA certificates, you can add many "trusted" client and CA certificates
 in server's certificate databases.
 
 
 upsmon (required): upsd authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order for upsmon to securely connect to upsd, it must authenticate it.
-You must associate an upsd host name to security rules in upsmon.conf
-with the directive 'CERTHOST'.
+In order for `upsmon` to securely connect to `upsd`, it must authenticate it.
+You must associate an `upsd` host name to security rules in `upsmon.conf`
+with the directive `CERTHOST`.
 
-'CERTHOST' associates a hostname to a certificate name. It also determines
+`CERTHOST` associates a hostname to a certificate name. It also determines
 whether a SSL connection is mandatory, and if the server certificate must be
 validated.
 
-	CERTHOST 'hostname' 'certificate name' 'certverify' 'forcessl'
+	CERTHOST "hostname" "certificate name" "certverify" "forcessl"
 
-If the flag `forcessl` is set to `1`, and upsd answers that it can not
+If the flag `forcessl` is set to `1`, and `upsd` answers that it can not
 connect with SSL, the connection closes.
+
 If the flag `certverify` is set to `1` and the connection is done in SSL,
-upsd's certificate is verified and its name must be the specified
-'certificate name'.
+`upsd`'s certificate is verified and its name must be the specified
+`"certificate name"`.
 
 To prevent security leaks, you should set all `certverify` and `forcessl`
 flags to `1` (force SSL connection and validate all certificates for all
@@ -631,14 +632,15 @@ name is its hostname.
 upsmon (optional): certificate database and self certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Like upsd, upsmon may need to authenticate itself (upsd's `CERTREQUEST`
+Like `upsd`, `upsmon` may need to authenticate itself (`upsd`'s `CERTREQUEST`
 directive set to `REQUEST` or `REQUIRE`).
+
 It must access to a certificate (and its private key) in a certificate
-database configuring `CERTPATH` and `CERTIDENT` in upsmon.conf in the
-same way as upsd.
+database configuring `CERTPATH` and `CERTIDENT` in `upsmon.conf` in the
+same way as `upsd`.
 
 	CERTPATH /usr/local/ups/etc/cert_db
-	CERTIDENT 'certificate name' 'database password'
+	CERTIDENT "certificate name" "database password"
 
 
 Restart upsd
@@ -647,21 +649,21 @@ Restart upsd
 It should come back up without any complaints.  If it says something
 about keys or certificates, then you probably missed a step.
 
-If you run upsd as a separate user ID (like nutsrv), make sure that
+If you run `upsd` as a separate user ID (like `nutsrv`), make sure that
 user can read files in the certificate directory. NUT reads the keys and
 certificates after forking and dropping privileges.
 
 Restart upsmon
 ~~~~~~~~~~~~~~
 
-You should see something like this in the syslog from upsd:
+You should see something like this in the syslog from `upsd`:
 
 	foo upsd[1234]: Client mon@localhost logged in to UPS [myups] (SSL)
 
-If upsd or upsmon give any error messages, or the `(SSL)` is missing,
+If `upsd` or `upsmon` give any error messages, or the `(SSL)` is missing,
 then something isn't right.
 
-If in doubt about upsmon, start it with -D so it will stay in
+If in doubt about `upsmon`, start it with `-D` so it will stay in
 the foreground and print debug messages.  It should print something
 like this every couple of seconds:
 
@@ -731,7 +733,7 @@ Note that the replacement of OpenSSL by Mozilla Network Security Services
 chrooting and other forms of paranoia
 -------------------------------------
 
-It has been possible to run the drivers and upsd in a chrooted jail for
+It has been possible to run the drivers and `upsd` in a chrooted jail for
 some time, but it involved a number of evil hacks.  From the 1.3 series,
 a much saner chroot behavior exists, using BIND 9 as an inspiration.
 
@@ -763,7 +765,7 @@ programs have been built with the default prefix, so they are using
 	cp -a /usr/local/ups/etc/upsd.conf .
 	cp -a /usr/local/ups/etc/ups.conf .
 
-We're using 'cp -a' to maintain the permissions on those files.
+We're using `cp -a` to maintain the permissions on those files.
 
 Now bring over your state path, maintaining the same permissions as
 before.
@@ -803,7 +805,7 @@ symlinks
 ~~~~~~~~
 
 After you do this, you will have two copies of many things, like the
-confpath and the state path.  I recommend deleting the 'real'
+confpath and the state path.  I recommend deleting the "real"
 `/var/state/ups`, replacing it with a symlink to
 `/chroot/nut/var/state/ups`.  That will let other programs reference the
 `.pid` files without a lot of hassle.
@@ -811,7 +813,7 @@ confpath and the state path.  I recommend deleting the 'real'
 You can also do this with your confpath and point `/usr/local/ups/etc` (or
 equivalent on your system) at `/chroot/nut/usr/local/ups/etc` unless you're
 worried about something hurting the files inside that directory.  In that
-case, you should maintain a 'golden' copy and push it into the chroot path
+case, you should maintain a "golden" copy and push it into the chroot path
 after making changes.
 
 The `upsdrvctl` itself does not chroot, so the `ups.conf` still needs to be
@@ -820,9 +822,9 @@ in the usual confpath.
 upsmon
 ~~~~~~
 
-This has not yet been applied to upsmon, since it can be quite
+This has not yet been applied to `upsmon`, since it can be quite
 complicated when there are notifiers that need to be run.  One
-possibility would be for upsmon to have three instances:
+possibility would be for `upsmon` to have three instances:
 
 	- privileged root parent that listens for a shutdown command
 

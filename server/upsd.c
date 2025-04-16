@@ -5,6 +5,7 @@
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
 	2019 		Eaton (author: Arnaud Quette <ArnaudQuette@eaton.com>)
+	2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,7 +43,7 @@
 #  include <signal.h>
 /* #include <poll.h> */
 # endif
-#else
+#else	/* WIN32 */
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
 # include <ws2tcpip.h>
@@ -52,7 +53,7 @@
 # include "wincompat.h"
 # undef W32_NETWORK_CALL_OVERRIDE
 # include <getopt.h>
-#endif
+#endif	/* WIN32 */
 
 #include "user.h"
 #include "nut_ctype.h"
@@ -117,7 +118,7 @@ typedef enum {
 	SERVER
 #ifdef WIN32
 	,NAMED_PIPE
-#endif
+#endif	/* WIN32 */
 
 } handler_type_t;
 
@@ -149,14 +150,14 @@ static tracking_t	*tracking_list = NULL;
 #ifndef WIN32
 	/* pollfd  */
 static struct pollfd	*fds = NULL;
-#else
+#else	/* WIN32 */
 static HANDLE		*fds = NULL;
 static HANDLE		mutex = INVALID_HANDLE_VALUE;
-#endif
+#endif	/* WIN32 */
 static handler_t	*handler = NULL;
 
 	/* pid file */
-static char	pidfn[SMALLBUF];
+static char	pidfn[NUT_PATH_MAX];
 
 	/* set by signal handlers */
 static int	reload_flag = 0, exit_flag = 0;
@@ -191,6 +192,8 @@ upstype_t *get_ups_ptr(const char *name)
 	upstype_t	*tmp;
 
 	if (!name) {
+		upsdebugx(3, "%s: not a valid UPS: <null>",
+			__func__);
 		return NULL;
 	}
 
@@ -200,6 +203,8 @@ upstype_t *get_ups_ptr(const char *name)
 		}
 	}
 
+	upsdebugx(3, "%s: not a valid UPS: %s",
+		__func__, NUT_STRARG(name));
 	return NULL;
 }
 
@@ -275,11 +280,14 @@ static void setuptcp(stype_t *server)
 {
 #ifdef WIN32
 	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
-#endif
+#endif	/* WIN32 */
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
+
+#ifdef WIN32
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif	/* WIN32 */
 
 	if (VALID_FD_SOCK(server->sock_fd)) {
 		/* Already bound, e.g. thanks to 'LISTEN *' handling and injection
@@ -442,10 +450,10 @@ static void setuptcp(stype_t *server)
 
 	if ((v = getaddrinfo(server->addr, server->port, &hints, &res)) != 0) {
 		if (v == EAI_SYSTEM) {
-			fatal_with_errno(EXIT_FAILURE, "getaddrinfo");
+			fatal_with_errno(EXIT_FAILURE, "getaddrinfo('%s')", NUT_STRARG(server->addr));
 		}
 
-		fatalx(EXIT_FAILURE, "getaddrinfo: %s", gai_strerror(v));
+		fatalx(EXIT_FAILURE, "getaddrinfo('%s'): %s", NUT_STRARG(server->addr), gai_strerror(v));
 	}
 
 	for (ai = res; ai; ai = ai->ai_next) {
@@ -460,10 +468,12 @@ static void setuptcp(stype_t *server)
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
 
+#ifdef IPV6_V6ONLY
 		/* Ordinarily we request that IPv6 listeners handle only IPv6
 		 * and not IPv4 mapped addresses - if the OS would honour that.
 		 * TOTHINK: Does any platform need `#ifdef IPV6_V6ONLY` given
 		 * that we apparently already have AF_INET6 OS support everywhere?
+		 * YES: Solaris 8 has IPv6 but not this symbol.
 		 */
 		if (ai->ai_family == AF_INET6) {
 			if (setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&one, sizeof(one)) != 0) {
@@ -471,6 +481,7 @@ static void setuptcp(stype_t *server)
 				/* ack, ignore */
 			}
 		}
+#endif
 
 		if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) < 0) {
 			upsdebug_with_errno(3, "setuptcp: bind");
@@ -487,7 +498,7 @@ static void setuptcp(stype_t *server)
 		if (fcntl(sock_fd, F_SETFL, v | O_NDELAY) == -1) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(set)");
 		}
-#endif
+#endif	/* !WIN32 */
 
 		if (listen(sock_fd, 16) < 0) {
 			upsdebug_with_errno(3, "setuptcp: listen");
@@ -521,7 +532,7 @@ static void setuptcp(stype_t *server)
 
 		/* Associate socket event to the socket via its Event object */
 		WSAEventSelect( server->sock_fd, server->Event, FD_ACCEPT );
-#endif
+#endif	/* WIN32 */
 
 	freeaddrinfo(res);
 
@@ -569,7 +580,7 @@ static void client_disconnect(nut_ctype_t *client)
 
 #ifdef WIN32
 	CloseHandle(client->Event);
-#endif
+#endif	/* WIN32 */
 
 	if (client->loginups) {
 		declogins(client->loginups);
@@ -813,7 +824,7 @@ static void client_connect(stype_t *server)
 
 	/* Associate socket event to the socket via its Event object */
 	WSAEventSelect( client->sock_fd, client->Event, FD_READ );
-#endif
+#endif	/* WIN32 */
 
 	pconf_init(&client->ctx, NULL);
 
@@ -1067,10 +1078,10 @@ static void driver_free(void)
 		if (VALID_FD(ups->sock_fd)) {
 #ifndef WIN32
 			close(ups->sock_fd);
-#else
+#else	/* WIN32 */
 			DisconnectNamedPipe(ups->sock_fd);
 			CloseHandle(ups->sock_fd);
-#endif
+#endif	/* WIN32 */
 			ups->sock_fd = ERROR_FD;
 		}
 
@@ -1088,6 +1099,8 @@ static void driver_free(void)
 
 static void upsd_cleanup(void)
 {
+	upsdebugx(1, "%s: starting the end-game", __func__);
+
 	if (strlen(pidfn) > 0) {
 		unlink(pidfn);
 	}
@@ -1116,7 +1129,9 @@ static void upsd_cleanup(void)
 		ReleaseMutex(mutex);
 		CloseHandle(mutex);
 	}
-#endif
+#endif	/* WIN32 */
+
+	upsdebugx(1, "%s: finished", __func__);
 }
 
 static void poll_reload(void)
@@ -1151,10 +1166,10 @@ static void poll_reload(void)
 	/* The checks above effectively limit that maxconn is in size_t range */
 	fds = xrealloc(fds, (size_t)maxconn * sizeof(*fds));
 	handler = xrealloc(handler, (size_t)maxconn * sizeof(*handler));
-#else
+#else	/* WIN32 */
 	fds = xrealloc(fds, (size_t)MAXIMUM_WAIT_OBJECTS * sizeof(*fds));
 	handler = xrealloc(handler, (size_t)MAXIMUM_WAIT_OBJECTS * sizeof(*handler));
-#endif
+#endif	/* WIN32 */
 }
 
 /* instant command and setvar status tracking */
@@ -1308,9 +1323,12 @@ char *tracking_get(const char *id)
 		case STAT_UNKNOWN:
 			return "ERR UNKNOWN";
 		case STAT_INVALID:
+		case STAT_CONVERSION_FAILED:
 			return "ERR INVALID-ARGUMENT";
 		case STAT_FAILED:
 			return "ERR FAILED";
+		default:
+			break;
 		}
 	}
 
@@ -1387,10 +1405,10 @@ static void mainloop(void)
 #ifndef WIN32
 	int	ret;
 	nfds_t	i;
-#else
+#else	/* WIN32 */
 	DWORD	ret;
 	pipe_conn_t * conn;
-#endif
+#endif	/* WIN32 */
 
 	nfds_t	nfds = 0;
 	upstype_t	*ups;
@@ -1602,7 +1620,7 @@ static void mainloop(void)
 			continue;
 		}
 	}
-#else
+#else	/* WIN32 */
 	/* scan through driver sockets */
 	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
 
@@ -1791,7 +1809,7 @@ static void mainloop(void)
 			upsdebugx(2, "%s: <unknown> has data available", __func__);
 			break;
 	}
-#endif
+#endif	/* WIN32 */
 }
 
 static void help(const char *arg_progname)
@@ -1799,9 +1817,10 @@ static void help(const char *arg_progname)
 
 static void help(const char *arg_progname)
 {
-	printf("Network server for UPS data.\n\n");
-	printf("usage: %s [OPTIONS]\n", arg_progname);
+	print_banner_once(arg_progname, 2);
+	printf("NUT network data server for UPS monitoring and management.\n");
 
+	printf("\nusage: %s [OPTIONS]\n", arg_progname);
 	printf("\n");
 	printf("  -c <command>	send <command> via signal to background process\n");
 	printf("		commands:\n");
@@ -1809,7 +1828,7 @@ static void help(const char *arg_progname)
 	printf("		 - stop: stop process and exit\n");
 #ifndef WIN32
 	printf("  -P <pid>	send the signal above to specified PID (bypassing PID file)\n");
-#endif
+#endif	/* !WIN32 */
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -FF		stay foregrounded and still save the PID file\n");
@@ -1823,6 +1842,8 @@ static void help(const char *arg_progname)
 	printf("  -6		IPv6 only\n");
 
 	nut_report_config_flags();
+
+	printf("\n%s", suggest_doc_links(progname, "ups.conf, upsd.conf and upsd.users"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -1856,9 +1877,9 @@ static void setup_signals(void)
 	/* handle reloading */
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGHUP, &sa, NULL);
-#else
+#else	/* WIN32 */
 	pipe_create(UPSD_PIPE_NAME);
-#endif
+#endif	/* WIN32 */
 }
 
 void check_perms(const char *fn)
@@ -1875,11 +1896,12 @@ void check_perms(const char *fn)
 
 	/* include the x bit here in case we check a directory */
 	if (st.st_mode & (S_IROTH | S_IXOTH)) {
-		upslogx(LOG_WARNING, "%s is world readable", fn);
+		upslogx(LOG_WARNING, "WARNING: %s is world readable (hope you don't have passwords there)", fn);
 	}
-#else
+#else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(fn);
-#endif
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 }
 
 int main(int argc, char **argv)
@@ -1888,9 +1910,9 @@ int main(int argc, char **argv)
 #ifndef WIN32
 	int	cmd = 0;
 	pid_t	oldpid = -1;
-#else
+#else	/* WIN32 */
 	const char * cmd = NULL;
-#endif
+#endif	/* WIN32 */
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -1901,7 +1923,7 @@ int main(int argc, char **argv)
 	statepath = xstrdup(dflt_statepath());
 #ifndef WIN32
 	datapath = xstrdup(NUT_DATADIR);
-#else
+#else	/* WIN32 */
 	datapath = getfullpath(PATH_SHARE);
 
 	/* remove trailing .exe */
@@ -1918,12 +1940,12 @@ int main(int argc, char **argv)
 	else {
 		progname = drv_name;
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* set up some things for later */
 	snprintf(pidfn, sizeof(pidfn), "%s/%s.pid", altpidpath(), progname);
 
-	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
+	print_banner_once(progname, 0);
 
 	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFB")) != -1) {
 		switch (i) {
@@ -1949,9 +1971,10 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
-				/* Note - we already printed the banner for program name */
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(progname, 1);
 				nut_report_config_flags();
-
 				exit(EXIT_SUCCESS);
 
 			case 'c':
@@ -1972,7 +1995,7 @@ int main(int argc, char **argv)
 				if ((oldpid = parsepid(optarg)) < 0)
 					help(progname);
 				break;
-#endif
+#endif	/* !WIN32 */
 
 			case 'D':
 				nut_debug_level++;
@@ -2031,20 +2054,22 @@ int main(int argc, char **argv)
 	 * for probing whether a competing older instance of this program
 	 * is running (error if it is).
 	 */
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 #ifndef WIN32
 	/* If cmd == 0 we are starting and check if a previous instance
 	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)
 	 */
 
 	if (oldpid < 0) {
-		cmdret = sendsignalfn(pidfn, cmd);
+		cmdret = sendsignalfn(pidfn, cmd, progname, 1);
 	} else {
-		cmdret = sendsignalpid(oldpid, cmd);
+		cmdret = sendsignalpid(oldpid, cmd, progname, 1);
 	}
 #else	/* if WIN32 */
 	if (cmd) {
 		/* Command the running daemon, it should be there */
-		cmdret = sendsignal(UPSD_PIPE_NAME, cmd);
+		cmdret = sendsignal(UPSD_PIPE_NAME, cmd, 1);
 	} else {
 		/* Starting new daemon, check for competition */
 		mutex = CreateMutex(NULL, TRUE, UPSD_PIPE_NAME);
@@ -2084,7 +2109,7 @@ int main(int argc, char **argv)
 		 */
 		upslogx(LOG_WARNING, "Could not %s PID file '%s' "
 			"to see if previous upsd instance is "
-			"already running!",
+			"already running or not!",
 			(cmdret == -3 ? "find" : "parse"),
 			pidfn);
 		break;
@@ -2132,11 +2157,21 @@ int main(int argc, char **argv)
 				upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
 			}
 # endif
-#endif	/* not WIN32 */
+#else 	/* WIN32 */
+			/* NOTE: Code above is just suggestions about different
+			 *  ways to send commands on other platforms; nothing
+			 *  to fix here as if it were NUT_WIN32_INCOMPLETE
+			 *  (or maybe suggest restarting NUT service whole?)
+			 */
+			/* NUT_WIN32_INCOMPLETE_DETAILED("could not signal a running daemon (if any)"); */
+#endif	/* WIN32 */
 		}
 
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
+
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 
 	argc -= optind;
 	argv += optind;
@@ -2165,9 +2200,9 @@ int main(int argc, char **argv)
 	/* default to system limit (may be overridden in upsd.conf) */
 	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
 	maxconn = (nfds_t)sysconf(_SC_OPEN_MAX);
-#else
-	maxconn = 64;  /*FIXME : arbitrary value, need adjustement */
-#endif
+#else	/* WIN32 */
+	maxconn = 64;  /*FIXME NUT_WIN32_INCOMPLETE : arbitrary value, need adjustement */
+#endif	/* WIN32 */
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
@@ -2236,7 +2271,7 @@ int main(int argc, char **argv)
 	} else {
 		upsdebugx(1, "chdired into statepath %s for driver sockets", statepath);
 	}
-#endif
+#endif	/* !WIN32 */
 
 	/* check statepath perms */
 	check_perms(statepath);

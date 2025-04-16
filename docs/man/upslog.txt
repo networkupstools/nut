@@ -25,98 +25,184 @@ common UPS models.  See the description below to make your own.
 OPTIONS
 -------
 
-*-h*::
-Display the help message.
-
 *-f* 'format'::
 Monitor the UPS using this format string.  Be sure to enclose
 'format' in quotes so your shell doesn't split it up. Valid escapes
 within this string are:
-
++
+--
 %%;; Insert a single "%"
 
-%TIME format%;; Insert the time with strftime formatting
+%t;; Insert a single TAB character (like `printf("\t")`)
 
-%ETIME%;; Insert the number of seconds, ala time_t.  This is now a
-10 digit number.
+%TIME format%;; Insert the time with `strftime` formatting
 
-%HOST%;; insert the local hostname
+%ETIME%;; Insert the number of seconds since the start of "Epoch",
+ala `time_t`.  This is now a 10-digit number.
 
-%UPSHOST%;; insert the host of the UPS being monitored
+%HOST%;; Insert the local hostname
 
-%PID%;; insert the pid of upslog
+%UPSHOST%;; Insert the host of the UPS being monitored
+(the `<system>` part of your logging specification, e.g. `ups[@host[:port]]`)
 
-%VAR varname%;; insert the value of variable varname
+%PID%;; Insert the PID of `upslog` itself
+
+%VAR varname%;; Insert the value of variable varname
 (see NUT developer documentation chapter "Variables" on-line or in
 the `docs/nut-names.txt` file in sources of the NUT version you have
 installed for more details)
-
+--
++
 The default format string is:
 
  %TIME @Y@m@d @H@M@S% %VAR battery.charge% %VAR input.voltage%
  %VAR ups.load% [%VAR ups.status%] %VAR ups.temperature%
  %VAR input.frequency%
 
+*-N*::
+Prefix `%UPSHOST%%t` before the format string (whether default or custom).
+Useful when logging many systems into same target.
++
+NOTE: This option DOES NOT currently check if you already have `%UPSHOST%`
+in the formatting string (e.g. specified explicitly).
+
 *-i* 'interval'::
 
-Wait this many seconds between polls.  This defaults to 30 seconds.
+Wait this many seconds between polls.  This defaults to '30' seconds.
 +
-If you require tighter timing, you should write your own logger using
+If you require tighter timing, consider writing your own logger using
 the linkman:upsclient[3] library.
+
+*-d* 'count'::
+
+Exit after specified amount of updates.  Default is '0' for infinite loop
+(until interrupted otherwise).
 
 *-l* 'logfile'::
 
 Store the results in this file.
 +
-You can use "-" for stdout, but upslog will remain in the foreground
+You can use `-` for stdout, but `upslog` will remain in the foreground
 by default.
++
+Requires that the `-s <system>` option is also used for the single-system
+logging.
++
+Can be used with the `-m <tuple>`, will be added to the list.
+
+*-D*::
+Raise debugging verbosity level by one; `upslog` will remain in the
+foreground by default.
 
 *-F*::
 upslog will run in the foreground, regardless of logging target.
 
 *-B*::
-upslog will run in the background, regardless of logging target.
+upslog will run in the background, regardless of logging target or debugging.
 
 *-s* 'ups'::
 Monitor this UPS.  The format for this option is
 +upsname[@hostname[:port]]+.  The default hostname is "localhost".
++
+The 'upsname' may be an asterisk `*` to query UPSes currently served by
+'hostname', and monitor each of them (into the same logging destination).
++
+Requires that the `-l <logfile>` option is also used for the single-system
+logging.
++
+Can be used with the `-m <tuple>`, will be added to the list.
 
 *-m* 'tuple'::
-Monitor multiple UPSs. The format for this option is a tuple of
-ups and logfile separated by commas. An example would be:
-`upsname@hostname:9999,/var/log/nut/cps.log`
+Monitor multiple UPSs (provided several instances of such option).
++
+The format for this option is a tuple of UPS system and log file
+specification, separated by commas. An example would be:
++
+----
+upsname@hostname:9999,/var/log/nut/cps.log
+----
++
+The 'upsname' may be an asterisk `*` to query UPSes currently served by
+'hostname', and monitor each of them (into the same logging destination).
++
+Tuples may specify `-` as the logfile, to emit messages on `stdout`
+(e.g. to be collected by the system journal for services).
++
+Use of `stdout` via tuple-based logging specifications also
+implies that upslog will remain in the foreground by default.
 
 *-u* 'username'::
 
-If started as root, upslog will *setuid*(2) to the user id
+If started as 'root', `upslog` will linkmanext:setuid[2] to the user id
 associated with 'username' for security.
 +
 If 'username' is not defined, it will use the value that was compiled into
-the program.  This defaults to "nobody", which is less than ideal.
+the program.  This defaults to 'nobody' (if not otherwise configured),
+which is far from ideal.
+
+COMMON OPTIONS
+--------------
+
+*-h*::
+Show the command-line help message.
+
+*-V*::
+Show NUT version banner.  More details may be available if you also
+`export NUT_DEBUG_LEVEL=1` or greater verbosity level.
+
+*-W* 'secs'::
+Set the timeout for initial network connections (by default they are
+indefinitely non-blocking, or until the system interrupts the attempt).
+Overrides the optional `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
 
 SERVICE DELAYS
 --------------
 
-The interval value is merely the number given to *sleep*(3) after running
+The interval value is merely the number given to linkmanext:sleep[3] after running
 through the format string.  Therefore, a query will actually take slightly
 longer than the interval, depending on the speed of your system.
 
 ON-DEMAND LOGGING
 -----------------
 
-Sending a USR1 signal to a running *upslog* process makes it wake from the
+Sending a `SIGUSR1` to a running *upslog* process makes it wake from the
 current sleep and log immediately.  This is useful when triggered from a
 *upssched* event trigger (e.g. `AT ONBATT` or `AT ONLINE`) to ensure that an
 entry always exists, even if the power goes away for a period of time shorter
 than that specified by the `-i` argument.
 
+LOG CO-LOCATION
+---------------
+
+It is possible and safe to specify the same log file (including `-` for stdout)
+in several tuples, and it would only be opened or closed once without conflict.
+
+Consider adding `%UPSHOST%` to your custom formatting string (e.g. by using
+the *-N* command-line option), in order to easily differentiate lines
+corresponding to different systems, when logging them to the same target.
 
 LOG ROTATION
 ------------
 
 *upslog* writes its PID to `upslog.pid`, and will reopen the log file if you
-send it a SIGHUP.  This allows it to keep running when the log is rotated
+send it a `SIGHUP`.  This allows it to keep running when the log is rotated
 by an external program.
+
+CAVEATS
+-------
+
+Historically this daemon supported logging of data for one UPS system per run
+(specified by the `-s` option) into one log file name or `stdout` (specified
+by the `-l` option).
+
+Since NUT v2.8.1 it allowed to log several devices (each logged into its
+individual destination file or common `stdout`) as specified by multiple
+`-m tuple` options.  But the two modes were effectively exclusive of each
+other (single-UPS options were ignored if tuples are also provided).
+
+Since NUT v2.8.3, the single-UPS options are added to the list of tuples,
+so both legacy and new options can be reliably used to monitor multiple
+devices in the same run.
 
 SEE ALSO
 --------

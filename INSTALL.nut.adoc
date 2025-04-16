@@ -1,5 +1,183 @@
 Installation instructions
 =========================
+// NOTE: No blank line here, document-header include processing should kick in!
+//GH_MARKUP_1095//ifdef::top_srcdir[]
+//GH_MARKUP_1095//include::{top_srcdir}docs/asciidoc-vars.conf[]
+//GH_MARKUP_1095//endif::top_srcdir[]
+//GH_MARKUP_1095//ifndef::top_srcdir[]
+//GH_MARKUP_1095//include::docs/asciidoc-vars.conf[]
+//GH_MARKUP_1095//endif::top_srcdir[]
+//GH_MARKUP_1095_INCLUDE_BEGIN//a6bd83d48 (2025-03-20) docs/asciidoc-vars.conf: document that linkdoc may have further args
+ifndef::asciidoc-vars-nut-included[]
+:asciidoc-vars-nut-included:	true
+// NOTE: The big block of comments and definitions below comes from
+// NUT::docs/asciidoc-vars.conf and is included into top-level document
+// sources by maintenance recipes directly (`make maintainer-asciidocs`),
+// due to current limitations of the GitHub Web UI asciidoc renderer.
+// Hopefully it can be dropped in favor of compact include definitions
+// (see README.adoc for anticipated example) after this issue is resolved
+// on their side:
+// * https://github.com/github/markup/issues/1095
+//
+// This file should be included into NUT documentation sources to consistently
+// define certain expandable attributes, with contents defined based on the
+// rendition target (e.g. GitHub Web UI, plain text, locally built HTML/PDF...)
+// Note that currently GitHub Web UI references lead to nut-website (as of
+// last built and published revision), not to neighboring documents in the
+// source browser (which would make sense for branch revisions, etc.) due
+// to certain complexity about referencing other-document sections with a
+// partially functional rendering engine there. Exploration and fixes are
+// welcome (actually working links like
+// https://github.com/networkupstools/nut/tree/master#installing or
+// https://github.com/networkupstools/nut/blob/master/UPGRADING.adoc#changes-from-274-to-280
+// do seem promising)!
+//
+// Since the GitHub UI does not allow use of custom asciidoc configuration
+// files, or generally does not process the `include:` requests at this time,
+// clumsy expandable attributes had to be used (usually a set including a
+// prefix with meaningful name, and one or more separators and/or a suffix
+// with shortened names). For our classic documentation renditions, they
+// should resolve to properly defined macros from `docs/asciidoc.conf`
+// (usually named same as the variables defined here, for simplicity):
+// * `linksrcdoc` allows to refer to a source of documentation file
+//   relative to the root of NUT code base.
+// * `linkdoc` allows to refer to a file under `docs/` directory (or
+//   its nut-website rendition).
+// * `xref` substitutes the asciidoc shorthand '<< >>' syntax with
+//   attributes that conditionally expand to:
+//   - links on GitHub (references can point at most to a section of
+//     level docs/common.xsl's <chunk.section.depth>), or
+//   - xref asciidoc macros when generating docs.
+// * `linksingledoc` guarantees that, when chunked HTML is generated,
+//   the link always points to a non-chunked file.
+// * `linkman2` allows to support different names for the manpage and
+//   the command shown. This is also needed to properly display links
+//   to manpages in both GitHub and generated docs without defining an
+//   attribute for each manpage.
+// * `linkmanext` and `linkmanext2` macros repeat the behavior of the default ones.
+//   These macros are intended for system man pages (e.g. HTML links might lead
+//   to a generic internet site, or possibly to a distro-provided library
+//   online or locally).
+//
+// Optional attributes set by callers:
+// * `website-url` (defaulted below) may be used for "historic website"
+//   snapshot builds... hopefully
+// * `website` is used as a boolean toggle in our recipes for nut-website
+//   vs. offline documentation renditions
+// * `env-github` is used as a boolean toggle, set by GitHub Web-UI renderer
+// * `(top_)srcdir` and `(top_)builddir` can be set by `Makefile.am`
+//   calling the `a2x` tool, since some of the files with the asciidoc
+//   mark-up are only generated or post-processed during build and
+//   (due to `make dist` restrictions) being build products, they may
+//   not reside in same directory as static source text files which
+//   reference or include them. Note that the non-`top` paths would
+//   normally differ based on location of the `Makefile` involved
+//   (e.g. workspace root, or the `docs`, or `docs/man` directories).
+//   These variables are expected to be absolute paths, or ones relative
+//   to asciidoc-selected `:base_dir`, and to end with a relevant path
+//   separator, or be empty -- so in all cases letting the resulting
+//   string resolve meaningfully in the filesystem during docs build.
+//
+// Please keep the remaining comments and definitions as one big block
+// so it does not become a series of empty paragraphs in the rendered
+// documents!
+//
+ifndef::website-url[]
+:website-url:	https://www.networkupstools.org/
+endif::website-url[]
+//
+ifndef::srcdir[]
+:srcdir:
+endif::srcdir[]
+//
+ifndef::builddir[]
+:builddir:
+endif::builddir[]
+//
+ifndef::top_srcdir[]
+:top_srcdir:
+endif::top_srcdir[]
+//
+ifndef::top_builddir[]
+:top_builddir:
+endif::top_builddir[]
+//
+//
+// Address links on GitHub vs. docs
+// (note: 'env-github' attribute is set on GitHub)
+//
+// - when generating docs:
+ifndef::env-github[]
+//   * xref -> xref
+//     syntax: {xref}<id>{x-s}[<caption>]
+//     -> xref:<id>[<caption>]
+:xref:		xref:
+:x-s:
+//   * link to doc -> our macro
+//     syntax: {linksrcdoc}<document>
+//     -> linksrcdoc:<document>[]
+:linksrcdoc:	linksrcdoc:
+//   * link to doc -> our macro (optional 2/3/4 args)
+//     syntax: {linkdoc}<document>{ld-s}[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
+//     -> linkdoc:<document>[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
+:linkdoc:	linkdoc:
+:ld-s:
+//   * link to single doc -> our macro
+//     syntax: {linksingledoc}<document>{lsd-s}[<display title>]
+//     -> linksingledoc:<document>[<display title>]
+:linksingledoc:	linksingledoc:
+:lsd-s:
+//   * link to manpage -> our macro
+//     syntax: {linkman2}<command-page>{lm-s}<displayed-command>{lm-c}<manpage-section>{lm-e}
+//     -> linkman2:<command-page>[<displayed-command>,<manpage-section>]
+:linkman2:	linkman2:
+:lm-s:		[
+:lm-c:		,
+:lm-e:		]
+:linkmanext:	https://www.die.net/search/?q=
+:linkmanext2:	https://www.die.net/search/?q=
+endif::env-github[]
+//
+// - on GitHub:
+ifdef::env-github[]
+//     In our normal builds, Makefile variables convey the needed paths
+//     (used relatively below as `image:images/ci/...png` etc.)
+:imagesdir:	docs
+//   * xref -> link
+//     syntax: {xref}<id>{x-s}[<caption>]
+//     In order for it to work, <id> can reference at most a section of
+//     level docs/common.xsl's <chunk.section.depth>
+//     -> {website-url}docs/user-manual.chunked/<id>.html[<caption>]
+:xref:		{website-url}docs/user-manual.chunked/
+:x-s:		.html
+//   * link to doc -> our macro
+//     syntax: {linksrcdoc}<document>
+//     -> link:<document>[]
+:linksrcdoc:	link:{top_srcdir}/
+//   * link to doc -> link (FIXME: ignore or use 2/3/4 args; currently they are all pasted as <display title> contents!)
+//     syntax: {linkdoc}<document>{ld-s}[<display title>{,<anchor>{,<srcdoc>{,<chunkname>}}}]
+//     -> {website-url}docs/<document>.chunked/index.html[<display title>]
+:linkdoc:	{website-url}docs/
+:ld-s:		.chunked/index.html
+//   * link to single doc -> link
+//     syntax: {linksingledoc}<document>{lsd-s}[<display title>]
+//     -> {website-url}docs/<document>.html[<display title>]
+:linksingledoc:	{website-url}docs/
+:lsd-s:		.html
+//   * link to manpage -> link
+//     syntax: {linkman2}<command-page>{lm-s}<displayed-command>{lm-c}<manpage-section>{lm-e}
+//     All the fields are mandatory.
+//     -> {website-url}docs/man/<command-page>.html[<displayed-command>(<manpage-section>)]
+:linkman2:	{website-url}docs/man/
+:lm-s:		.html[
+:lm-c:		(
+:lm-e:		)]
+:linkmanext:	https://www.die.net/search/?q=
+:linkmanext2:	https://www.die.net/search/?q=
+endif::env-github[]
+endif::asciidoc-vars-nut-included[]
+//
+//GH_MARKUP_1095_INCLUDE_END//
 
 This chapter describes the various methods for installing Network UPS Tools.
 
@@ -8,6 +186,12 @@ Packagers have done an excellent and hard work at improving NUT integration
 into their operating system.  On the other hand, distributions and appliances
 tend to package "official releases" of projects such as NUT, and so do not
 deliver latest and greatest fixes, new drivers, bugs and other features.
+
+Stable distributions also tend to deliver minor fixes to the version of
+third-party software (like NUT) a particular release of the operating
+system has initially delivered, so those release lines can be years behind
+development in terms of new features (or bug fixes, if they are not trivial
+to patch into the old code base snapshot used to create the package).
 
 [[Installing_source]]
 Installing from source
@@ -22,14 +206,14 @@ To build NUT from a Git checkout you may need some additional tools
 (referenced just a bit below) and run `./autogen.sh` to generate the
 needed files. For common developer iterations, porting to new platforms,
 or in-place testing, running the `./ci_build.sh` script can be helpful.
-The "<<Installing_inplace,Building NUT for in‐place upgrades or non‐disruptive
+The "<<Installing_inplace,Building NUT for in-place upgrades or non-disruptive
 tests>>" section details some more hints about such workflow, including some
 `systemd` integration.
 
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
 
-The <<Config_Prereqs,Prerequisites for building NUT on different OSes>>
+The {linkdoc}qa-guide{ld-s}[NUT Quality Assurance Guide,NUT_Config_Prereqs,docs/config-prereqs.txt]
 document suggests prerequisite packages with tools and dependencies
 available and needed to build and test as much as possible of NUT on
 numerous platforms, written from perspective of CI testing (if you
@@ -87,8 +271,8 @@ do this, you will have problems later on when you try to start upsd.
 Build and install
 ~~~~~~~~~~~~~~~~~
 
-NOTE: See also <<Installing_inplace,Building NUT for in‐place upgrades
-or non‐disruptive tests>>.
+NOTE: See also <<Installing_inplace,Building NUT for in-place upgrades
+or non-disruptive tests>>.
 
 [[Configuration]]
 Configuration
@@ -130,17 +314,38 @@ This will build the NUT client and server programs and the
 selected drivers. It will also build any other features that were
 selected during <<Configuration,configuration>> step above.
 
+NOTE: NUT is regularly tested with GNU, BSD and Sun implementations of `make`.
+
 
 Installation
 ^^^^^^^^^^^^
 
 [NOTE]
 =====================================================================
+You should now gain privileges for installing software if necessary, e.g.:
 
-you should now gain privileges for installing software if necessary:
+	su -
 
-	su
+or prefix installation (not build/check!) commands with `sudo`, e.g.:
 
+	sudo make install ...
+=====================================================================
+
+[NOTE]
+=====================================================================
+If you install NUT for direct consumption on the system that has just
+built it from source, you might be aided for some of the steps listed
+and explained below by running (as `root`):
+
+	make install-as-root
+
+This should not only install the software, but also create directories
+such as the state path, assign ownership and access permissions to
+certain directories and sample configuration files which NUT user
+and/or group accounts should be able to read and/or write, and, on
+some platforms, also (re-)start the NUT daemons/services.
+
+See above "System User creation", that should be done first!
 =====================================================================
 
 Install the files to a system level directory:
@@ -158,7 +363,7 @@ have created.
 
 If you are packaging this software, then you will probably want to
 use the DESTDIR variable to redirect the build into another place,
-i.e.:
+also known as a "prototype directory" or a "staging area", i.e.:
 
 	make DESTDIR=/tmp/package install
 	make DESTDIR=/tmp/package install-conf
@@ -167,9 +372,12 @@ i.e.:
 State path creation
 ^^^^^^^^^^^^^^^^^^^
 
+NOTE: See above about `make install-as-root`, if you use that -- skip
+this step here.
+
 Create the state path directory for the driver(s) and server to use
 for storing UPS status data and other auxiliary files, and make it
-group-writable by the group of the system user you created.
+group-writable by the group of the system user you created, e.g.:
 
 	mkdir -p /var/state/ups
 	chmod 0770 /var/state/ups
@@ -211,7 +419,7 @@ drivers; this should allow you to follow the below
 instructions. However, don't forget to set up the correct
 permissions later!).
 
-NOTE: if you are using something like udev or devd, make sure
+NOTE: If you are using something like udev or devd, make sure
 these permissions stay set across a reboot.  If they revert to the
 old values, your drivers may fail to start.
 
@@ -221,7 +429,7 @@ You are now ready to configure NUT, and start testing and using it.
 You can jump directly to the <<Configuration_notes,NUT configuration>>.
 
 [[Installing_inplace]]
-Building NUT for in‐place upgrades or non‐disruptive tests
+Building NUT for in-place upgrades or non-disruptive tests
 ----------------------------------------------------------
 
 NOTE: The NUT GitHub Wiki article at
@@ -263,7 +471,7 @@ ports involved, and to read the production configuration files).
 Pre-requisites
 ^^^^^^^^^^^^^^
 
-The <<Config_Prereqs,Prerequisites for building NUT on different OSes>>
+The {linkdoc}qa-guide{ld-s}[NUT Quality Assurance Guide,NUT_Config_Prereqs,docs/config-prereqs.txt]
 document details tools and dependencies that were added on NUT CI build
 environments, which now cover many operating systems. This should
 provide a decent starting point for the build on yours (PRs to update
@@ -288,16 +496,21 @@ copy the proposed-source URL of that "from" part.
 For example, in some PR this says `jimklimov:issue-1234` and links to
 `https://github.com/jimklimov/nut/tree/issue-1234`.
 For manual git-cloning, just paste that URL into the shell and replace
-the `/tree/` with "`-b`" CLI option for branch selection, like this:
+the `/tree/` with "`-b`" CLI option for branch selection; it also helps
+to keep the workspace directory name dedicated to that PR, like this:
 
 	:; cd /tmp
 	### Checkout https://github.com/jimklimov/nut/tree/issue-1234
-	:; git clone https://github.com/jimklimov/nut -b issue-1234
+	:; git clone https://github.com/jimklimov/nut -b issue-1234 nut-issue-1234
+	:; cd nut-issue-1234
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build (common instructions below)
 
 Testing with CI helper
 ~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: this uses the `ci_build.sh` script to arrange some rituals and
+NOTE: This uses the `ci_build.sh` script to arrange some rituals and
 settings, in this case primarily to default the choice of drivers to
 auto-detection of what can be built, and to skip building documentation.
 Also note that this script supports many other scenarios for CI and
@@ -309,6 +522,9 @@ An "in-place" _testing_ build and run would probably go along these lines:
 	:; cd /tmp
 	:; git clone -b master https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./ci_build.sh inplace
 	### Temporarily stop your original drivers
 	:; ./drivers/nutdrv_qx -a DEVNAME_FROM_UPS_CONF -d1 -DDDDDD \
@@ -353,6 +569,19 @@ binaries that the package would put into an obscure location like
 would refer to new locations specified by the current build, so such old
 binaries would just consume disk space but not run.
 
+It is recommended to first try installing into a prototyping area, so you
+can review which files get delivered and perhaps which locations you may
+have to tune for a more tightly tailored replacement of an older (packaged)
+installation, in case whole swathes of files that you expect to be present
+in the current system (libraries, drivers, docs) are not getting installed
+by the new build into same path names:
+
+----
+:; rm -rf /tmp/nut ; make DESTDIR=/tmp/nut install -j 8
+:; (cd /tmp/nut && find . | sort) | while read N ; \
+   do [ -e "/$N" ] || echo "=== MISSING: /$N" >&2 ; done
+----
+
 Replacing any NUT deployment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -363,6 +592,9 @@ This goes similar to usual build and install from Git:
 	:; cd /tmp
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	:; make -j 4 all && make -j 4 check && sudo make install
@@ -391,6 +623,9 @@ symlinks) and to get them started:
 	:; cd /tmp
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	:; make -j 4 all && make -j 4 check && \
@@ -443,6 +678,9 @@ e.g.:
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
 	:; git checkout -b issue-1234 ### your PR branch name, arbitrary
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	### Iterate your code changes (e.g. PR draft), build and install with:
@@ -453,6 +691,13 @@ e.g.:
 	    sudo systemctl restart \
 	        nut-driver-enumerator.service nut-monitor nut-server
 
+Note that to contribute your work back to upstream NUT codebase, you would
+need to create a "fork" of https://github.com/networkupstools/nut on GitHub,
+then `git remote add USERNAME https://github.com/USERNAME/nut`, maybe refresh
+the workspace index with `git fetch --all`, and finally `git push USERNAME`
+(possibly follow further instructions from `git` tooling) to create the
+pull request. For more details, see `docs/developers.txt` in NUT sources.
+
 Next steps after an in-place upgrade
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -460,8 +705,9 @@ You can jump directly to the <<Configuration_notes,NUT configuration>>
 if you need to revise the settings for your new NUT version, take advantage
 of new configuration options, etc.
 
-Check the linkdoc:NEWS and linkdoc:UPGRADING[Upgrade Notes] files in your
-Git workspace to review features that should be present in your new build.
+Check the {linksrcdoc}NEWS.adoc[] and {linksrcdoc}UPGRADING.adoc[] files
+in your checked-out Git workspace to review features that should be present
+in your new build.
 
 [[Installing_packages]]
 Installing from packages
@@ -475,7 +721,7 @@ Debian, Ubuntu and other derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official Debian packager is part of the NUT Team.
+The official Debian packager used to be part of the NUT Team.
 
 Using your preferred method (apt-get, aptitude, Synaptic, ...), install
 the 'nut' package, and optionally the following:
@@ -632,7 +878,7 @@ and help would be welcome!
 It should currently be possible to build the codebase in native Windows
 with MSYS2/MinGW and cross-building from Linux with mingw (preferably
 in a Debian/Ubuntu container). Refer to
-link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+link:docs/config-prereqs.txt[Prerequisites for building NUT on different OSes]
 and link:scripts/Windows/README.adoc[scripts/Windows/README.adoc file]
 for respective build environment preparation instructions.
 
@@ -681,6 +927,18 @@ For suggestions about setting up the NUT build environment variants
 for Windows, please see link:docs/config-prereqs.txt and/or
 link:scripts/Windows/README.adoc files. Note this is rather experimental
 at this point.
+
+If using USB drivers, such as `usbhid-ups`, `nutdrv_qx` or `blazer_usb`,
+you may benefit from the link:http://zadig.akeo.ie/[Zadig] tool to pin
+the low-level drivers needed for LibUSB and further NUT to interact with
+the hardware.  Otherwise, OS-provided (e.g. "HID Battery") or third-party
+drivers may attach and "steal" bytes from the data stream needed by LibUSB
+rendering it invalid.
+
+NOTE: For more details, see
+link:https://github.com/networkupstools/nut/issues/1690[NUT issue #1690] and
+the link:https://github.com/networkupstools/nut/wiki/NUT-for-Windows[NUT for
+Windows] article on NUT GitHub Wiki.
 
 
 Runtime configuration

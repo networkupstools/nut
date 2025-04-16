@@ -1,0 +1,200 @@
+Enphase Monitor for dummy-ups
+=============================
+
+The Enphase Monitor is a `bash` script that queries the local IQ Gateway's
+API, and makes "Grid On/Off" and Battery State-Of-Charge status
+available to NUT's `dummy-ups` driver by updating its "port" file
+(see the linkman:dummy-ups[8] man page).
+
+NOTE: Location where we write the data file for `dummy-ups` to process and
+publish should not be in a temporary file system, as we may inherit some
+manually added data points in the file that we want to retain across reboots.
+On systems with wear-prone storage (flash/SSD), you can fiddle with a
+"manually-made" file that would be copied into a tmpfs mount point, and
+have the script (and `dummy-ups` driver) pick up *that* tmpfs location
+with initially inherited data points.
+
+The `enphase-monitor` script supports the following:
+
+ - auto-login to 'enlighten.enphaseenergy.com' to generate and auto-renew
+   tokens for local Gateway API access (tokens are cached until expiration)
+ - retains any (non-generated) values in the "port" file
+ - gracefully handles split-phase or 3-phase input/output values
+ - calculates derived values such as battery voltage, runtime and `ups.load`
+ - handles no-comms with temporary rename of the port file (indicates
+   "stale data")
+ - dedicated configuration file (for login, API query timing, etc.)
+ - enforces access permissions on files containing secrets
+ - is fully self-documented (leading comment in the script included below)
+ - GPLv2 licensed
+ - minimal requirements: `bash`, `jq`, `base64` and `curl`
+ - includes a sample instantiated systemd service for use with `dummy-ups`
+ - includes a "TEST" mode that loops through various states and
+   randomly expires the token
+
+Developed by Scott Shambarger <devel@shambarger.net>
+
+Documentation
+-------------
+
+The script is self-documented, but the following is the script's leading
+comments block with installation instructions and configuration reference:
+
+----
+Usage: enphase-monitor [ <options> ] -c <config> | <ups>
+
+  -c <config> - use named config-file (or set $CONFIG_FILE)
+  <ups> - use config-file /etc/ups/enphase-<ups>.conf (or set $UPS)
+
+<options> may include:
+  -d - increase debug to stderr (2+ exposes secrets!)
+  -h - show help and exit
+  -s - perform one network check and exit
+  -v - verbose output
+  -x - set 'nocomms' and exit"
+
+<config> must contain:
+
+  USERNAME=<enphase login>
+  PASSWORD=<enphase password>
+  SERIAL=<envoy serial#>
+  PORT_FILE=<portfile from ups.conf, see below>
+
+and optionally (defaults shown):
+
+  DISABLE_METERS= any value to disable power reporting
+  ENVOY_HOST="envoy.local" ip/hostname of IQ Gateway on local network
+  STATE_DIR="$NUT_STATEPATH" (e.g. "/var/lib/ups") writable directory for portfile/tokens
+  POLLFREQ=60 seconds between API queries, min 5
+  POLLFREQALERT=20 seconds between API queries when on battery, min 5
+  TOKEN_FILE="enphase-<ups>.token" path defaults to STATE_DIR
+  LOADKWH=768 max load/1kWh capacity, used for ups.load calculation
+                0 disables calc (default based on IQ 5P rate 3.84kVA/5kWh)
+  LOGIN_TIMEOUT=10 timeout (secs) for login/token gen, min 5
+  API_TIMEOUT=5 timeout (secs) for local ENVOY_HOST api access, min 2
+
+Add section to /etc/ups/ups.conf for your <ups> name (replace <XXX>)
+
+[<ups>]
+  driver = dummy-ups
+  port = <STATE_DIR>/<portfile> this should be an absolute path!
+  mode = dummy-once or name <portfile> with `.dev` extension
+  desc = "Enphase IQ Gateway"
+
+<portfile> MUST EXIST before running the monitor (to ensure it's running
+on the correct machine). The following entries are optional but
+used if specified (defaults shown); other non-generated entries are retained.
+
+  battery.charge.low: 20
+  battery.voltage.high: 86.4
+  battery.voltage.nominal: 76.8
+  battery.voltage.low: 68.5
+  device.mfr: Enphase Energy
+  device.model: IQ Gateway
+
+The monitor uses the enphase <login> + <serial#> to retrieve a long-term
+token and saves it in STATE_DIR (token renewal is handled automatically)
+
+The monitor then queries the ENVOY_HOST (local IQ Gateway) API at POLLFREQ
+intervals to retrieve the envoy state, and updates <portfile>.
+Using values retrieved from the API and settings above, the monitor
+calculates the values ups.load, battery.voltage and battery.runtime
+
+enphase-monitor needs to have write access to <portfile>, so usually
+upsd hosting <ups> should be on local host, but shared filesystems may
+allow upsd to be remote.
+
+NOTE: if connections to ENVOY_HOST fail, <portfile> is renamed
+<portfile>-nocomms to trigger dummy-ups to show stale data.
+Either filename may exist on startup.
+
+Environment (optional):
+  CONFIG_FILE - override default <config>
+  UPS - set a default <ups>
+  NUT_SYSCONFIG - default <config> directory (NUT_CONFPATH, e.g. /etc/ups)
+  NUT_LOCALSTATE - default for STATE_DIR (NUT_STATEPATH, e.g. /var/lib/ups)
+
+=== INSTALL ===
+
+Install required support programs: bash, base64, jq, and curl
+
+Create an entry in /etc/ups/ups.conf (as above)
+
+Copy enphase-monitor to some <INSTALL-DIR> (e.g. /usr/local/libexec)
+
+Create a <config> file with required variables.  If only <ups>
+used to start the monitor, is looks for `/etc/ups/enphase-<ups>.conf`
+Ensure <config> can be read by monitor and is not world readable!
+
+Choose a NUT writable directory for STATE_DIR (default /var/lib/ups),
+and create an empty <portfile> there:
+
+ $ touch <STATE_DIR>/<portfile>
+ $ chown <nut-user>:<nut-group> <STATE_DIR>/<portfile>
+
+If using SELinux, ensure NUT's dummy-ups has access to the <portfile>
+(even in /var/lib/ups!) by adding a label, e.g.
+
+  $ semanage fcontext -a -t nut_conf_t <STATE_DIR>/<portfile>
+  $ restoreconf -F <STATE_DIR>/<portfile>
+
+Create a systemd template file (replace <XXX> items)
+
+ --- /etc/systemd/system/enphase-monitor@.service ---
+ [Unit]
+ Description=Enphase API monitor for NUT dummy-ups %I
+ PartOf=nut-driver.target
+ Before=nut-driver@%i.service
+
+ [Service]
+ SyslogIdentifier=%N
+ User=<NUT-USER>
+ ExecStartPre=<INSTALL-PATH>/enphase-monitor -s %I
+ ExecStart=<INSTALL-PATH>/enphase-monitor %I
+ Type=exec
+ Restart=always
+ RestartSec=30
+
+ [Install]
+ WantedBy=nut-driver@%i.service
+ --- end of file ---
+
+Enable the instance for <ups>
+
+  $ systemctl daemon-reload
+  $ systemctl enable nut-driver@<ups>
+  $ systemctl enable enphase-monitor@<ups>
+
+Restart NUT :)
+
+=== TEST MODE ===
+
+If using the distributed `test.conf`, copy `test-ref.dev` to `test.dev`
+and then run:
+
+  $ ./enphase-monitor -c test.conf
+
+`test.conf` sets "UPS=test" and "STATE_DIR=." and PORT_FILE="test.dev"
+(so token/portfiles are located in the current directory)
+It also sets "DEBUG=1" to show debug output (optional), and POLLFREQ
+to a few secs.
+
+"TEST" mode will loop (and randomly expire the token):
+
+  online -> nocomms -> online -> onbatt -> lowbatt <- <repeat>
+
+A "TEST" mode <config> should set:
+
+  TEST=1 <- required for "TEST" mode
+  TEST_SESS=<json> use {"session_id":"some-value"}
+  TEST_TOKEN=<web-token> JWT token, should have valid expires!
+  TEST_RELAY=<json> ivp/ensemble/relay {"mains_oper_state":"@RELAY_STATE@"}
+  TEST_LIVE=<json> ivp/livedata/status, {"soc":"@BATT_SOC@"}
+  TEST_REPORTS=<json> ivp/meters/reports
+  TEST_SECCTRL=<json> ivp/ensemble/secctrl, {"soc_recovery_exit":10}
+  TEST_INFO=<xml> info.xml
+
+Output from real HTTP requests can be used (use "-d -d" to see output)
+for each of those APIs.  Any empty TEST_XXXX value simulates a
+failed API query.
+----

@@ -4,6 +4,7 @@
 	2003	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2012	Arnaud Quette <arnaud.quette@free.fr>
+	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,7 +30,7 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif
+#endif	/* !WIN32 */
 
 #include "common.h"
 #include "state.h"
@@ -295,6 +296,7 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 
 		/* changes should be ignored */
 		if (node->flags & ST_FLAG_IMMUTABLE) {
+			upsdebugx(6, "%s: not changing immutable variable [%s]", __func__, var);
 			return 0;	/* no change */
 		}
 
@@ -357,8 +359,8 @@ int state_addenum(st_tree_t *root, const char *var, const char *val)
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "state_addenum: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) "
+			"does not exist", __func__, var);
 		return 0;	/* failed */
 	}
 
@@ -400,8 +402,8 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 
 	/* sanity check */
 	if (min > max) {
-		upslogx(LOG_ERR, "state_addrange: min is superior to max! (%i, %i)",
-			min, max);
+		upslogx(LOG_ERR, "%s: min is superior to max! (%i, %i)",
+			__func__, min, max);
 		return 0;
 	}
 
@@ -409,8 +411,8 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "state_addrange: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) "
+			"does not exist", __func__, var);
 		return 0;	/* failed */
 	}
 
@@ -427,8 +429,8 @@ int state_setaux(st_tree_t *root, const char *var, const char *auxs)
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "state_addenum: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) "
+			"does not exist", __func__, var);
 		return -1;	/* failed */
 	}
 
@@ -524,8 +526,8 @@ void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **fl
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "state_setflags: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) "
+			"does not exist", __func__, var);
 		return;
 	}
 
@@ -549,7 +551,7 @@ void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **fl
 			continue;
 		}
 
-		upsdebugx(2, "Unrecognized flag [%s]", flag[i]);
+		upsdebugx(2, "%s: Unrecognized flag [%s]", __func__, flag[i]);
 	}
 }
 

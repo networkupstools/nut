@@ -184,7 +184,7 @@ static void addchar(PCONF_CTX_t *ctx)
 	/* CVE-2012-2944: only allow the subset of ASCII charset from Space to ~ */
 	if ((ctx->ch < 0x20) || (ctx->ch > 0x7f)) {
 		fprintf(stderr, "addchar: discarding invalid character (0x%02x)!\n",
-				ctx->ch);
+				(unsigned int)ctx->ch);
 		return;
 	}
 
@@ -484,6 +484,9 @@ static void parse_char(PCONF_CTX_t *ctx)
 
 		case STATE_COLLECTLITERAL:
 			ctx->state = collectliteral(ctx);
+			break;
+
+		default:
 			break;
 	}	/* switch */
 }

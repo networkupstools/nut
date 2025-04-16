@@ -1,0 +1,80 @@
+#!/bin/sh
+#	init
+#
+#	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#
+#	A shell script to command UPSes to disable delayed power off of outlet
+#	groups, which could have ben requested as part of the emergency shutdown
+#	driven by IPP - Unix (NUT); called from nut init-script
+#
+# Requires configuration from ipp.conf, or otherwise default to the values below
+# Also requires matching features to be available in the UPSes and their drivers
+#
+# TODO remaining per IPSSUNIX-29:
+#	* Mismatch against the `shutdown` script: during shutdown we set
+#	  `load.on.delay` and `load.off.delay` via `upscmd` for the UPS itself,
+#	  as well as `upsrw` the similar settings for outlet groups, but during
+#	  the `init` we reset to `-1` only the outlet group settings and not
+#	  those of the UPS itself
+#	* The script acts on ALL UPSes configured on this system (`upsc -l`),
+#	  rather than those MONITORed as feeding a non-zero amount
+#	  power-sources in `upsmon.conf`
+#	* The username is hardcoded as `admin` rather than taken from config
+#	* Maybe we do not try every possible instcmd for UPS poweroff/reboot -
+#	  revise against upsrw and upscmd for NETXML and SNMP drivers at least
+
+NUT_DIR="/usr/local/ups"
+NUT_CFG_DIR=""
+for D in "$NUT_DIR/etc" "/etc/nut" "/etc/ups" ; do
+	if [ -d "$D" ] && [ -f "$D/ups.conf" ] && [ -f "$D/ipp.conf" ] ; then
+		NUT_CFG_DIR="$D"
+		break
+	fi
+done
+unset D
+CONFIG_IPP="$NUT_CFG_DIR/ipp.conf"
+
+# Note: $NUT_DIR/xbin holds the wrappers to run NUT binaries with co-bundled
+# third party libs and hopefully without conflicts induced for the OS binaries
+PATH="$NUT_DIR/xbin:$NUT_DIR/sbin:$NUT_DIR/bin:$PATH"
+export PATH
+
+# Search for binaries under current PATH normally, no hardcoding
+NUT_UPSC="upsc"
+NUT_UPSCMD="upscmd"
+NUT_UPSRW="upsrw"
+#NUT_UPSC="$NUT_DIR/xbin/upsc"
+#NUT_UPSCMD="$NUT_DIR/xbin/upscmd"
+#NUT_UPSRW="$NUT_DIR/xbin/upsrw"
+
+# Do not normally mangle the LD_LIBRARY_PATH - it can impact system tools too
+#LD_LIBRARY_PATH="$NUT_DIR/lib:/usr/lib:/lib:$LD_LIBRARY_PATH"
+#export LD_LIBRARY_PATH
+
+# Include IPP ipp.conf (may overwrite the above default values!) to
+# get shutdown delay and admin password
+if [ -f "$CONFIG_IPP" ] ; then
+	. "$CONFIG_IPP"
+fi
+
+if [ "$IPP_DEBUG" = yes ] ; then
+	# Keep entries with the same log as shutdown
+	exec >> /var/tmp/ipp-shutdown.log 2>&1
+	echo "`date`: Started booting: $0 $*" >&2
+	set >&2
+	set -x
+fi
+
+[ "$POWERDOWNFLAG_USER" = "forbid" ] && exit 0
+
+# TODO: Here we want to refine the list to only MONITORed UPSes that power us?
+# Convert to parsing of "ipp-status -p" which reports all needed details
+upslist="`"$NUT_UPSC" -l`"
+echo "$upslist"
+for u in $upslist; do
+	echo "Disabling poweroff for UPS outlet-groups on '$u' ..."
+	for o in 3 2 1 ; do
+		"$NUT_UPSRW" -s "outlet.$o.delay.shutdown=-1" \
+			-u admin -p "$PASSWORD" "$u"
+	done
+done
