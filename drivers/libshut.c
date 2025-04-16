@@ -376,15 +376,10 @@ static int libshut_open(
 		            usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen))
 {
 	int ret, res;
-	/* Below we cast this buffer as sometimes containing entried of type
-	 * "struct device_descriptor_s" or "struct my_hid_descriptor".
-	 * Currently both of these are sized "2", and I don't see a way
-	 * to require a "max()" of such sizes to align for generally.
-	 */
 	usb_ctrl_char buf[20] __attribute__((aligned(4)));
 	char string[MAX_STRING_SIZE];
-	struct my_hid_descriptor *desc;
-	struct device_descriptor_s *dev_descriptor;
+	struct my_hid_descriptor	desc_buf, *desc = &desc_buf;
+	struct device_descriptor_s	dev_descriptor_buf, *dev_descriptor = &dev_descriptor_buf;
 
 	/* report descriptor */
 	usb_ctrl_char	rdbuf[MAX_REPORT_SIZE];
@@ -470,21 +465,7 @@ static int libshut_open(
 	}
 
 	/* Get DEVICE descriptor */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wcast-align"
-#endif
-	dev_descriptor = (struct device_descriptor_s *)buf;
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
+	memcpy(dev_descriptor, buf, sizeof(struct device_descriptor_s));
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_DEVICE, 0, buf, USB_DT_DEVICE_SIZE);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 	(USB_DT_DEVICE << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -587,21 +568,7 @@ static int libshut_open(
 	}
 
 	/* Get HID descriptor */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wcast-align"
-#endif
-	desc = (struct my_hid_descriptor *)buf;
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
+	memcpy(desc, buf, sizeof(struct my_hid_descriptor));
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_HID, hid_desc_index, buf, 0x9);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 			(USB_DT_HID << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -783,7 +750,7 @@ static int libshut_set_report(
 	upsdebugx(1,
 		"Entering libshut_set_report (report %x, "
 		"len %" PRI_NUT_USB_CTRL_CHARBUFSIZE ")",
-		ReportId, ReportSize);
+		(unsigned int)ReportId, ReportSize);
 
 	if ((uintmax_t)ReportSize > (uintmax_t)INT_MAX) {
 		upsdebugx(1, "%s: ReportSize exceeds INT_MAX", __func__);
@@ -1316,7 +1283,7 @@ static int shut_control_msg(
 				__func__, data_size);
 			return -1;
 		}
-		if (data_size > 0x0F) {
+		if (data_size > 0x0F || data_size > sizeof(shut_pkt) - 2) {
 			upsdebugx(1, "%s: WARNING: data_size %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 				" may be too large for SHUT packet?",
 				__func__, data_size);
@@ -1326,7 +1293,7 @@ static int shut_control_msg(
 		}
 		shut_pkt[1] = (unsigned char)(data_size<<4) + (unsigned char)data_size;
 		if ( (requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size < 8) )
-			memcpy(&shut_pkt[2], bytes, data_size); /* we need to send ctrl.data  */
+			memcpy(&shut_pkt[2], bytes, data_size > sizeof(shut_pkt) - 2 ? sizeof(shut_pkt) - 2 : data_size); /* we need to send ctrl.data  */
 		else
 			memcpy(&shut_pkt[2], &ctrl, 8);
 		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], (unsigned char)data_size);

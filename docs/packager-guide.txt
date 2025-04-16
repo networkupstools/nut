@@ -29,7 +29,7 @@ Packaging is a final aim for software. It eases and completes the
 software integration into an OS, and allows users to have an easy
 software installation and support out of the box.
 
-NOTE: making NUT packaging more uniform should help its documentation,
+NOTE: Making NUT packaging more uniform should help its documentation,
 support and maintenance across the supported OSes.
 
 ------------------------------------------------------------------------
@@ -380,12 +380,12 @@ nut-server
 		E) nut-cgi
 
 			Deps:
-			Files: snmp-ups and powernet + manpages
+			Files: snmp-ups and powernet + man pages
 
 		F) nut-doc:
 
 			Deps:
-			Files: dummycons + manpage
+			Files: dummycons + man page
 
 		G) nut-dev:
 
@@ -395,7 +395,7 @@ nut-server
 		H) nut-scanner:
 
 			Deps: hard dependency on `libltdl`; recommends `libsnmp`, `libneon`, and the `libusb` variant (0.1 or 1.0) it was built against.
-			Files: nut-scanner tool and libnutscan + manpages
+			Files: nut-scanner tool and libnutscan + man pages
 
 
 Note: "nut" can be a meta package

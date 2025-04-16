@@ -27,10 +27,10 @@ jobs:
       with:
         fetch-depth: 0
         fetch-tags: true
-    - name: Set up Python 3.10
+    - name: Set up Python 3.13
       uses: actions/setup-python@v3
       with:
-        python-version: '3.10'
+        python-version: '3.13'
     - name: Extract python interpreter path name
       id: pythoncmd
       run: >-
@@ -47,7 +47,7 @@ jobs:
             {  TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*')" \
             || TAG_NAME="$(git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*')" ; } \
             && test -n "${TAG_NAME}" \
-            || TAG_NAME="2.8.2-`TZ=UTC date +%s`" ;
+            || TAG_NAME="2.8.3-`TZ=UTC date +%s`" ;
         fi >&2 ;
         TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,' -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g')" ;
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT

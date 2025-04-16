@@ -51,7 +51,7 @@
 #include "timehead.h"   /* fallback gmtime_r() variants if needed (e.g. some WIN32) */
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.08"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -318,7 +318,7 @@ static void ups2000_device_identification(void)
 		ser_flush_in(upsfd, "", nut_debug_level);
 		r = ser_send_buf(upsfd, ident_req, IDENT_REQUEST_LEN);
 		if (r != IDENT_REQUEST_LEN) {
-			fatalx(EXIT_FAILURE, "unable to send request!\n");
+			fatalx(EXIT_FAILURE, "unable to send request!");
 		}
 
 		ident_response_len = ups2000_read_serial(ident_response, IDENT_RESPONSE_MAX_LEN);
@@ -338,8 +338,8 @@ static void ups2000_device_identification(void)
 
 		if (ptr + IDENT_RESPONSE_HEADER_LEN > ident_response_end) {
 			fatalx(EXIT_FAILURE, "response header too short! "
-					     "expected %d, received %" PRIuSIZE ".",
-					     IDENT_RESPONSE_HEADER_LEN, ident_response_len);
+				"expected %d, received %" PRIuSIZE ".",
+				IDENT_RESPONSE_HEADER_LEN, ident_response_len);
 		}
 
 		/* step 3: check response CRC-16 */
@@ -443,10 +443,10 @@ static void ups2000_device_identification(void)
 
 		r = str_to_uint_strict(key, &idx, 10);
 		if (!r || idx + 1 > UPS2000_DESC_MAX_FIELDS || idx < 1)
-			fatalx(EXIT_FAILURE, "desc index %d is invalid!", idx);
+			fatalx(EXIT_FAILURE, "desc index %u is invalid!", idx);
 
 		if (strlen(val) + 1 > UPS2000_DESC_MAX_LEN)
-			fatalx(EXIT_FAILURE, "desc field %d too long!", idx);
+			fatalx(EXIT_FAILURE, "desc field %u too long!", idx);
 
 		memcpy(ups2000_desc[idx], val, strlen(val) + 1);
 	}
@@ -477,31 +477,32 @@ void upsdrv_initinfo(void)
 	/* check whether the UPS is a known model */
 	for (i = 0; supported_model[i] != NULL; i++) {
 		if (!strcmp(supported_model[i],
-			    ups2000_desc[UPS2000_DESC_MODEL])) {
+			ups2000_desc[UPS2000_DESC_MODEL])
+		) {
 			in_list = 1;
 		}
 	}
 	if (!in_list) {
 		fatalx(EXIT_FAILURE, "Unknown UPS model %s",
-				     ups2000_desc[UPS2000_DESC_MODEL]);
+			ups2000_desc[UPS2000_DESC_MODEL]);
 	}
 
 	dstate_setinfo("device.mfr", "Huawei");
 	dstate_setinfo("device.type", "ups");
 	dstate_setinfo("device.model", "%s",
-		       ups2000_desc[UPS2000_DESC_MODEL]);
+		ups2000_desc[UPS2000_DESC_MODEL]);
 	dstate_setinfo("device.serial", "%s",
-		       ups2000_desc[UPS2000_DESC_ESN]);
+		ups2000_desc[UPS2000_DESC_ESN]);
 
 	dstate_setinfo("ups.mfr", "Huawei");
 	dstate_setinfo("ups.model", "%s",
-		       ups2000_desc[UPS2000_DESC_MODEL]);
+		ups2000_desc[UPS2000_DESC_MODEL]);
 	dstate_setinfo("ups.firmware", "%s",
-		       ups2000_desc[UPS2000_DESC_FIRMWARE_REV]);
+		ups2000_desc[UPS2000_DESC_FIRMWARE_REV]);
 	dstate_setinfo("ups.firmware.aux", "%s",
-		       ups2000_desc[UPS2000_DESC_PROTOCOL_REV]);
+		ups2000_desc[UPS2000_DESC_PROTOCOL_REV]);
 	dstate_setinfo("ups.serial", "%s",
-		       ups2000_desc[UPS2000_DESC_ESN]);
+		ups2000_desc[UPS2000_DESC_ESN]);
 	dstate_setinfo("ups.type", "online");
 
 	/* RW variables */
@@ -520,9 +521,9 @@ void upsdrv_initinfo(void)
  */
 enum {
 	REG_UINT16,
-	REG_UINT32, /* occupies two registers */
-	REG_FLOAT,  /* actually a misnomer, it should really be called
-		       fixed-point number, but we follow the datasheet */
+	REG_UINT32,	/* occupies two registers */
+	REG_FLOAT,	/* actually a misnomer, it should really be called
+			 * fixed-point number, but we follow the datasheet */
 };
 #define REG_UINT16_INVALID 0xFFFFU
 #define REG_UINT32_INVALID 0xFFFFFFFFU
@@ -599,7 +600,7 @@ static int ups2000_update_info(void)
 			page = 2;
 
 		if (page > 2 || idx > 33)  /* also suppress compiler warn */
-			fatalx(EXIT_FAILURE, "register calculation overflow!\n");
+			fatalx(EXIT_FAILURE, "register calculation overflow!");
 
 		switch (ups2000_var[i].datatype) {
 		case REG_FLOAT:
@@ -619,7 +620,7 @@ static int ups2000_update_info(void)
 				invalid = 1;
 			break;
 		default:
-			fatalx(EXIT_FAILURE, "invalid data type in register table!\n");
+			fatalx(EXIT_FAILURE, "invalid data type in register table!");
 		}
 
 		if (invalid) {
@@ -637,7 +638,7 @@ static int ups2000_update_info(void)
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 		dstate_setinfo(ups2000_var[i].name, ups2000_var[i].fmt,
-			       (float) val / ups2000_var[i].scaling);
+			(float) val / ups2000_var[i].scaling);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -741,7 +742,8 @@ static int ups2000_update_status(void)
 			 * for, or if register has its n-th "bit" set...
 			 */
 			if ((flag[j].val != -1 && flag[j].val == val) ||
-			    (flag[j].bit != -1 && CHECK_BIT(val, flag[j].bit))) {
+			    (flag[j].bit != -1 && CHECK_BIT(val, flag[j].bit))
+			) {
 				/* if it has a corresponding status flag */
 				if (strlen(flag[j].status_name) != 0)
 					status_set(flag[j].status_name);
@@ -959,7 +961,7 @@ static int ups2000_update_alarm(void)
 	for (i = 0; ups2000_alarm[i].alarm_id != -1; i++) {
 		int idx = ups2000_alarm[i].reg - ups2000_alarm[0].reg;
 		if (idx > 26 || idx < 0)
-			fatalx(EXIT_FAILURE, "register calculation overflow!\n");
+			fatalx(EXIT_FAILURE, "register calculation overflow!");
 
 		if (CHECK_BIT(val[idx], ups2000_alarm[i].bit)) {
 			int gotlen;
@@ -975,12 +977,12 @@ static int ups2000_update_alarm(void)
 			alarm_count++;
 
 			gotlen = snprintf(alarm_buf, 128, "(ID %02d/%02d): %s!",
-						   ups2000_alarm[i].alarm_id,
-						   ups2000_alarm[i].alarm_cause_id,
-						   ups2000_alarm[i].alarm_name);
+				ups2000_alarm[i].alarm_id,
+				ups2000_alarm[i].alarm_cause_id,
+				ups2000_alarm[i].alarm_name);
 
 			if (gotlen < 0 || (uintmax_t)gotlen > SIZE_MAX) {
-				fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!\n");
+				fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!");
 			}
 
 			all_alarms_len += (size_t)gotlen;
@@ -994,7 +996,8 @@ static int ups2000_update_alarm(void)
 			 * has paseed since we first warned it.
 			 */
 			if (!ups2000_alarm[i].active ||
-			    difftime(now, alarm_logged_since) >= UPS2000_LOG_INTERVAL) {
+			    difftime(now, alarm_logged_since) >= UPS2000_LOG_INTERVAL
+			) {
 				int loglevel;
 				const char *alarm_word;
 
@@ -1016,10 +1019,10 @@ static int ups2000_update_alarm(void)
 				}
 
 				upslogx(loglevel, "%s: alarm %02d, Cause %02d: %s!",
-						  alarm_word,
-						  ups2000_alarm[i].alarm_id,
-						  ups2000_alarm[i].alarm_cause_id,
-						  ups2000_alarm[i].alarm_name);
+					alarm_word,
+					ups2000_alarm[i].alarm_id,
+					ups2000_alarm[i].alarm_cause_id,
+					ups2000_alarm[i].alarm_name);
 
 				if (ups2000_alarm[i].alarm_desc)
 					upslogx(loglevel, "%s", ups2000_alarm[i].alarm_desc);
@@ -1029,12 +1032,17 @@ static int ups2000_update_alarm(void)
 					upslogx(loglevel, "This alarm can be auto cleared.");
 					break;
 				case ALARM_CLEAR_MANUAL:
-					upslogx(loglevel, "This alarm can only be manual cleared "
-							  "via front panel.");
+					upslogx(loglevel,
+						"This alarm can only be manually cleared "
+						"via front panel.");
 					break;
 				case ALARM_CLEAR_DEPENDING:
-					upslogx(loglevel, "This alarm is auto or manual cleared "
-							  "depending on the specific problem.");
+					upslogx(loglevel,
+						"This alarm is auto or manually cleared "
+						"depending on the specific problem.");
+					break;
+				default:
+					break;
 				}
 
 				ups2000_alarm[i].active = 1;
@@ -1044,10 +1052,11 @@ static int ups2000_update_alarm(void)
 		}
 		else {
 			if (ups2000_alarm[i].active) {
-				upslogx(LOG_WARNING, "Cleared alarm %02d, Cause %02d: %s",
-						     ups2000_alarm[i].alarm_id,
-						     ups2000_alarm[i].alarm_cause_id,
-						     ups2000_alarm[i].alarm_name);
+				upslogx(LOG_WARNING,
+					"Cleared alarm %02d, Cause %02d: %s",
+					ups2000_alarm[i].alarm_id,
+					ups2000_alarm[i].alarm_cause_id,
+					ups2000_alarm[i].alarm_name);
 				ups2000_alarm[i].active = 0;
 				alarm_logged = 1;
 			}
@@ -1060,7 +1069,7 @@ static int ups2000_update_alarm(void)
 		int gotlen = snprintf(alarm_buf, 128, "Check log for details!");
 
 		if (gotlen < 0 || (uintmax_t)gotlen > SIZE_MAX) {
-			fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!\n");
+			fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!");
 		}
 
 		all_alarms_len += (size_t)gotlen;
@@ -1082,7 +1091,7 @@ static int ups2000_update_alarm(void)
 			upslogx(LOG_WARNING, "UPS has %d alarms in effect.", alarm_count);
 			if (alarm_rtfm)
 				upslogx(LOG_WARNING, "Read Huawei User Manual for "
-						     "troubleshooting information.");
+					"troubleshooting information.");
 			alarm_logged_since = time(NULL);
 		}
 	}
@@ -1392,18 +1401,18 @@ static int ups2000_delay_set(const char *var, const char *string)
 		return STAT_SET_INVALID;
 	if (delay < delay_schema->min) {
 		upslogx(LOG_NOTICE, "setvar: %s [%u] is too low, "
-				    "it has been set to %u seconds\n",
-				    delay_schema->varname_cmdline, delay,
-				    delay_schema->min);
+			"it has been set to %u seconds",
+			delay_schema->varname_cmdline, delay,
+			delay_schema->min);
 		delay = delay_schema->min;
 	}
 
 	if (delay % delay_schema->step != 0) {
 		delay_rounded = delay + delay_schema->step - delay % delay_schema->step;
 		upslogx(LOG_NOTICE, "setvar: %s [%u] is not a multiple of %d, "
-				    "it has been rounded up to %u seconds\n",
-				    delay_schema->varname_cmdline, delay,
-				    delay_schema->step, delay_rounded);
+			"it has been rounded up to %u seconds",
+			delay_schema->varname_cmdline, delay,
+			delay_schema->step, delay_rounded);
 		delay = delay_rounded;
 	}
 
@@ -1494,8 +1503,8 @@ static int instcmd(const char *cmd, const char *extra)
 	else if (cmd_action->reg1 >= 0 && cmd_action->val1 >= 0) {
 		/* handled by a register write */
 		int r = ups2000_write_register(modbus_ctx,
-					       10000 + cmd_action->reg1,
-					       (uint16_t)cmd_action->val1);
+			10000 + cmd_action->reg1,
+			(uint16_t)cmd_action->val1);
 		if (r == 1)
 			status = STAT_INSTCMD_HANDLED;
 		else
@@ -1507,8 +1516,8 @@ static int instcmd(const char *cmd, const char *extra)
 		 */
 		if (r == 1 && cmd_action->reg2 >= 0 && cmd_action->val2 >= 0) {
 			r = ups2000_write_register(modbus_ctx,
-						   10000 + cmd_action->reg2,
-						   (uint16_t)cmd_action->val2);
+				10000 + cmd_action->reg2,
+				(uint16_t)cmd_action->val2);
 			if (r == 1)
 				status = STAT_INSTCMD_HANDLED;
 			else
@@ -1702,8 +1711,9 @@ static int ups2000_instcmd_shutdown_return(const uint16_t reg)
 	int r;
 	NUT_UNUSED_VARIABLE(reg);
 
-	r = ups2000_shutdown_guaranteed_return(ups2000_offdelay,
-					       ups2000_ondelay);
+	r = ups2000_shutdown_guaranteed_return(
+		ups2000_offdelay,
+		ups2000_ondelay);
 	if (r == STAT_INSTCMD_HANDLED) {
 		shutdown_at = time_seek(time(NULL), ups2000_offdelay);
 	}
@@ -1724,8 +1734,9 @@ static int ups2000_instcmd_shutdown_reboot(const uint16_t reg)
 	int r;
 	NUT_UNUSED_VARIABLE(reg);
 
-	r = ups2000_shutdown_guaranteed_return(ups2000_rw_delay[REBOOT].min,
-					       ups2000_ondelay);
+	r = ups2000_shutdown_guaranteed_return(
+		ups2000_rw_delay[REBOOT].min,
+		ups2000_ondelay);
 	if (r == STAT_INSTCMD_HANDLED) {
 		reboot_at = time_seek(time(NULL), ups2000_rw_delay[REBOOT].min);
 		start_at = time_seek(reboot_at, ups2000_ondelay);
@@ -1747,8 +1758,9 @@ static int ups2000_instcmd_shutdown_reboot_graceful(const uint16_t reg)
 	int r;
 	NUT_UNUSED_VARIABLE(reg);
 
-	r = ups2000_shutdown_guaranteed_return(ups2000_rebootdelay,
-					       ups2000_ondelay);
+	r = ups2000_shutdown_guaranteed_return(
+		ups2000_rebootdelay,
+		ups2000_ondelay);
 	if (r == STAT_INSTCMD_HANDLED) {
 		reboot_at = time_seek(time(NULL), ups2000_rebootdelay);
 		start_at = time_seek(reboot_at, ups2000_ondelay);
@@ -1798,12 +1810,14 @@ static int ups2000_update_timers(void)
 
 void upsdrv_shutdown(void)
 {
-	int r;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	r = instcmd("shutdown.reboot", "");
-	if (r != STAT_INSTCMD_HANDLED) {
+	int ret = do_loop_shutdown_commands("shutdown.reboot", NULL);
+	if (ret != STAT_INSTCMD_HANDLED) {
 		upslogx(LOG_ERR, "upsdrv_shutdown failed!");
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	}
 }
 
@@ -1819,15 +1833,15 @@ void upsdrv_makevartable(void)
 	char msg[64];
 
 	snprintf(msg, 64, "Set shutdown delay, in seconds, 6-second step"
-			  " (default=%d)", ups2000_rw_delay[SHUTDOWN].dfault);
+		" (default=%d)", ups2000_rw_delay[SHUTDOWN].dfault);
 	addvar(VAR_VALUE, "offdelay", msg);
 
 	snprintf(msg, 64, "Set reboot delay, in seconds, 6-second step"
-			  " (default=%d).", ups2000_rw_delay[REBOOT].dfault);
+		" (default=%d).", ups2000_rw_delay[REBOOT].dfault);
 	addvar(VAR_VALUE, "rebootdelay", msg);
 
 	snprintf(msg, 64, "Set start delay, in seconds, 60-second step"
-			  " (default=%d).", ups2000_rw_delay[START].dfault);
+		" (default=%d).", ups2000_rw_delay[START].dfault);
 	addvar(VAR_VALUE, "ondelay", msg);
 }
 
@@ -1858,7 +1872,7 @@ static time_t time_seek(time_t t, int seconds)
 	if (!t)
 		fatalx(EXIT_FAILURE, "time_seek() failed!");
 
-	if (!gmtime_r(&t, &time_tm))
+	if (gmtime_r(&t, &time_tm) == NULL)
 		fatalx(EXIT_FAILURE, "time_seek() failed!");
 
 	time_tm.tm_sec += seconds;
@@ -1979,7 +1993,8 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 		 * and it's not fatal, so we use LOG_INFO.
 		 */
 		if (retry_status == RETRY_ENABLE &&
-		    addr == 12002 && (dest[0] < 2 || dest[0] > 5)) {
+		    addr == 12002 && (dest[0] < 2 || dest[0] > 5)
+		) {
 			upslogx(LOG_INFO, "Battery status has a non-fatal read failure, it's usually harmless. Retrying... ");
 			sleep(1);
 			continue;

@@ -1,0 +1,30 @@
+UPSCLI_GET_DEFAULT_CONNECT_TIMEOUT(3)
+=====================================
+
+NAME
+----
+
+upscli_get_default_connect_timeout - Return the upsclient module default timeout for initial connections.
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	int upscli_get_default_connect_timeout(struct timeval *ptv);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_get_default_connect_timeout()* function takes the pointer 'ptv'
+to a 'struct timeval' and returns the default network timeout for initial
+connections last assigned with linkman:upscli_set_default_connect_timeout[3].
+
+SEE ALSO
+--------
+
+linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
+linkman:upscli_init_default_connect_timeout[3],
+linkman:upscli_set_default_connect_timeout[3]

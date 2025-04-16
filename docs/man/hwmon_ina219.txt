@@ -4,7 +4,7 @@ HWMON_INA219(8)
 NAME
 ----
 
-hwmon_ina219 - driver for UPS based on INA219
+hwmon_ina219 - Driver for UPS based on INA219
 
 SYNOPSIS
 --------
@@ -41,7 +41,7 @@ Optional parameters:
 Threshold for low battery state (in percent).
 
 *default.battery.voltage.nominal*='voltage-value'::
-Nominal voltage (V) value of utilised batteries, used to derive their low
+Nominal voltage (V) value of utilized batteries, used to derive their low
 and high watermark settings (see below). Default: 3.6.
 +
 Known pre-sets include: `3.6`, `3.7`, `3.8`, `3.85`.

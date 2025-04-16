@@ -38,12 +38,12 @@ risky!)
 
 Select a specific UPS, in case there is more than one connected via
 USB. Each option specifies an extended regular expression (see
-*regex(7)* for more information on regular expressions), which
-must match the UPS's entire respective vendor/product/serial string
-(minus any surrounding whitespace), or the whole 4-digit
+linkmanext:regex[7] for more information on regular expressions), which
+must match the UPS's entire respective `vendor`/`product`/`serial`
+string values (minus any surrounding whitespace), or the whole 4-digit
 hexadecimal code for `vendorid` and `productid`.
 +
-Try *lsusb(8)* or running this NUT driver with *-DD* command-line
+Try linkmanext:lsusb[8] or running this NUT driver with `-DD` command-line
 argument for finding out the strings to match.
 +
 Examples:
@@ -57,14 +57,14 @@ Examples:
 Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. `bus="002"` or `bus="00[2-3]"`) as seen on Linux in
-`/sys/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
+`/sys/bus/usb/devices` or linkmanext:lsusb[8]; including leading zeroes.
 
 *device =* 'regex'::
 
 Select a UPS on a specific USB device or group of devices. The argument is
 a regular expression that must match the device name where the UPS is
 connected (e.g. `device="001"` or `device="00[1-2]"`) as seen on Linux
-in `/sys/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
+in `/sys/bus/usb/devices` or linkmanext:lsusb[8]; including leading zeroes.
 +
 NOTE: device numbers are not guaranteed by the OS to be stable across
 re-boots or device re-plugging.
@@ -84,7 +84,7 @@ that NUT can run on.
 *allow_duplicates*::
 
 If you have several UPS devices which may not be uniquely identified by
-the options above (e.g. only VID:PID can be discovered there), this flag
+the options above (e.g. only 'VID:PID' can be discovered there), this flag
 allows each driver instance where it is set to take the first match if
 available, or proceed to try another.
 +
@@ -117,10 +117,36 @@ by the interface number `0` (default).
 *usb_hid_ep_out*::
 
 Force use of specific interface, endpoint, descriptor index etc. numbers,
-rather than defaulting to 0 (rarely other values in certain drivers for
+rather than defaulting to '0' (rarely other values in certain drivers for
 some devices known to use non-zero numbers). Specified as a hexadecimal
 number.
 +
 As a rule of thumb for `usb_hid_desc_index` discovery, you can see larger
 `wDescriptorLength` values (roughly 600+ bytes) in reports of `lsusb` or
 similar tools.
+
+*LIBUSB_DEBUG =* 'INTEGER'::
+
+Run-time troubleshooting of USB-capable NUT drivers can involve not only
+raising the common NUT debug verbosity (e.g. using the `DEBUG_MIN` setting
+in linkman:ups.conf[5] or protocol commands to change the `driver.debug`
+value), but may also benefit from LibUSB specific debugging.
++
+For the latter, you can set the `LIBUSB_DEBUG` driver option; alternatively
+you can classically export the environment variable `LIBUSB_DEBUG` before
+starting a NUT driver program (may be set and "exported" in driver init
+script or service method, perhaps via linkman:nut.conf[5]), to a numeric
+value such as `4` ("All messages are emitted").
++
+For more details, including the currently supported values for your version
+of the library, see e.g.:
+
+* https://libusb.sourceforge.io/api-1.0/
+* link:https://libusb.sourceforge.io/api-1.0/group\__libusb\__lib.html[https://libusb.sourceforge.io/api-1.0/group\__libusb__lib.html]
+
+///////////////////
+// EDITOR NOTE: There are no backslashes in the URL above, just that
+// asciidoc sees them as "emphasis" markup, they had to be escaped.
+// If a link from this asciidoc source file is needed, please visit:
+// https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
+///////////////////

@@ -57,4 +57,9 @@
 #define d_equal(x, y) ( fabs((double)(x) - (double)(y)) <= DBL_EPSILON )
 #define ld_equal(x, y) ( fabsl((long double)(x) - (long double)(y)) <= LDBL_EPSILON )
 
+#ifndef HAVE_STRTOF
+/* Use fallback from libcommon */
+float strtof(const char *nptr, char **endptr);
+#endif
+
 #endif	/* NUT_FLOAT_H_SEEN */

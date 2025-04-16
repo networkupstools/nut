@@ -1,13 +1,14 @@
 NUTCONF(8)
 ==========
 
-
 NAME
 ----
+
 nutconf - NUT configuration tool
 
 SYNOPSIS
 --------
+
 *nutconf* --help
 
 *nutconf* ['OPTIONS']
@@ -47,8 +48,7 @@ Prints current NUT configuration mode
 
 *--set-mode* 'mode'::
 Sets NUT configuration mode.
-
- ::
++
 Known modes are:
 
 - standalone
@@ -71,31 +71,35 @@ Note that such options may be specified multiple times for one run
 
 *--set-monitor* | *--add-monitor* '<arguments>'::
 Sets/adds a NUT monitor.
-
- ::
-Arguments:
++
+* Arguments:
++
+----
 '<ups_ID>' '<host>[:<port>]' '<power_value>' '<user>' '<passwd>' '(\"master\"|\"slave\")'
+----
 
 *--set-listen* | *--add-listen* '<address>' '[<port>]'::
-Sets/adds 'upsd' daemon listen address
+Sets/adds linkman:upsd[8] daemon listen address.
 
 *--set-device* | *--add-device* '<arguments>'::
 Sets/adds a device (typically a UPS).
-
- ::
-Arguments:
++
+* Arguments:
++
+----
 '<ups_ID>' '<driver>' '<port>' '[<attribute>=<value>]*'
-
- ::
+----
++
 The attribute/value pairs follow device configuration syntax.
 Devices may have very different configuration attributes depending on the driver.
 Exhaustive description of them is beyond this man page and may be found in NUT documentation.
 
 *--set-notifyflags* | *--add-notifyflags* '<type>' '<flag>+'::
++
+--
 Sets/adds notification flags for the notification type.
 
- ::
-Notification types are:
+* Notification types are:
 
 - 'ONLINE' (mains is present)
 - 'ONBATT' (mains is gone)
@@ -107,14 +111,32 @@ Notification types are:
 - 'REPLBATT' (UPS battery needs replacing)
 - 'NOCOMM' (device is unavailable)
 - 'NOPARENT' (upsmon parent process died, shutdown is impossible)
+- 'CAL' (calibration in progress)
+- 'NOTCAL' (calibration finished)
+- 'OFF' (UPS is administratively OFF or asleep, should wake up on command)
+- 'NOTOFF' (UPS is no longer administratively OFF or asleep)
+- 'BYPASS' (on bypass = powered, not protecting)
+- 'NOTBYPASS' (no longer on bypass)
+- 'ALARM' (UPS is in an alarm state (has active alarms))
+- 'NOTALARM' (UPS is no longer in an alarm state (no active alarms))
+- 'OVER' (overloaded)
+- 'NOTOVER' (no longer overloaded)
+- 'TRIM' (trimming incoming voltage)
+- 'NOTTRIM' (no longer trimming incoming voltage)
+- 'BOOST' (boosting incoming voltage)
+- 'NOTBOOST' (no longer boosting incoming voltage)
+- 'OTHER' (UPS has at least one unclassified status token)
+- 'NOTOTHER' (UPS has no unclassified status tokens anymore)
+- 'SUSPEND_STARTING' (OS is entering sleep/suspend/hibernate mode)
+- 'SUSPEND_FINISHED' (OS just finished sleep/suspend/hibernate mode)
 
- ::
-Notification flags:
+* Notification flags:
 
 - 'SYSLOG' (use syslogd to log the notification)
 - 'WALL' (push a message to users' terminals)
 - 'EXEC' (execute a command)
 - 'IGNORE' (don't act)
+--
 
 *--set-notifymsg* '<type>' '<message>'::
 Sets message for the specified notification type.
@@ -124,17 +146,16 @@ Sets command used to shut the system down.
 
 *--set-user* | *--add-user* '<arguments>'::
 Sets/adds NUT user.
-
- ::
-Arguments:
++
+* Arguments:
 
 - '<username>' (specifies user name).
-For 'upsmon' user, it has a special form of
-'upsmon=(master|slave)' which specifies the monitoring mode.
+  For 'upsmon' user, it has a special form of
+  `upsmon=(primary|master|secondary|slave)` which specifies the monitoring mode.
 - 'password=<passwd>' sets password for the user
 - 'actions=<actions>' sets actions ('SET', 'FSD' are supported)
 - 'instcmds=<command>' sets instant commands allowed for the user
-(may be used multiple times)
+  (may be used multiple times)
 
 SCANNING OPTIONS
 ----------------
@@ -142,16 +163,15 @@ SCANNING OPTIONS
 Availability of each scanning option depends on availability of
 various 3rd-party libraries both at compile time and run time.
 
-Issue the tool with the *--help* option to check which of the
+Run the tool with the *--help* option to check which of the
 *--scan-...* options are actually supported.
 
 All timeouts are in microseconds.
 
 *--scan-snmp* '<start IP>' '<stop IP>' '[<attribute>=<value>]*'::
 Scans for SNMP devices on IP addresses from the specified range.
-
- ::
-Known attributes are:
++
+* Known attributes are:
 
 - 'timeout' device scan timeout
 - 'community' SNMP community (default: *public*)
@@ -176,10 +196,11 @@ Scans for NUT (pseudo-)devices on the network.
 Scans for Avahi devices.
 
 *--scan-ipmi* '<start IP>' '<stop IP>' '[<attribute>=<value>]'*::
++
+--
 Scans for IPMI devices on IP addresses from the specified range.
 
- ::
-Known attributes are:
+* Known attributes are:
 
 - 'username' username (mandatory for IPMI/LAN)
 - 'password' user password (mandatory for IPMI/LAN)
@@ -190,11 +211,11 @@ Known attributes are:
 - 'workaround-flags'
 - 'version' (1.5 or 2.0)
 
- ::
-Authentication types:
- ::
-Specifies the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5).
-This forces connection through the 'lan' IPMI interface , thus in IPMI 1.5 mode.
+* Authentication types:
++
+Specifies the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY,
+MD2, and MD5) with the remote host (default=MD5).
+This forces connection through the 'lan' IPMI interface, thus in IPMI 1.5 mode.
 
 - 'none' (authentication is disabled)
 - 'MD2'
@@ -203,47 +224,56 @@ This forces connection through the 'lan' IPMI interface , thus in IPMI 1.5 mode.
 - 'OEM'
 - 'RMCPplus'
 
- ::
-Cipher suite IDs:
- ::
-Specifies the IPMI 2.0 cipher suite ID to use. The Cipher Suite ID identifies a set of authentication, integrity, and
-confidentiality algorithms to use for IPMI 2.0  communication. The authentication algorithm identifies the algorithm
-to use for session setup, the integrity algorithm identifies the algorithm to use for session packet signatures, and the
-confidentiality algorithm identifies the algorithm to use for payload encryption (default=3).
- ::
-The following cipher suite ids are currently supported (Authentication; Integrity; Confidentiality):
-
-- '0': None; None; None
-- '1': HMAC-SHA1; None; None
-- '2': HMAC-SHA1; HMAC-SHA1-96; None
-- '3': HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128
-- '6': HMAC-MD5; None; None
-- '7': HMAC-MD5; HMAC-MD5-128; None
-- '8': HMAC-MD5; HMAC-MD5-128; AES-CBC-128
-- '11': HMAC-MD5; MD5-128; None
-- '12': HMAC-MD5; MD5-128; AES-CBC-128
-- '15': HMAC-SHA256; None; None
-- '16': HMAC-SHA256; HMAC_SHA256_128; None
-- '17': HMAC-SHA256; HMAC_SHA256_128; AES-CBC-128
+* Cipher suite IDs:
++
+Specifies the IPMI 2.0 cipher suite ID to use.
++
+The Cipher Suite ID identifies a set of authentication, integrity, and
+confidentiality algorithms to use for IPMI 2.0 communication.
++
+The authentication algorithm identifies the algorithm to use for session setup,
+the integrity algorithm identifies the algorithm to use for session packet
+signatures, and the confidentiality algorithm identifies the algorithm to
+use for payload encryption (default=3).
++
+The following cipher suite IDs are currently supported:
++
+[options="header"]
+|===========================================================================
+| Code | Authentication | Integrity       | Confidentiality
+| '0'  | None           | None            | None
+| '1'  | HMAC-SHA1      | None            | None
+| '2'  | HMAC-SHA1      | HMAC-SHA1-96    | None
+| '3'  | HMAC-SHA1      | HMAC-SHA1-96    | AES-CBC-128
+| '6'  | HMAC-MD5       | None            | None
+| '7'  | HMAC-MD5       | HMAC-MD5-128    | None
+| '8'  | HMAC-MD5       | HMAC-MD5-128    | AES-CBC-128
+| '11' | HMAC-MD5       | MD5-128         | None
+| '12' | HMAC-MD5       | MD5-128         | AES-CBC-128
+| '15' | HMAC-SHA256    | None            | None
+| '16' | HMAC-SHA256    | HMAC_SHA256_128 | None
+| '17' | HMAC-SHA256    | HMAC_SHA256_128 | AES-CBC-128
+|===========================================================================
+--
 
 *--scan-serial* '<port>'*::
 Scans for serial devices (of supported types) on the specified
-serial ports.
+serial port(s).
 
 EXAMPLES
 --------
 
 To set alternative directory for configuration files:
 
-*nutconf --local ~/test/nut/etc*
+	:; nutconf --local ~/test/nut/etc
 
 To add another user (keeping the existing ones):
 
-*nutconf --add-user bart password=qwerty*
+	:; nutconf --add-user bart password=qwerty
 
-To scan USB devices and serial devices (on the 1st two ports):
+To scan USB devices and serial devices (on the first two ports):
 
-*nutconf --scan-usb --scan-serial /dev/ttyS1 /dev/ttyS2*
+	:; nutconf --scan-usb --scan-serial /dev/ttyS1 /dev/ttyS2
 
 SEE ALSO
 --------

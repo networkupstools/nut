@@ -26,14 +26,13 @@
  *
  */
 
-#include "main.h"     /* for getval() */
+#include "main.h"	/* for getval() */
 #include "usbhid-ups.h"
 #include "belkin-hid.h"
 #include "usb-common.h"
+#include "nut_float.h"	/* For fabs() */
 
-#include <math.h>     /* for fabs() */
-
-#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.21"
+#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.22"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -666,6 +665,9 @@ static int belkin_claim(HIDDevice_t *hd)
 			}
 			possibly_supported("Liebert", hd);
 			return 0;
+
+		default:
+			break;
 		}
 		return 0;
 

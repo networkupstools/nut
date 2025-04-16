@@ -84,6 +84,10 @@
 #undef PACKAGE_TARNAME
 #endif
 
+#ifdef PACKAGE_URL
+#undef PACKAGE_URL
+#endif
+
 #ifdef HAVE_DMALLOC_H
 #undef HAVE_DMALLOC_H
 #endif
@@ -95,10 +99,28 @@
 # ifdef _WIN32_WINNT
 #  undef _WIN32_WINNT
 # endif
-#endif
+#endif	/* WIN32 */
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
+/* These tend to have inlined API implementations as empty braces,
+ * causing warnings about unused parameters.
+ */
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER)
+# pragma GCC diagnostic pop
+#endif
 
 #ifndef ONE_SEC
 /* This macro name disappeared from net-snmp sources and headers

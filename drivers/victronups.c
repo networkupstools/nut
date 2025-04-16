@@ -32,7 +32,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"GE/IMV/Victron UPS driver"
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -498,6 +498,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	ser_send(upsfd, "vCc0!%c", ENDCHAR);
 	usleep(UPS_DELAY);
 

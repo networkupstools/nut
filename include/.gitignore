@@ -1,5 +1,6 @@
 /config.h
 /config.h.in
 /nut_version.h
+/nut_version.h.tmp*
 /stamp-h1
 /stamp-h.in

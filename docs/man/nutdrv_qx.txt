@@ -22,15 +22,36 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
+The protocol originates from Mega System Technologies, Inc. in Taiwan
+and was used by numerous vendors, as well as evolved over time, growing
+both in features and nuance incompatibilities. NUT documentation usually
+refers to this large family of similar dialects as the 'Megatec Q*' or
+'Megatec Qx' protocol family.
+
 The *nutdrv_qx* driver is known to work with various UPSes from
 'Armac', 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric',
-'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power', 'SKE'
-(rebranded by many, many - have I said many? - others...
+'Gtec', 'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power',
+'SKE' (rebranded by many, many -- have I said many? -- others...
 
 Long story short: if your UPS came with a software called 'Viewpower',
 chances are high that it works with this driver with one of the
 <<_extra_arguments,'voltronic*' protocols or with the 'mecer' one>>),
 and many others.
+
+NOTE: Due to historical reasons, two important tunables of this driver are
+somewhat inconveniently named *protocol* (for the Qx dialect) and *subdriver*
+(for USB to serial link conversion). Other multi-dialect drivers refer to their
+dialect modules as *subdrivers*, and actually the modular source code of
+`nutdrv_qx` also does.
+
+NOTE: Due to the amount of supported Qx dialects, and the time it takes
+to query for relevant combinations of commands and wait for a reply or
+absence thereof, in order to detect hardware/firmware support of some
+particular way for the driver to communicate with the device, automatic
+`nutdrv_qx` driver initialization may take about a minute.
+It is recommended to store the detected and reported `protocol` and/or
+`subdriver` values into your linkman:ups.conf[5] file to speed up later
+driver start-ups and avoid possible service timeouts.
 
 The <<_internet_resources,NUT compatibility table>> lists all the known
 supported models. Keep in mind, however, that other models not listed
@@ -60,14 +81,14 @@ Time to wait before shutting down the UPS (seconds).
 This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds).
 Defaults to 30 seconds.
 +
-This option provides a default value for *ups.delay.shutdown* that will then be used by the driver in the automatic shutdown sequence (i.e. calling the driver with the *-k* option, calling linkman:upsdrvctl[8] with the *shutdown* option or when the +FSD+ flag is set and linkman:upsmon[8] enters its shutdown sequence): however you can change this value `on the fly' for the actual session, only for the use with instant commands, setting *ups.delay.shutdown* with linkman:upsrw[8].
+This option provides a default value for *ups.delay.shutdown* that will then be used by the driver in the automatic shutdown sequence (i.e. calling the driver with the *-k* option, calling linkman:upsdrvctl[8] with the *shutdown* option or when the +FSD+ flag is set and linkman:upsmon[8] enters its shutdown sequence): however you can change this value "on the fly" for the actual session, only for the use with instant commands, setting *ups.delay.shutdown* with linkman:upsrw[8].
 
 *stayoff*::
 If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *shutdown.stayoff* shutting down after *ups.delay.shutdown* seconds and won't return (see <<_known_problems,KNOWN PROBLEMS>>), otherwise (standard behaviour) the UPS will call *shutdown.return* shutting down after *ups.delay.shutdown* seconds and then turn on after *ups.delay.start* seconds (if mains meanwhile returned).
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'hunnox', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
+Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Run the driver program with the `--help` option to see the exact list of
 `protocol` values it would currently recognize.
@@ -122,7 +143,7 @@ value as a multiple of *battery.packs* and "native" *battery.voltage*).
 +
 Note this is primarily useful for consistent diagnostics and graphing of the
 numbers, and should not impact the "guesstimation" of `battery.charge` and/or
-`battery.runtime` - so rather a cosmetic adjustment, than critical.
+`battery.runtime` -- so rather a cosmetic adjustment, than critical.
 
 *runtimecal =* 'value,value,value,value'::
 Parameter used in the (optional) runtime estimation.
@@ -147,8 +168,8 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
-BESTUPS, MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, Q1, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BESTUPS, INNOVART31, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *ignoresab*::
 Some UPSes incorrectly report the `Shutdown Active' bit as always on, consequently making the driver believe the UPS is nearing a shutdown (and, as a result, ups.status always contains +FSD+... and you know what this means).
@@ -156,8 +177,8 @@ Setting this flag will make the driver ignore the `Shutdown Active' bit.
 
 
 [[old-blazer-protocols-options]]
-MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MECER, MEGATEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *ondelay*::
 The acceptable range is +0..599940+ seconds.
@@ -196,14 +217,21 @@ Safeguard against talking to the wrong one of several identical UPSes on the sam
 Note that when changing *ups.id* (through linkman:upsrw[8]) the driver will continue to talk to the UPS with the new 'slave address', but won't claim it again on restart until the *slave_addr* parameter is adjusted.
 
 
-Q1 PROTOCOL
-~~~~~~~~~~~
+INNOVART31, Q1, Q2, Q6 PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *ondelay*::
 The acceptable range is +0..599940+ seconds.
 
 *offdelay*::
 The acceptable range is +12..600+ seconds.
+
+
+Q2, Q6 PROTOCOLS
+~~~~~~~~~~~~~~~~
+
+*nooutstats*::
+Some UPSes don't support `WA` command which returns output load stats. Using this flag will make the driver ignore these requests.
 
 
 VOLTRONIC-QS, VOLTRONIC-QS-HEX PROTOCOLS
@@ -333,7 +361,7 @@ TESTING
 
 This protocol comes with a couple of functions that are not enabled by default because of the lack of knowledge of some part of the communication protocol used by these UPSes by your friendly neighborhood developer.
 Since these functions are supposed to be queries to the UPS for some kind of information, they _should_ not make your UPS go boom.
-So if you are brave enough to risk your UPS and attached devices' life to help the developers, this will be very appreciated..
+So if you are brave enough to risk your UPS and attached devices' life to help the developers, this will be very appreciated.
 *Do it at your own risk*.
 
 *testing*::
@@ -355,7 +383,7 @@ include::nut_usb_addvars.txt[]
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs*, *snr*,  *armac* and *ablerex*.
+You have a choice between *ablerex*, *armac*, *cypress*, *fabula*, *fuji*, *gtec*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
 +
 Run the driver program with the `--help` option to see the exact list of
 `subdriver` values it would currently recognize.
@@ -385,6 +413,38 @@ the older standalone `richcomm_usb` driver.
 *'fabula' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.
 Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.
+
+*'gtec' subdriver*::
+Currently, the Gtec specific support is only known to work with USB devices
+(tested with a Gtec ZP120N), and was not seen with Serial port.
++
+This mode is not automatically detected, and should be enabled manually in
+your 'ups.conf', e.g.:
++
+----
+[gtec-ups]
+    driver = "nutdrv_qx"
+    port = "auto"
+    subdriver = "gtec"
+    protocol = "gtec"
+----
++
+Other subdrivers and protocol implementations (including linkman:blazer_usb[8])
+sort of work, but both have two problems:
++
+* They use the simple "Q1" query, which doesn't report the result of
+  the latest battery test.
+  - For some reason the UPS reports normal battery voltage even when
+    the battery is completely disconnected.
+    So you won't know the battery is dead until a power failure.
+  - This driver sends the more advanced "Q4" request instead.
+    Here the answer includes status letters with more information
+    than the Q1 binary flags, including battery status.
+* USB reply is read in 8-byte chunks, which causes the UPS to disconnect
+  from USB. The UPS reconnects in a second, but it still breaks the
+  initialization of `nutdrv_qx`, where the query is sent twice in a
+  short time (unlike `blazer_usb`).
+  - The solution is simple: read the whole reply at once.
 
 *'hunnox' subdriver*::
 This protocol subdriver is closely related to 'fabula' one, with a few tweaks for devices not directly supported by that driver.
@@ -439,8 +499,8 @@ Stop a running battery test.
 (Not available on some hardware)
 
 
-BESTUPS, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BESTUPS, INNOVART31, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *test.battery.start* 'value'::
 Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+60..5940+].
@@ -610,7 +670,7 @@ It no longer defaults to 0 minutes but to 3 minutes (i.e. 180 seconds) for compa
 *battnumb*::
 This option has been renamed to *battery_number*.
 
-The following options are no longer supported by this driver, you can now change them more conveniently `on the fly' calling linkman:upsrw[8] with the appropriate NUT variable - provided that your UPS supports them.
+The following options are no longer supported by this driver, you can now change them more conveniently "on the fly" calling linkman:upsrw[8] with the appropriate NUT variable -- provided that your UPS supports them.
 
 [horizontal]
 *battpacks*:: -> *battery.packs*
@@ -739,7 +799,7 @@ Since more than one warning at a time can be signaled, and because of the limite
 If you want to know the explanation of that bit you can either watch the log or see the next table (unlisted bits equal to unknown warnings).
 
 .UPS Warnings for 'voltronic' UPSes
-[cols="5>,95",options="autowidth,header",frame="topbot",grid="rows",align="center",caption=""]
+[cols="5,95",options="autowidth,header",frame="topbot",grid="rows",align="center",caption=""]
 |====
 |#	|Corresponding Warning
 |1	|Battery disconnected

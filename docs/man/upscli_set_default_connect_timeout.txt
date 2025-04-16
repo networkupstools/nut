@@ -1,0 +1,44 @@
+UPSCLI_SET_DEFAULT_CONNECT_TIMEOUT(3)
+=====================================
+
+NAME
+----
+
+upscli_set_default_connect_timeout - Configure upsclient module aspect of default timeout for initial connections.
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	int upscli_set_default_connect_timeout(const char *secs);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_set_default_connect_timeout()* function assigns upsclient module internal
+default connection timeout for linkman:upscli_connect[3] from a C string which
+represents a floating-point non-negative number (invalid parsing is ignored
+and does not modify the previously stored value), a `NULL` argument value sets
+the internal timeout to '0' meaning indefinitely blocking (NUT default for this
+method over at least 20 years).
+
+While this method can be called explicitly, it is recommended to call the
+linkman:upscli_init_default_connect_timeout[3] for consistent setting from a number
+of sources with different priority.
+
+RETURN VALUE
+------------
+
+The *upscli_set_default_connect_timeout()* function returns '0' on success (either if
+the strings was `NULL` so the built-in default '0' is applied, or if its content
+was valid and its value got applied), or '-1' if an error occurs (string was
+not `NULL`, and its content was not valid -- not a number, negative, etc.)
+
+SEE ALSO
+--------
+
+linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
+linkman:upscli_init_default_connect_timeout[3], linkman:upscli_get_default_connect_timeout[3]

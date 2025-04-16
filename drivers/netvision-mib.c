@@ -25,7 +25,7 @@
 
 #include "netvision-mib.h"
 
-#define NETVISION_MIB_VERSION			"0.44"
+#define NETVISION_MIB_VERSION			"0.45"
 
 #define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
 
@@ -100,7 +100,18 @@ static info_lkp_t netvision_onbatt_info[] = {
 #define NETVISION_OID_CONTROL_STATUS 	     ".1.3.6.1.4.1.4555.1.1.1.1.8.1"
 #define NETVISION_OID_CONTROL_SHUTDOWN_DELAY ".1.3.6.1.4.1.4555.1.1.1.1.8.2"
 
+/*
+ * some of the output sources below are set to empty string; because we
+ * don't know from here if we are online or on batteries.
+ * In this case upsAlarmOnBattery will set the appropriate status.
+ */
 static info_lkp_t netvision_output_info[] = {
+#if 0
+	/* For reference: from the times before Git until SVN, this mapping
+	 * was defined as stashed away in this block of code. It was wrong
+	 * at least for MASTERYS 3/3 SYSTEM 60 kVA UPS devices described in
+	 * pull request https://github.com/networkupstools/nut/pull/2803
+	 */
 	info_lkp_default(1, ""),	/* output source other   */
 	info_lkp_default(2, ""),	/* output source none    */
 	info_lkp_default(3, "OL"),	/* output source normal  */
@@ -110,6 +121,17 @@ static info_lkp_t netvision_output_info[] = {
 	info_lkp_default(7, "OL TRIM"),	/* output source reducer */
 	info_lkp_default(8, "OL"),	/* output source standby */
 	info_lkp_default(9, ""),	/* output source ecomode */
+#else
+	info_lkp_default(1, ""),	/* output source unknown   */
+	info_lkp_default(2, ""),	/* output source inverter  */
+	info_lkp_default(3, "OL"),	/* output source mains     */
+	info_lkp_default(4, ""),	/* output source ecomode   */
+	info_lkp_default(5, "OL BYPASS"), /* output source bypass  */
+	info_lkp_default(6, "OFF"),	/* output source standby   */
+	info_lkp_default(7, "OL BYPASS"), /* output source maintenance bypass */
+	info_lkp_default(8, "OFF"),	/* output source off       */
+	info_lkp_default(9, ""),	/* output source normal    */
+#endif
 	info_lkp_sentinel
 };
 

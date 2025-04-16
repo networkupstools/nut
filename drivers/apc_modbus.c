@@ -17,11 +17,13 @@
  */
 
 #include "main.h"
+
 #if defined NUT_MODBUS_HAS_USB
-#include "nut_libusb.h"
-#include "libhid.h"
-#include "hidparser.h"
+# include "nut_libusb.h"
+# include "libhid.h"
+# include "hidparser.h"
 #endif /* defined NUT_MODBUS_HAS_USB */
+
 #include "timehead.h"
 #include "nut_stdint.h"
 #include "apc_modbus.h"
@@ -31,8 +33,12 @@
 
 #include <modbus.h>
 
-#define DRIVER_NAME "NUT APC Modbus driver"
-#define DRIVER_VERSION "0.10"
+#if defined NUT_MODBUS_HAS_USB
+# define DRIVER_NAME "NUT APC Modbus driver with USB support"
+#else
+# define DRIVER_NAME "NUT APC Modbus driver without USB support"
+#endif
+#define DRIVER_VERSION "0.12"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -361,6 +367,30 @@ static int _apc_modbus_to_double(const apc_modbus_value_t *value, double *output
 			break;
 		case APC_VT_STRING:
 			return 0;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	return 1;
@@ -777,9 +807,9 @@ static int _apc_modbus_date_from_nut(const char *value, uint16_t *output, size_t
 	}
 
 	memset(&tm_struct, 0, sizeof(tm_struct));
-    if (strptime(value, "%Y-%m-%d", &tm_struct) == NULL) {
-        return 0;
-    }
+	if (strptime(value, "%Y-%m-%d", &tm_struct) == NULL) {
+		return 0;
+	}
 
 	if ((epoch_time = timegm(&tm_struct)) == -1) {
 		return 0;
@@ -990,11 +1020,11 @@ static void _apc_modbus_handle_error(modbus_t *ctx)
 	if (wsa_error == WSAETIMEDOUT) {
 		flush = 1;
 	}
-#else
+#else	/* !WIN32 */
 	if (errno == ETIMEDOUT) {
 		flush = 1;
 	}
-#endif /* WIN32 */
+#endif /* !WIN32 */
 
 	if (flush > 0 && flush_retries++ < 5) {
 		usleep(1000000);
@@ -1048,6 +1078,31 @@ static int _apc_modbus_update_value(apc_modbus_register_t *regs_info, const uint
 	case APC_VT_UINT:
 		_apc_modbus_to_uint64(regs, regs_info->modbus_len, &value.data.uint_value);
 		break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+	default:
+		/* Must not occur. */
+		break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	if (regs_info->value_converter != NULL && regs_info->value_converter->apc_to_nut != NULL) {
@@ -1076,6 +1131,31 @@ static int _apc_modbus_update_value(apc_modbus_register_t *regs_info, const uint
 		case APC_VT_UINT:
 			dstate_setinfo(regs_info->nut_variable_name, regs_info->value_format, value.data.uint_value);
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		}
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -1203,6 +1283,31 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 		case APC_VT_UINT:
 			r = _apc_modbus_from_uint64_string(str_value, reg_value, apc_value->modbus_len);
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		}
 
 		if (!r) {
@@ -1375,6 +1480,7 @@ void upsdrv_updateinfo(void)
 
 	alarm_init();
 	status_init();
+	buzzmode_init();
 
 	/* Status Data */
 	if (_apc_modbus_read_registers(modbus_ctx, 0, 27, regbuf)) {
@@ -1402,7 +1508,7 @@ void upsdrv_updateinfo(void)
 			status_set("TEST");
 		}
 		if (value & (1 << 13)) {
-			status_set("HE"); /* High efficiency / ECO mode*/
+			buzzmode_set("vendor:apc:HE"); /* High efficiency / ECO mode*/
 		}
 		if (value & (1 << 21)) {
 			status_set("OVER");
@@ -1459,12 +1565,37 @@ void upsdrv_updateinfo(void)
 
 	alarm_commit();
 	status_commit();
+	buzzmode_commit();
 	dstate_dataok();
 }
 
 void upsdrv_shutdown(void)
 {
-	modbus_write_register(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/*
+	 * WARNING: When using RTU TCP, this driver will probably
+	 * never support shutdowns properly, except on some systems:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
+	/* FIXME: got no direct equivalent in apc_modbus_command_map[]
+	 *  used for instcmd above. Investigate if we can add this
+	 *  combo into that map and name it as an INSTCMD to call by
+	 *  this driver's standard approach.
+	 */
+	modbus_write_register(modbus_ctx,
+		APC_MODBUS_OUTLETCOMMAND_BF_REG,
+		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP
+	);
 }
 
 void upsdrv_help(void)
@@ -1478,8 +1609,10 @@ void upsdrv_makevartable(void)
 #endif /* defined NUT_MODBUS_HAS_USB */
 
 #if defined NUT_MODBUS_HAS_USB
+	upsdebugx(1, "This build of the driver is USB-capable; also Serial and TCP Modbus RTU are supported");
 	addvar(VAR_VALUE, "porttype", "Modbus port type (serial, tcp, usb, default=usb)");
 #else
+	upsdebugx(1, "This build of the driver is not USB-capable, only Serial and TCP Modbus RTU are supported");
 	addvar(VAR_VALUE, "porttype", "Modbus port type (serial, tcp, default=serial)");
 #endif /* defined NUT_MODBUS_HAS_USB */
 	addvar(VAR_VALUE, "slaveid", "Modbus slave id (default=1)");

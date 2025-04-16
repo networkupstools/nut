@@ -55,7 +55,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"ETA PRO driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -65,6 +65,14 @@ upsdrv_info_t upsdrv_info = {
 	DRV_STABLE,
 	{ NULL }
 };
+
+/* TODO: delays should be tunable, the UPS supports max 32767 minutes.  */
+
+/* Shutdown command to off delay in seconds.  */
+#define SHUTDOWN_GRACE_TIME 10
+
+/* Shutdown to return delay in seconds.  */
+#define SHUTDOWN_TO_RETURN_TIME 15
 
 static int
 etapro_get_response(const char *resp_type)
@@ -106,6 +114,8 @@ etapro_get_response(const char *resp_type)
 	case 'T':
 		dstate_setinfo("ups.mfr.date", "%s", cp + 2);
 		return 0;
+	default:
+		break;
 	}
 	/* Handle all other responses as hexadecimal numbers.  */
 	val = 0;
@@ -120,7 +130,7 @@ etapro_get_response(const char *resp_type)
 }
 
 static void
-etapro_set_on_timer(int seconds)
+etapro_set_on_timer(unsigned int seconds)
 {
 	int x;
 
@@ -134,10 +144,10 @@ etapro_set_on_timer(int seconds)
 			seconds = (seconds + 59) / 60;
 			if (seconds > 0x7fff)
 				seconds = 0x7fff;
-			printf("UPS on in %d minutes\n", seconds);
+			printf("UPS on in %u minutes\n", seconds);
 			seconds |= 0x8000;
 		} else {
-			printf("UPS on in %d seconds\n", seconds);
+			printf("UPS on in %u seconds\n", seconds);
 		}
 
 		ser_send(upsfd, "RN%04X\r", seconds);
@@ -145,11 +155,11 @@ etapro_set_on_timer(int seconds)
 		if (x == 0x20)
 			return;  /* OK */
 	}
-	upslogx(LOG_ERR, "etapro_set_on_timer: error, status=0x%02x", x);
+	upslogx(LOG_ERR, "etapro_set_on_timer: error, status=0x%02x", (unsigned int)x);
 }
 
 static void
-etapro_set_off_timer(int seconds)
+etapro_set_off_timer(unsigned int seconds)
 {
 	int x;
 
@@ -163,10 +173,10 @@ etapro_set_off_timer(int seconds)
 			seconds /= 60;
 			if (seconds > 0x7fff)
 				seconds = 0x7fff;
-			printf("UPS off in %d minutes\n", seconds);
+			printf("UPS off in %u minutes\n", seconds);
 			seconds |= 0x8000;
 		} else {
-			printf("UPS off in %d seconds\n", seconds);
+			printf("UPS off in %u seconds\n", seconds);
 		}
 
 		ser_send(upsfd, "RO%04X\r", seconds);
@@ -174,7 +184,7 @@ etapro_set_off_timer(int seconds)
 		if (x == 0)
 			return;  /* OK */
 	}
-	upslogx(LOG_ERR, "etapro_set_off_timer: error, status=0x%02x", x);
+	upslogx(LOG_ERR, "etapro_set_off_timer: error, status=0x%02x", (unsigned int)x);
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -190,7 +200,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		upsdrv_shutdown();
+		etapro_set_on_timer(SHUTDOWN_GRACE_TIME + SHUTDOWN_TO_RETURN_TIME);
+		etapro_set_off_timer(SHUTDOWN_GRACE_TIME);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -329,19 +340,15 @@ upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
-/* TODO: delays should be tunable, the UPS supports max 32767 minutes.  */
-
-/* Shutdown command to off delay in seconds.  */
-#define SHUTDOWN_GRACE_TIME 10
-
-/* Shutdown to return delay in seconds.  */
-#define SHUTDOWN_TO_RETURN_TIME 15
-
 void
 upsdrv_shutdown(void)
 {
-	etapro_set_on_timer(SHUTDOWN_GRACE_TIME + SHUTDOWN_TO_RETURN_TIME);
-	etapro_set_off_timer(SHUTDOWN_GRACE_TIME);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void

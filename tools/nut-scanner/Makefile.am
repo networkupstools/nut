@@ -11,6 +11,8 @@
 
 # Generally, list headers and/or sources which are re-generated
 # for nut-scanner in the parent dir
+# Note there is also a libupsclient-version.h which we ensure and
+# manage via usual `make` dependencies below.
 NUT_SCANNER_DEPS_H = nutscan-usb.h nutscan-snmp.h
 NUT_SCANNER_DEPS_C =
 
@@ -28,7 +30,10 @@ $(NUT_SCANNER_DEPS): dummy
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/include/nut_version.h \
-$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/clients/libupsclient-version.h \
+$(top_builddir)/common/libnutwincompat.la \
+$(top_builddir)/drivers/libserial-nutscan.la \
+$(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -36,51 +41,56 @@ $(top_builddir)/common/libcommon.la: dummy
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else
+# FIXME: this can cause rebuilds of nut_version.h for every mention
+#  (especially if we `configire --enable-force-nut-version-header`,
+#  which is default). This also causes binary build of libupsclient.la
+#  to look up its metadata and generate libupsclient-version.h which
+#  may be a bit of overkill (especially in cross-build cases etc.)
+#  Notably this pops up in `configure && make dist(check)` rituals.
 nut-scanner.c: $(top_builddir)/include/nut_version.h
+nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
-LINKED_SOURCE_FILES =
+# We optionally append values to this below
+bin_PROGRAMS =
+lib_LTLIBRARIES =
+include_HEADERS =
+dist_noinst_HEADERS =
 
-# Separate the .deps of other dirs from this one
-# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
-# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
-LINKED_SOURCE_FILES += serial.c
-serial.c: $(top_srcdir)/drivers/serial.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
-
-LINKED_SOURCE_FILES += bcmxcp_ser.c
-bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
-
-CLEANFILES += $(LINKED_SOURCE_FILES)
-BUILT_SOURCES += $(LINKED_SOURCE_FILES)
-
-# Note: we only build nut-scanner, and its library, if libltdl was found (required!)
+# Note: we only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_NUT_SCANNER
- bin_PROGRAMS = nut-scanner
- lib_LTLIBRARIES = libnutscan.la
+ bin_PROGRAMS += nut-scanner
+ lib_LTLIBRARIES += libnutscan.la
 endif WITH_NUT_SCANNER
 libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
-nodist_libnutscan_la_SOURCES = $(LINKED_SOURCE_FILES)
 libnutscan_la_LIBADD = $(NETLIBS)
+libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
+
+# Make sure generated sources are there when needed
+scan_snmp.c: nutscan-snmp.h
+scan_usb.c: nutscan-usb.h
+
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif WITH_LIBLTDL
-libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+
 if HAVE_SEMAPHORE_LIBS
 # Are additional libraries needed for semaphore support?
 libnutscan_la_LIBADD += $(SEMLIBS)
 endif HAVE_SEMAPHORE_LIBS
 
-# FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
-libnutscan_la_LDFLAGS = $(SERLIBS)
+libnutscan_la_LIBADD += $(SERLIBS)
 
+libnutscan_la_LDFLAGS =
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutscan_la_LIBADD += $(top_builddir)/common/libnutwincompat.la
   libnutscan_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
+# Technically, we might only have this one set on Windows so far...
+libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 
 #
 # Below we set API versions of public libraries
@@ -89,7 +99,7 @@ endif HAVE_WINDOWS
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:5:0
+libnutscan_la_LDFLAGS += -version-info 3:0:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -100,17 +110,35 @@ libnutscan_la_LDFLAGS += -version-info 2:5:0
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths)'
-libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
+libnutscan_la_CFLAGS = \
+			-I$(top_builddir)/clients -I$(top_srcdir)/clients \
+			-I$(top_builddir)/include -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
+libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
+
 nut_scanner_SOURCES = nut-scanner.c
-nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
+nut_scanner_CFLAGS = \
+			-I$(top_builddir)/clients -I$(top_srcdir)/clients \
+			-I$(top_builddir)/include -I$(top_srcdir)/include
 nut_scanner_LDADD = libnutscan.la
+
+# Hack to allow correct RPATH/RUNPATH like /usr/lib/mps/64 (Mozilla NSS)
+# to be used on Solaris/illumos and similar platforms. For more details,
+# see https://github.com/networkupstools/nut/issues/2674 but in short -
+# we know the libs and options from pkg-config, and then they are well
+# embedded into libnutscan.la, and then the -R/some/path options are
+# chopped away by libtool when linking the program (while for some reason
+# it adds the libraries wanted by libnutscan.la directly as libs wanted
+# by the program, and ALSO they have a link chain through the shared lib).
+# I'd argue this is a libtool bug, but here's a workaround that works...
+nut_scanner_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
-  libnutscan_la_LIBADD += $(LIBSSL_LIBS)
+  libnutscan_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
+  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
 endif WITH_SSL
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
@@ -118,6 +146,9 @@ endif WITH_USB
 # Note: do not indent automake "if" lines
 if WITH_SNMP
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
+if !WITH_OPENSSL
+  libnutscan_la_CFLAGS += -UNETSNMP_USE_OPENSSL
+endif !WITH_OPENSSL
 if    WITH_SNMP_STATIC
     # MinGW builds of libnetsnmp are static-only, so we link it in:
     libnutscan_la_CFLAGS += -DWITH_SNMP_STATIC=1
@@ -143,11 +174,11 @@ if WITH_IPMI
 endif WITH_IPMI
 
 # C is not a header, but there is no dist_noinst_SOURCES
-dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
+dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
- include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
+ include_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 else !WITH_DEV
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif !WITH_DEV
@@ -161,3 +192,6 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # the root Makefile.am takes care of that!
 #clean-local:
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

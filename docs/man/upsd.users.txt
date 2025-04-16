@@ -4,7 +4,7 @@ UPSD.USERS(5)
 NAME
 ----
 
-upsd.users - Administrative user definitions for NUT upsd
+upsd.users - Administrative user definitions for NUT upsd data server
 
 DESCRIPTION
 -----------
@@ -13,10 +13,39 @@ Administrative commands such as setting variables and the instant
 commands are powerful, and access to them needs to be restricted.  This
 file defines who may access them, and what is available.
 
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
+* Balance the run-time user permissions to access the file (and perhaps the
+  directory it is in) for only `upsd` to be able to read it; write access
+  is not needed. It is common to use `chown root:nut` and `chmod 640`
+  to set up acceptable file permissions.
+  - Packages (and build recipes) typically prepare one set of user and
+    group accounts for NUT. Custom builds with minimal configuration might
+    even use `nobody:nogroup` or similar, which is inherently insecure.
+  - On systems with extra security concerns, NUT drivers and data server
+    should run as separate user accounts which would be members of one
+    same group for shared access to local Unix socket files and the
+    directory they are in, but different groups for configuration file
+    access. This would need some daemons to use customized `user`, `group`,
+    `RUN_AS_USER` and/or `RUN_AS_GROUP` settings to override the single
+    built-in value.
+  - Note that the monitoring, logging, etc. clients are networked-only.
+    They do not need access to these files and directories, and can run
+    as an independent user and group altogether.
+  - Keep in mind the security of also any backup copies of this file,
+    e.g. the archive files it might end up in.
+
+SECTIONS
+--------
+
 Each user gets its own section.  The fields in that section set the
 parameters associated with that user's privileges.  The section begins
 with the name of the user in brackets, and continues until the next user
-name in brackets or EOF.  These users are independent of /etc/passwd.
+name in brackets or EOF.  These users are independent of `/etc/passwd`
+or other OS account databases.
 
 Here are some examples to get you started:
 
@@ -48,16 +77,18 @@ Set the password for this user.
 
 *actions*::
 
-Allow the user to do certain things with upsd.  To specify multiple
+Allow the user to do certain things with `upsd`.  To specify multiple
 actions, use multiple instances of the *actions* field.  Valid
 actions are:
-
++
+--
 	SET;; change the value of certain variables in the UPS
 
 	FSD;; set the forced shutdown flag in the UPS.  This is
-equivalent to an "on battery + low battery" situation for the purposes
-of monitoring.
-
+          equivalent to an "on battery + low battery" situation
+          for the purposes of monitoring.
+--
++
 The list of actions is expected to grow in the future.
 
 *instcmds*::
@@ -65,20 +96,23 @@ The list of actions is expected to grow in the future.
 Let a user initiate specific instant commands.  Use "ALL" to grant all
 commands automatically.  To specify multiple commands, use multiple
 instances of the *instcmds* field.  For the full list of what your UPS
-supports, use "upscmd -l".
+supports, use `upscmd -l`.
 +
-The +cmdvartab+ file supplied with the distribution contains a list
-of most of the known command names.
+The +cmdvartab+ file supplied with the NUT distribution contains a list
+of most of the generally known command names.
 
 *upsmon*::
 
-Add the necessary actions for a upsmon process to work.  This is either
-set to "primary" or "secondary".
+Add the necessary actions for an `upsmon` process, and can be viewed as a
+role of a particular client instance to work with this data server instance.
+This is either set to 'primary' (may request FSD) or 'secondary' (follows
+critical situations to shut down when needed).
 +
-Do not attempt to assign actions to upsmon by hand, as you may miss
+Do not attempt to assign actions to `upsmon` by hand, as you may miss
 something important.  This method of designating a "upsmon user" was
 created so internal capabilities could be changed later on without
-breaking existing installations.
+breaking existing installations (potentially using actions that are
+not exposed for direct assignment).
 
 SEE ALSO
 --------

@@ -29,7 +29,7 @@
 #define APCC_MIB_VERSION	"1.60"
 
 #define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
-/* FIXME: Find a better oid_auto_check vs sysOID for this one? */
+/* FIXME: Find a better oid_auto_check vs. sysOID for this one? */
 #define APC_UPS_SYSOID	APC_UPS_DEVICE_MODEL
 
 /* Other APC sysOID:
@@ -164,9 +164,9 @@ static info_lkp_t apcc_transfer_reasons[] = {
 #define APCC_REBOOT_DO			2
 #define APCC_REBOOT_GRACEFUL	3
 #if 0	/* not used. */
-	#define APCC_OID_SLEEP		".1.3.6.1.4.1.318.1.1.1.6.2.3"
-	#define APCC_SLEEP_ON			"2"
-	#define APCC_SLEEP_GRACEFUL		"3"
+#	define APCC_OID_SLEEP		".1.3.6.1.4.1.318.1.1.1.6.2.3"
+#	define APCC_SLEEP_ON			"2"
+#	define APCC_SLEEP_GRACEFUL		"3"
 #endif
 
 

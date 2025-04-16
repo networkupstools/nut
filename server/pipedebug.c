@@ -40,7 +40,7 @@ static void pipe_arg(int numarg, char **arg)
 static HANDLE pipe_connect(const char *pipefn)
 {
 	HANDLE	fd;
-	char	pipename[SMALLBUF];
+	char	pipename[NUT_PATH_MAX];
 	BOOL	result = FALSE;
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s", pipefn);
@@ -138,6 +138,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: %s <pipe name>\n", prog);
 		fprintf(stderr, "       %s apcsmart-com1\n",
 			argv[0]);
+
+		fprintf(stderr, "\n%s", suggest_doc_links(prog, NULL));
+
 		exit(EXIT_SUCCESS);
 	}
 

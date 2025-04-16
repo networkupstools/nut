@@ -30,7 +30,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.14"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -65,6 +65,9 @@ static usb_device_id_t richcomm_usb_id[] = {
 static usb_dev_handle	*udev = NULL;
 static USBDevice_t	usbdevice;
 static unsigned int	comm_failures = 0;
+
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
@@ -490,6 +493,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
 					goto next_device;
+
+				default:
+					break;
 				}
 			}
 #ifdef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER
@@ -585,11 +591,11 @@ void upsdrv_initups(void)
 
 #ifndef WIN32
 		if ((i < 32) && (sleep(5) == 0)) {
-#else
-/*FIXME*/
+#else	/* WIN32 */
+/* FIXME NUT_WIN32_INCOMPLETE? */
 		sleep(5);
 		if ((i < 32)) {
-#endif
+#endif	/* WIN32 */
 			usb_comm_fail("Can't open USB device, retrying ...");
 			continue;
 		}
@@ -633,6 +639,15 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);
 	dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
+
+	/* commands ----------------------------------------------- */
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("shutdown.return");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 void upsdrv_updateinfo(void)
@@ -693,46 +708,82 @@ void upsdrv_updateinfo(void)
 	status_commit();
 }
 
-/*
- * The shutdown feature is a bit strange on this UPS IMHO, it
- * switches the polarity of the 'Shutdown UPS' signal, at which
- * point it will automatically power down once it loses power.
- *
- * It will still, however, be possible to poll the UPS and
- * reverse the polarity _again_, at which point it will
- * start back up once power comes back.
- *
- * Maybe this is the normal way, it just seems a bit strange.
- *
- * Please note, this function doesn't power the UPS off if
- * line power is connected.
- */
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	NUT_UNUSED_VARIABLE(extra);
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "shutdown.return"))
+	{
+		/* FIXME: Which one is this - "load.off",
+		 * "shutdown.stayoff" or "shutdown.return"?
+		 * Per legacy comments below it seems to
+		 * best fit "load.off", and then we would
+		 * want a "load.on" as well (is it different
+		 * given the talk of polarity inversion?),
+		 * except that "load.*" are to be immediate
+		 * and here it depends on line power state...
+		 */
+
+		/*
+		 * The shutdown feature is a bit strange on this UPS IMHO, it
+		 * switches the polarity of the 'Shutdown UPS' signal, at which
+		 * point it will automatically power down once it loses power.
+		 *
+		 * It will still, however, be possible to poll the UPS and
+		 * reverse the polarity _again_, at which point it will
+		 * start back up once power comes back.
+		 *
+		 * Maybe this is the normal way, it just seems a bit strange.
+		 *
+		 * Please note, this function doesn't power the UPS off if
+		 * line power is connected.
+		 */
+
+		/*
+		 * This packet shuts down the UPS, that is,
+		 * if it is not currently on line power
+		 */
+		char	prepare[QUERY_PACKETSIZE] = { 0x02, 0x00, 0x00, 0x00 };
+
+		/*
+		 * This should make the UPS turn itself back on once the
+		 * power comes back on; which is probably what we want
+		 */
+		char	restart[QUERY_PACKETSIZE] = { 0x02, 0x01, 0x00, 0x00 };
+		char	reply[REPLY_PACKETSIZE];
+
+		execute_and_retrieve_query(prepare, reply);
+
+		/*
+		 * have to wait a bit, the previous command seems
+		 * to be ignored if the second command comes right
+		 * behind it
+		 */
+		sleep(1);
+
+		execute_and_retrieve_query(restart, reply);
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 void upsdrv_shutdown(void)
 {
-	/*
-	 * This packet shuts down the UPS, that is,
-	 * if it is not currently on line power
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
 	 */
-	char	prepare[QUERY_PACKETSIZE] = { 0x02, 0x00, 0x00, 0x00 };
-
-	/*
-	 * This should make the UPS turn itself back on once the
-	 * power comes back on; which is probably what we want
-	 */
-	char	restart[QUERY_PACKETSIZE] = { 0x02, 0x01, 0x00, 0x00 };
-	char	reply[REPLY_PACKETSIZE];
-
-	execute_and_retrieve_query(prepare, reply);
-
-	/*
-	 * have to, the previous command seems to be
-	 * ignored if the second command comes right
-	 * behind it
-	 */
-	sleep(1);
-
-
-	execute_and_retrieve_query(restart, reply);
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
@@ -743,6 +794,7 @@ void upsdrv_makevartable(void)
 {
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	/* TODO: Uncomment while addressing https://github.com/networkupstools/nut/issues/1768
-	nut_usb_addvars();
+	 * When fixing, see also tools/nut-scanner/scan_usb.c "exceptions".
+	 * nut_usb_addvars();
 	*/
 }

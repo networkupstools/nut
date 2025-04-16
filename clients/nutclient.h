@@ -18,7 +18,7 @@
 */
 
 #ifndef NUTCLIENT_HPP_SEEN
-#define NUTCLIENT_HPP_SEEN
+#define NUTCLIENT_HPP_SEEN 1
 
 /* Begin of C++ nutclient library declaration */
 #ifdef __cplusplus

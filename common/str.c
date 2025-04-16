@@ -666,3 +666,31 @@ char *	str_concat(size_t count, ...)
 
 	return merged;
 }
+
+#ifndef HAVE_STRTOF
+# include <errno.h>
+# include <stdio.h>
+float strtof(const char *nptr, char **endptr)
+{
+	double d;
+	int i;
+
+	if (!nptr || !*nptr) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	/* FIXME: LC_NUMERIC=C for dot floats */
+	i = sscanf(nptr, "%f", &d);
+	if (i < 1) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	if (endptr) {
+		*endptr = (char*)nptr + i;
+	}
+
+	return (float)d;
+}
+#endif	/* HAVE_STRTOF */

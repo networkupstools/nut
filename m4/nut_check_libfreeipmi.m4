@@ -8,11 +8,15 @@ AC_DEFUN([NUT_CHECK_LIBFREEIPMI],
 [
 if test -z "${nut_have_libfreeipmi_seen}"; then
 	nut_have_libfreeipmi_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	CFLAGS=""
+	LIBS=""
+	depCFLAGS=""
+	depLIBS=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl pkg-config support requires Freeipmi 1.0.5, released on Thu Jun 30 2011
@@ -31,11 +35,11 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	)
 
 	AS_IF([test x"$FREEIPMI_VERSION" != xnone],
-		[CFLAGS="`$PKG_CONFIG --silence-errors --cflags libfreeipmi libipmimonitoring 2>/dev/null`"
-		 LIBS="`$PKG_CONFIG --silence-errors --libs libfreeipmi libipmimonitoring 2>/dev/null`"
+		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libfreeipmi libipmimonitoring 2>/dev/null`"
+		 depLIBS="`$PKG_CONFIG --silence-errors --libs libfreeipmi libipmimonitoring 2>/dev/null`"
 		],
-		[CFLAGS=""
-		 LIBS="-lfreeipmi -lipmimonitoring"
+		[depCFLAGS=""
+		 depLIBS="-lfreeipmi -lipmimonitoring"
 		]
 	)
 
@@ -49,11 +53,11 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-freeipmi-includes - see docs/configure.txt)
 			;;
 		*)
-			CFLAGS="${withval}"
+			depCFLAGS="${withval}"
 			;;
 		esac
 	], [])
-	AC_MSG_RESULT([${CFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for FreeIPMI ldflags)
 	AC_ARG_WITH(freeipmi-libs,
@@ -64,13 +68,15 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-freeipmi-libs - see docs/configure.txt)
 			;;
 		*)
-			LIBS="${withval}"
+			depLIBS="${withval}"
 			;;
 		esac
 	], [])
-	AC_MSG_RESULT([${LIBS}])
+	AC_MSG_RESULT([${depLIBS}])
 
 	dnl check if freeipmi is usable with our current flags
+	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
+	LIBS="${LIBS_ORIG} ${depLIBS}"
 	AC_CHECK_HEADERS(freeipmi/freeipmi.h, [nut_have_freeipmi=yes], [nut_have_freeipmi=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_HEADERS(ipmi_monitoring.h, [], [nut_have_freeipmi=no], [AC_INCLUDES_DEFAULT])
 	AC_SEARCH_LIBS([ipmi_ctx_create], [freeipmi], [], [nut_have_freeipmi=no])
@@ -85,13 +91,36 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	AC_SEARCH_LIBS([ipmi_sdr_cache_ctx_destroy], [freeipmi], [nut_have_freeipmi_11x_12x=no], [])
 	AC_SEARCH_LIBS([ipmi_sdr_ctx_destroy], [freeipmi], [nut_have_freeipmi_11x_12x=yes], [nut_have_freeipmi_11x_12x=no])
 
+	dnl Collect possibly updated dependencies after AC SEARCH LIBS:
+	AS_IF([test x"${LIBS}" != x"${LIBS_ORIG} ${depLIBS}"], [
+		AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
+			depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
+		])
+	])
+
 	if test "${nut_have_freeipmi}" = "yes"; then
 		nut_with_ipmi="yes"
 		nut_ipmi_lib="(FreeIPMI)"
 		nut_have_libipmi="yes"
 		AC_DEFINE(HAVE_FREEIPMI, 1, [Define if FreeIPMI support is available])
-		LIBIPMI_CFLAGS="${CFLAGS}"
-		LIBIPMI_LIBS="${LIBS}"
+		LIBIPMI_CFLAGS="${depCFLAGS}"
+		LIBIPMI_LIBS="${depLIBS}"
+
+		dnl Help ltdl if we can (nut-scanner etc.)
+		for TOKEN in $depLIBS ; do
+			AS_CASE(["${TOKEN}"],
+				[-l*ipmi*], [
+					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBFREEIPMI], [])
+					AS_IF([test -n "${SOPATH_LIBFREEIPMI}" && test -s "${SOPATH_LIBFREEIPMI}"], [
+						AC_DEFINE_UNQUOTED([SOPATH_LIBFREEIPMI],["${SOPATH_LIBFREEIPMI}"],[Path to dynamic library on build system])
+						SOFILE_LIBFREEIPMI="`basename "$SOPATH_LIBFREEIPMI"`"
+						AC_DEFINE_UNQUOTED([SOFILE_LIBFREEIPMI],["${SOFILE_LIBFREEIPMI}"],[Base file name of dynamic library on build system])
+						break
+					])
+				]
+			)
+		done
+		unset TOKEN
 	fi
 
 	if test "${nut_have_freeipmi_11x_12x}" = "yes"; then
@@ -101,6 +130,9 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	if test "${nut_have_freeipmi_monitoring}" = "yes"; then
 		AC_DEFINE(HAVE_FREEIPMI_MONITORING, 1, [Define if FreeIPMI monitoring support is available])
 	fi
+
+	unset depCFLAGS
+	unset depLIBS
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

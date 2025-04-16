@@ -23,7 +23,7 @@
  * -------------------------------------------------------------------------- */
 
 #ifndef NUT_HID_PARSER_H_SEEN
-#define NUT_HID_PARSER_H_SEEN
+#define NUT_HID_PARSER_H_SEEN 1
 
 
 #ifdef __cplusplus

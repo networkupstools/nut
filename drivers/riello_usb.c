@@ -36,7 +36,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.14"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -143,7 +143,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
-			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
+			upsdebug_with_errno(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, nut_usb_strerror(err));
 			return err;
 		}
 		ussleep(USB_WRITE_DELAY);
@@ -173,7 +173,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
-			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
+			upsdebug_with_errno(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, nut_usb_strerror(err));
 			return err;
 		}
 		ussleep(USB_WRITE_DELAY);
@@ -201,7 +201,7 @@ static int Get_USB_Packet(uint8_t *buffer)
 		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
 
 	if (err < 0){
-		upsdebugx(3, "USB: Get_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
+		upsdebug_with_errno(3, "USB: Get_USB_Packet: send_usb_packet, err = %d %s ", err, nut_usb_strerror(err));
 		return err;
 	}
 
@@ -374,7 +374,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
 	if (ret >= 0) {
-		upsdebugx (3, "riello_command ok: %u", ret);
+		upsdebugx (3, "riello_command ok: %d", ret);
 		return ret;
 	}
 
@@ -436,7 +436,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	case -EPROTO:		/* Protocol error */
 # endif
 		break;
-#endif
+#endif	/* !WIN32 */
 
 	default:
 		break;
@@ -834,7 +834,7 @@ static int start_ups_comm(void)
 		return 1;
 	}
 
-	upsdebugx (3, "Get identif Ok: read byte: %u", recv);
+	upsdebugx (3, "Get identif Ok: read byte: %d", recv);
 
 	return 0;
 }
@@ -980,15 +980,15 @@ void upsdrv_initinfo(void)
 		input_monophase = 1;
 	else {
 		input_monophase = 0;
-		dstate_setinfo("input.phases", "%u", 3);
-		dstate_setinfo("input.phases", "%u", 3);
-		dstate_setinfo("input.bypass.phases", "%u", 3);
+		dstate_setinfo("input.phases", "%d", 3);
+		dstate_setinfo("input.phases", "%d", 3);
+		dstate_setinfo("input.bypass.phases", "%d", 3);
 	}
 	if ((DevData.Identif_bytes[0] == '1') || (DevData.Identif_bytes[0] == '3'))
 		output_monophase = 1;
 	else {
 		output_monophase = 0;
-		dstate_setinfo("output.phases", "%u", 3);
+		dstate_setinfo("output.phases", "%d", 3);
 	}
 
 	dstate_setinfo("device.mfr", "RPS S.p.a.");
@@ -1134,6 +1134,9 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 	int retry;
 
@@ -1151,7 +1154,8 @@ void upsdrv_shutdown(void)
 	/* OB: the load must remain off until the power returns */
 
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
+		/* By default, abort a previously requested shutdown
+		 * (if any) and schedule a new one from this moment. */
 		if (riello_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
@@ -1161,12 +1165,14 @@ void upsdrv_shutdown(void)
 		}
 
 		upslogx(LOG_ERR, "Shutting down");
-		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_updateinfo(void)
@@ -1252,7 +1258,7 @@ void upsdrv_updateinfo(void)
 		battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
 		upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
 
-		dstate_setinfo("battery.charge", "%u", battcharge);
+		dstate_setinfo("battery.charge", "%d", battcharge);
 		dstate_setinfo("battery.runtime", "%.0f", battruntime/upsloadfactor);
 	}
 	else {
@@ -1268,7 +1274,7 @@ void upsdrv_updateinfo(void)
 			 * invalid/unknown by HW/FW (all bits in the word are set).
 			 */
 			dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-			dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+			dstate_setinfo("battery.runtime", "%u", (unsigned int)DevData.BatTime*60);
 		}
 	}
 
@@ -1310,7 +1316,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("output.L1.power.percent", "%u", DevData.Pout1);
 		dstate_setinfo("output.L2.power.percent", "%u", DevData.Pout2);
 		dstate_setinfo("output.L3.power.percent", "%u", DevData.Pout3);
-		dstate_setinfo("ups.load", "%u", (DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
+		dstate_setinfo("ups.load", "%u", (unsigned int)(DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
 	}
 
 	status_init();
