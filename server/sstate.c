@@ -220,8 +220,15 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	if (ret < 0) {
 		time_t	now;
 
-		upsdebugx(2, "%s: failed to connect() UNIX socket %s (%s)",
-			__func__, NUT_STRARG(ups->fn), sa.sun_path);
+		if (strstr(sa.sun_path, "/")) {
+			upsdebugx(2, "%s: failed to connect() UNIX socket %s (%s)",
+				__func__, NUT_STRARG(ups->fn), sa.sun_path);
+		} else {
+			char	cwd[NUT_PATH_MAX+1];
+			upsdebugx(2, "%s: failed to connect() UNIX socket %s (%s/%s)",
+				__func__, NUT_STRARG(ups->fn),
+				getcwd(cwd, sizeof(cwd)), sa.sun_path);
+		}
 		close(fd);
 
 		/* rate-limit complaints - don't spam the syslog */
@@ -230,8 +237,14 @@ TYPE_FD sstate_connect(upstype_t *ups)
 			return ERROR_FD;
 
 		ups->last_connfail = now;
-		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
-			ups->name, ups->fn);
+		if (strstr(ups->fn, "/")) {
+			upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
+				ups->name, ups->fn);
+		} else {
+			char	cwd[NUT_PATH_MAX+1];
+			upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s/%s)",
+				ups->name, getcwd(cwd, sizeof(cwd)), ups->fn);
+		}
 
 		return ERROR_FD;
 	}
@@ -262,14 +275,15 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	}
 
 #else
-	char pipename[SMALLBUF];
+	char pipename[NUT_PATH_MAX];
 	const char	*dumpcmd = "DUMPALL\n";
 	BOOL  result = FALSE;
+	DWORD bytesWritten;
 
 	upsdebugx(2, "%s: preparing Windows pipe %s", __func__, NUT_STRARG(ups->fn));
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s", ups->fn);
 
-	result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
+	result = WaitNamedPipe(pipename, NMPWAIT_USE_DEFAULT_WAIT);
 
 	if (result == FALSE) {
 		upsdebugx(2, "%s: failed to WaitNamedPipe(%s)",
@@ -288,14 +302,15 @@ TYPE_FD sstate_connect(upstype_t *ups)
 			NULL);          /* no template file */
 
 	if (fd == INVALID_HANDLE_VALUE) {
-		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)", ups->name, ups->fn);
+		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s) named pipe %s",
+			ups->name, ups->fn, pipename);
 		return ERROR_FD;
 	}
 
 	/* get a dump started so we have a fresh set of data */
-	DWORD bytesWritten = 0;
+	bytesWritten = 0;
 
-	result = WriteFile (fd,dumpcmd,strlen(dumpcmd),&bytesWritten,NULL);
+	result = WriteFile(fd, dumpcmd, strlen(dumpcmd), &bytesWritten, NULL);
 	if (result == 0 || bytesWritten != strlen(dumpcmd)) {
 		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", ups->name);
 		CloseHandle(fd);

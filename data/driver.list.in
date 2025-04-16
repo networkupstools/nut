@@ -506,8 +506,10 @@
 
 "Grafenthal"	"ups"	"3"	"PR-3000-HS"	"SNMP/Web Minislot card (ref 149G0006)"	"snmp-ups"	# http://grafenthal.de/produkte/usv/online/pr-hs-serie/pr-3000-hs/?L=3et8
 
+"Greencell"	"ups"	"2"	"2000VA"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1673
 "Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1080
 "Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/1080
+"Greencell"	"ups"	"2"	"PowerProof 2000"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/2727
 
 "Gtec"	"ups"	"2"	"ZP120N-1K / ZP120N-1KS / ZP120N-2K / ZP120N-2KS / ZP120N-3K / ZP120N-3KS"	"USB"	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-6K / ZP120N-6KS / ZP120N-10K-11 / ZP120N-10KS-11"	"USB"	"blazer_usb"
@@ -1264,6 +1266,7 @@
 "Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
 
 "Salicru"	"ups"	"2"	"SPS ONE 700VA"	"USB"	"blazer_usb"
+"Salicru"	"ups"	"2"	"SPS ONE 900VA"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1623
 "Salicru"	"ups"	"2"	"SPS ONE 2000VA"	"USB"	"nutdrv_qx"	# https://www.salicru.com/en/ups/sps-one.html https://github.com/networkupstools/nut/issues/554
 "Salicru"	"ups"	"3"	"SPS 650/850 HOME"	"usb"	"usbhid-ups (experimental)"
 "Salicru"	"ups"	"3"	"SLC TWIN PRO2"	"usb"	"usbhid-ups (experimental)" # https://github.com/networkupstools/nut/issues/450

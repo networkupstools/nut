@@ -158,7 +158,7 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 }
 
 udq_pipe_conn_t *upsdrvquery_connect_drvname_upsname(const char *drvname, const char *upsname) {
-	char	sockname[SMALLBUF];
+	char	sockname[NUT_PATH_MAX];
 #ifndef WIN32
 	struct stat     fs;
 	snprintf(sockname, sizeof(sockname), "%s/%s-%s",

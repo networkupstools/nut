@@ -332,7 +332,8 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
 		fatalx(EXIT_FAILURE, "too small dest in comli_prepare\n");
 
 	out[0] = STX;
-	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04zX%02zX", h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
+	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04zX%02zX",
+		(unsigned int)h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
 
 	memcpy(out+11, buf, count);
 	reverse_bits(out+11, count);
@@ -572,7 +573,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	reply = raw_reply.begin - 1;
 
 	if ( (raw_reply.end - raw_reply.begin) != (ptrdiff_t)(10 + io_head->len))  {
-		upsdebugx(3, "%s: corrupt sentence\t(%i != %" PRIiSIZE ")",
+		upsdebugx(3, "%s: corrupt sentence\t(%i != %" PRIuSIZE ")",
 				__func__, (int)(raw_reply.end - raw_reply.begin), 10 + io_head->len);
 		return -1;		/* corrupt sentence	*/
 	}
@@ -648,7 +649,7 @@ static int al_check_ack(/*const*/ raw_data_t raw_ack)
 	}
 
 	if (ack[5]!=ACK)  {
-		upsdebugx(3, "%s: wrong ack\t(0x%02X != 0x%02X)", __func__, ack[5], ACK);
+		upsdebugx(3, "%s: wrong ack\t(0x%02X != 0x%02X)", __func__, ack[5], (unsigned int)ACK);
 		return -1;		/* wrong ack	*/
 	}
 
@@ -907,7 +908,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
 	if (err!=(int)(io->len+2)) {
-		upsdebugx(4, "rx_tail failed, err=%" PRIiSIZE " (!= %" PRIiSIZE ")", err, io->len+2);
+		upsdebugx(4, "rx_tail failed, err=%" PRIiSIZE " (!= %" PRIuSIZE ")", err, io->len+2);
 		ret = -1; goto out;
 	}
 

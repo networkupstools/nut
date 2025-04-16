@@ -119,6 +119,11 @@ https://github.com/networkupstools/nut/milestone/11
    now to report human-friendly text instead of internal enum codes. Follow-up
    to [issue #1590, PR #1777, PR #2136]
 
+ - drivers should no longer print warning messages about not-initializing the
+   notification subsystem because not running as a service when they are either
+   started explicitly to show the help message, or when their CLI arguments
+   are fatally wrong (no UPS name, no `port`, invalid trailing keywords...)
+
  - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
    the daemon was running to potentially conflict with), especially useless
@@ -131,6 +136,10 @@ https://github.com/networkupstools/nut/milestone/11
    now also handle an existing PID file to interact with the earlier instance
    of the driver program, if still running (e.g. started manually). [#2384]
 
+ - Drivers executed to force an UPS shutdown (with `-k` CLI option) should
+   now try harder to kill off a daemonized sibling, if it still runs (and
+   did not handle a `driver.killpower` INSTCMD well). [#2666]
+
  - Extended instant commands for driver reloading with a `driver.exit`
    command for a protocol equivalent of sending a `SIGTERM`, e.g. when
    a newer instance of the driver program tries to start. [#1903, #2392]
@@ -138,6 +147,12 @@ https://github.com/networkupstools/nut/milestone/11
  - A new `NUT_QUIET_INIT_BANNER` envvar (presence or "true" value) can now
    prevent the tool name and NUT version banner from being unilaterally
    printed out when NUT programs start. [issues #1789 vs. #316; #2573]
+
+ - Drivers would now report the socket they are listening on, and server
+   would report full path to the driver socket it tries to connect to.
+   A new `NUT_QUIET_INIT_LISTENER` envvar (presence or "true" value) can
+   prevent the socket name from being unilaterally printed out when NUT
+   drivers start. [#2764]
 
  - The `upsdrvctl` should now warn if executed on systems where NUT was
    built with support for service management frameworks like systemd or SMF,
@@ -170,6 +185,8 @@ https://github.com/networkupstools/nut/milestone/11
      as known supported by `nutdrv_qx` (Megatec protocol) since at least
      NUT v2.7.4 release. [#2395]
    * introduced `innovart31` protocol support for Innova RT 3/1 UPSes. [#2712]
+   * extended Voltronic protocol to support longer numbers as remaining
+     `battery.runtime` value. [#2765]
 
  - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
    communication protocol, which supports any UPS shipped with the PSZ-1053
@@ -226,6 +243,10 @@ https://github.com/networkupstools/nut/milestone/11
    * in `cps-hid` subdriver, `cps_fix_report_desc()` method should now handle
      mismatched `LogMax` ranges for input and output voltages, whose USB Report
      Descriptors are wrongly encoded by some firmware versions. [#1512]
+   * in `cps-hid` subdriver, try to fix frequency scaling based on the values
+     we see from the device and/or configuration overrides (low, nominal, high)
+     so `499.0 Hz` reading that comes from some firmware versions gets reported
+     properly as `49.9Hz`. [#2717]
    * USB parameters (per `usb_communication_subdriver_t`) are now set back to
      their default values during enumeration after probing each subdriver.
      Having an unrelated device connected with a VID:PID matching the
@@ -262,6 +283,12 @@ https://github.com/networkupstools/nut/milestone/11
      in the next line, when applicable. [PR #2699]
    * ...should now track the fact of `assumed_LogMax` (typically when firmware
      encoding logic is wrong, and `-1` is resolved by parser). [#1512, #1040]
+
+ - snmp-ups updates:
+   * added support to monitor BayTech RPC3-NC PDUs, with `baytech-rpc3nc-mib`
+     serving same basic data points as were available in `baytech-mib.c`,
+     but checking for a different model OID subtree and different OIDs for
+     the device model information. [#2779]
 
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
@@ -315,6 +342,28 @@ https://github.com/networkupstools/nut/milestone/11
      as "OTHER" notification type (whenever the set of such tokens appears
      or changes) or "NOTOTHER" when they disappear. [#415]
 
+ - upslog:
+   * Added support for limiting the loop count. Using in NIT (NUT Integration
+     Test) suite for double profit (checking the tool and fallback in NIT).
+   * If you use the legacy CLI options for single-system logging (`-s <system>`
+     and `-l <logfile>`) along with newer tuple(s) for multiple-system logging
+     (repeatable `-m <system,logfile>`), previously the single-system options
+     were overridden by the tuple(s); now they become part of the list.
+   * Internally, changed from use of shared global variables to query one UPS
+     at a time, populated from the new list of tuples during each loop cycle,
+     to passing and using the new tuple structures directly.
+   * The `upsname` in the `system=upsname[@hostname[:port]]` parameter may
+     be an asterisk `*` to query for devices currently served by the hostname.
+   * Same log file may safely be used in different logging tuples (it is
+     then recommended to use `%UPSHOST%` in a custom formatting string).
+   * Fixed printing of `%UPSHOST%` when multiple systems are being logged.
+   * A `%t` for a TAB character can now be used in the formatting string.
+   * Added `-N` to prefix `%UPSHOST%%t` before the format string (whether
+     default or custom). Useful when logging many systems into same target.
+   * Added `-D` for debugging (and foregrounding by default), like with
+     other NUT daemons.
+   * Added systemd and SMF service integration. [#1803]
+
  - More systemd integration:
    * Introduced a `nut-sleep.service` unit which stops `nut.target` when a
      system sleep was requested, and starts it when the sleep is finished.
@@ -335,6 +384,8 @@ https://github.com/networkupstools/nut/milestone/11
      should be handled similar (avoid stale UPS data and rash decisions)
      for summer/winter time change on non-UTC deployments, a debugger
      suspending the `upsmon` process, etc. [#2597]
+   * Introduced delivery of default systemd presets (lists of enabled/disabled
+     units). [#2721]
 
  - gamatronic driver revised for safer memory operations; this was reported
    to have fixed a Segmentation Fault seen in earlier NUT releases with
@@ -397,6 +448,8 @@ logic that was previously the content of `upsdrv_shutdown()` methods was often
 relocated into new `shutdown.default` INSTCMD definitions. [#2670]
 
  - common code:
+   * `upscli_splitname()` should now recognize `upsname:port` typos (missing
+     the `@hostname` part) and error out gracefully.
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
      of syslog message emission (and related detachment of `stderr` when
      backgrounding), primarily useful for NIT and perhaps systemd. Most
@@ -438,6 +491,16 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
      `gcc-13`+ whose static analyzers on NUT CI farm complained about some
      imperfections after adding newer OS revisions to the population of
      build agents. [#2585, #2588]
+   * New checks in `clang-19` brought new findings about mismatched formatting
+     strings and `int`-ish parameters of respective methods.
+     Overall, had to change formatting strings in some cases, variable types
+     in others (e.g. flags or notification types do not make sense as signed)
+     and added casting in a few places that remained, because:
+     - `%x` style formatting requires an `unsigned int` variable
+     - numeric literals and macros are `int` by default
+     - results of math with unsigned types like `uint16_t`, done in some
+       cases, are up-scaled into `int` by default
+     - `char`'s, `unsigned` or not, seem to be also up-scaled into `int`
 
  - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
@@ -466,9 +529,20 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
    as a service, have a help message, pass debug verbosity to launched NUT
    programs...) and add a man page for it. [issue #2432, PR #2446]
 
+ - the `scripts/Windows/build-mingw-nut.sh` helper script was extended to
+   use `nut_build_${ARCH}` and `nut_install_${ARCH}` directories by default,
+   with the older `nut_build` and `nut_install` short names becoming just a
+   symbolic link to the latest executed build: this should help compare the
+   differences of 32/64-bit builds, without them stepping on each other's toes.
+
  - the `PyNUTClient` module should no longer rely on presence of a `telnetlib`
    module in the build or execution environment (deprecated in Python 3.11,
    removed since Python 3.13). [#2183]
+
+ - the PyPI distribution of the `PyNUTClient` module tarball should now use a
+   lower-cased file name (and immediate versioned directory name inside) to
+   match the requirements of link:https://peps.python.org/pep-0625/[PEP-0625].
+   The Python module name (and its directory) should remain camel-cased. [#2773]
 
  - enabled installation of built single-file PDF and HTML (including man page
    renditions) under the configured `docdir`. It seems previously they were
@@ -491,6 +565,12 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
    added (for `make` calls and used by `tools/gitlog2changelog.py.in` script),
    and it defaults to `true` allowing for better ordered documents at the cost
    of some memory during document generation. [#2510]
+
+ - updated man page generation with `configure` script options to specify that
+   manual sections on the target platform differ from (Linux-based) defaults
+   hard-coded into page sources; this should allow to simplify NUT packaging
+   recipe maintenance in distributions (no more updating patches for changed
+   or added documentation sources).
 
  - lines in first section of NUT configuration report (can optionally remain as
    `config.nut_report_feature.log` and be installed into shared documentation
@@ -539,6 +619,10 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
 
  - Introduced a simple experiment to expose NUT client readings as filesystem
    objects via FUSE, in `scripts/fuse/execfuse-nut` now. [#2591]
+
+ - Introduced `make install-as-root` to create directories not directly
+   populated by `make install` and NUT build artifacts, apply permissions
+   and (on some platforms) restart services involved with NUT. [#1298]
 
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
@@ -1638,7 +1722,7 @@ refer to this change set (too long in the making) as NUT 2.7.5.
      autoconf-2.70 releases in 2020 (also works with 2.69 which was the
      earlier release since 2012)
    * Dynamic library loading used in certain programs and use-cases improved,
-     especially for 64-bit vs 32-bit builds on multiple-bitness OSes
+     especially for 64-bit vs. 32-bit builds on multiple-bitness OSes
    * Logging routines like `upsdebugx()` were refactored as macros so there
      is slightly less overhead when logging is disabled [PRs #685 and #1100]
    * Numerous classes of compilation warnings eradicated, many of those being
@@ -1873,7 +1957,7 @@ Release notes for NUT 2.7.2 - what's new since 2.7.1
    * Emerson Network Power Liebert PSI 1440
    * MicroDowell B.Box LP 500
    * Numeric Digital 800 plus
-   * OptiUPS VS 575C
+   * OptiUPS vs. 575C
    * Tripp Lite SU10KRT3/1X
 
  - FreeDesktop Hardware Abstraction Layer (HAL) support was removed.

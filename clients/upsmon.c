@@ -290,7 +290,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 }
 #endif
 
-static void notify(const char *notice, int flags, const char *ntype,
+static void notify(const char *notice, unsigned int flags, const char *ntype,
 			const char *upsname)
 {
 #ifndef WIN32
@@ -380,7 +380,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 #endif
 }
 
-static void do_notify(const utype_t *ups, int ntype, const char *extra)
+static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 {
 	int	i;
 	char	msg[SMALLBUF], *upsname = NULL;
@@ -394,7 +394,8 @@ static void do_notify(const utype_t *ups, int ntype, const char *extra)
 			const char	*msgfmt = (notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg);
 			char	*s = strstr(msgfmt, "%s");
 
-			upsdebugx(2, "%s: ntype 0x%04x (%s)", __func__, ntype,
+			upsdebugx(2, "%s: ntype 0x%04x (%s)",
+				__func__, ntype,
 				notifylist[i].name);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -1371,8 +1372,8 @@ static int is_ups_critical(utype_t *ups)
 				"%s: seems that UPS [%s] is OB+LB now, "
 				"but OBLBDURATION=%d - not declaring "
 				"a critical state just now, but will "
-				"bump the polling rate to %d (from "
-				"POLLFREQALERT=%d) and wait to see "
+				"bump the polling rate to %u (from "
+				"POLLFREQALERT=%u) and wait to see "
 				"if this situation dissipates soon",
 				__func__, ups->upsname,
 				oblbdurationtime,
@@ -1604,7 +1605,7 @@ static void redefine_ups(utype_t *ups, unsigned int pv, const char *un,
 		 * from seeing it again? This is a somewhat rare case
 		 * of self-inflicted pain, if it does even happen :)
 		 */
-		upslogx(LOG_INFO, "UPS [%s]: redefined power value to %d",
+		upslogx(LOG_INFO, "UPS [%s]: redefined power value to %u",
 			ups->sys, pv);
 		ups->pv = pv;
 	}
@@ -1818,7 +1819,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	/* Negative debug value may be set by help() to be really quiet */
 	if (nut_debug_level > -1) {
 		if (tmp->pv)
-			upslogx(LOG_INFO, "UPS: %s (%s) (power value %d)", tmp->sys,
+			upslogx(LOG_INFO, "UPS: %s (%s) (power value %u)", tmp->sys,
 				flag_isset(tmp->status, ST_PRIMARY) ? "primary" : "secondary",
 				tmp->pv);
 		else
@@ -2835,7 +2836,7 @@ static void pollups(utype_t *ups)
 				upslogx(LOG_ERR, "Poll UPS [%s] failure state code "
 					"changed from %d to %d; "
 					"report below will only be repeated to syslog "
-					"every %d polling loop cycles (%d sec):",
+					"every %d polling loop cycles (%u sec):",
 					ups->sys, ups->pollfail_log_throttle_state,
 					upserror, pollfail_log_throttle_max,
 					pollfail_log_throttle_max * pollfreq);
@@ -3202,8 +3203,8 @@ static void reload_conf(void)
 
 	/* see if the user just blew off a foot */
 	if (totalpv < minsupplies) {
-		upslogx(LOG_CRIT, "Fatal error: total power value (%d) less "
-			"than MINSUPPLIES (%d)", totalpv, minsupplies);
+		upslogx(LOG_CRIT, "Fatal error: total power value (%u) less "
+			"than MINSUPPLIES (%u)", totalpv, minsupplies);
 
 		fatalx(EXIT_FAILURE, "Impossible power configuration, unable to continue");
 	}
@@ -3577,8 +3578,8 @@ int main(int argc, char *argv[])
 	if (totalpv < minsupplies) {
 		printf("\nFatal error: insufficient power configured!\n\n");
 
-		printf("Sum of power values........: %d\n", totalpv);
-		printf("Minimum value (MINSUPPLIES): %d\n", minsupplies);
+		printf("Sum of power values........: %u\n", totalpv);
+		printf("Minimum value (MINSUPPLIES): %u\n", minsupplies);
 
 		printf("\nEdit your upsmon.conf and change the values.\n");
 		exit(EXIT_FAILURE);

@@ -374,7 +374,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
 	if (ret >= 0) {
-		upsdebugx (3, "riello_command ok: %u", ret);
+		upsdebugx (3, "riello_command ok: %d", ret);
 		return ret;
 	}
 
@@ -834,7 +834,7 @@ static int start_ups_comm(void)
 		return 1;
 	}
 
-	upsdebugx (3, "Get identif Ok: read byte: %u", recv);
+	upsdebugx (3, "Get identif Ok: read byte: %d", recv);
 
 	return 0;
 }
@@ -980,15 +980,15 @@ void upsdrv_initinfo(void)
 		input_monophase = 1;
 	else {
 		input_monophase = 0;
-		dstate_setinfo("input.phases", "%u", 3);
-		dstate_setinfo("input.phases", "%u", 3);
-		dstate_setinfo("input.bypass.phases", "%u", 3);
+		dstate_setinfo("input.phases", "%d", 3);
+		dstate_setinfo("input.phases", "%d", 3);
+		dstate_setinfo("input.bypass.phases", "%d", 3);
 	}
 	if ((DevData.Identif_bytes[0] == '1') || (DevData.Identif_bytes[0] == '3'))
 		output_monophase = 1;
 	else {
 		output_monophase = 0;
-		dstate_setinfo("output.phases", "%u", 3);
+		dstate_setinfo("output.phases", "%d", 3);
 	}
 
 	dstate_setinfo("device.mfr", "RPS S.p.a.");
@@ -1258,7 +1258,7 @@ void upsdrv_updateinfo(void)
 		battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
 		upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
 
-		dstate_setinfo("battery.charge", "%u", battcharge);
+		dstate_setinfo("battery.charge", "%d", battcharge);
 		dstate_setinfo("battery.runtime", "%.0f", battruntime/upsloadfactor);
 	}
 	else {
@@ -1274,7 +1274,7 @@ void upsdrv_updateinfo(void)
 			 * invalid/unknown by HW/FW (all bits in the word are set).
 			 */
 			dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-			dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+			dstate_setinfo("battery.runtime", "%u", (unsigned int)DevData.BatTime*60);
 		}
 	}
 
@@ -1316,7 +1316,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("output.L1.power.percent", "%u", DevData.Pout1);
 		dstate_setinfo("output.L2.power.percent", "%u", DevData.Pout2);
 		dstate_setinfo("output.L3.power.percent", "%u", DevData.Pout3);
-		dstate_setinfo("ups.load", "%u", (DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
+		dstate_setinfo("ups.load", "%u", (unsigned int)(DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
 	}
 
 	status_init();

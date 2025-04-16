@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3273 utf-8
+personal_ws-1.1 en 3283 utf-8
 AAC
 AAS
 ABI
@@ -1250,6 +1250,7 @@ Tecnoware
 Tefft
 Telecom
 Temurin
+Termux
 Teurlings
 Thanos
 Thecus
@@ -1486,6 +1487,7 @@ apcsmart
 apctest
 apcupsd
 aphel
+api
 apinames
 appveyor
 ar
@@ -1718,10 +1720,12 @@ cppnit
 cppunit
 cpqpower
 cpsups
+cpu
 cr
 crestfactor
 crit
 criticality
+crle
 crlf
 cron
 crontab
@@ -2430,6 +2434,7 @@ natively
 nb
 nbproject
 nbr
+nc
 nd
 nds
 netcat
@@ -2547,6 +2552,7 @@ optiups
 oq
 os
 ostream
+other's
 otheruser
 outliers
 ovmf
@@ -2741,6 +2747,7 @@ rootca
 rootfs
 rootfs'es
 rootpidpath
+rpc
 rq
 rqt
 rsa
@@ -2867,6 +2874,7 @@ something's
 sp
 spanish
 sparc
+sparcv
 spectype
 spellcheck
 splitaddr
@@ -2964,6 +2972,7 @@ syslogd
 systemctl
 systemd
 systemdshutdowndir
+systemdsystempresetdir
 systemdsystemunitdir
 systemdtmpfilesdir
 systemtest
@@ -3026,6 +3035,7 @@ ttyc
 ttymode
 ttyp
 tuple
+tuples
 turnon
 tv
 tw

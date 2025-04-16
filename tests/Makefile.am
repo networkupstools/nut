@@ -145,11 +145,6 @@ TESTS += $(TESTS_CXX11)
 # Note: we only build it, but do not run directly (NIT prepares the sandbox)
 check_PROGRAMS += cppnit
 
-if WITH_VALGRIND
-check-local: $(check_PROGRAMS)
-	RES=0; for P in $? ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
-endif WITH_VALGRIND
-
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 ###cppunittest_CXXFLAGS += -I$(top_srcdir)/include -DTOP_SRCDIR="\"$(top_srcdir)\""
 cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
@@ -194,6 +189,36 @@ cppnit:
 	@echo "SKIP: $@ not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
 
 endif !HAVE_CXX11
+
+if HAVE_VALGRIND
+# NOTE: "cppnit", if built, requires running from NIT (with NUT_PORT, etc.)
+# Note that FAILED value begins with a space, so we do not echo another
+memcheck: $(check_PROGRAMS)
+	@RES=0; FAILED=""; \
+	 for P in $? ; do \
+		case "$$P" in \
+			cppnit|cppnit$(EXEEXT)) \
+				if [ "$${NUT_PORT-}" -gt 0 ] 2>/dev/null ; then : ; else \
+					echo "SKIPPED: $(VALGRIND) ./$$P : NUT_PORT not prepared" ; \
+					continue ; \
+				fi ;; \
+		esac ; \
+		'$(top_builddir)/scripts/valgrind/valgrind.sh' "./$$P" \
+		|| { RES=$$? ; \
+			echo "FAILED: '$(top_builddir)/scripts/valgrind/valgrind.sh' './$$P'" >&2; \
+			FAILED="$$FAILED $$P" ; \
+		} ; \
+	 done; \
+	 if [ -n "$$FAILED" ] ; then echo "OVERALL FAILED:$$FAILED" >&2 ; fi ; \
+	 exit $$RES
+else !HAVE_VALGRIND
+memcheck:
+	@echo "SKIPPED $@ : valgrind was not detected on this system by configure script" >&2
+endif !HAVE_VALGRIND
+
+if WITH_VALGRIND
+check-local: memcheck
+endif WITH_VALGRIND
 
 dummy:
 

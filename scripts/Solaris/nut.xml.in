@@ -87,16 +87,11 @@
 				</loctext>
 			</common_name>
 			<documentation>
-				<manpage title='upsdrvctl' section='8'
-				manpath='/usr/share/man' />
-				<manpage title='upsd' section='8'
-				manpath='/usr/share/man' />
-				<manpage title='ups.conf' section='5'
-				manpath='/usr/share/man' />
-				<manpage title='upsd.conf' section='5'
-				manpath='/usr/share/man' />
-				<manpage title='upsd.users' section='5'
-				manpath='/usr/share/man' />
+				<manpage title='upsdrvctl'	section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
+				<manpage title='upsd'		section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
+				<manpage title='ups.conf'	section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+				<manpage title='upsd.conf'	section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+				<manpage title='upsd.users'	section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 			</documentation>
 		</template>
 	</service>

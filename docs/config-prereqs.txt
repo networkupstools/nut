@@ -18,7 +18,7 @@ of new releases.
   up the multi-arch Linux LXC container farm for NUT CI]
 
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
-or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
+or SSL implementations (OpenSSL vs. Mozilla NSS) -- no problem installing
 both, at a disk space cost.
 
 [NOTE]
@@ -146,6 +146,12 @@ but otherwise the Debian/Ubuntu oriented lists of packages below apply.
 You would need at least a couple of gigabytes available on the internal
 phone storage though, especially if using `ccache` or setting up cross
 builds.
+
+The Termux distribution as of this writing seems to lack cppunit packages
+but you can build it from https://www.freedesktop.org/wiki/Software/cppunit/
+e.g. `--with-prefix=${HOME}/nut-deps/usr` and `make install` there.
+A custom `PKG_CONFIG_PATH=${HOME}/nut-deps/usr/lib/pkgconfig` would find
+it during NUT build.
 ======
 
 Debian-like package installations commonly start with an update of
@@ -869,7 +875,7 @@ that seems to exceed whatever is available on network mirrors; for example,
 the CD image included `clang` program while it is not available to `pkg_add`,
 at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.5/packages/amd64/
 mirror. The `gcc` version on CD image differed notably from that in the
-networked repository (4.2.x vs 4.9.x).
+networked repository (4.2.x vs. 4.9.x).
 You may have to echo a working base URL (part before "6.5/..." into the
 `/etc/installurl` file, since the old distribution is no longer served by
 default site.
@@ -1158,7 +1164,7 @@ Typical tooling would include:
 :; pkg install \
     asciidoc libxslt \
     docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common pygments-39 \
-    graphviz expect graphviz-tcl
+    image/graphviz expect graphviz-tcl
 
 # For CGI graph generation - massive packages (X11):
 :; pkg install \
@@ -1169,9 +1175,9 @@ Typical tooling would include:
     library/augeas python/augeas \
     libusb-1 libusbugen system/library/usb/libusb system/header/header-usb driver/usb/ugen \
     libmodbus \
-    neon \
-    net-snmp \
-    powerman \
+    library/neon \
+    system/management/snmp/net-snmp \
+    system/management/powerman \
     freeipmi \
     avahi
 
@@ -1200,6 +1206,12 @@ For extra compiler coverage, we can install a large selection of versions,
 although to meet NUT CI farm expectations we also need to expose "numbered"
 filenames, as automated below:
 ------
+# NOTE: not all compiler versions may be served, some are obsoleted over time.
+# Check current distro repository offers with:
+:; pkg info -r '*clang*' '*gcc*'
+:; pkg search -r '*bin/g++*'
+:; pkg search -r '*bin/clang++*'
+
 :; pkg install \
     gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 gcc-11 \
     clang-80 clang-90 \
@@ -1207,13 +1219,18 @@ filenames, as automated below:
 
 # As of this writing, clang-13 refused to link (claiming issues with
 # --fuse-ld which was never specified) on OI; maybe later it will:
+#:; pkg install \
+#    developer/clang-13 runtime/clang-13
+
+# With OI 2024.04 there's also clang-18 available in the mix, and as of
+# 2025 packaging, clang-19 as well:
 :; pkg install \
-    developer/clang-13 runtime/clang-13
+    developer/clang-19 runtime/clang-19
 
 # Get clang-cpp-X visible in standard PATH (for CI to reference the right one),
 # and make sure other frontends are exposed with versions (not all OI distro
 # releases have such symlinks packaged right), e.g.:
-:; (cd /usr/bin && for X in 8 9 13 ; do for T in "" "++" "-cpp"; do \
+:; (cd /usr/bin && for X in 8 9 19 ; do for T in "" "++" "-cpp"; do \
     ln -fs "../clang/$X.0/bin/clang$T" "clang${T}-${X}" ; \
    done; done)
 
@@ -1268,15 +1285,30 @@ happen that you would need to roll and install your own builds in accordance
 with that project's design goals.
 
 Note you may need not just the "Core" IPS package publisher, but also the
-"Extra" one. See OmniOS CE web site for setup details.
+"Extra" one. As of release 151052, it can be attached right in the installer;
+otherwise the `pkg (set-)publisher` commands can be used. See OmniOS CE web
+site for setup details.
 
 ------
+# Optionally, make the environment comfortable, e.g.:
+:; pkg install sudo bash application/mc wget rsync pigz pbzip2 p7zip top
+
+# NOTE: not all compiler versions may be served, some are obsoleted over time.
+# While OmniOS LTS 151046 offers a range of clang 13 to 17, current stable
+# includes also 18 and 19. OmniOS does not provide implicit (not numbered)
+# packages for clang or gcc. Check your distro repository offers with:
+:; pkg info -r '*clang*' '*gcc*'
+:; pkg search -r '*bin/g++*'
+:; pkg search -r '*bin/clang++*'
+
 :; pkg install \
-    developer/build/autoconf developer/build/automake developer/build/libtool \
+    developer/build/autoconf developer/build/automake \
+    developer/build/libtool library/libtool/libltdl \
     build-essential ccache git developer/pkg-config \
     runtime/perl \
     asciidoc \
-    libgd
+    libgd \
+    developer/clang-17
 
 :; pkg install \
     net-snmp
@@ -1307,39 +1339,53 @@ and the library+symlinks for all architectures you would need).
 NOTE: As of July 2022, a `libusb-1` package recipe was proposed for the
 `omnios-extra` repository (NUT itself and further dependencies may also
 appear there, per
-link:https://github.com/networkupstools/nut/issues/1498[issue #1498]).
+link:https://github.com/networkupstools/nut/issues/1498[issue #1498]),
+and is available as of release 151046:
+------
+:; pkg install \
+    libusb-1
+------
 
 You may need to set up `ccache` with the same `/usr/lib/ccache` dir used
-in other OS recipes. Assuming your Build Essentials pulled GCC 9 version,
+in other OS recipes. Assuming your Build Essentials pulled GCC 11 version,
 and ccache is under `/opt/ooce` namespace, that would be like:
 ------
+:; GCCVER=11
 :; mkdir -p /usr/lib/ccache
 :; cd /usr/lib/ccache
 :; ln -fs ../../../opt/ooce/bin/ccache gcc
 :; ln -fs ../../../opt/ooce/bin/ccache g++
 :; ln -fs ../../../opt/ooce/bin/ccache gcpp
-:; ln -fs ../../../opt/ooce/bin/ccache gcc-9
-:; ln -fs ../../../opt/ooce/bin/ccache g++-9
-:; ln -fs ../../../opt/ooce/bin/ccache gcpp-9
+:; ln -fs ../../../opt/ooce/bin/ccache gcc-${GCCVER}
+:; ln -fs ../../../opt/ooce/bin/ccache g++-${GCCVER}
+:; ln -fs ../../../opt/ooce/bin/ccache gcpp-${GCCVER}
 ------
 
 Given that many of the dependencies can get installed into that namespace,
 you may have to specify where `pkg-config` will look for them (note that
-library and binary paths can be architecture bitness-dependent):
+library and binary paths can be architecture bitness-dependent; the
+`ci_build.sh` script should take care of this for many scenarios):
 ------
 :; ./configure PKG_CONFIG_PATH="/opt/ooce/lib/amd64/pkgconfig" --with-cgi
 ------
+
+You may also have to fiddle with either `LD_LIBRARY_PATH`, `crle (-c)` or
+`./configure --with-something-libs` options to compensate for lack of `-R`
+linker options in the `pkg-config` information provided by that repository:
+by default the NUT programs can build with the information they get, but
+fail to find the needed shared objects at run-time. More about this situation
+is tracked at https://github.com/networkupstools/nut/issues/2782
 
 Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
 whatever they need to happen.
 
-NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk17`
+NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk21`
 for JRE/JDK 17. Java 17 or 21 is required to run Jenkins agents after
 autumn 2024. If updating from older releases, you may need to update default
 implementation, e.g.:
 ----
-:; pkg set-mediator -V 17 java
+:; pkg set-mediator -V 21 java
 ----
 
 
@@ -1473,6 +1519,7 @@ NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
 the location of packaged resources (`${HOMEBREW_PREFIX}/etc/xml/catalog`).
 On one test system, man page builds spewed warnings like
 `<unknown>:1: SyntaxWarning: invalid escape sequence '\S'`
+due to incompatibility of older asciidoc with new Python syntax requirements,
 but seemed to produce reasonable results otherwise.
 
 Note that ccache is installed in a different location than expected by default
@@ -1492,6 +1539,8 @@ NOTE: For Jenkins agents, also need to `brew install --cask temurin@21`
 for JRE/JDK 21. Java 17 or 21 (an LTS) is required to run Jenkins agents
 after summer 2024.
 
+The compiler is part of Apple's XCode ecosystem. Just try to run `clang`
+in a GUI terminal, and a pop-up will appear offering to install it.
 Note that you would have to create symbolic links to version-numbered names
 of compilers, e.g. `clang-14` and `clang++-14` in both `/usr/local/bin`
 (pointing to `/bin/clang(++)` and in the `ccache` location prepared above
@@ -1515,10 +1564,10 @@ programs.
 
 Further TODO for Windows would include:
 
-* MSVCRT (ubiquitous) vs UCRT (more standards compliant, but since Windows 10)
+* MSVCRT (ubiquitous) vs. UCRT (more standards compliant, but since Windows 10)
   https://docs.microsoft.com/en-us/cpp/porting/upgrade-your-code-to-the-universal-crt?view=msvc-160
 
-* libusb-0.1 vs libusb-1.0
+* libusb-0.1 vs. libusb-1.0
 
 NOTE: Native mingw, MSYS2, etc. builds on Windows are known to suffer from
 interaction with antivirus software which holds executable files open and

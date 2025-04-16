@@ -1003,7 +1003,7 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 		/* indexed collection */
 		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)
 		{
-			snprintfcat(string, size, "[%i]", path->Node[i] & 0x0000ffff);
+			snprintfcat(string, size, "[%u]", path->Node[i] & 0x0000ffff);
 			continue;
 		}
 

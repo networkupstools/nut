@@ -155,7 +155,7 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 
-	dstate_setinfo("input.voltage", "%03ld", lineV);
+	dstate_setinfo("input.voltage", "%03lu", lineV);
 	dstate_setinfo("battery.voltage", "%03.2f", (double)acuV /10.0);
 
 	fVal=((double)acuV-95.0)*100.0;

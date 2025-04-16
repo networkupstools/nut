@@ -970,14 +970,14 @@ static void start_daemon(TYPE_FD lockfd)
 	DWORD timeout_ms;
 	HANDLE rfds[32];
 
-	char module[MAX_PATH];
+	char module[NUT_PATH_MAX];
 	STARTUPINFO sinfo;
 	PROCESS_INFORMATION pinfo;
-	if( !GetModuleFileName(NULL,module,MAX_PATH) ) {
+	if (!GetModuleFileName(NULL, module, NUT_PATH_MAX)) {
 		fatal_with_errno(EXIT_FAILURE, "Can't retrieve module name");
 	}
 	memset(&sinfo,0,sizeof(sinfo));
-	if(!CreateProcess(module, NULL, NULL,NULL,FALSE,0,NULL,NULL,&sinfo,&pinfo)) {
+	if (!CreateProcess(module, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &sinfo, &pinfo)) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create child process");
 	}
 	pipefd = open_sock();
@@ -1439,7 +1439,7 @@ static void upssched_err(const char *errmsg)
 
 static void checkconf(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 
