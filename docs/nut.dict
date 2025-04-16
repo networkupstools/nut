@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3454 utf-8
+personal_ws-1.1 en 3457 utf-8
 AAC
 AAS
 ABI
@@ -152,6 +152,7 @@ CBI
 CCC
 CCCC
 CDC
+CDN
 CDS
 CELLPADDING
 CELLSPACING
@@ -1845,6 +1846,7 @@ datadir
 datagrams
 datalink
 dataok
+datarootdir
 dataset
 datasets
 datasheet
@@ -2673,6 +2675,7 @@ openmp
 openpimi
 openssh
 openssl
+openwin
 oper
 optimizations
 optiups

@@ -99,7 +99,7 @@ libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:6:0
+libnutscan_la_LDFLAGS += -version-info 3:0:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
