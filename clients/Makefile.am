@@ -26,12 +26,12 @@ $(top_builddir)/common/libparseconf.la: dummy
 LDADD_FULL = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
   LDADD_FULL += $(LIBSSL_LIBS) $(LIBSSL_LDFLAGS_RPATH)
-endif
+endif WITH_SSL
 
 LDADD_CLIENT = $(top_builddir)/common/libcommonclient.la libupsclient.la $(NETLIBS)
 if WITH_SSL
   LDADD_CLIENT += $(LIBSSL_LIBS) $(LIBSSL_LDFLAGS_RPATH)
-endif
+endif WITH_SSL
 
 # by default, link programs in this directory with
 # the more compact libcommonclient.a bundle
@@ -43,23 +43,23 @@ LDADD = $(LDADD_CLIENT)
 AM_CFLAGS = -I$(top_srcdir)/include
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
-endif
+endif WITH_SSL
 if WITH_CGI
   AM_CFLAGS += $(LIBGD_CFLAGS)
-endif
+endif WITH_CGI
 
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
 if HAVE_WINDOWS_SOCKETS
   sbin_PROGRAMS += message
-endif
+endif HAVE_WINDOWS_SOCKETS
 
 lib_LTLIBRARIES = libupsclient.la
 if HAVE_CXX11
   lib_LTLIBRARIES += libnutclient.la
   lib_LTLIBRARIES += libnutclientstub.la
-endif
+endif HAVE_CXX11
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
@@ -73,7 +73,7 @@ endif WITH_DEV
 
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi
-endif
+endif WITH_CGI
 
 upsc_SOURCES = upsc.c upsclient.h
 upscmd_SOURCES = upscmd.c upsclient.h
@@ -84,7 +84,7 @@ upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 upsmon_LDADD = $(LDADD_FULL)
 if HAVE_WINDOWS_SOCKETS
 message_SOURCES = message.c
-endif
+endif HAVE_WINDOWS_SOCKETS
 
 upssched_SOURCES = upssched.c upssched.h
 upssched_LDADD = $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
@@ -101,10 +101,10 @@ libupsclient_la_SOURCES = upsclient.c upsclient.h
 libupsclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
 if HAVE_WINDOWS_SOCKETS
   libupsclient_la_LIBADD += -lws2_32
-endif
+endif HAVE_WINDOWS_SOCKETS
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
-endif
+endif WITH_SSL
 
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -112,12 +112,13 @@ endif
 # object .so names would differ)
 
 # libupsclient version information
-libupsclient_la_LDFLAGS = -version-info 6:1:0
-libupsclient_la_LDFLAGS += -export-symbols-regex ^upscli_
+libupsclient_la_LDFLAGS = -version-info 7:0:0
+libupsclient_la_LDFLAGS += -export-symbols-regex '^(upscli_|nut_debug_level)'
+#|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|print_banner_once)'
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libupsclient_la_LDFLAGS += -no-undefined
-endif
+endif HAVE_WINDOWS
 
 # ./clients/libupsclient.la samples (partial!) on...
 # Linux:
@@ -131,9 +132,11 @@ endif
 #   dlname='libupsclient-6.dll'
 #   library_names='libupsclient.dll.a'
 #   libdir='//lib'
-CLEANFILES += libupsclient-version.h
+CLEANFILES += libupsclient-version.h libupsclient-version.h.tmp*
 libupsclient-version.h: libupsclient.la
-	@dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
+	@echo "  GENERATE-HEADER	$@" ; \
+	 RES=0; \
+	 dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
 	 SOFILE_LIBUPSCLIENT="`grep -E '^dlname' '$?' | dlname_filter`" \
 	 || SOFILE_LIBUPSCLIENT="" ; \
 	 if [ x"$${SOFILE_LIBUPSCLIENT-}" = x ] ; then \
@@ -142,7 +145,21 @@ libupsclient-version.h: libupsclient.la
 	 else \
 	    printf "#ifndef SOFILE_LIBUPSCLIENT\n# define SOFILE_LIBUPSCLIENT \"%s\"\n#endif\n\n" "$${SOFILE_LIBUPSCLIENT}" ; \
 	    printf "#ifndef SOPATH_LIBUPSCLIENT\n# define SOPATH_LIBUPSCLIENT \"%s/%s\"\n#endif\n\n" "@LIBDIR@" "$${SOFILE_LIBUPSCLIENT}" ; \
-	 fi > "$@"
+	 fi > "$@".tmp.$$$$ && \
+	 if test -f "$@" && test -s "$@" ; then \
+		if cmp -s "$@.tmp.$$$$" "$@" ; then \
+			echo "  GENERATE-HEADER	$@ did not change" ; \
+		else \
+			echo "  GENERATE-HEADER	$@ got changed" ; \
+			cp "$@.tmp.$$$$" "$@" ; \
+		fi ; \
+	 else \
+		echo "  GENERATE-HEADER	$@ was absent"; \
+		cp "$@.tmp.$$$$" "$@" ; \
+	 fi \
+	 || RES=$$?; \
+	 rm -f "$@.tmp.$$$$" ; \
+	 exit $$RES
 
 if HAVE_CXX11
 # libnutclient version information and build
@@ -154,10 +171,10 @@ libnutclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutclient_la_LDFLAGS += -no-undefined
-endif
-else
+endif HAVE_WINDOWS
+else !HAVE_CXX11
 EXTRA_DIST += nutclient.h nutclient.cpp
-endif
+endif !HAVE_CXX11
 
 if HAVE_CXX11
 # libnutclientstub version information and build
@@ -167,10 +184,10 @@ libnutclientstub_la_LIBADD = libnutclient.la
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutclientstub_la_LDFLAGS += -no-undefined
-endif
-else
+endif HAVE_WINDOWS
+else !HAVE_CXX11
 EXTRA_DIST += nutclientmem.h nutclientmem.cpp
-endif
+endif !HAVE_CXX11
 
 dummy:
 
@@ -180,3 +197,7 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # the root Makefile.am takes care of that!
 #clean-local:
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES) \
+	libupsclient-version.h

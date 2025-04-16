@@ -1,6 +1,10 @@
 <revhistory>
+  <!-- This file was generated and is later maintained with:
+       DOCINFO_XML="docs/docinfo.xml.in" DOCINFO_OLDEST_TAG="v2.6.0" ./docs/docinfo.xml.sh
+    -->
 
   <!-- Current release of NUT (to be left on top) -->
+<!--
   <revision>
     <revnumber>@PACKAGE_VERSION@ @NUT_SOURCE_GITREV@</revnumber>
     <date>@now@</date>
@@ -9,12 +13,26 @@
       Current release snapshot of Network UPS Tools (NUT).
     </revremark>
   </revision>
+-->
 
   <!-- 'Real' revision history (news on top). The revremarks are based
        on 'git diff ${RELTAG}..${RELTAG_NEXT} NEWS UPGRADING "*.txt"'
        with a focus on those changes which impacted documentation.
     -->
   <!-- AUTOINSERT LOCATION -->
+  <revision>
+    <revnumber>2.8.3</revnumber>
+    <date>2025-04-07</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Some changes to docs and recipes, libusbclient API and functionality.
+        Updated NUT SEMVER definition and added scripting around it.
+        Groundwork for vendor-defined status and INSTCMD buzzwords like "ECO".
+        Fixed some regressions and added improvements for certain new device
+        series.
+    </revremark>
+  </revision>
+
   <revision>
     <revnumber>2.8.2</revnumber>
     <date>2024-04-01</date>

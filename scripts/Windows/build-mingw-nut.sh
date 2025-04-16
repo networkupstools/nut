@@ -14,7 +14,7 @@ DLLLDD_SOURCED=true . "${SCRIPTDIR}/dllldd.sh"
 
 # This should match the tarball and directory name,
 # if a stable version is used:
-[ -n "$VER_OPT" ] || VER_OPT=2.8.2
+[ -n "$VER_OPT" ] || VER_OPT=2.8.3
 DEBUG=true
 
 # default to 32bits build
@@ -216,7 +216,8 @@ do_build_mingw_nut() {
 		|| echo "NOTE: FAILED to process OPTIONAL cgi-bin directory; was NUT CGI enabled?" >&2
 	fi
 
-	echo "$0: install phase complete ($?)" >&2
+	# If we had fatal errors above, we exited there - so here we are SUCCESSful
+	echo "$0: SUCCESS: install phase complete ($?)" >&2
 	cd ..
 }
 

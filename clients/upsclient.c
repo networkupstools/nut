@@ -28,7 +28,7 @@
 /* this include is needed on AIX to have errno stored in thread local storage */
 #  include <pthread.h>
 # endif
-#endif
+#endif	/* !WIN32 */
 
 #include <errno.h>
 #include <stdio.h>
@@ -53,10 +53,11 @@
 # define W32_NETWORK_CALL_OVERRIDE
 # include "wincompat.h"
 # undef W32_NETWORK_CALL_OVERRIDE
-#endif
+#endif	/* WIN32 */
 
 #include "common.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include "timehead.h"
 #include "upsclient.h"
 
@@ -154,8 +155,12 @@ typedef struct HOST_CERT_s {
 }	HOST_CERT_t;
 static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
 
-
+/* Flag for SSL init */
 static int upscli_initialized = 0;
+
+/* 0 means no timeout in upscli_connect() */
+static struct timeval upscli_default_connect_timeout = {0, 0};
+static int upscli_default_connect_timeout_initialized = 0;
 
 #ifdef WITH_OPENSSL
 static SSL_CTX	*ssl_ctx;
@@ -345,6 +350,18 @@ int upscli_init(int certverify, const char *certpath,
 	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
+	if (upscli_initialized == 1) {
+		upslogx(LOG_WARNING, "upscli already initialized");
+		return -1;
+	}
+
+	if (upscli_default_connect_timeout_initialized == 0) {
+		/* There may be an envvar waiting to be parsed */
+		upsdebugx(1, "%s: upscli_default_connect_timeout was not initialized, checking now",
+			__func__);
+		upscli_init_default_connect_timeout(NULL, NULL, NULL);
+	}
+
 	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
 	if (quiet_init_ssl != NULL) {
 		if (*quiet_init_ssl == '\0'
@@ -355,11 +372,6 @@ int upscli_init(int certverify, const char *certpath,
 			upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
 			quiet_init_ssl = NULL;
 		}
-	}
-
-	if (upscli_initialized == 1) {
-		upslogx(LOG_WARNING, "upscli already initialized");
-		return -1;
 	}
 
 #ifdef WITH_OPENSSL
@@ -1011,13 +1023,13 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 #ifndef WIN32
 	long			fd_flags;
-#else
+#else	/* WIN32 */
 	HANDLE event = NULL;
 	unsigned long argp;
 
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
-#endif
+#endif	/* WIN32 */
 	if (!ups) {
 		return -1;
 	}
@@ -1058,6 +1070,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 			return -1;
 		case EAI_MEMORY:
+			upslogx(LOG_WARNING, "%s: Insufficient memory", __func__);
 			ups->upserror = UPSCLI_ERR_NOMEM;
 			return -1;
 		case EAI_SYSTEM:
@@ -1067,6 +1080,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			break;
 		}
 
+		upslog_with_errno(LOG_WARNING, "%s: Unknown error happened during getaddrinfo()", __func__);
 		ups->upserror = UPSCLI_ERR_UNKNOWN;
 		return -1;
 	}
@@ -1094,7 +1108,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags |= O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-#else
+#else	/* WIN32 */
 			event = CreateEvent(NULL, /* Security */
 					FALSE, /* auto-reset */
 					FALSE, /* initial state */
@@ -1103,15 +1117,15 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			/* Associate socket event to the socket via its Event object */
 			WSAEventSelect( sock_fd, event, FD_CONNECT );
 			CloseHandle(event);
-#endif
+#endif	/* WIN32 */
 		}
 
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
 #ifndef WIN32
 			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
-#else
+#else	/* WIN32 */
 			if(errno == WSAEWOULDBLOCK) {
-#endif
+#endif	/* WIN32 */
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
 				select(sock_fd+1,NULL,&wfds,NULL,
@@ -1130,6 +1144,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 				else {
 					/* Timeout */
 					v = -1;
+					ups->upserror = UPSCLI_ERR_CONNFAILURE;
+					ups->syserrno = ETIMEDOUT;
 					break;
 				}
 			}
@@ -1150,6 +1166,42 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 		if (v < 0) {
 			close(sock_fd);
+			/* if timeout, break out so client can continue */
+			/* match Linux behavior that updates timeout struct */
+			if (timeout != NULL &&
+			    ups->upserror == UPSCLI_ERR_CONNFAILURE &&
+			    ups->syserrno == ETIMEDOUT
+			) {
+				/* https://stackoverflow.com/a/29147085/4715872
+				 * obviously INET6_ADDRSTRLEN is expected to be larger
+				 * than INET_ADDRSTRLEN, but this may be required in case
+				 * if for some unexpected reason IPv6 is not supported, and
+				 * INET6_ADDRSTRLEN is defined as 0
+				 * but this is not very likely and I am aware of no cases of
+				 * this in practice (editor)
+				 */
+				char	addrstr[(INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1];
+				addrstr[0] = '\0';
+				switch (ai->ai_family) {
+					case AF_INET: {
+						struct sockaddr_in addr_in;
+						memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
+						inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, INET_ADDRSTRLEN);
+						break;
+					}
+					case AF_INET6: {
+						struct sockaddr_in6 addr_in6;
+						memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
+						inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, INET6_ADDRSTRLEN);
+						break;
+					}
+					default:
+						break;
+				}
+				upslogx(LOG_WARNING, "%s: Connection to host timed out: '%s'",
+					__func__, *addrstr ? addrstr : NUT_STRARG(host));
+				break;
+			}
 			continue;
 		}
 
@@ -1159,10 +1211,10 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-#else
+#else	/* WIN32 */
 			argp = 0;
 			ioctlsocket(sock_fd, FIONBIO, &argp);
-#endif
+#endif	/* WIN32 */
 		}
 
 		ups->fd = sock_fd;
@@ -1234,7 +1286,23 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags)
 {
-	return upscli_tryconnect(ups,host,port,flags,NULL);
+	struct timeval tv = {0, 0}, *ptv = NULL;
+
+	if (upscli_default_connect_timeout_initialized == 0) {
+		/* There may be an envvar waiting to be parsed */
+		upscli_init_default_connect_timeout(NULL, NULL, NULL);
+
+		/* Failed or not (bad envvar), avoid looping messages
+		 * about bad value parsing for every upscli_connect() */
+		upscli_default_connect_timeout_initialized = 1;
+	}
+
+	tv = upscli_default_connect_timeout;
+	if (tv.tv_sec != 0 || tv.tv_usec != 0) {
+		/* By default, ptv==NULL for a blocking upscli_tryconnect() */
+		ptv = &tv;
+	}
+	return upscli_tryconnect(ups, host, port, flags, ptv);
 }
 
 /* map upsd error strings back to upsclient internal numbers */
@@ -1844,4 +1912,127 @@ int upscli_ssl(UPSCONN_t *ups)
 #endif /* WITH_SSL */
 
 	return 0;
+}
+
+int upscli_set_default_connect_timeout(const char *secs) {
+	double fsecs;
+
+	if (secs) {
+		if (str_to_double(secs, &fsecs, 10) < 1) {
+			return -1;
+		}
+		if (d_equal(fsecs, 0.0)) {
+			upscli_default_connect_timeout.tv_sec = 0;
+			upscli_default_connect_timeout.tv_usec = 0;
+			return 0;
+		}
+		if (fsecs < 0.0) {
+			return -1;
+		}
+		upscli_default_connect_timeout.tv_sec = (time_t)fsecs;
+		fsecs *= 1000000;
+		upscli_default_connect_timeout.tv_usec =
+			(suseconds_t)((int)fsecs % 1000000);
+	}
+	else {
+		upscli_default_connect_timeout.tv_sec = 0;
+		upscli_default_connect_timeout.tv_usec = 0;
+	}
+	return 0;
+}
+
+void upscli_get_default_connect_timeout(struct timeval *ptv) {
+	if (ptv) {
+		*ptv = upscli_default_connect_timeout;
+	}
+}
+
+int upscli_init_default_connect_timeout(const char *cli_secs, const char *config_secs, const char *default_secs) {
+	const char	*envvar_secs, *cause = "built-in";
+	int	failed = 0, applied = 0;
+
+	/* First the very default: blocking connections as we always had */
+	upscli_default_connect_timeout.tv_sec = 0;
+	upscli_default_connect_timeout.tv_usec = 0;
+
+	/* Then try a program's built-in default, if any */
+	if (default_secs) {
+		if (upscli_set_default_connect_timeout(default_secs) < 0) {
+			upslogx(LOG_WARNING, "%s: default_secs='%s' value was not recognized, ignored",
+				__func__, default_secs);
+			failed++;
+		} else {
+			cause = "default_secs";
+			applied++;
+		}
+	}
+
+	/* Then override with envvar setting, if any (and if its value is valid) */
+	envvar_secs = getenv("NUT_DEFAULT_CONNECT_TIMEOUT");
+	if (envvar_secs) {
+		if (upscli_set_default_connect_timeout(envvar_secs) < 0) {
+			upslogx(LOG_WARNING, "%s: NUT_DEFAULT_CONNECT_TIMEOUT='%s' value was not recognized, ignored",
+				__func__, envvar_secs);
+			failed++;
+		} else {
+			cause = "envvar_secs";
+			applied++;
+		}
+	}
+
+	/* Then override with config-file setting, if any (and if its value is valid) */
+	if (config_secs) {
+		if (upscli_set_default_connect_timeout(config_secs) < 0) {
+			upslogx(LOG_WARNING, "%s: config_secs='%s' value was not recognized, ignored",
+				__func__, config_secs);
+			failed++;
+		} else {
+			cause = "config_secs";
+			applied++;
+		}
+	}
+
+	/* Then override with command-line setting, if any (and if its value is valid) */
+	if (cli_secs) {
+		if (upscli_set_default_connect_timeout(cli_secs) < 0) {
+			upslogx(LOG_WARNING, "%s: cli_secs='%s' value was not recognized, ignored",
+				__func__, cli_secs);
+			failed++;
+		} else {
+			cause = "cli_secs";
+			applied++;
+		}
+	}
+
+	upsdebugx(1, "%s: upscli_default_connect_timeout=%" PRIiMAX
+		 ".%06" PRIiMAX " sec assigned from: %s",
+		__func__, (intmax_t)upscli_default_connect_timeout.tv_sec,
+		(intmax_t)upscli_default_connect_timeout.tv_usec, cause);
+
+	/* Some non-built-in value was OK */
+	if (applied) {
+		upscli_default_connect_timeout_initialized++;
+		return 0;
+	}
+
+	/* None of provided non-built-in values was OK */
+	if (failed)
+		return -1;
+
+	/* At least we have the built-in default and nothing failed */
+	upscli_default_connect_timeout_initialized++;
+	return 0;
+}
+
+/* Pick up the methods below from libcommon and expose in the NUT client API */
+int	upscli_str_contains_token(const char *string, const char *token)
+{
+	return str_contains_token(string, token);
+}
+
+int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+				int (*callback_always)(char *, size_t, const char *),
+				int (*callback_unique)(char *, size_t, const char *)
+) {
+	return str_add_unique_token(tgt, tgtsize, token, callback_always, callback_unique);
 }

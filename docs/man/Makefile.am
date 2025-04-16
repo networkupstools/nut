@@ -15,14 +15,209 @@
 #   the --with-doc=man=auto detected an inability to build the man-pages
 #   but enabled the DOC_INSTALL_DISTED_MANS toggle so we deliver disted
 #   files from source tree
+# - Man page lists are collected into several patterns of make variables
+#   (FIXME? to simplify?) :
+#   * INST_MAN_xxx_PAGES, INST_HTML_xxx_PAGES: what we would install
+#     (if building of man/HTML pages, and perhaps an optional tool building,
+#     are enabled);
+#   * MAN_xxx_PAGES: what we actually enable to build and deliver (may be empty);
+#   * HTML_xxx_PAGES: populated most of the time, buildable optionally;
+#   * DIST_ALL_PAGES: all known page file names, to help ensure dist archive
+#     contains everything that any build may want (even if missing tools to
+#     build the docs from scratch, or choosing not to do that for speed).
+#   * DIST_ALL_MAN_PAGES: all known MAN page file names, to help ensure dist archive
+#   * DIST_ALL_HTML_PAGES: all known HTML page file names, to help ensure nut-website
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 #EGREP = egrep
 EGREP = grep -E
 
-all:
+SRC_ALL_PAGES = index.txt
 
-all-am-local all-local: $(abs_top_builddir)/docs/man/.prep-src-docs
+# Used for dist completeness checks; the actual build products
+# (depending on enabled features) are in MAN_MANS and HTML_MANS.
+# This does not necessarily trigger the build, just allows us
+# to check if they all exist.
+DIST_ALL_MAN_PAGES =
+DIST_ALL_HTML_PAGES = index.html
+# HTML collection is for nut-website primarily, not for tarballs... so far...
+DIST_ALL_PAGES = $(DIST_ALL_MAN_PAGES)
+
+# Possible man page section remapping in some distros:
+MAN_SECTION_API_BASE=@MAN_SECTION_API_BASE@
+MAN_SECTION_CFG_BASE=@MAN_SECTION_CFG_BASE@
+MAN_SECTION_CMD_SYS_BASE=@MAN_SECTION_CMD_SYS_BASE@
+MAN_SECTION_CMD_USR_BASE=@MAN_SECTION_CMD_USR_BASE@
+# Other rewritable properties:
+NUT_WEBSITE_BASE=@NUT_WEBSITE_BASE@
+PACKAGE_VERSION=@PACKAGE_VERSION@
+TREE_VERSION=@TREE_VERSION@
+
+# Groups and locations for man pages
+manapidir = $(mandir)/man$(MAN_SECTION_API_BASE)
+manapi_DATA =
+
+mancfgdir = $(mandir)/man$(MAN_SECTION_CFG_BASE)
+mancfg_DATA =
+
+mansysdir = $(mandir)/man$(MAN_SECTION_CMD_SYS_BASE)
+mansys_DATA =
+
+manusrdir = $(mandir)/man$(MAN_SECTION_CMD_USR_BASE)
+manusr_DATA =
+
+ALL_TGT =
+if WITH_MANS
+if !KNOWN_UNABLE_MANS
+# Give it our best shot; do not try if we know we would fail
+# Do not distcheck-light-DIST_ALL_MAN_PAGES for fake pages either -
+# this is up to caller and use-case
+ALL_TGT += all-man
+endif !KNOWN_UNABLE_MANS
+endif WITH_MANS
+if WITH_HTML_SINGLE
+ALL_TGT += all-html
+else !WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+ALL_TGT += all-html
+endif WITH_HTML_CHUNKED
+endif !WITH_HTML_SINGLE
+
+# Ensure early build by default automake "all" rule, if it gets used.
+BUILT_SOURCES = $(abs_top_builddir)/docs/man/.prep-src-docs all-optional
+
+# Note: this intends to be used instead of the "all" target that may have
+# been provided by automake, since we want to do nothing in certain cases.
+# Ideally it would refuse "make all" in certain cases, but we can't override
+# the automake-generated rules in each make implementation we care for.
+all-optional: $(abs_top_builddir)/docs/man/.prep-src-docs
+	+@case "$(ALL_TGT)" in \
+	  ""|" "|"  "|"   ") echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile: No format of man page rendering is enabled" ; exit 0 ;; \
+	  *all-*) \
+		if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile: requested to not work in this code path" ; exit 0 ; fi ; \
+		echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make $(ALL_TGT)' to ensure complex document types (if enabled)" ; \
+		$(MAKE) $(AM_MAKEFLAGS) $(ALL_TGT) ; exit ;; \
+	  esac ; exit 0
+
+# Quickly check that we have all needed files (e.g. from configure script)
+# Do not ensure they are built/valid/etc.
+LIST_FILES = ( \
+	echo "  HELPER	$@" >&2 ; \
+	MISSING=0; \
+	TOTAL=0; \
+	for P in $${FILENAMES} ; do \
+		TOTAL="`expr $$TOTAL + 1`" ; \
+		F="`basename "$$P"`" ; \
+		if [ -s "$(abs_builddir)/$$F" ] ; then \
+				echo "BUILDDIR: $(builddir)/$$F" ; \
+		else \
+			if [ -s "$(abs_srcdir)/$$F" ] ; then \
+				echo "SRCDIR:   $(srcdir)/$$F" ; \
+			else \
+				echo "MISSING:  $$F" >&2 ; \
+				MISSING="`expr $$MISSING + 1`" ; \
+			fi ; \
+		fi ; \
+	done ; \
+	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files are all present)" >&2 ; else echo "$@: FAILED ($$MISSING files of $$TOTAL are missing, see above)" >&2 ; exit 1 ; fi ; \
+)
+
+if KNOWN_UNABLE_MANS
+FAKE_PAGES_BUMP_SRC = false
+else !KNOWN_UNABLE_MANS
+if DOC_INSTALL_DISTED_MANS
+FAKE_PAGES_BUMP_SRC = false
+else !DOC_INSTALL_DISTED_MANS
+FAKE_PAGES_BUMP_SRC = true
+endif !DOC_INSTALL_DISTED_MANS
+endif !KNOWN_UNABLE_MANS
+
+FAKE_FILES = ( \
+	echo "  HELPER	$@" >&2 ; \
+	MISSING=0; \
+	TOTAL=0; \
+	for P in $${FILENAMES} ; do \
+		TOTAL="`expr $$TOTAL + 1`" ; \
+		F="`basename "$$P"`" ; \
+		if [ ! -s "$(abs_builddir)/$$F" ] && [ ! -s "$(abs_srcdir)/$$F" ] ; then \
+			echo "PLACEHOLDER" > "$(abs_builddir)/$$F" ; \
+			MISSING="`expr $$MISSING + 1`" ; \
+		fi ; \
+	done ; \
+	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files are all present)" >&2 ; else echo "$@: FAKED SOME FILES ($$MISSING files of $$TOTAL were missing)" >&2 ; exit 1 ; fi ; \
+)
+
+# Unlike helpers above, does not fail if placeholders were seen
+FAKE_FILES_RM = ( \
+	echo "  HELPER	$@" >&2 ; \
+	MISSING=0; \
+	TOTAL=0; \
+	for P in $${FILENAMES} ; do \
+		TOTAL="`expr $$TOTAL + 1`" ; \
+		F="`basename "$$P"`" ; \
+		if [ -s "$(abs_builddir)/$$F" ] \
+		&& [ x"PLACEHOLDER" = x"`cat "$(abs_builddir)/$$F"`" ] ; then \
+			rm -f "$(abs_builddir)/$$F" ; \
+			MISSING="`expr $$MISSING + 1`" ; \
+		fi ; \
+	done ; \
+	if [ x"$$MISSING" = x0 ] ; then echo "$@: SUCCESS ($$TOTAL files were all real or already absent)" >&2 ; else echo "$@: REMOVED SOME FAKED FILES ($$MISSING files of $$TOTAL were placeholders)" >&2 ; fi ; \
+)
+
+# List man pages we intend to deliver (depending on chosen build products)
+print-MAN_MANS:
+	@echo "$(MAN_MANS)"
+
+check-list-MAN_MANS:
+	@FILENAMES='$(MAN_MANS)' ; $(LIST_FILES)
+
+# List all (man page) file names we know we should distribute in a tarball
+# (whether built right now or inherited from a tarball build by itself)
+print-DIST_ALL_PAGES:
+	@echo "$(DIST_ALL_PAGES)"
+
+check-list-DIST_ALL_PAGES:
+	@FILENAMES='$(DIST_ALL_PAGES)' ; $(LIST_FILES)
+
+# If any pages are missing, fake them
+distcheck-light-DIST_ALL_PAGES:
+	@FILENAMES='$(DIST_ALL_PAGES)' ; $(FAKE_FILES) || ( \
+		if [ x"$(FAKE_PAGES_BUMP_SRC)" = xtrue ] ; then \
+			cd "$(abs_srcdir)" && touch $(SRC_ALL_PAGES) || echo "$@: Well we tried" >&2 ; \
+		fi ; )
+
+print-DIST_ALL_MAN_PAGES:
+	@echo "$(DIST_ALL_MAN_PAGES)"
+
+check-list-DIST_ALL_MAN_PAGES:
+	@FILENAMES='$(DIST_ALL_MAN_PAGES)' ; $(LIST_FILES)
+
+# If any pages are missing, fake them
+distcheck-light-DIST_ALL_MAN_PAGES:
+	@FILENAMES='$(DIST_ALL_MAN_PAGES)' ; $(FAKE_FILES) || ( \
+		if [ x"$(FAKE_PAGES_BUMP_SRC)" = xtrue ] ; then \
+			cd "$(abs_srcdir)" && touch $(SRC_ALL_PAGES) || echo "$@: Well we tried" >&2 ; \
+		fi ; )
+
+# Likewise for HTML renders (but no fake pages made/needed for dist)
+print-HTML_MANS:
+	@echo "$(HTML_MANS)"
+
+check-list-HTML_MANS:
+	@FILENAMES='$(HTML_MANS)' ; $(LIST_FILES)
+
+print-DIST_ALL_HTML_PAGES:
+	@echo "$(DIST_ALL_HTML_PAGES)"
+
+check-list-DIST_ALL_HTML_PAGES:
+	@FILENAMES='$(DIST_ALL_HTML_PAGES)' ; $(LIST_FILES)
+
+# Likewise for plaintext sources
+print-SRC_ALL_PAGES:
+	@echo "$(SRC_ALL_PAGES)"
+
+check-list-SRC_ALL_PAGES:
+	@FILENAMES='$(SRC_ALL_PAGES)' ; $(LIST_FILES)
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
@@ -33,25 +228,32 @@ SRC_CONF_PAGES = \
 	upsmon.conf.txt \
 	upssched.conf.txt
 
-if WITH_MANS
-MAN_CONF_PAGES = \
+INST_MAN_CONF_PAGES = \
 	nut.conf.$(MAN_SECTION_CFG) \
 	ups.conf.$(MAN_SECTION_CFG) \
 	upsd.conf.$(MAN_SECTION_CFG) \
 	upsd.users.$(MAN_SECTION_CFG) \
 	upsmon.conf.$(MAN_SECTION_CFG) \
 	upssched.conf.$(MAN_SECTION_CFG)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_CONF_PAGES)
+
+if WITH_MANS
+MAN_CONF_PAGES = $(INST_MAN_CONF_PAGES)
 endif WITH_MANS
 
-man@MAN_SECTION_CFG_BASE@_MANS = $(MAN_CONF_PAGES)
+mancfg_DATA += $(MAN_CONF_PAGES)
 
-HTML_CONF_MANS = \
+INST_HTML_CONF_MANS = \
 	nut.conf.html \
 	ups.conf.html \
 	upsd.conf.html \
 	upsd.users.html \
 	upsmon.conf.html \
 	upssched.conf.html
+
+DIST_ALL_HTML_PAGES += $(INST_HTML_CONF_MANS)
+HTML_CONF_MANS = $(INST_HTML_CONF_MANS)
 
 # NOTE: Currently SRC_DRIVERTOOL_PAGES are a separate list to generate
 # a linkman-drivertool-names.txt file, but historically remain part of
@@ -72,8 +274,7 @@ SRC_CLIENT_PAGES = \
 	upsrw.txt \
 	upssched.txt
 
-if WITH_MANS
-MAN_CLIENT_PAGES = \
+INST_MAN_CLIENT_PAGES = \
 	nutupsdrv.$(MAN_SECTION_CMD_SYS) \
 	nut-driver-enumerator.$(MAN_SECTION_CMD_SYS) \
 	upsc.$(MAN_SECTION_CMD_SYS) \
@@ -85,18 +286,53 @@ MAN_CLIENT_PAGES = \
 	upsmon.$(MAN_SECTION_CMD_SYS) \
 	upsrw.$(MAN_SECTION_CMD_SYS) \
 	upssched.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_CLIENT_PAGES)
+
+if WITH_MANS
+MAN_CLIENT_PAGES = $(INST_MAN_CLIENT_PAGES)
 endif WITH_MANS
 
+MAN_CLIENT_PAGES_ADDON_NUT_EXE = nut.exe.$(MAN_SECTION_CMD_SYS)
 if HAVE_WINDOWS
 SRC_CLIENT_PAGES += nut.exe.txt
 if WITH_MANS
-MAN_CLIENT_PAGES += nut.exe.$(MAN_SECTION_CMD_SYS)
-endif WITH_MANS
-endif HAVE_WINDOWS
+INST_MAN_CLIENT_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
+else !WITH_MANS
+DIST_ALL_MAN_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
+endif !WITH_MANS
+else !HAVE_WINDOWS
+SRC_ALL_PAGES += nut.exe.txt
+DIST_ALL_MAN_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
+endif !HAVE_WINDOWS
 
-man@MAN_SECTION_CMD_SYS_BASE@_MANS = $(MAN_CLIENT_PAGES)
+MAN_CLIENT_PAGES_ADDON_NUT_MONITOR = \
+	NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS) \
+	NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS) \
+	NUT-Monitor.$(MAN_SECTION_CMD_SYS)
 
-HTML_CLIENT_MANS = \
+# Alias page for one text describing two commands:
+NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+	touch $@
+
+NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+	touch $@
+
+if WITH_NUT_MONITOR
+SRC_CLIENT_PAGES += NUT-Monitor.txt
+if WITH_MANS
+INST_MAN_CLIENT_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
+else !WITH_MANS
+DIST_ALL_MAN_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
+endif !WITH_MANS
+else !WITH_NUT_MONITOR
+SRC_ALL_PAGES += NUT-Monitor.txt
+DIST_ALL_MAN_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_MONITOR)
+endif !WITH_NUT_MONITOR
+
+mansys_DATA += $(MAN_CLIENT_PAGES)
+
+INST_HTML_CLIENT_MANS = \
 	nutupsdrv.html \
 	nut-driver-enumerator.html \
 	upsc.html \
@@ -110,18 +346,62 @@ HTML_CLIENT_MANS = \
 	upssched.html
 
 if HAVE_WINDOWS
-HTML_CLIENT_MANS += nut.exe.html
-endif HAVE_WINDOWS
+INST_HTML_CLIENT_MANS += nut.exe.html
+else !HAVE_WINDOWS
+DIST_ALL_HTML_PAGES += nut.exe.html
+endif !HAVE_WINDOWS
 
-SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt nutconf.txt
+if WITH_NUT_MONITOR
+INST_HTML_CLIENT_MANS += NUT-Monitor.html
+
+# Can't make this work on all make implementations at once, so disabled for now
+# Anyway it would be the same man-like page for several functions
+INST_HTML_CLIENT_MANS_FICTION = \
+	NUT-Monitor-py2gtk2.html \
+	NUT-Monitor-py3qt5.html
+
+NUT-Monitor-py2gtk2.html: NUT-Monitor.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+NUT-Monitor-py3qt5.html: NUT-Monitor.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+else !WITH_NUT_MONITOR
+
+DIST_ALL_HTML_PAGES += NUT-Monitor.html
+
+endif !WITH_NUT_MONITOR
+
+DIST_ALL_HTML_PAGES += $(INST_HTML_CLIENT_MANS)
+HTML_CLIENT_MANS = $(INST_HTML_CLIENT_MANS)
+
+SRC_TOOL_PAGES = \
+	nut-scanner.txt \
+	nut-recorder.txt \
+	nutconf.txt
+
+# FIXME: Make nut-scanner and nut-conf pages optional (if tool is enabled)?
+INST_MAN_TOOL_PAGES = \
+	nut-scanner.$(MAN_SECTION_CMD_SYS) \
+	nut-recorder.$(MAN_SECTION_CMD_SYS) \
+	nutconf.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_TOOL_PAGES)
 
 if WITH_MANS
-MAN_TOOL_PAGES = nut-scanner.$(MAN_SECTION_CMD_SYS) nut-recorder.$(MAN_SECTION_CMD_SYS) nutconf.$(MAN_SECTION_CMD_SYS)
+MAN_TOOL_PAGES = $(INST_MAN_TOOL_PAGES)
 endif WITH_MANS
 
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_TOOL_PAGES)
+mansys_DATA += $(MAN_TOOL_PAGES)
 
-HTML_TOOL_MANS = nut-scanner.html nut-recorder.html nutconf.html
+# FIXME: Make nut-scanner and nut-conf pages optional (if tool is enabled)?
+INST_HTML_TOOL_MANS = \
+	nut-scanner.html \
+	nut-recorder.html \
+	nutconf.html
+
+DIST_ALL_HTML_PAGES += $(INST_HTML_TOOL_MANS)
+HTML_TOOL_MANS = $(INST_HTML_TOOL_MANS)
 
 # CGI (--with-cgi) related manpages
 SRC_CGI_PAGES = \
@@ -132,24 +412,29 @@ SRC_CGI_PAGES = \
 	upsstats.cgi.txt \
 	upsimage.cgi.txt
 
-if WITH_MANS
-MAN@MAN_SECTION_CFG_BASE@_CGI_PAGES = \
+INST_MAN_CGI_CFG_PAGES = \
 	hosts.conf.$(MAN_SECTION_CFG) \
 	upsset.conf.$(MAN_SECTION_CFG) \
 	upsstats.html.$(MAN_SECTION_CFG)
 
-MAN@MAN_SECTION_CMD_SYS_BASE@_CGI_PAGES = \
+INST_MAN_CGI_CMD_SYS_PAGES = \
 	upsset.cgi.$(MAN_SECTION_CMD_SYS) \
 	upsstats.cgi.$(MAN_SECTION_CMD_SYS) \
 	upsimage.cgi.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_CGI_CFG_PAGES) $(INST_MAN_CGI_CMD_SYS_PAGES)
+
+if WITH_MANS
+MAN_CGI_CFG_PAGES = $(INST_MAN_CGI_CFG_PAGES)
+MAN_CGI_CMD_SYS_PAGES = $(INST_MAN_CGI_CMD_SYS_PAGES)
 endif WITH_MANS
 
 if WITH_CGI
-man@MAN_SECTION_CFG_BASE@_MANS += $(MAN@MAN_SECTION_CFG_BASE@_CGI_PAGES)
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN@MAN_SECTION_CMD_SYS_BASE@_CGI_PAGES)
+mancfg_DATA += $(MAN_CGI_CFG_PAGES)
+mansys_DATA += $(MAN_CGI_CMD_SYS_PAGES)
 endif WITH_CGI
 
-HTML_CGI_MANS = \
+INST_HTML_CGI_MANS = \
 	hosts.conf.html \
 	upsset.conf.html \
 	upsstats.html.html \
@@ -157,6 +442,8 @@ HTML_CGI_MANS = \
 	upsstats.cgi.html \
 	upsimage.cgi.html
 
+DIST_ALL_HTML_PAGES += $(INST_HTML_CGI_MANS)
+HTML_CGI_MANS = $(INST_HTML_CGI_MANS)
 
 # Development (--with-dev) related manpages
 SRC_DEV_PAGES = \
@@ -168,6 +455,9 @@ SRC_DEV_PAGES = \
 	upscli_fd.txt \
 	upscli_get.txt \
 	upscli_init.txt \
+	upscli_set_default_connect_timeout.txt \
+	upscli_get_default_connect_timeout.txt \
+	upscli_init_default_connect_timeout.txt \
 	upscli_list_next.txt \
 	upscli_list_start.txt \
 	upscli_readline.txt \
@@ -177,6 +467,8 @@ SRC_DEV_PAGES = \
 	upscli_ssl.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
+	upscli_str_add_unique_token.txt \
+	upscli_str_contains_token.txt \
 	libnutclient.txt \
 	libnutclient_commands.txt \
 	libnutclient_devices.txt \
@@ -215,10 +507,9 @@ SRC_DEV_PAGES = \
 	sockdebug.txt \
 	skel.txt
 
-if WITH_MANS
 # NOTE: nutclient_*.$(MAN_SECTION_API) has no source counterpart (libnutclient_*.txt)
 
-LIBNUTCLIENT_MISC_DEPS= \
+LIBNUTCLIENT_MISC_DEPS = \
 	nutclient_authenticate.$(MAN_SECTION_API) \
 	nutclient_logout.$(MAN_SECTION_API) \
 	nutclient_device_login.$(MAN_SECTION_API) \
@@ -229,7 +520,7 @@ LIBNUTCLIENT_MISC_DEPS= \
 $(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_TCP_DEPS= \
+LIBNUTCLIENT_TCP_DEPS = \
 	nutclient_tcp_create_client.$(MAN_SECTION_API) \
 	nutclient_tcp_disconnect.$(MAN_SECTION_API) \
 	nutclient_tcp_get_timeout.$(MAN_SECTION_API) \
@@ -240,13 +531,13 @@ LIBNUTCLIENT_TCP_DEPS= \
 $(LIBNUTCLIENT_TCP_DEPS): libnutclient_tcp.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_GENERAL_DEPS= \
+LIBNUTCLIENT_GENERAL_DEPS = \
 	nutclient_destroy.$(MAN_SECTION_API)
 
 $(LIBNUTCLIENT_GENERAL_DEPS): libnutclient_general.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_VARIABLES_DEPS= \
+LIBNUTCLIENT_VARIABLES_DEPS = \
 	nutclient_get_device_rw_variables.$(MAN_SECTION_API) \
 	nutclient_get_device_variable_description.$(MAN_SECTION_API) \
 	nutclient_get_device_variables.$(MAN_SECTION_API) \
@@ -258,7 +549,7 @@ LIBNUTCLIENT_VARIABLES_DEPS= \
 $(LIBNUTCLIENT_VARIABLES_DEPS): libnutclient_variables.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_COMMANDS_DEPS= \
+LIBNUTCLIENT_COMMANDS_DEPS = \
 	nutclient_execute_device_command.$(MAN_SECTION_API) \
 	nutclient_get_device_command_description.$(MAN_SECTION_API) \
 	nutclient_get_device_commands.$(MAN_SECTION_API) \
@@ -267,7 +558,7 @@ LIBNUTCLIENT_COMMANDS_DEPS= \
 $(LIBNUTCLIENT_COMMANDS_DEPS): libnutclient_commands.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_DEVICES_DEPS= \
+LIBNUTCLIENT_DEVICES_DEPS = \
 	nutclient_get_device_description.$(MAN_SECTION_API) \
 	nutclient_get_devices.$(MAN_SECTION_API) \
 	nutclient_has_device.$(MAN_SECTION_API)
@@ -275,15 +566,19 @@ LIBNUTCLIENT_DEVICES_DEPS= \
 $(LIBNUTCLIENT_DEVICES_DEPS): libnutclient_devices.$(MAN_SECTION_API)
 	touch $@
 
-MAN@MAN_SECTION_API_BASE@_DEV_PAGES = \
+INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
 	upscli_cleanup.$(MAN_SECTION_API) \
 	upscli_connect.$(MAN_SECTION_API) \
+	upscli_tryconnect.$(MAN_SECTION_API) \
 	upscli_disconnect.$(MAN_SECTION_API) \
 	upscli_fd.$(MAN_SECTION_API) \
 	upscli_get.$(MAN_SECTION_API) \
 	upscli_init.$(MAN_SECTION_API) \
+	upscli_set_default_connect_timeout.$(MAN_SECTION_API) \
+	upscli_get_default_connect_timeout.$(MAN_SECTION_API) \
+	upscli_init_default_connect_timeout.$(MAN_SECTION_API) \
 	upscli_list_next.$(MAN_SECTION_API) \
 	upscli_list_start.$(MAN_SECTION_API) \
 	upscli_readline.$(MAN_SECTION_API) \
@@ -295,6 +590,8 @@ MAN@MAN_SECTION_API_BASE@_DEV_PAGES = \
 	upscli_ssl.$(MAN_SECTION_API) \
 	upscli_strerror.$(MAN_SECTION_API) \
 	upscli_upserror.$(MAN_SECTION_API) \
+	upscli_str_add_unique_token.$(MAN_SECTION_API) \
+	upscli_str_contains_token.$(MAN_SECTION_API) \
 	libnutclient.$(MAN_SECTION_API) \
 	libnutclient_commands.$(MAN_SECTION_API) \
 	$(LIBNUTCLIENT_COMMANDS_DEPS) \
@@ -344,6 +641,9 @@ upscli_readline_timeout.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
 upscli_sendline_timeout.$(MAN_SECTION_API): upscli_sendline.$(MAN_SECTION_API)
 	touch $@
 
+upscli_tryconnect.$(MAN_SECTION_API): upscli_connect.$(MAN_SECTION_API)
+	touch $@
+
 nutscan_scan_ip_range_snmp.$(MAN_SECTION_API): nutscan_scan_snmp.$(MAN_SECTION_API)
 	touch $@
 
@@ -359,24 +659,31 @@ nutscan_scan_ip_range_ipmi.$(MAN_SECTION_API): nutscan_scan_ipmi.$(MAN_SECTION_A
 nutscan_add_commented_option_to_device.$(MAN_SECTION_API): nutscan_add_option_to_device.$(MAN_SECTION_API)
 	touch $@
 
-MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES = \
+INST_MAN_DEV_CMD_USR_PAGES = \
 	libupsclient-config.$(MAN_SECTION_CMD_USR)
 
-MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES = \
+INST_MAN_DEV_CMD_SYS_PAGES = \
 	sockdebug.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_DEV_API_PAGES) $(INST_MAN_DEV_CMD_USR_PAGES) $(INST_MAN_DEV_CMD_SYS_PAGES)
+
+if WITH_MANS
+MAN_DEV_API_PAGES = $(INST_MAN_DEV_API_PAGES)
+MAN_DEV_CMD_USR_PAGES = $(INST_MAN_DEV_CMD_USR_PAGES)
+MAN_DEV_CMD_SYS_PAGES = $(INST_MAN_DEV_CMD_SYS_PAGES)
 endif WITH_MANS
 
 if WITH_DEV
-man@MAN_SECTION_API_BASE@_MANS = $(MAN@MAN_SECTION_API_BASE@_DEV_PAGES)
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES)
+manapi_DATA += $(MAN_DEV_API_PAGES)
+mansys_DATA += $(MAN_DEV_CMD_SYS_PAGES)
 
 if !WITH_PKG_CONFIG
-man@MAN_SECTION_CMD_USR_BASE@_MANS = $(MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES)
+manusr_DATA += $(MAN_DEV_CMD_USR_PAGES)
 endif !WITH_PKG_CONFIG
 
 endif WITH_DEV
 
-HTML_DEV_MANS = \
+INST_HTML_DEV_MANS = \
 	upsclient.html \
 	upscli_add_host_cert.html \
 	upscli_cleanup.html \
@@ -385,6 +692,9 @@ HTML_DEV_MANS = \
 	upscli_fd.html \
 	upscli_get.html \
 	upscli_init.html \
+	upscli_set_default_connect_timeout.html \
+	upscli_get_default_connect_timeout.html \
+	upscli_init_default_connect_timeout.html \
 	upscli_list_next.html \
 	upscli_list_start.html \
 	upscli_readline.html \
@@ -394,6 +704,8 @@ HTML_DEV_MANS = \
 	upscli_ssl.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
+	upscli_str_add_unique_token.html \
+	upscli_str_contains_token.html \
 	libnutclient.html \
 	libnutclient_commands.html \
 	libnutclient_devices.html \
@@ -432,11 +744,15 @@ HTML_DEV_MANS = \
 	sockdebug.html \
 	skel.html
 
+DIST_ALL_HTML_PAGES += $(INST_HTML_DEV_MANS)
+HTML_DEV_MANS = $(INST_HTML_DEV_MANS)
+
 # Can't make this work on all make implementations at once, so disabled for now
 # Anyway it would be the same man-like page for several functions
 HTML_DEV_MANS_FICTION = \
 	upscli_readline_timeout.html \
 	upscli_sendline_timeout.html \
+	upscli_tryconnect.html \
 	nutscan_scan_ip_range_snmp.html \
 	nutscan_scan_ip_range_xml_http.html \
 	nutscan_scan_ip_range_nut.html \
@@ -447,6 +763,9 @@ upscli_readline_timeout.html: upscli_readline.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 upscli_sendline_timeout.html: upscli_sendline.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+upscli_tryconnect.html: upscli_connect.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 nutscan_scan_ip_range_snmp.html: nutscan_scan_snmp.html
@@ -469,7 +788,7 @@ nutscan_add_commented_option_to_device.html: nutscan_add_option_to_device.html
 # If (--with-drivers=...) then we only build specific documents, however
 # still do track (and EXTRA_DIST, and spellcheck) all available sources.
 if SOME_DRIVERS
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(DRIVER_MAN_LIST)
+mansys_DATA += $(DRIVER_MAN_LIST)
 endif
 
 # (--with-serial)
@@ -503,7 +822,8 @@ SRC_SERIAL_PAGES = \
 	metasys.txt	\
 	mge-shut.txt	\
 	mge-utalk.txt	\
-	oneac.txt		\
+	nhs_ser.txt	\
+	oneac.txt	\
 	microdowell.txt	\
 	microsol-apc.txt	\
 	nutdrv_siemens_sitop.txt	\
@@ -521,15 +841,7 @@ SRC_SERIAL_PAGES = \
 	victronups.txt	\
 	apcupsd-ups.txt
 
-if HAVE_LINUX_SERIAL_H
-# Temporary, until ported to more OSes
-SRC_SERIAL_PAGES += \
-	nhs_ser.txt
-endif HAVE_LINUX_SERIAL_H
-
-if ! SOME_DRIVERS
-if WITH_MANS
-MAN_SERIAL_PAGES = \
+INST_MAN_SERIAL_PAGES = \
 	al175.$(MAN_SECTION_CMD_SYS)	\
 	apcsmart.$(MAN_SECTION_CMD_SYS)	\
 	apcsmart-old.$(MAN_SECTION_CMD_SYS)	\
@@ -576,20 +888,26 @@ MAN_SERIAL_PAGES = \
 	victronups.$(MAN_SECTION_CMD_SYS)	\
 	apcupsd-ups.$(MAN_SECTION_CMD_SYS)
 
+DIST_ALL_MAN_PAGES += $(INST_MAN_SERIAL_PAGES)
+DIST_ALL_MAN_PAGES += nhs_ser.$(MAN_SECTION_CMD_SYS)
+
+if ! SOME_DRIVERS
+if WITH_MANS
+MAN_SERIAL_PAGES = $(INST_MAN_SERIAL_PAGES)
 if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
 MAN_SERIAL_PAGES += \
 	nhs_ser.$(MAN_SECTION_CMD_SYS)
 endif HAVE_LINUX_SERIAL_H
-
 endif WITH_MANS
 
 
 if WITH_SERIAL
-man@MAN_SECTION_CMD_SYS_BASE@_MANS +=  $(MAN_SERIAL_PAGES)
+mansys_DATA +=  $(MAN_SERIAL_PAGES)
 endif WITH_SERIAL
+endif ! SOME_DRIVERS
 
-HTML_SERIAL_MANS = \
+INST_HTML_SERIAL_MANS = \
 	al175.html	\
 	apcsmart.html	\
 	apcsmart-old.html	\
@@ -638,24 +956,40 @@ HTML_SERIAL_MANS = \
 
 if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
-HTML_SERIAL_MANS += \
+INST_HTML_SERIAL_MANS += \
 	nhs_ser.html
-endif HAVE_LINUX_SERIAL_H
+else !HAVE_LINUX_SERIAL_H
+DIST_ALL_HTML_PAGES += \
+	nhs_ser.html
+endif !HAVE_LINUX_SERIAL_H
 
+DIST_ALL_HTML_PAGES += $(INST_HTML_SERIAL_MANS)
+
+if ! SOME_DRIVERS
+HTML_SERIAL_MANS = $(INST_HTML_SERIAL_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
+INST_MAN_SNMP_PAGES = snmp-ups.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_SNMP_PAGES)
+
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_SNMP_PAGES = snmp-ups.$(MAN_SECTION_CMD_SYS)
+MAN_SNMP_PAGES = $(INST_MAN_SNMP_PAGES)
 endif WITH_MANS
 
 if WITH_SNMP
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_SNMP_PAGES)
+mansys_DATA += $(MAN_SNMP_PAGES)
 endif WITH_SNMP
+endif ! SOME_DRIVERS
 
-HTML_SNMP_MANS = snmp-ups.html
+INST_HTML_SNMP_MANS = snmp-ups.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_SNMP_MANS)
+
+if ! SOME_DRIVERS
+HTML_SNMP_MANS = $(INST_HTML_SNMP_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-usb)
@@ -670,10 +1004,7 @@ SRC_USB_LIBUSB_PAGES = \
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
-if ! SOME_DRIVERS
-# NOTE: nut_usb_addvars and blazer-common are not standalone man pages
-if WITH_MANS
-MAN_USB_LIBUSB_PAGES = \
+INST_MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.$(MAN_SECTION_CMD_SYS) \
 	blazer_usb.$(MAN_SECTION_CMD_SYS) \
 	nutdrv_atcl_usb.$(MAN_SECTION_CMD_SYS) \
@@ -681,13 +1012,21 @@ MAN_USB_LIBUSB_PAGES = \
 	riello_usb.$(MAN_SECTION_CMD_SYS)	\
 	tripplite_usb.$(MAN_SECTION_CMD_SYS) \
 	usbhid-ups.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_USB_LIBUSB_PAGES)
+
+if ! SOME_DRIVERS
+# NOTE: nut_usb_addvars and blazer-common are not standalone man pages
+if WITH_MANS
+MAN_USB_LIBUSB_PAGES = $(INST_MAN_USB_LIBUSB_PAGES)
 endif WITH_MANS
 
 if WITH_USB
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_USB_LIBUSB_PAGES)
+mansys_DATA += $(MAN_USB_LIBUSB_PAGES)
 endif WITH_USB
+endif ! SOME_DRIVERS
 
-HTML_USB_LIBUSB_MANS = \
+INST_HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	blazer_usb.html	\
 	nutdrv_atcl_usb.html \
@@ -695,142 +1034,223 @@ HTML_USB_LIBUSB_MANS = \
 	riello_usb.html	\
 	tripplite_usb.html \
 	usbhid-ups.html
+
+DIST_ALL_HTML_PAGES += $(INST_HTML_USB_LIBUSB_MANS)
+
+if ! SOME_DRIVERS
+HTML_USB_LIBUSB_MANS = $(INST_HTML_USB_LIBUSB_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-serial / --with-usb)
 SRC_SERIAL_USB_PAGES = \
 	nutdrv_qx.txt
 
+INST_MAN_SERIAL_USB_PAGES = \
+	nutdrv_qx.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_SERIAL_USB_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_SERIAL_USB_PAGES = \
-	nutdrv_qx.$(MAN_SECTION_CMD_SYS)
+MAN_SERIAL_USB_PAGES = $(INST_MAN_SERIAL_USB_PAGES)
 endif WITH_MANS
 
 if WITH_SERIAL
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_SERIAL_USB_PAGES)
+mansys_DATA += $(MAN_SERIAL_USB_PAGES)
 else !WITH_SERIAL
 if WITH_USB
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_SERIAL_USB_PAGES)
+mansys_DATA += $(MAN_SERIAL_USB_PAGES)
 endif WITH_USB
 endif !WITH_SERIAL
+endif ! SOME_DRIVERS
 
-HTML_SERIAL_USB_MANS = \
+INST_HTML_SERIAL_USB_MANS = \
 	nutdrv_qx.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_SERIAL_USB_MANS)
+
+if ! SOME_DRIVERS
+HTML_SERIAL_USB_MANS = $(INST_HTML_SERIAL_USB_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
+INST_MAN_NETXML_PAGES = netxml-ups.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_MAN_PAGES += $(INST_MAN_NETXML_PAGES)
+
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_NETXML_PAGES = netxml-ups.$(MAN_SECTION_CMD_SYS)
+MAN_NETXML_PAGES = $(INST_MAN_NETXML_PAGES)
 endif WITH_MANS
 
 if WITH_NEON
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_NETXML_PAGES)
+mansys_DATA += $(MAN_NETXML_PAGES)
 endif WITH_NEON
+endif ! SOME_DRIVERS
 
-HTML_NETXML_MANS = netxml-ups.html
+INST_HTML_NETXML_MANS = netxml-ups.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_NETXML_MANS)
+
+if ! SOME_DRIVERS
+HTML_NETXML_MANS = $(INST_HTML_NETXML_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-powerman)
 SRC_POWERMAN_PAGES = powerman-pdu.txt
+INST_MAN_POWERMAN_PAGES = powerman-pdu.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_MAN_PAGES += $(INST_MAN_POWERMAN_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_POWERMAN_PAGES = powerman-pdu.$(MAN_SECTION_CMD_SYS)
+MAN_POWERMAN_PAGES = $(INST_MAN_POWERMAN_PAGES)
 endif WITH_MANS
 
 if WITH_LIBPOWERMAN
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_POWERMAN_PAGES)
+mansys_DATA += $(MAN_POWERMAN_PAGES)
 endif WITH_LIBPOWERMAN
+endif ! SOME_DRIVERS
 
-HTML_POWERMAN_MANS = powerman-pdu.html
+INST_HTML_POWERMAN_MANS = powerman-pdu.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_POWERMAN_MANS)
+
+if ! SOME_DRIVERS
+HTML_POWERMAN_MANS = $(INST_HTML_POWERMAN_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-ipmi)
 SRC_IPMIPSU_PAGES = nut-ipmipsu.txt
+INST_MAN_IPMIPSU_PAGES = nut-ipmipsu.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_MAN_PAGES += $(INST_MAN_IPMIPSU_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_IPMIPSU_PAGES = nut-ipmipsu.$(MAN_SECTION_CMD_SYS)
+MAN_IPMIPSU_PAGES = $(INST_MAN_IPMIPSU_PAGES)
 endif WITH_MANS
 
 if WITH_IPMI
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_IPMIPSU_PAGES)
+mansys_DATA += $(MAN_IPMIPSU_PAGES)
 endif WITH_IPMI
+endif ! SOME_DRIVERS
 
-HTML_IPMIPSU_MANS = nut-ipmipsu.html
+INST_HTML_IPMIPSU_MANS = nut-ipmipsu.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_IPMIPSU_MANS)
+
+if ! SOME_DRIVERS
+HTML_IPMIPSU_MANS = $(INST_HTML_IPMIPSU_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-macosx_ups)
 SRC_MACOSX_PAGES = macosx-ups.txt
+INST_MAN_MACOSX_PAGES = macosx-ups.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_MAN_PAGES += $(INST_MAN_MACOSX_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_MACOSX_PAGES = macosx-ups.$(MAN_SECTION_CMD_SYS)
+MAN_MACOSX_PAGES = $(INST_MAN_MACOSX_PAGES)
 endif WITH_MANS
 
 if WITH_MACOSX
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_MACOSX_PAGES)
+mansys_DATA += $(MAN_MACOSX_PAGES)
 endif WITH_MACOSX
+endif ! SOME_DRIVERS
 
-HTML_MACOSX_MANS = macosx-ups.html
+INST_HTML_MACOSX_MANS = macosx-ups.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_MACOSX_MANS)
+
+if ! SOME_DRIVERS
+HTML_MACOSX_MANS = $(INST_HTML_MACOSX_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-modbus)
-SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
+SRC_MODBUS_PAGES = \
+	phoenixcontact_modbus.txt \
 	generic_modbus.txt \
 	huawei-ups2000.txt \
 	socomec_jbus.txt   \
 	adelsystem_cbi.txt \
 	apc_modbus.txt
 
-if ! SOME_DRIVERS
-if WITH_MANS
-MAN_MODBUS_PAGES = phoenixcontact_modbus.$(MAN_SECTION_CMD_SYS) \
+INST_MAN_MODBUS_PAGES = \
+	phoenixcontact_modbus.$(MAN_SECTION_CMD_SYS) \
 	generic_modbus.$(MAN_SECTION_CMD_SYS) \
 	huawei-ups2000.$(MAN_SECTION_CMD_SYS) \
 	socomec_jbus.$(MAN_SECTION_CMD_SYS)   \
 	adelsystem_cbi.$(MAN_SECTION_CMD_SYS) \
 	apc_modbus.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_MODBUS_PAGES)
+
+if ! SOME_DRIVERS
+if WITH_MANS
+MAN_MODBUS_PAGES = $(INST_MAN_MODBUS_PAGES)
 endif WITH_MANS
 
 if WITH_MODBUS
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_MODBUS_PAGES)
+mansys_DATA += $(MAN_MODBUS_PAGES)
 endif WITH_MODBUS
+endif ! SOME_DRIVERS
 
-HTML_MODBUS_MANS = phoenixcontact_modbus.html \
+INST_HTML_MODBUS_MANS = \
+	phoenixcontact_modbus.html \
 	generic_modbus.html \
 	huawei-ups2000.html \
 	socomec_jbus.html   \
 	adelsystem_cbi.html \
 	apc_modbus.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_MODBUS_MANS)
+
+if ! SOME_DRIVERS
+HTML_MODBUS_MANS = $(INST_HTML_MODBUS_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-linux_i2c)
-SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt hwmon_ina219.txt
+SRC_LINUX_I2C_PAGES = \
+	asem.txt \
+	pijuice.txt \
+	hwmon_ina219.txt
+
+INST_MAN_LINUX_I2C_PAGES = \
+	asem.$(MAN_SECTION_CMD_SYS) \
+	pijuice.$(MAN_SECTION_CMD_SYS) \
+	hwmon_ina219.$(MAN_SECTION_CMD_SYS)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_LINUX_I2C_PAGES)
+
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_LINUX_I2C_PAGES = asem.$(MAN_SECTION_CMD_SYS) pijuice.$(MAN_SECTION_CMD_SYS) hwmon_ina219.$(MAN_SECTION_CMD_SYS)
+MAN_LINUX_I2C_PAGES = $(INST_MAN_LINUX_I2C_PAGES)
 endif WITH_MANS
 
 if WITH_LINUX_I2C
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_LINUX_I2C_PAGES)
+mansys_DATA += $(MAN_LINUX_I2C_PAGES)
 endif WITH_LINUX_I2C
+endif ! SOME_DRIVERS
 
-HTML_LINUX_I2C_MANS = asem.html pijuice.html hwmon_ina219.html
+INST_HTML_LINUX_I2C_MANS = \
+	asem.html \
+	pijuice.html \
+	hwmon_ina219.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_LINUX_I2C_MANS)
+
+if ! SOME_DRIVERS
+HTML_LINUX_I2C_MANS = $(INST_HTML_LINUX_I2C_MANS)
 endif ! SOME_DRIVERS
 
 # (--with-gpio)
 SRC_GPIO_PAGES = generic_gpio.txt
+INST_MAN_GPIO_PAGES = generic_gpio.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_PAGES += $(INST_MAN_GPIO_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_GPIO_PAGES = generic_gpio.$(MAN_SECTION_CMD_SYS)
+MAN_GPIO_PAGES = $(INST_MAN_GPIO_PAGES)
 endif WITH_MANS
 
 if WITH_GPIO
-man@MAN_SECTION_CMD_SYS_BASE@_MANS += $(MAN_GPIO_PAGES)
+mansys_DATA += $(MAN_GPIO_PAGES)
 endif WITH_GPIO
+endif ! SOME_DRIVERS
 
-HTML_GPIO_MANS = generic_gpio.html
+INST_HTML_GPIO_MANS = \
+	generic_gpio.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_GPIO_MANS)
+
+if ! SOME_DRIVERS
+HTML_GPIO_MANS = $(INST_HTML_GPIO_MANS)
 endif ! SOME_DRIVERS
 
 MAN_MANS =
@@ -839,11 +1259,11 @@ MAN_MANS += \
 	$(MAN_CONF_PAGES) \
 	$(MAN_CLIENT_PAGES) \
 	$(MAN_TOOL_PAGES) \
-	$(MAN@MAN_SECTION_CFG_BASE@_CGI_PAGES) \
-	$(MAN@MAN_SECTION_CMD_SYS_BASE@_CGI_PAGES) \
-	$(MAN@MAN_SECTION_CMD_USR_BASE@_DEV_PAGES) \
-	$(MAN@MAN_SECTION_API_BASE@_DEV_PAGES) \
-	$(MAN@MAN_SECTION_CMD_SYS_BASE@_DEV_PAGES) \
+	$(MAN_CGI_CFG_PAGES) \
+	$(MAN_CGI_CMD_SYS_PAGES) \
+	$(MAN_DEV_CMD_USR_PAGES) \
+	$(MAN_DEV_API_PAGES) \
+	$(MAN_DEV_CMD_SYS_PAGES) \
 	$(MAN_SERIAL_PAGES) \
 	$(MAN_SNMP_PAGES) \
 	$(MAN_USB_LIBUSB_PAGES) \
@@ -880,26 +1300,40 @@ endif
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
-SRC_ALL_PAGES = \
+SRC_ALL_PAGES += \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
 	$(SRC_TOOL_PAGES) \
 	$(SRC_CGI_PAGES) \
 	$(SRC_DEV_PAGES) \
-	$(SRC_DRIVERS_PAGES)
+	$(SRC_DRIVERS_PAGES) \
+	index.txt
 
+# DIST_ALL_PAGES: Make sure pages are built for the archive (or
+# inherited from earlier tarball this release is being built from);
+# caller may have to fake them if we are in a situation we know we can
+# not provide them (see `make distcheck-ci` in top-level Makefile.am).
 EXTRA_DIST = \
 	$(SRC_ALL_PAGES) \
+	$(DIST_ALL_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
 
 if ! WITH_MANS
+# We may be here because tools are missing, or because caller ran
+# ./configure --without-doc (but the tools were present and AC_PROG
+# caused the needed variables to resolve, so pages can in fact get
+# built, or are present in the release tarball we are building).
 if ! SKIP_MANS
-# Cause "make dist" to fail, unless caller (like the stack of distcheck-dmf)
-# runs ./configure --with-doc=skip (or --with-doc=man=skip specifically)
-EXTRA_DIST += dist
-dist:
-	@echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+# Absense of pages can cause "make dist" to fail, unless caller
+# (like `make distcheck-light`) runs ./configure --with-doc=skip
+# (or --with-doc=man=skip specifically).
+# FIXME: See also HAVE_ASCIIDOC (covers several tools in fact)
+#  and DOC_INSTALL_DISTED_MANS for a more granular approach.
+dist-warning:
+	@echo "WARNING: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2
+
+dist: dist-warning
 endif ! SKIP_MANS
 endif ! WITH_MANS
 
@@ -912,6 +1346,7 @@ dist-hook:
 	@echo "Fix up manpage source timestamps" && cd $(distdir) && touch $(SRC_ALL_PAGES)
 
 HTML_MANS = \
+	index.html \
 	$(HTML_CONF_MANS) \
 	$(HTML_CLIENT_MANS) \
 	$(HTML_TOOL_MANS) \
@@ -983,32 +1418,48 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 # Make sure sources are there for out-of-tree builds:
-$(HTML_MANS) $(MAN_MANS) index.html: $(abs_top_builddir)/docs/man/.prep-src-docs
+$(HTML_MANS) $(MAN_MANS): $(abs_top_builddir)/docs/man/.prep-src-docs
 
-all-html html-man: $(HTML_MANS) index.html
+all-html html-man: $(HTML_MANS)
 
 # Have a way to build all man pages, not just those that fit currently
 # configured drivers, daemons, developer aspect, etc.
 all-man man-man: $(MAN_MANS)
 
+dist-html: $(DIST_ALL_HTML_PAGES)
+dist-man: $(DIST_ALL_MAN_PAGES)
+
+# This list is defined by configure script choices and options:
+CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
+
 if WITH_MANS
 if ! SKIP_MANS
 check-local: check-man
-else
+else SKIP_MANS
 check-local: check-man-txt check-man-pages
 	@echo "Man-page generation was SKIPPED per user request, so pregenerated pages were sanity-checked (if any)" >&2
-endif
-else
+endif SKIP_MANS
+else ! WITH_MANS
 check-local: check-man-txt check-man-pages
 	@echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
-endif
+endif ! WITH_MANS
 
-check-man: check-man-txt check-man-pages check-html-man
+TGT_REQUIRE_CHECK_HTML =
+if WITH_HTML_SINGLE
+TGT_REQUIRE_CHECK_HTML += check-html-man
+else !WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+TGT_REQUIRE_CHECK_HTML += check-html-man
+endif WITH_HTML_CHUNKED
+endif !WITH_HTML_SINGLE
+
+check-man check-man-man: check-man-txt check-man-pages $(TGT_REQUIRE_CHECK_HTML)
 
 # the "for" loops might better use $^ but it might be not portable
 check-man-html: check-html-man
 
-check-html-man: $(HTML_MANS)
+check-html-man: .check-html-man
+.check-html-man: $(HTML_MANS) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(HTML_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
@@ -1016,12 +1467,14 @@ check-html-man: $(HTML_MANS)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-man sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-man sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
 # Note: many man-pages here have code samples and are mis-identified as C code
 check-man-page: check-man-pages
 
 # Man-pages may be pre-generated (srcdir), or re-built (builddir)
-check-man-pages: $(MAN_MANS)
+check-man-pages: .check-man-pages
+.check-man-pages: $(MAN_MANS) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(MAN_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
@@ -1034,12 +1487,14 @@ check-man-pages: $(MAN_MANS)
 	      echo "BUILDDIR:"; cd "$(abs_builddir)/" && file $$FAILED ; \
 	    ) >&2 ; exit 1; \
 	fi; echo "PASSED man-page sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
 check-man-source: check-man-txt
 
 # Note: (GNU) make can helpfully add VPATH to the short source filenames
 # which we had listed above, so the "case" below handles two possibilities
-check-man-txt: $(SRC_ALL_PAGES)
+check-man-txt: .check-man-txt
+.check-man-txt: $(SRC_ALL_PAGES) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	( cd $(abs_srcdir) ) || exit; \
 	for F in $(SRC_ALL_PAGES) ; do \
@@ -1052,8 +1507,9 @@ check-man-txt: $(SRC_ALL_PAGES)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
-CLEANFILES = *-spellchecked .prep-src-docs *-prepped
+CLEANFILES = *-spellchecked .prep-src-docs *-prepped .check-*
 
 SUFFIXES = .txt-prepped .txt .html .$(MAN_SECTION_CMD_USR) .$(MAN_SECTION_API) .$(MAN_SECTION_CFG) .$(MAN_SECTION_CMD_SYS)
 
@@ -1067,9 +1523,24 @@ else
 SRC_PREBUILT_CLAUSE=
 endif
 
+# Only clean away build products if we can reproduce them
+# including cases where we generate placeholders
+if WITH_MANS
+CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS)
+clean-man-pages:
+else !WITH_MANS
 if HAVE_ASCIIDOC
+CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS)
+clean-man-pages:
+else !HAVE_ASCIIDOC
+clean-man-pages:
+	@FILENAMES='$(DIST_ALL_MAN_PAGES)' ; $(FAKE_FILES_RM)
+endif !HAVE_ASCIIDOC
+endif !WITH_MANS
 
-CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS) *.xml *.html *.pdf
+if HAVE_ASCIIDOC
+# Only clean away build products if we can reproduce them
+CLEANFILES += *.xml *.html *.pdf
 
 # Working around a2x not friendly to parallelized runs.
 # See more details in the main NUT docs/Makefile.am
@@ -1114,6 +1585,7 @@ DOCBUILD_END = { \
 ### or just touch-files for peace of mind (in-tree builds). Then we
 ### use these path names (truncated "-prepped") now surely located
 ### in the builddir as the sources for rendered docs.
+
 *.txt-prepped: $(abs_top_builddir)/docs/man/.prep-src-docs
 
 #.txt.txt-prepped: $(abs_top_builddir)/docs/man/.prep-src-docs
@@ -1130,13 +1602,18 @@ DOCBUILD_END = { \
 	 echo "  DOC-MAN-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(ASCIIDOC) --backend=xhtml11 $${A2X_VERBOSE} \
-		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
-		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
-		--attribute nutversion="@PACKAGE_VERSION@" \
-		--attribute srcdir="$(abs_srcdir)/" \
-		--attribute builddir="$(abs_builddir)/" \
-		--attribute top_srcdir="$(abs_top_srcdir)/" \
-		--attribute top_builddir="$(abs_top_builddir)/" \
+		--attribute=localdate="`TZ=UTC date +%Y-%m-%d`" \
+		--attribute=localtime="`TZ=UTC date +%H:%M:%S`" \
+		--attribute=nutversion="$(PACKAGE_VERSION)" \
+		--attribute=srcdir="$(abs_srcdir)/" \
+		--attribute=builddir="$(abs_builddir)/" \
+		--attribute=top_srcdir="$(abs_top_srcdir)/" \
+		--attribute=top_builddir="$(abs_top_builddir)/" \
+		--attribute=MAN_SECTION_API_BASE='$(MAN_SECTION_API_BASE)' \
+		--attribute=MAN_SECTION_CFG_BASE='$(MAN_SECTION_CFG_BASE)' \
+		--attribute=MAN_SECTION_CMD_SYS_BASE='$(MAN_SECTION_CMD_SYS_BASE)' \
+		--attribute=MAN_SECTION_CMD_USR_BASE='$(MAN_SECTION_CMD_USR_BASE)' \
+		--attribute=NUT_WEBSITE_BASE='$(NUT_WEBSITE_BASE)' \
 		-o "$${A2X_OUTDIR}/$(@F)" '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
@@ -1144,15 +1621,29 @@ DOCBUILD_END = { \
 ### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--xsltproc-opts="--nonet" \
-	--attribute mansource="Network UPS Tools" \
-	--attribute manversion="@PACKAGE_VERSION@" \
-	--attribute manmanual="NUT Manual" \
-	--attribute srcdir="$(abs_srcdir)/" \
-	--attribute builddir="$(abs_builddir)/" \
-	--attribute top_srcdir="$(abs_top_srcdir)/" \
-	--attribute top_builddir="$(abs_top_builddir)/" \
+	--attribute=mansource="Network UPS Tools" \
+	--attribute=manversion="$(PACKAGE_VERSION)" \
+	--attribute=manmanual="NUT Manual" \
+	--attribute=srcdir="$(abs_srcdir)/" \
+	--attribute=builddir="$(abs_builddir)/" \
+	--attribute=top_srcdir="$(abs_top_srcdir)/" \
+	--attribute=top_builddir="$(abs_top_builddir)/" \
 	--destination-dir="$${A2X_OUTDIR}"
 
+if KNOWN_UNABLE_MANS
+.txt.$(MAN_SECTION_API) .txt-prepped.$(MAN_SECTION_API) \
+.txt.$(MAN_SECTION_CFG) .txt-prepped.$(MAN_SECTION_CFG) \
+.txt.$(MAN_SECTION_CMD_SYS) .txt-prepped.$(MAN_SECTION_CMD_SYS) \
+.txt.$(MAN_SECTION_CMD_USR) .txt-prepped.$(MAN_SECTION_CMD_USR) :
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not functional (even though found)." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed and functional?"; \
+		exit 1; \
+	fi
+
+else !KNOWN_UNABLE_MANS
 .txt-prepped.$(MAN_SECTION_CMD_USR):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_CMD_USR).$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
@@ -1180,20 +1671,21 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
+endif !KNOWN_UNABLE_MANS
 
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
-		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page (as HTML), since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
-		echo "Could not find prebuilt $@ manual page." ; \
+		echo "Could not find prebuilt $@ manual page (as HTML)." ; \
 		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
 		exit 1; \
 	fi
 
 .txt.$(MAN_SECTION_CMD_USR):
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1202,7 +1694,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_API):
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1211,7 +1703,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_CFG):
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1220,7 +1712,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_CMD_SYS):
-	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1266,8 +1758,21 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
 # so should be run from $(abs_builddir) to be safe, as we jump around
 # the build workspace
-$(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
+# NOTE: For DOCS_NO_MAN case we expect that the top-level Makefile caused
+# parallel runs of several directories, so we can reasonably wait some
+# time for the target file to just appear.
+MAINTAINER_DOCS_PREP_MAN_DELAY = 60
+prep-src-docs: $(abs_top_builddir)/docs/man/.prep-src-docs
+$(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	@cd "$(@D)" || exit ; \
+	 if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then \
+	    if [ "$(MAINTAINER_DOCS_PREP_MAN_DELAY)" -gt 0 ] 2>/dev/null ; then \
+	        echo "  DOCS_NO_MAN     BLOCK: $@ called in docs/man/Makefile : waiting for other thread to complete this target" ; \
+	        W=0 ; while [ "$${W}" -lt "$(MAINTAINER_DOCS_PREP_MAN_DELAY)" ] && ( [ \! -e '$@' ] || [ x"`find $(PREP_SRC) \! -newer '$@' 2>/dev/null`" = x ] ) ; do sleep 1 ; W="`expr $$W + 1`"; done ; \
+	        echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile : waited $$W seconds" ; \
+	    fi ; \
+	    exit 0 ; \
+	 fi ; \
 	 linkroot="$(abs_builddir)" ; \
 	 MAN_SECTIONS_DEFAULT=false ; \
 	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)" = x3581 ] ; then \
@@ -1284,9 +1789,11 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	                fi ;; \
 	        esac ; \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
@@ -1341,9 +1848,11 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
@@ -1362,7 +1871,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
-clean-local:
+clean-local: clean-man-pages
 	$(AM_V_at)rm -rf tmp
 	$(AM_V_at)for F in $(PREP_SRC) ; do \
 	        case "$$F" in \

@@ -179,6 +179,18 @@ AC_DEFUN([NUT_REPORT_TARGET],
     AC_DEFINE_UNQUOTED($1, $2, $3)
 ])
 
+AC_DEFUN([NUT_REPORT_TARGET_WITHOUT_AC_DEFINE],
+[
+    dnl arg#1 = autoconf varname
+    dnl arg#2 = value
+    dnl arg#3 = summary/config.log/autoconf description
+    AC_MSG_CHECKING([$3])
+    AC_MSG_RESULT([$2])
+    NUT_REPORT_FILE([$3], ["$2"], [8], "NUT Build/Target system info:")
+
+    dnl Not defining here (e.g. multi-line strings causing bad C markup)
+])
+
 AC_DEFUN([NUT_REPORT_COMPILERS],
 [
     (echo ""
@@ -208,6 +220,8 @@ AC_DEFUN([NUT_REPORT_COMPILERS],
      printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
      printf '* CPP     \t: %s\n' "$CPP"
      printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
+     printf '* LD      \t: %s\n' "$LD"
+     printf '* LDFLAGS \t: %s\n' "$LDFLAGS"
      printf '* CONFIG_FLAGS\t: %s\n' "$CONFIG_FLAGS"
     ) > config.nut_report_feature.log.9
     ac_clean_files="${ac_clean_files} config.nut_report_feature.log.9"

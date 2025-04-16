@@ -3,6 +3,27 @@ Configure options
 =================
 endif::website[]
 
+As many other projects relying on GNU autotools for build recipe automation,
+NUT sources deliver a `configure` script which is used to set up numerous
+nuances relevant for your build of the project.  Most of the configuration
+requirements are passed by `--with-something` or `--enable-something` options
+(allegedly, not always used consistently with autotools naming recommendations),
+and with environment variables like `CFLAGS` typically also passed as command
+line options.
+
+Default syntax of `--with-something` or `--enable-something` assumes a boolean
+approach, so the option as such conveys a `yes` string value, and aliases
+`--without-something` or `--disable-something` are handled automatically as
+a `no` string value, for the option named `something`.
+
+In many cases, these options are used to pass non-boolean configuration of the
+option in question, commonly a path, program name, compiler flags to use along
+with a particular dependency, user name or type of documentation to build, etc.
+
+A special case here concerns options that accept an `auto` value, where the
+`configure` script would opine to request a final `yes` or `no`, depending on
+other circumstances of the build environment and requested configuration.
+
 [NOTE]
 ======
 When building NUT from Git sources rather than the distribution tarballs,
@@ -12,11 +33,12 @@ and other dependencies on your build environment (referenced just a bit
 below). For common developer iterations, porting to new platforms,
 or in-place testing, running the `./ci_build.sh` script can be a helpful
 one-stop solution.
-+
+
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
-+
-The link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+
+The linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt]
 document suggests prerequisite packages with tools and dependencies
 available and needed to build and test as much as possible of NUT on
 numerous platforms, written from perspective of CI testing (if you
@@ -38,8 +60,9 @@ Network UPS Tools upsd 2.8.1
 Network UPS Tools version 2.8.1 configured with flags: --with-all=auto --with-doc=skip ...
 ----
 
-A more industrial approach is to use `lib/libupsclient-config --config-flags`
-where supported.
+A more industrial approach is to use `lib/libupsclient-config --config-flags`,
+where supported.  Note that the `pkg-config` manifest `libupsclient.pc` does
+not easily convey this information.
 
 Keeping a report of NUT configuration
 -------------------------------------
@@ -64,15 +87,16 @@ filesystem access permissions and configuration file locations.
 
 Tries to detect and pre-set `configure` defaults for run-time settings
 (which you can still override if needed, but no longer *must* specify
-explicitly to be on same page as the existing setup), e.g.:
+explicitly to be on same page as the existing setup), most notably:
 
-* --sysconfdir
-* --with-user
-* --with-group
+* `--sysconfdir`
+* `--with-user`
+* `--with-group`
 
 If the installed NUT version supports reporting of `CONFIG_FLAGS` used
 during its build, the `configure` script will try to take those values
-into account when running in this mode.
+into account when running in this mode (and so use the same program and
+data installation paths, for example).
 
 NOTE: This does not currently rely on the configuration report optionally
 installed by `--enable-keep_nut_report_feature` above, but might do so
@@ -98,11 +122,17 @@ Build and install the USB drivers (default: auto-detect)
 Note that you need to install the libusb development package or files,
 and that both libusb 0.1 and 1.0 are supported. In case both are
 available, libusb 1.0 takes precedence, and will be used by default.
+
 It is however possible to override this default choice by explicitly
 calling `--with-usb=libusb-0.1` or `--with-usb=libusb-1.0`.
+
 If you do specify the version to use (or `yes` for auto-detection),
 this option would fail if requested (or any) libusb version was not
 found.  The default `auto` value would not fail in such case.
+
+WARNING: If you intend to use the `libmodbus` variant with `libusb`
+support, you would require `libusb-1.0` specifically; the implementation
+or "compat API" of `0.1` is not supported by that library version.
 
 SNMP drivers
 ~~~~~~~~~~~~
@@ -197,6 +227,7 @@ so your NUT build environment should provide a prerequisite build of
 https://github.com/networkupstools/libmodbus/tree/rtu_usb (may be a
 static library build, used from a temporary installation prefix location,
 to avoid potential conflicts with the OS packaged shared library).
+You would also need specifically `libusb-1.0` (not the older API).
 
 At the time of this writing, such constraint can be desirable for the
 linkman:apc_modbus[8] driver which supports different communication media.
@@ -241,6 +272,30 @@ CGI configuration files. This is not enabled by default, as they
 are only useful on web servers. See link:data/html/README[] for additional
 information on how to set up CGI programs.
 
+NUT Scanner tool
+~~~~~~~~~~~~~~~~
+
+	--with-nut-scanner (default: auto)
+
+Build and install the optional linkman:nut-scanner[8] tool to discover some
+types of UPS or ePDU devices on locally or remotely connected media (such as
+Serial, USB, SNMP, IPMI, NetXML), as well as NUT data servers (by Avahi/mDNS
+broadcasts or "old" NUT port polling) and simulation device configurations
+that can be relayed by a local linkman:dummy-ups[8] driver instance.
+
+Many of the features depend on third-party libraries that are loosely linked
+at run-time using libltdl, and due to that, the build, delivery and use of the
+tool does not depend on *all* of them being available in the final deployment.
+
+NUT Configuration tool
+~~~~~~~~~~~~~~~~~~~~~~
+
+	--with-nutconf (default: auto)
+
+Build and install the optional linkman:nutconf[8] tool to create and manipulate
+NUT configuration files.  It also optionally supports device scanning, using
+the linkman:nutscan[3] library (if built), to suggest configuration of devices.
+
 Pretty documentation and man pages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -258,7 +313,7 @@ The possible documentation type values are:
 * `html-single` for single page HTML,
 * `html-chunked` for multi-paged HTML,
 * `pdf` for a PDF file, and
-* `man` for the usual manpages.
+* `man` for the usual man pages.
 
 Other values understood for this option are listed below:
 
@@ -271,7 +326,7 @@ Other values understood for this option are listed below:
   can not be generated.
 
 * A `--with-doc=no` quietly skips generation of all types of documentation,
-  including manpages.
+  including man pages.
 
 * A `--with-doc=skip` is used to configure some of the `make distcheck*`
   scenarios to re-use man page files built and distributed by the main
@@ -437,6 +492,64 @@ Development files
 Build and install the upsclient and nutclient library and header files, to
 build further projects against NUT (such as wmNUT client and many others).
 
+Also delivers `libnutscan` library and header files, if `--with-nut-scanner`
+is enabled.
+
+Disabled development file delivery, in particular, disables installation of
+static libraries.
+
+	--with-dev-libnutconf (yes/no/auto, default: no)
+
+Build and install the nutconf library and header files, to build further
+projects against NUT (especially those that need to set it up).  This is
+currently not automatically tied into either `--with-dev` nor `--with-nutconf`
+(note below on `--with-all`), because the tool and library are experimental
+and the API may yet undergo significant changes in the coming years.
+
+It is more recommended to use the CLI tool as a presumably more stable API
+for third-party integrations, than the library directly.
+
+This feature may however be enabled or disabled implicitly, using
+`--with-all(=yes/no/auto)` request, based on a combination of
+`--with-nutconf` and `--with-dev` options:
+
+* if `--without-all`, default to set `--with-dev-libnutconf=no`; otherwise...
+* if either `--without-dev` or `--without-nutconf`,
+  default to set `--with-dev-libnutconf=no`; otherwise...
+* if either `--without-dev=auto` and/or `--without-nutconf=auto`,
+  default to set `--with-dev-libnutconf=auto`; otherwise...
+* if both `--with-dev` and `--with-nutconf`,
+  default to set `--with-dev-libnutconf=yes`.
+
+Requires C++11 support to be enabled (available in compiler, not neutered
+by explicit selection of an older standard).
+
+	--enable-ldflags-nut-rpath (yes/no/auto/flags, default: auto)
+	--enable-ldflags-nut-rpath-cxx (yes/no/auto/flags, default: auto)
+
+NUT development files include the `*.pc` metadata for `pkg-config` ecosystem
+and a legacy `libupsclient-config` script, both used to deliver compiler and
+linker options for third-party programs to build against NUT libraries.
+
+There can be a problem during run-time, when NUT is installed into a location
+that the system linker does not know to look into, e.g. the default `--prefix`
+value of `/usr/local/ups`, that the built programs fail to dynamically link
+with the shared objects of NUT libraries, unless deprecated tricks like the
+`LD_LIBRARY_PATH` setting are applied.
+
+These options allow NUT to add linker options, which set "RPATH" in consumer
+binaries, to the announced metadata.  As a result, third-party programs or
+libraries are hard-coded to look for NUT libraries in a certain location, in
+addition to system locations and similar paths added by other dependencies.
+
+By default (in `auto` mode), the `configure` script queries the compiler for
+known system library paths (currently supported with GCC and CLANG builds),
+and checks the NUT `libdir` against that list.  If there is a hit, no extra
+flags are announced; otherwise, the format detected for currently used linker
+by autoconf libtool macros is added to the announced metadata for builds
+against NUT.  If this causes problems, you can either `--disable-...` these
+flags or provide the desired string explicitly.
+
 Options for developers
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -479,6 +592,10 @@ tools in recent compiler generations.  The `auto` value enables the flag
 for certain compiler versions known to complain about some of our use
 cases -- even though those seem to be false positives.
 
+	--enable-configure-debug
+
+Cause the `configure` script run to report some internal values of variables as
+it goes through making of choices, to help recipe developers troubleshoot it.
 
 I want it all!
 ~~~~~~~~~~~~~~
@@ -488,6 +605,10 @@ I want it all!
 Build and install all of the above (the serial, USB, SNMP, XML/HTTP and
 PowerMan drivers, the CGI programs and HTML files, and the upsclient
 library).
+
+You can also use `--with-all=auto` to detect available prerequisites and
+only build everything that we can build on this system (but not fail due
+to inability to request a build of something from the full scope).
 
 Networking transport security
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -606,6 +727,31 @@ Change the facility used when writing to the log file.  Read the man
 page for `openlog` to get some idea of what's available on your system.
 Default is `LOG_DAEMON`.
 
+External API integration scripts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes as a developer or user you need to interact with a device for
+which a "proper" NUT driver does not yet exist (or is not in your version),
+but some proof-of-concept script can be good enough to collect some data.
+
+In some cases, an UPS does not support local monitoring at all, but has
+a network port for cloud-based monitoring through its vendor's portal.
+
+Such data can be converted and fed into the NUT `dummy-ups` driver, and so
+represented in the NUT ecosystem, by rewriting the "sequence" file whose
+contents it processes in a loop (see linkman:dummy-ups[8] for more details).
+
+NUT provides sample scripts for such integration, which can be used if you
+have a suitable use-case, or provide inspiration for you to begin experiments
+with a new device and (as often happens) a shell or Python script polling
+it for information. For more details, see `scripts/external_apis` in NUT
+sources (and pull requests with more integrations would be welcome there).
+
+	--enable-extapi-enphase=(yes|auto|no)
+
+Enable installation of integration script for External API: Enphase Monitor
+(default: no)
+
 
 Installation directories
 ------------------------
@@ -659,9 +805,17 @@ at run time.
 	--datadir=PATH
 
 Change the data directory, i.e., where architecture independent
-read-only data is installed.  By default this is `<prefix>/share`,
-i.e. `/usr/local/ups/share`.  At the moment, this directory only
-holds two files -- the optional `cmdvartab` and `driver.list`.
+read-only data for the currently built project is installed.
+By GNU Autotools default, this is `<prefix>/share` (same as the
+system-wide "data root" which we also consult for third-party data
+such as Augeas lens delivery locations), i.e. `/usr/local/ups/share`.
++
+Typically this is reconfigured to a `'${datarootdir}/nut'` value.
++
+At the moment, this directory only holds two files by default -- the
+optional `cmdvartab` and `driver.list`, but may hold additional data
+on certain systems (e.g. FreeBSD quirks, Solaris SMF or init methods,
+sometimes documentation).
 
 	--mandir=PATH
 
@@ -825,17 +979,25 @@ will leave files here.
 	--with-altpidpath=PATH
 
 Programs that normally don't have `root` powers, like the drivers and
-`upsd`, write their pid files here.  By default this is whatever the
+`upsd`, write their PID files here.  By default this is whatever the
 statepath (below) is, as those programs should be able to write there.
 
 The `NUT_ALTPIDPATH` environment variable overrides this at run time.
 
 	--with-statepath=PATH
 
-Change the default location of the state sockets created by the drivers
-to interact with the data server `upsd`. Default is `/var/state/ups`.
+Change the default location of the local Unix sockets created by the drivers
+to interact with the data server `upsd` to report their state and receive
+commands. Default is `/var/state/ups`.
+
+This is also the default location for non-`root` daemons to write a PID file,
+if a separate location is not specified by `--with-altpidpath` option.
 
 The `NUT_STATEPATH` environment variable overrides this at run time.
+
+NOTE: Fun fact: in early iterations of the NUT project, the drivers and the
+data server did exchange information by writing and reading complete state
+files in a commonly accessible location, hence the name.
 
 	--with-powerdownflag=FILEPATH
 
@@ -848,8 +1010,8 @@ systems and `"C:\\killpower"` (note the double backslashes) on Windows.
 Things the compiler might need to find
 --------------------------------------
 
-LibGD
-~~~~~
+pkg-config tooling
+~~~~~~~~~~~~~~~~~~
 
 	--with-pkg-config
 
@@ -858,6 +1020,9 @@ complete pathname to `pkg-config` which describes `CFLAGS`, `LIBS` and
 possibly other build-time options in `*.pc` files, to use third-party
 libraries. On build systems which support multiple architectures you
 may also want to set `PKG_CONFIG_PATH` to match your current build.
+
+LibGD
+~~~~~
 
 	--with-gd-includes="-I/foo/bar"
 
@@ -899,15 +1064,15 @@ Various
 	--with-neon-includes, --with-libltdl-includes,
 	--with-powerman-includes="-I/foo/bar"
 
-If your system doesn't have pkg-config and support for any of the above
+If your system doesn't have `pkg-config` and support for any of the above
 libraries isn't found (but you know it is installed), you must specify
 the compiler flags that are needed.
 
 	--with-ssl-libs, --with-usb-libs, --with-snmp-libs,
 	--with-neon-libs, --with-libltdl-libs
-	--with-powerman-libs="-L/foo/bar -labcd -lxyz"
+	--with-powerman-libs="-L/foo/bar -R/foo/bar -labcd -lxyz"
 
-If system doesn't have pkg-config or it fails to provides hints for
+If system doesn't have `pkg-config` or it fails to provides hints for
 some of the settings that are needed to set it up properly and the
 build in defaults are not right, you can specify the correct values
 for your system here.

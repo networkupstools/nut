@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.39"
+#define DRIVER_VERSION	"0.42"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -77,12 +77,15 @@
 #include "nutdrv_qx_megatec-old.h"
 #include "nutdrv_qx_mustek.h"
 #include "nutdrv_qx_q1.h"
+#include "nutdrv_qx_q2.h"
+#include "nutdrv_qx_q6.h"
 #include "nutdrv_qx_voltronic.h"
 #include "nutdrv_qx_voltronic-qs.h"
 #include "nutdrv_qx_voltronic-qs-hex.h"
 #include "nutdrv_qx_zinto.h"
 #include "nutdrv_qx_masterguard.h"
 #include "nutdrv_qx_ablerex.h"
+#include "nutdrv_qx_gtec.h"
 
 /* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
@@ -99,6 +102,9 @@ static subdriver_t	*subdriver_list[] = {
 	&hunnox_subdriver,
 	&ablerex_subdriver,
 	&innovart31_subdriver,
+	&q2_subdriver,
+	&q6_subdriver,
+	&gtec_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -255,6 +261,32 @@ int qx_multiply_battvolt(item_t *item, char *value, const size_t valuelen) {
 	}
 
 	snprintf(value, valuelen, "%.2f", s * batt.packs);
+	return 0;
+}
+
+/* Convert kilo-values to their full representation */
+int qx_multiply_x1000(item_t *item, char *value, const size_t valuelen) {
+	float s = 0;
+
+	if (sscanf(item->value, "%f", &s) != 1) {
+		upsdebugx(2, "unparsable ss.ss %s", item->value);
+		return -1;
+	}
+
+	snprintf(value, valuelen, "%.2f", s * 1000.0);
+	return 0;
+}
+
+/* Convert minutes to seconds */
+int qx_multiply_m2s(item_t *item, char *value, const size_t valuelen) {
+	float s = 0;
+
+	if (sscanf(item->value, "%f", &s) != 1) {
+		upsdebugx(2, "unparsable ss.ss %s", item->value);
+		return -1;
+	}
+
+	snprintf(value, valuelen, "%.0f", s * 60.0);
 	return 0;
 }
 
@@ -961,7 +993,7 @@ static int 	hunnox_protocol(int asking_for)
 			}
 			break;
 		case 3:
-			if (asking_for != 0x0c) {
+			if (asking_for != 0x0c && !testvar("novendor")) {
 				upsdebugx(3, "asking for: %02X", (unsigned int)0x0c);
 				usb_get_string(udev, 0x0c,
 					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
@@ -1838,6 +1870,79 @@ static void	*ablerex_subdriver_fun(USBDevice_t *device)
 
 	subdriver_command = &ablerex_command;
 	return NULL;
+}
+
+/* Gtec communication subdriver (based on Cypress) */
+static int	gtec_command(const char *cmd, char *buf, size_t buflen)
+{
+	char	tmp[SMALLBUF];
+	int	ret = 0;
+	size_t	i;
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
+	/* Send command */
+	memset(tmp, 0, sizeof(tmp));
+	snprintf(tmp, sizeof(tmp), "%s", cmd);
+
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
+
+		/* Write data in 8-byte chunks */
+		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x02, 0,
+			(usb_ctrl_charbuf)&tmp[i], 8, 5000);
+
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
+			return ret;
+		}
+
+	}
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
+
+	/* Read reply */
+	memset(buf, 0, buflen);
+
+	for (i = 0; (i <= buflen-128) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
+
+		/* Read data in 8-byte chunks */
+		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)&buf[i], 128, 1000);
+
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
+			return ret;
+		}
+
+		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
+		upsdebug_hex(5, tmp, &buf[i], (size_t)ret);
+
+	}
+
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+	if (i > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
+		return -1;
+	}
+	return (int)i;
 }
 
 static struct {
@@ -2899,6 +3004,7 @@ void	upsdrv_shutdown(void)
 			{ "snr", &snr_command },
 			{ "ablerex", &ablerex_command },
 			{ "armac", &armac_command },
+			{ "gtec", &gtec_command },
 			{ NULL, NULL }
 		};
 #	endif
@@ -2938,7 +3044,7 @@ void	upsdrv_help(void)
 
 		/* lowercase the (ASCII) string */
 		for (p = subdrv_name; *p; ++p)
-			*p = tolower(*p);
+			*p = tolower((unsigned char)(*p));
 
 		if (i>0)
 			printf(", ");
@@ -3025,6 +3131,7 @@ void	upsdrv_updateinfo(void)
 
 	/* Clear status buffer before beginning */
 	status_init();
+	buzzmode_init();
 
 	/* Do a full update (polling) every pollfreq or upon data change
 	 * (i.e. setvar/instcmd) */
@@ -3077,6 +3184,7 @@ void	upsdrv_updateinfo(void)
 	}
 
 	ups_status_set();
+	buzzmode_commit();
 	status_commit();
 
 	if (retry > MAXTRIES) {

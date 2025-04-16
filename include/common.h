@@ -1,7 +1,7 @@
 /* common.h - prototypes for the common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 /* for fcntl() and its flags in MSYS2 */
 #  define __POSIX_VISIBLE 200809
 # endif
-#endif
+#endif	/* WIN32 */
 
 /* Need this on AIX when using xlc to get alloca */
 #ifdef _AIX
@@ -66,11 +66,11 @@
 
 #ifndef WIN32
 #include <syslog.h>
-#else
+#else	/* WIN32 */
 #include <winsock2.h>
 #include <windows.h>
 #include <ws2tcpip.h>
-#endif
+#endif	/* WIN32 */
 
 #include <unistd.h>	/* useconds_t */
 #ifndef HAVE_USECONDS_T
@@ -135,7 +135,7 @@ extern "C" {
 # define ERROR_FD_SOCK ERROR_FD
 # define VALID_FD_SOCK(a) VALID_FD(a)
 
-#else /* WIN32 */
+#else	/* WIN32 */
 
 /* Separate definitions of TYPE_FD, ERROR_FD, VALID_FD() macros
  * for usual file descriptors vs. types needed for serial port
@@ -171,7 +171,7 @@ typedef struct serial_handler_s {
 /* difftime returns erroneous value so we use this macro */
 # undef difftime
 # define difftime(t1,t0) (double)(t1 - t0)
-#endif /* WIN32 */
+#endif	/* WIN32 */
 
 /* Two uppercase letters are more readable than one exclamation */
 #define INVALID_FD_SER(a) (!VALID_FD_SER(a))
@@ -308,12 +308,43 @@ pid_t parsepid(const char *buf);
 /* send a signal to another running NUT process */
 #ifndef WIN32
 int sendsignal(const char *progname, int sig, int check_current_progname);
-#else
+#else	/* WIN32 */
 int sendsignal(const char *progname, const char * sig, int check_current_progname);
-#endif
+#endif	/* WIN32 */
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
+
+/*****************************************************************************
+ * String methods for space-separated token lists, used originally in dstate *
+ * NOTE: These methods are also exposed by external API (via libupsclient.h) *
+ * with the `upscli_` prefix, to ease third-party C NUT clients' parsing of  *
+ * `ups.status` et al.                                                       *
+ *****************************************************************************/
+
+/* Return non-zero if "string" contains "token" (case-sensitive),
+ * either surrounded by space character(s) or start/end of "string",
+ * or 0 if that token is not there, or if either string is NULL or empty.
+ */
+int	str_contains_token(const char *string, const char *token);
+
+/* Add "token" to end of string "tgt", if it is not yet there
+ * (prefix it with a space character if "tgt" is not empty).
+ * Return 0 if already there, 1 if token was added successfully,
+ * -1 if we needed to add it but it did not fit under the tgtsize limit,
+ * -2 if either string was NULL or "token" was empty.
+ * NOTE: If token contains space(s) inside, recurse to treat it
+ * as several tokens to add independently.
+ * Optionally calls "callback_always" (if not NULL) after checking
+ * for spaces (and maybe recursing) and before checking if the token
+ * is already there, and/or "callback_unique" (if not NULL) after
+ * checking for uniqueness and going to add a newly seen token.
+ * If such callback returns 0, abort the addition of token and return -3.
+ */
+int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+			    int (*callback_always)(char *, size_t, const char *),
+			    int (*callback_unique)(char *, size_t, const char *)
+);
 
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);
@@ -345,10 +376,10 @@ pid_t parsepidfile(const char *pidfn);
  * named driver programs does not request it)
  */
 int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname);
-#else
+#else	/* WIN32 */
 /* No progname here - communications via named pipe */
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored);
-#endif
+#endif	/* WIN32 */
 
 const char *xbasename(const char *file);
 
@@ -529,11 +560,11 @@ int match_regex_hex(const regex_t *preg, const int n);
 #ifndef WIN32
 ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
-#else
+#else	/* WIN32 */
 ssize_t select_read(serial_handler_t *fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 /* Note: currently not implemented de-facto for Win32 */
 ssize_t select_write(serial_handler_t * fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
-#endif
+#endif	/* WIN32 */
 
 char * get_libname(const char* base_libname);
 
@@ -620,7 +651,7 @@ char * getfullpath(char * relative_path);
 #define PATH_BIN "\\..\\bin"
 #define PATH_SBIN "\\..\\sbin"
 #define PATH_LIB "\\..\\lib"
-#endif /* WIN32*/
+#endif	/* WIN32*/
 
 /* Return a difference of two timevals as a floating-point number */
 double difftimeval(struct timeval x, struct timeval y);
@@ -642,7 +673,7 @@ size_t strnlen(const char *s, size_t maxlen);
 
 /* Not all platforms support the flag; this method abstracts
  * its use (or not) to simplify calls in the actual codebase */
-/* TODO: Extend for TYPE_FD and WIN32 eventually? */
+/* TODO NUT_WIN32_INCOMPLETE? : Extend for TYPE_FD and WIN32 eventually? */
 void set_close_on_exec(int fd);
 
 #ifdef __cplusplus

@@ -76,7 +76,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 			name);
 		return;
 	}
-#endif
+#endif	/* WIN32 */
 	temp->sock_fd = sstate_connect(temp);
 
 	/* preload this to the current time to avoid false staleness */
@@ -119,9 +119,9 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 
 #ifndef WIN32
 		close(temp->sock_fd);
-#else
+#else	/* WIN32 */
 		CloseHandle(temp->sock_fd);
-#endif
+#endif	/* WIN32 */
 		temp->sock_fd = ERROR_FD;
 		temp->dumpdone = 0;
 
@@ -571,9 +571,9 @@ static void delete_ups(upstype_t *target)
 			if (VALID_FD(ptr->sock_fd))
 #ifndef WIN32
 				close(ptr->sock_fd);
-#else
+#else	/* WIN32 */
 				CloseHandle(ptr->sock_fd);
-#endif
+#endif	/* WIN32 */
 
 			/* release memory */
 			sstate_infofree(ptr);

@@ -163,3 +163,10 @@ MODE=none
 # Optionally suppress reporting of sockets the driver programs listen at.
 #NUT_QUIET_INIT_LISTENER=true
 #export NUT_QUIET_INIT_LISTENER
+
+# Optionally impose a connection timeout for NUT client programs. The built-in
+# default is "0" meaning indefinitely blocking attempts, but many NUT clients
+# since NUT v2.8.3 set it to "10" by their default (can be overridden by this
+# variable, or via command line or configuration for some of them).
+#NUT_DEFAULT_CONNECT_TIMEOUT=10
+#export NUT_DEFAULT_CONNECT_TIMEOUT

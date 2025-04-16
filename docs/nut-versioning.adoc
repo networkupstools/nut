@@ -1,0 +1,393 @@
+NUT versioning
+==============
+
+Historic note
+-------------
+
+Historically, the Network UPS Tools project release and interim iterations
+code base versions were identified by three or four numeric components,
+roughly following the Semantic Versioning (SEMVER) traditions, later
+codified as a formal standard at link:https://semver.org/[semver.org]:
+
+* NUT uses the GNU autotools suite for recipe orchestration, and the version
+  string is specified in the `configure.ac` file an `AC_INIT` macro, which
+  further generates variables like `PACKAGE_VERSION`, `PACKAGE_URL` and others
+  used (substituted) in the actual code base, often via `nut_version.h` file.
+* NUT releases were identified by a `MAJOR.MINOR.PATCH` triplet, which
+  was not strictly following the standard in that while the "major" part
+  did reflect architectural/design changes, and "minor" part reflected some
+  significant development milestones or API changes, the "patch" part did
+  not correspond to post-release fixes but reflected iterative development,
+  of which releases were the better-reviewed snapshots. Such a triplet was
+  only spelled in `AC_INIT` for the commit tagged as that release.
+* Until NUT v2.6.x, the odd values of the `MINOR` component meant development
+  code trees, and even values meant the stable tree. This approach was
+  skipped (or effectively abandoned, as over a decade passed) with the
+  move to Git branches for development -- as numerous NUT v2.7.x based
+  releases were produced, and development continued into NUT v2.8.x.
+* NUT development versions were specified by the next commit after a
+  release was published, spelling an `AC_INIT` macro argument like
+  `MAJOR.MINOR.PATCH.1` to provide a fourth component -- which is
+  logically "greater than" `MAJOR.MINOR.PATCH` for comparisons, so that
+  the developed version can formally be installed over a preceding
+  release (e.g. from custom testing packages).
+
+This configuration with a single development version (`.1`) was not very
+helpful for the faster pace of iterations, especially as the Git workflow
+and pull requests were adopted as the way of iterating the NUT development.
+This did not really help identify the build being tested by CI or reported
+by a community member, nor quickly determine if one custom build is "newer"
+than another (e.g. can be a recommended upgrade from the previously installed
+snapshot to check if some bug was fixed).
+
+Some experiments were done adding the `git describe` output to version
+banners reported by programs. These provide the number of commits since
+the most-recent known git tag, as well as the git hash of the NUT sources
+involved. This made the builds better identifiable, but did not help
+compare the feature branches and the main trunk of development: any code
+committed after a release has its own count of commits since that tag,
+this one number does not really suffice.
+
+Current NUT SEMVER definition
+-----------------------------
+
+Since NUT v2.8.3, the definition which goes into `AC_INIT` and further into
+the code was extended in a manner similar to what `git describe` produces,
+but with added numbers after the common triplet of semantically versioned
+numbers: `X.Y.Z(.T(.B(-C+gHASH)))`
+
+* Standard semver (used in releases):
++
+NOTE: Historically NUT did not *diligently* follow the standard semver triplet,
+primarily because a snapshot of trunk is tested and released, and work
+moves on with the PATCH part (rarely MINOR one) incremented; no actual
+patches are released to some sustaining track of an older release lineage.
+There were large re-designs that got MAJOR up to 2, though.
+
+  - `X`: MAJOR - incompatible API changes
+  - `Y`: MINOR - major new features and/or API evolution
+  - `Z`: PATCH - bug fixes (and new features like added drivers)
+* Extended semver (for snapshots of trunk):
+  - T: (optional) Commits on trunk since previous release tag
+* Extended semver (for features branched off trunk):
+  - B: (optional) Commits on branch since nearest ancestor which is on trunk
+
+The optional suffix (only for commits which are not git tags themselves)
+is provided by `git describe`:
+
+* C: Commits on branch since previous release tag
+* H: Git hash (prefixed by `g` character) of the described commit
+
+The numeric part of NUT SEMVER definition mostly follows https://semver.org/
+except that for development iterations the base version may have up to
+five dot-separated numeric components (SEMVER triplet for base release,
+and additional data described above). Unlike standard semver provisions
+for "pre-release versions" (separated by a minus sign after the triplet),
+which are "less than" that release for comparisons, the fourth and fifth
+components (if present) are "greater than" that release and any preceding
+development iterations made after it.
+
+Helper script `tools/gitlog2version.sh` is used to determine the project
+version from packager-provided override files (or equivalents provided by
+`make dist` in a snapshot/release tarball), git metadata from the current
+workspace, or built-in fallback defaults.
+
+Occasionally there may be tagged pre-releases, which follow the standard
+semver markup, like `v2.8.0-rc3` (in git), however they would be converted
+to NUT SEMVER here (as a number of commits since previous release) by default.
+
+Using gitlog2version.sh
+-----------------------
+
+The script can be controlled by environment variables, including some sourced
+from configuration files. It identifies a number of data items, and reports
+the one specified by `NUT_VERSION_QUERY` on `stdout`.
+
+NOTE: It does not currently have a query to report "everything" in a manner
+that can be processed by `eval` in calling shell scripts (or `Makefile` rule
+implementations).
+
+.Environment variables that can be used for external configuration
+[opts="header",cols="1,3,2a"]
+|=========================================================================
+|Variable	| Description	| Example
+|`abs_top_srcdir`	| Top source directory	| `/home/abuild/nut`
+|`abs_top_builddir`	| Top build directory (defaults to `abs_top_srcdir`)
+			| `/home/abuild/.builds/linux/nut`
+|`NUT_VERSION_FORCED`	| Set `NUT_VERSION_DEFAULT` (extended NUT SEMVER,
+			  may be just a triplet) to this value and enforce
+			  `NUT_VERSION_PREFER_GIT=false`. Usually sourced
+			  from `${abs_top_srcdir}/VERSION_FORCED` (if present)
+			| `2.8.3.2379`
+|`NUT_VERSION_FORCED_SEMVER`	| Set `SEMVER` (exactly a triplet) to this value
+			  regardless of `NUT_VERSION_PREFER_GIT` setting. Usually
+			  sourced from `${abs_top_srcdir}/VERSION_FORCED_SEMVER`
+			  (if present)
+			| `2.8.3`
+|`NUT_VERSION_DEFAULT`	| Usually sourced from either
+			  `${abs_top_builddir}/VERSION_DEFAULT` (if present)
+			  or `${abs_top_srcdir}/VERSION_DEFAULT` (if present),
+			  in which case the script also defaults
+			  `NUT_VERSION_PREFER_GIT=false` (unless it is already
+			  specified as `true` or `${abs_top_srcdir}/.git` exists).
+			  If no value was provided, a hard-coded value is used
+			  (updated as part of maintainers' release rituals).
+			| `2.8.2.2379.2-2381+g1faa9945d`
+|`NUT_VERSION_PREFER_GIT`	| If not provided by caller, or sourced files,
+			  or defaulted with `NUT_VERSION_FORCED` or
+			  `NUT_VERSION_DEFAULT` as described above, as a `false`
+			  value, then becomes `true` if `${abs_top_srcdir}/.git`
+			  exists or `false` otherwise (tarball builds) | `true`
+|`NUT_WEBSITE`	| Default website URL, extended for historic sub-sites for
+			  a release	| `https://www.networkupstools.org/`
+|`NUT_VERSION_GIT_TRUNK`	| Git branch name to use for calculation of
+			  current codebase distance from main development (as known
+			  in local workspace index); by default, the newest branch named
+			  like `master` is located (any competition is same or ancestor)
+			| `origin/master`
+|`NUT_VERSION_GIT_ALL_TAGS`	| If `true`, consider usual (not "annotated")
+			  tags too	| `false`
+|`NUT_VERSION_GIT_ALWAYS_DESC`	| If `true`, tell git to return just a commit
+			  hash if no tag was matched in index.	| `false`
+|=========================================================================
+
+.Intermediate variables in Git workspace processing
+[opts="header",cols="1,3,2a"]
+|=========================================================================
+|Variable	| Description	| Example (development and release)
+|`DESC`	| Originates from `git describe`, filtered for releases (`vX.Y.Z`)
+		  and ignoring various `rc`, `alpha`, `beta` etc. tags.
+		  This yields the tag name, followed by number of commits added to
+		  current `HEAD` history since that tag, and the current commit hash.
+		  In the resulting string, the git hash is separated by a "plus"
+		  sign (as semver build metadata) rather than the "minus" returned
+		  by the tool.
+		  | `v2.8.2-2381+g1faa9945d`
+|`TAG`	| Nearest (annotated by default) tag preceding the `HEAD` in history:
+		  the part of `DESC` before the commit count and hash.	| `v2.8.2`
+|`BASE`	| The `git merge-base` of current commit and `NUT_VERSION_GIT_TRUNK`
+		  (see above). How much of the known trunk history is in current HEAD?
+		  This may be "all of it" when we are on that branch or PR made from
+		  its tip, "some of it" if looking at a historic snapshot, or "nothing"
+		  if looking at the tagged commit (it is the merge base for itself and
+		  any of its descendants)	| `e9a48c9afeb4e06c758a3f4215977445c0f64780`
+|`SUFFIX`	| Commit count since the tag and hash of the `HEAD` commit;
+			  empty e.g. when `HEAD` is the tagged commit	| `-2381+g1faa9945d`
+|`VER5`	| Full 5-component version, note we strip leading `v` from the expected
+		  `TAG` value	| `2.8.2.2379.2`
+|`DESC5`	| Full 5-component version `VER5` concatenated with `SUFFIX`
+			| `2.8.2.2379.2-2381+g1faa9945d`
+|`VER50`	| `VER5` without trailing `.0` in fifth or fourth component
+			| * dev: `2.8.2.2379.2`
+			  * trunk: `2.8.2.2379.0` => `2.8.2.2379`
+			  * release: `2.8.2.0.0` => `2.8.2`
+|`DESC50`	| `VER50` concatenated with `SUFFIX`
+			| * release: `2.8.2-2381-g1faa9945d`
+|`SEMVER`	| Exactly three leading numeric components.
+			  Either `NUT_VERSION_FORCED_SEMVER` (if provided by caller or
+			  configuration files), or derived from `VER5` (removing fourth
+			  and fifth numbers)	| `2.8.0`
+|=========================================================================
+
+.Intermediate variables in default (non-git -- tarball or forced) processing
+[opts="header",cols="1,3,2a"]
+|=========================================================================
+|Variable	| Description	| Example (development and release)
+|`NUT_VERSION_DEFAULT_DOTS`	| Processed from `NUT_VERSION_DEFAULT` (see above)
+			  to count just the dot characters
+			| * dev: `....`
+			  * trunk: `...`
+			  * release: `..`
+|`NUT_VERSION_DEFAULT5_DOTS`	| Grows from `NUT_VERSION_DEFAULT_DOTS`,
+			  used to construct `NUT_VERSION_DEFAULT5`
+			| `....`
+|`NUT_VERSION_DEFAULT5`	| Constructed from `NUT_VERSION_DEFAULT`, adding `.0`
+			  numeric components as needed, to have *at least 5* of them
+			| `2.8.2.0.0`
+|`NUT_VERSION_DEFAULT3_DOTS`	| Decreases from `NUT_VERSION_DEFAULT_DOTS`,
+			  used to construct `NUT_VERSION_DEFAULT3`	| `..`
+|`NUT_VERSION_DEFAULT3`	| Constructed from `NUT_VERSION_DEFAULT`, adding `.0`
+			  numeric components as needed or dropping extras, to have
+			  *exactly 3* of them
+			| `2.8.0`
+|`VER5` and `DESC5`	| Full 5-component version, `NUT_VERSION_DEFAULT5`
+			| `2.8.2.2379.2`
+|`VER50` and `DESC50`	| `NUT_VERSION_DEFAULT` as provided by caller or
+			  defaulted, may be with or without trailing `.0` in fifth or
+			  fourth components
+			| `2.8.2.1`
+|`BASE`	| Empty (no known common commits with no trunk)	| `""`
+|`SEMVER`	| Exactly three leading numeric components.
+			  Either `NUT_VERSION_FORCED_SEMVER` (if provided by caller or
+			  configuration files), or `NUT_VERSION_DEFAULT3` (see above)
+			| `2.8.0`
+|`TAG`	| Constructed as `v${NUT_VERSION_DEFAULT3}`	| `v2.8.0`
+|=========================================================================
+
+The majority of identified values can be reported for debugging to `stderr`,
+currently as a single line (wrapped for readability in the sample below):
+
+----
+:; ./tools/gitlog2version.sh
+SEMVER=2.8.2;
+TRUNK='master';
+BASE='e9a48c9afeb4e06c758a3f4215977445c0f64780';
+DESC='v2.8.2-2381+g1faa9945d'
+=> TAG='v2.8.2' + SUFFIX='-2381+g1faa9945d'
+=> VER5='2.8.2.2379.2'
+=> VER50='2.8.2.2379.2'
+=> DESC50='2.8.2.2379.2-2381+g1faa9945d'
+----
+
+.Values reported via `NUT_VERSION_QUERY`
+[opts="header",cols="1,3,2a"]
+|=========================================================================
+|`NUT_VERSION_QUERY`	| Description	| Example (development and release)
+|`DESC5`	| Full 5-component version (concatenated with `SUFFIX` for git)
+			| * dev: `2.8.2.2379.2-2381+g1faa9945d`
+			  * snapshot tarball: `2.8.2.2379.2`
+|`DESC50`	| 3-to-5 non-zero component version (concatenated with `SUFFIX`
+			  for git)
+			| * dev: `2.8.2.2381-2381+g1faa9945d`
+			  * snapshot tarball: `2.8.2.1`
+|`VER5`		| Full 5-component version
+			| * dev: `2.8.2.2379.2`
+			  * snapshot tarball: `2.8.2.1.0`
+|`VER50`	| 3-to-5 non-zero component version
+			| * dev: `2.8.2.2379.2`
+			  * release tarball: `2.8.0`
+|`SEMVER`	| Exactly three leading numeric components	| `2.8.2`
+|`IS_RELEASE`	| `true` if `SEMVER`==`VER50`, `false` otherwise
+			| * dev: `false`
+			  * rel: `true`
+|`TAG`	| GIT: Nearest (annotated by default) tag preceding the `HEAD` in history.
+		  DEFAULT: Constructed from `SEMVER`
+		| `v2.8.2`
+|`TRUNK`	| GIT: Branch name used for calculation of current codebase
+			  distance from main development.
+			  DEFAULT: empty.
+			| `master`
+|`SUFFIX`	| GIT: Commit count since the tag and hash of the `HEAD` commit
+			  DEFAULT: empty.
+			| * dev: `-2381+g1faa9945d`
+|`BASE`		| GIT: Newest common commit of development `TRUNK` and the `HEAD`
+			  commit (their `git merge-base`).
+			  DEFAULT: empty.
+			| `e9a48c9afeb4e06c758a3f4215977445c0f64780`
+|`URL`	| Clarify the project website URL -- particularly historically
+			  frozen snapshots made for releases
+			| * dev: `https://www.networkupstools.org/` (default development)
+			  * rel: `https://www.networkupstools.org/historic/v2.8.2/index.html`
+|`UPDATE_FILE`	| Used in `autogen.sh` and top-level `Makefile.am` to
+			  update the `VERSION_DEFAULT` file that goes into "dist"
+			  tarballs; prints its contents
+			| `NUT_VERSION_DEFAULT='2.8.2.2379.2-2381+g1faa9945d'`
+|default	| Report `DESC50`	| `v2.8.2-2381-g1faa9945d`
+|=========================================================================
+
+Variables propagated by configure.ac
+------------------------------------
+
+.Values reported via `NUT_VERSION_QUERY`
+[opts="header",cols="1,3,2a"]
+|=========================================================================
+|Variable	| Description	| Example (development and release)
+|`PACKAGE_VERSION`	| Argument to `AC_INIT` determined by
+			  `NUT_VERSION_QUERY=VER50 gitlog2version.sh`
+			| * dev: `2.8.2.695.1`
+			  * trunk: `2.8.2.695`
+			  * release: `2.8.2`
+|`PACKAGE_URL`	| Argument to `AC_INIT` determined by
+			  `NUT_VERSION_QUERY=URL gitlog2version.sh`
+			| * dev/trunk: `https://www.networkupstools.org/`
+			  * release: `https://www.networkupstools.org/historic/v2.8.2/index.html`
+|`NUT_WEBSITE_BASE`	| Derived from `PACKAGE_URL` without a trailing slash
+			  nor `index.html` (prefixed to documentation file URLs, etc.)
+			| * dev/trunk: `https://www.networkupstools.org`
+			  * release: `https://www.networkupstools.org/historic/v2.8.2`
+|`NUT_SOURCE_GITREV`
+			| Determined by `NUT_VERSION_QUERY=DESC50 gitlog2version.sh`
+			| `2.8.2.695.1-696+g0e00f0777`
+|`NUT_SOURCE_GITREV_SEMVER`
+			| Determined by `NUT_VERSION_QUERY=SEMVER gitlog2version.sh`
+			| `2.8.2`
+|`NUT_SOURCE_GITREV_NUMERIC`
+			| Determined by `NUT_SOURCE_GITREV` leaving only the numbers,
+			  e.g. for PyPI uploads (currently without the total commit count)
+			| `2.8.2.695.1'`
+|`NUT_SOURCE_GITREV_IS_RELEASE`
+			| Determined by `NUT_VERSION_QUERY=IS_RELEASE gitlog2version.sh`
+			| `true` or `false`
+|`NUT_SOURCE_GITREV_DEVREL`
+			| String determined by `NUT_SOURCE_GITREV_IS_RELEASE`
+			| `"release"` or `"development iteration"`
+|=========================================================================
+
+Variables propagated by nut_version.h
+-------------------------------------
+
+.Values encoded via `include/nut_version.h`, generated by `include/Makefile.am`
+[opts="header",cols="1,3,2a"]
+|=========================================================================
+|Variable	| Description	| Example (development and release)
+|`#define NUT_VERSION_MACRO "$NUT_VERSION"`
+		| Determined by default `gitlog2version.sh` (no `NUT_VERSION_QUERY`)
+		  at the moment of latest build, or (as fallback) `PACKAGE_VERSION`
+		  set during the last run of `configure` script
+		| `2.8.2.695.1`
+|`#define NUT_VERSION_SEMVER_MACRO "$GITREV_SEMVER"`
+		| Determined by `NUT_VERSION_QUERY=SEMVER gitlog2version.sh` at the
+		  moment of latest build, or (as fallback) `NUT_SOURCE_GITREV_SEMVER`
+		  set during the last run of `configure` script
+		| `2.8.2`
+|`#define NUT_VERSION_IS_RELEASE <0-or-1>`
+		| Determined by `NUT_VERSION_QUERY=IS_RELEASE gitlog2version.sh`
+		  (falls back to `false` if that query fails)
+		| * `1` if `$GITREV_IS_RELEASE`
+		  * `0` otherwise
+|=========================================================================
+
+Use in C code
+-------------
+
+common.c
+~~~~~~~~
+
+* The `NUT_VERSION_MACRO` is used in `common/common.c` and further made known
+  to all code base as a static string `UPS_VERSION` linked via `libcommon*.la`
+  internal libraries.
+* Method `describe_NUT_VERSION_once()` prepares the string which combines the
+  `NUT_VERSION_MACRO` with comments that it is either a `release` or a
+  `(development iteration after $NUT_VERSION_SEMVER_MACRO)`, based on
+  the value of `NUT_VERSION_IS_RELEASE`.
++
+It is used from a number of other methods, such as `print_banner_once()`,
+  `nut_report_config_flags()`, and so ends up in version reports of programs
+  via their `help()`/`usage()` methods.
+* Method `suggest_doc_links()` prepares a uniform bit of text for driver and
+  tool programs to report in their `help()`/`usage()` methods, to refer to
+  their manual page under the `NUT_WEBSITE_BASE`.
+
+Man pages
+~~~~~~~~~
+
+* Manual pages and other documentation consume the `PACKAGE_VERSION`,
+  `PACKAGE_VERSION` and `NUT_WEBSITE_BASE` as `asciidoc` attributes
+  when rendering HTML/PDF/man document formats.
+* The `NUT_WEBSITE_BASE` is also substituted instead of literal
+  `https://www.networkupstools.org/*` which follows a `home page:` prefix
+  (so that the pages rendered for a release refer to the historic website).
+
+systemd and SMF manifests
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Service manifests include references to documentation for the tools they wrap,
+including published pages under the `NUT_WEBSITE_BASE` for the development or
+historic variants of the NUT website.
+
+NUT-Monitor (Python UI) and PyNUTClient
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* The `PACKAGE_VERSION` and `NUT_WEBSITE_BASE` are reported in the About dialog.
+* Version information is propagated into PyPI packages for the `PyNUTClient`
+  module.

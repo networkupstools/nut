@@ -538,7 +538,7 @@ usb_dev_handle *nutusb_open(const char *port)
 				upsdebugx(1, "Can't set POWERWARE USB configuration: %s", nut_usb_strerror(ret));
 				errout = 1;
 			}
-#endif
+#endif	/* WIN32 */
 			if ((ret = usb_claim_interface(dev_h, 0)) < 0)
 			{
 				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", nut_usb_strerror(ret));

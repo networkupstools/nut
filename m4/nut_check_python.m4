@@ -92,7 +92,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         dnl For some use-cases, this lack of constraints may be
         dnl deliberately desired; for others it is a "caveat emptor!"
         AS_CASE(["${PYTHON}"],
-            [*2.*|*3.*], [],
+            [*2.*|*3.*|no], [],
             [AC_MSG_WARN([A python program name without a specific version number was requested (may be a symlink prone to change over time): ${PYTHON}])])
 
         AS_CASE(["${PYTHON}"],
@@ -130,7 +130,10 @@ AC_DEFUN([NUT_CHECK_PYTHON],
 
             export PYTHON
             AC_CACHE_CHECK([python site-packages location], [nut_cv_PYTHON_SITE_PACKAGES], [
-                nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"
+                dnl sysconfig introduced in python3.2
+                AS_IF([test x"`${PYTHON} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue],
+                    [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
+                    [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"])
                 AS_CASE(["$nut_cv_PYTHON_SITE_PACKAGES"],
                     [*:*], [
                         dnl Note: on Windows MSYS2 this embeds "C:/msys64/mingw..." into the string [nut#1584]
@@ -380,7 +383,10 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
 
             export PYTHON3
             AC_CACHE_CHECK([python3 site-packages location], [nut_cv_PYTHON3_SITE_PACKAGES], [
-                nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"
+                dnl sysconfig introduced in python3.2
+                AS_IF([test x"`${PYTHON3} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue],
+                    [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
+                    [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"])
                 AS_CASE(["$nut_cv_PYTHON3_SITE_PACKAGES"],
                     [*:*], [
                         dnl Note: on Windows MSYS2 this embeds "C:/msys64/mingw..." into the string [nut#1584]

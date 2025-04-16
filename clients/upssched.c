@@ -50,11 +50,11 @@
 # include <unistd.h>
 # include <fcntl.h>
 # include <poll.h>
-#else
+#else	/* WIN32 */
 # include "wincompat.h"
 # include <winsock2.h>
 # include <ws2tcpip.h>
-#endif
+#endif	/* WIN32 */
 
 #include "upssched.h"
 #include "timehead.h"
@@ -71,12 +71,12 @@ static conn_t	*connhead = NULL;
 static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
 
 /* ups name and notify type (string) as received from upsmon */
-static const	char	*upsname, *notify_type;
+static const	char	*upsname, *notify_type, *prog = NULL;
 
 #ifdef WIN32
 static OVERLAPPED connect_overlapped;
 # define BUF_LEN 512
-#endif
+#endif	/* WIN32 */
 
 #define PARENT_STARTED		-2
 #define PARENT_UNNECESSARY	-3
@@ -108,14 +108,14 @@ static void exec_cmd(const char *cmd)
 			upslogx(LOG_ERR, "Execute command failure: %s", buf);
 		}
 	}
-#else
+#else	/* WIN32 */
 	if(err != -1) {
 		upslogx(LOG_INFO, "Execute command \"%s\" OK", buf);
 	}
 	else {
 		upslogx(LOG_ERR, "Execute command failure : %s", buf);
 	}
-#endif
+#endif	/* WIN32 */
 
 	return;
 }
@@ -291,7 +291,7 @@ static void us_serialize(int op)
 			break;
 	}
 }
-#endif
+#endif	/* !WIN32 */
 
 static TYPE_FD open_sock(void)
 {
@@ -427,10 +427,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		if (VALID_FD(conn->fd)) {
 #ifndef WIN32
 			close(conn->fd);
-#else
+#else	/* WIN32 */
 			FlushFileBuffers(conn->fd);
 			CloseHandle(conn->fd);
-#endif
+#endif	/* WIN32 */
 			conn->fd = ERROR_FD;
 		}
 
@@ -450,7 +450,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 		return 0;	/* failed */
 	}
-#else
+#else	/* WIN32 */
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 
@@ -502,7 +502,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	int			salen;
 # else
 	socklen_t	salen;
-#endif
+# endif
 
 	salen = sizeof(saddr);
 	acc = accept(sockfd, (struct sockaddr *) &saddr, &salen);
@@ -739,7 +739,7 @@ static int sock_read(conn_t *conn)
 			upsdebugx(6, "Ending sock_read(): some other problem");
 			return -1;	/* error */
 		}
-#else
+#else	/* WIN32 */
 		DWORD bytesRead;
 		GetOverlappedResult(conn->fd, &conn->read_overlapped, &bytesRead,FALSE);
 		if( bytesRead < 1 ) {
@@ -873,6 +873,7 @@ static void start_daemon(TYPE_FD lockfd)
 #  endif /* not HAVE_DUP */
 # endif /* not HAVE_DUP2 */
 
+	/* Still in child, non-WIN32 - work as timer daemon (infinite loop) */
 	pipefd = open_sock();
 
 	if (nut_debug_level)
@@ -884,6 +885,13 @@ static void start_daemon(TYPE_FD lockfd)
 	/* drop the lock now that the background is running */
 	unlink(lockfn);
 	close(lockfd);
+	writepid(prog);
+
+	/* Whatever upsmon envvars were set when this daemon started, would be
+	 * irrelevant and only confusing at the moment a particular timer causes
+	 * CMDSCRIPT to run */
+	unsetenv("NOTIFYTYPE");
+	unsetenv("UPSNAME");
 
 	/* now watch for activity */
 	upsdebugx(2, "Timer daemon waiting for connections on pipefd %d",
@@ -970,10 +978,10 @@ static void start_daemon(TYPE_FD lockfd)
 	DWORD timeout_ms;
 	HANDLE rfds[32];
 
-	char module[NUT_PATH_MAX];
+	char module[NUT_PATH_MAX + 1];
 	STARTUPINFO sinfo;
 	PROCESS_INFORMATION pinfo;
-	if (!GetModuleFileName(NULL, module, NUT_PATH_MAX)) {
+	if (!GetModuleFileName(NULL, module, sizeof(module))) {
 		fatal_with_errno(EXIT_FAILURE, "Can't retrieve module name");
 	}
 	memset(&sinfo,0,sizeof(sinfo));
@@ -988,6 +996,13 @@ static void start_daemon(TYPE_FD lockfd)
 	/* drop the lock now that the background is running */
 	CloseHandle(lockfd);
 	DeleteFile(lockfn);
+	writepid(prog);
+
+	/* Whatever upsmon envvars were set when this daemon started, would be
+	 * irrelevant and only confusing at the moment a particular timer causes
+	 * CMDSCRIPT to run */
+	unsetenv("NOTIFYTYPE");
+	unsetenv("UPSNAME");
 
 	/* now watch for activity */
 
@@ -1109,9 +1124,9 @@ static TYPE_FD get_lock(const char *fn)
 {
 #ifndef WIN32
 	return open(fn, O_RDONLY | O_CREAT | O_EXCL, 0);
-#else
+#else	/* WIN32 */
 	return CreateFile(fn,GENERIC_ALL,0,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
-#endif
+#endif	/* WIN32 */
 }
 
 /* try to connect to bg process, and start one if necessary */
@@ -1148,9 +1163,9 @@ static TYPE_FD check_parent(const char *cmd, const char *arg2)
 		/* blow this away in case we crashed before */
 #ifndef WIN32
 		unlink(lockfn);
-#else
+#else	/* WIN32 */
 		DeleteFile(lockfn);
-#endif
+#endif	/* WIN32 */
 
 		/* give the other one a chance to start it, then try again */
 		usleep(250000);
@@ -1170,9 +1185,9 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 	int	ret_s;
 	struct	timeval tv;
 	fd_set	fdread;
-#else
+#else	/* WIN32 */
 	DWORD bytesWritten = 0;
-#endif
+#endif	/* WIN32 */
 	TYPE_FD pipefd;
 
 	/* insanity */
@@ -1397,9 +1412,9 @@ static int conf_arg(size_t numargs, char **arg)
 	if (!strcmp(arg[0], "PIPEFN")) {
 #ifndef WIN32
 		pipefn = xstrdup(arg[1]);
-#else
+#else	/* WIN32 */
 		pipefn = xstrdup("\\\\.\\pipe\\upssched");
-#endif
+#endif	/* WIN32 */
 		return 1;
 	}
 
@@ -1407,9 +1422,9 @@ static int conf_arg(size_t numargs, char **arg)
 	if (!strcmp(arg[0], "LOCKFN")) {
 #ifndef WIN32
 		lockfn = xstrdup(arg[1]);
-#else
+#else	/* WIN32 */
 		lockfn = filter_path(arg[1]);
-#endif
+#endif	/* WIN32 */
 		return 1;
 	}
 
@@ -1439,7 +1454,7 @@ static void upssched_err(const char *errmsg)
 
 static void checkconf(void)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 
@@ -1513,8 +1528,12 @@ static void help(const char *arg_progname)
 
 int main(int argc, char **argv)
 {
-	const char	*prog = xbasename(argv[0]);
 	int i;
+
+	if (argc > 0)
+		prog = xbasename(argv[0]);
+	if (!prog)
+		prog = "upssched";
 
 	while ((i = getopt(argc, argv, "+DVh")) != -1) {
 		switch (i) {

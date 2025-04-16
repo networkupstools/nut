@@ -480,7 +480,7 @@ int nut_usb_get_string(
 #ifdef WIN32
 		/* only for libusb0 ? */
 		errno = -ret;
-#endif
+#endif	/* WIN32 */
 		return ret;
 	}
 

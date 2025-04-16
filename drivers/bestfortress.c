@@ -35,7 +35,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.10"
+#define DRIVER_VERSION  "0.11"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -234,12 +234,12 @@ static int upssend(const char *fmt,...) {
 	for (p = buf; *p && sent < INT_MAX - 1; p++) {
 #ifndef WIN32
 		if (write(upsfd, p, 1) != 1)
-#else
+#else	/* WIN32 */
 		DWORD bytes_written;
 		BOOL res;
 		res = WriteFile(upsfd, p, 1, &bytes_written,NULL);
 		if (res == 0 || bytes_written == 0)
-#endif
+#endif	/* WIN32 */
 			return -1;
 
 		/* Note: LGTM.com analysis warns that here
@@ -401,13 +401,13 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 	if (low_batt)
-		status_set("LB ");
+		status_set("LB");
 	else if (trimming)
 		status_set("TRIM");
 	else if (boosting)
 		status_set("BOOST");
 	else
-		status_set(is_online ? (is_off ? "OFF " : "OL ") : "OB ");
+		status_set(is_online ? (is_off ? "OFF" : "OL") : "OB");
 
 	/* setinfo(INFO_STATUS, "%s%s",
 	 *	(util < lownorm) ? "BOOST ", "",

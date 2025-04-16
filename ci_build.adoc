@@ -1,0 +1,96 @@
+The ci_build.sh script
+======================
+
+This script was originally introduced (following ZeroMQ/ZProject example)
+to automate CI builds, by automating certain scenarios driven by exported
+environment variables to set particular `configure` options and `make`
+some targets (chosen by the `BUILD_TYPE` envvar). It can also be used
+locally to avoid much typing to re-run those scenarios during development.
+
+Developers can directly use the scripts involved in CI builds to fix
+existing code on their workstations or to ensure support for new
+compilers and C standard revisions, e.g. save a local file like this
+to call the common script with pre-sets:
+
+----
+$ cat _fightwarn-gcc10-gnu17.sh
+#!/bin/sh
+
+BUILD_TYPE=default-all-errors \
+CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" \
+CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" \
+CC=gcc-10 CXX=g++-10 \
+    ./ci_build.sh
+----
+
+...and then execute it to prepare a workspace, after which you can go
+fixing bugs file-by-file running a `make` after each save to confirm
+your solutions and uncover the next issue to address :-)
+
+Helpfully, the NUT CI farm build logs report the configuration used for
+each executed stage, so if some build combination fails -- you can just
+scroll to the end of that section and copy-paste the way to reproduce
+an issue locally (on an OS similar to that build case).
+
+Note that while spelling out sets of warnings can help in a quest to
+fix certain bugs during development (if only by removing noise from
+classes of warnings not relevant to the issue one is working on), there
+is a reasonable set of warnings which NUT codebase actively tries to
+be clean about (and checks in CI), detailed in the next section.
+
+For the `ci_build.sh` usage like above, one can instead pass the setting
+via `BUILD_WARNOPT=...`, and require that all emitted warnings are fatal
+for their build, e.g.:
+
+----
+$ cat _fightwarn-clang9-gnu11.sh
+#!/bin/sh
+
+BUILD_TYPE=default-all-errors \
+BUILD_WARNOPT=hard BUILD_WARNFATAL=yes \
+CFLAGS="-std=gnu11" \
+CXXFLAGS="-std=gnu++11" \
+CC=clang-9 CXX=clang++-9 CPP=clang-cpp \
+    ./ci_build.sh
+----
+
+Finally, for refactoring effort geared particularly for fighting the
+warnings which exist in current codebase, the script contains some
+presets (which would evolve along with codebase quality improvements)
+as `BUILD_TYPE=fightwarn-gcc`, `BUILD_TYPE=fightwarn-clang` or plain
+`BUILD_TYPE=fightwarn`:
+
+    :; BUILD_TYPE=fightwarn-clang ./ci_build.sh
+
+As a rule of thumb, new contributions must not emit any warnings when
+built in GNU99 mode with a `minimal` "difficulty" level of warnings.
+Technically they must survive the part of test matrix across the several
+platforms tested by NUT CI and marked in project settings as required
+to pass, to be accepted for a pull request merge.
+
+Developers aiming to post successful pull requests to improve NUT can
+pass the `--enable-warnings` option to the `configure` script in local
+builds to see how that behaves and ensure that at least in some set-up
+their contribution is viable. Note that different compiler versions and
+vendors (gcc/clang/...), building against different OS and third-party
+dependencies, with different CPU architectures and different language
+specification revisions, might all complain about different issues --
+and catching this in as diverse range of set-ups as possible is why we
+have CI tests.
+
+It can be beneficial for serial developers to set up a local BuildBot,
+Travis or a Jenkins instance with a matrix test job, to test their local
+git repository branches with whatever systems they have available.
+
+* https://github.com/networkupstools/nut/issues/823
+
+While `autoconf` tries its best to provide portable shell code, sometimes
+there are builds of system shell that just fail under stress. If you are
+seeing random failures of `./configure` script in different spots with
+the same inputs, try telling `./ci_build.sh` to loop configuring until
+success (instead of quickly failing), and/or tell `./configure` to use
+another shell at least for the system call-outs, with options like these:
+
+    :; SHELL=/bin/bash CONFIG_SHELL=/bin/bash CI_SHELL_IS_FLAKY=true \
+       ./ci_build.sh
+

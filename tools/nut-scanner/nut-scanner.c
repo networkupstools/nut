@@ -49,7 +49,7 @@
 # include <netdb.h>
 # include <sys/ioctl.h>
 # include <net/if.h>
-#else
+#else	/* WIN32 */
 # if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
 #  include <winsock2.h>
 # endif
@@ -62,7 +62,7 @@
 #  define AI_NUMERICSERV NI_NUMERICSERV
 # endif
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 

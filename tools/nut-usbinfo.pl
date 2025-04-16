@@ -293,6 +293,15 @@ sub find_usbdevs
 	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.(orig|o|la|lo|exe)$/) || ($_ eq '.libs') || ($_ eq '.deps') || ($_ eq '..');
 	return $File::Find::prune = 0 if ($_ eq '.');
 
+	if (-d $_) {
+		# FIXME: in current NUT vanilla code we do not support subdirs
+		#  with driver sources, so skip any subdirs we see for now.
+		#  Eventually we might want to chdir, recurse and return info
+		#  with prefixed dirname.
+		print stderr "find_usbdevs(): SKIP: nameFile='" . $_ . "' is a directory\n";
+		return $File::Find::prune = 1;
+	}
+
 	my $nameFile=$_;
 	my $lastComment="";
 

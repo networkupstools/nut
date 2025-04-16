@@ -1,7 +1,7 @@
 /*
  *  Copyright (C)
  *      2013 - EATON
- *      2024 - Jim Klimov <jimklimov+nut@gmail.com>
+ *      2024-2025 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ extern "C" {
  * for C++ code (here for common printing of version banner)? */
 #include "common.h"
 #if (defined WITH_NUTSCANNER)
+/* NOTE: `libnutscan` itself gets linked in at run-time, no ltdl optionality */
 # include "nut-scan.h"
 # include "nutscan-init.h"
 # include "nutscan-device.h"
@@ -46,6 +47,7 @@ extern "C" {
 #include <stdexcept>
 #include <cassert>
 #include <cstring>
+#include <cstdlib>
 
 
 class Usage {
@@ -77,6 +79,9 @@ const char * Usage::s_text[] = {
 	"    --is-configured                     Checks whether NUT is configured",
 	"    --local <directory>                 Sets configuration directory",
 	"    --system                            Sets configuration directory to " CONFPATH " (default)",
+	"                                        NOTE: If NUT_CONFPATH envvar is set,",
+	"                                        it is the default unless overridden by",
+	"                                        --system (lower prio) or --local DIR",
 	"    --get-mode                          Gets NUT mode (see below)",
 	"    --set-mode <NUT mode>               Sets NUT mode (see below)",
 	"    --set-monitor <spec>                Configures one monitor (see below)",
@@ -145,6 +150,7 @@ const char * Usage::s_text[] = {
 	"Notification types:",
 	"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT,",
 	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS, ECO, NOTECO, ALARM, NOTALARM,",
+	"    OVER, NOTOVER, TRIM, NOTTRIM, BOOST, NOTBOOST,",
 	"    OTHER, NOTOTHER, SUSPEND_STARTING, SUSPEND_FINISHED",
 	"Notification flags:",
 	"    SYSLOG, WALL, EXEC, IGNORE",
@@ -584,7 +590,8 @@ void Options::dump(std::ostream & stream) const {
 
 
 Options::Options(char * const argv[], int argc): m_last(nullptr) {
-	for (int i = 1; i < argc; ++i) {
+	int i;
+	for (i = 1; i < argc; ++i) {
 		const std::string arg(argv[i]);
 
 		// Empty string is the current option argument, too
@@ -1099,7 +1106,7 @@ class NutConfOptions: public Options {
 	/** --is-configured */
 	bool is_configured;
 
-	/** -- local argument */
+	/** --local argument */
 	std::string local;
 
 	/** --system */
@@ -3117,6 +3124,7 @@ static void scanSerialDevices(const NutConfOptions & options) {
  */
 static int mainx(int argc, char * const argv[]) {
 	const char	*prog = xbasename(argv[0]);
+	char	*s = nullptr;
 
 	// Get options
 	NutConfOptions options(argv, argc);
@@ -3146,6 +3154,10 @@ static int mainx(int argc, char * const argv[]) {
 
 	// Set configuration directory
 	std::string etc(CONFPATH);
+
+	s = ::getenv("NUT_CONFPATH");
+	if (s != nullptr && !options.system)
+		etc = s;
 
 	if (!options.local.empty()) {
 		etc = options.local;

@@ -333,3 +333,12 @@
    fun:_Znwm
    fun:main
 }
+{
+   <openindiana_malloc_printf>
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:printf
+   ...
+   fun:main
+}
