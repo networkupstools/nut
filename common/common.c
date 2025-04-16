@@ -1690,6 +1690,7 @@ void writepid(const char *name)
 	char	fn[NUT_PATH_MAX + 1];
 	FILE	*pidf;
 	mode_t	mask;
+	intmax_t	initial_uid = getuid();
 
 	/* use full path if present, else build filename in PIDPATH */
 	if (*name == '/')
@@ -1699,6 +1700,10 @@ void writepid(const char *name)
 
 	mask = umask(022);
 	pidf = fopen(fn, "w");
+	if (!pidf && initial_uid) {
+		snprintf(fn, sizeof(fn), "%s/%s.pid", altpidpath(), name);
+		pidf = fopen(fn, "w");
+	}
 
 	if (pidf) {
 		intmax_t pid = (intmax_t)getpid();
@@ -2225,8 +2230,12 @@ int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
 int sendsignal(const char *progname, int sig, int check_current_progname)
 {
 	char	fn[NUT_PATH_MAX + 1];
+	struct stat	st;
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
+	if (stat(fn, &st) != 0) {
+		snprintf(fn, sizeof(fn), "%s/%s.pid", altpidpath(), progname);
+	}
 
 	return sendsignalfn(fn, sig, progname, check_current_progname);
 }
