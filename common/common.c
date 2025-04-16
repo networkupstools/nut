@@ -2832,12 +2832,34 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #endif
 	) {
 		if (ret == -127) {
-			if (!upsnotify_reported_disabled_notech)
-				upsdebugx(upsnotify_report_verbosity,
+			if (!upsnotify_reported_disabled_notech) {
+				int	verbosity = upsnotify_report_verbosity;
+
+				if (state == NOTIFY_STATE_STOPPING && upsnotify_report_verbosity == 0) {
+					/* By default, do not spam even this if our
+					 * first-most message to be suppressed is
+					 * already about stopping (e.g. a failed
+					 * driver) unless explicitly requested to.
+					 */
+					char	*s = getenv("NUT_QUIET_INIT_UPSNOTIFY");
+
+					/* FIXME: Make an INVERTED server/conf.c::parse_boolean() reusable */
+					if (s && *s &&
+					    ( (!strcasecmp(s, "false")) || (!strcasecmp(s, "off")) || (!strcasecmp(s, "no")) || (!strcasecmp(s, "0")))
+					) {
+						upsdebugx(1, "Caller WANTS to see all these messages: NUT_QUIET_INIT_UPSNOTIFY=%s", NUT_STRARG(s));
+					} else {
+						/* Hide this one by default */
+						verbosity = 1;
+					}
+				}
+
+				upsdebugx(verbosity,
 					"%s: failed to notify about state %s: "
 					"no notification tech defined, "
 					"will not spam more about it",
 					__func__, str_upsnotify_state(state));
+			}
 			upsnotify_reported_disabled_notech = 1;
 			upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 		} else {

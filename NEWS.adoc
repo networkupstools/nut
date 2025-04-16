@@ -151,16 +151,23 @@ This requirement compromises usability of `make distcheck` on platforms without
      take advantage of these mechanisms to also produce usable dist archives
      for their relaxed or purpose-specific tests.
 
- - the `upsnotify()` common code introduced in recent NUT releases (integrating
-   with service management frameworks, etc.) was a bit cryptic when it reported
-   a *failure to notify* (e.g. when not running as a service currently), fixed
-   now to report human-friendly text instead of internal enum codes. Follow-up
-   to [issue #1590, PR #1777, PR #2136]
-
- - drivers should no longer print warning messages about not-initializing the
-   notification subsystem because not running as a service when they are either
-   started explicitly to show the help message, or when their CLI arguments
-   are fatally wrong (no UPS name, no `port`, invalid trailing keywords...)
+ - Revised behaviors for the `upsnotify()` common code introduced in recent NUT
+   releases (integrating with service management frameworks, etc.):
+   * it was a bit cryptic when it reported a *failure to notify* (e.g. when a
+     NUT program was not running as a service currently), fixed now to report
+     human-friendly text instead of internal enum codes. Follow-up to [issue
+     #1590, PR #1777, PR #2136]
+   * drivers should no longer print warning messages about not-initializing
+     the notification subsystem because not running as a service when they
+     are either started explicitly to show the help message, or when their
+     CLI arguments are fatally wrong (no UPS name, no `port`, invalid trailing
+     keywords...)
+   * NUT programs generally should default to not "spam" about lack of known
+     notification technology if our first message to be suppressed is already
+     about stopping that program.  This might help nag distros into getting
+     a service framework, or integrating theirs with NUT, but is generally
+     annoying to end-users where there's little they can do about it (other
+     than suppressing the message with `NUT_QUIET_INIT_UPSNOTIFY` envvar).
 
  - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
