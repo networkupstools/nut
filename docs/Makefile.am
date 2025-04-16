@@ -758,6 +758,8 @@ GENERATE_PDF = ( \
 )
 
 *.pdf: docinfo.xml
+# Technically only needed for PDF generation, but some other recipes still complained
+qa-guide.adoc-prepped \
 qa-guide.pdf: docinfo-since-v2.8.3.xml qa-guide-docinfo.xml
 .txt-prepped.pdf:
 	@$(GENERATE_PDF)
