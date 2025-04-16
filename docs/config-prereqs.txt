@@ -210,7 +210,8 @@ metadata about recently published package revisions:
 :; apt-get install \
     aspell aspell-en
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; apt-get install \
     asciidoc source-highlight python3-pygments dblatex
 
@@ -317,7 +318,8 @@ file (as the aged distributions become less served by mirrors), such as:
 +
 ------
 # e.g. for CentOS7 currently:
-:; yum install https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm
+:; yum install \
+   https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm
 
 # And edit /etc/yum.repos.d/epel.repo to uncomment and set the baseurl=...
 # lines, and comment away the mirrorlist= lines (if yum hiccups otherwise)
@@ -336,7 +338,8 @@ detailing how to replace `/etc/yum.repos.d/` contents (you can wholesale rename
 the existing directory and populate a new one with `curl` downloads from the
 article), and additional key trust for EPEL packages:
 ------
-:; yum install https://dl.fedoraproject.org/pub/archive/epel/6/x86_64/epel-release-6-8.noarch.rpm
+:; yum install \
+   https://dl.fedoraproject.org/pub/archive/epel/6/x86_64/epel-release-6-8.noarch.rpm
 ------
 
 Set up CentOS packages for NUT
@@ -413,7 +416,8 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 :; yum install \
     aspell aspell-en
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; yum install \
     asciidoc source-highlight python-pygments dblatex
 
@@ -441,8 +445,10 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
     neon-devel
 #?# is python-augeas needed? exists at least...
 #?# no (lib)i2c-devel ...
-#?# no (lib)ipmimonitoring-devel ... would "freeipmi-ipmidetectd" cut it at least for run-time?
-#?# no (lib)gpio(d)-devel - starts with CentOS 8 (or extra repositories for later minor releases of CentOS 7)
+#?# no (lib)ipmimonitoring-devel ... would "freeipmi-ipmidetectd"
+#?#     cut it at least for run-time?
+#?# no (lib)gpio(d)-devel - starts with CentOS 8 (or extra repositories
+#?#     for later minor releases of CentOS 7)
 
 # Some NUT code related to lua may be currently limited to lua-5.1
 # or possibly 5.2; the former is default in CentOS 7 releases...
@@ -642,7 +648,14 @@ For procedures below, this is automated via `root` profile to become a
 `slackpkg-install` command:
 ----
 :; grep "slackpkg-install" ~/.profile || {
-    echo 'slackpkg-install() { for P in "$@" ; do echo "=== $P:"; slackpkg info "$P" || slackpkg install "$P" || break ; done; }' >> ~/.profile
+    cat >> ~/.profile << 'EOF'
+slackpkg-install() {
+    for P in "$@" ; do
+        echo "=== $P:"
+        slackpkg info "$P" || slackpkg install "$P" || break
+    done
+}
+EOF
    }
 :; . ~/.profile
 ----
@@ -737,7 +750,8 @@ like this:
 :; wget -m -l1 http://www.slackware.com/~alien/slackbuilds/asciidoc/pkg/ && \
     find . -name '*.t?z'
 
-:; installpkg ./www.slackware.com/~alien/slackbuilds/asciidoc/pkg/asciidoc-8.1.0-noarch-2.tgz
+:; (cd ./www.slackware.com/~alien/slackbuilds/asciidoc/pkg/ && \
+    installpkgasciidoc-8.1.0-noarch-2.tgz )
 ----
 
 Note that some packages are further separated by Slackware version, e.g. with
@@ -819,7 +833,8 @@ below.
 :; pkg install \
     aspell en-aspell
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; pkg install \
     asciidoc source-highlight textproc/py-pygments dblatex
 
@@ -963,7 +978,8 @@ default site.
 :; pkg_add \
     aspell
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; pkg_add \
     asciidoc source-highlight py-pygments dblatex \
     docbook2x docbook-to-man
@@ -985,7 +1001,8 @@ default site.
 # to only deliver a numbered SO library name), e.g.:
 :; pkg_add neon && \
    if ! test -s /usr/local/lib/libneon.so ; then
-    ln -s "`cd /usr/local/lib && ls -1 libneon.so.* | sort -n | tail -1`" /usr/local/lib/libneon.so
+    ln -s "`cd /usr/local/lib && ls -1 libneon.so.* | sort -n | tail -1`" \
+        /usr/local/lib/libneon.so
    fi
 
 # Select a LUA-5.1 (or possibly 5.2?) version
@@ -1009,11 +1026,15 @@ Recommended:
         done ; \
    )
 
-:; ( cd /usr/bin && for T in gcc g++ cpp ; do ln -s "$T" "$T-4.2.1" ; done )
-:; ( cd /usr/lib/ccache && for T in gcc g++ cpp ; do ln -s "$T" "$T-4.2.1" ; done )
+:; ( cd /usr/bin && for T in gcc g++ cpp ; \
+    do ln -s "$T" "$T-4.2.1" ; done )
+:; ( cd /usr/lib/ccache && for T in gcc g++ cpp ; \
+    do ln -s "$T" "$T-4.2.1" ; done )
 
-:; ( cd /usr/bin && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-7.0.1" ; done )
-:; ( cd /usr/lib/ccache && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-7.0.1" ; done )
+:; ( cd /usr/bin && for T in clang clang++ clang-cpp ; \
+    do ln -s "$T" "$T-7.0.1" ; done )
+:; ( cd /usr/lib/ccache && for T in clang clang++ clang-cpp ; \
+    do ln -s "$T" "$T-7.0.1" ; done )
 ------
 
 For compatibility with common setups on other operating systems, can add
@@ -1058,7 +1079,8 @@ Note that `PATH` for builds on NetBSD should include `local` and
 `pkg`; the default after installation of the test system was:
 
 ------
-:; PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/X11R7/bin:/usr/local/sbin:/usr/local/bin"
+:; PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin"
+:; PATH="$PATH:/usr/X11R7/bin:/usr/local/sbin:/usr/local/bin"
 :; export PATH
 ------
 
@@ -1088,7 +1110,8 @@ this document describes, but if an e.g. older release lacks it, it can be added
 using the older tooling:
 
 ----
-:; PKG_PATH="http://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r|cut -f '1 2' -d.)/All/"
+:; CDN="http://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD"
+:; PKG_PATH="${CDN}/$(uname -p)/$(uname -r|cut -f '1 2' -d.)/All/"
 :; export PKG_PATH
 :; pkg_add pkgin
 ----
@@ -1277,10 +1300,12 @@ Typical tooling would include:
 :; pkg install \
     aspell text/aspell/en
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; pkg install \
     asciidoc libxslt \
-    docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common pygments-39 \
+    docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common \
+    pygments-39 \
     image/graphviz expect graphviz-tcl
 
 # For CGI graph generation - massive packages (X11):
@@ -1290,7 +1315,8 @@ Typical tooling would include:
 :; pkg install \
     openssl library/mozilla-nss \
     library/augeas python/augeas \
-    libusb-1 libusbugen system/library/usb/libusb system/header/header-usb driver/usb/ugen \
+    libusb-1 libusbugen system/library/usb/libusb \
+    system/header/header-usb driver/usb/ugen \
     libmodbus \
     library/neon \
     system/management/snmp/net-snmp \
@@ -1414,10 +1440,11 @@ site for setup details.
 :; pkg install sudo bash application/mc wget rsync pigz pbzip2 p7zip top
 
 # NOTE: not all compiler versions may be served by all releases (e.g. OmniOS
-# did not deliver clang in Core nor Extra repos for quite a while), some are
-# obsoleted over time. While OmniOS LTS 151046 offers a range of clang 13 to
-# 17, current stable (151052) includes also 18 and 19. Unlike OpenIndiana,
-# OmniOS does not provide implicit (not-numbered) packages for clang or gcc.
+# did not deliver clang in Core nor Extra repositories for quite a while),
+# and some are obsoleted over time. While OmniOS 151036 lacked any clang,
+# LTS 151046 offered a range of clang 13 to 17, and current stable (151052)
+# includes also 18 and 19. Unlike OpenIndiana, OmniOS does not provide
+# implicit default (not-numbered) packages for neither clang nor gcc.
 # Check your distro repository offers with:
 :; pkg info -r '*clang*' '*gcc*'
 :; pkg search -r '*bin/g++*'
@@ -1598,12 +1625,14 @@ Overall, the successful test build using the NUT standard CI helper script
 `ci_build.sh` had the following shell session settings:
 
 ----
-### Common pre-sets from .profile or .bashrc:
+### Common pre-sets from .profile or .bashrc (long lines wrapped for readability):
 ### bash-2.03$ echo $PATH
-### /usr/bin:/usr/dt/bin:/usr/openwin/bin:/bin:/usr/ucb:/usr/tgcware/bin:/usr/tgcware/gnu:/usr/tgcware/gcc42/bin:/usr/tgcware/i386-pc-solaris2.8/bin
+###   /usr/bin:/usr/dt/bin:/usr/openwin/bin:/bin:/usr/ucb:/usr/tgcware/bin:\
+###   /usr/tgcware/gnu:/usr/tgcware/gcc42/bin:/usr/tgcware/i386-pc-solaris2.8/bin
 
 ### bash-2.03$ echo $LD_LIBRARY_PATH
-### /usr/lib:/usr/tgcware/lib:/usr/tgcware/gcc42/lib:/usr/tgcware/i386-pc-solaris2.8/lib
+###   /usr/lib:/usr/tgcware/lib:/usr/tgcware/gcc42/lib:\
+###   /usr/tgcware/i386-pc-solaris2.8/lib
 
 ### Further tuning for the build itself:
 :; git clean -fffdddxxx
@@ -1852,7 +1881,8 @@ export PATH
 
 # Alternately there is libusb-compat (libusb-1.0 codebase exposing the older
 # libusb-0.1 API) which SHOULD NOT be installed along with the real libusb-0.1:
-# :; pacman -S --needed mingw-w64-x86_64-libusb-compat-git mingw-w64-clang-x86_64-libusb-compat-git
+# :; pacman -S --needed mingw-w64-x86_64-libusb-compat-git \
+#        mingw-w64-clang-x86_64-libusb-compat-git
 
 # This also pulls *-devel of several other projects:
 :; pacman -S --needed \
@@ -1877,7 +1907,8 @@ and lack a set for `clang` tools; easy-peasy fix with:
 
 ----
 :; cd /mingw64/lib/ccache/bin
-:; for T in clang clang++ clang-cpp ; do sed "s/gcc/$T/" < gcc > "$T" ; chmod +x "$T" ; done
+:; for T in clang clang++ clang-cpp ; do \
+    sed "s/gcc/$T/" < gcc > "$T" ; chmod +x "$T" ; done
 ----
 
 Note that default `ccache` seems quirky on Windows MSYS2, possibly due to

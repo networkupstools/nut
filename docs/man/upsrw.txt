@@ -64,9 +64,10 @@ like -u, and you will be prompted for it if necessary.
 
 *-w*::
 Wait for the completion of setting execution by the driver and return its
-actual result from the device. Note that this feature requires that both upsd
-and the driver support TRACKING (NUT version 2.8.0 or higher) or it will
-otherwise fail.
+actual result from the device. Note that this feature requires that both
+linkman:upsd[8] and the driver support TRACKING (NUT version 2.8.0 or higher),
+or it will otherwise fail.
++
 The command will also block until an actual result is provided from the driver,
 or the timeout is reached (see *-t*).
 
@@ -113,6 +114,12 @@ DIAGNOSTICS
 username and password.  If you get "access denied" errors, make sure
 that your linkman:upsd.users[5] has an entry for you, and that the
 username you are using has permissions to SET variables.
+
+*upsrw* without '-w' would somewhat confusingly show "OK" meaning just that
+the data server connection was established, and the server did not immediately
+reject the request due to e.g. unknown driver variable name. If you care
+to know the actual results, do use the `-w (-t NUM)` option(s) to wait for
+them.
 
 VALUE FORMAT
 ------------

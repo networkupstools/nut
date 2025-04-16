@@ -60,6 +60,11 @@ https://github.com/networkupstools/nut/milestone/11
      introduced in NUT v2.8.2 for the socket protocol (between driver and
      data server), by returning "ERR INVALID-ARGUMENT", so there is no change
      for the network protocol definition. [#2182]
+   * The `configure --enable-inplace-runtime` option added in NUT v2.8.1 should
+     now also try to detect and set default values for the `--with-drvpath`,
+     `--with-cgipath`, `--datadir` and `--libdir` options to more closely match
+     a packaged setup and avoid confusion with e.g. two incompatible NUT client
+     libraries in system default search path. [#2895]
 
  - Large parts of the NUT User Manual and NUT Developer Guide were relocated
    into the new NUT Quality Assurance and Build Automation Guide (maintained
