@@ -245,6 +245,25 @@ modbus_set_byte_timeout(ctx, to_sec, to_usec);])
 		 LIBMODBUS_LIBS="${depLIBS}"
 		 AS_IF([test x"${nut_have_libmodbus_usb}" = x"yes"],
 			[AC_DEFINE([NUT_MODBUS_HAS_USB], 1, [Define to use libmodbus USB backend])])
+
+		 dnl The hack below relies on definition of AC LINK IFELSE macro and (GNUish) LDD!
+		 dnl FIXME: This may be platform-dependent; check e.g. mingw/WIN32 builds via ${top_srcdir}/scripts/Windows/dllldd.sh?
+		 dnl Information ismostly useful for troubleshooting though
+		 dnl (cosmetic/messages), so no big fuss if we do not learn it
+		 LIBMODBUS_LINKTYPE="unknown"
+		 AS_IF([test -n "${LDD}" && test -x "${LDD}"], [
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([
+#include <modbus.h>
+], [modbus_t *ctx = modbus_new_rtu(NULL, 0, 0, 0, 0);
+if (ctx) modbus_free(ctx);])], [AS_IF([test -x "conftest$ac_exeext"], [
+					AS_IF([test -n "`${LDD} "conftest$ac_exeext" | grep "libmodbus"`" 2>/dev/null],
+						[LIBMODBUS_LINKTYPE="dynamic"], [LIBMODBUS_LINKTYPE="static"])
+				])])
+			dnl If not GNU LDD, try other tools?
+		 ])
+		 AC_MSG_CHECKING([if libmodbus linking is dynamic or static])
+		 AC_MSG_RESULT([${LIBMODBUS_LINKTYPE}])
+		 AC_DEFINE_UNQUOTED([NUT_MODBUS_LINKTYPE_STR], ["${LIBMODBUS_LINKTYPE}"], [Define to let the libmodbus linking type be known for troubleshooting])
 	])
 
 	unset depCFLAGS
