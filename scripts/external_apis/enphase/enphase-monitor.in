@@ -5,7 +5,7 @@
 #
 # Copyright (C) 2025 Scott Shambarger
 #
-# Enphase Monitor for NUT dummy-ups v0.9.2
+# Enphase Monitor for NUT dummy-ups v0.9.3
 # Author: Scott Shambarger <devel@shambarger.net>
 #
 # Enphase Monitor is designed to work with Network UPS Tools
@@ -44,7 +44,7 @@
 #   LOADKWH=768 # max load/1kWh capacity, used for ups.load calculation
 #                 0 disables calc (default based on IQ 5P rate 3.84kVA/5kWh)
 #   LOGIN_TIMEOUT=10 # timeout (secs) for login/token gen, min 5
-#   API_TIMEOUT=5 # timeout (secs) for local ENVOY_HOST api access, min 2
+#   API_TIMEOUT=10 # timeout (secs) for local ENVOY_HOST api access, min 2
 #
 # Add section to /etc/ups/ups.conf for your <ups> name (replace <XXX>)
 #
@@ -221,9 +221,12 @@ verbose() {
 die() { warn "enphase-monitor $UPS: $*"; exit 1; }
 
 int100() { # <int> = <float, either radix> * 100
+  local _i _s=''
   LC_NUMERIC=C printf -v _i "%.2f" "${2/,/.}"
   _i=${_i/./}
-  printf -v "$1" "%s" "${_i#0}"
+  [[ ${_i:0:1} == - ]] && { _s=-; _i=${_i#-}; }
+  _i=${_i#0}
+  printf -v "$1" "%s" "${_s}${_i#0}"
 }
 
 fmtfloat() { # <precision> <dest> <float, either radix>
@@ -356,7 +359,7 @@ envoy_get() { # <token> <path>
   [[ $1 ]] || die "envoy_get() requires a token"
   local token=$1 url=$2
   [[ $url ]] || die "envoy_get() requires a URL"
-  curl_get -m "$API_TIMEOUT" -H "Authorization: Bearer $token" \
+  curl_get --retry 1 -m "$API_TIMEOUT" -H "Authorization: Bearer $token" \
            -H 'Accept: application/json' "https://$ENVOY_HOST/${url#/}"
 }
 
@@ -962,7 +965,7 @@ main() {
   local USERNAME PASSWORD SERIAL PORT_FILE TOKEN_FILE DISABLE_METERS
   local ENVOY_HOST="envoy.local" STATE_DIR="$NUT_LOCALSTATE"
   local -i POLLFREQ=60 POLLFREQALERT=20 LOADKWH=768
-  local -i LOGIN_TIMEOUT=10 API_TIMEOUT=5
+  local -i LOGIN_TIMEOUT=10 API_TIMEOUT=10
 
   check_requires
 

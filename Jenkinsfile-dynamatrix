@@ -100,7 +100,7 @@ import org.nut.dynamatrix.*;
     // quietly for things that succeed, and summarizes errors in the end
     dynacfgPipeline['spellcheck_prepconf'] = false
     dynacfgPipeline['spellcheck_configure'] = false
-    dynacfgPipeline['spellcheck'] = '(BUILD_TYPE=default-spellcheck ./ci_build.sh)'
+    dynacfgPipeline['spellcheck'] = '(BUILD_TYPE=default-spellcheck-quick ./ci_build.sh)'
 
 /*
     // For older builds, with only autotools in the tree:

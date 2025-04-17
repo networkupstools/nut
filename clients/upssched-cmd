@@ -14,9 +14,13 @@
 
 # Feel free to remove or comment away these lines when you actually
 # customize the script for your deployment:
-echo "THIS IS A SAMPLE SCRIPT, PLEASE TAILOR IT FOR YOUR DEPLOYMENT OF NUT!" >&2
+echo "`date -u`: $0: THIS IS A SAMPLE SCRIPT, PLEASE TAILOR IT FOR YOUR DEPLOYMENT OF NUT!" >&2
 logger -t upssched-cmd "THIS IS A SAMPLE SCRIPT, PLEASE TAILOR IT FOR YOUR DEPLOYMENT OF NUT!"
-printf "NOTIFYTYPE='%s' args=%s\n" "$NOTIFYTYPE" "$@" | logger -t upssched-cmd-received-NOTIFYTYPE
+
+printf "`date -u`: UPSNAME='%s'\tNOTIFYTYPE='%s'\targs=%s\n" "$UPSNAME" "$NOTIFYTYPE" "$@" >&2
+printf "UPSNAME='%s' NOTIFYTYPE='%s' args=%s\n" "$UPSNAME" "$NOTIFYTYPE" "$@" | logger -t upssched-cmd-received-NOTIFYTYPE
+
+#set
 
 # Handle received timer names, as defined in your upssched.conf (example):
 case "$1" in

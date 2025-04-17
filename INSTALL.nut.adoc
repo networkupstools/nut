@@ -206,7 +206,7 @@ To build NUT from a Git checkout you may need some additional tools
 (referenced just a bit below) and run `./autogen.sh` to generate the
 needed files. For common developer iterations, porting to new platforms,
 or in-place testing, running the `./ci_build.sh` script can be helpful.
-The "<<Installing_inplace,Building NUT for in‐place upgrades or non‐disruptive
+The "<<Installing_inplace,Building NUT for in-place upgrades or non-disruptive
 tests>>" section details some more hints about such workflow, including some
 `systemd` integration.
 
@@ -271,8 +271,8 @@ do this, you will have problems later on when you try to start upsd.
 Build and install
 ~~~~~~~~~~~~~~~~~
 
-NOTE: See also <<Installing_inplace,Building NUT for in‐place upgrades
-or non‐disruptive tests>>.
+NOTE: See also <<Installing_inplace,Building NUT for in-place upgrades
+or non-disruptive tests>>.
 
 [[Configuration]]
 Configuration
@@ -429,7 +429,7 @@ You are now ready to configure NUT, and start testing and using it.
 You can jump directly to the <<Configuration_notes,NUT configuration>>.
 
 [[Installing_inplace]]
-Building NUT for in‐place upgrades or non‐disruptive tests
+Building NUT for in-place upgrades or non-disruptive tests
 ----------------------------------------------------------
 
 NOTE: The NUT GitHub Wiki article at
@@ -568,6 +568,19 @@ binaries that the package would put into an obscure location like
 `/lib/nut`. It would however install init-scripts or systemd units that
 would refer to new locations specified by the current build, so such old
 binaries would just consume disk space but not run.
+
+It is recommended to first try installing into a prototyping area, so you
+can review which files get delivered and perhaps which locations you may
+have to tune for a more tightly tailored replacement of an older (packaged)
+installation, in case whole swathes of files that you expect to be present
+in the current system (libraries, drivers, docs) are not getting installed
+by the new build into same path names:
+
+----
+:; rm -rf /tmp/nut ; make DESTDIR=/tmp/nut install -j 8
+:; (cd /tmp/nut && find . | sort) | while read N ; \
+   do [ -e "/$N" ] || echo "=== MISSING: /$N" >&2 ; done
+----
 
 Replacing any NUT deployment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

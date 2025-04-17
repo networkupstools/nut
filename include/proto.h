@@ -94,6 +94,13 @@ static inline int setenv(const char *name, const char *value, int overwrite) {
 }
 #endif
 
+#ifndef HAVE_UNSETENV
+int nut_unsetenv(const char *name);
+static inline int unsetenv(const char *name) {
+	return nut_unsetenv(name);
+}
+#endif
+
 #ifdef __hpux
 #ifdef HAVE_SYS_MODEM_H
 #include <sys/modem.h>

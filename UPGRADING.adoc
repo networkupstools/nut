@@ -88,6 +88,10 @@ Changes from 2.8.2 to 2.8.3
     positive values should time-limit the connection attempts), and
     `upscli_get_default_connect_timeout()` to retrieve its copy. [#2847]
 
+- API versions of `libupsclient` and `libnutscan` export more symbols now,
+  and so were bumped to new "current" numbers; this may impact the naming
+  of shared object files to be delivered by updated packaging. [#2895]
+
 - Standard NUT clients including `upsc`, `upscmd`, `upsrw`, `upslog`, `upsmon`,
   `upsimage`, `upsset` and `upsstats`) were updated to default with a 10-second
   connection establishment timeout in case of name resolution lags or
