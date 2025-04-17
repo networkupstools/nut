@@ -543,7 +543,7 @@ else !HAVE_VALGRIND
 memcheck distcheck-valgrind:
 	@echo "Starting $@" >&2
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
-	@echo "SKIPPED $@ : valgrind was not detected on this system by configure script" >&2
+	@echo "  SKIP	$@ : valgrind was not detected on this system by configure script" >&2
 endif !HAVE_VALGRIND
 
 # workaround the dist generated files that are also part of the distribution
@@ -1370,10 +1370,10 @@ install-win-bundle-thirdparty:
 
 else !HAVE_WINDOWS
 install-win-bundle:
-	@echo "SKIP: '$@' not enabled for current build configuration"
+	@echo "  SKIP	'$@' : not enabled for current build configuration"
 
 install-win-bundle-thirdparty:
-	@echo "SKIP: '$@' not enabled for current build configuration"
+	@echo "  SKIP	'$@' : not enabled for current build configuration"
 endif !HAVE_WINDOWS
 
 print-MAINTAINERCLEANFILES print-REALCLEANFILES:
