@@ -99,7 +99,7 @@ package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SV
 
 # TODO: Define support for IPS packaging (provide p5m files and make rules)
 package-solaris-ips:
-	@echo "SKIPPED : Target $@ is not implemented yet"
+	@echo "  SKIP	$@ : Target is not implemented yet"
 
 check-local: $(SOLARIS_CHECK_TARGETS)
 

@@ -341,7 +341,7 @@ ChangeLog.html-contentchecked:
 	    fi; \
 	 fi; \
 	 if [ x"$$FAILED" = x ] ; then \
-	    echo "SKIPPED $@ because input files were not available" >&2 ; \
+	    echo "  SKIP	$@ : because input files were not available" >&2 ; \
 	    exit 0 ; \
 	 fi ; \
 	 exit 1
@@ -848,8 +848,8 @@ SPELLCHECK_RECIPE_DEBUG_STREAM = /dev/null
 # and the dictionary was NOT in fact modified, restore the timestamp.
 $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@ from `pwd`)" >&2 ; exit 0; fi; \
-	 case "$@" in *-spellchecked) ;; *) echo "SKIP: Bogus spellcheck call for non '*-spellchecked' target filename (with make target $@ from `pwd`)" >&2 ; exit 0;; esac; \
+	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "  SKIP	Bogus spellcheck call for empty target filename (with make target $@ from `pwd`)" >&2 ; exit 0; fi; \
+	 case "$@" in *-spellchecked) ;; *) echo "  SKIP	Bogus spellcheck call for non '*-spellchecked' target filename (with make target $@ from `pwd`)" >&2 ; exit 0;; esac; \
 	 rm -f "$@" || true ; \
 	 $(MKDIR_P) "$(@D)" || exit ; \
 	 REPORT_SRCDIR="$(SPELLCHECK_SRCDIR)"; \
