@@ -302,12 +302,12 @@ dmfgen-sanity: $(srcdir)/dmfify-mib.sh
 	    echo "Sanity-checked the low-level ability to generate DMF files - OK" >&2; \
 	    test -f "$(DMFGEN_SANITY_VALIDATED)" || touch $(DMFGEN_SANITY_VALIDATED); \
 	 else \
-	    echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
+	    echo "  SKIP	$@ : NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
 	    rm -f $(DMFGEN_SANITY_VALIDATED); \
 	 fi
 else !WITH_REGENERATE_DMF_SNMP
   DMFGEN_CMD = ( \
-	echo "SKIP: Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
+	echo "  SKIP	Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
 	rm -f $(DMFGEN_SANITY_VALIDATED); \
 	if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@" -a ! -s "$(abs_top_builddir)/$@" -a ! -s "$(abs_top_srcdir)/$@"; then \
 		echo "ERROR: Distributed file $@ is missing" >&2; exit 2; \
@@ -419,7 +419,7 @@ $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(
 	test -s "$@"
 else !WITH_REGENERATE_DMF_NUTSCAN
 $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
-	@echo "SKIP: Generation of $@ not enabled by the configure script (--with-dmfnutscan-regenerate option)"
+	@echo "  SKIP	Generation of $@ not enabled by the configure script (--with-dmfnutscan-regenerate option)"
 	@if test ! -s "$@" -a ! -s "$(abs_srcdir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; true
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
@@ -477,7 +477,7 @@ if WITH_VALIDATE_DMF_SNMP
 else !WITH_VALIDATE_DMF_SNMP
   DMFLINT_CMD = ( \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
-	echo "SKIP: Validation of $@ not enabled by the configure script ($$DMFLINT_OPTION option)" ; \
+	echo "  SKIP	Validation of $@ not enabled by the configure script ($$DMFLINT_OPTION option)" ; \
 	echo "VALIDATION-SKIPPED" > "$@" ; \
 	)
 endif !WITH_VALIDATE_DMF_SNMP
@@ -711,7 +711,7 @@ $(abs_builddir)/testdata-fun/.validated: $(abs_builddir)/testdata-fun/.uptodate
 else !WITH_VALIDATE_DMF_SNMP
 $(abs_builddir)/testdata-lua/.validated $(abs_builddir)/testdata-fun/.validated:
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
-	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
+	@echo "  SKIP	Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
 	@echo "VALIDATION-SKIPPED" > "$@"
 endif !WITH_VALIDATE_DMF_SNMP
 CLEANFILES += $(abs_builddir)/testdata-lua/.validated testdata-lua/.validated
