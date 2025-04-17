@@ -106,7 +106,7 @@ check-local: $(SOLARIS_CHECK_TARGETS)
 check-local-solaris-smf: $(SOLARIS_SMF_MANIFESTS)
 	@[ -x /usr/sbin/svccfg ] || { echo "WARNING : Target $@ skipped due to absent /usr/sbin/svccfg" >&2; return 0; } ; \
 	 RES=0 ; for F in $? ; do \
-	    echo "  SVCCFG-VALIDATE  $$F"; \
+	    echo "  SVCCFG-VALIDATE	$$F"; \
 	    /usr/sbin/svccfg validate "$$F" || RES=$$? ; \
 	 done; exit $$RES
 

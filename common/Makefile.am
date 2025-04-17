@@ -51,7 +51,7 @@ else !BUILDING_IN_TREE
 	@if [ x"$(abs_top_srcdir)" = x"$(abs_top_builddir)" ] || test -s "$@" ; then \
 		exit 0 ; \
 	 else \
-		echo "  LN         $(top_srcdir)/common/common.c => $@ (relative to `pwd`)" ; \
+		echo "  LN	$(top_srcdir)/common/common.c => $@ (relative to `pwd`)" ; \
 		ln -s -f "$(top_srcdir)/common/common.c" "$@" ; \
 	 fi
 endif !BUILDING_IN_TREE
