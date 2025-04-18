@@ -625,6 +625,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	UPSMON_DIRECTIVEX("POLLFAIL_LOG_THROTTLE_MAX", int, config.pollFailLogThrottleMax,  false);
 	UPSMON_DIRECTIVEX("OFFDURATION",    int,          config.offDuration,    false);
 	UPSMON_DIRECTIVEX("OBLBDURATION",   int,          config.oblbDuration,   false);
+	UPSMON_DIRECTIVEX("OVERDURATION",   int,          config.overDuration,   false);
 	UPSMON_DIRECTIVEX("SHUTDOWNEXIT",   nut::BoolInt, config.shutdownExit,   false);
 
 	UPSMON_DIRECTIVEX("CERTPATH",       std::string,  config.certPath,       true);
