@@ -75,6 +75,7 @@ let upsmon_num_bool_re = "SHUTDOWNEXIT"
 
 let upsmon_bool_re = "CERTVERIFY"
                   | "FORCESSL"
+                  | "ALARMCRITICAL"
 
 let upsmon_num    = [ del_spc . key upsmon_num_re . sep_spc . store num . eol ]
 
