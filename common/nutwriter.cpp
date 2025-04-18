@@ -627,6 +627,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	UPSMON_DIRECTIVEX("OBLBDURATION",   int,          config.oblbDuration,   false);
 	UPSMON_DIRECTIVEX("OVERDURATION",   int,          config.overDuration,   false);
 	UPSMON_DIRECTIVEX("SHUTDOWNEXIT",   nut::BoolInt, config.shutdownExit,   false);
+	UPSMON_DIRECTIVEX("ALARMCRITICAL",  nut::BoolInt, config.alarmCritical,  false);
 
 	UPSMON_DIRECTIVEX("CERTPATH",       std::string,  config.certPath,       true);
 
