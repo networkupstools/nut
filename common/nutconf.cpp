@@ -1595,6 +1595,15 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				_config->forceSsl = bi;
 			}
 		}
+		else if(directiveName == "ALARMCRITICAL")
+		{
+			if(values.size()>0)
+			{
+				nut::BoolInt bi;
+				bi << values.front();
+				_config->alarmCritical = bi;
+			}
+		}
 		else if(directiveName == "HOSTSYNC")
 		{
 			if(values.size()>0)

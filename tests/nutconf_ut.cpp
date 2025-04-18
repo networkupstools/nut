@@ -218,6 +218,7 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 	config.overDuration  = -1;
 	config.certVerify    = (*(tmpPtr = new nut::BoolInt()) << false); delete tmpPtr;
 	config.forceSsl      = (*(tmpPtr = new nut::BoolInt()) << "1"); delete tmpPtr;
+	config.alarmCritical = (*(tmpPtr = new nut::BoolInt()) << "1"); delete tmpPtr;
 
 	config.certIdent.certName    = "My test cert";
 	config.certIdent.certDbPass  = "DbPwd!";
@@ -249,6 +250,7 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 		"SHUTDOWNEXIT yes\n"
 		"CERTVERIFY 0\n"
 		"FORCESSL 1\n"
+		"ALARMCRITICAL 1\n"
 		"HOSTSYNC 15\n"
 		"DEADTIME 30\n"
 		"RBWARNTIME 43200\n"
