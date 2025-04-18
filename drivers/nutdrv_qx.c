@@ -3285,7 +3285,7 @@ void	upsdrv_initups(void)
 
 	/* Whether the device is connected through USB or serial */
 	if (
-		!strcasecmp(dstate_getinfo("driver.parameter.port"), "auto") ||
+		!strcasecmp(device_path, "auto") ||
 		getval("subdriver") ||
 		getval("vendorid") ||
 		getval("productid") ||
