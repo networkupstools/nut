@@ -1532,6 +1532,13 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				_config->oblbDuration = StringToSettableNumber<int>(values.front());
 			}
 		}
+		else if(directiveName == "OVERDURATION")
+		{
+			if(values.size()>0)
+			{
+				_config->overDuration = StringToSettableNumber<int>(values.front());
+			}
+		}
 		else if(directiveName == "SHUTDOWNEXIT")
 		{
 			if(values.size()>0)
