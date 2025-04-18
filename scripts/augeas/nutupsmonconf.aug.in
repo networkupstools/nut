@@ -41,7 +41,7 @@ let comment  = Util.comment
 let quoted_string = del "\"" "\"" . store /[^"\n]+/ . del "\"" "\""
 
 (* UPS identifier
- * <upsname>[@<hostname>[:<port>]] 
+ * <upsname>[@<hostname>[:<port>]]
  *
  * There might be a cleaner way to write this
  *  but I'm stuck with (hostname | hostname . port)?
@@ -69,6 +69,7 @@ let upsmon_num_signed_re = "DEBUG_MIN"
                   | "POLLFAIL_LOG_THROTTLE_MAX"
                   | "OFFDURATION"
                   | "OBLBDURATION"
+                  | "OVERDURATION"
 
 let upsmon_num_bool_re = "SHUTDOWNEXIT"
 
