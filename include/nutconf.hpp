@@ -1505,7 +1505,7 @@ public:
 	void parseFromString(const std::string& str);
 
 	Settable<int>          debugMin, pollFailLogThrottleMax;
-	Settable<int>          offDuration, oblbDuration;
+	Settable<int>          offDuration, oblbDuration, overDuration;
 	Settable<std::string>  runAsUser, shutdownCmd, notifyCmd, powerDownFlag;
 	/* yes|no (boolean) or a delay */
 	Settable<nut::BoolInt> shutdownExit;
