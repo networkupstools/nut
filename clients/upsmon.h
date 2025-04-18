@@ -83,6 +83,7 @@ typedef struct {
 					/* delays not implemented now	*/
 	int	alarmstate;		/* fire on a 0->1 transition;	*/
 					/* delays not implemented now	*/
+	int	overstate;		/* fire on a 0->1 transition;	*/
 
 	/* see detailed comment for pollfail_log_throttle_max in upsmon.c
 	 * about handling of poll failure log throttling (syslog storage I/O)
@@ -97,6 +98,7 @@ typedef struct {
 
 	time_t	offsince;		/* time of recent entry into OFF state	*/
 	time_t	oblbsince;		/* time of recent entry into OB LB state (normally this causes immediate shutdown alert, unless we are configured to delay it)	*/
+	time_t	oversince;		/* time of recent entry into OVER state	*/
 
 	void	*next;
 }	utype_t;
@@ -198,7 +200,7 @@ static struct {
 	{ NOTIFY_NOTTRIM,  "NOTTRIM",  NULL, "UPS %s: no longer trimming incoming voltage", NOTIFY_DEFAULT },
 	{ NOTIFY_BOOST,    "BOOST",    NULL, "UPS %s: boosting incoming voltage", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTBOOST, "NOTBOOST", NULL, "UPS %s: no longer boosting incoming voltage", NOTIFY_DEFAULT },
-	
+
 	/* Special handling, two string placeholders!
 	 * Reported when status_tokens tree changes (and is not empty in the end) */
 	{ NOTIFY_OTHER,    "OTHER",    NULL, "UPS %s: has at least one unclassified status token: [%s]", NOTIFY_DEFAULT },

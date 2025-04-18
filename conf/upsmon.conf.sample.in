@@ -441,6 +441,25 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 OFFDURATION 30
 
 # --------------------------------------------------------------------------
+# OVERDURATION - timeout after which OVER status can cause a critical UPS
+# OVERDURATION -1
+#
+# This setting handles how a UPS that is overloaded should be treated in
+# situations when it is not fully communicating. Because such a UPS may be
+# in a potentially severe state, some users may want their systems to be
+# shutdown either immediately or after a set timeout has elapsed. The
+# OVERDURATION setting defines this timeout (in seconds), after which an
+# overloaded UPS that is not communicating will be considered critical.
+#
+# A value of zero means the UPS will instantly be considered critical when
+# overloaded and not communicating. In case a negative value is set (the
+# default), such a UPS will never be considered critical, at least not
+# because of the overload itself.
+#
+
+OVERDURATION -1
+
+# --------------------------------------------------------------------------
 # OBLBDURATION - put "OB LB" state into effect if it persists for this many
 # seconds
 #

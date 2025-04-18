@@ -1505,12 +1505,12 @@ public:
 	void parseFromString(const std::string& str);
 
 	Settable<int>          debugMin, pollFailLogThrottleMax;
-	Settable<int>          offDuration, oblbDuration;
+	Settable<int>          offDuration, oblbDuration, overDuration;
 	Settable<std::string>  runAsUser, shutdownCmd, notifyCmd, powerDownFlag;
 	/* yes|no (boolean) or a delay */
 	Settable<nut::BoolInt> shutdownExit;
 	/* practically boolean, but in 0|1 written form (bool01 fiddling) */
-	Settable<nut::BoolInt> certVerify, forceSsl;
+	Settable<nut::BoolInt> certVerify, forceSsl, alarmCritical;
 	Settable<std::string>  certPath;
 	CertIdent              certIdent;
 	std::list<CertHost>    certHosts;

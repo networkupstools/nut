@@ -1532,6 +1532,13 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				_config->oblbDuration = StringToSettableNumber<int>(values.front());
 			}
 		}
+		else if(directiveName == "OVERDURATION")
+		{
+			if(values.size()>0)
+			{
+				_config->overDuration = StringToSettableNumber<int>(values.front());
+			}
+		}
 		else if(directiveName == "SHUTDOWNEXIT")
 		{
 			if(values.size()>0)
@@ -1586,6 +1593,15 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				nut::BoolInt bi;
 				bi << values.front();
 				_config->forceSsl = bi;
+			}
+		}
+		else if(directiveName == "ALARMCRITICAL")
+		{
+			if(values.size()>0)
+			{
+				nut::BoolInt bi;
+				bi << values.front();
+				_config->alarmCritical = bi;
 			}
 		}
 		else if(directiveName == "HOSTSYNC")

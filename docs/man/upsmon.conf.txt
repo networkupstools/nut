@@ -425,6 +425,25 @@ NOTE: so far we support the device reporting an "OFF" state which usually
 means completely un-powering the load; a bug-tracker issue was logged to
 design similar support for just some manageable outlets or outlet groups.
 
+*OVERDURATION* 'seconds'::
+
+This setting handles how a UPS that is overloaded should be treated in
+situations when it is not fully communicating. Because such a UPS may 
+be in a potentially severe state, some users may want their systems 
+to be shutdown either immediately or after a set timeout has elapsed. 
+The OVERDURATION setting defines this timeout (in seconds), after which 
+an overloaded UPS that is not communicating will be considered critical.
++
+A negative value means an overloaded UPS will never be considered 
+critical (at least not because of the overload itself). A value of zero 
+means the UPS will instantly be considered critical when overloaded and 
+not communicating. Built-in default value is -1 (seconds).
++
+NOTE: This setting only affects the behavior when a UPS is both 
+overloaded and not communicating. When the UPS is communicating 
+normally, an overload condition may raise notifications but won't 
+trigger a system shutdown on its own.
+
 *OBLBDURATION* 'seconds'::
 
 NUT normally raises alarms for immediate shutdown (FSD) for consumers of an
