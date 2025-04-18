@@ -99,6 +99,13 @@ artifacts associated with a particular release version/tag, and changing
 Git tags on public repositories is generally considered as a bad practice.
 So best to avoid it in the first place.
 
+NOTE: Take time to push release candidates also as one of `fightwarn*` git
+branches (maybe with QEMU scenarios too), and maybe post a `FTY` branch
+update (while it is not all upstreamed), to gather more insights into code
+and recipe quality from scenarios that do not often run. Also revise if
+CodeQL or similar tools on GitHub have posted any relevant suggestions
+about security or other matters.
+
 * clean up "in-development" bits from files (which we would revert after
   release), e.g.:
 ** TODO etc. referring planned future in the `NEWS.adoc` and `UPDATING.adoc`

@@ -30,7 +30,11 @@
 #include "main.h"
 #include <modbus.h>
 
-#define DRIVER_NAME	"Socomec jbus driver"
+#if !(defined NUT_MODBUS_LINKTYPE_STR)
+# define NUT_MODBUS_LINKTYPE_STR	"unknown"
+#endif
+
+#define DRIVER_NAME	"Socomec jbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
 #define DRIVER_VERSION	"0.09"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))

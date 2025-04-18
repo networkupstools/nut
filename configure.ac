@@ -230,6 +230,7 @@ AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_CXX_C_O
+AC_PATH_PROG([LDD], [ldd])
 
 CFLAGS_AFTER_ACPROG="${CFLAGS-}"
 CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"
@@ -535,8 +536,6 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [AS_IF([test -d "${DEPLOYED_BINDIR}"],
             [DEPLOYED_PREFIX="`dirname "${DEPLOYED_BINDIR}"`"])]
     )
-
-    AC_PATH_PROG([LDD], [ldd])
 
     AC_MSG_CHECKING([for CONFIG_FLAGS of an already deployed NUT build (if it reports those)])
 

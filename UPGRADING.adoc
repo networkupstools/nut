@@ -66,7 +66,7 @@ Changes from 2.8.2 to 2.8.3
   (and `make dist-ci`) to fake presence of pre-built man pages with placeholder
   files, to complete other aspects of `distcheck` validation. [#2842]
 
-- the PyPI distribution of the `PyNUTClient` module tarball should now use a
+- The PyPI distribution of the `PyNUTClient` module tarball should now use a
   lower-cased file name (and immediate versioned directory name inside) to
   match the requirements of link:https://peps.python.org/pep-0625/[PEP-0625].
   The Python module name (and its directory) should remain camel-cased.
@@ -174,7 +174,7 @@ Changes from 2.8.2 to 2.8.3
   1200VA); it may be remotely possible that some other devices could begin
   to misbehave due to this fix -- please let us know then. [#2839]
 
-- mge-utalk driver will no longer set non-standard status values `COMMFAULT`
+- `mge-utalk` driver will no longer set non-standard status values `COMMFAULT`
   and `ALARM` (for a specific status bit); instead, it will set modern
   `ups.alarm` with values `COMMFAULT` and/or `DEVICEALARM` (and raise
   an `ALARM` in `ups.status` for either, as standard alarms go). If your
