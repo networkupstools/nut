@@ -3608,6 +3608,8 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		dnl Experimental support for --with-doc=man=dist-auto to prefer pre-disted docs if available, below
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
+		dnl FIXME: Perform some of these checks/infos also if docs=(man=)skip
+		dnl  so we know if disted files are still an option
 		have_disted_doc_man=no
 		want_disted_doc_man=no
 		if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
@@ -3748,6 +3750,7 @@ AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 AM_CONDITIONAL(KNOWN_UNABLE_MANS, test "${KNOWN_UNABLE_MANS}" = "yes")
 AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
 dnl Reporting have_disted_doc_man not DOC_INSTALL_DISTED_MANS because the former has more values
+AS_IF([test x"${have_disted_doc_man}" = x], [have_disted_doc_man="did not check"])
 NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${have_disted_doc_man}"])
 
 WITH_HTML_SINGLE=no
