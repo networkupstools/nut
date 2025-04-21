@@ -34,11 +34,17 @@
 #include <modbus.h>
 
 #if defined NUT_MODBUS_HAS_USB
-# define DRIVER_NAME "NUT APC Modbus driver with USB support"
+# define DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR	"with"
 #else
-# define DRIVER_NAME "NUT APC Modbus driver without USB support"
+# define DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR	"without"
 #endif
-#define DRIVER_VERSION "0.12"
+
+#if !(defined NUT_MODBUS_LINKTYPE_STR)
+# define NUT_MODBUS_LINKTYPE_STR	"unknown"
+#endif
+
+#define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
+#define DRIVER_VERSION	"0.12"
 
 #if defined NUT_MODBUS_HAS_USB
 
