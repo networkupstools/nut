@@ -282,6 +282,11 @@ DESC='v2.8.2-2381+g1faa9945d'
 			  update the `VERSION_DEFAULT` file that goes into "dist"
 			  tarballs; prints its contents
 			| `NUT_VERSION_DEFAULT='2.8.2.2379.2-2381+g1faa9945d'`
+|`UPDATE_FILE_GIT_RELEASE`	| Used in maintainer rituals (requires git) to
+			  update the `VERSION_FORCED` and `VERSION_FORCED_SEMVER`
+			  files that go into "dist" tarballs; prints their contents
+			| `NUT_VERSION_FORCED='2.8.2.2878.3-2881+g45029249f+v2.8.3+rc6'`
+			  `NUT_VERSION_FORCED_SEMVER='2.8.3'`
 |default	| Report `DESC50`	| `v2.8.2-2381-g1faa9945d`
 |=========================================================================
 

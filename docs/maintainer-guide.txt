@@ -170,6 +170,27 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
    file (DO NOT add them to git to avoid confusion later, or revert any such
    addition after the release -- still has a chance to confuse e.g. branches
    made from release tag later):
+*** Automation was introduced to help maintain these files, e.g.:
++
+----
+# Current commit MUST be git-tagged for *-(rc|alpha|beta) for magic to work:
+:; git tag v2.8.3-rc7
+
+:; NUT_VERSION_QUERY="UPDATE_FILE_GIT_RELEASE" ./tools/gitlog2version.sh
+SEMVER=2.8.3; TRUNK='upstream/master'; BASE='735451f1f21556f2a7b8443053e8962c2184239f';
+DESC='v2.8.2-2881+gbdade6241' => TAG='v2.8.2' + SUFFIX='-2881+gbdade6241+v2.8.3+rc7'
+ => VER5='2.8.2.2878.3' => DESC5='2.8.2.2878.3-2881+gbdade6241+v2.8.3+rc7'
+ => VER50='2.8.2.2878.3' => DESC50='2.8.2.2878.3-2881+gbdade6241+v2.8.3+rc7'
+
+# Note it assigns SEMVER from the pre-release tag, but other git info from
+# real git-describe details
+
+# You can verify current contents of these files with:
+:; grep . VER*
+VERSION_FORCED:NUT_VERSION_FORCED='2.8.2.2878.3-2881+gbdade6241+v2.8.3+rc7'
+VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
+----
+*** An older, possibly more reliable, way would go like this:
 +
 ----
 # Do not let them be easily deleted by e.g. `git clean -fdX` while you

@@ -92,13 +92,22 @@ fi
 # caller environment, or a file setting it reproducibly, can help
 # identify the actual NUT release version triplet used on the box.
 # Please use it, it immensely helps with community troubleshooting!
-if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
-    # Should set NUT_VERSION_FORCED=X.Y.Z(.a.b...)
-    . "${abs_top_srcdir}/VERSION_FORCED" || exit
-fi
-if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
-    # Should set NUT_VERSION_FORCED_SEMVER=X.Y.Z
-    . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+if [ x"${NUT_VERSION_QUERY-}" = x"UPDATE_FILE_GIT_RELEASE" ] ; then
+    if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+        echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED', will replace with git info" >&2
+    fi
+    if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+        echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED_SEMVER', will replace with git info" >&2
+    fi
+else
+    if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+        # Should set NUT_VERSION_FORCED=X.Y.Z(.a.b...)
+        . "${abs_top_srcdir}/VERSION_FORCED" || exit
+    fi
+    if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+        # Should set NUT_VERSION_FORCED_SEMVER=X.Y.Z
+        . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+    fi
 fi
 if [ -n "${NUT_VERSION_FORCED-}" ] ; then
     NUT_VERSION_DEFAULT="${NUT_VERSION_FORCED-}"
@@ -268,6 +277,23 @@ report_output() {
             else
                 echo "${NUT_WEBSITE}"
             fi
+            ;;
+        "UPDATE_FILE_GIT_RELEASE")
+            # NOTE: For maintainers, changes SRCDIR not BUILDDIR; requires GIT
+            # Do not "mv" here because maintainer files may be hard-linked from elsewhere
+            echo "NUT_VERSION_FORCED='${DESC50}'" > "${abs_top_srcdir}/VERSION_FORCED.tmp" || exit
+            if ! cmp "${abs_top_srcdir}/VERSION_FORCED.tmp" "${abs_top_srcdir}/VERSION_FORCED" >/dev/null 2>/dev/null ; then
+                cat "${abs_top_srcdir}/VERSION_FORCED.tmp" > "${abs_top_srcdir}/VERSION_FORCED" || exit
+            fi
+            rm -f "${abs_top_srcdir}/VERSION_FORCED.tmp"
+
+            echo "NUT_VERSION_FORCED_SEMVER='${SEMVER}'" > "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" || exit
+            if ! cmp "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" "${abs_top_srcdir}/VERSION_FORCED_SEMVER" >/dev/null 2>/dev/null ; then
+                cat "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" > "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+            fi
+            rm -f "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp"
+
+            grep . "${abs_top_srcdir}/VERSION_FORCED" "${abs_top_srcdir}/VERSION_FORCED_SEMVER"
             ;;
         "UPDATE_FILE")
             if [ x"${abs_top_builddir}" != x"${abs_top_srcdir}" ] \
