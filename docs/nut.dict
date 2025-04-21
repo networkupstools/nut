@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3457 utf-8
+personal_ws-1.1 en 3458 utf-8
 AAC
 AAS
 ABI
@@ -846,6 +846,7 @@ OUTDIR
 OUTPUTV
 OUTVOLT
 OV
+OVERDURATION
 Oden
 OffTime
 Ohloh
@@ -2686,7 +2687,6 @@ other's
 otheruser
 ouGDQn
 outliers
-OVERDURATION
 ovmf
 pF
 pacman
