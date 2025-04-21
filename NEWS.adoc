@@ -392,7 +392,9 @@ This requirement compromises usability of `make distcheck` on platforms without
 
  - The `upsmon` client can now also report entering and exiting the `OVER`
    (UPS overloaded), `TRIM` and `BOOST` (adjusting for bad input voltage)
-   states. [#1074]
+   states. A setting `OVERDURATION` was introduced to define a timeout
+   after which a non-communicating UPS that was last seen in state `OVER`
+   should be considered critical (or not). [PR #1074, issue #2877]
 
  - Revised `upssched` timer handler that can be called from `upsmon` as its
    `NOTIFYCMD` to not report confusing environment variable values of
