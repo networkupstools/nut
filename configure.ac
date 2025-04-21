@@ -230,6 +230,7 @@ AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_CXX_C_O
+AC_PATH_PROG([LDD], [ldd])
 
 CFLAGS_AFTER_ACPROG="${CFLAGS-}"
 CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"
@@ -535,8 +536,6 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [AS_IF([test -d "${DEPLOYED_BINDIR}"],
             [DEPLOYED_PREFIX="`dirname "${DEPLOYED_BINDIR}"`"])]
     )
-
-    AC_PATH_PROG([LDD], [ldd])
 
     AC_MSG_CHECKING([for CONFIG_FLAGS of an already deployed NUT build (if it reports those)])
 
@@ -3499,6 +3498,24 @@ fi
 DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
 DOCTESTDIR="$(cd "$DOCTESTDIR" && pwd)"
 
+dnl NOTE: We perform some of these checks/infos also if docs=(man=)skip
+dnl  so we know in later reports if disted files are still an option
+dnl  should we want to not just skip them
+have_disted_doc_man=no
+want_disted_doc_man=no
+if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
+	dnl Test that groff files exist (building from distributed tarball, not git repo)
+	if test x"PLACEHOLDER" = x"`cat "${abs_srcdir}"/docs/man/snmp-ups.8`" ; then
+		dnl REALLY should not happen in real builds,
+		dnl but may be in distcheck-driven sub-builds
+		dnl where the external build agreed to use
+		dnl fake man pages (e.g. for CI recipe checks)
+		have_disted_doc_man=yes-placeholder
+	else
+		have_disted_doc_man=yes
+	fi
+fi
+
 dnl Note: Do not cover ${nut_doc_build_list} in braces or quotes here,
 dnl to ensure that it is processed as several space-separated tokens
 for nut_doc_build_target in $nut_doc_build_list; do
@@ -3609,20 +3626,6 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		dnl Experimental support for --with-doc=man=dist-auto to prefer pre-disted docs if available, below
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
-		have_disted_doc_man=no
-		want_disted_doc_man=no
-		if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
-			dnl Test that groff files exist (building from distributed tarball, not git repo)
-			if test x"PLACEHOLDER" = x"`cat "${abs_srcdir}"/docs/man/snmp-ups.8`" ; then
-				dnl REALLY should not happen in real builds,
-				dnl but may be in distcheck-driven sub-builds
-				dnl where the external build agreed to use
-				dnl fake man pages
-				have_disted_doc_man=yes-placeholder
-			else
-				have_disted_doc_man=yes
-			fi
-		fi
 		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test "${nut_doc_build_target_flag}" = "dist-auto"; then
 			want_disted_doc_man=yes
 		fi
@@ -3749,6 +3752,7 @@ AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 AM_CONDITIONAL(KNOWN_UNABLE_MANS, test "${KNOWN_UNABLE_MANS}" = "yes")
 AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
 dnl Reporting have_disted_doc_man not DOC_INSTALL_DISTED_MANS because the former has more values
+AS_IF([test x"${have_disted_doc_man}" = x], [have_disted_doc_man="did not check"])
 NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${have_disted_doc_man}"])
 
 WITH_HTML_SINGLE=no
