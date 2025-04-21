@@ -54,7 +54,7 @@ Current NUT SEMVER definition
 Since NUT v2.8.3, the definition which goes into `AC_INIT` and further into
 the code was extended in a manner similar to what `git describe` produces,
 but with added numbers after the common triplet of semantically versioned
-numbers: `X.Y.Z(.T(.B(-C+gHASH)))`
+numbers: `X.Y.Z(.T(.B(-C+H(+R))))` or `X.Y.Z(.T(.B(-R)))`
 
 * Standard semver (used in releases):
 +
@@ -76,7 +76,15 @@ The optional suffix (only for commits which are not git tags themselves)
 is provided by `git describe`:
 
 * C: Commits on branch since previous release tag
-* H: Git hash (prefixed by `g` character) of the described commit
+* H: (Short) Git hash (prefixed by "g" character) of the described commit
+
+The pre-release information (if provided/known) would either follow the
+optional suffix detailed above, or it would be the suffix itself:
+
+* R: If this commit has a non-release tag, it can be optionally reported
+     so we know that a commit some '1234' iterations after release 'N' is
+     also a release candidate for 'N+1'. Note that any dash in that tag value
+     will be replaced by a plus, e.g. `2.8.2.2878.1-2879+g882dd4b00+v2.8.3+rc6`
 
 The numeric part of NUT SEMVER definition mostly follows https://semver.org/
 except that for development iterations the base version may have up to
@@ -118,7 +126,8 @@ implementations).
 			  may be just a triplet) to this value and enforce
 			  `NUT_VERSION_PREFER_GIT=false`. Usually sourced
 			  from `${abs_top_srcdir}/VERSION_FORCED` (if present)
-			| `2.8.3.2379`
+			| `2.8.2.2379` `2.8.3-rc3`
+			  `2.8.2.2878.3-2881+g45029249f+v2.8.3+rc6`
 |`NUT_VERSION_FORCED_SEMVER`	| Set `SEMVER` (exactly a triplet) to this value
 			  regardless of `NUT_VERSION_PREFER_GIT` setting. Usually
 			  sourced from `${abs_top_srcdir}/VERSION_FORCED_SEMVER`
@@ -210,18 +219,27 @@ implementations).
 			  numeric components as needed or dropping extras, to have
 			  *exactly 3* of them
 			| `2.8.0`
-|`VER5` and `DESC5`	| Full 5-component version, `NUT_VERSION_DEFAULT5`
+|`SUFFIX`		| Empty, unless `NUT_VERSION_DEFAULT` had a suffix
+			  for pre-release information roughly matching the
+			  `-(rc|alpha|beta)[0-9]*` regular expression
+			| `""` `-rc6`
+|`VER5`			| Full 5-component version, `NUT_VERSION_DEFAULT5`
 			| `2.8.2.2379.2`
-|`VER50` and `DESC50`	| `NUT_VERSION_DEFAULT` as provided by caller or
+|`DESC5`		| Constructed as `${VER5}${SUFFIX}`
+			| `2.8.2.2379.2` `2.8.3.0.0-rc6`
+|`VER50`		| `NUT_VERSION_DEFAULT` as provided by caller or
 			  defaulted, may be with or without trailing `.0` in fifth or
 			  fourth components
 			| `2.8.2.1`
-|`BASE`	| Empty (no known common commits with no trunk)	| `""`
-|`SEMVER`	| Exactly three leading numeric components.
+|`DESC50`		| Constructed as `${VER50}${SUFFIX}`
+			| `2.8.2.1` `2.8.3-rc6`
+|`BASE`			| Empty (no known common commits with no trunk)	| `""`
+|`SEMVER`		| Exactly three leading numeric components.
 			  Either `NUT_VERSION_FORCED_SEMVER` (if provided by caller or
 			  configuration files), or `NUT_VERSION_DEFAULT3` (see above)
 			| `2.8.0`
-|`TAG`	| Constructed as `v${NUT_VERSION_DEFAULT3}`	| `v2.8.0`
+|`TAG`			| Constructed as `v${NUT_VERSION_DEFAULT3}${SUFFIX}`
+			| `v2.8.0` `v2.8.3-rc6`
 |=========================================================================
 
 The majority of identified values can be reported for debugging to `stderr`,
@@ -260,16 +278,40 @@ DESC='v2.8.2-2381+g1faa9945d'
 |`IS_RELEASE`	| `true` if `SEMVER`==`VER50`, `false` otherwise
 			| * dev: `false`
 			  * rel: `true`
+|`IS_PRERELEASE`	| `true` if `SUFFIX_PRERELEASE` is not empty, `false` otherwise
+			| * dev: `false`
+			  * rel/RC: `true`
 |`TAG`	| GIT: Nearest (annotated by default) tag preceding the `HEAD` in history.
 		  DEFAULT: Constructed from `SEMVER`
 		| `v2.8.2`
+|`TAG_PRERELEASE`	| GIT: if the `HEAD` itself has a tag matching
+		  the `-(rc|alpha|beta)[0-9]*` regular expression.
+		  DEFAULT: Constructed from `NUT_VERSION_DEFAULT3`
+		  and `SUFFIX_PRERELEASE`.
+		  Empty for not-pre-releases.
+		| `v2.8.2-rc3` `""`
 |`TRUNK`	| GIT: Branch name used for calculation of current codebase
 			  distance from main development.
 			  DEFAULT: empty.
 			| `master`
 |`SUFFIX`	| GIT: Commit count since the tag and hash of the `HEAD` commit
-			  DEFAULT: empty.
+			  DEFAULT: empty for non-prerelease `NUT_VERSION_DEFAULT`
+			  values, or either value of `SUFFIX_PRERELEASE` with a
+			  leading dash for `NUT_VERSION_DEFAULT` values without
+			  git offset info (e.g. `2.8.3.5-rc6` => `-rc6`), or the
+			  whole tail with git and pre-release tag info.
 			| * dev: `-2381+g1faa9945d`
+			  * RC git: `-2381+g1faa9945d+v2.8.3+rc6`
+			  * RC default: `-rc6`
+|`SUFFIX_PRERELEASE`	| GIT: Constructed from `TAG_PRERELEASE` replacing any
+			  dash with a plus character.
+			  DEFAULT: empty unless `NUT_VERSION_DEFAULT` has a
+			  suffix matching the `-(rc|alpha|beta)[0-9]*`
+			  regular expression, or git info followed by
+			  the pre-release tag.
+                          NOTE: No leading dash in this value (unlike `SUFFIX`).
+			| * RC git: `v2.8.3+rc6`
+			  * RC default: `rc6`
 |`BASE`		| GIT: Newest common commit of development `TRUNK` and the `HEAD`
 			  commit (their `git merge-base`).
 			  DEFAULT: empty.
