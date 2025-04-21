@@ -365,6 +365,9 @@ Variables propagated by configure.ac
 |`NUT_SOURCE_GITREV_IS_RELEASE`
 			| Determined by `NUT_VERSION_QUERY=IS_RELEASE gitlog2version.sh`
 			| `true` or `false`
+|`NUT_SOURCE_GITREV_IS_PRERELEASE`
+			| Determined by `NUT_VERSION_QUERY=IS_PRERELEASE gitlog2version.sh`
+			| `true` or `false`
 |`NUT_SOURCE_GITREV_DEVREL`
 			| String determined by `NUT_SOURCE_GITREV_IS_RELEASE`
 			| `"release"` or `"development iteration"`
@@ -391,6 +394,11 @@ Variables propagated by nut_version.h
 		| Determined by `NUT_VERSION_QUERY=IS_RELEASE gitlog2version.sh`
 		  (falls back to `false` if that query fails)
 		| * `1` if `$GITREV_IS_RELEASE`
+		  * `0` otherwise
+|`#define NUT_VERSION_IS_PRERELEASE <0-or-1>`
+		| Determined by `NUT_VERSION_QUERY=IS_PRERELEASE gitlog2version.sh`
+		  (falls back to `false` if that query fails)
+		| * `1` if `$GITREV_IS_PRERELEASE`
 		  * `0` otherwise
 |=========================================================================
 
