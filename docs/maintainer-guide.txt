@@ -172,11 +172,23 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
    made from release tag later):
 +
 ----
+# Do not let them be easily deleted by e.g. `git clean -fdX` while you
+# would inevitably iterate the release attempts - keep in a subdir, and
+# juggle hardlinks (so they are archived into the tarball as real files):
+:; rm -rf .relver
+:; mkdir -p .relver
+
 # Generally may be the nuanced NUT SEMVER; is a triplet for releases
-:; echo 'NUT_VERSION_FORCED="2.8.3"' > VERSION_FORCED
+# or suffixed for release candidates
+:; echo 'NUT_VERSION_FORCED="2.8.3"' > .relver/VERSION_FORCED
+:; echo 'NUT_VERSION_FORCED="2.8.3-rc1"' > .relver/VERSION_FORCED
 
 # Should always be a triplet
-:; echo 'NUT_VERSION_FORCED_SEMVER="2.8.3"' > VERSION_FORCED_SEMVER
+:; echo 'NUT_VERSION_FORCED_SEMVER="2.8.3"' > .relver/VERSION_FORCED_SEMVER
+
+# Do not let them be easily lost; later you can just re-create these links
+# if file names in your top_srcdir are removed:
+:; ln .relver/* .
 ----
 *** Note that since NUT v2.8.3 this script dictates the version propagated by
     the `configure` script, so direct changes of `AC_INIT` there are no longer
