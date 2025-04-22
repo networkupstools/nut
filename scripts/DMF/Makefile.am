@@ -269,7 +269,7 @@ if WITH_REGENERATE_DMF_SNMP
   DMFGEN_CMD = ( \
 	if test x"$(V)" = x1 ; then echo "[D] abs_top_builddir='$(abs_top_builddir)' abs_top_srcdir='$(abs_top_srcdir)' top_builddir='$(top_builddir)' top_srcdir='$(top_srcdir)' builddir='$(builddir)' srcdir='$(srcdir)' PWD='`pwd`'" >&2 ; fi ; \
 	if test x"$${ABS_OUTDIR-}" = x ; then ABS_OUTDIR="`pwd`" ; fi ; export ABS_OUTDIR ; \
-	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD='`pwd`', actual ABS_OUTDIR='$${ABS_OUTDIR}')" ; \
+	echo "  DMFIFY	'$$CMIBFILE' => '$@' (PWD='`pwd`', actual ABS_OUTDIR='$${ABS_OUTDIR}')" ; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
 	    test -d "$${ABS_OUTDIR}" -a -w "$${ABS_OUTDIR}" || $(MKDIR_P) "$${ABS_OUTDIR}" || exit ; \
@@ -302,12 +302,12 @@ dmfgen-sanity: $(srcdir)/dmfify-mib.sh
 	    echo "Sanity-checked the low-level ability to generate DMF files - OK" >&2; \
 	    test -f "$(DMFGEN_SANITY_VALIDATED)" || touch $(DMFGEN_SANITY_VALIDATED); \
 	 else \
-	    echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
+	    echo "  SKIP	$@ : NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
 	    rm -f $(DMFGEN_SANITY_VALIDATED); \
 	 fi
 else !WITH_REGENERATE_DMF_SNMP
   DMFGEN_CMD = ( \
-	echo "SKIP: Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
+	echo "  SKIP	Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
 	rm -f $(DMFGEN_SANITY_VALIDATED); \
 	if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@" -a ! -s "$(abs_top_builddir)/$@" -a ! -s "$(abs_top_srcdir)/$@"; then \
 		echo "ERROR: Distributed file $@ is missing" >&2; exit 2; \
@@ -330,9 +330,9 @@ endif !WITH_REGENERATE_DMF_SNMP
 DMFLNK_CMD = ( \
 	case "$$DMFFILE" in /*) DMFFILE_DIR="" ;; *) DMFFILE_DIR="$(DMFFILE_DIR)" ;; esac; \
 	if [ x"$(V)" = x1 ] ; then \
-		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK' (PWD = '`pwd`', IN='$?', IN_ALL='$^', OUT='$@')" >&2 ; \
+		echo "  LN	'$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK' (PWD = '`pwd`', IN='$?', IN_ALL='$^', OUT='$@')" >&2 ; \
 	else \
-		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK'" ; \
+		echo "  LN	'$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK'" ; \
 	fi ; \
 	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 1. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 5 ; sync; } ; \
 	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 2. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 10 ; sync; } ; \
@@ -372,7 +372,7 @@ $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
 				S*|K*) ;; \
 				*) N="$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/$$B"; \
 					if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
-						echo "  CP    $$F => $$N" ; \
+						echo "  CP	$$F => $$N" ; \
 						$(MKDIR_P) "$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)" && \
 						cp -f "$$F" "$$N" || exit ; \
 					fi ;; \
@@ -419,14 +419,14 @@ $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(
 	test -s "$@"
 else !WITH_REGENERATE_DMF_NUTSCAN
 $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
-	@echo "SKIP: Generation of $@ not enabled by the configure script (--with-dmfnutscan-regenerate option)"
+	@echo "  SKIP	Generation of $@ not enabled by the configure script (--with-dmfnutscan-regenerate option)"
 	@if test ! -s "$@" -a ! -s "$(abs_srcdir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; true
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
 		F="$(abs_srcdir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; \
 		N="$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; \
 		if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
-			echo "  CP    $$F => $$N" && \
+			echo "  CP	$$F => $$N" && \
 			$(MKDIR_P) "$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)" && \
 			cp -f "$$F" "$$N" || { ls -la "$$F" "$$N" ; exit 1; } ; \
 		fi; \
@@ -477,7 +477,7 @@ if WITH_VALIDATE_DMF_SNMP
 else !WITH_VALIDATE_DMF_SNMP
   DMFLINT_CMD = ( \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
-	echo "SKIP: Validation of $@ not enabled by the configure script ($$DMFLINT_OPTION option)" ; \
+	echo "  SKIP	Validation of $@ not enabled by the configure script ($$DMFLINT_OPTION option)" ; \
 	echo "VALIDATION-SKIPPED" > "$@" ; \
 	)
 endif !WITH_VALIDATE_DMF_SNMP
@@ -627,7 +627,7 @@ run-dmf-reindex: dmf-reindex $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && ls -la && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(DMF_REINDEX)
 else !WITH_REGENERATE_DMF_NUTSCAN
 run-dmf-test run-dmf-reindex:
-	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
+	@echo "  SKIP	DMF support was not enabled or detected during project configuration, can not run test programs" >&2
 endif !WITH_REGENERATE_DMF_NUTSCAN
 
 if WITH_DMF
@@ -711,7 +711,7 @@ $(abs_builddir)/testdata-fun/.validated: $(abs_builddir)/testdata-fun/.uptodate
 else !WITH_VALIDATE_DMF_SNMP
 $(abs_builddir)/testdata-lua/.validated $(abs_builddir)/testdata-fun/.validated:
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
-	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
+	@echo "  SKIP	Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
 	@echo "VALIDATION-SKIPPED" > "$@"
 endif !WITH_VALIDATE_DMF_SNMP
 CLEANFILES += $(abs_builddir)/testdata-lua/.validated testdata-lua/.validated
@@ -725,29 +725,29 @@ run-dmf-fun-test: dmf-fun-test $(abs_builddir)/testdata-fun/.validated
 	cd $(abs_top_builddir)/scripts/DMF/testdata-fun && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-fun-test
 else !WITH_LUA
 dmf-lua-test:
-	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
+	@echo "  SKIP	LUA support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
 
 run-dmf-lua-test:
-	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-lua-test" >&2
+	@echo "  SKIP	LUA support was not enabled or detected during project configuration, can not run-dmf-lua-test" >&2
 
 dmf-fun-test:
-	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-fun-test program" >&2
+	@echo "  SKIP	LUA support was not enabled or detected during project configuration, can not build dmf-fun-test program" >&2
 
 run-dmf-fun-test:
-	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-fun-test" >&2
+	@echo "  SKIP	LUA support was not enabled or detected during project configuration, can not run-dmf-fun-test" >&2
 endif !WITH_LUA
 else !WITH_DMF
 dmf-lua-test:
-	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
+	@echo "  SKIP	DMF support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
 
 run-dmf-lua-test:
-	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
+	@echo "  SKIP	DMF support was not enabled or detected during project configuration, can not run test programs" >&2
 
 dmf-fun-test:
-	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not build dmf-fun-test program" >&2
+	@echo "  SKIP	DMF support was not enabled or detected during project configuration, can not build dmf-fun-test program" >&2
 
 run-dmf-fun-test:
-	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
+	@echo "  SKIP	DMF support was not enabled or detected during project configuration, can not run test programs" >&2
 endif !WITH_DMF
 
 SPELLCHECK_SRC = README-NUT-DMF.txt

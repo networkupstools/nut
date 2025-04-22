@@ -51,12 +51,20 @@ NUT_SOURCE_GITREV="`NUT_VERSION_QUERY=DESC50 "${srcdir}/tools/gitlog2version.sh"
 
 dnl A true/false (literally) response that can be used for prettier messages
 dnl emitted by NUT code.
-NUT_SOURCE_GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
-AS_IF([$NUT_SOURCE_GITREV_IS_RELEASE], [NUT_SOURCE_GITREV_DEVREL="release"], [NUT_SOURCE_GITREV_DEVREL="development iteration"])
+NUT_SOURCE_GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null || echo false`"
+NUT_SOURCE_GITREV_IS_PRERELEASE="`NUT_VERSION_QUERY=IS_PRERELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null || echo false`"
+
+AS_IF([$NUT_SOURCE_GITREV_IS_RELEASE], [NUT_SOURCE_GITREV_DEVREL="release"], [
+    AS_IF([$NUT_SOURCE_GITREV_IS_PRERELEASE], [NUT_SOURCE_GITREV_DEVREL="pre-release"],
+        [NUT_SOURCE_GITREV_DEVREL="development iteration"])
+])
 
 dnl Semantic version of most-recent NUT release this code is derived from.
 dnl It may equal the NUT_SOURCE_GITREV and NUT_SOURCE_GITREV_NUMERIC, but
-dnl this situation is only expected if NUT_SOURCE_GITREV_IS_RELEASE==true.
+dnl this situation is only expected if NUT_SOURCE_GITREV_IS_RELEASE==true;
+dnl for a pre-release it may differ from even the base NUT_VERSION numbers
+dnl (e.g. a commit tagged as 2.8.3-rc5 can have its own NUT_VERSION based
+dnl on 2.8.2-something, but is assumed as a pre-release for 2.8.3 SEMVER).
 NUT_SOURCE_GITREV_SEMVER="`NUT_VERSION_QUERY=SEMVER "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
 
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
@@ -230,6 +238,7 @@ AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_CXX_C_O
+AC_PATH_PROG([LDD], [ldd])
 
 CFLAGS_AFTER_ACPROG="${CFLAGS-}"
 CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"
@@ -483,8 +492,24 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     eval conftemp=\"${conftemp}\"
     PREFIX_BINDIR="${conftemp}"
 
+    dnl Not-set CGI or DRV paths would be defaulted in due time,
+    dnl probably to bindir. Do not enforce any opinions here.
+    conftemp="${with_cgipath}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    PREFIX_CGIDIR="${conftemp}"
+    AS_CASE([${PREFIX_CGIDIR}], [yes|no], [PREFIX_CGIDIR=""])
+
+    conftemp="${with_drvpath}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    PREFIX_DRVDIR="${conftemp}"
+    AS_CASE([${PREFIX_DRVDIR}], [yes|no], [PREFIX_DRVDIR=""])
+
     DEPLOYED_SBINDIR="${PREFIX_SBINDIR}"
     DEPLOYED_BINDIR="${PREFIX_BINDIR}"
+    DEPLOYED_CGIDIR="${PREFIX_CGIDIR}"
+    DEPLOYED_DRVDIR="${PREFIX_DRVDIR}"
     dnl Note use of AC_PATH_PROG for specific pathname (not AC_CHECK_PROGS which picks filename variants)!
     dnl Note: "ordinary" users might not have "sbin" in their default PATH, so appending it:
     dnl Note: in some systems, the file in PATH is a shell
@@ -492,6 +517,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     AC_PATH_PROG([DEPLOYED_UPSD], [upsd], [], [${PREFIX_SBINDIR}:${PATH}:/sbin:/usr/sbin:/usr/local/sbin])
     dnl ...however "upsc" is a userland tool so should be there:
     AC_PATH_PROG([DEPLOYED_UPSC], [upsc], [], [${PREFIX_BINDIR}:${PATH}])
+    dnl Assume some driver that is commonly/always installed; check also Debian-ish packaged locations:
+    AC_PATH_PROG([DEPLOYED_DUMMYUPS], [dummy-ups], [], [${PREFIX_DRVDIR}:${PREFIX_BINDIR}:${PATH}:/usr/lib/nut:/lib/nut])
+    dnl The CGI client suite is very optional, may well be absent:
+    AC_PATH_PROG([DEPLOYED_UPSIMAGE], [upsimage.cgi], [], [${PREFIX_CGIDIR}:${PREFIX_BINDIR}:${PATH}:/usr/lib/cgi-bin/nut:/usr/libexec/cgi-bin/nut:/usr/libexec/nut:/usr/libexec/nut/cgi-bin:/usr/lib/nut:/usr/lib/nut/cgi-bin])
     AS_IF([test -x "${DEPLOYED_UPSD}"], [
         AX_REALPATH([$DEPLOYED_UPSD], [DEPLOYED_UPSD])
         DEPLOYED_SBINDIR="`dirname "${DEPLOYED_UPSD}"`"
@@ -499,6 +528,14 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     AS_IF([test -x "${DEPLOYED_UPSC}"], [
         AX_REALPATH([$DEPLOYED_UPSC], [DEPLOYED_UPSC])
         DEPLOYED_BINDIR="`dirname "${DEPLOYED_UPSC}"`"
+        ])
+    AS_IF([test -x "${DEPLOYED_DUMMYUPS}"], [
+        AX_REALPATH([$DEPLOYED_DUMMYUPS], [DEPLOYED_DUMMYUPS])
+        DEPLOYED_DRVDIR="`dirname "${DEPLOYED_DUMMYUPS}"`"
+        ])
+    AS_IF([test -x "${DEPLOYED_UPSIMAGE}"], [
+        AX_REALPATH([$DEPLOYED_UPSIMAGE], [DEPLOYED_UPSIMAGE])
+        DEPLOYED_CGIDIR="`dirname "${DEPLOYED_UPSIMAGE}"`"
         ])
 
     DEPLOYED_PREFIX=""
@@ -512,11 +549,16 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
 
     CONFIG_FLAGS_DEPLOYED=""
     NUT_VERSION_DEPLOYED=""
+    DEPLOYED_LIBDIR=""
     dnl TODO: Similar query can be done for BINDIR tools
     dnl and for libupsclient-config if deployed locally
+    dnl First check upsc, dummy-ups or nut-scanner (TBD)
+    dnl to detect not only version and CONFIG_OPTS but
+    dnl also the shared library location the best we can.
     for DEPLOYED_TOOL in \
-        "${DEPLOYED_UPSD}" \
         "${DEPLOYED_UPSC}" \
+        "${DEPLOYED_DUMMYUPS}" \
+        "${DEPLOYED_UPSD}" \
     ; do
         AS_IF([test x"${DEPLOYED_TOOL}" = x], [continue])
         AS_IF([test -x "${DEPLOYED_TOOL}"], [], [continue])
@@ -534,6 +576,18 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         && test x"${NUT_VERSION_DEPLOYED}" != x \
         || NUT_VERSION_DEPLOYED=""
 
+        dnl FIXME: Find some more portable solution? Use a platform-dependent
+        dnl  "case" or various toolkits?
+        dnl  * Probably no need to fuss for Windows builds, as they would
+        dnl    anyway use the DLL near EXE after installation.
+        AS_IF([test -x "${LDD}" 2>/dev/null], [
+            for TOKEN in `$LDD "${DEPLOYED_TOOL}" 2>&1 | grep libupsclient` ; do
+                case "${TOKEN}" in
+                    /*/libupsclient*) DEPLOYED_LIBDIR="`dirname "$TOKEN"`" ;;
+                esac
+            done
+        ])
+
         AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}${NUT_VERSION_DEPLOYED}" = x], [], [break])
     done
 
@@ -544,25 +598,110 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     ])
 
     dnl Account for custom paths if known/found:
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--prefix=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--prefix="*) prefix="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                esac
+            done
+        ]
+    )
+
     AS_IF([test x"${DEPLOYED_PREFIX}" != x && test x"${DEPLOYED_PREFIX}" != x"${prefix}"],
         AC_MSG_WARN([Deployed NUT installation uses a PREFIX different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_PREFIX}' vs. '${prefix}'])
         [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
             [*--prefix=*], [],
-            [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --prefix='${DEPLOYED_PREFIX}'"])
+            [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --prefix='${DEPLOYED_PREFIX}'"
+             dnl Help re-evaluate it from verbatim defaults in later
+             dnl deployed path determinations e.g. for data(root)dir:
+             prefix="${DEPLOYED_PREFIX}"
+        ])
     ])
+    dnl FIXME? Re-evaluate cgipath and/or drvpath if they are defined with a
+    dnl verbatim '${prefix}' inside, and no hits found in earlier attempts?
 
     AS_IF([test x"${DEPLOYED_SBINDIR}" != x && test x"${DEPLOYED_SBINDIR}" != x"${PREFIX_SBINDIR}"],
-        AC_MSG_WARN([Deployed NUT installation uses a SBINDIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_SBINDIR}' vs. '${sbindir}'])
+        AC_MSG_WARN([Deployed NUT installation uses a SBINDIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_SBINDIR}' vs. '${PREFIX_SBINDIR}' ('${sbindir}')])
         [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
             [*--sbindir=*], [],
             [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --sbindir='${DEPLOYED_SBINDIR}'"])
     ])
 
     AS_IF([test x"${DEPLOYED_BINDIR}" != x && test x"${DEPLOYED_BINDIR}" != x"${PREFIX_BINDIR}"],
-        AC_MSG_WARN([Deployed NUT installation uses a BINDIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_BINDIR}' vs. '${bindir}'])
+        AC_MSG_WARN([Deployed NUT installation uses a BINDIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_BINDIR}' vs. '${PREFIX_BINDIR}' ('${bindir}')])
         [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
             [*--bindir=*], [],
             [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --bindir='${DEPLOYED_BINDIR}'"])
+    ])
+
+    AS_IF([test x"${DEPLOYED_CGIDIR}" != x && test x"${DEPLOYED_CGIDIR}" != x"${PREFIX_CGIDIR}"],
+        AC_MSG_WARN([Deployed NUT installation uses a CGIDIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_CGIDIR}' vs. '${PREFIX_CGIDIR}' ('${with_cgipath}')])
+        [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+            [*--with-cgipath=*], [],
+            [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --with-cgipath='${DEPLOYED_CGIDIR}'"])
+    ])
+
+    AS_IF([test x"${DEPLOYED_DRVDIR}" != x && test x"${DEPLOYED_DRVDIR}" != x"${PREFIX_DRVDIR}"],
+        AC_MSG_WARN([Deployed NUT installation uses a DRVDIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_DRVDIR}' vs. '${PREFIX_DRVDIR}' ('${with_drvpath}')])
+        [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+            [*--with-drvpath=*], [],
+            [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --with-drvpath='${DEPLOYED_DRVDIR}'"])
+    ])
+
+
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--datarootdir=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--datarootdir="*) datarootdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                esac
+            done
+        ]
+    )
+
+    conftemp="${datarootdir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    PREFIX_DATAROOTDIR="${conftemp}"
+    dnl The dataroot dir (system-wide) here is used to search for datadir candidate info
+
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--datadir=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--datadir="*) datadir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                esac
+            done
+        ]
+    )
+
+    conftemp="${datadir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    PREFIX_DATADIR="${conftemp}"
+    DATADIR="${PREFIX_DATADIR}"
+    DEPLOYED_DATADIR=""
+
+    AS_IF([test -e "${PREFIX_DATAROOTDIR}/nut/cmdvartab" || test -e "${PREFIX_DATAROOTDIR}/nut/driver.list"],
+        [DEPLOYED_DATADIR="${PREFIX_DATAROOTDIR}/nut"],
+        [AS_IF([test -e "${PREFIX_DATAROOTDIR}/cmdvartab" || test -e "${PREFIX_DATAROOTDIR}/driver.list"],
+            [DEPLOYED_DATADIR="${PREFIX_DATAROOTDIR}"],
+            [dnl FIXME: Be careful on WIN32 and its "find" vs. that in MINGW?
+             DEPLOYED_DATADIR="`find "${PREFIX_DATAROOTDIR}" -name cmdvartab | head -1 | sed 's,/@<:@^/@:>@*$,,'`" || DEPLOYED_DATADIR=""
+             AS_IF([test -z "${DEPLOYED_DATADIR}"], [DEPLOYED_DATADIR="`find "${PREFIX_DATAROOTDIR}" -name driver.list | head -1 | sed 's,/@<:@^/@:>@*$,,'`" || DEPLOYED_DATADIR=""])
+            ]
+        )]
+    )
+    AS_IF([test -z "${DEPLOYED_DATADIR}" && test -d "${PREFIX_DATAROOTDIR}/nut"], [DEPLOYED_DATADIR="${PREFIX_DATAROOTDIR}/nut"])
+
+    AS_IF([test x"${DEPLOYED_DATADIR}" != x && test x"${DEPLOYED_DATADIR}" != x"${PREFIX_DATADIR}"],
+        AC_MSG_WARN([Deployed NUT installation uses a DATADIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_DATADIR}' vs. '${PREFIX_DATADIR}' ('${datadir}')])
+        [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+            [*--datadir=*], [],
+            [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --datadir='${DEPLOYED_DATADIR}'"
+             DATADIR="${DEPLOYED_DATADIR}"
+            ])
     ])
 
     AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
@@ -579,7 +718,14 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         dnl NOTE: Single-quotes are correct for autotools default,
         dnl expanded at runtime (see conftemp tricks below)
 
-        AC_MSG_CHECKING([for in-place replacement default sysconfdir (better than '${sysconfdir}')])
+        conftemp="${sysconfdir}"
+        eval conftemp=\"${conftemp}\"
+        eval conftemp=\"${conftemp}\"
+        dnl Evaluated here for the message; CONFPATH will be re-evaluated
+        dnl below, after we decide on the sysconfdir value we really like.
+        PREFIX_SYSCONFDIR="${conftemp}"
+
+        AC_MSG_CHECKING([for in-place replacement default sysconfdir, better than '${PREFIX_SYSCONFDIR}' ('${sysconfdir}')])
         DEPLOYED_SYSCONFDIR=""
 
         dnl TODO: Any more reasonable defaults? Pile them on here :)
@@ -633,7 +779,17 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     conftemp="${libdir}"
     eval conftemp=\"${conftemp}\"
     eval conftemp=\"${conftemp}\"
-    LIBDIR="${conftemp}"
+    PREFIX_LIBDIR="${conftemp}"
+    LIBDIR="${PREFIX_LIBDIR}"
+
+    AS_IF([test x"${DEPLOYED_LIBDIR}" != x && test x"${DEPLOYED_LIBDIR}" != x"${PREFIX_LIBDIR}"],
+        AC_MSG_WARN([Deployed NUT installation uses a LIBDIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_LIBDIR}' vs. '${PREFIX_LIBDIR}' ('${libdir}')])
+        [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+            [*--libdir=*], [],
+            [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --libdir='${DEPLOYED_LIBDIR}'"
+             LIBDIR="${DEPLOYED_LIBDIR}"
+            ])
+    ])
 
     AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
         [*--libexecdir=*], [
@@ -760,7 +916,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     ])
 
     AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}" != x], [
-        AC_MSG_NOTICE([Detected CONFIG_FLAGS of an already deployed NUT installation, using them for --inplace-runtime configuration (restarting script)])
+        AC_MSG_NOTICE([Detected CONFIG_FLAGS for an already deployed NUT installation, using them for --inplace-runtime configuration (restarting script)])
         dnl For multiply-specified flags with conflicting values, last mention wins:
         AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime])
         AS_IF([test x"${NUT_VERSION_DEPLOYED}" != x], [
@@ -1465,7 +1621,7 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_TYPE_LONG_LONG_INT
 ])
 
-AC_REPLACE_FUNCS(setenv strerror atexit)
+AC_REPLACE_FUNCS(setenv unsetenv strerror atexit)
 
 case ${target_os} in
    solaris2* )
@@ -3385,6 +3541,24 @@ fi
 DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
 DOCTESTDIR="$(cd "$DOCTESTDIR" && pwd)"
 
+dnl NOTE: We perform some of these checks/infos also if docs=(man=)skip
+dnl  so we know in later reports if disted files are still an option
+dnl  should we want to not just skip them
+have_disted_doc_man=no
+want_disted_doc_man=no
+if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
+	dnl Test that groff files exist (building from distributed tarball, not git repo)
+	if test x"PLACEHOLDER" = x"`cat "${abs_srcdir}"/docs/man/snmp-ups.8`" ; then
+		dnl REALLY should not happen in real builds,
+		dnl but may be in distcheck-driven sub-builds
+		dnl where the external build agreed to use
+		dnl fake man pages (e.g. for CI recipe checks)
+		have_disted_doc_man=yes-placeholder
+	else
+		have_disted_doc_man=yes
+	fi
+fi
+
 dnl Note: Do not cover ${nut_doc_build_list} in braces or quotes here,
 dnl to ensure that it is processed as several space-separated tokens
 for nut_doc_build_target in $nut_doc_build_list; do
@@ -3495,20 +3669,6 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		dnl Experimental support for --with-doc=man=dist-auto to prefer pre-disted docs if available, below
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
-		have_disted_doc_man=no
-		want_disted_doc_man=no
-		if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
-			dnl Test that groff files exist (building from distributed tarball, not git repo)
-			if test x"PLACEHOLDER" = x"`cat "${abs_srcdir}"/docs/man/snmp-ups.8`" ; then
-				dnl REALLY should not happen in real builds,
-				dnl but may be in distcheck-driven sub-builds
-				dnl where the external build agreed to use
-				dnl fake man pages
-				have_disted_doc_man=yes-placeholder
-			else
-				have_disted_doc_man=yes
-			fi
-		fi
 		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test "${nut_doc_build_target_flag}" = "dist-auto"; then
 			want_disted_doc_man=yes
 		fi
@@ -3635,6 +3795,7 @@ AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 AM_CONDITIONAL(KNOWN_UNABLE_MANS, test "${KNOWN_UNABLE_MANS}" = "yes")
 AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
 dnl Reporting have_disted_doc_man not DOC_INSTALL_DISTED_MANS because the former has more values
+AS_IF([test x"${have_disted_doc_man}" = x], [have_disted_doc_man="did not check"])
 NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${have_disted_doc_man}"])
 
 WITH_HTML_SINGLE=no
@@ -4154,7 +4315,7 @@ AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
 
-dnl NOTE: Be sure to customize e.g.  --datarootdir=/usr/share/nut to install
+dnl NOTE: Be sure to customize e.g.  --datadir=/usr/share/nut to install
 dnl these scripts not into default location as e.g. /usr/share/solaris-smf
 AC_MSG_CHECKING(whether to install Solaris SMF files)
 solarissmf="auto"
@@ -5950,6 +6111,7 @@ AC_SUBST(NUT_NETVERSION)
 AC_SUBST(FORCE_NUT_VERSION)
 AC_SUBST(NUT_SOURCE_GITREV)
 AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
+AC_SUBST(NUT_SOURCE_GITREV_IS_PRERELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
 AC_SUBST(NUT_WEBSITE_BASE)
@@ -6836,4 +6998,14 @@ AS_IF([test -s "${ABS_TOP_SRCDIR}/install-sh" && grep -w MKDIRPROG "${ABS_TOP_SR
 		 AC_MSG_WARN([This should not impact parallel builds.])
 		 AC_MSG_WARN([=====================================================])
 	])
+])
+
+AS_IF([test x"${NUT_VERSION_DEPLOYED-}" = x"<reenter>"], [
+	AC_MSG_NOTICE([==========================================================])
+	AC_MSG_NOTICE([You have configured a build for "in-place" replacement])
+	AC_MSG_NOTICE([of an existing NUT installation. You are advised to first])
+	AC_MSG_NOTICE([install into a temporary DESTDIR and verify the fliesystem])
+	AC_MSG_NOTICE([layout of the new build against what you already have.])
+	AC_MSG_NOTICE([Check INSTALL.nut.adoc for practical details and example.])
+	AC_MSG_NOTICE([==========================================================])
 ])

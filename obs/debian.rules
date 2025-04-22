@@ -98,7 +98,7 @@ common-install-arch::
 	# prepare debian packaging files
 	mkdir -p $(CURDIR)/debian
 	for F in nut-client.init nut-common.postinst nut-common.prerm nut-server.init nut-server.prerm nut-common.tmpfiles ; do \
-		echo "  SED    $F.in => $F" ; \
+		echo "  SED	$F.in => $F" ; \
 		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/obs/debian.$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
 	done
 
