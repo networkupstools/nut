@@ -99,6 +99,13 @@ artifacts associated with a particular release version/tag, and changing
 Git tags on public repositories is generally considered as a bad practice.
 So best to avoid it in the first place.
 
+NOTE: Take time to push release candidates also as one of `fightwarn*` git
+branches (maybe with QEMU scenarios too), and maybe post a `FTY` branch
+update (while it is not all upstreamed), to gather more insights into code
+and recipe quality from scenarios that do not often run. Also revise if
+CodeQL or similar tools on GitHub have posted any relevant suggestions
+about security or other matters.
+
 * clean up "in-development" bits from files (which we would revert after
   release), e.g.:
 ** TODO etc. referring planned future in the `NEWS.adoc` and `UPDATING.adoc`
@@ -163,13 +170,46 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
    file (DO NOT add them to git to avoid confusion later, or revert any such
    addition after the release -- still has a chance to confuse e.g. branches
    made from release tag later):
+*** Automation was introduced to help maintain these files, e.g.:
 +
 ----
+# Current commit MUST be git-tagged for *-(rc|alpha|beta) for magic to work:
+:; git tag v2.8.3-rc7
+
+:; NUT_VERSION_QUERY="UPDATE_FILE_GIT_RELEASE" ./tools/gitlog2version.sh
+SEMVER=2.8.3; TRUNK='upstream/master'; BASE='735451f1f21556f2a7b8443053e8962c2184239f';
+DESC='v2.8.2-2881+gbdade6241' => TAG='v2.8.2' + SUFFIX='-2881+gbdade6241+v2.8.3+rc7'
+ => VER5='2.8.2.2878.3' => DESC5='2.8.2.2878.3-2881+gbdade6241+v2.8.3+rc7'
+ => VER50='2.8.2.2878.3' => DESC50='2.8.2.2878.3-2881+gbdade6241+v2.8.3+rc7'
+
+# Note it assigns SEMVER from the pre-release tag, but other git info from
+# real git-describe details
+
+# You can verify current contents of these files with:
+:; grep . VER*
+VERSION_FORCED:NUT_VERSION_FORCED='2.8.2.2878.3-2881+gbdade6241+v2.8.3+rc7'
+VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
+----
+*** An older, possibly more reliable, way would go like this:
++
+----
+# Do not let them be easily deleted by e.g. `git clean -fdX` while you
+# would inevitably iterate the release attempts - keep in a subdir, and
+# juggle hardlinks (so they are archived into the tarball as real files):
+:; rm -rf .relver
+:; mkdir -p .relver
+
 # Generally may be the nuanced NUT SEMVER; is a triplet for releases
-:; echo 'NUT_VERSION_FORCED="2.8.3"' > VERSION_FORCED
+# or suffixed for release candidates
+:; echo 'NUT_VERSION_FORCED="2.8.3"' > .relver/VERSION_FORCED
+:; echo 'NUT_VERSION_FORCED="2.8.3-rc1"' > .relver/VERSION_FORCED
 
 # Should always be a triplet
-:; echo 'NUT_VERSION_FORCED_SEMVER="2.8.3"' > VERSION_FORCED_SEMVER
+:; echo 'NUT_VERSION_FORCED_SEMVER="2.8.3"' > .relver/VERSION_FORCED_SEMVER
+
+# Do not let them be easily lost; later you can just re-create these links
+# if file names in your top_srcdir are removed:
+:; ln .relver/* .
 ----
 *** Note that since NUT v2.8.3 this script dictates the version propagated by
     the `configure` script, so direct changes of `AC_INIT` there are no longer
@@ -214,8 +254,10 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
 * don't forget to push not only the code, but also the tag:
 +
 ----
-:; git push upstream && git push --tags upstream
+:; git push upstream && git push upstream v2.8.0
 ----
+** avoid `git push --tags` so your experimental tags do not pollute common
+   NUT repository
 
 * `make dist-files` (especially if you did not `make distcheck` above,
   or had some changes since then) to store the source tarball, checksum
@@ -243,7 +285,8 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
 ** in `source` submodule add a copy of tarball, checksum and hash files for
    download: `make dist{,-hash,-sig}` (or since NUT v2.8.3, `make dist-files`)
 *** for a `new-X.Y.Z.txt` file use the `NEWS.adoc` with a stripped title
-    (see existing files)
+    and prominent `link:` asciidoc markup (see existing files)
+** update `historic/index.txt` with an entry for the new release tag and date
 ** `git tag` the website release
 ** generate and publish a "historic" sub-site snapshot (currently manually,
    check comments in nut-website's `ci_build.sh` script and/or its README file)

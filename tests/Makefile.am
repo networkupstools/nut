@@ -183,7 +183,7 @@ else !HAVE_CPPUNIT
 EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC) $(CPPUNITTESTSRC_NUTCONF)
 
 cppnit:
-	@echo "SKIP: $@ not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
+	@echo "  SKIP	$@ : not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
 
 endif !HAVE_CPPUNIT
 
@@ -193,7 +193,7 @@ else !HAVE_CXX11
 EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC) $(CPPUNITTESTSRC_NUTCONF)
 
 cppnit:
-	@echo "SKIP: $@ not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
+	@echo "  SKIP	$@ : not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
 
 endif !HAVE_CXX11
 
@@ -206,7 +206,7 @@ memcheck: $(check_PROGRAMS)
 		case "$$P" in \
 			cppnit|cppnit$(EXEEXT)) \
 				if [ "$${NUT_PORT-}" -gt 0 ] 2>/dev/null ; then : ; else \
-					echo "SKIPPED: $(VALGRIND) ./$$P : NUT_PORT not prepared" ; \
+					echo "  SKIP	$@ : $(VALGRIND) ./$$P : NUT_PORT not prepared" ; \
 					continue ; \
 				fi ;; \
 		esac ; \
@@ -220,7 +220,7 @@ memcheck: $(check_PROGRAMS)
 	 exit $$RES
 else !HAVE_VALGRIND
 memcheck:
-	@echo "SKIPPED $@ : valgrind was not detected on this system by configure script" >&2
+	@echo "  SKIP	$@ : valgrind was not detected on this system by configure script" >&2
 endif !HAVE_VALGRIND
 
 if WITH_VALGRIND
