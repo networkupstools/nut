@@ -18,10 +18,6 @@ PLANNED: Release notes for NUT 2.8.4 - what's new since 2.8.3
 
 https://github.com/networkupstools/nut/milestone/9
 
- - `lib/*.pc.in`: propagate `-R/PATH` to NUT library installation location
-   (by default not in system prefix) to help third-party clients link with
-   us automatically. [#2782]
-
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly (porting from 42ITy project)
@@ -671,6 +667,10 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
  - Fixed dynamic linking of Mozilla NSS on systems like Solaris/illumos,
    where the shared objects are not packaged into the common RPATH.
    [issue #2674, PR #2675]
+
+ - `lib/*.pc.in`: propagate `-R/PATH` to NUT library installation location
+   (by default not in system prefix) to help third-party clients link with
+   us automatically. [related to issue #2782, PR #2865]
 
  - Added `scripts/valgrind` with a helper script and suppression file to
    ignore common third-party problems. [#2511]
