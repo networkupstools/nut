@@ -316,12 +316,99 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 		case ITEM_LOG_MAX :
 			pParser->Data.LogMax = FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
-			/* HACK: If treating the value as signed (FormatValue(...)) results in a LogMax that is
-			 * less than the LogMin value then it is likely that the LogMax value has been
-			 * incorrectly encoded by the UPS firmware (field too short and overflowed into sign
-			 * bit).  In that case, reinterpret it as an unsigned number and log the problem.
-			 * This hack is not correct in the sense that it only looks at the LogMin value for
-			 * this item, whereas the HID spec says that Logical values persist in global state.
+			/* HACK: If treating the value as signed (FormatValue(...))
+			 *  results in a LogMax that is less than the LogMin
+			 *  value then it is likely that the LogMax value has
+			 *  been incorrectly encoded by the UPS firmware
+			 *  (field was too short and overflowed into sign bit).
+			 * In that case, reinterpret it as an unsigned number
+			 *  and log the problem. See also *_fix_report_desc()
+			 *  methods that follow up in some *-hid.c subdrivers.
+			 * This hack is not correct in the sense that it only
+			 *  looks at the LogMin value for this item, whereas
+			 *  the HID spec says that Logical values persist in
+			 *  global state.
+			 * Note the values MAY be signed or unsigned, according
+			 *  to rules and circumstances explored below.
+			 *
+			 * RATIONALE: per discussions such as:
+			 * * https://github.com/networkupstools/nut/issues/1512#issuecomment-1238310056
+			 *   The encoding of small integers in the logical/physical
+			 *    min/max fields (in fact, I think in anywhere they
+			 *    encode integers) is independent of the size of
+			 *    the (feature) field they end up referring to.
+			 *   One should use the smallest size encoding
+			 *    (0, 1, 2, or 4 bytes are the options) that can
+			 *    represent, as a signed quantity, the value you
+			 *    need to encode. See HID spec 1.11, sec 6.2.2.2
+			 *    "Short Items". Given a 16 bit report field, with
+			 *    logical values 0..65535, it should use a 0 byte
+			 *    encoding for the logical minimum (0x14, rather
+			 *    than 0x15 0x00) and a 4-byte encoding for the
+			 *    logical maximum (0x27 0xFF 0xFF 0x00 0x00).
+			 *   Their encoding choice does suggest you cannot
+			 *    have an unsigned 32-bit report item with logical
+			 *    maximum >2147483647 (unless you assume, as I did,
+			 *    that "if max < min" then it's just a bad encoding
+			 *    of a positive number that ran into the sign bit).
+			 * * https://github.com/networkupstools/nut/pull/2718#issuecomment-2547021458
+			 *   This is what the spec says (page labelled 19 of
+			 *   hid1_11.pdf, physical page 29 of 97) --
+			 *   5.8 Format of Multibyte Numeric Values
+			 *    Multibyte numeric values in reports are
+			 *    represented in little-endian format, with the
+			 *    least significant byte at the lowest address.
+			 *    The Logical Minimum and Logical Maximum values
+			 *    identify the range of values that will be found
+			 *    in a report.
+			 *    If Logical Minimum and Logical Maximum are
+			 *    both positive values then a sign bit is
+			 *    unnecessary in the report field and the
+			 *    contents of a field can be assumed to
+			 *    be an unsigned value.
+			 *    Otherwise, all integer values are signed
+			 *    values represented in 2's complement format.
+			 *    Floating point values are not allowed.
+			 * * https://github.com/networkupstools/nut/pull/2718#issuecomment-2547065141
+			 *    The number of bytes in the encoding of the
+			 *     LogMin and LogMax fields is only loosely tied
+			 *     to the "Size" of the field that they are
+			 *     describing -- but the implementers on the
+			 *     UPS side don't seem to quite get that.
+			 *    It's all starting to come back to me...
+			 *    If you're trying to describe a report field
+			 *     that is 16-bits and has (unsigned) values
+			 *     from 0..65535 range, then you SHOULD have
+			 *     a LogMin field containing value 0, and
+			 *     a LogMax field that contains value 65535.
+			 *    Since all numeric fields are interpreted as
+			 *     signed "two's-complement" values (except for
+			 *     that note above about the *report values*,
+			 *     NOT the values in the report description), to
+			 *     encode such a LogMax field you would have to
+			 *     express the *LogMax field* in a 4-byte encoding
+			 *     in the *report description*.
+			 *    That's independent of the ultimate 2-byte
+			 *     *report value* that these LogMin and LogMax
+			 *     are describing.
+			 *    We suppose that some coder at the UPS company
+			 *     took a shortcut, and set not only "LogMin = 0",
+			 *     but also effectively "LogMax = -1" (because they
+			 *     used a 2-byte encoding with all bits set, not a
+			 *     4-byte encoding), and then NUT is left to decide
+			 *     what they actually intended.
+			 *    My interpretation of that is that they're trying
+			 *     to say e.g. 0..65535, because if they had meant
+			 *     0..32767 they would have just written that (as
+			 *     0..7FFF which fits in the signed 2-byte repr.),
+			 *     but unless they're actually trying to represent
+			 *     e.g. voltages over 327 V, deciding that the
+			 *     limit is a signed 32767 should also be fine.
+			 *
+			 * ...and maybe some in other tickets
+			 *
+			 * TL;DR: there is likely a mis-understanding
+			 *  of the USB spec by firmware developers.
 			 */
 			if (pParser->Data.LogMax < pParser->Data.LogMin) {
 				upslogx(LOG_WARNING,
@@ -332,6 +419,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 					pParser->Data.LogMax,
 					pParser->Value,
 					pParser->Data.ReportID);
+				pParser->Data.assumed_LogMax = true;
 				pParser->Data.LogMax = (long) pParser->Value;
 			}
 			break;
@@ -349,6 +437,9 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		case ITEM_LONG :
 			/* can't handle long items, but should at least skip them */
 			pParser->Pos += (uint8_t)(pParser->Value & 0xff);
+			break;
+
+		default:
 			break;
 		}
 	} /* while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize)) */
@@ -480,7 +571,7 @@ HIDData_t *FindObject_with_ID_Node(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNo
 void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 {
 	/* Note:  https://github.com/networkupstools/nut/issues/1023
-	   This conversion code can easily be sensitive to 32- vs 64- bit
+	   This conversion code can easily be sensitive to 32- vs. 64- bit
 	   compilation environments.  Consider the possibility of overflow
 	   in 32-bit representations when computing with extreme values,
 	   for example LogMax-LogMin+1.

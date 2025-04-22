@@ -14,6 +14,7 @@
 /_install_pkgprotodir/
 Makefile
 Makefile.in
+
 ## Parent directory only
 /aclocal.m4
 /ar-lib
@@ -22,6 +23,7 @@ Makefile.in
 /ChangeLog.adoc
 /config.guess
 /config.log
+/config.log.inplace-outer
 /config.status
 /config.sub
 /config.h
@@ -43,16 +45,20 @@ Makefile.in
 /README
 /TODO
 /UPGRADING
+/VERSION_DEFAULT
+/VERSION_FORCED
+/VERSION_FORCED_SEMVER
 /install-sh
 /libtool
 /ltmain.sh
 /missing
 /test-driver
-*-contentchecked
-*-spellchecked
+*-contentchecked*
+*-spellchecked*
 *-prepped
 *.usage-report
 *.adoc-parsed
+*.adoc-parsed.*
 *.adoc*.tmp
 *.adoc*.tmp.*
 *.txt*.tmp

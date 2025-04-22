@@ -30,9 +30,9 @@
 #ifndef WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "upsd.h"
 #include "neterr.h"
@@ -345,6 +345,8 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	case -1:
 		upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
 		ssl_error(client->ssl, ret);
+		break;
+	default:
 		break;
 	}
 

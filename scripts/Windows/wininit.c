@@ -1,4 +1,4 @@
-/* wininit.c - MS Windows service which replace the init script
+/* wininit.c - MS Windows service which replaces the init script
                (compiled as "nut.exe")
 
    Copyright (C)
@@ -145,7 +145,7 @@ static const char * makearg_debug(void)
 /* return PID of created process or 0 on failure */
 static DWORD run_drivers(void)
 {
-	char command[MAX_PATH];
+	char command[NUT_PATH_MAX];
 	char *path;
 
 	path = getfullpath(PATH_BIN);
@@ -162,7 +162,7 @@ static DWORD run_drivers(void)
 /* return PID of created process or 0 on failure */
 static DWORD stop_drivers(void)
 {
-	char command[MAX_PATH];
+	char command[NUT_PATH_MAX];
 	char *path;
 
 	path = getfullpath(PATH_BIN);
@@ -179,7 +179,7 @@ static DWORD stop_drivers(void)
 /* return PID of created process or 0 on failure */
 static void run_upsd(void)
 {
-	char command[MAX_PATH];
+	char command[NUT_PATH_MAX];
 	char *path;
 
 	path = getfullpath(PATH_SBIN);
@@ -201,7 +201,7 @@ static void stop_upsd(void)
 /* return PID of created process or 0 on failure */
 static void run_upsmon(void)
 {
-	char command[MAX_PATH];
+	char command[NUT_PATH_MAX];
 	char *path;
 
 	path = getfullpath(PATH_SBIN);
@@ -223,7 +223,7 @@ static void stop_upsmon(void)
 /* Return 0 if powerdown flag is set */
 static DWORD test_powerdownflag(void)
 {
-	char command[MAX_PATH];
+	char command[NUT_PATH_MAX];
 	char *path;
 	STARTUPINFO StartupInfo;
 	PROCESS_INFORMATION ProcessInformation;
@@ -279,7 +279,7 @@ static DWORD test_powerdownflag(void)
 
 static DWORD shutdown_ups(void)
 {
-	char command[MAX_PATH];
+	char command[NUT_PATH_MAX];
 	char *path;
 
 	path = getfullpath(PATH_BIN);
@@ -296,10 +296,10 @@ static DWORD shutdown_ups(void)
 /* return 0 on failure */
 static int parse_nutconf(BOOL start_flag)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	FILE	*nutf;
 	char	buf[SMALLBUF];
-	char	fullname[SMALLBUF];
+	char	fullname[NUT_PATH_MAX];
 
 	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
 
@@ -373,9 +373,9 @@ static int SvcInstall(const char * SvcName, const char * args)
 {
 	SC_HANDLE SCManager;
 	SC_HANDLE Service;
-	TCHAR Path[MAX_PATH];
+	TCHAR Path[NUT_PATH_MAX];
 
-	if (!GetModuleFileName(NULL, Path, MAX_PATH)) {
+	if (!GetModuleFileName(NULL, Path, NUT_PATH_MAX)) {
 		printf("Cannot install service (%d)\n", (int)GetLastError());
 		return EXIT_FAILURE;
 	}
@@ -702,7 +702,7 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 static void help(const char *arg_progname)
 {
-	printf("Network UPS Tools %s %s\n\n", arg_progname, UPS_VERSION);
+	print_banner_once(arg_progname, 2);
 
 	printf("NUT for Windows all-in-one wrapper for driver(s), data server and monitoring client\n");
 	printf("including shutdown and power-off handling (where supported). All together they rely\n");
@@ -722,6 +722,11 @@ static void help(const char *arg_progname)
 	printf("    -D	Raise debug verbosity (passed to launched NUT programs)\n");
 	printf("    -V	Display NUT version and exit\n");
 	printf("    -h	Display this help and exit\n");	/* also /? but be hush about the one slash */
+
+	printf("\n%s", suggest_doc_links(
+		"nut.exe" /*arg_progname*/,
+		"nut.conf, ups.conf, upsmon.conf, upsd.conf and upsd.users"
+		));
 }
 
 int main(int argc, char **argv)
@@ -778,8 +783,9 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				break;
 			case 'V':
-				/* also show the optional CONFIG_FLAGS banner if available */
-				printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(progname, 1);
 				nut_report_config_flags();
 				return EXIT_SUCCESS;
 			case 'h':
@@ -839,9 +845,9 @@ int main(int argc, char **argv)
 	return EXIT_SUCCESS;
 }
 
-#else
+#else	/* !WIN32 */
 
 /* Just avoid: ISO C forbids an empty translation unit [-Werror=pedantic] */
 int main (int argc, char ** argv);
 
-#endif  /* WIN32 */
+#endif  /* !WIN32 */

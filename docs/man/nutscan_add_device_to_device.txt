@@ -9,12 +9,13 @@ nutscan_add_device_to_device - Concatenate two devices structure.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- nutscan_device_t * nutscan_add_device_to_device(
-       nutscan_device_t * first,
-       nutscan_device_t * second);
-
+	nutscan_device_t * nutscan_add_device_to_device(
+		nutscan_device_t * first,
+		nutscan_device_t * second);
+------
 
 DESCRIPTION
 -----------

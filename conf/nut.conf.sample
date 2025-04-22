@@ -9,11 +9,16 @@
 #
 # IMPORTANT NOTES:
 #  This file is intended to be sourced by standard POSIX shell scripts
-#  (so there is no guaranteed `export VAR=VAL` syntax) and additionally
-#  by systemd on Linux (no guaranteed expansion of variables).
+#  (so there is no guaranteed `export VAR=VAL` syntax, while you may need
+#  to `export VAR` when sourcing it into init-scripts, for propagation to
+#  NUT programs eventually), and additionally by systemd on Linux (with no
+#  guaranteed expansion of variables -- only verbatim assignments).
+#
 #  You MUST NOT use spaces around the equal sign!
+#
 #  Practical support for this file and its settings currently varies between
 #  various OS packages and NUT sample scripts, but should converge over time.
+#
 #  Contents of this file should be pure ASCII (character codes not in range
 #  would be ignored with a warning message).
 #
@@ -93,6 +98,13 @@ MODE=none
 # verbosity passed to NUT daemons. As an environment variable, its priority sits
 # between that of 'DEBUG_MIN' setting of a driver and the command-line options.
 #NUT_DEBUG_LEVEL=0
+#export NUT_DEBUG_LEVEL
+
+# Optionally add current process ID to tags with debug-level identifiers.
+# This may be useful when many NUT daemons write to the same console or log
+# file, such as in containers/plugins for Home Assistant, storage appliances...
+#NUT_DEBUG_PID=true
+#export NUT_DEBUG_PID
 
 # Normally NUT can (attempt to) use the syslog or Event Log (WIN32), but the
 # environment variable 'NUT_DEBUG_SYSLOG' allows to bypass it, and perhaps keep
@@ -103,6 +115,7 @@ MODE=none
 #  `none`    Disabled and background() detaches stderr as usual
 #  `default`/unset/other   Not disabled
 #NUT_DEBUG_SYSLOG=stderr
+#export NUT_DEBUG_SYSLOG
 
 # Normally NUT can (attempt to) verify that the program file name matches the
 # name associated with a running process, when using PID files to send signals.
@@ -112,3 +125,48 @@ MODE=none
 # optionally set in init-scripts or service methods for `upsd`, `upsmon` and
 # NUT drivers/`upsdrvctl`.
 #NUT_IGNORE_CHECKPROCNAME=true
+#export NUT_IGNORE_CHECKPROCNAME
+
+# Optional flag to prevent daemons which can notify service management frameworks
+# (such as systemd) about passing their lifecycle milestones, to not report
+# loudly if they could NOT do so (e.g. running on a system without a framework,
+# or misconfigured so they could not report and the OS could eventually restart
+# the false-positively identified "unresponsive" service.
+# Currently such reports, done by default, help troubleshoot service start-up
+# and highlight that NUT sources (or package build) did not take advantage of
+# tighter OS service management framework integration (if one exists, so that
+# developers could focus on adding that). Reasons to set this flag could include
+# platforms without such a framework and not expecting one, although nagging
+# your favourite OS or contributing development to make it better is also a way.
+#NUT_QUIET_INIT_UPSNOTIFY=true
+#export NUT_QUIET_INIT_UPSNOTIFY
+
+##############################################################################
+# Variables that can be helpful more for tool scripting than service daemons
+##############################################################################
+
+# Optionally prevent `libupsclient` consumers (notoriously `upsc`, maybe
+# also `dummy-ups` driver or `nut-scanner` tool) from reporting whether
+# they have initialized SSL support -- or, loudly, failed to initialize
+# as it was not configured on this system.
+#NUT_QUIET_INIT_SSL=true
+#export NUT_QUIET_INIT_SSL
+
+# Optionally suppress NUT tool name and version banner (normally shown in most
+# NUT programs unilaterally, before processing any CLI options and possibly
+# failing due to that).
+# NOT recommended for services due to adverse troubleshooting impact, but may
+# be helpful in shell profiles or scripts which process NUT tool outputs.
+#NUT_QUIET_INIT_BANNER=true
+#export NUT_QUIET_INIT_BANNER
+
+# Optionally suppress reporting of sockets the driver programs listen at.
+#NUT_QUIET_INIT_LISTENER=true
+#export NUT_QUIET_INIT_LISTENER
+
+# Optionally impose a connection timeout for NUT client programs. The built-in
+# default is "0" meaning indefinitely blocking attempts, but many NUT clients
+# since NUT v2.8.3 set it to "10" by their default (can be overridden by this
+# variable, or via command line or configuration for some of them).
+#NUT_DEFAULT_CONNECT_TIMEOUT=10
+#export NUT_DEFAULT_CONNECT_TIMEOUT

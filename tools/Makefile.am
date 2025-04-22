@@ -25,7 +25,7 @@ SUBDIRS = . nut-scanner nutconf
 PYTHON = @PYTHON@
 
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh nut-dumpdiff.sh \
-  gitlog2changelog.py.in nut-snmpinfo.py.in driver-list-format.sh
+  gitlog2changelog.py.in gitlog2version.sh nut-snmpinfo.py.in driver-list-format.sh
 
 # These files are generated for nut-scanner builds (and cleaned as any others),
 # and can change as respective SNMP/USB subdriver sources are iterated by a
@@ -172,3 +172,6 @@ DISTCLEANFILES = gitlog2changelog.py
 DISTCLEANFILES += nut-snmpinfo.py
 
 .PHONY: nut-scanner-deps nut-scanner-snmp-deps nut-scanner-usb-deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: nut-scanner-deps

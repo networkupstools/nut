@@ -36,7 +36,7 @@
 
 #include <math.h>
 
-#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.61"
+#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.62"
 
 typedef struct {
 	unsigned char	start;

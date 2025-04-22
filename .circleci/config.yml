@@ -87,7 +87,7 @@ jobs:
       - run:
           name: "homebrew"
           command: |-
-            #HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
+            HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
             brew install ccache bash libtool binutils autoconf automake git m4 \
                 pkg-config aspell asciidoc docbook-xsl cppunit gd \
                 libusb neon net-snmp \
@@ -127,6 +127,11 @@ jobs:
             - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
             - ccache-master-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
 
+      # Help SEMVER look right (optionally)
+      - run:
+          name: "fetch git tags"
+          command: git fetch --tags || true
+
       # Fail fast if we had a problem with prerequisites - this
       # situation would likely impact all build branches anyway.
       # Requires a Personal API token in the building account:
@@ -162,7 +167,7 @@ jobs:
             CANBUILD_NIT_TESTS=yes \
             CFLAGS="$CC_STDVER" \
             CXXFLAGS="$CXX_STDVER" \
-            PYTHON=python3.12 \
+            PYTHON=python3.11 \
             ./ci_build.sh
 
       - run:

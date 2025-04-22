@@ -2,7 +2,7 @@
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2012  Arnaud Quette <arnaud.quette@free.fr>
-   Copyright (C) 2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,25 +26,27 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#endif
+#endif	/* !WIN32 */
 
 #include "nut_stdint.h"
 #include "upsclient.h"
+
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char		*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 
 static void usage(const char *prog)
 {
-	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
+	print_banner_once(prog, 2);
+	printf("NUT read-only client program to display UPS variables.\n");
 
-	printf("usage: %s -l | -L [<hostname>[:port]]\n", prog);
+	printf("\nusage: %s -l | -L [<hostname>[:port]]\n", prog);
 	printf("       %s <ups> [<variable>]\n", prog);
 	printf("       %s -c <ups>\n", prog);
 
-	printf("\nDemo program to display UPS variables.\n\n");
-
-	printf("First form (lists UPSes):\n");
+	printf("\nFirst form (lists UPSes):\n");
 	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
 	printf("  -L         - lists each UPS followed by its description (from ups.conf).\n");
 	printf("               Default hostname: localhost\n");
@@ -60,9 +62,13 @@ static void usage(const char *prog)
 
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
+
+	printf("\n%s", suggest_doc_links(prog, NULL));
 }
 
 static void printvar(const char *var)
@@ -222,6 +228,7 @@ int main(int argc, char **argv)
 	uint16_t	port;
 	int	varlist = 0, clientlist = 0, verbose = 0;
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_connect_timeout = NULL;
 	char	*s = NULL;
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
@@ -235,7 +242,7 @@ int main(int argc, char **argv)
 	}
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
-	while ((i = getopt(argc, argv, "+hlLcV")) != -1) {
+	while ((i = getopt(argc, argv, "+hlLcVW:")) != -1) {
 
 		switch (i)
 		{
@@ -246,23 +253,32 @@ int main(int argc, char **argv)
 		fallthrough_case_l:
 			varlist = 1;
 			break;
+
 		case 'c':
 			clientlist = 1;
 			break;
 
 		case 'V':
+			/* just show the version and optional
+			 * CONFIG_FLAGS banner if available */
+			print_banner_once(prog, 1);
 			nut_report_config_flags();
+			exit(EXIT_SUCCESS);
 
-			fatalx(EXIT_SUCCESS, "Network UPS Tools upsc %s", UPS_VERSION);
-#ifndef HAVE___ATTRIBUTE__NORETURN
-			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */
-#endif
+		case 'W':
+			net_connect_timeout = optarg;
+			break;
 
 		case 'h':
 		default:
 			usage(prog);
 			exit(EXIT_SUCCESS);
 		}
+	}
+
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+			net_connect_timeout);
 	}
 
 	argc -= optind;

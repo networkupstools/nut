@@ -218,11 +218,13 @@ lxc.arch = x86_64
 Also note the container/system naming without underscore in "x86_64" --
    the deployed system discards the character when assigning its hostname.
    Using "amd64" is another reasonable choice here.
++
 ** For Arch Linux you would need `pacman` tools on the host system, so see
    https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux#Using_pacman_from_the_host_system
    for details.
-   On a Debian/Ubuntu host (assumed ready for NUT builds per
-   linkdoc:config-prereqs.txt) it would start like this:
+   On a Debian/Ubuntu host, assumed ready for NUT builds per
+   linkdoc:qa-guide[Prerequisites for building NUT on different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt],
+   it would start like this:
 +
 ------
 :; apt-get update
@@ -254,6 +256,7 @@ Also note the container/system naming without underscore in "x86_64" --
 +
 You will also need `pacstrap` and Debian `arch-install-scripts` package
 does not deliver it. It is however simply achieved:
++
 ------
 :; git clone https://github.com/archlinux/arch-install-scripts
 :; cd arch-install-scripts
@@ -264,6 +267,7 @@ does not deliver it. It is however simply achieved:
 It will also want an `/etc/pacman.d/mirrorlist` which you can populate for
 your geographic location from https://archlinux.org/mirrorlist/ service,
 or just fetch them all (don't forget to uncomment some `Server =` lines):
++
 ------
 :; mkdir -p /etc/pacman.d/
 :; curl https://archlinux.org/mirrorlist/all/ > /etc/pacman.d/mirrorlist
@@ -272,6 +276,7 @@ or just fetch them all (don't forget to uncomment some `Server =` lines):
 And to reference it from your host `/etc/pacman.conf` by un-commenting the
 `[core]` section and `Include` instruction, as well as adding `[community]`
 and `[extra]` sections with same reference, e.g.:
++
 ------
 [core]
 ### SigLevel = Never
@@ -290,6 +295,7 @@ Include = /etc/pacman.d/mirrorlist
 ------
 +
 And just then you can proceed with LXC:
++
 ------
 :; lxc-create -P /srv/libvirt/rootfs \
     -n jenkins-archlinux-amd64 -t archlinux -- \
@@ -302,6 +308,7 @@ so I had to run `pacman-key --init; pacman-key --refresh-keys` on the
 host itself. Even so, `lxc-create` complained about updating some keyring
 entries and I had to go one by one picking key servers (serving different
 metadata) like this:
++
 ------
 :; pacman-key --keyserver keyserver.ubuntu.com --recv-key 6D1655C14CE1C13E
 ------
@@ -471,8 +478,9 @@ fails to find the group anyway; then we have to "manually" add them.
 Further setup of the containers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See NUT `docs/config-prereqs.txt` about dependency package installation
-for Debian-based Linux systems.
+See linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] about dependency
+package installation for Debian-based Linux systems.
 
 It may be wise to not install e.g. documentation generation tools (or at
 least not the full set for HTML/PDF generation) in each environment, in
@@ -498,7 +506,8 @@ may be not yet configured or still struggling to access the Internet):
 
 Similarly for `yum`-managed systems (CentOS and relatives), though specific
 package names can differ, and additional package repositories may need to
-be enabled first (see link:config-prereqs.txt[config-prereqs.txt] for more
+be enabled first (see linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for more
 details such as recommended package names).
 
 Note that technically `(sudo) chroot ...` can also be used from the CI worker
@@ -557,17 +566,20 @@ Troubleshooting
 ------
 Failed to create symlink /sys/fs/cgroup/net_cls: Operation not permitted
 ------
++
 A: According to https://bugzilla.redhat.com/show_bug.cgi?id=1770763
    (skip to the end for summary) this can happen when a newer Linux
    host system with `cgroupsv2` capabilities runs an older guest distro
    which only knows about `cgroupsv1`, such as when hosting a CentOS 7
    container on a Debian 11 server.
++
 ** One workaround is to ensure that the guest `systemd` does not try to
    "join" host facilities, by setting an explicit empty list for that:
 +
 ------
 :; echo 'JoinControllers=' >> "$ALTROOT/etc/systemd/system.conf"
 ------
++
 ** Another approach is to upgrade `systemd` related packages in the guest
    container. This may require additional "backport" repositories or
    similar means, possibly maintained not by distribution itself but by
@@ -690,8 +702,8 @@ available to the NUT CI farm:
   Filesystem for the `abuild` account may be or not be shared with the host.
 
 * Java can not run in the container (crashes on emulated CPU, or is too old
-  in the agent container's distro -- currently Jenkins requires JRE 8+, but
-  eventually will require 11+) => the agent would run on the host, and then
+  in the agent container's distro -- currently Jenkins requires JRE 17+, but
+  eventually will require 21+) => the agent would run on the host, and then
   the host would `ssh` or `chroot` (networking not required, but bind-mount
   of `/home/abuild` and maybe other paths from host would be needed) called
   for executing `sh` steps in the container environment. Either way, home
@@ -700,6 +712,20 @@ available to the NUT CI farm:
 
 * Java is inefficient in the container (operations like un-stashing the source
   succeed but take minutes instead of seconds) => either of the above
+
+NOTE: As time moves on and Jenkins core and its plugins get updated, support
+for some older run-time features of the build agents can get removed (e.g.
+older Java releases, older Git tooling). While there are projects like Temurin
+that provide Java builds for older systems, at some point a switch to "Jenkins
+agent on new host going into older build container" approach can become
+unavoidable. One clue to look at in build logs is failure messages like:
+
+----
+Caused by: java.lang.UnsupportedClassVersionError:
+  hudson/slaves/SlaveComputer$SlaveVersion has been compiled by a more
+  recent version of the Java Runtime (class file version 61.0), this version
+  of the Java Runtime only recognizes class file versions up to 55.0
+----
 
 Using Jenkins SSH Build Agents
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

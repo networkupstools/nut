@@ -11,15 +11,26 @@ systemdsystemunit_DATA = \
         nut-driver-enumerator-daemon-activator.service \
         nut-driver-enumerator-daemon.service \
         nut-driver@.service \
+        nut-logger.service \
         nut-monitor.service \
         nut-server.service  \
         nut-driver.target   \
+        nut-udev-settle.service \
         nut.target
+
+if !WITH_LIBSYSTEMD_INHIBITOR
+systemdsystemunit_DATA += \
+        nut-sleep.service
+endif !WITH_LIBSYSTEMD_INHIBITOR
 
 systemdtmpfiles_DATA = \
         nut-common-tmpfiles.conf
 
-EXTRA_DIST += nut-driver.target nut.target
+systemdsystempreset_DATA = \
+        nut-systemd.preset
+
+# Add files not generated from .in templates
+EXTRA_DIST += nut-sleep.service nut-systemd.preset nut-udev-settle.service
 
 systemdshutdown_SCRIPTS = nutshutdown
 
@@ -27,17 +38,20 @@ libexec_SCRIPTS = ../upsdrvsvcctl/nut-driver-enumerator.sh
 
 sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 
-else
+else !HAVE_SYSTEMD
 EXTRA_DIST += \
-	nut-driver@.service.in nut-monitor.service.in \
-	nut-server.service.in nutshutdown.in nut-driver.target nut.target \
+	nut.target.in nut-systemd.preset \
+	nut-driver@.service.in nut-driver.target.in \
+	nut-server.service.in nut-udev-settle.service \
+	nut-logger.service.in nut-monitor.service.in \
+	nut-sleep.service nutshutdown.in \
 	nut-driver-enumerator.path.in nut-driver-enumerator.service.in \
 	nut-driver-enumerator-daemon-activator.path.in \
 	nut-driver-enumerator-daemon-activator.service.in \
 	nut-driver-enumerator-daemon.service.in
 
 # NOTE: Do not EXTRA_DIST nut-common-tmpfiles.conf.in - it is generated per build
-endif
+endif !HAVE_SYSTEMD
 
 SPELLCHECK_SRC = README.adoc
 

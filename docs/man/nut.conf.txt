@@ -10,28 +10,40 @@ DESCRIPTION
 -----------
 
 This file attempts to standardize the various files being found
-in different installations, like /etc/default/nut on Debian based
-systems and /etc/sysconfig/ups on RedHat based systems.
+in different installations, like `/etc/default/nut` on Debian based
+systems and `/etc/sysconfig/ups` on RedHat based systems.
 
 Distribution's init script should source this file in order to
 determine which components have to be started.
 
-Blank lines are ignored. Lines with a hash ('#') character at the
-1st position of the line are ignored, too.  They can be used to add
+Blank lines are ignored. Lines with a hash (`#`) character at the
+first position of the line are ignored, too.  They can be used to add
 comments.
 
 IMPORTANT NOTES
 ---------------
 
-* This file is intended to be sourced by shell scripts.
+* This file is intended to be sourced by shell scripts as well as by
+  service management frameworks like systemd on Linux:
+  - There is no guaranteed `export VAR=VAL` syntax
+  - No guaranteed expansion of variables like `VAR1="$VAR2-something"` --
+    only verbatim assignments
+  - You may need to `export VAR` when sourcing it into init-scripts
+    or other scripts, for eventual propagation of certain settings
+    to NUT programs. Not-exported variables can only be consumed by
+    the script which "sourced" the file (and may choose to `export`
+    them independently).
 
 * You MUST NOT use spaces around the equal sign!
+
+* Practical support for this file and its settings currently varies
+  between different OS packages and NUT sample scripts, but should
+  converge over time.
 
 * Contents of this file should be pure ASCII (character codes
   not in range would be ignored with a warning message).
 
 Refer to the EXAMPLE section for illustrations.
-----------------
 
 DIRECTIVES
 ----------
@@ -92,22 +104,22 @@ should be running.
 *UPSMON_OPTIONS*::
 Optional.  Set upsmon specific options. See linkman:upsmon[8] for
 more details.  It is ignored when 'MODE' above indicates that no
-upsmon should be running.
+`upsmon` should be running.
 
 *POWEROFF_WAIT*::
 Optional.  At the end of an emergency system halt, the upsmon primary
 will signal the UPS to switch off.  This may fail for a number of
 reasons.  Most notably is the case that mains power returns during
 the shutdown process.  See the section "Power races" in
-/usr/share/doc/nut/FAQ.txt.gz.  The system will wait this
+`/usr/share/doc/nut/FAQ.txt.gz`.  The system will wait this
 long for the UPS to cut power, and then reboot.  It should be long
 enough to exhaust the batteries, in case line power continues to be
 unavailable.  On the other hand, it should not be so long that the
 system remains offline for an unreasonable amount of time if line
-power has returned.  See sleep(1) for compatible time syntax.
+power has returned.  See linkmanext:sleep[1] for compatible time syntax.
 If you specify the time in seconds, use the "s" suffix.
 +
-WARNING: this workaround might be dangerous under some circumstances.
+WARNING: This workaround might be dangerous under some circumstances.
 Please read http://bugs.debian.org/358696 for more details.
 
 *POWEROFF_QUIET*::
@@ -122,6 +134,11 @@ Optional, defaults to `0`. This setting controls the default debugging message
 verbosity passed to NUT daemons. As an environment variable, its priority sits
 between that of 'DEBUG_MIN' setting of a driver and the command-line options.
 
+*NUT_DEBUG_PID*::
+Optionally add current process ID to tags with debug-level identifiers.
+This may be useful when many NUT daemons write to the same console or log
+file, such as in containers/plugins for Home Assistant, storage appliances...
+
 *NUT_DEBUG_SYSLOG*::
 Optional, unset by default.
 Normally NUT can (attempt to) use the syslog or Event Log (WIN32), but the
@@ -130,11 +147,11 @@ the daemons logging to stderr (useful e.g. in NUT Integration Test suite to
 not pollute the OS logs, or in systemd where stderr and syslog both go into
 the same journal). Recognized values:
 +
-[options="header"]
+[options="header",cols="1,3a"]
 |===========================================================================
 | Value       | Description
-| `stderr`    | Disabled and background() keeps stderr attached
-| `none`      | Disabled and background() detaches stderr as usual
+| `stderr`    | Disabled and `background()` keeps `stderr` attached
+| `none`      | Disabled and `background()` detaches `stderr` as usual
 | `default`   | Not disabled
 | unset/other | Not disabled
 |===========================================================================
@@ -150,6 +167,20 @@ and do not match built-in expectations).
 +
 This environment variable can also be optionally set in init-scripts or
 service methods for `upsd`, `upsmon` and NUT drivers/`upsdrvctl`.
+
+*NUT_QUIET_INIT_UPSNOTIFY*::
+Optional flag to prevent daemons which can notify service management frameworks
+(such as systemd) about passing their lifecycle milestones, to not report
+loudly if they could NOT do so (e.g. running on a system without a framework,
+or misconfigured so they could not report and the OS could eventually restart
+the false-positively identified "unresponsive" service.
++
+Currently such reports, done by default, help troubleshoot service start-up
+and highlight that NUT sources (or package build) did not take advantage of
+tighter OS service management framework integration (if one exists, so that
+developers could focus on adding that). Reasons to set this flag could include
+platforms without such a framework and not expecting one, although nagging
+your favourite OS or contributing development to make it better is also a way.
 
 EXAMPLE
 -------
@@ -169,7 +200,7 @@ EXAMPLE
 INTEGRATION
 -----------
 
-An init script, such as /etc/init.d/nut, is expected to source this
+An init script, such as `/etc/init.d/nut`, is expected to source this
 file in order to determine which components have to be started.
 
 SEE ALSO

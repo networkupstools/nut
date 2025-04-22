@@ -14,11 +14,11 @@ against numerous OS distributions on one physical or virtual machine,
 e.g. to cover non-regression with older tool kits while taking advantage
 of new releases.
 
-* For Linux systems, we have notes on link:ci-farm-lxc-setup.txt[Setting
-  up the multi-arch Linux LXC container farm for NUT CI]
+* For Linux systems, we have notes on linkdoc:qa-guide[Custom NUT CI farm
+  build agents: LXC multi-arch containers,CI_LXC,docs/ci-farm-lxc-setup.txt]
 
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
-or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
+or SSL implementations (OpenSSL vs. Mozilla NSS) -- no problem installing
 both, at a disk space cost.
 
 [NOTE]
@@ -106,13 +106,16 @@ recommended for build agents with immutable system areas, etc.
 Build prerequisites to make NUT from scratch on various Operating Systems
 -------------------------------------------------------------------------
 
-Debian 10/11/12
-~~~~~~~~~~~~~~~
+Debian 10/11/12/13
+~~~~~~~~~~~~~~~~~~
 
 Being a popular baseline among Linux distributions, Debian is an
 important build target. Related common operating systems include
 Ubuntu and customized distros for Raspberry Pi, Proxmox, as well
 as many others.
+
+For some (newer) distributions, `apt` or other front-ends may be
+preferable to `apt-get`, but otherwise the commands are equivalent.
 
 The package list below should largely apply to those as well,
 however note that some well-known package names tend to differ.
@@ -133,6 +136,27 @@ actual package source versions on both Debian 8 "Jessie" and
 Debian 11 "Buster").
 ======
 
+[NOTE]
+.FUN NOTE
+======
+For development on the road (or a native ARM build) you can use the
+link:https://termux.dev/en/[Termux] project on Android. It provides
+a sufficiently Debian-like operating environment for all intents and
+purposes, but you may have to use their `pkg` wrapper instead of `apt`
+tooling directly, and `ldd` may be in a package separate from `binutils`,
+but otherwise the Debian/Ubuntu oriented lists of packages below apply.
+
+You would need at least a couple of gigabytes available on the internal
+phone storage though, especially if using `ccache` or setting up cross
+builds.
+
+The Termux distribution as of this writing seems to lack cppunit packages
+but you can build it from https://www.freedesktop.org/wiki/Software/cppunit/
+e.g. `--with-prefix=${HOME}/nut-deps/usr` and `make install` there.
+A custom `PKG_CONFIG_PATH=${HOME}/nut-deps/usr/lib/pkgconfig` would find
+it during NUT build.
+======
+
 Debian-like package installations commonly start with an update of
 metadata about recently published package revisions:
 
@@ -142,11 +166,16 @@ metadata about recently published package revisions:
 :; apt-get install \
     ccache time \
     git perl curl \
-    make autoconf automake libltdl-dev libtool \
+    make autoconf automake libltdl-dev libtool binutils \
     valgrind \
     cppcheck \
     pkg-config \
     gcc g++ clang
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; apt-get install \
+    gdb
 
 # NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
@@ -168,7 +197,11 @@ metadata about recently published package revisions:
 # provide an `msgfmt` implementation, e.g.:
 #   :; apt-get install gettext
 #
-# To install the Python NUT-Monitor app, you may need some modules:
+# To install the Python NUT-Monitor app, you may need some modules.
+# Ideally, they would be packaged, named according to major Python version:
+#   :; apt-get install python3-pyqt5
+#
+# If not packaged for your distro:
 #   :; apt-get install pip
 # For Python3:
 #   :; python3 -m pip install PyQt5 configparser
@@ -177,13 +210,20 @@ metadata about recently published package revisions:
 :; apt-get install \
     aspell aspell-en
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; apt-get install \
     asciidoc source-highlight python3-pygments dblatex
 
 # For CGI graph generation - massive packages (X11):
 :; apt-get install \
     libgd-dev
+
+# Debian 13 serves metadata needed for NUT to find where to install the
+# service unit files in a separate development package; earlier distro
+# releases did not seem to require it explicitly:
+:; apt-get install \
+    systemd-dev
 
 # Optionally for sd_notify integration:
 :; apt-get install \
@@ -245,7 +285,7 @@ complete environments):
     qemu-user-static
 ------
 
-NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`.
+NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`.
 You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 
@@ -278,7 +318,8 @@ file (as the aged distributions become less served by mirrors), such as:
 +
 ------
 # e.g. for CentOS7 currently:
-:; yum install https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm
+:; yum install \
+   https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm
 
 # And edit /etc/yum.repos.d/epel.repo to uncomment and set the baseurl=...
 # lines, and comment away the mirrorlist= lines (if yum hiccups otherwise)
@@ -297,15 +338,19 @@ detailing how to replace `/etc/yum.repos.d/` contents (you can wholesale rename
 the existing directory and populate a new one with `curl` downloads from the
 article), and additional key trust for EPEL packages:
 ------
-:; yum install https://dl.fedoraproject.org/pub/archive/epel/6/x86_64/epel-release-6-8.noarch.rpm
+:; yum install \
+   https://dl.fedoraproject.org/pub/archive/epel/6/x86_64/epel-release-6-8.noarch.rpm
 ------
 
 Set up CentOS packages for NUT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Instructions below apply to both CentOS 6 and 7 (a few nuances for 6 commented).
+For newer distributions, `dnf` may be preferable to `yum`, but otherwise the
+commands are equivalent.
 
-General developer system helpers mentioned in link:ci-farm-lxc-setup.txt[]:
+General developer system helpers mentioned in linkdoc:qa-guide[Custom NUT CI
+farm build agents: LXC multi-arch containers,CI_LXC,docs/ci-farm-lxc-setup.txt]:
 ------
 :; yum update
 
@@ -349,6 +394,11 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
     pkgconfig \
     gcc gcc-c++ clang
 
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; yum install \
+    gdb
+
 # See comments below, python version and package naming depends on distro
 :; yum install \
     python
@@ -366,7 +416,8 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 :; yum install \
     aspell aspell-en
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; yum install \
     asciidoc source-highlight python-pygments dblatex
 
@@ -394,8 +445,10 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
     neon-devel
 #?# is python-augeas needed? exists at least...
 #?# no (lib)i2c-devel ...
-#?# no (lib)ipmimonitoring-devel ... would "freeipmi-ipmidetectd" cut it at least for run-time?
-#?# no (lib)gpio(d)-devel - starts with CentOS 8 (or extra repositories for later minor releases of CentOS 7)
+#?# no (lib)ipmimonitoring-devel ... would "freeipmi-ipmidetectd"
+#?#     cut it at least for run-time?
+#?# no (lib)gpio(d)-devel - starts with CentOS 8 (or extra repositories
+#?#     for later minor releases of CentOS 7)
 
 # Some NUT code related to lua may be currently limited to lua-5.1
 # or possibly 5.2; the former is default in CentOS 7 releases...
@@ -417,8 +470,23 @@ other described environments by adding a symlink `/usr/lib/ccache`:
 :; ln -s ../lib64/ccache/ "$ALTROOT"/usr/lib/
 ------
 
-NOTE: For Jenkins agents, also need to `yum install java-11-openjdk-headless`
-(not available for CentOS 6).
+[NOTE]
+======
+For Jenkins agents, also need to install JDK 17 or newer, which is not
+available for CentOS 6 nor 7 directly (in distribution packaging).
+Alternative packaging, such as Temurin from the Adoptium project, is possible
+(checked for at least CentOS 7), see
+link:https://adoptium.net/installation/linux/#_centosrhelfedora_instructions[their
+instructions] for specific details. This may require updated library package
+versions as dependencies from the OS distribution, so you may also have to make
+sure that  your `/etc/yum.repos.d/*` files (certainly `CentOS-Base.repo`, maybe
+also `CentOS-fasttrack.repo` and/or `CentOS-CR.repo`) to use e.g.
+----
+baseurl=https://vault.centos.org/centos/$releasever/os/$basearch/
+----
+lines if the `mirrorlist` ones do not suffice to find living mirrors (WARNING:
+the `/os/` part of the URL would vary for different repository types).
+======
 
 Arch Linux
 ~~~~~~~~~~
@@ -439,6 +507,11 @@ Install tools and prerequisites for NUT:
     vim python perl \
     pkgconf \
     cppcheck valgrind
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pacman -S --needed \
+    gdb
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pacman -S --needed \
@@ -511,7 +584,7 @@ clang version 14.0.6
     done; done)
 ------
 
-Also for CI build agents, a Java environment (JDK11+ since summer 2022) is
+Also for CI build agents, a Java environment (JDK17+ since autumn 2024) is
 required:
 ------
 # Search for available Java versions:
@@ -519,7 +592,10 @@ required:
 
 # Pick one:
 :; pacman -S --needed \
-    jre11-openjdk-headless
+    jre17-openjdk-headless
+
+# If needed to change default implementation, consult:
+:; archlinux-java help
 ------
 
 Slackware Linux 15
@@ -572,7 +648,14 @@ For procedures below, this is automated via `root` profile to become a
 `slackpkg-install` command:
 ----
 :; grep "slackpkg-install" ~/.profile || {
-    echo 'slackpkg-install() { for P in "$@" ; do echo "=== $P:"; slackpkg info "$P" || slackpkg install "$P" || break ; done; }' >> ~/.profile
+    cat >> ~/.profile << 'EOF'
+slackpkg-install() {
+    for P in "$@" ; do
+        echo "=== $P:"
+        slackpkg info "$P" || slackpkg install "$P" || break
+    done
+}
+EOF
    }
 :; . ~/.profile
 ----
@@ -597,13 +680,17 @@ For NUT dependencies and build tools:
     pkg-config \
     gcc llvm
 
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; slackpkg-install gdb
+
 # For spell-checking, highly recommended if you would propose pull requests:
 :; slackpkg-install aspell{,-en}
 
 # Note there is no direct "asciidoc" nor "a2x", just the competing project
 # "rubygem-asciidoctor" that NUT currently has no recipes for, so you can
 # not compile man/html/pdf docs here, per the default repository. See below
-# for tools from alternative repositories, which seem to work well. Manpage
+# for tools from alternative repositories, which seem to work well. Man page
 # compilation would require docbook-xml resources; older versions are in
 # this package https://slackbuilds.org/repository/15.0/system/docbook-xml/
 # and recent ones are in not-installed part of main repository:
@@ -635,7 +722,7 @@ Other common NUT dependencies absent from primary Slackware repositories
 can be found and downloaded (seek `*.txz` package files, although a few
 are named `*.tgz`) from here, and passed to `installpkg`:
 
-* http://www.slackware.com/~alien/slackbuilds/openjdk11/
+* http://www.slackware.com/~alien/slackbuilds/openjdk17/
 * http://www.slackware.com/~alien/slackbuilds/asciidoc/
 * http://www.slackware.com/~alien/slackbuilds/cppunit/
 * http://www.slackware.com/~alien/slackbuilds/lua/ (5.1 in "stable") and
@@ -663,7 +750,17 @@ like this:
 :; wget -m -l1 http://www.slackware.com/~alien/slackbuilds/asciidoc/pkg/ && \
     find . -name '*.t?z'
 
-:; installpkg ./www.slackware.com/~alien/slackbuilds/asciidoc/pkg/asciidoc-8.1.0-noarch-2.tgz
+:; (cd ./www.slackware.com/~alien/slackbuilds/asciidoc/pkg/ && \
+    installpkgasciidoc-8.1.0-noarch-2.tgz )
+----
+
+Note that some packages are further separated by Slackware version, e.g. with
+sub-directories for `15.0` and `current`:
+----
+:; wget -r -l1 -nd -R gif,css,jpg,html,htm --remove-listing \
+    http://www.slackware.com/~alien/slackbuilds/openjdk17/pkg64/15.0/
+
+:; installpkg openjdk17-17.0.12_7-x86_64-1alien.txz
 ----
 
 Upon community members' recommendations, Sotirov's SlackPack is also considered
@@ -671,18 +768,30 @@ a reputable repository: https://sotirov-bg.net/slackpack/ and should cover most
 if not all of the dependencies required for NUT building (including PowerMan,
 IPMI etc.)
 
-NOTE: If setting up a CI farm agent with builds in RAM disk, keep in mind that
+[NOTE]
+======
+If setting up a CI farm agent with builds in RAM disk, keep in mind that
 default mount options for `/dev/shm` preclude script execution. Either set up
 the agent in a non-standard fashion (to use another work area), or if this is
-a dedicated machine -- relax the mount options in `/etc/fstab`. Here is an
-example with `noexec` which we *must avoid* for such use-case:
+a dedicated machine -- relax the mount options in `/etc/fstab`.
+
+Here is an example with `noexec` which we *must avoid* for such use-case:
 ----
 :; mount | grep /dev/shm
 tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,inode64)
 ----
+======
 
 FreeBSD 12.2
 ~~~~~~~~~~~~
+
+NOTE: As of 2024, this version is way beyond EOL -- packages have been
+removed from mirrors. A discussion at
+https://forums.freebsd.org/threads/easy-upgrading-from-12-2-rel-in-2024.92695/
+touches on upgrades in such situation. An alternate mirror (that worked to
+bump the system to `openjdk17`, as of this writing in Nov 2024) can be found
+at https://mirror.sg.gs/freebsd-pkg/FreeBSD:12:amd64/quarterly/ and written
+into `/etc/pkg/FreeBSD.conf` similarly to existing `url` entry.
 
 Note that `PATH` for builds on BSD should include `/usr/local/...`:
 
@@ -703,6 +812,11 @@ below.
     pkgconf \
     gcc clang
 
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pkg install \
+    gdb
+
 # See comments below, python version and package naming depends on distro
 :; pkg install \
     python
@@ -719,7 +833,8 @@ below.
 :; pkg install \
     aspell en-aspell
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; pkg install \
     asciidoc source-highlight textproc/py-pygments dblatex
 
@@ -765,8 +880,8 @@ For compatibility with common setups on other operating systems, can symlink
 suffixed symlinks to compiler tools (e.g. `gcc-10` beside `gcc10` installed
 by package).
 
-NOTE: For Jenkins agents, also need to `pkg install openjdk11` (11 or 17
-required since summer 2022) -- and do note its further OS configuration
+NOTE: For Jenkins agents, also need to `pkg install openjdk11` (17 or 21
+required since autumn 2024) -- and do note its further OS configuration
 suggestions for special filesystem mounts.
 
 Due to BSD specific paths *when not using* an implementation of `pkg-config`
@@ -802,6 +917,10 @@ NOTE: For the purposes of builds with Jenkins CI agents, since summer 2022 it
 requires JDK11 which was first delivered with OpenBSD 6.5. Earlier iterations
 used OpenBSD 6.4 and version nuances in this document may still reflect that.
 
+FIXME: Since autumn 2024, JDK17+ is required. Maybe time to EOL OpenBSD 6.x
+workers, or to SSH into them from a nearby machine's Java agent?.. Alternately,
+consider https://github.com/adoptium/jdk17/blob/master/doc/building.md
+
 During builds, you may have to tell system dispatcher scripts which version
 to use (which feels inconvenient, but on the up-side for CI -- this system
 allows to test many versions of auto-tools in the same agent), e.g.:
@@ -818,7 +937,7 @@ that seems to exceed whatever is available on network mirrors; for example,
 the CD image included `clang` program while it is not available to `pkg_add`,
 at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.5/packages/amd64/
 mirror. The `gcc` version on CD image differed notably from that in the
-networked repository (4.2.x vs 4.9.x).
+networked repository (4.2.x vs. 4.9.x).
 You may have to echo a working base URL (part before "6.5/..." into the
 `/etc/installurl` file, since the old distribution is no longer served by
 default site.
@@ -834,6 +953,11 @@ default site.
     cppcheck \
     pkgconf \
     gcc clang
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pkg_add install \
+    gdb
 
 # See comments below, python version and package naming depends on distro
 :; pkg_add \
@@ -854,7 +978,8 @@ default site.
 :; pkg_add \
     aspell
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; pkg_add \
     asciidoc source-highlight py-pygments dblatex \
     docbook2x docbook-to-man
@@ -876,7 +1001,8 @@ default site.
 # to only deliver a numbered SO library name), e.g.:
 :; pkg_add neon && \
    if ! test -s /usr/local/lib/libneon.so ; then
-    ln -s "`cd /usr/local/lib && ls -1 libneon.so.* | sort -n | tail -1`" /usr/local/lib/libneon.so
+    ln -s "`cd /usr/local/lib && ls -1 libneon.so.* | sort -n | tail -1`" \
+        /usr/local/lib/libneon.so
    fi
 
 # Select a LUA-5.1 (or possibly 5.2?) version
@@ -900,11 +1026,15 @@ Recommended:
         done ; \
    )
 
-:; ( cd /usr/bin && for T in gcc g++ cpp ; do ln -s "$T" "$T-4.2.1" ; done )
-:; ( cd /usr/lib/ccache && for T in gcc g++ cpp ; do ln -s "$T" "$T-4.2.1" ; done )
+:; ( cd /usr/bin && for T in gcc g++ cpp ; \
+    do ln -s "$T" "$T-4.2.1" ; done )
+:; ( cd /usr/lib/ccache && for T in gcc g++ cpp ; \
+    do ln -s "$T" "$T-4.2.1" ; done )
 
-:; ( cd /usr/bin && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-7.0.1" ; done )
-:; ( cd /usr/lib/ccache && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-7.0.1" ; done )
+:; ( cd /usr/bin && for T in clang clang++ clang-cpp ; \
+    do ln -s "$T" "$T-7.0.1" ; done )
+:; ( cd /usr/lib/ccache && for T in clang clang++ clang-cpp ; \
+    do ln -s "$T" "$T-7.0.1" ; done )
 ------
 
 For compatibility with common setups on other operating systems, can add
@@ -949,11 +1079,13 @@ Note that `PATH` for builds on NetBSD should include `local` and
 `pkg`; the default after installation of the test system was:
 
 ------
-:; PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/X11R7/bin:/usr/local/sbin:/usr/local/bin"
+:; PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin"
+:; PATH="$PATH:/usr/X11R7/bin:/usr/local/sbin:/usr/local/bin"
 :; export PATH
 ------
 
 NOTE: You may want to reference `ccache` even before all that,
+e.g. in the system-wide `/etc/profile` or build-user's `~/.profile`,
 as detailed below:
 
 ------
@@ -970,21 +1102,64 @@ resources when generating the `configure` script may be old and its directory
 creation mode is not safe for parallel-`make` installations. If this happens,
 you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
 
+[NOTE]
+======
+Instructions below rely on `pkgin`, an `apt`/`yum`-like front-end tool for
+managing pkgsrc binary packages.  It is available out of the box on the system
+this document describes, but if an e.g. older release lacks it, it can be added
+using the older tooling:
+
+----
+:; CDN="http://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD"
+:; PKG_PATH="${CDN}/$(uname -p)/$(uname -r|cut -f '1 2' -d.)/All/"
+:; export PKG_PATH
+:; pkg_add pkgin
+----
+
+For more details, see https://www.pkgsrc.org/#index1h1 and
+https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
+(the latter also provides a nice cheat-sheet about `pkgin` operations).
+======
+
+[NOTE]
+======
+On NetBSD 9.2 the `openpimi` and `net-snmp` packages complain that
+they require either OS ABI 9.0, or that `CHECK_OSABI=no` is set in
+a `pkg_install.conf`. Such file was not found in the test system,
+but can be created in `/etc/` and is honoured by `pkgin`:
+
+----
+:; grep CHECK_OSABI /etc/pkg_install.conf || \
+    ( echo CHECK_OSABI=no >> /etc/pkg_install.conf )
+----
+======
+
 ------
 :; pkgin install \
     git perl curl \
-    make gmake autoconf automake libltdl libtool \
+    mozilla-rootcerts mozilla-rootcerts-openssl \
+    bmake gmake autoconf automake libltdl libtool \
     cppcheck \
     pkgconf \
-    gcc7 clang
+    gcc7 gcc14 clang
 
 # See comments below, python version and package naming depends on distro
 :; pkgin install \
-    python27 python39
+    python27 python39 python312 python313
 
-;; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.9 python3 ) )
+:; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.13 python3 ) )
 # You can find a list of what is (pre-)installed with:
 #   :; pkgin list | grep -Ei 'perl|python'
+
+# For localization maintenance (currently in Python NUT-Monitor app),
+# provide an `msgfmt` implementation, e.g.:
+#   :; pkgin install gettext
+#
+# To install the Python NUT-Monitor app, you may need some modules:
+# For Python2:
+#   :; pkgin install py27-gtk2
+# For Python3:
+#   :; pkgin install py312-qt5 py313-qt5
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pkgin install \
@@ -994,9 +1169,10 @@ you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
 :; pkgin install \
     asciidoc
 
+# FIXME: Missing packages?
 # For other doc types (PDF, HTML) generation - massive packages (TEX, X11):
-:; pkgin install \
-    source-highlight py39-pygments dblatex
+# :; pkgin install \
+#    source-highlight py39-pygments dblatex
 
 # For CGI graph generation - massive packages (X11):
 :; pkgin install \
@@ -1013,7 +1189,7 @@ you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
 
 # Select a LUA-5.1 (or possibly 5.2?) version
 :; pkgin install \
-    lua51
+    lua51 # lua52
 
 :; pkgin install \
     bash dash ast-ksh oksh
@@ -1021,14 +1197,16 @@ you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
 
 [NOTE]
 ======
-(TBD) On NetBSD 9.2 this package complains that it requires
-OS ABI 9.0, or that `CHECK_OSABI=no` is set in `pkg_install.conf`.
-Such file was not found in the test system...
+There seems to be no FreeIPMI for NetBSD, but there's OpenIPMI
+(can help someone implementing actual support for it):
 
 ------
 :; pkgin install \
     openipmi
 ------
+
+It still seems to not work for NUT's expectations of FreeIPMI
+(we have basic detection support for OpenIPMI but no code yet).
 ======
 
 Recommended: For compatibility with common setups on other operating
@@ -1036,37 +1214,51 @@ systems, can add dash-number suffixed symlinks to compiler tools (e.g.
 `gcc-7` beside the `gcc` installed by package) near the original
 binaries and into `/usr/lib/ccache`:
 ------
-:; ( cd /usr/bin && for TOOL in cpp gcc g++ ; do \
-        ln -s "$TOOL" "$TOOL-7" ; \
+:; ( cd /usr/pkg/bin && for TOOL in cpp gcc g++ ; do \
+        for VER in "7" "14" ; do \
+            ln -fs "../gcc$VER/bin/$TOOL" "${TOOL}-${VER}" ; \
+        done ; \
      done )
 
-# Note that the one delivered binary is `clang-13` and many (unnumbered)
-# symlinks to it. For NUT CI style of support for builds with many
-# compilers, complete the known numbers:
+# Note that the one delivered binary is `clang-13` (in originally described
+# installation; `clang-18` after an update in 2025 which auto-removed the
+# older version) and many (unnumbered) symlinks to it. For NUT CI style of
+# support for builds with many compilers, complete the known numbers:
 :; ( cd /usr/pkg/bin && for TOOL in clang-cpp clang++ ; do \
-        ln -s clang-13 "$TOOL-13" ; \
+        for VER in "-18" ; do \
+            ln -s clang-18 "$TOOL$VER" ; \
+        done ; \
      done )
 
 :; pkgin install ccache
 :; ( mkdir -p /usr/lib/ccache && cd /usr/lib/ccache && \
         for TOOL in cpp gcc g++ clang ; do \
-            for VER in "" "-7" ; do \
+            for VER in "" "-7" "-14" ; do \
                 ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
             done ; \
         done ; \
         for TOOL in clang clang++ clang-cpp ; do \
-            for VER in "" "-13" ; do \
+            for VER in "" "-18" ; do \
                 ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
             done ; \
         done ; \
    )
 ------
 
-NOTE: For Jenkins agents, also need to `pkgin install openjdk11` (will be
-in `JAVA_HOME=/usr/pkg/java/openjdk11`).
+NOTE: For Jenkins agents, also need to `pkgin install openjdk21` (will be
+in `JAVA_HOME=/usr/pkg/java/openjdk21`). Note that the location may be not
+exposed in `PATH` by default, so you may want to edit your system-wide
+`/etc/profile` or build user's `~/.profile` with:
 
-OpenIndiana 2021.10
-~~~~~~~~~~~~~~~~~~~
+------
+JAVA_HOME="/usr/pkg/java/openjdk21"
+export JAVA_HOME
+PATH="${JAVA_HOME}/bin:${PATH}"
+export PATH
+------
+
+OpenIndiana as of releases 2021.10 to 2024.04
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note that due to IPS and `pkg(5)`, a version of python is part of baseline
 illumos-based OS; this may not be the case on some other illumos distributions
@@ -1084,6 +1276,11 @@ Typical tooling would include:
     valgrind \
     pkg-config \
     gnu-binutils developer/linker
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pkg install \
+    gdb
 
 # NOTE: For python, some suitable version should be available since `pkg(5)`
 # tool is written in it. Similarly, many system tools are written in perl
@@ -1103,11 +1300,13 @@ Typical tooling would include:
 :; pkg install \
     aspell text/aspell/en
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+# For other doc types (man-page, PDF, HTML) generation - massive packages
+# (TEX, X11):
 :; pkg install \
     asciidoc libxslt \
-    docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common pygments-39 \
-    graphviz expect graphviz-tcl
+    docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common \
+    pygments-39 \
+    image/graphviz expect graphviz-tcl
 
 # For CGI graph generation - massive packages (X11):
 :; pkg install \
@@ -1116,13 +1315,20 @@ Typical tooling would include:
 :; pkg install \
     openssl library/mozilla-nss \
     library/augeas python/augeas \
-    libusb-1 libusbugen system/library/usb/libusb system/header/header-usb driver/usb/ugen \
+    libusb-1 libusbugen system/library/usb/libusb \
+    system/header/header-usb driver/usb/ugen \
     libmodbus \
-    neon \
-    net-snmp \
-    powerman \
+    library/neon \
+    system/management/snmp/net-snmp \
+    system/management/powerman \
     freeipmi \
     avahi
+
+# With 2024.04, some packages were split for development vs. run-time
+# and/or based on architecture:
+:; pkg install \
+    system/library/mozilla-nss/header-nss \
+    library/nspr library/nspr/32
 
 :; pkg install \
     lua
@@ -1143,6 +1349,12 @@ For extra compiler coverage, we can install a large selection of versions,
 although to meet NUT CI farm expectations we also need to expose "numbered"
 filenames, as automated below:
 ------
+# NOTE: not all compiler versions may be served, some are obsoleted over time.
+# Check current distro repository offers with:
+:; pkg info -r '*clang*' '*gcc*'
+:; pkg search -r '*bin/g++*'
+:; pkg search -r '*bin/clang++*'
+
 :; pkg install \
     gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 gcc-11 \
     clang-80 clang-90 \
@@ -1150,13 +1362,18 @@ filenames, as automated below:
 
 # As of this writing, clang-13 refused to link (claiming issues with
 # --fuse-ld which was never specified) on OI; maybe later it will:
+#:; pkg install \
+#    developer/clang-13 runtime/clang-13
+
+# With OI 2024.04 there's also clang-18 available in the mix, and as of
+# 2025 packaging, clang-19 as well:
 :; pkg install \
-    developer/clang-13 runtime/clang-13
+    developer/clang-19 runtime/clang-19
 
 # Get clang-cpp-X visible in standard PATH (for CI to reference the right one),
 # and make sure other frontends are exposed with versions (not all OI distro
 # releases have such symlinks packaged right), e.g.:
-:; (cd /usr/bin && for X in 8 9 13 ; do for T in "" "++" "-cpp"; do \
+:; (cd /usr/bin && for X in 8 9 19 ; do for T in "" "++" "-cpp"; do \
     ln -fs "../clang/$X.0/bin/clang$T" "clang${T}-${X}" ; \
    done; done)
 
@@ -1193,12 +1410,19 @@ from third-party repositories (e.g. SFE) and/or build from sources.
 
 No pre-packaged `cppcheck` was found, either.
 
-NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk11`
-for JRE/JDK 11. Java 11 or 17 is required to run Jenkins agents after
-summer 2022.
+[NOTE]
+======
+For Jenkins agents, also need to `pkg install runtime/java/openjdk17`
+for JRE/JDK 17. Java 17 or 21 is required to run Jenkins agents after
+autumn 2024. If updating from older releases, you may need to update default
+implementation, e.g.:
+----
+:; pkg set-mediator -V 17 java
+----
+======
 
-OmniOS CE (as of release 151036)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OmniOS CE (as of releases 151036 - 151052)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Being a minimal-footprint system, OmniOS CE provides very few packages out
 of the box. There are additional repositories supported by the project, as
@@ -1207,18 +1431,56 @@ happen that you would need to roll and install your own builds in accordance
 with that project's design goals.
 
 Note you may need not just the "Core" IPS package publisher, but also the
-"Extra" one. See OmniOS CE web site for setup details.
+"Extra" one. As of release 151052, it can be attached right in the installer;
+otherwise the `pkg (set-)publisher` commands can be used. See OmniOS CE web
+site for setup details.
 
 ------
+# Optionally, make the environment comfortable, e.g.:
+:; pkg install sudo bash application/mc wget rsync pigz pbzip2 p7zip top
+
+# NOTE: not all compiler versions may be served by all releases (e.g. OmniOS
+# did not deliver clang in Core nor Extra repositories for quite a while),
+# and some are obsoleted over time. While OmniOS 151036 lacked any clang,
+# LTS 151046 offered a range of clang 13 to 17, and current stable (151052)
+# includes also 18 and 19. Unlike OpenIndiana, OmniOS does not provide
+# implicit default (not-numbered) packages for neither clang nor gcc.
+# Check your distro repository offers with:
+:; pkg info -r '*clang*' '*gcc*'
+:; pkg search -r '*bin/g++*'
+:; pkg search -r '*bin/clang++*'
+
+# Then install a suitable one, e.g.:
 :; pkg install \
-    developer/build/autoconf developer/build/automake developer/build/libtool \
+    developer/clang-17
+
+:; pkg install \
+    developer/build/autoconf developer/build/automake \
+    developer/build/libtool library/libtool/libltdl \
     build-essential ccache git developer/pkg-config \
     runtime/perl \
     asciidoc \
     libgd
 
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pkg install \
+    gdb
+
+# May be or not be provided, depending on distro age:
 :; pkg install \
     net-snmp
+
+# For crypto-enabled builds:
+:; pkg install \
+    openssl-3
+
+# By r151046, some packages were split for development vs. run-time;
+# to provide support for Mozilla NSS, you need libraries and headers:
+:; pkg install \
+    system/library/mozilla-nss \
+    system/library/mozilla-nss/header-nss \
+    library/nspr library/nspr/header-nspr
 
 # NOTE: For python, some suitable version should be available since `pkg(5)`
 # tool is written in it. You may specify an additional variant like this
@@ -1232,46 +1494,71 @@ Your OmniOS version may lack a pre-packaged libusb, however the binary
 build from contemporary OpenIndiana can be used (copy the header files
 and the library+symlinks for all architectures you would need).
 
-NOTE: As of July 2022, a `libusb-1` package recipe was proposed for the
+[NOTE]
+======
+As of July 2022, a `libusb-1` package recipe was proposed for the
 `omnios-extra` repository (NUT itself and further dependencies may also
 appear there, per
-link:https://github.com/networkupstools/nut/issues/1498[issue #1498]).
+link:https://github.com/networkupstools/nut/issues/1498[issue #1498]),
+and is available as of release 151046 and later on:
+------
+:; pkg install \
+    libusb-1
+------
+======
 
 You may need to set up `ccache` with the same `/usr/lib/ccache` dir used
-in other OS recipes. Assuming your Build Essentials pulled GCC 9 version,
+in other OS recipes. Assuming your Build Essentials pulled GCC 11 version,
 and ccache is under `/opt/ooce` namespace, that would be like:
 ------
+:; GCCVER=11
 :; mkdir -p /usr/lib/ccache
 :; cd /usr/lib/ccache
 :; ln -fs ../../../opt/ooce/bin/ccache gcc
 :; ln -fs ../../../opt/ooce/bin/ccache g++
 :; ln -fs ../../../opt/ooce/bin/ccache gcpp
-:; ln -fs ../../../opt/ooce/bin/ccache gcc-9
-:; ln -fs ../../../opt/ooce/bin/ccache g++-9
-:; ln -fs ../../../opt/ooce/bin/ccache gcpp-9
+:; ln -fs ../../../opt/ooce/bin/ccache gcc-${GCCVER}
+:; ln -fs ../../../opt/ooce/bin/ccache g++-${GCCVER}
+:; ln -fs ../../../opt/ooce/bin/ccache gcpp-${GCCVER}
 ------
 
 Given that many of the dependencies can get installed into that namespace,
 you may have to specify where `pkg-config` will look for them (note that
-library and binary paths can be architecture bitness-dependent):
+library and binary paths can be architecture bitness-dependent; the
+`ci_build.sh` script should take care of this for many scenarios):
 ------
 :; ./configure PKG_CONFIG_PATH="/opt/ooce/lib/amd64/pkgconfig" --with-cgi
 ------
+
+You may also have to fiddle with either `LD_LIBRARY_PATH`, `crle (-c)` or
+`./configure --with-something-libs` options to compensate for lack of `-R`
+linker options in the `pkg-config` information provided by that repository:
+by default the NUT programs can build with the information they get, but
+fail to find the needed shared objects at run-time. More about this situation
+is tracked at https://github.com/networkupstools/nut/issues/2782
 
 Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
 whatever they need to happen.
 
-NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk11`
-for JRE/JDK 11. Java 11 or 17 is required to run Jenkins agents after
-summer 2022.
+[NOTE]
+======
+For Jenkins agents, also need to `pkg install runtime/java/openjdk21`
+for JRE/JDK 17. Java 17 or 21 is required to run Jenkins agents after
+autumn 2024. If updating from older releases, you may need to update default
+implementation, e.g.:
+----
+:; pkg set-mediator -V 21 java
+----
+======
+
 
 Solaris 8
 ~~~~~~~~~
 
-Builds for a platform as old as this are not currently covered by CI, however
-since the very possibility of doing this was recently verified, some notes
-follow.
+Builds for a platform as old as this are not currently covered by regular
+NUT CI farm runs, however since the very possibility of doing this was
+recently verified, some notes follow.
 
 For context: Following a discussion in the mailing list starting at
 https://alioth-lists.debian.net/pipermail/nut-upsuser/2022-December/013051.html
@@ -1338,12 +1625,14 @@ Overall, the successful test build using the NUT standard CI helper script
 `ci_build.sh` had the following shell session settings:
 
 ----
-### Common pre-sets from .profile or .bashrc:
+### Common pre-sets from .profile or .bashrc (long lines wrapped for readability):
 ### bash-2.03$ echo $PATH
-### /usr/bin:/usr/dt/bin:/usr/openwin/bin:/bin:/usr/ucb:/usr/tgcware/bin:/usr/tgcware/gnu:/usr/tgcware/gcc42/bin:/usr/tgcware/i386-pc-solaris2.8/bin
+###   /usr/bin:/usr/dt/bin:/usr/openwin/bin:/bin:/usr/ucb:/usr/tgcware/bin:\
+###   /usr/tgcware/gnu:/usr/tgcware/gcc42/bin:/usr/tgcware/i386-pc-solaris2.8/bin
 
 ### bash-2.03$ echo $LD_LIBRARY_PATH
-### /usr/lib:/usr/tgcware/lib:/usr/tgcware/gcc42/lib:/usr/tgcware/i386-pc-solaris2.8/lib
+###   /usr/lib:/usr/tgcware/lib:/usr/tgcware/gcc42/lib:\
+###   /usr/tgcware/i386-pc-solaris2.8/lib
 
 ### Further tuning for the build itself:
 :; git clean -fffdddxxx
@@ -1366,6 +1655,19 @@ setup, and https://brew.sh if you want to install it on your MacOS system
 depending on architecture -- see https://docs.brew.sh/Installation for more
 details; find via `brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`).
 
+[NOTE]
+======
+The quickest pre-configuration for `ci_build.sh` integration with this
+non-default build system would be to add this line into your shell profile:
+----
+eval "$(brew shellenv)"
+----
+======
+
+NOTE: Homebrew is not the only build/packaging system available for MacOS,
+so NUT scripts do not make any assumptions nor try to find a build system
+they were not told about (via `HOMEBREW_PREFIX` in this case).
+
 Currently known dependencies for basic build include:
 ----
 # Optional for a quick spin:
@@ -1377,15 +1679,23 @@ Currently known dependencies for basic build include:
         libusb neon net-snmp \
         nss openssl \
         libmodbus freeipmi powerman
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; brew install gdb
+
+# Recommended:
+:; brew install curl wget midnight-commander
 ----
 
 NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
 the location of packaged resources (`${HOMEBREW_PREFIX}/etc/xml/catalog`).
 On one test system, man page builds spewed warnings like
 `<unknown>:1: SyntaxWarning: invalid escape sequence '\S'`
+due to incompatibility of older asciidoc with new Python syntax requirements,
 but seemed to produce reasonable results otherwise.
 
-Note that ccache is installed in a different location than expected by default
+Note that `ccache` is installed in a different location than expected by default
 in the `ci_build.sh` script, so if your system allows to add the symbolic link
 to `/opt/homebrew/opt/ccache/libexec` (`/usr/local/opt/ccache/libexec` on x86)
 as `/usr/lib/ccache` -- please do so as the easiest way out.
@@ -1402,6 +1712,8 @@ NOTE: For Jenkins agents, also need to `brew install --cask temurin@21`
 for JRE/JDK 21. Java 17 or 21 (an LTS) is required to run Jenkins agents
 after summer 2024.
 
+The compiler is part of Apple's XCode ecosystem. Just try to run `clang`
+in a GUI terminal, and a pop-up will appear offering to install it.
 Note that you would have to create symbolic links to version-numbered names
 of compilers, e.g. `clang-14` and `clang++-14` in both `/usr/local/bin`
 (pointing to `/bin/clang(++)` and in the `ccache` location prepared above
@@ -1415,6 +1727,24 @@ binaries.
 WARNING: Take care to *NOT* symlink a `clang-cpp(-14)` which is not a
 name recognized by XCode dispatcher program, so requests to it freeze.
 
+On a machine dedicated to CI purposes, it may be wise to disable Spotlight
+search indexing with `sudo mdutil -a -i off`, disable active desktop themes,
+etc. (normally you would not even log in interactively).
+
+For scratch workers (VMs) also consider going to System Preferences =>
+Software Updates => Advanced, and un-checking all the boxes (disable the
+overheads of pulling in the updates you won't remember in an hour anyway).
+
+If you eventually find that the `kernel_task` consumes a lot of CPU, this
+is usually the system's way of throttling (scheduling A LOT of high-priority
+no-op cycles to preempt any other workload). In this case please investigate
+cooling and hardware compatibility (especially in a VM), or find and follow
+community documentation about neutering `IOPlatformPluginFamily.kext` module
+(probably not on the bare-metal MacOS instance -- find the cooling problem
+there instead).
+
+* https://grafxflow.co.uk/blog/mac-os-x/delete-ioplatformpluginfamilykext-macos-big-sur
+
 
 Windows builds
 ~~~~~~~~~~~~~~
@@ -1425,10 +1755,10 @@ programs.
 
 Further TODO for Windows would include:
 
-* MSVCRT (ubiquitous) vs UCRT (more standards compliant, but since Windows 10)
+* MSVCRT (ubiquitous) vs. UCRT (more standards compliant, but since Windows 10)
   https://docs.microsoft.com/en-us/cpp/porting/upgrade-your-code-to-the-universal-crt?view=msvc-160
 
-* libusb-0.1 vs libusb-1.0
+* libusb-0.1 vs. libusb-1.0
 
 NOTE: Native mingw, MSYS2, etc. builds on Windows are known to suffer from
 interaction with antivirus software which holds executable files open and
@@ -1551,7 +1881,8 @@ export PATH
 
 # Alternately there is libusb-compat (libusb-1.0 codebase exposing the older
 # libusb-0.1 API) which SHOULD NOT be installed along with the real libusb-0.1:
-# :; pacman -S --needed mingw-w64-x86_64-libusb-compat-git mingw-w64-clang-x86_64-libusb-compat-git
+# :; pacman -S --needed mingw-w64-x86_64-libusb-compat-git \
+#        mingw-w64-clang-x86_64-libusb-compat-git
 
 # This also pulls *-devel of several other projects:
 :; pacman -S --needed \
@@ -1576,7 +1907,8 @@ and lack a set for `clang` tools; easy-peasy fix with:
 
 ----
 :; cd /mingw64/lib/ccache/bin
-:; for T in clang clang++ clang-cpp ; do sed "s/gcc/$T/" < gcc > "$T" ; chmod +x "$T" ; done
+:; for T in clang clang++ clang-cpp ; do \
+    sed "s/gcc/$T/" < gcc > "$T" ; chmod +x "$T" ; done
 ----
 
 Note that default `ccache` seems quirky on Windows MSYS2, possibly due to
@@ -1611,9 +1943,12 @@ Not installed above (yet?):
 Note that `ccache` symlinks for MSYS2 are installed into `/usr/lib/ccache/bin`
 directory (not plain `/usr/lib/ccache` as elsewhere).
 
-NOTE: After you successfully build NUT (perhaps using `ci_build.sh`), if you
+[NOTE]
+======
+After you successfully build NUT (perhaps using `ci_build.sh`), if you
 install it into a prototype area by `make DESTDIR=... install` then you should
 add the third-party shared libraries involved, for that file set to be usable.
+
 Something along these lines:
 ------
 :; find "$DESTDIR" -name '*.exe' -type f  | while read F ; do ldd "$F" \
@@ -1626,3 +1961,4 @@ problematic on that platform) may be needed in other directories, such as
 ------
 :; ( cd "$DESTDIR/mingw64/bin/" && ln *.dll ../sbin && ln *.dll ../cgi-bin )
 ------
+======

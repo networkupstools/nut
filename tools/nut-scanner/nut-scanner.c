@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "nut_version.h"
 #include <unistd.h>
 #include <string.h>
 
@@ -50,7 +49,7 @@
 # include <netdb.h>
 # include <sys/ioctl.h>
 # include <net/if.h>
-#else
+#else	/* WIN32 */
 # if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
 #  include <winsock2.h>
 # endif
@@ -63,7 +62,7 @@
 #  define AI_NUMERICSERV NI_NUMERICSERV
 # endif
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 
@@ -969,10 +968,11 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 #endif	/* HAVE_GETIFADDRS || ( WIN32 && (HAVE_GETADAPTERSINFO || HAVE_GETADAPTERSADDRESSES)) */
 }
 
-static void show_usage(void)
+static void show_usage(const char *arg_progname)
 {
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
-	puts("nut-scanner : utility for detection of available power devices.\n");
+	print_banner_once(arg_progname, 2);
+	puts("NUT utility for detection of available power devices.\n");
 
 	nut_report_config_flags();
 
@@ -1154,10 +1154,13 @@ static void show_usage(void)
 	printf("  -a, --available: Display available bus that can be scanned\n");
 	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
 	printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
+
+	printf("\n%s", suggest_doc_links(arg_progname, "ups.conf"));
 }
 
 int main(int argc, char *argv[])
 {
+	const char	*progname = xbasename(argv[0]);
 	nutscan_snmp_t snmp_sec;
 	nutscan_ipmi_t ipmi_sec;
 	nutscan_xml_t  xml_sec;
@@ -1543,7 +1546,9 @@ int main(int argc, char *argv[])
 				quiet = 1;
 				break;
 			case 'V':
-				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(progname, 1);
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'a':
@@ -1572,7 +1577,7 @@ int main(int argc, char *argv[])
 			case 'h':
 			default:
 display_help:
-				show_usage();
+				show_usage(progname);
 				if ((opt_ret != 'h') || (ret_code != EXIT_SUCCESS))
 					fprintf(stderr, "\n\n"
 						"WARNING: Some error has occurred while processing 'nut-scanner' command-line\n"

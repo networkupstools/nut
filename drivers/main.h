@@ -8,14 +8,15 @@
 #include "extstate.h"
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
-/* public functions & variables from main.c */
+/* public functions & variables from main.c, documented in detail there */
 extern const char	*progname, *upsname, *device_name;
-extern char		*device_path;
-extern int		broken_driver, experimental_driver, do_lock_port, exit_flag;
+extern char		*device_path, *device_sdcommands;
+extern int		broken_driver, experimental_driver,
+			do_lock_port, exit_flag, handling_upsdrv_shutdown;
 extern TYPE_FD		upsfd, extrafd;
-extern time_t	poll_interval;
+extern time_t		poll_interval;
 
 /* functions & variables required in each driver */
 void upsdrv_initups(void);	/* open connection to UPS, fail if not found */
@@ -29,6 +30,33 @@ void upsdrv_cleanup(void);	/* free any resources before shutdown */
 void set_exit_flag(int sig);
 
 /* --- details for the variable/value sharing --- */
+
+/* Try each instant command in the comma-separated list of
+ * sdcmds, until the first one that reports it was handled.
+ * Returns STAT_INSTCMD_HANDLED if one of those was accepted
+ * by the device, or STAT_INSTCMD_INVALID if none succeeded.
+ * If cmdused is not NULL, it is populated by the command
+ * string which succeeded (or NULL if none), and the caller
+ * should free() it eventually.
+ */
+int do_loop_shutdown_commands(const char *sdcmds, char **cmdused);
+#define	MAX_SDCOMMANDS_DEPTH	15
+
+/* Use driver-provided sdcmds_default, unless a custom driver parameter value
+ * "sdcommands" is set - then use it instead. Call do_loop_shutdown_commands()
+ * for actual work; return STAT_INSTCMD_HANDLED or STAT_INSTCMD_HANDLED as
+ * applicable; if caller-provided cmdused is not NULL, populate it with the
+ * command that was used successfully (if any).
+ */
+int loop_shutdown_commands(const char *sdcmds_default, char **cmdused);
+
+/*
+ * Effectively call loop_shutdown_commands("shutdown.default") (which in turn
+ * probably calls some other INSTCMD, but may be using a more custom logic),
+ * and report how that went.
+ * Depending on run-time circumstances, probably set_exit_flag() too.
+ */
+int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmdused);
 
 /* handle instant commands common for all drivers
  * (returns STAT_INSTCMD_* state values per enum in upshandler.h)
@@ -152,10 +180,10 @@ void setup_signals(void);
 #   pragma warn "This OS lacks SIGURG and SIGWINCH, will not handle SIGCMD_DATA_DUMP"
 #  endif
 # endif
-#else
-/* FIXME: handle WIN32 builds for other signals too */
+#else	/* WIN32 */
+/* FIXME NUT_WIN32_INCOMPLETE : handle WIN32 builds for other signals too */
 # define SIGCMD_EXIT                    "driver.exit"
-# define SIGCMD_RELOAD_OR_ERROR         "driver.reload-or-error"
+# define SIGCMD_RELOAD_OR_ERROR         "driver.reload-or-error"	/* NUT_WIN32_INCOMPLETE */
 #endif	/* WIN32 */
 
 #endif /* NUT_MAIN_H_SEEN */

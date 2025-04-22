@@ -3,7 +3,7 @@
 
     Copyright (C)
         2012	Vaclav Krpec <VaclavKrpec@Eaton.com>
-        2024	Jim Klimov <jimklimov+nut@gmail.com>
+        2024-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ extern "C" {
 #ifndef WIN32
 # include <sys/select.h>
 # include <sys/wait.h>
-#else
+#else	/* WIN32 */
 # if !(defined random) && !(defined HAVE_RANDOM)
    /* WIN32 names it differently: */
 #  define random() rand()
@@ -77,8 +77,10 @@ extern bool verbose;
 #  pragma GCC diagnostic ignored "-Wold-style-cast"
 # endif
 #endif
-#ifdef __clang__
-# pragma clang diagnostic push "-Wdeprecated-declarations"
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
+# ifdef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#  pragma clang diagnostic push "-Wdeprecated-declarations"
+# endif
 #endif
 
 #include <cppunit/extensions/HelperMacros.h>
@@ -355,7 +357,7 @@ static uint16_t getFreePort() {
 		// well, at least attempted
 		wsaStarted = 1;
 	}
-#endif
+#endif	/* WIN32 */
 	while (tries > 0) {
 		uint16_t port = 10000 + static_cast<uint16_t>(reallyRandom() % 40000);
 		nut::NutSocket::Address addr(127, 0, 0, 1, port);
@@ -411,9 +413,10 @@ bool NutSocketUnitTest::Writer::run() {
 
 void NutSocketUnitTest::test() {
 #ifdef WIN32
-	/* FIXME: get Process working in the first place */
+	/* FIXME NUT_WIN32_INCOMPLETE:
+	 *  get Process working in the first place */
 	std::cout << "NutSocketUnitTest::test(): skipped on this platform" << std::endl;
-#else
+#else	/* !WIN32 */
 	// Fork writer
 	pid_t writer_pid = ::fork();
 
@@ -468,7 +471,7 @@ void NutSocketUnitTest::test() {
 	std::stringstream msg_writer_exit;
 	msg_writer_exit << "Got writer_exit=" << writer_exit << ", expected 0";
 	CPPUNIT_ASSERT_MESSAGE(msg_writer_exit.str(), 0    == writer_exit);
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
 }
 
 
@@ -485,7 +488,7 @@ NutStreamUnitTest::~NutStreamUnitTest() {}
 
 } // namespace nut {}
 
-#ifdef __clang__
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
 # pragma clang diagnostic pop
 #endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC)

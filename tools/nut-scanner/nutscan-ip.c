@@ -32,7 +32,7 @@
 #ifndef WIN32
 # include <sys/socket.h>
 # include <netdb.h>
-#else
+#else	/* WIN32 */
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
 # include <ws2tcpip.h>
@@ -41,7 +41,7 @@
 #  define AI_NUMERICSERV NI_NUMERICSERV
 # endif
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 static void increment_IPv6(struct in6_addr * addr)
 {
@@ -364,7 +364,7 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 	hints.ai_family = AF_INET;
 
 	ip->type = IPv4;
-	/* Detecting IPv4 vs IPv6 */
+	/* Detecting IPv4 vs. IPv6 */
 	if (getaddrinfo(startIP, NULL, &hints, &res) != 0) {
 		/*Try IPv6 detection */
 		ip->type = IPv6;
@@ -578,7 +578,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	/* Note: this freeing invalidates "mask" and "saveptr" pointer targets */
 	free(cidr_tok);
 
-	/* Detecting IPv4 vs IPv6 */
+	/* Detecting IPv4 vs. IPv6 */
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;
 

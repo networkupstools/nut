@@ -141,6 +141,11 @@ usb:v09AEp4008*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=TrippLite
 
+# KSTAR under Berkeley Varitronics Systems ID
+usb:v09D6p0001*
+ UPOWER_BATTERY_TYPE=ups
+ UPOWER_VENDOR=KSTAR under Berkeley Varitronics Systems ID
+
 # PowerCOM
 usb:v0D9Fp0001*
 usb:v0D9Fp0004*
@@ -201,6 +206,11 @@ usb:v2E66p0300*
 usb:v2E66p0302*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=Salicru
+
+# EcoFlow
+usb:v3746pFFFF*
+ UPOWER_BATTERY_TYPE=ups
+ UPOWER_VENDOR=EcoFlow
 
 # Powervar
 usb:v4234p0002*

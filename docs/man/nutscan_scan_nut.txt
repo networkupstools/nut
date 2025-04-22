@@ -9,19 +9,21 @@ nutscan_scan_nut - Scan network for available NUT services.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
- #include <unistd.h> /* useconds_t */
+------
+	#include <nut-scan.h>
+	#include <unistd.h> /* useconds_t */
 
- nutscan_device_t * nutscan_scan_nut(
-        const char * startIP,
-        const char * stopIP,
-        const char * port,
-        useconds_t usec_timeout);
+	nutscan_device_t * nutscan_scan_nut(
+		const char * startIP,
+		const char * stopIP,
+		const char * port,
+		useconds_t usec_timeout);
 
- nutscan_device_t * nutscan_scan_ip_range_nut(
-        nutscan_ip_range_list_t * irl,
-        const char * port,
-        useconds_t usec_timeout);
+	nutscan_device_t * nutscan_scan_ip_range_nut(
+		nutscan_ip_range_list_t * irl,
+		const char * port,
+		useconds_t usec_timeout);
+------
 
 DESCRIPTION
 -----------
@@ -29,10 +31,12 @@ DESCRIPTION
 The *nutscan_scan_nut()* and *nutscan_scan_ip_range_nut()* functions
 try to detect available NUT services and their associated devices.
 The former issues a NUT request on every IP ranging from 'startIP'
-to 'stopIP' (where 'startIP' is mandatory, 'stopIP' is optional);
+to 'stopIP', where 'startIP' is mandatory and 'stopIP' is optional
+(one 'startIP' address is scanned if 'stopIP' is NULL); while
 the latter can walk several IP address ranges represented by a
-`nutscan_ip_range_list_t` structure. Those IP arguments may be
-either IPv4 or IPv6 addresses or host names.
+`nutscan_ip_range_list_t` structure.
+
+Those IP arguments may be either IPv4 or IPv6 addresses or host names.
 
 You MUST call linkman:nutscan_init[3] before using this function.
 

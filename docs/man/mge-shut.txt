@@ -40,7 +40,7 @@ the exact model.
 
 *offdelay*='num'::
 Set the timer before the UPS is turned off after the kill power command is
-sent (via the *-k* switch).
+sent (via the `-k` switch).
 +
 The default value is 20 (in seconds). Usually this *must be lower* than
 'ondelay', but the driver will *not* warn you upon startup if it isn't.
@@ -62,7 +62,7 @@ driver ( 3 for 30 seconds) . It is now set in seconds ( 30 for 30 seconds).
 Make sure you use the correct unit in your configuration.
 
 *notification*='num'::
-Set notification type to 1 (no), 2 (light) or 3 (yes).
+Set notification type to '1' (no), '2' (light) or '3' (yes).
 +
 This argument is ignored. It is only here for backward compatibility.
 
@@ -72,11 +72,11 @@ KNOWN ISSUES
 Repetitive timeout and staleness
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Some models tends to be unresponsive with the default polling frequency.
+Some models tend to be unresponsive with the default polling frequency.
 The result is that you have some "data stale" errors  in your system log.
 
-In this case, simply modify the general parameter "pollinterval" to a higher
-value (like 10 for 10 seconds). This should solve the issue.
+In this case, simply modify the general parameter `pollinterval` to a higher
+value (like '10' for 10 seconds). This should solve the issue.
 
 Using 'notification=3' might also help.
 

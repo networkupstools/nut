@@ -43,7 +43,7 @@ int nutscan_unload_neon_library(void);
 # include <netinet/in.h>
 # include <sys/select.h>
 # define SOCK_OPT_CAST
-#else
+#else	/* WIN32 */
 # define SOCK_OPT_CAST (char*)
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
@@ -270,7 +270,7 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 		if (ip == NULL) {
 			upsdebugx(2,
 				"%s: scanning connected network segment(s) "
-				"with a broadcast, attempt %d of %d with a timeout of %" PRIdMAX " usec",
+				"with a broadcast, attempt %d of %d with a timeout of %" PRIuMAX " usec",
 				__func__, (i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
 			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST,
@@ -279,7 +279,7 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 		} else {
 			upsdebugx(2,
 				"%s: scanning IP '%s' with a unicast, "
-				"attempt %d of %d with a timeout of %" PRIdMAX " usec",
+				"attempt %d of %d with a timeout of %" PRIuMAX " usec",
 				__func__, ip, (i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			inet_pton(AF_INET, ip, &(sockAddress_udp.sin_addr));
 		}
@@ -614,7 +614,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 				upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 					" curr_threads=%" PRIuSIZE
 					" thread_count=%" PRIuSIZE
-					" stwST=%d stwS=%d pass=%d",
+					" stwST=%d stwS=%d pass=%u",
 					__func__, max_threads_scantype,
 					curr_threads, thread_count,
 					stwST, stwS, pass

@@ -32,10 +32,21 @@ or:
 Localization
 ------------
 
-For localized UI, also `export LANG=fr_FR.UTF-8` or `export LANG=ru_RU.UTF-8`
-(see and feel welcome to improve the choice of languages in `locale` directory).
+For localized UI, on some platforms you can also request the locale with different
+precision like `export LANG=fr_FR.UTF-8`, `export LANG=it_IT` or `export LANG=ru`
+(see and feel welcome to improve the choice of languages in `locale` directory);
+however on some others you are required to use the `xx_YY.UTF-8` spec format.
 
-NOTE: Currently localization only works for Python 2 client, PRs are welcome.
+NOTE: Currently, the localization only fully works for Python 2 client, while
+menu names, dialog field labels, etc. remain in default English wording despite
+the presence of translations in resource files. PRs to attach them to run-time
+rendering in the Python 3 client are welcome.
+
+Note that some items, like the standard menu items for Preferences or About,
+can come from the interpreter's default library and so partially cover the
+interface elements in other languages (e.g. system default) independently of
+the resources provided with the script or its sources (at least in the
+Python 2 / GTK2 variant of the UI).
 
 Desktop menu integration
 ------------------------
@@ -54,6 +65,50 @@ image::screenshots/nut-monitor-1.png[Example of device status overview]
 image::screenshots/nut-monitor-2.png[Example report of device variables]
 
 image::screenshots/nut-monitor-3.png[Example modification of a writable variable]
+
+Development/Testing notes
+-------------------------
+
+As Python2 falls out of favor and packaging scope of different distributions,
+one where both variants of the script can be tested simultaneously as of 2025
+is MSYS2 (on Windows), see linkdoc:qa-guide[Prerequisites for building NUT
+on different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for more
+details about general prerequisites for the NUT build in that environment.
+
+Regarding the Python UI support, you would need:
+
+----
+:; pacman -Sy mingw-w64-x86_64-python2-pygtk mingw-w64-x86_64-python-pyqt5
+----
+
+This should pull in the interpreters and libraries involved.
+
+You may have to add this to your `~/.bashrc` for Python 2 to work properly:
+
+----
+PYTHONIOENCODING=UTF-8
+export PYTHONIOENCODING
+----
+
+To iterate during specifically localization development, you can edit the `.in`
+template sources of the scripts and the localization files, and (from the `app`
+directory) run with:
+
+----
+:; (cd .. && make `pwd`/app/locale/*/*/*) ; (cd ../../../ && ./config.status \
+   scripts/python/app/NUT-Monitor-py2gtk2 scripts/python/app/NUT-Monitor-py3qt5) \
+   && LANG=fr_FR ./NUT-Monitor-py2gtk2
+----
+
+or `..../NUT-Monitor-py3qt5` respectively.
+
+NOTE: While `LANG=it` can be useful on MSYS2 for testing that localization does
+take place, it proved problematic to load `fr` and `ru` resources -- logic
+buried inside `gtk.glade.XML()` and `gtk.glade.xml_new_from_buffer()` gets
+the UTF-8 encoded data from `ui/gui-1.3.glade`, but then apparently mangles
+it inside (possibly in the DLL used by the Python module) to some other
+encoding, and then fails to parse that as UTF-8 (broken non-ASCII characters
+in `fr`, crash in `ru`). PRs with fixes would be welcome!
 
 Kudos
 -----

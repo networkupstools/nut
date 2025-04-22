@@ -18,9 +18,9 @@
 # else
 #  include <termios.h>
 # endif /* HAVE_SYS_TERMIOS_H */
-#else /* WIN32 */
+#else	/* WIN32 */
 # include "wincompat.h"
-#endif /* WIN32 */
+#endif	/* WIN32 */
 
 #include <unistd.h>             /* for usleep() and useconds_t, latter also might be via <sys/types.h> */
 #include <sys/types.h>
@@ -108,7 +108,7 @@ void ser_comm_good(void);
 #define close(a)	w32_serial_close(a)
 #define read(a,b,c)	w32_serial_read(a,b,c,INFINITE)
 #define write(a,b,c)	w32_serial_write(a,b,c)
-#endif
+#endif	/* WIN32 */
 
 
 #endif	/* SERIAL_H_SEEN */

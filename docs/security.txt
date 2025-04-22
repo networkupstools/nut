@@ -11,7 +11,7 @@ This chapter will present you these mechanisms, by increasing order of security
 level. This means that the more security you need, the more mechanisms you will
 have to apply.
 
-NOTE: you may want to have a look at NUT Quality Assurance, since some
+NOTE: You may want to have a look at NUT Quality Assurance, since some
 topics are related to NUT security and reliability.
 
 
@@ -275,7 +275,7 @@ If the server is build with tcp-wrappers support enabled, it will check if the
 NUT username is allowed to connect from the client address through the
 `/etc/hosts.allow` and `/etc/hosts.deny` files.
 
-NOTE: this will only be done for commands that require the user to be logged
+NOTE: This will only be done for commands that require the user to be logged
 into the server.
 
 `hosts.allow`:

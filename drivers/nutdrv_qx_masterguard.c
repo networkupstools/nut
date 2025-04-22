@@ -611,6 +611,8 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 		case 's':
 			snprintf_dynamic(value, valuelen, item->command, "%s", s);
 			break;
+		default:
+			break;
 	}
 
 	return 0;

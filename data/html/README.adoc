@@ -56,6 +56,7 @@ b) configure manually
 
 - Now edit your webserver configuration file, adding for
   example (for Apache):
++
 ----
 #Begin Section
 ScriptAlias /nut/cgi-bin/ /usr/local/nut/cgi-bin/
@@ -84,7 +85,8 @@ Alias /nut/ /usr/local/nut/html/
 
 - Make sure to restart your webserver.
 
-- Configure the CGI scripts.  Manpages can be found from:
+- Configure the CGI scripts.  Man pages can be found from:
++
 ----
 :; man -M /usr/local/nut/man/ upsstats.cgi
 :; man -M /usr/local/nut/man/ upsset.cgi

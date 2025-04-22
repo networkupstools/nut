@@ -15,6 +15,7 @@ if test -z "${nut_ax_realpath_lib_prereq_seen}"; then
     nut_ax_realpath_lib_prereq_seen=yes
 
     AC_REQUIRE([NUT_COMPILER_FAMILY])dnl
+    AC_REQUIRE([AX_REALPATH])dnl
     AS_CASE(["${target_os}"],
         [*mingw*], [
             AS_IF([test x"${DLLTOOL-}" = x],
@@ -111,8 +112,10 @@ AC_DEFUN([AX_REALPATH_LIB],
                                 "${MSYSTEM_PREFIX}/lib" \
                                 "${MINGW_PREFIX}/bin" \
                                 "${MINGW_PREFIX}/lib" \
-                                `${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^libraries: *=/,/,'` \
+                                `${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^@<:@^=@:>@*=,:,' | sed 's,\(@<:@:;@:>@\)\(@<:@A-Z@:>@\):/,:/\2/,g' | tr ':' '\n'` \
                             ; do
+                                dnl NOTE: Here we check myLIBPATH detected above,
+                                dnl in fallback below we would retry with a myLIBNAME
                                 if test -s "$D/${myLIBPATH}" 2>/dev/null ; then
                                     myLIBPATH="$D/${myLIBPATH}"
                                     break
@@ -129,6 +132,37 @@ AC_DEFUN([AX_REALPATH_LIB],
                 || myLIBPATH=""
             ]
         )
+
+        AS_IF([test -z "${myLIBPATH}"], [
+            for TOKEN in $CFLAGS $LDFLAGS $LIBS ; do
+                D=""
+                case "$TOKEN" in
+                    -R*|-L*) D="`echo "$TOKEN" | sed 's,^-[RL],,'`" ;;
+                    -Wl,-R*) D="`echo "$TOKEN" | sed 's,^-Wl\,-R,,'`" ;;
+                    -Wl,-rpath,*) D="`echo "$TOKEN" | sed 's,^-Wl\,-rpath\,,,'`" ;;
+                esac
+                if test -z "$D" || ! test -d "$D" ; then continue ; fi
+                if test -s "$D/${myLIBNAME}" 2>/dev/null ; then
+                    myLIBPATH="$D/${myLIBNAME}"
+                    break
+                fi
+            done
+            unset D
+        ])
+
+        AS_IF([test -z "${myLIBPATH}"], [
+            for D in \
+                "/usr/${target}/bin" \
+                "/usr/${target}/lib" \
+                `${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^@<:@^=@:>@*=,:,' | sed 's,\(@<:@:;@:>@\)\(@<:@A-Z@:>@\):/,:/\2/,g' | tr ':' '\n'` \
+            ; do
+                if test -s "$D/${myLIBNAME}" 2>/dev/null ; then
+                    myLIBPATH="$D/${myLIBNAME}"
+                    break
+                fi
+            done
+            unset D
+        ])
 
         AS_IF([test -z "${myLIBPATH}" && test x"${LD}" != x -a x"${LD}" != xfalse], [
             AS_CASE(["${target_os}"],
@@ -156,25 +190,52 @@ AC_DEFUN([AX_REALPATH_LIB],
         AS_IF([test -n "${myLIBPATH}" && test -s "${myLIBPATH}"], [
             AC_MSG_RESULT([initially '${myLIBPATH}'])
 
-            dnl # Resolving the directory location is a nice bonus
-            dnl # (usually the paths are relative to toolkit and ugly,
-            dnl # though maybe arguably portable with regard to symlinks).
-            dnl # The primary goal is to resolve the actual library file
-            dnl # name like "libnetsnmp.so.1.2.3", so we can preferentially
-            dnl # try to dlopen() it on a system with a packaged footprint
-            dnl # that does not serve short (developer-friendly) links like
-            dnl # "libnetsnmp.so".
-            myLIBPATH_REAL="${myLIBPATH}"
-            AX_REALPATH([${myLIBPATH}], [myLIBPATH_REAL])
+            AC_MSG_CHECKING([whether the file is a "GNU ld script" and not a binary])
+            AS_IF([LANG=C LC_ALL=C file "${myLIBPATH}" | grep -Ei '(ascii|text)' && grep -w GROUP "${myLIBPATH}" >/dev/null], [
+                # dnl e.g. # cat /usr/lib/x86_64-linux-gnu/libusb.so
+                # dnl    /* GNU ld script.  */
+                # dnl    GROUP ( /lib/x86_64-linux-gnu/libusb-0.1.so.4.4.4 )
+                # dnl Note that spaces around parentheses vary, more keywords
+                # dnl may be present in a group (e.g. AS_NEEDED), and comment
+                # dnl strings are inconsistent (useless to match by).
+                AC_MSG_RESULT([yes, iterate further])
+                myLIBPATH_LDSCRIPT="`grep -w GROUP "${myLIBPATH}" | sed 's,^.*GROUP *( *\(/@<:@^ @:>@*\.so@<:@^ @:>@*\)@<:@^0-9a-zA-Z_.-@:>@.*$,\1,'`"
+                AS_IF([test -n "${myLIBPATH_LDSCRIPT}" && test -s "${myLIBPATH_LDSCRIPT}"], [
+                    AC_MSG_NOTICE([will dig into ${myLIBPATH_LDSCRIPT}])
+
+                    dnl # See detailed comments just below
+                    myLIBPATH_REAL="${myLIBPATH_LDSCRIPT}"
+                    AX_REALPATH([${myLIBPATH_LDSCRIPT}], [myLIBPATH_REAL])
+                ], [
+                    AC_MSG_NOTICE([could not determine a further path name, will use what we have])
+
+                    dnl # See detailed comments just below
+                    myLIBPATH_REAL="${myLIBPATH}"
+                    AX_REALPATH([${myLIBPATH}], [myLIBPATH_REAL])
+                ])
+            ],[
+                AC_MSG_RESULT([no, seems like a normal binary])
+
+                dnl # Resolving the directory location is a nice bonus
+                dnl # (usually the paths are relative to toolkit and ugly,
+                dnl # though maybe arguably portable with regard to symlinks).
+                dnl # The primary goal is to resolve the actual library file
+                dnl # name like "libnetsnmp.so.1.2.3", so we can preferentially
+                dnl # try to dlopen() it on a system with a packaged footprint
+                dnl # that does not serve short (developer-friendly) links like
+                dnl # "libnetsnmp.so".
+                myLIBPATH_REAL="${myLIBPATH}"
+                AX_REALPATH([${myLIBPATH}], [myLIBPATH_REAL])
+            ])
+
             AC_MSG_RESULT(${myLIBPATH_REAL})
             $2="${myLIBPATH_REAL}"
-            ],[
+        ],[
             AC_MSG_RESULT([not found])
             $2="$3"
-            ])
-        ],
-        [AC_MSG_WARN([Compiler not detected as GCC/CLANG-compatible, skipping REALPATH_LIB($1)])
-         $2="$3"
-        ]
-    )
+        ])
+    ],
+    [AC_MSG_WARN([Compiler not detected as GCC/CLANG-compatible, skipping REALPATH_LIB($1)])
+     $2="$3"
+    ])
 ])
