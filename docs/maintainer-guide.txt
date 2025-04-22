@@ -254,8 +254,10 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 * don't forget to push not only the code, but also the tag:
 +
 ----
-:; git push upstream && git push --tags upstream
+:; git push upstream && git push upstream v2.8.0
 ----
+** avoid `git push --tags` so your experimental tags do not pollute common
+   NUT repository
 
 * `make dist-files` (especially if you did not `make distcheck` above,
   or had some changes since then) to store the source tarball, checksum
@@ -283,7 +285,8 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 ** in `source` submodule add a copy of tarball, checksum and hash files for
    download: `make dist{,-hash,-sig}` (or since NUT v2.8.3, `make dist-files`)
 *** for a `new-X.Y.Z.txt` file use the `NEWS.adoc` with a stripped title
-    (see existing files)
+    and prominent `link:` asciidoc markup (see existing files)
+** update `historic/index.txt` with an entry for the new release tag and date
 ** `git tag` the website release
 ** generate and publish a "historic" sub-site snapshot (currently manually,
    check comments in nut-website's `ci_build.sh` script and/or its README file)
