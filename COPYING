@@ -3,20 +3,18 @@
  or (at your option) any later version. See "LICENSE-GPL2" in the root of this
  distribution.
 
- The scripts/python/module/nut_telnetlib.py file is copied for fall-back
- purposes from Python 3.10, and released under its original license (the
- PSF License Version 2). It was only modified in the comment section to
- describe the copy, purpose and provenance per section 3 of the license.
- According to https://github.com/python/cpython/blob/3.10/LICENSE most of
- the licenses Python was provided under over the years are GPL-compatible.
-
- Other files in the scripts/python/ directory are released under GNU General
+ Files in the scripts/python/ directory are released under GNU General
  Public License (GPL) version 3, or (at your option) any later version. See
  "LICENSE-GPL3" in the root of this distribution.
 
  The Perl client module (scripts/perl/Nut.pm) is released under the same
  license as Perl itself. That is to say either GPL version 1 or (at your option)
  any later version, or the "Artistic License".
+
+ The scripts/installer contents were donated to the Network UPS Tools project
+ by Eaton in 2022, including the license change from the one originally used
+ with their software companion to terms of the open-source project (that is,
+ GPL version 2 or newer).
 
  Several fallback implementations for methods absent from standard library of
  an end-user's current build platform are derived from source code available

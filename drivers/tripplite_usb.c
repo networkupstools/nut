@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.37"
+#define DRIVER_VERSION	"0.39"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -784,12 +784,12 @@ static int soft_shutdown(void)
 	/* FIXME: Assumes memory layout / endianness? */
 	cmd_N[2] = (unsigned char)(offdelay & 0x00FF);
 	cmd_N[1] = (unsigned char)(offdelay >> 8);
-	upsdebugx(3, "soft_shutdown(offdelay=%d): N", offdelay);
+	upsdebugx(3, "soft_shutdown(offdelay=%u): N", offdelay);
 
 	ret = send_cmd(cmd_N, sizeof(cmd_N), buf, sizeof(buf));
 
 	if(ret != 8) {
-		upslogx(LOG_ERR, "Could not set offdelay to %d", offdelay);
+		upslogx(LOG_ERR, "Could not set offdelay to %u", offdelay);
 		return ret;
 	}
 
@@ -843,7 +843,7 @@ static int control_outlet(int outlet_id, int state)
 	switch(tl_model) {
 		case TRIPP_LITE_SMARTPRO:   /* tested */
 		case TRIPP_LITE_SMART_0004: /* untested */
-			snprintf(k_cmd, sizeof(k_cmd)-1, "N%02X", 5);
+			snprintf(k_cmd, sizeof(k_cmd)-1, "N%02X", (unsigned int)5);
 			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
 			snprintf(k_cmd, sizeof(k_cmd)-1, "K%d%d", outlet_id, state & 1);
 			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
@@ -967,7 +967,7 @@ static int setvar(const char *varname, const char *val)
 		int ival = atoi(val);
 		if (ival >= 0) {
 			offdelay = (unsigned int)ival;
-			dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+			dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 			return STAT_SET_HANDLED;
 		} else {
 			upslogx(LOG_NOTICE, "FAILED to set '%s' to %d", varname, ival);
@@ -1261,7 +1261,12 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	soft_shutdown();
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_updateinfo(void)
@@ -1493,6 +1498,8 @@ void upsdrv_updateinfo(void)
 				case '0':
 					dstate_setinfo("input.frequency.nominal", "%d", 50);
 					break;
+				default:
+					break;
 			}
 		}
 
@@ -1502,7 +1509,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		if( tl_model == TRIPP_LITE_SMART_3005 ) {
-			dstate_setinfo("ups.temperature", "%d",
+			dstate_setinfo("ups.temperature", "%u",
 				(unsigned)(hex2d(t_value+1, 1)));
 		} else {
 			/* I'm guessing this is a calibration constant of some sort. */

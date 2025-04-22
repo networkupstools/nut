@@ -8,6 +8,8 @@
 # but could be refactored for better maintainability and generic
 # approach. Part of the goal was to let this script set up the
 # sandbox to run tests which could be defined in other files.
+# To speed up this practical developer-testing aspect, you can just
+# `make check-NIT-sandbox{,-devel}` (optionally with custom DEBUG_SLEEP).
 #
 # WARNING: Current working directory when starting the script should be
 # the location where it may create temporary data (e.g. the BUILDDIR).
@@ -15,19 +17,41 @@
 #	DEBUG=true	to print debug messages, running processes, etc.
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
 #	NUT_DEBUG_MIN=3	to set (minimum) debug level for drivers, upsd...
+#	NUT_DEBUG_LEVEL_UPSSCHED=3	to set debug level for particular
+#			NUT daemons or tools
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
+#	NUT_FOREGROUND_WITH_PID=true	default foregrounding is without
+#			PID files, this option tells daemons to save them
+#	TESTDIR=/tmp/nut-NIT	to propose a location for "etc" and "run"
+#			mock locations (under some circumstances, the
+#			script can anyway choose to `mktemp` another)
+#	NUT_DEBUG_UPSMON_NOTIFY_SYSLOG=false	To *disable* upsmon
+#			notifications spilling to the script's console.
 #
 # Common sandbox run for testing goes from NUT root build directory like:
-#	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd make check-NIT &
+#	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd NUT_FOREGROUND_WITH_PID=true make check-NIT &
 #
 # Design note: written with dumbed-down POSIX shell syntax, to
 # properly work in whatever different OSes have (bash, dash,
 # ksh, busybox sh...)
 #
 # Copyright
-#	2022-2024 Jim Klimov <jimklimov+nut@gmail.com>
+#	2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
+
+if [ -z "${BASH_VERSION-}" ] \
+&& (command -v bash) \
+&& [ x"${DEBUG_NONBASH-}" != xtrue ] \
+; then
+    # FIXME: detect and pass -x/-v options?
+    echo "WARNING: Re-execing in BASH (export DEBUG_NONBASH=true to avoid)" >&2
+    exec bash $0 "$@"
+fi
+
+if [ -n "${BASH_VERSION-}" ]; then
+    eval `echo "set -o pipefail"`
+fi
 
 TZ=UTC
 LANG=C
@@ -44,8 +68,26 @@ export NUT_QUIET_INIT_UPSNOTIFY
 NUT_DEBUG_SYSLOG="stderr"
 export NUT_DEBUG_SYSLOG
 
+# Stash the originally requested value so we can fiddle with envvars (if set)
+# per daemon, like NUT_DEBUG_LEVEL_UPSD, NUT_DEBUG_LEVEL_UPSMON,
+# NUT_DEBUG_LEVEL_UPSLOG, NUT_DEBUG_LEVEL_UPSSCHED, NUT_DEBUG_LEVEL_DRIVERS,
+# or per tool, like NUT_DEBUG_LEVEL_UPSC (not in all cases),
+# NUT_DEBUG_LEVEL_NUT_SCANNER
+NUT_DEBUG_LEVEL_ORIG="${NUT_DEBUG_LEVEL-}"
+# Whether from env or set in script per prog, let it be known to children:
+export NUT_DEBUG_LEVEL
+
 NUT_DEBUG_PID="true"
 export NUT_DEBUG_PID
+
+# Just keep upsdrvctl quiet if used in test builds or with the sandbox
+NUT_QUIET_INIT_NDE_WARNING="true"
+export NUT_QUIET_INIT_NDE_WARNING
+
+ARG_FG="-F"
+if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
+
+TABCHAR="`printf '\t'`"
 
 log_separator() {
     echo "" >&2
@@ -94,7 +136,7 @@ isBusy_NUT_PORT() {
     [ -n "${NUT_PORT}" ] || return
 
     log_debug "isBusy_NUT_PORT() Trying to report if NUT_PORT=${NUT_PORT} is used"
-    if [ -e /proc/net/tcp ] || [ -e /proc/net/tcp6 ]; then
+    if [ -r /proc/net/tcp ] || [ -r /proc/net/tcp6 ]; then
         # Assume Linux - hex-encoded
         # IPv4:
         #   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
@@ -114,20 +156,13 @@ isBusy_NUT_PORT() {
         return 1
     fi
 
-    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null \
+    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(${TABCHAR}| |\$)" > /dev/null \
     && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat, sockstat or ss" \
     && return
 
     (lsof -i :"${NUT_PORT}") 2>/dev/null \
     && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per lsof" \
     && return
-
-    # Not busy... or no tools to confirm?
-    if (command -v netstat || command -v sockstat || command -v ss || command -v lsof) 2>/dev/null >/dev/null ; then
-        # at least one tool is present, so not busy
-        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat, ss or lsof"
-        return 1
-    fi
 
     # If the current shell interpreter is bash, it can do a bit of networking:
     if [ -n "${BASH_VERSION-}" ]; then
@@ -148,6 +183,13 @@ isBusy_NUT_PORT() {
             return 1
         ) && return 0
         log_warn "isBusy_NUT_PORT() tried with BASH-specific query, and port does not seem busy (or something else errored out)"
+    fi
+
+    # Not busy... or no tools to confirm? (or no perms, or no lsof plugin)?
+    if (command -v netstat || command -v sockstat || command -v ss || command -v lsof) 2>/dev/null >/dev/null ; then
+        # at least one tool is present, so not busy
+        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat, ss or lsof"
+        return 1
     fi
 
     # Assume not busy to not preclude testing in 100% of the cases
@@ -176,7 +218,22 @@ runcmd() {
     CMDOUT=""
     CMDERR=""
 
+    # FIXME: Consider EXEEXT?
+    case "$0" in
+        upsc|*/upsc)
+            if [ -n "${NUT_DEBUG_LEVEL_UPSC-}" ]; then
+                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSC}"
+            fi
+            ;;
+        nut-scanner|*/nut-scanner)
+            if [ -n "${NUT_DEBUG_LEVEL_NUT_SCANNER-}" ]; then
+                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_NUT_SCANNER}"
+            fi
+            ;;
+    esac
+
     "$@" > "${NUT_STATEPATH}/runcmd.out" 2>"${NUT_STATEPATH}/runcmd.err" || CMDRES=$?
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     CMDOUT="`cat "${NUT_STATEPATH}/runcmd.out"`"
     CMDERR="`cat "${NUT_STATEPATH}/runcmd.err"`"
 
@@ -210,6 +267,9 @@ case "${SRCDIR}" in
         TOP_SRCDIR="`cd "${SRCDIR}"/../.. && pwd`" ;;
     *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
 esac
+
+# Make these paths known to e.g. upsmon/upssched and handler scripts they call
+export BUILDDIR TOP_BUILDDIR SRCDIR TOP_SRCDIR
 
 # No fuss about LD_LIBRARY_PATH: for most of the (client) binaries that
 # need it, the PATH entries below would contain libtool wrapper scripts;
@@ -248,36 +308,74 @@ else
     LD_LIBRARY_PATH_CLIENT="${LD_LIBRARY_PATH_ORIG}"
 fi
 
-for PROG in upsd upsc dummy-ups upsmon ; do
+for PROG in upsd upsc dummy-ups upsmon upslog upssched ; do
     (command -v ${PROG}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
 done
 
 PID_UPSD=""
 PID_UPSMON=""
+PID_UPSSCHED=""
 PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 
-TESTDIR="$BUILDDIR/tmp"
-# Technically the limit is sizeof(sockaddr.sun_path) for complete socket
-# pathname, which varies 104-108 chars max on systems seen in CI farm;
-# we reserve 17 chars for "/dummy-ups-dummy" longest filename.
-if [ `echo "$TESTDIR" | wc -c` -gt 80 ]; then
-    log_info "'$TESTDIR' is too long to store AF_UNIX socket files, will mktemp"
+# Stash it for some later decisions
+TESTDIR_CALLER="${TESTDIR-}"
+[ -n "${TESTDIR-}" ] || TESTDIR="$BUILDDIR/tmp"
+if [ `echo "${TESTDIR}" | wc -c` -gt 80 ]; then
+    # Technically the limit is sizeof(sockaddr.sun_path) for complete socket
+    # pathname, which varies 104-108 chars max on systems seen in CI farm;
+    # we reserve 17 chars for "/dummy-ups-dummy" longest filename.
+    log_info "'${TESTDIR}' is too long to store AF_UNIX socket files, will mktemp"
+    TESTDIR=""
+else
+    if [ "`id -u`" = 0 ]; then
+        case "${TESTDIR}" in
+            "${HOME}"/*)
+                log_info "Test script was started by 'root' and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
+                TESTDIR=""
+                ;;
+        esac
+    else
+        if ! mkdir -p "${TESTDIR}" || ! [ -w "${TESTDIR}" ] ; then
+            log_info "'${TESTDIR}' could not be created/used, will mktemp"
+            TESTDIR=""
+        fi
+    fi
+fi
+
+if [ x"${TESTDIR}" = x ] ; then
     if ( [ -n "${TMPDIR-}" ] && [ -d "${TMPDIR-}" ] && [ -w "${TMPDIR-}" ] ) ; then
         :
     else
         if [ -d /dev/shm ] && [ -w /dev/shm ]; then TMPDIR=/dev/shm ; else TMPDIR=/tmp ; fi
     fi
+    log_warn "Will now mktemp a TESTDIR under '${TMPDIR}'. It will be wiped when the NIT script exits."
+    log_warn "If you want a pre-determined location, pre-export a usable TESTDIR value."
     TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
+    if [ "`id -u`" = 0 ]; then
+        # Cah be protected as 0700 by default
+        chmod ugo+rx "${TESTDIR}"
+    fi
 else
+    NUT_CONFPATH="${TESTDIR}/etc"
+    if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+        log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running with same configs?"
+        sleep 3
+    fi
+
     # NOTE: Keep in sync with NIT_CASE handling and the exit-trap below
     case "${NIT_CASE}" in
         generatecfg_*|is*) ;;
-        *) rm -rf "${TESTDIR}" || true ;;
+        *)
+            rm -rf "${TESTDIR}" || true
+            ;;
     esac
 fi
 log_info "Using '$TESTDIR' for generated configs and state files"
+if [ x"${TESTDIR_CALLER}" = x"${TESTDIR}" ] && [ x"${TESTDIR}" != x"$BUILDDIR/tmp" ] ; then
+    log_warn "A caller-provided location is used, it would not be automatically removed after tests nor by 'make clean'"
+fi
 
 mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
@@ -288,26 +386,48 @@ if [ "`id -u`" = 0 ]; then
 fi
 
 stop_daemons() {
-    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2" ] ; then
+    if [ -n "$PID_UPSMON" ] ; then
+        log_info "Stopping test daemons: upsmon via command"
+        upsmon -c stop
+    fi
+
+    if [ -z "$PID_UPSSCHED" ] && [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
+        PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+    fi
+
+    if [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
+        PID_UPSSCHED_NOW="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+    fi
+
+    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
         log_info "Stopping test daemons"
-        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 2>/dev/null || return 0
-        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 || true
+        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
+        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW || true
     fi
 
     PID_UPSD=""
     PID_UPSMON=""
+    PID_UPSSCHED=""
     PID_DUMMYUPS=""
     PID_DUMMYUPS1=""
     PID_DUMMYUPS2=""
+
+    unset PID_UPSSCHED_NOW
 }
 
-trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then rm -rf "${TESTDIR}"; fi ;; esac; exit $RES;' 0 1 2 3 15
+trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ x"${TESTDIR}" != x"${BUILDDIR}/tmp" ] && [ x"${TESTDIR}" != x"$TESTDIR_CALLER" ] ; then rm -rf "${TESTDIR}" ; else rm -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ; fi ;; esac; exit $RES;' 0 1 2 3 15
 
 NUT_STATEPATH="${TESTDIR}/run"
 NUT_PIDPATH="${TESTDIR}/run"
 NUT_ALTPIDPATH="${TESTDIR}/run"
 NUT_CONFPATH="${TESTDIR}/etc"
 export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH
+
+if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+    log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running?"
+    sleep 3
+fi
+rm -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" || true
 
 # TODO: Find a portable way to (check and) grab a random unprivileged port?
 if [ -n "${NUT_PORT-}" ] && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] ; then
@@ -374,10 +494,10 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 # the values when fallback is used. If this is a
 # problem on any platform (Win/Mac and spaces in
 # paths?) please investigate and fix accordingly.
-set | grep -E '^(NUT_|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
+set | grep -E '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
 | while IFS='=' read K V ; do
     case "$K" in
-        LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*)
+        LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*|TESTDIR_*)
             continue
             ;;
         DEBUG_SLEEP|PATH|LD_LIBRARY_PATH*) printf '### ' ;;
@@ -410,8 +530,8 @@ EOF
     fi
 
     # Some systems listening on symbolic "localhost" actually
-    # only bind to IPv6, and Python telnetlib resolves IPv4
-    # and fails its connection tests. Others fare well with
+    # only bind to IPv6, and some (Python) client might resolve
+    # IPv4 and fail its connection tests. Others fare well with
     # both addresses in one command.
     for LH in 127.0.0.1 '::1' ; do
         if (
@@ -478,7 +598,7 @@ EOF
     fi
 }
 
-### upsmon.conf: ##################################################
+### upsmon.conf and upssched.conf: ##################################################
 
 updatecfg_upsmon_supplies() {
     NUMSUP="${1-}"
@@ -499,19 +619,48 @@ updatecfg_upsmon_supplies() {
 generatecfg_upsmon_trivial() {
     # Populate the configs for the run
     rm -f "$NUT_STATEPATH/upsmon.sd.log"
-    (  echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
-       echo 'SHUTDOWNCMD "echo \"`date`: TESTING_DUMMY_SHUTDOWN_NOW\" | tee \"'"$NUT_STATEPATH"'/upsmon.sd.log\" "' >> "$NUT_CONFPATH/upsmon.conf" || exit
+    (   echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
+        echo 'SHUTDOWNCMD "echo \"`date`: TESTING_DUMMY_SHUTDOWN_NOW\" | tee \"'"$NUT_STATEPATH"'/upsmon.sd.log\" "' >> "$NUT_CONFPATH/upsmon.conf" || exit
 
-       if [ -n "${NUT_DEBUG_MIN-}" ] ; then
-           echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsmon.conf" || exit
-       fi
+        NOTIFYTGT=""
+        if [ -x "${TOP_SRCDIR-}/scripts/misc/notifyme-debug" ] ; then
+            echo "NOTIFYCMD \"TEMPDIR='${NUT_STATEPATH}' ${TOP_SRCDIR-}/scripts/misc/notifyme-debug\"" >> "$NUT_CONFPATH/upsmon.conf" || exit
+
+            # NOTE: "SYSLOG" typically ends up in console log of the NIT run and
+            # "EXEC" goes to a log file like tests/NIT/tmp/run/notifyme-399.log
+            NOTIFYTGT="EXEC"
+        fi
+        if [ x"$NUT_DEBUG_UPSMON_NOTIFY_SYSLOG" != xfalse ] ; then
+            [ -n "${NOTIFYTGT}" ] && NOTIFYTGT="${NOTIFYTGT}+SYSLOG" || NOTIFYTGT="SYSLOG"
+        fi
+
+        if [ -n "${NOTIFYTGT}" ]; then
+            if [ -s "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" ] ; then
+                grep -E '# NOTIFYFLAG .*SYSLOG\+WALL$' \
+                < "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" \
+                | sed 's,^# \(NOTIFYFLAG[^A-Z_]*[A-Z_]*\)[^A-Z_]*SYSLOG.*$,\1\t'"${NOTIFYTGT}"',' \
+                >> "$NUT_CONFPATH/upsmon.conf" || exit
+            fi
+        fi
+
+        if [ -n "${NUT_DEBUG_MIN-}" ] ; then
+            echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsmon.conf" || exit
+        fi
     ) || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
+    sed \
+        -e 's,[@]TOP_BUILDDIR[@],'"${TOP_BUILDDIR}"',g' \
+        -e 's,[@]TOP_SRCDIR[@],'"${TOP_SRCDIR}"',g' \
+        -e 's,[@]NUT_CONFPATH[@],'"${NUT_CONFPATH}"',g' \
+        -e 's,[@]NUT_STATEPATH[@],'"${NUT_STATEPATH}"',g' \
+    < "${TOP_SRCDIR-}/tests/NIT/upssched.conf.in" > "$NUT_CONFPATH/upssched.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: upssched.conf"
+
     if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsmon.conf' so unprivileged daemons (after de-elevation) may read it"
-        chmod 644 "$NUT_CONFPATH/upsmon.conf"
+        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsmon.conf' and '$NUT_CONFPATH/upssched.conf' so unprivileged daemons (after de-elevation) may read them"
+        chmod 644 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
     else
-        chmod 640 "$NUT_CONFPATH/upsmon.conf"
+        chmod 640 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
     fi
 
     if [ $# -gt 0 ] ; then
@@ -645,7 +794,10 @@ PASSED=0
 testcase_upsd_no_configs_at_all() {
     log_separator
     log_info "[testcase_upsd_no_configs_at_all] Test UPSD without configs at all"
-    upsd -F
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
+    upsd ${ARG_FG}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
@@ -654,13 +806,17 @@ testcase_upsd_no_configs_at_all() {
         log_info "[testcase_upsd_no_configs_at_all] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 }
 
 testcase_upsd_no_configs_driver_file() {
     log_separator
     log_info "[testcase_upsd_no_configs_driver_file] Test UPSD without driver config file"
     generatecfg_upsd_trivial
-    upsd -F
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
+    upsd ${ARG_FG}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
@@ -669,6 +825,7 @@ testcase_upsd_no_configs_driver_file() {
         log_info "[testcase_upsd_no_configs_driver_file] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 }
 
 testcase_upsd_no_configs_in_driver_file() {
@@ -676,7 +833,10 @@ testcase_upsd_no_configs_in_driver_file() {
     log_info "[testcase_upsd_no_configs_in_driver_file] Test UPSD without drivers defined in config file"
     generatecfg_upsd_trivial
     generatecfg_ups_trivial
-    upsd -F
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
+    upsd ${ARG_FG}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
@@ -685,6 +845,7 @@ testcase_upsd_no_configs_in_driver_file() {
         log_info "[testcase_upsd_no_configs_in_driver_file] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 }
 
 upsd_start_loop() {
@@ -694,8 +855,12 @@ upsd_start_loop() {
         return 0
     fi
 
-    upsd -F &
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
+    upsd ${ARG_FG} &
     PID_UPSD="$!"
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSD as PID $PID_UPSD"
     sleep 2
     # Due to a busy port, server could have died by now
@@ -724,8 +889,12 @@ upsd_start_loop() {
         log_warn "[${TESTCASE}] Port ${NUT_PORT} is ${PORT_WORD}listening and UPSD PID $PID_UPSD is not alive, will sleep and retry"
 
         sleep 10
-        upsd -F &
+        if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+        fi
+        upsd ${ARG_FG} &
         PID_UPSD="$!"
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
         log_warn "[${TESTCASE}] Tried to start UPSD again, now as PID $PID_UPSD"
         sleep 5
     done
@@ -871,20 +1040,24 @@ sandbox_start_drivers() {
     sandbox_generate_configs
 
     log_info "Starting dummy-ups driver(s) for sandbox"
-    #upsdrvctl -F start dummy &
-    dummy-ups -a dummy -F &
+    if [ -n "${NUT_DEBUG_LEVEL_DRIVERS-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_DRIVERS}"
+    fi
+    #upsdrvctl ${ARG_FG} start dummy &
+    dummy-ups -a dummy ${ARG_FG} &
     PID_DUMMYUPS="$!"
     log_debug "Tried to start dummy-ups driver for 'dummy' as PID $PID_DUMMYUPS"
 
     if [ x"${TOP_SRCDIR}" != x ]; then
-        dummy-ups -a UPS1 -F &
+        dummy-ups -a UPS1 ${ARG_FG} &
         PID_DUMMYUPS1="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS1' as PID $PID_DUMMYUPS1"
 
-        dummy-ups -a UPS2 -F &
+        dummy-ups -a UPS2 ${ARG_FG} &
         PID_DUMMYUPS2="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
     fi
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 
     sleep 5
 
@@ -969,8 +1142,12 @@ testcase_sandbox_start_upsd_after_drivers() {
 
     # Not calling upsd_start_loop() here, before drivers
     # If the server starts, fine; if not - we retry below
-    upsd -F &
+    if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
+    fi
+    upsd ${ARG_FG} &
     PID_UPSD="$!"
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
 
     sandbox_start_drivers
@@ -1094,21 +1271,51 @@ testcase_sandbox_upsc_query_bogus() {
 testcase_sandbox_upsc_query_timer() {
     log_separator
     log_info "[testcase_sandbox_upsc_query_timer] Test that dummy-ups TIMER action changes the reported state"
-    # Driver is set up to flip ups.status every 5 sec, so check every 3
+
+    # Driver is set up to flip ups.status every 5 sec, so check every 3 sec
+    # with upsc, but we can follow with upslog more intensively. New process
+    # launches can lag a lot on very busy SUTs; hopefully still-running ones
+    # are more responsive in this regard.
+    log_info "Starting upslog daemon"
+    rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
+    # Start as foregrounded always, so we have a PID to kill easily:
+    if [ -n "${NUT_DEBUG_LEVEL_UPSLOG-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSLOG}"
+    fi
+    upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
+    PID_UPSLOG="$!"
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
+
     # TODO: Any need to convert to runcmd()?
     OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
     OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
     OUT3=""
     OUT4=""
+    OUT5=""
+
+    # The SUT may be busy, or dummy-ups can have a loop delay
+    # (pollfreq) after reading the file before wrapping around
     if [ x"$OUT1" = x"$OUT2" ]; then
         sleep 3
         OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
         if [ x"$OUT2" = x"$OUT3" ]; then
             sleep 3
             OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            if [ x"$OUT3" = x"$OUT4" ]; then
+                sleep 8
+                OUT5="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            fi
         fi
     fi
-    if echo "$OUT1$OUT2$OUT3$OUT4" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4" | grep "OL" ; then
+
+    log_info "Stopping upslog daemon"
+    kill -15 $PID_UPSLOG 2>/dev/null || true
+    wait $PID_UPSLOG || true
+
+    if (grep " [OB] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " [OL] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (grep " \[OB\] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " \[OL\] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OL") \
+    ; then
         log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
     else
@@ -1116,6 +1323,8 @@ testcase_sandbox_upsc_query_timer() {
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_timer"
     fi
+
+    #rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
 }
 
 isTestablePython() {
@@ -1424,8 +1633,14 @@ upsmon_start_loop() {
         return 0
     fi
 
-    upsmon -F &
+    if [ -n "${NUT_DEBUG_LEVEL_UPSMON-}" ]; then
+        # Note: This is inherited into children of UPSMON process too,
+        # but the sample script honours NUT_DEBUG_LEVEL_UPSSCHED if set
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSMON}"
+    fi
+    upsmon ${ARG_FG} &
     PID_UPSMON="$!"
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSMON as PID $PID_UPSMON"
     sleep 2
     # Due to severe config errors, client could have died by now
@@ -1573,11 +1788,15 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
         DEBUG_SLEEP=60
     fi
 
+    if [ -z "$PID_UPSSCHED" ] && [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
+        PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+    fi
+
     log_separator
     log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running"
     log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
     printf "PID_NIT_SCRIPT='%s'\nexport PID_NIT_SCRIPT\n" "$$" >> "$NUT_CONFPATH/NIT.env"
-    set | grep -E '^PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
+    set | grep -E '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
         V="`echo "$V" | tr -d "'"`"
         # Dummy comment to reset syntax highlighting due to ' quote above
         if [ -n "$V" ] ; then
@@ -1587,9 +1806,18 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_separator
     cat "$NUT_CONFPATH/NIT.env"
     log_separator
-    log_info "See above about important variables from the test sandbox and a way to 'source' them into your shell"
+    log_info "See above about important variables from the test sandbox and a way to 'source' them into your shell, e.g.: . '$NUT_CONFPATH/NIT.env'"
+
+    if [ x"${TESTDIR_CALLER}" != x"${TESTDIR}" ] && [ x"${TESTDIR}" != x"$BUILDDIR/tmp" ] ; then
+        log_warn "A temporary random TESTDIR location is used, it would be automatically removed after this script exits!"
+    fi
+
     log_info "You may want to press Ctrl+Z now and command 'bg' to the shell, if you did not start '$0 &' backgrounded already"
     log_info "To kill the script early, return it to foreground with 'fg' and press Ctrl+C, or 'kill -2 \$PID_NIT_SCRIPT' (kill -2 $$)"
+    log_info "To trace built programs, check scripts/valgrind/README.adoc and LD_LIBRARY_PATH for this build"
+
+    log_info "Remember that in shell/scripting you can probe for '${NUT_CONFPATH}/NIT.env-sandbox-ready' which only appears at this moment"
+    touch "${NUT_CONFPATH}/NIT.env-sandbox-ready"
 
     sleep "${DEBUG_SLEEP}"
     log_info "Sleep finished"

@@ -35,7 +35,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif
+#endif	/* !WIN32 */
 
 #include "timehead.h"
 
@@ -82,7 +82,8 @@ enum {
    STAT_HANDLED = 0,	/* completed successfully (NUT_SUCCESS or "OK") */
    STAT_UNKNOWN,	/* unspecified error (NUT_ERR_UNKNOWN) */
    STAT_INVALID,	/* invalid command/setvar (NUT_ERR_INVALID_ARGUMENT) */
-   STAT_FAILED		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+   STAT_FAILED,		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+   STAT_CONVERSION_FAILED	/* STAT_INSTCMD_CONVERSION_FAILED / STAT_SET_CONVERSION_FAILED in drivers/upshandler.h => "ERR INVALID-ARGUMENT" same as STAT_INVALID */
 };
 
 /* Commands and settings status tracking functions */
@@ -107,10 +108,10 @@ extern nut_ctype_t	*firstclient;
 #ifndef WIN32
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
-#else
+#else	/* WIN32 */
 #define SIGCMD_STOP    COMMAND_STOP
 #define SIGCMD_RELOAD  COMMAND_RELOAD
-#endif
+#endif	/* WIN32 */
 
 /* awkward way to make a string out of a numeric constant */
 

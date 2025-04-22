@@ -11,9 +11,11 @@ and, more importantly, filled by a series of `nutscan_add_ip_range()` calls.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- void nutscan_free_ip_ranges(nutscan_ip_range_list_t *irl);
+	void nutscan_free_ip_ranges(nutscan_ip_range_list_t *irl);
+------
 
 DESCRIPTION
 -----------
@@ -25,8 +27,8 @@ entries, and zeroes out helper properties.
 The structure itself is not freed (as it can be a statically allocated
 variable on the stack), and can be re-used for a new list if needed.
 
-The caller must free the structure object if it was allocated dynamically
-(e.g. by calling `nutscan_init_ip_ranges(NULL)`).
+The caller must ultimately free the structure object if it was allocated
+dynamically (e.g. by originally calling `nutscan_init_ip_ranges(NULL)`).
 
 NOTES
 -----

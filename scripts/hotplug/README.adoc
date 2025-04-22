@@ -38,6 +38,7 @@ These scripts can be used with Linux 2.4 to 2.6.13.
 - possibly change `libhidups` to match NUT user
 - copy `libhidups` and `libhid.usermap` to `/etc/hotplug/usb/`
 - make `libhidups` executable with:
++
 ----
 :; chmod a+x /etc/hotplug/usb/libhidups
 ----

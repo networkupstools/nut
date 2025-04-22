@@ -1,9 +1,13 @@
 /*
     nutstream.hpp - NUT stream
 
-    Copyright (C)
-	2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
-	2024	Jim Klimov <jimklimov+nut@gmail.com>
+    Copyright (C) 2012 Eaton
+
+        Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
+
+    Copyright (C) 2024-2025 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,7 +41,7 @@ extern "C" {
 #include <sys/types.h>
 #ifndef WIN32
 # include <sys/socket.h>
-#else
+#else	/* WIN32 */
 # if HAVE_WINSOCK2_H
 #  include <winsock2.h>
 # endif
@@ -48,7 +52,7 @@ extern "C" {
  * similar to nutclient.cpp; do not call wincompat.h!
  * FIXME: refactor to reuse the C++ adaptation?
  */
-#endif
+#endif	/* WIN32 */
 }
 
 /* See include/common.h for details behind this */
@@ -334,10 +338,11 @@ class NutFile: public NutStream {
 	inline static const std::string & path_sep() {
 		static std::string pathsep =
 #ifdef WIN32
+			/* FIXME NUT_WIN32_INCOMPLETE : Actually modern Windows supports both slashes */
 			"\\";
-#else
+#else	/* !WIN32 */
 			"/";
-#endif
+#endif	/* !WIN32 */
 		return pathsep;
 	}
 

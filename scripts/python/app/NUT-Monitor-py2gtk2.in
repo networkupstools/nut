@@ -26,6 +26,10 @@
 #
 # 2015-02-14 Michal Fincham - Version 1.3.1
 #            Corrected unsafe permissions on ~/.nut-monitor (Debian #777706)
+#
+# 2025-03-15 Jim Klimov - Version 2.0.2 (to align with Python3 variant)
+#            Revise localisation, inject PACKAGE_VERSION and NUT_WEBSITE_BASE
+#            into the About dialog contents
 
 
 import gtk, gtk.glade, gobject
@@ -40,8 +44,38 @@ import optparse
 import ConfigParser
 import locale
 import gettext
-import PyNUT
 
+if platform.system() == "Windows":
+    import xml.dom.minidom
+
+# Try local development/accompanying packaging first,
+# then system installation
+sys_path_orig = list(sys.path)
+try:
+	# Try "module" path relative to this program script:
+	mod_path = os.path.sep.join([
+		os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
+		"..", "module"])
+	### sys.stderr.write("[D] mod_path: %s\n" % mod_path)
+	if os.path.isfile(os.path.sep.join([mod_path, "PyNUT.py"])):
+		# Insert into the system path at index 1 to ensure that it
+		# resolves after the main script but before anything else:
+		sys.path.insert(1, mod_path)
+		### sys.stderr.write("[D] sys.path: %s\n" % sys.path)
+
+	# Try our chances with the default or augmented path
+	import PyNUT
+except Exception as ignored:
+	# ModuleNotFoundError, path/parsing, et al
+	# Try our chances with the default path:
+	sys.path = sys_path_orig
+	### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
+	import PyNUT
+
+
+# We would seek locale files relative to script dir
+os.chdir(os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
+# print(os.getcwd())
 
 # Activate threadings on glib
 gobject.threads_init()
@@ -79,9 +113,26 @@ class interface :
         # the `nut-monitor-py2gtk2.desktop` for windowing resources:
         # g_set_prgname('nut-monitor-py2gtk2')
 
-        self.__glade_file = os.path.join( os.path.dirname( sys.argv[0] ), "ui/gui-1.3.glade" )
+        self.__glade_file = os.path.join( "ui", "gui-1.3.glade" )
+        if os.path.exists(self.__glade_file):
+            self.__resdir = "."
+        else:
+            self.__resdir = os.path.dirname( sys.argv[0] )
+            self.__glade_file = os.path.join(self.__resdir, "ui", "gui-1.3.glade" )
+            # If not exists, we bail out in load attempt below
 
-        self.__widgets["interface"]                   = gtk.glade.XML( self.__glade_file, "window1", APP )
+        if ( platform.system() == "Windows" ) :
+            ### Fails for "fr" and "ru" locales with errors decoding UTF-8 in
+            ### both XML() and xml_new_from_buffer() despite any trickery like
+            ### attempts done below. PRs welcome:
+            # with open(self.__glade_file, 'rb') as f:
+            #    doc = f.read()  # .decode("cp1250").encode("utf8")
+            #    self.__widgets["interface"]           = gtk.glade.xml_new_from_buffer( doc, len(doc), "window1", APP )
+            doc = xml.dom.minidom.parse(self.__glade_file).toxml().encode("utf-8")
+            self.__widgets["interface"]               = gtk.glade.xml_new_from_buffer( doc, len(doc), "window1", APP )
+        else :
+            self.__widgets["interface"]               = gtk.glade.XML( self.__glade_file, "window1", APP )
+
         self.__widgets["main_window"]                 = self.__widgets["interface"].get_widget("window1")
         self.__widgets["status_bar"]                  = self.__widgets["interface"].get_widget("statusbar2")
         self.__widgets["ups_host_entry"]              = self.__widgets["interface"].get_widget("entry1")
@@ -112,11 +163,11 @@ class interface :
 
         # Create the tray icon and connect it to the show/hide method...
         self.__widgets["status_icon"] = gtk.StatusIcon()
-        self.__widgets["status_icon"].set_from_file( os.path.join( os.path.dirname( sys.argv[0] ), "pixmaps", "on_line.png" ) )
+        self.__widgets["status_icon"].set_from_file( os.path.join( self.__resdir, "pixmaps", "on_line.png" ) )
         self.__widgets["status_icon"].set_visible( True )
         self.__widgets["status_icon"].connect( "activate", self.tray_activated )
 
-        self.__widgets["ups_status_image"].set_from_file( os.path.join( os.path.dirname( sys.argv[0] ), "pixmaps", "on_line.png" ) )
+        self.__widgets["ups_status_image"].set_from_file( os.path.join( self.__resdir, "pixmaps", "on_line.png" ) )
 
         # Define interface callbacks actions
         self.__callbacks = { "on_window1_destroy"              : self.quit,
@@ -274,8 +325,8 @@ class interface :
     #-------------------------------------------------------------------
     # Change the status icon and tray icon
     def change_status_icon( self, icon="on_line", blink=False ) :
-        self.__widgets["status_icon"].set_from_file( os.path.join( os.path.dirname( sys.argv[0] ), "pixmaps", "%s.png" % icon ) )
-        self.__widgets["ups_status_image"].set_from_file( os.path.join( os.path.dirname( sys.argv[0] ), "pixmaps", "%s.png" % icon ) )
+        self.__widgets["status_icon"].set_from_file( os.path.join( self.__resdir, "pixmaps", "%s.png" % icon ) )
+        self.__widgets["ups_status_image"].set_from_file( os.path.join( self.__resdir, "pixmaps", "%s.png" % icon ) )
         self.__widgets["status_icon"].set_blinking( blink )
 
     #-------------------------------------------------------------------
@@ -608,7 +659,25 @@ class interface :
     # Display the about dialog
     def gui_about_dialog( self, widget=None ) :
         dialog_interface = gtk.glade.XML( self.__glade_file, "aboutdialog1" )
+        ### sys.stderr.write("gui_about_dialog(): dialog_interface=%s\n" % str(dir(dialog_interface)))
+        ### sys.stderr.write("gui_about_dialog(): dialog_interface.props=%s\n" % str(dir(dialog_interface.props)))
+        ### sys.stderr.write("gui_about_dialog(): dialog_interface.get_data=%s\n" % str(dir(dialog_interface.get_data("label"))))
+        ### sys.stderr.write("gui_about_dialog(): dialog_interface.get_properties=%s\n" % str(dir(dialog_interface.get_properties("label"))))
         dialog = dialog_interface.get_widget( "aboutdialog1" )
+        ### sys.stderr.write("gui_about_dialog(): dialog=%s\n" % str(dir(dialog)))
+        ### sys.stderr.write("gui_about_dialog(): label=%s\n" % str(dir(dialog.label)))
+        ### sys.stderr.write("gui_about_dialog(): text=%s\n" % str(dir(dialog.label.text)))
+        ### sys.stderr.write("gui_about_dialog(): text()=%s\n" % str(dir(dialog.label.text())))
+        s = dialog.get_comments()
+        ### sys.stderr.write("gui_about_dialog(): s (original) ='%s'\n" % s)
+        s = _(s)
+        ### sys.stderr.write("gui_about_dialog(): s (localized) ='%s'\n" % s)
+        s = (s
+             .replace('%s%s%s' % ("@", "PACKAGE_VERSION", "@"), '@PACKAGE_VERSION@')
+             .replace('%s%s%s' % ("@", "NUT_WEBSITE_BASE", "@"), '@NUT_WEBSITE_BASE@')
+            )
+        ### sys.stderr.write("gui_about_dialog(): s (rewritten) ='%s'\n" % s)
+        dialog.set_comments(s)
 
         self.__widgets["main_window"].set_sensitive( False )
         dialog.run()
@@ -639,7 +708,7 @@ class interface :
             pynotify.init( "NUT Monitor" )
 
             if ( icon_file != "" ) :
-                icon = "file://%s" % os.path.abspath( os.path.join( os.path.dirname( sys.argv[0] ), "pixmaps", icon_file ) )
+                icon = "file://%s" % os.path.abspath( os.path.join( self.__resdir, "pixmaps", icon_file ) )
             else :
                 icon = None
 
@@ -736,9 +805,9 @@ class interface :
 
             for k,v in vars.iteritems() :
                 if ( rwvars.has_key( k ) ) :
-                    icon_file = os.path.join( os.path.dirname( sys.argv[0] ), "pixmaps", "var-rw.png" )
+                    icon_file = os.path.join( self.__resdir, "pixmaps", "var-rw.png" )
                 else :
-                    icon_file = os.path.join( os.path.dirname( sys.argv[0] ), "pixmaps", "var-ro.png" )
+                    icon_file = os.path.join( self.__resdir, "pixmaps", "var-ro.png" )
 
                 icon = gtk.gdk.pixbuf_new_from_file( icon_file )
                 self.__widgets["ups_vars_tree_store"].append( [ icon, k, v ] )
@@ -788,7 +857,9 @@ class gui_updater( threading.Thread ) :
         # Define a dict containing different UPS status
         status_mapper = { "LB"     : "<span color=\"#BB0000\"><b>%s</b></span>" % _("Low batteries"),
                           "RB"     : "<span color=\"#FF0000\"><b>%s</b></span>" % _("Replace batteries !"),
+                          "ALARM"  : "<span color=\"#FF0000\"><b>%s</b></span>" % _("Active alarms !"),
                           "BYPASS" : "<span color=\"#BB0000\">Bypass</span> <i>%s</i>" % _("(no battery protection)"),
+                          "ECO"    : _("In ECO mode (as defined by vendor)"),
                           "CAL"    : _("Performing runtime calibration"),
                           "OFF"    : "<span color=\"#000090\">%s</span> <i>(%s)</i>" % ( _("Offline"), _("not providing power to the load") ),
                           "OVER"   : "<span color=\"#BB0000\">%s</span> <i>(%s)</i>" % ( _("Overloaded !"), _("there is too much load for device") ),

@@ -1,7 +1,9 @@
 /*
-* clone.c: UPS driver clone
+* clone.c: clone an UPS, treating its outlet as if it were an UPS
+*          (with shutdown INSTCMD support)
 *
 * Copyright (C) 2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+* Copyright (C) 2024 - Jim Klimov <jimklimov+nut@gmail.com>
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -28,10 +30,10 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif
+#endif	/* !WIN32 */
 
 #define DRIVER_NAME	"Clone UPS driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -65,14 +67,15 @@ static int	dumpdone = 0, online = 1, outlet = 1;
 static long	offdelay = 120, ondelay = 30;
 
 static PCONF_CTX_t	sock_ctx;
-static time_t	last_poll = 0, last_heard = 0,
-		last_ping = 0;
+static time_t	last_poll = 0, last_heard = 0, last_ping = 0;
+
 #ifndef WIN32
-static time_t last_connfail = 0;
-#else
-static char	read_buf[SMALLBUF];
-static OVERLAPPED read_overlapped;
-#endif
+/* TODO NUT_WIN32_INCOMPLETE : Why not built in WIN32? */
+static time_t	last_connfail = 0;
+#else	/* WIN32 */
+static char     	read_buf[SMALLBUF];
+static OVERLAPPED	read_overlapped;
+#endif	/* WIN32 */
 
 static int instcmd(const char *cmdname, const char *extra);
 
@@ -80,7 +83,7 @@ static int instcmd(const char *cmdname, const char *extra);
 static int parse_args(size_t numargs, char **arg)
 {
 	if (numargs < 1) {
-		return 0;
+		goto skip_out;
 	}
 
 	if (!strcasecmp(arg[0], "PONG")) {
@@ -105,7 +108,7 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (numargs < 2) {
-		return 0;
+		goto skip_out;
 	}
 
 	/* DELINFO <var> */
@@ -115,7 +118,7 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (numargs < 3) {
-		return 0;
+		goto skip_out;
 	}
 
 	/* SETINFO <varname> <value> */
@@ -144,7 +147,7 @@ static int parse_args(size_t numargs, char **arg)
 		if (!strcasecmp(arg[1], "battery.charge")) {
 			battery.charge.act = strtod(arg[2], NULL);
 
-			dstate_setinfo("battery.charge.low", "%g", battery.charge.low);
+			dstate_setinfo("battery.charge.low", "%f", battery.charge.low);
 			dstate_setflags("battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING);
 			dstate_setaux("battery.charge.low", 3);
 		}
@@ -152,13 +155,31 @@ static int parse_args(size_t numargs, char **arg)
 		if (!strcasecmp(arg[1], "battery.runtime")) {
 			battery.runtime.act = strtod(arg[2], NULL);
 
-			dstate_setinfo("battery.runtime.low", "%g", battery.runtime.low);
+			dstate_setinfo("battery.runtime.low", "%f", battery.runtime.low);
 			dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
 			dstate_setaux("battery.runtime.low", 4);
 		}
 
 		dstate_setinfo(arg[1], "%s", arg[2]);
 		return 1;
+	}
+
+skip_out:
+	if (nut_debug_level > 0) {
+		char	buf[LARGEBUF];
+		size_t	i;
+		int	len = -1;
+
+		memset(buf, 0, sizeof(buf));
+		for (i = 0; i < numargs; i++) {
+			len = snprintfcat(buf, sizeof(buf), "[%s] ", arg[i]);
+		}
+		if (len > 0) {
+			buf[len - 1] = '\0';
+		}
+
+		upsdebugx(3, "%s: ignored protocol line with %" PRIuSIZE " keyword(s): %s",
+			__func__, numargs, numargs < 1 ? "<empty>" : buf);
 	}
 
 	return 0;
@@ -168,11 +189,11 @@ static int parse_args(size_t numargs, char **arg)
 static TYPE_FD sstate_connect(void)
 {
 	TYPE_FD	fd;
+	const char	*dumpcmd = "DUMPALL\n";
 
 #ifndef WIN32
 	ssize_t	ret;
 	int	len;
-	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
@@ -247,8 +268,7 @@ static TYPE_FD sstate_connect(void)
 
 	/* continued below... */
 #else /* WIN32 */
-	char		pipename[SMALLBUF];
-	const char	*dumpcmd = "DUMPALL\n";
+	char		pipename[NUT_PATH_MAX];
 	BOOL		result = FALSE;
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s/%s", dflt_statepath(), device_path);
@@ -288,7 +308,7 @@ static TYPE_FD sstate_connect(void)
 	ReadFile(fd, read_buf,
 		sizeof(read_buf) - 1, /*-1 to be sure to have a trailling 0 */
 		NULL, &(read_overlapped));
-#endif
+#endif	/* WIN32 */
 
 	/* sstate_connect() continued for both platforms: */
 	pconf_init(&sock_ctx, NULL);
@@ -316,9 +336,9 @@ static void sstate_disconnect(void)
 
 #ifndef WIN32
 	close(upsfd);
-#else
+#else	/* WIN32 */
 	CloseHandle(upsfd);
-#endif
+#endif	/* WIN32 */
 
 	upsfd = ERROR_FD;
 }
@@ -334,11 +354,11 @@ static int sstate_sendline(const char *buf)
 
 #ifndef WIN32
 	ret = write(upsfd, buf, strlen(buf));
-#else
+#else	/* WIN32 */
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 
-	result = WriteFile (upsfd,buf,strlen(buf),&bytesWritten,NULL);
+	result = WriteFile (upsfd, buf, strlen(buf), &bytesWritten, NULL);
 
 	if (result == 0) {
 		ret = 0;
@@ -346,7 +366,7 @@ static int sstate_sendline(const char *buf)
 	else {
 		ret = (int)bytesWritten;
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (ret == (int)strlen(buf)) {
 		return 0;
@@ -373,16 +393,16 @@ static int sstate_readline(void)
 	if (ret < 0) {
 		switch(errno)
 		{
-		case EINTR:
-		case EAGAIN:
-			return 0;
+			case EINTR:
+			case EAGAIN:
+				return 0;
 
-		default:
-			upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", device_path);
-			return -1;
+			default:
+				upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", device_path);
+				return -1;
 		}
 	}
-#else
+#else	/* WIN32 */
 	if (INVALID_FD(upsfd)) {
 		return -1;	/* failed */
 	}
@@ -392,25 +412,25 @@ static int sstate_readline(void)
 	DWORD bytesRead;
 	GetOverlappedResult(upsfd, &read_overlapped, &bytesRead, FALSE);
 	ret = bytesRead;
-#endif
+#endif	/* WIN32 */
 
 	for (i = 0; i < ret; i++) {
 
 		switch (pconf_char(&sock_ctx, buf[i]))
 		{
-		case 1:
-			if (parse_args(sock_ctx.numargs, sock_ctx.arglist)) {
-				time(&last_heard);
-			}
-			continue;
+			case 1:
+				if (parse_args(sock_ctx.numargs, sock_ctx.arglist)) {
+					time(&last_heard);
+				}
+				continue;
 
-		case 0:
-			continue;	/* haven't gotten a line yet */
+			case 0:
+				continue;	/* haven't gotten a line yet */
 
-		default:
-			/* parse error */
-			upslogx(LOG_NOTICE, "Parse error on sock: %s", sock_ctx.errmsg);
-			return -1;
+			default:
+				/* parse error */
+				upslogx(LOG_NOTICE, "Parse error on sock: %s", sock_ctx.errmsg);
+				return -1;
 		}
 	}
 
@@ -498,13 +518,13 @@ static int setvar(const char *varname, const char *val)
 {
 	if (!strcasecmp(varname, "battery.charge.low")) {
 		battery.charge.low = strtod(val, NULL);
-		dstate_setinfo("battery.charge.low", "%g", battery.charge.low);
+		dstate_setinfo("battery.charge.low", "%f", battery.charge.low);
 		return STAT_SET_HANDLED;
 	}
 
 	if (!strcasecmp(varname, "battery.runtime.low")) {
 		battery.runtime.low = strtod(val, NULL);
-		dstate_setinfo("battery.runtime.low", "%g", battery.runtime.low);
+		dstate_setinfo("battery.runtime.low", "%f", battery.runtime.low);
 		return STAT_SET_HANDLED;
 	}
 
@@ -556,6 +576,16 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	time_t	now = time(NULL);
+	double	d;
+
+	/* Throttle tight loops to avoid CPU burn, e.g. when the socket to driver
+	 * is not in fact connected, so a select() somewhere is not waiting much */
+	if (last_poll > 0 && (d = difftime(now, last_poll)) < 1.0) {
+		upsdebugx(5, "%s: too little time (%g sec) has passed since last cycle, throttling",
+			__func__, d);
+		usleep(500000);
+		now = time(NULL);
+	}
 
 	if (sstate_dead(15)) {
 		sstate_disconnect();
@@ -630,9 +660,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 

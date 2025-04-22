@@ -16,3 +16,26 @@ link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression 
 and link:https://salsa.debian.org/debian/nut/-/tree/debian/debian/tests[Debian packaging recipe]
 doing a similar job with NUT installed from packages and configuring
 it via files in standard path names.
+
+A sandbox prepared by this script can be used for `upsmon` testing:
+
+----
+:; make check-NIT-sandbox-devel &
+
+# Wait for sandbox, e.g. test that "${NUT_CONFPATH}/NIT.env-sandbox-ready"
+# file appeared; then source the envvars, e.g.:
+:; sleep 5 ; while ! [ -e ./tests/NIT/tmp/etc/NIT.env-sandbox-ready ] ; do sleep 1 ; done
+:; . ./tests/NIT/tmp/etc/NIT.env
+
+# Prepare upsmon.conf there, e.g.:
+:; printf 'MINSUPPLIES 1\nPOWERDOWNFLAG "%s/killpower"\nSHUTDOWNCMD "date >> \"%s/nut-shutdown.log\""\nMONITOR "%s@127.0.0.1:%s" 1 "%s" "%s" primary\n' \
+    "$NUT_STATEPATH" "$NUT_STATEPATH" 'dummy' "$NUT_PORT" \
+    'dummy-admin' "${TESTPASS_UPSMON_PRIMARY}" \
+    > "${NUT_CONFPATH}/upsmon.conf"
+----
+
+The `nit.sh` script supports a lot of environment variables to tune its
+behavior, notably `NIT_CASE`, `NUT_PORT`, `NUT_STATEPATH` and `NUT_CONFPATH`,
+but also many more. See its sources, as well as the top-level `Makefile.am`
+recipe and the `./tests/NIT/tmp/etc/NIT.env` file generated during a test run,
+for more details and examples about the currently supported tunables.

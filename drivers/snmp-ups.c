@@ -6,6 +6,7 @@
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2022	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2022 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -51,6 +52,7 @@
 #include "raritan-pdu-mib.h"
 #include "raritan-px2-mib.h"
 #include "baytech-mib.h"
+#include "baytech-rpc3nc-mib.h"
 #include "compaq-mib.h"
 #include "bestpower-mib.h"
 #include "cyberpower-mib.h"
@@ -101,6 +103,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_epdu,		/* This struct comes from : apc-epdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
 	&baytech,			/* This struct comes from : baytech-mib.c */
+	&baytech_rpc3nc,		/* This struct comes from : baytech-rpc3nc-mib.c */
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
 	&compaq,			/* This struct comes from : compaq-mib.c */
 	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
@@ -174,7 +177,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.31"
+#define DRIVER_VERSION	"1.33"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -341,40 +344,44 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/*
-	This driver will probably never support this. In order to
-	be any use, the driver should be called near the end of
-	the system halt script. By that time we in all likelyhood
-	we won't have network capabilities anymore, so we could
-	never send this command to the UPS. This is not an error,
-	but a limitation of the interface used.
-	*/
+	 * WARNING:
+	 * This driver will probably never support this properly:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+	char	*cmd_used = NULL;
 
 	upsdebugx(1, "%s...", __func__);
 
 	/* set shutdown and autostart delay */
 	set_delays();
 
-	/* Try to shutdown with delay */
-	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try shutdown.reboot */
-	if (su_instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try load.off.delay */
-	if (su_instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
+	/* By default:
+	 * - Try to shutdown with delay
+	 * - If the above doesn't work, try shutdown.reboot
+	 * - If the above doesn't work, try load.off.delay
+	 * - Finally, try shutdown.stayoff
+	 */
+	if (do_loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_INFO, "Shutdown successful with '%s'", NUT_STRARG(cmd_used));
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
@@ -1166,7 +1173,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 			/* Error throttling otherwise */
 			numerr++;
-			upsdebugx(4, "%s: numerr++ (total=%i)", __func__, numerr);
+			upsdebugx(4, "%s: numerr++ (total=%u)", __func__, numerr);
 
 			if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
 				upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
@@ -4177,7 +4184,7 @@ static void mibconf_err(const char *errmsg)
 /* load *mib.conf into an snmp_info_t structure */
 void read_mibconf(char *mib)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 

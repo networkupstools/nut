@@ -414,7 +414,7 @@ static void resolve_callback(
 				(*nut_avahi_strerror)((*nut_avahi_client_errno)((*nut_avahi_service_resolver_get_client)(r))));
 			break;
 
-		case AVAHI_RESOLVER_FOUND: {
+		case AVAHI_RESOLVER_FOUND: { /* scoping */
 			char a[AVAHI_ADDRESS_STR_MAX], *t;
 
 /*			upsdebugx(1, "%s: Service '%s' of type '%s' in domain '%s':", __func__, name, type, domain); */
@@ -444,7 +444,33 @@ static void resolve_callback(
 */
 			update_device(host_name, a, port, t, address->proto);
 			(*nut_avahi_free)(t);
-		}
+			}
+			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	(*nut_avahi_service_resolver_free)(r);
@@ -518,6 +544,31 @@ static void browse_callback(
 		fallthrough_AVAHI_BROWSER_CACHE_EXHAUSTED:
 /*			upsdebugx(1, "%s: (Browser) %s", __func__, event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW"); */
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 }
 

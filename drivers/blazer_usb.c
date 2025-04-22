@@ -34,10 +34,10 @@
 #include "blazer.h"
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.21"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -137,6 +137,9 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 			break;
 
 		case LIBUSB_ERROR_TIMEOUT: /** Operation or Connection timed out */
+			break;
+
+		default:
 			break;
 		}
 
@@ -514,7 +517,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 # if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
 # endif
-#endif
+#endif	/* !WIN32 */
 	default:
 		break;
 	}
@@ -541,7 +544,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 			continue;
 		}
 
-		/* TODO: Range-check int vs ssize_t values */
+		/* TODO: Range-check int vs. ssize_t values */
 		return (ssize_t)snprintf(buf, buflen, "%s", testing[i].answer);
 	}
 
@@ -576,8 +579,6 @@ void upsdrv_help(void)
 	}
 	printf("\n\n");
 #endif	/* TESTING */
-
-	printf("Read The Fine Manual ('man 8 blazer_usb')\n");
 }
 
 
@@ -628,7 +629,8 @@ void upsdrv_initups(void)
 		}
 		else {
 			langid_fix = (int)u_langid_fix;
-			upsdebugx(2, "language ID workaround enabled (using '0x%x')", langid_fix);
+			upsdebugx(2, "language ID workaround enabled (using '0x%x')",
+				(unsigned int)langid_fix);
 		}
 	}
 
@@ -709,7 +711,9 @@ void upsdrv_initups(void)
 		ret = usb_get_string(udev, 0, 0, (usb_ctrl_charbuf)tbuf, sizeof(tbuf));
 		if (ret >= 4) {
 			langid = (unsigned char)tbuf[2] | ((unsigned char)tbuf[3] << 8);
-			upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
+			upsdebugx(1, "First supported language ID: 0x%x "
+				"(please report to the NUT maintainer!)",
+				(unsigned int)langid);
 		}
 	}
 #endif	/* TESTING */

@@ -30,7 +30,7 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif
+#endif	/* !WIN32 */
 
 #include "common.h"
 #include "state.h"

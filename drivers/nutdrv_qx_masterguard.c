@@ -619,6 +619,8 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 		case 's':
 			snprintf(value, valuelen, item->command, s);
 			break;
+		default:
+			break;
 	}
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop

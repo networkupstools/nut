@@ -1,7 +1,7 @@
 /*
  *  Copyright (C)
  *      2013 - EATON
- *      2024 - Jim Klimov <jimklimov+nut@gmail.com>
+ *      2024-2025 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,11 +29,15 @@
 #include "nutstream.hpp"
 
 extern "C" {
+/* FIXME? Is it counter-intentional to use our C common library
+ * for C++ code (here for common printing of version banner)? */
+#include "common.h"
 #if (defined WITH_NUTSCANNER)
-#include "nut-scan.h"
-#include "nutscan-init.h"
-#include "nutscan-device.h"
-#endif  // defined WITH_NUTSCANNER
+/* NOTE: `libnutscan` itself gets linked in at run-time, no ltdl optionality */
+# include "nut-scan.h"
+# include "nutscan-init.h"
+# include "nutscan-device.h"
+#endif	/* WITH_NUTSCANNER */
 }
 
 #include <iostream>
@@ -43,6 +47,7 @@ extern "C" {
 #include <stdexcept>
 #include <cassert>
 #include <cstring>
+#include <cstdlib>
 
 
 class Usage {
@@ -56,8 +61,11 @@ class Usage {
 
 	public:
 
-	/** Print usage */
+	/** Print version and usage to stderr */
 	static void print(const std::string & bin);
+
+	/** Print version info to stdout */
+	static void printVersion(const std::string & bin);
 
 };  // end of class usage
 
@@ -65,10 +73,15 @@ class Usage {
 const char * Usage::s_text[] = {
 	"    -h  -help",
 	"    --help                              Display this help and exit",
+	"    -V",
+	"    --version                           Display tool version on stdout and exit",
 	"    --autoconfigure                     Perform automatic configuration",
 	"    --is-configured                     Checks whether NUT is configured",
 	"    --local <directory>                 Sets configuration directory",
 	"    --system                            Sets configuration directory to " CONFPATH " (default)",
+	"                                        NOTE: If NUT_CONFPATH envvar is set,",
+	"                                        it is the default unless overridden by",
+	"                                        --system (lower prio) or --local DIR",
 	"    --get-mode                          Gets NUT mode (see below)",
 	"    --set-mode <NUT mode>               Sets NUT mode (see below)",
 	"    --set-monitor <spec>                Configures one monitor (see below)",
@@ -100,6 +113,9 @@ const char * Usage::s_text[] = {
 	"                                        specified multiple times to set multiple users",
 	"    --add-user <spec>                   Same as --set-user, but keeps existing users",
 	"                                        The two options are mutually exclusive",
+	/* FIXME: Alias as "-D"? Is this the same as nut_debug_level
+	 * NOTE: upsdebugx() not used here directly (yet?), though we
+	 * could setenv() the envvar for libnutscan perhaps? */
 	"    -v",
 	"    --verbose                           Increase verbosity of output one level",
 	"                                        May be specified multiple times",
@@ -133,7 +149,9 @@ const char * Usage::s_text[] = {
 	"    <ups_ID> <driver> <port> [<key>=<value>]*",
 	"Notification types:",
 	"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT,",
-	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS",
+	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS, ECO, NOTECO, ALARM, NOTALARM,",
+	"    OVER, NOTOVER, TRIM, NOTTRIM, BOOST, NOTBOOST,",
+	"    OTHER, NOTOTHER, SUSPEND_STARTING, SUSPEND_FINISHED",
 	"Notification flags:",
 	"    SYSLOG, WALL, EXEC, IGNORE",
 	"User specification:",
@@ -164,9 +182,23 @@ const char * Usage::s_text[] = {
 	"",
 };
 
+/**
+ * Print version info to stdout (like other NUT tools)
+ */
+void Usage::printVersion(const std::string & bin) {
+	std::cout
+		<< "Network UPS Tools " << bin
+		<< " " << describe_NUT_VERSION_once() << std::endl;
+}
 
+/**
+ * Print help text (including version info) to stderr
+ */
 void Usage::print(const std::string & bin) {
 	std::cerr
+		<< "Network UPS Tools " << bin
+		<< " " << describe_NUT_VERSION_once() << std::endl
+		<< std::endl
 		<< "Usage: " << bin << " [OPTIONS]" << std::endl
 		<< std::endl
 		<< "OPTIONS:" << std::endl;
@@ -174,6 +206,11 @@ void Usage::print(const std::string & bin) {
 	for (size_t i = 0; i < sizeof(s_text) / sizeof(char *); ++i) {
 		std::cerr << s_text[i] << std::endl;
 	}
+
+	std::cerr
+		/* << std::endl // last line of s_text is blank */
+		<< suggest_doc_links(bin.c_str(), nullptr);
+		/* Method output brings its own endl */
 }
 
 
@@ -553,7 +590,8 @@ void Options::dump(std::ostream & stream) const {
 
 
 Options::Options(char * const argv[], int argc): m_last(nullptr) {
-	for (int i = 1; i < argc; ++i) {
+	int i;
+	for (i = 1; i < argc; ++i) {
 		const std::string arg(argv[i]);
 
 		// Empty string is the current option argument, too
@@ -1068,7 +1106,7 @@ class NutConfOptions: public Options {
 	/** --is-configured */
 	bool is_configured;
 
-	/** -- local argument */
+	/** --local argument */
 	std::string local;
 
 	/** --system */
@@ -3085,12 +3123,22 @@ static void scanSerialDevices(const NutConfOptions & options) {
  *  \return 0 always (exits on error)
  */
 static int mainx(int argc, char * const argv[]) {
+	const char	*prog = xbasename(argv[0]);
+	char	*s = nullptr;
+
 	// Get options
 	NutConfOptions options(argv, argc);
 
 	// Usage
 	if (options.exists("help") || options.existsSingle("h")) {
-		Usage::print(argv[0]);
+		Usage::print(prog);
+
+		::exit(0);
+	}
+
+	// Usage
+	if (options.exists("version") || options.existsSingle("V")) {
+		Usage::printVersion(prog);
 
 		::exit(0);
 	}
@@ -3106,6 +3154,10 @@ static int mainx(int argc, char * const argv[]) {
 
 	// Set configuration directory
 	std::string etc(CONFPATH);
+
+	s = ::getenv("NUT_CONFPATH");
+	if (s != nullptr && !options.system)
+		etc = s;
 
 	if (!options.local.empty()) {
 		etc = options.local;

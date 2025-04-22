@@ -1,0 +1,14 @@
+/* CSS files sourced below originated in different Git repositories.
+ *
+ * Place this file and those included below into $JENKINS_HOME/userContent
+ * and refer to this one as "/userContent/ci-root.css" from your Jenkins
+ * controller theme configuration - see $JENKINS_URL/manage/appearance/
+ * section "Customizable theme" (or "Customizable Header", not both).
+ */
+
+/* https://raw.githubusercontent.com/networkupstools/nut/refs/heads/master/docs/images/ci/jenkins-nut.css */
+@import "jenkins-nut.css";
+
+/* https://raw.githubusercontent.com/networkupstools/jenkins-dynamatrix/refs/heads/master/jenkins-dynamatrix-badges.css */
+@import "jenkins-dynamatrix-badges.css";
+

@@ -30,6 +30,12 @@ EXTRA_DIST = \
 	solcmn/solaris_init	\
 	solcmn/ipp-os-shutdown.conf.sample
 
+# Originally an Eaton license was used, changed along with donation of sources
+# to NUT project. Having the file name populated helps keep the scripts as is.
+common_EN/license.txt: $(top_srcdir)/LICENSE-GPL2
+	$(MKDIR_P) '$(@D)'
+	cp -pf '$?' '$@'
+
 SPELLCHECK_SRC = README.adoc common/README_ipp-os-shutdown.adoc
 
 nut:
@@ -56,7 +62,7 @@ nut:
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-CLEANFILES = *-spellchecked */*-spellchecked
+CLEANFILES = *-spellchecked */*-spellchecked common_EN/license.txt
 
 # Remove "nut" if it is a symlink to the source tree
 clean-local:

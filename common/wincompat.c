@@ -498,11 +498,11 @@ static const char	*named_pipe_name=NULL;
 void pipe_create(const char * pipe_name)
 {
 	BOOL ret;
-	char pipe_full_name[SMALLBUF];
+	char pipe_full_name[NUT_PATH_MAX + 1];
 
 	/* save pipe name for further use in pipe_connect */
-	if( pipe_name == NULL ) {
-		if( named_pipe_name == NULL ) {
+	if (pipe_name == NULL) {
+		if (named_pipe_name == NULL) {
 			return;
 		}
 	}
@@ -1639,4 +1639,4 @@ speed_t cfgetospeed(const struct termios *t)
 /* Just avoid: ISO C forbids an empty translation unit [-Werror=pedantic] */
 int main (int argc, char ** argv);
 
-#endif	/* WIN32 */
+#endif	/* !WIN32 */

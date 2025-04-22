@@ -52,7 +52,7 @@ typedef	uint8_t byte_t;
 
 
 #define DRIVER_NAME	"Eltek AL175/COMLI driver"
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -332,7 +332,8 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
 		fatalx(EXIT_FAILURE, "too small dest in comli_prepare\n");
 
 	out[0] = STX;
-	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04zX%02zX", h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
+	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04zX%02zX",
+		(unsigned int)h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
 
 	memcpy(out+11, buf, count);
 	reverse_bits(out+11, count);
@@ -572,7 +573,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	reply = raw_reply.begin - 1;
 
 	if ( (raw_reply.end - raw_reply.begin) != (ptrdiff_t)(10 + io_head->len))  {
-		upsdebugx(3, "%s: corrupt sentence\t(%i != %" PRIiSIZE ")",
+		upsdebugx(3, "%s: corrupt sentence\t(%i != %" PRIuSIZE ")",
 				__func__, (int)(raw_reply.end - raw_reply.begin), 10 + io_head->len);
 		return -1;		/* corrupt sentence	*/
 	}
@@ -648,7 +649,7 @@ static int al_check_ack(/*const*/ raw_data_t raw_ack)
 	}
 
 	if (ack[5]!=ACK)  {
-		upsdebugx(3, "%s: wrong ack\t(0x%02X != 0x%02X)", __func__, ack[5], ACK);
+		upsdebugx(3, "%s: wrong ack\t(0x%02X != 0x%02X)", __func__, ack[5], (unsigned int)ACK);
 		return -1;		/* wrong ack	*/
 	}
 
@@ -713,7 +714,7 @@ static int tx(const char *dmsg, /*const*/ raw_data_t frame)
 
 	err = ser_send_buf(upsfd, frame.begin, frame_len );
 	if (err==-1) {
-		upslogx(LOG_ERR, "failed to send frame to PRS: %s", strerror(errno));
+		upslog_with_errno(LOG_ERR, "failed to send frame to PRS");
 		return -1;
 	}
 
@@ -907,7 +908,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
 	if (err!=(int)(io->len+2)) {
-		upsdebugx(4, "rx_tail failed, err=%" PRIiSIZE " (!= %" PRIiSIZE ")", err, io->len+2);
+		upsdebugx(4, "rx_tail failed, err=%" PRIiSIZE " (!= %" PRIuSIZE ")", err, io->len+2);
 		ret = -1; goto out;
 	}
 
@@ -1267,6 +1268,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* TODO use TOGGLE_PRS_ONOFF for shutdown */
 
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
@@ -1276,7 +1280,8 @@ void upsdrv_shutdown(void)
 
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */

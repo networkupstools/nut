@@ -17,7 +17,7 @@ which contains a number of directives that set parameters for that UPS.
 
 A UPS section begins with the name of the UPS in brackets, and continues
 until the next UPS name in brackets or until EOF.  The name "default" is
-used internally in upsd, so you can't use it in this file.
+used internally in linkman:upsd[8], so you can't use it in this file.
 
 You must define the 'driver' and 'port' elements for each entry.  Anything
 after that in a section is optional.  A simple example might look like this:
@@ -53,6 +53,25 @@ IMPORTANT NOTES
 
 * Contents of this file should be pure ASCII (character codes
   not in range would be ignored with a warning message).
+* Balance the run-time user permissions to access the file (and perhaps the
+  directory it is in) for only `upsd` and the drivers to be able to read it;
+  write access is not needed. It is common to use `chown root:nut` and
+  `chmod 640` to set up acceptable file permissions.
+  - Packages (and build recipes) typically prepare one set of user and
+    group accounts for NUT. Custom builds with minimal configuration might
+    even use `nobody:nogroup` or similar, which is inherently insecure.
+  - On systems with extra security concerns, NUT drivers, data server
+    should run as separate user accounts which would be members of one
+    same group for shared access to local Unix socket files and the
+    directory they are in, as well for reading `ups.conf`, but different
+    groups for other configuration file access. This would need some
+    daemons to use customized `user`, `group`, `RUN_AS_USER` and/or
+    `RUN_AS_GROUP` settings to override the single built-in value.
+  - Note that the monitoring, logging, etc. clients are networked-only.
+    They do not need access to these files and directories, and can run
+    as an independent user and group altogether.
+  - Keep in mind the security of also any backup copies of this file,
+    e.g. the archive files it might end up in.
 
 GLOBAL DIRECTIVES
 -----------------
@@ -67,6 +86,19 @@ This can be useful when securing systems.
 Optional.  Path name of the directory in which the UPS driver executables
 reside.  If you don't specify this, the programs look in a built-in default
 directory, which is often /usr/local/ups/bin.
+
+*statepath*::
+
+Optional.  Path name of the directory in which the UPS drivers should place
+their state sockets for local communication with `upsd` data server, rather
+than the default location that was compiled into the program, which is often
+/var/state/ups.
++
+Note that the drivers must use the same path as `upsd`, so the data server
+would prefer this setting from `ups.conf` global section, if present, over
+its own in `upsd.conf`.
++
+Environment variable `NUT_STATEPATH` set by caller can override this setting.
 
 *maxstartdelay*::
 
@@ -156,6 +188,26 @@ troubleshooting a deployment, without impacting foreground or background
 running mode directly. Command-line option `-D` can only increase this
 verbosity level.
 
+*LIBUSB_DEBUG* 'INTEGER'::
+
+Optional.  For run-time troubleshooting of USB-capable NUT drivers,
+you can specify verbosity of LibUSB specific debugging as a numeric
+value such as `4` ("All messages are emitted").  Should not have any
+practical impact on other NUT drivers.
++
+For more details, including the currently supported values for your
+version of the library, see e.g.:
+
+* https://libusb.sourceforge.io/api-1.0/
+* link:https://libusb.sourceforge.io/api-1.0/group\__libusb\__lib.html[https://libusb.sourceforge.io/api-1.0/group\__libusb__lib.html]
+
+///////////////////
+// EDITOR NOTE: There are no backslashes in the URL above, just that
+// asciidoc sees them as "emphasis" markup, they had to be escaped.
+// If a link from this asciidoc source file is needed, please visit:
+// https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
+///////////////////
+
 UPS FIELDS
 ----------
 
@@ -201,6 +253,31 @@ then the 1s, 2s, and so on.  To exclude a UPS from the shutdown sequence,
 set this to -1.
 +
 The default value for this parameter is 0.
+
+*sdcommands*::
+
+Optional.  Comma-separated list of instant command name(s) to send to
+the UPS when you request its shutdown.
++
+Default logic is built into each driver (where supported) and can be
+referenced here as the `shutdown.default` value.
++
+The primary use-case is for devices whose drivers "natively" support
+trying several commands, but the built-in order of those calls a
+command that is mis-handled by the specific device model (so the
+handling is reported as successful and the loop stops, but nothing
+happens as far as the load power-down is concerned).
++
+Another use-case is differentiation of automated power-off scenarios
+where the UPS and its load should stay "OFF" (e.g. by building emergency
+power-off) vs. those where the load should return to work automatically
+when it is safe to do so.  NOTE: This would *currently* need editing of
+`ups.conf` for such cases before `nutshutdown` sees the file; but could
+be better automated in future NUT releases.
++
+NOTE: User-provided commands may be something other than actual shutdown,
+e.g. a beeper to test that the INSTCMD happened such and when expected,
+and the device was contacted, without impacting the load fed by the UPS.
 
 *allow_killpower*::
 Optional.  This allows you to request `driver.killpower` instant command,
@@ -260,7 +337,17 @@ initializing in the background, and might even succeed eventually.
 +
 They would not be actively killed by `upsdrvctl` after this timeout expires.
 +
-The default is 45 seconds.
+The default is 75 seconds.
+
+*maxretry*::
+Optional.  This can be set as a global variable above your first UPS
+definition and it can also be set in a UPS section.  See explanation
+above, in the global section.
+
+*retrydelay*::
+Optional.  This can be set as a global variable above your first UPS
+definition and it can also be set in a UPS section.  See explanation
+above, in the global section.
 
 *synchronous*::
 
@@ -324,6 +411,25 @@ troubleshooting a deployment, without impacting foreground or background
 running mode directly.  If the global `debug_min` is also set, this
 driver-level setting overrides it.  Command-line option `-D` can only
 increase this verbosity level.
+
+*LIBUSB_DEBUG* 'INTEGER'::
+
+Optional.  For run-time troubleshooting of USB-capable NUT drivers,
+you can specify verbosity of LibUSB specific debugging as a numeric
+value such as `4` ("All messages are emitted").
++
+For more details, including the currently supported values for your
+version of the library, see e.g.:
+
+* https://libusb.sourceforge.io/api-1.0/
+* link:https://libusb.sourceforge.io/api-1.0/group\__libusb\__lib.html[https://libusb.sourceforge.io/api-1.0/group\__libusb__lib.html]
+
+///////////////////
+// EDITOR NOTE: There are no backslashes in the URL above, just that
+// asciidoc sees them as "emphasis" markup, they had to be escaped.
+// If a link from this asciidoc source file is needed, please visit:
+// https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
+///////////////////
 
 INTEGRATION
 -----------

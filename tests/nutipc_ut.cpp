@@ -5,7 +5,7 @@
 
             \author Vaclav Krpec <VaclavKrpec@Eaton.com>
 
-        Copyright (C) 2024
+        Copyright (C) 2024-2025
 
             \author Jim Klimov <jimklimov+nut@gmail.com>
 
@@ -70,8 +70,10 @@ extern bool verbose;
 #  pragma GCC diagnostic ignored "-Wold-style-cast"
 # endif
 #endif
-#ifdef __clang__
-# pragma clang diagnostic push "-Wdeprecated-declarations"
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
+# ifdef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#  pragma clang diagnostic push "-Wdeprecated-declarations"
+# endif
 #endif
 
 #include <cppunit/extensions/HelperMacros.h>
@@ -120,10 +122,11 @@ CPPUNIT_TEST_SUITE_REGISTRATION(NutIPCUnitTest);
 
 void NutIPCUnitTest::testExec() {
 #ifdef WIN32
-	/* FIXME: Some other program, maybe NUT's "message" handler, or "cmd -k" etc.?
-	 * And get Process working in the first place */
+	/* FIXME NUT_WIN32_INCOMPLETE:
+	 *  Some other program, maybe NUT's "message" handler, or "cmd -k" etc.?
+	 *  And get Process working in the first place */
 	std::cout << "NutIPCUnitTest::testExec(): skipped on this platform" << std::endl;
-#else
+#else	/* !WIN32 */
 	static const std::string bin = "/bin/sh";
 
 	nut::Process::Executor::Arguments args;
@@ -136,7 +139,7 @@ void NutIPCUnitTest::testExec() {
 	CPPUNIT_ASSERT(123 == child.wait());
 
 	CPPUNIT_ASSERT(0 == nut::Process::execute("test 'Hello world' = 'Hello world'"));
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
 }
 
 
@@ -149,9 +152,10 @@ void NutIPCUnitTest::testSignalHandler(int signal) {
 
 void NutIPCUnitTest::testSignalSend() {
 #ifdef WIN32
-	/* FIXME: Needs implementation for signals via pipes */
+	/* FIXME NUT_WIN32_INCOMPLETE:
+	 *  Needs implementation for signals via pipes */
 	std::cout << "NutIPCUnitTest::testSignalSend(): skipped on this platform" << std::endl;
-#else
+#else	/* !WIN32 */
 	struct sigaction action;
 
 	pid_t my_pid = nut::Process::getPID();
@@ -208,7 +212,7 @@ void NutIPCUnitTest::testSignalSend() {
 	pid_file.removex();
 
 	signal_caught = 0;
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
 }
 
 
@@ -226,11 +230,13 @@ class TestSignalHandler: public nut::Signal::Handler {
 	virtual ~TestSignalHandler() override;
 };  // end of class TestSignalHandler
 
+// \todo Describe the point of this test.
 void NutIPCUnitTest::testSignalRecvQuick() {
 #ifdef WIN32
-	/* FIXME: Needs implementation for signals via pipes */
+	/* FIXME NUT_WIN32_INCOMPLETE:
+	 *  Needs implementation for signals via pipes */
 	std::cout << "NutIPCUnitTest::testSignalRecvQuick(): skipped on this platform" << std::endl;
-#else
+#else	/* !WIN32 */
 	// Create signal handler thread
 	nut::Signal::List signals;
 	caught_signals.clear();
@@ -242,22 +248,52 @@ void NutIPCUnitTest::testSignalRecvQuick() {
 
 	pid_t my_pid = nut::Process::getPID();
 
-	/* NOTE: The signal order delivery is not specified by POSIX if several
-	 * ones arrive nearly simultaneously (and/or get confused by multi-CPU
-	 * routing). In this test we only verify that after sending several copies
-	 * of several signals, the expected counts of events were received.
+	/*
+	 * POSIX does not require signals to be delivered in order.
+	 * It does not require that signals are like messages, but
+	 * rather views them as a software version of hardware
+	 * interrupts.  Two sent signals might result in only one
+	 * handler invocation.  However, we (and most other signal
+	 * users) expect that signals are usually in order and usually
+	 * relatively promptly.
+	 *
+	 * For now, insist on beyond-POSIX behavior, as a canary that
+	 * if triggered, we should examine nut's use of signals.
 	 */
-	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
-	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
-	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
-	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
-	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
 
-	// Let the sig. handler thread finish...
+	/* Send two signals, and pause briefly to allow delivery. */
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
 	::sleep(1);
 
+	/* Send two signals in the other order, and again pause briefly. */
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+	::sleep(1);
+
+	/* Send a single signal. */
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+
+	/*
+	 * Sleep 1s, assuming that is long enough for all signals to
+	 * be delivered (really, the last one) and the handler to have
+	 * run to completion.
+	 */
+	::sleep(1);
+
+	/*
+	 * Check that all 5 sent were received.  Note that strictly,
+	 * an OS on which USER1 and USER2 are each received once is
+	 * not a failure to conform.  But a delay of 1s in signal
+	 * delivery would generally be seen as not ok.
+	 */
 	CPPUNIT_ASSERT(caught_signals.size() == 5);
 
+	/*
+	 * Loop over the received signal records.  Count the number of
+	 * USER1 and USER2, and assert that no signals other than
+	 * those two were received.
+	 */
 	int countUSER1 = 0;
 	int countUSER2 = 0;
 	while (!caught_signals.empty()) {
@@ -275,16 +311,18 @@ void NutIPCUnitTest::testSignalRecvQuick() {
 		}
 	}
 
+	/* Check that received count matches sent count from code above. */
 	CPPUNIT_ASSERT(countUSER1 == 3);
 	CPPUNIT_ASSERT(countUSER2 == 2);
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
 }
 
 void NutIPCUnitTest::testSignalRecvStaggered() {
 #ifdef WIN32
-	/* FIXME: Needs implementation for signals via pipes */
+	/* FIXME NUT_WIN32_INCOMPLETE:
+	 *  Needs implementation for signals via pipes */
 	std::cout << "NutIPCUnitTest::testSignalRecvStaggered(): skipped on this platform" << std::endl;
-#else
+#else	/* !WIN32 */
 	// Create signal handler thread
 	nut::Signal::List signals;
 	caught_signals.clear();
@@ -334,7 +372,7 @@ void NutIPCUnitTest::testSignalRecvStaggered() {
 	caught_signals.pop_front();
 
 	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
-#endif	/* WIN32 */
+#endif	/* !WIN32 */
 }
 
 // Implement out of class declaration to avoid
@@ -344,7 +382,7 @@ void NutIPCUnitTest::testSignalRecvStaggered() {
 TestSignalHandler::~TestSignalHandler() {}
 NutIPCUnitTest::~NutIPCUnitTest() {}
 
-#ifdef __clang__
+#if (defined __clang__) && (defined HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
 # pragma clang diagnostic pop
 #endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC)

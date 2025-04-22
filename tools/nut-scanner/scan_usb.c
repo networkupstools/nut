@@ -43,9 +43,15 @@ static const char *dl_error = NULL;
 static char *dl_saved_libname = NULL;
 
 static int (*nut_usb_close)(libusb_device_handle *dev);
-static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
+static int (*nut_usb_control_transfer)(libusb_device_handle *dev,
+		uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
+		unsigned char *data, uint16_t wLength, unsigned int timeout);
+static int (*nut_usb_get_string_with_langid)(libusb_device_handle *dev, int index, int langid,
 		char *buf, size_t buflen);
-
+/* Fallback implem if the above is not a library symbol */
+static int nut_usb_get_string_with_langid_control_transfer(
+		libusb_device_handle *dev, int index, int langid,
+		char *buf, size_t buflen);
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
 #if WITH_LIBUSB_1_0
@@ -64,6 +70,9 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static uint8_t (*nut_usb_get_port_number)(libusb_device *dev);
  static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
 	struct libusb_device_descriptor *desc);
+# define USB_DT_STRING	LIBUSB_DT_STRING
+# define USB_ENDPOINT_IN	LIBUSB_ENDPOINT_IN
+# define USB_REQ_GET_DESCRIPTOR	LIBUSB_REQUEST_GET_DESCRIPTOR
 #else /* => WITH_LIBUSB_0_1 */
 # define USB_INIT_SYMBOL "usb_init"
 # define USB_OPEN_SYMBOL "usb_open"
@@ -196,10 +205,19 @@ int nutscan_load_usb_library(const char *libname_path)
 			goto err;
 	}
 
-	*(void **) (&nut_usb_get_string_simple) = lt_dlsym(dl_handle,
-					"libusb_get_string_descriptor_ascii");
+	*(void **) (&nut_usb_control_transfer) = lt_dlsym(dl_handle,
+					"libusb_control_transfer");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
+	}
+
+	*(void **) (&nut_usb_get_string_with_langid) = lt_dlsym(dl_handle,
+					"libusb_get_string_descriptor");
+	if ((dl_error = lt_dlerror()) != NULL) {
+			/* This one may be only defined in a header as an inline method;
+			 * then we are adapting it via nut_usb_control_transfer().
+			 */
+			nut_usb_get_string_with_langid = NULL;
 	}
 #else /* for libusb 0.1 */
 	*(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle,
@@ -228,12 +246,23 @@ int nutscan_load_usb_library(const char *libname_path)
 			goto err;
 	}
 
-	*(void **) (&nut_usb_get_string_simple) = lt_dlsym(dl_handle,
-					"usb_get_string_simple");
+	*(void **) (&nut_usb_control_transfer) = lt_dlsym(dl_handle,
+					"usb_control_msg");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
-#endif /* WITH_LIBUSB_1_0 */
+
+	*(void **) (&nut_usb_get_string_with_langid) = lt_dlsym(dl_handle,
+					"usb_get_string");
+	if ((dl_error = lt_dlerror()) != NULL) {
+			/* See comment above */
+			nut_usb_get_string_with_langid = NULL;
+	}
+#endif /* not WITH_LIBUSB_1_0 => for libusb 0.1 */
+
+	if (nut_usb_get_string_with_langid == NULL) {
+			nut_usb_get_string_with_langid = nut_usb_get_string_with_langid_control_transfer;
+	}
 
 	if (dl_saved_libname)
 		free(dl_saved_libname);
@@ -271,6 +300,107 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 	}
 
 	return NULL;
+}
+
+/* This one may be only defined in a header as an inline method;
+ * then we are adapting it via nut_usb_control_transfer() per
+ * https://github.com/libusb/libusb-compat-0.1/blob/eaed7b8f11badaf07a91e07538f6e8842f59eaab/libusb/libusb-dload.h#L165-L171
+ */
+static int nut_usb_get_string_with_langid_control_transfer(
+		libusb_device_handle *dev, int index, int langid,
+		char *buf, size_t buflen)
+{
+	return (*nut_usb_control_transfer)(
+		dev, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR,
+		(USB_DT_STRING << 8) + index, langid,
+		(unsigned char *)buf, buflen, 1000);
+}
+
+/* Replicated from usb-common.c with consideration for nut-scanner's
+ * use of method pointers instead of direct linking. API neutral,
+ * handles retries. Retries were originally introduced for "Tripp Lite"
+ * devices, see https://github.com/networkupstools/nut/issues/414
+ */
+#define MAX_STRING_DESC_TRIES 3
+
+static int nut_usb_get_string_descriptor(
+	libusb_device_handle *udev,
+	int StringIdx,
+	int langid,
+	char *buf,
+	size_t buflen)
+{
+	int ret = -1;
+	int tries = MAX_STRING_DESC_TRIES;
+
+	while (tries--) {
+		ret = (*nut_usb_get_string_with_langid)(
+			udev, StringIdx,
+			langid, buf, buflen);
+		if (ret >= 0) {
+			break;
+		} else if (tries) {
+			upsdebugx(1, "%s: string descriptor %d request failed, retrying...", __func__, StringIdx);
+			usleep(50000);	/* 50 ms, might help in some cases */
+		}
+	}
+	return ret;
+}
+
+/* Replicated from usb-common.c with consideration for nut-scanner's
+ * use of method pointers instead of direct linking. API neutral,
+ * assumes en_US if langid descriptor is broken */
+static int nut_usb_get_string(
+	libusb_device_handle *udev,
+	int StringIdx,
+	char *buf,
+	size_t buflen)
+{
+	int ret;
+	char buffer[255];
+	int langid;
+	int len;
+	int i;
+
+	if (!udev || StringIdx < 1 || StringIdx > 255) {
+		return -1;
+	}
+
+	/* request langid descriptor */
+	ret = nut_usb_get_string_descriptor(udev, 0, 0, buffer, 4);
+	if (ret < 0)
+		return ret;
+
+	if (ret == 4 && buffer[0] >= 4 && buffer[1] == USB_DT_STRING) {
+		langid = buffer[2] | (buffer[3] << 8);
+	} else {
+		upsdebugx(1, "%s: Broken language identifier, assuming en_US", __func__);
+		langid = 0x0409;
+	}
+
+	/* retrieve string in preferred language */
+	ret = nut_usb_get_string_descriptor(udev, StringIdx, langid, buffer, sizeof(buffer));
+	if (ret < 0) {
+#ifdef WIN32
+		/* FIXME NUT_WIN32_INCOMPLETE? : only for libusb0 ? */
+		errno = -ret;
+#endif	/* WIN32 */
+		return ret;
+	}
+
+	/* translate simple UTF-16LE to 8-bit */
+	len = ret < (int)buflen ? ret : (int)buflen;
+	len = len / 2 - 1;	/* 16-bit characters, without header */
+	len = len < (int)buflen - 1 ? len : (int)buflen - 1;	/* reserve for null terminator */
+	for (i = 0; i < len; i++) {
+		if (buffer[2 + i * 2 + 1] == 0)
+			buf[i] = buffer[2 + i * 2];
+		else
+			buf[i] = '?';	/* not decoded */
+	}
+	buf[i] = '\0';
+
+	return len;
 }
 
 /* return NULL if error */
@@ -355,7 +485,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 #if WITH_LIBUSB_1_0
 	if ((*nut_usb_init)(NULL) < 0) {
 		(*nut_usb_exit)(NULL);
-		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+		upsdebug_with_errno(0, "Failed to init libusb 1.0");
+		/* nutscan_avail_usb = 0; */
+		return NULL;
 	}
 #else  /* => WITH_LIBUSB_0_1 */
 	(*nut_usb_init)();
@@ -367,7 +499,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 	devcount = (*nut_usb_get_device_list)(NULL, &devlist);
 	if (devcount <= 0) {
 		(*nut_usb_exit)(NULL);
-		fatal_with_errno(EXIT_FAILURE, "No USB device found");
+		upsdebug_with_errno(0, "No USB device found");
+		/* nutscan_avail_usb = 0; */
+		return NULL;
 	}
 
 	for (i = 0; i < devcount; i++) {
@@ -387,7 +521,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 		if (busname == NULL) {
 			(*nut_usb_free_device_list)(devlist, 1);
 			(*nut_usb_exit)(NULL);
-			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			upsdebug_with_errno(0, "%s: Out of memory", __func__);
+			/* nutscan_avail_usb = 0; */
+			return NULL;
 		}
 		snprintf(busname, 4, "%03d", bus_num);
 
@@ -395,7 +531,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 		if (device_port == NULL) {
 			(*nut_usb_free_device_list)(devlist, 1);
 			(*nut_usb_exit)(NULL);
-			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			upsdebug_with_errno(0, "%s: Out of memory", __func__);
+			/* nutscan_avail_usb = 0; */
+			return NULL;
 		} else {
 			uint8_t device_addr = (*nut_usb_get_device_address)(dev);
 			if (device_addr > 0) {
@@ -410,7 +548,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 			if (bus_port == NULL) {
 				(*nut_usb_free_device_list)(devlist, 1);
 				(*nut_usb_exit)(NULL);
-				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+				upsdebug_with_errno(0, "%s: Out of memory", __func__);
+				/* nutscan_avail_usb = 0; */
+				return NULL;
 			} else {
 				uint8_t port_num = (*nut_usb_get_port_number)(dev);
 				if (port_num > 0) {
@@ -486,7 +626,7 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 
 				/* get serial number */
 				if (iSerialNumber) {
-					ret = (*nut_usb_get_string_simple)(udev,
+					ret = nut_usb_get_string(udev,
 						iSerialNumber, string, sizeof(string));
 					if (ret > 0) {
 						serialnumber = strdup(str_rtrim(string, ' '));
@@ -502,14 +642,16 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
-							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+							upsdebug_with_errno(0, "%s: Out of memory", __func__);
+							/* nutscan_avail_usb = 0; */
+							return NULL;
 						}
 					}
 				}
 
 				/* get product name */
 				if (iProduct) {
-					ret = (*nut_usb_get_string_simple)(udev,
+					ret = nut_usb_get_string(udev,
 						iProduct, string, sizeof(string));
 					if (ret > 0) {
 						device_name = strdup(str_rtrim(string, ' '));
@@ -526,14 +668,16 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
-							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+							upsdebug_with_errno(0, "%s: Out of memory", __func__);
+							/* nutscan_avail_usb = 0; */
+							return NULL;
 						}
 					}
 				}
 
 				/* get vendor name */
 				if (iManufacturer) {
-					ret = (*nut_usb_get_string_simple)(udev,
+					ret = nut_usb_get_string(udev,
 						iManufacturer, string, sizeof(string));
 					if (ret > 0) {
 						vendor_name = strdup(str_rtrim(string, ' '));
@@ -551,7 +695,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
-							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+							upsdebug_with_errno(0, "%s: Out of memory", __func__);
+							/* nutscan_avail_usb = 0; */
+							return NULL;
 						}
 					}
 				}
@@ -586,36 +732,87 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 				}
 				nut_dev->port = strdup("auto");
 
-				sprintf(string, "%04X", VendorID);
-				nutscan_add_option_to_device(nut_dev,
-					"vendorid",
-					string);
-
-				sprintf(string, "%04X", ProductID);
-				nutscan_add_option_to_device(nut_dev,
-					"productid",
-					string);
-
-				if (device_name) {
+				/* FIXME: https://github.com/networkupstools/nut/pull/1763
+				 * and linked issues: some drivers do not use
+				 * the common nut_usb_addvars() method, and
+				 * do not otherwise support these options:
+				 */
+				if (strncmp(driver_name, "bcmxcp_usb", 10)
+				 && strncmp(driver_name, "richcomm_usb", 12)
+				 && strncmp(driver_name, "nutdrv_atcl_usb", 15)
+				) {
+					sprintf(string, "%04X", VendorID);
 					nutscan_add_option_to_device(nut_dev,
-						"product",
-						device_name);
-					free(device_name);
-					device_name = NULL;
-				}
+						"vendorid",
+						string);
 
-				if (serialnumber) {
+					sprintf(string, "%04X", ProductID);
 					nutscan_add_option_to_device(nut_dev,
-						"serial",
-						serialnumber);
-					free(serialnumber);
-					serialnumber = NULL;
+						"productid",
+						string);
+
+					if (device_name) {
+						nutscan_add_option_to_device(nut_dev,
+							"product",
+							device_name);
+						free(device_name);
+						device_name = NULL;
+					}
+
+					if (serialnumber) {
+						nutscan_add_option_to_device(nut_dev,
+							"serial",
+							serialnumber);
+						free(serialnumber);
+						serialnumber = NULL;
+					}
+				} else {
+					sprintf(string, "%04X", VendorID);
+					nutscan_add_commented_option_to_device(nut_dev,
+						"vendorid",
+						string,
+						"");
+
+					sprintf(string, "%04X", ProductID);
+					nutscan_add_commented_option_to_device(nut_dev,
+						"productid",
+						string,
+						"");
+
+					if (device_name) {
+						nutscan_add_commented_option_to_device(nut_dev,
+							"product",
+							device_name,
+							"");
+						free(device_name);
+						device_name = NULL;
+					}
+
+					if (serialnumber) {
+						nutscan_add_commented_option_to_device(nut_dev,
+							"serial",
+							serialnumber,
+							"");
+						free(serialnumber);
+						serialnumber = NULL;
+					}
 				}
 
 				if (vendor_name) {
-					nutscan_add_option_to_device(nut_dev,
-						"vendor",
-						vendor_name);
+					/* NOTE: nutdrv_atcl_usb recognizes
+					 * "vendor" but not other opts */
+					if (strncmp(driver_name, "bcmxcp_usb", 10)
+					 && strncmp(driver_name, "richcomm_usb", 12)
+					) {
+						nutscan_add_option_to_device(nut_dev,
+							"vendor",
+							vendor_name);
+					} else {
+						nutscan_add_commented_option_to_device(nut_dev,
+							"vendor",
+							vendor_name,
+							"");
+					}
 					free(vendor_name);
 					vendor_name = NULL;
 				}

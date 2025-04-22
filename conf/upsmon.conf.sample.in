@@ -332,10 +332,36 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG NOTOFF	"UPS %s: no longer administratively OFF or asleep"
 # NOTIFYMSG BYPASS	"UPS %s: on bypass (powered, not protecting)"
 # NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
+# NOTIFYMSG ECO		"UPS %s: in ECO mode (as defined by vendor)"
+# NOTIFYMSG NOTECO	"UPS %s: no longer in ECO mode (as defined by vendor)"
 #
-# Note that %s is replaced with the identifier of the UPS in question.
+# NOTIFYMSG ALARM	"UPS %s: one or more active alarms: [%s]"
+# or NOTIFYMSG ALARM	"UPS %s: one or more active alarms (check ups.alarm)"
+# NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
 #
-# Possible values for <notify type>:
+# NOTIFYMSG OVER	"UPS %s: overloaded"
+# NOTIFYMSG NOTOVER	"UPS %s: no longer overloaded"
+# NOTIFYMSG TRIM	"UPS %s: trimming incoming voltage"
+# NOTIFYMSG NOTTRIM	"UPS %s: no longer trimming incoming voltage"
+# NOTIFYMSG BOOST	"UPS %s: boosting incoming voltage"
+# NOTIFYMSG NOTBOOST	"UPS %s: no longer boosting incoming voltage"
+#
+# Special handling is provided for surprise tokens seen in ups.status, which
+# are not in the standard NUT dictionary (but some drivers are known to use);
+# note that unlike other formatting strings, the "OTHER" one has two string
+# placeholders "%s" (it is safe to use one, leaving just the UPS name, or none):
+#
+# NOTIFYMSG OTHER	"UPS %s: has at least one unclassified status token: [%s]"
+# NOTIFYMSG NOTOTHER	"UPS %s has no unclassified status tokens anymore"
+#
+# A few messages not directly related to UPS events are also available:
+#
+# NOTIFYMSG SUSPEND_STARTING	"OS is entering sleep/suspend/hibernate mode"
+# NOTIFYMSG SUSPEND_FINISHED	"OS just finished sleep/suspend/hibernate mode, de-activating obsolete UPS readings to avoid an unfortunate shutdown"
+#
+# Note that %s (where used) is replaced with the identifier of the UPS in question.
+#
+# Meanings of some possible values for <notify type>:
 #
 # ONLINE   : UPS is back online
 # ONBATT   : UPS is on battery
@@ -347,6 +373,7 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # REPLBATT : The UPS battery is bad and needs to be replaced
 # NOCOMM   : A UPS is unavailable (can't be contacted for monitoring)
 # NOPARENT : The process that shuts down the system has died (shutdown impossible)
+# ALARM    : UPS has one or more alarms (look at "ups.alarm" for details)
 
 # --------------------------------------------------------------------------
 # NOTIFYFLAG - change behavior of upsmon when NOTIFY events occur
@@ -374,6 +401,16 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYFLAG NOTOFF	SYSLOG+WALL
 # NOTIFYFLAG BYPASS	SYSLOG+WALL
 # NOTIFYFLAG NOTBYPASS	SYSLOG+WALL
+# NOTIFYFLAG ECO	SYSLOG+WALL
+# NOTIFYFLAG NOTECO	SYSLOG+WALL
+# NOTIFYFLAG ALARM	SYSLOG+WALL
+# NOTIFYFLAG NOTALARM	SYSLOG+WALL
+#
+# NOTIFYFLAG OTHER	SYSLOG+WALL
+# NOTIFYFLAG NOTOTHER	SYSLOG+WALL
+#
+# NOTIFYFLAG SUSPEND_STARTING	SYSLOG+WALL
+# NOTIFYFLAG SUSPEND_FINISHED	SYSLOG+WALL
 #
 # Possible values for the flags:
 #
@@ -402,6 +439,25 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # immediate. Built-in default value is 30 (seconds).
 
 OFFDURATION 30
+
+# --------------------------------------------------------------------------
+# OVERDURATION - timeout after which OVER status can cause a critical UPS
+# OVERDURATION -1
+#
+# This setting handles how a UPS that is overloaded should be treated in
+# situations when it is not fully communicating. Because such a UPS may be
+# in a potentially severe state, some users may want their systems to be
+# shutdown either immediately or after a set timeout has elapsed. The
+# OVERDURATION setting defines this timeout (in seconds), after which an
+# overloaded UPS that is not communicating will be considered critical.
+#
+# A value of zero means the UPS will instantly be considered critical when
+# overloaded and not communicating. In case a negative value is set (the
+# default), such a UPS will never be considered critical, at least not
+# because of the overload itself.
+#
+
+OVERDURATION -1
 
 # --------------------------------------------------------------------------
 # OBLBDURATION - put "OB LB" state into effect if it persists for this many
@@ -484,6 +540,25 @@ NOCOMMWARNTIME 300
 # to disconnect.
 
 FINALDELAY 5
+
+# --------------------------------------------------------------------------
+# ALARMCRITICAL - an ALARM status can cause the UPS to become critical
+# ALARMCRITICAL 1
+#
+# Some drivers implement handling device-/manufacturer-specific UPS alarms.
+# Such alarms would generally be raised for severe UPS device conditions,
+# but were also seen for mundane conditions such as an active HE/ECO mode.
+#
+# By default a device in an ALARM status is considered to be in a volatile
+# state and e.g. loss of connection will result in the UPS being considered
+# critical/dead, possibly resulting in shutdown depending on 'MINSUPPLIES'.
+#
+# If this behavior is unwanted (due to mundane device states raising ALARM
+# and false shutdowns occurring as a side-effect), 'ALARMCRITICAL 0' can be
+# set to disable this behavior and treat 'ALARM' as any regular UPS status.
+#
+
+ALARMCRITICAL 1
 
 # --------------------------------------------------------------------------
 # CERTPATH - path to certificates (database directory or directory with CA's)

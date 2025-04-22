@@ -101,28 +101,52 @@ dnl so seemingly try to parse the method without args:
 
 dnl Note: per https://stackoverflow.com/questions/52557417/how-to-check-support-compile-flag-in-autoconf-for-clang
 dnl the -Werror below is needed to detect "warnings" about unsupported options
+dnl NOTE: this option should not be passed via the fourth argument of the macro,
+dnl or it ends up in the flags too, possibly during the "pop"; have to use the
+dnl GOOD_FLAG instead :\
     COMPILERFLAG="$1"
 
 dnl We also try to run an actual build since tools called from that might
 dnl complain if they are forwarded unknown flags accepted by the front-end.
-    SAVED_CFLAGS="$CFLAGS"
-    SAVED_CXXFLAGS="$CXXFLAGS"
+    NUT_SAVED_CFLAGS="$CFLAGS"
+    NUT_SAVED_CXXFLAGS="$CXXFLAGS"
+    AC_MSG_NOTICE([Starting check compile flag for '${COMPILERFLAG}'; now CFLAGS='${CFLAGS}' and CXXFLAGS='${CXXFLAGS}'])
 
     AC_LANG_PUSH([C])
+    GOOD_FLAG=no
     AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
-        [CFLAGS="$CFLAGS ${COMPILERFLAG}"
+        [CFLAGS="-Werror $NUT_SAVED_CFLAGS ${COMPILERFLAG}"
+         AC_MSG_CHECKING([whether the flag '${COMPILERFLAG}' is still supported in CC linker mode])
          AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-            [], [CFLAGS="$SAVED_CFLAGS"])
-        ], [], [-Werror])
+            [GOOD_FLAG=yes],[])
+         AC_MSG_RESULT([${GOOD_FLAG}])
+        ], [], [])
     AC_LANG_POP([C])
+    AS_IF([test x"${GOOD_FLAG}" = xyes],
+        [CFLAGS="$NUT_SAVED_CFLAGS ${COMPILERFLAG}"],
+        [CFLAGS="$NUT_SAVED_CFLAGS"]
+    )
+    AC_MSG_NOTICE([${GOOD_FLAG} for C '${COMPILERFLAG}'; now CFLAGS=${CFLAGS}])
 
     AC_LANG_PUSH([C++])
+    GOOD_FLAG=no
     AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
-        [CXXFLAGS="$CXXFLAGS ${COMPILERFLAG}"
+        [CXXFLAGS="-Werror $NUT_SAVED_CXXFLAGS ${COMPILERFLAG}"
+         AC_MSG_CHECKING([whether the flag '${COMPILERFLAG}' is still supported in CXX linker mode])
          AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-            [], [CXXFLAGS="$SAVED_CXXFLAGS"])
-        ], [], [-Werror])
+            [GOOD_FLAG=yes],[])
+         AC_MSG_RESULT([${GOOD_FLAG}])
+        ], [], [])
     AC_LANG_POP([C++])
+    AS_IF([test x"${GOOD_FLAG}" = xyes],
+        [CXXFLAGS="$NUT_SAVED_CXXFLAGS ${COMPILERFLAG}"],
+        [CXXFLAGS="$NUT_SAVED_CXXFLAGS"]
+    )
+    AC_MSG_NOTICE([${GOOD_FLAG} for C++ '${COMPILERFLAG}'; now CXXFLAGS=${CXXFLAGS}])
+
+    unset NUT_SAVED_CXXFLAGS
+    unset NUT_SAVED_CFLAGS
+    unset GOOD_FLAG
 ])
 
 AC_DEFUN([NUT_COMPILER_FAMILY_FLAGS],
@@ -179,9 +203,10 @@ dnl    AS_IF([test "x$GXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning"])
 
 dnl # There should be no need to include standard system paths (and possibly
 dnl # confuse the compiler assumptions - along with its provided headers)...
-dnl # ideally; in practice however cppunit, net-snmp and some system include
-dnl # files do cause grief to picky compiler settings (more so from third
-dnl # party packages shipped via /usr/local/... namespace):
+dnl # ideally; in practice however cppunit, net-snmp, openssl-3 and some
+dnl # system include files do cause grief to picky compiler settings (more
+dnl # so from third party packages shipped via /usr/local/... namespace);
+dnl # see also e.g. nut_check_libopenssl.m4 for component-specific locations:
     AS_IF([test "x$cross_compiling" != xyes], [
         AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
 dnl #            CFLAGS="-isystem /usr/include $CFLAGS"

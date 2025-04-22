@@ -65,6 +65,7 @@ symbols during dynamic linking), so while this contribution here is
 published "as is", more work would be needed to make it useful in
 modern environments. Helper scripts should be quickly useful though.
 
-Developed (pre-?)2013-2018 by Eaton; contributed to NUT 2022 by Eaton
+Developed (pre-?)2013-2018 by Eaton; contributed to NUT and re-licensed
+under same terms as NUT in 2022 by Eaton.
 
 Maintained since 2024 by Jim Klimov <jimklimov+nut@gmail.com>

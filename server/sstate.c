@@ -37,7 +37,7 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif
+#endif	/* !WIN32 */
 
 static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 {
@@ -167,7 +167,7 @@ static void sendping(upstype_t *ups)
 
 #ifndef WIN32
 	ret = write(ups->sock_fd, cmd, cmdlen);
-#else
+#else	/* WIN32 */
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 
@@ -179,7 +179,7 @@ static void sendping(upstype_t *ups)
 	else  {
 		ret = (ssize_t)bytesWritten;
 	}
-#endif
+#endif	/* WIN32 */
 
 	if ((ret < 1) || (ret != (ssize_t)cmdlen))  {
 		upslog_with_errno(LOG_NOTICE, "Send ping to UPS [%s] failed", ups->name);
@@ -220,8 +220,15 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	if (ret < 0) {
 		time_t	now;
 
-		upsdebugx(2, "%s: failed to connect() UNIX socket %s (%s)",
-			__func__, NUT_STRARG(ups->fn), sa.sun_path);
+		if (strstr(sa.sun_path, "/")) {
+			upsdebugx(2, "%s: failed to connect() UNIX socket %s (%s)",
+				__func__, NUT_STRARG(ups->fn), sa.sun_path);
+		} else {
+			char	cwd[NUT_PATH_MAX+1];
+			upsdebugx(2, "%s: failed to connect() UNIX socket %s (%s/%s)",
+				__func__, NUT_STRARG(ups->fn),
+				getcwd(cwd, sizeof(cwd)), sa.sun_path);
+		}
 		close(fd);
 
 		/* rate-limit complaints - don't spam the syslog */
@@ -230,8 +237,14 @@ TYPE_FD sstate_connect(upstype_t *ups)
 			return ERROR_FD;
 
 		ups->last_connfail = now;
-		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
-			ups->name, ups->fn);
+		if (strstr(ups->fn, "/")) {
+			upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
+				ups->name, ups->fn);
+		} else {
+			char	cwd[NUT_PATH_MAX+1];
+			upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s/%s)",
+				ups->name, getcwd(cwd, sizeof(cwd)), ups->fn);
+		}
 
 		return ERROR_FD;
 	}
@@ -261,15 +274,16 @@ TYPE_FD sstate_connect(upstype_t *ups)
 		return ERROR_FD;
 	}
 
-#else
-	char pipename[SMALLBUF];
+#else	/* WIN32 */
+	char pipename[NUT_PATH_MAX];
 	const char	*dumpcmd = "DUMPALL\n";
 	BOOL  result = FALSE;
+	DWORD bytesWritten;
 
 	upsdebugx(2, "%s: preparing Windows pipe %s", __func__, NUT_STRARG(ups->fn));
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s", ups->fn);
 
-	result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
+	result = WaitNamedPipe(pipename, NMPWAIT_USE_DEFAULT_WAIT);
 
 	if (result == FALSE) {
 		upsdebugx(2, "%s: failed to WaitNamedPipe(%s)",
@@ -288,14 +302,15 @@ TYPE_FD sstate_connect(upstype_t *ups)
 			NULL);          /* no template file */
 
 	if (fd == INVALID_HANDLE_VALUE) {
-		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)", ups->name, ups->fn);
+		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s) named pipe %s",
+			ups->name, ups->fn, pipename);
 		return ERROR_FD;
 	}
 
 	/* get a dump started so we have a fresh set of data */
-	DWORD bytesWritten = 0;
+	bytesWritten = 0;
 
-	result = WriteFile (fd,dumpcmd,strlen(dumpcmd),&bytesWritten,NULL);
+	result = WriteFile(fd, dumpcmd, strlen(dumpcmd), &bytesWritten, NULL);
 	if (result == 0 || bytesWritten != strlen(dumpcmd)) {
 		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", ups->name);
 		CloseHandle(fd);
@@ -306,7 +321,7 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	ReadFile(fd, ups->buf,
 		sizeof(ups->buf) - 1, /*-1 to be sure to have a trailling 0 */
 		NULL, &(ups->read_overlapped));
-#endif
+#endif	/* WIN32 */
 
 	/* sstate_connect() continued for both platforms: */
 
@@ -339,9 +354,9 @@ void sstate_disconnect(upstype_t *ups)
 
 #ifndef WIN32
 	close(ups->sock_fd);
-#else
+#else	/* WIN32 */
 	CloseHandle(ups->sock_fd);
-#endif
+#endif	/* WIN32 */
 
 	ups->sock_fd = ERROR_FD;
 }
@@ -372,7 +387,7 @@ void sstate_readline(upstype_t *ups)
 			return;
 		}
 	}
-#else
+#else	/* WIN32 */
 	if ((!ups) || INVALID_FD(ups->sock_fd)) {
 		return;
 	}
@@ -382,7 +397,7 @@ void sstate_readline(upstype_t *ups)
 	DWORD bytesRead;
 	GetOverlappedResult(ups->sock_fd, &ups->read_overlapped, &bytesRead, FALSE);
 	ret = bytesRead;
-#endif
+#endif	/* WIN32 */
 
 	for (i = 0; i < ret; i++) {
 
@@ -409,7 +424,7 @@ void sstate_readline(upstype_t *ups)
 	/* Restart async read */
 	memset(ups->buf,0,sizeof(ups->buf));
 	ReadFile( ups->sock_fd, ups->buf, sizeof(ups->buf)-1,NULL, &(ups->read_overlapped)); /* -1 to be sure to have a trailing 0 */
-#endif
+#endif	/* WIN32 */
 }
 
 const char *sstate_getinfo(const upstype_t *ups, const char *var)
@@ -498,6 +513,11 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 	ssize_t	ret;
 	size_t	buflen;
 
+#ifdef WIN32
+	DWORD bytesWritten = 0;
+	BOOL  result = FALSE;
+#endif	/* WIN32 */
+
 	if ((!ups) || INVALID_FD(ups->sock_fd)) {
 		return 0;	/* failed */
 	}
@@ -511,10 +531,7 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 
 #ifndef WIN32
 	ret = write(ups->sock_fd, buf, buflen);
-#else
-	DWORD bytesWritten = 0;
-	BOOL  result = FALSE;
-
+#else	/* WIN32 */
 	result = WriteFile (ups->sock_fd, buf, buflen, &bytesWritten, NULL);
 
 	if (result == 0) {
@@ -523,7 +540,7 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 	else {
 		ret = (ssize_t)bytesWritten;
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (ret == (ssize_t)buflen) {
 		return 1;

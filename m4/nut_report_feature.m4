@@ -13,16 +13,20 @@ AC_DEFUN([NUT_REPORT_FILE],
     AS_IF([test x"${nut_report_feature_flag$3}" = x], [
         nut_report_feature_flag$3="1"
         ac_clean_files="${ac_clean_files} config.nut_report_feature.log.$3"
-        if test x1 = "x$3" ; then
+        case x"$3" in
+        x1a)
             echo "$4"
             echo "$4" | sed 's/./=/g'
             echo ""
-        else
+            ;;
+        x1*) ;;
+        *)
             echo ""
             echo "$4"
             echo "$4" | sed 's/./-/g'
             echo ""
-        fi > "config.nut_report_feature.log.$3"
+            ;;
+        esac > "config.nut_report_feature.log.$3"
     ])
     printf "* %s:\t%s\n" "$1" "$2" >> "config.nut_report_feature.log.$3"
 ])
@@ -31,7 +35,23 @@ AC_DEFUN([NUT_REPORT],
 [
     dnl arg#1 = description (summary)
     dnl arg#2 = value
-    NUT_REPORT_FILE([$1], [$2], [1], "NUT Configuration summary:")
+    NUT_REPORT_FILE([$1], [$2], [1a], "NUT Configuration summary:")
+])
+
+AC_DEFUN([NUT_REPORT_DRV],
+[
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
+    dnl Title irrelevant here, should not show
+    NUT_REPORT_FILE([$1], [$2], [1b], "NUT Configuration summary:")
+])
+
+AC_DEFUN([NUT_REPORT_PRG],
+[
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
+    dnl Title irrelevant here, should not show
+    NUT_REPORT_FILE([$1], [$2], [1c], "NUT Configuration summary:")
 ])
 
 AC_DEFUN([NUT_REPORT_PATH],
@@ -46,6 +66,42 @@ AC_DEFUN([NUT_REPORT_PATH_INTEGRATIONS],
     dnl arg#1 = description (summary)
     dnl arg#2 = value
     NUT_REPORT_FILE([$1], [$2], [3], "NUT Paths for third-party integrations:")
+])
+
+AC_DEFUN([NUT_REPORT_DRIVER],
+[
+    dnl NOTE: Same as feature, just grouped into "1b" file to display after features
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = test flag ("yes" or not)
+    dnl arg#3 = value
+    dnl arg#4 = autoconf varname
+    dnl arg#5 = longer description (autoconf comment)
+    AC_MSG_CHECKING([whether to $1])
+    AC_MSG_RESULT([$2 $3])
+    NUT_REPORT_DRV([$1], [$2 $3])
+
+    AM_CONDITIONAL([$4], test "$2" = "yes")
+    AS_IF([test x"$2" = x"yes"], [
+        AC_DEFINE_UNQUOTED($4, 1, $5)
+    ])
+])
+
+AC_DEFUN([NUT_REPORT_PROGRAM],
+[
+    dnl NOTE: Same as feature, just grouped into "1c" file to display last
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = test flag ("yes" or not)
+    dnl arg#3 = value
+    dnl arg#4 = autoconf varname
+    dnl arg#5 = longer description (autoconf comment)
+    AC_MSG_CHECKING([whether to $1])
+    AC_MSG_RESULT([$2 $3])
+    NUT_REPORT_PRG([$1], [$2 $3])
+
+    AM_CONDITIONAL([$4], test "$2" = "yes")
+    AS_IF([test x"$2" = x"yes"], [
+        AC_DEFINE_UNQUOTED($4, 1, $5)
+    ])
 ])
 
 AC_DEFUN([NUT_REPORT_FEATURE],
@@ -123,6 +179,18 @@ AC_DEFUN([NUT_REPORT_TARGET],
     AC_DEFINE_UNQUOTED($1, $2, $3)
 ])
 
+AC_DEFUN([NUT_REPORT_TARGET_WITHOUT_AC_DEFINE],
+[
+    dnl arg#1 = autoconf varname
+    dnl arg#2 = value
+    dnl arg#3 = summary/config.log/autoconf description
+    AC_MSG_CHECKING([$3])
+    AC_MSG_RESULT([$2])
+    NUT_REPORT_FILE([$3], ["$2"], [8], "NUT Build/Target system info:")
+
+    dnl Not defining here (e.g. multi-line strings causing bad C markup)
+])
+
 AC_DEFUN([NUT_REPORT_COMPILERS],
 [
     (echo ""
@@ -152,6 +220,8 @@ AC_DEFUN([NUT_REPORT_COMPILERS],
      printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
      printf '* CPP     \t: %s\n' "$CPP"
      printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
+     printf '* LD      \t: %s\n' "$LD"
+     printf '* LDFLAGS \t: %s\n' "$LDFLAGS"
      printf '* CONFIG_FLAGS\t: %s\n' "$CONFIG_FLAGS"
     ) > config.nut_report_feature.log.9
     ac_clean_files="${ac_clean_files} config.nut_report_feature.log.9"

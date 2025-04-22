@@ -37,9 +37,9 @@ int nutscan_unload_snmp_library(void);
 
 #ifndef WIN32
 # include <sys/socket.h>
-#else
+#else	/* WIN32 */
 # undef _WIN32_WINNT
-#endif
+#endif	/* WIN32 */
 
 #include <string.h>
 #include <stdio.h>
@@ -65,6 +65,10 @@ int nutscan_unload_snmp_library(void);
 
 #ifdef PACKAGE_TARNAME
 # undef PACKAGE_TARNAME
+#endif
+
+#ifdef PACKAGE_URL
+# undef PACKAGE_URL
 #endif
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER)

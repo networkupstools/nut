@@ -10,9 +10,11 @@ nutscan_free_device - Free a `nutscan_device_t` structure created by
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- void nutscan_free_device(nutscan_device_t * device);
+	void nutscan_free_device(nutscan_device_t * device);
+------
 
 DESCRIPTION
 -----------

@@ -28,11 +28,11 @@
 #ifndef WIN32
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#else
+#else	/* WIN32 */
 #include <winsock2.h>
 #include <windows.h>
 #include <ws2tcpip.h>
-#endif
+#endif	/* WIN32 */
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

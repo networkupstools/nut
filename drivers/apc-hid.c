@@ -543,11 +543,14 @@ static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			"NOT Attempting Report Descriptor fix for UPS: "
 			"Vendor: %04x, Product: %04x "
 			"(got disable_fix_report_desc in config)",
-			vendorID, productID);
+			(unsigned int)vendorID,
+			(unsigned int)productID);
 		return 0;
 	}
 
-	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x", vendorID, productID);
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x",
+		(unsigned int)vendorID,
+		(unsigned int)productID);
 
 	/* Look at the High Voltage Transfer logical max value:
 	 * If the HVT logmax is greater than the configured or input voltage limit
