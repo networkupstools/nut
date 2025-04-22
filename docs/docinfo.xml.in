@@ -4,7 +4,6 @@
     -->
 
   <!-- Current release of NUT (to be left on top) -->
-<!--
   <revision>
     <revnumber>@PACKAGE_VERSION@ @NUT_SOURCE_GITREV@</revnumber>
     <date>@now@</date>
@@ -13,7 +12,6 @@
       Current release snapshot of Network UPS Tools (NUT).
     </revremark>
   </revision>
--->
 
   <!-- 'Real' revision history (news on top). The revremarks are based
        on 'git diff ${RELTAG}..${RELTAG_NEXT} NEWS UPGRADING "*.txt"'
