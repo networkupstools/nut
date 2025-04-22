@@ -51,12 +51,20 @@ NUT_SOURCE_GITREV="`NUT_VERSION_QUERY=DESC50 "${srcdir}/tools/gitlog2version.sh"
 
 dnl A true/false (literally) response that can be used for prettier messages
 dnl emitted by NUT code.
-NUT_SOURCE_GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
-AS_IF([$NUT_SOURCE_GITREV_IS_RELEASE], [NUT_SOURCE_GITREV_DEVREL="release"], [NUT_SOURCE_GITREV_DEVREL="development iteration"])
+NUT_SOURCE_GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null || echo false`"
+NUT_SOURCE_GITREV_IS_PRERELEASE="`NUT_VERSION_QUERY=IS_PRERELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null || echo false`"
+
+AS_IF([$NUT_SOURCE_GITREV_IS_RELEASE], [NUT_SOURCE_GITREV_DEVREL="release"], [
+    AS_IF([$NUT_SOURCE_GITREV_IS_PRERELEASE], [NUT_SOURCE_GITREV_DEVREL="pre-release"],
+        [NUT_SOURCE_GITREV_DEVREL="development iteration"])
+])
 
 dnl Semantic version of most-recent NUT release this code is derived from.
 dnl It may equal the NUT_SOURCE_GITREV and NUT_SOURCE_GITREV_NUMERIC, but
-dnl this situation is only expected if NUT_SOURCE_GITREV_IS_RELEASE==true.
+dnl this situation is only expected if NUT_SOURCE_GITREV_IS_RELEASE==true;
+dnl for a pre-release it may differ from even the base NUT_VERSION numbers
+dnl (e.g. a commit tagged as 2.8.3-rc5 can have its own NUT_VERSION based
+dnl on 2.8.2-something, but is assumed as a pre-release for 2.8.3 SEMVER).
 NUT_SOURCE_GITREV_SEMVER="`NUT_VERSION_QUERY=SEMVER "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
 
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
@@ -6103,6 +6111,7 @@ AC_SUBST(NUT_NETVERSION)
 AC_SUBST(FORCE_NUT_VERSION)
 AC_SUBST(NUT_SOURCE_GITREV)
 AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
+AC_SUBST(NUT_SOURCE_GITREV_IS_PRERELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
 AC_SUBST(NUT_WEBSITE_BASE)

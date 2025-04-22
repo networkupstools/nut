@@ -30,18 +30,24 @@
 # components (if present) are "greater than" that release and any preceding
 # development iterations made after it.
 #
-# Helper script to determine the project version in a manner similar to
-# what `git describe` produces, but with added numbers after the common
-# triplet of semantically versioned numbers:   X.Y.Z.T.B(-C+gHASH)
+# Helper script to determine the project version in a manner similar to what
+# `git describe` produces, but with added numbers after the common triplet
+# of semantically versioned numbers: X.Y.Z.T.B(-C+H(+R)) or X.Y.Z.T.B(-R)
 #   * X: MAJOR - incompatible API changes
 #   * Y: MINOR - new features and/or API
 #   * Z: PATCH - small bug fixes
 #   * T: Commits on trunk since previous release tag
 #   * B: Commits on branch since nearest ancestor which is on trunk
-# The optional suffix (only for commits which are not tags themselves)
+# The optional suffix (only for commits which are not release tags themselves)
 # is provided by `git describe`:
 #   * C: Commits on branch since previous release tag
-#   * H: Git hash (prefixed by "g" character) of the described commit
+#   * H: (Short) Git hash (prefixed by "g" character) of the described commit
+# The pre-release information (if provided/known) would either follow the
+# optional suffix detailed above, or it would be the suffix itself:
+#   * R: If this commit has a non-release tag, it can be optionally reported
+#        so we know that the commit 1234 iterations after release N is also
+#        a release candidate for N+1. Note that any dash in that tag value will
+#        be replaced by a plus, e.g. 2.8.2.2878.1-2879+g882dd4b00+v2.8.3+rc6
 #
 # Note that historically NUT did not diligently follow the semver triplet,
 # primarily because a snapshot of trunk is tested and released, and work
@@ -92,13 +98,22 @@ fi
 # caller environment, or a file setting it reproducibly, can help
 # identify the actual NUT release version triplet used on the box.
 # Please use it, it immensely helps with community troubleshooting!
-if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
-    # Should set NUT_VERSION_FORCED=X.Y.Z(.a.b...)
-    . "${abs_top_srcdir}/VERSION_FORCED" || exit
-fi
-if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
-    # Should set NUT_VERSION_FORCED_SEMVER=X.Y.Z
-    . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+if [ x"${NUT_VERSION_QUERY-}" = x"UPDATE_FILE_GIT_RELEASE" ] ; then
+    if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+        echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED', will replace with git info" >&2
+    fi
+    if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+        echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED_SEMVER', will replace with git info" >&2
+    fi
+else
+    if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+        # Should set NUT_VERSION_FORCED=X.Y.Z(.a.b...)
+        . "${abs_top_srcdir}/VERSION_FORCED" || exit
+    fi
+    if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+        # Should set NUT_VERSION_FORCED_SEMVER=X.Y.Z
+        . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+    fi
 fi
 if [ -n "${NUT_VERSION_FORCED-}" ] ; then
     NUT_VERSION_DEFAULT="${NUT_VERSION_FORCED-}"
@@ -163,16 +178,27 @@ getver_git() {
     ALWAYS_DESC_ARG=""
     if [ x"${NUT_VERSION_GIT_ALWAYS_DESC-}" = xtrue ] ; then ALWAYS_DESC_ARG="--always" ; fi
 
-    # Praises to old gits and the new, who may --exclude:
+    # Praises to old gits and the new, who may --exclude;
+    # NOTE: match/exclude by shell glob expressions, not regex!
     DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null`" \
     && [ -n "${DESC}" ] \
-    || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9]*.[0-9]*.[0-9]'`"
+    || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*'`"
     # Old stripper (also for possible refspec parts like "tags/"):
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
     # Follow https://semver.org/#spec-item-10 about build metadata:
     # it is (a dot-separated list) separated by a plus sign from preceding
     DESC="`echo "${DESC}" | sed 's/\(-[0-9][0-9]*\)-\(g[0-9a-fA-F][0-9a-fA-F]*\)$/\1+\2/'`"
     if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return 1 ; fi
+
+    # Does the current commit correspond to an `(alpha|beta|rc)NUM` git tag
+    # (may be un-annotated)? Note that `git describe` picks the value to
+    # report in case several tags are attached; as of git-v2.34.1 it seems
+    # to go for first alphanumeric hit (picking same or older non-suffixed
+    # string over longer ones if available, or older RC over newer release
+    # like "v2.8.2-rc8" preferred over "v2.8.3" if they happen to be tagging
+    # the same commit):
+    DESC_PRERELEASE="`git describe --tags | grep -E '^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(|-(rc|alpha|beta)-*[0-9][0-9]*)$'`" \
+    || DESC_PRERELEASE=""
 
     # How much of the known trunk history is in current HEAD?
     # e.g. all of it when we are on that branch or PR made from its tip,
@@ -184,12 +210,39 @@ getver_git() {
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
     TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
+    TAG_PRERELEASE=""
+    if [ -n "${DESC_PRERELEASE}" ] ; then
+        TAG_PRERELEASE="`echo "${DESC_PRERELEASE}" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
+        if [ x"${DESC_PRERELEASE}" != x"${TAG_PRERELEASE}" ] ; then
+            # We did chop off something, so `git describe` above did not hit
+            # exactly the tagged commit, but something later - not interesting
+            TAG_PRERELEASE=""
+        fi
+        if [ x"${TAG}" = x"${TAG_PRERELEASE}" ] ; then
+            # Nothing new
+            TAG_PRERELEASE=""
+        fi
+    fi
 
-    # Commit count since the tag and hash of the HEAD commit;
-    # empty e.g. when HEAD is the tagged commit:
-    SUFFIX="`echo "${DESC}" | sed 's/^.*\(-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*\)$/\1/'`" && [ x"${SUFFIX}" != x"${TAG}" ] || SUFFIX=""
+    # Commit count since the tag, and hash, of the current HEAD commit;
+    # empty e.g. when HEAD is the release-tagged commit:
+    SUFFIX="`echo "${DESC}" | sed 's/^.*\(-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*\)$/\1/'`" \
+    && [ x"${SUFFIX}" != x"${TAG}" ] || SUFFIX=""
+
+    # Tack on "this commit is a pre-release!" info, if known
+    SUFFIX_PRERELEASE=""
+    if [ -n "${TAG_PRERELEASE}" ] ; then
+        SUFFIX_PRERELEASE="`echo "${TAG_PRERELEASE}" | tr '-' '+'`"
+        if [ -n "${SUFFIX}" ] ; then
+            SUFFIX="${SUFFIX}+${SUFFIX_PRERELEASE}"
+        else
+            SUFFIX="-${SUFFIX_PRERELEASE}"
+        fi
+    fi
 
     # 5-digit version, note we strip leading "v" from the expected TAG value
+    # Note the commit count will be non-trivial even if this is commit tagged
+    # as a final release but it is not (yet?) on the BASE branch!
     VER5="${TAG#v}.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${NUT_VERSION_GIT_TRUNK}..HEAD" | wc -l | tr -d ' '`"
     DESC5="${VER5}${SUFFIX}"
 
@@ -201,12 +254,69 @@ getver_git() {
     if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
         SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
     else
-        SEMVER="`echo "${VER5}" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`"
+        if [ -n "${TAG_PRERELEASE}" ] ; then
+            # Actually report as SEMVER the version of (next) release
+            # for which this commit is candidate
+            SEMVER="`echo "${TAG_PRERELEASE}" | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)[^0-9].*$/\1/'`"
+        else
+            SEMVER="`echo "${VER5}" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`"
+        fi
     fi
     # FIXME? Add ".0" up to 3 components?
 }
 
 getver_default() {
+    # We will collect this value as we go
+    SEMVER=""
+    if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
+        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+    fi
+
+    # Similar to DESC_PRERELEASE filtering above, should yield non-trivial
+    # "-rc6" given a "v2.8.3-rc6" as input. Unlike git-based knowledge,
+    # we can not say that this is a build based off old release N which
+    # is a candidate for N+1, probably.
+    SUFFIX=""
+    SUFFIX_PRERELEASE=""
+    case "${NUT_VERSION_DEFAULT}" in
+        *-rc*|*-alpha*|*-beta*)
+            # Assume triplet (possibly prefixed with `v`) + suffix
+            # like `v2.8.3-rc6` or `2.8.2-beta-1`
+            # FIXME: Check the assumption better!
+            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(|-(rc|alpha|beta)-*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
+            && [ -n "${SUFFIX}" ] \
+            && SUFFIX_PRERELEASE="`echo "${SUFFIX}" | sed 's/^-*//'`" \
+            && NUT_VERSION_DEFAULT="`echo "${NUT_VERSION_DEFAULT}" | sed -e 's/'"${SUFFIX}"'$//'`"
+            ;;
+        *+rc*|*+alpha*|*+beta*)
+            # Consider forced `2.8.2.2878.3-2881+g45029249f+v2.8.3+rc6` values
+
+            # We remove up to 5 dot-separated leading numbers, so
+            # for the example above, `-2881+g45029249f` remains:
+            tmpSUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(.*\+(rc|alpha|beta)[+-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
+            || tmpSUFFIX=""
+            if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != "${NUT_VERSION_DEFAULT}" ] ; then
+                # Extract tagged NUT version from that suffix
+                SUFFIX="${tmpSUFFIX}"
+                # for the example above, `v2.8.3+rc6` remains
+                tmpTAG_PRERELEASE="`echo "${tmpSUFFIX}" | sed 's/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[+]\(rc\|alpha\|beta\)[+-]*[0-9][0-9]*\)$/\1/'`" \
+                || tmpTAG_PRERELEASE=""
+                if [ -n "${tmpTAG_PRERELEASE}" ] && [ x"${tmpSUFFIX}" != "${tmpTAG_PRERELEASE}" ] ; then
+                    # Replace back pluses to dashes for the tag
+                    TAG_PRERELEASE="v`echo "${tmpTAG_PRERELEASE}" | sed -e 's/[+]\(rc\|alpha\|beta\)/-\1/' -e 's/\(rc\|alpha\|beta\)[+]/\1-/'`"
+                    if [ -z "${SEMVER}" ] ; then
+                        # for the example above, `2.8.3` remains:
+                        SEMVER="`echo "${tmpTAG_PRERELEASE}" | sed -e 's/[-+].*$//'`"
+                    fi
+                    # for the example above, `rc6` remains:
+                    SUFFIX_PRERELEASE="`echo "${tmpTAG_PRERELEASE}" | sed 's/^[^+-]*[+-]//'`"
+                    # for the example above, `2.8.2.2878.3-2881+g45029249f` remains:
+                    NUT_VERSION_DEFAULT="`echo "${NUT_VERSION_DEFAULT}" | sed -e 's/'"${SUFFIX}"'$//'`"
+                fi
+            fi
+            ;;
+    esac
+
     NUT_VERSION_DEFAULT_DOTS="`echo "${NUT_VERSION_DEFAULT}" | sed 's/[^.]*//g' | tr -d '\n' | wc -c`"
 
     # Ensure at least 4 dots (5 presumed-numeric components)
@@ -229,23 +339,27 @@ getver_default() {
         NUT_VERSION_DEFAULT3_DOTS="`expr $NUT_VERSION_DEFAULT3_DOTS - 1`"
     done
 
-    DESC5="${NUT_VERSION_DEFAULT5}"
-    DESC50="${NUT_VERSION_DEFAULT}"
+    DESC5="${NUT_VERSION_DEFAULT5}${SUFFIX}"
+    DESC50="${NUT_VERSION_DEFAULT}${SUFFIX}"
     VER5="${NUT_VERSION_DEFAULT5}"
     VER50="${NUT_VERSION_DEFAULT}"
-    SUFFIX=""
     BASE=""
-    if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
-        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
-    else
+    if [ -z "${SEMVER}" ] ; then
         SEMVER="${NUT_VERSION_DEFAULT3}"
     fi
-    TAG="v${NUT_VERSION_DEFAULT3}"
+    TAG="v${NUT_VERSION_DEFAULT3}${SUFFIX}"
+    if [ x"${TAG_PRERELEASE-}" = x ] ; then
+        if [ x"${SUFFIX_PRERELEASE}" != x ] ; then
+            TAG_PRERELEASE="v${NUT_VERSION_DEFAULT3}-${SUFFIX_PRERELEASE}"
+        else
+            TAG_PRERELEASE=""
+        fi
+    fi
 }
 
 report_debug() {
     # Debug
-    echo "SEMVER=${SEMVER}; TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
+    echo "SEMVER=${SEMVER}; TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => DESC5='${DESC5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
 }
 
 report_output() {
@@ -256,9 +370,12 @@ report_output() {
         "VER50")	echo "${VER50}" ;;
         "SEMVER")	echo "${SEMVER}" ;;
         "IS_RELEASE")	[ x"${SEMVER}" = x"${VER50}" ] && echo true || echo false ;;
+        "IS_PRERELEASE")	[ x"${SUFFIX_PRERELEASE}" != x ] && echo true || echo false ;;
         "TAG")  	echo "${TAG}" ;;
+        "TAG_PRERELEASE") echo "${TAG_PRERELEASE}" ;;
         "TRUNK")  	echo "${NUT_VERSION_GIT_TRUNK-}" ;;
         "SUFFIX")	echo "${SUFFIX}" ;;
+        "SUFFIX_PRERELEASE") echo "${SUFFIX_PRERELEASE}" ;;
         "BASE") 	echo "${BASE}" ;;
         "URL")
             # Clarify the project website URL - particularly historically
@@ -268,6 +385,23 @@ report_output() {
             else
                 echo "${NUT_WEBSITE}"
             fi
+            ;;
+        "UPDATE_FILE_GIT_RELEASE")
+            # NOTE: For maintainers, changes SRCDIR not BUILDDIR; requires GIT
+            # Do not "mv" here because maintainer files may be hard-linked from elsewhere
+            echo "NUT_VERSION_FORCED='${DESC50}'" > "${abs_top_srcdir}/VERSION_FORCED.tmp" || exit
+            if ! cmp "${abs_top_srcdir}/VERSION_FORCED.tmp" "${abs_top_srcdir}/VERSION_FORCED" >/dev/null 2>/dev/null ; then
+                cat "${abs_top_srcdir}/VERSION_FORCED.tmp" > "${abs_top_srcdir}/VERSION_FORCED" || exit
+            fi
+            rm -f "${abs_top_srcdir}/VERSION_FORCED.tmp"
+
+            echo "NUT_VERSION_FORCED_SEMVER='${SEMVER}'" > "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" || exit
+            if ! cmp "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" "${abs_top_srcdir}/VERSION_FORCED_SEMVER" >/dev/null 2>/dev/null ; then
+                cat "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" > "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+            fi
+            rm -f "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp"
+
+            grep . "${abs_top_srcdir}/VERSION_FORCED" "${abs_top_srcdir}/VERSION_FORCED_SEMVER"
             ;;
         "UPDATE_FILE")
             if [ x"${abs_top_builddir}" != x"${abs_top_srcdir}" ] \

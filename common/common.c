@@ -628,7 +628,10 @@ const char *describe_NUT_VERSION_once(void)
 	if (1 < snprintf(buf, sizeof(buf),
 		"%s %s%s%s",
 		NUT_VERSION_MACRO,
-		NUT_VERSION_IS_RELEASE ? "release" : "(development iteration after ",
+		NUT_VERSION_IS_RELEASE ? "release" :
+			(NUT_VERSION_IS_PRERELEASE
+			 ? "(pre-release iteration of "
+			 : "(development iteration after "),
 		NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
 		NUT_VERSION_IS_RELEASE ? "" : ")"
 	)) {
