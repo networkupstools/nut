@@ -1415,3 +1415,12 @@ git-realclean-check:
 			done; \
 		done ; \
 	 fi
+
+# Simply group recipes which depend on a ton of source files but are generally
+# quickly handled by external tools, to group (in life and log) various checks
+# separately from the probably slower/louder stages for test programs like
+# check-NIT:
+check-files-quick: spellcheck-quick check-man
+
+# Autotools hook: run the quick checks before recursing for defaults:
+check-recursive: check-files-quick
