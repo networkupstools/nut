@@ -369,7 +369,6 @@ all/server: all-libs-local/common
 ### LIB-Requires-ext: drivers/libserial-nutscan.la
 ### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
 ### LIB-Requires-ext: common/libcommonversion.la
-### Requires-ext: include/nut_version.h
 ### Requires-ext: clients/libupsclient-version.h
 ### Requires-int: libnutscan.la
 all/tools/nut-scanner: all-libs-local/include all-libs-local/common \
