@@ -38,6 +38,24 @@
 #include "nut_version.h"
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
+/* Know which bitness we were built for, to adjust the report */
+#include "nut_stdint.h"
+#if defined(UINTPTR_MAX) && (UINTPTR_MAX + 0) == 0xffffffffffffffffULL
+# define BUILD_64   1
+#else
+# ifdef BUILD_64
+#  undef BUILD_64
+# endif
+#endif
+
+#if defined(UINTPTR_MAX) && (UINTPTR_MAX + 0) == 0x00000000ffffffffULL
+# define BUILD_32   1
+#else
+# ifdef BUILD_32
+#  undef BUILD_32
+# endif
+#endif
+
 /* privately declare a few things implemented in common.c (this code used
  * to be there) */
 extern struct timeval	upslog_start;
@@ -147,10 +165,19 @@ void nut_report_config_flags(void)
 	 * of compiled codepaths: */
 	const char	*compiler_ver = CC_VERSION;
 	const char	*config_flags = CONFIG_FLAGS;
+	const char	*bitness_str = NULL;
 	struct timeval		now;
 
 	if (nut_debug_level < 1)
 		return;
+
+#ifdef BUILD_64
+	bitness_str = "64";
+#else
+# ifdef BUILD_32
+	bitness_str = "32";
+# endif
+#endif
 
 #if 0
 	/* Only report git revision if NUT_VERSION_MACRO in nut_version.h aka
@@ -195,10 +222,13 @@ void nut_report_config_flags(void)
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
-		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s %s%s\n",
+		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
 			difftime(now.tv_sec, upslog_start.tv_sec),
 			(long)(now.tv_usec - upslog_start.tv_usec),
 			describe_NUT_VERSION_once(),
+			bitness_str ? " (" : "",
+			bitness_str ? bitness_str : "",
+			bitness_str ? "-bit build)" : "",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
@@ -213,8 +243,11 @@ void nut_report_config_flags(void)
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG)) {
-		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s %s%s",
+		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
 			describe_NUT_VERSION_once(),
+			bitness_str ? " (" : "",
+			bitness_str ? bitness_str : "",
+			bitness_str ? "-bit build)" : "",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
