@@ -30,11 +30,12 @@
 # include "wincompat.h"
 #endif	/* WIN32 */
 
-/* the reason we define UPS_VERSION as a static string, rather than a
-	macro, is to make dependency tracking easier (only common.o depends
-	on nut_version.h), and also to prevent all sources from
-	having to be recompiled each time the version changes (they only
-	need to be re-linked). */
+/* the reason we define UPS_VERSION as a static string, rather than a macro,
+ * is to make dependency tracking easier (only common-nut_version.o file
+ * depends on nut_version.h), and also to prevent all sources from having
+ * to be recompiled each time the version changes (they only need to be
+ * re-linked). Similarly for other variables below in the code.
+ */
 #include "nut_version.h"
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
@@ -165,18 +166,24 @@ void nut_report_config_flags(void)
 	 * of compiled codepaths: */
 	const char	*compiler_ver = CC_VERSION;
 	const char	*config_flags = CONFIG_FLAGS;
-	const char	*bitness_str = NULL;
+	const char	*BITNESS_STR = NULL;
+	const char	*CPU_TYPE_STR = NULL;
 	struct timeval		now;
 
 	if (nut_debug_level < 1)
 		return;
 
 #ifdef BUILD_64
-	bitness_str = "64";
+	BITNESS_STR = "64";
 #else
 # ifdef BUILD_32
-	bitness_str = "32";
+	BITNESS_STR = "32";
 # endif
+#endif
+
+#ifdef CPU_TYPE
+	if (CPU_TYPE && *CPU_TYPE)
+		CPU_TYPE_STR = CPU_TYPE;
 #endif
 
 #if 0
@@ -222,13 +229,16 @@ void nut_report_config_flags(void)
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
-		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s%s%s%s %s%s\n",
 			difftime(now.tv_sec, upslog_start.tv_sec),
 			(long)(now.tv_usec - upslog_start.tv_usec),
 			describe_NUT_VERSION_once(),
-			bitness_str ? " (" : "",
-			bitness_str ? bitness_str : "",
-			bitness_str ? "-bit build)" : "",
+			BITNESS_STR ? ", " : "",
+			BITNESS_STR ? BITNESS_STR : "",
+			BITNESS_STR ? "-bit build" : "",
+			CPU_TYPE_STR ? " for " : "",
+			CPU_TYPE_STR ? CPU_TYPE_STR : "",
+			BITNESS_STR ? "," : "",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
@@ -243,11 +253,14 @@ void nut_report_config_flags(void)
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG)) {
-		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
+		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s%s%s%s %s%s",
 			describe_NUT_VERSION_once(),
-			bitness_str ? " (" : "",
-			bitness_str ? bitness_str : "",
-			bitness_str ? "-bit build)" : "",
+			BITNESS_STR ? ", " : "",
+			BITNESS_STR ? BITNESS_STR : "",
+			BITNESS_STR ? "-bit build" : "",
+			CPU_TYPE_STR ? " for " : "",
+			CPU_TYPE_STR ? CPU_TYPE_STR : "",
+			BITNESS_STR ? "," : "",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
