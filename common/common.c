@@ -2522,6 +2522,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 		/* generic message... */
+		/* Note: this code intentionally uses a caller-provided
+		 * format string (we do not get it from configs etc.) */
 		ret = vsnprintf(msgbuf, sizeof(msgbuf), fmt, va);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3414,6 +3416,10 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #endif
 	/* Note: errors here can reset errno,
 	 * so errno_orig is stashed beforehand */
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	do {
 		ret = vsnprintf(buf, bufsize, fmt, va);
 
@@ -3720,6 +3726,10 @@ void upslog_with_errno(int priority, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(priority, fmt, va, 1);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3742,6 +3752,10 @@ void upslogx(int priority, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(priority, fmt, va, 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3804,6 +3818,10 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(LOG_DEBUG, fmt, va, 1);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3859,6 +3877,10 @@ void s_upsdebugx(int level, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(LOG_DEBUG, fmt, va, 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3999,6 +4021,10 @@ static void vfatal(const char *fmt, va_list va, int use_strerror)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(LOG_ERR, fmt, va, use_strerror);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -4019,6 +4045,10 @@ void fatal_with_errno(int status, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vfatal(fmt, va, (errno > 0) ? 1 : 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -4042,6 +4072,10 @@ void fatalx(int status, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vfatal(fmt, va, 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop

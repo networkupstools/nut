@@ -731,6 +731,10 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings from the mge_info[] mapping table */
+
 	/* write into infostr with proper formatting */
 	if ( strpbrk(item->fmt, "feEgG") ) {           /* float */
 		snprintf(infostr, infolen, item->fmt,

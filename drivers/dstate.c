@@ -264,6 +264,10 @@ static void send_to_all(const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -360,6 +364,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -1340,6 +1348,11 @@ int vdstate_setinfo(const char *var, const char *fmt, va_list ap)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_setinfo_dynamic() method). */
 	vsnprintf(value, sizeof(value), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -1369,6 +1382,11 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_setinfo_dynamic() method). */
 	ret = vdstate_setinfo(var, fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -1396,6 +1414,7 @@ int dstate_setinfo_dynamic(const char *var, const char *fmt_dynamic, const char 
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+		/* Using validated formatting string here */
 		ret = vdstate_setinfo(var, fmt_dynamic, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -1420,6 +1439,11 @@ int vdstate_addenum(const char *var, const char *fmt, va_list ap)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_addenum_dynamic() method). */
 	vsnprintf(value, sizeof(value), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -1449,6 +1473,11 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_addenum_dynamic() method). */
 	ret = vdstate_addenum(var, fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -1457,6 +1486,8 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 
 	return ret;
 }
+
+/* FIXME: Implement dstate_addenum_dynamic() - it is in header and comments! */
 
 int dstate_addrange(const char *var, const int min, const int max)
 {
