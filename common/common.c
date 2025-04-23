@@ -3109,6 +3109,8 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 					*b++ = *p;
 					i++;
 					continue;
+				default:
+					upsdebugx(1, "%s: in-escape: unexpected formatting char: '%c'", __func__, *p);
 			}
 
 			/* Assume and skip a flags/width/precision character
