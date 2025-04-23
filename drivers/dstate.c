@@ -1487,7 +1487,34 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 	return ret;
 }
 
-/* FIXME: Implement dstate_addenum_dynamic() - it is in header and comments! */
+int dstate_addenum_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	if (!var || validate_formatting_string(fmt_dynamic, fmt_reference, NUT_DYNAMICFORMATTING_DEBUG_LEVEL) < 0) {
+		return -1;
+	} else {
+		int	ret;
+		va_list	ap;
+
+		va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* Using validated formatting string here */
+		ret = vdstate_addenum(var, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		va_end(ap);
+
+		return ret;
+	}
+}
 
 int dstate_addrange(const char *var, const int min, const int max)
 {
