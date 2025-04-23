@@ -39,20 +39,20 @@ libparseconf_la_SOURCES = parseconf.c
 # be built before anything else... but do depend on its build area:
 if BUILDING_IN_TREE
 # No need for symlink hack
-  common.c: $(top_builddir)/include/nut_version.h
+  common-nut_version.c: $(top_builddir)/include/nut_version.h
 else !BUILDING_IN_TREE
-# Surprisingly, for some "make" implementations this dependency means
-# that the "common.c" required for builds below will be seeked in the
+# Surprisingly, for some "make" implementations this dependency means that
+# the "common-nut_version.c" required for builds below will be seeked in the
 # current directory. So for out-of-tree builds like distcheck, we have
 # to symlink the "real" source to build area. And then when we handle
 # subsequent dependencies, we already have a filename that "make" now
 # discovers and is confused about:
-  common.c: $(top_builddir)/include/nut_version.h $(srcdir)/common.c
+  common-nut_version.c: $(top_builddir)/include/nut_version.h $(srcdir)/common-nut_version.c
 	@if [ x"$(abs_top_srcdir)" = x"$(abs_top_builddir)" ] || test -s "$@" ; then \
 		exit 0 ; \
 	 else \
-		echo "  LN	$(top_srcdir)/common/common.c => $@ (relative to `pwd`)" ; \
-		ln -s -f "$(top_srcdir)/common/common.c" "$@" ; \
+		echo "  LN	$(top_srcdir)/common/common-nut_version.c => $@ (relative to `pwd`)" ; \
+		ln -s -f "$(top_srcdir)/common/common-nut_version.c" "$@" ; \
 	 fi
 endif !BUILDING_IN_TREE
 
@@ -65,24 +65,28 @@ $(top_builddir)/include/nut_version.h:
 libcommon_la_SOURCES = state.c str.c upsconf.c
 libcommonclient_la_SOURCES = state.c str.c
 
-# several other Makefiles include the two helpers common.c str.c (and
-# perhaps some other string-related code), so make them a library too;
+# several other Makefiles include the three helpers common.c common-nut_version.c str.c
+# (and perhaps some other string-related code), so we make them a library too;
 # note that LTLIBOBJS pulls in snprintf.c contents too.
 noinst_LTLIBRARIES += libcommonstr.la
 libcommonstr_la_SOURCES = str.c
 libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 libcommonstr_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
 
+COMMON_SRC = \
+    common-nut_version.c \
+    common.c
+
 if BUILDING_IN_TREE
-  libcommon_la_SOURCES += common.c
-  libcommonstr_la_SOURCES += common.c
-  libcommonclient_la_SOURCES += common.c
+  libcommon_la_SOURCES += $(COMMON_SRC)
+  libcommonstr_la_SOURCES += $(COMMON_SRC)
+  libcommonclient_la_SOURCES += $(COMMON_SRC)
 else !BUILDING_IN_TREE
-  nodist_libcommon_la_SOURCES = common.c
-  nodist_libcommonstr_la_SOURCES = common.c
-  nodist_libcommonclient_la_SOURCES = common.c
-  CLEANFILES += $(top_builddir)/common/common.c
-  BUILT_SOURCES = common.c
+  nodist_libcommon_la_SOURCES = $(COMMON_SRC)
+  nodist_libcommonstr_la_SOURCES = $(COMMON_SRC)
+  nodist_libcommonclient_la_SOURCES = $(COMMON_SRC)
+  CLEANFILES += $(top_builddir)/common/nut_version.c
+  BUILT_SOURCES = common-nut_version.c
 endif !BUILDING_IN_TREE
 
 if HAVE_STRPTIME
@@ -193,7 +197,9 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
 clean-local:
-	if test -L $(builddir)/common.c || test -h $(builddir)/common.c ; then rm -f $(builddir)/common.c ; fi
+	if test -L $(builddir)/common-nut_version.c \
+	|| test -h $(builddir)/common-nut_version.c \
+	; then rm -f $(builddir)/common-nut_version.c ; fi
 #	$(AM_V_at)rm -rf $(builddir)/.deps
 
 # Helper for only the enabled libs to get built:
