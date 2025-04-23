@@ -34,6 +34,7 @@ $(top_builddir)/clients/libupsclient-version.h \
 $(top_builddir)/common/libnutwincompat.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonstr.la \
+$(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -116,7 +117,9 @@ libnutscan_la_CFLAGS = \
 			-I$(top_builddir)/include -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
-libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
+libnutscan_la_LIBADD += \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libcommonstr.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = \

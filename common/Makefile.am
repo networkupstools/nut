@@ -38,7 +38,7 @@ libparseconf_la_SOURCES = parseconf.c
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else... but do depend on its build area:
 if BUILDING_IN_TREE
-# No need for symlink hack
+# No need for symlink hack, just rebuild if header gets updated:
   common-nut_version.c: $(top_builddir)/include/nut_version.h
 else !BUILDING_IN_TREE
 # Surprisingly, for some "make" implementations this dependency means that
@@ -54,6 +54,9 @@ else !BUILDING_IN_TREE
 		echo "  LN	$(top_srcdir)/common/common-nut_version.c => $@ (relative to `pwd`)" ; \
 		ln -s -f "$(top_srcdir)/common/common-nut_version.c" "$@" ; \
 	 fi
+
+  CLEANFILES += $(top_builddir)/common/nut_version.c
+  BUILT_SOURCES = common-nut_version.c
 endif !BUILDING_IN_TREE
 
 $(top_builddir)/include/nut_version.h:
@@ -73,8 +76,16 @@ libcommonstr_la_SOURCES = str.c
 libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 libcommonstr_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
 
+# This one includes only version-related data and methods and should be
+# linked along with one of the other libcommon*.la for logging methods:
+noinst_LTLIBRARIES += libcommonversion.la
+libcommonversion_la_SOURCES = common-nut_version.c
+#libcommonversion_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
+#libcommonversion_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
+
+# Eventually we expect more sources as the big common.c source gets split
+# into smaller better-focused files.
 COMMON_SRC = \
-    common-nut_version.c \
     common.c
 
 if BUILDING_IN_TREE
@@ -85,8 +96,6 @@ else !BUILDING_IN_TREE
   nodist_libcommon_la_SOURCES = $(COMMON_SRC)
   nodist_libcommonstr_la_SOURCES = $(COMMON_SRC)
   nodist_libcommonclient_la_SOURCES = $(COMMON_SRC)
-  CLEANFILES += $(top_builddir)/common/nut_version.c
-  BUILT_SOURCES = common-nut_version.c
 endif !BUILDING_IN_TREE
 
 if HAVE_STRPTIME
