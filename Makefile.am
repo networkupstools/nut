@@ -976,6 +976,10 @@ ChangeLog.adoc: ChangeLog
 nut_version.h include/nut_version.h:
 	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) nut_version.h
 
+# May involve (re-)build of libupsclient.la
+libupsclient-version.h clients/libupsclient-version.h:
+	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
+
 tools/gitlog2changelog.py: tools/gitlog2changelog.py.in
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) -s $(@F)
 
