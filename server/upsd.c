@@ -507,17 +507,13 @@ static void setuptcp(stype_t *server)
 		}
 
 		if (ai->ai_next) {
-			char ipaddrbuf[SMALLBUF];
-			const char *ipaddr;
-			snprintf(ipaddrbuf, sizeof(ipaddrbuf), " as ");
-			ipaddr = inet_ntop(ai->ai_family, ai->ai_addr,
-				ipaddrbuf + strlen(ipaddrbuf),
-				sizeof(ipaddrbuf));
+			const char *ipaddr = inet_ntopW((struct sockaddr_storage *)ai->ai_addr);
 			upslogx(LOG_WARNING,
-				"setuptcp: bound to %s%s but there seem to be "
+				"setuptcp: bound to %s%s%s but there seem to be "
 				"further (ignored) addresses resolved for this name",
 				server->addr,
-				ipaddr == NULL ? "" : ipaddrbuf);
+				ipaddr == NULL ? "" : " as ",
+				ipaddr == NULL ? "" : ipaddr);
 		}
 
 		server->sock_fd = sock_fd;
