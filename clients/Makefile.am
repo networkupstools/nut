@@ -111,9 +111,9 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 
 # not LDADD... why?
 libupsclient_la_SOURCES = upsclient.c upsclient.h
+# NOTE: The library does not require libcommonversion.la
 libupsclient_la_LIBADD = \
-	$(top_builddir)/common/libcommonclient.la \
-	$(top_builddir)/common/libcommonversion.la
+	$(top_builddir)/common/libcommonclient.la
 if HAVE_WINDOWS_SOCKETS
   libupsclient_la_LIBADD += -lws2_32
 endif HAVE_WINDOWS_SOCKETS
@@ -183,8 +183,7 @@ libnutclient_la_LDFLAGS = -version-info 2:2:0
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 libnutclient_la_LIBADD = \
-	$(top_builddir)/common/libcommonclient.la \
-	$(top_builddir)/common/libcommonversion.la
+	$(top_builddir)/common/libcommonclient.la
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutclient_la_LDFLAGS += -no-undefined
