@@ -5,7 +5,7 @@
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
 	2019 		Eaton (author: Arnaud Quette <ArnaudQuette@eaton.com>)
-	2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2020 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#define NUT_WANT_INET_NTOP_XX	1
 
 #include "config.h"	/* must be the first header */
 

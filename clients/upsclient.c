@@ -20,6 +20,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#define NUT_WANT_INET_NTOP_XX	1
+
 #include "config.h"	/* safe because it doesn't contain prototypes */
 #include "nut_platform.h"
 
