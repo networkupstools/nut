@@ -170,9 +170,14 @@ static int	reload_flag = 0, exit_flag = 0;
 # define SERVICE_UNIT_NAME "nut-server.service"
 #endif
 
-static const char *inet_ntopW (struct sockaddr_storage *s)
+static const char *inet_ntopW(struct sockaddr_storage *s)
 {
 	static char str[40];
+
+	if (!s) {
+		errno = EINVAL;
+		return NULL;
+	}
 
 	switch (s->ss_family)
 	{
