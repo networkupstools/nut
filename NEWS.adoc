@@ -41,6 +41,11 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
+ - common code:
+   * Refactored repetitive implementations of `inet_ntopSS()` (nee
+     `inet_ntopW()` in `upsd.c`) and `inet_ntopAI()` methods into `common.c`,
+     so now they can be re-used or expanded more easily. [#2916]
+
  - `upsd` updates:
    * Fixed two bugs about printing the "further (ignored) addresses resolved
      for this name": the way to extract IP address string was not portable

@@ -4485,3 +4485,67 @@ int match_regex_hex(const regex_t *preg, const int n)
 	return match_regex(preg, buf);
 }
 #endif	/* HAVE_LIBREGEX */
+
+/* NOT THREAD SAFE!
+ * Helpers to convert one IP address to string from different structure types
+ * Return pointer to internal buffer, or NULL and errno upon errors */
+const char *inet_ntopSS(struct sockaddr_storage *s)
+{
+	static char str[40];
+
+	if (!s) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	switch (s->ss_family)
+	{
+	case AF_INET:
+		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), str, 16);
+	case AF_INET6:
+		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), str, 40);
+	default:
+		errno = EAFNOSUPPORT;
+		return NULL;
+	}
+}
+
+const char *inet_ntopAI(struct addrinfo *ai)
+{
+	/* Note: below we manipulate copies of ai - cannot cast into
+	 * specific structure type pointers right away because:
+	 *   error: cast from 'struct sockaddr *' to 'struct sockaddr_storage *'
+	 *          increases required alignment from 2 to 8
+	 */
+	/* https://stackoverflow.com/a/29147085/4715872
+	 * obviously INET6_ADDRSTRLEN is expected to be larger
+	 * than INET_ADDRSTRLEN, but this may be required in case
+	 * if for some unexpected reason IPv6 is not supported, and
+	 * INET6_ADDRSTRLEN is defined as 0
+	 * but this is not very likely and I am aware of no cases of
+	 * this in practice (editor)
+	 */
+	static char	addrstr[(INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1];
+
+	if (!ai || !ai->ai_addr) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	addrstr[0] = '\0';
+	switch (ai->ai_family) {
+		case AF_INET: {
+			struct sockaddr_in	addr_in;
+			memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
+			return inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, INET_ADDRSTRLEN);
+		}
+		case AF_INET6: {
+			struct sockaddr_in6	addr_in6;
+			memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
+			return inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, INET6_ADDRSTRLEN);
+		}
+		default:
+			errno = EAFNOSUPPORT;
+			return NULL;
+	}
+}

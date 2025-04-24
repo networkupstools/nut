@@ -65,11 +65,14 @@
 #endif
 
 #ifndef WIN32
-#include <syslog.h>
+# include <netdb.h>
+# include <sys/socket.h>
+# include <arpa/inet.h>
+# include <syslog.h>
 #else	/* WIN32 */
-#include <winsock2.h>
-#include <windows.h>
-#include <ws2tcpip.h>
+# include <winsock2.h>
+# include <windows.h>
+# include <ws2tcpip.h>
 #endif	/* WIN32 */
 
 #include <unistd.h>	/* useconds_t */
@@ -401,6 +404,12 @@ const char * rootpidpath(void);
 
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);
+
+/* NOT THREAD SAFE!
+ * Helpers to convert one IP address to string from different structure types
+ * Return pointer to internal buffer, or NULL and errno upon errors */
+const char *inet_ntopSS(struct sockaddr_storage *s);
+const char *inet_ntopAI(struct addrinfo *ai);
 
 /* Provide integration for systemd inhibitor interface (where available,
  * dummy code otherwise) implementing the pseudo-code example from
