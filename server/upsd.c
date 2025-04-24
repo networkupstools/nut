@@ -186,6 +186,46 @@ static const char *inet_ntopW (struct sockaddr_storage *s)
 	}
 }
 
+static const char *inet_ntopAI(struct addrinfo *ai)
+{
+	/* Note: below we manipulate copies of ai - cannot cast into
+	 * specific structure type pointers right away because:
+	 *   error: cast from 'struct sockaddr *' to 'struct sockaddr_storage *'
+	 *          increases required alignment from 2 to 8
+	 */
+	/* https://stackoverflow.com/a/29147085/4715872
+	 * obviously INET6_ADDRSTRLEN is expected to be larger
+	 * than INET_ADDRSTRLEN, but this may be required in case
+	 * if for some unexpected reason IPv6 is not supported, and
+	 * INET6_ADDRSTRLEN is defined as 0
+	 * but this is not very likely and I am aware of no cases of
+	 * this in practice (editor)
+	 */
+	static char	addrstr[(INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1];
+
+	if (!ai || !ai->ai_addr) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	addrstr[0] = '\0';
+	switch (ai->ai_family) {
+		case AF_INET: {
+			struct sockaddr_in	addr_in;
+			memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
+			return inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, INET_ADDRSTRLEN);
+		}
+		case AF_INET6: {
+			struct sockaddr_in6	addr_in6;
+			memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
+			return inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, INET6_ADDRSTRLEN);
+		}
+		default:
+			errno = EAFNOSUPPORT;
+			return NULL;
+	}
+}
+
 /* return a pointer to the named ups if possible */
 upstype_t *get_ups_ptr(const char *name)
 {
@@ -507,7 +547,7 @@ static void setuptcp(stype_t *server)
 		}
 
 		if (ai->ai_next) {
-			const char *ipaddr = inet_ntopW((struct sockaddr_storage *)ai->ai_addr);
+			const char *ipaddr = inet_ntopAI(ai);
 			upslogx(LOG_WARNING,
 				"setuptcp: bound to %s%s%s but there seem to be "
 				"further (ignored) addresses resolved for this name",
