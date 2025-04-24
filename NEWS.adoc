@@ -49,6 +49,9 @@ https://github.com/networkupstools/nut/milestone/9
    * Refactored NUT "common" sources to reference `nut_version.h` macros from
      a smaller C source file, to minimize the compilation unit size impacted
      by development iterations. [issue #2097]
+   * Common code hardening: added sanity-checking for dynamically constructed
+     or selected formatting strings with variable-argument list methods
+     (typically used with log printing, `dstate` setting, etc.) [#2450]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2

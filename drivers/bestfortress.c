@@ -35,7 +35,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.11"
+#define DRIVER_VERSION  "0.12"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -185,19 +185,7 @@ static inline void setinfo_float (const char *key, const char * fmt, const char 
 	strncpy (buf, s, len);
 	buf[len] = 0;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	dstate_setinfo (key, fmt, factor * (double)(atoi (buf)));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	dstate_setinfo_dynamic (key, fmt, "%f", factor * (double)(atoi (buf)));
 }
 
 static int upssend(const char *fmt,...) {
@@ -217,6 +205,9 @@ static int upssend(const char *fmt,...) {
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) */
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop

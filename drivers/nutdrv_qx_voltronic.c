@@ -25,7 +25,7 @@
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.10"
+#define VOLTRONIC_VERSION "Voltronic 0.11"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -1929,19 +1929,7 @@ static int	voltronic_process_setvar(item_t *item, char *value, const size_t valu
 
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->command, val);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->command, "%f", val);
 
 	return 0;
 }
@@ -2077,19 +2065,7 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->command, buf);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->command, "%s", buf);
 
 	return 0;
 }
@@ -2406,19 +2382,7 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 	if (!val)
 		return -1;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, val);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", val);
 
 	/* This item doesn't have a NUT var and we were not asked by the user to change its value */
 	if ((item->qxflags & QX_FLAG_NONUT) && !getval(item->info_type))
@@ -2439,27 +2403,15 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 /* *SETVAR* Set UPS capability options */
 static int	voltronic_capability_set(item_t *item, char *value, const size_t valuelen)
 {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
 	if (!strcasecmp(value, "yes")) {
-		snprintf(value, valuelen, item->command, "E");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "E");
 		return 0;
 	}
 
 	if (!strcasecmp(value, "no")) {
-		snprintf(value, valuelen, item->command, "D");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "D");
 		return 0;
 	}
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
 
 	/* At this point value should have been already checked against enum so this shouldn't happen.. however.. */
 	upslogx(LOG_ERR, "%s: given value [%s] is not acceptable. Enter either 'yes' or 'no'.", item->info_type, value);
@@ -2512,27 +2464,15 @@ static int	voltronic_capability_set_nonut(item_t *item, char *value, const size_
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
 	if (!strcasecmp(value, "disabled")) {
-		snprintf(value, valuelen, item->command, "D");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "D");
 	} else if (!strcasecmp(value, "enabled")) {
-		snprintf(value, valuelen, item->command, "E");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "E");
 	} else {
 		/* At this point value should have been already checked against enum so this shouldn't happen.. however.. */
 		upslogx(LOG_ERR, "%s: [%s] is not within acceptable values [enabled/disabled]", item->info_type, value);
 		return -1;
 	}
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
 
 	return 0;
 }
@@ -2584,19 +2524,7 @@ static int	voltronic_eco_volt(item_t *item, char *value, const size_t valuelen)
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, strtod(item->value, NULL));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", strtod(item->value, NULL));
 
 	outvoltnom = dstate_getinfo("output.voltage.nominal");
 
@@ -2762,19 +2690,7 @@ static int	voltronic_eco_freq(item_t *item, char *value, const size_t valuelen)
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, strtod(item->value, NULL));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", strtod(item->value, NULL));
 
 	/* Unskip input.transfer.{high,low} setvar */
 	unskip = find_nut_info(item->info_type, QX_FLAG_SETVAR, 0);
@@ -2822,19 +2738,7 @@ static int	voltronic_bypass(item_t *item, char *value, const size_t valuelen)
 
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, val);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", val);
 
 	/* No user-provided value to change.. */
 	if (!getval(item->info_type))
@@ -2871,19 +2775,7 @@ static int	voltronic_batt_numb(item_t *item, char *value, const size_t valuelen)
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, (int)battery_number);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%d", (int)battery_number);
 
 	/* No user-provided value to change.. */
 	if (!getval(item->info_type))
@@ -2914,19 +2806,7 @@ static int	voltronic_batt_runtime(item_t *item, char *value, const size_t valuel
 	/* Battery runtime is reported by the UPS in minutes, NUT expects seconds */
 	runtime = strtod(item->value, NULL) * 60;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, runtime);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", runtime);
 
 	return 0;
 }
@@ -2991,19 +2871,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 	upslogx(LOG_INFO, "Checking for faults..");
 
 	if (!strcasecmp(item->value, "OK")) {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		snprintf(value, valuelen, item->dfl, "No fault found");
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "No fault found");
 		upslogx(LOG_INFO, "%s", value);
 		item->qxflags |= QX_FLAG_SKIP;
 		return 0;
@@ -3352,19 +3220,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, alarm);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", alarm);
 	upslogx(LOG_INFO, "Fault found: %s", alarm);
 
 	item->qxflags |= QX_FLAG_SKIP;
@@ -3843,23 +3699,11 @@ static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
 	if (alarm && !strcasecmp(item->info_type, "ups.alarm")) {
-		snprintf(value, valuelen, item->dfl, alarm);
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", alarm);
 	} else if (status && !strcasecmp(item->info_type, "ups.status")) {
-		snprintf(value, valuelen, item->dfl, status);
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", status);
 	}
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
 
 	return 0;
 }
@@ -4055,19 +3899,7 @@ static int	voltronic_output_powerfactor(item_t *item, char *value, const size_t 
 	/* UPS report a value expressed in % so -> output.powerfactor*100 e.g. opf = 0,8 -> ups = 80 */
 	opf = strtod(item->value, NULL) * 0.01;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, opf);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", opf);
 
 	return 0;
 }
@@ -4081,19 +3913,7 @@ static int	voltronic_serial_numb(item_t *item, char *value, const size_t valuele
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, item->value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", item->value);
 
 	return 0;
 }
@@ -4127,26 +3947,14 @@ static int	voltronic_outlet(item_t *item, char *value, const size_t valuelen)
 
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
 	if (strstr(item->info_type, "switchable")) {
-		snprintf(value, valuelen, item->dfl, switchable);
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", switchable);
 	} else if (strstr(item->info_type, "status")) {
-		snprintf(value, valuelen, item->dfl, status);
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", status);
 	} else {
 		/* Don't know what happened */
 		return -1;
 	}
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
 
 	/* Unskip outlet.n.delay.shutdown */
 	snprintf(buf, sizeof(buf), "outlet.%c.delay.shutdown", number);
@@ -4200,19 +4008,7 @@ static int	voltronic_outlet_delay(item_t *item, char *value, const size_t valuel
 	/* UPS reports minutes, NUT expects seconds */
 	val = strtod(item->value, NULL) * 60;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, val);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", val);
 
 	/* Unskip outlet.n.delay.shutdown setvar */
 	snprintf(buf, sizeof(buf), "outlet.%c.delay.shutdown", number);
@@ -4242,19 +4038,7 @@ static int	voltronic_outlet_delay_set(item_t *item, char *value, const size_t va
 	/* From seconds to minute */
 	delay = delay / 60;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->command, (int)delay);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->command, "%d", (int)delay);
 
 	return 0;
 }
@@ -4278,19 +4062,7 @@ static int	voltronic_p31b(item_t *item, char *value, const size_t valuelen)
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, item->info_rw[(size_t)val].value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", item->info_rw[(size_t)val].value);
 
 	return 0;
 }
@@ -4340,19 +4112,7 @@ static int	voltronic_p31g(item_t *item, char *value, const size_t valuelen)
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, item->info_rw[(size_t)val].value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", item->info_rw[(size_t)val].value);
 
 	work_range_type = val;
 
@@ -4431,19 +4191,7 @@ static int	voltronic_phase(item_t *item, char *value, const size_t valuelen)
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, (int)angle);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%d", (int)angle);
 
 	return 0;
 }

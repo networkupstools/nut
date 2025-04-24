@@ -245,6 +245,60 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wdeprecated-declarations"])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat"],
+    [ax_cv__pragma__gcc__diags_ignored_format],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wformat"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_format=yes],
+      [ax_cv__pragma__gcc__diags_ignored_format=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_format_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wformat"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_format_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_format_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat-nonliteral"],
+    [ax_cv__pragma__gcc__diags_ignored_format_extra_args],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_format_extra_args=yes],
+      [ax_cv__pragma__gcc__diags_ignored_format_extra_args=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_extra_args" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_EXTRA_ARGS], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat-extra-args"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat-extra-args" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_format_extra_args_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wformat-extra-args"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_format_extra_args_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_format_extra_args_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_extra_args_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_EXTRA_ARGS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat-extra-args" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat-nonliteral"],
     [ax_cv__pragma__gcc__diags_ignored_format_nonliteral],
     [AC_COMPILE_IFELSE(

@@ -405,6 +405,7 @@ static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 			upsdebugx(2, "%s: ntype 0x%04x (%s)",
 				__func__, ntype,
 				notifylist[i].name);
+
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -427,13 +428,15 @@ static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 					 *  only have one "%s", plaster another
 					 *  to "msgfmt" and follow this path?
 					 */
-					snprintf(msg, sizeof(msg),
+					snprintf_dynamic(msg, sizeof(msg),
 						msgfmt,
+						"%s%s",
 						upsname ? upsname : "",
 						NUT_STRARG(extra));
 				} else {
-					snprintf(msg, sizeof(msg),
+					snprintf_dynamic(msg, sizeof(msg),
 						msgfmt,
+						"%s",
 						upsname ? upsname : "");
 				}
 			} else {

@@ -96,7 +96,7 @@ libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 3:0:0
+libnutscan_la_LDFLAGS += -version-info 4:0:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -107,7 +107,7 @@ libnutscan_la_LDFLAGS += -version-info 3:0:0
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|snprintf_dynamic|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
 libnutscan_la_CFLAGS = \
 			-I$(top_builddir)/clients -I$(top_srcdir)/clients \
 			-I$(top_builddir)/include -I$(top_srcdir)/include \
