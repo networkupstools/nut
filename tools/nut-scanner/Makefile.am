@@ -29,25 +29,22 @@ $(NUT_SCANNER_DEPS): dummy
 	+@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
-$(top_builddir)/include/nut_version.h \
 $(top_builddir)/clients/libupsclient-version.h \
 $(top_builddir)/common/libnutwincompat.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonstr.la \
+$(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-# do not hard depend on '../include/nut_version.h', since it blocks
+# do not hard depend on '../clients/libupsclient-version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
-# BUILT_SOURCES (in ../include) will ensure nut_version.h will
+# BUILT_SOURCES (in ../clients) will ensure libupsclient-version.h will
 # be built before anything else
-# FIXME: this can cause rebuilds of nut_version.h for every mention
-#  (especially if we `configire --enable-force-nut-version-header`,
-#  which is default). This also causes binary build of libupsclient.la
+# FIXME: this can cause re-evaluation, possibly rebuilds, of libupsclient.la
 #  to look up its metadata and generate libupsclient-version.h which
 #  may be a bit of overkill (especially in cross-build cases etc.)
 #  Notably this pops up in `configure && make dist(check)` rituals.
-nut-scanner.c: $(top_builddir)/include/nut_version.h
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
 # We optionally append values to this below
@@ -116,7 +113,9 @@ libnutscan_la_CFLAGS = \
 			-I$(top_builddir)/include -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
-libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
+libnutscan_la_LIBADD += \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libcommonstr.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = \
