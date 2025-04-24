@@ -1,7 +1,8 @@
 /* common.h - prototypes for the common useful functions
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C)
+    2000  Russell Kroll <rkroll@exploits.org>
+    2020-2025 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -540,6 +541,47 @@ void *xmalloc(size_t size);
 void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
+
+int vsnprintfcat(char *dst, size_t size, const char *fmt, va_list ap);
+int snprintfcat(char *dst, size_t size, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 3, 4)));
+
+/* Mitigate the inherent insecurity of dynamically constructed formatting
+ * strings vs. a fixed vararg list with its amounts and types of variables
+ * printed by this or that method and pre-compiled in the program.
+ * Verbosity is passed to upsdebugx(); a negative value should keep it quiet
+ * (e.g. when code deliberately checks for suitable formatting constraints).
+ * Consumers like the *_dynamic() methods here and in dstate typically use
+ * "1" to make errors in code visible with any effort to troubleshoot them.
+ */
+/* Verbosity built into the methods which call the *_formatting_*() and
+ * pass this value as the verbosity variable argument. It is anticipated
+ * that some custom builds can define it to e.g. 0 to see discrepancies
+ * at run-time without enabling any debug verbosity: */
+#ifndef NUT_DYNAMICFORMATTING_DEBUG_LEVEL
+# define NUT_DYNAMICFORMATTING_DEBUG_LEVEL 1
+#endif
+/* Verbosity built into consumers that deliberately check the formatting
+ * strings for this or that outcome and do not want noise in the log: */
+#define NUT_DYNAMICFORMATTING_DEBUG_LEVEL_SILENT -1
+char *minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int verbosity);
+char *minimize_formatting_string_staticbuf(const char *fmt, int verbosity);
+int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference, int verbosity);
+
+int vsnprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list va);
+int snprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 4, 5)));
+
+int vsnprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list va);
+int snprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 4, 5)));
+
+/* Practical helper with a static buffer which we can use for setting
+ * values as a "%s" string e.g. in calls to dstate_setinfo(), etc.
+ * Sets buffer to empty string in case of errors.
+ */
+char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3)));
 
 /**** REGEX helper methods ****/
 

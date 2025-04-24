@@ -42,6 +42,16 @@ https://github.com/networkupstools/nut/milestone/9
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
  - common code:
+   * Revised common `writepid()` to use `altpidpath()` as location for the
+     PID file creation, if the default `rootpidpath()` is not accessible
+     (e.g. daemon was not initially started as `root`). Likewise updated
+     short PID file based signal sending to consult both locations. [#1717]
+   * Refactored NUT "common" sources to reference `nut_version.h` macros from
+     a smaller C source file, to minimize the compilation unit size impacted
+     by development iterations. [issue #2097]
+   * Common code hardening: added sanity-checking for dynamically constructed
+     or selected formatting strings with variable-argument list methods
+     (typically used with log printing, `dstate` setting, etc.) [#2450]
    * Refactored repetitive implementations of `inet_ntopSS()` (nee
      `inet_ntopW()` in `upsd.c`) and `inet_ntopAI()` methods into `common.c`,
      so now they can be re-used or expanded more easily. [#2916]
