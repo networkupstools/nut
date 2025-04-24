@@ -115,6 +115,7 @@ import org.nut.dynamatrix.*;
     // are used (just assigning it among build agent labels is not enough).
     dynacfgPipeline['shellcheck'] = [
         //'stageNameFunc': null,
+        requiredNodelabels: dynacfgPipeline.disableSlowBuildCIBuild_QEMU ? ["nut-builder"] : ["(nut-builder||qemu-nut-builder)"],
         //'dynamatrixAxesLabels': [~/^OS_.+/, 'MAKE'],
         'dynamatrixAxesLabels': ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
         'single': '( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; \${MAKE} -j 4 shellcheck )',
