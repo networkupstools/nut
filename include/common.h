@@ -68,6 +68,7 @@
 # include <netdb.h>
 # include <sys/socket.h>
 # include <arpa/inet.h>
+# include <netinet/in.h>
 # include <syslog.h>
 #else	/* WIN32 */
 # include <winsock2.h>
