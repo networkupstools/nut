@@ -41,6 +41,13 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
+ - `upsd` updates:
+   * Fixed two bugs about printing the "further (ignored) addresses resolved
+     for this name": the way to extract IP address string was not portable
+     and misfired on some platforms, and the way to print had a theoretical
+     potential for buffer overflow. [#2915]
+
+
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------
 
