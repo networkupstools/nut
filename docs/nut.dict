@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3458 utf-8
+personal_ws-1.1 en 3460 utf-8
 AAC
 AAS
 ABI
@@ -2893,6 +2893,7 @@ rootca
 rootcerts
 rootfs
 rootfs'es
+rootpidpath
 rpath
 rpc
 rpool
@@ -3396,6 +3397,7 @@ workspaceFolder
 workspaces
 writability
 writeinfo
+writepid
 writeups
 ws
 xAAAA

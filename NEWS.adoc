@@ -41,9 +41,15 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
- - Refactored NUT "common" sources to reference `nut_version.h` macros from
-   a smaller C source file, to minimize the compilation unit size impacted by
-   development iterations. [issue #2097]
+ - common code:
+   * Revised common `writepid()` to use `altpidpath()` as location for the
+     PID file creation, if the default `rootpidpath()` is not accessible
+     (e.g. daemon was not initially started as `root`). Likewise updated
+     short PID file based signal sending to consult both locations. [#1717]
+   * Refactored NUT "common" sources to reference `nut_version.h` macros from
+     a smaller C source file, to minimize the compilation unit size impacted
+     by development iterations. [issue #2097]
+
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------
