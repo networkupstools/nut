@@ -3,6 +3,7 @@
  * Copyright (C)
  *   2014 Daniele Pezzini <hyouko@gmail.com>
  *   2022 Graham Leggett <minfrin@sharp.fm>
+ *   2025 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +27,7 @@
 #include "nutdrv_qx_voltronic-axpert.h"
 #include "common_voltronic-crc.h"
 
-#define VOLTRONIC_AXPERT_VERSION "Voltronic-Axpert 0.01"
+#define VOLTRONIC_AXPERT_VERSION	"Voltronic-Axpert 0.01"
 
 /* Support functions */
 static int	voltronic_sunny_claim(void);
@@ -173,6 +174,8 @@ static info_rw_t	voltronic_sunny_e_pv_priority[] = {
 /* Preprocess enum value for PV energy supply priority */
 static int	voltronic_sunny_pv_priority_enum(char *value, const size_t len)
 {
+	NUT_UNUSED_VARIABLE(len);	/* FIXME? strncasecmp(value, expected, len) but make sure we check the whole fixed argument or it is not equal */
+
 	switch (model_type)
 	{
 	case 1:		/* Off-grid */
@@ -273,6 +276,8 @@ static int	voltronic_sunny_grid_inout_freq_max(char *value, const size_t len)
 	double		gfn;
 	const char	*gridfreqnom = dstate_getinfo("grid.frequency.nominal");
 
+	NUT_UNUSED_VARIABLE(len);	/* FIXME? */
+
 	if (!gridfreqnom) {
 		upsdebugx(2, "%s: unable to get grid.frequency.nominal", __func__);
 		return -1;
@@ -318,6 +323,8 @@ static int	voltronic_sunny_grid_inout_freq_min(char *value, const size_t len)
 	const int	val = strtol(value, &ptr, 10) * 10 + (*ptr == '.' ? strtol(++ptr, NULL, 10) : 0);
 	double		gfn;
 	const char	*gridfreqnom = dstate_getinfo("grid.frequency.nominal");
+
+	NUT_UNUSED_VARIABLE(len);	/* FIXME? */
 
 	if (!gridfreqnom) {
 		upsdebugx(2, "%s: unable to get grid.frequency.nominal", __func__);
@@ -381,6 +388,8 @@ static info_rw_t	voltronic_sunny_r_bc_v_bulk[] = {
 static int	voltronic_sunny_bc_v_bulk(char *value, const size_t len)
 {
 	const int	val = strtol(value, NULL, 10);
+
+	NUT_UNUSED_VARIABLE(len);	/* FIXME? */
 
 	switch (val)
 	{
@@ -461,6 +470,8 @@ static info_rw_t	voltronic_sunny_r_pv_input_volt_max[] = {
 static int	voltronic_sunny_pv_input_volt_max(char *value, const size_t len)
 {
 	const int	val = strtol(value, NULL, 10);
+
+	NUT_UNUSED_VARIABLE(len);	/* FIXME? */
 
 	switch (val)
 	{
