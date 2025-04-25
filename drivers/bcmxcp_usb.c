@@ -231,7 +231,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		/* Now validate XCP frame */
 		/* Check header */
 		if ( my_buf[0] != PW_COMMAND_START_BYTE ) {
-			upsdebugx(2, "get_answer: wrong header 0xab vs %02x", my_buf[0]);
+			upsdebugx(2, "get_answer: wrong header 0xab vs. %02x", my_buf[0]);
 			/* Sometime we read something wrong. bad cables? bad ports? */
 			my_buf = memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
 			if (!my_buf)
@@ -266,11 +266,11 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		/* Test the Sequence # */
 		sequence = my_buf[3];
 		if ((sequence & PW_SEQ_MASK) != seq_num) {
-			nutusb_comm_fail("get_answer: not the right sequence received %x!!!\n", (sequence & PW_SEQ_MASK));
+			nutusb_comm_fail("get_answer: not the right sequence received %x!!!\n", (unsigned int)(sequence & PW_SEQ_MASK));
 			return -1;
 		}
 		else {
-			upsdebugx(2, "get_answer: sequence number (%x) is ok", (sequence & PW_SEQ_MASK));
+			upsdebugx(2, "get_answer: sequence number (%x) is ok", (unsigned int)(sequence & PW_SEQ_MASK));
 		}
 
 		/* Validate checksum */
@@ -423,7 +423,8 @@ static usb_dev_handle *open_powerware_usb(void)
 	ssize_t devcount = 0;
 	libusb_device_handle *udev;
 	struct libusb_device_descriptor dev_desc;
-	uint8_t bus;
+	uint8_t bus_num;
+	/* TODO: consider device_addr */
 	int i;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
@@ -441,13 +442,13 @@ static usb_dev_handle *open_powerware_usb(void)
 
 		curDevice.VendorID = dev_desc.idVendor;
 		curDevice.ProductID = dev_desc.idProduct;
-		bus = libusb_get_bus_number(device);
+		bus_num = libusb_get_bus_number(device);
 		curDevice.Bus = (char *)malloc(4);
 		if (curDevice.Bus == NULL) {
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		sprintf(curDevice.Bus, "%03d", bus);
+		sprintf(curDevice.Bus, "%03d", bus_num);
 
 		/* FIXME: we should also retrieve
 		 * dev->descriptor.iManufacturer
@@ -537,7 +538,7 @@ usb_dev_handle *nutusb_open(const char *port)
 				upsdebugx(1, "Can't set POWERWARE USB configuration: %s", nut_usb_strerror(ret));
 				errout = 1;
 			}
-#endif
+#endif	/* WIN32 */
 			if ((ret = usb_claim_interface(dev_h, 0)) < 0)
 			{
 				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", nut_usb_strerror(ret));

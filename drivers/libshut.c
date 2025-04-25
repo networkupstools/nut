@@ -43,7 +43,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.86"
+#define SHUT_DRIVER_VERSION	"0.89"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -376,15 +376,10 @@ static int libshut_open(
 		            usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen))
 {
 	int ret, res;
-	/* Below we cast this buffer as sometimes containing entried of type
-	 * "struct device_descriptor_s" or "struct my_hid_descriptor".
-	 * Currently both of these are sized "2", and I don't see a way
-	 * to require a "max()" of such sizes to align for generally.
-	 */
 	usb_ctrl_char buf[20] __attribute__((aligned(4)));
 	char string[MAX_STRING_SIZE];
-	struct my_hid_descriptor *desc;
-	struct device_descriptor_s *dev_descriptor;
+	struct my_hid_descriptor	desc_buf, *desc = &desc_buf;
+	struct device_descriptor_s	dev_descriptor_buf, *dev_descriptor = &dev_descriptor_buf;
 
 	/* report descriptor */
 	usb_ctrl_char	rdbuf[MAX_REPORT_SIZE];
@@ -393,6 +388,54 @@ static int libshut_open(
 	 * Eaton units have a light HID descriptor at index 0, and the full
 	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
 	usb_ctrl_descindex	hid_desc_index = 0;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	static int usb_hid_number_opts_parsed = 0;
+	if (!usb_hid_number_opts_parsed) {
+		const char *s;
+		unsigned short us = 0;
+		if ((s = getval("usb_hid_desc_index"))) {
+			if (!str_to_ushort(s, &us, 16) || (us > USB_CTRL_DESCINDEX_MAX)) {
+				fatalx(EXIT_FAILURE, "%s: could not parse usb_hid_desc_index", __func__);
+			}
+			hid_desc_index = (usb_ctrl_descindex)us;
+		}
+		usb_hid_number_opts_parsed = 1;
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	if (!arg_device_path) {
+		fatalx(EXIT_FAILURE, "%s: arg_device_path=null", __func__);
+	}
 
 	upsdebugx(2, "libshut_open: using port %s", arg_device_path);
 
@@ -422,21 +465,7 @@ static int libshut_open(
 	}
 
 	/* Get DEVICE descriptor */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wcast-align"
-#endif
-	dev_descriptor = (struct device_descriptor_s *)buf;
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
+	memcpy(dev_descriptor, buf, sizeof(struct device_descriptor_s));
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_DEVICE, 0, buf, USB_DT_DEVICE_SIZE);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 	(USB_DT_DEVICE << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -463,19 +492,36 @@ static int libshut_open(
 	free(curDevice->Product);
 	free(curDevice->Serial);
 	free(curDevice->Bus);
+	free(curDevice->Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(curDevice->BusPort);
+#endif
 	memset(curDevice, '\0', sizeof(*curDevice));
 
 	curDevice->VendorID = dev_descriptor->idVendor;
 	curDevice->ProductID = dev_descriptor->idProduct;
 	curDevice->Bus = strdup("serial");
+	curDevice->Device = strdup(arg_device_path);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	curDevice->BusPort = (char *)malloc(4);
+	if (curDevice->BusPort == NULL) {
+		fatal_with_errno(EXIT_FAILURE, "Out of memory");
+	}
+	upsdebugx(2, "%s: NOTE: BusPort is always zero with libshut", __func__);
+	sprintf(curDevice->BusPort, "%03d", 0);
+#endif
+
 	curDevice->bcdDevice = dev_descriptor->bcdDevice;
-	curDevice->Vendor = strdup("Eaton");
+	curDevice->Vendor = NULL;
 	if (dev_descriptor->iManufacturer) {
 		ret = shut_get_string_simple(*arg_upsfd, dev_descriptor->iManufacturer,
 			string, MAX_STRING_SIZE);
 		if (ret > 0) {
 			curDevice->Vendor = strdup(string);
 		}
+	}
+	if (curDevice->Vendor == NULL) {
+		curDevice->Vendor = strdup("Eaton");
 	}
 
 	/* ensure iProduct retrieval */
@@ -508,30 +554,21 @@ static int libshut_open(
 	upsdebugx(2, "- Product: %s", curDevice->Product);
 	upsdebugx(2, "- Serial Number: %s", curDevice->Serial);
 	upsdebugx(2, "- Bus: %s", curDevice->Bus);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+#endif
+	upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
 	upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 	upsdebugx(2, "Device matches");
 
 	if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
-			upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
+		upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
+		if (!getval("usb_hid_desc_index"))
 			hid_desc_index = 1;
 	}
 
 	/* Get HID descriptor */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wcast-align"
-#endif
-	desc = (struct my_hid_descriptor *)buf;
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
+	memcpy(desc, buf, sizeof(struct my_hid_descriptor));
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_HID, hid_desc_index, buf, 0x9);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 			(USB_DT_HID << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -549,8 +586,7 @@ static int libshut_open(
 	}
 
 	/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-	desc->wDescriptorLength = (uint16_t)(buf[7]);
-	desc->wDescriptorLength |= (((uint16_t)buf[8]) << 8);
+	desc->wDescriptorLength = (0x00FF & (uint8_t)buf[7]) | ((0x00FF & (uint8_t)buf[8]) << 8);
 	upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
 
 /*
@@ -714,7 +750,7 @@ static int libshut_set_report(
 	upsdebugx(1,
 		"Entering libshut_set_report (report %x, "
 		"len %" PRI_NUT_USB_CTRL_CHARBUFSIZE ")",
-		ReportId, ReportSize);
+		(unsigned int)ReportId, ReportSize);
 
 	if ((uintmax_t)ReportSize > (uintmax_t)INT_MAX) {
 		upsdebugx(1, "%s: ReportSize exceeds INT_MAX", __func__);
@@ -1247,7 +1283,7 @@ static int shut_control_msg(
 				__func__, data_size);
 			return -1;
 		}
-		if (data_size > 0x0F) {
+		if (data_size > 0x0F || data_size > sizeof(shut_pkt) - 2) {
 			upsdebugx(1, "%s: WARNING: data_size %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 				" may be too large for SHUT packet?",
 				__func__, data_size);
@@ -1257,7 +1293,7 @@ static int shut_control_msg(
 		}
 		shut_pkt[1] = (unsigned char)(data_size<<4) + (unsigned char)data_size;
 		if ( (requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size < 8) )
-			memcpy(&shut_pkt[2], bytes, data_size); /* we need to send ctrl.data  */
+			memcpy(&shut_pkt[2], bytes, data_size > sizeof(shut_pkt) - 2 ? sizeof(shut_pkt) - 2 : data_size); /* we need to send ctrl.data  */
 		else
 			memcpy(&shut_pkt[2], &ctrl, 8);
 		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], (unsigned char)data_size);

@@ -1,5 +1,7 @@
 /*
+ *  Copyright (C) 2011-2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,10 +21,14 @@
 /*! \file scan_avahi.c
     \brief detect NUT through Avahi mDNS / DNS-SD services
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #include "common.h"
 #include "nut-scan.h"
+
+/* externally visible to nutscan-init */
+int nutscan_unload_avahi_library(void);
 
 #ifdef WITH_AVAHI
 
@@ -40,9 +46,12 @@
 
 #include <ltdl.h>
 
+#define SCAN_AVAHI_DRIVERNAME "dummy-ups"
+
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+static char *dl_saved_libname = NULL;
 
 static AvahiClient* (*nut_avahi_service_browser_get_client)(AvahiServiceBrowser *);
 static int (*nut_avahi_simple_poll_loop)(AvahiSimplePoll *s);
@@ -86,7 +95,16 @@ static int (*nut_avahi_service_browser_free)(AvahiServiceBrowser *);
 static char * (*nut_avahi_address_snprint)(char *ret_s, size_t length, const AvahiAddress *a);
 static const AvahiPoll* (*nut_avahi_simple_poll_get)(AvahiSimplePoll *s);
 
-/* return 0 on error; visible externally */
+/* Return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_avahi_library(void)
+{
+	return nutscan_unload_library(&nutscan_avail_avahi, &dl_handle, &dl_saved_libname);
+}
+
+/* Return 0 on error; visible externally */
 int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_avahi_library(const char *libname_path)
 {
@@ -100,12 +118,12 @@ int nutscan_load_avahi_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		fprintf(stderr, "AVAHI client library not found. AVAHI search disabled.\n");
+		upsdebugx(0, "AVAHI client library not found. AVAHI search disabled.");
 		return 0;
 	}
 
 	if (lt_dlinit() != 0) {
-		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(0, "%s: Error initializing lt_dlinit", __func__);
 		return 0;
 	}
 
@@ -114,7 +132,10 @@ int nutscan_load_avahi_library(const char *libname_path)
 		dl_error = lt_dlerror();
 		goto err;
 	}
-	lt_dlerror();      /* Clear any existing error */
+
+	/* Clear any existing error */
+	lt_dlerror();
+
 	*(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle, "avahi_service_browser_get_client");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
@@ -205,13 +226,22 @@ int nutscan_load_avahi_library(const char *libname_path)
 		goto err;
 	}
 
+	if (dl_saved_libname)
+		free(dl_saved_libname);
+	dl_saved_libname = xstrdup(libname_path);
+
 	return 1;
+
 err:
-	fprintf(stderr,
-		"Cannot load AVAHI library (%s) : %s. AVAHI search disabled.\n",
+	upsdebugx(0,
+		"Cannot load AVAHI library (%s) : %s. AVAHI search disabled.",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
+	if (dl_saved_libname) {
+		free(dl_saved_libname);
+		dl_saved_libname = NULL;
+	}
 	return 0;
 }
 /* end of dynamic link library stuff */
@@ -266,7 +296,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			dev->type = TYPE_NUT;
 			/* NOTE: There is no driver by such name, in practice it could
 			 * be a dummy-ups relay, a clone driver, or part of upsmon config */
-			dev->driver = strdup("nutclient");
+			dev->driver = strdup(SCAN_AVAHI_DRIVERNAME);
 			if (proto == AVAHI_PROTO_INET) {
 				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}
@@ -322,7 +352,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 		else {
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
-			dev->driver = strdup("nutclient");
+			dev->driver = strdup(SCAN_AVAHI_DRIVERNAME);
 			if (proto == AVAHI_PROTO_INET) {
 				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}
@@ -378,23 +408,23 @@ static void resolve_callback(
 
 	switch (event) {
 		case AVAHI_RESOLVER_FAILURE:
-			fprintf(stderr,
-				"(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n",
-				name, type, domain,
+			upsdebugx(0, "%s: "
+				"(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s",
+				__func__, name, type, domain,
 				(*nut_avahi_strerror)((*nut_avahi_client_errno)((*nut_avahi_service_resolver_get_client)(r))));
 			break;
 
-		case AVAHI_RESOLVER_FOUND: {
+		case AVAHI_RESOLVER_FOUND: { /* scoping */
 			char a[AVAHI_ADDRESS_STR_MAX], *t;
 
-/*			fprintf(stderr, "Service '%s' of type '%s' in domain '%s':\n", name, type, domain); */
+/*			upsdebugx(1, "%s: Service '%s' of type '%s' in domain '%s':", __func__, name, type, domain); */
 
 			(*nut_avahi_address_snprint)(a, sizeof(a), address);
 			t = (*nut_avahi_string_list_to_string)(txt);
 
 			NUT_UNUSED_VARIABLE(flags);
 /*
-			fprintf(stderr,
+			upsdebugx(1,
 				"\t%s:%u (%s)\n"
 				"\tTXT=%s\n"
 				"\tcookie is %u\n"
@@ -414,7 +444,33 @@ static void resolve_callback(
 */
 			update_device(host_name, a, port, t, address->proto);
 			(*nut_avahi_free)(t);
-		}
+			}
+			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	(*nut_avahi_service_resolver_free)(r);
@@ -442,14 +498,14 @@ static void browse_callback(
 	switch (event) {
 		case AVAHI_BROWSER_FAILURE:
 
-			fprintf(stderr,
-				"(Browser) %s\n",
+			upsdebugx(0, "%s: (Browser) %s",
+				__func__,
 				(*nut_avahi_strerror)((*nut_avahi_client_errno)((*nut_avahi_service_browser_get_client)(b))));
 			(*nut_avahi_simple_poll_quit)(simple_poll);
 			return;
 
 		case AVAHI_BROWSER_NEW:
-/*			fprintf(stderr, "(Browser) NEW: service '%s' of type '%s' in domain '%s'\n", name, type, domain); */
+/*			upsdebugx(1, "%s: "(Browser) NEW: service '%s' of type '%s' in domain '%s'", __func__, name, type, domain); */
 
 			/* We ignore the returned resolver object. In the callback
 			   function we free it. If the server is terminated before
@@ -469,14 +525,15 @@ static void browse_callback(
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
-				fprintf(stderr,
-					"Failed to resolve service '%s': %s\n",
+				upsdebugx(0, "%s: "
+					"Failed to resolve service '%s': %s",
+					__func__,
 					name, (*nut_avahi_strerror)((*nut_avahi_client_errno)(c)));
 
 			break;
 
 		case AVAHI_BROWSER_REMOVE:
-			fprintf(stderr, "(Browser) REMOVE: service '%s' of type '%s' in domain '%s'\n", name, type, domain);
+			upsdebugx(0, "%s: (Browser) REMOVE: service '%s' of type '%s' in domain '%s'", __func__, name, type, domain);
 			break;
 
 		case AVAHI_BROWSER_ALL_FOR_NOW:
@@ -485,8 +542,33 @@ static void browse_callback(
 
 		case AVAHI_BROWSER_CACHE_EXHAUSTED:
 		fallthrough_AVAHI_BROWSER_CACHE_EXHAUSTED:
-/*			fprintf(stderr, "(Browser) %s\n", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW"); */
+/*			upsdebugx(1, "%s: (Browser) %s", __func__, event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW"); */
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 }
 
@@ -497,11 +579,30 @@ static void client_callback(AvahiClient *c, AvahiClientState state, void * userd
 	/* Called whenever the client or server state changes */
 
 	if (state == AVAHI_CLIENT_FAILURE) {
-		fprintf(stderr,
-			"Server connection failure: %s\n",
+		upsdebugx(0, "%s: "
+			"Server connection failure: %s",
+			__func__,
 			(*nut_avahi_strerror)((*nut_avahi_client_errno)(c)));
 		(*nut_avahi_simple_poll_quit)(simple_poll);
 	}
+}
+
+static AvahiClient* wrap_nut_avahi_client_new(int *error)
+{
+	/* Allocate a new client */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wassign-enum"
+#endif
+	/* It seems that avahi-common/defs.h only defines the flags in a
+	 * manner similar to bitmask flags to request certain features,
+	 * but lacks a value in that enum for lack of flags (unconstrained
+	 * lookup). So we have to silence a warning here...
+	 */
+	return (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), 0, client_callback, NULL, error);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic pop
+#endif
 }
 
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
@@ -521,30 +622,19 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 
 	/* Allocate main loop object */
 	if (!(simple_poll = (*nut_avahi_simple_poll_new)())) {
-		fprintf(stderr, "Failed to create Avahi simple poll object.\n");
+		upsdebugx(0, "%s: Failed to create Avahi simple poll object.",
+			__func__);
 		goto fail;
 	}
 
 	/* Allocate a new client */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wassign-enum"
-#endif
-	/* It seems that avahi-common/defs.h only defines the flags in a
-	 * manner similar to bitmask flags to request certain features,
-	 * but lacks a value in that enum for lack of flags (unconstrained
-	 * lookup). So we have to silence a warning here...
-	 */
-	client = (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), 0, client_callback, NULL, &error);
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
-# pragma GCC diagnostic pop
-#endif
+	client = wrap_nut_avahi_client_new(&error);
 
 	/* Check wether creating the client object succeeded */
 	if (!client) {
-		fprintf(stderr,
-			"Failed to create Avahi client: %s\n",
-			(*nut_avahi_strerror)(error));
+		upsdebugx(0, "%s: "
+			"Failed to create Avahi client: %s",
+			__func__, (*nut_avahi_strerror)(error));
 		goto fail;
 	}
 
@@ -561,8 +651,9 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
-		fprintf(stderr,
-			"Failed to create Avahi service browser: %s\n",
+		upsdebugx(0, "%s: "
+			"Failed to create Avahi service browser: %s",
+			__func__,
 			(*nut_avahi_strerror)((*nut_avahi_client_errno)(client)));
 		goto fail;
 	}
@@ -595,4 +686,8 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 	return NULL;
 }
 
+int nutscan_unload_avahi_library(void)
+{
+	return 0;
+}
 #endif /* WITH_AVAHI */

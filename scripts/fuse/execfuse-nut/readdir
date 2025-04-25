@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Simple PoC of NUT client as a FUSE mountable filesystem
+# Requires https://github.com/vi/execfuse
+# Copyright (C) 2024 by Jim Klimov <jimklimov+nut@gmail.com>
+# Licensed GPLv2+ as NUT codebase
+
+if [ x"$NUT_DEBUG_FUSE" = xtrue ] ; then
+    exec 2>"/tmp/nut-debug-fuse-`basename $0`.log"
+    echo "ARGS($#, $0): 1='$1' 2='$2' @='$@'" >&2
+    #echo "ARGS: $#: $@" >&2
+    #set | grep -E '^[^ =]*=' >&2
+fi
+
+#PATH="~/nut/clients:$PATH"
+#export PATH
+
+#exec find "$2$1" -mindepth 1 -maxdepth 1 -printf 'ino=%i mode=%M nlink=%n uid=%U gid=%G rdev=0 size=%s blksize=512 blocks=%b atime=%A@ mtime=%T@ ctime=%C@ %f\0'
+
+# $1 = (parent?) dirname
+# $2 = dir basename?
+
+print_dots() {
+    printf 'ino=1 mode=drwxr-xr-x nlink=4 uid=0 gid=0 rdev=0 size=4096 blksize=512 blocks=2 atime=0 mtime=0 ctime=0 .\0'
+    printf 'ino=1 mode=drwxr-xr-x nlink=4 uid=0 gid=0 rdev=0 size=1111 blksize=512 blocks=2 atime=0 mtime=0 ctime=0 ..\0'
+}
+
+case "$1" in
+    /)
+        print_dots
+        for D in "by-server" ; do
+            printf 'ino=1 mode=drwxr-xr-x nlink=4 uid=0 gid=0 rdev=0 size=4096 blksize=512 blocks=2 atime=0 mtime=0 ctime=0 %s\0' "$D"
+        done
+        for F in "client-location" "client-version" ; do
+            printf 'ino=1 mode=-r--r--r-- nlink=1 uid=0 gid=0 rdev=0 size=4096 blksize=512 blocks=2 atime=0 mtime=0 ctime=0 %s\0' "$F"
+        done
+        ;;
+    /by-server)
+        print_dots
+        printf 'ino=1 mode=drwxr-xr-x nlink=16 uid=0 gid=0 rdev=0 size=16 blksize=512 blocks=1 atime=0 mtime=0 ctime=0 %s\0' "localhost"
+        # Primarily this is a value arranged by `make check-NIT`:
+        set -x
+        if [ -n "${NUT_PORT-}" ] && [ x"${NUT_PORT}" != x3493 ]; then
+            printf 'ino=1 mode=drwxr-xr-x nlink=16 uid=0 gid=0 rdev=0 size=16 blksize=512 blocks=1 atime=0 mtime=0 ctime=0 %s\0' "localhost:${NUT_PORT}"
+        fi
+        ;;
+    /by-server/*/*/*) # Don't want subdirs here
+        exit 2 # ENOENT
+        ;;
+    /by-server/*/*) # list device variables
+        UPSNAME="`basename "$1"`"
+        UPSSRV="`echo "$1" | sed 's,^/by-server/\(.*\)/'"$UPSNAME"'$,\1,'`"
+        print_dots
+        for VARNAME in `upsc "$UPSNAME@$UPSSRV" | awk -F: '{print $1}'` ; do
+            printf 'ino=1 mode=-r--r--r-- nlink=1 uid=0 gid=0 rdev=0 size=16 blksize=512 blocks=1 atime=0 mtime=0 ctime=0 %s\0' "$VARNAME"
+        done
+        ;;
+    /by-server/*) # devices on hostname
+        UPSSRV="`basename "$1"`"
+        print_dots
+        for UPSNAME in `upsc -l "$UPSSRV"` ; do
+            printf 'ino=1 mode=drwxr-xr-x nlink=16 uid=0 gid=0 rdev=0 size=16 blksize=512 blocks=1 atime=0 mtime=0 ctime=0 %s\0' "$UPSNAME"
+        done
+        ;;
+    *)
+        exit 2 # ENOENT
+        ;;
+esac
+
+exit 0

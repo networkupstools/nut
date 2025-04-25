@@ -7,10 +7,14 @@ NAME
 richcomm_usb - Driver UPS equipment using Richcomm dry-contact to USB
 solution
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the specific features of the richcomm_usb
+*richcomm_usb* -h
+
+*richcomm_usb* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the richcomm_usb
 driver.  For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
@@ -19,8 +23,8 @@ SUPPORTED HARDWARE
 The Richcomm dry-contact to USB solution is a generic interface that is
 used to upgrade an existing (RS-232) contact closure UPS interface to USB.
 As such, all the limitations of the underlying contact closure interface
-apply.  This means that you will only get the essentials in ups.status: OL,
-OB, and LB.  See also linkman:genericups[8].
+apply.  This means that you will only get the essentials in `ups.status`:
+`OL`, `OB`, and `LB`.  See also linkman:genericups[8].
 
 ////////
 TODO: Uncomment after solving https://github.com/networkupstools/nut/issues/1768
@@ -63,4 +67,4 @@ linkman:genericups[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

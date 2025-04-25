@@ -4,12 +4,16 @@ NUTDRV_SIEMENS_SITOP(8)
 NAME
 ----
 
-nutdrv_siemens_sitop - driver for the Siemens SITOP UPS500 series UPS
+nutdrv_siemens_sitop - Driver for the Siemens SITOP UPS500 series UPS
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*nutdrv_siemens_sitop* -h
+
+*nutdrv_siemens_sitop* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 *nutdrv_siemens_sitop* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -62,7 +66,7 @@ USB driver
 
 The USB-versions of the UPS contain an FTDI USB-to-serial converter chip.
 It is programmed with a non-standard product ID (for example _0403:e0e3_),
-but can still be used with the normal ftdi_sio driver.
+but can still be used with the normal `ftdi_sio` driver.
 
 NOTE: The following hints may be specific to GNU/Linux.
 
@@ -75,7 +79,7 @@ modprobe ftdi_sio
 echo 0403 e0e3 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id
 ....
 
-If your system uses *udev*, this can be automated via a udev rule:
+If your system uses *udev*, this can be automated via an *udev* rule:
 
 ----
 ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3", \
@@ -84,7 +88,7 @@ ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3", \
 ----
 
 You can use the following udev rule to obtain a predictable device name,
-for example _/dev/ttyUPS_:
+for example `/dev/ttyUPS`:
 ----
 SUBSYSTEM=="tty" ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3" SYMLINK+="ttyUPS"
 ----
@@ -109,7 +113,8 @@ This driver supports the following optional settings:
 The serial port is polled periodically for new data (see *Polling*).
 If there is no valid new data after 'num' polls, it is assumed that
 communication with the UPS is lost.
-The default value is 2. Lower values may cause spurious 'Data stale'
++
+The default value is '2'. Lower values may cause spurious 'Data stale'
 messages, especially at startup.
 
 INSTANT COMMANDS
@@ -140,7 +145,7 @@ Make sure that your operating system has created a serial device for the UPS.
 See the section *USB driver* for more information.
 
 Next, make sure that NUT has access rights to this device file.
-For example, by creating a udev rule that grants permission to the NUT user,
+For example, by creating an udev rule that grants permission to the NUT user,
 or by adding the NUT user to a user group that can access serial devices
 (e.g. the *dialout* group on Debian-based systems).
 
@@ -148,10 +153,10 @@ DIAGNOSTICS
 -----------
 
 You can verify the correct functioning of the hardware, by monitoring the
-serial port with a terminal program, for example picocom:
+serial port with a terminal program, for example `picocom`:
 
 ....
-picocom -b 9600 -d 8 -p n /dev/ttyUPS
+:; picocom -b 9600 -d 8 -p n /dev/ttyUPS
 ....
 
 NUT must not be running when you do this.
@@ -177,12 +182,15 @@ The firmware in these UPSes is quite buggy. After sending data to the UPS,
 it sometimes stops sending status updates. This driver tries to prevent this
 (e.g. by sending commands twice, and by sending additional LF characters after
 each command).
++
 Once the UPS is in this state, communication can only be restored by rebooting
 the UPS, or by unplugging and reconnecting the USB cable.
++
 During normal operation, no commands are sent to the UPS at all
 (only at shutdown), so this issue is expected to have little impact on
 usability.
-It is not sure if the serial models are affected by this issue as well.
++
+It is not certain if the serial models are affected by this issue as well.
 
 AUTHOR
 ------
@@ -200,4 +208,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

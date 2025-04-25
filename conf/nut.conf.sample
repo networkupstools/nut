@@ -1,19 +1,40 @@
 # Network UPS Tools: example nut.conf
 #
+# This file tries to standardize the various files being found in the field,
+# like /etc/default/nut on Debian based systems, /etc/sysconfig/ups on RedHat
+# based systems, ... Distribution's init script or service unit/method script
+# should source this file to see which component(s) has to be started.
+# Some scripts and units provided by NUT project itself may also look into
+# this file for optional configuration about OS integration.
+#
+# IMPORTANT NOTES:
+#  This file is intended to be sourced by standard POSIX shell scripts
+#  (so there is no guaranteed `export VAR=VAL` syntax, while you may need
+#  to `export VAR` when sourcing it into init-scripts, for propagation to
+#  NUT programs eventually), and additionally by systemd on Linux (with no
+#  guaranteed expansion of variables -- only verbatim assignments).
+#
+#  You MUST NOT use spaces around the equal sign!
+#
+#  Practical support for this file and its settings currently varies between
+#  various OS packages and NUT sample scripts, but should converge over time.
+#
+#  Contents of this file should be pure ASCII (character codes not in range
+#  would be ignored with a warning message).
+#
+# See also: `man nut.conf` (usually in Manual pages Section 5,
+#           for Configuration files)
+#
 ##############################################################################
 # General section
 ##############################################################################
 # The MODE determines which part of the NUT is to be started, and which
 # configuration files must be modified.
 #
-# This file try to standardize the various files being found in the field, like
-# /etc/default/nut on Debian based systems, /etc/sysconfig/ups on RedHat based
-# systems, ... Distribution's init script should source this file to see which
-# component(s) has to be started.
-#
 # The values of MODE can be:
 # - none: NUT is not configured, or use the Integrated Power Management, or use
-#   some external system to startup NUT components. So nothing is to be started.
+#   some external system to startup NUT components. So nothing is to be started
+#   by scripts or services bundled with NUT packages.
 # - standalone: This mode address a local only configuration, with 1 UPS
 #   protecting the local system. This implies to start the 3 NUT layers (driver,
 #   upsd and upsmon) and the matching configuration files. This mode can also
@@ -23,17 +44,129 @@
 #   specific LISTEN directive in upsd.conf.
 #   Since this MODE is opened to the network, a special care should be applied
 #   to security concerns.
-# - netclient: this mode only requires upsmon.
-#
-# IMPORTANT NOTE:
-#  This file is intended to be sourced by standard POSIX shell scripts (so
-#  there is no guaranteed `export VAR=VAL` syntax) and by systemd on Linux.
-#  You MUST NOT use spaces around the equal sign!
+# - netclient: this mode only requires upsmon (and tools it may be using, like
+#   upssched or custom scripts) to monitor a remote NUT server and possibly
+#   shut down this system (part of upsmon must run as root then).
 
 MODE=none
 
-# Uncomment this to allow starting the service even if ups.conf has no device
-# sections at the moment. This environment variable overrides the built-in
-# "false" and an optional same-named default flag that can be set in upsd.conf:
+# Uncomment this to allow starting the `upsd` data server even if `ups.conf`
+# has no device sections configured at the moment. This environment variable
+# overrides the built-in "false" flag in `upsd`, and an optional same-named
+# default flag that can be set in `upsd.conf`. If you want a data server always
+# running, even if it initially has nothing to serve (may be live-reloaded
+# later, when devices become configured), this option is for you.
 #ALLOW_NO_DEVICE=true
 #export ALLOW_NO_DEVICE
+
+# Uncomment this to allow starting the `upsd` data server even if not all
+# `LISTEN` directives can be honoured at the moment. This environment variable
+# overrides the built-in "false" flag in `upsd`, and an optional same-named
+# default flag that can be set in `upsd.conf`. If you want a data server always
+# running, even if it would potentially not serve all clients on every uptime,
+# this option is for you (note you would have to restart `upsd` to pick up the
+# `LISTEN`ed IP address if it appears later). Probably `LISTEN *` is better.
+#ALLOW_NOT_ALL_LISTENERS=true
+#export ALLOW_NOT_ALL_LISTENERS
+
+# The optional 'UPSD_OPTIONS' allow to set upsd specific command-line options.
+# It is ignored when 'MODE' above indicates that no upsd should be running.
+# It may be redundant in comparison to options which can be set in `upsd.conf`.
+#UPSD_OPTIONS=
+
+# The optional 'UPSMON_OPTIONS' allow to set upsmon specific command-line options.
+# It is ignored when 'MODE' above indicates that no upsmon should be running.
+# It may be redundant in comparison to options which can be set in `upsmon.conf`.
+#UPSMON_OPTIONS=
+
+# If the optional 'POWEROFF_WAIT' is configured (to a value that can be handled
+# by `/bin/sleep` on the current system - typically an integer with the number
+# of seconds for a delay, but not always limited to that syntax), and the current
+# system which manages one or more UPS devices would not only command it to shut
+# down, but also try to avoid the "Power race". Caveats emptor, see NUT FAQ and
+# other docs for details.
+#POWEROFF_WAIT=3600
+
+# The optional 'POWEROFF_QUIET' setting controls if the NUT shutdown integration
+# scripts or service units would emit messages about their activity (or lack
+# thereof). By default they may be verbose, to aid post-mortem troubleshooting
+# via logs or console captures.
+# Set to `true` to avoid that trove of information, if you consider it noise.
+#POWEROFF_QUIET=true
+
+# The optional 'NUT_DEBUG_LEVEL' setting controls the default debugging message
+# verbosity passed to NUT daemons. As an environment variable, its priority sits
+# between that of 'DEBUG_MIN' setting of a driver and the command-line options.
+#NUT_DEBUG_LEVEL=0
+#export NUT_DEBUG_LEVEL
+
+# Optionally add current process ID to tags with debug-level identifiers.
+# This may be useful when many NUT daemons write to the same console or log
+# file, such as in containers/plugins for Home Assistant, storage appliances...
+#NUT_DEBUG_PID=true
+#export NUT_DEBUG_PID
+
+# Normally NUT can (attempt to) use the syslog or Event Log (WIN32), but the
+# environment variable 'NUT_DEBUG_SYSLOG' allows to bypass it, and perhaps keep
+# the daemons logging to stderr (useful e.g. in NUT Integration Test suite to
+# not pollute the OS logs, or in systemd where stderr and syslog both go into
+# the same journal). Recognized values:
+#  `stderr`  Disabled and background() keeps stderr attached
+#  `none`    Disabled and background() detaches stderr as usual
+#  `default`/unset/other   Not disabled
+#NUT_DEBUG_SYSLOG=stderr
+#export NUT_DEBUG_SYSLOG
+
+# Normally NUT can (attempt to) verify that the program file name matches the
+# name associated with a running process, when using PID files to send signals.
+# The `NUT_IGNORE_CHECKPROCNAME` boolean toggle allows to quickly skip such
+# verification, in case it causes problems (e.g. NUT programs were renamed and
+# do not match built-in expectations). This environment variable can also be
+# optionally set in init-scripts or service methods for `upsd`, `upsmon` and
+# NUT drivers/`upsdrvctl`.
+#NUT_IGNORE_CHECKPROCNAME=true
+#export NUT_IGNORE_CHECKPROCNAME
+
+# Optional flag to prevent daemons which can notify service management frameworks
+# (such as systemd) about passing their lifecycle milestones, to not report
+# loudly if they could NOT do so (e.g. running on a system without a framework,
+# or misconfigured so they could not report and the OS could eventually restart
+# the false-positively identified "unresponsive" service.
+# Currently such reports, done by default, help troubleshoot service start-up
+# and highlight that NUT sources (or package build) did not take advantage of
+# tighter OS service management framework integration (if one exists, so that
+# developers could focus on adding that). Reasons to set this flag could include
+# platforms without such a framework and not expecting one, although nagging
+# your favourite OS or contributing development to make it better is also a way.
+#NUT_QUIET_INIT_UPSNOTIFY=true
+#export NUT_QUIET_INIT_UPSNOTIFY
+
+##############################################################################
+# Variables that can be helpful more for tool scripting than service daemons
+##############################################################################
+
+# Optionally prevent `libupsclient` consumers (notoriously `upsc`, maybe
+# also `dummy-ups` driver or `nut-scanner` tool) from reporting whether
+# they have initialized SSL support -- or, loudly, failed to initialize
+# as it was not configured on this system.
+#NUT_QUIET_INIT_SSL=true
+#export NUT_QUIET_INIT_SSL
+
+# Optionally suppress NUT tool name and version banner (normally shown in most
+# NUT programs unilaterally, before processing any CLI options and possibly
+# failing due to that).
+# NOT recommended for services due to adverse troubleshooting impact, but may
+# be helpful in shell profiles or scripts which process NUT tool outputs.
+#NUT_QUIET_INIT_BANNER=true
+#export NUT_QUIET_INIT_BANNER
+
+# Optionally suppress reporting of sockets the driver programs listen at.
+#NUT_QUIET_INIT_LISTENER=true
+#export NUT_QUIET_INIT_LISTENER
+
+# Optionally impose a connection timeout for NUT client programs. The built-in
+# default is "0" meaning indefinitely blocking attempts, but many NUT clients
+# since NUT v2.8.3 set it to "10" by their default (can be overridden by this
+# variable, or via command line or configuration for some of them).
+#NUT_DEFAULT_CONNECT_TIMEOUT=10
+#export NUT_DEFAULT_CONNECT_TIMEOUT

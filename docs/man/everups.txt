@@ -6,10 +6,14 @@ NAME
 
 everups - Driver for Ever UPS models
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*everups* -h
+
+*everups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 everups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -47,4 +51,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

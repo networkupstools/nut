@@ -6,10 +6,14 @@ NAME
 
 genericups - Driver for contact-closure UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the specific features of the genericups
+*genericups* -h
+
+*genericups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the genericups
 driver.  For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
@@ -75,22 +79,24 @@ it gets tired of waiting for the driver to return.
 CUSTOM CONFIGURATIONS
 ---------------------
 
-You may override the values for CP, OL, LB, and SD by defining them in
-the linkman:ups.conf[5] after the upstype setting.
+You may override the values for `CP`, `OL`, `LB`, and `SD` by defining them in
+the linkman:ups.conf[5] after the `upstype` setting.
 
-For example, to set the cable power to DTR and the low battery value to
-DCD, it would look like this:
+For example, to set the cable power to `DTR` and the low battery value to
+`DCD`, it would look like this:
 
+----
 	CP = DTR
 
 	LB = DCD
+----
 
-Recognized values for input lines are CTS, DCD, and RNG.  Recognized
-values for output lines are DTR, RTS, and ST.  See below for more about
+Recognized values for input lines are `CTS`, `DCD`, and `RNG`.  Recognized
+values for output lines are `DTR`, `RTS`, and `ST`.  See below for more about
 what these signals mean.
 
-These values may be negated for active low signals.  That is, "LB=-DCD"
-recognizes a low battery condition when DCD is not held high.
+These values may be negated for active low signals.  That is, `LB=-DCD`
+recognizes a low battery condition when `DCD` is not held high.
 
 TYPE INFORMATION
 ----------------
@@ -98,7 +104,7 @@ TYPE INFORMATION
 The essence of a UPS definition in this driver is how it uses the serial
 lines that are available.  These are the abbreviations you will see below:
 
-OL:: On line (no power failure) (opposite of OB - on battery)
+OL:: On line (no power failure) (opposite of 'OB' -- on battery)
 
 LB:: Low battery
 
@@ -124,13 +130,13 @@ DSR:: Data Set Ready.  Received from the UPS.
 
 ST:: Send a BREAK on the transmit data line
 
-NULL:: Disable this signal.  Disabled signal will always be low except for OL
+NULL:: Disable this signal.  Disabled signal will always be low except for 'OL'
        which will always be high.
 
 none:: Alias to `NULL` which matches some other documentation.
 
-A "-" in front of a signal name (like -RNG) means that the indicated
-condition is signaled with an active low signal.  For example, [LB=-RNG]
+A `-` in front of a signal name (like `-RNG`) means that the indicated
+condition is signaled with an active low signal.  For example, `[LB=-RNG]`
 means the battery is low when the ring indicate line goes low, and that
 the battery is OK when that line is held high.
 
@@ -146,10 +152,9 @@ UPS TYPES
     [CP=DTR] [OL=-RNG] [LB=DCD] [SD=RTS]
 
 2 = APC Back-UPS/Back-UPS Pro/Smart-UPS with 940-0020B cable
+(Note: Type 2 has also been reported to work with the 940-0020C cable).
 
     [CP=RTS] [OL=-CTS] [LB=DCD] [SD=DTR+RTS]
-
-    Type 2 has also been reported to work with the 940-0020C cable.
 
 3 = PowerTech Comp1000 with DTR cable power
 
@@ -169,7 +174,7 @@ UPS TYPES
 
 7 = CyberPower Power99
     Also Upsonic Power Guardian PG-500, Belkin Belkin Home Office,
-    F6H350-SER, F6H500-SER, F6H650-SER, Eaton Management Card Contact - Config3
+    F6H350-SER, F6H500-SER, F6H650-SER, Eaton Management Card Contact -- Config3
     with cable 66033 (shutdown does not work)
 
     [CP=RTS] [OL=CTS] [LB=-DCD] [SD=DTR]
@@ -222,11 +227,9 @@ UPS TYPES
 
      [CP=DTR] [OL=CTS] [LB=-DCD] [SD=RTS]
 
-20 = Powerware 5119 RM
+20 = Powerware 5119 RM (check `docs/cables/powerware.txt` in NUT sources)
 
      [CP=DTR] [OL=-CTS] [LB=DCD] [SD=ST]
-
-     Check docs/cables/powerware.txt
 
 21 = Generic RUPS 2000 (Megatec M2501 cable)
 
@@ -249,7 +252,7 @@ Many different UPS companies make models with similar interfaces.  The
 RUPS cable seems to be especially popular in the "power strip" variety of
 UPS found in office supply stores.  If your UPS works with an entry in the
 table above, but the model or manufacturer information don't match,
-don't despair.  You can fix that easily by using the mfr and model
+don't despair.  You can fix that easily by using the `mfr` and `model`
 variables documented above in your linkman:ups.conf[5].
 
 TESTING COMPATIBILITY
@@ -272,20 +275,20 @@ going down the list.
 Step 1
 ~~~~~~
 
-Pick a driver to try from the list (genericups -h) and go to step 2.
+Pick a driver to try from the list (run `genericups -h`) and go to step 2.
 
 Step 2
 ~~~~~~
 
-Start the driver with the type you want to try -
+Start the driver with the type you want to try, e.g.:
 
         genericups -x upstype=n /dev/port
 
-Let upsd sync up (watch the syslog), and then run upsc to see what it
-found.  If the STATUS is right (should be OL for on line), continue to
-<<_step_3,Step 3>>, otherwise go back to step 1.
+Let linkman:upsd[8] sync up (watch the syslog), and then run linkman:upsc[8]
+to see what it found.  If the `STATUS` is correct (should be "OL" for online),
+continue to <<_step_3,Step 3>>, otherwise go back to step 1.
 
-Alternatively, you can run genericups in debug mode -
+Alternatively, you can run `genericups` in debug mode, e.g.:
 
         genericups -DDDDD -x upstype=n /dev/port
 
@@ -344,7 +347,7 @@ NEW SUPPORT
 
 If the above testing sequence fails, you will probably need to create a
 new entry to support your hardware.  All UPS types are determined from the
-table in the genericups.h file in the source tree.
+table in the `genericups.h` file in the source tree.
 
 On a standard 9 pin serial port, there are 6 lines that are used as the
 standard "high/low" signal levels.  4 of them are incoming (to the PC,
@@ -369,7 +372,7 @@ shutdown sequence.  - Neil Muller
 
 The Tripp-Lite Internet Office 700 must be used with the black 73-0844
 cable instead of the gray 73-0743 cable.  This entry should work with any
-of their models with the Lan 2.2 interface - see the sticker by the DB9
+of their models with the Lan 2.2 interface -- see the sticker by the DB9
 connector on the UPS.  - Stephen Brown
 
 Type 5 should work with the Tripp-Lite Lan 2.1 interface and the 73-0724
@@ -404,4 +407,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

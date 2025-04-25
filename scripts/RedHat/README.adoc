@@ -1,0 +1,6 @@
+NUT integration files for older RedHat based Linux distributions
+================================================================
+
+Install `ups` in `/etc/rc.d/init.d`
+
+The `/etc/sysconfig/ups` is used only to store the `POWERDOWNFLAG` variable

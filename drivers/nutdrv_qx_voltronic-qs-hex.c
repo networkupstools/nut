@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs-hex.h"
 
-#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.10"
+#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.11"
 
 /* Support functions */
 static int	voltronic_qs_hex_claim(void);
@@ -224,19 +224,19 @@ static int	voltronic_qs_hex_preprocess_qs_answer(item_t *item, const int len)
 			switch (item->answer[i + 1])
 			{
 			case 0x00:	/* Escaped because: CR */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x0D);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x0D);
 				break;
 			case 0x01:	/* Escaped because: XON */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x11);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x11);
 				break;
 			case 0x02:	/* Escaped because: XOFF */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x13);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x13);
 				break;
 			case 0x03:	/* Escaped because: LF */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x0A);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x0A);
 				break;
 			case 0x04:	/* Escaped because: space */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x20);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x20);
 				break;
 			default:
 				if (token != 10 && token != 11)
@@ -323,19 +323,7 @@ static int	voltronic_qs_hex_protocol(item_t *item, char *value, const size_t val
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, item->value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", item->value);
 
 	/* Unskip items supported only by devices that implement 'T' protocol */
 
@@ -368,19 +356,7 @@ static int	voltronic_qs_hex_input_output_voltage(item_t *item, char *value, cons
 	val = strtol(item->value, &str_end, 16) * strtol(str_end, NULL, 16) / 51;
 	ret = val / 256.0;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, ret);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", ret);
 
 	return 0;
 }
@@ -393,19 +369,7 @@ static int	voltronic_qs_hex_load(item_t *item, char *value, const size_t valuele
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, strtol(item->value, NULL, 16));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%ld", strtol(item->value, NULL, 16));
 
 	return 0;
 }
@@ -427,19 +391,7 @@ static int	voltronic_qs_hex_frequency(item_t *item, char *value, const size_t va
 	ret = val2 / val1;
 	ret = ret > 99.9 ? 99.9 : ret;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, ret);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", ret);
 
 	return 0;
 }
@@ -448,6 +400,7 @@ static int	voltronic_qs_hex_frequency(item_t *item, char *value, const size_t va
 static int	voltronic_qs_hex_battery_voltage(item_t *item, char *value, const size_t valuelen)
 {
 	long	val1, val2;
+	double	val3;
 	char	*str_end;
 
 	if (strspn(item->value, "0123456789ABCDEFabcdef ") != strlen(item->value)) {
@@ -457,20 +410,9 @@ static int	voltronic_qs_hex_battery_voltage(item_t *item, char *value, const siz
 
 	val1 = strtol(item->value, &str_end, 16);
 	val2 = strtol(str_end, NULL, 16);
+	val3 = (val1 * val2) / 510.0;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, (val1 * val2) / 510.0);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", val3);
 
 	return 0;
 }
@@ -538,19 +480,7 @@ static int	voltronic_qs_hex_process_ratings_bits(item_t *item, char *value, cons
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, ret);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", ret);
 
 	return 0;
 }

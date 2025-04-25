@@ -6,17 +6,21 @@ NAME
 
 nutdrv_atcl_usb - Driver for 'ATCL FOR UPS' equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the specific features of the nutdrv_atcl_usb
+*nutdrv_atcl_usb* -h
+
+*nutdrv_atcl_usb* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the nutdrv_atcl_usb
 driver.  For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
 
-This driver is for UPS hardware which identifies itself as USB idVendor 0001
-and idProduct 0000, and iManufacturer +ATCL FOR UPS+.  Known manufacturers
+This driver is for UPS hardware which identifies itself as USB idVendor +0001+
+and idProduct +0000+, and iManufacturer +ATCL FOR UPS+.  Known manufacturers
 include Kanji and Plexus.
 
 The UPS interface seems to be a generic USB-to-serial chip, and for
@@ -27,7 +31,7 @@ linkman:genericups[8]), with no other dynamic status values reported.
 
 Note that these USB identifiers (including the iManufacturer string)
 have also been seen on devices that are supported by the `fuji`
-subdriver of linkman:nutdrv_qx[8].
+subdriver of linkman:nutdrv_qx[8], and some others.
 
 EXTRA ARGUMENTS
 ---------------
@@ -92,4 +96,4 @@ linkman:nutdrv_qx[8] (`fuji` subdriver)
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

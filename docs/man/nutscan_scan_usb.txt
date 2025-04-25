@@ -9,14 +9,47 @@ nutscan_scan_usb - Scan NUT compatible USB devices.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
+
+	nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts);
+------
+
+[NOTE]
+======
+Before `libnutscan` version 2.5.0 there was no argument:
 
  nutscan_device_t * nutscan_scan_usb(void);
+
+After the API update to have an argument, equivalent default activity can
+be achieved by passing `NULL` value for the argument.
+======
 
 DESCRIPTION
 -----------
 
-The *nutscan_scan_usb()* function try to detect NUT compatible USB devices.
+The *nutscan_scan_usb()* function tries to detect NUT compatible USB devices.
+
+The `scanopts` argument contains toggles about values that would be reported
+into the generated device section. Currently they regard physical link details
+which can change over time (e.g. USB re-enumeration due to software or hardware
+re-connections); see `nut-scan.h` for current details:
+
+----
+/* USB scan options structure */
+typedef struct nutscan_usb {
+    /* Hardware link related values below are not reliable for run-time
+     * matching (they can change over time) but can be useful if e.g.
+     * "serial" is not available or unique */
+    int report_bus;
+    int report_busport;
+    int report_device;
+
+    /* The value is not currently used for device matching, but might be
+     * used later, and it is available from discovery */
+    int report_bcdDevice;
+} nutscan_usb_t;
+----
 
 You MUST call linkman:nutscan_init[3] before using this function.
 

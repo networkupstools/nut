@@ -113,11 +113,11 @@
 #include "serial.h"
 #include "tripplite.h"
 #include "nut_stdint.h"
-#include <math.h>
+#include "nut_float.h"
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.93"
+#define DRIVER_VERSION	"0.97"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -342,13 +342,13 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.firmware", "%c%c (Gen %d)",
 			'A'+v_value[0]-'0', 'A'+v_value[1]-'0', gen);
 
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", 3);
-	dstate_setinfo("ups.delay.start", "%d", startdelay);
+	dstate_setinfo("ups.delay.start", "%u", startdelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", 8);
-	dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
+	dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
 	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.reboot", 3);
 
@@ -378,7 +378,12 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	soft_shutdown();
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_updateinfo(void)
@@ -612,9 +617,10 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	char	*val;
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
-	char *val;
 
 	if ((val = getval("offdelay"))) {
 		int ipv = atoi(val);

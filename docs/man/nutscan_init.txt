@@ -9,9 +9,11 @@ nutscan_init - Initialize the nutscan library.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- void nutscan_init(void);
+	void nutscan_init(void);
+------
 
 DESCRIPTION
 -----------
@@ -22,14 +24,16 @@ any other function of the nutscan library.
 It updates the following global variables which can be used by nutscan
 library user to know which scan methods are available at run-time.
 
-This depends on the libraries installed on the system:
+This depends on further libraries installed on the system:
 
-	nutscan_avail_avahi = 1 : AVAHI scan is available
-	nutscan_avail_ipmi = 1 : IPMI scan is available
-	nutscan_avail_nut = 1 : Old NUT method is available
-	nutscan_avail_snmp = 1 : SNMP method is available
-	nutscan_avail_usb = 1 : USB method is available
-	nutscan_avail_xml_http = 1 : XML HTTP method is available
+* `nutscan_avail_avahi = 1`: AVAHI NUT scan is available
+* `nutscan_avail_ipmi = 1`: IPMI scan is available
+* `nutscan_avail_nut = 1`: "Old" NUT method is available
+* `nutscan_avail_nut_simulation = 1`: NUT simulation devices method
+  is available
+* `nutscan_avail_snmp = 1`: SNMP method is available
+* `nutscan_avail_usb = 1`: USB method is available
+* `nutscan_avail_xml_http = 1`: XML HTTP method is available
 
 Note that if a method is reported as unavailable by those variables, the
 call to the corresponding `nutscan_scan_*` function will always return NULL.
@@ -44,9 +48,9 @@ SEE ALSO
 
 linkman:nutscan_init[3], linkman:nutscan_scan_usb[3],
 linkman:nutscan_scan_snmp[3], linkman:nutscan_scan_xml_http_range[3],
-linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
-linkman:nutscan_scan_ipmi[3], linkman:nutscan_display_ups_conf[3],
-linkman:nutscan_display_sanity_check[3],
+linkman:nutscan_scan_nut[3], linkman:nutscan_scan_nut_simulation[3],
+linkman:nutscan_scan_avahi[3], linkman:nutscan_scan_ipmi[3],
+linkman:nutscan_display_ups_conf[3], linkman:nutscan_display_sanity_check[3],
 linkman:nutscan_display_sanity_check_serial[3],
 linkman:nutscan_display_ups_conf_with_sanity_check[3],
 linkman:nutscan_display_parsable[3], linkman:nutscan_new_device[3],

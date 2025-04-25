@@ -4,6 +4,11 @@
   as for which text documents to update. See also docs/developer-guide.txt
   for general points on NUT architecture and design.
 
+* Please note that we require "Signed-Off-By" tags in each Git Commit
+  message, to conform to the common DCO (Developer Certificate of Origin)
+  as posted in LICENSE-DCO at root of NUT codebase as well as published
+  at https://developercertificate.org/
+
 * The checklist below is more of a reminder of steps to take and "dangers"
   to look out for. PRs to update this template are also welcome :)
 
@@ -21,6 +26,8 @@
   separate PR, but certainly in a dedicated commit to simplify reviews
   of "real" changes in the other commits. Similarly for typo fixes in
   comments or text documents.
+
+- [ ] Please star NUT on GitHub, this helps with sponsorships! ;)
 
 ## Frequent "underwater rocks" for driver addition/update PRs
 

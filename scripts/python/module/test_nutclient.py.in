@@ -13,13 +13,16 @@ if __name__ == "__main__" :
     NUT_USER = os.getenv('NUT_USER', None)
     NUT_PASS = os.getenv('NUT_PASS', None)
 
+    NUT_DEBUG = ("true" == os.getenv('DEBUG', 'false') or os.getenv('NUT_DEBUG_LEVEL', None) is not None)
+
     # Account "unexpected" failures (more due to coding than circumstances)
     # e.g. lack of protected access when no credentials were passed is okay
     failed = []
 
     print( "PyNUTClient test..." )
     #nut    = PyNUT.PyNUTClient( debug=True, port=NUT_PORT )
-    nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=True, host=NUT_HOST, port=NUT_PORT )
+    #nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=True, host=NUT_HOST, port=NUT_PORT )
+    nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=NUT_DEBUG, host=NUT_HOST, port=NUT_PORT )
     #nut    = PyNUT.PyNUTClient( login="upsadmin", password="upsadmin", debug=True, port=NUT_PORT )
 
     print( 80*"-" + "\nTesting 'GetUPSList' :")
@@ -32,6 +35,10 @@ if __name__ == "__main__" :
     # port = /src/nut/data/evolution500.seq
     print( 80*"-" + "\nTesting 'GetUPSVars' for 'dummy' (should be registered in upsd.conf) :")
     result = nut.GetUPSVars( "dummy" )
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'CheckUPSAvailable' :")
+    result = nut.CheckUPSAvailable( "dummy" )
     print( "\033[01;33m%s\033[0m\n" % result )
 
     print( 80*"-" + "\nTesting 'GetUPSCommands' :")

@@ -2,6 +2,7 @@
 
    Copyright (C)
        2005 - 2015  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+       2014 - 2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,7 +36,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#endif
+#endif	/* !WIN32 */
 
 #include <sys/stat.h>
 #include <string.h>
@@ -47,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -98,7 +99,7 @@ static struct stat	datafile_stat;
 
 static int setvar(const char *varname, const char *val);
 static int instcmd(const char *cmdname, const char *extra);
-static int parse_data_file(TYPE_FD upsfd);
+static int parse_data_file(TYPE_FD arg_upsfd);
 static dummy_info_t *find_info(const char *varname);
 static int is_valid_data(const char* varname);
 static int is_valid_value(const char* varname, const char *value);
@@ -109,6 +110,9 @@ static int upsclient_update_vars(void);
 static char		*client_upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static uint16_t	port;
+
+/* repeater mode parameters */
+static int repeater_disable_strict_start = 0;
 
 /* Driver functions */
 
@@ -130,7 +134,7 @@ void upsdrv_initinfo(void)
 
 					/* Set max length for strings, if needed */
 					if (item->info_flags & ST_FLAG_STRING)
-						dstate_setaux(item->info_type, item->info_len);
+						dstate_setaux(item->info_type, (long)item->info_len);
 				}
 			}
 
@@ -155,7 +159,17 @@ void upsdrv_initinfo(void)
 			ups = xmalloc(sizeof(*ups));
 			if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 			{
-				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+				if(repeater_disable_strict_start == 1)
+				{
+					upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+				}
+				else
+				{
+					fatalx(EXIT_FAILURE, "Error: %s. "
+					"Any errors encountered starting the repeater mode result in driver termination, "
+					"perhaps you want to set the 'repeater_disable_strict_start' option?"
+					, upscli_strerror(ups));
+				}
 			}
 			else
 			{
@@ -168,7 +182,18 @@ void upsdrv_initinfo(void)
 				{
 					fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
 				}
-				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+
+				if(repeater_disable_strict_start == 1)
+				{
+					upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+				}
+				else
+				{
+					fatalx(EXIT_FAILURE, "Error: %s. "
+					"Any errors encountered starting the repeater mode result in driver termination, "
+					"perhaps you want to set the 'repeater_disable_strict_start' option?"
+					, upscli_strerror(ups));
+				}
 			}
 			/* FIXME: commands and settable variable! */
 			break;
@@ -207,6 +232,36 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("load.off");
 }
 
+static int prepare_filepath(char *fn, size_t buflen)
+{
+	/* Note: device_path is a global variable,
+	 * the "port=..." value parsed in main.c */
+	if (device_path[0] == '/'
+#ifdef WIN32
+	||  device_path[1] == ':'	/* "C:\..." */
+#endif	/* WIN32 */
+	) {
+		/* absolute path */
+		return snprintf(fn, buflen, "%s", device_path);
+	} else if (device_path[0] == '.') {
+		/* "./" or "../" e.g. via CLI, relative to current working
+		 * directory of the driver process... at this moment */
+		if (getcwd(fn, buflen)) {
+			return snprintf(fn + strlen(fn), buflen - strlen(fn), "/%s", device_path);
+		} else {
+			return snprintf(fn, buflen, "%s", device_path);
+		}
+	} else {
+		/* assumed to be a filename in NUT config file path
+		 * (possibly under, with direct use of dirname without dots)
+		 * Note that we do not fiddle with file-path separator,
+		 * modern Windows (at least via MinGW/MSYS2) supports
+		 * the POSIX slash.
+		 */
+		return snprintf(fn, buflen, "%s/%s", confpath(), device_path);
+	}
+}
+
 void upsdrv_updateinfo(void)
 {
 	upsdebugx(1, "upsdrv_updateinfo...");
@@ -225,31 +280,37 @@ void upsdrv_updateinfo(void)
 			/* less stress on the sys */
 			if (ctx == NULL && next_update == -1) {
 				struct stat	fs;
-				char fn[SMALLBUF];
+				char fn[NUT_PATH_MAX + 1];
 
-				if (device_path[0] == '/')
-					snprintf(fn, sizeof(fn), "%s", device_path);
-				else
-					snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
+				prepare_filepath(fn, sizeof(fn));
 
 				/* Determine if file modification timestamp has changed
 				 * since last use (so we would want to re-read it) */
 #ifndef WIN32
-				/* Either successful stat is OK to fill the "fs" struct */
-				if (0 != fstat (upsfd, &fs) && 0 != stat (fn, &fs)) {
-#else
+				/* Either successful stat (zero return) is OK to
+				 * fill the "fs" struct. Note that currently
+				 * "upsfd" is a no-op for files, they are re-opened
+				 * and re-parsed every time so callers can modify
+				 * the data without complications.
+				 */
+				if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &fs)) && 0 != stat (fn, &fs))
+#else	/* WIN32 */
 				/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
 				 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 				 */
-				if (0 != stat (fn, &fs)) {
-#endif
-					upsdebugx(2, "Can't open %s currently", fn);
+				if (0 != stat (fn, &fs))
+#endif	/* WIN32 */
+				{
+					upsdebugx(2, "%s: MODE_DUMMY_ONCE: Can't stat %s currently", __func__, fn);
 					/* retry ASAP until we get a file */
 					memset(&datafile_stat, 0, sizeof(struct stat));
 					next_update = 1;
 				} else {
 					if (datafile_stat.st_mtime != fs.st_mtime) {
-						upsdebugx(2, "upsdrv_updateinfo: input file was already read once to the end, but changed later - re-reading");
+						upsdebugx(2,
+							"%s: MODE_DUMMY_ONCE: input file was already read once "
+							"to the end, but changed later - re-reading: %s",
+							__func__, fn);
 						/* updated file => retry ASAP */
 						next_update = 1;
 						datafile_stat = fs;
@@ -258,7 +319,7 @@ void upsdrv_updateinfo(void)
 			}
 
 			if (ctx == NULL && next_update == -1) {
-				upsdebugx(2, "upsdrv_updateinfo: NO-OP: input file was already read once to the end");
+				upsdebugx(2, "%s: MODE_DUMMY_ONCE: NO-OP: input file was already read once to the end", __func__);
 				dstate_dataok();
 			} else {
 				/* initial parsing interrupted by e.g. TIMER line */
@@ -320,11 +381,14 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* replace with a proper shutdown function */
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -351,6 +415,7 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE,	"mode",	"Specify mode instead of guessing it from port value (dummy = dummy-loop, dummy-once, repeater)"); /* meta */
+	addvar(VAR_FLAG,    "repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
 }
 
 void upsdrv_initups(void)
@@ -381,7 +446,7 @@ void upsdrv_initups(void)
 	}
 	else
 	{
-		char fn[SMALLBUF];
+		char fn[NUT_PATH_MAX + 1];
 		mode = MODE_NONE;
 
 		if (val) {
@@ -462,23 +527,33 @@ void upsdrv_initups(void)
 #endif
 		}
 
-		if (device_path[0] == '/')
-			snprintf(fn, sizeof(fn), "%s", device_path);
-		else
-			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
+		prepare_filepath(fn, sizeof(fn));
 
 		/* Update file modification timestamp (and other data) */
 #ifndef WIN32
-		/* Either successful stat is OK to fill the "datafile_stat" struct */
-		if (0 != fstat (upsfd, &datafile_stat) && 0 != stat (device_path, &datafile_stat)) {
-#else
+		/* Either successful stat (zero return) is OK to fill the
+		 * "datafile_stat" struct. Note that currently "upsfd" is
+		 * a no-op for files, they are re-opened and re-parsed
+		 * every time so callers can modify the data without
+		 * complications.
+		 */
+		if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &datafile_stat)) && 0 != stat (fn, &datafile_stat))
+#else	/* WIN32 */
 		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+		 * NUT_WIN32_INCOMPLETE?
 		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 		 */
-		if (0 != stat (device_path, &datafile_stat)) {
-#endif
-			upsdebugx(2, "Can't open %s currently", device_path);
+		if (0 != stat (fn, &datafile_stat))
+#endif	/* WIN32 */
+		{
+			upsdebugx(2, "%s: Can't stat %s (%s) currently", __func__, device_path, fn);
+		} else {
+			upsdebugx(2, "Located %s for device simulation data: %s", device_path, fn);
 		}
+	}
+	if (testvar("repeater_disable_strict_start"))
+	{
+		repeater_disable_strict_start = 1;
 	}
 }
 
@@ -553,7 +628,7 @@ static int setvar(const char *varname, const char *val)
 
 			/* Set max length for strings, if needed */
 			if (item->info_flags & ST_FLAG_STRING)
-				dstate_setaux(item->info_type, item->info_len);
+				dstate_setaux(item->info_type, (long)item->info_len);
 		}
 		else
 		{
@@ -617,7 +692,7 @@ static dummy_info_t *find_info(const char *varname)
 			return item;
 	}
 
-	upsdebugx(2, "find_info: unknown variable: %s\n", varname);
+	upsdebugx(2, "find_info: unknown variable: %s", varname);
 
 	return NULL;
 }
@@ -673,7 +748,7 @@ static void upsconf_err(const char *errmsg)
  */
 static int parse_data_file(TYPE_FD arg_upsfd)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	size_t	value_args = 0, counter;
 	time_t	now;
@@ -694,11 +769,7 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 	{
 		ctx = (PCONF_CTX_t *)xmalloc(sizeof(PCONF_CTX_t));
 
-		if (device_path[0] == '/')
-			snprintf(fn, sizeof(fn), "%s", device_path);
-		else
-			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
-
+		prepare_filepath(fn, sizeof(fn));
 		pconf_init(ctx, upsconf_err);
 
 		if (!pconf_file_begin(ctx, fn))

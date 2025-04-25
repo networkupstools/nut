@@ -1,0 +1,78 @@
+name: Publish PyNUT client bindings for NUT 🐍 distributions 📦 to PyPI
+# based on https://medium.com/@VersuS_/automate-pypi-releases-with-github-actions-4c5a9cfe947d
+# and https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
+
+# NOTE: We may need to split this workflow into two files to do only
+# paths for master branch, and run always for (release) tags?
+on:
+  push:
+    paths:
+     - 'scripts/python/module/*'
+     - '.github/workflows/PyNUTClient.yml'
+    tags:
+     - '*'
+    branches:
+     - 'master'
+
+permissions:
+  id-token: write
+
+jobs:
+  build-n-publish:
+    if: github.repository_owner == 'networkupstools'
+    name: Build and publish Python 🐍 distributions 📦 to PyPI
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.13'
+    - name: Extract python interpreter path name
+      id: pythoncmd
+      run: >-
+        set -x ;
+        echo "PYTHON=$(command -v python)" >> $GITHUB_OUTPUT
+    - name: Extract tag name
+      id: tag
+      # Note: this is all a single shell line in the end,
+      # so we need semicolons between commands!
+      run: >-
+        set -x ;
+        TAG_NAME="$(echo $GITHUB_REF | cut -d / -f 3)" ;
+        if [ x"$TAG_NAME" = xmaster ]; then
+            {  TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*')" \
+            || TAG_NAME="$(git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*')" ; } \
+            && test -n "${TAG_NAME}" \
+            || TAG_NAME="2.8.3-`TZ=UTC date +%s`" ;
+        fi >&2 ;
+        TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,' -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g')" ;
+        echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+    - name: Install pypa/setuptools
+      run: >-
+        ${{ steps.pythoncmd.outputs.PYTHON }} -m
+        pip install wheel build
+    - name: Prepare source layout and Build a binary wheel
+      run: >-
+        set -e ;
+        cd scripts/python/module ;
+        cp -f Makefile.am Makefile ;
+        make -f Makefile.am clean-local dist NUT_SOURCE_GITREV_NUMERIC="${{ steps.tag.outputs.TAG_NAME }}" PYTHON="${{ steps.pythoncmd.outputs.PYTHON }}" top_srcdir="../../.." srcdir="." builddir="." ;
+        find . -ls
+    - name: Publish master distribution 📦 to Test PyPI
+      # https://github.com/pypa/gh-action-pypi-publish
+      if: ${{ !startsWith(github.ref, 'refs/tags') }}
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: scripts/python/module/dist
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository-url: https://test.pypi.org/legacy/
+    - name: Publish tagged release distribution 📦 to PyPI
+      if: startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: scripts/python/module/dist
+        password: ${{ secrets.PYPI_API_TOKEN }}

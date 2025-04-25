@@ -18,7 +18,7 @@
 */
 
 #ifndef NUTCLIENT_HPP_SEEN
-#define NUTCLIENT_HPP_SEEN
+#define NUTCLIENT_HPP_SEEN 1
 
 /* Begin of C++ nutclient library declaration */
 #ifdef __cplusplus
@@ -60,7 +60,7 @@ public:
 	NutException(const std::string& msg):_msg(msg){}
 	NutException(const NutException&) = default;
 	NutException& operator=(NutException& rhs) = default;
-	virtual ~NutException() override;
+	virtual ~NutException() noexcept override;
 	virtual const char * what() const noexcept override {return this->_msg.c_str();}
 	virtual std::string str() const noexcept {return this->_msg;}
 private:
@@ -76,7 +76,7 @@ public:
 	SystemException();
 	SystemException(const SystemException&) = default;
 	SystemException& operator=(SystemException& rhs) = default;
-	virtual ~SystemException() override;
+	virtual ~SystemException() noexcept override;
 private:
 	static std::string err();
 };
@@ -91,7 +91,7 @@ public:
 	IOException(const std::string& msg):NutException(msg){}
 	IOException(const IOException&) = default;
 	IOException& operator=(IOException& rhs) = default;
-	virtual ~IOException() override;
+	virtual ~IOException() noexcept override;
 };
 
 /**
@@ -103,7 +103,7 @@ public:
 	UnknownHostException():IOException("Unknown host"){}
 	UnknownHostException(const UnknownHostException&) = default;
 	UnknownHostException& operator=(UnknownHostException& rhs) = default;
-	virtual ~UnknownHostException() override;
+	virtual ~UnknownHostException() noexcept override;
 };
 
 /**
@@ -115,7 +115,7 @@ public:
 	NotConnectedException():IOException("Not connected"){}
 	NotConnectedException(const NotConnectedException&) = default;
 	NotConnectedException& operator=(NotConnectedException& rhs) = default;
-	virtual ~NotConnectedException() override;
+	virtual ~NotConnectedException() noexcept override;
 };
 
 /**
@@ -127,7 +127,7 @@ public:
 	TimeoutException():IOException("Timeout"){}
 	TimeoutException(const TimeoutException&) = default;
 	TimeoutException& operator=(TimeoutException& rhs) = default;
-	virtual ~TimeoutException() override;
+	virtual ~TimeoutException() noexcept override;
 };
 
 /**

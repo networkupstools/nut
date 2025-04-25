@@ -4,6 +4,7 @@
 	2003	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2012	Arnaud Quette <arnaud.quette@free.fr>
+	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,11 +30,13 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif
+#endif	/* !WIN32 */
 
 #include "common.h"
 #include "state.h"
 #include "parseconf.h"
+
+/* internal helpers */
 
 static void val_escape(st_tree_t *node)
 {
@@ -128,6 +131,65 @@ static void st_tree_node_add(st_tree_t **nptr, st_tree_t *sptr)
 	*nptr = sptr;
 }
 
+static int st_tree_node_refresh_timestamp(const st_tree_t *node)
+{
+	if (!node)
+		return -1;
+
+	return state_get_timestamp((st_tree_timespec_t *)&node->lastset);
+}
+
+/* interface */
+
+/* As underlying system methods:
+ * return 0 on success, -1 and errno on error
+ */
+int state_get_timestamp(st_tree_timespec_t *now)
+{
+	if (!now)
+		return -1;
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+	return clock_gettime(CLOCK_MONOTONIC, now);
+#else
+	return gettimeofday(now, NULL);
+#endif
+}
+
+/* Returns -1 if the node->lastset is "older" than cutoff,
+ * 0 if it is equal, or +1 if it is newer.
+ * Returns -2 or -3 if node or cutoff are null.
+ */
+int st_tree_node_compare_timestamp(
+	const st_tree_t *node,
+	const st_tree_timespec_t *cutoff
+) {
+	double d;
+
+	if (!node)
+		return -2;
+
+	if (!cutoff)
+		return -3;
+
+	/* Like in difftime(), the first arg is "finish" and
+	 * the second arg is "start" of a time range (below),
+	 * so if the diff is negative, then "lastset" happened
+	 * before "cutoff":
+	 */
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+	d = difftimespec(node->lastset, *cutoff);
+#else
+	d = difftimeval(node->lastset, *cutoff);
+#endif
+
+	if (d < 0)
+		return -1;
+	if (d > 0)
+		return 1;
+	return 0;
+}
+
 /* remove a variable from a tree
  * except for variables with ST_FLAG_IMMUTABLE
  * (for override.* to survive) per issue #737
@@ -167,7 +229,46 @@ int state_delinfo(st_tree_t **nptr, const char *var)
 	return 0;	/* not found */
 }
 
-/* interface */
+int state_delinfo_olderthan(st_tree_t **nptr, const char *var, const st_tree_timespec_t *cutoff)
+{
+	while (*nptr) {
+
+		st_tree_t	*node = *nptr;
+
+		if (strcasecmp(node->var, var) > 0) {
+			nptr = &node->left;
+			continue;
+		}
+
+		if (strcasecmp(node->var, var) < 0) {
+			nptr = &node->right;
+			continue;
+		}
+
+		if (node->flags & ST_FLAG_IMMUTABLE) {
+			upsdebugx(6, "%s: not deleting immutable variable [%s]", __func__, var);
+			return 0;
+		}
+
+		if (st_tree_node_compare_timestamp(node, cutoff) >= 0) {
+			upsdebugx(6, "%s: not deleting recently updated variable [%s]", __func__, var);
+			return 0;
+		}
+		upsdebugx(6, "%s: deleting variable [%s] last updated too long ago", __func__, var);
+
+		/* whatever is on the left, hang it off current right */
+		st_tree_node_add(&node->right, node->left);
+
+		/* now point the parent at the old right child */
+		*nptr = node->right;
+
+		st_tree_node_free(node);
+
+		return 1;
+	}
+
+	return 0;	/* not found */
+}
 
 int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 {
@@ -185,6 +286,9 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 			continue;
 		}
 
+		/* refresh even if "skip-writing" same info value */
+		st_tree_node_refresh_timestamp(node);
+
 		/* updating an existing entry */
 		if (!strcasecmp(node->raw, val)) {
 			return 0;	/* no change */
@@ -192,6 +296,7 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 
 		/* changes should be ignored */
 		if (node->flags & ST_FLAG_IMMUTABLE) {
+			upsdebugx(6, "%s: not changing immutable variable [%s]", __func__, var);
 			return 0;	/* no change */
 		}
 
@@ -214,6 +319,7 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 	(*nptr)->var = xstrdup(var);
 	(*nptr)->raw = xstrdup(val);
 	(*nptr)->rawsize = strlen(val) + 1;
+	st_tree_node_refresh_timestamp(*nptr);
 
 	val_escape(*nptr);
 
@@ -253,14 +359,15 @@ int state_addenum(st_tree_t *root, const char *var, const char *val)
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "state_addenum: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) "
+			"does not exist", __func__, var);
 		return 0;	/* failed */
 	}
 
 	/* smooth over any oddities in the enum value */
 	pconf_encode(val, enc, sizeof(enc));
 
+	st_tree_node_refresh_timestamp(sttmp);
 	return st_tree_enum_add(&sttmp->enum_list, enc);
 }
 
@@ -295,8 +402,8 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 
 	/* sanity check */
 	if (min > max) {
-		upslogx(LOG_ERR, "state_addrange: min is superior to max! (%i, %i)",
-			min, max);
+		upslogx(LOG_ERR, "%s: min is superior to max! (%i, %i)",
+			__func__, min, max);
 		return 0;
 	}
 
@@ -304,11 +411,12 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "state_addrange: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) "
+			"does not exist", __func__, var);
 		return 0;	/* failed */
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	return st_tree_range_add(&sttmp->range_list, min, max);
 }
 
@@ -321,11 +429,12 @@ int state_setaux(st_tree_t *root, const char *var, const char *auxs)
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "state_addenum: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) "
+			"does not exist", __func__, var);
 		return -1;	/* failed */
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	aux = strtol(auxs, (char **) NULL, 10);
 
 	/* silently ignore matches */
@@ -417,11 +526,12 @@ void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **fl
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "state_setflags: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) "
+			"does not exist", __func__, var);
 		return;
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	sttmp->flags = 0;
 
 	for (i = 0; i < numflags; i++) {
@@ -441,7 +551,7 @@ void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **fl
 			continue;
 		}
 
-		upsdebugx(2, "Unrecognized flag [%s]", flag[i]);
+		upsdebugx(2, "%s: Unrecognized flag [%s]", __func__, flag[i]);
 	}
 }
 
@@ -562,6 +672,7 @@ int state_delenum(st_tree_t *root, const char *var, const char *val)
 		return 0;
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	return st_tree_del_enum(&sttmp->enum_list, val);
 }
 
@@ -599,6 +710,7 @@ int state_delrange(st_tree_t *root, const char *var, const int min, const int ma
 		return 0;
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	return st_tree_del_range(&sttmp->range_list, min, max);
 }
 

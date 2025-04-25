@@ -89,7 +89,7 @@ Setting this flag will make the driver skip this step.
 *protocol =* 'string'::
 
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values 'megatec', 'megatec/old', 'mustek' and 'zinto'.
+Supported values are 'megatec', 'megatec/old', 'mustek' and 'zinto'.
 
 *runtimecal =* 'value,value,value,value'::
 
@@ -311,5 +311,5 @@ linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-* The NUT HCL: http://www.networkupstools.org/stable-hcl.html
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* The NUT HCL: https://www.networkupstools.org/stable-hcl.html

@@ -6,10 +6,14 @@ NAME
 
 bcmxcp - Driver for UPSes supporting the serial BCM/XCP protocol
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*bcmxcp* -h
+
+*bcmxcp* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 bcmxcp driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -18,6 +22,7 @@ SUPPORTED HARDWARE
 
 This driver should recognize all serial BCM/XCP-compatible UPSes.
 It has been developed and tested on Powerware PW5115 and PW9120 hardware.
+
 If your UPS has a USB connection, you may also consult the
 linkman:bcmxcp_usb[8] driver documentation.
 
@@ -97,4 +102,4 @@ linkman:bcmxcp_usb[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -5,6 +5,9 @@
 # the upsset.cgi program from running until you have assured it that you
 # have secured your web server's CGI directory.
 #
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
 # By default, your web server will probably let anyone access upsset.cgi
 # once it is installed.  This means that anyone could attempt to crack
 # upsd logins since they would appear to be coming from your web server,
@@ -15,7 +18,7 @@
 # your web server, then you should *not* run this program.
 #
 # For Apache, the .htaccess file can be used in the directory with the
-# programs.  You'll need something like this:
+# programs.  You'll need something like this for older versions:
 #
 #   <Files upsset.cgi>
 #       deny from all
@@ -24,6 +27,20 @@
 #
 # You will probably have to set "AllowOverride Limit" for this directory in
 # your server-level configuration file as well.
+#
+# Modern Apache enjoys a more detailed syntax, like this:
+#
+#   ScriptAlias /upsstats.cgi /usr/share/nut/cgi/upsstats.cgi
+#   ScriptAlias /upsset.cgi /usr/share/nut/cgi/upsset.cgi
+#
+#   <Directory "/usr/share/nut/cgi">
+#         Options +Includes +ExecCGI
+#         AllowOverride Limit
+#         <RequireAny>
+#             Require local
+#             Require ip aa.bb.cc.dd/nn
+#         </RequireAny>
+#   </Directory>
 #
 # If this doesn't make sense, then stop reading and leave this program alone.
 #

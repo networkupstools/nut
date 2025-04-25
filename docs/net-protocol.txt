@@ -142,7 +142,7 @@ Response:
 - 'ENUM': an enumerated type, which supports a few specific values
 - 'STRING:n': this is a string of maximum length n
 - 'RANGE': this is an numeric, either integer or float, comprised in the
-range (see LIST RANGE)
+  range (see LIST RANGE)
 - 'NUMBER': this is a simple numeric value, either integer or float
 
 ENUM, STRING and RANGE are usually associated with RW, but not always.
@@ -153,7 +153,8 @@ float.
 Note that float values are expressed using decimal (base 10) english-based
 representation, so using a dot, in non-scientific notation.  So hexadecimal,
 exponents, and comma for thousands separator are forbidden.
-For example: "1200.20" is valid, while "1,200.20" and "1200,20" are invalid.
+For example: "1200.20" is valid, while "1,200.20" and "1200,20" and "1.2e4"
+are invalid.
 
 
 This replaces the old "VARTYPE" command.
@@ -358,7 +359,7 @@ Response:
 
 This replaces the old "ENUM" command.
 
-NOTE: this does not support the old "SELECTED" notation.  You must
+NOTE: This does not support the old "SELECTED" notation.  You must
 request the current value separately.
 
 
@@ -787,7 +788,7 @@ Dense lists
 ~~~~~~~~~~~
 
 The LIST commands may be given the ability to handle options some day.
-For example, "LIST VARS <ups> +DESC" would return the current value
+For example, `LIST VARS <ups> +DESC` would return the current value
 like now, but it would also append the description of that variable.
 
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # an auxiliary script to produce a "stub" usbhid-ups subdriver from
 # the output of

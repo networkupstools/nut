@@ -421,7 +421,8 @@ static void comm_receive(const unsigned char *bufptr, size_t size)
 			checksum += bufptr[i];
 		}
 		checksum = checksum % 256;
-		upsdebugx(4, "%s: calculated checksum = 0x%02x, bufptr[23] = 0x%02x", __func__, checksum, bufptr[23]);
+		upsdebugx(4, "%s: calculated checksum = 0x%02x, bufptr[23] = 0x%02x",
+			__func__, (unsigned int)checksum, bufptr[23]);
 
 		/* Only proceed if checksum matches and packet delimiter is found */
 		if (checksum == bufptr[23] && bufptr[24] == 254) {
@@ -754,6 +755,9 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	if (!line_unpowered) {	/* on line */
 		upslogx(LOG_NOTICE, "On line, sending power cycle command...");
 		ser_send_char(upsfd, CMD_SHUTRET);

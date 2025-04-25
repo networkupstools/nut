@@ -157,18 +157,49 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	/* Any variable that is not string | range | enum is just a simple
 	 * numeric value */
 
+	if (!(node->flags & ST_FLAG_NUMBER)) {
+		upsdebugx(3, "%s: assuming that UPS[%s] variable %s which has no type flag is a NUMBER",
+			__func__, upsname, var);
+	}
+
 	sendback(client, "%s NUMBER\n", buf);
 }
 
 static void get_var_server(nut_ctype_t *client, const char *upsname, const char *var)
 {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	int	pkgurlHasNutOrg = PACKAGE_URL ? (strstr(PACKAGE_URL, "networkupstools.org") != NULL) : 0;
+
 	if (!strcasecmp(var, "server.info")) {
+		/* NOTE: Some compilers deduce that macro-based decisions about
+		 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
+		 * a particular build. So we pragmatically handwave this away.
+		 */
 		sendback(client, "VAR %s server.info "
 			"\"Network UPS Tools upsd %s - "
-			"http://www.networkupstools.org/\"\n",
-			upsname, UPS_VERSION);
+			"%s%s%s\"\n",
+			upsname, UPS_VERSION,
+			PACKAGE_URL ? PACKAGE_URL : "",
+			(PACKAGE_URL && !pkgurlHasNutOrg) ? " or " : "",
+			pkgurlHasNutOrg ? "" : "https://www.networkupstools.org/"
+			);
 		return;
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
 	if (!strcasecmp(var, "server.version")) {
 		sendback(client, "VAR %s server.version \"%s\"\n",

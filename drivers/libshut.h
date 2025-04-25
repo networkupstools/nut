@@ -116,7 +116,7 @@ typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
 
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
- * the 5 pieces of information by which a SHUT device identifies
+ * the 5 or more pieces of information by which a SHUT device identifies
  * itself, so it serves as a kind of "fingerprint" of the device. This
  * information must be matched exactly when reopening a device, and
  * therefore must not be "improved" or updated by a client
@@ -132,6 +132,9 @@ typedef struct SHUTDevice_s {
 	char*		Bus;       /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
 	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	char		*BusPort;  /*!< Port name, e.g. "001"  */
+#endif
 } SHUTDevice_t;
 
 /*!

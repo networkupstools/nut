@@ -42,7 +42,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.44"
+#define DRIVER_VERSION	"0.47"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -50,7 +50,7 @@
 #ifdef WIN32 /* FIXME ?? skip alarm handling */
 #define HAVE_NE_SET_CONNECT_TIMEOUT  1
 #define HAVE_NE_SOCK_CONNECT_TIMEOUT 1
-#endif
+#endif	/* WIN32 */
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -283,10 +283,11 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("driver.version.data", "%s", subdriver->version);
 
 		if (testvar("subscribe") && (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK)) {
-/* TODO: port extrafd to Windows */
 #ifndef WIN32
 			extrafd = ne_sock_fd(sock);
-#endif
+#else	/* WIN32 */
+			NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
 			time(&lastheard);
 		}
 
@@ -342,19 +343,23 @@ void upsdrv_updateinfo(void)
 			ne_sock_close(sock);
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
-/* TODO: port extrafd to Windows */
 #ifndef WIN32
 				extrafd = ne_sock_fd(sock);
-#endif
+#else	/* WIN32 */
+				NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
 				time(&lastheard);
 				return;
 			}
 
 			dstate_datastale();
-/* TODO: port extrafd to Windows */
+
 #ifndef WIN32
 			extrafd = ERROR_FD;
-#endif
+#else	/* WIN32 */
+			NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
+
 			return;
 		}
 	}
@@ -394,6 +399,27 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void) {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/*
+	 * WARNING:
+	 * This driver will probably never support this properly:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
+	/* FIXME: Make a name for default original shutdown
+	 * in particular to make it one of the options and
+	 * call protocol cleanup below, if needed.
+	 */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
@@ -451,8 +477,11 @@ void upsdrv_shutdown(void) {
 	if (NULL != resp)
 		object_query_destroy(resp);
 
-	if (STAT_SET_HANDLED != status)
-		fatalx(EXIT_FAILURE, "Shutdown failed: %d", status);
+	if (STAT_SET_HANDLED != status) {
+		upslogx(LOG_ERR, "Shutdown failed: %d", status);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+	}
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -613,7 +642,7 @@ void upsdrv_initups(void)
 		uri.port = ne_uri_defaultport(uri.scheme);
 	}
 
-	upsdebugx(1, "using %s://%s port %d", uri.scheme, uri.host, uri.port);
+	upsdebugx(1, "using %s://%s port %u", uri.scheme, uri.host, uri.port);
 
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
@@ -637,9 +666,9 @@ void upsdrv_initups(void)
 	if (!nut_debug_level) {
 #ifndef WIN32
 		fp = fopen("/dev/null", "w");
-#else
+#else	/* WIN32 */
 		fp = fopen("nul", "w");
-#endif
+#endif	/* WIN32 */
 	} else {
 		fp = stderr;
 	}
@@ -846,7 +875,7 @@ static int netxml_alarm_subscribe(const char *page)
 
 	for (ai = ne_addr_first(addr); ai != NULL; ai = ne_addr_next(addr)) {
 
-		upsdebugx(2, "%s: connecting to host %s port %d", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
+		upsdebugx(2, "%s: connecting to host %s port %u", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
 
 #ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
 		alarm(timeout+1);
@@ -869,7 +898,7 @@ static int netxml_alarm_subscribe(const char *page)
 		return NE_RETRY;
 	}
 
-	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>", secret);
+	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>", (unsigned int)secret);
 	ret = ne_sock_fullwrite(sock, buf, strlen(buf) + 1);
 
 	if (ret != NE_OK) {
@@ -930,9 +959,8 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 /* Supply the 'login' and 'password' when authentication is required */
 static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
 {
-	NUT_UNUSED_VARIABLE(userdata);
-
 	char	*val;
+	NUT_UNUSED_VARIABLE(userdata);
 
 	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, attempt);
 
@@ -1019,7 +1047,7 @@ static void netxml_status_set(void)
 	if (STATUS_BIT(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
-	if (STATUS_BIT(REPLACEBATT)) {
+	if (STATUS_BIT(REPLACEBATT) || STATUS_BIT(NOBATTERY)) {
 		status_set("RB");		/* replace batt */
 	}
 	if (STATUS_BIT(TRIM)) {
@@ -1148,13 +1176,36 @@ static void object_entry_destroy(object_query_t *handle, object_entry_t *entry) 
 	switch (handle->type) {
 		case SET_OBJECT_REQUEST:
 			set_object_req_destroy(&entry->payld.req);
-
 			break;
 
 		case SET_OBJECT_RESPONSE:
 			set_object_resp_destroy(&entry->payld.resp);
-
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	/* Destroy entry */
@@ -1214,13 +1265,14 @@ static object_entry_t *set_object_add(
 	const char     *name,
 	const char     *value)
 {
-	char *name_cpy;
-	char *value_cpy;
+	char	*name_cpy;
+	char	*value_cpy;
+	object_entry_t	*entry;
 
 	assert(NULL != name);
 	assert(NULL != value);
 
-	object_entry_t *entry = (object_entry_t *)calloc(1,
+	entry = (object_entry_t *)calloc(1,
 		sizeof(object_entry_t));
 
 	if (NULL == entry)
@@ -1295,13 +1347,15 @@ static object_query_status_t set_object_serialise_entries(ne_buffer *buff, objec
 
 
 static ne_buffer *set_object_serialise_raw(object_query_t *handle) {
+	ne_buffer	*buff;
+
 	assert(NULL != handle);
 
 	/* Sanity checks */
 	assert(SET_OBJECT_REQUEST == handle->type);
 
 	/* Create buffer */
-	ne_buffer *buff = ne_buffer_create();
+	buff = ne_buffer_create();
 
 	/* neon API ref. states that the function always succeeds */
 	assert(NULL != buff);
@@ -1314,7 +1368,8 @@ static ne_buffer *set_object_serialise_raw(object_query_t *handle) {
 
 
 static ne_buffer *set_object_serialise_form(object_query_t *handle) {
-	const char *vname = NULL;
+	const char	*vname = NULL;
+	ne_buffer	*buff;
 
 	assert(NULL != handle);
 
@@ -1322,7 +1377,7 @@ static ne_buffer *set_object_serialise_form(object_query_t *handle) {
 	assert(SET_OBJECT_REQUEST == handle->type);
 
 	/* Create buffer */
-	ne_buffer *buff = ne_buffer_create();
+	buff = ne_buffer_create();
 
 	/* neon API ref. states that the function always succeeds */
 	assert(NULL != buff);
@@ -1560,18 +1615,20 @@ static int set_object_raw_resp_end_element(
 
 
 static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
-	int ne_status;
+	int	ne_status;
+	object_query_t	*handle;
+	ne_xml_parser	*parser;
 
 	assert(NULL != buff);
 
 	/* Create SET_OBJECT query response */
-	object_query_t *handle = object_query_create(SET_OBJECT_RESPONSE, RAW_POST);
+	handle = object_query_create(SET_OBJECT_RESPONSE, RAW_POST);
 
 	if (NULL == handle)
 		return NULL;
 
 	/* Create XML parser */
-	ne_xml_parser *parser = ne_xml_create();
+	parser = ne_xml_create();
 
 	/* neon API ref. states that the function always succeeds */
 	assert(NULL != parser);
@@ -1630,7 +1687,8 @@ static int send_http_request(
 	assert(NULL != req);
 
 	do {  /* Pragmatic do ... while (0) loop allowing breaks on error */
-		const ne_status *req_st;
+		const ne_status	*req_st;
+		int	status;
 
 		/* Set Content-Type */
 		if (NULL != ct)
@@ -1643,7 +1701,7 @@ static int send_http_request(
 				req_body->data, req_body->used - 1);
 
 		/* Send request */
-		int status = ne_begin_request(req);
+		status = ne_begin_request(req);
 
 		if (NE_OK != status) {
 			break;
@@ -1801,13 +1859,36 @@ static object_query_t *set_object(object_query_t *req) {
 	switch (req->mode) {
 		case RAW_POST:
 			resp = set_object_raw(req);
-
 			break;
 
 		case FORM_POST:
 			resp = set_object_form(req);
-
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	return resp;

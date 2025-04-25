@@ -1,4 +1,4 @@
-/* pipe.c - Network UPS Tools driver-server pipe debugger
+/* pipe.c - Network UPS Tools driver-server pipe debugger (WIN32 builds)
 
    Copyright (C) 2012  Frederic Bohe <fredericbohe@eaton.com>
 
@@ -26,45 +26,46 @@ PCONF_CTX_t	pipe_ctx;
 
 static void pipe_arg(int numarg, char **arg)
 {
-        int     i;
+	int	i;
 
-        printf("numarg=%d : ", numarg);
+	printf("numarg=%d : ", numarg);
 
-        for (i = 0; i < numarg; i++)
-                printf("[%s] ", arg[i]);
+	for (i = 0; i < numarg; i++)
+		printf("[%s] ", arg[i]);
 
-        printf("\n");
+	printf("\n");
+	fflush(stdout);
 }
 
 static HANDLE pipe_connect(const char *pipefn)
 {
-        HANDLE fd;
-        char pipename[SMALLBUF];
-        BOOL  result = FALSE;
+	HANDLE	fd;
+	char	pipename[NUT_PATH_MAX];
+	BOOL	result = FALSE;
 
-        snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s", pipefn);
+	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s", pipefn);
 
-        result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
+	result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
 
-        if( result == FALSE ) {
+	if( result == FALSE ) {
 		printf("WaitNamedPipe : %d\n",GetLastError());
 		exit(EXIT_FAILURE);
-        }
+	}
 
-        fd = CreateFile(
-                        pipename,   // pipe name
-                        GENERIC_READ |  // read and write access
-                        GENERIC_WRITE,
-                        0,              // no sharing
-                        NULL,           // default security attributes FIXME
-                        OPEN_EXISTING,  // opens existing pipe
-                        FILE_FLAG_OVERLAPPED, //  enable async IO
-                        NULL);          // no template file
+	fd = CreateFile(
+			pipename,       /* pipe name */
+			GENERIC_READ |  /* read and write access */
+			GENERIC_WRITE,
+			0,              /* no sharing */
+			NULL,           /* default security attributes FIXME */
+			OPEN_EXISTING,  /* opens existing pipe */
+			FILE_FLAG_OVERLAPPED, /*  enable async IO */
+			NULL);          /* no template file */
 
-        if (fd == INVALID_HANDLE_VALUE) {
+	if (fd == INVALID_HANDLE_VALUE) {
 		printf("CreateFile : %d\n",GetLastError());
 		exit(EXIT_FAILURE);
-        }
+	}
 
 	return fd;
 }
@@ -89,18 +90,18 @@ static void read_buf(char * buf, DWORD num)
 
 DWORD WINAPI ReadThread( LPVOID lpParameter )
 {
-	HANDLE pipefd = *((HANDLE *)lpParameter);
-	DWORD bytes_read;
-	char pipe_buf[SMALLBUF];
-	OVERLAPPED pipe_overlapped;
+	HANDLE	pipefd = *((HANDLE *)lpParameter);
+	DWORD	bytes_read;
+	char	pipe_buf[SMALLBUF];
+	OVERLAPPED	pipe_overlapped;
 
 	pconf_init(&pipe_ctx, NULL);
 
-        memset(&pipe_overlapped,0,sizeof(pipe_overlapped));
+	memset(&pipe_overlapped,0,sizeof(pipe_overlapped));
 	pipe_overlapped.hEvent = CreateEvent(NULL,FALSE,FALSE,NULL);
 
 	for (;;) {
-        	memset(pipe_buf,0,sizeof(pipe_buf));
+		memset(pipe_buf,0,sizeof(pipe_buf));
 		ReadFile(pipefd,pipe_buf,sizeof(pipe_buf),NULL,&pipe_overlapped);
 		GetOverlappedResult(pipefd,&pipe_overlapped,&bytes_read,TRUE);
 		read_buf(pipe_buf,bytes_read);
@@ -109,15 +110,15 @@ DWORD WINAPI ReadThread( LPVOID lpParameter )
 
 DWORD WINAPI WriteThread( LPVOID lpParameter )
 {
-	HANDLE pipefd = *((HANDLE *)lpParameter);
-	HANDLE hStdin;
-	DWORD bytes_read;
-	char stdin_buf[SMALLBUF];
-	OVERLAPPED pipe_overlapped;
+	HANDLE	pipefd = *((HANDLE *)lpParameter);
+	HANDLE	hStdin;
+	DWORD	bytes_read;
+	char	stdin_buf[SMALLBUF];
+	OVERLAPPED	pipe_overlapped;
 
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
 
-        memset(&pipe_overlapped,0,sizeof(pipe_overlapped));
+	memset(&pipe_overlapped,0,sizeof(pipe_overlapped));
 	pipe_overlapped.hEvent = CreateEvent(NULL,FALSE,FALSE,NULL);
 
 	for (;;) {
@@ -128,19 +129,25 @@ DWORD WINAPI WriteThread( LPVOID lpParameter )
 int main(int argc, char **argv)
 {
 	const char	*prog = xbasename(argv[0]);
-	HANDLE pipefd;	
-	HANDLE thread[2];
+	HANDLE	pipefd;
+	HANDLE	thread[2];
 
-	if (argc != 2) {
+	if (argc != 2
+	|| (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")))
+	) {
 		fprintf(stderr, "usage: %s <pipe name>\n", prog);
 		fprintf(stderr, "       %s apcsmart-com1\n",
 			argv[0]);
+
+		fprintf(stderr, "\n%s", suggest_doc_links(prog, NULL));
+
 		exit(EXIT_SUCCESS);
 	}
 
 	pipefd = pipe_connect(argv[1]);
 
 	printf("connected: fd %d\n", pipefd);
+	fflush(stdout);
 
 	thread[0] = CreateThread(
 					NULL,	/* security */

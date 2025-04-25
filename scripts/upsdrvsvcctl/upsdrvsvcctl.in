@@ -1,6 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2016-2018 Eaton
+# Copyright (C) 2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,17 +33,27 @@ fi
 VERB=""
 CMD=""
 CMDARG=""
-ENUMERATOR=""
+# Note: some frameworks separate the commands for acting and for reporting
+CMDREPORT=""
+CMDREPORTARG=""
 case "$SERVICE_FRAMEWORK" in
     smf) CMD="/usr/sbin/svcadm"
-        ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+        CMDREPORT="/usr/bin/svcs"
+        [ -n "${ENUMERATOR-}" ] && export ENUMERATOR || ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
         ;;
     systemd) CMD="/bin/systemctl"
-        ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+        CMDREPORT="${CMD}"
+        [ -n "${ENUMERATOR-}" ] && export ENUMERATOR || ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
         ;;
     *)  echo "Unrecognized SERVICE_FRAMEWORK: $SERVICE_FRAMEWORK" >&2 ; exit ;;
 esac
+[ -n "${UPSDRVCTL-}" ] && export UPSDRVCTL || UPSDRVCTL='@SBINDIR@/upsdrvctl'
+PACKAGE_VERSION='@PACKAGE_VERSION@'
 
+# Should be populated by configure script during NUT build:
+NUT_WEBSITE_BASE='@NUT_WEBSITE_BASE@'
+# Fallback, no trailing slash!
+[ -n "${NUT_WEBSITE_BASE-}" ] || NUT_WEBSITE_BASE='https://www.networkupstools.org'
 
 usage() {
     # Note: version header differs from UPS_VERSION in binaries that
@@ -57,8 +68,14 @@ usage: $0 [OPTIONS] (start | stop | shutdown) [<ups>]
 
 Options:
   -h            	display this help
+  -V            	display upsdrvctl binary program version (should
+                	not differ from script version above, but...)
   -t            	testing mode - prints actions without doing them
   -D            	raise debugging level
+  --timeout-cmd <prog>	service management calls will be time-limited
+  --timeout-args <arg>	by calling the specified program with its args.
+                    	By default, if coreutils timeout is found, it
+                    	would be used to limit service calls by 90 sec.
   start         	start all UPS drivers in ups.conf
   start <ups>   	only start driver for UPS <ups>
   stop          	stop all UPS drivers in ups.conf
@@ -87,9 +104,23 @@ usage: $0 [OPTIONS] list [<ups>]
                 	to list the mapping of service instances to device sections
   list <ups>    	(optionally return the service instance name for one device)
 
+usage: $0 [OPTIONS] status [<ups>]
+  status        	report run-time status for each driver in ups.conf
+                	and call $ENUMERATOR
+                	to list the mapping of service instances to device sections
+                	and report run-time status for each one that was matched
+  status <ups>  	(optionally return the status info only for one device)
+                	Fields: SVC_NAME SVC_STATE UPSNAME UPSDRV RUNNING PF_PID S_RESPONSIVE S_PID S_STATUS
+                	(SVC_* according to service management framework; and
+                	PF_* = according to PID file, if any; S_* = via socket
+                	protocol -- as defined by upsdrvctl)
 usage: $0 [OPTIONS] show-config [<ups>]
   show-config <ups>	output config section from ups.conf for device <ups>
   show-config   	...or all devices if no <ups> argument was passed
+
+For more information please Read The Fine Manual ('man upsdrvsvcctl') and/or see
+        ${NUT_WEBSITE_BASE}/docs/man/upsdrvsvcctl.html
+Also check documentation of nut-driver-enumerator and plain old upsdrvctl tools
 EOF
 }
 
@@ -98,6 +129,18 @@ SVCINST=""
 DRYRUN=""
 DEBUG=0
 # Note: DEBUG is UNUSED_PARAM so far
+
+# Optionally use Coreutils timeout to limit the
+# (potentially hanging) calls to systemd tools...
+# Should not hurt with SMF too, if it ever misbehaves.
+TIMEOUT_CMD=""
+TIMEOUT_ARGS=""
+if which timeout 2>/dev/null >/dev/null ; then
+    # Systemd default timeout for unit start/stop
+    TIMEOUT_CMD="timeout"
+    TIMEOUT_ARGS="90s"
+fi
+
 while [ $# -gt 0 ]; do
     case "$1" in
         resync) eval $DRYRUN $ENUMERATOR ; exit $? ;;
@@ -116,6 +159,86 @@ while [ $# -gt 0 ]; do
                 eval $ENUMERATOR --show-all-configs ; exit $?
             fi
             ;;
+        status)
+            RES=0
+            STATUSES="`NUT_QUIET_INIT_BANNER=true "${UPSDRVCTL}" status $2`" || RES=$?
+            if [ x"${STATUSES}" = x ]; then
+                exit $RES
+            fi
+
+            SVCINSTS="`$0 list $2`" || RES=$?
+            # Use a common approach below, even if we only got one instance name from list()
+            if [ -n "$2" ] && [ -n "${SVCINSTS}" ] ; then SVCINSTS="${SVCINSTS}	$2" ; fi
+
+            # Accomodate svc:/system/power/nut-driver:dummy (SMF)
+            # or         nut-driver@dummy.service           (systemd)
+            case "$SERVICE_FRAMEWORK" in
+                smf) SVC_NAME_WIDTH="39" ; SVC_STATE_WIDTH="11" ;;
+                systemd) SVC_NAME_WIDTH="30" ; SVC_STATE_WIDTH="23" ;;
+            esac
+
+            echo "$STATUSES" | ( COUNT=0; while IFS='' read LINE ; do
+                COUNT="`expr $COUNT + 1`"
+                if [ "$COUNT" = 1 ] ; then
+                    # Header line
+                    printf '%-'"${SVC_NAME_WIDTH}"'s\t%'"${SVC_STATE_WIDTH}"'s\t%s\n' "SVC_NAME" "SVC_STATE" "$LINE"
+                    continue
+                fi
+                DEV_NAME="`echo "$LINE" | awk '{print $1}'`"
+                SVC_NAME="`echo "$SVCINSTS" | awk '($NF == "'"${DEV_NAME}"'") {print $1}'`" && [ -n "$SVC_NAME" ] || SVC_NAME="N/A"
+                if [ x"$SVC_NAME" = "N/A" ]; then
+                    SVC_STATE="N/A"
+                else
+                    case "$SERVICE_FRAMEWORK" in
+                        smf) SVC_STATE="`$CMDREPORT -Hostate ${SVC_NAME} 2>/dev/null`" \
+                            && [ -n "$SVC_STATE" ] && [ 1 = `echo "$SVC_STATE" | wc -l` ] \
+                            || SVC_STATE="N/A"
+                            ;;
+                        systemd) SVC_STATE=""
+                            CMDRES=0
+                            OUT="`$CMDREPORT is-enabled "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            if [ x"$OUT" != x ] ; then SVC_STATE="${OUT}" ; else
+                                [ 0 = "$CMDRES" ] && SVC_STATE="enabled" || SVC_STATE="disabled"
+                            fi
+                            # At this point we should have some value, so others below
+                            # may be or not be suffixed with a comma.
+
+                            # The masked unit state has no separate query in some (all?)
+                            # systemd versions and can be reported as part of the above
+                            CMDRES=0
+                            OUT="`$CMDREPORT is-masked "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            if [ x"$OUT" != x ] ; then
+                                if [ x"${SVC_STATE}" != xmasked ] && [ x"${SVC_STATE}" != x"${OUT}" ] ; then
+                                    SVC_STATE="${SVC_STATE},${OUT}"
+                                fi
+                            else
+                                [ 0 = "$CMDRES" ] && SVC_STATE="${SVC_STATE},masked" || true
+                            fi
+
+                            CMDRES=0
+                            OUT="`$CMDREPORT is-active "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            if [ x"$OUT" != x ] ; then
+                                SVC_STATE="${SVC_STATE},${OUT}"
+                            else
+                                [ 0 = "$CMDRES" ] && SVC_STATE="${SVC_STATE},active" || true
+                            fi
+
+                            CMDRES=0
+                            OUT="`$CMDREPORT is-failed "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            if [ x"$OUT" != x ] ; then
+                                if [ x"${OUT}" != xactive ] && [ x"${OUT}" != xinactive ] ; then
+                                    SVC_STATE="${SVC_STATE},${OUT}"
+                                fi
+                            else
+                                [ 0 = "$CMDRES" ] && SVC_STATE="${SVC_STATE},failed" || true
+                            fi
+                            ;;
+                    esac
+                fi
+                printf '%-'"${SVC_NAME_WIDTH}"'s\t%'"${SVC_STATE_WIDTH}"'s\t%s\n' "$SVC_NAME" "$SVC_STATE" "$LINE"
+            done )
+            exit $RES
+            ;;
         start|stop)
             ACTION="$1"
             if [ -n "$2" ] ; then
@@ -128,13 +251,34 @@ while [ $# -gt 0 ]; do
             echo "Stopping the driver service instance(s) to release exclusive resources, if any..." >&2
             RES=0
             $0 stop $2
-            @SBINDIR@/upsdrvctl shutdown $2 || RES=$?
+            "${UPSDRVCTL}" shutdown $2 || RES=$?
             echo "Starting the driver service instance(s) so they can reconnect when the UPS returns..." >&2
             $0 start $2
             exit $RES
             ;;
+        --timeout-length|--timeout-len|--timeout-args)
+            TIMEOUT_ARGS="$2"
+            shift
+            ;;
+        --timeout-cmd)
+            if [ -n "$2" ] ; then
+                if [ -x "$2" ] || which "$2" 2>/dev/null >/dev/null ; then
+                    TIMEOUT_CMD="$2"
+                else
+                    echo "ERROR: Received a '$2' argument for $1, and can not find such program; clearing the option so the basic functionality can proceed" >&2
+                    TIMEOUT_CMD=""
+                    TIMEOUT_ARGS=""
+                fi
+            else
+                echo "INFO: Received an empty argument for $1, clearing the option" >&2
+                TIMEOUT_CMD=""
+                TIMEOUT_ARGS=""
+            fi
+            shift
+            ;;
         -t) DRYRUN="echo" ;;
         -h) usage; exit 0 ;;
+        -V) "${UPSDRVCTL}" -V ; exit ;;
         -D) DEBUG="`expr $DEBUG + 1`" ;;
         -r|-u) echo "Option '$1 $2' is not implemented via services currently" >&2 ; shift;;
         *)  echo "Unrecognized argument: $1" >&2 ; exit ;;
@@ -150,6 +294,10 @@ fi
 if [ -z "$ACTION" ]; then
     echo "No action was requested!" >&2
     exit 1
+fi
+
+if [ -n "$TIMEOUT_CMD" ]; then
+    echo "INFO: Detected presence of $TIMEOUT_CMD so will limit service management calls by passing the args: $TIMEOUT_ARGS" >&2
 fi
 
 if [ -z "$SVCINST" ]; then
@@ -178,7 +326,7 @@ esac
 
 for INST in $SVCINST ; do
     echo "$VERB $INST ..." >&2
-    $DRYRUN $CMD $CMDARG "$INST" &
+    $DRYRUN $TIMEOUT_CMD $TIMEOUT_ARGS $CMD $CMDARG "$INST" &
 done
 wait
 
@@ -188,7 +336,7 @@ case "$SERVICE_FRAMEWORK" in
         echo "Post-process clearing services that failed early..." >&2
         for INST in $SVCINST ; do
             echo "Clearing $INST (if it got broken) ..." >&2
-            $DRYRUN $CMD clear "$INST" &
+            $DRYRUN $TIMEOUT_CMD $TIMEOUT_ARGS $CMD clear "$INST" &
         done
         ;;
 esac

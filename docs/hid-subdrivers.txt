@@ -39,7 +39,7 @@ beeper enabled/disabled/muted status) can be read and written. These
 variables are usually grouped together and arranged in a hierarchical
 tree shape, similar to directories in a file system. This tree is
 called the "usage" tree. For example, here is part of the usage tree
-for a typical APC device. Variable components are separated by ".".
+for a typical APC device. Variable components are separated by `.`.
 Typical values for each variable are also shown for illustrative
 purposes.
 
@@ -179,14 +179,14 @@ You should save this information to a file, e.g.:
 You can now create an initial "stub" subdriver for your device by using
 helper script `scripts/subdriver/gen-usbhid-subdriver.sh`.
 
-NOTE: this only creates a driver code "stub" which needs to be further
+NOTE: This only creates a driver code "stub" which needs to be further
 customized to be actually useful (see "Customization" below).
 
 Use the script as follows:
 
 	scripts/subdriver/gen-usbhid-subdriver.sh < /tmp/info
 
-where /tmp/info is the file where you previously saved the debugging
+where `/tmp/info` is the file where you previously saved the debugging
 information.
 
 This script prompts you for a name for the subdriver; use only letters
@@ -312,7 +312,8 @@ multiple-byte ranges in a protocol buffer.
 For a deep dive into the byte stream, you will need additional tools:
 
 * get/build/install link:https://regina-rexx.sourceforge.io[regina-rexx]
-* get/install link:https://github.com/abend0c1/hidrdd[HIDRDD]
+* get/install link:https://github.com/abend0c1/hidrdd[HIDRDD] (uses REXX
+  as the interpreter)
 
 Typical troubleshooting of suspected firmware/protocol issues goes like this:
 
@@ -321,10 +322,11 @@ Typical troubleshooting of suspected firmware/protocol issues goes like this:
 * Look for reports from the driver of any problems it has already detected
   and possibly amended (LogMin/LogMax, report descriptor fix-ups)
 * Extract the HEX dump of the report descriptor from USB driver output from
-  the first step above, and run it through HIDRDD
+  the first step above, and run it through HIDRDD (and/or REXX directly,
+  per example below).
 * Look at the HIDRDD output, with reference to any documents related to your
   device and the USB/HID power devices class available in NUT documentation,
-  e.g. at https://networkupstools.org/ups-protocols.html
+  e.g. at https://www.networkupstools.org/ups-protocols.html
 * Especially look for inconsistencies in the USB HID report descriptors (RD):
   * between the min/max (logical and physical) values,
   * the sizes of the report fields they apply to,
@@ -336,6 +338,61 @@ Typical troubleshooting of suspected firmware/protocol issues goes like this:
 * Read the NUT code, tracing through how each value gets processed looking
   for where the result deviates from expectations...
 * Think, code, test, rinse, repeat, post a PR :)
+
+.Example direct use of REXX
+===========================
+Example adapted from https://github.com/networkupstools/nut/issues/2039
+
+Run a NUT `usb-hid` driver with at least debug verbosity level 3 (`-DDD`)
+to get a report descriptor dump starting with a line like this:
+----
+   3.670755     [D3] Report Descriptor: (909 bytes) => 05 84 09 04 a1 01 ...
+----
+
+...and copy-paste those reported lines as input into `rexx` tool, which
+would generate a C source file including human-worded description and
+a relevant data structure:
+
+----
+:; rexx rd.rex -d --hex 05 84 09 04 a1 01 85 01 09 18 ... 55 b1 02 c0 c0 c0
+
+//--------------------------------------------------------------------------------
+// Decoded Application Collection
+//--------------------------------------------------------------------------------
+
+/*
+05 84        (GLOBAL) USAGE_PAGE         0x0084 Power Device Page
+09 04        (LOCAL)  USAGE              0x00840004 UPS (Application Collection)
+A1 01        (MAIN)   COLLECTION         0x01 Application (Usage=0x00840004: Page=Power Device Page, Usage=UPS, Type=Application Collection)
+85 01          (GLOBAL) REPORT_ID          0x01 (1)
+09 18          (LOCAL)  USAGE              0x00840018 Outlet System (Physical Collection)
+...
+*/
+
+// All structure fields should be byte-aligned...
+#pragma pack(push,1)
+
+//--------------------------------------------------------------------------------
+// Power Device Page featureReport 01 (Device <-> Host)
+//--------------------------------------------------------------------------------
+
+typedef struct
+{
+  uint8_t  reportId;                                 // Report ID = 0x01 (1)
+                                                     // Collection: CA:UPS CP:OutletSystem CP:Outlet
+  int8_t   POW_UPSOutletSystemOutletSwitchable;      // Usage 0x0084006C: Switchable, Value =  to
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeStartup; // Usage 0x00840056: Delay Before Startup, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeShutdown; // Usage 0x00840057: Delay Before Shutdown, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeReboot; // Usage 0x00840055: Delay Before Reboot, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletSwitchable_1;    // Usage 0x0084006C: Switchable, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeStartup_1; // Usage 0x00840056: Delay Before Startup, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeShutdown_1; // Usage 0x00840057: Delay Before Shutdown, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeReboot_1; // Usage 0x00840055: Delay Before Reboot, Value = -1 to 60
+} featureReport01_t;
+
+#pragma pack(pop)
+----
+===========================
 
 
 Shutting down the UPS

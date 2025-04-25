@@ -34,7 +34,7 @@ in NUT any SNMP Agent (embedded or on a host).
 
 The new snmp-ups driver now support multiple MIBS (SNMP structures
 declaration). For more information on snmp-ups, have a look at its
-manpage (man 8 snmp-ups).
+man page (man 8 snmp-ups).
 
 	* Extending existing mib2nut information
 
@@ -47,4 +47,4 @@ manpage (man 8 snmp-ups).
 
 References:
 - NUT SNMP Protocols Library Available at:
-http://www.networkupstools.org/ups-protocols.html#_snmp
+https://www.networkupstools.org/ups-protocols.html#_snmp

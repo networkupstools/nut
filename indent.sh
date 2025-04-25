@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Filter NUT C source file style to conform to recommendations of
-# http://networkupstools.org/docs/developer-guide.chunked/ar01s03.html#_coding_style
+# https://www.networkupstools.org/docs/developer-guide.chunked/ar01s03.html#_coding_style
 # Note that the sed filter "command does a reasonable job of converting
 # most C++ style comments (but not URLs and DOCTYPE strings)" so a manual
 # pass may be needed to revise the changes.

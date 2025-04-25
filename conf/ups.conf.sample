@@ -9,6 +9,9 @@
 #
 # ---
 #
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
 # This is where you configure all the UPSes that this system will be
 # monitoring directly.  These are usually attached to serial ports, but
 # USB devices and SNMP devices are also supported.
@@ -45,24 +48,18 @@
 # These directives are used by upsdrvctl only and should be specified outside
 # of a driver definition:
 #
-#    maxretry: OPTIONAL.  Specify the number of attempts to start the driver(s),
-#              in case of failure, before giving up. A delay of 'retrydelay' is
-#              inserted between each attempt. Caution should be taken when using
-#              this option, since it can impact the time taken by your system to
-#              start.
-#
-#              The built-in default is 1 attempt.
-#
-#  retrydelay: OPTIONAL.  Specify the delay between each restart attempt of the
-#              driver(s), as specified by 'maxretry'. Caution should be taken
-#              when using this option, since it can impact the time taken by your
-#              system to start.
-#
-#              The default is 5 seconds.
-#
 #      chroot: OPTIONAL. Used for securing. See man page for details.
 #
 #  driverpath: OPTIONAL. Used for custom setups. See man page for details.
+#
+#   statepath: OPTIONAL. Used for custom setups. Tell drivers to place their
+#              state sockets for communication with 'upsd' in 'path' rather
+#              than the default location that was compiled into the program.
+#              Note that the drivers must use the same path as 'upsd', so the
+#              data server would prefer this setting from `ups.conf` global
+#              section, if present, over its own in `upsd.conf`.
+#              Environment variable NUT_STATEPATH set by caller can override
+#              this setting.
 #
 #      nowait: OPTIONAL. Tell upsdrvctl to not wait at all for the driver(s)
 #              to execute the requested command. Fire and forget.
@@ -79,8 +76,23 @@
 # Set maxretry to 3 by default, this should mitigate race with slow devices:
 maxretry = 3
 
-# These directives can be set outside and inside a driver definition, with
-# slightly different meanings per context:
+# These directives can be set outside and inside a driver definition,
+# sometimes with slightly different meanings per context:
+#
+#    maxretry: OPTIONAL.  Specify the number of attempts to start the driver(s),
+#              in case of failure, before giving up. A delay of 'retrydelay' is
+#              inserted between each attempt. Caution should be taken when using
+#              this option, since it can impact the time taken by your system to
+#              start.
+#
+#              The built-in default is 1 attempt.
+#
+#  retrydelay: OPTIONAL.  Specify the delay between each restart attempt of the
+#              driver(s), as specified by 'maxretry'. Caution should be taken
+#              when using this option, since it can impact the time taken by your
+#              system to start.
+#
+#              The default is 5 seconds.
 #
 # maxstartdelay: OPTIONAL.  This can be set as a global variable
 #                above your first UPS definition and it can also be
@@ -88,7 +100,17 @@ maxretry = 3
 #                upsdrvctl will wait for the driver to finish starting.
 #                This keeps your system from getting stuck due to a
 #                broken driver or UPS.
-#                The default is 45 seconds.
+#                Note that after this time upsdrvctl would just move
+#                along with its business (whether retrying the same
+#                driver if `maxretry>1`, or trying another driver if
+#                starting them all, or just eventually exit); however,
+#                each such most recently started "stuck" driver process
+#                may be further initializing in the background, and
+#                might even succeed eventually.
+#                They would not be actively killed by upsdrvctl after
+#                this timeout expires.
+#
+#                The default is 75 seconds.
 #
 #   debug_min: OPTIONAL.  Specify a minimum debug level for all driver daemons
 #              (when specified at global level), or for this driver daemon
@@ -97,6 +119,13 @@ maxretry = 3
 #              background running mode. If both the global and driver level
 #              `debug_min` are set, the driver-level setting takes precedence.
 #              Command-line option `-D` can only increase this verbosity level.
+#
+# LIBUSB_DEBUG: OPTIONAL.  For run-time troubleshooting of USB-capable NUT
+#                drivers, you can specify the verbosity of LibUSB specific
+#                debugging as a numeric value such as `4` ("All messages
+#                are emitted").  Should not have any practical impact on
+#                other NUT drivers. For more details, see the library's
+#                documentation at e.g. https://libusb.sourceforge.io/api-1.0/
 #
 # user, group: OPTIONAL. Overrides the compiled-in (also global-section,
 #                when used in driver section) default unprivileged user/group
@@ -140,6 +169,12 @@ maxretry = 3
 #
 #          The default value for this parameter is 0.
 #
+# sdcommands: OPTIONAL.  Comma-separated list of instant command name(s)
+#          to send to the UPS when you request its shutdown.  For more
+#          details about relevant use-cases see the ups.conf manual page.
+#
+#          The default value is built into each driver (where supported).
+#
 #    desc: optional, to keep a note of the UPS purpose, location, etc.
 #
 #  nolock: optional, and not recommended for use in this file.
@@ -161,6 +196,15 @@ maxretry = 3
 #           the call to initialize; others however can get stuck due to it -
 #           so it is not called by default. Yet others can be composite
 #           devices which use a non-zero interface to represent the UPS.
+#
+# usb_config_index=hexnum, usb_hid_rep_index=hexnum,
+# usb_hid_desc_index=hexnum, usb_hid_ep_in=hexnum, usb_hid_ep_out=hexnum:
+#           OPTIONAL. Force use of specific interface, endpoint, descriptor
+#           index etc. numbers, rather than defaulting to 0 (rarely other
+#           values in certain drivers for some devices known to use non-zero
+#           numbers). As a rule of thumb for `usb_hid_desc_index` discovery,
+#           you can see larger `wDescriptorLength` values (roughly 600+ bytes)
+#           in reports of `lsusb` or similar tools.
 #
 # default.<variable>: OPTIONAL. Set a default value for <variable> which is
 #           used in case the UPS doesn't provide a value, but which will be

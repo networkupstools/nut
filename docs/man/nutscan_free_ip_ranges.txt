@@ -1,0 +1,45 @@
+NUTSCAN_FREE_IP_RANGES(3)
+=========================
+
+NAME
+----
+
+nutscan_free_ip_ranges - Free contents of a `nutscan_ip_range_list_t`
+structure populated (and optionally created) by `nutscan_init_ip_ranges()`
+and, more importantly, filled by a series of `nutscan_add_ip_range()` calls.
+
+SYNOPSIS
+--------
+
+------
+	#include <nut-scan.h>
+
+	void nutscan_free_ip_ranges(nutscan_ip_range_list_t *irl);
+------
+
+DESCRIPTION
+-----------
+
+The *nutscan_free_ip_ranges()* function can free a `nutscan_ip_range_list_t`
+structure. Doing so, it frees the whole linked list of `nutscan_ip_range_t`
+entries, and zeroes out helper properties.
+
+The structure itself is not freed (as it can be a statically allocated
+variable on the stack), and can be re-used for a new list if needed.
+
+The caller must ultimately free the structure object if it was allocated
+dynamically (e.g. by originally calling `nutscan_init_ip_ranges(NULL)`).
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-ip.h' file.
+
+SEE ALSO
+--------
+
+linkman:nutscan_init_ip_ranges[3], linkman:nutscan_add_ip_range[3],
+linkman:nutscan_stringify_ip_ranges[3],
+linkman:nutscan_cidr_to_ip[3],
+linkman:nutscan_ip_ranges_iter_init[3],
+linkman:nutscan_ip_ranges_iter_inc[3]

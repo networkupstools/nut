@@ -2,7 +2,9 @@
  *
  *  Copyright (C)
  *        2003 - 2015 Arnaud Quette <arnaud.quette@free.fr>
- *        2015 - 2016 Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
+ *        2015 - 2024 Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
+ *        2020 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
+ *        2024 - 2025 "DaRK AnGeL" <28630321+masterwishx@users.noreply.github.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -39,7 +41,18 @@
 #include "nut_float.h"
 #include "timehead.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.46"
+#ifdef WIN32
+# include "wincompat.h"
+# ifndef LDOUBLE
+#  ifdef HAVE_LONG_DOUBLE
+#   define LDOUBLE long double
+#  else
+#   define LDOUBLE double
+#  endif
+# endif
+#endif	/* WIN32 */
+
+#define MGE_HID_VERSION		"MGE HID 1.54"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -52,20 +65,23 @@
 #define POWERWARE_VENDORID	0x0592
 
 /* Hewlett Packard */
-#define HP_VENDORID 0x03f0
+#define HP_VENDORID		0x03f0
 
 /* AEG */
-#define AEG_VENDORID 0x2b2d
+#define AEG_VENDORID		0x2b2d
 
 /* Note that normally this VID is handled by Liebert/Phoenixtec HID mapping,
  * here it is just for for AEG PROTECT NAS devices: */
 /* Phoenixtec Power Co., Ltd */
-#define PHOENIXTEC 0x06da
+#define PHOENIXTEC		0x06da
 
 /* IBM */
-#define IBM_VENDORID 0x04b3
+#define IBM_VENDORID		0x04b3
 
-#ifndef SHUT_MODE
+/* KSTAR under Berkeley Varitronics Systems ID */
+#define KSTAR_VENDORID		0x09d6
+
+#if !((defined SHUT_MODE) && SHUT_MODE)
 #include "usb-common.h"
 
 /* USB IDs device table */
@@ -95,10 +111,14 @@ static usb_device_id_t mge_usb_device_table[] = {
 	/* 6000 VA LCD 4U Rack UPS; 5396-1Kx */
 	{ USB_DEVICE(IBM_VENDORID, 0x0001), NULL },
 
+	/* MasterPower MF-UPS650VA under KSTAR vendorid (can also be under MGE)
+	 * MicroPower models were also reported */
+	{ USB_DEVICE(KSTAR_VENDORID, 0x0001), NULL },
+
 	/* Terminating entry */
 	{ 0, 0, NULL }
 };
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 typedef enum {
 	MGE_DEFAULT_OFFLINE = 0,
@@ -120,7 +140,8 @@ typedef enum {
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
 		MGE_PULSAR_M_3000_XL,
-	EATON_5P = 0x500			/* Eaton 5P / 5PX series */
+	EATON_5P = 0x500,			/* Eaton 5P / 5PX / 5SC series; possibly 5S also */
+	EATON_9E = 0x900			/* Eaton 9E entry-level / 9SX / 9PX series */
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
@@ -145,23 +166,25 @@ static char		mge_scratch_buf[20];
 /* ABM - Advanced Battery Monitoring
  ***********************************
  * Synthesis table
- * HID data                                   |             Charger in ABM mode             | Charger in Constant mode
- * UPS.BatterySystem.Charger.ABMEnable        |                      1                      |            0
- * UPS.PowerSummary.PresentStatus.ACPresent   |           On utility          | On battery  | On utility | On battery
- * Charger ABM mode                           | Charging | Floating | Resting | Discharging | Disabled   | Disabled
- * UPS.BatterySystem.Charger.Mode             |     1    |    3     |   4     |      2      |     6      |    6
- * UPS.PowerSummary.PresentStatus.Charging    |     1    |    1     |   1     |      0      |     1      |    0
- * UPS.PowerSummary.PresentStatus.Discharging |     0    |    0     |   0     |      1      |     0      |    1
+ * HID data                                   |             Charger in ABM mode             | Charger in Constant mode | Error | Good |
+ * UPS.BatterySystem.Charger.ABMEnable        |                      1                      |            0             |       |      |
+ * UPS.PowerSummary.PresentStatus.ACPresent   |           On utility          | On battery  | On utility | On battery  |       |      |
+ * Charger ABM mode                           | Charging | Floating | Resting | Discharging | Disabled   | Disabled    |       |      |
+ * UPS.BatterySystem.Charger.Mode             |     1    |    3     |   4     |      2      |     6      |    6        |       |      |
+ * UPS.BatterySystem.Charger.Status           |     1    |    2     |   3     |      4      |     6      |    6        |   0   |   1  |
+ * UPS.PowerSummary.PresentStatus.Charging    |     1    |    1     |   1     |      0      |     1      |    0        |       |      |
+ * UPS.PowerSummary.PresentStatus.Discharging |     0    |    0     |   0     |      1      |     0      |    1        |       |      |
  *
  * Notes (from David G. Miller) to understand ABM status:
+ *
  * When supporting ABM, when a UPS powers up or returns from battery, or
  * ends the ABM rest mode, it enters charge mode.
  * Some UPSs run a different charger reference voltage during charge mode
  * but all the newer models should not be doing that, but basically once
- * the battery voltage reaches the charger reference level (should be 2.3
- * volts/cell), the charger is considered in float mode.  Some UPSs will not
- * annunciate float mode until the charger power starts falling from the maximum
- * level indicating the battery is truly at the float voltage or in float mode.
+ * the battery voltage reaches the charger reference level
+ * (should be 2.3 volts/cell) = 13.8v battery(6 cells), the charger is considered in float mode.
+ * Some UPSs will not annunciate float mode until the charger power starts falling from
+ * the maximum level indicating the battery is truly at the float voltage or in float mode.
  * The %charge level is based on battery voltage and the charge mode timer
  * (should be 48 hours) and some UPSs add in a value that's related to charger
  * power output.  So you can have UPS that enters float mode with anywhere
@@ -169,22 +192,54 @@ static char		mge_scratch_buf[20];
  * float mode is not important from the software's perspective, it's there to
  * help determine if the charger is advancing correctly.
  * So in float mode, the charger is charging the battery, so by definition you
- * can assert the CHRG flag in NUT when in “float” mode or “charge” mode.
- * When in “rest” mode the charger is not delivering anything to the battery,
+ * can assert the CHRG flag in NUT when in "float" mode or "charge" mode.
+ * When in "rest" mode the charger is not delivering anything to the battery,
  * but it will when the ABM cycle(28 days) ends, or a battery discharge occurs
- * and utility returns.  This is when the ABM status should be “resting”.
+ * and utility returns.  This is when the ABM status should be "resting".
  * If a battery failure is detected that disables the charger, it should be
- * reporting “off” in the ABM charger status.
+ * reporting "off" in the ABM charger status.
  * Of course when delivering load power from the battery, the ABM status is
  * discharging.
- */
+ *
+ * UPS.BatterySystem.Charger.ChargerType:
+ *
+ * This HID path has been seen to denote the charger type of the UPS.
+ * At present it is unclear whether deductions about ABM being enabled
+ * should be made from it, even though it seems to be changing when a
+ * UPS that is ABM-capable is manually enabling and disabling its ABM.
+ * For example, the Eaton 5P850I has been seen with a ChargerType of 0
+ * when having ABM disabled, and ChargerType of 4 when ABM was enabled.
+ * According to the known values, however, the ChargerType should have
+ * either remained the same (if only to display general charger ability)
+ * or changed to ChargerType of 5 (for constant charge mode) - and not 0:
+ *
+ * { 0, "None", NULL, NULL },
+ * { 1, "Extended (CLA)", NULL, NULL },
+ * { 2, "Large extension", NULL, NULL },
+ * { 3, "Extra large extension (XL)", NULL, NULL },
+ * { 4, "ABM", NULL, NULL },
+ * { 5, "Constant Charge (CC)", NULL, NULL },
+ *
+ * For this reason, ABM being enabled remains controlled only through the
+ * one HID path known to be consistent: UPS.BatterySystem.Charger.ABMEnable
+*/
 
-#define			ABM_UNKNOWN  -1
-#define			ABM_DISABLED  0
-#define			ABM_ENABLED   1
+#define			ABM_UNKNOWN     -1
+#define			ABM_DISABLED     0
+#define			ABM_ENABLED      1
+
+/* Define internal flags to process the different ABM paths as seen in HID:
+ * ABM_PATH_STATUS --> UPS.BatterySystem.Charger.Status
+ * ABM_PATH_MODE --> UPS.BatterySystem.Charger.Mode */
+#define			ABM_PATH_UNKNOWN  -1
+#define			ABM_PATH_STATUS    0
+#define			ABM_PATH_MODE      1
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
-static int advanced_battery_monitoring = ABM_UNKNOWN;
+static int	advanced_battery_monitoring = ABM_UNKNOWN;
+
+/* Internal flag to process the different ABM paths as seen in HID */
+static int	advanced_battery_path = ABM_PATH_UNKNOWN;
 
 /* TODO: Lifted from strptime.c... maybe should externalize the fallback?
  * NOTE: HAVE_DECL_* are always defined, 0 or 1. Many other flags are not.
@@ -196,23 +251,37 @@ static long round (double value)
 static long round (LDOUBLE value)
 # endif
 {
-  long intpart;
+	long	intpart;
 
-  intpart = (long)value;
-  value = value - intpart;
-  if (value >= 0.5)
-    intpart++;
+	intpart = (long)value;
+	value = value - intpart;
+	if (value >= 0.5)
+		intpart++;
 
-  return intpart;
+	return intpart;
 }
 #endif /* HAVE_DECL_ROUND */
 
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_fun(double value)
 {
-	advanced_battery_monitoring = value;
+	int	abm_enabled_value = (int)value;
 
-	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==1)?"enabled":"disabled");
+	switch (abm_enabled_value)
+	{
+		case ABM_DISABLED:
+			advanced_battery_monitoring = ABM_DISABLED;
+			upsdebugx(2, "ABM status is: disabled (%i)", abm_enabled_value);
+			break;
+		case ABM_ENABLED:
+			advanced_battery_monitoring = ABM_ENABLED;
+			upsdebugx(2, "ABM status is: enabled (%i)", abm_enabled_value);
+			break;
+		default:
+			advanced_battery_monitoring = ABM_UNKNOWN;
+			upsdebugx(2, "ABM status is: unknown (%i)", abm_enabled_value);
+			break;
+	}
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
@@ -220,6 +289,60 @@ static const char *eaton_abm_enabled_fun(double value)
 
 static info_lkp_t eaton_abm_enabled_info[] = {
 	{ 0, "dummy", eaton_abm_enabled_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* ABM Path: UPS.BatterySystem.Charger.Mode (battery.charger.mode.status) */
+static const char *eaton_abm_path_mode_fun(double value)
+{
+	int	abm_path_mode_value = (int)value;
+
+	/* If unknown/disabled ABM, reset ABM path to give UPS a chance to use another once re-enabled */
+	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
+		advanced_battery_path = ABM_PATH_UNKNOWN;
+		return NULL;
+	}
+
+	/* If ABM_ENABLED and not yet initialized set ABM path to ABM_PATH_MODE */
+	if (advanced_battery_monitoring == ABM_ENABLED && advanced_battery_path == ABM_PATH_UNKNOWN)
+	{
+		advanced_battery_path = ABM_PATH_MODE;
+		upsdebugx(2, "Set ABM path to: ABM_PATH_MODE (%i)", abm_path_mode_value);
+	}
+
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_abm_path_mode_info[] = {
+	{ 0, "dummy", eaton_abm_path_mode_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* ABM Path: UPS.BatterySystem.Charger.Status (battery.charger.type.status) */
+static const char *eaton_abm_path_status_fun(double value)
+{
+	int	abm_path_status_value = (int)value;
+
+	/* If unknown/disabled ABM, reset ABM path to give UPS a chance to use another once re-enabled */
+	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
+		advanced_battery_path = ABM_PATH_UNKNOWN;
+		return NULL;
+	}
+
+	/* If ABM_ENABLED and not yet initialized set ABM path to ABM_PATH_STATUS */
+	if (advanced_battery_monitoring == ABM_ENABLED && advanced_battery_path == ABM_PATH_UNKNOWN)
+	{
+		advanced_battery_path = ABM_PATH_STATUS;
+		upsdebugx(2, "Set ABM path to: ABM_PATH_STATUS (%i)", abm_path_status_value);
+	}
+
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_abm_path_status_info[] = {
+	{ 0, "dummy", eaton_abm_path_status_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -242,43 +365,75 @@ static info_lkp_t eaton_abm_enabled_legacy_info[] = {
 };
 #endif /* if 0 */
 
-/* Used to process ABM flags, for battery.charger.status */
+/* Used to process ABM status text (for battery.charger.status) */
 static const char *eaton_abm_status_fun(double value)
 {
-	/* Don't process if ABM is disabled */
-	if (advanced_battery_monitoring == ABM_DISABLED) {
+	int	abm_status_value = (int)value;
+
+	/* Don't process if ABM is unknown or disabled */
+	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
 		/* Clear any previously published data, in case
 		 * the user has switched off ABM */
 		dstate_delinfo("battery.charger.status");
 		return NULL;
 	}
 
-	upsdebugx(2, "ABM numeric status: %i", (int)value);
-
-	switch ((long)value)
+	/* ABM Path: UPS.BatterySystem.Charger.Status (battery.charger.type.status)
+	 * as more recent and seen with 9 series devices (and possibly others): */
+	if (advanced_battery_path == ABM_PATH_STATUS)
 	{
-	case 1:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
-		break;
-	case 2:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
-		break;
-	case 3:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
-		break;
-	case 4:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
-		break;
-	case 6: /* ABM Charger Disabled */
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
-		break;
-	case 5: /* Undefined - ABM is not activated */
-	default:
-		/* Return NULL, not to get the value published! */
-		return NULL;
+		switch (abm_status_value)
+		{
+			case 1:
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
+				break;
+			case 2:
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
+				break;
+			case 3:
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
+				break;
+			case 4:
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
+				break;
+			case 6: /* ABM Charger Disabled */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
+				break;
+			case 5: /* Undefined - ABM is not activated */
+			default:
+				/* Return NULL, not to get the value published! */
+				return NULL;
+		}
+	}
+	/* ABM Path: UPS.BatterySystem.Charger.Mode (battery.charger.mode.status)
+	 * as more common and for any other ABM paths not (yet) recognized: */
+	else
+	{
+		switch (abm_status_value)
+		{
+			case 1:
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
+				break;
+			case 2:
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
+				break;
+			case 3:
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
+				break;
+			case 4:
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
+				break;
+			case 6: /* ABM Charger Disabled */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
+				break;
+			case 5: /* Undefined - ABM is not activated */
+			default:
+				/* Return NULL, not to get the value published! */
+				return NULL;
+		}
 	}
 
-	upsdebugx(2, "ABM string status: %s", mge_scratch_buf);
+	upsdebugx(2, "ABM charger status is: %s (%i)", mge_scratch_buf, abm_status_value);
 
 	return mge_scratch_buf;
 }
@@ -288,31 +443,73 @@ static info_lkp_t eaton_abm_status_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Used to process ABM flags, for ups.status (CHRG/DISCHRG/RB) */
+static info_lkp_t eaton_charger_type_info[] = {
+	{ 0, "None", NULL, NULL },
+	{ 1, "Extended (CLA)", NULL, NULL },
+	{ 2, "Large extension", NULL, NULL },
+	{ 3, "Extra large extension (XL)", NULL, NULL },
+	{ 4, "ABM", NULL, NULL },
+	{ 5, "Constant Charge (CC)", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Used to process ABM status flags, for ups.status (CHRG/DISCHRG) */
 static const char *eaton_abm_chrg_dischrg_fun(double value)
 {
-	/* Don't process if ABM is disabled */
-	if (advanced_battery_monitoring == ABM_DISABLED)
+	int	abm_chrg_dischrg_value = (int)value;
+
+	/* Don't process if ABM is unknown or disabled */
+	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED)
 		return NULL;
 
-	switch ((long)value)
+	/* ABM Path: UPS.BatterySystem.Charger.Status (battery.charger.type.status)
+	 * as more recent and seen with 9 series devices (and possibly others): */
+	if (advanced_battery_path == ABM_PATH_STATUS)
 	{
-	case 1: /* charging status */
-	case 3: /* floating status */
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
-		break;
-	case 2:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
-		break;
-	case 6: /* ABM Charger Disabled */
-	case 4: /* resting, nothing to publish! (?) */
-	case 5: /* Undefined - ABM is not activated */
-	default:
-		/* Return NULL, not to get the value published! */
-		return NULL;
+		switch (abm_chrg_dischrg_value)
+		{
+			case 1: /* charging status */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+				break;
+			case 2: /* floating status */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+				break;
+			case 4: /* discharging status */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
+				break;
+			case 6: /* ABM Charger Disabled */
+			case 3: /* resting, nothing to publish! (?) */
+			case 5: /* Undefined - ABM is not activated */
+			default:
+				/* Return NULL, not to get the value published! */
+				return NULL;
+		}
+	}
+	/* ABM Path: UPS.BatterySystem.Charger.Mode (battery.charger.mode.status)
+	 * as more common and for any other ABM paths not (yet) recognized: */
+	else
+	{
+		switch (abm_chrg_dischrg_value)
+		{
+			case 1: /* charging status */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+				break;
+			case 3: /* floating status */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+				break;
+			case 2: /* discharging status */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
+				break;
+			case 6: /* ABM Charger Disabled */
+			case 4: /* resting, nothing to publish! (?) */
+			case 5: /* Undefined - ABM is not activated */
+			default:
+				/* Return NULL, not to get the value published! */
+				return NULL;
+		}
 	}
 
-	upsdebugx(2, "ABM CHRG/DISCHRG legacy string status (ups.status): %s", mge_scratch_buf);
+	upsdebugx(2, "ABM charger flag is: %s (%i)", mge_scratch_buf, abm_chrg_dischrg_value);
 
 	return mge_scratch_buf;
 }
@@ -330,7 +527,7 @@ static info_lkp_t eaton_abm_chrg_dischrg_info[] = {
  * on battery.charger.status?! */
 static const char *eaton_abm_check_dischrg_fun(double value)
 {
-	if (advanced_battery_monitoring == ABM_DISABLED)
+	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED)
 	{
 		if (d_equal(value, 1)) {
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
@@ -356,7 +553,7 @@ static info_lkp_t eaton_discharging_info[] = {
 
 static const char *eaton_abm_check_chrg_fun(double value)
 {
-	if (advanced_battery_monitoring == ABM_DISABLED)
+	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED)
 	{
 		if (d_equal(value, 1)) {
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
@@ -398,7 +595,7 @@ static const char *mge_date_conversion_fun(double value)
 
 static const char *mge_time_conversion_fun(double value)
 {
-	time_t sec = value;
+	time_t	sec = value;
 	struct tm	tmbuf;
 
 	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%H:%M:%S", localtime_r(&sec, &tmbuf)) == 8) {
@@ -464,8 +661,9 @@ static info_lkp_t mge_time_conversion[] = {
 #endif /* HAVE_STRPTIME */
 
 /* The HID path 'UPS.PowerSummary.ConfigVoltage' only reports
-   'battery.voltage.nominal' for specific UPS series. Ignore
-   the value for other series (default behavior). */
+ * 'battery.voltage.nominal' for specific UPS series.
+ * Ignore the value for other series (default behavior).
+ */
 static const char *mge_battery_voltage_nominal_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
@@ -478,6 +676,7 @@ static const char *mge_battery_voltage_nominal_fun(double value)
 
 	case MGE_PULSAR_M:
 	case EATON_5P:
+	case EATON_9E:	/* Presumably per https://github.com/networkupstools/nut/issues/1925#issuecomment-1562342854 */
 		break;
 
 	default:
@@ -494,8 +693,9 @@ static info_lkp_t mge_battery_voltage_nominal[] = {
 };
 
 /* The HID path 'UPS.PowerSummary.Voltage' only reports
-   'battery.voltage' for specific UPS series. Ignore the
-   value for other series (default behavior). */
+ * 'battery.voltage' for specific UPS series.
+ * Ignore the value for other series (default behavior).
+ */
 static const char *mge_battery_voltage_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
@@ -503,6 +703,7 @@ static const char *mge_battery_voltage_fun(double value)
 	case MGE_EVOLUTION:
 	case MGE_PULSAR_M:
 	case EATON_5P:
+	case EATON_9E:	/* Presumably per https://github.com/networkupstools/nut/issues/1925#issuecomment-1562342854 */
 		break;
 
 	default:
@@ -675,10 +876,353 @@ static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t outlet_eco_yes_no_info[] = {
+	{ 0, "The outlet is not ECO controlled", NULL, NULL },
+	{ 1, "The outlet is ECO controlled", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Function to check if the current High Efficiency (aka ECO) mode voltage/frequency is within the configured limits */
+static const char *eaton_input_eco_mode_check_range(double value)
+{
+	double	bypass_voltage;
+	double	eco_low_transfer;
+	double	eco_high_transfer;
+	double	out_voltage_nominal;
+	double	out_frequency_nominal;
+	double	bypass_frequency;
+	double	frequency_range_transfer;
+	double	lower_frequency_limit;
+	double	upper_frequency_limit;
+	double	lower_voltage_limit;
+	double	upper_voltage_limit;
+
+	/* Get the ECO mode voltage/frequency and transfer points */
+	const char	*bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
+	const char	*eco_low_transfer_str = dstate_getinfo("input.transfer.eco.low");
+	const char	*eco_high_transfer_str = dstate_getinfo("input.transfer.eco.high");
+	const char	*out_voltage_nominal_str = dstate_getinfo("output.voltage.nominal");
+	const char	*out_frequency_nominal_str = dstate_getinfo("output.frequency.nominal");
+	const char	*frequency_range_transfer_str = dstate_getinfo("input.transfer.frequency.eco.range");
+	const char	*bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
+
+	NUT_UNUSED_VARIABLE(value);
+
+	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
+	 || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL
+	) {
+		upsdebugx(2, "%s: Failed to get values: "
+			"input.bypass.voltage = %s, "
+			"input.bypass.frequency = %s, "
+			"output.voltage.nominal = %s, "
+			"output.frequency.nominal = %s",
+			__func__,
+			NUT_STRARG(bypass_voltage_str),
+			NUT_STRARG(bypass_frequency_str),
+			NUT_STRARG(out_voltage_nominal_str),
+			NUT_STRARG(out_frequency_nominal_str));
+
+		/* Disable ECO mode switching, do not enter ECO mode */
+		dstate_setinfo("input.eco.switchable", "normal");
+		upsdebugx(1, "%s: Disable ECO mode due to missing input/output variables.", __func__);
+		return NULL;
+	}
+
+	/* In case we don't have ECO transfer limit variables
+	 * but still have ability to enter Bypass/ECO modes,
+	 * will use default limits later in code.
+	 * Possibly reported by debug log for 9SX1000i https://github.com/networkupstools/nut/issues/2685
+	 */
+	if (eco_low_transfer_str == NULL || eco_high_transfer_str == NULL
+	 || frequency_range_transfer_str == NULL
+	) {
+		upsdebugx(2, "%s: Failed to get values: "
+			"input.transfer.eco.low = %s, "
+			"input.transfer.eco.high = %s, "
+			"input.transfer.frequency.eco.range = %s",
+			__func__,
+			NUT_STRARG(eco_low_transfer_str),
+			NUT_STRARG(eco_high_transfer_str),
+			NUT_STRARG(frequency_range_transfer_str));
+		/* Do not return NULL here, we will use default values for limits */
+	}
+
+	str_to_double(bypass_voltage_str, &bypass_voltage, 10);
+	str_to_double(eco_low_transfer_str, &eco_low_transfer, 10);
+	str_to_double(eco_high_transfer_str, &eco_high_transfer, 10);
+	str_to_double(out_voltage_nominal_str, &out_voltage_nominal, 10);
+	str_to_double(out_frequency_nominal_str, &out_frequency_nominal, 10);
+	str_to_double(frequency_range_transfer_str, &frequency_range_transfer, 10);
+	str_to_double(bypass_frequency_str, &bypass_frequency, 10);
+
+	/* Default values if user-defined limits are not available or out of range
+	 * 5% below nominal output voltage
+	 * 5% above nominal output voltage
+	 * 5% below/above output frequency nominal
+	 */
+
+	/* Set the frequency limit */
+	if (frequency_range_transfer > 0) {
+		lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range_transfer);
+		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range_transfer);
+	} else {
+		/* Set default values if user-defined limits are not available or out of range */
+		lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 5);
+		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 5);
+	}
+
+	/* Set the voltage limit */
+	if (eco_low_transfer > 0 && eco_high_transfer > 0) {
+		lower_voltage_limit = eco_low_transfer;
+		upper_voltage_limit = eco_high_transfer;
+	} else {
+		/* Set default values if user-defined limits are not available or out of range */
+		lower_voltage_limit = out_voltage_nominal * 0.95;
+		upper_voltage_limit = out_voltage_nominal * 1.05;
+	}
+
+	/* Check if limits are within valid range */
+	if ((bypass_voltage >= lower_voltage_limit && bypass_voltage <= upper_voltage_limit)
+	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
+	) {
+		upsdebugx(1, "%s: Entering ECO mode due to input conditions being within the transfer limits.", __func__);
+		buzzmode_set("vendor:mge-hid:ECO");
+		return "ECO"; /* Enter ECO mode */
+	} else {
+		/* Condensed debug messages for out of range voltage and frequency */
+		if (bypass_voltage < lower_voltage_limit || bypass_voltage > upper_voltage_limit) {
+			upsdebugx(1, "Input Bypass voltage is outside ECO transfer limits: %.1f V", bypass_voltage);
+		}
+		if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
+			upsdebugx(1, "Input Bypass frequency is outside ECO transfer limits: %.1f Hz", bypass_frequency);
+		}
+		/* Disable ECO mode switching, do not enter ECO mode */
+		dstate_setinfo("input.eco.switchable", "normal");
+		buzzmode_set("vendor:mge-hid:normal");
+		upsdebugx(1, "%s: Disable ECO mode due to input conditions being outside the transfer limits.", __func__);
+		return NULL;
+	}
+}
+
+/* If we are called, it means the status is on? */
+static const char *eaton_input_ess_mode_report(double value)
+{
+	NUT_UNUSED_VARIABLE(value);
+
+	buzzmode_set("vendor:mge-hid:ESS");
+	return "ESS";
+}
+
+/* High Efficiency (aka ECO) mode, Energy Saver System (aka ESS) mode makes sense for UPS like (93PM G2, 9395P) */
+static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
+	{ 0, "normal", NULL, NULL },
+	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ECO" = tested on 9SX model and working fine, 9E model can stuck in ECO mode https://github.com/networkupstools/nut/issues/2719 */
+	{ 2, "ESS", eaton_input_ess_mode_report, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Function to check if the current Bypass transfer voltage/frequency is within the configured limits */
+static const char *eaton_input_bypass_check_range(double value)
+{
+	double	bypass_voltage;
+	double	bypass_low_transfer;
+	double	bypass_high_transfer;
+	double	out_voltage_nominal;
+	double	bypass_frequency;
+	double	frequency_range_transfer;
+	double	lower_frequency_limit;
+	double	upper_frequency_limit;
+	double	lower_voltage_limit;
+	double	upper_voltage_limit;
+	double	out_frequency_nominal;
+
+	/* Get the Bypass mode voltage/frequency and transfer points */
+	const char	*bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
+	const char	*bypass_low_transfer_str = dstate_getinfo("input.transfer.bypass.low");
+	const char	*bypass_high_transfer_str = dstate_getinfo("input.transfer.bypass.high");
+	const char	*out_voltage_nominal_str = dstate_getinfo("output.voltage.nominal");
+	const char	*bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
+	const char	*frequency_range_transfer_str = dstate_getinfo("input.transfer.frequency.bypass.range");
+	const char	*out_frequency_nominal_str = dstate_getinfo("output.frequency.nominal");
+
+	NUT_UNUSED_VARIABLE(value);
+
+	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
+	 || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL
+	) {
+		upsdebugx(2, "%s: Failed to get values: "
+			"input.bypass.voltage = %s, "
+			"input.bypass.frequency = %s, "
+			"output.voltage.nominal = %s, "
+			"output.frequency.nominal = %s",
+			__func__,
+			NUT_STRARG(bypass_voltage_str),
+			NUT_STRARG(bypass_frequency_str),
+			NUT_STRARG(out_voltage_nominal_str),
+			NUT_STRARG(out_frequency_nominal_str));
+
+		/* Disable Bypass mode switching, do not enter Bypass mode */
+		dstate_setinfo("input.bypass.switch.on", "disabled");
+		upsdebugx(1, "%s: Disable Bypass mode due to missing input/output variables.", __func__);
+		return NULL;
+	}
+
+	/* In case we dont have Bypass transfer limit variables but still have ability to enter Bypass mode */
+	if (bypass_low_transfer_str == NULL || bypass_high_transfer_str == NULL
+	 || frequency_range_transfer_str == NULL
+	) {
+		upsdebugx(2, "%s: Failed to get values: "
+			"input.transfer.bypass.low = %s, "
+			"input.transfer.bypass.high = %s, "
+			"input.transfer.frequency.bypass.range = %s",
+			__func__,
+			NUT_STRARG(bypass_low_transfer_str),
+			NUT_STRARG(bypass_high_transfer_str),
+			NUT_STRARG(frequency_range_transfer_str));
+		/* Do not return NULL here, we will use default values for limits */
+	}
+
+	str_to_double(bypass_voltage_str, &bypass_voltage, 10);
+	str_to_double(bypass_low_transfer_str, &bypass_low_transfer, 10);
+	str_to_double(bypass_high_transfer_str, &bypass_high_transfer, 10);
+	str_to_double(out_voltage_nominal_str, &out_voltage_nominal, 10);
+	str_to_double(bypass_frequency_str, &bypass_frequency, 10);
+	str_to_double(frequency_range_transfer_str, &frequency_range_transfer, 10);
+	str_to_double(out_frequency_nominal_str, &out_frequency_nominal, 10);
+
+	/* Default values if user-defined limits are not available or out of range
+	 * 20% below nominal output voltage
+	 * 15% above nominal output voltage
+	 * 10% below/above output frequency nominal
+	 */
+
+	/* Set the frequency limit */
+	if (frequency_range_transfer > 0) {
+		lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range_transfer);
+		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range_transfer);
+	} else {
+		/* Set default values if user-defined limits are not available or out of range */
+		lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 10);
+		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 10);
+	}
+
+	/* Set the voltage limit */
+	if (bypass_low_transfer > 0 && bypass_high_transfer > 0) {
+		lower_voltage_limit = bypass_low_transfer;
+		upper_voltage_limit = bypass_high_transfer;
+	} else {
+		/* Set default values if user-defined limits are not available or out of range */
+		lower_voltage_limit = out_voltage_nominal * 0.8;
+		upper_voltage_limit = out_voltage_nominal * 1.15;
+	}
+
+	/* Check if limits are within valid range */
+	if ((bypass_voltage >= lower_voltage_limit && bypass_voltage <= upper_voltage_limit)
+	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
+	) {
+		upsdebugx(1, "%s: Entering Bypass mode due to input conditions being within the transfer limits.", __func__);
+		return "on"; /* Enter Bypass mode */
+	} else {
+		/* Condensed debug messages for out of range voltage and frequency */
+		if (bypass_voltage < lower_voltage_limit || bypass_voltage > upper_voltage_limit) {
+			upsdebugx(1, "Input Bypass voltage is outside Bypass transfer limits: %.1f V", bypass_voltage);
+		}
+		if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
+			upsdebugx(1, "Input Bypass frequency is outside Bypass transfer limits: %.1f Hz", bypass_frequency);
+		}
+		/* Disable Bypass mode switching, do not enter Bypass mode */
+		dstate_setinfo("input.bypass.switch.on", "disabled");
+		upsdebugx(1, "%s: Disable Bypass mode due to input conditions being outside the transfer limits.", __func__);
+		return NULL;
+	}
+}
+
+/* Automatic Bypass mode on */
+static info_lkp_t eaton_input_bypass_mode_on_info[] = {
+	{ 0, "disabled", NULL, NULL },
+	{ 1, "on", eaton_input_bypass_check_range, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Automatic Bypass mode off (switch on inverter) */
+static info_lkp_t eaton_input_bypass_mode_off_info[] = {
+	{ 0, "disabled", NULL, NULL },
+	{ 1, "off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Function to start ECO(HE) Mode automatically instead of manually starting Bypass and then ECO(HE) Mode */
+static const char *eaton_input_eco_mode_auto_on_fun(double value)
+{
+	const char *bypass_switch_on_str = NULL;
+	const char *eco_switchable_str = NULL;
+
+	NUT_UNUSED_VARIABLE(value);
+
+	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
+	bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
+	if (!strcmp(bypass_switch_on_str, "disabled")) {
+		setvar("input.bypass.switch.on", "on");
+	} else {
+		upsdebugx(1, "Bypass switch on state is: %s , must be disabled before switching on", bypass_switch_on_str);
+		return NULL;
+	}
+
+	/* Check if input.eco.switchable is normal and set it to 'ECO' */
+	eco_switchable_str = dstate_getinfo("input.eco.switchable");
+	if (!strcmp(eco_switchable_str, "normal")) {
+		setvar("input.eco.switchable", "ECO");
+	} else {
+		upsdebugx(1, "ECO switch state is: %s , must be normal before switching to ECO", eco_switchable_str);
+		return NULL;
+	}
+
+	upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
+	return NULL;
+}
+
+/* Function to stop ECO(HE) Mode automatically instead of manually stoping Bypass and then Online Mode */
+static const char *eaton_input_eco_mode_auto_off_fun(double value)
+{
+	const char *bypass_switch_off_str = NULL;
+	const char *eco_switchable_str = NULL;
+
+	NUT_UNUSED_VARIABLE(value);
+
+	/* Check if input.bypass.switch.off is disabled and set it to 'off' */
+	bypass_switch_off_str = dstate_getinfo("input.bypass.switch.off");
+	if (!strcmp(bypass_switch_off_str, "disabled")) {
+		setvar("input.bypass.switch.off", "off");
+	} else {
+		upsdebugx(1, "Bypass switch off state is: %s , must be disabled before switching off", bypass_switch_off_str);
+		return NULL;
+	}
+
+	/* Check if input.eco.switchable is 'ECO' and set it to normal */
+	eco_switchable_str = dstate_getinfo("input.eco.switchable");
+	if (!strcmp(eco_switchable_str, "ECO")) {
+		setvar("input.eco.switchable", "normal");
+	} else {
+		upsdebugx(1, "ECO switch state is: %s , must be ECO before switching to normal", eco_switchable_str);
+		return NULL;
+	}
+
+	upsdebugx(1, "%s: ECO Mode was disabled after switching from Bypass Mode", __func__);
+	return NULL;
+}
+
+/* High Efficiency (aka ECO) mode for auto start/stop commands */
+static info_lkp_t eaton_input_eco_mode_auto_on_off_info[] = {
+	{ 1, "dummy", eaton_input_eco_mode_auto_on_fun, NULL },
+	{ 0, "dummy", eaton_input_eco_mode_auto_off_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
  * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
- * 		else default to "US" */
+ * 		else default to "US"
+ */
 static const char *eaton_check_country_fun(double value)
 {
 	country_code = value;
@@ -695,14 +1239,15 @@ static info_lkp_t eaton_check_country_info[] = {
  * compute a realpower approximation using available data */
 static const char *eaton_compute_realpower_fun(double value)
 {
+	const char	*str_ups_load = dstate_getinfo("ups.load");
+	const char	*str_power_nominal = dstate_getinfo("ups.power.nominal");
+	const char	*str_powerfactor = dstate_getinfo("output.powerfactor");
+	float	powerfactor = 0.80;
+	int	power_nominal = 0;
+	int	ups_load = 0;
+	double	realpower = 0;
 	NUT_UNUSED_VARIABLE(value);
-	const char *str_ups_load = dstate_getinfo("ups.load");
-	const char *str_power_nominal = dstate_getinfo("ups.power.nominal");
-	const char *str_powerfactor = dstate_getinfo("output.powerfactor");
-	float powerfactor = 0.80;
-	int power_nominal = 0;
-	int ups_load = 0;
-	double realpower = 0;
+
 	if (str_power_nominal && str_ups_load) {
 		/* Extract needed values */
 		ups_load = atoi(str_ups_load);
@@ -836,7 +1381,7 @@ static info_lkp_t nominal_output_voltage_info[] = {
 /* Limit reporting "online / !online" to when "!off" */
 static const char *eaton_converter_online_fun(double value)
 {
-	unsigned ups_status = ups_status_get();
+	unsigned	ups_status = ups_status_get();
 
 	if (ups_status & STATUS(OFF))
 		return NULL;
@@ -849,6 +1394,13 @@ static info_lkp_t eaton_converter_online_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t eaton_outlet_protection_status_info[] = {
+	{ 0, "not powered", NULL, NULL },
+	{ 1, "not protected", NULL, NULL },
+	{ 2, "protected", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -856,10 +1408,11 @@ static info_lkp_t eaton_converter_online_info[] = {
 /* Eaton / MGE HID usage table */
 static usage_lkp_t mge_usage_lkp[] = {
 	{ "Undefined",				0xffff0000 },
-	{ "STS",				0xffff0001 },
+	{ "STS",					0xffff0001 },
 	{ "Environment",			0xffff0002 },
-	{ "Statistic",			0xffff0003 },
+	{ "Statistic",				0xffff0003 },
 	{ "StatisticSystem",		0xffff0004 },
+	{ "USB",					0xffff0005 },
 	/* 0xffff0005-0xffff000f	=>	Reserved */
 	{ "Phase",				0xffff0010 },
 	{ "PhaseID",				0xffff0011 },
@@ -980,7 +1533,7 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "DataValid",				0xffff0099 },
 	{ "ToggleTimer",				0xffff009a },
 	{ "BypassTransferDelay",		0xffff009b },
-	{ "HysteresysVoltageTransfer",	0xffff009c },
+	{ "HysteresisVoltageTransfer",		0xffff009c },
 	{ "SlewRate",					0xffff009d },
 	/* 0xffff009e-0xffff009f	=>	Reserved */
 	{ "PDU",					0xffff00a0 },
@@ -999,8 +1552,12 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "Reset",			0xffff00ad },
 	{ "WatchdogReset",			0xffff00ae },
 	/* 0xffff00af-0xffff00df	=>	Reserved */
+	{ "iDesignator",			0xffff00ba },
 	{ "COPIBridge",				0xffff00e0 },
-	/* 0xffff00e1-0xffff00ef	=>	Reserved */
+	{ "Gateway",				0xffff00e1 },
+	{ "System",					0xffff00e5 },
+	{ "Status",					0xffff00e9 },
+	/* 0xffff00ee-0xffff00ef	=>	Reserved */
 	{ "iModel",				0xffff00f0 },
 	{ "iVersion",				0xffff00f1 },
 	{ "iTechnicalLevel",		0xffff00f2 },
@@ -1111,6 +1668,90 @@ static models_name_t mge_model_names [] =
 	{ "Eaton 5P", "1150", EATON_5P, "5P 1150" },
 	{ "Eaton 5P", "1550", EATON_5P, "5P 1550" },
 
+	/* Eaton 5PX, names assumed per VA numbers in
+	 * https://www.eaton.com/gb/en-gb/catalog/backup-power-ups-surge-it-power-distribution/eaton-5px-ups-emea.html#tab-2
+	 * and a user report in https://github.com/networkupstools/nut/issues/2380
+	 * Fixes for actual product/model names reported via USB are welcome
+	 */
+	{ "Eaton 5PX", "1500", EATON_5P, NULL },
+	{ "Eaton 5PX", "2200", EATON_5P, NULL },
+	{ "Eaton 5PX", "3000", EATON_5P, NULL },
+
+	/* Eaton 5SC, names assumed per VA numbers in
+	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$5sc.tabs$all.html
+	 * and a user report in https://github.com/networkupstools/nut/issues/2380
+	 * Fixes for actual product/model names reported via USB are welcome
+	 */
+	{ "Eaton 5SC", "500", EATON_5P, NULL },
+	{ "Eaton 5SC", "750", EATON_5P, NULL },
+	{ "Eaton 5SC", "1000", EATON_5P, NULL },
+	{ "Eaton 5SC", "1500", EATON_5P, NULL },
+	{ "Eaton 5SC", "2200", EATON_5P, NULL },
+	{ "Eaton 5SC", "3000", EATON_5P, NULL },
+
+	/* Eaton 5S, sort of:
+	 * Per https://github.com/networkupstools/nut/issues/2380#issuecomment-2705813132
+	 * a device marketed as Eaton "5S1200AU" self-identified as an "Ellipse PRO" in
+	 * USB metadata; the trailing space after "1200 " was significant for matching it.
+	 */
+	{ "Ellipse PRO", "1200 ", EATON_5P, "Eaton 5S1200" },
+
+	/* Eaton 9E entry-level series per discussions in
+	 * https://github.com/networkupstools/nut/issues/1925
+	 * https://github.com/networkupstools/nut/issues/2380
+	 * https://github.com/networkupstools/nut/issues/2492
+	 */
+	{ "Eaton 9E", "1000",  EATON_9E, "9E1000" },
+	{ "Eaton 9E", "1000i", EATON_9E, "9E1000i" },
+	{ "Eaton 9E", "1000iau", EATON_9E, "9E1000iau" },
+	{ "Eaton 9E", "1000ir", EATON_9E, "9E1000ir" },
+	{ "Eaton 9E", "2000",  EATON_9E, "9E2000" },
+	{ "Eaton 9E", "2000i", EATON_9E, "9E2000i" },
+	{ "Eaton 9E", "2000iau", EATON_9E, "9E2000iau" },
+	{ "Eaton 9E", "2000ir", EATON_9E, "9E2000ir" },
+	{ "Eaton 9E", "3000",  EATON_9E, "9E3000" },
+	{ "Eaton 9E", "3000i", EATON_9E, "9E3000i" },
+	{ "Eaton 9E", "3000iau", EATON_9E, "9E3000iau" },
+	{ "Eaton 9E", "3000ir", EATON_9E, "9E3000ir" },
+	{ "Eaton 9E", "3000ixl", EATON_9E, "9E3000ixl" },
+	{ "Eaton 9E", "3000ixlau", EATON_9E, "9E3000ixlau" },
+
+	/* https://github.com/networkupstools/nut/issues/1925#issuecomment-1609262963
+	 * if we failed to get iManufacturer, iProduct and iSerialNumber but saw
+	 * the UPS.Flow.[4].ConfigApparentPower (the "2000" or "3000" part here)
+	 */
+	{ "unknown",  "1000",  EATON_9E, "9E1000i (presumed)" },
+	{ "unknown",  "2000",  EATON_9E, "9E2000i (presumed)" },
+	{ "unknown",  "3000",  EATON_9E, "9E3000i (presumed)" },
+
+	/* Eaton 9SX series per discussions in
+	 * https://github.com/networkupstools/nut/issues/2685
+	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$9sx.tabs$all.html
+	 */
+	{ "Eaton 9SX", "700i", EATON_9E, "9SX700i" },
+	{ "Eaton 9SX", "1000i", EATON_9E, "9SX1000i" },
+	{ "Eaton 9SX", "1000im", EATON_9E, "9SX1000im" },
+	{ "Eaton 9SX", "1500i", EATON_9E, "9SX1500i" },
+	{ "Eaton 9SX", "2000i", EATON_9E, "9SX2000i" },
+	{ "Eaton 9SX", "3000i", EATON_9E, "9SX3000i" },
+	{ "Eaton 9SX", "3000im", EATON_9E, "9SX3000im" },
+	{ "Eaton 9SX", "1000ir", EATON_9E, "9SX1000ir" },
+	{ "Eaton 9SX", "1500ir", EATON_9E, "9SX1500ir" },
+	{ "Eaton 9SX", "2000ir", EATON_9E, "9SX2000ir" },
+	{ "Eaton 9SX", "3000ir", EATON_9E, "9SX3000ir" },
+
+	/* Eaton 9PX series
+	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$9px.tabs$all.html
+	 */
+	{ "Eaton 9PX", "1000irt2u", EATON_9E, "9px1000irt2u" },
+	{ "Eaton 9PX", "1500irt2u", EATON_9E, "9px1500irt2u" },
+	{ "Eaton 9PX", "1500irtm", EATON_9E, "9px1500irtm" },
+	{ "Eaton 9PX", "2200irt2u", EATON_9E, "9px2200irt2u" },
+	{ "Eaton 9PX", "2200irt3u", EATON_9E, "9px2200irt3u" },
+	{ "Eaton 9PX", "3000irt2u", EATON_9E, "9px3000irt2u" },
+	{ "Eaton 9PX", "3000irt3u", EATON_9E, "9px3000irt3u" },
+	{ "Eaton 9PX", "3000irtm", EATON_9E, "9px3000irtm" },
+
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
 	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, NULL },
@@ -1189,6 +1830,9 @@ static hid_info_t mge_hid2nut[] =
 	/* Device collection */
 	/* Just declared to call *hid2info */
 	{ "device.country", ST_FLAG_STRING, 20, "UPS.PowerSummary.Country", NULL, "Europe", HU_FLAG_STATIC, eaton_check_country_info },
+	{ "device.usb.version", ST_FLAG_STRING, 20, "UPS.System.USB.iVersion", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
+	/* { "device.usb.mode", ST_FLAG_STRING, 20, "UPS.System.USB.Mode", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, */ /* not useful ,not a string (1 to set in bootloader ) */
+	/*{ "device.gateway.power.rate", ST_FLAG_STRING, 20, "UPS.System.Gateway.PowerRate", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, */  /* not useful , not a string (level of power provided by the UPS to the network card */
 
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
@@ -1214,15 +1858,31 @@ static hid_info_t mge_hid2nut[] =
 	/* Newer implementation */
 	{ "battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "battery.energysave.realpower", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ConfigActivePower", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+
 	/* ABM (Advanced Battery Monitoring) processing
 	 * Must be processed before the BOOL status */
-	/* Not published, just to store in internal var. advanced_battery_monitoring */
-	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+
+	/* Not published, just to store internally if ABM is enabled or disabled */
+	{ "battery.charger.abm.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+
+	/*
+	 * Process two different ABM paths (each of which expose different values for CHRG/DISCHRG in ABM-enabled paths)
+	*/
+
+	/* Not published, used to internally decide and store taken ABM path */
+	{ "battery.charger.mode.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_path_mode_info },
+	{ "battery.charger.type.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_path_status_info },
+
+	/* Published ABM status for the respective taken ABM path */
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
+
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
-	/* This data is the actual ABM status information */
-	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
+
+	/* Published battery charger type (can be ABM, CC, ...) */
+	{ "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
 
 	/* UPS page */
 	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
@@ -1240,6 +1900,7 @@ static hid_info_t mge_hid2nut[] =
 	 * Only the first valid one will be used */
 	{ "ups.beeper.status", 0 ,0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
+	{ "ups.beeper.status", 0 ,0, "UPS.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },   //yonesmit - support for Masterpower MF-UPS650VA
 	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
 	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "ups.L1.power", 0, 0, "UPS.PowerConverter.Output.Phase.[1].ApparentPower", NULL, "%.0f", 0, NULL },
@@ -1271,6 +1932,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
 #if 0
+	/* NOTE: see entry with eaton_converter_online_info below now */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
 #endif
 	/* These 2 ones are used when ABM is disabled */
@@ -1278,6 +1940,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
 	/* And this one when ABM is enabled (same as battery.charger.status) */
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_chrg_dischrg_info },
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_chrg_dischrg_info },
 	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 1" */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
 	/* Output overload, Level 1 (FIXME: add the level?) */
@@ -1298,7 +1961,9 @@ static hid_info_t mge_hid2nut[] =
 	 * and must hence be after "UPS.PowerSummary.PresentStatus.Good" */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, eaton_converter_online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
+	/* NOTE: entry [3] is above as mge_onbatt_info */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[5].PresentStatus.Used", NULL, NULL, 0, eco_mode_info }, /* ECO(HE), ESS Mode */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", NULL, NULL, 0, nobattery_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.InternalFailure", NULL, NULL, 0, chargerfail_info },
@@ -1338,11 +2003,21 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.frequency.nominal", 0, 0, "UPS.Flow.[1].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	/* same as "input.transfer.boost.low" */
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.eco.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.bypass.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBoostTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBoostTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	/* same as "input.transfer.trim.high" */
 	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.eco.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.bypass.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.frequency.bypass.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.frequency.eco.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.hysteresis", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HysteresisVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.bypass.forced", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].ForcedTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
+	{ "input.transfer.bypass.overload", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].OverloadTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
+	{ "input.transfer.bypass.outlimits", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].OutOfToleranceTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerConverter.Output.SensitivityMode", NULL, "%s", HU_FLAG_SEMI_STATIC, mge_sensitivity_info },
 	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
@@ -1364,6 +2039,16 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.bypass.current.nominal", 0, 0, "UPS.Flow.[2].ConfigCurrent", NULL, "%.2f", HU_FLAG_STATIC, NULL },
 	{ "input.bypass.frequency", 0, 0, "UPS.PowerConverter.Input.[2].Frequency", NULL, "%.1f", 0, NULL },
 	{ "input.bypass.frequency.nominal", 0, 0, "UPS.Flow.[2].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+
+	/* ECO(HE), ESS Mode switch, to use when 'input.bypass.switch.on' is on */
+	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_eco_mode_on_off_info },
+
+	/* Auto Bypass Mode on/off, to use when 'input.transfer.bypass.forced' is enabled */
+	{ "input.bypass.switch.on", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_on_info },
+	{ "input.bypass.switch.off", ST_FLAG_RW | ST_FLAG_STRING, 12, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_off_info },
+
+	/* Transfer on automatic Bypass switch with rules 'input.transfer.bypass.overload' and 'input.transfer.bypass.outlimits' */
+	{ "input.bypass.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
@@ -1402,7 +2087,10 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
+	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */
 	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
+	{ "outlet.1.protect.status", 0, 0, "UPS.OutletSystem.Outlet.[1].Status", NULL, "%s", 0, eaton_outlet_protection_status_info },
+	{ "outlet.1.designator", 0, 0, "UPS.OutletSystem.Outlet.[1].iDesignator", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%s", 0, on_off_info },
 	/* FIXME: change to outlet.1.battery.charge.low, as in mge-xml.c?! */
@@ -1413,6 +2101,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.realpower", 0, 0, "UPS.OutletSystem.Outlet.[2].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "outlet.1.current", 0, 0, "UPS.OutletSystem.Outlet.[2].Current", NULL, "%.2f", 0, NULL },
 	{ "outlet.1.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[2].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
+	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info */
+	{ "outlet.1.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[2].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, outlet_eco_yes_no_info},
 	/* Second outlet */
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT, NULL },
@@ -1422,6 +2112,8 @@ static hid_info_t mge_hid2nut[] =
 	/* Generic version (RO) for other models */
 	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", 0, yes_no_info },
 	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
+	{ "outlet.2.protect.status", 0, 0, "UPS.OutletSystem.Outlet.[3].Status", NULL, "%s", 0, eaton_outlet_protection_status_info },
+	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -1429,11 +2121,13 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.realpower", 0, 0, "UPS.OutletSystem.Outlet.[3].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "outlet.2.current", 0, 0, "UPS.OutletSystem.Outlet.[3].Current", NULL, "%.2f", 0, NULL },
 	{ "outlet.2.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[3].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
+	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info */
+	{ "outlet.2.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[3].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, outlet_eco_yes_no_info},
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
-	* ie: test.battery.start quick
-	*/
+	 * ie: test.battery.start quick
+	 */
 	{ "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "test.battery.stop", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },
@@ -1451,12 +2145,28 @@ static hid_info_t mge_hid2nut[] =
 	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "beeper.enable", 0, 0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
+	{ "beeper.disable", 0, 0, "UPS.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL }, //yonesmit - support for Masterpower MF-UPS650VA
+	{ "beeper.enable", 0, 0, "UPS.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },  //yonesmit - support for Masterpower MF-UPS650VA
 
 	/* Command for the outlet collection */
 	{ "outlet.1.load.off", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.1.load.on", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.2.load.off", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
+
+	/* Command to switch ECO(HE), ESS Mode */
+	{ "experimental.ecomode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
+	{ "experimental.ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
+	{ "experimental.essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
+	{ "experimental.essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
+	/* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on before */
+	{ "experimental.ecomode.start.auto", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_off_info },
+	/* Command to switch from ECO(HE) Mode with switch from Automatic Bypass Mode on before */
+	{ "experimental.ecomode.stop.auto", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_off_info },
+
+	/* Command to switch Automatic Bypass Mode on/off */
+	{ "bypass.start", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, eaton_input_bypass_mode_on_info },
+	{ "bypass.stop", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "1", HU_TYPE_CMD, eaton_input_bypass_mode_off_info },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
@@ -1475,7 +2185,7 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 
 	/* Search for device type and formatting rules */
 	for (model = mge_model_names; model->iProduct; model++) {
-		if(model->name) {
+		if (model->name) {
 			upsdebugx(2, "comparing with: %s", model->name);
 		}
 		else {
@@ -1508,7 +2218,7 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
 		/* NOTE: We intentionally limit the amount of bytes reported */
-		int len = snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+		int	len = snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
 
 		if (len < 0) {
 			upsdebugx(1, "%s: got an error while extracting iProduct+iModel value", __func__);
@@ -1518,7 +2228,7 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 		 * buffer definitions below
 		 */
 		if ((intmax_t)len > (intmax_t)sizeof(buf)
-		|| (intmax_t)(strnlen(iProduct, SMALLBUF) + strnlen(iModel, SMALLBUF) + 1 + 1)
+		|| ((intmax_t)(strnlen(iProduct, SMALLBUF) + strnlen(iModel, SMALLBUF) + 1 + 1))
 		    > (intmax_t)sizeof(buf)
 		) {
 			upsdebugx(1, "%s: extracted iProduct+iModel value was truncated", __func__);
@@ -1572,8 +2282,11 @@ static const char *mge_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int mge_claim(HIDDevice_t *hd) {
 
-#ifndef SHUT_MODE
-	int status = is_usb_device_supported(mge_usb_device_table, hd);
+#if (defined SHUT_MODE) && SHUT_MODE
+	NUT_UNUSED_VARIABLE(hd);
+	return 1;
+#else	/* !SHUT_MODE => USB */
+	int	status = is_usb_device_supported(mge_usb_device_table, hd);
 
 	switch (status) {
 
@@ -1608,6 +2321,15 @@ static int mge_claim(HIDDevice_t *hd) {
 				/* Let liebert-hid grab this */
 				return 0;
 
+			case KSTAR_VENDORID:
+				if (hd->Vendor && strstr(hd->Vendor, "KSTAR")) {
+					return 1;
+				}
+
+				/* So far we only heard of KSTAR using this ID
+				 * in some models (or MGE 0x0463 originally) */
+				return 0;
+
 			default: /* Valid for Eaton */
 				/* by default, reject, unless the productid option is given */
 				if (getval("productid")) {
@@ -1631,6 +2353,18 @@ static int mge_claim(HIDDevice_t *hd) {
 
 				/* Let liebert-hid grab this */
 				return 0;
+
+			case KSTAR_VENDORID:
+				if (hd->Vendor && strstr(hd->Vendor, "KSTAR")) {
+					return 1;
+				}
+
+				/* So far we only heard of KSTAR using this ID
+				 * in some models (or MGE 0x0463 originally) */
+				return 0;
+
+			default:
+				break;
 		}
 
 		return 1;
@@ -1639,10 +2373,7 @@ static int mge_claim(HIDDevice_t *hd) {
 	default:
 		return 0;
 	}
-#else
-	NUT_UNUSED_VARIABLE(hd);
-	return 1;
-#endif
+#endif	/* SHUT_MODE / USB */
 }
 
 subdriver_t mge_subdriver = {

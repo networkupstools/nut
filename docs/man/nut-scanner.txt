@@ -4,7 +4,7 @@ NUT-SCANNER(8)
 NAME
 ----
 
-nut-scanner - scan communication buses for NUT devices
+nut-scanner - Tool to scan communication buses for NUT devices
 
 SYNOPSIS
 --------
@@ -19,14 +19,21 @@ DESCRIPTION
 *nut-scanner* scans available communication buses and displays any
 NUT-compatible devices it has found.
 
+*nut-scanner* can also display the detected devices in various formats,
+including `ups.conf`, and ensures that the generated devices name are unique
+across buses.
+
 INSTALLATION
 ------------
 
 *nut-scanner* is only built if libltdl (part of libtool development suite)
-is available. Available options (USB, SNMP, IPMI, ...) will vary according
-to the available compile time and runtime dependencies. For example, if
-Net-SNMP is installed, thus providing libsnmp (.so or .dll) and headers,
-both during compilation and runtime, then SNMP discovery will be available.
+is available.
+
+Available scanning options (USB, SNMP, IPMI, ...) will vary according
+to the available compile-time and run-time dependencies. For example, if
+Net-SNMP is installed, thus providing libsnmp libraries (`*.so` or `*.dll`)
+and header files during compilation, and at least the library files on the
+monitoring system, then SNMP discovery will be available.
 
 OPTIONS
 -------
@@ -38,11 +45,11 @@ DISPLAY OPTIONS
 ---------------
 
 *-Q* | *--disp_nut_conf_with_sanity_check*::
-Display result in the 'ups.conf' format with sanity-check warnings (if any)
+Display result in the `ups.conf` format with sanity-check warnings (if any)
 as comments (default).
 
 *-N* | *--disp_nut_conf*::
-Display result in the 'ups.conf' format.
+Display result in the `ups.conf` format.
 
 *-P* | *--disp_parsable*::
 Display result in a parsable format.
@@ -55,6 +62,23 @@ Scan all available communication buses (default behavior)
 
 *-U* | *--usb_scan*::
 List all NUT-compatible USB devices currently plugged in.
++
+This option can be specified several times, for more hardware link-specific
+details; these can be counter-productive in case of USB enumeration changes
+over time:
++
+[options="header",cols="1,3a"]
+|===========================================================================
+| Option count | Practical meaning
+| `-U`    | do not report any `bus`/`device`/`busport` details
+| `-UU`   | report `bus` and `busport`, if available
+| `-UUU`  | report `bus`/`device`/`busport` details
+| `-UUUU` | report `bus`/`device`/`busport` details,
+            and `bcdDevice` (limited use and benefit)
+|===========================================================================
++
+NOTE: For reliability, it is preferable to match just by vendor and product
+identification, and a serial number if available and unique.
 
 *-S* | *--snmp_scan*::
 Scan SNMP devices. Requires at least a 'start IP', and optionally,
@@ -62,35 +86,78 @@ an 'end IP'. See specific SNMP OPTIONS for community and security settings.
 
 *-M* | *--xml_scan*::
 Scan XML/HTTP devices. Can broadcast a network message on the current network
-interfaces to retrieve XML/HTTP capable devices. No IP required in this mode.
+interface(s) to retrieve XML/HTTP capable devices. No IP required in this mode.
+If IP address ranges are specified, they would be scanned instead of a broadcast.
 
 *-O* | *--oldnut_scan*::
-Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.
+Scan NUT devices (i.e. `upsd` daemon) on IP ranging from 'start IP' to 'end IP'.
+
+*-n* | *--nut_simulation_scan*::
+Scan NUT simulated devices (`.dev` files in the built-in "sysconfig" location).
++
+WARNING: The `NUT_CONFPATH` environment variable override is not currently
+supported.
 
 *-A* | *--avahi_scan*::
-Scan NUT servers using Avahi request on the current network interfaces.
-No IP required.
+Scan NUT servers using Avahi request on the current network interface(s).
+No IP address options are required or used.
 
 *-I* | *--ipmi_scan*::
 Scan NUT compatible power supplies available via IPMI on the current host,
-or over the network.
+or over the network if IP address ranges are specified.
 
 *-E* | *--eaton_serial* 'serial ports'::
 Scan Eaton devices (XCP and SHUT) available via serial bus on the current host.
 This option must be requested explicitly, even for a complete scan.
 'serial ports' can be expressed in various forms:
-
++
 - 'auto' to scan all serial ports.
-- a single character indicating a port number ('0' (zero) for /dev/ttyS0 and
-/dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
+- a single character indicating a port number ('0' (zero) for `/dev/ttyS0` and
+  `/dev/ttyUSB0` on Linux, '1' for `COM1` on Windows, 'a' for `/dev/ttya`
+  on Solaris...)
 - a range of N characters, hyphen separated, describing the range of
-ports using 'X-Y', where X and Y are characters referring to the port number.
+  ports using `X-Y` syntax, where 'X' and 'Y' are characters referring
+  to the port number.
 - a single port name.
-- a list of ports name, coma separated, like '/dev/ttyS1,/dev/ttyS4'.
-
+- a list of ports name, comma separated, like `/dev/ttyS1,/dev/ttyS4`.
 
 NETWORK OPTIONS
 ---------------
+
+[NOTE]
+======
+The networked buses (such as SNMP, NetXML, IPMI and "Old NUT") allow to
+specify several IP (IPv4 or IPv6) address ranges, down to individual single
+IP addresses.
+
+Normally a new range is specified by a set of one `-s` and one `-e` options
+following each other (in any order on the command line).
+
+Lone or consecutive `-s` or `-e` options present on the command line would
+translate to single-IP queries.
+
+Also, a `-m` option squashed between two `-s` and `-e` options would be a new
+range, turning those two into single-IP queries.  This feature does not by
+itself recombine "neighboring" addresses into one range, nor even check for
+duplicate or overlapping specifications.
+
+A single-address range may be a host name which would be resolved into one IP
+address by the system resolver. A CIDR using a host name and netmask length
+would be resolved into an IP address and subjected to the mask application,
+to query hosts "near" the named one.
+======
+
+Also note that some buses require IP address(es) to scan, and others have a
+different behavior when exactly no addresses are specified (it is not currently
+possible to mix the two behaviors in one invocation of the `nut-scanner` tool).
+
+Finally note that currently even if multi-threaded support is available, each
+range specification is a separate fan-out of queries constrained by the timeout.
+Requests to scan many single IP addresses will take a while to complete, much
+longer than if they were a single range.  This will be hopefully fixed in later
+releases.
+
+NOTE: Colon-separated IPv6 addresses must be passed in square brackets.
 
 *-t* | *--timeout* 'timeout'::
 Set the network timeout in seconds. Default timeout is 5 seconds.
@@ -106,7 +173,20 @@ If this parameter is omitted, only the 'start IP' is scanned. If 'end IP' is
 less than 'start IP', both parameters are internally permuted.
 
 *-m* | *--mask_cidr* 'IP address/mask'::
-Set a range of IP using CIDR notation.
+Set a range of IP addresses by using CIDR notation.
++
+A special form `-m auto` allows `nut-scanner` to detect local IP address(es)
+and scan corresponding subnet(s) on supported platforms, and `-m auto4` or
+`-m auto6` limits the selected addresses to IPv4 and IPv6 respectively. Only
+the first "auto*" request would be honoured, others ignored with a warning.
++
+An `/ADDRLEN` suffix can be added to the option, to filter out discovered
+subnets with too many bits available for the host address part (avoiding
+millions of scans in the extreme cases).  For example, if your IPv4 LAN's
+network range is `10.2.3.0/24`, its address part is `(32-24)=8`. Note that
+while this is applied to IPv6 networks also, their typical `/64` subnets
+are not likely to have a NUT/SNMP/NetXML/... server *that* close nearby
+(in addressing terms), for a tight filter to find them. Default is `8`.
 
 NUT DEVICE OPTION
 -----------------
@@ -126,6 +206,7 @@ SNMP V3 OPTIONS
 *-l* | *--secLevel* 'security level'::
 Set the 'security level' used for SNMPv3 messages.
 Allowed values are: noAuthNoPriv, authNoPriv and authPriv.
+This parameter is mandatory if you use non-trivial authentication.
 
 *-u* | *--secName* 'security name'::
 Set the 'security name' used for authenticated SNMPv3 messages.
@@ -201,8 +282,8 @@ MISCELLANEOUS OPTIONS
 Display NUT version.
 
 *-a* | *--available*::
-Display available bus that can be scanned, depending on how the nut-scanner
-binary program has been compiled. (OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
+Display available buses that can be scanned, depending on how the nut-scanner
+binary program has been compiled. (e.g. OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
 
 *-q* | *--quiet*::
 Display only scan result. No information on currently scanned bus is displayed.
@@ -210,40 +291,77 @@ Display only scan result. No information on currently scanned bus is displayed.
 *-D* | *--nut_debug_level*::
 Raise the debugging level.  Use this multiple times to see more details.
 
+NOTE: The level of debugging needed depends both on `nut-scanner` and the
+problem you're trying to diagnose.  Therefore, first explain the problem you
+have with `nut-scanner` to a developer/maintainer, before sending them debugging
+output.  More often than not, if you just pick a level, the output may be
+either too limited or too verbose to be of any use.
+
 EXAMPLES
 --------
 
 To scan USB devices only:
 
-*nut-scanner -U*
+----
+:; nut-scanner -U
 
-To scan SNMP v1 device with public community on address range 192.168.0.0
-to 192.168.0.255:
+[nutdev-usb1]
+        driver = "snmp-ups"
+        port = "192.168.0.42"
+----
 
-*nut-scanner -S -s 192.168.0.0 -e 192.168.0.255*
+To scan SNMP v1 device with 'public' (default) community on address range
+'192.168.0.0 to 192.168.0.255':
+
+----
+:; nut-scanner -S -s 192.168.0.0 -e 192.168.0.255
+
+[nutdev-snmp1]
+        driver = "snmp-ups"
+        port = "192.168.0.42"
+----
 
 The same using CIDR notation:
 
-*nut-scanner -S -m 192.168.0.0/24*
+----
+:; nut-scanner -S -m 192.168.0.0/24
 
-To scan NUT servers with a timeout of 10 seconds on IP range 192.168.0.0
-to 192.168.0.127 using CIDR notation:
+[nutdev-snmp1]
+        driver = "snmp-ups"
+        port = "192.168.0.42"
+----
 
-*nut-scanner -O -t 10 -m 192.168.0.0/25*
+To scan NUT servers with a timeout of '10' seconds on IP range '192.168.0.0
+to 192.168.0.127' using CIDR notation:
+
+----
+:; nut-scanner -O -t 10 -m 192.168.0.0/25
+
+[nutdev-nut1]
+        driver = "dummy-ups"
+        port = "dummy-test@192.168.1.28"
+----
 
 To scan for power supplies, through IPMI (1.5 mode) over the network,
-on address range 192.168.0.0 to 192.168.0.255 using CIDR notation:
+on address range '192.168.0.0 to 192.168.0.255' using CIDR notation:
 
-*nut-scanner -I -m 192.168.0.0/24 -b username -B password*
+----
+:; nut-scanner -I -m 192.168.0.0/24 -b username -B password
+----
 
-To scan for Eaton serial devices on ports 0 and 1 (/dev/ttyS0,
-/dev/ttyUSB0, /dev/ttyS1 and /dev/ttyUSB1 on Linux):
+To scan for Eaton serial devices on ports '0' and '1' (`/dev/ttyS0`,
+`/dev/ttyUSB0`, `/dev/ttyS1` and `/dev/ttyUSB1` on Linux):
 
-*nut-scanner --eaton_serial 0-1*
+----
+:; nut-scanner --eaton_serial 0-1
+----
 
-To scan for Eaton serial devices on ports 1 and 2 (COM1 and COM2 on Windows):
+To scan for Eaton serial devices on ports '1' and '2' (`COM1` and `COM2`
+on Windows):
 
-*nut-scanner --eaton_serial 1-2*
+----
+:; nut-scanner --eaton_serial 1-2
+----
 
 SEE ALSO
 --------
@@ -253,4 +371,4 @@ linkman:ups.conf[5]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

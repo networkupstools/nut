@@ -1,5 +1,5 @@
 HUAWEI_UPS2000(8)
-==================
+=================
 
 NAME
 ----
@@ -31,9 +31,13 @@ on Linux 5.12 and newer kernels, but there are exceptions, read the section
 *Cabling* carefully).
 
 The UPS2000 series has two variants: UPS2000-A with a tower chassis,
-and UPS2000-G with a rack-mount chassis. Both should be equally supported,
-but more testers are needed.
-Currently, it has been tested on the following models.
+and UPS2000-G with a rack-mount chassis. Within these two variants,
+there are also two sub-variants: a standard runtime model powered by
+an internal battery pack denoted by an "S" suffix, and a long runtime
+model powered by an external battery pack denoted by an "L" suffix.
+
+All of these models should be equally supported, but more testers are
+needed. Currently, it has been tested on the following models.
 
 * UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
 * UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC50, P1.0-D1.0)
@@ -42,6 +46,7 @@ Currently, it has been tested on the following models.
 * UPS2000-G-1KRTS (firmware: UPS2000G, V2R1C1SPC50, P1.0-D1.0)
 * UPS2000-G-3KRTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
 * UPS2000-G-3KRTS (firmware: UPS2000G, V2R1C1SPC50, P1.0-D1.0)
+* UPS2000-G-3KRTL (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
 
 If your model is not in the list, we encourage you to report successful
 or unsuccessful results to the bug tracker or the mailing list.
@@ -144,7 +149,7 @@ operating system.
 INSTALLATION
 ------------
 
-This driver is not built by default.  You can build it by installing libmodbus
+This driver may be not built by default.  You can build it by installing libmodbus
 (with development packages) and running
 
     configure --with-serial=yes --with-modbus=yes
@@ -321,17 +326,23 @@ normal uses, please file a bug report with full logs attached.
 
 Before troubleshooting or reporting a problem, it's important to check
 your *dmesg* log for USB connect and disconnect events to avoid wasting
-time on the NUT driver when the actual problem is USB. For example, if
-someone yanks the cable out of the USB port, or if a new USB device is
-plugged into a USB host/hub that is struggling to power its ports
-(common on single-board computers like Raspberry Pi), or if you have
-flaky cabling or EMI noise, the serial converter can get disconnected
-from USB, at least briefly. This creates a permanent data stale, the driver
-must be restarted (plugging the USB back won't fix it, since the driver
-is still using the nonexistent serial device). These USB problems usually
-have nothing to do with NUT. If it's the case, you should solve the
-underlying USB problem - check the cable, check the converter, try a
-powered USB hub, try a full-speed USB isolator, etc.
+time on the NUT driver when the actual problem is USB.
+
+For example, if someone yanks the cable out of the USB port, or if a
+new USB device is plugged into a USB host/hub that is struggling to
+power its ports (common on single-board computers like Raspberry Pi),
+or if you have flaky cabling or EMI noise, due to all these and similar
+reasons the serial converter can get disconnected from USB, at least
+briefly.
+
+This creates a permanent data stale situation, and the driver must be
+restarted (plugging the USB back won't fix it, since the driver is still
+using the nonexistent serial device, if the system kernel initializes
+a new device driver instance internally).
+
+These USB problems usually have nothing to do with NUT. If it's the case,
+you should solve the underlying USB problem -- check the cable, check the
+converter, try a powered USB hub, try a full-speed USB isolator, etc.
 
 Serial port becomes unresponsive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -339,8 +350,9 @@ Serial port becomes unresponsive
 Some malformed commands are known to lock up the serial port (including
 USB, which is a USB-to-serial device). Upon receiving them, UPS2000 stops
 all serial communications. The result is a completely unresponsive UPS,
-regardless of what you do - restarting NUT, rebooting the computer -
-cannot restore connectivity, as if someone has unplugged the RS-232 cable.
+regardless of what you do -- restarting NUT, rebooting the computer -- can
+not restore connectivity, as if someone has unplugged the RS-232 cable.
+
 To recover, simply power cycle the UPS: Turn off the UPS output via the
 front panel, then unplug the UPS from line power. Wait for the LCD front
 screen to go black. Finally reconnect line power and restart your UPS.
@@ -353,8 +365,8 @@ they're unlikely to be accidentally generated.
 Still, we recommend to power cycle your UPS after making a cabling change,
 especially after changing from RS-485/USB to RS-232, just to ensure the
 UPS selects the correct communication interface. Also, if you have
-discovered a reproducible serial port lockup problem, it can be an
-previously unknown bug, make sure to file a bug report.
+discovered a reproducible serial port lockup problem, it can be a
+previously unknown bug, so please make sure to file a bug report.
 
 USB chip (MaxLinear/Exar RX21V1410) is unsupported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -395,7 +407,7 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * Huawei UPS2000-A (1 kVA-3 kVA) User Manual:
   https://support.huawei.com/enterprise/en/doc/EDOC1000084260
 * Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide:

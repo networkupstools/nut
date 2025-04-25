@@ -4,7 +4,7 @@ NUTUPSDRV(8)
 NAME
 ----
 
-nutupsdrv - generic manual for unified NUT drivers
+nutupsdrv - Generic manual for unified NUT drivers
 
 SYNOPSIS
 --------
@@ -40,13 +40,15 @@ systems attached must be turned off to ensure a proper reboot when power
 returns.
 
 In the third mode, using *-d*, the driver will exit after some update loops,
-dumping the data tree (in upsc-like format) to stdout.  This can be useful to
-complement the nut-scanner to discover devices, along with in-depth data.
+dumping the data tree (in linkman:upsc[8]-like format) to `stdout`.
+This can be useful to complement the linkman:nut-scanner[8] to discover
+devices, along with in-depth data.
 
-NOTE: You probably don't want to use any of these options directly.  You
-should use linkman:upsdrvctl[8] to control your drivers, and
-linkman:ups.conf[5] to configure them.  The rest of this manual describes
-options and parameters that generally are not needed by normal users.
+NOTE: You probably don't want to use any of these options directly.
+You should use linkman:upsdrvctl[8] (or linkman:upsdrvsvcctl[8] on systems
+with a service management framework like systemd or SMF) to control your
+drivers, and linkman:ups.conf[5] to configure them.  The rest of this manual
+describes options and parameters that generally are not needed by normal users.
 
 OPTIONS
 -------
@@ -65,14 +67,14 @@ Configure this driver only with command line arguments instead of reading
 linkman:ups.conf[5]. To be used instead of *-a* option when need to run
 a driver not present in driver configuration file. Instead, driver
 configuration have to be set with *-x* options directly in the command line.
-As the driver instance cannot be controlled by linkman:upsdrvctl[8],
-this option should be used for specific needs only.
+As such driver instance cannot be controlled by linkman:upsdrvctl[8] or
+linkman:upsdrvsvcctl[8], this option should be used for specific needs only.
 
 *-D*::
 Raise the debugging level.  Use this multiple times to see more details.
 Running a driver in debug mode will (by default) prevent it from backgrounding
 after startup.  It will keep on logging information to the console until it
-receives a SIGINT (usually Ctrl-C) or SIGTERM signal.
+receives a *SIGINT* (usually Ctrl-C) or *SIGTERM* signal.
 +
 The level of debugging needed depends both on the driver and the
 problem you're trying to diagnose.  Therefore, first explain the problem you
@@ -81,20 +83,59 @@ output.  More often than not, if you just pick a level, the output may be
 either too limited or too verbose to be of any use.
 
 *-d* 'update_count'::
-Dump the data tree (in upsc-like format) to stdout after running the driver
-update loop for 'update_count' times and exit.
+Dump the data tree (in linkman:upsc[8]-like format) to `stdout` after running
+the driver update loop for the specified 'update_count' times and exit.
++
 By default this prevents the driver process from backgrounding after startup.
 Note that the driver banner will be printed too, so when using this option in
-scripts, don't forget to trim the first line.
+scripts, don't forget to trim the first line, or use the `NUT_QUIET_INIT_BANNER`
+environment variable.
 
 *-q*::
 Raise log level threshold.  Use this multiple times to log more details.
 +
 The debugging comment above also applies here.
 
+*-c* 'command'::
+Send 'command' to the background process as a signal.  Valid commands
+are:
+
+	*reload*;; reread configuration files, ignoring modified settings
+	           which can not be applied "on the fly"
+	*reload-or-error*;; reread configuration files, ignoring but counting
+	           changed values which require a driver restart (can not be
+	           changed on the fly), and return a success/fail code based
+	           on that count, so the caller can decide the fate of the
+	           currently running driver instance
+	*reload-or-exit*;; reread configuration files, exiting the old
+	           driver process if it encounters modified settings
+	           which can not be applied "on the fly" (so caller like
+	           systemd can launch another copy of the driver)
+/////////
+	*reload-or-restart*;; reread configuration files, causing the
+	           old driver process to close the device connection
+	           and re-exec itself if it encounters modified settings
+	           which can not be applied "on the fly" (may fail for
+	           critical changes like run-time user/group accounts)
+/////////
+	*exit*;;   tell the currently running driver instance to just exit
+	           (so an external caller like the new driver instance, or
+	           the systemd or SMF frameworks would start another copy)
+
+With recent NUT v2.8.x releases, such commands can be sent using the Unix socket
+for driver-server interaction. As a fallback, like older releases, signals
+can be sent to the old driver instance's PID (where possible).
+
+*-P* 'pid'::
+Send the command signal above using specified PID number, rather than
+consulting the PID file.  This can help define service units which start
+each NUT driver as a foreground process so it does not create a PID file.
+See also `-FF` option as an alternative.
+
 *-F*::
 Enforce running the driver as a foreground process, regardless of debugging
 or data-dumping settings.
+Specify twice (`-FF` or `-F -F`) to save the PID file even in this mode.
 
 *-B*::
 Enforce running the driver as a background process, regardless of debugging
@@ -114,22 +155,25 @@ wizard programs.
 ("Kill" power) Forced shutdown mode.  The UPS will power off the
 attached load, if possible.
 +
-You should use +upsdrvctl shutdown+ whenever possible instead of
-calling this directly.
+You should use `upsdrvctl shutdown` whenever possible instead of
+calling this directly. Note that the constrained operating system
+context for shutdown typically rules out use of `upsdrvsvcctl shutdown`.
 
 *-r* 'directory'::
-The driver will chroot(2) to 'directory' during initialization.
+The driver will linkmanext:chroot[2] to 'directory' during initialization.
 This can be useful when securing systems.
 +
-In addition to the state path, many systems will require /dev/null to
+In addition to the state path, many systems will require `/dev/null` to
 exist within 'directory' for this to work.  The serial ports are
-opened before the chroot call, so you do not need to create them inside
-the jail.  In fact, it is somewhat safer if you do not.
+opened before the `chroot` call, so you do not need to create them inside
+the jail.  In fact, it is somewhat safer if you do not (but reconnection
+to devices may be no longer possible and could require a full restart of
+the driver).
 
 *-u* 'username'::
 Override the unprivileged username that the driver may use after startup.  If
 started as root, after opening configuration files (and optionally calling
-chroot(2), as described in the previous option), the driver will look up
+linkmanext:chroot[2], as described in the previous option), the driver will look up
 'username' in the `passwd` database, then change to the user and group
 identities associated with 'username'. (If started with a nonzero UID or
 effective UID, the driver will silently ignore this option.)
@@ -148,8 +192,8 @@ to set permissions for the filesystem socket so `upsd` may still access it
 if the run-time `user` of the driver normally would deny that access.
 
 *-x* 'var'='val'::
-Define a variable called 'var' with the value of 'var' in the
-driver.  This varies from driver to driver - see the specific man pages
+Define a variable called 'var' with the value of 'var' in the driver.
+This varies from driver to driver -- see their specific man pages
 for more information.
 +
 This is like setting 'var'='val' in linkman:ups.conf[5], but
@@ -158,17 +202,20 @@ This is like setting 'var'='val' in linkman:ups.conf[5], but
 DIAGNOSTICS
 -----------
 
-Information about the startup process is printed to stdout.  Additional
-messages after that point are available in the syslog.  After linkman:upsd[8]
-starts, the UPS clients such as linkman:upsc[8] can be used to query the status
-of an UPS.
+Information about the startup process is printed to `stdout` and/or `stderr`.
+Additional messages after that point are only available in the syslog, unless
+the driver remains in foreground (e.g. due to raised debugging verbosity).
+
+After linkman:upsd[8] starts, the UPS clients such as linkman:upsc[8] can
+be used to query the status of an UPS.
 
 PROGRAM CONTROL
 ---------------
 
-You should always use linkman:upsdrvctl[8] to control the drivers.  While
-drivers can be started by hand for testing purposes, it is not recommended for
-production use.
+You should always use linkman:upsdrvctl[8] (or linkman:upsdrvsvcctl[8] on
+systems with a service management framework like systemd or SMF) to control
+the drivers.  While drivers can be started by hand for testing purposes,
+it is not recommended for production use.
 
 FILES
 -----
@@ -180,19 +227,34 @@ to start and where the hardware is attached.
 ENVIRONMENT VARIABLES
 ---------------------
 
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
+
 *NUT_CONFPATH* is the path name of the directory that contains
-`upsd.conf` and other configuration files.  If this variable is not set,
-*upsd* uses a built-in default, which is often `/usr/local/ups/etc`.
+`ups.conf` and other configuration files.  If this variable is not set,
+drivers use a built-in default, which is often `/usr/local/ups/etc`.
 
 *NUT_STATEPATH* is the path name of the directory in which
-*upsd* keeps state information.  If this variable is not set,
-*upsd* uses a built-in default, which is often `/var/state/ups`.
+*upsd* and drivers keep shared state information.  If this variable
+is not set, *upsd* and drivers use a built-in default, which is often
+`/var/state/ups`.
 The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
 
 *NUT_ALTPIDPATH* is the path name of the directory in which
 *upsd* and drivers store .pid files.  If this variable is not set,
 *upsd* and drivers use either *NUT_STATEPATH* if set, or ALTPIDPATH if set,
 or otherwise the built-in default *STATEPATH*.
+
+*NUT_QUIET_INIT_UPSNOTIFY=true* can be used to prevent daemons which can
+notify service management frameworks (such as systemd) about passing
+their lifecycle milestones from emitting such notifications (including
+those about lack of system support for such modern features, once per run).
+
+*NUT_QUIET_INIT_BANNER=true* can be used to suppress NUT tool name and
+version banner. NOT recommended for services due to adverse troubleshooting
+impact, but may be helpful in shell profiles or scripts which process NUT
+tool outputs.
 
 BUGS
 ----
@@ -202,6 +264,12 @@ information.
 
 SEE ALSO
 --------
+
+Configuration:
+~~~~~~~~~~~~~~
+
+- linkman:ups.conf[5]
+- linkman:nut.conf[5]
 
 Server:
 ~~~~~~~
@@ -227,14 +295,14 @@ CGI programs:
 Driver control:
 ~~~~~~~~~~~~~~~
 
-include::{builddir}/linkman-drivertool-names.txt[]
+include::{builddir}linkman-drivertool-names.txt[]
 
 Drivers:
 ~~~~~~~~
 
-include::{builddir}/linkman-driver-names.txt[]
+include::{builddir}linkman-driver-names.txt[]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

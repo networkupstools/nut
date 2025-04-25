@@ -40,7 +40,7 @@ definition described below.
 If your 940-0024C cable is broken or missing, use this diagram to build
 a clone:
 
-http://www.networkupstools.org/cables/940-0024C.jpg
+https://www.networkupstools.org/cables/940-0024C.jpg
 
 EXTRA ARGUMENTS
 ---------------
@@ -93,7 +93,8 @@ This driver was called `newapc` for a time and was renamed in
 the 1.5 series.
 
 In 2.6.2 the driver was renamed to `apcsmart-old`, being superseded
-by updated version with new features.
+by updated version with new features which currently holds the
+`apcsmart` name.
 
 SEE ALSO
 --------
@@ -106,4 +107,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

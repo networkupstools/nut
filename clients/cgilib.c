@@ -17,9 +17,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include <ctype.h>
-
 #include "common.h"
+
+#include <ctype.h>
+#include <stdio.h>
+
 #include "cgilib.h"
 #include "parseconf.h"
 
@@ -40,6 +42,7 @@ static char *unescape(char *buf)
 			ch = ' ';
 
 		if (ch == '%') {
+			long l;
 			if (i + 2 > buflen)
 				fatalx(EXIT_FAILURE, "string too short for escaped char");
 			hex[0] = buf[++i];
@@ -48,7 +51,7 @@ static char *unescape(char *buf)
 			if (!isxdigit((unsigned char) hex[0])
 				|| !isxdigit((unsigned char) hex[1]))
 				fatalx(EXIT_FAILURE, "bad escape char");
-			long l = strtol(hex, NULL, 16);
+			l = strtol(hex, NULL, 16);
 			assert(l>=0);
 			assert(l<=255);
 			ch = (char)l;	/* FIXME: Loophole about non-ASCII symbols in top 128 values, or negatives for signed char... */
@@ -159,7 +162,7 @@ static void cgilib_err(const char *errmsg)
 
 int checkhost(const char *host, char **desc)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	if (!host)

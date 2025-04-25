@@ -1,0 +1,46 @@
+NUTSCAN_INIT_IP_RANGES(3)
+=========================
+
+NAME
+----
+
+nutscan_init_ip_ranges - Initialize contents of a `nutscan_ip_range_list_t`
+structure (and optionally create one in the first place).
+
+SYNOPSIS
+--------
+
+------
+	#include <nut-scan.h>
+
+	nutscan_ip_range_list_t * nutscan_init_ip_ranges(nutscan_ip_range_list_t *irl);
+------
+
+DESCRIPTION
+-----------
+
+The *nutscan_init_ip_ranges()* function can prepare a `nutscan_ip_range_list_t`
+structure by zeroing out its fields.  If the argument is `NULL`, the structure
+is dynamically allocated.  Either way, a pointer to it is returned.
+
+A structure passed by caller is not assumed to have any valid contents to free,
+as it may have garbage from stack after allocation.
+
+The caller must free the contents of the structure after completing its use
+by calling `nutscan_free_ip_ranges` (after which the structure can be re-used),
+and explicitly `free()` the structure object itself if it was allocated
+dynamically (e.g. by originally calling `nutscan_init_ip_ranges(NULL)`).
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-ip.h' file.
+
+SEE ALSO
+--------
+
+linkman:nutscan_free_ip_ranges[3], linkman:nutscan_add_ip_range[3],
+linkman:nutscan_stringify_ip_ranges[3],
+linkman:nutscan_cidr_to_ip[3],
+linkman:nutscan_ip_ranges_iter_init[3],
+linkman:nutscan_ip_ranges_iter_inc[3]

@@ -24,7 +24,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif
+#endif	/* !WIN32 */
 
 #include "common.h"
 #include "parseconf.h"
@@ -468,7 +468,7 @@ static void upsd_user_err(const char *errmsg)
 
 void user_load(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 
 	curr_user = NULL;

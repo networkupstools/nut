@@ -33,8 +33,8 @@ mge-utalk supports the following legacy units, using the MGE UTalk protocol:
 
 This driver also support some newer models with backward UTalk compatibility,
 such as Pulsar Evolution and Pulsar EXtreme C. As these models also support
-the SHUT protocol, prefer mge-shut for serial communication, or use the USB
-port, if available, with the usbhid-ups driver.
+the SHUT protocol, prefer linkman:mge-shut[8] for serial communication, or
+use the USB port, if available, with the linkman:usbhid-ups[8]] driver.
 
 EXTRA ARGUMENTS
 ---------------
@@ -45,12 +45,12 @@ This driver supports the following optional settings in the linkman:ups.conf[5]:
 Set the low battery warning threshold at which shutdown is initiated by
 linkman:upsmon[8].
 +
-The factory default value is 30 (in percent), and can be settable depending on
-the exact model.
+The factory default value is '30' (in percent), and can be settable depending
+on the exact model.
 
 *offdelay*='num'::
 Set the timer before the UPS is turned off after the kill power command is
-sent (via the *-k* switch).
+sent (via the `-k` switch).
 +
 The default value is 20 (in seconds).
 
@@ -72,8 +72,8 @@ Repetitive timeout and staleness
 
 Older models, such as ES/ESV ones, might report repetitive "data stale" errors.
 This is due to the fact that these models don't support too much polling.
-To solve this problem, add "pollinterval=20" in ups.conf, and change the value
-of MAXAGE to 25 in upsd.conf, and DEADTIME to 25 in upsmon.conf.
+To solve this problem, add `pollinterval=20` in `ups.conf`, and change the value
+of `MAXAGE` to '25' in `upsd.conf`, and `DEADTIME` to '25' in `upsmon.conf`.
 
 AUTHORS
 -------
@@ -97,4 +97,4 @@ linkman:nutupsdrv[8]
 Internet resources
 ~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -26,8 +26,12 @@
 #include "timehead.h"
 #include "nut_stdint.h"
 
-#define DRIVER_NAME "NUT Generic Modbus driver"
-#define DRIVER_VERSION  "0.03"
+#if !(defined NUT_MODBUS_LINKTYPE_STR)
+# define NUT_MODBUS_LINKTYPE_STR	"unknown"
+#endif
+
+#define DRIVER_NAME	"NUT Generic Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
+#define DRIVER_VERSION	"0.06"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -46,7 +50,6 @@ static uint32_t mod_resp_to_s = MODRESP_TIMEOUT_s;         /* set the modbus res
 static uint32_t mod_resp_to_us = MODRESP_TIMEOUT_us;       /* set the modbus response time out (us) */
 static uint32_t mod_byte_to_s = MODBYTE_TIMEOUT_s;         /* set the modbus byte time out (us) */
 static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;       /* set the modbus byte time out (us) */
-
 
 /* get config vars set by -x or defined in ups.conf driver section */
 void get_config_vars(void);
@@ -95,6 +98,11 @@ void upsdrv_initinfo(void) {
 	/* register instant commands */
 	if (sigar[FSD_T].addr != NOTUSED) {
 		dstate_addcmd("load.off");
+
+		/* FIXME: Check with the device what this instcmd
+		 * (nee upsdrv_shutdown() contents) actually does!
+		 */
+		dstate_addcmd("shutdown.stayoff");
 	}
 
 	/* set callback for instant commands */
@@ -316,33 +324,25 @@ void upsdrv_updateinfo(void)
 /* shutdown UPS */
 void upsdrv_shutdown(void)
 {
-	int rval;
-	int cnt = FSD_REPEAT_CNT;    /* shutdown repeat counter */
-	struct timeval start;
-	long etime;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	/* retry sending shutdown command on error */
-	while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
-		rval = gettimeofday(&start, NULL);
-		if (rval < 0) {
-			upslogx(LOG_ERR, "upscmd: gettimeofday: %s", strerror(errno));
-		}
+	/*
+	 * WARNING: When using RTU TCP, this driver will probably
+	 * never support shutdowns properly, except on some systems:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
 
-		/* wait for an increasing time interval before sending shutdown command */
-		while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
-		upsdebugx(2,"ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
-		cnt--;
-	}
-	switch (rval) {
-		case STAT_INSTCMD_FAILED:
-		case STAT_INSTCMD_INVALID:
-			fatalx(EXIT_FAILURE, "shutdown failed");
-		case STAT_INSTCMD_UNKNOWN:
-			fatalx(EXIT_FAILURE, "shutdown not supported");
-		default:
-			break;
-	}
-	upslogx(LOG_INFO, "shutdown command executed");
+	int	ret = do_loop_shutdown_commands("shutdown.stayoff", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* print driver usage info */
@@ -451,7 +451,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 		 * memory corruptions and buggy inputs below...
 		 */
 		default:
-			upsdebugx(2,"ERROR: register_read: invalid register type %d\n", type);
+			upsdebugx(2, "ERROR: register_read: invalid register type %u", type);
 			break;
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -461,9 +461,9 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 #endif
 	}
 	if (rval == -1) {
-		upslogx(LOG_ERR,"ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s\n",
+		upslogx(LOG_ERR, "ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s",
 			modbus_strerror(errno),
-			addr,
+			(unsigned int)addr,
 			(type == COIL) ? "COIL" :
 			(type == INPUT_B) ? "INPUT_B" :
 			(type == INPUT_R) ? "INPUT_R" : "HOLDING",
@@ -476,7 +476,8 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 			modbus_reconnect();
 		}
 	}
-	upsdebugx(3, "register addr: 0x%x, register type: %d read: %u",addr, type, *(unsigned int *)data);
+	upsdebugx(3, "register addr: 0x%x, register type: %u read: %u",
+		(unsigned int)addr, type, *(unsigned int *)data);
 	return rval;
 }
 
@@ -513,13 +514,13 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic pop
 #endif
-			upsdebugx(2,"ERROR: register_write: invalid register type %d\n", type);
+			upsdebugx(2, "ERROR: register_write: invalid register type %u", type);
 			break;
 	}
 	if (rval == -1) {
-		upslogx(LOG_ERR,"ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s\n",
+		upslogx(LOG_ERR, "ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s",
 			modbus_strerror(errno),
-			addr,
+			(unsigned int)addr,
 			(type == COIL) ? "COIL" :
 			(type == INPUT_B) ? "INPUT_B" :
 			(type == INPUT_R) ? "INPUT_R" : "HOLDING",
@@ -532,7 +533,8 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 			modbus_reconnect();
 		}
 	}
-	upsdebugx(3, "register addr: 0x%x, register type: %d read: %u",addr, type, *(unsigned int *)data);
+	upsdebugx(3, "register addr: 0x%x, register type: %u read: %u",
+		(unsigned int)addr, type, *(unsigned int *)data);
 	return rval;
 }
 
@@ -544,7 +546,7 @@ long time_elapsed(struct timeval *start)
 
 	rval = gettimeofday(&end, NULL);
 	if (rval < 0) {
-		upslogx(LOG_ERR, "time_elapsed: %s", strerror(errno));
+		upslog_with_errno(LOG_ERR, "time_elapsed");
 	}
 	if (start->tv_usec < end.tv_usec) {
 		suseconds_t nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
@@ -576,16 +578,17 @@ int upscmd(const char *cmd, const char *arg)
 			data = 1 ^ sigar[FSD_T].noro;
 			rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
 			if (rval == -1) {
-				upslogx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
+				upslogx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s",
 					modbus_strerror(errno),
-					sigar[FSD_T].addr,
+					(unsigned int)(sigar[FSD_T].addr),
 					sigar[FSD_T].type,
 					device_path
 				);
 				upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
 				rval = STAT_INSTCMD_FAILED;
 			} else {
-				upsdebugx(2, "load.off: addr: 0x%x, data: %d", sigar[FSD_T].addr, data);
+				upsdebugx(2, "load.off: addr: 0x%x, data: %d",
+					(unsigned int)(sigar[FSD_T].addr), data);
 				rval = STAT_INSTCMD_HANDLED;
 			}
 
@@ -593,7 +596,7 @@ int upscmd(const char *cmd, const char *arg)
 			if (FSD_pulse_duration != NOTUSED && rval == STAT_INSTCMD_HANDLED) {
 				rval = gettimeofday(&start, NULL);
 				if (rval < 0) {
-					upslogx(LOG_ERR, "upscmd: gettimeofday: %s", strerror(errno));
+					upslog_with_errno(LOG_ERR, "upscmd: gettimeofday");
 				}
 
 				/* wait for FSD_pulse_duration ms */
@@ -602,9 +605,9 @@ int upscmd(const char *cmd, const char *arg)
 				data = 0 ^ sigar[FSD_T].noro;
 				rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
 				if (rval == -1) {
-					upslogx(LOG_ERR, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
+					upslogx(LOG_ERR, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s\n",
 						modbus_strerror(errno),
-						sigar[FSD_T].addr,
+						(unsigned int)(sigar[FSD_T].addr),
 						sigar[FSD_T].type,
 						device_path
 					);
@@ -612,7 +615,7 @@ int upscmd(const char *cmd, const char *arg)
 					rval = STAT_INSTCMD_FAILED;
 				} else {
 					upsdebugx(2, "load.off: addr: 0x%x, data: %d, elapsed time: %lims",
-						sigar[FSD_T].addr,
+						(unsigned int)(sigar[FSD_T].addr),
 						data,
 						etime
 					);
@@ -625,6 +628,41 @@ int upscmd(const char *cmd, const char *arg)
 				arg
 			);
 			rval = STAT_INSTCMD_FAILED;
+		}
+	} else if (!strcasecmp(cmd, "shutdown.stayoff")) {
+		/* FIXME: Which one is this actually -
+		 * "shutdown.stayoff" or "shutdown.return"? */
+		int cnt = FSD_REPEAT_CNT;    /* shutdown repeat counter */
+
+		/* retry sending shutdown command on error */
+		while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
+			rval = gettimeofday(&start, NULL);
+			if (rval < 0) {
+				upslog_with_errno(LOG_ERR, "upscmd: gettimeofday");
+			}
+
+			/* wait for an increasing time interval before sending shutdown command */
+			while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
+			upsdebugx(2,"ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
+			cnt--;
+		}
+		switch (rval) {
+			case STAT_INSTCMD_FAILED:
+			case STAT_INSTCMD_INVALID:
+				upslogx(LOG_ERR, "shutdown failed");
+				if (handling_upsdrv_shutdown > 0)
+					set_exit_flag(EF_EXIT_FAILURE);
+				return rval;
+			case STAT_INSTCMD_UNKNOWN:
+				upslogx(LOG_ERR, "shutdown not supported");
+				if (handling_upsdrv_shutdown > 0)
+					set_exit_flag(EF_EXIT_FAILURE);
+				return rval;
+			default:
+				upslogx(LOG_INFO, "shutdown command executed");
+				if (handling_upsdrv_shutdown > 0)
+					set_exit_flag(EF_EXIT_SUCCESS);
+				break;
 		}
 	} else {
 		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd, arg);
@@ -703,7 +741,7 @@ int get_signal_state(devstate_t state)
 }
 
 /* get driver configuration parameters */
-void get_config_vars()
+void get_config_vars(void)
 {
 	int i; /* local index */
 
@@ -766,31 +804,31 @@ void get_config_vars()
 	if (testvar("mod_resp_to_s")) {
 		mod_resp_to_s = (uint32_t)strtol(getval("mod_resp_to_s"), NULL, 10);
 	}
-	upsdebugx(2, "mod_resp_to_s %d", mod_resp_to_s);
+	upsdebugx(2, "mod_resp_to_s %u", mod_resp_to_s);
 
 	/* check if response time out (us) is set ang get the value */
 	if (testvar("mod_resp_to_us")) {
 		mod_resp_to_us = (uint32_t) strtol(getval("mod_resp_to_us"), NULL, 10);
 		if (mod_resp_to_us > 999999) {
-			fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_resp_to_us %d", mod_resp_to_us);
+			fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_resp_to_us %u", mod_resp_to_us);
 		}
 	}
-	upsdebugx(2, "mod_resp_to_us %d", mod_resp_to_us);
+	upsdebugx(2, "mod_resp_to_us %u", mod_resp_to_us);
 
 	/* check if byte time out (s) is set ang get the value */
 	if (testvar("mod_byte_to_s")) {
 		mod_byte_to_s = (uint32_t)strtol(getval("mod_byte_to_s"), NULL, 10);
 	}
-	upsdebugx(2, "mod_byte_to_s %d", mod_byte_to_s);
+	upsdebugx(2, "mod_byte_to_s %u", mod_byte_to_s);
 
 	/* check if byte time out (us) is set ang get the value */
 	if (testvar("mod_byte_to_us")) {
 		mod_byte_to_us = (uint32_t) strtol(getval("mod_byte_to_us"), NULL, 10);
 		if (mod_byte_to_us > 999999) {
-			fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_byte_to_us %d", mod_byte_to_us);
+			fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_byte_to_us %u", mod_byte_to_us);
 		}
 	}
-	upsdebugx(2, "mod_byte_to_us %d", mod_byte_to_us);
+	upsdebugx(2, "mod_byte_to_us %u", mod_byte_to_us);
 
 	/* check if OL address is set and get the value */
 	if (testvar("OL_addr")) {
@@ -999,7 +1037,10 @@ void get_config_vars()
 					signame = "NOTUSED";
 					break;
 			}
-			upsdebugx(2, "%s, addr:0x%x, type:%d", signame, sigar[i].addr, sigar[i].type);
+			upsdebugx(2, "%s, addr:0x%x, type:%u",
+				signame,
+				(unsigned int)(sigar[i].addr),
+				sigar[i].type);
 		}
 	}
 }

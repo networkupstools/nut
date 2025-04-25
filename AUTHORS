@@ -14,6 +14,12 @@
 # if you want to hide at the bottom, that's fine by me.  Just clarify
 # your preference when submitting changes to this file.
 
+N: Axel Gembe
+E: axel@gembe.net
+W: http://axel.gembe.net/
+D: Added APC Modbus support
+P: rsa4096/43109AAC 11E6 515C B8A4 26C6 07C1  36A4 1CB3 AA21 4310 9AAC
+
 N: Stephen Brown
 E: steve@datalimbo.net
 W: http://www.datalimbo.net/
@@ -54,7 +60,7 @@ D: Provided a Best Fortress for development of a Best driver (bestups)
 
 N: Russell Kroll
 E: rkroll@exploits.org
-W: http://www.networkupstools.org/
+W: https://www.networkupstools.org/
 D: Original NUT author and coordinator
 P: 1024D/9DC0E77E 6A5C 7D2D 7945 C022 6104  D421 D61D C97F 9DC0 E77E
 
@@ -80,12 +86,22 @@ N: Mark Powell
 E: medp@primagraphics.co.uk
 D: Ported to SunOS4
 
+N: Evgeny "Jim" Klimov
+E: jimklimov+nut@gmail.com
+D: Primary coordinator ; author of numerous CI recipes, tests and OS
+D: integration scripts - including NDE (NUT Driver Enumerator), NIT
+D: (NUT Integration Test suite) and Jenkins-Dynamatrix, to name a few.
+D: Also automake/autoconf/m4 scripting, asciidoc documentation.
+D: More of a bug-fixer, warnings-squasher and portability maintainer,
+D: rather than e.g. specifically a driver developer.
+P: 4096R/7043DCF7 B834 59F7 76B9 0224 988F 36C0 DE01 84DA 7043 DCF7
+
 N: Arnaud Quette
 E: aquette.dev@gmail.com
 E: arnaud.quette@mgeups.com
 E: aquette@debian.org
 W: http://arnaud.quette.free.fr/
-D: Primary coordinator ; author of snmp-ups, mge-shut, usbhid-ups ;
+D: Previous primary coordinator ; author of snmp-ups, mge-shut, usbhid-ups ;
 D: co author of mge-utalk, hidups, SNMP UPS Agent ; contributor to blazer,
 D: bestferrups, nut core, and many others ; coordination with MGE UPS
 D: SYSTEMS, linux-usb developers (for hidups), Net SNMP and packagers

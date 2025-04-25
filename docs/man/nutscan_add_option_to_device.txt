@@ -4,18 +4,31 @@ NUTSCAN_ADD_OPTION_TO_DEVICE(3)
 NAME
 ----
 
-nutscan_add_option_to_device - Add option data to the specified device.
+nutscan_add_option_to_device, nutscan_add_commented_option_to_device - Add
+option data to the specified device.
+
 
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- void nutscan_add_option_to_device(
-        nutscan_device_t * device,
-        char * option_name,
-        char * value);
+	/* Add enabled option data to the specified device. */
+	void nutscan_add_option_to_device(
+		nutscan_device_t * device,
+		char * option_name,
+		char * value);
 
+	/* Since libnutscan version 2.5.0:
+	 * Add option data to the specified device with an optional comment tag
+	 * for options suggested, but not currently enabled for actual use. */
+	void nutscan_add_commented_option_to_device(
+		nutscan_device_t * device,
+		char * option_name,
+		char * value,
+		char * comment_tag);
+------
 
 DESCRIPTION
 -----------
@@ -24,24 +37,31 @@ The `nutscan_device_t` contains the following variables:
 
 	nutscan_device_type_t   type;
 	char *          driver;
+	char *          alt_driver_names;
 	char *          port;
 	nutscan_options_t       opt;
 	struct nutscan_device * prev;
 	struct nutscan_device * next;
 
-This is a double linked list of device. Each device is described by
+This is a double linked list of devices. Each 'device' is described by
 its `type`, its `driver` name, its `port` and any number of optional data.
 
 The *nutscan_add_option_to_device()* adds an optional data in the
-given device. Optional data are made of an 'option_name' and an
-associated 'value'. Copies of 'option_name' and 'value' are stored
-in the device, so the caller can safely free both of the original
-strings used as arguments.
+given 'device'. Optional data are made of an 'option_name' and an
+associated 'value', and optionally a 'comment_tag'. Copies of the
+'option_name', 'value' and 'comment_tag' are stored in the 'device',
+so the caller can safely linkmanext:free[3] all of the original strings
+used as arguments.
+
+NOTE: A non-`NULL` value of the 'comment_tag' makes the option not-enabled
+for current use. Depending on the output format, it may be either completely
+ignored, or rendered as a comment with this value as a prefix (a zero-length
+string `"\0"` may be passed to have no prefix).
 
 Such options and their values may be further sanity-checked and reported
 as warnings by *nutscan_display_sanity_check()* dispatcher and its related
 methods which implement the logic of particular checks. This is used for
-example when generating 'ups.conf' file content suggestions with
+example when generating an `ups.conf` file content suggestions with
 *nutscan_display_ups_conf_with_sanity_check()* method.
 
 NOTES

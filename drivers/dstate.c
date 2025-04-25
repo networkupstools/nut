@@ -3,7 +3,8 @@
    Copyright (C)
 	2003		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2012 - 2017	Arnaud Quette <arnaud.quette@free.fr>
+	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
+	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,16 +25,16 @@
 
 #include <stdio.h>
 #ifndef WIN32
-#include <stdarg.h>
-#include <sys/stat.h>
-#include <pwd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#else
-#include <strings.h>
-#include "wincompat.h"
-#endif
+# include <stdarg.h>
+# include <sys/stat.h>
+# include <pwd.h>
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <sys/un.h>
+#else	/* WIN32 */
+# include <strings.h>
+# include "wincompat.h"
+#endif	/* WIN32 */
 
 #include "common.h"
 #include "dstate.h"
@@ -45,15 +46,16 @@
 	static TYPE_FD	sockfd = ERROR_FD;
 #ifndef WIN32
 	static char	*sockfn = NULL;
-#else
-	static OVERLAPPED connect_overlapped;
+#else	/* WIN32 */
+	static OVERLAPPED	connect_overlapped;
 	static char	*pipename = NULL;
-#endif
-	static int	stale = 1, alarm_active = 0, ignorelb = 0;
-	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
-	static st_tree_t	*dtree_root = NULL;
+#endif	/* WIN32 */
+	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
+	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN],
+			buzzmode_buf[ST_MAX_VALUE_LEN];
 	static conn_t	*connhead = NULL;
-	static cmdlist_t *cmdhead = NULL;
+	static st_tree_t	*dtree_root = NULL;
+	static cmdlist_t	*cmdhead = NULL;
 
 	struct ups_handler	upsh;
 
@@ -65,7 +67,7 @@ static void sock_fail(const char *fn)
 static void sock_fail(const char *fn)
 {
 	int	sockerr;
-	struct passwd	*user;
+	struct passwd	*pwuser;
 
 	/* save this so it doesn't get overwritten */
 	sockerr = errno;
@@ -75,9 +77,9 @@ static void sock_fail(const char *fn)
 	printf("\nFatal error: unable to create listener socket\n\n");
 	printf("bind %s failed: %s\n", fn, strerror(sockerr));
 
-	user = getpwuid(getuid());
+	pwuser = getpwuid(getuid());
 
-	if (!user) {
+	if (!pwuser) {
 		fatal_with_errno(EXIT_FAILURE, "getpwuid");
 	}
 
@@ -86,7 +88,7 @@ static void sock_fail(const char *fn)
 	{
 	case EACCES:
 		printf("\nCurrent user: %s (UID %d)\n\n",
-			user->pw_name, (int)user->pw_uid);
+			pwuser->pw_name, (int)pwuser->pw_uid);
 
 		printf("Things to try:\n\n");
 		printf(" - set different owners or permissions on %s\n\n",
@@ -105,6 +107,9 @@ static void sock_fail(const char *fn)
 		printf(" - rm %s\n\n", dflt_statepath());
 		printf(" - mkdir %s\n", dflt_statepath());
 		break;
+
+	default:
+		break;
 	}
 
 	/*
@@ -115,7 +120,7 @@ static void sock_fail(const char *fn)
 	printf("\n");
 	fatalx(EXIT_FAILURE, "Exiting.");
 }
-#endif
+#endif	/* !WIN32 */
 
 static TYPE_FD sock_open(const char *fn)
 {
@@ -162,20 +167,23 @@ static TYPE_FD sock_open(const char *fn)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 	}
 
+	if (!getenv("NUT_QUIET_INIT_LISTENER"))
+		upslogx(LOG_INFO, "Listening on socket %s", sockfn);
+
 #else /* WIN32 */
 
 	fd = CreateNamedPipe(
-			fn,			// pipe name
-			PIPE_ACCESS_DUPLEX |  // read/write access
-			FILE_FLAG_OVERLAPPED, // async IO
+			fn,			/* pipe name */
+			PIPE_ACCESS_DUPLEX |	/* read/write access */
+			FILE_FLAG_OVERLAPPED,	/* async IO */
 			PIPE_TYPE_BYTE |
 			PIPE_READMODE_BYTE |
 			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, // max. instances
-			ST_SOCK_BUF_LEN,	// output buffer size
-			ST_SOCK_BUF_LEN,	// input buffer size
-			0,			// client time-out
-			NULL);			// FIXME: default security attribute
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			ST_SOCK_BUF_LEN,	/* output buffer size */
+			ST_SOCK_BUF_LEN,	/* input buffer size */
+			0,			/* client time-out */
+			NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -183,18 +191,22 @@ static TYPE_FD sock_open(const char *fn)
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
-	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	memset(&connect_overlapped, 0, sizeof(connect_overlapped));
 	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
 			FALSE, /* auto-reset*/
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
-	if(connect_overlapped.hEvent == NULL ) {
+	if (connect_overlapped.hEvent == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
 	/* Wait for a connection */
-	ConnectNamedPipe(fd,&connect_overlapped);
-#endif
+	ConnectNamedPipe(fd, &connect_overlapped);
+
+	if (!getenv("NUT_QUIET_INIT_LISTENER"))
+		upslogx(LOG_INFO, "Listening on named pipe %s", fn);
+
+#endif	/* WIN32 */
 
 	return fd;
 }
@@ -202,18 +214,22 @@ static TYPE_FD sock_open(const char *fn)
 static void sock_disconnect(conn_t *conn)
 {
 #ifndef WIN32
+	upsdebugx(3, "%s: disconnecting socket %d", __func__, (int)conn->fd);
 	close(conn->fd);
-#else
-	/* FIXME not sure if this is the right way to close a connection */
-	if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+#else	/* WIN32 */
+	/* FIXME NUT_WIN32_INCOMPLETE not sure if this is the right way to close a connection */
+	if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
+	upsdebugx(3, "%s: disconnecting named pipe handle %p", __func__, conn->fd);
 	DisconnectNamedPipe(conn->fd);
-#endif
+#endif	/* WIN32 */
 
+	upsdebugx(5, "%s: finishing parsing context", __func__);
 	pconf_finish(&conn->ctx);
 
+	upsdebugx(5, "%s: relinking the chain of connections", __func__);
 	if (conn->prev) {
 		conn->prev->next = conn->next;
 	} else {
@@ -226,6 +242,7 @@ static void sock_disconnect(conn_t *conn)
 		/* conntail = conn->prev; */
 	}
 
+	upsdebugx(5, "%s: freeing the conn object", __func__);
 	free(conn);
 }
 
@@ -247,6 +264,10 @@ static void send_to_all(const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -270,35 +291,37 @@ static void send_to_all(const char *fmt, ...)
 
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
+		if (conn->nobroadcast)
+			continue;
 
 #ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
-#else
+#else	/* WIN32 */
 		DWORD bytesWritten = 0;
 		BOOL  result = FALSE;
 
 		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 		if( result == 0 ) {
-			upsdebugx(2, "write failed on handle %p, disconnecting", conn->fd);
+			upsdebugx(2, "%s: write failed on handle %p, disconnecting", __func__, conn->fd);
 			sock_disconnect(conn);
 			continue;
 		}
 		else  {
 			ret = (ssize_t)bytesWritten;
 		}
-#endif
+#endif	/* WIN32 */
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
-			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-				"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
-				__func__, buflen, (int)conn->fd, ret, strerror(errno));
-#else
-			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-				"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
-				__func__, buflen, conn->fd, ret, strerror(errno));
-#endif
-			upsdebugx(6, "failed write: %s", buf);
+			upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
+				"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
+				__func__, buflen, (int)conn->fd, ret);
+#else	/* WIN32 */
+			upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
+				"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
+				__func__, buflen, conn->fd, ret);
+#endif	/* WIN32 */
+			upsdebugx(6, "%s: failed write: %s", __func__, buf);
 
 			sock_disconnect(conn);
 
@@ -313,7 +336,7 @@ static void send_to_all(const char *fmt, ...)
 			dstate_setinfo("driver.parameter.synchronous", "%s",
 				(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 		} else {
-			upsdebugx(6, "%s: write %" PRIiSIZE " bytes to socket %d succeeded "
+			upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
 				"(ret=%" PRIiSIZE "): %s",
 				__func__, buflen, conn->fd, ret, buf);
 		}
@@ -329,7 +352,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #ifdef WIN32
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
-#endif
+#endif	/* WIN32 */
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -341,6 +364,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -370,7 +397,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 #ifndef WIN32
 	ret = write(conn->fd, buf, buflen);
-#else
+#else	/* WIN32 */
 	result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 	if( result == 0 ) {
 		ret = 0;
@@ -378,29 +405,25 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	else  {
 		ret = (ssize_t)bytesWritten;
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
 #ifndef WIN32
-		upsdebugx(1, "%s: had to throttle down to retry "
-			"writing %" PRIiSIZE " bytes to socket %d "
-			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
-			__func__, buflen, (int)conn->fd,
-			ret, errno, strerror(errno),
-			buf);
-#else
-		upsdebugx(1, "%s: had to throttle down to retry "
-			"writing %" PRIiSIZE " bytes to handle %p "
-			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
-			__func__, buflen, conn->fd,
-			ret, errno, strerror(errno),
-			buf);
-#endif
+		upsdebug_with_errno(1, "%s: had to throttle down to retry "
+			"writing %" PRIuSIZE " bytes to socket %d (ret=%" PRIiSIZE ") : %s",
+			__func__, buflen, (int)conn->fd, ret, buf);
+#else	/* WIN32 */
+		upsdebug_with_errno(1, "%s: had to throttle down to retry "
+			"writing %" PRIuSIZE " bytes to handle %p (ret=%" PRIiSIZE ") : %s",
+			__func__, buflen, conn->fd, ret, buf);
+#endif	/* WIN32 */
+
 		usleep(200);
+
 #ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
-#else
+#else	/* WIN32 */
 		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 		if( result == 0 ) {
 			ret = 0;
@@ -408,7 +431,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		else  {
 			ret = (ssize_t)bytesWritten;
 		}
-#endif
+#endif	/* WIN32 */
 		if (ret == (ssize_t)buflen) {
 			upsdebugx(1, "%s: throttling down helped", __func__);
 		}
@@ -416,15 +439,15 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
-		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-			"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
-			__func__, buflen, (int)conn->fd, ret, strerror(errno));
-#else
-		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-			"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
-			__func__, buflen, conn->fd, ret, strerror(errno));
-#endif
-		upsdebugx(6, "failed write: %s", buf);
+		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
+			"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
+			__func__, buflen, (int)conn->fd, ret);
+#else	/* WIN32 */
+		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
+			"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
+			__func__, buflen, conn->fd, ret);
+#endif	/* WIN32 */
+		upsdebugx(6, "%s: failed write: %s", __func__, buf);
 		sock_disconnect(conn);
 
 		/* TOTHINK: Maybe fallback elsewhere in other cases? */
@@ -441,14 +464,14 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		return 0;	/* failed */
 	} else {
 #ifndef WIN32
-		upsdebugx(6, "%s: write %" PRIiSIZE " bytes to socket %d succeeded "
+		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
 			"(ret=%" PRIiSIZE "): %s",
 			__func__, buflen, conn->fd, ret, buf);
-#else
-		upsdebugx(6, "%s: write %" PRIiSIZE " bytes to handle %p succeeded "
+#else	/* WIN32 */
+		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to handle %p succeeded "
 			"(ret=%" PRIiSIZE "): %s",
 			__func__, buflen, conn->fd, ret, buf);
-#endif
+#endif	/* WIN32 */
 	}
 
 	return 1;	/* OK */
@@ -463,16 +486,16 @@ static void sock_connect(TYPE_FD sock)
 	int	fd;
 
 	struct sockaddr_un sa;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
+# if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int	salen;
-#else
+# else
 	socklen_t	salen;
-#endif
+# endif
 	salen = sizeof(sa);
 	fd = accept(sock, (struct sockaddr *) &sa, &salen);
 
 	if (INVALID_FD(fd)) {
-		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
+		upslog_with_errno(LOG_ERR, "%s: accept on unix fd failed", __func__);
 		return;
 	}
 
@@ -488,7 +511,7 @@ static void sock_connect(TYPE_FD sock)
 		ret = fcntl(fd, F_GETFL, 0);
 
 		if (ret < 0) {
-			upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
+			upslog_with_errno(LOG_ERR, "%s: fcntl get on unix fd failed", __func__);
 			close(fd);
 			return;
 		}
@@ -496,7 +519,7 @@ static void sock_connect(TYPE_FD sock)
 		ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
 
 		if (ret < 0) {
-			upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
+			upslog_with_errno(LOG_ERR, "%s: fcntl set O_NDELAY on unix fd failed", __func__);
 			close(fd);
 			return;
 		}
@@ -505,7 +528,7 @@ static void sock_connect(TYPE_FD sock)
 		upsdebugx(0, "%s: keeping default synchronous mode", __func__);
 	}
 
-	conn = xcalloc(1, sizeof(*conn));
+	conn = (conn_t *)xcalloc(1, sizeof(*conn));
 	conn->fd = fd;
 
 #else /* WIN32 */
@@ -518,17 +541,17 @@ static void sock_connect(TYPE_FD sock)
 
 	/* sockfd is the handle of the connection pending pipe */
 	sockfd = CreateNamedPipe(
-			pipename,			// pipe name
-			PIPE_ACCESS_DUPLEX |  // read/write access
-			FILE_FLAG_OVERLAPPED, // async IO
+			pipename,		/* pipe name */
+			PIPE_ACCESS_DUPLEX |	/* read/write access */
+			FILE_FLAG_OVERLAPPED,	/* async IO */
 			PIPE_TYPE_BYTE |
 			PIPE_READMODE_BYTE |
 			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, // max. instances
-			ST_SOCK_BUF_LEN,	// output buffer size
-			ST_SOCK_BUF_LEN,	// input buffer size
-			0,			// client time-out
-			NULL);			// FIXME: default security attribute
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			ST_SOCK_BUF_LEN,	/* output buffer size */
+			ST_SOCK_BUF_LEN,	/* input buffer size */
+			0,			/* client time-out */
+			NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(sockfd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -564,8 +587,11 @@ static void sock_connect(TYPE_FD sock)
 	ReadFile (conn->fd, conn->buf,
 		sizeof(conn->buf) - 1, /* -1 to be sure to have a trailling 0 */
 		NULL, &(conn->read_overlapped));
-#endif
+#endif	/* WIN32 */
 
+	conn->nobroadcast = 0;
+	conn->readzero = 0;
+	conn->closing = 0;
 	pconf_init(&conn->ctx, NULL);
 
 	if (connhead) {
@@ -576,30 +602,17 @@ static void sock_connect(TYPE_FD sock)
 	connhead = conn;
 
 #ifndef WIN32
-	upsdebugx(3, "new connection on fd %d", fd);
-#else
-	upsdebugx(3, "new connection on handle %p", sock);
-#endif
+	upsdebugx(3, "%s: new connection on fd %d", __func__, fd);
+#else	/* WIN32 */
+	upsdebugx(3, "%s: new connection on handle %p", __func__, sock);
+#endif	/* WIN32 */
 
 }
 
-static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
+static int st_tree_dump_conn_one_node(st_tree_t *node, conn_t *conn)
 {
-	int	ret;
 	enum_t	*etmp;
 	range_t	*rtmp;
-
-	if (!node) {
-		return 1;	/* not an error */
-	}
-
-	if (node->left) {
-		ret = st_tree_dump_conn(node->left, conn);
-
-		if (!ret) {
-			return 0;	/* write failed in the child */
-		}
-	}
 
 	if (!send_to_one(conn, "SETINFO %s \"%s\"\n", node->var, node->val)) {
 		return 0;	/* write failed, bail out */
@@ -648,6 +661,28 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 		}
 	}
 
+	return 1;	/* everything's OK here ... */
+}
+
+static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
+{
+	int	ret;
+
+	if (!node) {
+		return 1;	/* not an error */
+	}
+
+	if (node->left) {
+		ret = st_tree_dump_conn(node->left, conn);
+
+		if (!ret) {
+			return 0;	/* write failed in the child */
+		}
+	}
+
+	if (!st_tree_dump_conn_one_node(node, conn))
+		return 0;	/* one of writes failed, bail out */
+
 	if (node->right) {
 		return st_tree_dump_conn(node->right, conn);
 	}
@@ -678,28 +713,62 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
 #ifdef WIN32
 	char *sockfn = pipename;	/* Just for the report below; not a global var in WIN32 builds */
-#endif
+#endif	/* WIN32 */
 
-	upsdebugx(6, "Driver on %s is now handling %s with %" PRIuSIZE " args",
-		sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
+	upsdebugx(6, "%s: Driver on %s is now handling %s with %" PRIuSIZE " args",
+		__func__, sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
 
 	if (numarg < 1) {
 		return 0;
 	}
 
-	if (!strcasecmp(arg[0], "DUMPALL")) {
+	if (!strcasecmp(arg[0], "LOGOUT")) {
+		send_to_one(conn, "OK Goodbye\n");
+#ifndef WIN32
+		upsdebugx(2, "%s: received LOGOUT on socket %d, will be disconnecting", __func__, (int)conn->fd);
+#else	/* WIN32 */
+		upsdebugx(2, "%s: received LOGOUT on handle %p, will be disconnecting", __func__, conn->fd);
+#endif	/* WIN32 */
+		/* Let the system flush the reply somehow (or the other
+		 * side to just see it) before we drop the pipe */
+		usleep(1000000);
+		/* err on the safe side, and actually close/free conn separately */
+		conn->closing = 1;
+		upsdebugx(4, "%s: LOGOUT processing finished", __func__);
+		return 2;
+	}
 
+	if (!strcasecmp(arg[0], "GETPID")) {
+		send_to_one(conn, "PID %" PRIiMAX "\n", (intmax_t)getpid());
+		return 1;
+	}
+
+	if (!strcasecmp(arg[0], "DUMPALL") || !strcasecmp(arg[0], "DUMPSTATUS") || (!strcasecmp(arg[0], "DUMPVALUE") && numarg > 1)) {
 		/* first thing: the staleness flag (see also below) */
 		if ((stale == 1) && !send_to_one(conn, "DATASTALE\n")) {
 			return 1;
 		}
 
-		if (!st_tree_dump_conn(dtree_root, conn)) {
-			return 1;
-		}
+		if (!strcasecmp(arg[0], "DUMPALL")) {
+			if (!st_tree_dump_conn(dtree_root, conn)) {
+				return 1;
+			}
 
-		if (!cmd_dump_conn(conn)) {
-			return 1;
+			if (!cmd_dump_conn(conn)) {
+				return 1;
+			}
+		} else {
+			/* A cheaper version of the dump */
+			char	*varname = (!strcasecmp(arg[0], "DUMPSTATUS") ? "ups.status" : (numarg > 1 ? arg[1] : NULL));
+			st_tree_t	*sttmp = (varname ? state_tree_find(dtree_root, varname) : NULL);
+
+			if (!sttmp) {
+				upsdebugx(1, "%s: %s was requested but currently no %s is known",
+					__func__, arg[0], NUT_STRARG(varname));
+			} else {
+				if (!st_tree_dump_conn_one_node(sttmp, conn))
+					return 1;
+			}
 		}
 
 		if ((stale == 0) && !send_to_one(conn, "DATAOK\n")) {
@@ -715,6 +784,40 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		return 1;
 	}
 
+	if (!strcasecmp(arg[0], "NOBROADCAST")) {
+		char buf[SMALLBUF];
+		conn->nobroadcast = 1;
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else	/* WIN32 */
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif	/* WIN32 */
+		upsdebugx(1, "%s: %s requested NOBROADCAST mode",
+			__func__, buf);
+		return 1;
+	}
+
+	/* BROADCAST <0|1> */
+	if (!strcasecmp(arg[0], "BROADCAST")) {
+		int i;
+		char buf[SMALLBUF];
+		conn->nobroadcast = 0;
+		if (numarg > 1 && str_to_int(arg[1], &i, 10)) {
+			if (i < 1)
+				conn->nobroadcast = 1;
+		}
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else	/* WIN32 */
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif	/* WIN32 */
+		upsdebugx(1,
+			"%s: %s requested %sBROADCAST mode",
+			__func__, buf,
+			conn->nobroadcast ? "NO" : "");
+		return 1;
+	}
+
 	if (numarg < 2) {
 		return 0;
 	}
@@ -726,7 +829,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		char *cmdparam = NULL;
 		char *cmdid = NULL;
 
-		/* Check if <cmdparam> and TRACKING were provided */
+		/* Check if <cmdparam> and/or TRACKING were provided */
 		if (numarg == 3) {
 			cmdparam = arg[2];
 		} else if (numarg == 4 && !strcasecmp(arg[2], "TRACKING")) {
@@ -742,18 +845,55 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		if (cmdid)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_instcmd(cmdname, cmdparam, conn);
+		if (ret != STAT_INSTCMD_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
+			if (cmdid)
+				send_tracking(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.instcmd) {
 			ret = upsh.instcmd(cmdname, cmdparam);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (cmdid)
 				send_tracking(conn, cmdid, ret);
 
 			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
-		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
+
+		if (cmdparam) {
+			upslogx(LOG_NOTICE,
+				"Got INSTCMD '%s' '%s', but driver lacks a handler",
+				NUT_STRARG(cmdname), NUT_STRARG(cmdparam));
+		} else {
+			upslogx(LOG_NOTICE,
+				"Got INSTCMD '%s', but driver lacks a handler",
+				NUT_STRARG(cmdname));
+		}
+
+		/* Send back execution result (here, STAT_INSTCMD_UNKNOWN)
+		 * if TRACKING was requested.
+		 * Note that in practice we should not get here often: if the
+		 * instcmd was not registered, it may be rejected earlier in
+		 * call stack, or returned by a driver's handler (for unknown
+		 * commands) just a bit above.
+		 */
+		if (cmdid)
+			send_tracking(conn, cmdid, ret);
+
+		/* The command was handled, status is a separate consideration */
 		return 1;
 	}
 
@@ -779,11 +919,27 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, setid);
 		}
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_setvar(arg[1], arg[2], conn);
+		if (ret != STAT_SET_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
+			if (setid)
+				send_tracking(conn, setid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.setvar) {
 			ret = upsh.setvar(arg[1], arg[2]);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (setid)
 				send_tracking(conn, setid, ret);
 
@@ -802,6 +958,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 static void sock_read(conn_t *conn)
 {
 	ssize_t	ret, i;
+	int	ret_arg = -1;
 
 #ifndef WIN32
 	char	buf[SMALLBUF];
@@ -820,7 +977,41 @@ static void sock_read(conn_t *conn)
 			return;
 		}
 	}
-#else
+
+	if (ret == 0) {
+		int	flags = fcntl(conn->fd, F_GETFL), is_closed = 0;
+		upsdebugx(2, "%s: read() returned 0; flags=%04X O_NDELAY=%04X",
+			__func__, (unsigned int)flags, (unsigned int)O_NDELAY);
+		if (flags & O_NDELAY || O_NDELAY == 0) {
+			/* O_NDELAY with zero bytes means nothing to read but
+			 * since read() follows a successful select() with
+			 * ready file descriptor, ret shouldn't be 0.
+			 * This may also mean that the counterpart has exited
+			 * and the file descriptor should be reaped.
+			 * e.g. a `driver -c reload -a testups` fires its
+			 * message over Unix socket and disconnects.
+			 */
+			is_closed = 1;
+		} else {
+			/* assume we will soon have data waiting in the buffer */
+			conn->readzero++;
+			upsdebugx(1, "%s: got zero-sized reads %d times in a row", __func__, conn->readzero);
+			if (conn->readzero > DSTATE_CONN_READZERO_THROTTLE_MAX) {
+				is_closed = 2;
+			} else {
+				usleep(DSTATE_CONN_READZERO_THROTTLE_USEC);
+			}
+		}
+
+		if (is_closed) {
+			upsdebugx(1, "%s: it seems the other side has closed the connection", __func__);
+			sock_disconnect(conn);
+			return;
+		}
+	} else {
+		conn->readzero = 0;
+	}
+#else	/* WIN32 */
 	char *buf = conn->buf;
 	DWORD bytesRead;
 	BOOL res;
@@ -837,7 +1028,7 @@ static void sock_read(conn_t *conn)
 		set_exit_flag(1);
 		return;
 	}
-#endif
+#endif	/* WIN32 */
 
 	for (i = 0; i < ret; i++) {
 
@@ -847,7 +1038,8 @@ static void sock_read(conn_t *conn)
 			continue;
 
 		case 1: /* try to use it, and complain about unknown commands */
-			if (!sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist)) {
+			ret_arg = sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist);
+			if (!ret_arg) {
 				size_t	arg;
 
 				upslogx(LOG_INFO, "Unknown command on socket: ");
@@ -855,7 +1047,13 @@ static void sock_read(conn_t *conn)
 				for (arg = 0; arg < conn->ctx.numargs && arg < INT_MAX; arg++) {
 					upslogx(LOG_INFO, "arg %d: %s", (int)arg, conn->ctx.arglist[arg]);
 				}
+			} else if (ret_arg == 2) {
+				/* closed by LOGOUT processing, conn is free()'d */
+				if (i < ret)
+					upsdebugx(1, "%s: returning early, socket may be not valid anymore", __func__);
+				return;
 			}
+
 			continue;
 
 		default: /* nothing parsed */
@@ -868,7 +1066,7 @@ static void sock_read(conn_t *conn)
 	/* Restart async read */
 	memset(conn->buf,0,sizeof(conn->buf));
 	ReadFile(conn->fd,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
-#endif
+#endif	/* WIN32 */
 }
 
 static void sock_close(void)
@@ -884,10 +1082,10 @@ static void sock_close(void)
 			free(sockfn);
 			sockfn = NULL;
 		}
-#else
+#else	/* WIN32 */
 		FlushFileBuffers(sockfd);
 		CloseHandle(sockfd);
-#endif
+#endif	/* WIN32 */
 
 		sockfd = ERROR_FD;
 	}
@@ -905,7 +1103,7 @@ static void sock_close(void)
 
 char * dstate_init(const char *prog, const char *devname)
 {
-	char	sockname[SMALLBUF];
+	char	sockname[NUT_PATH_MAX + 1];
 
 #ifndef WIN32
 	/* do this here for now */
@@ -923,19 +1121,19 @@ char * dstate_init(const char *prog, const char *devname)
 	} else {
 		snprintf(sockname, sizeof(sockname), "%s/%s", dflt_statepath(), prog);
 	}
-#else
+#else	/* WIN32 */
 	/* upsname (and so devname) is now mandatory so no need to test it */
 	snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, devname);
 	pipename = xstrdup(sockname);
-#endif
+#endif	/* WIN32 */
 
 	sockfd = sock_open(sockname);
 
 #ifndef WIN32
-	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
-#else
-	upsdebugx(2, "dstate_init: sock %s open on handle %p", sockname, sockfd);
-#endif
+	upsdebugx(2, "%s: sock %s open on fd %d", __func__, sockname, sockfd);
+#else	/* WIN32 */
+	upsdebugx(2, "%s: sock %s open on handle %p", __func__, sockname, sockfd);
+#endif	/* WIN32 */
 
 	/* NOTE: Caller must free this string */
 	return xstrdup(sockname);
@@ -946,13 +1144,12 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 {
 	int	maxfd = 0; /* Unidiomatic use vs. "sockfd" below, which is "int" on non-WIN32 */
 	int	overrun = 0;
-	conn_t	*conn;
+	conn_t	*conn, *cnext;
 	struct timeval	now;
 
 #ifndef WIN32
 	int	ret;
 	fd_set	rfds;
-	conn_t	*cnext;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
@@ -1007,7 +1204,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 			break;
 
 		default:
-			upslog_with_errno(LOG_ERR, "select unix sockets failed");
+			upslog_with_errno(LOG_ERR, "%s: select unix sockets failed", __func__);
 		}
 
 		return overrun;
@@ -1022,6 +1219,14 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 		if (FD_ISSET(conn->fd, &rfds)) {
 			sock_read(conn);
+		}
+	}
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
 		}
 	}
 
@@ -1084,7 +1289,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 	}
 
 	if (ret == WAIT_FAILED) {
-		upslog_with_errno(LOG_ERR, "waitfor failed");
+		upslog_with_errno(LOG_ERR, "%s: waitfor failed", __func__);
 		return overrun;
 	}
 
@@ -1106,13 +1311,21 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 		}
 	}
 
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
+		}
+	}
+
 	/* tell the caller if that fd woke up */
 /*
 	if (VALID_FD(arg_extrafd) && (ret == arg_extrafd)) {
 		return 1;
 	}
 */
-#endif
+#endif	/* WIN32 */
 
 	return overrun;
 }
@@ -1121,13 +1334,11 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
  * COMMON
  ******************************************************************/
 
-int dstate_setinfo(const char *var, const char *fmt, ...)
+int vdstate_setinfo(const char *var, const char *fmt, va_list ap)
 {
 	int	ret;
 	char	value[ST_MAX_VALUE_LEN];
-	va_list	ap;
 
-	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -1137,11 +1348,15 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_setinfo_dynamic() method). */
 	vsnprintf(value, sizeof(value), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
-	va_end(ap);
 
 	ret = state_setinfo(&dtree_root, var, value);
 
@@ -1152,10 +1367,9 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 	return ret;
 }
 
-int dstate_addenum(const char *var, const char *fmt, ...)
+int dstate_setinfo(const char *var, const char *fmt, ...)
 {
 	int	ret;
-	char	value[ST_MAX_VALUE_LEN];
 	va_list	ap;
 
 	va_start(ap, fmt);
@@ -1168,11 +1382,72 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	vsnprintf(value, sizeof(value), fmt, ap);
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_setinfo_dynamic() method). */
+	ret = vdstate_setinfo(var, fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 	va_end(ap);
+
+	return ret;
+}
+
+int dstate_setinfo_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	if (!var || validate_formatting_string(fmt_dynamic, fmt_reference, NUT_DYNAMICFORMATTING_DEBUG_LEVEL) < 0) {
+		return -1;
+	} else {
+		int	ret;
+		va_list	ap;
+
+		va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* Using validated formatting string here */
+		ret = vdstate_setinfo(var, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		va_end(ap);
+
+		return ret;
+	}
+}
+
+int vdstate_addenum(const char *var, const char *fmt, va_list ap)
+{
+	int	ret;
+	char	value[ST_MAX_VALUE_LEN];
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_addenum_dynamic() method). */
+	vsnprintf(value, sizeof(value), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	ret = state_addenum(dtree_root, var, value);
 
@@ -1181,6 +1456,64 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 	}
 
 	return ret;
+}
+
+int dstate_addenum(const char *var, const char *fmt, ...)
+{
+	int	ret;
+	va_list	ap;
+
+	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_addenum_dynamic() method). */
+	ret = vdstate_addenum(var, fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	return ret;
+}
+
+int dstate_addenum_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	if (!var || validate_formatting_string(fmt_dynamic, fmt_reference, NUT_DYNAMICFORMATTING_DEBUG_LEVEL) < 0) {
+		return -1;
+	} else {
+		int	ret;
+		va_list	ap;
+
+		va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* Using validated formatting string here */
+		ret = vdstate_addenum(var, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		va_end(ap);
+
+		return ret;
+	}
 }
 
 int dstate_addrange(const char *var, const int min, const int max)
@@ -1285,7 +1618,7 @@ void dstate_setaux(const char *var, long aux)
 	sttmp = state_tree_find(dtree_root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "dstate_setaux: base variable (%s) does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) does not exist", __func__, var);
 		return;
 	}
 
@@ -1321,6 +1654,20 @@ int dstate_delinfo(const char *var)
 	int	ret;
 
 	ret = state_delinfo(&dtree_root, var);
+
+	/* update listeners */
+	if (ret == 1) {
+		send_to_all("DELINFO %s\n", var);
+	}
+
+	return ret;
+}
+
+int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff)
+{
+	int	ret;
+
+	ret = state_delinfo_olderthan(&dtree_root, var, cutoff);
 
 	/* update listeners */
 	if (ret == 1) {
@@ -1424,22 +1771,53 @@ void status_init(void)
 	}
 
 	memset(status_buf, 0, sizeof(status_buf));
+	alarm_status = 0;
+}
+
+/* check if a status element has been set, return 0 if not, 1 if yes
+ * (considering a whole-word token in temporary status_buf) */
+int status_get(const char *buf)
+{
+	return str_contains_token(status_buf, buf);
 }
 
 /* add a status element */
-void status_set(const char *buf)
+static int status_set_callback(char *tgt, size_t tgtsize, const char *token)
 {
-	if (ignorelb && !strcasecmp(buf, "LB")) {
-		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
-		return;
+	if (tgt != status_buf || tgtsize != sizeof(status_buf)) {
+		upsdebugx(2, "%s: called for wrong use-case", __func__);
+		return 0;
 	}
 
-	/* separate with a space if multiple elements are present */
-	if (strlen(status_buf) > 0) {
-		snprintfcat(status_buf, sizeof(status_buf), " %s", buf);
-	} else {
-		snprintfcat(status_buf, sizeof(status_buf), "%s", buf);
+	if (ignorelb && !strcasecmp(token, "LB")) {
+		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
+		return 0;
 	}
+
+	if (!strcasecmp(token, "ALARM")) {
+		/* Drivers really should not raise alarms this way,
+		 * but for the sake of third-party forks, we handle
+		 * the possibility...
+		 */
+		upsdebugx(2, "%s: (almost) ignoring ALARM set as a status", __func__);
+		if (!alarm_status && !alarm_active && strlen(alarm_buf) == 0) {
+			alarm_init();	/* no-op currently, but better be proper about it */
+			alarm_set("[N/A]");
+		}
+		alarm_status++;
+		return 0;
+	}
+
+	/* Proceed adding the token */
+	return 1;
+}
+
+void status_set(const char *buf)
+{
+#ifdef DEBUG
+	upsdebugx(3, "%s: '%s'\n", __func__, buf);
+#endif
+	str_add_unique_token(status_buf, sizeof(status_buf), buf, status_set_callback, NULL);
 }
 
 /* write the status_buf into the externally visible dstate storage */
@@ -1470,11 +1848,64 @@ void status_commit(void)
 		break;
 	}
 
+	/* NOTE: Not sure if any clients rely on ALARM being first if raised,
+	 * but note that if someone also uses status_set("ALARM") we can end
+	 * up with a "[N/A]" alarm value injected (if no other alarm was set)
+	 * and only add the token here so it remains first.
+	 *
+	 * NOTE: alarm_commit() must be executed before status_commit() for
+	 * this report to work!
+	 * * If a driver only called status_set("ALARM") and did not bother
+	 *   with alarm_commit(), the "ups.alarm" value queries would have
+	 *   returned NULL if not for the "sloppy driver" fix below, although
+	 *   the "ups.status" value would report an ALARM token.
+	 * * If a driver properly used alarm_init() and alarm_set(), but then
+	 *   called status_commit() before alarm_commit(), the "ups.status"
+	 *   value would not know to report an ALARM token, as before.
+	 * * If a driver used both status_set("ALARM") and alarm_set() later,
+	 *   the injected "[N/A]" value of the alarm (if that's its complete
+	 *   value) would be overwritten by the explicitly assigned contents,
+	 *   and an explicit alarm_commit() would be required for proper
+	 *   reporting from a non-sloppy driver.
+	 */
+
+	if (!alarm_active && alarm_status && !strcmp(alarm_buf, "[N/A]")) {
+		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and used status_set(\"ALARM\") instead: commit the injected N/A ups.alarm value", __func__);
+		alarm_commit();
+	}
+
 	if (alarm_active) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
 	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);
 	}
+}
+
+/* similar functions for experimental.ups.mode.buzzwords, where tracked
+ * dynamically (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
+void buzzmode_init(void)
+{
+	memset(buzzmode_buf, 0, sizeof(buzzmode_buf));
+}
+
+int  buzzmode_get(const char *buf)
+{
+	return str_contains_token(buzzmode_buf, buf);
+}
+
+void buzzmode_set(const char *buf)
+{
+	str_add_unique_token(buzzmode_buf, sizeof(buzzmode_buf), buf, NULL, NULL);
+}
+
+void buzzmode_commit(void)
+{
+	if (!*buzzmode_buf) {
+		dstate_delinfo("experimental.ups.mode.buzzwords");
+		return;
+	}
+
+	dstate_setinfo("experimental.ups.mode.buzzwords", "%s", buzzmode_buf);
 }
 
 /* similar handlers for ups.alarm */
@@ -1495,24 +1926,31 @@ void alarm_init(void)
 #endif
 void alarm_set(const char *buf)
 {
+	/* NOTE: Differs from status_set() since we can add whole sentences
+	 *  here, not just unique tokens. Drivers are encouraged to wrap such
+	 *  sentences into brackets, especially when many alarms raised at once
+	 *  are anticipated, for readability.
+	 */
 	int ret;
-	if (strlen(alarm_buf) > 0) {
-		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
+	if (strlen(alarm_buf) < 1 || (alarm_status && !strcmp(alarm_buf, "[N/A]"))) {
+		ret = snprintf(alarm_buf, sizeof(alarm_buf), "%s", buf);
 	} else {
-		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), "%s", buf);
+		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
 	}
 
 	if (ret < 0) {
 		/* Should we also try to print the potentially unusable buf?
 		 * Generally - likely not. But if it is short enough...
-		 * Note: LARGEBUF was the original limit mismatched vs alarm_buf
+		 * Note: LARGEBUF was the original limit mismatched vs. alarm_buf
 		 * size before PR #986.
 		 */
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
 		/* A bit of complexity to keep both (int)snprintf(...) and (size_t)sizeof(...) happy */
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1548,10 +1986,12 @@ void alarm_set(const char *buf)
 		upslogx(LOG_ERR, "%s: error setting alarm_buf to: %s%s",
 			__func__, alarm_tmp, ( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" ) );
 	} else if ((size_t)ret > sizeof(alarm_buf)) {
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1587,9 +2027,15 @@ void alarm_set(const char *buf)
 # pragma GCC diagnostic pop
 #endif
 
-/* write the status_buf into the info array */
+/* write the status_buf into the info array for "ups.alarm" */
 void alarm_commit(void)
 {
+	/* Note this is a bit different from `device_alarm_commit(0);`
+	 * because here we also increase AND zero out the alarm count.
+	 *		alarm_active = 0; device_alarm_commit(0);
+	 * would be equivalent, but too intimate for later maintenance.
+	 */
+
 	if (strlen(alarm_buf) > 0) {
 		dstate_setinfo("ups.alarm", "%s", alarm_buf);
 		alarm_active = 1;
@@ -1606,6 +2052,8 @@ void device_alarm_init(void)
 }
 
 /* same as above, but writes to "device.X.ups.alarm" or "ups.alarm" */
+/* Note that 20 chars below just allow for a 2-digit "X" */
+/* FIXME? Shouldn't this be changed to be a LARGEBUF aka sizeof(alarm_buf) ? */
 void device_alarm_commit(const int device_number)
 {
 	char info_name[20];
@@ -1848,9 +2296,16 @@ static int dstate_tree_dump(const st_tree_t *node)
 /* Public interface */
 void dstate_dump(void)
 {
+	const st_tree_t *node;
+
 	upsdebugx(3, "Entering %s", __func__);
 
-	const st_tree_t *node = (const st_tree_t *)dstate_getroot();
+	node = (const st_tree_t *)dstate_getroot();
+	fflush(stderr);
 
 	dstate_tree_dump(node);
+
+	/* Make sure it lands in one piece and is logged where called */
+	fflush(stdout);
+	fflush(stderr);
 }

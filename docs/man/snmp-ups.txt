@@ -6,10 +6,14 @@ NAME
 
 snmp-ups - Multi-MIB Driver for SNMP UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*snmp-ups* -h
+
+*snmp-ups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 snmp-ups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -87,25 +91,26 @@ There is no default for the hostname, but the default port is 161.
 *mibs*='--list'::
 A special option which allows to list the currently known MIB-to-NUT mappings
 and exit the driver binary, intended for command-line usage like this:
++
 ----
-$ snmp-ups -a snmp-test -x mibs=--list
+:; snmp-ups -a snmp-test -x mibs=--list
 ----
 
 *mibs*='name'::
-Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED
+Set MIB compliance (default='auto', allowed entries: refer to SUPPORTED
 HARDWARE above).
 +
 With "auto", the driver will try a select set of SNMP objects until it finds
 one that the device responds to.
 +
-Note that since NUT 2.6.2, snmp-ups has a new method that uses sysObjectID
+Note that since NUT 2.6.2, snmp-ups has a new method that uses `sysObjectID`
 (which is a pointer to the preferred MIB of the device) to detect supported
 devices.  This renders void the *requirement* to use the "mibs" option.
 
 *community*='name'::
-Set community name (default = public).
-Note that a RW community name is required to change UPS settings and
-send commands (as for a powerdown).
+Set community name (default is 'public') for SNMPv1 and SNMPv2c connections.
+Note that an RW capable community name is required to change UPS settings and
+send commands (such as for a power-down).
 
 *snmp_version*='version'::
 Set SNMP version (default = v1, allowed: v2c, v3)
@@ -136,6 +141,7 @@ equipment which has strangeness in the three-phase power reporting.
 *secLevel*='value'::
 Set the securityLevel used for SNMPv3 messages (default=noAuthNoPriv,
 allowed: authNoPriv,authPriv)
+This parameter is mandatory if you use non-trivial authentication.
 
 *secName*='value'::
 Set the securityName used for authenticated SNMPv3 messages (no default)
@@ -231,9 +237,9 @@ linkman:nutupsdrv[8]
 NUT SNMP Protocols Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Available at: http://www.networkupstools.org/ups-protocols.html#_snmp
+Available at: https://www.networkupstools.org/ups-protocols.html#_snmp
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

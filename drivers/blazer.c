@@ -7,7 +7,7 @@
  * device support from such legacy drivers over time.
  *
  * A document describing the protocol implemented by this driver can be
- * found online at http://www.networkupstools.org/ups-protocols/megatec.html
+ * found online at https://www.networkupstools.org/ups-protocols/megatec.html
  *
  * Copyright (C)
  *   2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -132,7 +132,7 @@ static double blazer_load(const char *ptr, char **endptr)
 
 /*
  * The battery voltage will quickly return to at least the nominal value after
- * discharging them. For overlapping battery.voltage.low/high ranges therefor
+ * discharging them. For overlapping battery.voltage.low/high ranges therefore
  * choose the one with the highest multiplier.
  */
 static double blazer_packs(const char *ptr, char **endptr)
@@ -150,7 +150,7 @@ static double blazer_packs(const char *ptr, char **endptr)
 
 	for (i = 0; packs[i] > 0; i++) {
 
-		if (packs[i] * batt.volt.act > 1.2 * batt.volt.nom) {
+		if (packs[i] * batt.volt.act > 1.25 * batt.volt.nom) {
 			continue;
 		}
 
@@ -204,7 +204,6 @@ static int blazer_status(const char *cmd)
 	}
 
 	for (i = 0, val = strtok_r(buf+1, " ", &last); status[i].var; i++, val = strtok_r(NULL, " \r\n", &last)) {
-
 		if (!val) {
 			upsdebugx(2, "%s: parsing failed", __func__);
 			return -1;
@@ -215,20 +214,7 @@ static int blazer_status(const char *cmd)
 			continue;
 		}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(status[i].var, status[i].fmt, status[i].conv(val, NULL));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
-
+		dstate_setinfo_dynamic(status[i].var, status[i].fmt, "%f", status[i].conv(val, NULL));
 	}
 
 	if (!val) {
@@ -344,7 +330,6 @@ static int blazer_rating(const char *cmd)
 	}
 
 	for (i = 0, val = strtok_r(buf+1, " ", &last); rating[i].var; i++, val = strtok_r(NULL, " \r\n", &last)) {
-
 		if (!val) {
 			upsdebugx(2, "%s: parsing failed", __func__);
 			return -1;
@@ -355,20 +340,7 @@ static int blazer_rating(const char *cmd)
 			continue;
 		}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(rating[i].var, rating[i].fmt, rating[i].conv(val, NULL));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
-
+		dstate_setinfo_dynamic(rating[i].var, rating[i].fmt, "%f", rating[i].conv(val, NULL));
 	}
 
 	return 0;
@@ -554,7 +526,7 @@ void blazer_makevartable(void)
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
 
-	addvar(VAR_FLAG, "protocol", "Preselect communication protocol (skip autodetection)");
+	addvar(VAR_VALUE, "protocol", "Preselect communication protocol (skip autodetection)");
 }
 
 
@@ -850,21 +822,19 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	retry;
 
 	/* Stop pending shutdowns */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
 		break;
-
 	}
 
 	if (retry > MAXTRIES) {
@@ -873,14 +843,17 @@ void upsdrv_shutdown(void)
 
 	/* Shutdown */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down in %ld seconds", offdelay);
-
+		upslogx(LOG_ERR, "Shutting down in %ld seconds", offdelay);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
+		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }

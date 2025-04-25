@@ -74,7 +74,7 @@ This driver supports the following optional settings in the
 linkman:ups.conf[5] file:
 
 Generic:
-~~~~~~~
+~~~~~~~~
 
 *device_mfr*='value'::
 A string specifying the manufacturer of the UPS device (default UNKNOWN).
@@ -83,7 +83,7 @@ A string specifying the manufacturer of the UPS device (default UNKNOWN).
 A string specifying the model of the UPS device (default UNKNOWN).
 
 Serial:
-~~~~~~
+~~~~~~~
 
 *ser_baud_rate*='value'::
 A integer specifying the serial port baud rate (default 9600).
@@ -98,7 +98,7 @@ A character specifying the serial port parity (default N).
 An integer specifying the serial port stop bit (default 1).
 
 Modbus:
-~~~~~~
+~~~~~~~
 
 *rio_slave_id*='value'::
 An integer specifying the RIO modbus slave ID (default 1).
@@ -206,11 +206,11 @@ executes "instant poweroff"
 INSTALLATION
 ------------
 
-This driver is not built by default. You can build it by installing
+This driver may be not built by default. You can build it by installing
 libmodbus and running `configure --with-modbus=yes`.
 
 You also need to give proper permissions on the local serial device
-file (/dev/ttyUSB0 for example) to allow the run-time NUT driver user
+file (`/dev/ttyUSB0` for example) to allow the run-time NUT driver user
 account to access it.
 
 OTHER NOTES
@@ -245,5 +245,5 @@ linkman:nutupsdrv[8], linkman:ups.conf[5]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * libmodbus home page: http://libmodbus.org

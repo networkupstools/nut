@@ -22,8 +22,7 @@ SUPPORTED HARDWARE
 
 This driver should support the PhoenixContact QUINT-UPS industrial DC UPS,
 model 2320461 and all compatible models. More information about this UPS
-can be found here:
-https://www.phoenixcontact.com/online/portal/us?uri=pxc-oc-itemdetail:pid=2320461
+can be found among <<_internet_resources,Internet resources>> below.
 
 phoenixcontact_modbus uses the libmodbus project, for Modbus implementation.
 
@@ -34,7 +33,7 @@ Note: this UPS and its manual refers to Low-Batt as "Shutdown Event".
 
 You need the "IFS-RS232-DATACABLE" to communicate with the UPS in Linux
 as the IFS-USB cable doesn't seem to be supported. FYI communication
-parameters are: 115200,E,8,1.
+parameters are: `115200,E,8,1`.
 
 You also need the UPS-CONF Windows software (free; download from their
 site), to configure the UPS signals and timers.
@@ -76,11 +75,11 @@ This driver doesn't support any optional settings.
 INSTALLATION
 ------------
 
-This driver is not built by default.  You can build it by installing
+This driver may be not built by default.  You can build it by installing
 libmodbus and running `configure --with-modbus=yes`.
 
 You also need to give proper permissions on the local serial device file
-(/dev/ttyS0 for example) to allow the NUT user to access it.
+(`/dev/ttyS0` for example) to allow the NUT user to access it.
 
 INSTANT COMMANDS
 ----------------
@@ -103,5 +102,8 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * libmodbus home page: http://libmodbus.org
+* More information about PhoenixContact QUINT-UPS industrial DC UPS,
+  model 2320461 UPS series can be found here:
+  https://www.phoenixcontact.com/online/portal/us?uri=pxc-oc-itemdetail:pid=2320461

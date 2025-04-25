@@ -4,14 +4,14 @@ UPSDRVSVCCTL(8)
 NAME
 ----
 
-upsdrvsvcctl - UPS driver service instance controller
+upsdrvsvcctl - Network UPS Tools driver service instance controller
 
 SYNOPSIS
 --------
 
 *upsdrvsvcctl* -h
 
-*upsdrvsvcctl* ['OPTIONS'] {start | stop } ['ups']
+*upsdrvsvcctl* ['OPTIONS'] {start | stop | status} ['ups']
 
 DESCRIPTION
 -----------
@@ -23,16 +23,17 @@ derived from Solaris 10 codebase, including proprietary Sun/Oracle
 Solaris and numerous open-source illumos distributions with SMF).
 It may be not installed in packaging for other operating systems.
 
-When used properly, upsdrvsvcctl lets you maintain identical startup
+When used properly, `upsdrvsvcctl` lets you maintain identical startup
 scripts across multiple systems with different UPS configurations.
 
-The goal of this solution is to allow the services of *upsd* data
-server to start up even if some of the power devices are currently
+The goal of this solution is to allow the services of linkman:upsd[8]
+data server to start up even if some of the power devices are currently
 not accessible, and for NUT drivers to be automatically restarted
 by the system in case of problems (driver bug, startup failure).
 It also allows for faster startup of systems which monitor several
-devices, by letting each driver to start in parallel with others,
-and not with a sequential loop like was done previously.
+devices, by letting each driver to start in parallel with others
+and as soon as the required subsystem for the specific driver's media
+is available, i.e. not with a sequential loop like was done previously.
 
 Independent service instances for each NUT driver also allow one
 to configure further dependencies, such as that networking must be
@@ -46,27 +47,39 @@ It was also not easy to strike a pre-packaged balance between early
 UPS protection for USB/serial home setups vs. waiting for network
 on larger ones.
 
-*upsdrvsvcctl* is a script which mimics the operation of *upsdrvctl*
+*upsdrvsvcctl* is a script which mimics the operation of linkman:upsdrvctl[8]
 program (where possible) to provide similar end-user experience when
 manipulating drivers wrapped into service instances rather than as
-directly executed daemons. It relies on *nut-driver-enumerator.sh*
+directly executed daemons. It relies on linkman:nut-driver-enumerator[8]
 for a large part of actual operations.
 
-You should use upsdrvsvcctl instead of direct calls to the drivers
-and daemon-based management with *upsdrvctl* whenever possible (that
+You should use `upsdrvsvcctl` instead of direct calls to the drivers
+and daemon-based management with linkman:upsdrvctl[8] whenever possible (that
 is, for "production" use on compatible OSes). Otherwise (testing,
-other OSes) the *upsdrvctl* is a recommended option.
+other OSes) the `upsdrvctl` is a recommended option.
 
 OPTIONS
 -------
 
 *-h*::
-Display the help text.
+Display the help text, including the built-in version of the script.
+
+*-V*::
+Display the version of NUT binaries (calling *upsdrvctl -V*), which
+normally should not differ much from the built-in version of the script
+shown in help. But with custom builds everything is possible, so it may
+be useful to know.
 
 *-t*::
 Enable testing mode. Testing mode makes upsdrvsvcctl display the actions
 it would execute without actually doing them.
 
+
+*--timeout-cmd <prog>* and *--timeout-args <arg>*::
+Service management calls will be time-limited by calling the specified
+program with its args. By default, if coreutils timeout is found, it
+would be used to limit service calls by 90 sec, to avoid/work around
+certain hangs that happen in some systemd version under stress.
 
 
 OPTIONS OF UPSDRVCTL NOT (CURRENTLY) APPLICABLE TO UPSDRVSVCCTL
@@ -81,20 +94,22 @@ be better to stop the service instance and play with *upsdrvctl*
 directly.
 
 *-r* 'directory'::
-If starting a driver, this value will direct it to *chroot*(2) into
-'directory'.  This can be useful when securing systems.
-
-This may be set in the ups.conf with "chroot" in the global section.
+If starting a driver, this value will direct it to linkmanext:chroot[2]
+into 'directory'.  This can be useful when securing systems.
++
+This may be set in the linkman:ups.conf[5] with the +chroot+ directive
+in the global section.
 
 *-u* 'username'::
-If starting a driver, this value will direct it to *setuid*(2) to
+If starting a driver, this value will direct it to linkmanext:setuid[2] to
 the user id associated with 'username'.
-
-If the driver is started as root without specifying this value, it will
++
+If the driver is started as 'root' without specifying this value, it will
 use the username that was compiled into the binary.  This defaults to
-"nobody", and is far from ideal.
-
-This may be set in ups.conf with "user" in the global section.
+'nobody' (if not otherwise configured), which is far from ideal.
++
+This may be set in linkman:ups.conf[5] with the +user+ directive in the
+global section.
 
 *-D*::
 Raise the driver debug level.  Use this multiple times for additional
@@ -116,10 +131,18 @@ online.
 
 *start*::
 Start the UPS driver(s). In case of failure, further attempts may be executed
-by using the 'maxretry' and 'retrydelay' options - see linkman:ups.conf[5].
+by using the 'maxretry' and 'retrydelay' options -- see linkman:ups.conf[5].
 
 *stop*::
 Stop the UPS driver(s).
+
+*status*::
+Query run-time status of all configured devices (or one specified device).
+Currently defers work to linkman:upsdrvctl[8], to list known device
+configurations and their driver daemon details (PID, responsiveness,
+`ups.status`) and to linkman:nut-driver-enumerator[8] to map device
+names to service unit instances to report their names and states in
+the service management framework.
 
 *upsdrvsvcctl* also supports further operations for troubleshooting the
 mapping of NUT driver section names to the service instance names (which
@@ -138,7 +161,7 @@ COMMANDS OF UPSDRVCTL NOT (CURRENTLY) APPLICABLE TO UPSDRVSVCCTL
 
 *shutdown*::
 Command the UPS driver(s) to run their shutdown sequence.  Drivers are
-stopped according to their sdorder value - see linkman:ups.conf[5].
+stopped according to their `sdorder` value -- see linkman:ups.conf[5].
 
 WARNING: this will probably power off your computers, so don't
 play around with this option.  Only use it when your systems are prepared
@@ -180,12 +203,12 @@ this service are stored), as suggested below:
 Messages will normally be kept in the service journal, so:
 
 	journalctl -lu nut-driver@instance-name
-
++
 Note that your local system configuration may be impacted by such
 nuances as passing the journal data to a standard syslog server,
 and/or by having a small cache for locally stored journal messages
 (so older entries would disappear). There may also be or not be a
-copy of the journals stored in the filesystem.
+copy of the journals stored in the persistent filesystem at all.
 
 *Solaris SMF*::
 Look for `/var/svc/log/system-power-nut-driver:instance-name.log` file.
@@ -204,4 +227,4 @@ linkman:nut-driver-enumerator[8], linkman:ups.conf[5]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
