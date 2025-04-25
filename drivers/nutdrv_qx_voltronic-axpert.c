@@ -2041,7 +2041,7 @@ static void	voltronic_sunny_update_related_vars_limits(item_t *item, const char 
 		{ "output.realpower.max",			"grid.realpower.max",				1 },	/*	QOPMP #1 sets the MAX settable value of QGPMP #1 */
 		{ "grid.realpower.max",				"output.realpower.max",				0 },	/*	QGPMP #1 sets the MIN settable value of QOPMP #1 */
 		{ "output.realpower.nominal",			"output.realpower.max",				1 },	/*	QMD   #2 sets the MAX settable value of QOPMP #1 */
-		{ NULL }												/* [1]:	The min settable value of QCHGS #2 is the greatest one among these 3 values	*/
+		{ NULL, NULL, 0 }											/* [1]:	The min settable value of QCHGS #2 is the greatest one among these 3 values	*/
 	};
 
 	val = strtod(value, NULL);
@@ -2546,7 +2546,7 @@ static int	voltronic_axpert_capability_set_nonut(item_t *item, char *value, cons
 	} capability[] = {
 		{ "bypass_alarm",	bypass_alarm },
 		{ "battery_alarm",	battery_alarm },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	for (i = 0; capability[i].type; i++) {
