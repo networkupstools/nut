@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3457 utf-8
+personal_ws-1.1 en 3467 utf-8
 AAC
 AAS
 ABI
@@ -846,6 +846,7 @@ OUTDIR
 OUTPUTV
 OUTVOLT
 OV
+OVERDURATION
 Oden
 OffTime
 Ohloh
@@ -2205,6 +2206,7 @@ ina
 includePath
 includedir
 inductor
+inet
 infos
 infoval
 inh
@@ -2499,6 +2501,7 @@ mirrorlist
 mis
 misconfigured
 mkdir
+mkstr
 mmZ
 mmap
 mn
@@ -2622,6 +2625,9 @@ nowarn
 np
 nspr
 nss
+ntopAI
+ntopSS
+ntopW
 nuget
 num
 numOfBytesFromUPS
@@ -2892,6 +2898,7 @@ rootca
 rootcerts
 rootfs
 rootfs'es
+rootpidpath
 rpath
 rpc
 rpool
@@ -3369,6 +3376,8 @@ vo
 volsize
 voltronic
 vscode
+vsnprintf
+vsnprintfcat
 vt
 wDescriptorLength
 waitbeforereconnect
@@ -3395,6 +3404,7 @@ workspaceFolder
 workspaces
 writability
 writeinfo
+writepid
 writeups
 ws
 xAAAA

@@ -292,6 +292,8 @@ sub find_usbdevs
 	# take care to NOT prune (avoid recursion into) the "." one:
 	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.(orig|o|la|lo|exe)$/) || ($_ eq '.libs') || ($_ eq '.deps') || ($_ eq '..');
 	return $File::Find::prune = 0 if ($_ eq '.');
+	# FIXME: Skip libtool wrappers or binary builds of drivers without extension
+	# Maybe ONLY walk *.c and *.h files (and subdirs)?..
 
 	if (-d $_) {
 		# FIXME: in current NUT vanilla code we do not support subdirs
