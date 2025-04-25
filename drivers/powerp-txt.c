@@ -36,7 +36,7 @@
 
 #include <ctype.h>
 
-#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.62"
+#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.63"
 
 typedef struct {
 	float          i_volt;
@@ -207,19 +207,7 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		snprintf(command, sizeof(command), vartab[i].set, atoi(val));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		snprintf_dynamic(command, sizeof(command), vartab[i].set, "%d", atoi(val));
 
 		if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
 			dstate_setinfo(varname, "%s", val);

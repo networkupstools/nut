@@ -172,3 +172,6 @@ DISTCLEANFILES = gitlog2changelog.py
 DISTCLEANFILES += nut-snmpinfo.py
 
 .PHONY: nut-scanner-deps nut-scanner-snmp-deps nut-scanner-usb-deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: nut-scanner-deps

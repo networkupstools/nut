@@ -29,8 +29,12 @@
 #include <modbus.h>
 #include <timehead.h>
 
-#define DRIVER_NAME "NUT ADELSYSTEM DC-UPS CB/CBI driver"
-#define DRIVER_VERSION "0.04"
+#if !(defined NUT_MODBUS_LINKTYPE_STR)
+# define NUT_MODBUS_LINKTYPE_STR	"unknown"
+#endif
+
+#define DRIVER_NAME	"NUT ADELSYSTEM DC-UPS CB/CBI driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
+#define DRIVER_VERSION	"0.04"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */

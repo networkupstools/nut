@@ -625,8 +625,8 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	UPSMON_DIRECTIVEX("POLLFAIL_LOG_THROTTLE_MAX", int, config.pollFailLogThrottleMax,  false);
 	UPSMON_DIRECTIVEX("OFFDURATION",    int,          config.offDuration,    false);
 	UPSMON_DIRECTIVEX("OBLBDURATION",   int,          config.oblbDuration,   false);
+	UPSMON_DIRECTIVEX("OVERDURATION",   int,          config.overDuration,   false);
 	UPSMON_DIRECTIVEX("SHUTDOWNEXIT",   nut::BoolInt, config.shutdownExit,   false);
-
 	UPSMON_DIRECTIVEX("CERTPATH",       std::string,  config.certPath,       true);
 
 	// Spec says to write these as 0/1 integers
@@ -660,6 +660,15 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 		bi2 = i;
 		bis = bi2;
 		UPSMON_DIRECTIVEX("FORCESSL",       nut::BoolInt, bis,                   false);
+	}
+
+	if (config.alarmCritical.set()) {
+		bi = config.alarmCritical;
+		bi.bool01 = true;
+		i = bi;
+		bi2 = i;
+		bis = bi2;
+		UPSMON_DIRECTIVEX("ALARMCRITICAL",  nut::BoolInt, bis,                   false);
 	}
 
 	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hostSync,       false);

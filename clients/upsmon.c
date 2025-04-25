@@ -122,6 +122,12 @@ static	int	exit_flag = 0;
 	/* set if ALARM status can cause UPS to become critical (e.g. when no-comms) */
 static	int	alarmcritical = 1;
 
+	/* Set the time (in seconds) after which OVER can result in a UPS to be
+	considered critical (e.g. when not communicating). Negative values will
+	prevent a UPS from ever becoming critical from overload. A value of zero
+	will have the UPS instantly be considered critical in such situations. */
+static int overdurationtime = -1;
+
 	/* userid for unprivileged process when using fork mode */
 static	char	*run_as_user = NULL;
 
@@ -399,6 +405,7 @@ static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 			upsdebugx(2, "%s: ntype 0x%04x (%s)",
 				__func__, ntype,
 				notifylist[i].name);
+
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -421,13 +428,15 @@ static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 					 *  only have one "%s", plaster another
 					 *  to "msgfmt" and follow this path?
 					 */
-					snprintf(msg, sizeof(msg),
+					snprintf_dynamic(msg, sizeof(msg),
 						msgfmt,
+						"%s%s",
 						upsname ? upsname : "",
 						NUT_STRARG(extra));
 				} else {
-					snprintf(msg, sizeof(msg),
+					snprintf_dynamic(msg, sizeof(msg),
 						msgfmt,
+						"%s",
 						upsname ? upsname : "");
 				}
 			} else {
@@ -1277,15 +1286,6 @@ static int is_ups_critical(utype_t *ups)
 	if (ups->commstate == 0) {
 		/* Note: ECO mode not considered easily fatal here */
 
-		/* FIXME: Consider equivalents of alarmcritical for over/trim/boost? */
-		if (flag_isset(ups->status, ST_OVER)) {
-			upslogx(LOG_WARNING,
-				"UPS [%s] was last known to be overloaded "
-				"and currently is not communicating, "
-				"but we make no assumptions if it is dead now",
-				ups->sys);
-		}
-
 		if (flag_isset(ups->status, ST_TRIM)) {
 			upslogx(LOG_WARNING,
 				"UPS [%s] was last known to be "
@@ -1302,6 +1302,36 @@ static int is_ups_critical(utype_t *ups)
 				"and currently is not communicating, "
 				"but we make no assumptions if it is dead now",
 				ups->sys);
+		}
+
+		if (ups->overstate == 1
+			|| flag_isset(ups->status, ST_OVER)) {
+				if (overdurationtime >= 0) {
+					if (now > 0 && (now - ups->oversince < overdurationtime)) {
+						upslogx(LOG_WARNING,
+							"UPS [%s] was last known to be overloaded "
+							"for %" PRIiMAX " sec out of %d sec threshold "
+							"and currently is not communicating, just so you "
+							"know (waiting for OVERDURATION to elapse)",
+							ups->sys,
+							(intmax_t)(now - ups->oversince),
+							overdurationtime);
+					} else {
+						upslogx(LOG_WARNING,
+							"UPS [%s] was last known to be overloaded "
+							"for longer than the set threshold of %d sec "
+							"and is still not communicating, assuming dead",
+							ups->sys,
+							overdurationtime);
+						return 1;
+					}
+				} else {
+					upslogx(LOG_WARNING,
+						"UPS [%s] was last known to be overloaded "
+						"and currently is not communicating, "
+						"but we make no assumptions if it is dead now",
+						ups->sys);
+				}
 		}
 
 		if (ups->alarmstate == 1
@@ -1599,10 +1629,25 @@ static void ups_is_notcal(utype_t *ups)
 
 static void ups_is_over(utype_t *ups)
 {
+	time_t	now;
+
+	time(&now);
+
 	if (flag_isset(ups->status, ST_OVER)) { 	/* no change */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		if (ups->oversince < 1) {
+			/* Should not happen, but just in case */
+			ups->oversince = now;
+		}
 		return;
 	}
+
+	if (overdurationtime >= 0) {
+		sleepval = pollfreqalert;	/* bump up polling frequency */
+	}
+
+	ups->oversince = now;
+	ups->overstate = 1;
 
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
@@ -1615,6 +1660,9 @@ static void ups_is_over(utype_t *ups)
 static void ups_is_notover(utype_t *ups)
 {
 	/* Called when OVER is NOT among known states */
+	ups->oversince = 0;
+	ups->overstate = 0;
+
 	if (flag_isset(ups->status, ST_OVER)) {	/* actual change */
 		do_notify(ups, NOTIFY_NOTOVER, NULL);
 		clearflag(&ups->status, ST_OVER);
@@ -1940,6 +1988,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	tmp->bypassstate = -1;
 	tmp->ecostate = -1;
 	tmp->alarmstate = -1;
+	tmp->overstate = -1;
 
 	/* forget poll-failure logging throttling */
 	tmp->pollfail_log_throttle_count = -1;
@@ -1952,6 +2001,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 
 	tmp->offsince = 0;
 	tmp->oblbsince = 0;
+	tmp->oversince = 0;
 
 	if (   (!strcasecmp(managerialOption, "primary"))
 	    || (!strcasecmp(managerialOption, "master"))  ) {
@@ -2183,6 +2233,12 @@ static int parse_conf_arg(size_t numargs, char **arg)
 	/* OFFDURATION <num> */
 	if (!strcmp(arg[0], "OFFDURATION")) {
 		offdurationtime = atoi(arg[1]);
+		return 1;
+	}
+
+	/* OVERDURATION <num> */
+	if (!strcmp(arg[0], "OVERDURATION")) {
+		overdurationtime = atoi(arg[1]);
 		return 1;
 	}
 

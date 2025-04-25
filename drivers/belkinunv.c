@@ -746,6 +746,9 @@ static void updatestatus(int smode, const char *fmt, ...) {
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) a few times */
 	vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop

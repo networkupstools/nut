@@ -297,11 +297,11 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfdlocal) {
 					&libgpiod_data->gpioEventLines,
 					j
 				);
-				int eventRc=gpiod_line_event_read(eLine, &event);
+				int eventRc = gpiod_line_event_read(eLine, &event);
 				unsigned int lineOffset = gpiod_line_offset(eLine);
 				event.event_type=0;
 				upsdebugx(5,
-					"Event read return code %d and event type %d for line %d",
+					"Event read return code %d and event type %d for line %u",
 					eventRc,
 					event.event_type,
 					lineOffset

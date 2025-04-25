@@ -204,7 +204,6 @@ static int blazer_status(const char *cmd)
 	}
 
 	for (i = 0, val = strtok_r(buf+1, " ", &last); status[i].var; i++, val = strtok_r(NULL, " \r\n", &last)) {
-
 		if (!val) {
 			upsdebugx(2, "%s: parsing failed", __func__);
 			return -1;
@@ -215,20 +214,7 @@ static int blazer_status(const char *cmd)
 			continue;
 		}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(status[i].var, status[i].fmt, status[i].conv(val, NULL));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
-
+		dstate_setinfo_dynamic(status[i].var, status[i].fmt, "%f", status[i].conv(val, NULL));
 	}
 
 	if (!val) {
@@ -344,7 +330,6 @@ static int blazer_rating(const char *cmd)
 	}
 
 	for (i = 0, val = strtok_r(buf+1, " ", &last); rating[i].var; i++, val = strtok_r(NULL, " \r\n", &last)) {
-
 		if (!val) {
 			upsdebugx(2, "%s: parsing failed", __func__);
 			return -1;
@@ -355,20 +340,7 @@ static int blazer_rating(const char *cmd)
 			continue;
 		}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(rating[i].var, rating[i].fmt, rating[i].conv(val, NULL));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
-
+		dstate_setinfo_dynamic(rating[i].var, rating[i].fmt, "%f", rating[i].conv(val, NULL));
 	}
 
 	return 0;
