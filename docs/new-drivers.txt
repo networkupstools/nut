@@ -204,6 +204,20 @@ values right there:
 
 	dstate_setinfo("ups.model", "Mega-Zapper %d", rating);
 
+In a few cases you can use a formatting string coming from a mapping
+table or constructed during run-time.  This is generally not safe (due
+to references into the stack when handling the variable argument list),
+and modern compilers warn against doing so.  While it is possible to
+quiesce the warnings with pragmas, it is better to play safe with the
+"dynamic" versions of methods provided by NUT -- they allow to combine
+both compile-time checks of expected formatting string vs. types of data
+in the method arguments, and run-time equivalence of the actual dynamic
+formatting string to those expectations.  In this case, you would use
+`dstate_setinfo_dynamic()` with a coding pattern similar to the following:
+
+	char *fmt = "Mega-Zapper %d";
+	dstate_setinfo_dynamic("ups.model", fmt, "%d", rating);
+
 Setting flags
 ~~~~~~~~~~~~~
 

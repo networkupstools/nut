@@ -5,7 +5,7 @@
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
 	2019 		Eaton (author: Arnaud Quette <ArnaudQuette@eaton.com>)
-	2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2020 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#define NUT_WANT_INET_NTOP_XX	1
 
 #include "config.h"	/* must be the first header */
 
@@ -169,22 +171,6 @@ static int	reload_flag = 0, exit_flag = 0;
 #ifdef HAVE_SYSTEMD
 # define SERVICE_UNIT_NAME "nut-server.service"
 #endif
-
-static const char *inet_ntopW (struct sockaddr_storage *s)
-{
-	static char str[40];
-
-	switch (s->ss_family)
-	{
-	case AF_INET:
-		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), str, 16);
-	case AF_INET6:
-		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), str, 40);
-	default:
-		errno = EAFNOSUPPORT;
-		return NULL;
-	}
-}
 
 /* return a pointer to the named ups if possible */
 upstype_t *get_ups_ptr(const char *name)
@@ -507,17 +493,13 @@ static void setuptcp(stype_t *server)
 		}
 
 		if (ai->ai_next) {
-			char ipaddrbuf[SMALLBUF];
-			const char *ipaddr;
-			snprintf(ipaddrbuf, sizeof(ipaddrbuf), " as ");
-			ipaddr = inet_ntop(ai->ai_family, ai->ai_addr,
-				ipaddrbuf + strlen(ipaddrbuf),
-				sizeof(ipaddrbuf));
+			const char *ipaddr = inet_ntopAI(ai);
 			upslogx(LOG_WARNING,
-				"setuptcp: bound to %s%s but there seem to be "
+				"setuptcp: bound to %s%s%s but there seem to be "
 				"further (ignored) addresses resolved for this name",
 				server->addr,
-				ipaddr == NULL ? "" : ipaddrbuf);
+				ipaddr == NULL ? "" : " as ",
+				ipaddr == NULL ? "" : ipaddr);
 		}
 
 		server->sock_fd = sock_fd;
@@ -812,7 +794,7 @@ static void client_connect(stype_t *server)
 
 	time(&client->last_heard);
 
-	client->addr = xstrdup(inet_ntopW(&csock));
+	client->addr = xstrdup(inet_ntopSS(&csock));
 
 	client->tracking = 0;
 

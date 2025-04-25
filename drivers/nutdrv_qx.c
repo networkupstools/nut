@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.42"
+#define DRIVER_VERSION	"0.43"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -3285,7 +3285,7 @@ void	upsdrv_initups(void)
 
 	/* Whether the device is connected through USB or serial */
 	if (
-		!strcasecmp(dstate_getinfo("driver.parameter.port"), "auto") ||
+		!strcasecmp(device_path, "auto") ||
 		getval("subdriver") ||
 		getval("vendorid") ||
 		getval("productid") ||
@@ -3294,12 +3294,19 @@ void	upsdrv_initups(void)
 		getval("serial") ||
 		getval("bus") ||
 		getval("langid_fix")
-#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+# if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 		|| getval("busport")
-#endif
+# endif
 	) {
 		/* USB */
 		is_usb = 1;
+
+		/* FIXME: Revise when/if we add support for port devfs paths */
+		/* NOTE: We also get a more detailed message below with
+		 * the warn_if_bad_usb_port_filename() method */
+		if (strcasecmp(device_path, "auto")) {
+			upslogx(LOG_WARNING, "WARNING: port='%s' would be ignored, since other options indicate USB mode", device_path);
+		}
 	} else {
 		/* Serial */
 		is_usb = 0;
@@ -4520,19 +4527,7 @@ int	ups_infoval_set(item_t *item)
 				return -1;
 			}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-			snprintf(value, sizeof(value), item->dfl, strtod(value, NULL));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+			snprintf_dynamic(value, sizeof(value), item->dfl, "%f", strtod(value, NULL));
 		}
 
 	}
