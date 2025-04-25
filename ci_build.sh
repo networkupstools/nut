@@ -1513,6 +1513,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
+    # This is assumed for non-production builds to avoid confusion.
+    # FIXME: Extra toggle?..
+    CONFIG_OPTS+=("--with-unmapped-data-points")
+
     if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
         CONFIG_OPTS+=("--enable-inplace-runtime")
     fi
@@ -2459,6 +2463,9 @@ bindings)
     else
         # Help developers debug:
         CONFIG_OPTS+=("--disable-silent-rules")
+        # This is assumed for non-production builds to avoid confusion.
+        # FIXME: Extra toggle?..
+        CONFIG_OPTS+=("--with-unmapped-data-points")
     fi
 
     if [ -n "${BUILD_DEBUGINFO-}" ]; then
