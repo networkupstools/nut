@@ -851,8 +851,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 #if TESTING_AXPERT_CAPS_QUERY
 	/* Not available in NUT */
 	/* FIXME: ups_status BYPASS and RB(?) */
-	{ "bypass_alarm",				0,				NULL,					"QFLAG\r",			"",	4,	'(',	"",	1,	0,	"%s",			QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability },
-	{ "battery_alarm",				0,				NULL,					"QFLAG\r",			"",	4,	'(',	"",	1,	0,	"%s",			QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability },
+	{ "experimental.bypass_alarm",				0,				NULL,					"QFLAG\r",			"",	4,	'(',	"",	1,	0,	"%s",			QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability },
+	{ "experimental.battery_alarm",				0,				NULL,					"QFLAG\r",			"",	4,	'(',	"",	1,	0,	"%s",			QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability },
 #endif	/* TESTING_AXPERT_CAPS_QUERY */
 
 #if TESTING_AXPERT_CAPS_CHANGE
@@ -863,13 +863,12 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0			   0
 	 */
 
-	/* FIXME: vendor buzzwords */
 	{ "battery.energysave",				0,				voltronic_axpert_e_cap,			"P%sJ\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_set },
 	/* Not available in NUT */
-	{ "reset_to_default",				0,				NULL,					"PF\r",				"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT,					voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_reset },
+	{ "experimental.reset_to_default",				0,				NULL,					"PF\r",				"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT,					voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_reset },
 	/* FIXME: ups_status BYPASS and RB(?) */
-	{ "bypass_alarm",				0,				voltronic_axpert_e_cap_nonut,		"P%sP\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_set_nonut },
-	{ "battery_alarm",				0,				voltronic_axpert_e_cap_nonut,		"P%sB\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_set_nonut },
+	{ "experimental.bypass_alarm",				0,				voltronic_axpert_e_cap_nonut,		"P%sP\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_set_nonut },
+	{ "experimental.battery_alarm",				0,				voltronic_axpert_e_cap_nonut,		"P%sB\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_set_nonut },
 #endif	/* TESTING_AXPERT_CAPS_CHANGE */
 
 #if TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE
@@ -881,13 +880,13 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1         2
 	 */
 
-	{ "charge_battery",				ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	2,	2,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* A */
-	{ "charge_battery_from_ac",			ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	4,	4,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* B */
-	{ "feed_grid",					ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	6,	6,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* C */
-	{ "discharge_battery_when_pv_on",		ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	8,	8,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* D */
-	{ "discharge_battery_when_pv_off",		ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	10,	10,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* E */
-	{ "feed_grid_from_battery_when_pv_on",		ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	12,	12,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* F */
-	{ "feed_grid_from_battery_when_pv_off",		ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	14,	14,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* G */
+	{ "experimental.charge_battery",				ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	2,	2,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* A */
+	{ "experimental.charge_battery_from_ac",			ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	4,	4,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* B */
+	{ "experimental.feed_grid",					ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	6,	6,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* C */
+	{ "experimental.discharge_battery_when_pv_on",		ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	8,	8,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* D */
+	{ "experimental.discharge_battery_when_pv_off",		ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	10,	10,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* E */
+	{ "experimental.feed_grid_from_battery_when_pv_on",		ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	12,	12,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* F */
+	{ "experimental.feed_grid_from_battery_when_pv_off",		ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	16,	'(',	"",	14,	14,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	/* G */
 /*	{ "unknown.?",					ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	18,	'(',	"",	16,	16,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	*//* H */
 /*	{ "unknown.?",					ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	20,	'(',	"",	18,	18,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	*//* I */
 /*	{ "unknown.?",					ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QENF\r",			"",	22,	'(',	"",	20,	20,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },	*//* J */
@@ -899,11 +898,11 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "charge_battery",				0,				voltronic_axpert_e_cap_nonut,		"ENFA%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* A */
-	{ "charge_battery_from_ac",			0,				voltronic_axpert_e_cap_nonut,		"ENFB%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* B */
-	{ "feed_grid",					0,				voltronic_axpert_e_cap_nonut,		"ENFC%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* C */
-	{ "discharge_battery_when_pv_on",		0,				voltronic_axpert_e_cap_nonut,		"ENFD%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* D */
-	{ "discharge_battery_when_pv_off",		0,				voltronic_axpert_e_cap_nonut,		"ENFE%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* E */
+	{ "experimental.charge_battery",				0,				voltronic_axpert_e_cap_nonut,		"ENFA%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* A */
+	{ "experimental.charge_battery_from_ac",			0,				voltronic_axpert_e_cap_nonut,		"ENFB%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* B */
+	{ "experimental.feed_grid",					0,				voltronic_axpert_e_cap_nonut,		"ENFC%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* C */
+	{ "experimental.discharge_battery_when_pv_on",		0,				voltronic_axpert_e_cap_nonut,		"ENFD%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* D */
+	{ "experimental.discharge_battery_when_pv_off",		0,				voltronic_axpert_e_cap_nonut,		"ENFE%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* E */
 	{ "feed_grid_from_battery_when_pv_on",		0,				voltronic_axpert_e_cap_nonut,		"ENFF%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* F */
 	{ "feed_grid_from_battery_when_pv_off",		0,				voltronic_axpert_e_cap_nonut,		"ENFG%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	/* G */
 /*	{ "unknown.?",					0,				voltronic_axpert_e_cap_nonut,		"ENFH%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	*//* H */
@@ -919,7 +918,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "output.powerfactor.curve.capability",	ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QPDG\r",			"",	3,	'(',	"",	1,	1,	"%s",			QX_FLAG_ENUM | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },
+	{ "experimental.output.powerfactor.curve.capability",	ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"QPDG\r",			"",	3,	'(',	"",	1,	1,	"%s",			QX_FLAG_ENUM | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },
 
 	/* Enable or disable power factor curve capability (P15 only)
 	 * > [PDG<n>\r]		<n>: 1 -> enable; 0 -> disable
@@ -928,7 +927,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "output.powerfactor.curve.capability",	0,				voltronic_axpert_e_cap_nonut,		"PDG%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },
+	{ "experimental.output.powerfactor.curve.capability",	0,				voltronic_axpert_e_cap_nonut,		"PDG%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },
 #endif	/* TESTING_AXPERT_PFC_CURVE_QUERY_CHANGE */
 
 #if TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE
@@ -940,7 +939,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 /*	{ "unknown.?",					0,				NULL,					"GNTMQ\r",			"",	4,	'(',	"",	1,	1,	"%s",			0,								NULL,				voltronic_axpert_checkcrc,		NULL },	*/
-	{ "generator_as_ac_source",			ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"GNTMQ\r",			"",	4,	'(',	"",	2,	2,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },
+	{ "experimental.generator_as_ac_source",			ST_FLAG_RW,			voltronic_axpert_e_cap_nonut,		"GNTMQ\r",			"",	4,	'(',	"",	2,	2,	"%s",			QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SEMI_STATIC,		NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },
 
 	/* Enable (<action>: 1) or disable (<action>: 0) generator as AC source option (P16 only)
 	 * > [GNTM<action>\r]
@@ -949,7 +948,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "generator_as_ac_source",			0,				voltronic_axpert_e_cap_nonut,		"PDG%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },
+	{ "experimental.generator_as_ac_source",			0,				voltronic_axpert_e_cap_nonut,		"PDG%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },
 #endif	/* TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE */
 
 #if TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE
@@ -961,7 +960,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 
-	{ "pv.energy.supplypriority",			ST_FLAG_RW,			voltronic_sunny_e_pv_priority,		"QPRIO\r",			"",	4,	'(',	"",	1,	2,	"%s",			QX_FLAG_ENUM | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pv_priority },
+	{ "experimental.pv.energy.supplypriority",			ST_FLAG_RW,			voltronic_sunny_e_pv_priority,		"QPRIO\r",			"",	4,	'(',	"",	1,	2,	"%s",			QX_FLAG_ENUM | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pv_priority },
 
 	/* Set PV energy supply priority (P16 only)
 	 * > [PRIO<n>\r]
@@ -970,7 +969,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "pv.energy.supplypriority",			0,				voltronic_sunny_e_pv_priority,		"PRIO%02d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pv_priority_set },
+	{ "experimental.pv.energy.supplypriority",			0,				voltronic_sunny_e_pv_priority,		"PRIO%02d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pv_priority_set },
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 #endif	/* TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE */
@@ -997,15 +996,15 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "battery.type",				0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	63,	63,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_battery_type },
 	{ "battery.charging.current.ac.high",		0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	65,	66,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 	{ "battery.charging.current.high",		0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	68,	70,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-/*	{ "input_voltage_range",			0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	72,	72,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_inputvoltage_range },*/
-/*	{ "charger_source_priority",			0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	76,	76,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_charger_source_priority },*/
-/*	{ "parallel_max_num",				0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	76,	76,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_parallel_max_num },*/
+/*	{ "experimental.input_voltage_range",			0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	72,	72,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_inputvoltage_range },*/
+/*	{ "experimental.charger_source_priority",			0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	76,	76,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_charger_source_priority },*/
+/*	{ "experimental.parallel_max_num",				0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	76,	76,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_parallel_max_num },*/
 	{ "device.model.type",				0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	80,	81,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_model_type },
 	{ "device.description",				0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	83,	83,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_transformer },
-/*	{ "output_mode",				0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	85,	85,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_output_mode },*/
-/*	{ "battery_redischarge_voltage",		0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	87,	90,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },*/
-/*	{ "pv_ok_condition_for_parallel",		0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	92,	92,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_pv_ok_condition_for_parallel },*/
-/*	{ "pv_power_balance",				0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	94,	94,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_pv_power_balance },*/
+/*	{ "experimental.output_mode",				0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	85,	85,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_output_mode },*/
+/*	{ "experimental.battery_redischarge_voltage",		0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	87,	90,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },*/
+/*	{ "experimental.pv_ok_condition_for_parallel",		0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	92,	92,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_pv_ok_condition_for_parallel },*/
+/*	{ "experimental.pv_power_balance",				0,				NULL,					"QPIRI\r",			"",	99,	'(',	"",	94,	94,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_pv_power_balance },*/
 
 
 
@@ -1018,7 +1017,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.voltage.nominal",			0,				voltronic_axpert_e_volt_nom,		"V%03d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_volt_nom_set },
+	{ "experimental.grid.voltage.nominal",			0,				voltronic_axpert_e_volt_nom,		"V%03d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_volt_nom_set },
 
 	/* Set nominal frequency (P16 only)
 	 * > [F<n>\r]
@@ -1027,7 +1026,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.frequency.nominal",			0,				voltronic_sunny_e_freq_nom,		"F%02.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.frequency.nominal",			0,				voltronic_sunny_e_freq_nom,		"F%02.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Set number of MPP trackers in use
 	 * > [PVN<n>\r]
@@ -1036,7 +1035,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "mpp.number",					0,				voltronic_sunny_r_mpp_number,		"PVN%02.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.mpp.number",					0,				voltronic_sunny_r_mpp_number,		"PVN%02.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 #endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE */
 
 	/* Query device for ratings #2
@@ -1066,10 +1065,10 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1         2         3
 	 */
 
-	{ "dsp.mfr.date",				0,				NULL,					"I\r",				"",	39,	'(',	"",	5,	12,	"%04d/%02d/%02d",	QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_yymmdd },
-	{ "dsp.mfr.time",				0,				NULL,					"I\r",				"",	39,	'(',	"",	14,	18,	"%02d:%02d",		QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_hh_mm },
-	{ "mcu.mfr.date",				0,				NULL,					"I\r",				"",	39,	'(',	"",	24,	31,	"%04d/%02d/%02d",	QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_yymmdd },
-	{ "mcu.mfr.time",				0,				NULL,					"I\r",				"",	39,	'(',	"",	33,	37,	"%02d:%02d",		QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_hh_mm },
+	{ "experimental.dsp.mfr.date",				0,				NULL,					"I\r",				"",	39,	'(',	"",	5,	12,	"%04d/%02d/%02d",	QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_yymmdd },
+	{ "experimental.dsp.mfr.time",				0,				NULL,					"I\r",				"",	39,	'(',	"",	14,	18,	"%02d:%02d",		QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_hh_mm },
+	{ "experimental.mcu.mfr.date",				0,				NULL,					"I\r",				"",	39,	'(',	"",	24,	31,	"%04d/%02d/%02d",	QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_yymmdd },
+	{ "experimental.mcu.mfr.time",				0,				NULL,					"I\r",				"",	39,	'(',	"",	33,	37,	"%02d:%02d",		QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_hh_mm },
 #endif	/* TESTING_AXPERT_RATINGS_QUERY_3 */
 
 
@@ -1086,24 +1085,25 @@ static item_t	voltronic_axpert_qx2nut[] = {
 
 	{ "output.voltage.default",			0,				NULL,					"QDI\r",			"",	80,	'(',	"",	1,	5,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 	{ "output.frequency.default",			0,				NULL,					"QDI\r",			"",	80,	'(',	"",	7,	10,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "battery.charging.current.ac.high.default",	0,				NULL,					"QDI\r",			"",	80,	'(',	"",	12,	15,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "battery.voltage.under.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	17,	20,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "battery.voltage.float.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	22,	25,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "battery.voltage.bulk.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	27,	30,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "battery.voltage.recharge.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	32,	35,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.battery.charging.current.ac.high.default",	0,				NULL,					"QDI\r",			"",	80,	'(',	"",	12,	15,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.battery.voltage.under.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	17,	20,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.battery.voltage.float.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	22,	25,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.battery.voltage.bulk.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	27,	30,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.battery.voltage.recharge.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	32,	35,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 	/* should be battery.charging.current.ac.high.default on MKS-*-* Plus Duo models */
-	{ "battery.charging.current.high.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	37,	38,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-/*	{ "input_voltage_range_default",			0,				NULL,					"QDI\r",			"",	80,	'(',	"",	40,	40,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_inputvoltage_range },*/
-/*	{ "output_source_priority_default",			0,				NULL,					"QDI\r",			"",	80,	'(',	"",	42,	42,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_output_source_priority },*/
-/*	{ "charger_source_priority_default",			0,				NULL,					"QDI\r",			"",	80,	'(',	"",	44,	44,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_charger_source_priority },*/
-	{ "battery.type.default",				0,				NULL,					"QDI\r",			"",	80,	'(',	"",	46,	46,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_battery_type },
+	{ "experimental.battery.charging.current.high.default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	37,	38,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+/*	{ "experimental.input_voltage_range_default",			0,				NULL,					"QDI\r",			"",	80,	'(',	"",	40,	40,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_inputvoltage_range },*/
+/*	{ "experimental.output_source_priority_default",			0,				NULL,					"QDI\r",			"",	80,	'(',	"",	42,	42,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_output_source_priority },*/
+/*	{ "experimental.charger_source_priority_default",			0,				NULL,					"QDI\r",			"",	80,	'(',	"",	44,	44,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_charger_source_priority },*/
+	/* in nut-names, this has no ".default" but there is a plain "battery.type" ... */
+	{ "experimental.battery.type.default",				0,				NULL,					"QDI\r",			"",	80,	'(',	"",	46,	46,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_battery_type },
 
 	/* FIXME: flags go here */
 
-/*	{ "output_mode_default",				0,				NULL,					"QDI\r",			"",	80,	'(',	"",	66,	66,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_output_mode },*/
-/*	{ "battery_redischarge_voltage_default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	68,	71,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },*/
-/*	{ "pv_ok_condition_for_parallel_default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	73,	73,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_pv_ok_condition_for_parallel },*/
-/*	{ "pv_power_balance_default",				0,				NULL,					"QDI\r",			"",	80,	'(',	"",	75,	75,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_pv_power_balance },*/
+/*	{ "experimental.output_mode_default",				0,				NULL,					"QDI\r",			"",	80,	'(',	"",	66,	66,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_output_mode },*/
+/*	{ "experimental.battery_redischarge_voltage_default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	68,	71,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },*/
+/*	{ "experimental.pv_ok_condition_for_parallel_default",		0,				NULL,					"QDI\r",			"",	80,	'(',	"",	73,	73,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_pv_ok_condition_for_parallel },*/
+/*	{ "experimental.pv_power_balance_default",				0,				NULL,					"QDI\r",			"",	80,	'(',	"",	75,	75,	"%s",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_qpiri_pv_power_balance },*/
 
 
 
@@ -1117,40 +1117,40 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1         2         3         4         5         6         7         8         9        10        11        12
 	 */
 
-	{ "grid.output.voltage.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	1,	5,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "grid.input.voltage.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	1,	5,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
-	{ "grid.output.voltage.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	7,	11,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "grid.input.voltage.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	7,	11,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
-	{ "grid.output.voltage.low.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	13,	17,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "grid.input.voltage.low.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	13,	17,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
-	{ "grid.output.voltage.low.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	19,	23,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "grid.input.voltage.low.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	19,	23,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
-	{ "grid.output.frequency.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	25,	28,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "grid.input.frequency.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	25,	28,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
-	{ "grid.output.frequency.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	30,	33,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "grid.input.frequency.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	30,	33,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
-	{ "grid.output.frequency.low.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	35,	38,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "grid.input.frequency.low.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	35,	38,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
-	{ "grid.output.frequency.low.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	40,	43,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "grid.input.frequency.low.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	40,	43,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
-	{ "grid.waitingtime.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	45,	47,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "grid.waitingtime.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	49,	51,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "battery.charging.voltage.floating.max",	0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	53,	56,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
-	{ "battery.charging.voltage.floating.min",	0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	58,	61,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
-	{ "battery.charging.current.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	63,	66,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
-	{ "battery.charging.current.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	68,	71,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
-	{ "pv.input.voltage.high.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	73,	75,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "pv.input.voltage.high.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	77,	79,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "pv.input.voltage.low.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	81,	83,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "pv.input.voltage.low.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	85,	87,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "mpp.voltage.high.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	89,	91,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "mpp.voltage.high.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	93,	95,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "mpp.voltage.low.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	97,	99,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "mpp.voltage.low.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	101,	103,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "output.realpower.max.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	105,	109,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "output.realpower.max.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	111,	115,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
-	{ "battery.charging.voltage.bulk.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	117,	120,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
-	{ "battery.charging.voltage.bulk.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	122,	125,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
+	{ "experimental.grid.output.voltage.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	1,	5,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.grid.input.voltage.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	1,	5,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
+	{ "experimental.grid.output.voltage.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	7,	11,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.grid.input.voltage.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	7,	11,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
+	{ "experimental.grid.output.voltage.low.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	13,	17,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.grid.input.voltage.low.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	13,	17,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
+	{ "experimental.grid.output.voltage.low.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	19,	23,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.grid.input.voltage.low.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	19,	23,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
+	{ "experimental.grid.output.frequency.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	25,	28,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.grid.input.frequency.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	25,	28,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
+	{ "experimental.grid.output.frequency.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	30,	33,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.grid.input.frequency.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	30,	33,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
+	{ "experimental.grid.output.frequency.low.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	35,	38,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.grid.input.frequency.low.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	35,	38,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
+	{ "experimental.grid.output.frequency.low.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	40,	43,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.grid.input.frequency.low.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	40,	43,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only (same token as previous one) */
+	{ "experimental.grid.waitingtime.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	45,	47,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.grid.waitingtime.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	49,	51,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.battery.charging.voltage.floating.max",	0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	53,	56,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
+	{ "experimental.battery.charging.voltage.floating.min",	0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	58,	61,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
+	{ "experimental.battery.charging.current.high.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	63,	66,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
+	{ "experimental.battery.charging.current.high.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	68,	71,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
+	{ "experimental.pv.input.voltage.high.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	73,	75,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.pv.input.voltage.high.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	77,	79,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.pv.input.voltage.low.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	81,	83,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.pv.input.voltage.low.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	85,	87,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.mpp.voltage.high.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	89,	91,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.mpp.voltage.high.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	93,	95,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.mpp.voltage.low.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	97,	99,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.mpp.voltage.low.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	101,	103,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.output.realpower.max.max",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	105,	109,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.output.realpower.max.min",			0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	111,	115,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },
+	{ "experimental.battery.charging.voltage.bulk.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	117,	120,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
+	{ "experimental.battery.charging.voltage.bulk.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	122,	125,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
 /*	{ "unknown.?",					0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	127,	128,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	*/
 #endif	/* TESTING_AXPERT_ACCEPTABLE_LIMITS_QUERY */
 
@@ -1162,8 +1162,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "grid.output.voltage.high",			ST_FLAG_RW,			voltronic_sunny_r_grid_output_volt_max,	"QGOV\r",			"",	13,	'(',	"",	1,	5,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
-	{ "grid.output.voltage.low",			ST_FLAG_RW,			voltronic_sunny_r_grid_output_volt_min,	"QGOV\r",			"",	13,	'(',	"",	7,	11,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.output.voltage.high",			ST_FLAG_RW,			voltronic_sunny_r_grid_output_volt_max,	"QGOV\r",			"",	13,	'(',	"",	1,	5,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.output.voltage.low",			ST_FLAG_RW,			voltronic_sunny_r_grid_output_volt_min,	"QGOV\r",			"",	13,	'(',	"",	7,	11,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set grid output voltage limits
 	 * > [GOHV<n>\r]	> [GOLV<n>\r]
@@ -1172,8 +1172,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "grid.output.voltage.high",			0,				voltronic_sunny_r_grid_output_volt_max,	"GOHV%05.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-	{ "grid.output.voltage.low",			0,				voltronic_sunny_r_grid_output_volt_min,	"GOLV%05.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.output.voltage.high",			0,				voltronic_sunny_r_grid_output_volt_max,	"GOHV%05.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.output.voltage.low",			0,				voltronic_sunny_r_grid_output_volt_min,	"GOLV%05.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for grid input voltage limits (P16 only)
 	 * > [QBYV\r]
@@ -1182,8 +1182,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "grid.input.voltage.high",			ST_FLAG_RW,			voltronic_sunny_r_grid_input_volt_max,	"QBYV\r",			"",	13,	'(',	"",	1,	5,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
-	{ "grid.input.voltage.low",			ST_FLAG_RW,			voltronic_sunny_r_grid_input_volt_min,	"QBYV\r",			"",	13,	'(',	"",	7,	11,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.input.voltage.high",			ST_FLAG_RW,			voltronic_sunny_r_grid_input_volt_max,	"QBYV\r",			"",	13,	'(',	"",	1,	5,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.input.voltage.low",			ST_FLAG_RW,			voltronic_sunny_r_grid_input_volt_min,	"QBYV\r",			"",	13,	'(',	"",	7,	11,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set grid input voltage limits (P16 only)
 	 * > [PHV<n>\r]		> [PLV<n>\r]
@@ -1192,8 +1192,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "grid.input.voltage.high",			0,				voltronic_sunny_r_grid_input_volt_max,	"PHV%05.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-	{ "grid.input.voltage.low",			0,				voltronic_sunny_r_grid_input_volt_min,	"PLV%05.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.input.voltage.high",			0,				voltronic_sunny_r_grid_input_volt_max,	"PHV%05.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.input.voltage.low",			0,				voltronic_sunny_r_grid_input_volt_min,	"PLV%05.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for grid output frequency limits
 	 * > [QGOF\r]
@@ -1202,8 +1202,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "grid.output.frequency.high",			ST_FLAG_RW,			voltronic_sunny_r_grid_inout_freq_max,	"QGOF\r",			"",	11,	'(',	"",	1,	4,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
-	{ "grid.output.frequency.low",			ST_FLAG_RW,			voltronic_sunny_r_grid_inout_freq_min,	"QGOF\r",			"",	11,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.output.frequency.high",			ST_FLAG_RW,			voltronic_sunny_r_grid_inout_freq_max,	"QGOF\r",			"",	11,	'(',	"",	1,	4,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.output.frequency.low",			ST_FLAG_RW,			voltronic_sunny_r_grid_inout_freq_min,	"QGOF\r",			"",	11,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set grid output frequency limits
 	 * > [GOHF<n>\r]	> [GOLF<n>\r]
@@ -1212,8 +1212,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "grid.output.frequency.high",			0,				voltronic_sunny_r_grid_inout_freq_max,	"GOHF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-	{ "grid.output.frequency.low",			0,				voltronic_sunny_r_grid_inout_freq_min,	"GOLF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.output.frequency.high",			0,				voltronic_sunny_r_grid_inout_freq_max,	"GOHF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.output.frequency.low",			0,				voltronic_sunny_r_grid_inout_freq_min,	"GOLF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for grid input frequency limits (P16 only)
 	 * > [QBYF\r]
@@ -1222,8 +1222,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "grid.input.frequency.high",			ST_FLAG_RW,			voltronic_sunny_r_grid_inout_freq_max,	"QBYF\r",			"",	11,	'(',	"",	1,	4,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
-	{ "grid.input.frequency.low",			ST_FLAG_RW,			voltronic_sunny_r_grid_inout_freq_min,	"QBYF\r",			"",	11,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.input.frequency.high",			ST_FLAG_RW,			voltronic_sunny_r_grid_inout_freq_max,	"QBYF\r",			"",	11,	'(',	"",	1,	4,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.input.frequency.low",			ST_FLAG_RW,			voltronic_sunny_r_grid_inout_freq_min,	"QBYF\r",			"",	11,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set grid input frequency limits (P16 only)
 	 * > [PGF<n>\r]		> [PSF<n>\r]
@@ -1232,8 +1232,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "grid.input.frequency.high",			0,				voltronic_sunny_r_grid_inout_freq_max,	"PGF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-	{ "grid.input.frequency.low",			0,				voltronic_sunny_r_grid_inout_freq_min,	"PSF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.input.frequency.high",			0,				voltronic_sunny_r_grid_inout_freq_max,	"PGF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.input.frequency.low",			0,				voltronic_sunny_r_grid_inout_freq_min,	"PSF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 #endif	/* TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY */
 
 #if TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE
@@ -1244,7 +1244,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.waitingtime",				ST_FLAG_RW,			voltronic_sunny_r_grid_waiting_time,	"QFT\r",			"",	5,	'(',	"",	1,	3,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.waitingtime",				ST_FLAG_RW,			voltronic_sunny_r_grid_waiting_time,	"QFT\r",			"",	5,	'(',	"",	1,	3,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set waiting time before grid connection
 	 * > [FT<n>\r]
@@ -1253,7 +1253,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.waitingtime",				0,				voltronic_sunny_r_grid_waiting_time,	"FT%03.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.waitingtime",				0,				voltronic_sunny_r_grid_waiting_time,	"FT%03.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 #endif	/* TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE */
 
 #if TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY
@@ -1264,10 +1264,10 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1         2
 	 */
 
-	{ "battery.charging.current",			0,				NULL,					"QCHGS\r",			"",	21,	'(',	"",	1,	4,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "battery.charging.voltage.floating",		ST_FLAG_RW,			voltronic_sunny_r_bc_v_floating,	"QCHGS\r",			"",	21,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
-	{ "battery.charging.current.high",		ST_FLAG_RW,			voltronic_sunny_r_bc_c_max,		"QCHGS\r",			"",	21,	'(',	"",	11,	14,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
-	{ "battery.charging.voltage.bulk",		ST_FLAG_RW,			voltronic_sunny_r_bc_v_bulk,		"QCHGS\r",			"",	21,	'(',	"",	16,	19,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.battery.charging.current",			0,				NULL,					"QCHGS\r",			"",	21,	'(',	"",	1,	4,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.battery.charging.voltage.floating",		ST_FLAG_RW,			voltronic_sunny_r_bc_v_floating,	"QCHGS\r",			"",	21,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.battery.charging.current.high",		ST_FLAG_RW,			voltronic_sunny_r_bc_c_max,		"QCHGS\r",			"",	21,	'(',	"",	11,	14,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.battery.charging.voltage.bulk",		ST_FLAG_RW,			voltronic_sunny_r_bc_v_bulk,		"QCHGS\r",			"",	21,	'(',	"",	16,	19,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
 #endif	/* TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY */
 
 	/* Set battery-charging limits (P16 only)
@@ -1277,9 +1277,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0			   0
 	 */
 #if TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE
-	{ "battery.charging.voltage.floating",		0,				voltronic_sunny_r_bc_v_floating,	"MCHGV%04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-	{ "battery.charging.current.high",		0,				voltronic_sunny_r_bc_c_max,		"MCHGC%04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-	{ "battery.charging.voltage.bulk",		0,				voltronic_sunny_r_bc_v_bulk,		"BCHGV%04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.battery.charging.voltage.floating",		0,				voltronic_sunny_r_bc_v_floating,	"MCHGV%04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.battery.charging.current.high",		0,				voltronic_sunny_r_bc_c_max,		"MCHGC%04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.battery.charging.voltage.bulk",		0,				voltronic_sunny_r_bc_v_bulk,		"BCHGV%04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 #endif	/* TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE */
 
 #if TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE
@@ -1290,9 +1290,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "battery.charging.current.floating.low",	ST_FLAG_RW,			voltronic_sunny_r_bc_c_floating_low,	"QOFFC\r",			"",	15,	'(',	"",	1,	4,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
-	{ "battery.charging.restartvoltage",		ST_FLAG_RW,			voltronic_sunny_r_bc_v_restart,		"QOFFC\r",			"",	15,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
-	{ "battery.charging.timethreshold",		ST_FLAG_RW,			voltronic_sunny_r_bc_time_threshold,	"QOFFC\r",			"",	15,	'(',	"",	11,	13,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.battery.charging.current.floating.low",	ST_FLAG_RW,			voltronic_sunny_r_bc_c_floating_low,	"QOFFC\r",			"",	15,	'(',	"",	1,	4,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.battery.charging.restartvoltage",		ST_FLAG_RW,			voltronic_sunny_r_bc_v_restart,		"QOFFC\r",			"",	15,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.battery.charging.timethreshold",		ST_FLAG_RW,			voltronic_sunny_r_bc_time_threshold,	"QOFFC\r",			"",	15,	'(',	"",	11,	13,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set battery charger limits (P16 only)
 	 * > [OFFC<a> <b> <c>\r]
@@ -1301,9 +1301,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "battery.charging.current.floating.low",	0,				voltronic_sunny_r_bc_c_floating_low,	"OFFC%04.1f %04.1f %03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_charger_limits_set },
-	{ "battery.charging.restartvoltage",		0,				voltronic_sunny_r_bc_v_restart,		"OFFC%04.1f %04.1f %03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_charger_limits_set },
-	{ "battery.charging.timethreshold",		0,				voltronic_sunny_r_bc_time_threshold,	"OFFC%04.1f %04.1f %03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_charger_limits_set },
+	{ "experimental.battery.charging.current.floating.low",	0,				voltronic_sunny_r_bc_c_floating_low,	"OFFC%04.1f %04.1f %03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_charger_limits_set },
+	{ "experimental.battery.charging.restartvoltage",		0,				voltronic_sunny_r_bc_v_restart,		"OFFC%04.1f %04.1f %03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_charger_limits_set },
+	{ "experimental.battery.charging.timethreshold",		0,				voltronic_sunny_r_bc_time_threshold,	"OFFC%04.1f %04.1f %03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_charger_limits_set },
 
 	/* Query device for MaxAcChargingCurrent (P16 only)	TODO: update with real device data	FIXME
 	 * > [QACCHC\r]
@@ -1312,7 +1312,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-/*	{ "battery.charging.current.ac.high",		0,				NULL,					"QACCHC\r",			"",	2,	'(',	"",	1,	0,	"%s",			QX_FLAG_STATIC,							NULL,				NULL,					NULL },	*/
+/*	{ "experimental.battery.charging.current.ac.high",		0,				NULL,					"QACCHC\r",			"",	2,	'(',	"",	1,	0,	"%s",			QX_FLAG_STATIC,							NULL,				NULL,					NULL },	*/
 
 	/* Query device for battery-discharging limits (P16 only)
 	 * > [QBSDV\r]
@@ -1321,10 +1321,10 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1         2
 	 */
 
-	{ "battery.discharging.cutoffvoltage.gridoff",	ST_FLAG_RW,			voltronic_sunny_r_bd_v_cutoff_gridoff,	"QBSDV\r",			"",	21,	'(',	"",	1,	4,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
-	{ "battery.discharging.cutoffvoltage.gridon",	ST_FLAG_RW,			voltronic_sunny_r_bd_v_cutoff_gridon,	"QBSDV\r",			"",	21,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
-	{ "battery.discharging.restartvoltage.gridoff",	ST_FLAG_RW,			voltronic_sunny_r_bd_v_restart_gridoff,	"QBSDV\r",			"",	21,	'(',	"",	11,	14,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
-	{ "battery.discharging.restartvoltage.gridon",	ST_FLAG_RW,			voltronic_sunny_r_bd_v_restart_gridon,	"QBSDV\r",			"",	21,	'(',	"",	16,	19,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.battery.discharging.cutoffvoltage.gridoff",	ST_FLAG_RW,			voltronic_sunny_r_bd_v_cutoff_gridoff,	"QBSDV\r",			"",	21,	'(',	"",	1,	4,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.battery.discharging.cutoffvoltage.gridon",	ST_FLAG_RW,			voltronic_sunny_r_bd_v_cutoff_gridon,	"QBSDV\r",			"",	21,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.battery.discharging.restartvoltage.gridoff",	ST_FLAG_RW,			voltronic_sunny_r_bd_v_restart_gridoff,	"QBSDV\r",			"",	21,	'(',	"",	11,	14,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.battery.discharging.restartvoltage.gridon",	ST_FLAG_RW,			voltronic_sunny_r_bd_v_restart_gridon,	"QBSDV\r",			"",	21,	'(',	"",	16,	19,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
 
 	/* Set battery-discharging limits (P16 only)
 	 * > [BSDV<a> <b>\r]	> [DSUBV<a> <b>\r]
@@ -1333,10 +1333,10 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "battery.discharging.cutoffvoltage.gridoff",	0,				voltronic_sunny_r_bd_v_cutoff_gridoff,	"BSDV%04.1f %04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_discharging_limits_set },
-	{ "battery.discharging.cutoffvoltage.gridon",	0,				voltronic_sunny_r_bd_v_cutoff_gridon,	"BSDV%04.1f %04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_discharging_limits_set },
-	{ "battery.discharging.restartvoltage.gridoff",	0,				voltronic_sunny_r_bd_v_restart_gridoff,	"DSUBV%04.1f %04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_discharging_limits_set },
-	{ "battery.discharging.restartvoltage.gridon",	0,				voltronic_sunny_r_bd_v_restart_gridon,	"DSUBV%04.1f %04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_discharging_limits_set },
+	{ "experimental.battery.discharging.cutoffvoltage.gridoff",	0,				voltronic_sunny_r_bd_v_cutoff_gridoff,	"BSDV%04.1f %04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_discharging_limits_set },
+	{ "experimental.battery.discharging.cutoffvoltage.gridon",	0,				voltronic_sunny_r_bd_v_cutoff_gridon,	"BSDV%04.1f %04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_discharging_limits_set },
+	{ "experimental.battery.discharging.restartvoltage.gridoff",	0,				voltronic_sunny_r_bd_v_restart_gridoff,	"DSUBV%04.1f %04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_discharging_limits_set },
+	{ "experimental.battery.discharging.restartvoltage.gridon",	0,				voltronic_sunny_r_bd_v_restart_gridon,	"DSUBV%04.1f %04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_discharging_limits_set },
 
 	/* Query device for PV input voltage limits
 	 * > [QPVIPV\r]
@@ -1345,8 +1345,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "pv.input.voltage.high",			ST_FLAG_RW,			voltronic_sunny_r_pv_input_volt_max,	"QPVIPV\r",			"",	9,	'(',	"",	1,	3,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
-	{ "pv.input.voltage.low",			ST_FLAG_RW,			voltronic_sunny_r_pv_input_volt_min,	"QPVIPV\r",			"",	9,	'(',	"",	5,	7,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.pv.input.voltage.high",			ST_FLAG_RW,			voltronic_sunny_r_pv_input_volt_max,	"QPVIPV\r",			"",	9,	'(',	"",	1,	3,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.pv.input.voltage.low",			ST_FLAG_RW,			voltronic_sunny_r_pv_input_volt_min,	"QPVIPV\r",			"",	9,	'(',	"",	5,	7,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set PV input voltage limits
 	 * > [PVIPHV<n>\r]	> [PVIPLV<n>\r]
@@ -1355,8 +1355,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "pv.input.voltage.high",			0,				voltronic_sunny_r_pv_input_volt_max,	"PVIPHV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-	{ "pv.input.voltage.low",			0,				voltronic_sunny_r_pv_input_volt_min,	"PVIPLV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.pv.input.voltage.high",			0,				voltronic_sunny_r_pv_input_volt_max,	"PVIPHV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.pv.input.voltage.low",			0,				voltronic_sunny_r_pv_input_volt_min,	"PVIPLV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for max/min MPP voltages
 	 * > [QMPPTV\r]
@@ -1365,8 +1365,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "mpp.voltage.high",				ST_FLAG_RW,			voltronic_sunny_r_mpp_input_volt_max,	"QMPPTV\r",			"",	9,	'(',	"",	1,	3,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
-	{ "mpp.voltage.low",				ST_FLAG_RW,			voltronic_sunny_r_mpp_input_volt_min,	"QMPPTV\r",			"",	9,	'(',	"",	5,	7,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.mpp.voltage.high",				ST_FLAG_RW,			voltronic_sunny_r_mpp_input_volt_max,	"QMPPTV\r",			"",	9,	'(',	"",	1,	3,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.mpp.voltage.low",				ST_FLAG_RW,			voltronic_sunny_r_mpp_input_volt_min,	"QMPPTV\r",			"",	9,	'(',	"",	5,	7,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set max/min MPP voltages
 	 * > [MPPTHV<n>\r]	> [MPPTLV<n>\r]
@@ -1375,8 +1375,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "mpp.voltage.high",				0,				voltronic_sunny_r_mpp_input_volt_max,	"MPPTHV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-	{ "mpp.voltage.low",				0,				voltronic_sunny_r_mpp_input_volt_min,	"MPPTLV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.mpp.voltage.high",				0,				voltronic_sunny_r_mpp_input_volt_max,	"MPPTHV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.mpp.voltage.low",				0,				voltronic_sunny_r_mpp_input_volt_min,	"MPPTLV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 #endif	/* TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
@@ -1389,7 +1389,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "output.realpower.max",			ST_FLAG_RW,			voltronic_sunny_r_output_realpower_max,	"QOPMP\r",			"",	7,	'(',	"",	1,	5,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	/* FIXME? in nut-names there is no "max" or even "nominal" for this one */
+	{ "experimental.output.realpower.max",			ST_FLAG_RW,			voltronic_sunny_r_output_realpower_max,	"QOPMP\r",			"",	7,	'(',	"",	1,	5,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
 
 	/* Set maximum output power
 	 * > [OPMP<n>\r]
@@ -1398,7 +1399,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "output.realpower.max",			0,				voltronic_sunny_r_output_realpower_max,	"OPMP%05.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.output.realpower.max",			0,				voltronic_sunny_r_output_realpower_max,	"OPMP%05.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for maximum power feeding grid
 	 * > [QGPMP\r]
@@ -1407,7 +1408,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.realpower.max",				ST_FLAG_RW,			voltronic_sunny_r_grid_realpower_max,	"QGPMP\r",			"",	7,	'(',	"",	1,	5,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
+	{ "experimental.grid.realpower.max",				ST_FLAG_RW,			voltronic_sunny_r_grid_realpower_max,	"QGPMP\r",			"",	7,	'(',	"",	1,	5,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
 
 	/* Set maximum power feeding grid
 	 * > [GPMP<n>\r]
@@ -1416,7 +1417,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.realpower.max",				0,				voltronic_sunny_r_grid_realpower_max,	"GPMP%05.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.realpower.max",				0,				voltronic_sunny_r_grid_realpower_max,	"GPMP%05.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for LCD sleep time (time after which LCD screen-saver starts)
 	 * > [QLST\r]
@@ -1425,7 +1426,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "lcd.sleeptime",				ST_FLAG_RW,			voltronic_sunny_r_lcd_sleep_time,	"QLST\r",			"",	4,	'(',	"",	1,	2,	"%d",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_lst },
+	{ "experimental.lcd.sleeptime",				ST_FLAG_RW,			voltronic_sunny_r_lcd_sleep_time,	"QLST\r",			"",	4,	'(',	"",	1,	2,	"%d",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_lst },
 
 	/* Set LCD sleep time (time after which LCD screen-saver starts)
 	 * > [LST<n>\r]
@@ -1434,7 +1435,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "lcd.sleeptime",				0,				voltronic_sunny_r_lcd_sleep_time,	"LST%02.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.lcd.sleeptime",				0,				voltronic_sunny_r_lcd_sleep_time,	"LST%02.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for allowed charging time settings (P16 only)
 	 * > [QCHT\r]
@@ -1443,8 +1444,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "charging_time.start",			ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QCHT\r",			"",	11,	'(',	"",	1,	4,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
-	{ "charging_time.end",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QCHT\r",			"",	11,	'(',	"",	6,	9,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
+	{ "experimental.charging_time.start",			ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QCHT\r",			"",	11,	'(',	"",	1,	4,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
+	{ "experimental.charging_time.end",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QCHT\r",			"",	11,	'(',	"",	6,	9,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
 
 	/* Set allowed charging time settings (P16 only)
 	 * > [CHTH<time>\r]	> [CHTL<time>\r]	<time>: hhmm
@@ -1453,8 +1454,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "charging_time.start",			ST_FLAG_STRING,			NULL,					"CHTH%02d%02d\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_set },
-	{ "charging_time.end",				ST_FLAG_STRING,			NULL,					"CHTL%02d%02d\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_set },
+	{ "experimental.charging_time.start",			ST_FLAG_STRING,			NULL,					"CHTH%02d%02d\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_set },
+	{ "experimental.charging_time.end",				ST_FLAG_STRING,			NULL,					"CHTL%02d%02d\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_set },
 
 	/* Query device for allowed charging-from-AC time settings (P16 only)
 	 * > [QPKT\r]
@@ -1463,8 +1464,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "charging_from_ac_time.start",		ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QPKT\r",			"",	11,	'(',	"",	1,	4,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
-	{ "charging_from_ac_time.end",			ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QPKT\r",			"",	11,	'(',	"",	6,	9,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
+	{ "experimental.charging_from_ac_time.start",		ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QPKT\r",			"",	11,	'(',	"",	1,	4,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
+	{ "experimental.charging_from_ac_time.end",			ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QPKT\r",			"",	11,	'(',	"",	6,	9,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
 
 	/* Set allowed charging-from-AC time settings (P16 only)
 	 * > [PKT<start> <end>\r]	<start>, <end>: hhmm
@@ -1473,8 +1474,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "charging_from_ac_time.start",		ST_FLAG_STRING,			NULL,					"PKT%02d%02d %02d%02d\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_x2_set },
-	{ "charging_from_ac_time.end",			ST_FLAG_STRING,			NULL,					"PKT%02d%02d %02d%02d\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_x2_set },
+	{ "experimental.charging_from_ac_time.start",		ST_FLAG_STRING,			NULL,					"PKT%02d%02d %02d%02d\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_x2_set },
+	{ "experimental.charging_from_ac_time.end",			ST_FLAG_STRING,			NULL,					"PKT%02d%02d %02d%02d\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_x2_set },
 
 	/* Query device for allowed AC-output time settings (P16 only)
 	 * > [QLDT\r]
@@ -1483,8 +1484,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "ac_output_time.start",			ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QLDT\r",			"",	11,	'(',	"",	1,	4,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
-	{ "ac_output_time.end",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QLDT\r",			"",	11,	'(',	"",	6,	9,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
+	{ "experimental.ac_output_time.start",			ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QLDT\r",			"",	11,	'(',	"",	1,	4,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
+	{ "experimental.ac_output_time.end",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_hhmm,			"QLDT\r",			"",	11,	'(',	"",	6,	9,	"%02d:%02d",		QX_FLAG_SEMI_STATIC,						NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm },
 
 	/* Set allowed AC-output time settings (P16 only)
 	 * > [LDT<start> <end>\r]	<start>, <end>: hhmm
@@ -1493,8 +1494,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "ac_output_time.start",			ST_FLAG_STRING,			NULL,					"LDT%02d%02d %02d%02d\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_x2_set },
-	{ "ac_output_time.end",				ST_FLAG_STRING,			NULL,					"LDT%02d%02d %02d%02d\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_x2_set },
+	{ "experimental.ac_output_time.start",			ST_FLAG_STRING,			NULL,					"LDT%02d%02d %02d%02d\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_x2_set },
+	{ "experimental.ac_output_time.end",				ST_FLAG_STRING,			NULL,					"LDT%02d%02d %02d%02d\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_hhmm_x2_set },
 
 	/* Query device for grid input average voltages limits
 	 * > [QGLTV\r]
@@ -1503,8 +1504,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.input.voltage.avg.max",			ST_FLAG_RW,			voltronic_sunny_r_grid_in_avg_volt_max,	"QGLTV\r",			"",	9,	'(',	"",	1,	3,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
-	{ "grid.input.voltage.avg.min",			0,				NULL,					"QGLTV\r",			"",	9,	'(',	"",	5,	7,	"%.0f",			QX_FLAG_STATIC,							NULL,				voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.grid.input.voltage.avg.max",			ST_FLAG_RW,			voltronic_sunny_r_grid_in_avg_volt_max,	"QGLTV\r",			"",	9,	'(',	"",	1,	3,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.grid.input.voltage.avg.min",			0,				NULL,					"QGLTV\r",			"",	9,	'(',	"",	5,	7,	"%.0f",			QX_FLAG_STATIC,							NULL,				voltronic_axpert_checkcrc,		NULL },
 
 	/* Set maximum grid input average voltage
 	 * > [GLTHV<n>\r]
@@ -1513,7 +1514,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.input.voltage.avg.max",			0,				voltronic_sunny_r_grid_in_avg_volt_max,	"GLTHV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.input.voltage.avg.max",			0,				voltronic_sunny_r_grid_in_avg_volt_max,	"GLTHV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for liFe flag (P16 only)	FIXME
 	 * liFeSign = (splitArray[1] > 0) ? true : false
@@ -1523,8 +1524,10 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.power.deviation", 			ST_FLAG_RW,			voltronic_sunny_r_grid_power_deviation,	"QEBGP\r",			"",	9,	'(',	"",	2,	4,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL, 				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
-	{ "battery.isLiFe", 				ST_FLAG_RW,			voltronic_axpert_e_cap,			"QEBGP\r",			"",	9,	'(',	"",	7,	7,	"%s",			QX_FLAG_ENUM | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },
+	{ "experimental.grid.power.deviation", 			ST_FLAG_RW,			voltronic_sunny_r_grid_power_deviation,	"QEBGP\r",			"",	9,	'(',	"",	2,	4,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL, 				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+
+	/* FIXME: tie into nut-names standard battery.type => chemistry */
+	{ "experimental.battery.isLiFe", 				ST_FLAG_RW,			voltronic_axpert_e_cap,			"QEBGP\r",			"",	9,	'(',	"",	7,	7,	"%s",			QX_FLAG_ENUM | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01 },
 
 	/* Set grid power deviation (P16 only)	FIXME
 	 * > [ABGP<n>\r]
@@ -1533,7 +1536,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.power.deviation",			0,				voltronic_sunny_r_grid_power_deviation,	"ABGP%+04.0f\r",		"",	5,	'(',	"",	1,	3,	"%d",			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.grid.power.deviation",			0,				voltronic_sunny_r_grid_power_deviation,	"ABGP%+04.0f\r",		"",	5,	'(',	"",	1,	3,	"%d",			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Set whether a LiFePo battery is connected or not (P16 only)	FIXME
 	 * > [LBF<n>\r]
@@ -1542,6 +1545,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
+	/* FIXME: tie into nut-names standard battery.type => chemistry */
 	{ "battery.isLiFe",				0,				voltronic_axpert_e_cap,			"LBF%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },
 #endif	/* TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
 
@@ -1573,7 +1577,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "power.percentsetting",			ST_FLAG_RW,			voltronic_sunny_r_powerpercent_setting,	"QPPS\r",			"",	5,	'(',	"",	1,	3,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.power.percentsetting",			ST_FLAG_RW,			voltronic_sunny_r_powerpercent_setting,	"QPPS\r",			"",	5,	'(',	"",	1,	3,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set power percent setting (P15 only)
 	 * > [PPS<n>\r]
@@ -1582,7 +1586,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "power.percentsetting",			0,				voltronic_sunny_r_powerpercent_setting,	"PPS%03.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.power.percentsetting",			0,				voltronic_sunny_r_powerpercent_setting,	"PPS%03.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for power factor percent (P15 only)
 	 * > [QPPD\r]
@@ -1591,7 +1595,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "output.powerfactor.percent",			ST_FLAG_RW,			voltronic_sunny_r_powerfactor_percent,	"QPPD\r",			"",	5,	'(',	"",	1,	3,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "experimental.output.powerfactor.percent",			ST_FLAG_RW,			voltronic_sunny_r_powerfactor_percent,	"QPPD\r",			"",	5,	'(',	"",	1,	3,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar },
 
 	/* Set power factor percent (P15 only)
 	 * > [PPD<n>\r]
@@ -1600,7 +1604,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "output.powerfactor.percent",			0,				voltronic_sunny_r_powerfactor_percent,	"PPD%03.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
+	{ "experimental.output.powerfactor.percent",			0,				voltronic_sunny_r_powerfactor_percent,	"PPD%03.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 
 	/* Query device for power factor curve (P15 only)
 	 * > [QPFL\r]
@@ -1609,7 +1613,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "output.powerfactor.curve",			ST_FLAG_RW,			voltronic_sunny_r_powerfactor_curve,	"QPFL\r",			"",	5,	'(',	"",	1,	3,	"%d",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pf },
+	{ "experimental.output.powerfactor.curve",			ST_FLAG_RW,			voltronic_sunny_r_powerfactor_curve,	"QPFL\r",			"",	5,	'(',	"",	1,	3,	"%d",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pf },
 
 	/* Set power factor curve (P15 only)
 	 * > [PFL<n>\r]
@@ -1618,7 +1622,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "output.powerfactor.curve",			0,				voltronic_sunny_r_powerfactor_curve,	"PFL%03d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pfc_set },
+	{ "experimental.output.powerfactor.curve",			0,				voltronic_sunny_r_powerfactor_curve,	"PFL%03d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pfc_set },
 #endif	/* TESTING_AXPERT_PF_QUERY_CHANGE */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
@@ -1631,8 +1635,10 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "device.date",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_date,			"QT\r",				"",	16,	'(',	"",	1,	8,	"%04d/%02d/%02d",	0,								NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_date },
-	{ "device.time",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_time,			"QT\r",				"",	16,	'(',	"",	9,	14,	"%02d:%02d:%02d",	0,								NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_time },
+	/* FIXME: nut-names standard ups.name / ups.time are currently
+	 *  available, so this section may be enabled by default! */
+	{ "experimental.device.date",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_date,			"QT\r",				"",	16,	'(',	"",	1,	8,	"%04d/%02d/%02d",	0,								NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_date },
+	{ "experimental.device.time",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_time,			"QT\r",				"",	16,	'(',	"",	9,	14,	"%02d:%02d:%02d",	0,								NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_time },
 
 	/* Set device date/time
 	 * > [DAT<time>\r]	<time>: YYMMDDhhmmss
@@ -1641,8 +1647,8 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "device.date",				ST_FLAG_STRING,			NULL,					"DAT%02d%02d%02d%s\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_date_set },
-	{ "device.time",				ST_FLAG_STRING,			NULL,					"DAT%s%02d%02d%02d\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_time_set },
+	{ "experimental.device.date",				ST_FLAG_STRING,			NULL,					"DAT%02d%02d%02d%s\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_date_set },
+	{ "experimental.device.time",				ST_FLAG_STRING,			NULL,					"DAT%s%02d%02d%02d\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_time_set },
 
 #endif	/* TESTING_AXPERT_DATETIME_QUERY_CHANGE */
 
@@ -1662,20 +1668,20 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "output.power",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	23,	26,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 	{ "output.realpower",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	28,	31,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 	{ "ups.load",					0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	33,	35,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-/*	{ "bus_voltage",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	37,	39,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+/*	{ "experimental.bus_voltage",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	37,	39,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
 	{ "battery.voltage",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	41,	45,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-/*	{ "battery_charging_current",			0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	47,	49,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+/*	{ "experimental.battery_charging_current",			0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	47,	49,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
 	{ "battery.charge",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	51,	53,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 	{ "ups.temperature",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	55,	58,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "input.pv1.current",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	60,	63,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "input.pv1.voltage",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	65,	69,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "battery.voltage.scc1",			0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	71,	75,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.input.pv1.current",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	60,	63,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.input.pv1.voltage",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	65,	69,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.battery.voltage.scc1",			0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	71,	75,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 	{ "battery.current",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	77,	81,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 	{ "ups.status",					0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	86,	86,	"%s",			QX_FLAG_QUICK_POLL,						voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_status },
 	{ "ups.status",					0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	88,	88,	"%s",			QX_FLAG_QUICK_POLL,						voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_status },
-/*	{ "battery_voltage_offset_for_fans_on",		0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	92,	93,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
-/*	{ "eeprom_version",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	95,	96,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
-/*	{ "pv_charging_power_1",			0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	98,	102,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+/*	{ "experimental.battery_voltage_offset_for_fans_on",		0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	92,	93,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+/*	{ "experimental.eeprom_version",				0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	95,	96,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+/*	{ "experimental.pv_charging_power_1",			0,				NULL,					"QPIGS\r",			"",	108,	'(',	"",	98,	102,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
 
 	/* Query device for status
 	 * > [QPIGS2\r]
@@ -1684,18 +1690,18 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1         2         3         4         5         6         7         8         9        10
 	 */
 
-	{ "input.pv2.current",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	1,	4,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "input.pv2.voltage",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	6,	10,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "battery.voltage.scc2",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	12,	16,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-/*	{ "pv_charging_power_2",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	18,	22,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+	{ "experimental.input.pv2.current",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	1,	4,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.input.pv2.voltage",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	6,	10,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.battery.voltage.scc2",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	12,	16,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+/*	{ "experimental.pv_charging_power_2",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	18,	22,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
 /*	{ "ups.status",					0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	24,	24,	"%s",			QX_FLAG_QUICK_POLL,						voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_status },*/
-/*	{ "ac_charging_current",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	33,	36,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
-/*	{ "ac_charging_power",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	38,	41,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
-	{ "input.pv3.current",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	42,	45,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "input.pv3.voltage",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	47,	51,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-	{ "battery.voltage.scc3",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	53,	57,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-/*	{ "pv_charging_power_3",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	58,	61,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
-/*	{ "pv_total_charging_power",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	63,	67,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+/*	{ "experimental.ac_charging_current",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	33,	36,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+/*	{ "experimental.ac_charging_power",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	38,	41,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+	{ "experimental.input.pv3.current",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	42,	45,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.input.pv3.voltage",				0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	47,	51,	"%.0f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.battery.voltage.scc3",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	53,	57,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
+/*	{ "experimental.pv_charging_power_3",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	58,	61,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
+/*	{ "experimental.pv_total_charging_power",			0,				NULL,					"QPIGS2\r",			"",	69,	'(',	"",	63,	67,	"%.1f",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	*/
 
 	/* Query device for warnings and their type
 	 * > [QPIWS\r]
@@ -1749,26 +1755,26 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "ups.alarm",					0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	1,	2,	"%s",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_fault },	/* FIXME: should be "device.alarm" */
-	{ "device.date.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	4,	11,	"%04d/%02d/%02d",	QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_date_skip_me },
-	{ "device.time.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	12,	17,	"%02d:%02d:%02d",	QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_time_skip_me },
-	{ "pv1.input.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	19,	21,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv1.input.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	23,	25,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv2.input.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	27,	29,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv2.input.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	31,	33,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv3.input.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	35,	37,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv3.input.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	39,	41,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "inverter.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	43,	45,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "inverter.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	47,	49,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "grid.voltage.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	51,	53,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "grid.frequency.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	55,	57,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "grid.current.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	59,	61,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "output.load.percent.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	63,	65,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "output.load.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	67,	69,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "output.load.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	71,	73,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "output.load.frequency.fault",		0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	75,	77,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "battery.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	79,	81,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "device.temperature.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	83,	85,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "run.status.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	87,	89,	"%s",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.device.date.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	4,	11,	"%04d/%02d/%02d",	QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_date_skip_me },
+	{ "experimental.device.time.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	12,	17,	"%02d:%02d:%02d",	QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_time_skip_me },
+	{ "experimental.pv1.input.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	19,	21,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv1.input.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	23,	25,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv2.input.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	27,	29,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv2.input.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	31,	33,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv3.input.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	35,	37,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv3.input.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	39,	41,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.inverter.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	43,	45,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.inverter.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	47,	49,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.grid.voltage.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	51,	53,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.grid.frequency.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	55,	57,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.grid.current.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	59,	61,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.output.load.percent.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	63,	65,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.output.load.current.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	67,	69,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.output.load.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	71,	73,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.output.load.frequency.fault",		0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	75,	77,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.battery.voltage.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	79,	81,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.device.temperature.fault",			0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	83,	85,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.run.status.fault",				0,				NULL,					"QPIFS\r",			"",	91,	'(',	"",	87,	89,	"%s",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
 
 	/* Query device for faults and their type.
 	 * IFF FW version (QSVFW2) >= (in P15: 0.9; in P16: 0.3)
@@ -1779,7 +1785,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "ups.alarm",					0,				NULL,					"QPICF\r",			"",	7,	'(',	"",	1,	2,	"%s",			0,								NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_fault_status },	/* FIXME: should be "device.alarm" */
-	{ "fault_id",					0,				NULL,					"QPICF\r",			"",	7,	'(',	"",	4,	5,	"%02d",			QX_FLAG_NONUT | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_fault_id },
+	{ "experimental.fault_id",					0,				NULL,					"QPICF\r",			"",	7,	'(',	"",	4,	5,	"%02d",			QX_FLAG_NONUT | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_fault_id },
 
 	/* Query device for fault <fault_id> and its type.	TODO: update with real device data
 	 * IFF FW version (QSVFW2) >= (in P15: 0.9; in P16: 0.3)
@@ -1793,26 +1799,26 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "ups.alarm",					0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	1,	2,	"%s",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_fault },	/* FIXME: should be "device.alarm" */
-	{ "device.date.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	4,	11,	"%04d/%02d/%02d",	QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_date_skip_me },
-	{ "device.time.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	12,	17,	"%02d:%02d:%02d",	QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_time_skip_me },
-	{ "pv1.input.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	19,	21,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv1.input.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	23,	25,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv2.input.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	27,	29,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv2.input.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	31,	33,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv3.input.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	35,	37,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "pv3.input.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	39,	41,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "inverter.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	43,	45,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "inverter.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	47,	49,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "grid.voltage.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	51,	53,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "grid.frequency.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	55,	57,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "grid.current.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	59,	61,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "output.load.percent.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	63,	65,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "output.load.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	67,	69,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "output.load.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	71,	73,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "output.load.frequency.fault",		0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	75,	77,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "battery.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	79,	81,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "device.temperature.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	83,	85,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
-	{ "run.status.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	87,	89,	"%s",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.device.date.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	4,	11,	"%04d/%02d/%02d",	QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_date_skip_me },
+	{ "experimental.device.time.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	12,	17,	"%02d:%02d:%02d",	QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_time_skip_me },
+	{ "experimental.pv1.input.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	19,	21,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv1.input.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	23,	25,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv2.input.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	27,	29,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv2.input.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	31,	33,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv3.input.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	35,	37,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.pv3.input.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	39,	41,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.inverter.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	43,	45,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.inverter.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	47,	49,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.grid.voltage.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	51,	53,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.grid.frequency.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	55,	57,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.grid.current.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	59,	61,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.output.load.percent.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	63,	65,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.output.load.current.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	67,	69,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.output.load.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	71,	73,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.output.load.frequency.fault",		0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	75,	77,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.battery.voltage.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	79,	81,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.device.temperature.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	83,	85,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
+	{ "experimental.run.status.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	87,	89,	"%s",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
 
 #endif	/* TESTING_AXPERT_FAULT_TYPE_QUERY */
 
@@ -1826,15 +1832,16 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1         2         3
 	 */
 
-	{ "device.test.result",				0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	1,	2,	"%s",			0,								NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_self_test_result },
-	{ "voltage.high.test",				0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	4,	6,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
-	{ "voltage.low.test",				0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	8,	10,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
-	{ "frequency.high.test",			0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	12,	14,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
-	{ "frequency.low.test",				0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	16,	18,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
-	{ "voltage.high.triptime.test",			0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	20,	22,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
-	{ "voltage.low.triptime.test",			0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	24,	26,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
-	{ "frequency.high.triptime.test",		0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	28,	30,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
-	{ "frequency.low.triptime.test",		0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	32,	34,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
+	/* FIXME: ups.test.result currently */
+	{ "experimental.device.test.result",				0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	1,	2,	"%s",			0,								NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_self_test_result },
+	{ "experimental.voltage.high.test",				0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	4,	6,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.voltage.low.test",				0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	8,	10,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.frequency.high.test",			0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	12,	14,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.frequency.low.test",				0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	16,	18,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.voltage.high.triptime.test",			0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	20,	22,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.voltage.low.triptime.test",			0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	24,	26,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.frequency.high.triptime.test",		0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	28,	30,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.frequency.low.triptime.test",		0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	32,	34,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
 
 #endif	/* TESTING_AXPERT_SELFTEST_RESULT_QUERY */
 
@@ -1848,7 +1855,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "energy.startdate",				0,				NULL,					"QFET\r",			"",	12,	'(',	"",	1,	8,	"%04d/%02d/%02d",	QX_FLAG_STATIC,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_date },
+	{ "experimental.energy.startdate",				0,				NULL,					"QFET\r",			"",	12,	'(',	"",	1,	8,	"%04d/%02d/%02d",	QX_FLAG_STATIC,							NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_date },
 
 	/* Just expose the following "energy per *"-items as "energy produced during current year/month/day/hour" */
 
@@ -1859,7 +1866,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "energy.hour",				0,				NULL,					"QEH%04d%02d%02d%02d%s\r",	"",	7,	'(',	"",	1,	5,	"%.0f",			0,								voltronic_sunny_energy_hour,	voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.energy.hour",				0,				NULL,					"QEH%04d%02d%02d%02d%s\r",	"",	7,	'(',	"",	1,	5,	"%.0f",			0,								voltronic_sunny_energy_hour,	voltronic_axpert_checkcrc,		NULL },
 
 	/* Query device for energy produced in a specific day
 	 * > [QED<date><checksum>\r]		<date>: YYYYMMDD, <checksum>: 3 digit checksum
@@ -1868,7 +1875,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "energy.day",					0,				NULL,					"QED%04d%02d%02d%s\r",		"",	8,	'(',	"",	1,	6,	"%.0f",			0,								voltronic_sunny_energy_day,	voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.energy.day",					0,				NULL,					"QED%04d%02d%02d%s\r",		"",	8,	'(',	"",	1,	6,	"%.0f",			0,								voltronic_sunny_energy_day,	voltronic_axpert_checkcrc,		NULL },
 
 	/* Query device for energy produced in a specific month
 	 * > [QEM<year><month><checksum>\r]	<year>: YYYY, <month>: MM, <checksum>: 3 digit checksum
@@ -1877,7 +1884,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "energy.month",				0,				NULL,					"QEM%04d%02d%s\r",		"",	9,	'(',	"",	1,	7,	"%.0f",			0,								voltronic_sunny_energy_month,	voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.energy.month",				0,				NULL,					"QEM%04d%02d%s\r",		"",	9,	'(',	"",	1,	7,	"%.0f",			0,								voltronic_sunny_energy_month,	voltronic_axpert_checkcrc,		NULL },
 
 	/* Query device for energy produced in a specific year
 	 * > [QEY<year><checksum>\r]		<year>: YYYY, <checksum>: 3 digit checksum
@@ -1886,7 +1893,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "energy.year",				0,				NULL,					"QEY%04d%s\r",			"",	10,	'(',	"",	1,	8,	"%.0f",			0,								voltronic_sunny_energy_year,	voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.energy.year",				0,				NULL,					"QEY%04d%s\r",			"",	10,	'(',	"",	1,	8,	"%.0f",			0,								voltronic_sunny_energy_year,	voltronic_axpert_checkcrc,		NULL },
 
 #endif	/* TESTING_AXPERT_ENERGY_STATS_QUERY */
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
@@ -1909,7 +1916,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "beeper.disable",				0,				NULL,					"PDA\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_CMD | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		NULL },
 
 	/* For internal use only */
-	{ "OEEPB",					0,				NULL,					"OEEPB\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_CMD | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		NULL },
+	{ "experimental.OEEPB",					0,				NULL,					"OEEPB\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_CMD | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		NULL },
 
 #endif	/* TESTING_AXPERT_INSTCMD */
 
