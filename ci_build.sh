@@ -1449,7 +1449,7 @@ echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 ensure_CI_CCACHE_SYMLINKDIR_envvar
 echo "Build host settings:"
-set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT)=' || true
+set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT|INPLACE_RUNTIME)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -1513,9 +1513,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
-    # This is assumed for non-production builds to avoid confusion.
-    # FIXME: Extra toggle?..
-    CONFIG_OPTS+=("--with-unmapped-data-points")
+    if [ -z "${WITH_UNMAPPED_DATAPOINTS-}" ] ; then
+        # This is assumed for non-production builds to avoid confusion
+        # with shipped untested code.
+        WITH_UNMAPPED_DATAPOINTS=true
+    fi
+
+    if [ x"${WITH_UNMAPPED_DATAPOINTS-}" = xtrue ] ; then
+        CONFIG_OPTS+=("--with-unmapped-data-points")
+    fi
 
     if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
         CONFIG_OPTS+=("--enable-inplace-runtime")
@@ -2463,8 +2469,20 @@ bindings)
     else
         # Help developers debug:
         CONFIG_OPTS+=("--disable-silent-rules")
-        # This is assumed for non-production builds to avoid confusion.
-        # FIXME: Extra toggle?..
+    fi
+
+    if [ -z "${WITH_UNMAPPED_DATAPOINTS-}" ] ; then
+        if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
+            WITH_UNMAPPED_DATAPOINTS=false
+        else
+            WITH_UNMAPPED_DATAPOINTS=true
+        fi
+    fi
+
+    if [ x"${WITH_UNMAPPED_DATAPOINTS-}" = xtrue ] ; then
+        # This is assumed for non-production builds to avoid confusion
+        # for end-users (not dev/testers).
+        # See above for defaulting of this vs. inplace builds.
         CONFIG_OPTS+=("--with-unmapped-data-points")
     fi
 
