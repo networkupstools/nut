@@ -22,10 +22,10 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Victron Energy Direct UPS and solar controller driver"
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.21"
 
-#define VE_GET          7
-#define VE_SET          8
+#define VE_GET	7
+#define VE_SET	8
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -38,33 +38,31 @@ upsdrv_info_t upsdrv_info = {
 
 /* FIXME: Does the protocol dictate a certain size here?
  * Or can SMALLBUF etc. suffice? */
-static char line[500];
-static size_t r_start = 0;
+static char	line[500];
+static size_t	r_start = 0;
 
 static void ve_copy(const char *endl)
 {
-	size_t left = (line + r_start) - endl;
+	size_t	left = (line + r_start) - endl;
 	if (left > 0)
 		memmove(line, endl, left);
 
 	r_start = left;
 }
 
-static int ve_process_text_buffer()
+static int ve_process_text_buffer(void)
 {
-	char vn[50];
-
-	char *v_name;
-	char *v_value;
+	char	vn[50], ch;
+	char	*v_name, *v_value, *checksum;
 
 	upsdebugx (3, "%s: buf '%s'", __func__, line);
 	/* find checksum, verify checksum */
-	char *checksum = strstr(line, "Checksum\t");
+	checksum = strstr(line, "Checksum\t");
 	if (checksum == NULL || checksum + 9 >= line + r_start)
 		return -1;
 
 	/* calculate checksum */
-	char ch = 0;
+	ch = 0;
 	for (v_name = line; v_name <= checksum + 8; v_name++)
 		ch += *v_name;
 	ch = ~ch + 1;
@@ -81,6 +79,8 @@ static int ve_process_text_buffer()
 	v_name = line;
 	while (v_name < checksum)
 	{
+		char	*end;
+
 		if (v_name[0] != '\r' || v_name[1] != '\n')
 			break;
 		v_name += 2;
@@ -91,7 +91,8 @@ static int ve_process_text_buffer()
 			break;
 		*v_value = '\0';
 		v_value++;
-		char *end = v_value;
+
+		end = v_value;
 		while (*end != '\r' && *end != '\0')
 			end++;
 		if (*end != '\r')
@@ -113,15 +114,15 @@ static int ve_process_text_buffer()
 /* calculates checksum for VE.Direct HEX command/reply */
 static unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
 {
-	unsigned char ch = ve_cmd - '0';
+	unsigned char	ch = ve_cmd - '0';
 	if (ve_extra != NULL)
 	{
-		const char *ve;
+		const char	*ve;
 		for (ve = ve_extra; *ve != '\0'; ve++)
 		{
 			if (ve[1] != '\0')
 			{
-				unsigned int a;
+				unsigned int	a;
 				sscanf (ve, "%02X", &a);
 				ch += (unsigned char) a;
 				ve++;
@@ -134,15 +135,14 @@ static unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
 
 static int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t ret_length)
 {
-	int ret;
+	int	ret;
+	char	*reply = NULL;
+	char	*endl = NULL;
 
 	if (ve_extra != NULL)
 		ser_send(upsfd, ":%c%s%02X\n", ve_cmd, ve_extra, ve_checksum(ve_cmd, ve_extra));
 	else
 		ser_send(upsfd, ":%c%02X\n", ve_cmd, ve_checksum(ve_cmd, ve_extra));
-
-	char *reply = NULL;
-	char *endl = NULL;
 
 	while (endl == NULL)
 	{
@@ -191,12 +191,12 @@ static int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, 
 			return STAT_INSTCMD_FAILED;
 		}
 
-
 		if (ve_return != NULL)
 		{
+			size_t	r_len;
 			memset(ve_return, 9, ret_length);
 
-			size_t r_len = endl - line - 4;
+			r_len = endl - line - 4;
 			if (r_len > 0)
 			{
 				strncpy(ve_return, line + 2, r_len > ret_length ? ret_length : r_len);
@@ -215,15 +215,15 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * standard docs/nut-names.txt
 	 */
 	if (!strcasecmp(cmdname, "experimental.ve-direct.ping"))
-		return ve_command('1',NULL,NULL,0);
+		return ve_command('1', NULL, NULL, 0);
 	if (!strcasecmp(cmdname, "experimental.ve-direct.get"))
-		return ve_command(VE_GET,extra,NULL,0);
+		return ve_command(VE_GET, extra, NULL, 0);
 	if (!strcasecmp(cmdname, "experimental.ve-direct.set"))
-		return ve_command(VE_SET,extra,NULL,0);
+		return ve_command(VE_SET, extra, NULL, 0);
 	if (!strcasecmp(cmdname, "beeper.disable"))
-		return ve_command(VE_SET,"FCEE0000",NULL,0);
+		return ve_command(VE_SET, "FCEE0000", NULL, 0);
 	if (!strcasecmp(cmdname, "beeper.enable"))
-		return ve_command(VE_SET, "FCEE0001",NULL,0);
+		return ve_command(VE_SET, "FCEE0001", NULL, 0);
 	upsdebugx(1, "instcmd: unknown command: %s", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
@@ -255,10 +255,12 @@ void upsdrv_updateinfo(void)
 	/************** ups.x ***************************/
 	while (1)
 	{
+		int	nred;
+
 		if (r_start >= sizeof(line))
 			r_start = 0;
 		memset(line + r_start, 0, sizeof(line) - r_start);
-		int nred = ser_get_buf(upsfd, line + r_start, sizeof(line) - r_start, 0, 200);
+		nred = ser_get_buf(upsfd, line + r_start, sizeof(line) - r_start, 0, 200);
 		if (nred < 0)
 			break;
 		if (nred == 0)
