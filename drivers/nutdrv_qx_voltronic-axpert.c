@@ -2341,20 +2341,20 @@ static int	voltronic_sunny_energy_year(item_t *item, char *command, const size_t
 /* Do floating point hex preprocessing to value */
 static int      voltronic_axpert_hex_preprocess(item_t *item, char *value, const size_t valuelen)
 {
-        snprintf(value, valuelen, "0X%s", item->value);
+	snprintf(value, valuelen, "0X%s", item->value);
 
-        if (strcasecmp(item->dfl, "0X%s")) {
+	if (strcasecmp(item->dfl, "0X%s")) {
 
-                if (strspn(value, "0123456789ABCDEF .-") != strlen(value)) {
-                        upsdebugx(2, "%s: non hex value [%s: %s]", __func__, item->info_type, value);
-                        return -1;
-                }
+		if (strspn(value, "0123456789ABCDEF .-") != strlen(value)) {
+			upsdebugx(2, "%s: non hex value [%s: %s]", __func__, item->info_type, value);
+			return -1;
+		}
 
-                snprintf_dynamic(value, valuelen, item->dfl, "%f", strtod(value, NULL));
+		snprintf_dynamic(value, valuelen, item->dfl, "%f", strtod(value, NULL));
 
-        }
+	}
 
-        return 0;
+	return 0;
 }
 
 /* Do only basic preprocessing to value */
@@ -2435,18 +2435,17 @@ static int	voltronic_axpert_serial_numb(item_t *item, char *value, const size_t 
 	return 0;
 }
 
-        /* A Enable/disable silence buzzer or open buzzer
-         *          * B Enable/Disable overload bypass function
-         *                   * J Enable/Disable power saving
-         *                            * K Enable/Disable LCD display escape to default page after 1min timeout
-         *                                     * U Enable/Disable overload restart
-         *                                              * V Enable/Disable over temperature restart
-         *                                                       * X Enable/Disable backlight on
-         *                                                                * Y Enable/Disable alarm on when primary source interrupt
-         *                                                                         * Z Enable/Disable fault code record
-         *                                                                                  * L Enable/Disable data log pop-up
-         *
-         */
+	/* A Enable/disable silence buzzer or open buzzer
+	 * B Enable/Disable overload bypass function
+	 * J Enable/Disable power saving
+	 * K Enable/Disable LCD display escape to default page after 1min timeout
+	 * U Enable/Disable overload restart
+	 * V Enable/Disable over temperature restart
+	 * X Enable/Disable backlight on
+	 * Y Enable/Disable alarm on when primary source interrupt
+	 * Z Enable/Disable fault code record
+	 * L Enable/Disable data log pop-up
+	 */
 
 /* Device capabilities */
 static int	voltronic_axpert_capability(item_t *item, char *value, const size_t valuelen)
