@@ -31,90 +31,222 @@
 
 #define VOLTRONIC_AXPERT_VERSION	"Voltronic-Axpert 0.01"
 
+/* For dev-testing: known ways to get data points, need mapping into NUT variables */
+#if WITH_UNMAPPED_DATA_POINTS
+# define TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT	1
+#else
+# define TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT	0
+#endif
+
+#define TESTING_AXPERT_CAPS_QUERY	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_CAPS_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_PFC_CURVE_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_RATINGS_QUERY_3	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_ACCEPTABLE_LIMITS_QUERY	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_PF_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_DATETIME_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_BATTERY_INFO_QUERY	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_FAULT_TYPE_QUERY	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_SELFTEST_RESULT_QUERY	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_ENERGY_STATS_QUERY	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_INSTCMD	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+
+/* Warning: unlocks a method not used in any code path: */
+#define TESTING_AXPERT_FUNC_PROCESS_SIGN	0 // TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+
 /* Support functions */
 static int	voltronic_sunny_claim(void);
 static void	voltronic_axpert_initinfo(void);
 static void	voltronic_sunny_makevartable(void);
+
 static int	voltronic_axpert_clear_flags(const char *varname, const unsigned long flag, const unsigned long noflag, const unsigned long clearflag);
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE
 static int	voltronic_axpert_add_flags(const char *varname, const unsigned long flag, const unsigned long noflag, const unsigned long addflag);
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE */
+
+#if TESTING_AXPERT_ENERGY_STATS_QUERY
 static int	voltronic_sunny_checksum(const char *string);
+#endif	/* TESTING_AXPERT_ENERGY_STATS_QUERY */
+
+#if TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 static void	voltronic_sunny_update_related_vars_limits(item_t *item, const char *value);
+#endif	/* TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY || TESTING_AXPERT_FUNC_PROCESS_SIGN || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
+
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE
 static int	voltronic_sunny_OEEPB(void);
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE */
 
 /* Range/enum functions */
+#if TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE
 static int	voltronic_sunny_pv_priority_enum(char *value, const size_t len);
+#endif	/* TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE */
+
+#if TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY
 static int	voltronic_sunny_grid_inout_freq_max(char *value, const size_t len);
 static int	voltronic_sunny_grid_inout_freq_min(char *value, const size_t len);
+#endif	/* TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY */
+
+#if TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE
 static int	voltronic_sunny_bc_v_bulk(char *value, const size_t len);
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE */
+
+#if TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE
 static int	voltronic_sunny_pv_input_volt_max(char *value, const size_t len);
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE */
 
 /* Answer preprocess functions */
 static int	voltronic_axpert_checkcrc(item_t *item, const int len);
 
 /* Command preprocess functions */
 static int      voltronic_axpert_crc(item_t *item, char *command, const size_t commandlen);
+#if TESTING_AXPERT_FAULT_TYPE_QUERY
 static int	voltronic_sunny_fault_query(item_t *item, char *command, const size_t commandlen);
+#endif	/* TESTING_AXPERT_FAULT_TYPE_QUERY */
+
+#if TESTING_AXPERT_ENERGY_STATS_QUERY
 static int	voltronic_sunny_energy_hour(item_t *item, char *command, const size_t commandlen);
 static int	voltronic_sunny_energy_day(item_t *item, char *command, const size_t commandlen);
 static int	voltronic_sunny_energy_month(item_t *item, char *command, const size_t commandlen);
 static int	voltronic_sunny_energy_year(item_t *item, char *command, const size_t commandlen);
+#endif	/* TESTING_AXPERT_ENERGY_STATS_QUERY */
 
 /* Preprocess functions */
 static int      voltronic_axpert_hex_preprocess(item_t *item, char *value, const size_t valuelen);
+#if TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY || TESTING_AXPERT_FUNC_PROCESS_SIGN || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY
 static int	voltronic_sunny_basic_preprocess(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY || TESTING_AXPERT_FUNC_PROCESS_SIGN || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY */
 static int	voltronic_axpert_protocol(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_axpert_fw(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_axpert_serial_numb(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_axpert_capability(item_t *item, char *value, const size_t valuelen);
+
+#if TESTING_AXPERT_CAPS_CHANGE
 static int	voltronic_axpert_capability_set(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_axpert_capability_reset(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_axpert_capability_set_nonut(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_CAPS_CHANGE */
+
+#if TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE || TESTING_AXPERT_PFC_CURVE_QUERY_CHANGE || TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 static int	voltronic_sunny_01(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_01_set(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE || TESTING_AXPERT_PFC_CURVE_QUERY_CHANGE || TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
+
+#if TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE
 static int	voltronic_sunny_pv_priority(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_pv_priority_set(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE */
+
+#if TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE
 static int	voltronic_sunny_unskip_setvar(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE */
+
 static int      voltronic_axpert_qpiri_battery_type(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_axpert_qpiri_model_type(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_axpert_transformer(item_t *item, char *value, const size_t valuelen);
+
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE
 static int	voltronic_sunny_volt_nom_set(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE */
+
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE
 static int	voltronic_sunny_process_setvar(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE */
+
+#if TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY
 static int	voltronic_sunny_basic_preprocess_and_update_related_vars_limits(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY */
+
+#if TESTING_AXPERT_RATINGS_QUERY_3
 static int	voltronic_sunny_yymmdd(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_hh_mm(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_RATINGS_QUERY_3 */
+
+#if TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 static int	voltronic_sunny_lst(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
+
+#if TESTING_AXPERT_ACCEPTABLE_LIMITS_QUERY
 static int	voltronic_sunny_set_limits(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_ACCEPTABLE_LIMITS_QUERY */
+
+#if TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 static int	voltronic_sunny_unskip_setvar_and_update_related_vars_limits(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
+
+#if TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE
 static int	voltronic_sunny_charger_limits_set(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_discharging_limits_set(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE */
+
+#if TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 static int	voltronic_sunny_hhmm(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_hhmm_set(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_hhmm_x2_set(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
+
+#if TESTING_AXPERT_PF_QUERY_CHANGE
 static int	voltronic_sunny_pf(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_pfc_set(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_PF_QUERY_CHANGE */
+
+#if TESTING_AXPERT_DATETIME_QUERY_CHANGE || TESTING_AXPERT_ENERGY_STATS_QUERY || TESTING_AXPERT_RATINGS_QUERY_3 || TESTING_AXPERT_FAULT_TYPE_QUERY
 static int	voltronic_sunny_date(item_t *item, char *value, const size_t valuelen);
-static int	voltronic_sunny_date_set(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_DATETIME_QUERY_CHANGE || TESTING_AXPERT_ENERGY_STATS_QUERY || TESTING_AXPERT_RATINGS_QUERY_3 || TESTING_AXPERT_FAULT_TYPE_QUERY */
+
+#if TESTING_AXPERT_DATETIME_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY
 static int	voltronic_sunny_time(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_DATETIME_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY */
+
+#if TESTING_AXPERT_DATETIME_QUERY_CHANGE
+static int	voltronic_sunny_date_set(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_time_set(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_DATETIME_QUERY_CHANGE */
+
+#if TESTING_AXPERT_FUNC_PROCESS_SIGN
+/* WARNING: Currently unused in any code path! */
 static int	voltronic_sunny_process_sign(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_FUNC_PROCESS_SIGN */
+
 static int	voltronic_axpert_status(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_warning(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_axpert_mode(item_t *item, char *value, const size_t valuelen);
+
+#if TESTING_AXPERT_BATTERY_INFO_QUERY
 static int	voltronic_sunny_batt_runtime(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_BATTERY_INFO_QUERY */
+
+#if TESTING_AXPERT_FAULT_TYPE_QUERY
 static int	voltronic_sunny_fault(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_date_skip_me(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_time_skip_me(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_skip_me(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_fault_status(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_fault_id(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_FAULT_TYPE_QUERY */
+
+#if TESTING_AXPERT_SELFTEST_RESULT_QUERY
 static int	voltronic_sunny_self_test_result(item_t *item, char *value, const size_t valuelen);
+#endif	/* TESTING_AXPERT_SELFTEST_RESULT_QUERY */
 
 
 /* == Global vars == */
 
+#if TESTING_AXPERT_CAPS_CHANGE
 /* Capability vars ("enabled"/"disabled") */
 static char	*bypass_alarm,
 		*battery_alarm;
+#endif	/* TESTING_AXPERT_CAPS_CHANGE */
 
 /* Global flags */
 static int	crc = 1,		/* Whether device puts CRC in its replies or not */
@@ -123,9 +255,13 @@ static int	crc = 1,		/* Whether device puts CRC in its replies or not */
 
 static double	fw = 0;			/* Firmware version */
 static int	protocol = 0,		/* Protocol used by device */
+#if TESTING_AXPERT_FAULT_TYPE_QUERY
+		fault_id,		/* Fault ID */
+#endif	/* TESTING_AXPERT_FAULT_TYPE_QUERY */
+#if TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE
 		model_id = 0,		/* Model ID */
-		model_type = 0,		/* Model type */
-		fault_id;		/* Fault ID */
+#endif	/* TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE */
+		model_type = 0;		/* Model type */
 
 
 /* == Ranges/enums/lengths == */
@@ -155,13 +291,16 @@ static info_rw_t	voltronic_axpert_e_cap[] = {
 	{ "", 0 }
 };
 
+#if TESTING_AXPERT_CAPS_CHANGE || TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE || TESTING_AXPERT_PFC_CURVE_QUERY_CHANGE || TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE
 /* Enumlist for NONUT capabilities */
 static info_rw_t	voltronic_axpert_e_cap_nonut[] = {
 	{ "disabled", 0 },
 	{ "enabled", 0 },
 	{ "", 0 }
 };
+#endif	/* TESTING_AXPERT_CAPS_CHANGE */
 
+#if TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE
 /* Enumlist for PV energy supply priority */
 static info_rw_t	voltronic_sunny_e_pv_priority[] = {
 	{ "Battery-Load", voltronic_sunny_pv_priority_enum },				/* Priority: 01; Type: Off-grid (01) */
@@ -204,6 +343,7 @@ static int	voltronic_sunny_pv_priority_enum(char *value, const size_t len)
 
 	return -1;
 }
+#endif	/* TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE */
 
 /* Enumlist for nominal voltage */
 static info_rw_t	voltronic_axpert_e_volt_nom[] = {
@@ -219,6 +359,7 @@ static info_rw_t	voltronic_axpert_e_volt_nom[] = {
 	{ "", 0 }
 };
 
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE
 /* Enumlist for nominal frequency */
 static info_rw_t	voltronic_sunny_e_freq_nom[] = {
 	{ "50", 0 },
@@ -232,7 +373,9 @@ static info_rw_t	voltronic_sunny_r_mpp_number[] = {
 	{ "99", 0 },
 	{ "", 0 }
 };
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE */
 
+#if TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY
 /* Range for maximum grid output voltage: overwritten (if appropriate) at runtime by voltronic_sunny_set_limits() (QVFTR #1, #2) */
 static info_rw_t	voltronic_sunny_r_grid_output_volt_max[] = {
 	{ "240", 0 },
@@ -356,14 +499,18 @@ static int	voltronic_sunny_grid_inout_freq_min(char *value, const size_t len)
 
 	return -1;
 }
+#endif	/* TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY */
 
+#if TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE
 /* Range for waiting time before grid connection: overwritten (if appropriate) at runtime by voltronic_sunny_set_limits() (QVFTR #9, #10) */
 static info_rw_t	voltronic_sunny_r_grid_waiting_time[] = {
 	{ "5", 0 },
 	{ "999", 0 },
 	{ "", 0 }
 };
+#endif	/* TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE */
 
+#if TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE
 /* Range for maximum battery-charging current: filled at runtime by voltronic_sunny_set_limits() (QVFTR #11, #12), overwritten (if appropriate) by voltronic_sunny_update_related_vars_limits() */
 static info_rw_t	voltronic_sunny_r_bc_v_floating[] = {
 	{ "", 0 },
@@ -410,7 +557,9 @@ static int	voltronic_sunny_bc_v_bulk(char *value, const size_t len)
 
 	return -1;
 }
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE */
 
+#if TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE
 /* Range for minimum floating battery-charging current: filled at runtime by voltronic_sunny_update_related_vars_limits() */
 static info_rw_t	voltronic_sunny_r_bc_c_floating_low[] = {
 	{ "0", 0 },
@@ -513,7 +662,9 @@ static info_rw_t	voltronic_sunny_r_mpp_input_volt_min[] = {
 	{ "200", 0 },
 	{ "", 0 }
 };
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE */
 
+#if TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 /* Range for maximum output power: filled(/overwritten, if appropriate) at runtime by voltronic_sunny_set_limits() (QVFTR #23, #24) and voltronic_sunny_update_related_vars_limits() */
 static info_rw_t	voltronic_sunny_r_output_realpower_max[] = {
 	{ "0", 0 },
@@ -554,7 +705,9 @@ static info_rw_t	voltronic_sunny_r_grid_power_deviation[] = {
 	{ "999", 0 },
 	{ "", 0 }
 };
+#endif	/* TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
 
+#if TESTING_AXPERT_PF_QUERY_CHANGE
 /* Range for power factor */
 static info_rw_t	voltronic_sunny_r_output_powerfactor[] = {	/* FIXME: 1. nutdrv_qx setvar+RANGE doesn't support negative values; 2. values should be divided by 100 */
 	{ "-99", 0 },
@@ -584,7 +737,9 @@ static info_rw_t	voltronic_sunny_r_powerfactor_curve[] = {	/* FIXME: nutdrv_qx s
 	{ "-90", 0 },
 	{ "", 0 }
 };
+#endif	/* TESTING_AXPERT_PF_QUERY_CHANGE */
 
+#if TESTING_AXPERT_DATETIME_QUERY_CHANGE
 /* Date (YYYY/MM/DD) length */
 static info_rw_t	voltronic_sunny_l_date[] = {
 	{ "10", 0 },
@@ -596,6 +751,7 @@ static info_rw_t	voltronic_sunny_l_time[] = {
 	{ "8", 0 },
 	{ "", 0 }
 };
+#endif	/* TESTING_AXPERT_DATETIME_QUERY_CHANGE */
 
 
 /* == qx2nut lookup table == */
@@ -692,13 +848,14 @@ static item_t	voltronic_axpert_qx2nut[] = {
 
 	{ "battery.energysave",				ST_FLAG_RW,			voltronic_axpert_e_cap,			"QFLAG\r",			"",	4,	'(',	"",	1,	0,	"%s",			QX_FLAG_ENUM | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability },
 	{ "ups.beeper.status",			0,				NULL,					"QFLAG\r",			"",	4,	'(',	"",	1,	0,	"%s",			QX_FLAG_SEMI_STATIC,						voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability },
-#if 0
+#if TESTING_AXPERT_CAPS_QUERY
 	/* Not available in NUT */
+	/* FIXME: ups_status BYPASS and RB(?) */
 	{ "bypass_alarm",				0,				NULL,					"QFLAG\r",			"",	4,	'(',	"",	1,	0,	"%s",			QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability },
 	{ "battery_alarm",				0,				NULL,					"QFLAG\r",			"",	4,	'(',	"",	1,	0,	"%s",			QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability },
-#endif
+#endif	/* TESTING_AXPERT_CAPS_QUERY */
 
-#if 0
+#if TESTING_AXPERT_CAPS_CHANGE
 	/*   Enable	or	  Disable	or	Reset to safe default values	capability options
 	 * > [PEX\r]		> [PDX\r]		> [PF\r]
 	 * < [(ACK\r]		< [(ACK\r]		< [(ACK\r]
@@ -706,14 +863,16 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    0			   0			   0
 	 */
 
+	/* FIXME: vendor buzzwords */
 	{ "battery.energysave",				0,				voltronic_axpert_e_cap,			"P%sJ\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_set },
 	/* Not available in NUT */
 	{ "reset_to_default",				0,				NULL,					"PF\r",				"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT,					voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_reset },
+	/* FIXME: ups_status BYPASS and RB(?) */
 	{ "bypass_alarm",				0,				voltronic_axpert_e_cap_nonut,		"P%sP\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_set_nonut },
 	{ "battery_alarm",				0,				voltronic_axpert_e_cap_nonut,		"P%sB\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_capability_set_nonut },
-#endif
+#endif	/* TESTING_AXPERT_CAPS_CHANGE */
 
-#if 0
+#if TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE
 	/* Query device for operational options flag (P16 only)
 	 * > [QENF\r]
 	 * < [(A1B1C1D1E1F0G1\r]	<- required options (length: 16)
@@ -750,9 +909,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 /*	{ "unknown.?",					0,				voltronic_axpert_e_cap_nonut,		"ENFH%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	*//* H */
 /*	{ "unknown.?",					0,				voltronic_axpert_e_cap_nonut,		"ENFI%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	*//* I */
 /*	{ "unknown.?",					0,				voltronic_axpert_e_cap_nonut,		"ENFJ%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },	*//* J */
-#endif
+#endif	/* TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE */
 
-#if 0
+#if TESTING_AXPERT_PFC_CURVE_QUERY_CHANGE
 	/* Query device for power factor curve capability (P15 only)
 	 * > [QPDG\r]
 	 * < [(0\r]
@@ -770,9 +929,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "output.powerfactor.curve.capability",	0,				voltronic_axpert_e_cap_nonut,		"PDG%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },
-#endif
+#endif	/* TESTING_AXPERT_PFC_CURVE_QUERY_CHANGE */
 
-#if 0
+#if TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE
 	/* Query device for generator as AC source option status (P16 only)
 	 * > [GNTMQ\r]
 	 * < [(00\r]
@@ -791,9 +950,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "generator_as_ac_source",			0,				voltronic_axpert_e_cap_nonut,		"PDG%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_ENUM | QX_FLAG_SKIP,	NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },
-#endif
+#endif	/* TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE */
 
-#if 0
+#if TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE
 	/* Query device for PV energy supply priority (P16 only)
 	 * > [QPRIO\r]
 	 * < [(02\r]
@@ -814,7 +973,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "pv.energy.supplypriority",			0,				voltronic_sunny_e_pv_priority,		"PRIO%02d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pv_priority_set },
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
-#endif
+#endif	/* TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE */
 
 	/* Query device for ratings #1
 	 * > [QPIRI\r]
@@ -851,7 +1010,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 
 
 
-#if 0
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE
 	/* Set nominal voltage (P16 only)
 	 * > [V<n>\r]
 	 * < [(ACK\r]
@@ -878,7 +1037,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "mpp.number",					0,				voltronic_sunny_r_mpp_number,		"PVN%02.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-#endif
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE */
 
 	/* Query device for ratings #2
 	 * > [QMD\r]
@@ -888,7 +1047,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "device.model",				0,				NULL,					"QMD\r",			"",	48,	'(',	"",	1,	15,	"%s",			QX_FLAG_STATIC | QX_FLAG_TRIM,					voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
-/*	{ "output.realpower.nominal",			0,				NULL,					"QMD\r",			"",	48,	'(',	"",	17,	23,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_TRIM,					voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_basic_preprocess_and_update_related_vars_limits },*/
+#if TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY
+	{ "output.realpower.nominal",			0,				NULL,					"QMD\r",			"",	48,	'(',	"",	17,	23,	"%.0f",			QX_FLAG_STATIC | QX_FLAG_TRIM,					voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_basic_preprocess_and_update_related_vars_limits },
+#endif	/* TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY */
 	{ "output.powerfactor.nominal",			0,				NULL,					"QMD\r",			"",	48,	'(',	"",	25,	26,	"%.0f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },	/* FIXME: value should be divided by 100 */
 	{ "input.phases",				0,				NULL,					"QMD\r",			"",	48,	'(',	"",	28,	28,	"%.0f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 	{ "output.phases",				0,				NULL,					"QMD\r",			"",	48,	'(',	"",	30,	30,	"%.0f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
@@ -897,7 +1058,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "battery.number",				0,				NULL,					"QMD\r",			"",	48,	'(',	"",	40,	41,	"%.0f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },
 /*	{ "battery.voltage.nominal",			0,				NULL,					"QMD\r",			"",	48,	'(',	"",	43,	46,	"%.1f",			QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		NULL },*/
 
-#if 0
+#if TESTING_AXPERT_RATINGS_QUERY_3
 	/* Query device for ratings #3
 	 * > [I\r]
 	 * < [(DSP:14-03-03,14:30 MCU:14-01-15,17:20\r]
@@ -909,7 +1070,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "dsp.mfr.time",				0,				NULL,					"I\r",				"",	39,	'(',	"",	14,	18,	"%02d:%02d",		QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_hh_mm },
 	{ "mcu.mfr.date",				0,				NULL,					"I\r",				"",	39,	'(',	"",	24,	31,	"%04d/%02d/%02d",	QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_yymmdd },
 	{ "mcu.mfr.time",				0,				NULL,					"I\r",				"",	39,	'(',	"",	33,	37,	"%02d:%02d",		QX_FLAG_STATIC,							voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_hh_mm },
-#endif
+#endif	/* TESTING_AXPERT_RATINGS_QUERY_3 */
 
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
@@ -948,7 +1109,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
-#if 0
+#if TESTING_AXPERT_ACCEPTABLE_LIMITS_QUERY
 	/* Query device for acceptable limits -these don't need to be published (as are already used in ranges), so mark them as NONUT
 	 * > [QVFTR\r]
 	 * < [(276.0 235.0 225.0 180.0 55.0 50.1 49.9 45.0 070 005 58.0 48.0 25.0 00.5 500 450 200 090 450 400 200 110 03000 00000 58.0 50.0 --\r]
@@ -991,9 +1152,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "battery.charging.voltage.bulk.max",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	117,	120,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
 	{ "battery.charging.voltage.bulk.min",		0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	122,	125,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	/* P16 only */
 /*	{ "unknown.?",					0,				NULL,					"QVFTR\r",			"",	130,	'(',	"",	127,	128,	"%.1f",			QX_FLAG_STATIC | QX_FLAG_NONUT,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_set_limits },	*/
-#endif
+#endif	/* TESTING_AXPERT_ACCEPTABLE_LIMITS_QUERY */
 
-#if 0
+#if TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY
 	/* Query device for grid output voltage limits
 	 * > [QGOV\r]
 	 * < [(264.5 184.0\r]
@@ -1073,9 +1234,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 
 	{ "grid.input.frequency.high",			0,				voltronic_sunny_r_grid_inout_freq_max,	"PGF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 	{ "grid.input.frequency.low",			0,				voltronic_sunny_r_grid_inout_freq_min,	"PSF%04.1f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-#endif
+#endif	/* TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY */
 
-#if 0
+#if TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE
 	/* Query device for waiting time before grid connection
 	 * > [QFT\r]
 	 * < [(060\r]
@@ -1093,9 +1254,9 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "grid.waitingtime",				0,				voltronic_sunny_r_grid_waiting_time,	"FT%03.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-#endif
+#endif	/* TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE */
 
-#if 0
+#if TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY
 	/* Query device for battery-charging data (P16 only)
 	 * > [QCHGS\r]
 	 * < [(00.3 54.0 25.0 55.4\r]
@@ -1107,7 +1268,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "battery.charging.voltage.floating",		ST_FLAG_RW,			voltronic_sunny_r_bc_v_floating,	"QCHGS\r",			"",	21,	'(',	"",	6,	9,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
 	{ "battery.charging.current.high",		ST_FLAG_RW,			voltronic_sunny_r_bc_c_max,		"QCHGS\r",			"",	21,	'(',	"",	11,	14,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
 	{ "battery.charging.voltage.bulk",		ST_FLAG_RW,			voltronic_sunny_r_bc_v_bulk,		"QCHGS\r",			"",	21,	'(',	"",	16,	19,	"%.1f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_sunny_unskip_setvar_and_update_related_vars_limits },
-#endif
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY */
 
 	/* Set battery-charging limits (P16 only)
 	 * > [MCHGV<n>\r]	> [MCHGC<n>\r]		> [BCHGV<n>\r]
@@ -1115,13 +1276,13 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 *    01234		   01234		   01234
 	 *    0			   0			   0
 	 */
-#if 0
+#if TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE
 	{ "battery.charging.voltage.floating",		0,				voltronic_sunny_r_bc_v_floating,	"MCHGV%04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 	{ "battery.charging.current.high",		0,				voltronic_sunny_r_bc_c_max,		"MCHGC%04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 	{ "battery.charging.voltage.bulk",		0,				voltronic_sunny_r_bc_v_bulk,		"BCHGV%04.1f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-#endif
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE */
 
-#if 0
+#if TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE
 	/* Query device for battery charger limits (P16 only)
 	 * > [QOFFC\r]
 	 * < [(00.0 53.0 060\r]
@@ -1216,11 +1377,11 @@ static item_t	voltronic_axpert_qx2nut[] = {
 
 	{ "mpp.voltage.high",				0,				voltronic_sunny_r_mpp_input_volt_max,	"MPPTHV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
 	{ "mpp.voltage.low",				0,				voltronic_sunny_r_mpp_input_volt_min,	"MPPTLV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_process_setvar },
-#endif
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
-#if 0
+#if TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 	/* Query device for maximum output power
 	 * > [QOPMP\r]
 	 * < [(03000\r]
@@ -1382,11 +1543,11 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "battery.isLiFe",				0,				voltronic_axpert_e_cap,			"LBF%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_01_set },
-#endif
+#endif	/* TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
-#if 0
+#if TESTING_AXPERT_PF_QUERY_CHANGE
 	/* Query device for power factor (P15 only)	FIXME: value should be divided by 100
 	 * > [QOPF\r]
 	 * < [(090\r]
@@ -1458,11 +1619,11 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	 */
 
 	{ "output.powerfactor.curve",			0,				voltronic_sunny_r_powerfactor_curve,	"PFL%03d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_pfc_set },
-#endif
+#endif	/* TESTING_AXPERT_PF_QUERY_CHANGE */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
-#if 0
+#if TESTING_AXPERT_DATETIME_QUERY_CHANGE
 	/* Query device for date/time
 	 * > [QT\r]
 	 * < [(YYYYMMDDhhmmss\r]
@@ -1483,7 +1644,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "device.date",				ST_FLAG_STRING,			NULL,					"DAT%02d%02d%02d%s\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_date_set },
 	{ "device.time",				ST_FLAG_STRING,			NULL,					"DAT%s%02d%02d%02d\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_time_set },
 
-#endif
+#endif	/* TESTING_AXPERT_DATETIME_QUERY_CHANGE */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
@@ -1556,7 +1717,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "ups.alarm",					0,				NULL,					"QMOD\r",			"",	3,	'(',	"",	1,	1,	"%s",			0,								voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_mode },	/* FIXME: should be "device.alarm" */
 	{ "ups.status",					0,				NULL,					"QMOD\r",			"",	3,	'(',	"",	1,	1,	"%s",			QX_FLAG_QUICK_POLL,						voltronic_axpert_crc,		voltronic_axpert_checkcrc,		voltronic_axpert_mode },	/* FIXME: should be "device.status" */
 
-#if 0
+#if TESTING_AXPERT_BATTERY_INFO_QUERY
 	/* Query device for actual infos about battery (P16 only)	TODO: update with real device data
 	 * > [QPIBI\r]
 	 * < [(000 001 002 003 004\r]
@@ -1570,11 +1731,11 @@ static item_t	voltronic_axpert_qx2nut[] = {
 /*	{ "unknown.?",					0,				NULL,					"QPIBI\r",			"",	21,	'(',	"",	13,	15,	"%s",			0,								NULL,				voltronic_axpert_checkcrc,		NULL },	*/
 	{ "battery.runtime",				0,				NULL,					"QPIBI\r",			"",	21,	'(',	"",	17,	19,	"%.0f",			0,								NULL,				voltronic_axpert_checkcrc,		voltronic_sunny_batt_runtime },
 
-#endif
+#endif	/* TESTING_AXPERT_BATTERY_INFO_QUERY */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
-#if 0
+#if TESTING_AXPERT_FAULT_TYPE_QUERY
 
 	/* Query device for faults and their type	TODO: update with real device data
 	 * IFF FW version (QSVFW2) < (in P15: 0.9; in P16: 0.3) && (QPIWS #1 == 1)
@@ -1653,11 +1814,11 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "device.temperature.fault",			0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	83,	85,	"%.1f",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
 	{ "run.status.fault",				0,				NULL,					"QPIHF%02d\r",			"",	91,	'(',	"",	87,	89,	"%s",			QX_FLAG_SKIP,							voltronic_sunny_fault_query,	voltronic_axpert_checkcrc,		voltronic_sunny_skip_me },
 
-#endif
+#endif	/* TESTING_AXPERT_FAULT_TYPE_QUERY */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
-#if 0
+#if TESTING_AXPERT_SELFTEST_RESULT_QUERY
 	/* Query device for self test results	TODO: update with real device data
 	 * > [QSTS\r]
 	 * < [(01 001 002 003 004 005 006 007 008\r]
@@ -1675,11 +1836,11 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	{ "frequency.high.triptime.test",		0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	28,	30,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
 	{ "frequency.low.triptime.test",		0,				NULL,					"QSTS\r",			"",	36,	'(',	"",	32,	34,	"%.1f",			QX_FLAG_SKIP,							NULL,				voltronic_axpert_checkcrc,		NULL },
 
-#endif
+#endif	/* TESTING_AXPERT_SELFTEST_RESULT_QUERY */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
-#if 0
+#if TESTING_AXPERT_ENERGY_STATS_QUERY
 	/* Query device for energy start date
 	 * > [QFET\r]
 	 * < [(YYYYMMDDhh\r]
@@ -1727,10 +1888,10 @@ static item_t	voltronic_axpert_qx2nut[] = {
 
 	{ "energy.year",				0,				NULL,					"QEY%04d%s\r",			"",	10,	'(',	"",	1,	8,	"%.0f",			0,								voltronic_sunny_energy_year,	voltronic_axpert_checkcrc,		NULL },
 
-#endif
+#endif	/* TESTING_AXPERT_ENERGY_STATS_QUERY */
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
-#if 0
+#if TESTING_AXPERT_INSTCMD
 	/* Instant commands */
 	{ "load.off",					0,				NULL,					"SOFF\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_CMD,							NULL,				voltronic_axpert_checkcrc,		NULL },
 	{ "load.on",					0,				NULL,					"SON\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_CMD,							NULL,				voltronic_axpert_checkcrc,		NULL },
@@ -1750,7 +1911,7 @@ static item_t	voltronic_axpert_qx2nut[] = {
 	/* For internal use only */
 	{ "OEEPB",					0,				NULL,					"OEEPB\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_CMD | QX_FLAG_SKIP,					NULL,				voltronic_axpert_checkcrc,		NULL },
 
-#endif
+#endif	/* TESTING_AXPERT_INSTCMD */
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
@@ -1952,10 +2113,12 @@ static void	voltronic_axpert_initinfo(void)
 /* Subdriver-specific flags/vars */
 static void	voltronic_sunny_makevartable(void)
 {
+#if TESTING_AXPERT_CAPS_CHANGE
 	/* Capability vars */
 	addvar(VAR_FLAG, "reset_to_default", "Reset capability options and their limits to safe default values");
 	addvar(VAR_VALUE, "bypass_alarm", "Alarm (BEEP!) at Bypass Mode [enabled/disabled]");
 	addvar(VAR_VALUE, "battery_alarm", "Alarm (BEEP!) at Battery Mode [enabled/disabled]");
+#endif	/* TESTING_AXPERT_CAPS_CHANGE */
 }
 
 /* Remove *clearflag* flags from the qxflags of an item_t with info_type *varname* and with:	FIXME: worth main driver?
@@ -1978,6 +2141,7 @@ static int	voltronic_axpert_clear_flags(const char *varname, const unsigned long
 	return 0;
 }
 
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE
 /* Add *addflag* flags to the qxflags of an item_t with info_type *varname* and with:	FIXME: worth main driver?
  *  - *flag*: flags that have to be set in the item;
  *  - *noflag*: flags that have to be absent in the item.
@@ -1997,7 +2161,9 @@ static int	voltronic_axpert_add_flags(const char *varname, const unsigned long f
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE */
 
+#if TESTING_AXPERT_ENERGY_STATS_QUERY
 /* Calculate (and return) checksum (as used in the 'energy produced in *' queries) of all chars in *string* preceding a percent sign (%) */
 static int	voltronic_sunny_checksum(const char *string)
 {
@@ -2013,7 +2179,9 @@ static int	voltronic_sunny_checksum(const char *string)
 
 	return sum;
 }
+#endif	/* TESTING_AXPERT_ENERGY_STATS_QUERY */
 
+#if TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 /* Update *item*-related vars limits in accordance with *value* */
 static void	voltronic_sunny_update_related_vars_limits(item_t *item, const char *value)
 {
@@ -2149,7 +2317,9 @@ static void	voltronic_sunny_update_related_vars_limits(item_t *item, const char 
 
 	}
 }
+#endif	/* TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY || TESTING_AXPERT_FUNC_PROCESS_SIGN || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
 
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE
 /* Unskip, run and re-skip 'OEEPB' command.
  * Return:
  * - -1, on failure;
@@ -2172,6 +2342,7 @@ static int	voltronic_sunny_OEEPB(void)
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE */
 
 
 /* == Answer preprocess functions == */
@@ -2207,7 +2378,7 @@ static int	voltronic_axpert_crc(item_t *item, char *command, const size_t comman
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
 }
 
-
+#if TESTING_AXPERT_FAULT_TYPE_QUERY
 /* Preprocess fault query */
 static int	voltronic_sunny_fault_query(item_t *item, char *command, const size_t commandlen)
 {
@@ -2215,7 +2386,9 @@ static int	voltronic_sunny_fault_query(item_t *item, char *command, const size_t
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
 }
+#endif	/* TESTING_AXPERT_FAULT_TYPE_QUERY */
 
+#if TESTING_AXPERT_ENERGY_STATS_QUERY
 /* Energy produced during current hour */
 static int	voltronic_sunny_energy_hour(item_t *item, char *command, const size_t commandlen)
 {
@@ -2334,6 +2507,7 @@ static int	voltronic_sunny_energy_year(item_t *item, char *command, const size_t
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
 }
+#endif	/* TESTING_AXPERT_ENERGY_STATS_QUERY */
 
 
 /* == Preprocess functions == */
@@ -2357,6 +2531,7 @@ static int      voltronic_axpert_hex_preprocess(item_t *item, char *value, const
 	return 0;
 }
 
+#if TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY || TESTING_AXPERT_FUNC_PROCESS_SIGN || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY
 /* Do only basic preprocessing to value */
 static int	voltronic_sunny_basic_preprocess(item_t *item, char *value, const size_t valuelen)
 {
@@ -2378,6 +2553,7 @@ static int	voltronic_sunny_basic_preprocess(item_t *item, char *value, const siz
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY || TESTING_AXPERT_FUNC_PROCESS_SIGN || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY */
 
 /* Protocol used by the device */
 static int	voltronic_axpert_protocol(item_t *item, char *value, const size_t valuelen)
@@ -2465,7 +2641,7 @@ static int	voltronic_axpert_capability(item_t *item, char *value, const size_t v
 	enabled = enabled ? enabled : "";
 	disabled = disabled ? disabled : "";
 
-#if 0
+#if TESTING_AXPERT_CAPS_CHANGE
 	/* NONUT items */
 	if (!strcasecmp(item->info_type, "bypass_alarm")) {
 
@@ -2481,7 +2657,7 @@ static int	voltronic_axpert_capability(item_t *item, char *value, const size_t v
 		else if (strchr(disabled, 'b'))
 			val = battery_alarm = "disabled";
 	} else
-#endif
+#endif	/* TESTING_AXPERT_CAPS_CHANGE */
 
 	/* Items with a NUT variable */
 	if (!strcasecmp(item->info_type, "ups.beeper.status")) {
@@ -2531,6 +2707,7 @@ static int	voltronic_axpert_capability(item_t *item, char *value, const size_t v
 	return 0;
 }
 
+#if TESTING_AXPERT_CAPS_CHANGE
 /* *SETVAR* Set device capability options */
 static int	voltronic_axpert_capability_set(item_t *item, char *value, const size_t valuelen)
 {
@@ -2615,7 +2792,9 @@ static int	voltronic_axpert_capability_set_nonut(item_t *item, char *value, cons
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_CAPS_CHANGE */
 
+#if TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE || TESTING_AXPERT_PFC_CURVE_QUERY_CHANGE || TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 /* 0 -> disabled; 1 -> enabled */
 static int	voltronic_sunny_01(item_t *item, char *value, const size_t valuelen)
 {
@@ -2651,7 +2830,9 @@ static int	voltronic_sunny_01_set(item_t *item, char *value, const size_t valuel
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE || TESTING_AXPERT_PFC_CURVE_QUERY_CHANGE || TESTING_AXPERT_GENERATOR_AS_AC_SOURCE_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
 
+#if TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE
 /* PV energy supply priority */
 static int	voltronic_sunny_pv_priority(item_t *item, char *value, const size_t valuelen)
 {
@@ -2787,7 +2968,9 @@ static int	voltronic_sunny_pv_priority_set(item_t *item, char *value, const size
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_PV_SUPPLY_PRIORITY_QUERY_CHANGE */
 
+#if TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE
 /* Do only basic preprocessing to value and unskip corresponding SETVAR item */
 static int	voltronic_sunny_unskip_setvar(item_t *item, char *value, const size_t valuelen)
 {
@@ -2801,6 +2984,7 @@ static int	voltronic_sunny_unskip_setvar(item_t *item, char *value, const size_t
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE */
 
 /* Battery type (from QPIRI) */
 static int	voltronic_axpert_qpiri_battery_type(item_t *item, char *value, const size_t valuelen)
@@ -2902,6 +3086,7 @@ static int	voltronic_axpert_transformer(item_t *item, char *value, const size_t 
 	return 0;
 }
 
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE
 /* *SETVAR* Nominal voltage */
 static int	voltronic_sunny_volt_nom_set(item_t *item, char *value, const size_t valuelen)
 {
@@ -2927,7 +3112,9 @@ static int	voltronic_sunny_volt_nom_set(item_t *item, char *value, const size_t 
 	/* OEEPB must be executed before any V<n> command */
 	return voltronic_sunny_OEEPB();
 }
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE */
 
+#if TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE
 /* *SETVAR(/NONUT)* Preprocess setvars */
 static int	voltronic_sunny_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
@@ -2964,7 +3151,9 @@ static int	voltronic_sunny_process_setvar(item_t *item, char *value, const size_
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_NOMINAL_VOLTAGE_CHANGE || TESTING_AXPERT_GRID_OUTPUT_VOLTAGE_LIMITS_QUERY || TESTING_AXPERT_WAITING_TIME_BEFORE_GRID_CONNECTION_QUERY_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_CHANGE || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE || TESTING_AXPERT_PF_QUERY_CHANGE */
 
+#if TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY
 /* Do only basic preprocessing and update related vars limits */
 static int	voltronic_sunny_basic_preprocess_and_update_related_vars_limits(item_t *item, char *value, const size_t valuelen)
 {
@@ -2977,7 +3166,9 @@ static int	voltronic_sunny_basic_preprocess_and_update_related_vars_limits(item_
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_OUTPUT_REALPOWER_NOMINAL_QUERY */
 
+#if TESTING_AXPERT_RATINGS_QUERY_3
 /* YY-MM-DD date */
 static int	voltronic_sunny_yymmdd(item_t *item, char *value, const size_t valuelen)
 {
@@ -3023,7 +3214,9 @@ static int	voltronic_sunny_hh_mm(item_t *item, char *value, const size_t valuele
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_RATINGS_QUERY_3 */
 
+#if TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 /* LCD sleep time */
 static int	voltronic_sunny_lst(item_t *item, char *value, const size_t valuelen)
 {
@@ -3044,7 +3237,9 @@ static int	voltronic_sunny_lst(item_t *item, char *value, const size_t valuelen)
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
 
+#if TESTING_AXPERT_ACCEPTABLE_LIMITS_QUERY
 /* Overwrite limits of items with same name of the currenly processed one (minus the max/min specifier) */
 static int	voltronic_sunny_set_limits(item_t *item, char *value, const size_t valuelen)
 {
@@ -3106,7 +3301,9 @@ static int	voltronic_sunny_set_limits(item_t *item, char *value, const size_t va
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_ACCEPTABLE_LIMITS_QUERY */
 
+#if TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 /* Do only basic preprocessing to value and unskip corresponding SETVAR item; plus update related vars limits */
 static int	voltronic_sunny_unskip_setvar_and_update_related_vars_limits(item_t *item, char *value, const size_t valuelen)
 {
@@ -3119,7 +3316,9 @@ static int	voltronic_sunny_unskip_setvar_and_update_related_vars_limits(item_t *
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_DATA_QUERY || TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE || TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
 
+#if TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE
 /* *SETVAR* Battery charger limits */
 static int	voltronic_sunny_charger_limits_set(item_t *item, char *value, const size_t valuelen)
 {
@@ -3201,7 +3400,9 @@ static int	voltronic_sunny_discharging_limits_set(item_t *item, char *value, con
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_BATTERY_CHARGING_LIMITS_QUERY_CHANGE */
 
+#if TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE
 /* hhmm to hh:mm format */
 static int	voltronic_sunny_hhmm(item_t *item, char *value, const size_t valuelen)
 {
@@ -3320,7 +3521,9 @@ static int	voltronic_sunny_hhmm_x2_set(item_t *item, char *value, const size_t v
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_MAX_OUTPUT_POWER_QUERY_CHANGE */
 
+#if TESTING_AXPERT_PF_QUERY_CHANGE
 /* Power factor */
 static int	voltronic_sunny_pf(item_t *item, char *value, const size_t valuelen)
 {
@@ -3360,7 +3563,9 @@ static int	voltronic_sunny_pfc_set(item_t *item, char *value, const size_t value
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_PF_QUERY_CHANGE */
 
+#if TESTING_AXPERT_DATETIME_QUERY_CHANGE || TESTING_AXPERT_ENERGY_STATS_QUERY || TESTING_AXPERT_RATINGS_QUERY_3 || TESTING_AXPERT_FAULT_TYPE_QUERY
 /* YYYYMMDD date */
 static int	voltronic_sunny_date(item_t *item, char *value, const size_t valuelen)
 {
@@ -3406,7 +3611,45 @@ static int	voltronic_sunny_date(item_t *item, char *value, const size_t valuelen
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_DATETIME_QUERY_CHANGE || TESTING_AXPERT_ENERGY_STATS_QUERY || TESTING_AXPERT_RATINGS_QUERY_3 || TESTING_AXPERT_FAULT_TYPE_QUERY */
 
+#if TESTING_AXPERT_DATETIME_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY
+/* hhmmss time */
+static int	voltronic_sunny_time(item_t *item, char *value, const size_t valuelen)
+{
+	int	hh, mm, ss;
+
+	/* Check format */
+	if (
+		strspn(item->value, "0123456789") != strlen(item->value) ||
+		strlen(item->value) != 6 ||
+		sscanf(item->value, "%2d%2d%2d", &hh, &mm, &ss) != 3
+	) {
+		upsdebugx(2, "%s: invalid format [%s: %s]; expected 'hhmmss'", __func__, item->info_type, item->value);
+		return -1;
+	}
+
+	/* Check time */
+	if (hh < 0 || hh > 23 || mm < 0 || mm > 59 || ss < 0 || ss > 59) {
+		upsdebugx(2, "%s: invalid time [%s: %s]", __func__, item->info_type, item->value);
+		return -1;
+	}
+
+	/* Publish as "hh:mm:ss" */
+	snprintf_dynamic(value, valuelen, item->dfl, "%d%d%d", hh, mm, ss);
+
+	if (!(item->info_flags & ST_FLAG_RW))
+		return 0;
+
+	/* Unskip setvar */
+	if (voltronic_axpert_clear_flags(item->info_type, QX_FLAG_SETVAR, 0, QX_FLAG_SKIP))
+		return -1;
+
+	return 0;
+}
+#endif	/* TESTING_AXPERT_DATETIME_QUERY_CHANGE || TESTING_AXPERT_FAULT_TYPE_QUERY */
+
+#if TESTING_AXPERT_DATETIME_QUERY_CHANGE
 /* *SETVAR* Device date */
 static int	voltronic_sunny_date_set(item_t *item, char *value, const size_t valuelen)
 {
@@ -3458,40 +3701,6 @@ static int	voltronic_sunny_date_set(item_t *item, char *value, const size_t valu
 	return 0;
 }
 
-/* hhmmss time */
-static int	voltronic_sunny_time(item_t *item, char *value, const size_t valuelen)
-{
-	int	hh, mm, ss;
-
-	/* Check format */
-	if (
-		strspn(item->value, "0123456789") != strlen(item->value) ||
-		strlen(item->value) != 6 ||
-		sscanf(item->value, "%2d%2d%2d", &hh, &mm, &ss) != 3
-	) {
-		upsdebugx(2, "%s: invalid format [%s: %s]; expected 'hhmmss'", __func__, item->info_type, item->value);
-		return -1;
-	}
-
-	/* Check time */
-	if (hh < 0 || hh > 23 || mm < 0 || mm > 59 || ss < 0 || ss > 59) {
-		upsdebugx(2, "%s: invalid time [%s: %s]", __func__, item->info_type, item->value);
-		return -1;
-	}
-
-	/* Publish as "hh:mm:ss" */
-	snprintf_dynamic(value, valuelen, item->dfl, "%d%d%d", hh, mm, ss);
-
-	if (!(item->info_flags & ST_FLAG_RW))
-		return 0;
-
-	/* Unskip setvar */
-	if (voltronic_axpert_clear_flags(item->info_type, QX_FLAG_SETVAR, 0, QX_FLAG_SKIP))
-		return -1;
-
-	return 0;
-}
-
 /* *SETVAR* Device time */
 static int	voltronic_sunny_time_set(item_t *item, char *value, const size_t valuelen)
 {
@@ -3531,7 +3740,9 @@ static int	voltronic_sunny_time_set(item_t *item, char *value, const size_t valu
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_DATETIME_QUERY_CHANGE */
 
+#if TESTING_AXPERT_FUNC_PROCESS_SIGN
 /* Process sign: if char @ 0 == 0 -> positive; otherwise -> negative */
 static int	voltronic_sunny_process_sign(item_t *item, char *value, const size_t valuelen)
 {
@@ -3540,6 +3751,7 @@ static int	voltronic_sunny_process_sign(item_t *item, char *value, const size_t 
 
 	return voltronic_sunny_basic_preprocess(item, value, valuelen);
 }
+#endif	/* TESTING_AXPERT_FUNC_PROCESS_SIGN */
 
 /* Process status bits */
 static int	voltronic_axpert_status(item_t *item, char *value, const size_t valuelen)
@@ -3846,6 +4058,7 @@ static int	voltronic_axpert_mode(item_t *item, char *value, const size_t valuele
 	return 0;
 }
 
+#if TESTING_AXPERT_BATTERY_INFO_QUERY
 /* Battery runtime */
 static int	voltronic_sunny_batt_runtime(item_t *item, char *value, const size_t valuelen)
 {
@@ -3863,7 +4076,9 @@ static int	voltronic_sunny_batt_runtime(item_t *item, char *value, const size_t 
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_BATTERY_INFO_QUERY */
 
+#if TESTING_AXPERT_FAULT_TYPE_QUERY
 /* Fault reported by the device */
 static int	voltronic_sunny_fault(item_t *item, char *value, const size_t valuelen)
 {
@@ -4081,7 +4296,9 @@ static int	voltronic_sunny_fault_id(item_t *item, char *value, const size_t valu
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_FAULT_TYPE_QUERY */
 
+#if TESTING_AXPERT_SELFTEST_RESULT_QUERY
 /* Self test result */
 static int	voltronic_sunny_self_test_result(item_t *item, char *value, const size_t valuelen)
 {
@@ -4131,6 +4348,7 @@ static int	voltronic_sunny_self_test_result(item_t *item, char *value, const siz
 
 	return 0;
 }
+#endif	/* TESTING_AXPERT_SELFTEST_RESULT_QUERY */
 
 
 /* == Subdriver interface == */
