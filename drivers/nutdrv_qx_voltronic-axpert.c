@@ -2070,13 +2070,15 @@ static void	voltronic_sunny_update_related_vars_limits(item_t *item, const char 
 
 		/* Don't know what happened */
 		if (!related_var) {
-			upsdebugx(2, "%s: cannot find %s var (related to %s)", __func__, vars[i].related_var, item->info_type);
+			upsdebugx(2, "%s: cannot find %s var (related to %s)",
+				__func__, vars[i].related_var, item->info_type);
 			continue;
 		}
 
 		/* This should not happen, too */
 		if (!related_var->info_rw) {
-			upsdebugx(2, "%s: %s (related to %s) doesn't have a info_rw", __func__, related_var->info_type, item->info_type);
+			upsdebugx(2, "%s: %s (related to %s) doesn't have a info_rw",
+				__func__, related_var->info_type, item->info_type);
 			continue;
 		}
 
@@ -2118,7 +2120,9 @@ static void	voltronic_sunny_update_related_vars_limits(item_t *item, const char 
 		snprintf(old_max, sizeof(old_max), "%s", related_var->info_rw[1].value);
 
 		/* Set new value */
-		snprintf(related_var->info_rw[vars[i].index].value, sizeof(related_var->info_rw[vars[i].index].value), related_var->dfl, val);
+		snprintf_dynamic(related_var->info_rw[vars[i].index].value,
+			sizeof(related_var->info_rw[vars[i].index].value),
+			related_var->dfl, "%f", val);
 
 		/* Related var not yet processed -> let main driver add the range */
 		if (!dstate_getinfo(related_var->info_type))
@@ -2207,7 +2211,7 @@ static int	voltronic_axpert_crc(item_t *item, char *command, const size_t comman
 /* Preprocess fault query */
 static int	voltronic_sunny_fault_query(item_t *item, char *command, const size_t commandlen)
 {
-	snprintf(command, commandlen, item->command, fault_id);
+	snprintf_dynamic(command, commandlen, item->command, "%d", fault_id);
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
 }
@@ -2236,9 +2240,9 @@ static int	voltronic_sunny_energy_hour(item_t *item, char *command, const size_t
 		return -1;
 	}
 
-	snprintf(buf, commandlen, item->command, yyyy, mm, dd, hh, "%03d");
+	snprintf_dynamic(buf, commandlen, item->command, "%d%d%d%d%s", yyyy, mm, dd, hh, "%03d");
 	sum = voltronic_sunny_checksum(buf);
-	snprintf(command, commandlen, buf, sum);
+	snprintf_dynamic(command, commandlen, buf, "%d", sum);
 	free(buf);
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
@@ -2265,9 +2269,9 @@ static int	voltronic_sunny_energy_day(item_t *item, char *command, const size_t 
 		return -1;
 	}
 
-	snprintf(buf, commandlen, item->command, yyyy, mm, dd, "%03d");
+	snprintf_dynamic(buf, commandlen, item->command, "%d%d%d%s", yyyy, mm, dd, "%03d");
 	sum = voltronic_sunny_checksum(buf);
-	snprintf(command, commandlen, buf, sum);
+	snprintf_dynamic(command, commandlen, buf, "%d", sum);
 	free(buf);
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
@@ -2294,9 +2298,9 @@ static int	voltronic_sunny_energy_month(item_t *item, char *command, const size_
 		return -1;
 	}
 
-	snprintf(buf, commandlen, item->command, yyyy, mm, "%03d");
+	snprintf_dynamic(buf, commandlen, item->command, "%d%d%s", yyyy, mm, "%03d");
 	sum = voltronic_sunny_checksum(buf);
-	snprintf(command, commandlen, buf, sum);
+	snprintf_dynamic(command, commandlen, buf, "%d", sum);
 	free(buf);
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
@@ -2323,9 +2327,9 @@ static int	voltronic_sunny_energy_year(item_t *item, char *command, const size_t
 		return -1;
 	}
 
-	snprintf(buf, commandlen, item->command, yyyy, "%03d");
+	snprintf_dynamic(buf, commandlen, item->command, "%d%s", yyyy, "%03d");
 	sum = voltronic_sunny_checksum(buf);
-	snprintf(command, commandlen, buf, sum);
+	snprintf_dynamic(command, commandlen, buf, "%d", sum);
 	free(buf);
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
@@ -2346,7 +2350,7 @@ static int      voltronic_axpert_hex_preprocess(item_t *item, char *value, const
                         return -1;
                 }
 
-                snprintf(value, valuelen, item->dfl, strtod(value, NULL));
+                snprintf_dynamic(value, valuelen, item->dfl, "%f", strtod(value, NULL));
 
         }
 
@@ -2368,7 +2372,7 @@ static int	voltronic_sunny_basic_preprocess(item_t *item, char *value, const siz
 			return -1;
 		}
 
-		snprintf(value, valuelen, item->dfl, strtod(value, NULL));
+		snprintf_dynamic(value, valuelen, item->dfl, "%f", strtod(value, NULL));
 
 	}
 
@@ -2427,7 +2431,7 @@ static int	voltronic_axpert_serial_numb(item_t *item, char *value, const size_t 
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, item->value);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", item->value);
 	return 0;
 }
 
@@ -2511,7 +2515,7 @@ static int	voltronic_axpert_capability(item_t *item, char *value, const size_t v
 	if (!val)
 		return -1;
 
-	snprintf(value, valuelen, item->dfl, val);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", val);
 
 	/* This item doesn't have a NUT var and we were not asked by the user to change its value */
 	if ((item->qxflags & QX_FLAG_NONUT) && !getval(item->info_type))
@@ -2532,12 +2536,12 @@ static int	voltronic_axpert_capability(item_t *item, char *value, const size_t v
 static int	voltronic_axpert_capability_set(item_t *item, char *value, const size_t valuelen)
 {
 	if (!strcasecmp(value, "yes")) {
-		snprintf(value, valuelen, item->command, "E");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "E");
 		return 0;
 	}
 
 	if (!strcasecmp(value, "no")) {
-		snprintf(value, valuelen, item->command, "D");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "D");
 		return 0;
 	}
 
@@ -2601,9 +2605,9 @@ static int	voltronic_axpert_capability_set_nonut(item_t *item, char *value, cons
 	}
 
 	if (!strcasecmp(value, "disabled")) {
-		snprintf(value, valuelen, item->command, "D");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "D");
 	} else if (!strcasecmp(value, "enabled")) {
-		snprintf(value, valuelen, item->command, "E");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "E");
 	} else {
 		/* At this point value should have been already checked against enum so this shouldn't happen.. however.. */
 		upslogx(LOG_ERR, "%s: [%s] is not within acceptable values [enabled/disabled]", item->info_type, value);
@@ -2625,7 +2629,7 @@ static int	voltronic_sunny_01(item_t *item, char *value, const size_t valuelen)
 
 	val = strtol(item->value, NULL, 10);
 
-	snprintf(value, valuelen, item->dfl, item->info_rw[val].value);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", item->info_rw[val].value);
 
 	/* Unskip setvar */
 	if (voltronic_axpert_clear_flags(item->info_type, QX_FLAG_SETVAR, 0, QX_FLAG_SKIP))
@@ -2644,7 +2648,7 @@ static int	voltronic_sunny_01_set(item_t *item, char *value, const size_t valuel
 			break;
 	}
 
-	snprintf(value, valuelen, item->command, i);
+	snprintf_dynamic(value, valuelen, item->command, "%d", i);
 
 	return 0;
 }
@@ -2695,7 +2699,7 @@ static int	voltronic_sunny_pv_priority(item_t *item, char *value, const size_t v
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, priority);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", priority);
 
 	/* Unskip setvar */
 	if (voltronic_axpert_clear_flags(item->info_type, QX_FLAG_SETVAR, 0, QX_FLAG_SKIP))
@@ -2780,7 +2784,7 @@ static int	voltronic_sunny_pv_priority_set(item_t *item, char *value, const size
 			dstate_delenum("device.model.type", "Off-grid (Vextex)");
 	}
 
-	snprintf(value, valuelen, item->command, priority);
+	snprintf_dynamic(value, valuelen, item->command, "%d", priority);
 
 	return 0;
 }
@@ -2828,7 +2832,7 @@ static int	voltronic_axpert_qpiri_battery_type(item_t *item, char *value, const 
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, val);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", val);
 
 	return 0;
 }
@@ -2868,7 +2872,7 @@ static int	voltronic_axpert_qpiri_model_type(item_t *item, char *value, const si
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, val);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", val);
 
 	/* Set global var */
 	model_type = model;
@@ -2894,7 +2898,7 @@ static int	voltronic_axpert_transformer(item_t *item, char *value, const size_t 
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, val);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", val);
 
 	return 0;
 }
@@ -2919,7 +2923,7 @@ static int	voltronic_sunny_volt_nom_set(item_t *item, char *value, const size_t 
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->command, nomvolt);
+	snprintf_dynamic(value, valuelen, item->command, "%d", nomvolt);
 
 	/* OEEPB must be executed before any V<n> command */
 	return voltronic_sunny_OEEPB();
@@ -2957,7 +2961,7 @@ static int	voltronic_sunny_process_setvar(item_t *item, char *value, const size_
 			return -1;
 	}
 
-	snprintf(value, valuelen, item->command, val);
+	snprintf_dynamic(value, valuelen, item->command, "%f", val);
 
 	return 0;
 }
@@ -3005,7 +3009,7 @@ static int	voltronic_sunny_hh_mm(item_t *item, char *value, const size_t valuele
 	/* Check format, fill value */
 	if (
 		sscanf(item->value, "%2d:%2d", &hh, &mm) != 2 ||
-		snprintf(value, valuelen, item->dfl, hh, mm) != 5 ||
+		snprintf_dynamic(value, valuelen, item->dfl, "%d%d", hh, mm) != 5 ||
 		strcasecmp(item->value, value)
 	) {
 		upsdebugx(2, "%s: invalid format [%s: %s]; expected 'hh:mm'", __func__, item->info_type, item->value);
@@ -3029,7 +3033,7 @@ static int	voltronic_sunny_lst(item_t *item, char *value, const size_t valuelen)
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, strtol(item->value, NULL, 10) * 30);
+	snprintf_dynamic(value, valuelen, item->dfl, "%ld", strtol(item->value, NULL, 10) * 30);
 
 	/* .default item */
 	if (strstr(item->info_type, "default"))
@@ -3055,7 +3059,7 @@ static int	voltronic_sunny_set_limits(item_t *item, char *value, const size_t va
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, strtod(item->value, NULL));
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", strtod(item->value, NULL));
 
 	/* .max/.min */
 	index = (int)strlen(item->info_type) - 4;
@@ -3151,7 +3155,8 @@ static int	voltronic_sunny_charger_limits_set(item_t *item, char *value, const s
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->command, min_float_current, restart_voltage, time_threshold);
+	snprintf_dynamic(value, valuelen, item->command, "%f%f%f",
+		min_float_current, restart_voltage, time_threshold);
 
 	return 0;
 }
@@ -3193,7 +3198,7 @@ static int	voltronic_sunny_discharging_limits_set(item_t *item, char *value, con
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->command, a, b);
+	snprintf_dynamic(value, valuelen, item->command, "%f%f", a, b);
 
 	return 0;
 }
@@ -3220,7 +3225,7 @@ static int	voltronic_sunny_hhmm(item_t *item, char *value, const size_t valuelen
 	}
 
 	/* Publish as "hh:mm" */
-	snprintf(value, valuelen, item->dfl, hh, mm);
+	snprintf_dynamic(value, valuelen, item->dfl, "%d%d", hh, mm);
 
 	/* Unskip setvar */
 	if (voltronic_axpert_clear_flags(item->info_type, QX_FLAG_SETVAR, 0, QX_FLAG_SKIP))
@@ -3252,7 +3257,7 @@ static int	voltronic_sunny_hhmm_set(item_t *item, char *value, const size_t valu
 	}
 
 	/* <hh><mm> */
-	snprintf(value, valuelen, item->command, hh, mm);
+	snprintf_dynamic(value, valuelen, item->command, "%d%d", hh, mm);
 
 	return 0;
 }
@@ -3309,10 +3314,10 @@ static int	voltronic_sunny_hhmm_x2_set(item_t *item, char *value, const size_t v
 
 	/* Complementary time is 'start time' -> <hh2><mm2> <hh><mm> */
 	if (!strcasecmp(type, ".start"))
-		snprintf(value, valuelen, item->command, hh2, mm2, hh, mm);
+		snprintf_dynamic(value, valuelen, item->command, "%d%d%d%d", hh2, mm2, hh, mm);
 	/* Complementary time is 'end time' -> <hh><mm> <hh2><mm2> */
 	else
-		snprintf(value, valuelen, item->command, hh, mm, hh2, mm2);
+		snprintf_dynamic(value, valuelen, item->command, "%d%d%d%d", hh, mm, hh2, mm2);
 
 	return 0;
 }
@@ -3329,10 +3334,12 @@ static int	voltronic_sunny_pf(item_t *item, char *value, const size_t valuelen)
 
 	pf = strtol(item->value, NULL, 10);
 
+	/* FIXME: Avoid pf > 200 ?*/
+	/* FIXME: intmax vs. long */
 	if (pf > 100)
 		pf = 100 - pf;
 
-	snprintf(value, valuelen, item->dfl, pf);
+	snprintf_dynamic(value, valuelen, item->dfl, "%d", pf);
 
 	/* Unskip setvar */
 	if (voltronic_axpert_clear_flags(item->info_type, QX_FLAG_SETVAR, 0, QX_FLAG_SKIP))
@@ -3346,10 +3353,11 @@ static int	voltronic_sunny_pfc_set(item_t *item, char *value, const size_t value
 {
 	int	pfc = strtol(value, NULL, 10);
 
+	/* FIXME: intmax vs. long */
 	if (pfc < 0)
 		pfc *= -1;
 
-	snprintf(value, valuelen, item->command, pfc);
+	snprintf_dynamic(value, valuelen, item->command, "%d", pfc);
 
 	return 0;
 }
@@ -3388,7 +3396,7 @@ static int	voltronic_sunny_date(item_t *item, char *value, const size_t valuelen
 	}
 
 	/* Publish as "YYYY/MM/DD" */
-	snprintf(value, valuelen, item->dfl, yyyy, mm, dd);
+	snprintf_dynamic(value, valuelen, item->dfl, "%d%d%d", yyyy, mm, dd);
 
 	if (!(item->info_flags & ST_FLAG_RW))
 		return 0;
@@ -3446,7 +3454,7 @@ static int	voltronic_sunny_date_set(item_t *item, char *value, const size_t valu
 	}
 
 	/* DAT<date>, <date>: YYMMDDhhmmss */
-	snprintf(value, valuelen, item->command, yy, mm, dd, time->value);
+	snprintf_dynamic(value, valuelen, item->command, "%d%d%d%s", yy, mm, dd, time->value);
 
 	return 0;
 }
@@ -3473,7 +3481,7 @@ static int	voltronic_sunny_time(item_t *item, char *value, const size_t valuelen
 	}
 
 	/* Publish as "hh:mm:ss" */
-	snprintf(value, valuelen, item->dfl, hh, mm, ss);
+	snprintf_dynamic(value, valuelen, item->dfl, "%d%d%d", hh, mm, ss);
 
 	if (!(item->info_flags & ST_FLAG_RW))
 		return 0;
@@ -3520,7 +3528,7 @@ static int	voltronic_sunny_time_set(item_t *item, char *value, const size_t valu
 	}
 
 	/* DAT<date>, <date>: YYMMDDhhmmss */
-	snprintf(value, valuelen, item->command, date->value + 2, hh, mm, ss);
+	snprintf_dynamic(value, valuelen, item->command, "%s%d%d%d", date->value + 2, hh, mm, ss);
 
 	return 0;
 }
@@ -3832,9 +3840,9 @@ static int	voltronic_axpert_mode(item_t *item, char *value, const size_t valuele
 	}
 
 	if (alarm && !strcasecmp(item->info_type, "ups.alarm"))	/* FIXME: should be "device.alarm" */
-		snprintf(value, valuelen, item->dfl, alarm);
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", alarm);
 	else if (status && !strcasecmp(item->info_type, "ups.status"))	/* FIXME: should be "device.status" */
-		snprintf(value, valuelen, item->dfl, status);
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", status);
 
 	return 0;
 }
@@ -3852,7 +3860,7 @@ static int	voltronic_sunny_batt_runtime(item_t *item, char *value, const size_t 
 	/* Battery runtime is reported by the device in minutes, NUT expects seconds */
 	runtime = strtod(item->value, NULL) * 60;
 
-	snprintf(value, valuelen, item->dfl, runtime);
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", runtime);
 
 	return 0;
 }
@@ -3869,7 +3877,7 @@ static int	voltronic_sunny_fault(item_t *item, char *value, const size_t valuele
 		(!strcasecmp(item->command, "QPIHF%02d\r") && !strcasecmp(item->value, "00")) ||
 		(!strcasecmp(item->command, "QPIFS\r") && !strcasecmp(item->value, "OK"))
 	) {
-		snprintf(value, valuelen, item->dfl, "No fault found");
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "No fault found");
 		upslogx(LOG_INFO, "%s", value);
 		item->qxflags |= QX_FLAG_SKIP;
 		return 0;
@@ -3979,7 +3987,7 @@ static int	voltronic_sunny_fault(item_t *item, char *value, const size_t valuele
 			break;
 		}
 
-	snprintf(value, valuelen, item->dfl, alarm);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", alarm);
 	upslogx(LOG_INFO, "Fault found: %s", alarm);
 
 	/* Unskip fault data items */
@@ -4036,7 +4044,7 @@ static int	voltronic_sunny_fault_status(item_t *item, char *value, const size_t 
 	if (!strcasecmp(item->value, "00"))
 		return 0;
 
-	snprintf(value, valuelen, item->dfl, "New fault found.");
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", "New fault found.");
 
 	/* Unskip fault ID */
 	if (voltronic_axpert_clear_flags("fault_id", 0, 0, QX_FLAG_SKIP))
@@ -4056,7 +4064,7 @@ static int	voltronic_sunny_fault_id(item_t *item, char *value, const size_t valu
 	}
 
 	fault_id = strtol(item->value, NULL, 10);
-	snprintf(value, valuelen, item->dfl, fault_id);
+	snprintf_dynamic(value, valuelen, item->dfl, "%d", fault_id);
 
 	/* Unskip status-of-ID */
 	for (unskip = voltronic_axpert_qx2nut; unskip->info_type != NULL; unskip++) {
@@ -4102,7 +4110,7 @@ static int	voltronic_sunny_self_test_result(item_t *item, char *value, const siz
 		break;
 	}
 
-	snprintf(value, valuelen, item->dfl, result);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", result);
 
 	/* Clear-skip/Unskip test data items */
 	for (test = voltronic_axpert_qx2nut; test->info_type != NULL; test++) {
