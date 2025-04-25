@@ -27,6 +27,8 @@
 #include "nutdrv_qx_voltronic-axpert.h"
 #include "common_voltronic-crc.h"
 
+#include "nut_float.h"
+
 #define VOLTRONIC_AXPERT_VERSION	"Voltronic-Axpert 0.01"
 
 /* Support functions */
@@ -2050,7 +2052,7 @@ static void	voltronic_sunny_update_related_vars_limits(item_t *item, const char 
 	if (
 		!strcasecmp(item->info_type, "output.realpower.nominal") &&
 		protocol == 15 &&
-		val == 4600
+		d_equal(val, 4600)
 	)
 		val = 5000;
 
