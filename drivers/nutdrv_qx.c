@@ -2061,7 +2061,9 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	char	tmpbuf[ARMAC_READ_SIZE_FOR_INTERRUPT];
 	int	ret = 0;
 	size_t	i, bufpos;
-	const size_t	cmdlen = strlen(cmd);
+	const size_t	cmdstrlen = strnlen(cmd, cmdlen);	/* Length of cmd string (excluding terminating '\0'), or cmdlen if the string is too long */
+	const size_t	cmddatalen = cmdstrlen >= cmdlen ? cmdlen : cmdstrlen + 1;	/* Amount of useful/valid data bytes in cmd string (max=cmdlen, or length of cmd+'\0' if the string is short enough) */
+	const size_t	tmplen = cmddatalen > sizeof(tmpbuf) ? sizeof(tmpbuf) : cmddatalen;	/* How much of cmd[] we can copy into tmp[] so it fits (and remains useful), including the terminating '\0' */
 	bool_t	use_interrupt = FALSE;
 	int	read_size = ARMAC_READ_SIZE_FOR_CONTROL;
 
@@ -2076,6 +2078,16 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 		"D\r",
 		NULL
 	};
+
+	if (cmdstrlen >= cmdlen || cmd[cmdstrlen - 1] != '\0') {
+		upsdebugx(2, "%s: strlen(cmd) > cmdlen (provided by caller), would effectively truncate!", __func__);
+		/* TOTHINK: // cmd[cmdlen] = '\0'; */
+	}
+
+	if (cmdstrlen + 1 > sizeof(tmpbuf)) {
+		upsdebugx(2, "%s: strlen(cmd) or cmdlen (provided by caller) are longer than tmp buffer, would effectively truncate!", __func__);
+		/* TOTHINK: // cmd[sizeof(tmpbuf)] = '\0'; */
+	}
 
 	if (!armac_endpoint_cache.initialized) {
 		load_armac_endpoint_cache();
@@ -2101,14 +2113,22 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 		&& armac_endpoint_cache.in_wMaxPacketSize == 64;
 #endif /* WITH_LIBUSB_1_0 */
 
-	if (use_interrupt && cmdlen + 1 < armac_endpoint_cache.in_wMaxPacketSize) {
-		memset(tmpbuf, 0, sizeof(tmpbuf));
-		tmpbuf[0] = 0xa0 + cmdlen;
-		memcpy(tmpbuf + 1, cmd, cmdlen);
+	if (use_interrupt && cmddatalen < armac_endpoint_cache.in_wMaxPacketSize) {
+		/* We deal with strings here, always leave last byte as '\0'
+		 * and the first byte tmpbuf[0] is used for the string length.
+		 * So tmpdatalen is how much of cmd we can copy into tmp so it
+		 * fits and makes sense (just the whole string if short enough).
+		 */
+		size_t	tmpdatalen = tmplen < sizeof(tmpbuf) - 1 ? tmplen : sizeof(tmpbuf) - 2;
 
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		tmpbuf[0] = 0xa0 + tmpdatalen;
+		memcpy(tmpbuf + 1, cmd, tmpdatalen);
+
+		/* Include terminating '\0' in the transfer */
 		ret = usb_interrupt_write(udev,
 			armac_endpoint_cache.out_endpoint_address,
-			(usb_ctrl_charbuf)tmpbuf, cmdlen + 1, 5000);
+			(usb_ctrl_charbuf)tmpbuf, tmpdatalen + 1, 5000);
 
 		read_size = ARMAC_READ_SIZE_FOR_INTERRUPT;
 	} else {
@@ -2125,8 +2145,9 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 
 		/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
 		 * parameterized tests. */
-		for (i = 0; i < cmdlen;) {
-			const size_t bytes_to_send = (cmdlen <= (i + 3)) ? (cmdlen - i) : 3;
+		for (i = 0; i < cmddatalen;) {
+			const size_t bytes_to_send = (cmddatalen <= (i + 3)) ? (cmddatalen - i) : 3;
+
 			memset(tmpbuf, 0, sizeof(tmpbuf));
 			tmpbuf[0] = 0xa0 + bytes_to_send;
 			memcpy(tmpbuf + 1, cmd + i, bytes_to_send);
