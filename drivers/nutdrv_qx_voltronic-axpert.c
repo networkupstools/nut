@@ -2195,9 +2195,9 @@ static int	voltronic_axpert_checkcrc(item_t *item, const int len)
 /* == Command preprocess functions == */
 
 /* Preprocess CRC */
-static int      voltronic_axpert_crc(item_t *item, char *command, const size_t commandlen)
+static int	voltronic_axpert_crc(item_t *item, char *command, const size_t commandlen)
 {
-
+	NUT_UNUSED_VARIABLE(item);
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
 }
 
