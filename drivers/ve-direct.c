@@ -174,9 +174,10 @@ static int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, 
 
 	if (endl != NULL)
 	{
-		*endl = '\0';
-		upsdebugx(2, "reply to command: %s", line);
 		int checksum = -1;
+		*endl = '\0';
+
+		upsdebugx(2, "reply to command: %s", line);
 		sscanf(endl - 2, "%02X", &checksum);
 		endl[-2] = '\0';
 
