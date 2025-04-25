@@ -19,6 +19,7 @@
  *
  */
 
+#include "common.h"
 #include "common_voltronic-crc.h"
 
 /* CRC table - filled at runtime by common_voltronic_crc_init() */
@@ -172,14 +173,19 @@ int	common_voltronic_crc_calc_and_add(const char *input, const size_t inputlen, 
 int	common_voltronic_crc_calc_and_add_m(char *input, const size_t inputlen)
 {
 	int	len;
-	char	buf[inputlen];
+	char	*buf = xcalloc(inputlen, sizeof(char));
+
+	if (!buf)
+		return -1;
 
 	/* Compute CRC and copy *input*, with CRC added to it, to buf */
 	len = common_voltronic_crc_calc_and_add(input, inputlen, buf, inputlen);
 
 	/* Failed */
-	if (len == -1)
+	if (len == -1) {
+		free(buf);
 		return -1;
+	}
 
 	/* Successfully computed CRC and copied *input*, with CRC added to it, to buf */
 
@@ -189,6 +195,7 @@ int	common_voltronic_crc_calc_and_add_m(char *input, const size_t inputlen)
 	/* Copy back buf to *input* */
 	memcpy(input, buf, len);
 
+	free(buf);
 	return len;
 }
 
@@ -270,14 +277,19 @@ int	common_voltronic_crc_check_and_remove(const char *input, const size_t inputl
 int	common_voltronic_crc_check_and_remove_m(char *input, const size_t inputlen)
 {
 	int	len;
-	char	buf[inputlen];
+	char	*buf = xcalloc(inputlen, sizeof(char));
+
+	if (!buf)
+		return -1;
 
 	/* Check CRC and copy *input*, purged of the CRC, to buf */
 	len = common_voltronic_crc_check_and_remove(input, inputlen, buf, inputlen);
 
 	/* Failed */
-	if (len == -1)
+	if (len == -1) {
+		free(buf);
 		return -1;
+	}
 
 	/* Successfully checked CRC and copied *input*, purged of the CRC, to buf */
 
@@ -287,5 +299,6 @@ int	common_voltronic_crc_check_and_remove_m(char *input, const size_t inputlen)
 	/* Copy back buf to *input* */
 	memcpy(input, buf, len);
 
+	free(buf);
 	return len;
 }
