@@ -1876,11 +1876,12 @@ static void	*ablerex_subdriver_fun(USBDevice_t *device)
 }
 
 /* Gtec communication subdriver (based on Cypress) */
-static int	gtec_command(const char *cmd, char *buf, size_t buflen)
+static int	gtec_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
 	int	ret = 0;
-	size_t	i;
+	size_t	i, tmpstrlen;
+	size_t	tmplen = cmdlen > sizeof(tmp) ? sizeof(tmp) : cmdlen;
 
 	if (buflen > INT_MAX) {
 		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
@@ -1891,9 +1892,11 @@ static int	gtec_command(const char *cmd, char *buf, size_t buflen)
 
 	/* Send command */
 	memset(tmp, 0, sizeof(tmp));
-	snprintf(tmp, sizeof(tmp), "%s", cmd);
+	memcpy(tmp, cmd, tmplen);
 
-	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
+	tmp[sizeof(tmp) - 1] = '\0';
+	tmpstrlen = strlen(tmp);
+	for (i = 0; i < tmpstrlen; i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
