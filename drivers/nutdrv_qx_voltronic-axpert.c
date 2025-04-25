@@ -2216,7 +2216,7 @@ static int	voltronic_sunny_energy_hour(item_t *item, char *command, const size_t
 	const char	*date = dstate_getinfo("device.date"),
 			*time = dstate_getinfo("device.time");
 	int		yyyy, mm, dd, hh, sum;
-	char		buf[commandlen];
+	char		*buf;
 
 	if (
 		!date ||
@@ -2228,9 +2228,16 @@ static int	voltronic_sunny_energy_hour(item_t *item, char *command, const size_t
 		return -1;
 	}
 
+	buf = xcalloc(commandlen, sizeof(char));
+	if (!buf) {
+		upsdebugx(2, "%s: cannot allocate buffer", __func__);
+		return -1;
+	}
+
 	snprintf(buf, commandlen, item->command, yyyy, mm, dd, hh, "%03d");
 	sum = voltronic_sunny_checksum(buf);
 	snprintf(command, commandlen, buf, sum);
+	free(buf);
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
 }
@@ -2240,7 +2247,7 @@ static int	voltronic_sunny_energy_day(item_t *item, char *command, const size_t 
 {
 	const char	*date = dstate_getinfo("device.date");
 	int		yyyy, mm, dd, sum;
-	char		buf[commandlen];
+	char		*buf;
 
 	if (
 		!date ||
@@ -2250,9 +2257,16 @@ static int	voltronic_sunny_energy_day(item_t *item, char *command, const size_t 
 		return -1;
 	}
 
+	buf = xcalloc(commandlen, sizeof(char));
+	if (!buf) {
+		upsdebugx(2, "%s: cannot allocate buffer", __func__);
+		return -1;
+	}
+
 	snprintf(buf, commandlen, item->command, yyyy, mm, dd, "%03d");
 	sum = voltronic_sunny_checksum(buf);
 	snprintf(command, commandlen, buf, sum);
+	free(buf);
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
 }
@@ -2262,7 +2276,7 @@ static int	voltronic_sunny_energy_month(item_t *item, char *command, const size_
 {
 	const char	*date = dstate_getinfo("device.date");
 	int		yyyy, mm, sum;
-	char		buf[commandlen];
+	char		*buf;
 
 	if (
 		!date ||
@@ -2272,9 +2286,16 @@ static int	voltronic_sunny_energy_month(item_t *item, char *command, const size_
 		return -1;
 	}
 
+	buf = xcalloc(commandlen, sizeof(char));
+	if (!buf) {
+		upsdebugx(2, "%s: cannot allocate buffer", __func__);
+		return -1;
+	}
+
 	snprintf(buf, commandlen, item->command, yyyy, mm, "%03d");
 	sum = voltronic_sunny_checksum(buf);
 	snprintf(command, commandlen, buf, sum);
+	free(buf);
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
 }
@@ -2284,7 +2305,7 @@ static int	voltronic_sunny_energy_year(item_t *item, char *command, const size_t
 {
 	const char	*date = dstate_getinfo("device.date");
 	int		yyyy, sum;
-	char		buf[commandlen];
+	char		*buf;
 
 	if (
 		!date ||
@@ -2294,9 +2315,16 @@ static int	voltronic_sunny_energy_year(item_t *item, char *command, const size_t
 		return -1;
 	}
 
+	buf = xcalloc(commandlen, sizeof(char));
+	if (!buf) {
+		upsdebugx(2, "%s: cannot allocate buffer", __func__);
+		return -1;
+	}
+
 	snprintf(buf, commandlen, item->command, yyyy, "%03d");
 	sum = voltronic_sunny_checksum(buf);
 	snprintf(command, commandlen, buf, sum);
+	free(buf);
 
 	return common_voltronic_crc_calc_and_add_m(command, commandlen);
 }
