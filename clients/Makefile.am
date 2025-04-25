@@ -198,7 +198,7 @@ libnutclientstub.la: libnutclient.la
 # libnutclientstub version information and build
 libnutclientstub_la_SOURCES = nutclientmem.h nutclientmem.cpp
 libnutclientstub_la_LDFLAGS = -version-info 1:1:0
-#libnutclientstub_la_LIBADD = libnutclient.la
+libnutclientstub_la_LIBADD = libnutclient.la
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutclientstub_la_LDFLAGS += -no-undefined
