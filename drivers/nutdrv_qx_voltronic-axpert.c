@@ -2898,12 +2898,14 @@ static int	voltronic_sunny_volt_nom_set(item_t *item, char *value, const size_t 
 /* *SETVAR(/NONUT)* Preprocess setvars */
 static int	voltronic_sunny_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
+	double	val;
+
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
 		return -1;
 	}
 
-	double	val = strtod(value, NULL);
+	val = strtod(value, NULL);
 
 	if (!strcasecmp(item->info_type, "lcd.sleeptime")) {
 		/* Divide by 30 (seconds) and discard remainder */
