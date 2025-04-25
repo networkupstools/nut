@@ -283,7 +283,6 @@ void upsdrv_shutdown(void)
 
 void upsdrv_help(void)
 {
-	printf("Read The Fine Manual ('man 8 ve-direct')\n");
 }
 
 /* list flags and values that you want to receive via -x */
