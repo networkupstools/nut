@@ -56,7 +56,7 @@ dist_noinst_HEADERS =
 # Separate the .deps of other dirs from this one
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
-LINKED_SOURCE_FILES += serial.c
+LINKED_SOURCE_FILES = serial.c
 serial.c: $(top_srcdir)/drivers/serial.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
 
