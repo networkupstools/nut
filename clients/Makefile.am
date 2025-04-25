@@ -193,6 +193,8 @@ EXTRA_DIST += nutclient.h nutclient.cpp
 endif !HAVE_CXX11
 
 if HAVE_CXX11
+# Need main lib built first
+libnutclientstub.la: libnutclient.la
 # libnutclientstub version information and build
 libnutclientstub_la_SOURCES = nutclientmem.h nutclientmem.cpp
 libnutclientstub_la_LDFLAGS = -version-info 1:1:0
