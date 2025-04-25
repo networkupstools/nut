@@ -1784,10 +1784,7 @@ static int	snr_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 
 static int ablerex_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
-	int	iii;
-	int	len;
-	int	idx;
-	int	retry;
+	size_t	iii, len, idx, retry;
 	char	tmp[64];
 	char	tmpryy[64];
 
@@ -1807,7 +1804,7 @@ static int ablerex_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 		tmp[1] = 0;
 		tmp[2] = 1 + (char)strcspn(cmd, "\r");
 
-		for (iii = 0 ; iii < tmp[2] ; iii++)
+		for (iii = 0 ; iii < (unsigned char)tmp[2] && iii < cmdlen && (iii + 3) < sizeof(tmp) ; iii++)
 		{
 			tmp[3+iii] = cmd[iii];
 		}
@@ -1837,7 +1834,7 @@ static int ablerex_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 				break;
 			}
 		}
-		upsdebugx(3, "R3 read%d: %.*s", len, len, tmpryy);
+		upsdebugx(3, "R3 read%" PRIuSIZE ": %.*s", len, (int)len, tmpryy);
 
 		if (len > 0) {
 			len ++;
