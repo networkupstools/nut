@@ -9,22 +9,43 @@ nutscan_scan_snmp - Scan network for SNMP devices.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
+	#include <unistd.h> /* useconds_t */
 
- nutscan_device_t * nutscan_scan_snmp(const char * start_ip,const char * stop_ip,long timeout, nutscan_snmp_t * sec);
+	nutscan_device_t * nutscan_scan_snmp(
+		const char * start_ip,
+		const char * stop_ip,
+		useconds_t timeout,
+		nutscan_snmp_t * sec);
+
+	nutscan_device_t * nutscan_scan_ip_range_snmp(
+		nutscan_ip_range_list_t * irl,
+		useconds_t usec_timeout,
+		nutscan_snmp_t * sec);
+------
 
 DESCRIPTION
 -----------
 
-The *nutscan_scan_snmp()* function try to detect NUT compatible SNMP devices. It tries SNMP queries on every IP ranging from 'start_ip' to 'stop_ip'. Those IP may be either IPv4 or IPv6 addresses or host names.
+The *nutscan_scan_snmp()* and *nutscan_scan_ip_range_snmp()* functions
+try to detect NUT compatible SNMP devices. The former tries SNMP queries
+on every IP ranging from 'start_ip' to 'stop_ip', where 'startIP' is
+mandatory and 'stopIP' is optional (one 'startIP' address is scanned
+if 'stopIP' is NULL); while the latter can walk several IP address
+ranges represented by a `nutscan_ip_range_list_t` structure.
+
+Those IP arguments may be either IPv4 or IPv6 addresses or host names.
 
 You MUST call linkman:nutscan_init[3] before using this function.
 
-This function waits up to 'timeout' microseconds before considering an IP address does not respond to SNMP queries.
+This function waits up to 'timeout' microseconds before considering
+an IP address does not respond to SNMP queries.
 
 A valid `nutscan_snmp_t` structure must be passed to this function.
 
-The `nutscan_snmp_t` structure contains the following members which must be filled as described below:
+The `nutscan_snmp_t` structure contains the following members which
+must be filled as described below:
 
 	char * 'community';
 	char * 'secLevel';
@@ -36,32 +57,51 @@ The `nutscan_snmp_t` structure contains the following members which must be fill
 
 If 'community' is not NULL, SNMP v1 request are sent using this 'community'.
 
-If 'community' is NULL and 'secLevel' is NULL, SNMP v1 is selected and 'community' is set to "public".
+If 'community' is NULL and 'secLevel' is NULL, SNMP v1 is selected
+and 'community' is set to "public".
 
-In the other cases, SNMP v3 is used. 'secLevel' may be one of `SNMP_SEC_LEVEL_NOAUTH`, `SNMP_SEC_LEVEL_AUTHNOPRIV` or `SNMP_SEC_LEVEL_AUTHPRIV`. 'secName' is the security name and must be non NULL.
+In the other cases, SNMP v3 is used. 'secLevel' may be one
+of `SNMP_SEC_LEVEL_NOAUTH`, `SNMP_SEC_LEVEL_AUTHNOPRIV`
+or `SNMP_SEC_LEVEL_AUTHPRIV`.
+'secName' is the security name and must be non NULL.
 
-If 'secLevel' is set to `SNMP_SEC_LEVEL_AUTHNOPRIV`, 'authPassword' must be non NULL.
+If 'secLevel' is set to `SNMP_SEC_LEVEL_AUTHNOPRIV`, 'authPassword'
+must be non NULL.
 
-If 'secLevel' is set to `SNMP_SEC_LEVEL_AUTHPRIV`, 'authPassword' and 'privPassword' must be non NULL.
+If 'secLevel' is set to `SNMP_SEC_LEVEL_AUTHPRIV`, 'authPassword'
+and 'privPassword' must be non NULL.
 
-If 'authProtocol' is NULL, MD5 protocol is used. Else you can set 'authProtocol' to either "MD5" or "SHA".
+If 'authProtocol' is NULL, MD5 protocol is used.
+Else you can set 'authProtocol' to either "MD5" or "SHA".
 
-If 'privProtocol' is NULL, DES protocol is used. Else you can set 'privProtocol' to either "AES" or "DES".
+If 'privProtocol' is NULL, DES protocol is used.
+Else you can set 'privProtocol' to either "AES" or "DES".
 
-'peername' and 'handle' are used internally and do not need any initialization.
+'peername' and 'handle' are used internally and do not need any
+initialization.
 
 RETURN VALUE
 ------------
 
-The *nutscan_scan_snmp()* function returns a pointer to a `nutscan_device_t` structure containing all found devices or NULL if an error occurs or no device is found.
+The *nutscan_scan_snmp()* function returns a pointer to a
+`nutscan_device_t` structure containing all found devices
+or NULL if an error occurs or no device is found.
 
 SEE ALSO
 --------
+
 linkman:nutscan_init[3],
-linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3],
+linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
-linkman:nutscan_scan_ipmi[3], linkman:nutscan_display_ups_conf[3],
+linkman:nutscan_scan_ipmi[3],
+linkman:nutscan_display_sanity_check[3],
+linkman:nutscan_display_sanity_check_serial[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
+linkman:nutscan_display_ups_conf[3],
 linkman:nutscan_display_parsable[3], linkman:nutscan_new_device[3],
 linkman:nutscan_free_device[3], linkman:nutscan_add_option_to_device[3],
 linkman:nutscan_add_device_to_device[3], linkman:nutscan_scan_eaton_serial[3],
+linkman:nutscan_init_ip_ranges[3],
+linkman:nutscan_free_ip_ranges[3],
+linkman:nutscan_add_ip_range[3],
 linkman:nutscan_cidr_to_ip[3]

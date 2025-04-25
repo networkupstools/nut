@@ -1,0 +1,183 @@
+#! /bin/sh
+#
+# ups: Starts the Network UPS Tools for IPP - Unix
+#       Customizations copyright (c) 2015, by Eaton (R) Corporation. All rights reserved.
+#
+# chkconfig: - 26 74
+# description: Network UPS Tools is a collection of programs which provide a common \
+#		interface for monitoring and administering UPS hardware.
+# processname: upsd
+# config: /usr/local/ups/etc
+# config: /etc/rc.ups
+#
+### BEGIN INIT INFO
+# Provides: ups
+# Required-Start: $syslog $network $named
+# Required-Stop: $local_fs
+# Default-Stop: 0 1 6
+# Short-Description: Starts the Network UPS tools
+# Description: Network UPS Tools is a collection of programs which provide a common \
+#		interface for monitoring and administering UPS hardware. 
+### END INIT INFO
+
+NUT_DIR="/usr/local/ups"
+
+# Source /etc/profile to get proper env. settings
+. /etc/profile
+
+LD_LIBRARY_PATH="${NUT_DIR}/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH
+
+success() {
+	echo OK
+}
+
+failure() {
+	echo FAILED
+	return 1
+}
+
+# Resolve what processes should run
+SERVER="no"
+CLIENT="no"
+
+if [ -f ${NUT_DIR}/etc/nut.conf ]; then
+	. ${NUT_DIR}/etc/nut.conf
+
+	case $MODE in
+		standalone|netserver)
+			SERVER="yes"
+			;;
+	esac
+
+	rpm -q nut-client >/dev/null 2>&1 && CLIENT="yes"
+fi
+
+SHUTDOWN_TIMER=-1
+if [ -f ${NUT_DIR}/etc/ipp.conf ]; then
+	. ${NUT_DIR}/etc/ipp.conf
+fi
+
+do_start() {
+	if [ "$SERVER" = "yes" ]; then
+		echo "Starting UPS driver controller: \c"
+		( ${NUT_DIR}/sbin/upsdrvctl start >/dev/null 2>&1 && success || failure ) || \
+			RETVAL=$?
+
+		echo "Starting upsd: \c"
+		( ${NUT_DIR}/sbin/upsd $UPSD_OPTIONS >/dev/null 2>&1 && success || failure ) || \
+			RETVAL=$?
+
+		if [ -x ${NUT_DIR}/init ]; then
+			( ${NUT_DIR}/init > /dev/null 2>&1 && success || failure ) || \
+				RETVAL=$?
+		fi
+	fi
+
+	if [ "$CLIENT" = "yes" ]; then
+		echo "Starting UPS monitor: \c"
+		if [ "$SHUTDOWN_TIMER" -gt -1 ]; then
+			# This host wants early shutdown support, must be root
+			( ${NUT_DIR}/sbin/upsmon -p >/dev/null 2>&1 && success || failure ) || \
+				RETVAL=$?
+		else
+			( ${NUT_DIR}/sbin/upsmon >/dev/null 2>&1 && success || failure ) || \
+				RETVAL=$?
+		fi
+	fi
+
+	[ "$RETVAL" = 0 ] && touch /var/locks/ups
+}
+
+do_stop() {
+	if test -e /var/run/nut/upsmon.pid; then
+		echo "Stopping UPS monitor: \c"
+		PID=`cat /var/run/nut/upsmon.pid`
+		( kill $PID && success || failure ) || \
+			RETVAL=$?
+		rm /var/run/nut/upsmon.pid
+	fi
+
+	if [ "$SERVER" = "yes" ]; then
+		if test -e /var/run/nut/upsd.pid; then
+			echo "Stopping upsd: \c"
+			PID=`cat /var/run/nut/upsd.pid`
+			( kill -9 $PID && success || failure ) || \
+				RETVAL=$?
+			rm /var/run/nut/upsd.pid
+		fi
+
+		echo "Shutting down UPS driver controller: \c"
+		( ${NUT_DIR}/sbin/upsdrvctl stop > /dev/null 2>&1 && success || failure ) || \
+			RETVAL=$?
+	fi
+	[ "$RETVAL" = 0 ] && rm -f /var/locks/ups
+}
+
+do_restart() {
+	do_stop
+	waitmore=5
+	while [ -n "$(ls /var/run/nut/)" -a $waitmore -ge 1 ]
+	do
+	  sleep 1
+	  waitmore=$((waitmore-1))
+	done
+	do_start
+}
+
+do_reload() {
+	# FIXME: upsd and upsmon always return 0
+	# => can't tell if reload was successful
+	if [ "$SERVER" = "yes" ]; then
+		echo "Reloading upsd"
+		${NUT_DIR}/sbin/upsd -c reload || \
+			RETVAL=$?
+	fi
+
+	echo "Reloading upsmon"
+	${NUT_DIR}/sbin/upsmon -c reload || \
+		RETVAL=$?
+}
+
+RETVAL=0
+# See how we are called.
+case "$1" in
+	start)
+		do_start ;;
+
+	stop)
+		do_stop ;;
+
+	restart)
+		do_restart ;;
+
+	try-restart)
+		[ -f /var/locks/ups ] && do_restart || true
+		;;
+
+	reload)
+		do_reload ;;
+
+	force-reload)
+		do_restart ;;
+
+	status)
+		if [ "$SERVER" = "yes" ]; then
+			if test -f /var/locks/ups; then
+				echo "upsd is running with PID" `cat /var/run/nut/upsd.pid`
+			fi
+		fi
+
+		if test -e /var/run/nut/upsmon.pid; then
+			echo "upsmon is running with PID" `cat /var/run/nut/upsmon.pid`
+		elif rpm -q nut-client >/dev/null 2>&1; then
+			echo "upsmon isn't running"
+		fi
+		;;
+
+	*)
+		echo "Usage: $0 {start|stop|restart|try-restart|reload|force-reload|status}"
+		RETVAL=3
+esac
+
+exit $RETVAL

@@ -1,11 +1,17 @@
-# Note: nut-common.tmpfiles.in is also generated, by configure script
-/nut-common.tmpfiles.in
-/nut-common.tmpfiles
+# Note: nut-common-tmpfiles.conf.in is also generated, by configure script
+/nut-common-tmpfiles.conf.in
+/nut-common-tmpfiles.conf
+/nut.target
+# Singular nut-driver.service is obsolete, help with old build workspaces:
 /nut-driver.service
-/nut-driver@.service
 /nut-driver.target
+/nut-driver@.service
+/nut-logger.service
 /nut-monitor.service
 /nut-server.service
 /nutshutdown
 /nut-driver-enumerator.service
 /nut-driver-enumerator.path
+/nut-driver-enumerator-daemon-activator.path
+/nut-driver-enumerator-daemon-activator.service
+/nut-driver-enumerator-daemon.service

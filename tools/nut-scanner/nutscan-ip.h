@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,8 +25,14 @@
 #ifndef SCAN_IP
 #define SCAN_IP
 
+#ifndef WIN32
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#else	/* WIN32 */
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#endif	/* WIN32 */
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -49,6 +56,56 @@ typedef struct nutscan_ip_iter {
 char * nutscan_ip_iter_init(nutscan_ip_iter_t *, const char * startIP, const char * stopIP);
 char * nutscan_ip_iter_inc(nutscan_ip_iter_t *);
 int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip);
+
+/* Track requested IP ranges (from CLI or auto-discovery) */
+/* One IP address range: */
+typedef struct nutscan_ip_range_s {
+	char * start_ip;
+	char * end_ip;
+	struct nutscan_ip_range_s * next;
+} nutscan_ip_range_t;
+
+/* List of IP address ranges and helper data: */
+typedef struct nutscan_ip_range_list_s {
+	nutscan_ip_range_t * ip_ranges;		/* Actual linked list of entries, first entry */
+	nutscan_ip_range_t * ip_ranges_last;	/* Pointer to end of list for quicker additions */
+	size_t ip_ranges_count;			/* Counter of added entries */
+} nutscan_ip_range_list_t;
+
+/* Initialize fields of caller-provided list
+ * (can allocate one if arg is NULL - caller
+ * must free it later). Does not assume that
+ * caller's list values are valid and should
+ * be freed (can be some garbage from stack).
+ *
+ * Returns pointer to the original or allocated list.
+ */
+nutscan_ip_range_list_t *nutscan_init_ip_ranges(nutscan_ip_range_list_t *irl);
+
+/* Free information from the list (does not
+ * free the list object itself, can be static)
+ * so it can be further re-used or freed.
+ */
+void nutscan_free_ip_ranges(nutscan_ip_range_list_t *irl);
+
+/* Prints contents of irl into a groovy-like string,
+ * using a static buffer (rewritten by each call) */
+const char * nutscan_stringify_ip_ranges(nutscan_ip_range_list_t *irl);
+
+size_t nutscan_add_ip_range(nutscan_ip_range_list_t *irl, char * start_ip, char * end_ip);
+
+/* Iterator over given nutscan_ip_range_list_t structure
+ * and the currently pointed-to range in its list.
+ * Several iterators may use the same range.
+ */
+typedef struct nutscan_ip_range_list_iter_s {
+	const nutscan_ip_range_list_t * irl;	/* Structure with actual linked list of address-range entries */
+	nutscan_ip_range_t * ip_ranges_iter;	/* Helper for iteration: across the list of IP ranges */
+	nutscan_ip_iter_t    curr_ip_iter;	/* Helper for iteration: across one currently iterated IP range */
+} nutscan_ip_range_list_iter_t;
+
+char * nutscan_ip_ranges_iter_init(nutscan_ip_range_list_iter_t *irliter, const nutscan_ip_range_list_t *irl);
+char * nutscan_ip_ranges_iter_inc(nutscan_ip_range_list_iter_t *irliter);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

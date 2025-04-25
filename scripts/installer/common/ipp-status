@@ -1,0 +1,520 @@
+#!/bin/sh
+#	ipp-status
+#
+#	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#
+#	A shell script to request UPS status (power state, runtime remaining)
+#	with upsc and aggregate the results as a table and an exit-status that
+#	can be inspected to see if the system is reliably protected or should
+#	better go into shut-down. Uses configuration variables of upsmon.conf.
+
+#
+# Global variables
+#
+NUT_DIR="/usr/local/ups"
+NUT_CFG_DIR=""
+for D in "$NUT_DIR/etc" "/etc/nut" "/etc/ups" ; do
+	if [ -d "$D" ] && [ -f "$D/ups.conf" ] && [ -f "$D/ipp.conf" ] ; then
+		NUT_CFG_DIR="$D"
+		break
+	fi
+done
+unset D
+CONFIG_UPSMON="$NUT_CFG_DIR/upsmon.conf"
+CONFIG_IPP="$NUT_CFG_DIR/ipp.conf"
+
+# Do not normally mangle the LD_LIBRARY_PATH - it can impact system tools too
+#LD_LIBRARY_PATH="$NUT_DIR/lib:/usr/lib:/lib:$LD_LIBRARY_PATH"
+#export LD_LIBRARY_PATH
+
+# Note: $NUT_DIR/xbin holds the wrappers to run NUT binaries with co-bundled
+# third party libs and hopefully without conflicts induced for the OS binaries
+PATH="$NUT_DIR/xbin:$NUT_DIR/sbin:$NUT_DIR/bin:$PATH"
+export PATH
+
+# Search for binaries under current PATH normally, no hardcoding
+NUT_UPSC="upsc"
+#NUT_UPSC="$NUT_DIR/xbin/upsc"
+
+# Flag for support (or not) of early-shutdown on this host
+SHUTDOWN_TIMER=-1
+
+# Include IPP ipp.conf (may overwrite the above default values!)
+if [ -f "$CONFIG_IPP" ] ; then
+	. "$CONFIG_IPP"
+fi
+
+#
+# We need capable awk
+#
+awk="awk"
+
+# On Solaris, the default awk is a simple implementation
+# lacking certain functions (most notably the match builtin function).
+# Luckily, nawk is present to save the day...
+test "`uname -s`" = "SunOS" && awk="nawk"
+
+
+#
+# Default settings
+#
+
+overall_status_enabled="yes"
+overall_status_mode="verbose"
+devices_status_enabled="yes"
+devices_formatted="yes"
+
+
+#
+# Get devices info, mixing config and runtime info
+# Note that some other scripts may be parsing this via "ipp-status -d",
+# so only append fields in the end as this evolves
+#
+get_devices_info() {
+	for dev in `$awk '/^MONITOR / { print $2 }' "$CONFIG_UPSMON"`; do
+		status="`$NUT_UPSC "$dev" ups.status 2>/dev/null`"
+		runtime="`$NUT_UPSC "$dev" battery.runtime 2>/dev/null`"
+		batterypct="`$NUT_UPSC "$dev" battery.charge 2>/dev/null`"
+		supplies="`get_pwr_value "$dev" | egrep '^[0-9]*$'`"
+		upsmon_ms="`get_ms_value "$dev" | egrep 'master|slave'`"
+
+		echo "$dev:$status:$runtime:$batterypct:$supplies:$upsmon_ms"
+	done
+}
+
+
+#
+# Get minimum of required power supplies
+#
+get_min_supplies() {
+	$awk '/^[ \t]*MINSUPPLIES/ { print $2 }' \
+		"$CONFIG_UPSMON" 2>/dev/null
+}
+
+
+#
+# Get a UPS power value (count of this host's power sources fed by UPS=="$1")
+#
+get_pwr_value() {
+	$awk '/^[ \t]*MONITOR/ {
+		if (match($2, /'"$1"'(@.*)?/))
+			print $3;
+	}' "$CONFIG_UPSMON" 2>/dev/null
+}
+
+#
+# Get a UPS master/slave value (influences shutdown sequence and poweroffs)
+#
+get_ms_value() {
+	$awk '/^[ \t]*MONITOR/ {
+		if (match($2, /'"$1"'(@.*)?/))
+			print $NF;
+	}' "$CONFIG_UPSMON" 2>/dev/null
+	# NF: This is last field in MONITOR line. Or 6th. Currently...
+}
+
+#
+# Overall status resolution - parsing helpers
+#
+parse_protectors_knowngood() {
+	# Lists the UPSes which are known to this host and have stable power
+	# (no regard to how many sources of this host they actually feed)
+	onbattery_sdtimer="$1"	# set to yes to trigger a shutdown timer
+				# when UPS are on battery
+	$awk -v ob_sdtimer="${onbattery_sdtimer}" -F: '
+	{
+		status = $2;
+
+		# UPS on bypass does not protect anything
+		if (match(status, /^OL BYPASS/))
+			;
+
+		# Other online states are OK
+		else if (match(status, /^OL/))
+			print $1;
+
+		# UPS on exhausted battery does not protect anything
+		else if (match(status, /^OB LB/))
+			;
+
+		# - NOK when onbattery_sdtimer = yes
+		# - OK otherwise
+		else if (match(status, /^OB/))
+			if (match(ob_sdtimer, /^yes/))
+				;
+			else
+				print $1;
+	}
+	' | sort | uniq
+}
+
+parse_protectors_unknown() {
+	# Lists the UPSes which are known to this host but have unknown power
+	# state (e.g. communications not established, driver died, initially
+	# WAITing for data after driver startup, etc.) - without regard as to
+	# how many sources of this host they actually feed
+	$awk -F: '
+	{
+		status = $2;
+
+		# Do not cause immediate shutdown if UPS is not accessible
+		# (driver or connection failure)
+		if (status == "")
+			print $1;
+
+		# Do not cause immediate shutdown when waiting for UPS data
+		else if (match(status, /WAIT/))
+			print $1;
+	}
+	' | sort | uniq
+}
+
+#
+# Overall status resolution - primary logic
+#
+overall_status() {
+	devices_info="$1"
+	onbattery_sdtimer="$2"	# set to yes to trigger a shutdown timer
+				# when UPS are on battery
+
+	# Get non-low battery UPSes (still protecting the system)
+	protectors="`echo "$devices_info" | parse_protectors_knowngood "${onbattery_sdtimer}"`"
+	protectors_unknown="`echo "$devices_info" | parse_protectors_unknown`"
+
+	# Get total powervalue of protecting UPSes
+	protectors_pwr_value=0
+	protectors_unknown_pwr_value=0
+	not_protectors=0
+
+	for ups in $protectors; do
+		pwr_value="`get_pwr_value "$ups"`"
+
+		test -n "$pwr_value" || pwr_value=1
+
+		if test "$pwr_value" -eq 0 ; then
+			not_protectors="`expr $not_protectors + 1`"
+		else
+			protectors_pwr_value="`expr $protectors_pwr_value + $pwr_value`"
+		fi
+	done
+
+	for ups in $protectors_unknown; do
+		pwr_value="`get_pwr_value "$ups"`"
+
+		test -n "$pwr_value" || pwr_value=1
+
+		if test "$pwr_value" -eq 0 ; then
+			not_protectors="`expr $not_protectors + 1`"
+		else
+			protectors_unknown_pwr_value="`expr $protectors_unknown_pwr_value + $pwr_value`"
+		fi
+	done
+
+	# Resolve system protection status
+	overall_status_str="protected"
+
+	min_supplies="`get_min_supplies`" \
+	&& test -n "$min_supplies" \
+	&& test "$min_supplies" -ge 0 \
+	|| min_supplies=1
+	# Zero is a resonable value - monitoring station that doesn't shut down
+
+	min_supplies_eff="$min_supplies"
+	if test "$protectors_unknown_pwr_value" -gt 0; then
+		min_supplies_eff="`expr $min_supplies - $protectors_unknown_pwr_value`"
+		test "$min_supplies_eff" -ge 0 || min_supplies_eff=0
+	fi
+
+	if test "$protectors_pwr_value" -lt "$min_supplies_eff"; then
+		overall_status_str="unprotected"
+	fi
+
+	# Overall status indication by exit code
+	if test "$overall_status_mode" = "silent"; then
+		test "$overall_status_str" = "unprotected" && exit 1
+		exit 0
+
+	# Short form of overall status
+	elif test "$overall_status_mode" = "short"; then
+		echo "$overall_status_str"
+
+	# Verbose form of overall status
+	elif test "$overall_status_str" = "unprotected"; then
+		cat <<HERE
+Your system IS NOT PROTECTED
+
+Only $protectors_pwr_value power backups are available (out of $min_supplies required with $protectors_unknown_pwr_value ignored)
+HERE
+	else
+		echo "Your system is protected ($protectors_pwr_value power backups out of $min_supplies required with $protectors_unknown_pwr_value ignored are available)"
+	fi
+
+	if test "$not_protectors" -gt 0 2>/dev/null ; then
+		echo "Also, $not_protectors device(s) that do not feed this host are known and monitored"
+	fi
+
+	case "$onbattery_sdtimer" in
+	[Yy][Ee][Ss])
+		if test "$min_supplies_eff" != "$min_supplies" ; then
+			echo "WARNING: Some UPSes are not available, but we ignored them since onbattery_sdtimer=yes" >&2
+		fi ;;
+	esac
+
+	test "$overall_status_str" = "unprotected" && return 1
+	return 0
+}
+
+
+#
+# Devices status resolution
+#
+devices_status() {
+	devices_info="$1"
+
+	# No UPS devices found
+	if test -z "$devices_info"; then
+		cat <<HERE
+
+No devices have been found.
+Please check that upsd is running and that your UPS devices
+have been configured.
+HERE
+		exit 1
+	fi
+
+	# Per-battery info
+	echo "$devices_info" | $awk -F: '
+	function external_settings() {
+		devices_formatted = "yes" == "'"$devices_formatted"'";
+	}
+
+	function t2h_mm_ss(t) {
+		sig = "";
+
+		t = int(t);
+
+		if (0 > t) {
+			sig = "-";
+			t = -t;
+		}
+
+		ss = t % 60;
+		t  = int(t / 60);
+		mm = t % 60;
+		h  = int(t / 60);
+
+		if (length(ss) < 2 && (0 != mm || 0 != h))
+			ss = "0" ss;
+
+		t = ss;
+
+		if (0 != mm || 0 != h) {
+			if (length(mm) < 2 && 0 != h)
+				mm = "0" mm;
+
+			t = mm ":" t;
+
+			if (0 != h)
+				t = h ":" t;
+		}
+
+		return sig t;
+	}
+
+	BEGIN {
+		external_settings();
+
+		id_width     = 20;
+		status_width = 15;
+		runt_width   = 10;
+		chrg_width   =  8;
+		sources_width = 8;
+		upsmonms_width= 7;
+		format_str = "%-" id_width "s%-" status_width "s%" runt_width "s%" chrg_width "s%" sources_width "s %-" upsmonms_width "s\n";
+
+		if (devices_formatted) {
+			printf("\nDevices status:\n\n");
+			printf(format_str, "Identifier", "Status", " Runtime", "Charge%", "Sources", "UPSMon");
+			printf(format_str, "----------", "------", "--------", "-------", "-------", "------");
+		}
+	}
+
+	{
+		id      = $1;
+		status  = $2
+		runtime = $3;
+		charge  = $4;
+		sources = $5;
+		upsmon_ms = $6;
+
+		# Resolve basic status
+		if (status == "")
+			status_str = "unknown";
+		else if (match(status, /WAIT/))
+			status_str = "unknown";
+		else if (match(status, /^OL BYPASS/))
+			status_str = "on bypass";
+		else if (match(status, /^OL/))
+			status_str = "online";
+		else if (match(status, /^OB LB/))
+			status_str = "low battery";
+		else if (match(status, /^OB/))
+			status_str = "on battery";
+		else if (match(status, /OFF/))
+			status_str = "off";
+		else if (match(status, /FSD/))
+			status_str = "forced shutdown";
+		else
+			status_str = "\"" status "\"";
+
+		# Resolve status modifications
+		if (match(status, /OVER/))
+			status_str = status_str " (OVERLOADED)";
+		else if (match(status, /TRIM/) || match(status, /BOOST/))
+			status_str = status_str " (improving mains)";
+
+		if (devices_formatted) {
+			if (runtime != "")
+				runtime = t2h_mm_ss(runtime);
+			else
+				runtime = "unknown";
+
+			printf(format_str, id, status_str, runtime, charge, sources, upsmon_ms);
+		}
+		else {
+			if (runtime != "")
+				runtime = int(runtime);
+			else
+				runtime = "unknown";
+
+			print id ":" status_str ":" runtime ":" charge ":" sources ":" upsmon_ms;
+		}
+	}
+	'
+}
+
+
+#
+# Usage
+#
+usage() {
+	this="`basename $0`"
+
+	cat <<HERE
+Usage: $this [OPTIONS]
+
+OPTIONS:
+    -h                 Print this help and exit
+    -S                 Don't show overall status
+    -s                 Show overall status in short form of "(un)protected"
+    -q                 Do not print anything; instead, exit with 0/non-0
+                       if the system is/isn't protected, respectively
+    -D                 Don't show devices status
+    -d                 Show devices report in scripting-friendly form
+    -p                 Parseable output only (-d -S)
+
+Full devices status report consists of the device ID, its power status (as
+a readable meaningful string), on-battery runtime in form [[H:]MM:]SS, the
+percentage of the battery charged, the number of this machine's sources
+this UPS feeds, and its upsmon master/slave setting.
+In the short form (for scripting), the runtime is shown in seconds and the
+six fields are separated by colon.
+
+HERE
+}
+
+
+usage_and_exit() {
+	exit_code="$1"
+
+	test -n "$exit_code" || exit_code=0
+
+	usage
+
+	exit $exit_code
+}
+
+
+#
+# Options
+#
+
+# Parse & unify command line arguments
+# TODO: getopt may be unportable to older shells, revise to simpler constructs
+options="`getopt 'hSsqDdp' $*`"
+
+test $? = 0 || usage_and_exit 1 >&2
+
+# Process options
+set -- $options
+
+while test "$1" != "--"; do
+	case "$1" in
+	-h)
+		# Print usage
+		usage_and_exit 0
+		;;
+
+	-S)
+		# Don't show overall status
+		overall_status_enabled="no"
+		;;
+
+	-s)
+		# Short overall status indication
+		overall_status_mode="short"
+		;;
+
+	-q)
+		# Silent overall status indication
+		overall_status_mode="silent"
+		devices_status_enabled="no"
+		;;
+
+	-D)
+		# Don't show devices status
+		devices_status_enabled="no"
+		;;
+
+	-d)
+		# Devices status shall not be formatted
+		devices_formatted="no"
+		;;
+
+	-p)
+		# Devices status shall not be formatted
+		devices_formatted="no"
+		# Don't show overall status
+		overall_status_enabled="no"
+		;;
+	esac
+
+	# Next option
+	shift
+done
+
+# Shift the final "--"
+shift
+
+
+#
+# Main
+#
+
+onbattery_sdtimer="no"
+if test "$SHUTDOWN_TIMER" -gt -1 2>/dev/null ; then
+	onbattery_sdtimer="yes"
+fi
+
+# Get devices info
+devices_info="`get_devices_info`"
+
+# Overall status
+if test "$overall_status_enabled" = "yes"; then
+	overall_status "$devices_info" "$onbattery_sdtimer"
+fi
+
+# Devices status
+if test "$devices_status_enabled" = "yes"; then
+	devices_status "$devices_info"
+fi

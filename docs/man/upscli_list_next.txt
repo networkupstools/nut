@@ -4,15 +4,21 @@ UPSCLI_LIST_NEXT(3)
 NAME
 ----
 
-upscli_list_next - retrieve list items from a UPS
+upscli_list_next - Retrieve list items from a UPS
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_list_next(UPSCONN_t *ups, size_t numq, const char **query,
-			size_t *numa, char ***answer)
+	int upscli_list_next(
+		UPSCONN_t *ups,
+		size_t numq,
+		const char **query,
+		size_t *numa,
+		char ***answer)
+------
 
 DESCRIPTION
 -----------
@@ -24,12 +30,12 @@ expects to find either another list item or the end of a list.
 
 You must call linkman:upscli_list_start[3] before calling this function.
 
-This function will return 1 and set values in 'numa' and
+This function will return '1' and set values in 'numa' and
 'answer' if a list item is received.  If the list is done, it will
-return 0, and the values in 'numa' and 'answer' are undefined.
+return '0', and the values in 'numa' and 'answer' are undefined.
 
-Calling this function after it returns something other than 1 is
-undefined.
+Calling this function after it returns something other than '1' is
+undefined behavior.
 
 QUERY FORMATTING
 ----------------
@@ -42,8 +48,8 @@ ANSWER FORMATTING
 -----------------
 
 The contents of 'numa' and 'answer' work just like a call to
-linkman:upscli_get[3].  The values returned by linkman:upsd[8] are identical to
-a single item request, so this is not surprising.
+linkman:upscli_get[3].  The values returned by linkman:upsd[8] are
+identical to a single item request, so this is not surprising.
 
 ERROR CHECKING
 --------------
@@ -58,13 +64,14 @@ When this happens, linkman:upscli_upserror[3] will return
 RETURN VALUE
 ------------
 
-The *upscli_list_next()* function returns 1 when list data is
-present, 0 if the list is finished, or -1 if an error occurs.
+The *upscli_list_next()* function returns '1' when list data is
+present, '0' if the list is finished, or '-1' if an error occurs.
 
-It is possible to have an empty list.  The function will return 0 for
+It is possible to have an empty list.  The function will return '0' for
 its first call in that case.
 
 SEE ALSO
 --------
+
 linkman:upscli_list_start[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

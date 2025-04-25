@@ -9,10 +9,13 @@ nutscan_add_device_to_device - Concatenate two devices structure.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second);
-
+	nutscan_device_t * nutscan_add_device_to_device(
+		nutscan_device_t * first,
+		nutscan_device_t * second);
+------
 
 DESCRIPTION
 -----------
@@ -20,24 +23,37 @@ DESCRIPTION
 The `nutscan_device_t` contains the following variables:
 
 	nutscan_device_type_t   type;
-        char *          driver;
-        char *          port;
-        nutscan_options_t       opt;
-        struct nutscan_device * prev;
-        struct nutscan_device * next;
+	char *          driver;
+	char *          alt_driver_names;
+	char *          port;
+	nutscan_options_t       opt;
+	struct nutscan_device * prev;
+	struct nutscan_device * next;
 
-This is a double linked list of device. Each device is described by its `type`, its `driver` name, its `port` and any number of optional data.
+This is a double linked list of device. Each device is described by its
+`type`, its `driver` name, its `port` and any number of optional data.
 
-The *nutscan_add_device_to_device()* concatenates 'first' and 'second' devices to a unique device. No new device is created, the two linked list are simply linked to each other. So 'first' and 'second' devices are likely to be modified by this function.
+The *nutscan_add_device_to_device()* concatenates 'first' and 'second'
+devices to a unique device. No new device is created, the two linked
+lists are simply linked to each other. So 'first' and 'second' devices
+are likely to be modified by this function.
 
 RETURN VALUE
 ------------
 
-The *nutscan_add_device_to_device()* functions returns a pointer to a device containing both passed devices. Note that it's not a new device, so it is either 'first' or 'second' which is returned.
+The *nutscan_add_device_to_device()* functions returns a pointer to a
+device containing both passed devices. Note that it's not a new device,
+so it is either 'first' or 'second' which is returned.
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-device.h' file.
 
 SEE ALSO
 --------
-linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3],
+
+linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3],
 linkman:nutscan_display_ups_conf[3], linkman:nutscan_display_parsable[3],

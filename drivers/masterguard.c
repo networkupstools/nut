@@ -4,6 +4,13 @@
 
    masterguard.c created on 15.8.2001
 
+   OBSOLETION WARNING: Please to not base new development on this
+   codebase, instead create a new subdriver for nutdrv_qx which
+   generally covers all Megatec/Qx protocol family and aggregates
+   device support from such legacy drivers over time.
+
+   FIXME: `if(DEBUG) print(...)` ==> `upsdebugx()`
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
@@ -21,9 +28,10 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.28"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -46,6 +54,9 @@ upsdrv_info_t upsdrv_info = {
 static int     type;
 static char    name[31];
 static char    firmware[6];
+
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 /********************************************************************
  *
@@ -158,7 +169,7 @@ static void parseFlags( char *flags )
  ********************************************************************/
 static void query1( char *buf )
 {
-	#define WORDMAXLEN 255
+#	define WORDMAXLEN 255
 	char    value[WORDMAXLEN];
 	char    word[WORDMAXLEN];
 	char    *newPOS;
@@ -232,7 +243,7 @@ static void query1( char *buf )
  ********************************************************************/
 static void query3( char *buf )
 {
-	#define WORDMAXLEN 255
+#	define WORDMAXLEN 255
 	char    value[WORDMAXLEN];
 	char    word[WORDMAXLEN];
 	char    *newPOS;
@@ -421,7 +432,7 @@ static ssize_t ups_ident( void )
 	else if( ret > 0 )
 	{
 		if( DEBUG )
-			printf( "WH says <%s> with length %zi\n", buf, ret );
+			printf( "WH says <%s> with length %" PRIiSIZE "\n", buf, ret );
 		upslog_with_errno( LOG_INFO,
 			"New WH String found. Please report to maintainer\n" );
 	}
@@ -453,6 +464,11 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.stop");
 	dstate_addcmd("test.battery.start");
 	*/
+
+	dstate_addcmd("shutdown.return");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 
 	if( strlen( name ) > 0 )
 		dstate_setinfo("ups.model", "%s", name);
@@ -502,7 +518,7 @@ void upsdrv_updateinfo(void)
 	if( ret != lenRSP )
 	{
 		if( DEBUG )
-			printf( "buf = %s len = %zi\n", buf, ret );
+			printf( "buf = %s len = %" PRIiSIZE "\n", buf, ret );
 		upslog_with_errno( LOG_ERR, "Error in UPS response " );
 		dstate_datastale();
 		return;
@@ -523,6 +539,25 @@ void upsdrv_updateinfo(void)
 	}
 }
 
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	NUT_UNUSED_VARIABLE(extra);
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "shutdown.return"))
+	{
+		/* ups will come up within a minute if utility is restored */
+		ser_send_pace(upsfd, UPS_PACE, "%s", "S.2R0001\x0D" );
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 /********************************************************************
  *
  * Called if the driver wants to shutdown the UPS.
@@ -534,8 +569,12 @@ void upsdrv_updateinfo(void)
  ********************************************************************/
 void upsdrv_shutdown(void)
 {
-	/* ups will come up within a minute if utility is restored */
-	ser_send_pace(upsfd, UPS_PACE, "%s", "S.2R0001\x0D" );
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /********************************************************************
@@ -561,6 +600,15 @@ void upsdrv_initups(void)
 	int     count = 0;
 	int     fail  = 0;
 	int     good  = 0;
+
+	upsdebugx(0,
+		"Please note that this driver is deprecated and will not receive\n"
+		"new development. If it works for managing your devices - fine,\n"
+		"but if you are running it to try setting up a new device, please\n"
+		"consider the newer nutdrv_qx instead, which should handle all 'Qx'\n"
+		"protocol variants for NUT. (Please also report if your device works\n"
+		"with this driver, but nutdrv_qx would not actually support it with\n"
+		"any subdriver!)\n");
 
 	/* setup serial port */
 	upsfd = ser_open(device_path);

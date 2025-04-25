@@ -4,21 +4,25 @@ UPSCLI_DISCONNECT(3)
 NAME
 ----
 
-upscli_disconnect - disconnect from a UPS server
+upscli_disconnect - Disconnect from a UPS server
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_disconnect(UPSCONN_t *ups);
+	int upscli_disconnect(UPSCONN_t *ups);
+------
 
 DESCRIPTION
 -----------
+
 The *upscli_disconnect()* function takes the pointer 'ups' to a
-`UPSCONN_t` state structure, shuts down the connection to the server, and
-frees dynamic memory used by the state structure.  The `UPSCONN_t` structure
-is no longer valid after this function is called.
+`UPSCONN_t` state structure, shuts down the connection to the server,
+and frees dynamic memory used by the state structure.
+
+The `UPSCONN_t` structure is no longer valid after this function is called.
 
 This function must be called, or your program will leak memory and
 file descriptors.
@@ -26,10 +30,11 @@ file descriptors.
 RETURN VALUE
 ------------
 
-The *upscli_disconnect()* function returns 0 on success, or -1 if an
+The *upscli_disconnect()* function returns '0' on success, or '-1' if an
 error occurs.
 
 SEE ALSO
 --------
+
 linkman:upscli_connect[3], linkman:upscli_fd[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

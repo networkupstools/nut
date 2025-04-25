@@ -7,7 +7,7 @@
  * device support from such legacy drivers over time.
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ * found online at "https://www.networkupstools.org/protocols/megatec.html".
  *
  * Copyright (C) 2003-2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
  * Copyright (C) 2011-2012  Arnaud Quette <arnaud.quette@free.fr>
@@ -32,9 +32,12 @@
 #include "nut_libusb.h"
 #include "usb-common.h"
 #include "blazer.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.22"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -129,11 +132,14 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		 */
 		switch (ret)
 		{
-		case ERROR_PIPE:    /** Pipe error or Broken pipe */
+		case LIBUSB_ERROR_PIPE:    /** Pipe error or Broken pipe */
 			usb_clear_halt(udev, 0x81);
 			break;
 
-		case ERROR_TIMEOUT: /** Operation or Connection timed out */
+		case LIBUSB_ERROR_TIMEOUT: /** Operation or Connection timed out */
+			break;
+
+		default:
 			break;
 		}
 
@@ -204,7 +210,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 			0x09, 0x2, 0, (usb_ctrl_charbuf)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
+			upsdebugx(3, "send: %s", (ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
 			return ret;
 		}
 	}
@@ -221,7 +227,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	 * will happen after successfully writing a command to the UPS)
 	 */
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
+		upsdebugx(3, "read: %s", (ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
 		return ret;
 	}
 
@@ -297,6 +303,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 			upsdebugx(1, "received %d (%d)", ret, buf[0]);
 
 			if (langid_fix != -1) {
+				size_t	di, si, size;
 				/* Limit this check, at least for now */
 				/* Invalid receive size - message corrupted */
 				if (ret != buf[0])
@@ -308,7 +315,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 				/* Simple unicode -> ASCII inplace conversion
 				 * FIXME: this code is at least shared with mge-shut/libshut
 				 * Create a common function? */
-				size_t di, si, size = (size_t)buf[0];
+				size = (size_t)buf[0];
 				for (di = 0, si = 2; si < size; si += 2) {
 					if (di >= (buflen - 1))
 						break;
@@ -442,11 +449,15 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 	ssize_t	ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+		dstate_setinfo("driver.state", "reconnect.trying");
+
+		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
 		if (ret < 1) {
 			return ret;
 		}
+
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
 	}
 
 	ret = (*subdriver_command)(cmd, buf, buflen);
@@ -456,7 +467,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	switch (ret)
 	{
-	case ERROR_BUSY:		/* Device or resource busy */
+	case LIBUSB_ERROR_BUSY:		/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
@@ -470,7 +481,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 # endif
 #endif /* WITH_LIBUSB_0_1 */
 
-	case ERROR_PIPE:		/* Broken pipe */
+	case LIBUSB_ERROR_PIPE:		/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
@@ -484,24 +495,29 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 			upsdebugx(1, "Device reset handled");
 		}
 		goto fallthrough_case_reconnect;
-	case ERROR_NO_DEVICE: /* No such device */
-	case ERROR_ACCESS:    /* Permission denied */
-	case ERROR_IO:        /* I/O error */
+	case LIBUSB_ERROR_NO_DEVICE: /* No such device */
+	case LIBUSB_ERROR_ACCESS:    /* Permission denied */
+	case LIBUSB_ERROR_IO:        /* I/O error */
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 	case -ENXIO:		/* No such device or address */
 #endif
-	case ERROR_NOT_FOUND:		/* No such file or directory */
+	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
-		usb->close(udev);
+		dstate_setinfo("driver.state", "reconnect.trying");
+		usb->close_dev(udev);
 		udev = NULL;
 		break;
 
-	case ERROR_TIMEOUT:  /* Connection timed out */
-	case ERROR_OVERFLOW: /* Value too large for defined data type */
-#if EPROTO && WITH_LIBUSB_0_1
+	case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
+/* libusb-win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
+#ifndef WIN32
+	case LIBUSB_ERROR_OVERFLOW: /* Value too large for defined data type */
+# if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
-#endif
+# endif
+#endif	/* !WIN32 */
 	default:
 		break;
 	}
@@ -528,7 +544,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 			continue;
 		}
 
-		/* TODO: Range-check int vs ssize_t values */
+		/* TODO: Range-check int vs. ssize_t values */
 		return (ssize_t)snprintf(buf, buflen, "%s", testing[i].answer);
 	}
 
@@ -552,8 +568,9 @@ static const struct subdriver_t {
 void upsdrv_help(void)
 {
 #ifndef TESTING
-	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
 	size_t i;
+
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
 
 	for (i = 0; subdriver[i].name != NULL; i++) {
 		if (i>0)
@@ -562,14 +579,14 @@ void upsdrv_help(void)
 	}
 	printf("\n\n");
 #endif	/* TESTING */
-
-	printf("Read The Fine Manual ('man 8 blazer_usb')\n");
 }
 
 
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
+
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
 	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
@@ -583,9 +600,10 @@ void upsdrv_initups(void)
 #ifndef TESTING
 	int	ret, langid;
 	char	tbuf[255]; /* Some devices choke on size > 255 */
-	char	*regex_array[7];
-
+	char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 	char	*subdrv = getval("subdriver");
+
+	warn_if_bad_usb_port_filename(device_path);
 
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");
@@ -594,6 +612,13 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	regex_array[7] = getval("busport");
+# else
+	if (getval("busport")) {
+		upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+	}
+# endif
 
 	/* check for language ID workaround (#1) */
 	if (getval("langid_fix")) {
@@ -604,7 +629,8 @@ void upsdrv_initups(void)
 		}
 		else {
 			langid_fix = (int)u_langid_fix;
-			upsdebugx(2, "language ID workaround enabled (using '0x%x')", langid_fix);
+			upsdebugx(2, "language ID workaround enabled (using '0x%x')",
+				(unsigned int)langid_fix);
 		}
 	}
 
@@ -646,7 +672,7 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+	ret = usb->open_dev(&udev, &usbdevice, regex_matcher, NULL);
 	if (ret < 0) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"
@@ -684,8 +710,10 @@ void upsdrv_initups(void)
 		 * This should allow automatic application of the workaround */
 		ret = usb_get_string(udev, 0, 0, (usb_ctrl_charbuf)tbuf, sizeof(tbuf));
 		if (ret >= 4) {
-			langid = tbuf[2] | (tbuf[3] << 8);
-			upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
+			langid = (unsigned char)tbuf[2] | ((unsigned char)tbuf[3] << 8);
+			upsdebugx(1, "First supported language ID: 0x%x "
+				"(please report to the NUT maintainer!)",
+				(unsigned int)langid);
 		}
 	}
 #endif	/* TESTING */
@@ -702,7 +730,7 @@ void upsdrv_initinfo(void)
 void upsdrv_cleanup(void)
 {
 #ifndef TESTING
-	usb->close(udev);
+	usb->close_dev(udev);
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 	free(usbdevice.Vendor);
@@ -710,5 +738,8 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
 	free(usbdevice.Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(usbdevice.BusPort);
+# endif
 #endif	/* TESTING */
 }

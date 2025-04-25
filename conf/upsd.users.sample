@@ -4,6 +4,9 @@
 # Users are defined here, are given passwords, and their privileges are
 # controlled here too.  Since this file will contain passwords, keep it
 # secure, with only enough permissions for upsd to read it.
+#
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
 
 # --------------------------------------------------------------------------
 
@@ -59,9 +62,9 @@
 #
 # --- Configuring for upsmon
 #
-# To add a user for your upsmon, use this example:
+# To add a NUT user for your upsmon, with a particular role, use this example:
 #
-#   [upsmon]
+#   [monuser]
 #       password  = pass
 #       upsmon primary
 # or
@@ -69,7 +72,7 @@
 #
 # The matching MONITOR line in your upsmon.conf would look like this:
 #
-# MONITOR myups@localhost 1 upsmon pass primary	(or secondary)
+# MONITOR myups@localhost 1 monuser pass primary	(or secondary)
 #
 # See comments in the upsmon.conf(.sample) file for details about this
 # keyword and the difference of NUT secondary and primary systems.

@@ -34,10 +34,11 @@
 #include "main.h"
 #include "serial.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "timehead.h"
 
-#define DRIVER_NAME		"Microsol Rhino UPS driver"
-#define DRIVER_VERSION	"0.52"
+#define DRIVER_NAME	"Microsol Rhino UPS driver"
+#define DRIVER_VERSION	"0.55"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -394,7 +395,7 @@ CommReceive(const unsigned char *bufptr, ssize_t size)
 	if( size == 37 )
 		Waiting = 0;
 
-	printf("CommReceive size = %zd waiting = %d\n", size, Waiting );
+	printf("CommReceive size = %" PRIiSIZE " waiting = %d\n", size, Waiting );
 
 	switch( Waiting )
 	{
@@ -462,6 +463,9 @@ CommReceive(const unsigned char *bufptr, ssize_t size)
 			Waiting = 0;
 			break;
 		}
+
+		default:
+			break;
 
 	}
 
@@ -745,13 +749,17 @@ void upsdrv_updateinfo(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* basic idea: find out line status and send appropriate command */
 	/* on line: send normal shutdown, ups will return by itself on utility */
 	/* on battery: send shutdown+return, ups will cycle and return soon */
 
 	if (!SourceFail)     /* on line */
 	{
-		/* FIXME: Both legs of the if-clause send CMD_SHUT, where is the "forcing"? */
+		/* FIXME: Both legs of the if-clause send CMD_SHUT,
+		 *  where is the "forcing"? */
 		printf("On line, forcing shutdown command...\n");
 		/* send_command( CMD_SHUT ); */
 		sendshut();

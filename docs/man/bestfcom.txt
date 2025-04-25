@@ -6,16 +6,23 @@ NAME
 
 bestfcom - Driver for Best Power Fortress/Ferrups
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*bestfcom* -h
+
+*bestfcom* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 bestfcom driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 Best Power Fortress/Ferrups implementing the Fortress UPS Protocol
-(f-command set).
+(f-command set).  (For older Fortress units, see
+linkman:bestfortress[8].)
 
 EXTRA ARGUMENTS
 ---------------
@@ -25,21 +32,21 @@ linkman:ups.conf[5].
 
 AUTHORS
 -------
-Kent Polk (bestfcom)
 
-Andreas Wrede, John Stone (bestuferrups)
-
-Grant Taylor (bestfort)
-
-Russell Kroll (bestups)
+* Kent Polk (bestfcom)
+* Andreas Wrede, John Stone (bestuferrups)
+* Grant Taylor (bestfort)
+* Russell Kroll (bestups)
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

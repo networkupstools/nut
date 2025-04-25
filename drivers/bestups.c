@@ -26,9 +26,10 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Best UPS driver"
-#define DRIVER_VERSION	"1.07"
+#define DRIVER_VERSION	"1.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -208,6 +209,9 @@ static void ups_ident(void)
 		case 5:
 			highvolt = atof(ptr);
 			break;
+
+		default:
+			break;
 		}
 
 		ptr = strtok(NULL, ",");
@@ -315,6 +319,9 @@ static int ups_on_line(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	printf("The UPS will shut down in approximately one minute.\n");
 
 	if (ups_on_line())
@@ -353,13 +360,13 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (ret < 46) {
-		ser_comm_fail("Poll failed: short read (got %zd bytes)", ret);
+		ser_comm_fail("Poll failed: short read (got %" PRIiSIZE " bytes)", ret);
 		dstate_datastale();
 		return;
 	}
 
 	if (ret > 46) {
-		ser_comm_fail("Poll failed: response too long (got %zd bytes)",
+		ser_comm_fail("Poll failed: response too long (got %" PRIiSIZE " bytes)",
 			ret);
 		dstate_datastale();
 		return;
@@ -436,6 +443,15 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	upsdebugx(0,
+		"Please note that this driver is deprecated and will not receive\n"
+		"new development. If it works for managing your devices - fine,\n"
+		"but if you are running it to try setting up a new device, please\n"
+		"consider the newer nutdrv_qx instead, which should handle all 'Qx'\n"
+		"protocol variants for NUT. (Please also report if your device works\n"
+		"with this driver, but nutdrv_qx would not actually support it with\n"
+		"any subdriver!)\n");
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 }

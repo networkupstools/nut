@@ -3,22 +3,30 @@ UPSCODE2(8)
 
 NAME
 ----
+
 upscode2 - Driver for UPScode II compatible UPS equipment
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*upscode2* -h
+
+*upscode2* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 upscode2 driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports UPS equipment which can be controlled via the UPScode II
 protocol.  This is mainly Fiskars, Powerware equipment, but also
 some (probably OEM'ed) products from Compaq.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
@@ -79,21 +87,24 @@ NOTES
 
 The Powerware UPS models that this driver has been tested against until now
 have not returned a value for 'battery.charge'. Therefore, the driver will
-guestimate a value based on the nominal battery min/max and the current
+guesstimate a value based on the nominal battery min/max and the current
 battery voltage.
 
-AUTHOR
-------
-Håvard Lygre <hklygre@online.no>,
-Niels Baggesen <niels@baggesen.net>
+AUTHORS
+-------
+
+* Håvard Lygre <hklygre@online.no>
+* Niels Baggesen <niels@baggesen.net>
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

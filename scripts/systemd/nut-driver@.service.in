@@ -1,3 +1,9 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2011-2025 by NUT contributors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
 [Unit]
 Description=Network UPS Tools - device driver for %I
 After=local-fs.target
@@ -15,6 +21,13 @@ After=local-fs.target
 # Propagate stopping of the target:
 PartOf=nut-driver.target
 
+Documentation=man:upsdrvsvcctl(@MAN_SECTION_CMD_SYS@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html
+Documentation=man:ups.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
 # Note: The choice of "network.target" allows to schedule this unit
 # roughly when the network stack of this OS is ready (e.g. that the
 # subsequent `upsd` will have a `0.0.0.0` or a `localhost` to bind
@@ -27,8 +40,10 @@ PartOf=nut-driver.target
 # and typically by the time the box gets an IP address, the driver
 # is still retrying to start and will succeed.
 # Extending the unit does not require *this* file to be edited, you
-# can instead drop in an additional piece of configuration, e.g. add
-# a `/etc/systemd/system/nut-driver@.service.d/network.conf` with:
+# can instead drop in an additional piece of configuration, e.g. to
+# require that a NUT driver only starts after external networking
+# is configured (usable IP addresses appear in the system) you can
+# add a `/etc/systemd/system/nut-driver@.service.d/network.conf` with:
 #   [Unit]
 #   Requires=network-online.target
 #   After=network-online.target
@@ -38,21 +53,35 @@ PartOf=nut-driver.target
 # Finally note that "nut-driver-enumerator.service" should take care of this.
 
 [Service]
+Environment=NUT_IGNORE_NOWAIT=true
+Environment=NUT_QUIET_INIT_NDE_WARNING=true
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
-ExecStart=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl start "$NUTDEV"'
+ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
+ExecStart=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; exec @SBINDIR@/upsdrvctl @SYSTEMD_DAEMON_ARGS_DRIVER@ start "$NUTDEV"'
+# SIGHUP: simple reload (ignore values we can not change on the fly)
+# SIGUSR1: reload-or-exit (let systemd resuscitate the service then)
+ExecReload=/bin/kill -USR1 $MAINPID
 ExecStop=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl stop "$NUTDEV"'
 # Restart really always, do not stop trying:
 StartLimitInterval=0
 Restart=always
 # Protract the "hold-off" interval, so if the device connection is
-# lost, the driver does not reapidly restart and fail too many times,
+# lost, the driver does not rapidly restart and fail too many times,
 # and then systemd would keep the unit failed without further retries.
 # Notably, this helps start "dummy-ups" drivers retranslating local
 # devices (so getting a chicken-and-egg problem for driver-upsd-driver
 # orderly series of initializations). More details in NUT issue #779.
 RestartSec=15s
-Type=forking
+Type=@SYSTEMD_DAEMON_TYPE_DRIVER@
+@SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER@
+# Note: if you set up with systemd notification support, you can take
+# advantage of watchdog mechanism. Timeouts involved are deployment
+# dependent (how many devices you monitor, how stressed are they and
+# the monitoring system, protocol used -- e.g. SNMP walks can take long),
+# so distributions should not pre-define this (at least not to a small
+# value):
+@SYSTEMD_DAEMON_WATCHDOG_DRIVER@
 # Note: If you customize the "maxstartdelay" in ups.conf or in your
 # NUT compilation defaults, so it exceeds the default systemd unit
 # startup timeout (typically 90 sec), then make sure to set a slightly

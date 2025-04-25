@@ -3,10 +3,39 @@
  or (at your option) any later version. See "LICENSE-GPL2" in the root of this
  distribution.
 
- The files in the scripts/python/ directory are released under GNU General
+ Files in the scripts/python/ directory are released under GNU General
  Public License (GPL) version 3, or (at your option) any later version. See
  "LICENSE-GPL3" in the root of this distribution.
 
  The Perl client module (scripts/perl/Nut.pm) is released under the same
  license as Perl itself. That is to say either GPL version 1 or (at your option)
  any later version, or the "Artistic License".
+
+ The scripts/installer contents were donated to the Network UPS Tools project
+ by Eaton in 2022, including the license change from the one originally used
+ with their software companion to terms of the open-source project (that is,
+ GPL version 2 or newer).
+
+ Several fallback implementations for methods absent from standard library of
+ an end-user's current build platform are derived from source code available
+ under the two-clause BSD license (common/strptime.c, common/strnlen.c)
+
+ Various methods may be adapted from code or ideas posted on Stack Exchange
+ sites (comments in NUT sources refer to original posts in this case), which
+ according to https://stackoverflow.com/help/licensing are made available under
+ different Creative Commons Attribution-ShareAlike license (CC BY-SA) versions
+ depending on contribution timestamp.
+
+ Several autoconf methods under m4/ directory are derived from curl codebase
+ and were originally available under curl license. Which is not unlike the MIT
+ license, see https://daniel.haxx.se/blog/2022/06/17/curl-is-reuse-compliant/
+
+ To the best of our knowledge, conditions of the 2/3-clause BSD, MIT, curl and
+ CC BY-SA licenses allow redistribution and reuse of the codebase in projects
+ made available under GPL license terms, as long as attribution is provided.
+
+ NUT contributors are encouraged to "sign off" their git commits as a conscious
+ act done under Developer's Certificate of Origin. See the copy of "LICENSE-DCO"
+ in the root of this distribution, but please note that it is not a "license" on
+ its own - rather a proclamation that work was done and submitted according to
+ applicable open-source licenses.

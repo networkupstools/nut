@@ -1,7 +1,0 @@
-NUT-Monitor is a graphical application to access and manage UPSes connected to
-a NUT (Network UPS Tools) server.
-
-This application (written in Python + GTK) uses the python-pynut class
-(available at http://www.lestat.st)
-
-David Goncalves <david@lestat.st>

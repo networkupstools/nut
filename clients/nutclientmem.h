@@ -18,7 +18,7 @@
 */
 
 #ifndef NUTCLIENTMEM_HPP_SEEN
-#define NUTCLIENTMEM_HPP_SEEN
+#define NUTCLIENTMEM_HPP_SEEN 1
 
 /* Begin of C++ nutclient library declaration */
 #ifdef __cplusplus
@@ -69,9 +69,14 @@ public:
 	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") override;
 
 	virtual void deviceLogin(const std::string& dev) override;
+	/* Note: "master" is deprecated, but supported
+	 * for mixing old/new client/server combos: */
 	virtual void deviceMaster(const std::string& dev) override;
+	virtual void devicePrimary(const std::string& dev) override;
 	virtual void deviceForcedShutdown(const std::string& dev) override;
 	virtual int deviceGetNumLogins(const std::string& dev) override;
+	virtual std::set<std::string> deviceGetClients(const std::string& dev) override;
+	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) override;
 
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 
@@ -112,4 +117,4 @@ NUTCLIENT_MEM_t nutclient_mem_create_client();
 #endif /* __cplusplus */
 /* End of C nutclient library declaration */
 
-#endif	/* NUTCLIENTMOCK_HPP_SEEN */
+#endif	/* NUTCLIENTMEM_HPP_SEEN */

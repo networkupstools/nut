@@ -421,7 +421,8 @@ static void comm_receive(const unsigned char *bufptr, size_t size)
 			checksum += bufptr[i];
 		}
 		checksum = checksum % 256;
-		upsdebugx(4, "%s: calculated checksum = 0x%02x, bufptr[23] = 0x%02x", __func__, checksum, bufptr[23]);
+		upsdebugx(4, "%s: calculated checksum = 0x%02x, bufptr[23] = 0x%02x",
+			__func__, (unsigned int)checksum, bufptr[23]);
 
 		/* Only proceed if checksum matches and packet delimiter is found */
 		if (checksum == bufptr[23] && bufptr[24] == 254) {
@@ -575,7 +576,7 @@ static void get_base_info(void)
 
 	upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
 	tam = ser_get_buf_len(upsfd, packet, PACKET_SIZE, 3, 0);
-	upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %" PRIiSIZE " bytes from ser_get_buf_len()", __func__, tam);
 	if (tam > 0 && nut_debug_level >= 4) {
 		upsdebug_hex(4, "received from ser_get_buf_len()", packet, (size_t)tam);
 	}
@@ -639,7 +640,7 @@ static void get_updated_info(void)
 	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
 	tam = ser_get_buf_len(upsfd, temp, PACKET_SIZE, 3, 0);
 
-	upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %" PRIiSIZE " bytes from ser_get_buf_len()", __func__, tam);
 	if (tam > 0 && nut_debug_level >= 4)
 		upsdebug_hex(4, "received from ser_get_buf_len()", temp, (size_t)tam);
 
@@ -754,6 +755,9 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	if (!line_unpowered) {	/* on line */
 		upslogx(LOG_NOTICE, "On line, sending power cycle command...");
 		ser_send_char(upsfd, CMD_SHUTRET);

@@ -336,6 +336,55 @@ the serial port were dropped from the tree.
 
 This tree was released as 2.0.0.
 
+Backwards and Forwards Compatibility (NUT v1.x vs. v2.x)
+--------------------------------------------------------
+
+The old network code spans a range from about 0.41.1 when TCP support
+was introduced up to the recent 1.4 series.  It used variable names
+like STATUS, UTILITY, and LOADPCT.  Many of these names go back to the
+earliest prototypes of this software from 1997.  At that point there
+was no way to know that so many drivers would come along and introduce
+so many new variables and commands.  The resulting mess grew out of
+control over the years.
+
+During the 1.3 development cycle, all variables and instant commands
+were renamed to fit into a tree-like structure.  There are major groups,
+like input, output and battery.  Members of those groups have been
+arranged to make sense - input.voltage and output.voltage compliment
+each other.  The old names were UTILITY and OUTVOLT.  The benefits in
+this change are obvious.
+
+The 1.4 clients can talk to either type of server, and can handle either
+naming scheme.  1.4 servers have a compatibility mode where they can
+answer queries for both names, even though the drivers are internally
+using the new format.
+
+When 1.4 clients talk to 1.4 or 2.0 (or more recent) servers, they will
+use the new names.
+
+Here's a table to make it easier to visualize:
+
+[options="header"]
+|=============================================
+|                   4+| Server version
+| *Client version*    | 1.0 | 1.2 | 1.4 | 2.0+
+| 1.0                 | yes | yes | yes | no
+| 1.2                 | yes | yes | yes | no
+| 1.4                 | yes | yes | yes | yes
+| 2.0+                | no  | no  | yes | yes
+|=============================================
+
+Version 2.0, and more recent, do not contain backwards compatibility for
+the old protocol and variable/command names.  As a result, 2.0 clients can't
+talk to anything older than a 1.4 server.  If you ask a 2.0 client to
+fetch "STATUS", it will fail.  You'll have to ask for "ups.status"
+instead.
+
+Authors of separate monitoring programs should have used the 1.4 series
+to write support for the new variables and command names.  Client
+software can easily support both versions as long as they like.  If upsd
+returns 'ERR UNKNOWN-COMMAND' to a GET request, you need to use REQ.
+
 networkupstools.org
 -------------------
 
@@ -350,7 +399,7 @@ attached to exploits.org is not going to work.
 
 The solution was to register a new domain and set up mirrors. There are two
 initial web servers, with more on the way. The main project URL has changed
-from `http://www.exploits.org/nut/` to http://www.networkupstools.org.
+from `http://www.exploits.org/nut/` to https://www.networkupstools.org.
 The actual content is hosted on various mirrors which are updated regularly
 with rsync, so the days of dribbling bits through my DSL should be over.
 

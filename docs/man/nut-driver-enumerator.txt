@@ -4,10 +4,11 @@ NUT-DRIVER-ENUMERATOR(8)
 NAME
 ----
 
-nut-driver-enumerator - tool to map NUT device entries to service instances
+nut-driver-enumerator - Tool to map NUT device entries to service instances
 
 SYNOPSIS
 --------
+
 *nut-driver-enumerator.sh* -h
 
 *nut-driver-enumerator.sh*  (no args)
@@ -50,6 +51,12 @@ Update wrapping of devices into services
 *nut-driver-enumerator.sh --daemon(=freq)*::
 Update wrapping of devices into services in an infinite loop;
 Default freq is 60 sec.
+
+*nut-driver-enumerator.sh --daemon-after(=freq)*::
+Update wrapping of devices into services in an infinite loop;
+first do one run of the loop though, then daemonize (this way
+service unit is deemed started only when NUT config and driver
+instances are in sync). Default freq is 60 sec.
 
 *nut-driver-enumerator.sh --reconfigure*::
 Stop and un-register all service instances and recreate them
@@ -133,10 +140,17 @@ Bad inputs, e.g. unrecognized service management framework
 *2*::
 Absent or unreadable `ups.conf` file
 
+AUTHOR
+------
+
+Jim Klimov <jimklimov+nut@gmail.com>
+
 SEE ALSO
 --------
+
 linkman:upsdrvsvcctl[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

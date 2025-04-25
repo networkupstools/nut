@@ -1,0 +1,83 @@
+#!/bin/sh
+
+# This script wraps selection of a NUT-Monitor implementation usable
+# on the current system, using the historic name for users to have
+# a single simple call.
+#
+# Copyright (C):
+#   2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
+#
+# License: GPLv2+
+
+# Currently we have issues using localization for py3qt5 variant,
+# so if both seem functional, the wrapper would call py2gtk2:
+case "${PREFER_PY2-}" in
+    true|false) ;;
+    "") PREFER_PY2=true ;;
+    *)  echo "Unsupported value of PREFER_PY2='$PREFER_PY2', defaulting to 'true'" >&2
+        PREFER_PY2=true
+        ;;
+esac
+
+# Detect which variant of NUT-Monitor we can run on the local system:
+[ -s "$0"-py2gtk2 -a -x "$0"-py2gtk2 ] && PYTHON_PY2GTK2_SHEBANG="`head -1 "$0"-py2gtk2 | sed 's,^#!,,'`" || PYTHON_PY2GTK2_SHEBANG=""
+[ -s "$0"-py3qt5 -a  -x "$0"-py3qt5 ]  && PYTHON_PY3QT5_SHEBANG="`head -1 "$0"-py3qt5 | sed 's,^#!,,'`"   || PYTHON_PY3QT5_SHEBANG=""
+SCRIPTDIR="`dirname "$0"`" && SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`" || SCRIPTDIR="./"
+
+PYTHON_PY2GTK2=""
+for P in "$PYTHON2" "$PYTHON_PY2GTK2_SHEBANG" "python2" "python" ; do
+    if [ -n "$P" ] \
+    && (command -v $P) >/dev/null 2>/dev/null \
+    && $P -c "import re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser" >/dev/null 2>/dev/null \
+    ; then
+        PYTHON_PY2GTK2="$P"
+        echo "PYTHON_PY2GTK2 is usable as: $PYTHON_PY2GTK2" >&2
+        break
+    fi
+done
+
+PYTHON_PY3QT5=""
+for P in "$PYTHON3" "$PYTHON_PY3QT5_SHEBANG" "python3" "python" ; do
+    if [ -n "$P" ] \
+    && (command -v $P) >/dev/null 2>/dev/null \
+    && $P -c "import re,glob,codecs,PyQt5.uic,configparser" >/dev/null 2>/dev/null \
+    ; then
+        PYTHON_PY3QT5="$P"
+        echo "PYTHON_PY3QT5 is usable as: $PYTHON_PY3QT5" >&2
+        break
+    fi
+done
+
+for P in "$PYTHON_PY2GTK2" "$PYTHON_PY3QT5" ; do
+    [ -n "$P" ] || continue
+
+    # If running from source tree...
+    if ! $P -c "import PyNUT" >/dev/null 2>/dev/null \
+    &&   PYTHONPATH="${SCRIPTDIR}/../module" $P -c "import PyNUT" >/dev/null 2>/dev/null \
+    ; then
+        PYTHONPATH="${SCRIPTDIR}/../module"
+        export PYTHONPATH
+    fi
+done
+
+if [ -n "$PYTHON_PY2GTK2" ] && [ -n "$PYTHON_PY3QT5" ] ; then
+    if $PREFER_PY2 ; then
+        echo "Starting $0-py2gtk2 variant..." >&2
+        exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
+    else
+        echo "Starting $0-py3qt5 variant..." >&2
+        exec $PYTHON_PY3QT5 "$0"-py3qt5 "$@"
+    fi
+else
+    if [ -n "$PYTHON_PY2GTK2" ] ; then
+        echo "Starting $0-py2gtk2 variant..." >&2
+        exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
+    fi
+    if [ -n "$PYTHON_PY3QT5" ] ; then
+        echo "Starting $0-py3qt5 variant..." >&2
+        exec $PYTHON_PY3QT5 "$0"-py3qt5 "$@"
+    fi
+fi
+
+echo "ERROR: No usable Python interpreter version (with needed modules) was found" >&2
+exit 1

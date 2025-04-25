@@ -1,4 +1,6 @@
 /* setenv.c Ben Collver <collver@softhome.net> */
+#include "config.h" /* must be first */
+
 #ifndef HAVE_SETENV
 #include <stdlib.h>
 #include <string.h>
@@ -24,4 +26,4 @@ int nut_setenv(const char *name, const char *value, int overwrite)
 	rv = putenv(buffer); /* man putenv, do not free(buffer) */
 	return (rv);
 }
-#endif
+#endif	/* !HAVE_SETENV */

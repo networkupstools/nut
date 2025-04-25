@@ -39,7 +39,7 @@ beeper enabled/disabled/muted status) can be read and written. These
 variables are usually grouped together and arranged in a hierarchical
 tree shape, similar to directories in a file system. This tree is
 called the "usage" tree. For example, here is part of the usage tree
-for a typical APC device. Variable components are separated by ".".
+for a typical APC device. Variable components are separated by `.`.
 Typical values for each variable are also shown for illustrative
 purposes.
 
@@ -163,7 +163,8 @@ Writing a subdriver
 In preparation for writing a subdriver for a device that is currently
 unsupported, run usbhid-ups with the following command line:
 
-	drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX -x port=auto -s ups
+	drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX \
+		-x port=auto -s ups
 
 (substitute your device's 4-digit VendorID instead of "XXXX").
 This will produce a bunch of debugging information, including a number
@@ -173,18 +174,19 @@ This information forms the initial basis for a new subdriver.
 You should save this information to a file, e.g.:
 
 	drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX \
-		-x port=auto -s ups 2>&1 | tee /tmp/info
+		-x port=auto -s ups -d1 2>&1 | tee /tmp/info
 
-You can create an initial "stub" subdriver for your device by using
-script scripts/subdriver/gen-usbhid-subdriver.sh. Note: this only creates
-a "stub" and needs to be further customized to be useful (see
-"Customization" below).
+You can now create an initial "stub" subdriver for your device by using
+helper script `scripts/subdriver/gen-usbhid-subdriver.sh`.
+
+NOTE: This only creates a driver code "stub" which needs to be further
+customized to be actually useful (see "Customization" below).
 
 Use the script as follows:
 
 	scripts/subdriver/gen-usbhid-subdriver.sh < /tmp/info
 
-where /tmp/info is the file where you previously saved the debugging
+where `/tmp/info` is the file where you previously saved the debugging
 information.
 
 This script prompts you for a name for the subdriver; use only letters
@@ -199,6 +201,40 @@ also add the subdriver to USBHID_UPS_SUBDRIVERS in `drivers/Makefile.am`
 and call `autoreconf` and/or `./configure` from the top-level NUT directory.
 You can then recompile `usbhid-ups`, and start experimenting with the new
 subdriver.
+
+
+Updating a subdriver
+~~~~~~~~~~~~~~~~~~~~
+
+You may have a device from vendor (and maybe model) whose support `usbhid-ups`
+already claims. However, you may feel that the driver does not represent all
+data points that your device serves. This may be possible, as vendors tend to
+use the same identifiers for unrelated products, as well as produce revisions
+of devices with same marketed name but different internals (due to chip and
+other components availability, cost optimization, etc.) Even without sinister
+implications, UPS firmwares evolve and so bugs and features can get added,
+fixed and removed over time with truly the same hardware being involved.
+
+In this case you should follow the same instructions as above for "Writing
+a subdriver", but specify the same subdriver name as the one which supports
+your device family already.
+
+Then compare the generated source file with the one already committed to NUT
+codebase, paying close attention to `..._hid2nut[]` table which maps "usage"
+names to NUT data points. There may be several "usage" values served by
+different device models or firmware versions, that provide same information
+for a NUT data point, such as `input.voltage`. For the `hid2nut` mapping
+tables, first hit wins (so you may e.g. prefer to check values with better
+precision first).
+
+Using a GUI tool with partial-line difference matching and highlighting,
+such as Meld or WinMerge, is recommended for this endeavour.
+
+For new data points in `hid2nut` tables be sure to not invent new names,
+but use standard ones from `docs/nut-names.txt` file. Temporarily, the
+`experimental.*` namespace may be used.
+If you need to standardize a name for some concept not addressed yet,
+please do so via nut-upsdev mailing list discussion.
 
 
 Customization
@@ -224,6 +260,11 @@ subdrivers are written:
 - powercom-hid.c/h
 - tripplite-hid.c/h
 
+NOTE: To test existing data points (including those not yet translated
+to standard NUT mappings conforming to <<nut-names,NUT command and
+variable naming scheme>>), you can use custom drivers built after you
+`./configure --with-unmapped-data-points`.
+Production driver builds must not include any non-standard names.
 
 Fixing report descriptors
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -242,6 +283,116 @@ a `fix_report_desc()` trivial implementation.
 For some practical examples, see e.g. `apc_fix_report_desc()` method in the
 `drivers/apc-hid.c` file, and `cps_fix_report_desc()` in `drivers/cps-hid.c`
 file.
+
+Finally note that such fix-ups may be not applicable to all devices or
+firmware versions for what they assume their target audience is. If you
+suspect that the fix-up method is actually causing problems, you can quickly
+disable it with `disable_fix_report_desc` driver option for `usbhid-ups`.
+If the problem does dissipate, please find a way to identify your "fixed"
+hardware/firmware vs. those models where existing fix-up method should be
+applied, and post a pull request so the NUT driver would handle both cases.
+
+
+Investigating report descriptors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Beside looking for problems with report descriptor processing in NUT code,
+it is important to make sure what data the device actually serves on the
+wire, and if it is logically consistent with the protocol requirements.
+
+While here, keep in mind that USB protocol on the wire has a specified
+order of bytes involved, while processing on your computer may lay them
+out differently due to bitness and endianness of the current binary build.
+General NUT codebase (`libhid.c`, `hidparser.c`) aims to abstract this,
+so application code like drivers can deal with their native numeric data
+types, but when troubleshooting, do not rule out possibility of flaws
+there as well. And certainly do not code any assumptions about ordered
+multiple-byte ranges in a protocol buffer.
+
+For a deep dive into the byte stream, you will need additional tools:
+
+* get/build/install link:https://regina-rexx.sourceforge.io[regina-rexx]
+* get/install link:https://github.com/abend0c1/hidrdd[HIDRDD] (uses REXX
+  as the interpreter)
+
+Typical troubleshooting of suspected firmware/protocol issues goes like this:
+
+* Turn the NUT `usbhid-ups` driver debug verbosity level up to 5 (or more)
+  and restart the driver, so it would record the HEX dump of report descriptor
+* Look for reports from the driver of any problems it has already detected
+  and possibly amended (LogMin/LogMax, report descriptor fix-ups)
+* Extract the HEX dump of the report descriptor from USB driver output from
+  the first step above, and run it through HIDRDD (and/or REXX directly,
+  per example below).
+* Look at the HIDRDD output, with reference to any documents related to your
+  device and the USB/HID power devices class available in NUT documentation,
+  e.g. at https://www.networkupstools.org/ups-protocols.html
+* Especially look for inconsistencies in the USB HID report descriptors (RD):
+  * between the min/max (logical and physical) values,
+  * the sizes of the report fields they apply to,
+  * the expected physical values (e.g., supply and output voltages,
+    over-voltage/under-voltage transfer points, ...)
+* If you're seeing unexpected values for particular variables, look at the
+  raw data that is being sent, decide whether it makes sense in the context
+  of the logical and physical min/max values from the report descriptor.
+* Read the NUT code, tracing through how each value gets processed looking
+  for where the result deviates from expectations...
+* Think, code, test, rinse, repeat, post a PR :)
+
+.Example direct use of REXX
+===========================
+Example adapted from https://github.com/networkupstools/nut/issues/2039
+
+Run a NUT `usb-hid` driver with at least debug verbosity level 3 (`-DDD`)
+to get a report descriptor dump starting with a line like this:
+----
+   3.670755     [D3] Report Descriptor: (909 bytes) => 05 84 09 04 a1 01 ...
+----
+
+...and copy-paste those reported lines as input into `rexx` tool, which
+would generate a C source file including human-worded description and
+a relevant data structure:
+
+----
+:; rexx rd.rex -d --hex 05 84 09 04 a1 01 85 01 09 18 ... 55 b1 02 c0 c0 c0
+
+//--------------------------------------------------------------------------------
+// Decoded Application Collection
+//--------------------------------------------------------------------------------
+
+/*
+05 84        (GLOBAL) USAGE_PAGE         0x0084 Power Device Page
+09 04        (LOCAL)  USAGE              0x00840004 UPS (Application Collection)
+A1 01        (MAIN)   COLLECTION         0x01 Application (Usage=0x00840004: Page=Power Device Page, Usage=UPS, Type=Application Collection)
+85 01          (GLOBAL) REPORT_ID          0x01 (1)
+09 18          (LOCAL)  USAGE              0x00840018 Outlet System (Physical Collection)
+...
+*/
+
+// All structure fields should be byte-aligned...
+#pragma pack(push,1)
+
+//--------------------------------------------------------------------------------
+// Power Device Page featureReport 01 (Device <-> Host)
+//--------------------------------------------------------------------------------
+
+typedef struct
+{
+  uint8_t  reportId;                                 // Report ID = 0x01 (1)
+                                                     // Collection: CA:UPS CP:OutletSystem CP:Outlet
+  int8_t   POW_UPSOutletSystemOutletSwitchable;      // Usage 0x0084006C: Switchable, Value =  to
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeStartup; // Usage 0x00840056: Delay Before Startup, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeShutdown; // Usage 0x00840057: Delay Before Shutdown, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeReboot; // Usage 0x00840055: Delay Before Reboot, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletSwitchable_1;    // Usage 0x0084006C: Switchable, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeStartup_1; // Usage 0x00840056: Delay Before Startup, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeShutdown_1; // Usage 0x00840057: Delay Before Shutdown, Value = -1 to 60
+  int8_t   POW_UPSOutletSystemOutletDelayBeforeReboot_1; // Usage 0x00840055: Delay Before Reboot, Value = -1 to 60
+} featureReport01_t;
+
+#pragma pack(pop)
+----
+===========================
 
 
 Shutting down the UPS

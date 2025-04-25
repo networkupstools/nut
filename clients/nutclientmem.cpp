@@ -17,8 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
 #include "nutclientmem.h"
-#include <common.h>
 
 namespace nut
 {
@@ -174,13 +174,32 @@ TrackingID MemClientStub::executeDeviceCommand(const std::string& dev, const std
 	throw NutException("Not implemented");
 }
 
+std::map<std::string, std::set<std::string>> MemClientStub::listDeviceClients(void)
+{
+	throw NutException("Not implemented");
+}
+
+std::set<std::string> MemClientStub::deviceGetClients(const std::string& dev)
+{
+	NUT_UNUSED_VARIABLE(dev);
+	throw NutException("Not implemented");
+}
+
 void MemClientStub::deviceLogin(const std::string& dev)
 {
 	NUT_UNUSED_VARIABLE(dev);
 	throw NutException("Not implemented");
 }
 
+/* Note: "master" is deprecated, but supported
+ * for mixing old/new client/server combos: */
 void MemClientStub::deviceMaster(const std::string& dev)
+{
+	NUT_UNUSED_VARIABLE(dev);
+	throw NutException("Not implemented");
+}
+
+void MemClientStub::devicePrimary(const std::string& dev)
 {
 	NUT_UNUSED_VARIABLE(dev);
 	throw NutException("Not implemented");
@@ -242,6 +261,3 @@ NUTCLIENT_MEM_t nutclient_mem_create_client()
 }
 
 } /* extern "C" */
-
-
-

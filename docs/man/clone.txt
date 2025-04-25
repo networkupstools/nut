@@ -3,23 +3,82 @@ CLONE(8)
 
 NAME
 ----
-clone - UPS driver clone
 
-NOTE
-----
-This man page only documents the specific features of the
+clone - Clone an UPS, treating its outlet as if it were an UPS
+        (with shutdown INSTCMD support)
+
+SYNOPSIS
+--------
+
+*clone* -h
+
+*clone* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the
 clone driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 DESCRIPTION
 -----------
-This driver, which sits on top of another driver socket, allows users to group
-clients to a particular outlet of a device and deal with this output as if it
-was a normal UPS.
+
+This driver, which sits on top of another driver's local UNIX socket file
+(or Windows named pipe), allows users to group clients to a particular
+outlet of a device and deal with this output as if it were a normal UPS.
+
+Unlike the linkman:clone-outlet[8] driver, this driver represents a
+manageable device that can be used both for monitoring and for client
+computer and UPS/ePDU outlet shutdowns (it supports sending relevant
+instant commands during run time).
+
+Unlike linkman:dummy-ups[8], this driver does not require a running `upsd`
+data server nor use the networked NUT protocol to talk to the "real" driver
+(which may be remote in case of `dummy-ups` repeater mode).
+
+This driver does not create a completely new virtual device, but replaces or
+extends some of the original readings reported by the "real" driver using
+information from the specified outlet, and relays all other readings as they
+were.
+
+Remote clients like `upsmon` can `MONITOR` the device entry presented by the
+data server with this driver (and the "real" driver) running and published.
+
+A larger deployment with one or more lower-priority devices collected on a
+manageable outlet of an UPS or ePDU would likely see several drivers set
+up on the system actually capable of interactions with the UPS and running
+the NUT data server linkman:upsd[8] (and likely powered by another outlet):
+
+* a "real" driver talking to the UPS;
+* a `clone` driver talking to the "real" driver and issuing outlet power-off
+  (or power-cycle) based on relatively high thresholds for remaining battery
+  charge and/or runtime of the actual UPS (or explicit instant commands),
+  with such operations first setting the respective timers for the outlet
+  on the "real" driver, and the "FSD" flag among states of the virtual UPS
+  status;
+* possibly a `clone-outlet` driver which is read-only and interprets the
+  outlet timer values as triggers for "FSD" or "OFF" flags reported among
+  states of the virtual UPS status.
+
+With this approach, the lower-priority systems collected on such outlet
+would run the NUT linkman:upsmon[8] client to `MONITOR` the virtual UPS
+presented by the read-only `clone-outlet` driver and shut down as soon as
+the "FSD" flag is raised (fairly early, based on charge and/or runtime
+thresholds configured for that driver) allowing the higher-priority devices
+(likely including the NUT server) to enjoy a longer on-battery life.
+
+The `clone` driver responsible for outlet power state changes would not
+normally be monitored directly (e.g. to avoid unfortunate direct shutdown
+requests from those clients), although it can be (instead of `clone-outlet`)
+in sufficiently trusted networks.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following settings:
+
+*port*='drivername-devicename'::
+Required. The standard NUT driver `port` setting, here it provides the name
+of the local Unix socket file (or Windows named pipe) for connection to the
+"real" device driver.
 
 *load.off*='command'::
 Recommended.  Set the command on the "real" UPS driver that will be used to
@@ -58,9 +117,12 @@ Set the remaining battery runtime when the clone UPS switches to LB
 
 IMPLEMENTATION
 --------------
-The port specification in the linkman:ups.conf[5] reference the driver
-socket that the "real" UPS driver is using. For example:
 
+The port specification in the linkman:ups.conf[5] should reference the
+local driver socket (or Windows named pipe) that the "real" UPS driver
+is using. For example:
+
+------
   [realups]
      driver = usbhid-ups
      port = auto
@@ -71,23 +133,61 @@ socket that the "real" UPS driver is using. For example:
      load.on = outlet.1.load.on
      load.off = outlet.1.load.off
      load.status = outlet.1.status
+     desc = "Outlet 1 of the Real UPS"
      [...]
+------
+
+This driver supports instant commands to initiate a forced shutdown for
+`upsmon` or similar clients which `MONITOR` this virtual UPS device, if
+the outlet status is currently 'on' and no other shutdown was initiated
+yet (setting the virtual UPS shutdown delay timer to `offdelay` and
+issuing an FSD via `ups.status`):
+
+* `shutdown.return` -- power the outlet back on after `ondelay`;
+* `shutdown.stayoff` -- keep the outlet 'off'.
+
+Such commands are propagated to the "real" driver using the NUT socket
+protocol (using command names specified in the `load.off` and `load.on`
+driver configuration options), if the shutdown or start timers are set
+at the moment, or if the "real" device is not "online" and its known
+battery charge or runtime are below the configured "low" thresholds.
+
+The outlet status is determined using the name specified by the
+`load.status` driver option if set, or is just assumed by latest
+completed shutdown/start operation (using unknown outlet number).
+
+The driver does not support a common NUT device shutdown operation as
+such (`clone -k` just prints an error and bails out).
+
+This driver also supports setting certain NUT variables at run-time:
+
+* `battery.charge.low` -- see `mincharge` in driver options;
+* `battery.runtime.low` -- see `minruntime` in driver options.
+
+Compared to the "real" driver's readings, this driver also adds
+(or overrides) the following data points: `ups.delay.shutdown`,
+`ups.delay.start`, `ups.timer.shutdown` and `ups.timer.start`.
+It keeps track of "real" driver's values of `battery.charge` and
+`battery.runtime` (actual current readings) to decide on automated
+outlet shutdown later on.
 
 IMPORTANT
 ---------
+
 Unlike a real UPS, you should *not* configure a upsmon primary mode for this
-driver.  When a upsmon primary sees the OB LB flags and tells the upsd server
-it is OK to initiate the shutdown sequence, the server will latch the FSD
-status and it will not be possible to restart the systems connected without
-restarting the upsd server.
+driver.  When a linkman:upsmon[8] primary sees the `OB LB` flags and tells the
+linkman:upsd[8] data server that it is OK to initiate the shutdown sequence,
+the server will latch the FSD status, and it will not be possible to restart
+the systems connected without restarting the `upsd` server.
 
 This will be a problem if the power returns after the clone UPS initiated
-the shutdown sequence on it's outlet, but returns before the real UPS begins
-shutting down. The solution is in the clone driver, that will insert the
-FSD flag if needed without the help of a upsmon primary.
+the shutdown sequence on its outlet, but returns before the real UPS begins
+shutting down. The solution is in the `clone` driver itself, that will insert
+the FSD flag if needed without the help of an upsmon primary.
 
 CAVEATS
 -------
+
 The clone UPS will follow the status on the real UPS driver.  You can only
 make the clone UPS shutdown earlier than the real UPS driver, not later.
 If the real UPS driver initiates a shutdown, the clone UPS driver will
@@ -98,8 +198,19 @@ drivers are not affected, so if you tell the real UPS driver to shutdown
 the outlet of the clone UPS driver, your clients will lose power without
 warning.
 
+If you use service management frameworks like systemd or SMF to manage the
+dependencies between driver instances and other units, then you may have
+to set up special dependencies (e.g. with systemd "drop-in" snippet files)
+to queue your `clone` drivers to start after the "real" device drivers.
+
+//////////////////////////////////////
+TODO later: declare the driver as "optional", see
+https://github.com/networkupstools/nut/issues/1389
+//////////////////////////////////////
+
 AUTHOR
 ------
+
 Arjen de Korte <adkorte-guest@alioth.debian.org>
 
 SEE ALSO
@@ -108,8 +219,19 @@ SEE ALSO
 linkman:upscmd[1],
 linkman:upsrw[1],
 linkman:ups.conf[5],
+linkman:clone-outlet[8],
 linkman:nutupsdrv[8]
+
+Dummy driver:
+~~~~~~~~~~~~~
+
+The "repeater" mode of 'dummy-ups' driver is in some ways similar to the
+'clone' and 'clone-outlet' drivers, by relaying information from a locally
+or remotely running "real" device driver (and NUT data server).
+
+linkman:dummy-ups[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

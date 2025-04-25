@@ -4,12 +4,12 @@ UPSRW(8)
 NAME
 ----
 
-upsrw - UPS variable administration tool
+upsrw - Network UPS Tools device/driver variable administration tool
 
 SYNOPSIS
 --------
 
-*upsrw* 'ups'
+*upsrw* [-l] 'ups'
 
 *upsrw* -h
 
@@ -20,18 +20,16 @@ DESCRIPTION
 
 *upsrw* allows you to view and change the read/write variables inside your UPS.
 It sends commands via the server linkman:upsd[8] to your driver, which
-configures the hardware for you.
+configures the hardware for you.  You must use credentials defined in
+linkman:upsd.users[5] file on that data server with appropriate permissions.
 
 The list of variables that allow you to change their values is based on
 the capabilities of your UPS equipment.  Not all models support this
 feature.  Typically, cheaper hardware does not support any of them.
-Run upsrw with a UPS identifier to see what will work for you.
+Run `upsrw` with a UPS identifier to see what will work for you.
 
 OPTIONS
 -------
-
-*-h*::
-Display the help message.
 
 *-s* 'variable'::
 Specify the variable to be changed inside the UPS.  For unattended
@@ -48,6 +46,12 @@ length limit.  Others are enumerated types and can only be set to one of
 those values.  Others may be within an allowed range of values. Refer to
 the list to know what's available in your hardware.
 
+*-l*::
+Just display the list of the variables and their possible values.
++
+Same as default activity without '-s' argument, provided for CLI similarity
+with other tools.
+
 *-u* 'username'::
 Set the NUT username for the connection to the server.  This is optional,
 and you will be prompted for this when using the -s option if you don't
@@ -60,9 +64,10 @@ like -u, and you will be prompted for it if necessary.
 
 *-w*::
 Wait for the completion of setting execution by the driver and return its
-actual result from the device. Note that this feature requires that both upsd
-and the driver support TRACKING (NUT version 2.7.5 or higher) or it will
-otherwise fail.
+actual result from the device. Note that this feature requires that both
+linkman:upsd[8] and the driver support TRACKING (NUT version 2.8.0 or higher),
+or it will otherwise fail.
++
 The command will also block until an actual result is provided from the driver,
 or the timeout is reached (see *-t*).
 
@@ -72,6 +77,21 @@ Set a timeout when using *-w*. Defaults to 10 seconds.
 'ups'::
 View or change the settings on this UPS.  The format for this option is
 `upsname[@hostname[:port]]`.  The default hostname is "localhost".
+
+COMMON OPTIONS
+--------------
+
+*-h*::
+Show the command-line help message.
+
+*-V*::
+Show NUT version banner.  More details may be available if you also
+`export NUT_DEBUG_LEVEL=1` or greater verbosity level.
+
+*-W* 'secs'::
+Set the timeout for initial network connections (by default they are
+indefinitely non-blocking, or until the system interrupts the attempt).
+Overrides the optional `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
 
 UNATTENDED MODE
 ---------------
@@ -95,6 +115,12 @@ username and password.  If you get "access denied" errors, make sure
 that your linkman:upsd.users[5] has an entry for you, and that the
 username you are using has permissions to SET variables.
 
+*upsrw* without '-w' would somewhat confusingly show "OK" meaning just that
+the data server connection was established, and the server did not immediately
+reject the request due to e.g. unknown driver variable name. If you care
+to know the actual results, do use the `-w (-t NUM)` option(s) to wait for
+them.
+
 VALUE FORMAT
 ------------
 
@@ -102,6 +128,7 @@ When using *upsrw* to modify a numeric float value, that values must be given
 using decimal (base 10) english-based representation, so using a dot, in
 non-scientific notation.  So hexadecimal, exponents, and comma for thousands
 separator are forbidden.
+
 For example: "1200.20" is valid, while "1,200.20" and "1200,20" are invalid.
 
 HISTORY
@@ -112,8 +139,10 @@ confusing.
 
 SEE ALSO
 --------
+
 linkman:upsd[8], linkman:upscmd[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

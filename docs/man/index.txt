@@ -33,10 +33,12 @@ Clients commands
 - linkman:upsc[8]
 - linkman:upscmd[8]
 - linkman:upsrw[8]
+- linkman:NUT-Monitor[8]
 
 Configuration commands
 ~~~~~~~~~~~~~~~~~~~~~~
 
+- linkman:nutconf[8]
 - linkman:nut-scanner[8]
 
 CGI programs
@@ -46,66 +48,25 @@ CGI programs
 - linkman:upsset.cgi[8]
 - linkman:upsstats.cgi[8]
 
+Platform management
+~~~~~~~~~~~~~~~~~~~
+
+Windows
+^^^^^^^
+
+- linkman:nut.exe[8]
+
 [[Drivers]]
-Drivers
-~~~~~~~
+Driver control:
+~~~~~~~~~~~~~~~
 
-- linkman:upsdrvctl[8]
-- linkman:upsdrvsvcctl[8]
-- linkman:nut-driver-enumerator[8]
+include::{builddir}linkman-drivertool-names.txt[]
 
-- linkman:al175[8]
-- linkman:apcsmart[8]
-- linkman:apcupsd-ups[8]
-- linkman:asem[8]
-- linkman:bcmxcp[8]
-- linkman:bcmxcp_usb[8]
-- linkman:belkin[8]
-- linkman:belkinunv[8]
-- linkman:bestfcom[8]
-- linkman:bestfortress[8]
-- linkman:bestuferrups[8]
-- linkman:bestups[8]
-- linkman:blazer_ser[8]
-- linkman:blazer_usb[8]
-- linkman:clone[8]
-- linkman:dummy-ups[8]
-- linkman:etapro[8]
-- linkman:everups[8]
-- linkman:gamatronic[8]
-- linkman:genericups[8]
-- linkman:isbmex[8]
-- linkman:ivtscd[8]
-- linkman:liebert[8]
-- linkman:liebert-esp2[8]
-- linkman:macosx-ups[8]
-- linkman:masterguard[8]
-- linkman:metasys[8]
-- linkman:mge-shut[8]
-- linkman:mge-utalk[8]
-- linkman:microdowell[8]
-- linkman:netxml-ups[8]
-- linkman:nutdrv_atcl_usb[8]
-- linkman:nutdrv_qx[8]
+Drivers:
+~~~~~~~~
+
 - linkman:nutupsdrv[8]
-- linkman:oneac[8]
-- linkman:optiups[8]
-- linkman:phoenixcontact_modbus[8]
-- linkman:pijuice[8]
-- linkman:powercom[8]
-- linkman:powerman-pdu[8]
-- linkman:powerpanel[8]
-- linkman:rhino[8]
-- linkman:richcomm_usb[8]
-- linkman:safenet[8]
-- linkman:snmp-ups[8]
-- linkman:solis[8]
-- linkman:tripplite[8]
-- linkman:tripplitesu[8]
-- linkman:tripplite_usb[8]
-- linkman:usbhid-ups[8]
-- linkman:upscode2[8]
-- linkman:victronups[8]
+include::{builddir}linkman-driver-names.txt[]
 
 [[Developer_man]]
 Developer manual pages
@@ -114,6 +75,7 @@ Developer manual pages
 - linkman:libupsclient-config[1]
 - linkman:nut-recorder[8]
 - linkman:skel[8]
+- linkman:sockdebug[8]
 
 [[devclient]]
 Client library
@@ -128,10 +90,17 @@ Client library
 - linkman:libnutclient_variables[3]
 
 - linkman:upsclient[3]
+- linkman:upscli_add_host_cert[3]
+- linkman:upscli_cleanup[3]
 - linkman:upscli_connect[3]
+- linkman:upscli_tryconnect[3]
 - linkman:upscli_disconnect[3]
 - linkman:upscli_fd[3]
 - linkman:upscli_get[3]
+- linkman:upscli_init[3]
+- linkman:upscli_set_default_connect_timeout[3]
+- linkman:upscli_get_default_connect_timeout[3]
+- linkman:upscli_init_default_connect_timeout[3]
 - linkman:upscli_list_next[3]
 - linkman:upscli_list_start[3]
 - linkman:upscli_readline[3]
@@ -141,23 +110,37 @@ Client library
 - linkman:upscli_ssl[3]
 - linkman:upscli_strerror[3]
 - linkman:upscli_upserror[3]
+- linkman:upscli_str_add_unique_token[3]
+- linkman:upscli_str_contains_token[3]
 
 [[devscan]]
 Device discovery library
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 - linkman:nutscan[3]
-- linkman:nutscan_scan_usb[3]
-- linkman:nutscan_scan_snmp[3]
-- linkman:nutscan_scan_xml_http[3]
-- linkman:nutscan_scan_nut[3]
-- linkman:nutscan_scan_avahi[3]
-- linkman:nutscan_scan_ipmi[3]
-- linkman:nutscan_scan_eaton_serial[3]
-- linkman:nutscan_display_parsable[3]
-- linkman:nutscan_display_ups_conf[3]
-- linkman:nutscan_new_device[3]
-- linkman:nutscan_free_device[3]
 - linkman:nutscan_add_device_to_device[3]
+- linkman:nutscan_add_ip_range[3]
 - linkman:nutscan_add_option_to_device[3]
 - linkman:nutscan_cidr_to_ip[3]
+- linkman:nutscan_display_parsable[3]
+- linkman:nutscan_display_sanity_check[3]
+- linkman:nutscan_display_sanity_check_serial[3]
+- linkman:nutscan_display_ups_conf[3]
+- linkman:nutscan_display_ups_conf_with_sanity_check[3]
+- linkman:nutscan_free_device[3]
+- linkman:nutscan_free_ip_ranges[3]
+- linkman:nutscan_get_serial_ports_list[3]
+- linkman:nutscan_init[3]
+- linkman:nutscan_init_ip_ranges[3]
+- linkman:nutscan_ip_ranges_iter_inc[3]
+- linkman:nutscan_ip_ranges_iter_init[3]
+- linkman:nutscan_new_device[3]
+- linkman:nutscan_scan_avahi[3]
+- linkman:nutscan_scan_eaton_serial[3]
+- linkman:nutscan_scan_ipmi[3]
+- linkman:nutscan_scan_nut[3]
+- linkman:nutscan_scan_nut_simulation[3]
+- linkman:nutscan_scan_snmp[3]
+- linkman:nutscan_scan_usb[3]
+- linkman:nutscan_scan_xml_http_range[3]
+- linkman:nutscan_stringify_ip_ranges[3]

@@ -63,6 +63,8 @@ static void *get_voltage_multiplier(USBDevice_t *device)
 			ccharge_scale = 0.1; /* unverified */
 			cdischarge_scale = 0.1; /* unverified */
 			break;
+		default:
+			break;
 	}
 
 	upsdebugx(1, "vin_scale = %g; vout_scale = %g\n", vin_scale, vout_scale);
@@ -121,7 +123,7 @@ static const unsigned int therm_tbl[] =
 	(unsigned int)0x3CC
 };
 
-static const unsigned int therm_tbl_size = sizeof(therm_tbl)/sizeof(therm_tbl[0]);
+static const unsigned int therm_tbl_size = SIZEOF_ARRAY(therm_tbl);
 
 static const char *openups_charging_fun(double value);
 static const char *openups_discharging_fun(double value);

@@ -19,17 +19,20 @@
  */
 
 #include "common.h"
+#include "nut_stdint.h"
+#include "timehead.h"
 #include "upsclient.h"
 #include "status.h"
 #include "cgilib.h"
 #include "parseconf.h"
-#include "timehead.h"
 #include "upsstats.h"
 #include "upsimagearg.h"
-#include "nut_stdint.h"
 
 #define MAX_CGI_STRLEN 128
 #define MAX_PARSE_ARGS 16
+
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char	*monhost = NULL;
 static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
@@ -37,7 +40,7 @@ static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
 	/* from cgilib's checkhost() */
 static char	*monhostdesc = NULL;
 
-static int	port;
+static uint16_t	port;
 static char	*upsname, *hostname;
 static char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
 static UPSCONN_t	ups;
@@ -351,7 +354,7 @@ static void ups_connect(void)
 {
 	static ulist_t	*lastups = NULL;
 	char	*newups, *newhost;
-	int	newport;
+	uint16_t	newport;
 
 	/* try to minimize reconnects */
 	if (lastups) {
@@ -398,7 +401,7 @@ static void ups_connect(void)
 		exit(EXIT_FAILURE);
 	}
 
-	if (upscli_connect(&ups, hostname, port, 0) < 0)
+	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n", currups->sys, upscli_strerror(&ups));
 
 	lastups = currups;
@@ -846,7 +849,7 @@ static void parse_line(const char *buf)
 
 static void display_template(const char *tfn)
 {
-	char	fn[SMALLBUF], buf[LARGEBUF];
+	char	fn[NUT_PATH_MAX + 1], buf[LARGEBUF];
 
 	snprintf(fn, sizeof(fn), "%s/%s", confpath(), tfn);
 
@@ -965,7 +968,7 @@ static void upsstats_hosts_err(const char *errmsg)
 
 static void load_hosts_conf(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/hosts.conf", CONFPATH);
@@ -1049,6 +1052,8 @@ int main(int argc, char **argv)
 	NUT_UNUSED_VARIABLE(argv);
 
 	extractcgiargs();
+
+	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
 	printf("Content-type: text/html\n");
 	printf("Pragma: no-cache\n");

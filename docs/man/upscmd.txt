@@ -3,10 +3,12 @@ UPSCMD(8)
 
 NAME
 ----
-upscmd - UPS administration program for instant commands
+
+upscmd - Network UPS Tools device/driver instant commands administration tool
 
 SYNOPSIS
 --------
+
 *upscmd* -h
 
 *upscmd* -l 'ups'
@@ -17,6 +19,10 @@ DESCRIPTION
 -----------
 
 *upscmd* allows you to invoke "instant commands" in your UPS hardware.
+It sends commands via the server linkman:upsd[8] to your driver, which
+manages the hardware for you.  You must use credentials defined in
+linkman:upsd.users[5] file on that data server with appropriate permissions.
+
 Not all hardware supports this, so check the list with -l to see if anything
 will work on your equipment.
 
@@ -26,9 +32,6 @@ and more.
 
 OPTIONS
 -------
-
-*-h*::
-Display the help message.
 
 *-l* 'ups'::
 Show the list of supported instant commands on that UPS.  Some hardware
@@ -44,9 +47,10 @@ like -u, and you will be prompted for it if necessary.
 
 *-w*::
 Wait for the completion of command execution by the driver and return its
-actual result from the device. Note that this feature requires that both upsd
-and the driver support TRACKING (NUT version 2.7.5 or higher) or it will
-otherwise fail.
+actual result from the device. Note that this feature requires that both
+linkman:upsd[8] and the driver support TRACKING (NUT version 2.8.0 or higher),
+or it will otherwise fail.
++
 The command will also block until an actual result is provided from the driver,
 or the timeout is reached (see *-t*).
 
@@ -56,6 +60,21 @@ Set a timeout when using *-w*. Defaults to 10 seconds.
 'ups'::
 Connect to this UPS.  The format is `upsname[@hostname[:port]]`.  The default
 hostname is "localhost".
+
+COMMON OPTIONS
+--------------
+
+*-h*::
+Show the command-line help message.
+
+*-V*::
+Show NUT version banner.  More details may be available if you also
+`export NUT_DEBUG_LEVEL=1` or greater verbosity level.
+
+*-W* 'secs'::
+Set the timeout for initial network connections (by default they are
+indefinitely non-blocking, or until the system interrupts the attempt).
+Overrides the optional `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
 
 UNATTENDED MODE
 ---------------
@@ -86,10 +105,16 @@ no control over the timing.
 DIAGNOSTICS
 -----------
 
-upscmd won't work unless you provide a valid username and password.  If
+*upscmd* won't work unless you provide a valid username and password.  If
 you get "access denied" errors, make sure that your linkman:upsd.users[5] has
 an entry for you, and that the username you are using has permissions to
 SET variables.
+
+*upscmd* without '-w' would somewhat confusingly show "OK" meaning just that
+the data server connection was established, and the server did not immediately
+reject the request due to e.g. unknown instant command name. If you care
+to know the actual results, do use the `-w (-t NUM)` option(s) to wait for
+them.
 
 BUGS
 ----
@@ -102,8 +127,10 @@ It involves magic cookies.
 
 SEE ALSO
 --------
+
 linkman:upsd[8], linkman:upsrw[8]
 
-INTERNET RESOURCES
-------------------
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

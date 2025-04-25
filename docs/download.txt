@@ -10,9 +10,13 @@ Source code
 ================================================================================
 You should always use PGP/GPG to verify the signatures before using any source code.
 
+///////////
+// FIXME: linkdoc:user-manual[following procedure,verifySourceSig,docs/security.txt]
+///////////
+
 You can use the
 ifdef::website[]
-link:docs/user-manual.chunked/ar01s09.html#verifySourceSig[following procedure]
+link:docs/user-manual.chunked/NUT_Security.html#verifySourceSig[following procedure]
 endif::website[]
 ifndef::website[]
 <<verifySourceSig,following procedure>>.
@@ -23,14 +27,14 @@ to do so.
 Stable tree: {tree_version}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz[nut-{revision}.tar.gz]
-- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sig[PGP/GPG signature]
-- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sha256[SHA-256 sum]
-- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.md5[MD5 sum]
-- link:http://www.networkupstools.org/source/{tree_version}/new-{revision}.txt[Release notes]
-- link:http://www.networkupstools.org/source/{tree_version}/ChangeLog[ChangeLog]
+- link:https://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz[nut-{revision}.tar.gz]
+- link:https://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sig[PGP/GPG signature]
+- link:https://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sha256[SHA-256 sum]
+- link:https://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.md5[MD5 sum]
+- link:https://www.networkupstools.org/source/{tree_version}/new-{revision}.txt[Release notes]
+- link:https://www.networkupstools.org/source/{tree_version}/ChangeLog[ChangeLog]
 
-You can also browse the link:http://www.networkupstools.org/source/{tree_version}/[stable source directory].
+You can also browse the link:https://www.networkupstools.org/source/{tree_version}/[stable source directory].
 
 Development tree:
 ~~~~~~~~~~~~~~~~~
@@ -43,13 +47,26 @@ link:https://github.com/[GitHub].
 
 To retrieve the current development tree, use the following command:
 
-	$ git clone git://github.com/networkupstools/nut.git
+	:; git clone git://github.com/networkupstools/nut.git
 
-The configure script and its dependencies are not stored in Git. To generate
+OPTIONALLY you can then fetch known git tags, so semantic versions look
+better (based off a recent release):
+
+	:; cd nut
+	:; git fetch --tags --all
+
+The `configure` script and its dependencies are not stored in Git. To generate
 them, ensure that autoconf, automake and libtool are installed, then run the
 following script in the directory you just checked out:
 
-	$ ./autogen.sh
+	:; ./autogen.sh
+
+NOTE: it is optionally recommended to have Python 2.x or 3.x, and Perl, to
+generate some files included into the `configure` script, presence is checked
+by autotools when it is generated. Neutered files can be just "touched" to
+pass the `autogen.sh` if these interpreters are not available, and effectively
+skip those parts of the build later on -- `autogen.sh` will then advise which
+special environment variables to `export` in your situation and re-run it.
 
 Then refer to the
 ifdef::website[]
@@ -68,12 +85,10 @@ use Git or <<Snapshots,snapshots>>.
 Browse code
 ^^^^^^^^^^^
 
-You can also browse the "vanilla NUT" code at
-link:https://github.com/networkupstools/nut[GitHub],
-or at packaging sources of operating system distributions such as:
-
-* link:https://salsa.debian.org/debian/nut/[Debian Salsa mirror]
-* link:https://src.fedoraproject.org/rpms/nut/tree/rawhide[Fedora Rawhide mirror]
+You can browse the "vanilla NUT" code at the
+link:https://github.com/networkupstools/nut/[Main GitHub repository for NUT sources],
+and some possibly modified copies as part of packaging recipe
+sources of operating system distributions, as listed below.
 
 [[Snapshots]]
 Snapshots
@@ -81,18 +96,28 @@ Snapshots
 
 GitHub has several download links for repository snapshots (for particular tags
 or branches), but you will need a number of tools such as autoconf, automake
-and libtool to use these snapshots.
+and libtool to use these snapshots to generate the `configure` script and some
+other files.
+
+After you `configure` the source workspace, a `make dist-hash` recipe would
+create the snapshot tarballs which do not require the auto* tools, and their
+checksum files, such as those available on the NUT website and attached to
+link:https://github.com/networkupstools/nut/releases[GitHub Releases page].
+
+/////////
+TODO: #1400 to replace this with a NUT CI farm service to publish the tarballs
 
 If our Buildbot instance is behaving, you can download a snapshot which does
 not require auto* tools from this
 link:http://buildbot.networkupstools.org/snapshots[builder].  Look for the
 latest *[tarball]* link towards the top of the page, and be sure to check the
 'Build ##' link to verify the branch name.
+/////////
 
 Older versions
 ~~~~~~~~~~~~~~
 
-link:http://www.networkupstools.org/source/[Browse source directory]
+link:https://www.networkupstools.org/source/[Browse source directory]
 
 
 Binary packages
@@ -100,45 +125,75 @@ Binary packages
 
 NOTE: The only official releases from this project are source code.
 
-NUT is already available in the following systems:
+NUT is already available in the following operating systems (and
+link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging-recipes-and-repository-sections[likely more]):
+
+- link:https://repology.org/project/nut/versions[Repology report on NUT]
+  lists 745 entries about NUT, as of this writing
 
 - Linux:
-link:https://aur.archlinux.org/packages/network-ups-tools[Arch Linux],
-link:http://packages.debian.org/nut[Debian],
-link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux],
-Mandriva,
-link:https://apps.fedoraproject.org/packages/nut[Red Hat / Fedora],
-link:http://software.opensuse.org/package/nut[Novell SUSE / openSUSE],
-link:https://github.com/openwrt/packages/tree/master/net/nut[OpenWrt],
-link:http://sotirov-bg.net/slackpack/search.cgi?q=nut[Slackware],
-link:http://packages.ubuntu.com/nut[Ubuntu],
-link:https://github.com/voidlinux/xbps-packages/blob/master/srcpkgs/network-ups-tools/template[Void Linux].
+
+    * link:https://github.com/42ity/nut/tree/FTY/obs[42ITy.org packaging recipes for Debian-based releases]
+    * link:https://salsa.debian.org/debian/nut/[Debian Salsa recipes]
+      and link:http://packages.debian.org/nut[Debian packages]
+    * link:http://packages.ubuntu.com/nut[Ubuntu packages]
+    * link:https://src.fedoraproject.org/rpms/nut/tree/rawhide[Fedora Rawhide recipes]
+      and link:https://src.fedoraproject.org/rpms/nut[Red Hat / Fedora packages]
+    * link:https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=network-ups-tools-git[Arch Linux recipe]
+      and link:https://aur.archlinux.org/packages/network-ups-tools-git[Arch Linux package info]
+    * link:https://gitweb.gentoo.org/repo/gentoo.git/tree/sys-power/nut[Gentoo Linux recipe]
+      and link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux package info]
+    * link:https://build.opensuse.org/package/show/openSUSE%3AFactory/nut[Novell SUSE / openSUSE official package base recipe]
+      and link:https://build.opensuse.org/package/show/hardware/nut[Novell SUSE / openSUSE official package development recipe],
+      and link:http://software.opensuse.org/package/nut[Novell SUSE / openSUSE official package overview]
+    * link:https://build.opensuse.org/search?search_text=nut[Numerous other recipes on Open Build System (not only by SUSE)]
+    * link:https://github.com/openwrt/packages/tree/master/net/nut[OpenWRT recipes]
+    * link:http://sotirov-bg.net/slackpack/search.cgi?q=nut[Slackware package overview]
+    * link:https://github.com/void-linux/void-packages/tree/master/srcpkgs/network-ups-tools[Void Linux recipes]
 
 - BSD systems:
-link:http://www.FreeBSD.org/cgi/ports.cgi?query=^nut-&amp;stype=name[FreeBSD],
-link:http://pkgsrc.se/sysutils/ups-nut[NetBSD],
-link:http://cvsweb.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD],
-link:http://doc.freenas.org/9.3/freenas_services.html#ups[FreeNAS].
+
+    * link:https://cgit.freebsd.org/ports/tree/sysutils/nut-devel[FreeBSD package recipe (devel)],
+      link:https://cgit.freebsd.org/ports/tree/sysutils/nut[FreeBSD package recipe]
+      and link:http://www.FreeBSD.org/cgi/ports.cgi?query=^nut-&amp;stype=name[FreeBSD package overview]
+    * link:http://cvsweb.netbsd.org/bsdweb.cgi/pkgsrc/sysutils/ups-nut/[NetBSD recipe] and link:https://pkgsrc.se/sysutils/ups-nut[NetBSD package overview]
+    * link:http://cvsweb.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD recipe]
+    * link:https://github.com/freenas/iocage-ports/tree/master/sysutils/nut[FreeNAS iocage-ports recipe],
+      link:http://doc.freenas.org/9.3/freenas_services.html#ups[FreeNAS 9.3 docs on UPS integration]
+      and link:https://www.ixsystems.com/documentation/freenas/11.3-U5/services.html#ups[FreeNAS 11.3-U5 docs on UPS integration]
 
 - Mac OS X:
-link:http://pdb.finkproject.org/pdb/package.php/nut[Fink],
-link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts]
+
+    * link:https://github.com/fink/fink-distributions/blob/master/10.9-libcxx/stable/main/finkinfo/net/nut.info[Fink recipe]
+      and link:http://pdb.finkproject.org/pdb/package.php/nut[Fink package overview]
+    * link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts recipe]
+
+- illumos/Solaris:
+
+    * link:https://github.com/OpenIndiana/oi-userland/tree/oi/hipster/components/sysutils/nut[OpenIndiana oi-userland recipe]
+      and link:https://pkg.openindiana.org/hipster/en/search.shtml?token=nut&action=Search[OpenIndiana latest rolling builds]
 
 - Windows (complete port, Beta):
-link:http://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-6.msi[Windows MSI installer 2.6.5-6]
+
+    * Current regular CI builds are available as tarballs with binaries from
+      link:https://ci.appveyor.com/project/nut-travis/nut/build/artifacts[Appveyor
+      CI] -- but it may be difficult to locate specifically the master-branch builds.
+      See link:https://github.com/networkupstools/nut/wiki/NUT-for-Windows[NUT
+      for Windows wiki article] for these details, and more.
+    * link:https://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-6.msi[(OBSOLETE) Windows MSI installer 2.6.5-6]
 
 
 Java packages
 -------------
 
-The jNut package has been split into its own
-link:https://github.com/networkupstools/jNut[GitHub repository].
+- The jNut package has been split into its own
+  link:https://github.com/networkupstools/jNut[GitHub repository].
 
 - NUT Java support (client side, Beta)
-link:http://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]
+  link:https://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]
 
 - NUT Java Web support (client side using REST, Beta)
-link:http://www.networkupstools.org/package/java/jNutWebAPI-0.2-SNAPSHOT-src.tar.gz[jNutWebAPI 0.2-SNAPSHOT (sources)]
+  link:https://www.networkupstools.org/package/java/jNutWebAPI-0.2-SNAPSHOT-src.tar.gz[jNutWebAPI 0.2-SNAPSHOT (sources)]
 
 Virtualization packages
 -----------------------
@@ -146,7 +201,25 @@ Virtualization packages
 VMware
 ~~~~~~
 
-- NUT client 2.7.4 for ESXi 5.0, 5.1, 5.5 and 6.0 (offsite, René Garcia)
+- NUT client for VMware ESXi (several versions of both; offsite, by René Garcia).
+  Since the hypervisor manager environment lacks access to hardware ports, this
+  package only includes the `upsmon` client integration, and a NUT server must
+  run in a VM with passed-through ports.
++
+See link:https://github.com/networkupstools/nut/wiki/NUT-and-VMware-(ESXi)[NUT
+  and VMware (ESXi) page on NUT Wiki] for more community-contributed details.
++
+Note that the VIB package versioning is independent of NUT or VMware versions,
+  they are however mentioned in downloadable file names. As of this writing,
+  there are builds spanning VMware ESXi 5.0-8.0 and NUT 2.7.4-2.8.0.
++
+WARNING: This module is provided "as is" and is not approved by VMware,
+you may lose VMware support if you install it. Use it at your own risks.
 
-  * link:http://rene.margar.fr/2012/05/client-nut-pour-esxi-5-0/[blog entry (French)]
-  * link:http://rene.margar.fr/downloads/NutClient-ESXi500-1.4.0.tar.gz[VIB package (v1.4.0)]
+  * link:https://github.com/rgc2000/NutClient-ESXi[GitHub repository with build recipes],
+    including link:https://github.com/rgc2000/NutClient-ESXi/releases[binary releases]
+  * link:https://rene.margar.fr/2012/05/client-nut-pour-esxi-5-0/[Original blog entry (French)]
+    * link:https://rene.margar.fr/2012/05/client-nut-pour-esxi-5-0/comment-page-22/#comment-13325[Historic
+      details of the recipe evolution]
+  * link:https://rene.margar.fr/downloads/NutClient-ESXi500-1.4.0.tar.gz[VIB package
+    (in fact automatically redirects to latest build)]

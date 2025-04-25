@@ -12,24 +12,37 @@ dnl Check for compilable and valid windows.h header
 AC_DEFUN([NUT_CHECK_HEADER_WINDOWS], [
   AC_CACHE_CHECK([for windows.h], [nut_cv_header_windows_h], [
     AC_LANG_PUSH([C])
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([[
+    TESTPROG_H='
 #undef inline
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-      ]],[[
+'
+    TESTPROG_C='
 #if defined(__CYGWIN__) || defined(__CEGCC__)
         HAVE_WINDOWS_H shall not be defined.
 #else
         int dummy=2*WINVER;
 #endif
-      ]])
+'
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([$TESTPROG_H], [$TESTPROG_C])
     ],[
       nut_cv_header_windows_h="yes"
     ],[
-      nut_cv_header_windows_h="no"
+      dnl Try extending default search path as relevant for e.g. MSYS2
+      dnl (though there this should be compiler built-in default):
+      SAVED_CFLAGS="$CFLAGS"
+      CFLAGS="-I/usr/include/w32api $CFLAGS"
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([$TESTPROG_H], [$TESTPROG_C])
+      ],[
+        nut_cv_header_windows_h="yes"
+      ],[
+        nut_cv_header_windows_h="no"
+        CFLAGS="$SAVED_CFLAGS"
+      ])
     ])
     AC_LANG_POP([C])
   ])
@@ -39,6 +52,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINDOWS], [
         [Define to 1 if you have the windows.h header file.])
       ;;
   esac
+  AM_CONDITIONAL(HAVE_WINDOWS_H, test "x$nut_cv_header_windows_h" = xyes)
 ])
 
 
@@ -111,6 +125,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINSOCK], [
         [Define to 1 if you have the winsock.h header file.])
       ;;
   esac
+  AM_CONDITIONAL(HAVE_WINSOCK_H, test "x$nut_cv_header_winsock_h" = xyes)
 ])
 
 
@@ -150,6 +165,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINSOCK2], [
         [Define to 1 if you have the winsock2.h header file.])
       ;;
   esac
+  AM_CONDITIONAL(HAVE_WINSOCK2_H, test "x$nut_cv_header_winsock2_h" = xyes)
 ])
 
 
@@ -190,4 +206,43 @@ AC_DEFUN([NUT_CHECK_HEADER_WS2TCPIP], [
         [Define to 1 if you have the ws2tcpip.h header file.])
       ;;
   esac
+  AM_CONDITIONAL(HAVE_WS2TCPIP_H, test "x$nut_cv_header_ws2tcpip_h" = xyes)
+])
+
+dnl NUT_CHECK_HEADER_IPHLPAPI
+dnl -------------------------------------------------
+dnl Check for compilable and valid iphlpapi.h header
+
+AC_DEFUN([NUT_CHECK_HEADER_IPHLPAPI], [
+  AC_REQUIRE([NUT_CHECK_HEADER_WINSOCK2])dnl
+  AC_CACHE_CHECK([for iphlpapi.h], [nut_cv_header_iphlpapi_h], [
+    AC_LANG_PUSH([C])
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([[
+#undef inline
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <winsock2.h>
+#include <iphlpapi.h>
+      ]],[[
+        PIP_ADAPTER_ADDRESSES pAddresses = NULL;
+        IP_ADAPTER_PREFIX *pPrefix = NULL;
+        PIP_ADAPTER_INFO pAdapter = NULL;
+      ]])
+    ],[
+      nut_cv_header_iphlpapi_h="yes"
+    ],[
+      nut_cv_header_iphlpapi_h="no"
+    ])
+    AC_LANG_POP([C])
+  ])
+  AS_CASE([$nut_cv_header_iphlpapi_h],
+    [yes], [
+      AC_DEFINE_UNQUOTED(HAVE_IPHLPAPI_H, 1,
+        [Define to 1 if you have the iphlpapi.h header file.])
+      ]
+  )
+  AM_CONDITIONAL(HAVE_IPHLPAPI_H, test "x$nut_cv_header_iphlpapi_h" = xyes)
 ])

@@ -6,8 +6,8 @@ Charles Lepple <clepple@gmail.com>
 Intro
 -----
 
-See http://www.methods.co.nz/asciidoc/[The AsciiDoc Manual] for more
-information.
+See the https://asciidoc-py.github.io/userguide.html[AsciiDoc User Guide]
+for more information.
 
 Works in Progress
 -----------------

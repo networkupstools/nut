@@ -1,9 +1,22 @@
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 blazer driver. For information about the core driver, see
 linkman:nutupsdrv[8].
 
+NOTE
+----
+
+Please note that this driver is deprecated and will not receive
+new development. If it works for managing your devices -- fine,
+but if you are running it to try setting up a new device, please
+consider the newer linkman:nutdrv_qx[8] instead, which should
+handle all 'Q*' protocol variants for NUT.
+
+Please do also report if your device works with this driver,
+but linkman:nutdrv_qx[8] would not actually support it with any
+subdriver!
 
 SUPPORTED HARDWARE
 ------------------
@@ -29,27 +42,27 @@ will need changing (see linkman:ups.conf[5]):
 
 Maximum battery voltage that is reached after about 12 to 24 hours charging.
 If you want the driver to report a guesstimated *battery.charge*, you need
-to specify this (see <<_battery_charge,BATTERY CHARGE>>).
+to specify this (see <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>).
 
 *default.battery.voltage.low =* 'value'::
 
 Minimum battery voltage just before the UPS automatically shuts down.
 If you want the driver to report a guesstimated *battery.charge*, you need
-to specify this (see <<_battery_charge,BATTERY CHARGE>>).
+to specify this (see <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>).
 
 *default.battery.voltage.nominal =* 'value'::
 *override.battery.voltage.nominal =* 'value'::
 
-Some devices show a wrong nominal battery voltage (or none at all), so you may
-need to override or set a default value.
+Some devices show a wrong nominal battery voltage (or none at all),
+so you may need to override or set a default value.
 
 *override.battery.packs =* 'value'::
 
 Some devices report a part of the total battery voltage. For instance, if
 *battery.voltage.nominal* is 24 V, but it reports a *battery.voltage*
 of around 2 V, the number of *battery.packs* to correct this reading would
-be 12. The driver will attempt to detect this automatically, but if this fails
-somehow, you may want to override this value.
+be 12. The driver will attempt to detect this automatically, but if this
+fails somehow, you may want to override this value.
 
 *ondelay =* 'value'::
 
@@ -76,7 +89,7 @@ Setting this flag will make the driver skip this step.
 *protocol =* 'string'::
 
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values 'megatec', 'megatec/old', 'mustek' and 'zinto'.
+Supported values are 'megatec', 'megatec/old', 'mustek' and 'zinto'.
 
 *runtimecal =* 'value,value,value,value'::
 
@@ -90,14 +103,14 @@ seconds at full load and 720 seconds at half load, you would enter
 The first load should always be higher than the second. If you have values
 available for loads other than 100 and 50 % respectively, you can use those
 too, but keep them spaced apart as far as reasonably possible. Just don't
-get too close to no load (prediction of runtime depends more on idle load for
-the battery then).
+get too close to no load (prediction of runtime depends more on idle load
+for the battery then).
 
 *chargetime =* 'value'::
 
-The time needed to fully recharge the battery after being fully discharged. If
-not specified, the driver defaults to 43200 seconds (12 hours). Only used if
-*runtimecal* is also specified.
+The time needed to fully recharge the battery after being fully discharged.
+If not specified, the driver defaults to 43200 seconds (12 hours).
+Only used if *runtimecal* is also specified.
 
 *idleload =* 'value'::
 
@@ -112,10 +125,10 @@ SERIAL INTERFACE ONLY
 
 *cablepower =* 'string'::
 
-By default the driver will set DTR and clear RTS ('normal'). If you find that
-your UPS isn't detected or the communication with the UPS is unreliable, you may
-try if clear DTR and set RTS ('reverse'), set DTR and RTS ('both') or
-clear DTR and RTS ('none') improves this situation.
+By default the driver will set DTR and clear RTS ('normal'). If you find
+that your UPS isn't detected or the communication with the UPS is unreliable,
+you may try if clear DTR and set RTS ('reverse'), set DTR and RTS ('both')
+or clear DTR and RTS ('none') improves this situation.
 endif::blazer_usb[]
 
 
@@ -123,44 +136,13 @@ ifdef::blazer_usb[]
 USB INTERFACE ONLY
 ~~~~~~~~~~~~~~~~~~
 
-*vendorid =* 'regex'::
-*productid =* 'regex'::
-*vendor =* 'regex'::
-*product =* 'regex'::
-*serial =* 'regex'::
-
-Select a specific UPS, in case there is more than one connected via
-USB. Each option specifies an extended regular expression (see
-*regex(7)*) that must match the UPS's entire vendor/product/serial
-string (minus any surrounding whitespace), or the whole 4-digit
-hexadecimal code for vendorid and productid. Try *-DD* for
-finding out the strings to match.
-+
-Examples:
-
- - `-x vendor="Foo.Corporation.*"`
- - `-x vendorid=051d*` (APC)
- - `-x product=".*(Smart|Back)-?UPS.*"`
-
-*bus =* 'regex'::
-
-Select a UPS on a specific USB bus or group of buses. The argument is
-a regular expression that must match the bus name where the UPS is
-connected (e.g. bus="002", bus="00[2-3]").
-
-*device =* 'regex'::
-
-Select a UPS on a specific USB device or group of devices. The argument is
-a regular expression that must match the device name where the UPS is
-connected (e.g. device="001", device="00[1-2]").
-Note that device numbers are not guaranteed by the OS to be stable across
-re-boots or device re-plugging.
+include::nut_usb_addvars.txt[]
 
 *subdriver =* 'string'::
 
 Select a serial-over-USB subdriver to use. You have a choice between *phoenix*,
-*ippon*, *cypress*, and *krauler*. When using this option, it is mandatory to also
-specify the *vendorid* and *productid*.
+*ippon*, *cypress*, and *krauler*. When using this option, it is mandatory
+to also specify the *vendorid* and *productid*.
 
 *langid_fix =* 'value'::
 
@@ -195,8 +177,8 @@ Turn off the load and return when power is back. Uses the timers defined by
 
 *shutdown.stayoff*::
 
-Turn off the load and remain off (see <<_known_problems,KNOWN PROBLEMS>>). Uses
-the timer defined by *offdelay*.
+Turn off the load and remain off (see <<_known_problems,KNOWN PROBLEMS>>).
+Uses the timer defined by *offdelay*.
 
 *shutdown.stop*::
 
@@ -219,45 +201,48 @@ Perform a battery test for the duration of 'value' minutes.
 Stop a running battery test (not available on some hardware.)
 
 
-BATTERY CHARGE
---------------
+BATTERY CHARGE GUESSTIMATION
+----------------------------
 
-Due to popular demand, this driver will report a guesstimated *battery.charge*
-and optionally *battery.runtime*, provided you specified a couple of the
-<<_extra_arguments,EXTRA ARGUMENTS>> listed above.
+Due to popular demand, this driver will report a guesstimated
+*battery.charge* value and optionally *battery.runtime*, provided you
+specified a couple of the <<_extra_arguments,EXTRA ARGUMENTS>> listed above.
 
 If you specify both *battery.voltage.high* and *battery.voltage.low* in
-linkman:ups.conf[5], but don't enter *runtimecal*, it will guesstimate the state
-of charge by looking at the battery voltage alone. This is not reliable under load,
-as this only gives reasonably accurate readings if you disconnect the load, let the
-battery rest for a couple of minutes and then measure the open cell voltage. This
-just isn't practical if the power went out and the UPS is providing power for your
+linkman:ups.conf[5], but don't enter *runtimecal*, it will guesstimate
+the state of charge by looking at the battery voltage alone.
+This is not reliable under load, as this only gives reasonably accurate
+readings if you disconnect the load, let the battery rest for a couple
+of minutes and then measure the open cell voltage. This just isn't
+practical if the power went out and the UPS is providing power for your
 systems.
 
-                     battery.voltage - battery.voltage.low
-battery.charge =  ------------------------------------------ x 100 %
-                  battery.voltage.high - battery.voltage.low
+                         battery.voltage - battery.voltage.low
+    battery.charge =  ------------------------------------------ x 100 %
+                      battery.voltage.high - battery.voltage.low
 
-There is a way to get better readings without disconnecting the load but this
-requires one to keep track on how much (and how fast) current is going in- and
-out of the battery. If you specified the *runtimecal*, the driver will attempt
-to do this. Note however, that this heavily relies on the values you enter and
-that the UPS must be able to report the load as well. There are quite a couple
-of devices that report 0 % (or any other fixed value) at all times, in which
-case this obviously doesn't work.
+There is a way to get better readings without disconnecting the load,
+but this requires one to keep track on how much (and how fast) current
+is going in- and out of the battery. If you specified the *runtimecal*,
+the driver will attempt to do this. Note however, that this heavily
+relies on the values you enter and that the UPS must be able to report
+the load as well. There are quite a couple of devices that report 0%
+(or any other fixed value) at all times, in which case this obviously
+doesn't work.
 
-The driver also has no way of determining the degradation of the battery capacity
-over time, so you'll have to deal with this yourself (by adjusting the values
-in *runtimecal*). Also note that the driver guesses the initial state of charge
-based on the battery voltage, so this may be less than 100 %, even when you are
-certain that they are full. There is just no way to reliably measure this between
-0 and 100 % full charge.
+The driver also has no way of determining the degradation of the battery
+capacity over time, so you'll have to deal with this yourself (by adjusting
+the values in *runtimecal*). Also note that the driver guesses the initial
+state of charge based on the battery voltage, so this may be less than 100%,
+even when you are certain that they are full. There is just no way to
+reliably measure this between 0 and 100% full charge.
 
-This is better than nothing (but not by much). If any of the above calculations is
-giving you incorrect readings, you are the one that put in the values in
-linkman:ups.conf[5], so don't complain with the author. If you need something better,
-buy a UPS that reports *battery.charge* and *battery.runtime* all by itself
-without the help of a NUT driver.
+This is better than nothing (but not by much). If any of the above
+calculations are giving you incorrect readings, remember that you are
+the one who put in the values in linkman:ups.conf[5], so don't complain
+to the author. If you need something better, consider buy an UPS that
+reports *battery.charge* and *battery.runtime* all by itself without
+the help of a NUT driver.
 
 
 NOTES FOR THE PREVIOUS USER OF MEGATEC DRIVERS
@@ -266,11 +251,13 @@ NOTES FOR THE PREVIOUS USER OF MEGATEC DRIVERS
 The blazer drivers having replaced the megatec ones, some configuration
 changes may be required by users switching to blazer.
 
-Part of this, the following megatec options, in ups.conf, have to be changed:
+Part of this, the following megatec options, in ups.conf, have to be
+changed:
 
 *battvolts*::
 
-You need to use 'default.battery.voltage.high' and 'default.battery.voltage.low'
+You need to use 'default.battery.voltage.high' and
+'default.battery.voltage.low'
 
 *dtr and rts*::
 
@@ -287,16 +274,17 @@ KNOWN PROBLEMS
 
 Some UPS commands aren't supported by all models. In most cases, the driver
 will send a message to the system log when the user tries to execute an
-unsupported command. Unfortunately, some models don't even provide a way for
-the driver to check for this, so the unsupported commands will silently
+unsupported command. Unfortunately, some models don't even provide a way
+for the driver to check for this, so the unsupported commands will silently
 fail.
 
 Both the *load.off* and *shutdown.stayoff* instant commands are meant to
 turn the load off indefinitely. However, some UPS models don't allow this.
 
-Some models report a bogus value for the beeper status (will always be 'enabled'
-or 'disabled'). So, the *beeper.toggle* command may appear to have no effect
-in the status reported by the driver when, in fact, it is working fine.
+Some models report a bogus value for the beeper status (will always be
+'enabled' or 'disabled'). So, the *beeper.toggle* command may appear to
+have no effect in the status reported by the driver when, in fact, it is
+working fine.
 
 The temperature and load value is known to be bogus in some models.
 
@@ -304,8 +292,8 @@ The temperature and load value is known to be bogus in some models.
 AUTHORS
 -------
 
-Arjen de Korte <adkorte-guest at alioth.debian.org>,
-Alexander Gordeev <lasaine at lvk.cs.msu.su>
+* Arjen de Korte <adkorte-guest at alioth.debian.org>
+* Alexander Gordeev <lasaine at lvk.cs.msu.su>
 
 
 SEE ALSO
@@ -323,7 +311,5 @@ linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-
-The NUT HCL: http://www.networkupstools.org/stable-hcl.html
-
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* The NUT HCL: https://www.networkupstools.org/stable-hcl.html

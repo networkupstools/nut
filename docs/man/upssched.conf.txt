@@ -12,6 +12,12 @@ DESCRIPTION
 This file controls the operations of linkman:upssched[8], the timer-based
 helper program for linkman:upsmon[8].
 
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
+
 CONFIGURATION DIRECTIVES
 ------------------------
 
@@ -107,4 +113,5 @@ linkman:upssched[8], linkman:upsmon[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

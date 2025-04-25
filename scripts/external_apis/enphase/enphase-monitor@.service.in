@@ -1,0 +1,38 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2025 by Scott Shambarger
+# Copyright (C) 2025 by NUT contributors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
+[Unit]
+Description=Enphase API monitor for NUT dummy-ups %I
+PartOf=nut-driver.target
+# NOTE: Works with individual service instances prepared by nut-driver-enumerator
+Before=nut-driver@%i.service
+
+[Service]
+SyslogIdentifier=%N
+# NOTE: Does not have to be same run-time account as NUT daemons, just the
+# files created by it should be readable by the dummy-ups daemon. For more
+# secured installations, customize this via a drop-in systemd file with a
+# different dedicated account:
+User=@RUN_AS_USER@
+# NOTE: On systems with wear-prone storage (flash/SSD), you can fiddle with
+# a "manually-made" file that would be copied into a tmpfs, and have the
+# script (and dummy-ups driver) pick up that tmpfs location with initially
+# inherited data points, e.g.:
+### ExecStartPre=/bin/cp @CONFPATH@/enphase-%I.default /dev/shm/nut/enphase-%I.seq
+# First run once to scrap obsolete data from the existing file
+# Replace -s with -x to start in nocomms (no network APIs) below:
+ExecStartPre=@NUT_LIBEXECDIR@/enphase-monitor -s %I
+# Start as the continuously running service
+ExecStart=@NUT_LIBEXECDIR@/enphase-monitor %I
+Type=exec
+# Restart really always, do not stop trying:
+StartLimitInterval=0
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=nut-driver@%i.service

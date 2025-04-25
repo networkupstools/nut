@@ -8,8 +8,14 @@ This project is the result of years of work by many individuals and companies.
 Many people have written or tweaked the software; the drivers, clients, server
 and documentation have all received valuable attention from numerous sources.
 
-Many of them are listed within the source code, AUTHORS file, release notes, and
-mailing list archives, but some prefer to be anonymous.
+Many of them are listed within the source code, linksrcdoc:AUTHORS[] file,
+release notes, and mailing list archives, but some prefer to be anonymous.
+
+Companies and organizations that have helped with various aspects of project
+infrastructure are listed in
+linkdoc:user-manual[Acknowledgements of organizations which help with NUT CI
+and other daily operations,acknowledgements-ci-ops,README.adoc,Overview].
+
 This software would not be possible without their help.
 
 
@@ -19,8 +25,10 @@ The NUT Team
 Active members
 ~~~~~~~~~~~~~~
 
-- Jim Klimov: project leader (since 2020), OpenIndiana and OmniOS packager, CI ops and infra
-- Arnaud Quette: ex-project leader (from 2005 to 2020), Debian packager and jack of all trades
+- Jim Klimov: project leader (since 2020), OpenIndiana and OmniOS packager,
+  CI dev/ops and infra
+- Arnaud Quette: ex-project leader (from 2005 to 2020), Debian packager
+  and jack of all trades
 - Charles Lepple: senior lieutenant
 - Daniele Pezzini: senior developer
 - Kjell Claesson: senior developer
@@ -69,7 +77,9 @@ UPS manufacturers
 
 [[Eaton]]
 * link:http://powerquality.eaton.com[Eaton], has been the main NUT supporter in
-the past, between 2007 and 2011, continuing MGE UPS SYSTEMS efforts.
+the past, between 2007 and 2011, continuing MGE UPS SYSTEMS efforts. In 2022,
+the Eaton NUT-based companion software bundle sources developed (pre-?)2013-2018
+were contributed and re-licensed to become part of NUT.
 As such, Eaton has been:
   - providing extensive technical documents (Eaton protocols library),
   - providing units to developers of NUT and related projects,
@@ -108,6 +118,10 @@ link:http://www.microdowell.com/fra/download.html[Linux / Unix].
 * link:http://pcmups.com.tw[Powercom], through Alexey Morozov, has provided
 link:ups-protocols.html[extensive information] on its USB/HID devices, along
 with development units.
++
+They also have a link:https://www.upspowercom.com/Support-NUT.jsp[page
+suggesting NUT] as the software to support a wide range of their USB HID
+capable models.
 
 * link:http://www.riello-ups.com[Riello UPS], through Massimo Zampieri, has
 provided link:ups-protocols.html[all protocols information]. Elio Parisi has
@@ -120,7 +134,7 @@ list, and the rest of the information is available via the
 link:http://article.gmane.org/gmane.comp.monitoring.nut.user/8173[list
 archives].
 
-* link:https://nag.company/en[NAG], through Alexey Kazancev and Igor Ryabov, 
+* link:https://nag.company/en[NAG], through Alexey Kazancev and Igor Ryabov,
 has added support for SNR-UPS-LID-XXXX models as usb-hid UPS.
 
 * link:http://www.ablerex.com.tw/[Ablere Electronics Co., Ltd.] contributed

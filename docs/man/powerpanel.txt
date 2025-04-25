@@ -6,14 +6,20 @@ NAME
 
 powerpanel - Driver for serial PowerPanel Plus compatible UPS equipment
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*powerpanel* -h
+
+*powerpanel* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 powerpanel driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports CyberPower BC1200, PR2200 and many other similar
 devices, both for the text and binary protocols. The driver will
 autodetect which protocol is used.
@@ -24,6 +30,7 @@ network cards via SNMP.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings in linkman:ups.conf[5]:
 
 *protocol=*['text,binary']::
@@ -51,6 +58,7 @@ seconds will be truncated to 6 seconds intervals, values above 60 seconds to
 
 VARIABLES
 ---------
+
 Depending on the type of your UPS unit, some of the following variables may
 be changed with linkman:upsrw[8]. If the driver can't read a variable from the
 UPS, it will not be made available.
@@ -72,6 +80,7 @@ writable: allow cold start from battery
 
 COMMANDS
 --------
+
 Depending on the type of your UPS unit, some of the following commands may
 be available.
 
@@ -88,6 +97,7 @@ must verify that these work as expected (see <<_shutdown_issues,Shutdown Issues>
 
 SUPPORT STATUS
 --------------
+
 Vendor support is absent for this driver, so if you need some features that
 are currently not available, provide ample documentation on what the driver
 should sent to the UPS in order to make this work. If more information
@@ -98,6 +108,7 @@ isn't willing to share this with us.
 
 SHUTDOWN ISSUES
 ---------------
+
 If the *shutdown.return* command on your UPS doesn't seem to work,
 chances are that your UPS is an older model. Try a couple of different
 settings for 'offdelay'. If no value in the range 6..600 works, your
@@ -114,6 +125,7 @@ supported through the text protocol are affected by this.
 
 KNOWN PROBLEMS
 --------------
+
 The CyberPower OP series don't offer direct voltage, charge, frequency
 and temperature readings. Instead, they will return a binary value
 that needs conversion to the actual value.
@@ -128,6 +140,7 @@ instrument.
 
 AUTHORS
 -------
+
 Arjen de Korte <arjen@de-korte.org>, Doug Reynolds <mav@wastegate.net>
 
 SEE ALSO
@@ -135,13 +148,16 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Other drivers:
 ~~~~~~~~~~~~~~
+
 linkman:usbhid-ups[8],
 linkman:snmp-ups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

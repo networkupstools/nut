@@ -42,15 +42,22 @@ NUT network protocol, over the time:
 |Protocol version |NUT version |Description
 |1.0              |< 1.5.0     |Original protocol (legacy version)
 |1.1              |>= 1.5.0    |Original protocol (without old commands)
-.2+|1.2        .2+|>= 2.6.4    |Add "LIST CLIENTS" and "NETVER" commands
+.2+|1.2        .2+|>= 2.6.4    |Add "LIST CLIENT" and "NETVER" commands
                                |Add ranges of values for writable variables
-.2+|1.3        .2+|>= 2.7.5    |Add "cmdparam" to "INSTCMD"
+.4+|1.3        .4+|>= 2.8.0    |Add "cmdparam" to "INSTCMD"
                                |Add "TRACKING" commands (GET, SET)
+                               |Add "PRIMARY" as alias to older "MASTER"
+                                (implementation tested to be backwards
+                                compatible in `upsd` and `upsmon`)
+                               |Add "PROTVER" as alias to older "NETVER"
 |===============================================================================
 
-NOTE: any new version of the protocol implies an update of NUT_NETVERSION
-in *configure.ac*.
+NOTE: Any new version of the protocol implies an update of `NUT_NETVERSION`
+in 'configure.ac' file.
 
+ERRATA: Earlier revisions of this table mistakenly mentioned `LIST CLIENTS`
+as added since 2.6.4. The actual added command was `LIST CLIENT` (no `S`)
+as documented in its section below.
 
 GET
 ---
@@ -135,7 +142,7 @@ Response:
 - 'ENUM': an enumerated type, which supports a few specific values
 - 'STRING:n': this is a string of maximum length n
 - 'RANGE': this is an numeric, either integer or float, comprised in the
-range (see LIST RANGE)
+  range (see LIST RANGE)
 - 'NUMBER': this is a simple numeric value, either integer or float
 
 ENUM, STRING and RANGE are usually associated with RW, but not always.
@@ -146,7 +153,8 @@ float.
 Note that float values are expressed using decimal (base 10) english-based
 representation, so using a dot, in non-scientific notation.  So hexadecimal,
 exponents, and comma for thousands separator are forbidden.
-For example: "1200.20" is valid, while "1,200.20" and "1200,20" are invalid.
+For example: "1200.20" is valid, while "1,200.20" and "1200,20" and "1.2e4"
+are invalid.
 
 
 This replaces the old "VARTYPE" command.
@@ -351,7 +359,7 @@ Response:
 
 This replaces the old "ENUM" command.
 
-NOTE: this does not support the old "SELECTED" notation.  You must
+NOTE: This does not support the old "SELECTED" notation.  You must
 request the current value separately.
 
 
@@ -489,8 +497,11 @@ NOTE: You probably shouldn't send this command unless you are upsmon,
 or a upsmon replacement.
 
 
-MASTER
-------
+PRIMARY (since NUT 2.8.0) or MASTER (deprecated)
+------------------------------------------------
+
+NOTE: This command was renamed in NUT 2.8.0 to "PRIMARY" with the older
+name "MASTER" kept as deprecated alias for compatibility.
 
 Form:
 
@@ -498,18 +509,25 @@ Form:
 
 Response:
 
-	OK	(upon success)
+	OK MASTER-GRANTED	(upon success)
+
+Form:
+
+	PRIMARY <upsname>
+
+Response:
+
+	OK PRIMARY-GRANTED	(upon success)
 
 or <<np-errors,various errors>>
 
 NOTE: This requires "upsmon primary" in upsd.users
 
+NOTE: Previously documented response was just `OK` -- clients checking
+that server reply *starts with* that keyword would handle all cases.
+
 This function doesn't do much by itself.  It is used by upsmon to make
 sure that primary-mode functions like FSD are available if necessary.
-
-NOTE: This command will be eventually renamed to "PRIMARY" with the older
-name "MASTER" kept as deprecated alias for compatibility; a protocol bump
-or special backwards-compatibility handling may be needed for that however.
 
 
 FSD
@@ -614,6 +632,7 @@ Other commands
 - HELP: lists the commands supported by this server
 - VER: shows the version of the server currently in use
 - NETVER: shows the version of the network protocol currently in use
+  (aliased as PROTVER since NUT v2.8.0, or formal protocol version 1.3)
 
 These three are not intended to be used directly by programs.  Humans can
 make use of this program by using telnet or netcat.  If you use
@@ -769,7 +788,7 @@ Dense lists
 ~~~~~~~~~~~
 
 The LIST commands may be given the ability to handle options some day.
-For example, "LIST VARS <ups> +DESC" would return the current value
+For example, `LIST VARS <ups> +DESC` would return the current value
 like now, but it would also append the description of that variable.
 
 

@@ -1,5 +1,12 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2011-2025 by NUT contributors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
 [Unit]
 Description=Network UPS Tools - power device monitor and shutdown controller
+# Note: do not mistake this historic misnomer for "NUT-Monitor" Python GUI client
 After=local-fs.target network.target nut-server.service
 # Note: We do not specify Requires nut-server.service because
 # the `upsd` daemon(s) may be running on a different machine
@@ -8,19 +15,38 @@ After=local-fs.target network.target nut-server.service
 # would not abort if that attempt fails for whatever reason.
 Wants=nut-server.service
 # Extending the unit does not require *this* file to be edited, you
-# can instead drop in an additional piece of configuration, e.g. add
-# a `/etc/systemd/system/nut-monitor.service.d/network.conf` with:
+# can instead drop in an additional piece of configuration, e.g. to
+# require the monitoring client to only start after external networking
+# is configured (usable IP addresses appear in the system) you can
+# add a `/etc/systemd/system/nut-monitor.service.d/network.conf` with:
 #   [Unit]
 #   Requires=network-online.target
 #   After=network-online.target
 PartOf=nut.target
 
+Documentation=man:upsmon(@MAN_SECTION_CMD_SYS@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsmon.html
+Documentation=man:upsmon.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsmon.conf.html
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
 [Service]
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
-ExecStart=@SBINDIR@/upsmon -F
+ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
+ExecStart=@SBINDIR@/upsmon @SYSTEMD_DAEMON_ARGS_UPSMON@
 ExecReload=@SBINDIR@/upsmon -c reload
 PIDFile=@PIDPATH@/upsmon.pid
+# If "-FF" or background-daemon mode is used, so that PID file exists
+# and "upsmon -c stop" in particular can be used from command-line or
+# legacy scripts, it causes a clean and intentional exit of the daemon.
+# Then systemd should not revive it - hence restart it only on failure:
+Restart=on-failure
+Type=@SYSTEMD_DAEMON_TYPE_UPSMON@
+@SYSTEMD_DAEMON_WATCHDOG_UPSMON@
+@SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON@
 
 [Install]
 WantedBy=nut.target
+Alias=upsmon.service

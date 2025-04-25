@@ -3,38 +3,57 @@ NUTDRV_ATCL_USB(8)
 
 NAME
 ----
+
 nutdrv_atcl_usb - Driver for 'ATCL FOR UPS' equipment
 
-NOTE
-----
-This man page only documents the specific features of the nutdrv_atcl_usb
+SYNOPSIS
+--------
+
+*nutdrv_atcl_usb* -h
+
+*nutdrv_atcl_usb* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the nutdrv_atcl_usb
 driver.  For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
-This driver is for UPS hardware which identifies itself as USB idVendor 0001
-and idProduct 0000, and iManufacturer +ATCL FOR UPS+.  Known manufacturers
-include Kanji and Plexus. The UPS interface seems to be a generic USB-to-serial
-chip, and for hardware manufactured by Kanji and Plexus, the microcontroller
+
+This driver is for UPS hardware which identifies itself as USB idVendor +0001+
+and idProduct +0000+, and iManufacturer +ATCL FOR UPS+.  Known manufacturers
+include Kanji and Plexus.
+
+The UPS interface seems to be a generic USB-to-serial chip, and for
+hardware manufactured by Kanji and Plexus, the microcontroller
 appears to emulate a traditional contact-closure interface. This translates
 into only three states in ups.status: *OL*, *OB* and *OB LB* (similar to
-linkman:genericups[8]), with no other dynamic status values reported. Note that
-these USB identifiers (including the iManufacturer string) have also been seen
-on devices that are supported by the `fuji` subdriver of linkman:nutdrv_qx[8].
+linkman:genericups[8]), with no other dynamic status values reported.
+
+Note that these USB identifiers (including the iManufacturer string)
+have also been seen on devices that are supported by the `fuji`
+subdriver of linkman:nutdrv_qx[8], and some others.
 
 EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following optional setting:
 
-*vendor*='name'::
+*vendor =* 'name'::
+
 In case your iManufacturer (Vendor) string does not exactly match
-+ATCL FOR UPS+, you may provide an alternate string here. Note that a more
-likely case is that your device is handled by another driver for +0001:0000+
-devices, such as linkman:nutdrv_qx[8].
++ATCL FOR UPS+, you may provide an alternate string here (or specify "NULL" if
+the device does not provide a vendor string but you want this driver to match).
++
+Note that a more likely case for mismatch is that your device is handled by
+another driver for +0001:0000+ devices, such as linkman:nutdrv_qx[8].
++
+NOTE: This driver does not intend to support USB-matching settings common to
+other drivers, such as *vendorid*, *product*, *productid*, *serial*, *device*
+or *bus*; also the *vendor* setting supported here is not a regular expression.
 
 BUGS
 ----
+
 The UPS returns the same code for "load power is off" as for "on line power".
 This condition will not be observed if the NUT `upsmon` in primary mode runs
 on the box powered by the UPS, but may be an issue if the UPS is monitored
@@ -51,8 +70,9 @@ systems. See the linkman:upsmon[8] man page for more information.
 The solution to this problem is to upgrade to a smart protocol UPS of some
 kind that allows detection and proper load cycling on command.
 
-AUTHORS
--------
+AUTHOR
+------
+
 Charles Lepple
 
 SEE ALSO
@@ -60,16 +80,20 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 The generic serial driver:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 linkman:genericups[8]
 
 The Qx driver:
 ~~~~~~~~~~~~~~
+
 linkman:nutdrv_qx[8] (`fuji` subdriver)
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

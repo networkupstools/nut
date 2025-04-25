@@ -3,21 +3,28 @@ VICTRONUPS(8)
 
 NAME
 ----
+
 victronups - Driver for IMV/Victron UPS unit Match, Match Lite, NetUps
 
-NOTE
-----
-This man page only documents the hardware-specific features of the the
+SYNOPSIS
+--------
+
+*victronups* -h
+
+*victronups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the the
 victronups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 The victronups driver should recognize all Victron models that use a serial
 protocol at 1200 bps.  These include Match Lite, Match and the NetUps line.
 
 The Match Lite line may only report a handful of variables.  This is
-usually not a bug - they just don't support anything else.
+usually not a bug -- they just don't support anything else.
 
 CABLING
 -------
@@ -25,10 +32,12 @@ CABLING
 If your Victron cable is broken or missing, use this diagram to build
 a clone:
 
-docs/cables/victron.txt
+* https://github.com/networkupstools/nut/blob/master/docs/cables/ge-imv-victron.txt
+* link:docs/cables/ge-imv-victron.txt[]
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional setting in the
 linkman:ups.conf[5]:
 
@@ -41,20 +50,24 @@ Set delay before shutdown on UPS
 
 BUGS
 ----
+
 The protocol for this UPS is not officially documented.
 
-AUTHOR
-------
-Radek Benedikt <benedikt@lphard.cz>,
-Daniel Prynych <Daniel.Prynych@hornet.cz>
+AUTHORS
+-------
+
+* Radek Benedikt <benedikt@lphard.cz>
+* Daniel Prynych <Daniel.Prynych@hornet.cz>
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

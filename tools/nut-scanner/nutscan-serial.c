@@ -30,16 +30,19 @@
 #include <stdlib.h>
 #include "nut_platform.h"
 #include "common.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif	/* WIN32 */
 
 #ifdef WIN32
 /* Windows: all serial port names start with "COM" */
 #define SERIAL_PORT_PREFIX "COM"
-#else
+#else	/* !WIN32 */
 /* Unix: all serial port names start with "/dev/tty" */
 #define SERIAL_PORT_PREFIX "/dev/tty"
-#endif
+#endif	/* !WIN32 */
 
-#define ERR_OUT_OF_BOUND "Serial port range out of bound (must be 0 to 9 or a to z depending on your system)\n"
+#define ERR_OUT_OF_BOUND "Serial port range out of bound (must be 0 to 9 or a to z depending on your system)"
 
 typedef struct {
 	char * name;
@@ -58,6 +61,8 @@ static device_portname_t device_portname[] = {
 #endif
 #ifdef NUT_PLATFORM_SOLARIS
 	{ "/dev/tty%c", 'a', 'z' },
+	{ "/dev/cua/%c", 'a', 'z' },
+	{ "/dev/cua%c", '0', '9' },
 #endif
 #ifdef NUT_PLATFORM_AIX
 	{ "/dev/tty%c", '0', '9' },
@@ -65,6 +70,13 @@ static device_portname_t device_portname[] = {
 #ifdef NUT_PLATFORM_LINUX
 	{ "/dev/ttyS%c", '0', '9' },
 	{ "/dev/ttyUSB%c", '0', '9' },
+	{ "/dev/cua%c", '0', '9' },
+#endif
+#ifdef NUT_PLATFORM_OPENBSD
+	{ "/dev/cua0%c", '0', '9' },
+	{ "/dev/cua0%c", 'a', 'f' },
+	{ "/dev/cuac%c", '0', '7' },
+	{ "/dev/cuaU%c", '0', '3' },
 #endif
 #ifdef NUT_PLATFORM_MS_WINDOWS
 	{ "COM%c",  '1', '9'},
@@ -105,7 +117,7 @@ static char ** add_port(char ** list, char * port)
 	/*+1 for the terminal NULL */
 	res = realloc(list, sizeof(char*) * (count + 1 + 1));
 	if (res == NULL) {
-		upsdebugx(1, "%s: Failed to realloc port list", __func__);
+		upsdebugx(0, "%s: Failed to realloc port list", __func__);
 		return list;
 	}
 	res[count] = strdup(port);
@@ -143,7 +155,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		if ((list_sep_ptr = strchr(range, '-')) != NULL) {
 			tok = strtok_r(range, "-", &saveptr);
 			if (tok[1] != 0) {
-				fprintf(stderr, ERR_OUT_OF_BOUND);
+				upsdebugx(0, "%s", ERR_OUT_OF_BOUND);
 				free(range);
 				return NULL;
 			}
@@ -151,7 +163,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 			tok = strtok_r(NULL, "-", &saveptr);
 			if (tok != NULL) {
 				if (tok[1] != 0) {
-					fprintf(stderr, ERR_OUT_OF_BOUND);
+					upsdebugx(0, "%s", ERR_OUT_OF_BOUND);
 					free(range);
 					return NULL;
 				}
@@ -195,26 +207,13 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		}
 		for (current_port = start_port; current_port <= stop_port;
 				current_port++) {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
 			/* We actually have a format string in the name,
 			 * see the device_portname[] definition above */
-			snprintf(str_tmp, sizeof(str_tmp), cur_device->name,
-					current_port);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+			snprintf_dynamic(str_tmp, sizeof(str_tmp), cur_device->name,
+					"%c", current_port);
 
 			ports_list = add_port(ports_list, str_tmp);
 		}
 	}
 	return ports_list;
 }
-

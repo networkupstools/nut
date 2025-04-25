@@ -1,33 +1,21 @@
 /*
  * huawei-ups2000.c - Driver for Huawei UPS2000 (1kVA-3kVA)
  *
- * Note: Huawei UPS2000 (1kVA-3kVA) can be accessed via RS-232,
- * USB, or an optional RMS-MODBUS01B (RS-485) adapter. Only
- * RS-232 and USB are supported, RS-485 is not.
+ * Note: If you're trying to debug the driver because it doesn't work,
+ * please BE SURE to read the manual in "docs/man/huawei-ups2000.txt"
+ * first! Otherwise you are guaranteed to waste your time!
  *
- * The USB port on the UPS is implemented via a MaxLinear RX21V1410
- * USB-to-serial converter, and can be recongized as a standard
- * USB-CDC serial device. Unfortunately, the generic USB-CDC driver
- * is incompatible with the specific chip configuration and cannot
- * be used. A device-specific driver, "xr_serial", must be used.
- *
- * The driver has only been merged to Linux 5.12 or later, via the
- * "xr_serial" kernel module. When the UPS2000 is connected via USB
- * to a supported Linux system, you should see the following logs in
- * "dmesg".
- *
- *     xr_serial 1-1.2:1.1: xr_serial converter detected
- *     usb 1-1.2: xr_serial converter now attached to ttyUSB0
- *
- * The driver must be "xr_serial". If your system doesn't have the
- * necessary device driver, you will get this message instead:
- *
- *     cdc_acm 1-1.2:1.0: ttyACM0: USB ACM device
- *
- * On other operating systems, USB cannot be used due to the absence
- * of the driver. You must use connect UPS2000 to your computer via
- * RS-232, either directly or using an USB-to-RS-232 converter supported
- * by your Linux or BSD kernel.
+ * Long story short, Huawei UPS2000 (1kVA-3kVA) can be accessed via
+ * RS-232, USB, or an optional RMS-MODBUS01B (RS-485) adapter. Only
+ * RS-232 and USB are supported, RS-485 is not. Also, for most UPS
+ * units, their USB ports are implemented via the MaxLinear RX21V1410
+ * USB-to-serial converter, and they DO NOT WORK without a special
+ * "xr_serial" driver, only available on Linux 5.12+ (not BSD or Solaris).
+ * Without this driver, the USB can still be recognized as a generic
+ * USB ACM device, but it DOES NOT WORK. Alternatively, some newer UPS
+ * units use the WCH CH341 chip, which should have better compatibility.
+ * Detailed information will not be repeated here, please read
+ * "docs/man/huawei-ups2000.txt".
  *
  * A document describing the protocol implemented by this driver can
  * be found online at:
@@ -36,7 +24,7 @@
  *
  * Huawei UPS2000 driver implemented by
  *   Copyright (C) 2020, 2021 Yifeng Li <tomli@tomli.me>
- *   The author is not affiliated to Huawei or other manufacturers.
+ *   The author is not affiliated with Huawei or other manufacturers.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,9 +47,15 @@
 #include <modbus.h>
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
+#include "timehead.h"   /* fallback gmtime_r() variants if needed (e.g. some WIN32) */
 
-#define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
-#define DRIVER_VERSION	"0.02"
+#if !(defined NUT_MODBUS_LINKTYPE_STR)
+# define NUT_MODBUS_LINKTYPE_STR	"unknown"
+#endif
+
+#define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
+#define DRIVER_VERSION	"0.09"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -72,7 +66,7 @@
  * model of the UPS2000 series.
  */
 static const char *supported_model[] = {
-	"UPS2000", "UPS2000A",
+	"UPS2000", "UPS2000A", "UPS2000G",
 	NULL
 };
 
@@ -169,7 +163,7 @@ static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len);
 static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
 static int ups2000_write_register(modbus_t *ctx, int addr, uint16_t val);
 static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src);
-static uint16_t crc16(uint8_t *buffer, uint16_t buffer_length);
+static uint16_t crc16(uint8_t *buffer, size_t buffer_length);
 static time_t time_seek(time_t t, int seconds);
 
 /* rw variables function prototypes */
@@ -235,12 +229,15 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
 #if LIBMODBUS_VERSION_CHECK(3, 1, 2)
-	/* It can take as slow as 1 sec. for the UPS to respond. */
-	modbus_set_response_timeout(modbus_ctx, 1, 0);
+	/*
+	 * Although it rarely occurs, it can take as slow as 2 sec. for the
+	 * UPS to respond a read and finish transmitting the message.
+	 */
+	modbus_set_response_timeout(modbus_ctx, 2, 0);
 #else
 	{
 		struct timeval timeout;
-		timeout.tv_sec = 1;
+		timeout.tv_sec = 2;
 		timeout.tv_usec = 0;
 		modbus_set_response_timeout(modbus_ctx, &timeout);
 	}
@@ -325,7 +322,7 @@ static void ups2000_device_identification(void)
 		ser_flush_in(upsfd, "", nut_debug_level);
 		r = ser_send_buf(upsfd, ident_req, IDENT_REQUEST_LEN);
 		if (r != IDENT_REQUEST_LEN) {
-			fatalx(EXIT_FAILURE, "unable to send request!\n");
+			fatalx(EXIT_FAILURE, "unable to send request!");
 		}
 
 		ident_response_len = ups2000_read_serial(ident_response, IDENT_RESPONSE_MAX_LEN);
@@ -345,20 +342,13 @@ static void ups2000_device_identification(void)
 
 		if (ptr + IDENT_RESPONSE_HEADER_LEN > ident_response_end) {
 			fatalx(EXIT_FAILURE, "response header too short! "
-					     "expected %d, received %zu.",
-					     IDENT_RESPONSE_HEADER_LEN, ident_response_len);
+				"expected %d, received %" PRIuSIZE ".",
+				IDENT_RESPONSE_HEADER_LEN, ident_response_len);
 		}
 
 		/* step 3: check response CRC-16 */
-		crc16_recv = (uint16_t)((uint16_t)(ident_response_end[0]) << 8) | (uint16_t)(ident_response_end[1]);
-		if (ident_response_len < IDENT_RESPONSE_CRC_LEN
-		|| (((uintmax_t)(ident_response_len) - IDENT_RESPONSE_CRC_LEN) > UINT16_MAX)
-		) {
-			fatalx(EXIT_FAILURE, "response header shorter than CRC "
-					     "or longer than UINT16_MAX!");
-		}
-
-		crc16_calc = crc16(ident_response, (uint16_t)(ident_response_len - IDENT_RESPONSE_CRC_LEN));
+		crc16_recv = (uint16_t) ident_response_end[0] << 8 | ident_response_end[1];
+		crc16_calc = crc16(ident_response, ident_response_len - IDENT_RESPONSE_CRC_LEN);
 		if (crc16_recv == crc16_calc) {
 			crc16_fail = 0;
 			break;
@@ -457,10 +447,10 @@ static void ups2000_device_identification(void)
 
 		r = str_to_uint_strict(key, &idx, 10);
 		if (!r || idx + 1 > UPS2000_DESC_MAX_FIELDS || idx < 1)
-			fatalx(EXIT_FAILURE, "desc index %d is invalid!", idx);
+			fatalx(EXIT_FAILURE, "desc index %u is invalid!", idx);
 
 		if (strlen(val) + 1 > UPS2000_DESC_MAX_LEN)
-			fatalx(EXIT_FAILURE, "desc field %d too long!", idx);
+			fatalx(EXIT_FAILURE, "desc field %u too long!", idx);
 
 		memcpy(ups2000_desc[idx], val, strlen(val) + 1);
 	}
@@ -491,31 +481,32 @@ void upsdrv_initinfo(void)
 	/* check whether the UPS is a known model */
 	for (i = 0; supported_model[i] != NULL; i++) {
 		if (!strcmp(supported_model[i],
-			    ups2000_desc[UPS2000_DESC_MODEL])) {
+			ups2000_desc[UPS2000_DESC_MODEL])
+		) {
 			in_list = 1;
 		}
 	}
 	if (!in_list) {
 		fatalx(EXIT_FAILURE, "Unknown UPS model %s",
-				     ups2000_desc[UPS2000_DESC_MODEL]);
+			ups2000_desc[UPS2000_DESC_MODEL]);
 	}
 
 	dstate_setinfo("device.mfr", "Huawei");
 	dstate_setinfo("device.type", "ups");
 	dstate_setinfo("device.model", "%s",
-		       ups2000_desc[UPS2000_DESC_MODEL]);
+		ups2000_desc[UPS2000_DESC_MODEL]);
 	dstate_setinfo("device.serial", "%s",
-		       ups2000_desc[UPS2000_DESC_ESN]);
+		ups2000_desc[UPS2000_DESC_ESN]);
 
 	dstate_setinfo("ups.mfr", "Huawei");
 	dstate_setinfo("ups.model", "%s",
-		       ups2000_desc[UPS2000_DESC_MODEL]);
+		ups2000_desc[UPS2000_DESC_MODEL]);
 	dstate_setinfo("ups.firmware", "%s",
-		       ups2000_desc[UPS2000_DESC_FIRMWARE_REV]);
+		ups2000_desc[UPS2000_DESC_FIRMWARE_REV]);
 	dstate_setinfo("ups.firmware.aux", "%s",
-		       ups2000_desc[UPS2000_DESC_PROTOCOL_REV]);
+		ups2000_desc[UPS2000_DESC_PROTOCOL_REV]);
 	dstate_setinfo("ups.serial", "%s",
-		       ups2000_desc[UPS2000_DESC_ESN]);
+		ups2000_desc[UPS2000_DESC_ESN]);
 	dstate_setinfo("ups.type", "online");
 
 	/* RW variables */
@@ -534,9 +525,9 @@ void upsdrv_initinfo(void)
  */
 enum {
 	REG_UINT16,
-	REG_UINT32, /* occupies two registers */
-	REG_FLOAT,  /* actually a misnomer, it should really be called
-		       fixed-point number, but we follow the datasheet */
+	REG_UINT32,	/* occupies two registers */
+	REG_FLOAT,	/* actually a misnomer, it should really be called
+			 * fixed-point number, but we follow the datasheet */
 };
 #define REG_UINT16_INVALID 0xFFFFU
 #define REG_UINT32_INVALID 0xFFFFFFFFU
@@ -613,7 +604,7 @@ static int ups2000_update_info(void)
 			page = 2;
 
 		if (page > 2 || idx > 33)  /* also suppress compiler warn */
-			fatalx(EXIT_FAILURE, "register calculation overflow!\n");
+			fatalx(EXIT_FAILURE, "register calculation overflow!");
 
 		switch (ups2000_var[i].datatype) {
 		case REG_FLOAT:
@@ -633,7 +624,7 @@ static int ups2000_update_info(void)
 				invalid = 1;
 			break;
 		default:
-			fatalx(EXIT_FAILURE, "invalid data type in register table!\n");
+			fatalx(EXIT_FAILURE, "invalid data type in register table!");
 		}
 
 		if (invalid) {
@@ -641,20 +632,8 @@ static int ups2000_update_info(void)
 			return 1;
 		}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(ups2000_var[i].name, ups2000_var[i].fmt,
-			       (float) val / ups2000_var[i].scaling);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		dstate_setinfo_dynamic(ups2000_var[i].name, ups2000_var[i].fmt,
+			"%f", (float) val / ups2000_var[i].scaling);
 	}
 	return 0;
 }
@@ -755,7 +734,8 @@ static int ups2000_update_status(void)
 			 * for, or if register has its n-th "bit" set...
 			 */
 			if ((flag[j].val != -1 && flag[j].val == val) ||
-			    (flag[j].bit != -1 && CHECK_BIT(val, flag[j].bit))) {
+			    (flag[j].bit != -1 && CHECK_BIT(val, flag[j].bit))
+			) {
 				/* if it has a corresponding status flag */
 				if (strlen(flag[j].status_name) != 0)
 					status_set(flag[j].status_name);
@@ -973,7 +953,7 @@ static int ups2000_update_alarm(void)
 	for (i = 0; ups2000_alarm[i].alarm_id != -1; i++) {
 		int idx = ups2000_alarm[i].reg - ups2000_alarm[0].reg;
 		if (idx > 26 || idx < 0)
-			fatalx(EXIT_FAILURE, "register calculation overflow!\n");
+			fatalx(EXIT_FAILURE, "register calculation overflow!");
 
 		if (CHECK_BIT(val[idx], ups2000_alarm[i].bit)) {
 			int gotlen;
@@ -989,12 +969,12 @@ static int ups2000_update_alarm(void)
 			alarm_count++;
 
 			gotlen = snprintf(alarm_buf, 128, "(ID %02d/%02d): %s!",
-						   ups2000_alarm[i].alarm_id,
-						   ups2000_alarm[i].alarm_cause_id,
-						   ups2000_alarm[i].alarm_name);
+				ups2000_alarm[i].alarm_id,
+				ups2000_alarm[i].alarm_cause_id,
+				ups2000_alarm[i].alarm_name);
 
 			if (gotlen < 0 || (uintmax_t)gotlen > SIZE_MAX) {
-				fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!\n");
+				fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!");
 			}
 
 			all_alarms_len += (size_t)gotlen;
@@ -1008,7 +988,8 @@ static int ups2000_update_alarm(void)
 			 * has paseed since we first warned it.
 			 */
 			if (!ups2000_alarm[i].active ||
-			    difftime(now, alarm_logged_since) >= UPS2000_LOG_INTERVAL) {
+			    difftime(now, alarm_logged_since) >= UPS2000_LOG_INTERVAL
+			) {
 				int loglevel;
 				const char *alarm_word;
 
@@ -1030,10 +1011,10 @@ static int ups2000_update_alarm(void)
 				}
 
 				upslogx(loglevel, "%s: alarm %02d, Cause %02d: %s!",
-						  alarm_word,
-						  ups2000_alarm[i].alarm_id,
-						  ups2000_alarm[i].alarm_cause_id,
-						  ups2000_alarm[i].alarm_name);
+					alarm_word,
+					ups2000_alarm[i].alarm_id,
+					ups2000_alarm[i].alarm_cause_id,
+					ups2000_alarm[i].alarm_name);
 
 				if (ups2000_alarm[i].alarm_desc)
 					upslogx(loglevel, "%s", ups2000_alarm[i].alarm_desc);
@@ -1043,12 +1024,17 @@ static int ups2000_update_alarm(void)
 					upslogx(loglevel, "This alarm can be auto cleared.");
 					break;
 				case ALARM_CLEAR_MANUAL:
-					upslogx(loglevel, "This alarm can only be manual cleared "
-							  "via front panel.");
+					upslogx(loglevel,
+						"This alarm can only be manually cleared "
+						"via front panel.");
 					break;
 				case ALARM_CLEAR_DEPENDING:
-					upslogx(loglevel, "This alarm is auto or manual cleared "
-							  "depending on the specific problem.");
+					upslogx(loglevel,
+						"This alarm is auto or manually cleared "
+						"depending on the specific problem.");
+					break;
+				default:
+					break;
 				}
 
 				ups2000_alarm[i].active = 1;
@@ -1058,10 +1044,11 @@ static int ups2000_update_alarm(void)
 		}
 		else {
 			if (ups2000_alarm[i].active) {
-				upslogx(LOG_WARNING, "Cleared alarm %02d, Cause %02d: %s",
-						     ups2000_alarm[i].alarm_id,
-						     ups2000_alarm[i].alarm_cause_id,
-						     ups2000_alarm[i].alarm_name);
+				upslogx(LOG_WARNING,
+					"Cleared alarm %02d, Cause %02d: %s",
+					ups2000_alarm[i].alarm_id,
+					ups2000_alarm[i].alarm_cause_id,
+					ups2000_alarm[i].alarm_name);
 				ups2000_alarm[i].active = 0;
 				alarm_logged = 1;
 			}
@@ -1074,7 +1061,7 @@ static int ups2000_update_alarm(void)
 		int gotlen = snprintf(alarm_buf, 128, "Check log for details!");
 
 		if (gotlen < 0 || (uintmax_t)gotlen > SIZE_MAX) {
-			fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!\n");
+			fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!");
 		}
 
 		all_alarms_len += (size_t)gotlen;
@@ -1096,7 +1083,7 @@ static int ups2000_update_alarm(void)
 			upslogx(LOG_WARNING, "UPS has %d alarms in effect.", alarm_count);
 			if (alarm_rtfm)
 				upslogx(LOG_WARNING, "Read Huawei User Manual for "
-						     "troubleshooting information.");
+					"troubleshooting information.");
 			alarm_logged_since = time(NULL);
 		}
 	}
@@ -1406,18 +1393,18 @@ static int ups2000_delay_set(const char *var, const char *string)
 		return STAT_SET_INVALID;
 	if (delay < delay_schema->min) {
 		upslogx(LOG_NOTICE, "setvar: %s [%u] is too low, "
-				    "it has been set to %u seconds\n",
-				    delay_schema->varname_cmdline, delay,
-				    delay_schema->min);
+			"it has been set to %u seconds",
+			delay_schema->varname_cmdline, delay,
+			delay_schema->min);
 		delay = delay_schema->min;
 	}
 
 	if (delay % delay_schema->step != 0) {
 		delay_rounded = delay + delay_schema->step - delay % delay_schema->step;
 		upslogx(LOG_NOTICE, "setvar: %s [%u] is not a multiple of %d, "
-				    "it has been rounded up to %u seconds\n",
-				    delay_schema->varname_cmdline, delay,
-				    delay_schema->step, delay_rounded);
+			"it has been rounded up to %u seconds",
+			delay_schema->varname_cmdline, delay,
+			delay_schema->step, delay_rounded);
 		delay = delay_rounded;
 	}
 
@@ -1441,7 +1428,8 @@ static int ups2000_delay_set(const char *var, const char *string)
  * used to handle commands that needs additional processing.
  * If "reg1" is not necessary or unsuitable, "-1" is used.
  */
-#define REG_NONE -1, -1
+#define REG_NULL  -1, -1
+#define FUNC_NULL NULL
 
 static struct ups2000_cmd_t {
 	const char *cmd;
@@ -1449,20 +1437,20 @@ static struct ups2000_cmd_t {
 	int (*const handler_func)(const uint16_t);
 } ups2000_cmd[] =
 {
-	{ "test.battery.start.quick", 2028,  1, REG_NONE, NULL },
-	{ "test.battery.start.deep",  2021,  1, REG_NONE, NULL },
-	{ "test.battery.stop",        2023,  1, REG_NONE, NULL },
-	{ "beeper.enable",            1046,  0, REG_NONE, NULL },
-	{ "beeper.disable",           1046,  1, REG_NONE, NULL },
-	{ "load.off",                 1045,  0, 1030, 1,  NULL },
-	{ "bypass.stop",              1029,  1, 1045, 0,  NULL },
-	{ "load.on",                  1029, -1, REG_NONE, ups2000_instcmd_load_on                  },
-	{ "bypass.start",             REG_NONE, REG_NONE, ups2000_instcmd_bypass_start             },
-	{ "beeper.toggle",            1046, -1, REG_NONE, ups2000_instcmd_beeper_toggle            },
-	{ "shutdown.stayoff",         1049, -1, REG_NONE, ups2000_instcmd_shutdown_stayoff         },
-	{ "shutdown.return",          REG_NONE, REG_NONE, ups2000_instcmd_shutdown_return          },
-	{ "shutdown.reboot",          REG_NONE, REG_NONE, ups2000_instcmd_shutdown_reboot          },
-	{ "shutdown.reboot.graceful", REG_NONE, REG_NONE, ups2000_instcmd_shutdown_reboot_graceful },
+	{ "test.battery.start.quick", 2028,  1, REG_NULL, FUNC_NULL },
+	{ "test.battery.start.deep",  2021,  1, REG_NULL, FUNC_NULL },
+	{ "test.battery.stop",        2023,  1, REG_NULL, FUNC_NULL },
+	{ "beeper.enable",            1046,  0, REG_NULL, FUNC_NULL },
+	{ "beeper.disable",           1046,  1, REG_NULL, FUNC_NULL },
+	{ "load.off",                 1045,  0, 1030, 1,  FUNC_NULL },
+	{ "bypass.stop",              1029,  1, 1045, 0,  FUNC_NULL },
+	{ "load.on",                  1029, -1, REG_NULL, ups2000_instcmd_load_on                  },
+	{ "bypass.start",             REG_NULL, REG_NULL, ups2000_instcmd_bypass_start             },
+	{ "beeper.toggle",            1046, -1, REG_NULL, ups2000_instcmd_beeper_toggle            },
+	{ "shutdown.stayoff",         1049, -1, REG_NULL, ups2000_instcmd_shutdown_stayoff         },
+	{ "shutdown.return",          REG_NULL, REG_NULL, ups2000_instcmd_shutdown_return          },
+	{ "shutdown.reboot",          REG_NULL, REG_NULL, ups2000_instcmd_shutdown_reboot          },
+	{ "shutdown.reboot.graceful", REG_NULL, REG_NULL, ups2000_instcmd_shutdown_reboot_graceful },
 	{ NULL, -1, -1, -1, -1, NULL },
 };
 
@@ -1507,8 +1495,8 @@ static int instcmd(const char *cmd, const char *extra)
 	else if (cmd_action->reg1 >= 0 && cmd_action->val1 >= 0) {
 		/* handled by a register write */
 		int r = ups2000_write_register(modbus_ctx,
-					       10000 + cmd_action->reg1,
-					       (uint16_t)cmd_action->val1);
+			10000 + cmd_action->reg1,
+			(uint16_t)cmd_action->val1);
 		if (r == 1)
 			status = STAT_INSTCMD_HANDLED;
 		else
@@ -1520,8 +1508,8 @@ static int instcmd(const char *cmd, const char *extra)
 		 */
 		if (r == 1 && cmd_action->reg2 >= 0 && cmd_action->val2 >= 0) {
 			r = ups2000_write_register(modbus_ctx,
-						   10000 + cmd_action->reg2,
-						   (uint16_t)cmd_action->val2);
+				10000 + cmd_action->reg2,
+				(uint16_t)cmd_action->val2);
 			if (r == 1)
 				status = STAT_INSTCMD_HANDLED;
 			else
@@ -1715,8 +1703,9 @@ static int ups2000_instcmd_shutdown_return(const uint16_t reg)
 	int r;
 	NUT_UNUSED_VARIABLE(reg);
 
-	r = ups2000_shutdown_guaranteed_return(ups2000_offdelay,
-					       ups2000_ondelay);
+	r = ups2000_shutdown_guaranteed_return(
+		ups2000_offdelay,
+		ups2000_ondelay);
 	if (r == STAT_INSTCMD_HANDLED) {
 		shutdown_at = time_seek(time(NULL), ups2000_offdelay);
 	}
@@ -1737,8 +1726,9 @@ static int ups2000_instcmd_shutdown_reboot(const uint16_t reg)
 	int r;
 	NUT_UNUSED_VARIABLE(reg);
 
-	r = ups2000_shutdown_guaranteed_return(ups2000_rw_delay[REBOOT].min,
-					       ups2000_ondelay);
+	r = ups2000_shutdown_guaranteed_return(
+		ups2000_rw_delay[REBOOT].min,
+		ups2000_ondelay);
 	if (r == STAT_INSTCMD_HANDLED) {
 		reboot_at = time_seek(time(NULL), ups2000_rw_delay[REBOOT].min);
 		start_at = time_seek(reboot_at, ups2000_ondelay);
@@ -1760,8 +1750,9 @@ static int ups2000_instcmd_shutdown_reboot_graceful(const uint16_t reg)
 	int r;
 	NUT_UNUSED_VARIABLE(reg);
 
-	r = ups2000_shutdown_guaranteed_return(ups2000_rebootdelay,
-					       ups2000_ondelay);
+	r = ups2000_shutdown_guaranteed_return(
+		ups2000_rebootdelay,
+		ups2000_ondelay);
 	if (r == STAT_INSTCMD_HANDLED) {
 		reboot_at = time_seek(time(NULL), ups2000_rebootdelay);
 		start_at = time_seek(reboot_at, ups2000_ondelay);
@@ -1811,11 +1802,15 @@ static int ups2000_update_timers(void)
 
 void upsdrv_shutdown(void)
 {
-	int r;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	r = instcmd("shutdown.reboot", "");
-	if (r != STAT_INSTCMD_HANDLED)
-		fatalx(EXIT_FAILURE, "upsdrv_shutdown failed!");
+	int ret = do_loop_shutdown_commands("shutdown.reboot", NULL);
+	if (ret != STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_ERR, "upsdrv_shutdown failed!");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+	}
 }
 
 
@@ -1830,15 +1825,15 @@ void upsdrv_makevartable(void)
 	char msg[64];
 
 	snprintf(msg, 64, "Set shutdown delay, in seconds, 6-second step"
-			  " (default=%d)", ups2000_rw_delay[SHUTDOWN].dfault);
+		" (default=%d)", ups2000_rw_delay[SHUTDOWN].dfault);
 	addvar(VAR_VALUE, "offdelay", msg);
 
 	snprintf(msg, 64, "Set reboot delay, in seconds, 6-second step"
-			  " (default=%d).", ups2000_rw_delay[REBOOT].dfault);
+		" (default=%d).", ups2000_rw_delay[REBOOT].dfault);
 	addvar(VAR_VALUE, "rebootdelay", msg);
 
 	snprintf(msg, 64, "Set start delay, in seconds, 60-second step"
-			  " (default=%d).", ups2000_rw_delay[START].dfault);
+		" (default=%d).", ups2000_rw_delay[START].dfault);
 	addvar(VAR_VALUE, "ondelay", msg);
 }
 
@@ -1869,7 +1864,7 @@ static time_t time_seek(time_t t, int seconds)
 	if (!t)
 		fatalx(EXIT_FAILURE, "time_seek() failed!");
 
-	if (!gmtime_r(&t, &time_tm))
+	if (gmtime_r(&t, &time_tm) == NULL)
 		fatalx(EXIT_FAILURE, "time_seek() failed!");
 
 	time_tm.tm_sec += seconds;
@@ -1908,11 +1903,16 @@ static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len)
 		else if (bytes == 0)
 			return total;  /* nothing to read */
 
+		if ((size_t) bytes > buf_len) {
+			/*
+			 * Assertion: This should never happen. bytes is always less or equal
+			 * to buf_len, and buf_len will never underflow under any circumstances.
+			 */
+			fatalx(EXIT_FAILURE, "ups2000_read_serial() reads too much!");
+		}
+
 		total += (size_t)bytes;        /* increment byte counter */
 		buf += bytes;                  /* advance buffer position */
-		if ((size_t)bytes > buf_len) {
-			fatalx(EXIT_FAILURE, "ups2000_read_serial() read too much!");
-		}
 		buf_len -= (size_t)bytes;      /* decrement limiter */
 	}
 	return 0;  /* buffer exhaustion */
@@ -1956,10 +1956,22 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 				 "Please file a bug report!", addr);
 
 	for (i = 0; i < 3; i++) {
+		/*
+		 * If the previous read failed with a timeout, often there
+		 * are still unprocessed bytes in the serial buffer and they
+		 * would be mixed with the new data, creating invalid messages,
+		 * making all subsequent reads to fail as well.
+		 *
+		 * Flush read buffer first to avoid it.
+		 */
+		modbus_flush(ctx);
+
 		r = modbus_read_registers(ctx, addr, nb, dest);
 
 		/* generic retry for modbus read failures. */
 		if (retry_status == RETRY_ENABLE && r != nb) {
+			upslogx(LOG_WARNING, "modbus_read_registers() failed (%d, errno %d): %s",
+				r, errno, modbus_strerror(errno));
 			upslogx(LOG_WARNING, "Register %04d has a read failure. Retrying...", addr);
 			sleep(1);
 			continue;
@@ -1973,7 +1985,8 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 		 * and it's not fatal, so we use LOG_INFO.
 		 */
 		if (retry_status == RETRY_ENABLE &&
-		    addr == 12002 && (dest[0] < 2 || dest[0] > 5)) {
+		    addr == 12002 && (dest[0] < 2 || dest[0] > 5)
+		) {
 			upslogx(LOG_INFO, "Battery status has a non-fatal read failure, it's usually harmless. Retrying... ");
 			sleep(1);
 			continue;
@@ -1985,7 +1998,9 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 	}
 
 	/* Give up */
-	upslogx(LOG_WARNING, "Register %04d has a fatal read failure.", addr);
+	upslogx(LOG_ERR, "modbus_read_registers() failed (%d, errno %d): %s",
+		r, errno, modbus_strerror(errno));
+	upslogx(LOG_ERR, "Register %04d has a fatal read failure.", addr);
 	retry_status = RETRY_DISABLE_TEMPORARY;
 	return r;
 }
@@ -2005,6 +2020,8 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 
 		/* generic retry for modbus write failures. */
 		if (retry_status == RETRY_ENABLE && r != nb) {
+			upslogx(LOG_WARNING, "modbus_write_registers() failed (%d, errno %d): %s",
+				r, errno, modbus_strerror(errno));
 			upslogx(LOG_WARNING, "Register %04d has a write failure. Retrying...", addr);
 			sleep(1);
 			continue;
@@ -2016,7 +2033,9 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 	}
 
 	/* Give up */
-	upslogx(LOG_WARNING, "Register %04d has a fatal write failure.", addr);
+	upslogx(LOG_ERR, "modbus_write_registers() failed (%d, errno %d): %s",
+		r, errno, modbus_strerror(errno));
+	upslogx(LOG_ERR, "Register %04d has a fatal write failure.", addr);
 	retry_status = RETRY_DISABLE_TEMPORARY;
 	return r;
 }
@@ -2105,7 +2124,7 @@ static const uint8_t table_crc_lo[] = {
 };
 
 
-static uint16_t crc16(uint8_t * buffer, uint16_t buffer_length)
+static uint16_t crc16(uint8_t * buffer, size_t buffer_length)
 {
 	uint8_t crc_hi = 0xFF;	/* high CRC byte initialized */
 	uint8_t crc_lo = 0xFF;	/* low CRC byte initialized */
@@ -2118,5 +2137,5 @@ static uint16_t crc16(uint8_t * buffer, uint16_t buffer_length)
 		crc_lo = table_crc_lo[i];
 	}
 
-	return ((uint16_t)((uint16_t)(crc_hi) << 8) | (uint16_t)crc_lo);
+	return (uint16_t) crc_hi << 8 | crc_lo;
 }

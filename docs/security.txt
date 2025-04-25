@@ -11,7 +11,7 @@ This chapter will present you these mechanisms, by increasing order of security
 level. This means that the more security you need, the more mechanisms you will
 have to apply.
 
-NOTE: you may want to have a look at NUT Quality Assurance, since some
+NOTE: You may want to have a look at NUT Quality Assurance, since some
 topics are related to NUT security and reliability.
 
 
@@ -22,31 +22,137 @@ How to verify the NUT source code signature
 In order to verify the NUT source code signature for releases, perform the
 following steps:
 
-- Retrieve the link:http://www.networkupstools.org/download.html[NUT source code]
+- Retrieve the link:https://www.networkupstools.org/download.html[NUT source code]
   (nut-X.Y.Z.tar.gz) and the matching signature (nut-X.Y.Z.tar.gz.sig)
-- Retrieve the link:http://www.networkupstools.org/source/nut-key.gpg[NUT maintainer's signature]:
+- Retrieve the link:https://www.networkupstools.org/source/nut-key.gpg[NUT
+maintainer's signature keyring]:
 
-	$ gpg --fetch-keys http://www.networkupstools.org/source/nut-key.gpg
+	$ gpg --fetch-keys https://www.networkupstools.org/source/nut-key.gpg
 
-NOTE: As of NUT 2.7.3, a new release key is used. In order to verify a previous
-release, please use
-link:http://www.networkupstools.org/source/nut-old-key.gpg[NUT old maintainer's signature]
+[NOTE]
+======
+As of NUT 2.8.0, a new release key is used, but the `nut-key.gpg` should
+be cumulative with older chain key files (includes them). You can view the key
+list in a downloaded copy of the URL above with:
+
+	$ gpg --with-colons --import-options import-show --dry-run --import < nut-key.gpg
+
+...and as of this writing, it should contain two key sets for various identities
+of "Arnaud Quette" and one set of "Jim Klimov".
+======
+
+Just in case, the previous key file used since NUT 2.7.3 release is stored as
+link:https://www.networkupstools.org/source/nut-key-2.7.3.gpg[NUT
+old maintainer's signature for 2.7.3-2.7.4 releases]
+
+In order to verify an even older release, please use
+link:https://www.networkupstools.org/source/nut-old-key.gpg[NUT
+old maintainer's signature since 2002 until 2.7.3 release]
 
 - Launch the GPG checking using the following command:
 
 	$ gpg --verify nut-X.Y.Z.tar.gz.sig
 
-- You should see a message mentioning a "Good signature", like:
+- You should see a message mentioning a "Good signature", with formatting which
+  depends on your gpg version, like:
+
+	gpg: Signature made Thu Jun  1 00:10:16 2023 CEST
+	...
+	gpg: Good signature from "Jim Klimov ..."
+	...
+	Primary key fingerprint: B834 59F7 76B9 0224 988F  36C0 DE01 84DA 7043 DCF7
+	...
+
+[NOTE]
+======
+The previously used maintainer's signatures would output (with markup of
+older gpg tools here):
 
 	gpg: Signature made Wed Apr 15 15:55:30 2015 CEST using RSA key ID 55CA5976
 	gpg: Good signature from "Arnaud Quette ..."
 	...
 
-NOTE: the previously used maintainer's signature would output:
-+
+or:
+
 	gpg: Signature made Thu Jul  5 16:15:05 2007 CEST using DSA key ID 204DDF1B
 	gpg: Good signature from "Arnaud Quette ..."
 	...
+======
+
+////////
+Maintainer notes for posterity:
+
+* See https://github.com/networkupstools/nut/issues/1963 and
+  https://github.com/networkupstools/nut/issues/1410 for recent
+  forays into this area.
+
+* Repo is https://github.com/networkupstools/nut-source-archive.git
+
+* Keys in the file can be viewed with:
+----
+:; gpg --with-colons --import-options import-show --dry-run --import < nut-key.gpg
+----
+
+* Old keys as well as a new maintainer key can be imported first into
+  a temporary keyring (existing target file and a slash in its path
+  name argument are allegedly important):
+----
+:; rm -f tmpring.gpg ; touch tmpring.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import nut-key.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import nut-old-key.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import nut-key-2.7.3.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import ~/.gnupg/HEXCODEMYNEWKEYDATA.pub
+----
+
+** Note that whenever the key owner edits the primary key data, e.g. to add or
+   remove "uid" entries with e-mail aliases, or sub-keys dedicated for specific
+   purposes, the `~/.gnupg/HEXCODEMYNEWKEYDATA.pub` is changed and should be
+   re-published to OpenPGP servers, to nut-website, to GitHub account, etc.
+
+* This (binary) keychain can be exported into ASCII-armor format, and also
+  update the keychain file used by default:
+----
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --export -a > nut-key.gpg
+----
+////////
+
+How to verify the NUT source code checksum
+------------------------------------------
+
+As a weaker but simpler alternative to verifying a *signature*, you can verify
+just the accompanying checksums of the source archive file. This is useful
+primarily to check against bit-rot in original storage or in transit. As far
+as disclaimers go: ideally, you should cover all provided algorithms -- e.g.
+MD5 and SHA256 -- to minimize the chance that intentional malicious tampering
+on the wire goes undetected. A myriad tools can check that on various platforms;
+some examples follow:
+
+	# Example original checksum to compare with, from NUT website:
+	$ cat nut-2.8.0.tar.gz.sha256
+	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5  nut-2.8.0.tar.gz
+
+	# Generate checksum of downloaded archive with perl (a NUT build dependency
+	# generally, though you may have to install Digest::SHA module from CPAN):
+	$ perl -MDigest::SHA=sha256_hex -le "print sha256_hex <>" nut-2.8.0.tar.gz
+	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5
+
+	# Generate checksum of downloaded archive with openssl (another optional
+	# NUT build dependency):
+	$ openssl sha256 nut-2.8.0.tar.gz
+	SHA256(nut-2.8.0.tar.gz)= c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5
+
+	# Generate checksum of downloaded archive with coreutils:
+	$ sha256sum nut-2.8.0.tar.gz
+	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5  nut-2.8.0.tar.gz
+
+	# Auto-check downloaded checksum against downloaded archive with coreutils:
+	$ sha256sum -c nut-2.8.0.tar.gz.sha256
+	nut-2.8.0.tar.gz: OK
+
+	# Generate checksum of downloaded archive with GPG:
+	$ gpg --print-md SHA256 nut-2.8.0.tar.gz
+	nut-2.8.0.tar.gz: C3E5A708 DA797B7C 70B653D3 7B1206A0
+	                  00FCB503 B85519FE 4CDF6353 F792BFE5
 
 System level privileges and ownership
 -------------------------------------
@@ -81,7 +187,7 @@ During the initial
 <<NUT_user_creation,NUT user creation>>, we have created a
 monitoring user for `upsmon`.
 
-You can also create an 'administrator' user with full power using:
+You can also create an `administrator` user in NUT with full power using:
 
 	[administrator]
 		password = mypass
@@ -128,6 +234,13 @@ compiled in).
 	   LISTEN ::1
 	   LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
 
+As a special case, `LISTEN * <port>` (with an asterisk) will try to
+listen on "ANY" IP address for both IPv6 (`::0`) and IPv4 (`0.0.0.0`),
+subject to `upsd` command-line arguments, or system configuration or support.
+Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
+and does not allow to disable this mode, then there may be one listening
+socket to handle both address families.
+
 This parameter will only be read at startup.  You'll need to restart (rather
 than reload) `upsd` to apply any changes made here.
 
@@ -152,7 +265,7 @@ You should use this to restrict network access.
 
 [[UFW]]
 
-include::../scripts/ufw/README[]
+include::../scripts/ufw/README.adoc[]
 
 [[TCP_Wrappers]]
 TCP Wrappers
@@ -162,7 +275,7 @@ If the server is build with tcp-wrappers support enabled, it will check if the
 NUT username is allowed to connect from the client address through the
 `/etc/hosts.allow` and `/etc/hosts.deny` files.
 
-NOTE: this will only be done for commands that require the user to be logged
+NOTE: This will only be done for commands that require the user to be logged
 into the server.
 
 `hosts.allow`:
@@ -182,10 +295,10 @@ Configuring SSL
 
 SSL is available as a build option (`--with-ssl`).
 
-It encrypts sessions between upsd and clients, and can also be used to
+It encrypts sessions between `upsd` and clients, and can also be used to
 authenticate servers.
 
-This means that stealing port 3493 from upsd will no longer net you interesting
+This means that stealing port 3493 from `upsd` will no longer net you interesting
 passwords.
 
 Several things must happen before this will work, however. This chapter will
@@ -262,18 +375,18 @@ Example:
 	cp upsd.crt /usr/local/ups/etc/certs/0123abcd.0
 
 If you already have a file with that name in there, increment the
-0 until you get a unique filename that works.
+`0` part until you get a unique filename that works.
 
-If you have multiple client systems (like upsmon instances in
+If you have multiple client systems (like `upsmon` instances in
 secondary mode), be sure to install this file on them as well.
 
 We recommend making a directory under your existing confpath to
 keep everything in the same place.  Remember the path you created,
-since you will need to put it in upsmon.conf later.
+since you will need to put it in `upsmon.conf` later.
 
 It must not be writable by unprivileged users, since someone could
-insert a new client certificate and fool upsmon into trusting a
-fake upsd.
+insert a new client certificate and fool `upsmon` into trusting a
+fake `upsd`.
 
 Create the combined file for upsd
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -285,12 +398,12 @@ To do so, use the below commands:
 	chmod 0640 upsd.pem
 
 This file must be kept secure, since anyone possessing it could
-pretend to be upsd and harvest authentication data if they get a
+pretend to be `upsd` and harvest authentication data if they get a
 hold of port 3493.
 
-Having it be owned by 'root' and readable by group 'nut' allows upsd
+Having it owned by `root` and readable by group `nut` allows `upsd`
 to read the file without being able to change the contents.  This
-is done to minimize the impact if someone should break into upsd.
+is done to minimize the impact if someone should break into `upsd`.
 NUT reads the key and certificate files after dropping privileges
 and forking.
 
@@ -326,13 +439,13 @@ Restart upsd
 It should come back up without any complaints.  If it says something
 about keys or certificates, then you probably missed a step.
 
-If you run upsd as a separate user id (like nutsrv), make sure that
-user can read the upsd.pem file.
+If you run `upsd` as a separate user id (like `nutsrv`), make sure that
+user can read the `upsd.pem` file.
 
 Point upsmon at the certificates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Edit your upsmon.conf, and tell it where the CERTPATH is:
+Edit your `upsmon.conf`, and tell it where the `CERTPATH` is:
 
 	CERTPATH <path>
 
@@ -343,27 +456,27 @@ Example:
 Recommended: make upsmon verify all connections with certificates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Put this in upsmon.conf:
+Put this in `upsmon.conf`:
 
 	CERTVERIFY 1
 
-Without this, there is no guarantee that the upsd is the right host.
+Without this, there is no guarantee that the `upsd` is the right host.
 Enabling this greatly reduces the risk of man in the middle attacks.
 
 This effectively forces the use of SSL, so don't use this unless
-all of your upsd hosts are ready for SSL and have their certificates
+all of your `upsd` hosts are ready for SSL and have their certificates
 in order.
 
 Recommended: force upsmon to use SSL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Again in upsmon.conf:
+Again in `upsmon.conf`:
 
 	FORCESSL 1
 
 If you don't use `CERTVERIFY 1`, then this will at least make sure
 that nobody can sniff your sessions without a large effort.  Setting
-this will make upsmon drop connections if the remote upsd doesn't
+this will make `upsmon` drop connections if the remote `upsd` doesn't
 support SSL, so don't use it unless all of them have it running.
 
 NSS backend usage
@@ -397,12 +510,12 @@ Certificates should be signed by a certification authorities (CAs).
 Following commands are typical samples, contact your SSL guru or security
 officer to follow your company procedures.
 
-.Generate a server certificate for upsd:
+.Generate a server certificate for `upsd`:
 - Create a directory where store the certificate database: `mkdir cert_db`
 - Create the certificate database : `certutil -N -d cert_db`
 - Import the CA certificate:
 	`certutil -A -d cert_db -n "My Root CA" -t "TC,," -a -i rootca.crt`
-- Create a server certificate request (here called 'My nut server'):
+- Create a server certificate request (here called "My nut server"):
 	`certutil -R -d cert_db -s "CN=My nut server,O=MyCompany,ST=MyState,C=US" -a -o server.req`
 - Make your CA sign the certificate (produces server.crt)
 - Import the signed certificate into server database:
@@ -429,8 +542,8 @@ an "official" certificate authority.
 	`certutil -N -d CA_db`
 - Generate a certificate for CA:
 	`certutil -S -d CA_db -n "My Root CA" -s "CN=My CA,O=MyCompany,ST=MyState,C=US" -t "CT,," -x -2`
-(Do not forget to answer 'Yes' to the question 'Is this a CA certificate [y/N]?')
-- Extract the CA certificate to be able to import it in upsd (or upsmon)
+(Do not forget to answer `Yes` to the question "Is this a CA certificate [y/N]?")
+- Extract the CA certificate to be able to import it in `upsd` (or `upsmon`)
 certificate database:
 	`certutil -L -d CA_db -n "My Root CA" -a -o rootca.crt`
 - Sign a certificate request with the CA certificate (simulate a real CA
@@ -449,14 +562,14 @@ database .db files) to the right place, such as `/usr/local/ups/etc/`:
 upsd (required): certificate database and self certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Edit the upsd.conf to tell where find the certificate database:
+Edit the `upsd.conf` to tell where find the certificate database:
 
 	CERTPATH /usr/local/ups/etc/cert_db
 
 Also tell which is the certificate to send to clients to authenticate itself
 and the password to decrypt private key associated to certificate:
 
-	CERTIDENT 'certificate name' 'database password'
+	CERTIDENT "certificate name" "database password"
 
 NOTE: Generally, the certificate name is the server domain name, but is not
 a hard rule. The certificate can be named as useful.
@@ -470,7 +583,7 @@ NUT with `WITH_CLIENT_CERTIFICATE_VALIDATION` defined:
 	make CFLAGS="-DWITH_CLIENT_CERTIFICATE_VALIDATION"
 
 UPSD can accept three levels of client authentication. Just specify it with
-the directive `CERTREQUEST` with the corresponding value in the upsd.conf
+the directive `CERTREQUEST` with the corresponding value in the `upsd.conf`
 file:
 
 - NO: no client authentication.
@@ -480,28 +593,29 @@ If the client does not send any certificate, the connection is closed.
 - REQUIRE: a certificate is requested to the client and if it is not valid
 (no validation chain) the connection is closed.
 
-Like CA certificates, you can add many 'trusted' client and CA certificates
+Like CA certificates, you can add many "trusted" client and CA certificates
 in server's certificate databases.
 
 
 upsmon (required): upsd authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order for upsmon to securely connect to upsd, it must authenticate it.
-You must associate an upsd host name to security rules in upsmon.conf
-with the directive 'CERTHOST'.
+In order for `upsmon` to securely connect to `upsd`, it must authenticate it.
+You must associate an `upsd` host name to security rules in `upsmon.conf`
+with the directive `CERTHOST`.
 
-'CERTHOST' associates a hostname to a certificate name. It also determines
+`CERTHOST` associates a hostname to a certificate name. It also determines
 whether a SSL connection is mandatory, and if the server certificate must be
 validated.
 
-	CERTHOST 'hostname' 'certificate name' 'certverify' 'forcessl'
+	CERTHOST "hostname" "certificate name" "certverify" "forcessl"
 
-If the flag `forcessl` is set to `1`, and upsd answers that it can not
+If the flag `forcessl` is set to `1`, and `upsd` answers that it can not
 connect with SSL, the connection closes.
+
 If the flag `certverify` is set to `1` and the connection is done in SSL,
-upsd's certificate is verified and its name must be the specified
-'certificate name'.
+`upsd`'s certificate is verified and its name must be the specified
+`"certificate name"`.
 
 To prevent security leaks, you should set all `certverify` and `forcessl`
 flags to `1` (force SSL connection and validate all certificates for all
@@ -518,14 +632,15 @@ name is its hostname.
 upsmon (optional): certificate database and self certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Like upsd, upsmon may need to authenticate itself (upsd's `CERTREQUEST`
+Like `upsd`, `upsmon` may need to authenticate itself (`upsd`'s `CERTREQUEST`
 directive set to `REQUEST` or `REQUIRE`).
+
 It must access to a certificate (and its private key) in a certificate
-database configuring `CERTPATH` and `CERTIDENT` in upsmon.conf in the
-same way as upsd.
+database configuring `CERTPATH` and `CERTIDENT` in `upsmon.conf` in the
+same way as `upsd`.
 
 	CERTPATH /usr/local/ups/etc/cert_db
-	CERTIDENT 'certificate name' 'database password'
+	CERTIDENT "certificate name" "database password"
 
 
 Restart upsd
@@ -534,21 +649,21 @@ Restart upsd
 It should come back up without any complaints.  If it says something
 about keys or certificates, then you probably missed a step.
 
-If you run upsd as a separate user ID (like nutsrv), make sure that
+If you run `upsd` as a separate user ID (like `nutsrv`), make sure that
 user can read files in the certificate directory. NUT reads the keys and
 certificates after forking and dropping privileges.
 
 Restart upsmon
 ~~~~~~~~~~~~~~
 
-You should see something like this in the syslog from upsd:
+You should see something like this in the syslog from `upsd`:
 
 	foo upsd[1234]: Client mon@localhost logged in to UPS [myups] (SSL)
 
-If upsd or upsmon give any error messages, or the `(SSL)` is missing,
+If `upsd` or `upsmon` give any error messages, or the `(SSL)` is missing,
 then something isn't right.
 
-If in doubt about upsmon, start it with -D so it will stay in
+If in doubt about `upsmon`, start it with `-D` so it will stay in
 the foreground and print debug messages.  It should print something
 like this every couple of seconds:
 
@@ -618,7 +733,7 @@ Note that the replacement of OpenSSL by Mozilla Network Security Services
 chrooting and other forms of paranoia
 -------------------------------------
 
-It has been possible to run the drivers and upsd in a chrooted jail for
+It has been possible to run the drivers and `upsd` in a chrooted jail for
 some time, but it involved a number of evil hacks.  From the 1.3 series,
 a much saner chroot behavior exists, using BIND 9 as an inspiration.
 
@@ -650,7 +765,7 @@ programs have been built with the default prefix, so they are using
 	cp -a /usr/local/ups/etc/upsd.conf .
 	cp -a /usr/local/ups/etc/ups.conf .
 
-We're using 'cp -a' to maintain the permissions on those files.
+We're using `cp -a` to maintain the permissions on those files.
 
 Now bring over your state path, maintaining the same permissions as
 before.
@@ -690,7 +805,7 @@ symlinks
 ~~~~~~~~
 
 After you do this, you will have two copies of many things, like the
-confpath and the state path.  I recommend deleting the 'real'
+confpath and the state path.  I recommend deleting the "real"
 `/var/state/ups`, replacing it with a symlink to
 `/chroot/nut/var/state/ups`.  That will let other programs reference the
 `.pid` files without a lot of hassle.
@@ -698,7 +813,7 @@ confpath and the state path.  I recommend deleting the 'real'
 You can also do this with your confpath and point `/usr/local/ups/etc` (or
 equivalent on your system) at `/chroot/nut/usr/local/ups/etc` unless you're
 worried about something hurting the files inside that directory.  In that
-case, you should maintain a 'golden' copy and push it into the chroot path
+case, you should maintain a "golden" copy and push it into the chroot path
 after making changes.
 
 The `upsdrvctl` itself does not chroot, so the `ups.conf` still needs to be
@@ -707,9 +822,9 @@ in the usual confpath.
 upsmon
 ~~~~~~
 
-This has not yet been applied to upsmon, since it can be quite
+This has not yet been applied to `upsmon`, since it can be quite
 complicated when there are notifiers that need to be run.  One
-possibility would be for upsmon to have three instances:
+possibility would be for `upsmon` to have three instances:
 
 	- privileged root parent that listens for a shutdown command
 

@@ -4,31 +4,46 @@ NUTSCAN_DISPLAY_PARSABLE(3)
 NAME
 ----
 
-nutscan_display_parsable - Display the specified `nutscan_device_t` structure on stdout.
+nutscan_display_parsable - Display the specified `nutscan_device_t`
+structure on stdout.
 
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- void nutscan_display_parsable(nutscan_device_t * device);
+	void nutscan_display_parsable(nutscan_device_t * device);
+------
 
 DESCRIPTION
 -----------
 
-The *nutscan_display_parsable()* function displays all NUT devices in 'device' to stdout. It displays them in a way that can be easily parsed which is:
+The *nutscan_display_parsable()* function displays all NUT devices in
+'device' to `stdout`. It displays them in a way that can be easily parsed,
+which is:
 
-<driver type>:driver="<driver name>",port="<port type>"[,<optional parameter 1>="<optional data 1>",<optional parameter 2>="<optional data 2>",...]
+    <driver type>:driver="<driver name>",port="<port type>"[,<optional parameter 1>="<optional data 1>",<optional parameter 2>="<optional data 2>",...]
 
-<driver type> may be one of USB, SNMP, XML, NUT, IPMI or AVAHI.
-<driver name> is the name of the driver's binary corresponding to this device.
-<port type> and <optional parameter X> depend on <driver name>, see the corresponding driver's man page.
+* <driver type> may be one of USB, SNMP, XML, NUT, IPMI or AVAHI.
+* <driver name> is the name of the driver's binary corresponding
+  to this device.
+* <port type> and <optional parameter X> depend on <driver name>,
+  see the corresponding driver's man page.
+
+Note that this format is for machine consumption, so is not associated
+with sanity checks that may be used along with display method for the
+`ups.conf` file format.
 
 SEE ALSO
 --------
-linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3],
+
+linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3],
+linkman:nutscan_display_sanity_check[3],
+linkman:nutscan_display_sanity_check_serial[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
 linkman:nutscan_display_ups_conf[3], linkman:nutscan_new_device[3],
 linkman:nutscan_free_device[3], linkman:nutscan_add_option_to_device[3],
 linkman:nutscan_add_device_to_device[3], linkman:nutscan_cidr_to_ip[3]

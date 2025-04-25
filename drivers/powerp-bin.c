@@ -32,10 +32,11 @@
 
 #include "powerp-bin.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 
 #include <math.h>
 
-#define POWERPANEL_BIN_VERSION "Powerpanel-Binary 0.5"
+#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.62"
 
 typedef struct {
 	unsigned char	start;
@@ -305,20 +306,8 @@ static int powpan_setvar(const char *varname, const char *val)
 				continue;
 			}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-			snprintf(command, sizeof(command), vartab[i].set,
-				vartab[i].map[type][j].command);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+			snprintf_dynamic(command, sizeof(command), vartab[i].set,
+				"%c", vartab[i].map[type][j].command);
 
 			if ((powpan_command(command, 4) == 3) && (!memcmp(powpan_answer, command, 3))) {
 				dstate_setinfo(varname, "%s", val);
@@ -430,7 +419,7 @@ static ssize_t powpan_status(status_t *status)
 	/*
 	 * WRITE D\r
 	 * READ #VVL.CTF.....\r
-        *      01234567890123
+	 *      01234567890123
 	 */
 	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
 
@@ -545,7 +534,7 @@ static int powpan_updateinfo(void)
 	}
 
 	/* !OB && !TEST */
-	if (!(status.flags[0] & 0x84)) {
+	if (!(status.flags[0] & 0x84) && status.o_volt) {
 
 		if (status.o_volt < 0.5 * status.i_volt) {
 			upsdebugx(2, "%s: output voltage too low", __func__);
@@ -628,7 +617,7 @@ static ssize_t powpan_initups(void)
 		upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 		if (ret < 20) {
-			upsdebugx(2, "Expected 20 bytes but only got %zd", ret);
+			upsdebugx(2, "Expected 20 bytes but only got %" PRIiSIZE, ret);
 			continue;
 		}
 

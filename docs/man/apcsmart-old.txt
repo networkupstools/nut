@@ -40,7 +40,7 @@ definition described below.
 If your 940-0024C cable is broken or missing, use this diagram to build
 a clone:
 
-http://www.networkupstools.org/cables/940-0024C.jpg
+https://www.networkupstools.org/cables/940-0024C.jpg
 
 EXTRA ARGUMENTS
 ---------------
@@ -83,21 +83,28 @@ other unexpected values have occasionally slipped through.
 APC UPS models with both USB and serial ports require a power cycle when
 switching from USB communication to serial, and perhaps vice versa.
 
-AUTHOR
-------
+AUTHORS AND HISTORY
+-------------------
+
 Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk> (drawing
-heavily on the original apcsmart driver by Russell Kroll).  This driver
-was called newapc for a time and was renamed in the 1.5 series. In 2.6.2
-the driver was renamed to apcsmart-old, being superseded by updated version
-with new features.
+heavily on the original `apcsmart` driver by Russell Kroll).
+
+This driver was called `newapc` for a time and was renamed in
+the 1.5 series.
+
+In 2.6.2 the driver was renamed to `apcsmart-old`, being superseded
+by updated version with new features which currently holds the
+`apcsmart` name.
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

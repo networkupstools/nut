@@ -32,7 +32,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.98"
+#define APC_HID_VERSION "APC HID 0.100"
 
 /* APC */
 #define APC_VENDORID 0x051d
@@ -94,6 +94,10 @@ static usb_device_id_t apc_usb_device_table[] = {
 	{ USB_DEVICE(APC_VENDORID, 0x0002), general_apc_check },
 	/* various 5G models */
 	{ USB_DEVICE(APC_VENDORID, 0x0003), disable_interrupt_pipe },
+	/* APC Smart UPS 1000 with latest firmware 04.3
+	 * seems to have bumped the productid from 3 to 4
+	 * See https://github.com/networkupstools/nut/issues/1429 */
+	{ USB_DEVICE(APC_VENDORID, 0x0004), disable_interrupt_pipe },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -128,8 +132,24 @@ static const char *apc_date_conversion_fun(double value)
 	return buf;
 }
 
+static double apc_date_conversion_reverse(const char *date_string)
+{
+	int year, month, day;
+	long date;
+
+	sscanf(date_string, "%04d/%02d/%02d", &year, &month, &day);
+	if(year >= 2070 || month > 12 || day > 31)
+		return 0;
+	year %= 100;
+	date = ((year / 10 & 0x0F) << 4) + (year % 10);
+	date += ((month / 10 & 0x0F) << 20) + ((month % 10) << 16);
+	date += ((day / 10 & 0x0F) << 12) + ((day % 10) << 8);
+
+	return (double) date;
+}
+
 static info_lkp_t apc_date_conversion[] = {
-	{ 0, NULL, apc_date_conversion_fun, NULL }
+	{ 0, NULL, apc_date_conversion_fun, apc_date_conversion_reverse }
 };
 
 /* This was determined empirically from observing a BackUPS LS 500 */
@@ -223,7 +243,7 @@ static usage_lkp_t apc_usage_lkp[] = {
 	{ "APCPanelTest",		0xff860072 }, /* FIXME: exploit */
 	{ "APCShutdownAfterDelay",	0xff860076 }, /* FIXME: exploit */
 	{ "APC_USB_FirmwareRevision",	0xff860079 }, /* FIXME: exploit */
-	{ "APCDelayBeforeReboot",	0xff86007c },
+	{ "APCDelayBeforeReboot",	0xff86007c }, /* WARNING: apcupsd maps this as APCForceShutdown... which one is right? */
 	{ "APCDelayBeforeShutdown",	0xff86007d },
 	{ "APCDelayBeforeStartup",	0xff86007e }, /* FIXME: exploit */
 	/* usage seen in dumps but unknown:
@@ -318,7 +338,7 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", 0, NULL }, /* Back-UPS 500 */
   { "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
-  { "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", 0, date_conversion },
+  { "battery.mfr.date", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_SEMI_STATIC, date_conversion },
   { "battery.mfr.date", 0, 0, "UPS.PowerSummary.APCBattReplaceDate", NULL, "%s", 0, apc_date_conversion }, /* Back-UPS 500, Back-UPS ES/CyberFort 500 */
   { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", 0, apc_date_conversion }, /* Observed values: 0x0 on Back-UPS ES 650, 0x92501 on Back-UPS BF500 whose manufacture date was 2005/01/20 - this makes little sense but at least it's a valid date. */
 
@@ -518,7 +538,19 @@ static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 		return 0;
 	}
 
-	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x", vendorID, productID);
+	if (disable_fix_report_desc) {
+		upsdebugx(3,
+			"NOT Attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(got disable_fix_report_desc in config)",
+			(unsigned int)vendorID,
+			(unsigned int)productID);
+		return 0;
+	}
+
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x",
+		(unsigned int)vendorID,
+		(unsigned int)productID);
 
 	/* Look at the High Voltage Transfer logical max value:
 	 * If the HVT logmax is greater than the configured or input voltage limit

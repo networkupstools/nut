@@ -4,44 +4,73 @@ LIBNUTCLIENT_COMMANDS(3)
 NAME
 ----
 
-libnutclient_commands, nutclient_get_device_commands, nutclient_has_device_command,
-nutclient_get_device_command_description, nutclient_execute_device_command -
-Instant command related functions in Network UPS Tools high-level client access library
+libnutclient_commands, nutclient_get_device_commands,
+nutclient_has_device_command, nutclient_get_device_command_description,
+nutclient_execute_device_command -
+Instant command related functions in Network UPS Tools high-level client
+access library
 
 SYNOPSIS
 --------
 
+------
 	#include <nutclient.h>
 
 	typedef void* NUTCLIENT_t;
 
-	strarr nutclient_get_device_commands(NUTCLIENT_t client, const char* dev);
-	int nutclient_has_device_command(NUTCLIENT_t client, const char* dev, const char* cmd);
-	char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* dev, const char* cmd);
-	void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd);
+	typedef char** strarr;
+
+	strarr nutclient_get_device_commands(
+		NUTCLIENT_t client,
+		const char* dev);
+
+	int nutclient_has_device_command(
+		NUTCLIENT_t client,
+		const char* dev, const char* cmd);
+
+	char* nutclient_get_device_command_description(
+		NUTCLIENT_t client,
+		const char* dev, const char* cmd);
+
+	void nutclient_execute_device_command(
+		NUTCLIENT_t client,
+		const char* dev, const char* cmd,
+		const char* param="");
+------
 
 DESCRIPTION
 -----------
 
 These functions allow to manage instant commands of devices.
 
-The *nutclient_get_device_commands()* function retrieve the list of command names for a device.
+* The *nutclient_get_device_commands()* function retrieves
+  the list of command names for a device.
++
 The returned strarr must be freed by 'strarr_free'.
 
-The *nutclient_has_device_command* function test if the specified command is supported by the device.
-Return 1 is supported and 0 if not.
+* The *nutclient_has_device_command* function tests if the
+  specified command is supported by the device.
++
+Return '1' if supported and '0' if not.
 
-The *nutclient_get_device_command_description* function retrieve the command description, if any.
-The returned string must be freed.
+* The *nutclient_get_device_command_description* function
+  retrieves the command description, if any.
++
+The returned string must be freed by linkmanext:free[3]
+(see linkman:libnutclient_general[3]).
 
-The *nutclient_execute_device_command* intend to execute the instant command.
+* The *nutclient_execute_device_command* intends to execute
+  the instant command, with an optional parameter.
 
-'dev' is the device name.
+Common arguments:
 
-'cmd' is the instant command name.
+* 'dev' is the device name.
+
+* 'cmd' is the instant command name.
 
 SEE ALSO
 --------
+
 linkman:libnutclient[3]
 linkman:libnutclient_devices[3]
 linkman:libnutclient_general[3]

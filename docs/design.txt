@@ -2,11 +2,33 @@ NUT design document
 ===================
 
 This software is designed around a layered scheme with drivers, a
-server and clients.   These layers communicate with text-based
+data server, and clients.   These layers communicate with text-based
 protocols for easier maintenance and diagnostics.
 
 The layering
 ------------
+
+The NUT driver(s) and the data server run on the same system, which
+has some communications media connected to the power device (e.g. a
+serial or USB link, a local IPMI interface, or a network interface
+in the engineering VLAN).  While each driver program talks the device
+vendor-defined protocol over such media, it also talks the local
+NUT Socket protocol to the local data server.
+
+Clients connect to the data server using the common NUT Network protocol
+over TCP, whether on `localhost` or remotely.
+
+One most notable client is `upsmon`, which is responsible for shutdown
+of the system it runs on, when the power situation becomes critical.
+Design-wise, it normally splits into two daemons to minimize security
+risks: one remains with 'root' privileges and is only used to start
+the configured `SHUTDOWNCMD` when the time comes, and the other half
+drops privileges and does the bulk of work.
+
+NOTE: There were requests for enhancement to also implement connectivity
+using the common NUT Network protocol using local sockets, so clients
+running on the same machine as the data server would not have to always
+use the TCP/IP stack; however this is currently not implemented.
 
 image:images/nut_layering.png[NUT layering]
 
@@ -39,7 +61,7 @@ The SERVER will connect to the socket of each DRIVER and will request a
 dump at that time.  It retains this data in local storage for later use.
 It continues to listen on the socket for additional updates.
 
-This protocol is documented in sock-protocol.txt.
+This protocol is documented in link:sock-protocol.txt[].
 
 From the server
 ~~~~~~~~~~~~~~~
@@ -50,14 +72,14 @@ immediately.  When a request for data arrives from a CLIENT, the SERVER
 looks through the internal storage for that UPS and returns the
 requested data if it is available.
 
-The format for requests from the CLIENT is documented in protocol.txt.
+The format for requests from the CLIENT is documented in link:protocol.txt[].
 
 Instant commands
 ----------------
 
-Instant commands is the term given to a set of actions that result in
+"Instant commands" is the term given to a set of actions that result in
 something happening to the UPS.  Some of the common ones are
-test.battery.start to initiate a battery test and test.panel.start to
+`test.battery.start` to initiate a battery test and `test.panel.start` to
 test the front panel of the UPS.
 
 They are passed to the SERVER from a CLIENT using an authenticated
@@ -69,8 +91,11 @@ information.
 At this point, there is no confirmation to the SERVER of the command's
 execution.  This is (still) planned for a future release.  This has been
 delayed since returning a response involves some potentially interesting
-timing issues.  Remember that upsd services clients in a round-robin
+timing issues.  Remember that `upsd` services clients in a round-robin
 fashion, so all queries must be lightweight and speedy.
+
+NOTE: FIXME: Wasn't "TRACKING" mechanism for "INSTCMD/SET VAR" introduced
+to address just this? See https://github.com/networkupstools/nut/pull/659
 
 Setting variables
 -----------------
@@ -88,6 +113,9 @@ Like the instant commands, there is currently no acknowledgement of the
 command's completion from the DRIVER.  This, too, is planned for a future
 release.
 
+NOTE: FIXME: Wasn't "TRACKING" mechanism for "INSTCMD/SET VAR" introduced
+to address just this? See https://github.com/networkupstools/nut/pull/659
+
 Example data path
 -----------------
 
@@ -97,24 +125,24 @@ delivering the alpha message to the admin.
 
 1. EQUIPMENT reports on battery by setting flag in status register
 
-2. DRIVER notices this flag and stores it in the ups.status variable as
+2. DRIVER notices this flag and stores it in the `ups.status` variable as
    OB.  This update gets pushed out to any listeners via the sockets.
 
-3. SERVER upsd sees activity on the socket, reads it, parses it, and
+3. SERVER `upsd` sees activity on the socket, reads it, parses it, and
    commits the new data to its local version of the status variable.
 
-4. CLIENT upsmon does a routine poll of SERVER for "ups.status" and
-   gets "OB".
+4. CLIENT `upsmon` does a routine poll of SERVER for `ups.status` and
+   gets `OB`.
 
-5. CLIENT upsmon then invokes its NOTIFYCMD which is upssched.
+5. CLIENT `upsmon` then invokes its `NOTIFYCMD` which is `upssched`.
 
-6. upssched starts up a daemon to handle a timer which will expire about
+6. `upssched` starts up a daemon to handle a timer which will expire about
    30 seconds into the future.
 
 7. 30 seconds later, the timer expires since the UPS is still on battery,
-   and upssched calls the CMDSCRIPT upssched-cmd.
+   and so `upssched` calls the `CMDSCRIPT` which is `upssched-cmd`.
 
-8. upssched-cmd parses the args and calls sendmail.
+8. `upssched-cmd` parses the args and calls `sendmail`.
 
 9. Avian carriers, smoke signals, SMTP, and some magic result in the
    message getting from the pager company's gateway to a transmitter
@@ -122,66 +150,66 @@ delivering the alpha message to the admin.
 
 This scenario requires some configuration, obviously:
 
-1. There's a UPS driver running.
+1. There's an UPS driver running.
    (Whatever applies for the hardware)
 
-2. upsd has a valid UPS entry in ups.conf for this UPS.
+2. `upsd` has a valid UPS entry in 'ups.conf' for this UPS.
 
 	[myups]
 		driver = nutupsdrv
 		port = /dev/ttySx
 
-3. upsd has a valid user for upsmon in upsd.users.
+3. `upsd` has a valid user for `upsmon` in 'upsd.users' file.
 
 	[monuser]
 		password = somepass
 		upsmon primary
 
-4. upsmon is set to monitor this UPS in upsmon.conf.
+4. `upsmon` is set to monitor this UPS with this user in 'upsmon.conf' file.
 
 	MONITOR myups@localhost 1 monuser somepass primary
 
-5. upsmon is set to EXEC the NOTIFYCMD for the ONBATT condition in
-   upsmon.conf.
+5. `upsmon` is set to `EXEC` the `NOTIFYCMD` for the `ONBATT` condition in
+   'upsmon.conf' file.
 
 	NOTIFYFLAG ONBATT EXEC
 
-6. upsmon calls upssched as the NOTIFYCMD in upsmon.conf.
+6. `upsmon` calls `upssched` as the `NOTIFYCMD` in 'upsmon.conf' file.
 
 	NOTIFYCMD /path/to/upssched
 
-7. upssched has a 30 second timer for ONBATT in upssched.conf.
+7. `upssched` has a 30 second timer for `ONBATT` in 'upssched.conf' file.
 
 	AT ONBATT * START-TIMER upsonbatt 30
 
-8. upssched calls upssched-cmd as the CMDSCRIPT in upssched.conf.
+8. `upssched` calls `upssched-cmd` as the `CMDSCRIPT` in 'upssched.conf'.
 
 	CMDSCRIPT /path/to/upssched-cmd
 
-9. upssched-cmd knows what to do with "upsonbatt" as its first argument
-   (A quick case..esac construct, see the examples)
+9. `upssched-cmd` knows what to do with `upsonbatt` keyword as its first
+   argument (a quick `case..esac` construct, see the examples)
 
 
 History
 -------
 
 The oldest versions of this software (1998) had no separation between
-the driver and the network server and only supported the latest APC
+the driver and the network server, and only supported the latest APC
 Smart-UPS hardware as a result.  The network protocol used brittle
 binary structs.  This had numerous bad implications for compatibility
 and portability.
 
 After the driver and server were separated, data was shared through the
 state file concept.  Status was written into a static array (the "info
-array") by drivers, and that array was stored on disk.  upsd would
+array") by drivers, and that array was stored on disk.  The `upsd` would
 periodically read that file into a local copy of that array.
 
 Shared memory mode was added a bit later, and that removed some of the
 lag from the status updates.  Unfortunately, it didn't have any locking
 originally, and the possibility for corruption due to races existed.
 
-mmap() support was added at some point after that, and became the
-default.  The drivers and upsd would mmap() the file into memory and
+`mmap()` support was added at some point after that, and became the
+default.  The drivers and `upsd` would `mmap()` the file into memory and
 read or write from it.  Locking was done using the state file as the
 token, so contention problems were avoided.  This method was relatively
 quick, but it involved at least 3 copies of the data (driver, disk/mmap,
@@ -191,15 +219,28 @@ delay the driver or server when waiting for a lock.
 In April 2003, the entire state management subsystem was removed and
 replaced with a single local socket.  The drivers listen for
 connections and push updates asynchronously to any listeners.  They also
-recognize a few commands.  Drivers also dampen updates, and only push
-them out when something actually changes.
+recognize a few commands.  Drivers also dampen the flow of updates, and
+only push them out when something actually changes.
 
-As a result, upsd no longer has to poll any files on the disk, and can
-just select() all of its fds and wait for activity.  When one of them is
-active, it reads the fd and parses the results.  Updates from the
-hardware now get to upsd about as fast as they possibly can.
+As a result, `upsd` no longer has to poll any files on the disk, and can
+just `select()` all of its file descriptors (fds) and wait for activity.
+When one of them is active, it reads the fd and parses the results.
+Updates from the hardware now get to `upsd` about as fast as they possibly
+can.
 
-Drivers used to call setinfo() to change the local array, and then would
-call writeinfo() to push the array onto the disk, or into the
+Drivers used to call `setinfo()` to change the local array, and then would
+call `writeinfo()` to push the array onto the disk, or into the
 mmap/shared memory space.  This introduced a lag since many drivers poll
 quite a few variables during an update.
+
+By 2013 much of the work on NUT for Windows branch (based off the NUT v2.6.5
+release) was completed, adding named pipes as the equivalent to local sockets
+as well as to cross-program signals.  This work got a face-lift and was merged
+into the main code base about a decade later, in 2022.
+
+In April 2023 (eventually released with NUT v2.8.1 and enhanced/fixed in
+later releases), a new use-case was added: interactions of two instances
+of a driver program over the local socket, as an alternative to signals
+for the already-running driver to reload configuration, exit and make way
+for a new instance of the driver daemon, or command the UPS to kill power
+without the overhead of a new connection made by such new instance.

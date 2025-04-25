@@ -6,21 +6,29 @@ NAME
 
 bcmxcp - Driver for UPSes supporting the serial BCM/XCP protocol
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*bcmxcp* -h
+
+*bcmxcp* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 bcmxcp driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
-This driver should recognize all serial BCM/XCP-compatible UPSes.  It has
-been developed and tested on Powerware PW5115 and PW9120 hardware. If your UPS
-has a USB connection, you may also consult the linkman:bcmxcp_usb[8] driver
-documentation.
+
+This driver should recognize all serial BCM/XCP-compatible UPSes.
+It has been developed and tested on Powerware PW5115 and PW9120 hardware.
+
+If your UPS has a USB connection, you may also consult the
+linkman:bcmxcp_usb[8] driver documentation.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings in the
 linkman:ups.conf[5].
 
@@ -29,18 +37,21 @@ The number of seconds that the UPS should wait between receiving the
 shutdown command (`upsdrvctl shutdown`) and actually shutting off.
 
 *baud_rate=*'rate'::
-Communication speed for the UPS. If this is set to 9600, it tries to connect
-to the UPS at 9600bps. If it fails to communicate, it will go into baud-hunting.
-It starts at 1200 and goes up to 19200. If it succeeds, it tell you the speed it
-connected with. If not included in the config, it defaults to baud-hunting.
+Communication speed for the UPS. If this is set to 9600, it tries to
+connect to the UPS at 9600bps. If it fails to communicate, it will go
+into baud-hunting. It starts at 1200 and goes up to 19200.
+If it succeeds, it tell you the speed it connected with.
+If not included in the config, it defaults to baud-hunting.
 
 DEFAULT VALUES FOR THE EXTRA ARGUMENTS
 --------------------------------------
+
  - *shutdown_delay =* '120'
  - *baud_rate =* 'none'
 
 INSTANT COMMANDS
 ----------------
+
 This driver supports the following Instant Commands:
 
 *shutdown.return*::
@@ -67,22 +78,28 @@ Access the config register to change settings.
 
 BUGS
 ----
+
 None known.
 
 AUTHOR
 ------
+
 Tore Ørpetveit <tore@orpetveit.net>
 
 SEE ALSO
 --------
+
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 The USB BCM/XCP driver:
 ~~~~~~~~~~~~~~~~~~~~~~~
+
 linkman:bcmxcp_usb[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

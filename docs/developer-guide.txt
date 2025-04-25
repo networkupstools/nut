@@ -2,8 +2,8 @@
 
 Network UPS Tools Developer Guide
 _________________________________
-:Author: Russell_Kroll,_Arnaud_Quette,_Charles_Lepple_and_Peter_Selinger
-:Author Initials: RK, AQ, CL & PS
+:Author: Russell_Kroll,_Arnaud_Quette,_Charles_Lepple,_Peter_Selinger,_Jim_Klimov_and_NUT_project_community_contributors
+:Author Initials: RK, AQ, CL, PS & JK
 
 Introduction
 ============
@@ -12,13 +12,18 @@ NUT is both a powerful toolkit and framework that provides support for Power
 Devices, such as Uninterruptible Power Supplies, Power Distribution Units
 and Solar Controllers.
 
-This document intend to describe how NUT is designed, and the way to
+This document intends to describe how NUT is designed, and the way to
 develop new device drivers and client applications.
 
 
 [[design]]
 
 include::design.txt[]
+
+
+[[versioning]]
+
+include::nut-versioning.adoc[]
 
 
 [[developers]]
@@ -38,12 +43,12 @@ include::sock-protocol.txt[]
 
 [[augeas]]
 
-include::../scripts/augeas/README[]
+include::../scripts/augeas/README.adoc[]
 
 
 [[devscan]]
 
-include::../tools/nut-scanner/README[]
+include::../tools/nut-scanner/README.adoc[]
 
 
 [[new-clients]]
@@ -73,18 +78,20 @@ This mode allows to simulate any kind of devices, even non existing ones.
 
 Using this method, you can either replay a real life sequence,
 <<dev-recording,recorded from an actual device>>, or directly interact
-through upsrw or by editing the device file, to modify the variables values.
+through `upsrw` or by editing the device file, to modify the variables'
+values.
 
 Here is an example to setup a device simulation:
 
 - install NUT as usual, if not already done
-- get a simulation file (.dev) or sequence (.seq), or generate one using the
-<<dev-recording,device recorder>>. Sample files are provided in the 'data'
-directory of the NUT source. You can also download these from the development
-repository, such as the
-link:http://anonscm.debian.org/viewvc/nut/trunk/data/evolution500.seq?revision=2778&view=co[evolution500.seq].
-- copy the simulation file to your sysconfig directory, like /etc/nut or
-/etc/ups
+- get a simulation file (`.dev`) or sequence (`.seq`), or generate one using
+  the <<dev-recording,device recorder>>. Sample files are provided in the
+  `data` directory of the NUT source. You can also download these from
+  the development repository, such as the
+  link:https://github.com/networkupstools/nut/raw/master/data/evolution500.seq[evolution500.seq]
+  or from link:https://github.com/networkupstools/nut-ddl/[NUT DDL] collection.
+- copy the simulation file to your sysconfig directory, like `/etc/nut`
+  or `/etc/ups`
 - configure NUT for simulation (linkman:ups.conf[5]):
 +
 	[dummy]
@@ -92,37 +99,48 @@ link:http://anonscm.debian.org/viewvc/nut/trunk/data/evolution500.seq?revision=2
 		port = evolution500.dev
 		desc = "dummy-ups in dummy mode"
 +
-- now start NUT, at least dummy-ups and upsd:
+- now start NUT, at least `dummy-ups` and `upsd`:
 +
-	$ upsdrvctl start dummy
-	$ upsd
+	:; upsdrvctl start dummy
+	:; upsd
 +
 - and check the data:
 +
-	$ upsc dummy
+	:; upsc dummy
 	...
 +
-- you can also use upsrw to modify the data:
+- you can also use `upsrw` to modify the data in memory:
 +
-	$ upsrw -s ups.status="OB LB" -u user -p password dummy
+	:; upsrw -s ups.status="OB LB" -u user -p password dummy
 +
-- or directly edit /etc/nut/evolution500.seq. In this case, modification will
-only apply according to the TIMER events and the current position in the
-sequence.
+- or directly edit your copy of `/etc/nut/evolution500.seq`.
+  In this case, modification will only apply according to the `TIMER`
+  events and the current position in the sequence.
 
 For more information, refer to linkman:dummy-ups[8] manual page.
 
+[[dev-simu-disco]]
+
+Simulated devices discovery
+---------------------------
+
+Any simulation file that is saved in the sysconfig directory can be
+automatically discovered and configured using nut-scanner:
+----
+	:; nut-scanner -n
+	:; nut-scanner --nut_simulation_scan
+----
 
 [[dev-recording]]
 
 Device recording
 ----------------
 
-To complete dummy-ups, NUT provides a device recorder script called
-'nut-recorder.sh' and located in the 'tools/' directory of the
+To complete `dummy-ups`, NUT provides a device recorder script called
+`nut-recorder.sh` and located in the 'tools/' directory of the
 NUT source tree.
 
-This script uses 'upsc' to record device information, and stores
+This script uses `upsc` to record device information, and stores
 these in a differential fashion every 5 seconds (by default).
 
 Its usage is the following:
@@ -131,11 +149,11 @@ Its usage is the following:
 
 For example, to record information from the device 'myups' every 10 seconds:
 
-	nut-recorder.sh myups@localhost myups.seq 10
+	:; nut-recorder.sh myups@localhost myups.seq 10
 
 During the recording, you will want to generate power events, such as power
-failure and restoration. These will be tracked in the simulation files, and be
-eventually be replayed by the <<dev-simu,dummy-ups>> driver.
+failure and restoration. These will be tracked in the simulation files, and
+be eventually be replayed by the <<dev-simu,dummy-ups>> driver.
 
 
 NUT core development and maintenance
@@ -150,7 +168,7 @@ include::macros.txt[]
 
 [[roadmap]]
 
-include::../TODO[]
+include::../TODO.adoc[]
 
 
 [[nut-names]]
@@ -169,4 +187,4 @@ include::daisychain.txt[]
 Appendix C: NUT libraries complementary information
 ===================================================
 
-include::../lib/README[]
+include::../lib/README.adoc[]

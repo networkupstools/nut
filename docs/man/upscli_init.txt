@@ -9,37 +9,60 @@ upscli_init - Initialize upsclient module specifying security properties.
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_init(int certverify, const char *certpath,
-			const char *certname, const char *certpasswd);
+	int upscli_init(
+		int certverify,
+		const char *certpath,
+		const char *certname,
+		const char *certpasswd);
+------
 
 DESCRIPTION
 -----------
-The *upscli_init()* function initialize upsclient module and set many
-SSL-related properties: 'certverify' to 1 makes certificate verification
+
+The *upscli_init()* function initializes upsclient module and sets many
+TLS/SSL-related properties: 'certverify' to 1 makes certificate verification
 required for all SSL connections and 'certpath' is the location of
 certificate database.
 
-If compiled with OpenSSL, certpath refers to directory containing
-certificates where the certificates must be named according to their
-hash values ending in a ".0" extension. If two certificates result in
-the same hash value (thus file name), the ".0" can be incremented to ".1"
-and so on, as needed. The bash command for creating links in this manner
-would be:
+* If compiled with OpenSSL, 'certpath' refers to directory containing
+  certificates where the certificates must be named according to their
+  hash values ending in a ".0" extension. If two certificates result in
+  the same hash value (thus file name), the ".0" can be incremented to ".1"
+  and so on, as needed. The shell command for creating links in this manner
+  would be:
++
+----
+:; ln -s ca.pem ./$(openssl x509 -hash -noout -in ca.pem).0
+----
++
+Alternatively, the `c_rehash` utility (provided by e.g. `openssl-perl`
+  package) can take a directory and iterate it to link all certificates
+  found in that directory, in the manner described above.
 
-ln -s ca.pem ./$(openssl x509 -hash -noout -in ca.pem).0
+* If compiled with NSS, 'certpath' refers to a directory containing its
+  database files.
 
-Alternatively, the c_rehash utility (provided by openssl-perl) can take a
-directory and iterate it to link all certificates found in that directory,
-in the manner described above.
-
-If compiled with NSS, certpath refers to a directory
-containing database files.
-
-If compiled with NSS and using SSL, you can specify 'certname' the name
-of the certificate to send to upsd and 'certpasswd' the password used
+If compiled with NSS and using SSL, you can specify 'certname' with the name
+of the certificate to send to `upsd`, and 'certpasswd' with the password used
 to decrypt certificate private key.
+
+If compiled with NSS, it would normally log either the infamous message
+"Init SSL without certificate database" if no 'certpath' was provided,
+or "Init SSL with certificate database located at %s" otherwise.
+Since some programmatic consumers become confused by such extra text on
+the `stderr` of tools they call (such as monitoring systems doing `upsc`
+queries), you can export an environment variable `NUT_QUIET_INIT_SSL`
+with string values `"true"`, `"TRUE"` or `"1"`, to avoid logging these
+messages and just emit them as debug stream (at verbosity 1 or higher).
+
+As part of general initialization, *upscli_init()* function can call the
+linkman:upscli_init_default_connect_timeout[3] method (if it was never used
+before): this allows unmodified (legacy) NUT clients to consistently benefit
+from presence of the `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable for
+linkman:upscli_connect[3] attempts to be not blocking (as per default).
 
 You can call linkman:upscli_add_host_cert[3] to register specific host
 security policy before initialize connections to them.
@@ -49,12 +72,15 @@ You must call linkman:upscli_cleanup[3] when exiting application.
 RETURN VALUE
 ------------
 
-The *upscli_init()* function returns 1 on success, or -1 if an error occurs.
+The *upscli_init()* function returns '1' on success, or '-1' if an error
+occurs.
 
 SEE ALSO
 --------
+
 linkman:upscli_add_host_cert[3], linkman:upscli_cleanup[3],
-linkman:upscli_disconnect[3], linkman:upscli_fd[3],
+linkman:upscli_connect[3], linkman:upscli_disconnect[3],
+linkman:upscli_init_default_connect_timeout[3], linkman:upscli_fd[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
 linkman:upscli_ssl[3], linkman:upscli_strerror[3],
 linkman:upscli_upserror[3]

@@ -31,9 +31,10 @@ extern "C" {
 
 /* Some compilers and/or C libraries do not handle printf("%s", NULL) correctly */
 #ifndef NUT_STRARG
-# ifdef HAVE_PRINTF_STRING_NULL
-#  define NUT_STRARG(x) x
+# if (defined REQUIRE_NUT_STRARG) && (REQUIRE_NUT_STRARG == 0)
+#  define NUT_STRARG(x) (x)
 # else
+/* Is required, or not defined => err on safe side */
 #  define NUT_STRARG(x) (x?x:"(null)")
 # endif
 #endif
@@ -128,6 +129,17 @@ int	str_to_ulong(const char *string, unsigned long *number, const int base);
 int	str_to_ulong_strict(const char *string, unsigned long *number, const int base);
 int	str_to_double(const char *string, double *number, const int base);
 int	str_to_double_strict(const char *string, double *number, const int base);
+
+/* Return non-zero if string s ends exactly with suff
+ * Note: s=NULL always fails the test; otherwise suff=NULL always matches
+ */
+int	str_ends_with(const char *s, const char *suff);
+
+#ifndef HAVE_STRSEP
+/* Makefile should add the implem to libcommon(client).la */
+char *strsep(char **stringp, const char *delim);
+#define HAVE_STRSEP 1
+#endif
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

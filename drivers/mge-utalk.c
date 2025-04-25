@@ -55,18 +55,21 @@
 #include "config.h" /* must be the first header */
 
 #include <ctype.h>
+#ifndef WIN32
 #include <sys/ioctl.h>
+#endif	/* !WIN32 */
 #include "timehead.h"
 #include "main.h"
 #include "serial.h"
 #include "mge-utalk.h"
+#include "nut_stdint.h"
 
 /* --------------------------------------------------------------- */
 /*                  Define "technical" constants                   */
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.94"
+#define DRIVER_VERSION	"0.98"
 
 
 /* driver description structure */
@@ -164,17 +167,28 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	char buf[BUFFLEN];
+#ifndef WIN32
 	int RTS = TIOCM_RTS;
+#endif	/* !WIN32 */
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* read command line/conf variable that affect comm. */
+#ifndef WIN32
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
 
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
+#else	/* WIN32 */
+	if (testvar ("oldmac")) {
+		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,CLRRTS);
+	}
+	else {
+		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,SETRTS);
+	}
+#endif	/* WIN32 */
 	enable_ups_comm();
 
 	/* Try to set "Low Battery Level" (if supported and given) */
@@ -463,8 +477,29 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	char buf[BUFFLEN];
-	/*  static time_t lastcmd = 0; */
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	char	buf[BUFFLEN];
+	/* static time_t	lastcmd = 0; */
+
+	/* We can enter this method either by handling of INSTCMD (whether it
+	 * was called by user, or by ourselves here via loop method), or by
+	 * handling of `drivername -k`. Avoid infinite loops with this flag
+	 * here and with handling_instcmd_shutdown above.
+	 */
+	static char	already_shutting_down = 0;
+
+	if (already_shutting_down)
+		return;
+
+	already_shutting_down = 1;
+
+	/* Here we are if handling explicit INSTCMD to shut down,
+	 * or this method was called and works to handle default
+	 * "sdcommands", or is recursively called with a custom
+	 * value of "sdcommands" pointing here.
+	 */
 	memset(buf, 0, sizeof(buf));
 
 	if (sdtype == SD_RETURN) {
@@ -474,8 +509,8 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_INFO, "UPS response to Automatic Restart was %s", buf);
 	}
 
-	/* Only call the effective shutoff if restart is ok */
-	/* or if we need only a stayoff... */
+	/* Only call the effective shutoff if restart is ok,
+	 * or if we need (caller asked for) only a stayoff... */
 	if (!strcmp(buf, "OK") || (sdtype == SD_STAYOFF)) {
 		/* shutdown UPS */
 		mge_command(buf, sizeof(buf), "Sx 0");
@@ -484,8 +519,13 @@ void upsdrv_shutdown(void)
 	}
 /*	if(strcmp(buf, "OK")) */
 
-	/* call the cleanup to disable/close the comm link */
-	upsdrv_cleanup();
+	if (handling_upsdrv_shutdown > 0) {
+		/* call the cleanup to disable/close the comm link */
+		upsdrv_cleanup();
+	} else {
+		/* Reset the flags if driver is not going down */
+		already_shutting_down = 0;
+	}
 }
 
 /* --------------------------------------------------------------- */
@@ -691,6 +731,10 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings from the mge_info[] mapping table */
+
 	/* write into infostr with proper formatting */
 	if ( strpbrk(item->fmt, "feEgG") ) {           /* float */
 		snprintf(infostr, infolen, item->fmt,
@@ -718,7 +762,7 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
    NOTE: MGE counts bytes/chars the opposite way as C,
          see mge-utalk manpage.  If status commands send two
          data items, these are separated by a space, so
-	 the elements of the second item are in buf[16..9].
+         the elements of the second item are in buf[16..9].
 */
 
 static int get_ups_status(void)
@@ -735,7 +779,8 @@ static int get_ups_status(void)
 		if (exit_flag != 0)
 			return FALSE;
 
-		/* must clear status buffer before each round */
+		/* must clear alarm and status buffers before each round */
+		alarm_init();
 		status_init();
 
 		/* system status */
@@ -763,11 +808,10 @@ static int get_ups_status(void)
 			}
 			/* buf[2] not used */
 			if (buf[1] == '1')
-				status_set("COMMFAULT"); /* self-invented */
+				alarm_set("COMMFAULT"); /* self-invented */
 				/* FIXME: better to call datastale()?! */
 			if (buf[0] == '1')
-				status_set("ALARM");     /* self-invented */
-				/* FIXME: better to use ups.alarm */
+				alarm_set("DEVICEALARM");     /* self-invented */
 		}  /* if strlen */
 
 		/* battery status */
@@ -826,6 +870,7 @@ static int get_ups_status(void)
 
 	} while ( !ok && tries++ < MAXTRIES );
 
+	alarm_commit();
 	status_commit();
 
 	return ok;
@@ -889,6 +934,9 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) quite intensively */
 	ret = vsnprintf(command, sizeof(command), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -908,7 +956,7 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 
 	/* send command */
 	for (p = command; *p; p++) {
-		if ( isprint(*p & 0xFF) )
+		if ( isprint((unsigned char)*p & 0xFF) )
 			upsdebugx(4, "mge_command: sending [%c]", *p);
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
@@ -922,7 +970,7 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 
 	/* send terminating string */
 	for (p = MGE_COMMAND_ENDCHAR; *p; p++) {
-		if ( isprint(*p & 0xFF) )
+		if ( isprint((unsigned char)*p & 0xFF) )
 			upsdebugx(4, "mge_command: sending [%c]", *p);
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
@@ -942,7 +990,9 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 	bytes_rcvd = ser_get_line(upsfd, reply, replylen,
 		MGE_REPLY_ENDCHAR, MGE_REPLY_IGNCHAR, 3, 0);
 
-	upsdebugx(4, "mge_command: received %zd byte(s)", bytes_rcvd);
+	upsdebugx(4, "mge_command: sent %" PRIiSIZE
+		", received %" PRIiSIZE " byte(s)",
+		bytes_sent, bytes_rcvd);
 
 	return bytes_rcvd;
 }

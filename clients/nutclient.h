@@ -18,7 +18,7 @@
 */
 
 #ifndef NUTCLIENT_HPP_SEEN
-#define NUTCLIENT_HPP_SEEN
+#define NUTCLIENT_HPP_SEEN 1
 
 /* Begin of C++ nutclient library declaration */
 #ifdef __cplusplus
@@ -28,6 +28,8 @@
 #include <map>
 #include <set>
 #include <exception>
+#include <cstdint>
+#include <ctime>
 
 /* See include/common.h for details behind this */
 #ifndef NUT_UNUSED_VARIABLE
@@ -58,7 +60,7 @@ public:
 	NutException(const std::string& msg):_msg(msg){}
 	NutException(const NutException&) = default;
 	NutException& operator=(NutException& rhs) = default;
-	virtual ~NutException() override;
+	virtual ~NutException() noexcept override;
 	virtual const char * what() const noexcept override {return this->_msg.c_str();}
 	virtual std::string str() const noexcept {return this->_msg;}
 private:
@@ -74,7 +76,7 @@ public:
 	SystemException();
 	SystemException(const SystemException&) = default;
 	SystemException& operator=(SystemException& rhs) = default;
-	virtual ~SystemException() override;
+	virtual ~SystemException() noexcept override;
 private:
 	static std::string err();
 };
@@ -89,7 +91,7 @@ public:
 	IOException(const std::string& msg):NutException(msg){}
 	IOException(const IOException&) = default;
 	IOException& operator=(IOException& rhs) = default;
-	virtual ~IOException() override;
+	virtual ~IOException() noexcept override;
 };
 
 /**
@@ -101,7 +103,7 @@ public:
 	UnknownHostException():IOException("Unknown host"){}
 	UnknownHostException(const UnknownHostException&) = default;
 	UnknownHostException& operator=(UnknownHostException& rhs) = default;
-	virtual ~UnknownHostException() override;
+	virtual ~UnknownHostException() noexcept override;
 };
 
 /**
@@ -113,7 +115,7 @@ public:
 	NotConnectedException():IOException("Not connected"){}
 	NotConnectedException(const NotConnectedException&) = default;
 	NotConnectedException& operator=(NotConnectedException& rhs) = default;
-	virtual ~NotConnectedException() override;
+	virtual ~NotConnectedException() noexcept override;
 };
 
 /**
@@ -125,7 +127,7 @@ public:
 	TimeoutException():IOException("Timeout"){}
 	TimeoutException(const TimeoutException&) = default;
 	TimeoutException& operator=(TimeoutException& rhs) = default;
-	virtual ~TimeoutException() override;
+	virtual ~TimeoutException() noexcept override;
 };
 
 /**
@@ -322,16 +324,31 @@ public:
 	 */
 	virtual void deviceLogin(const std::string& dev) = 0;
 	/**
-	 * Retrieve the number of user longged in the specified device.
+	 * Retrieve the number of user logged-in for the specified device.
 	 * \param dev Device name.
 	 * \return Number of logged-in users.
 	 */
 	virtual int deviceGetNumLogins(const std::string& dev) = 0;
-	/* FIXME: Protocol update needed to handle master/primary alias
-	 * and probably an API bump also, to rename/alias the routine.
+	/**
+	 * Who did a deviceLogin() to this dev?
+	 * \param dev Device name.
+	 * \return List of clients e.g. {'127.0.0.1', 'admin-workstation.local.domain'}
+	 */
+	virtual std::set<std::string> deviceGetClients(const std::string& dev) = 0;
+	/* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
+	 * For the sake of old/new server/client interoperability,
+	 * practical implementations should try to use one and fall
+	 * back to the other, and only fail if both return "ERR".
 	 */
 	virtual void deviceMaster(const std::string& dev) = 0;
+	virtual void devicePrimary(const std::string& dev) = 0;
 	virtual void deviceForcedShutdown(const std::string& dev) = 0;
+
+	/**
+	 * Lists all clients of all devices (which have at least one client)
+	 * \return Map with device names vs. list of their connected clients
+	 */
+	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) = 0;
 
 	/**
 	 * Retrieve the result of a tracking ID.
@@ -355,6 +372,11 @@ protected:
  */
 class TcpClient : public Client
 {
+	/* We have a number of direct-call methods we do not expose
+	 * generally, but still want covered with integration tests
+	 */
+	friend class NutActiveClientTest;
+
 public:
 	/**
 	 * Construct a nut TcpClient object.
@@ -367,7 +389,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	TcpClient(const std::string& host, int port = 3493);
+	TcpClient(const std::string& host, uint16_t port = 3493);
 	~TcpClient() override;
 
 	/**
@@ -375,13 +397,19 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	void connect(const std::string& host, int port = 3493);
+	void connect(const std::string& host, uint16_t port = 3493);
 
 	/**
 	 * Connect to the server.
-	 * Host name and ports must have already set (usefull for reconnection).
+	 * Host name and ports must have already set (useful for reconnection).
 	 */
 	void connect();
+
+	/**
+	 * Enable or disable std::cerr tracing of internal Socket operations
+	 * during connect() processing. Primarily for developer troubleshooting.
+	 */
+	void setDebugConnect(bool d);
 
 	/**
 	 * Test if the connection is active.
@@ -397,13 +425,13 @@ public:
 	 * Set the timeout in seconds.
 	 * \param timeout Timeout n seconds, negative to block operations.
 	 */
-	void setTimeout(long timeout);
+	void setTimeout(time_t timeout);
 
 	/**
 	 * Retrieve the timeout.
 	 * \returns Current timeout in seconds.
 	 */
-	long getTimeout()const;
+	time_t getTimeout()const;
 
 	/**
 	 * Retriueve the host name of the server the client is connected to.
@@ -414,7 +442,7 @@ public:
 	 * Retriueve the port of host of the server the client is connected to.
 	 * \return Server port
 	 */
-	int getPort()const;
+	uint16_t getPort()const;
 
 	virtual void authenticate(const std::string& user, const std::string& passwd) override;
 	virtual void logout() override;
@@ -441,8 +469,12 @@ public:
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
 	virtual void deviceMaster(const std::string& dev) override;
+	virtual void devicePrimary(const std::string& dev) override;
 	virtual void deviceForcedShutdown(const std::string& dev) override;
 	virtual int deviceGetNumLogins(const std::string& dev) override;
+	virtual std::set<std::string> deviceGetClients(const std::string& dev) override;
+
+	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) override;
 
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 
@@ -466,8 +498,8 @@ protected:
 
 private:
 	std::string _host;
-	int _port;
-	long _timeout;
+	uint16_t _port;
+	time_t _timeout;
 	internal::Socket* _socket;
 };
 
@@ -608,10 +640,15 @@ public:
 	 * Login current client's user for the device.
 	 */
 	void login();
+	/**
+	 * Who did a login() to this dev?
+	 */
+	std::set<std::string> getClients();
 	/* FIXME: Protocol update needed to handle master/primary alias
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
 	void master();
+	void primary();
 	void forcedShutdown();
 	/**
 	 * Retrieve the number of logged user for the device.
@@ -873,6 +910,7 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
  * and probably an API bump also, to rename/alias the routine.
  */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev);
+void nutclient_device_primary(NUTCLIENT_t client, const char* dev);
 
 /**
  * Set the FSD flag for the device.
@@ -1018,7 +1056,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * \param port Host port.
  * \return New client or nullptr if failed.
  */
-NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short port);
+NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
 /**
  * Test if a nut TCP client is connected.
  * \param client Nut TCP client handle.
@@ -1041,12 +1079,12 @@ int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
  * Set the timeout value for the TCP connection.
  * \param timeout Timeout in seconds, negative for blocking.
  */
-void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout);
+void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout);
 /**
  * Retrieve the timeout value for the TCP connection.
  * \return Timeout value in seconds.
  */
-long nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
+time_t nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
 
 /** \} */
 

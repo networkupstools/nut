@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -189,7 +189,7 @@ static int get_answer(unsigned char *data) {
 	/* Read STX byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
-		ser_comm_fail("Receive error (STX): %zd!!!\n", res);
+		ser_comm_fail("Receive error (STX): %" PRIiSIZE "!!!\n", res);
 		return -1;
 	}
 	if (my_buf[0] != 0x02) {
@@ -199,7 +199,7 @@ static int get_answer(unsigned char *data) {
 	/* Read data length byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
-		ser_comm_fail("Receive error (length): %zd!!!\n", res);
+		ser_comm_fail("Receive error (length): %" PRIiSIZE "!!!\n", res);
 		return -1;
 	}
 	packet_length = my_buf[0];
@@ -210,7 +210,7 @@ static int get_answer(unsigned char *data) {
 	/* Try to read all the remainig bytes (packet_length) */
 	res = ser_get_buf_len(upsfd, my_buf, packet_length, 1, 0);
 	if (res != packet_length) {
-		ser_comm_fail("Receive error (data): got %zd bytes instead of %d!!!\n", res, packet_length);
+		ser_comm_fail("Receive error (data): got %" PRIiSIZE " bytes instead of %d!!!\n", res, packet_length);
 		return -1;
 	}
 
@@ -868,11 +868,16 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	unsigned char command[10], answer[10];
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	unsigned char	command[10], answer[10];
 
 	/* Ensure that the ups is configured for automatically
 	   restart after a complete battery discharge
-	   and when the power comes back after a shutdown */
+	   and when the power comes back after a shutdown.
+	   Similar code to "shutdown.restart" but different timeouts.
+	 */
 	if (! autorestart) {
 		command[0]=UPS_SET_TIMES_ON_BATTERY;
 		command[1]=0x00;					/* max time on  */
@@ -885,7 +890,7 @@ void upsdrv_shutdown(void)
 		command_write_sequence(command, 6, answer);
 	}
 
-	/* shedule a shutdown in 120 seconds */
+	/* schedule a shutdown in 120 seconds */
 	command[0]=UPS_SET_SCHEDULING;
 	command[1]=0x96;					/* remaining  */
 	command[2]=0x00;					/* time		 */
@@ -939,7 +944,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			command[5]=0x01;					/* autorestart after battery depleted enabled */
 			command_write_sequence(command, 6, answer);
 		}
-		/* shedule a shutdown in 30 seconds */
+		/* schedule a shutdown in 30 seconds */
 		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0x1e;					/* remaining  */
 		command[2]=0x00;					/* time		 */
@@ -955,7 +960,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		/* shedule a shutdown in 30 seconds with no restart (-1) */
+		/* schedule a shutdown in 30 seconds with no restart (-1) */
 		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0x1e;					/* remaining  */
 		command[2]=0x00;					/* time		 */

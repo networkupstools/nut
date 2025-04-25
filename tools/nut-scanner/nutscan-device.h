@@ -1,5 +1,7 @@
 /*
+ *  Copyright (C) 2011-2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,6 +21,7 @@
 /*! \file nutscan-device.h
     \brief definition of a container describing a NUT discovered device
     \author Frederic Bohe <fredericbohe@eaton.com>
+	\author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #ifndef SCAN_DEVICE
@@ -39,6 +42,8 @@ extern "C" {
  */
 #define nutscan_device_type_string(type) \
 	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_strings[type - 1])
+#define nutscan_device_type_lstring(type) \
+	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_lstrings[type - 1])
 
 typedef enum nutscan_device_type {
 	TYPE_NONE = 0,
@@ -46,6 +51,7 @@ typedef enum nutscan_device_type {
 	TYPE_SNMP,
 	TYPE_XML,
 	TYPE_NUT,
+	TYPE_NUT_SIMULATION,
 	TYPE_IPMI,
 	TYPE_AVAHI,
 	TYPE_EATON_SERIAL,
@@ -53,17 +59,20 @@ typedef enum nutscan_device_type {
 } nutscan_device_type_t;
 
 /** Device type -> string mapping */
-extern const char * nutscan_device_type_strings[TYPE_END - 1];
+extern const char * nutscan_device_type_strings[TYPE_END];
+extern const char * nutscan_device_type_lstrings[TYPE_END];
 
 typedef struct nutscan_options {
 	char *		option;
 	char *		value;
+	char *		comment_tag;	/* if not NULL, this option may be not shown in some output formats, or represented as a comment with this tag in others (and empty string may also be used) */
 	struct nutscan_options*	next;
 } nutscan_options_t;
 
 typedef struct nutscan_device {
 	nutscan_device_type_t	type;
 	char *		driver;
+	char *		alt_driver_names;
 	char *		port;
 	nutscan_options_t     * opt;
 	struct nutscan_device * prev;
@@ -72,6 +81,8 @@ typedef struct nutscan_device {
 
 nutscan_device_t * nutscan_new_device(void);
 void nutscan_free_device(nutscan_device_t * device);
+void nutscan_add_commented_option_to_device(nutscan_device_t * device, char * option, char * value, char * comment_tag);
+/* This method calls the one above, using a NULL comment_tag */
 void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char * value);
 nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second);
 

@@ -68,10 +68,14 @@ static void upsconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in parseconf(ups.conf): %s", errmsg);
 }
 
-/* open the ups.conf, parse it, and call back do_upsconf_args() */
-void read_upsconf(void)
+/* open the ups.conf, parse it, and call back do_upsconf_args()
+ * returns -1 (or aborts the program) in case of errors;
+ * returns 1 if processing finished successfully
+ * See also reload_flag support in main.c for live-reload feature
+ */
+int read_upsconf(int fatal_errors)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	ups_section = NULL;
@@ -79,8 +83,14 @@ void read_upsconf(void)
 
 	pconf_init(&ctx, upsconf_err);
 
-	if (!pconf_file_begin(&ctx, fn))
-		fatalx(EXIT_FAILURE, "Can't open %s: %s", fn, ctx.errmsg);
+	if (!pconf_file_begin(&ctx, fn)) {
+		if (fatal_errors) {
+			fatalx(EXIT_FAILURE, "Can't open %s: %s", fn, ctx.errmsg);
+		} else {
+			upslogx(LOG_WARNING, "Can't open %s: %s", fn, ctx.errmsg);
+			return -1;
+		}
+	}
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
@@ -95,4 +105,6 @@ void read_upsconf(void)
 	pconf_finish(&ctx);
 
 	free(ups_section);
+
+	return 1; /* Handled OK */
 }

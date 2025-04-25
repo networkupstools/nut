@@ -25,7 +25,7 @@ SUPPORTED HARDWARE
 
 This driver should support a wide range of PSUs through local IPMI interface.
 
-nut-ipmipsu currently use the GNU FreeIPMI project, for IPMI implementation.
+nut-ipmipsu currently uses the GNU FreeIPMI project, for IPMI implementation.
 
 
 EXTRA ARGUMENTS
@@ -36,16 +36,18 @@ This driver doesn't support any optional settings.
 INSTALLATION
 ------------
 
-This driver is not built by default.  You can build it by using
-"configure --with-ipmi=yes".
+This driver may be not built by default.  You can build it by installing
+the libfreeipmi-dev dependencies and using `configure --with-ipmi=yes`.
 
 You also need to give proper permissions on the local IPMI device file
-(/dev/ipmi0 for example) to allow the NUT user to access it.
+(`/dev/ipmi0` for example) to allow the NUT user to access it.
 
-An udev rules file (nut-ipmipsu.rules) is provided and automatically installed
-on udev enabled system. This file is generally installed in /etc/udev/rules.d/
-or /lib/udev/rules.d/ on newer systems, to address the permission settings
-problem. For more information, refer to nut/scripts/udev/README.
+An *udev* rules file (`nut-ipmipsu.rules`) is provided and automatically
+installed on an *udev* enabled system. This file is generally installed
+in `/etc/udev/rules.d/`, or `/lib/udev/rules.d/` on newer systems, to
+address the permission settings problem.
+
+For more information, refer to `scripts/udev/README.adoc` in NUT sources.
 
 INSTANT COMMANDS
 ----------------
@@ -55,8 +57,8 @@ This driver doesn't support any instant commands.
 IMPLEMENTATION
 --------------
 
-The "port" value is used to identify the PSU.  For instance, to target
-FRU 0x2, use the following in *ups.conf*:
+The `port` value is used to identify the PSU.  For instance, to target
+FRU '0x2', use the following in *ups.conf*:
 
 	[pdu]
 		driver = nut-ipmipsu
@@ -70,8 +72,10 @@ This driver will report various information related to a PSU, including:
  - status of the PSU:
 
    * 'OL' means that the PSU is present and providing power,
-   * 'OFF' means that the PSU is present but not providing power (power cable removed),
-   * 'stale' (no data) means that the PSU is not present (ie physically removed).
+   * 'OFF' means that the PSU is present but not providing power
+     (power cable removed),
+   * 'stale' (no data) means that the PSU is not present (i.e.
+     physically removed).
 
 Here is an example output for a Dell r610 server:
 
@@ -100,16 +104,19 @@ Here is an example output for a Dell r610 server:
 
 AUTHOR
 ------
+
 Arnaud Quette <arnaud.quette@free.fr>
 
 SEE ALSO
 --------
+
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
-GNU FreeIPMI home page: http://www.gnu.org/software/freeipmi/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* GNU FreeIPMI home page: http://www.gnu.org/software/freeipmi/

@@ -1,6 +1,8 @@
 /* sockdebug.c - Network UPS Tools driver-server socket debugger
+                 Source variant for POSIX-compliant builds of NUT
 
    Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2023  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,6 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -26,16 +29,16 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "common.h"
 #include "parseconf.h"
+#include "nut_stdint.h"
 
-	PCONF_CTX_t	sock_ctx;
+static PCONF_CTX_t	sock_ctx;
 
 static void sock_arg(size_t numarg, char **arg)
 {
 	size_t	i;
 
-	printf("numarg=%zu : ", numarg);
+	printf("numarg=%" PRIuSIZE " : ", numarg);
 
 	for (i = 0; i < numarg; i++)
 		printf("[%s] ", arg[i]);
@@ -47,6 +50,8 @@ static int socket_connect(const char *sockfn)
 {
 	int	ret, fd;
 	struct	sockaddr_un sa;
+
+	check_unix_socket_filename(sockfn);
 
 	memset(&sa, '\0', sizeof(sa));
 	sa.sun_family = AF_UNIX;
@@ -60,6 +65,12 @@ static int socket_connect(const char *sockfn)
 	}
 
 	ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
+
+	if (ret < 0 && !strchr(sockfn, '/')) {
+		snprintf(sa.sun_path, sizeof(sa.sun_path), "%s/%s",
+			dflt_statepath(), sockfn);
+		ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
+	}
 
 	if (ret < 0) {
 		perror("connect");
@@ -112,6 +123,9 @@ static void read_sock(int fd)
 			case -1:
 				printf("Parse error: [%s]\n", sock_ctx.errmsg);
 				break;
+
+			default:
+				break;
 		}
 	}
 }
@@ -121,10 +135,18 @@ int main(int argc, char **argv)
 	const char	*prog = xbasename(argv[0]);
 	int	ret, sockfd;
 
-	if (argc != 2) {
+	if (argc != 2
+	|| (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")))
+	) {
 		fprintf(stderr, "usage: %s <socket name>\n", prog);
-		fprintf(stderr, "       %s /var/state/ups/apcsmart-ttyS1.newsock\n",
+		fprintf(stderr, "       %s /var/state/ups/apcsmart-ttyS1\n",
 			argv[0]);
+		fprintf(stderr, "  or   %s apcsmart-ttyS1\n",
+			argv[0]);
+		fprintf(stderr, "  for socket files placed in the standard location\n");
+
+		fprintf(stderr, "\n%s", suggest_doc_links(prog, NULL));
+
 		exit(EXIT_SUCCESS);
 	}
 
@@ -156,7 +178,10 @@ int main(int argc, char **argv)
 		if (FD_ISSET(fileno(stdin), &rfds)) {
 			char	buf[SMALLBUF];
 
-			fgets(buf, sizeof(buf), stdin);
+			if (!fgets(buf, sizeof(buf), stdin)) {
+				perror("fgets from stdin");
+				exit(EXIT_FAILURE);
+			}
 
 			ret = write(sockfd, buf, strlen(buf));
 
@@ -167,6 +192,20 @@ int main(int argc, char **argv)
 		}
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	/* NOTREACHED */
 	exit(EXIT_FAILURE);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
 }

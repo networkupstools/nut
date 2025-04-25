@@ -27,7 +27,7 @@
 #include "attribute.h"
 
 #define DRIVER_NAME	"Liebert MultiLink UPS driver"
-#define DRIVER_VERSION	"1.03"
+#define DRIVER_VERSION	"1.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -42,15 +42,17 @@ upsdrv_info_t upsdrv_info = {
 #define	ML_ONBATTERY	0x55
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* XXX: replace with a proper shutdown function (raise DTR) */
 
 	/* worse yet: stock cables don't support shutdown at all */
 
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_initinfo(void)
@@ -109,7 +111,7 @@ void upsdrv_updateinfo(void)
 	else
 		ob_ctr++;
 
-	upsdebugx(2, "OB: state %d last %d now %d ctr %d",
+	upsdebugx(2, "OB: state %u last %u now %u ctr %u",
 		ob_state, ob_last, ob, ob_ctr);
 
 	if (ob_ctr >= DEBOUNCE) {
@@ -135,7 +137,7 @@ void upsdrv_updateinfo(void)
 	else
 		lb_ctr++;
 
-	upsdebugx(2, "LB: state %d last %d now %d ctr %d",
+	upsdebugx(2, "LB: state %u last %u now %u ctr %u",
 		lb_state, lb_last, lb, lb_ctr);
 
 	if (lb_ctr >= DEBOUNCE) {

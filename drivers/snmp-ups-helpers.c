@@ -45,6 +45,9 @@
 
 static char su_scratch_buf[255];
 
+/* Temperature handling, to convert back to Celsius */
+int temperature_unit = TEMPERATURE_UNKNOWN;
+
 /* Convert a US formated date (mm/dd/yyyy) to an ISO 8601 Calendar date (yyyy-mm-dd) */
 const char *su_usdate_to_isodate_info_fun(void *raw_date)
 {
@@ -69,6 +72,35 @@ const char *su_usdate_to_isodate_info_fun(void *raw_date)
 
 info_lkp_t su_convert_to_iso_date_info[] = {
 	/* array index = FUNMAP_USDATE_TO_ISODATE: */
-	{ 1, "dummy", su_usdate_to_isodate_info_fun, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_fun_vp2s(1, "dummy", su_usdate_to_isodate_info_fun),
+	info_lkp_sentinel
 };
+
+/* Process temperature value according to 'temperature_unit' */
+const char *su_temperature_read_fun(void *raw_snmp_value)
+{
+	const long snmp_value = *((long*)raw_snmp_value);
+	long celsius_value = snmp_value;
+
+	memset(su_scratch_buf, 0, sizeof(su_scratch_buf));
+
+	switch (temperature_unit) {
+		case TEMPERATURE_KELVIN:
+			celsius_value = (snmp_value / 10) - 273.15;
+			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
+			break;
+		case TEMPERATURE_CELSIUS:
+			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", (snmp_value / 10));
+			break;
+		case TEMPERATURE_FAHRENHEIT:
+			celsius_value = (((snmp_value / 10) - 32) * 5) / 9;
+			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
+			break;
+		case TEMPERATURE_UNKNOWN:
+		default:
+			upsdebugx(1, "%s: not a known temperature unit for conversion!", __func__);
+			break;
+	}
+	upsdebugx(2, "%s: %.1ld => %s", __func__, (snmp_value / 10), su_scratch_buf);
+	return su_scratch_buf;
+}

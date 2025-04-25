@@ -66,7 +66,7 @@ technology change (hybrid chain with UPS and PDU for example).
 Devices status handling
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-To be clarified...
+FIXME: To be clarified...
 
 
 Devices alarms handling
@@ -77,11 +77,12 @@ which may evolve into `device.X.alarm`. If any of the devices has an alarm,
 the main `ups.status` will publish an `ALARM` flag. This flag is be cleared
 once all devices have no alarms anymore.
 
-NOTE: ups.alarm behavior is not yet defined (all devices alarms vs. list of
+NOTE: `ups.alarm` behavior is not yet defined (all devices alarms vs. list of
 device(s) that have alarms vs. nothing?)
 
 Example
 ^^^^^^^
+
 Here is an example excerpt of three PDUs, connected in daisychain mode, with
 one master and two slaves:
 
@@ -114,7 +115,7 @@ one master and two slaves:
 Information for developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: these details are dedicated to the `snmp-ups` driver!
+NOTE: These details are dedicated to the `snmp-ups` driver!
 
 In order to enable daisychain support for a range of devices, developers
 have to do two things:
@@ -164,7 +165,7 @@ in the daisychain, then you would have to adapt it the following way:
 Templates with multiple definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If there exist already templates in the mapping structure, such as for
+If there already exist templates in the mapping structure, such as for
 single outlets and outlet-groups, you also need to specify the position
 of the daisychain device index in the OID strings for all entries in the
 mapping table, to indicate where the daisychain insertion point is exactly.
@@ -179,8 +180,9 @@ You would have to translate it to:
 	{ "outlet.%i.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.3.%i.%i",
 		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 
-SU_TYPE_DAISY_1 indicates that the daisychain index is the 1st specifier
-("%i") in the string. If it is the second one, use SU_TYPE_DAISY_2.
+`SU_TYPE_DAISY_1` flag indicates that the daisychain index is the first
+`%i` specifier in the OID template string. If it is the second one, use
+`SU_TYPE_DAISY_2`.
 
 
 Devices alarms handling
@@ -189,26 +191,30 @@ Devices alarms handling
 Two functions are available to handle alarms on daisychain devices in your
 driver:
 
-* device_alarm_init(): clear the current alarm buffer
-* device_alarm_commit(const int device_number): commit the current alarm
-buffer to "device.<device_number>.ups.alarm", and increase the count of
-alarms. If the current alarms buffer is empty, the count of alarm is
-decreased, and the variable "device.<device_number>.ups.alarm" is removed
-from publication. Once the alarm count reaches "0", the main (device.0)
-ups.status will also remove the "ALARM" flag.
+* `device_alarm_init()`: clear the current alarm buffer
+* `device_alarm_commit(const int device_number)`: commit the current alarm
+  buffer to `device.<device_number>.ups.alarm`, and increase the count of
+  alarms. If the current alarms buffer is empty, the count of alarm is
+  decreased, and the variable `device.<device_number>.ups.alarm` is removed
+  from publication. Once the alarm count reaches "0", the main (`device.0`)
+  `ups.status` will also remove the "ALARM" flag.
 
-NOTE: when implementing a new driver, the following functions have to be
+[NOTE]
+======
+When implementing a new driver, the following functions have to be
 called:
-* "alarm_init()" at the beginning of the main update loop, for the whole
+
+* `alarm_init()` at the beginning of the main update loop, for the whole
 daisychain. This will set the alarm count to "0", and reinitialize all
 alarms,
-* "device_alarm_init()" at the beginning of the per-device update loop.
+* `device_alarm_init()` at the beginning of the per-device update loop.
 This will only clear the alarms for the current device,
-* "device_alarm_commit()" at the end of the per-device update loop.
+* `device_alarm_commit()` at the end of the per-device update loop.
 This will flush the current alarms for the current device,
-* also "device_alarm_init()" at the end of the per-device update loop.
+* also `device_alarm_init()` at the end of the per-device update loop.
 This will clear the current alarms, and ensure that this buffer will not
 be considered by other subsequent devices,
-- "alarm_commit()" at the end of the main update loop, for the whole
+* `alarm_commit()` at the end of the main update loop, for the whole
 daisychain. This will take care of publishing or not the "ALARM" flag
-in the main ups.status (device.0, root collection).
+in the main ups.status (`device.0`, root collection).
+======

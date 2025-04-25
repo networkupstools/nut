@@ -6,14 +6,20 @@ NAME
 
 bestuferrups - Driver for Best Power Micro-Ferrups
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*bestuferrups* -h
+
+*bestuferrups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 bestuferrups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 Best Power Micro-Ferrups ME3100, probably other similar models too.
 
 EXTRA ARGUMENTS
@@ -24,19 +30,20 @@ linkman:ups.conf[5].
 
 AUTHORS
 -------
-Andreas Wrede, John Stone (bestuferrups)
 
-Grant Taylor (bestfort)
-
-Russell Kroll (bestups)
+* Andreas Wrede, John Stone (bestuferrups)
+* Grant Taylor (bestfort)
+* Russell Kroll (bestups)
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

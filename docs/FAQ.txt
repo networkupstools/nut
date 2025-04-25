@@ -4,7 +4,7 @@ NUT Frequently Asked Questions
 endif::external_title[]
 
 == I just upgraded, and ...
-You have read link:UPGRADING[UPGRADING] in the base directory of the
+You have read link:UPGRADING.adoc[UPGRADING] in the base directory of the
 distribution, right?
 
 If not, go read it now, then come back to this file if your
@@ -36,10 +36,11 @@ already been done in the old version.
 
 *Answer 1*
 
-The drivers drop root privileges long before the serial port is
+The drivers drop root privileges long before the serial or USB port is
 opened.  You'll need to change the permissions on that port so that
-their new user id can access it.  Normally this is "nobody", but it
-may be changed at compile-time by using configure --with-user.
+their new user id can access it.  Normally this is 'nobody', but it
+may be changed at compile-time by using `configure --with-user` or
+in the `ups.conf` file for driver settings with `user=...`.
 
 Read the error message.  If you have a permissions mismatch, then
 you'll see something like this:
@@ -51,40 +52,43 @@ you'll see something like this:
 	of /dev/ttyS2 and try again.
 	Unable to open /dev/ttyS2: Permission denied
 
-Now is a good time to point out that using "nobody" is a bad idea,
+Now is a good time to point out that using 'nobody' is a bad idea,
 since it's a hack for NFS access.  You should create a new role
-account (perhaps called "ups" or "nut"), and use that instead.
+account (perhaps called 'ups' or 'nut'), and use that instead.
 
 Also, scroll down to the "security domains" question to see an
 even better way of restricting privileged operations.  Neither the
-drivers nor upsd ever need root powers, and that answer tells you
+drivers nor `upsd` ever need 'root' powers, and that answer tells you
 how to make it work.
 
 *Answer 2*
 
-You can also specify a user with "user=" in the global part of
-ups.conf.  Just define it before any of your [sections]:
+You can also specify a user with `user=` in the global part of
+linkman:ups.conf[5].  Just define it before any of your `[sections]`:
 
+----
 	user = nut
 
 	[myups]
 		driver = mge-shut
 		port = /dev/ttyS0
+----
 
 == upsc, upsstats, and the other clients say 'access denied'.  The device communication port (serial, USB or network) permissions are fine, so what gives?
 
-In this case, "access denied" means the access to upsd, not the device
-communication port.  You're being denied since the system has no
-permission to speak to upsd according to the access controls.
+In this case, "access denied" means the access to linkman:upsd[8], not the
+device communication port.  You're being denied since the system has no
+permission to speak to `upsd` according to its access controls.
 
-There can be various reasons. To fix it, check:
+There can be due to various reasons. To fix it, check:
 
-- the LISTEN directive in upsd.conf. It should allow your local or remote
-access method,
-- your firewall rules. Port 3493/tcp must be opened to incoming connections,
-- your tcp-wrappers configuration (hosts.allow and hosts.deny).
+- the LISTEN directive in linkman:upsd.conf[5]. It should allow your
+  local or remote access method,
+- your firewall rules. Port '3493/tcp' must be opened to incoming connections,
+- your *tcp-wrappers* configuration (`hosts.allow` and `hosts.deny`) if used.
 
-Refer to the upsd(8) and upsd.conf(5) manpages for more information.
+Refer to the linkman:upsd[8] and linkman:upsd.conf[5] man pages for more
+information.
 
 == I get a 'not listening on...' error from upsd.
 
@@ -141,7 +145,7 @@ wandered off, one can be built rather easily with some connectors and
 cable -- there's no fancy wiring or resistors.
 
 See this URL for a handy diagram:
-http://www.networkupstools.org/cables/940-0024C.jpg
+https://www.networkupstools.org/cables/940-0024C.jpg
 
 There is also a text version of that diagram in the docs/cables
 directory of the NUT source distribution.  Either one should allow
@@ -163,39 +167,47 @@ hardware properly.
 
 *Answer 1*
 
-We try to follow the "tool for the job" philosophy.  It may mean
+We try to follow the "tool for the job" philosophy of Unix.  It may mean
 more programs running, but the flexibility you get is usually
 worth it.
 
 Yes, the machine with the UPS attached will generally have 3
-processes (driver, upsd, upsmon) running, but this design allows a
-much bigger setup.  Imagine a data room with a bunch of machines
-all drawing power from the same UPS.  The rest of them just run
-upsmon.
+processes (driver, `upsd`, `upsmon`) running, but this design allows
+a much bigger setup.  Imagine a data room with a bunch of machines
+all drawing power from the same UPS.  Only one can be connected by a
+serial or USB cable, and the rest of them just run an `upsmon` client.
 
-Besides, if upsmon were rolled into upsd, upsd would get even
+Besides, if `upsmon` were rolled into `upsd`, `upsd` would get even
 bigger than it is now.  You'd have one less process, but the
-RAM consumption would be pretty close to now.
+RAM consumption would be pretty close to what you have now -- but
+consumed on each system involved.
 
-See the "Data Room" section in docs/config-notes.txt for more configuration
-ideas and explanations.
+See the "Data Room" section in link:docs/config-notes.txt[] for
+more configuration ideas and explanations.
 
 *Answer 2*
 
 If this really bothers you, roll up your sleeves and use the
-sockdebug code to write a "upsmon" type program that sits on top of
-the state sockets.  It won't work over the network, but it means
-you don't need upsd.  It also means only one host can monitor the
+linkman:sockdebug[8]] code to write a "upsmon" type program that sits on
+top of the state sockets.  It won't work over the network, but it means
+you don't need `upsd`.  It also means only one host can monitor the
 UPS.
 
 This is also a good option to consider if you can't use networked
 monitoring code for security or safety reasons.
 
+*Answer 3*
+
+There are plans in the queue... for a long time... to extend `upsd` data
+server and the NUT clients with ability to use a local Unix socket for the
+NUT Networked protocol. This would also allow to forgo the dependency on
+TCP/IP stack for communications within one machine.
+
 See the TODO file for more on this and other related topics.
 
 == Why isn't upssched part of upsmon?
 
-Most users will never have any reason to use upssched.  It's
+Most users will never have any reason to use `upssched`.  It's
 complicated, and getting it right for your situation can be tricky.
 Having it live in a separate program saves resources and lets most
 people avoid it completely.
@@ -206,20 +218,20 @@ It is also coherent with the answer to the previous question.
 
 *Answer 1*
 
-New versions of the init man page taken from the sysvinit package
-are saying that usage of SIGPWR is discouraged, since /dev/initctl
+New versions of the `init` man page taken from the *sysvinit* package
+are saying that usage of `SIGPWR` is discouraged, since `/dev/initctl`
 control channel is the preferred way of communication.
 
 *Answer 2*
 
-The name of the game is portability.  Not everyone's init handles
+The name of the game is portability.  Not everyone's `init` handles
 that kind of signalling gracefully.  What's more, some admins
 might want to do things differently even if they have that kind of
-init running.
+`init` running.
 
 So, to be compatible, upsmon just invokes a shell command.  If you
-want to use init's SIGPWR stuff, just put the right "kill" line in
-a shell script and make upsmon call it.  Everyone wins.
+want to use init's `SIGPWR` stuff, just put the right "kill" line in
+a shell script and make your `upsmon` call it.  Everyone wins.
 
 == Why won't bestups talk to my Best Fortress UPS?
 
@@ -254,41 +266,64 @@ directly affects how long you run on battery without knowing
 what's going on with the UPS.
 
 Note: some drivers occasionally need more time to update than the
-default value of MAXAGE (in upsd.conf) allows.  As a result, they
+default value of MAXAGE (in `upsd.conf`) allows.  As a result, they
 are temporarily marked stale even though everything is fine.  This
-can happen with MGE Ellipse equipment -- see the mge-shut or usbhid-ups man
-pages.  In such cases, you can raise the value of MAXAGE to avoid these
-warnings; try a value like 25 or 30.
+can happen with MGE Ellipse equipment -- see the linkman:mge-shut[8]
+or linkman:usbhid-ups[8] man pages.  In such cases, you can raise
+the value of MAXAGE to avoid these warnings; try a value like 25 or 30.
 
 == Why do the client programs say 'Driver not connected' when I try to run them?
 
-This means that upsd can't connect to the driver for some reason.
-Your ups.conf entry might be wrong, or the driver might not be
+*Answer 1*
+
+This means that `upsd` can't connect to the driver for some reason.
+Your `ups.conf` entry might be wrong, or the driver might not be
 running.  Maybe your state path is not configured properly.
 
 Check your syslog.  upsd will complain regularly if it can't
 connect to a driver, and it should say why it can't connect.
 
-Note: if you jumped in with both feet and didn't follow the INSTALL.nut
-document, you probably started upsd by itself.  You have to run
-'upsdrvctl start' to start the drivers after configuring ups.conf.
+Note: if you jumped in with both feet and didn't follow the link:INSTALL.nut[]
+document, you probably started `upsd` by itself.  You have to run
+`upsdrvctl start` (explicitly -- on legacy systems only) to start
+the drivers after configuring `ups.conf`.
 
 On operating systems with a supported service management framework,
 you might wrap your NUT drivers into individual services instances
-with 'upsdrvsvcctl resync' and then manage those with commands like
-'upsdrvsvcctl stop' and 'upsdrvsvcctl start' (note that on other
+with `upsdrvsvcctl resync` and then manage those with commands like
+`upsdrvsvcctl stop` and `upsdrvsvcctl start` (note that on other
 systems this tool may be not pre-installed via packaging).
+
+In fact, service instances prepared by the `nut-driver-enumerator` script
+and service based on contents of your `ups.conf` file and automatically
+maintained by the respective framework can conflict with manual execution
+of drivers, so `upsdrvctl` would emit a warning in NUT builds with that
+capability (can be silenced by exporting a `NUT_QUIET_INIT_NDE_WARNING`
+environment variable with any value).
+
+*Answer 2*
+
+Some USB UPS devices have unreliable USB to serial interfaces.
+In that case, it's advised to unplug / plug the device and try again.
+
+If that resolves the issue, you should consider resetting the USB hub the
+device is attached to before starting the nut driver, using `usb_resetter`
+script (for Linux) from https://github.com/netinvent/usb_resetter
+
+See files under `scripts/usb_resetter/` in NUT sources for more information.
 
 == Why don't the pathnames in your documentation match the package I installed?
 
 Each distribution has conventions for where specific file types should be
 stored. The NUT project cannot possibly track all of these conventions, so the
 documentation assumes the default installation directory prefix of
-`/usr/local/ups` when describing file locations. The distributions tend not to
-change the base name of the files, so you can search for drivers and
-configuration files in the package database of installed files. For instance,
-on Debian or Ubuntu derivatives, you can use `dpkg --search usbhid-ups` to see
-where the drivers are stored.
+`/usr/local/ups` when describing file locations. It also allows custom
+builds of NUT to minimally conflict with files of a packaged installation.
+
+The distributions tend not to change the base name of the files, so you
+can search for drivers and configuration files in the package database
+of installed files. For instance, on Debian or Ubuntu derivatives, you
+can use `dpkg --search usbhid-ups` to see where the drivers are stored.
 
 == Everything works perfectly during the shutdown, and the UPS comes back on, but my system stays off.  What's happening?
 
@@ -303,11 +338,15 @@ remembers the 'last state' when the UPS restarts.
 One solution is to change your shutdown scripts so you never reach
 that point.  You *want* the system to die without reaching the
 part where the kernel tells it to shut down.  A possible script
-might look like this:
+might look like this (see `scripts/systemd/nutshutdown` in NUT
+sources for a more streamlined and modern variant):
 
+------
 	# other shutdown stuff here (mount -o remount,ro ...)
+	# `upsmon -K` if available on still mounted filesystems
+	# at this point is more portable than the `test` below
 
-	if (test -f /etc/killpower)
+	if (test -f /etc/killpower || /sbin/upsmon -K)
 	then
 		/sbin/upsdrvctl shutdown
 
@@ -318,6 +357,7 @@ might look like this:
 	fi
 
 	halt -p
+------
 
 The other solution is to change your BIOS setting to "always power
 on" instead of "last state", assuming that's possible.
@@ -345,18 +385,19 @@ an enemy.  Let them worry about it.
 
 This is about the same situation as the ATX question above, only
 worse.  Earlier Macs apparently supported a hack where you could
-cat some magic characters at /dev/adb to enable "server mode".
+cat some magic characters at `/dev/adb` to enable "server mode".
 This would instruct the system to reboot while unattended.
 
 From Usenet post <6boftzxz51.fsf@ecc-office.sp.cs.cmu.edu>:
-
+------
 	# Send packet over the ADB bus to the PowerMac CUDA chip
 	# telling it to reboot automatically when power is restored
 	# after a power failure.
 
 	cat /etc/local/autoboot.adb > /dev/adb
 
-    autoboot.adb contains these three bytes (in hex):  01 13 01
+    # autoboot.adb contains these three bytes (in hex):  01 13 01
+------
 
 Later PowerPC Macs with a PMU and the appropriate kernel driver can achieve the
 same effect with the following command:
@@ -386,7 +427,7 @@ This is relatively simple to fix.  If you have console or VNC access, log in as
 an administrator, go to System Preferences, click on Energy Saver, click on the
 options tab, check "Restart automatically after a power failure".
 
-Alternatively, you can connect via SSH and run "sudo pmset autorestart 1" to
+Alternatively, you can connect via SSH and run `sudo pmset autorestart 1` to
 achieve the same effect.
 
 == I want to keep the drivers and upsd in their own security domains. How can this be accomplished?
@@ -424,36 +465,37 @@ You may have to remove old socket or state files first if you are
 changing to this security scheme from an older version.  The drivers
 will create new files with the right owners and modes.
 
-Note that /var/state/ups is group writable since upsd will
-place the upsd.pid file here.
+Note that `/var/state/ups` is group writable since `upsd` will
+place the `upsd.pid` file here by default.
 
-You may have to change the groups of upsd.conf and upsd.users to
-make them readable.  These files should not be owned by nutsrv,
-since someone could compromise the daemon and change the config
-files.  Instead, put nutsrv in a group ("nut" in this example), then
-make the files owned by root.nut, with mode 0640.
+You may have to change the groups of `upsd.conf` and `upsd.users` to
+make them readable to the NUT `upsd` program.  These files should not
+be owned nor writable by `nutsrv`, since someone could compromise the
+daemon and change the config files.  Instead, put `nutsrv` in a group
+(`nut` in this example), then make the files owned by `root.nut`, with
+POSIX bits mode `0640`.
 
 Once the config files are ready, start upsd:
 
-	# upsd -u nutsrv
+	:; upsd -u nutsrv
 
 Check your syslog to be sure everything's happy, then be sure to
 update your startup scripts so it uses this procedure on your next
 boot.
 
-If you like this, you'll probably also find the chroot process to
-be useful and interesting.  See security.txt for more details.
+If you like this, you'll probably also find the linkmanext:chroot[2] process
+to be useful and interesting.  See link:security.txt[] for more details.
 
 == What's the point of that 'security domains' concept above?
 
 The point is limiting your losses.  If someone should happen to
-break into upsd in that environment, they should only gain access
+break into `upsd` in that environment, they should only gain access
 to that one user account.  Direct access to the serial device is
 not possible, since that is owned by another user.
 
-There is also the possibility of running the drivers and upsd in a
-chroot jail.  See the chroot.txt provided in the source
-distribution for an example implementation.
+There is also the possibility of running the drivers and `upsd` in a
+chroot jail.  See the `chroot` option in link:security.txt[], `upsd`
+and driver documentation.
 
 Why give would-be vandals any sort of help?
 
@@ -465,8 +507,8 @@ using this technique.
 
 You probably don't want to do this, since it doesn't maximize your
 runtime on battery.  Assuming you have a good reason for it (see
-the next entry), then look at scheduling.txt or the upssched(8) man
-page for some ideas.
+the next entry), then look at link:scheduling.txt[] or the
+linkman:upssched[8] man page for some ideas.
 
 /////////////////////////////////////////////////////////////////
 TODO: figure out how to link to the upssched man page above.
@@ -475,14 +517,14 @@ TODO: figure out how to link to the upssched man page above.
 
 == Why doesn't upsmon shut down my system?  I pulled the plug and nothing happened.
 
-Wait.  upsmon doesn't consider a UPS to be critical until it's both
-'on battery' and 'low battery' at the same time.  This is by design.
+Wait.  The `upsmon` client doesn't consider a UPS to be critical until it's
+*both* 'on battery' and 'low battery' at the same time.  This is by design.
 Nearly every UPS supports the notion of detecting the low battery
 all by itself.  When the voltage drops below a certain point, it
 _will_ let you know about it.
 
-If your system has a really complicated shutdown procedure, you
-might need to shut down before the UPS raises the low battery flag.
+If your system has a really complicated or time-consuming shutdown procedure,
+you might need to shut down before the UPS raises the low battery flag.
 For most users, however, the default behavior is adequate.
 
 Ask yourself this: why buy a nice big UPS with the matching battery
@@ -494,23 +536,23 @@ with no visible interruption in service.
 If you purposely shut down early, you guarantee an interruption in
 service by bringing down the box.
 
-See upssched.txt for information on how you can shutdown early if
+See link:upssched.txt[] for information on how you can shutdown early if
 this is what you really want to do.
 
 == The CGI programs report 'access to that host is not authorized' --  what's going on?
 
 Those programs need to see a host in your hosts.conf before they
 will attempt communications.  This keeps people from feeding it
-random "host=" settings, which would annoy others with outgoing
+random `host=` settings, which would annoy others with outgoing
 connection attempts from your system.
 
-If your hosts.conf turns out to be configured correctly with
-MONITOR entries and all that, check the permissions.  Your web
+If your linkman:hosts.conf[5] turns out to be configured correctly with
+proper `MONITOR` entries and all that, check the permissions.  Your web
 server may be running the CGI programs as a user that can't read
 the file.
 
 If you run your web server in a chroot jail, make sure the programs
-can still read hosts.conf.  You may have to copy it into the jail
+can still read `hosts.conf`.  You may have to copy it into the jail
 for this to work.  If you do that, make sure it's not writable by
 any of the user accounts which run inside the jail.
 
@@ -519,9 +561,9 @@ any of the user accounts which run inside the jail.
 Assuming you haven't changed the TCP port number on the command line or at
 compile-time, then you may have some sort of firewall blocking the connection.
 
-upsd listens on TCP port 3493 by default. If you do not specify a LISTEN
-directive in upsd.conf, upsd only listens on the loopback interface. See the
-upsd.conf man page for details.
+`upsd` listens on TCP port '3493' by default. If you do not specify a `LISTEN`
+directive in `upsd.conf`, `upsd` only listens on the loopback interface.
+See the linkman:upsd.conf[5] man page for details.
 
 == How do you make upsmon reload the config file?
 
@@ -530,26 +572,68 @@ Or a variation like...
 == How do you make upsd reload the config file?
 
 Either find the pid of the background process and send it a SIGHUP,
-or just start it again with '-c reload'.
+or just start it again with '-c reload' (requires that the previously
+started daemon saves a PID file).
 
 If you send the signals yourself instead of using -c, be sure you
-hit the right process.  There are usually two upsmon processes, and you
-should only send signals to one of them.  To be safe, read the pid
+hit the right process.  There are usually two `upsmon` processes, and you
+should only send signals to one of them.  To be safe, read the PID
 file.
+
+If your daemons are managed as systemd units, it is more idiomatic to
+use the framework commands, e.g. `systemctl reload nut-server` (upsd)
+or `systemctl reload nut-monitor` (upsmon). Note that the implementation
+of `nut-server.service` by default starts `upsd -F` and does not save a
+PID file; if your workflow requires to use plain `upsd -c reload`, you
+should customize the unit (with a drop-in file) to start `upsd -FF`.
+
+NUT releases after 2.8.0 define aliases for these units, so if your Linux
+distribution uses NUT-provided unit definitions, `systemctl reload upsd`
+may also work.
 
 == I just bought a new WhizBang UPS that has a USB connector.  How do I monitor it?
 
 There are several driver to support USB models.
 
-- usbhid-ups supports various manufacturers complying to the HID Power Device Class (PDC) standard,
-- tripplite_usb supports various older Tripp-Lite units (with USB ProductID 0001)
-- bcmxcp_usb supports various Powerware units,
-- nutdrv_qx and blazer_usb support various manufacturers that use the Megatec / Q1 protocol.
+- linkman:usbhid-ups[8] supports various manufacturers complying to
+  the HID Power Device Class (PDC) standard,
+- linkman:tripplite_usb[8] supports various older Tripp-Lite units
+  (with USB ProductID 0001)
+- linkman:bcmxcp_usb[8] supports various Powerware units,
+- linkman:blazer_usb[8] supports various manufacturers that use the
+  Megatec / Q1 protocol.
+- linkman:nutdrv_qx[8] supports various manufacturers that use the wider
+  Megatec / Q* protocol family. This is the driver slated to receive all
+  further development in this area, it was specially designed to support
+  many more sub-drivers and has added a lot over time, so please do try
+  it first nowadays.
+- linkman:apc_modbus[8] supports some APC branded devices built after 2010
+  (requires to be built against a libmodbus version with RTU USB support)
 
-Refer to the 'driver-name' (8) man page for more information.
+Refer to the respective 'driver-name' (8) man page for more information.
 
 You can also consult the Hardware Compatibility List (HCL) and filter on USB:
-http://www.networkupstools.org/stable-hcl.html?connection=USB
+https://www.networkupstools.org/stable-hcl.html?connection=USB
+
+== My USB UPS has a bogus Vendor ID 0x0001 and Product ID 0x0000, what driver supports it?
+
+Unfortunately, many devices are made without registering as a Vendor with
+the corresponding standards body, and use generic USB chips for interfacing
+with a computer (roughly similar to using a network interface card with a
+random MAC address and PCI ID, and thus poorly identifiable device specifics
+needed to automatically load some certain driver). Often they also lack a
+unique serial number field, so monitoring several devices is problematic.
+
+One frequent case is with devices identifying as "Fry's Electronics" and/or
+"MEC0003", if those metadata are served at all, or plain "0001/0000" in ID
+field. In some cases they are accompanied by "UPSmart" software with a
+"MEGA(USB)" connection option that works for Windows users.
+
+Your best bet is to search for community discussions of issues on NUT GitHub
+at https://github.com/networkupstools/nut/issues?q=is%3Aissue and try options
+there. Devices with these chips were known to connect with drivers for such
+unrelated protocols as Megatec Q* (different sub-drivers, often `fabula` or
+`hunnox`), ATCL, or USB-HID.
 
 == My USB UPS is supported but doesn't work!
 
@@ -578,6 +662,13 @@ been fixed in the Git master branch, your distribution may still be affected.
 Details are available in the following GitHub issue:
 https://github.com/networkupstools/nut/issues/140
 
+There may also be a conflict with an already running instance of the driver,
+e.g. when a systemd unit instance `nut-driver@yourdevicename.service` was
+automatically created and started by the `nut-driver-enumerator`, and then
+you try to follow older revisions of the NUT documentation or blogs, and
+start another copy with `upsdrvctl` (which should only be used on legacy
+systems nowadays).
+
 == Why do you not use the Linux kernel HID driver when communicating with USB UPSes?
 
 When the `usbhid-ups` was first written, it replaced an older driver `hidups`
@@ -590,7 +681,7 @@ have very similar permissions problems as the `/dev/bus/usb` nodes that the
 libusb approach uses.
 
 Due to difficulties in running libusb on OS X and Windows, those platforms
-might benefit more from a native HID approach.
+might actually benefit more from a native HID approach.
 
 == I get a message from the kernel that the driver "did not claim interface 0 before use"
 
@@ -604,6 +695,82 @@ There is a rudimentary locking mechanism in NUT, but there is a chance that the
 packages might not use the same directory as the NUT default, and the conflict
 will be reported by the kernel.
 
+Also see above about conflicts between driver instances started by a service
+management framework like systemd and started manually (e.g. with `upsdrvctl`).
+
+== Why does my (Eaton 5E) USB UPS on Linux connect but quickly disconnects soon?
+
+This issue was extensively investigated by NUT community members in
+https://github.com/networkupstools/nut/issues/630 and resulted in a
+chain of distribution bugs logged such as
+https://bugzilla.redhat.com/show_bug.cgi?id=1715504
+
+The gist of it is that some versions of Linux kernel used an "USB HID quirk"
+for certain devices, see Linux kernel source `drivers/hid/hid-quirks.c` file,
+including MGE/Eaton vendor ID (0x0463) based on an older device a contributor
+had issues with. Firmware in newer devices no longer had the bug which needed
+the "quirk" and misbehaved when it was enabled. While newer (and much older)
+Linux kernels should not have the problem, with the quirk removed according
+to https://lkml.org/lkml/2018/11/26/580 having the issue in the field really
+depends on the combination of Linux kernel and device firmware that meet.
+
+Either way, it seems that problematic combinations preclude Linux from seeing
+the device as a `hid-generic` first, to hand it over to a NUT driver.
+
+This quirk can be tuned with a kernel boot parameter (via GRUB etc.):
+
+	usbhid.quirks=0x0463:0xffff:0x08
+
+to re-enable the NOGET quirk.
+
+For context, according to https://bugzilla.redhat.com/show_bug.cgi?id=1875532
+the symptoms for the problem look like this:
+
+	# Plug in the UPS and observe the dmesg logs,
+	# the following continuously appears:
+	[   93.568082] usb 1-6: new full-speed USB device number 9 using xhci_hcd
+	[   94.311469] usb 1-6: New USB device found, idVendor=0463, idProduct=ffff, bcdDevice= 0.01
+	[   94.311475] usb 1-6: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+	[   94.311483] usb 1-6: Product: 5E
+	[   94.311486] usb 1-6: Manufacturer: EATON
+	[   96.269989] hid-generic 0003:0463:FFFF.000A: hiddev96,hidraw2: USB HID v1.10 Device [EATON 5E] on usb-0000:00:14.0-6/input0
+	[  107.369425] hid-generic 0003:0463:FFFF.000A: usb_submit_urb(ctrl) failed: -1
+	[  107.369469] hid-generic 0003:0463:FFFF.000A: timeout initializing reports
+	[  112.828826] usb 1-6: USB disconnect, device number 9
+	[  113.284452] usb 1-6: new full-speed USB device number 10 using xhci_hcd
+	[  114.027693] usb 1-6: New USB device found, idVendor=0463, idProduct=ffff, bcdDevice= 0.01
+	[  114.027698] usb 1-6: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+	[  114.027701] usb 1-6: Product: 5E
+	[  114.027704] usb 1-6: Manufacturer: EATON
+	[  115.984222] hid-generic 0003:0463:FFFF.000B: hiddev96,hidraw2: USB HID v1.10 Device [EATON 5E] on usb-0000:00:14.0-6/input0
+	[  126.825756] hid-generic 0003:0463:FFFF.000B: usb_submit_urb(ctrl) failed: -1
+	[  126.825775] hid-generic 0003:0463:FFFF.000B: timeout initializing reports
+	[  132.527809] usb 1-6: USB disconnect, device number 10
+
+A similar report on the driver side may look like:
+
+	usbhid-ups[4554]: libusb_get_report: Input/output error
+	upsd[4591]: Data for UPS [eaton] is stale - check driver
+	usbhid-ups[4554]: Can't claim USB device [0463:ffff]: No such file or directory
+	upsd[4591]: Can't connect to UPS [eaton] (usbhid-ups-eaton): No such file or directory
+	upsmon[5148]: Poll UPS [eaton@localhost] failed - Driver not connected
+	upsmon[5148]: Communications with UPS eaton@localhost lost
+
+Other similar looking issues may include improper setup of udev, upower
+and similar frameworks to hand over the device from the OS to a driver
+daemon; competition with other software probing USB devices (ModemManager
+was mentioned in this context), including running several copies of the
+NUT drivers trying to use same port (e.g. one started by services and
+another manually as you tried to debug the problems).
+
+Software quirks aside, please do test with a different USB cable and/or port
+on the computer. These were known to cause grief beyond what can be fixed
+with a few key words ;)
+
+Finally, sometimes the issue is on the OS side (and/or USB chipset), to
+the point that the USB driver can not be unloaded and re-attached until
+you power cycle the system.
+
 == Why doesn't my package work?
 
 Or a variation like...
@@ -611,7 +778,7 @@ Or a variation like...
 == I can't run this because there's no package for it.  Why isn't this in a package yet?
 
 Sorry, can't help you there.  All official releases are source code
-and are posted on http://www.networkupstools.org/ along with PGP
+and are posted on https://www.networkupstools.org/ along with PGP
 signatures for verification.
 
 This means all packages have been built by a third party.  If you
@@ -656,10 +823,12 @@ by another NUT server.
 
 Example with `dummy-ups` driver:
 
-	[proxy]
-		driver = dummy-ups
-		port = upsname@ip-or-hostname[:port]
-		desc = "UPS proxy for UPS upsname on server ip-or-hostname"
+----
+[proxy]
+	driver = dummy-ups
+	port = upsname@ip-or-hostname[:port]
+	desc = "UPS proxy for UPS upsname on server ip-or-hostname"
+----
 
 Also note that there is a `clone` driver with similar purpose,
 which allows users to group clients to a particular outlet of
@@ -672,17 +841,19 @@ details and caveats.
 
 Example with `clone` driver:
 
-	[realups]
-		driver = usbhid-ups
-		port = auto
+----
+[realups]
+	driver = usbhid-ups
+	port = auto
 
-	[clone-outlet-1]
-		driver = clone
-		port = usbhid-ups-realups
-		load.on = outlet.1.load.on
-		load.off = outlet.1.load.off
-		load.status = outlet.1.status
-		[...]
+[clone-outlet-1]
+	driver = clone
+	port = usbhid-ups-realups
+	load.on = outlet.1.load.on
+	load.off = outlet.1.load.off
+	load.status = outlet.1.status
+	[...]
+----
 
 This allows to group load attached to a separately manageable
 outlet (or group of outlets) on larger UPS and ePDUs, in order
@@ -695,23 +866,33 @@ in a larger company.
 
 It's not really two complete copies if your OS forks efficiently.
 
-By default, upsmon runs most of the grunt work as an unprivileged
-user and keeps a stub process around with root powers that can
+By default, `upsmon` runs most of the grunt work as an unprivileged
+user and keeps a stub process around with 'root' powers that can
 only shut down the system when necessary.  This should make it much
-harder to gain root in the event a hole is ever discovered in
-upsmon.
+harder to gain 'root' in the event a hole is ever discovered in
+`upsmon`.
 
 If this really bothers you and you like running lots of code as
-root, start upsmon with -p and it will go back to being one big
-process.  This is not recommended, so don't blame us if something
-bad happens in this mode.
+`root`, start `upsmon` with `-p` option, and it will go back to
+being one big process.  This is not recommended, so don't blame
+us if something bad happens in this mode.
 
 == I get the following error while building: `make[4]: don't know how to make HP-UX/nut-drvctl.sh. Stop`
 
-NUT still has some hidden dependencies on GNU Make which show up while running
-`make distcheck`. If you are running `make distcheck` or its variants, you
-will need to install GNU Make (`devel/gmake` in the ports tree), which is
-incidentally what the official FreeBSD port of NUT does for all builds.
+*Answer 1*
+
+Current NUT codebase (since v2.8.0) is regularly tested with GNU, BSD and
+Sun implementations of `make`, so seeing failures in release snapshots
+(or iterations that made it to the master branch) is very surprising.
+Please raise an issue on GitHub.
+
+*Answer 2*
+
+Older NUT codebase (release tarballs) has some hidden dependencies on
+GNU Make which show up while running `make distcheck`. If you are running
+`make distcheck` or its variants, you will need to install GNU Make
+(`devel/gmake` in the ports tree), which is incidentally what the
+official FreeBSD port of NUT does for all builds.
 
 == I have 'some problem' with 'some old version' ...
 
@@ -730,12 +911,58 @@ yet. Please do not tell us you have the "latest version for Distro XYZ" -- even
 if the developers are familiar with that distribution, it helps others if you
 quote the exact package version.
 
-NOTE: check the release date on the version you have.  If it's more
+NOTE: Check the release date on the version you have.  If it's more
 than about 6-12 months old, there's probably a newer stable tree
 version out there. As development happens actively, be sure to also
 check if a custom build from Git (usually using the `master` branch
 of NUT https://github.com/networkupstools/nut/ repository) has your
 issue fixed by some kind soul already.
+
+== I can't connect with SSL using old NUT on an appliance
+
+Unfortunately, some vendors do not issue new firmwares often, and even more
+rarely do they significantly update any programs inside. It is not uncommon
+to see NUT versions over a decade old delivered with small NAS boxes, for
+example.
+
+This may impact not only NUT protocol compatibility, but also transport
+protocols such as SSL -- as cipher algorithms get outdated over time, and
+ones deemed insecure are no longer handled at all (by default).  This is
+not a problem limited to NUT: old SSH Key Exchange (kex) protocols or old
+HTTPS mechanisms also become hard or impossible to use eventually.
+
+On one hand, you can look into NUT configuration of `DISABLE_WEAK_SSL`.
+
+On another, you can modify configuration of the newer system to allow older
+algorithms as required by the older other system.
+
+For NUT built against OpenSSL, the change would be in `/etc/ssl/openssl.cnf`
+and similar to the diff block below:
+
+----
+--- a/etc/ssl/openssl.cnf
++++ b/etc/ssl/openssl.cnf
+@@ -52,13 +52,6 @@ tsa_policy3 = 1.2.3.4.5.7
+ 
+ [openssl_init]
+ providers = provider_sect
++ssl_conf = ssl_sect
++
++[ssl_sect]
++system_default = system_default_sect
++
++[system_default_sect]
++CipherString = DEFAULT@SECLEVEL=0
+ 
+ # List of providers to load
+ [provider_sect]
+----
+
+Of course, keep in mind that by doing this you degrade your security level.
+If better solutions are possible in your situation, prefer to follow them!
+
+Thanks to Kajetan Rzepecki for doing the research and posting the findings
+in https://github.com/networkupstools/nut/issues/1899
 
 == I built NUT from Git, and it complains about lots of missing files. What happened?
 
@@ -744,11 +971,18 @@ The NUT instance of Buildbot generates tar files of the latest NUT source
 after each successful build, and these snapshots include a pre-built version
 of the `./configure` script.
 
-Otherwise, you will need recent versions of autoconf, automake, libtool,
+WARNING: There is an outstanding bug that after the shutdown of BuildBot,
+no regular distribution tarballs are in fact published.
+
+To build from Git, you will need recent versions of autoconf, automake, libtool,
 asciidoc, a2x and its dependencies for DocBook/dblatex. Rather than publish a
 list of the exact versions needed (which will quickly become out of date), we
 recommend you consult your distribution's dependency list for building a NUT
 package, and use that as a starting point.
+
+That said, for the numerous systems running build agents of the NUT CI farm,
+their lists of dependency packages are available in `docs/config-prereqs.txt`
+in NUT sources.
 
 == Do I have to use a serial connection to monitor the UPS? What about direct network connections (SNMP or otherwise)?
 
@@ -760,8 +994,8 @@ easily.
 
 Any time there is a gap in features, it's usually because the
 group of people who own that hardware and the group of people who
-write code don't overlap.  The fix is to make them overlap -
-turn an owner into a developer or vice-versa.
+write code don't overlap.  The fix is to make them overlap -- turn
+an owner into a developer or vice-versa.
 
 == What happened to the patch I sent?
 
@@ -781,9 +1015,11 @@ various inconsistencies can be diagnosed and fixed early.
 == I'm not much of a programmer.  How can I help?
 
 There's always work to be done outside of the realm of code bashing.
-Documentation can always be improved.  A user's perspective
-is sometimes needed to appreciate this.  Bug reports on a project's
-documentation are just as valuable as those for the actual source.
+Documentation can always be improved.  A new user's perspective is
+sometimes needed to appreciate this, since developers and long-time
+users consider everything obvious.  Bug reports and pull requests
+on any project's documentation are just as valuable as those for
+the actual programs' sources.
 
 Fielding questions on the mailing lists is also helpful.  This
 lets other people to focus on coding issues while allowing the
@@ -869,7 +1105,7 @@ currently open pull requests.
 
 We are not going to rehash all of the arguments for and against this in a
 simple FAQ entry. If you intend for your reply to go to more than just the
-last person who posted, it is not too much trouble to hit "reply all".
+last person who posted, it is not too much trouble to hit "Reply All".
 
 == I found some information about another kind of UPS protocol you don't support yet, but I don't know what to do with it. Can you help?
 
@@ -902,9 +1138,11 @@ Or a variation like...
 You can rig up a little hack to handle this issue in software.
 
 Essentially, you need to test for the POWERDOWNFLAG in your *startup* scripts
-while the filesystems are still read-only.  If it's there, you know your last
-shutdown was caused by a power failure and the UPS battery is probably still
-quite weak.
+while the filesystems are still read-only (before `upsmon` daemon has started
+and removed it).  You can also query `upsmon -K` for presence of the file, to
+avoid hard-coding the path or parsing it from your `upsmon.conf` file.  If the
+flag is there, you know your last shutdown was caused by a power failure and
+the UPS battery is probably still quite weak.
 
 In this situation, your best bet is to sleep it off.  Pausing in your startup
 script to let the batteries recharge with the filesystems in a safe state is
@@ -940,7 +1178,11 @@ they won't be stuck in the halted state with the UPS running on line power.
 
 Implement this by modifying your shutdown script like this:
 
-	if (test -f /etc/killpower)
+------
+	# `upsmon -K` if available on still mounted filesystems
+	# at this point is more portable than the `test` below
+
+	if (test -f /etc/killpower || /sbin/upsmon -K)
 	then
 		/sbin/upsdrvctl shutdown
 
@@ -949,3 +1191,4 @@ Implement this by modifying your shutdown script like this:
 		# uh oh, we never got shut down! (power race?)
 		reboot
 	fi
+------

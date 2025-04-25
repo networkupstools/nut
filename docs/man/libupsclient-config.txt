@@ -4,18 +4,30 @@ LIBUPSCLIENT-CONFIG(1)
 NAME
 ----
 
-libupsclient-config - script to get information about the installed version of libupsclient
+libupsclient-config - Script to get information about the installed
+version of libupsclient
 
 SYNOPSIS
 --------
+
 *libupsclient-config* [--version] [--libs] [--cflags]
 
 DESCRIPTION
 -----------
 
 *libupsclient-config* is a tool that is used to determine the compiler and
-linker flags that should be used to compile and link programs that use
-*libupsclient* from the Network UPS Tools project.
+linker flags that should be used to compile and link programs that use the
+*libupsclient* from the Network UPS Tools project (also known as the "upscli"
+API).
+
+It allows to simplify build automation for systems without a `pkg-config`
+implementation which would instead use the `libupsclient.pc` file installed
+with the NUT development files.
+
+Note that to rebuild current NUT with same settings as the installed NUT
+v2.8.1 or newer, you can use `lib/libupsclient-config --config-flags`,
+where supported.  Note that the `pkg-config` manifest `libupsclient.pc` does
+not easily convey this information.
 
 OPTIONS
 -------
@@ -31,16 +43,22 @@ Print the linker flags that are necessary to link a *libupsclient* program.
 *--cflags*::
 Print the compiler flags that are necessary to compile a *libupsclient* program.
 
+*--config-flags*::
+Print the flags passed to `configure` script when this installation of NUT
+was originally built (supported since release v2.8.1).
+
 AUTHORS
 -------
+
 This manual page was written by Arnaud Quette <aquette.dev@gmail.com>.
 
 SEE ALSO
 --------
 
-linkman:upsclient[3]
+linkman:upsclient[3],
+linkman:nutclient[3]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

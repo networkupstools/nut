@@ -3,11 +3,17 @@ SKEL(8)
 
 NAME
 ----
-skel - skeleton driver man page
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+skel - Skeleton driver man page
+
+SYNOPSIS
+--------
+
+*skel* -h
+
+*skel* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 *skel* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -31,6 +37,7 @@ apropos(8) database is properly rebuilt.
 
 SUPPORTED HARDWARE
 ------------------
+
 *skel* supports ...
 
 //////////////////////////////////////////
@@ -44,6 +51,7 @@ CABLING
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver also supports the following optional settings:
 
 *option1*='num'::
@@ -86,6 +94,7 @@ encountered when implementing the protocol for your UPS.
 
 KNOWN ISSUES AND BUGS
 ---------------------
+
 *Got "EPERM: Operation not permitted" upon driver startup*::
 
 You have forgotten to install the udev files, as explained
@@ -100,6 +109,7 @@ some form of contact information so that users can report bugs.
 
 AUTHORS
 -------
+
 J Random User <user@example.org>
 
 //////////////////////////////////////////
@@ -114,8 +124,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -6,15 +6,20 @@ NAME
 
 belkin - Driver for Belkin serial UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*belkin* -h
+
+*belkin* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 belkin driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 The *belkin* driver is known to support the Regulator Pro 525 (F6C525-SER).
 Other similar models such as the 425 and 625 should also work.
 
@@ -46,10 +51,12 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Other Belkin drivers:
 ~~~~~~~~~~~~~~~~~~~~~
+
 linkman:belkinunv[8],
 linkman:blazer_ser[8],
 linkman:blazer_usb[8],
@@ -57,4 +64,5 @@ linkman:usbhid-ups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

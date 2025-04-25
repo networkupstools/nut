@@ -1,0 +1,28 @@
+Uncomplicated Firewall (UFW) support
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+NUT can tightly integrate with
+link:http://en.wikipedia.org/wiki/Uncomplicated_Firewall[Uncomplicated Firewall]
+using the provided profile (nut.ufw.profile).
+
+You must first install the profile on your system:
+
+	$ cp nut.ufw.profile /etc/ufw/applications.d/
+
+To enable outside access to your local upsd, use:
+
+	$ ufw allow NUT
+
+To restrict access to the network '192.168.X.Y', use:
+
+	$ ufw allow from 192.168.0.0/16 to any app NUT
+
+You can also use graphical frontends, such as gui-ufw (gufw), ufw-kde
+or ufw-frontends.
+
+For more information, refer to:
+
+ - link:http://gufw.tuxfamily.org/[UFW homepage],
+ - link:https://launchpad.net/ufw[UFW project page],
+ - link:https://wiki.ubuntu.com/UncomplicatedFirewall[UFW wiki],
+ - UFW manual page, section APPLICATION INTEGRATION

@@ -8,8 +8,8 @@ NUT (the GNU General Public License).
 If none of these suits you for technical or legal reasons, you can
 implement one easily using the <<net-protocol,Network protocol information>>.
 
-The latter approach has been used to create the Python 'PyNUT' module, the
-Nagios 'check_ups' plugin (and probably others), which can serve as a
+The latter approach has been used to create the Python 'PyNUTClient' module,
+the Nagios 'check_ups' plugin (and probably others), which can serve as a
 reference.
 
 C / C++
@@ -40,7 +40,7 @@ functions documentation referenced in the same file.
 
 Clients like upsc are provided as examples of how to retrieve data using the
 upsclient functions.
-link:http://www.networkupstools.org/projects.html[Other programs] not included
+link:https://www.networkupstools.org/projects.html[Other programs] not included
 in this package may also use this library, such as wmnut.
 
 High level library: libnutclient
@@ -51,6 +51,7 @@ and commands with an object-oriented API in C++ and C.
 
 For more information, refer to the linkman:libnutclient[3] manual page.
 
+------
   #include <iostream>
   #include <unistd.h>
   #include <stdlib.h>
@@ -128,6 +129,7 @@ For more information, refer to the linkman:libnutclient[3] manual page.
     delete client;
     return 0;
   }
+------
 
 
 Configuration helpers
@@ -144,7 +146,8 @@ Python
 
 The PyNUT module, contributed by David Goncalves, can be used for connecting a
 Python script to `upsd`. Note that this code (and the accompanying NUT-Monitor
-application) is licensed under the GPL v3.
+application, later separated into NUT-Monitor-py2gtk2 and NUT-Monitor-py3qt5,
+suitable for two generations of Python ecosystem) is licensed under the GPL v3.
 
 The `PyNUTClient` class abstracts the connection to the server. In order to
 list the status variables for `ups1` on the local `upsd`, the following
@@ -181,6 +184,7 @@ of the results. The Perl class instance encapsulates a single UPS, where the
 Python class instance represents a connection to the server (which may service
 multiple UPS units).
 
+------
  use UPS::Nut;
 
  $ups = new UPS::Nut( NAME => "myups",
@@ -203,10 +207,10 @@ multiple UPS units).
  ;
 
  print $other_ups{MFR}, " ", $other_ups{MODEL}, "\n";
+------
 
 Java
 ----
 
 The NUT Java support has been externalized.
 It is available at https://github.com/networkupstools/jnut
-

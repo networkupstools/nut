@@ -3,32 +3,44 @@ IVTSCD(8)
 
 NAME
 ----
-ivtscd - driver for the IVT Solar Controller Device
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+ivtscd - Driver for the IVT Solar Controller Device
+
+SYNOPSIS
+--------
+
+*ivtscd* -h
+
+*ivtscd* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 *ivtscd* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 DESCRIPTION
 -----------
+
 This driver allows to access the IVT SCD-series devices.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver does not support any extra argument.
 
 AUTHOR
 ------
+
 Arjen de Korte <adkorte-guest@alioth.debian.org>
 
 SEE ALSO
 --------
+
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

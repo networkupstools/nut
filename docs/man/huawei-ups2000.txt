@@ -1,5 +1,5 @@
 HUAWEI_UPS2000(8)
-==================
+=================
 
 NAME
 ----
@@ -26,33 +26,50 @@ UPS with the following characteristics.
 
 1. Output power: 1 kVA to 3 kVA (higher power models are unsupported).
 
-2. Connection: USB or RS-232 (USB is only supported on Linux 5.12 and
-newer kernels, read the section *Cabling* carefully).
+2. Connection: USB or RS-232 (for most UPS models, USB is only supported
+on Linux 5.12 and newer kernels, but there are exceptions, read the section
+*Cabling* carefully).
 
 The UPS2000 series has two variants: UPS2000-A with a tower chassis,
-and UPS2000-G with a rack-mount chassis. Both should be equally supported,
-but more testers are needed.
+and UPS2000-G with a rack-mount chassis. Within these two variants,
+there are also two sub-variants: a standard runtime model powered by
+an internal battery pack denoted by an "S" suffix, and a long runtime
+model powered by an external battery pack denoted by an "L" suffix.
 
-Currently, it has been tested on the following models.
+All of these models should be equally supported, but more testers are
+needed. Currently, it has been tested on the following models.
 
-* UPS2000-A-1KTTS (firmware: V2R1C1SPC40, P1.0-D1.0)
-* UPS2000-A-2KTTS (firmware: V2R1C1SPC50, P1.0-D1.0)
-* UPS2000-G-3KRTS (firmware: V2R1C1SPC40, P1.0-D1.0)
+* UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
+* UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC50, P1.0-D1.0)
+* UPS2000-A-2KTTS (firmware: UPS2000A, V2R1C1SPC50, P1.0-D1.0)
+* UPS2000-G-1KRTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
+* UPS2000-G-1KRTS (firmware: UPS2000G, V2R1C1SPC50, P1.0-D1.0)
+* UPS2000-G-3KRTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
+* UPS2000-G-3KRTS (firmware: UPS2000G, V2R1C1SPC50, P1.0-D1.0)
+* UPS2000-G-3KRTL (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
 
 If your model is not in the list, we encourage you to report successful
 or unsuccessful results to the bug tracker or the mailing list.
 Make sure to include the full model number of your UPS manually
-in your report, because the firmware only reports "UPS2000-A"
-for all models, including the G series.
+in your report, because many units only report themselves as "UPS2000-A"
+regardless of their models, including the G series.
+
+As of 2022, there is also a new hardware variant with a WCH CH341
+USB-to-serial chip instead of a MaxLinear/Exar RX21V1410 chip and
+reports itself as "UPS2000G". Driver support has been added since
+v0.03.
 
 huawei-ups2000 uses the libmodbus project, for Modbus implementation.
 
 CABLING
 -------
 
-The UPS has a USB port and a RS-232 port. Both are supported, but USB is
-only usable on Linux 5.12 and later, via the *xr_serial* kernel module (see
-subsection *USB* for details). RS-232 is supported on all operating systems.
+The UPS has a USB port and a RS-232 port. Both are supported, but on
+most UPS models, USB is only usable on Linux 5.12 and later, via the
+*xr_serial* kernel module. But for the newer hardware variant with a
+WCH CH341 chip, it should have better compatibility via the *ch341*
+kernel module. See subsection *USB* for details. On the other hand,
+RS-232 is always supported on all operating systems.
 
 Only one port can be used at a time. When USB is used, RS-232 should be
 unplugged from the UPS, and vice versa. Further, optional adapter cards,
@@ -68,12 +85,32 @@ screen to go black. Finally reconnect line power and restart your UPS.
 USB
 ~~~~
 
-The USB port on the UPS2000 is powered by a MaxLinear/Exar RX21V1410
-USB-to-serial converter chip, it's only supported by Linux 5.12 or
-newer, via the *xr_serial* kernel module.
+The USB port on the UPS2000 is originally powered by a MaxLinear/Exar
+RX21V1410 USB-to-serial converter chip, it's only supported by Linux
+5.12 or newer, via the *xr_serial* kernel module. Its *lsusb* report
+is:
 
-When the UPS2000 is connected via USB to a supported Linux system,
-you should see the following logs in *dmesg*.
+    04e2:1410 Exar Corp. XR21V1410 USB-UART IC
+
+However, a recent hardware variant switched to the WCH CH341 serial
+chip:
+
+    1a86:5523 QinHeng Electronics CH341 in serial mode, usb to serial port converter
+
+If your unit has a WCH CH341 chip (likely only found in units made
+after 2022), when the UPS2000 is connected via USB, you should see
+the following logs in *dmesg*.
+
+    ch341 2-1.2:1.0: ch341-uart converter detected
+    usb 2-1.2: ch341-uart converter now attached to ttyUSB0
+
+If so, you should be able to proceed without worrying about kernel
+compatibility. This CH341 chip has been around for a decade and should be
+compatible with your system.
+
+On the other hand, if your unit has a MaxLinear/Exar XR21V1410 chip, like
+most users do, when the UPS2000 is connected via USB to a supported Linux
+system, you should see the following logs in *dmesg*.
 
     xr_serial 1-1.2:1.1: xr_serial converter detected
     usb 1-1.2: xr_serial converter now attached to ttyUSB0
@@ -86,8 +123,8 @@ necessary device driver, you will get this message instead:
 The generic driver *cdc_acm* is incompatible and cannot be used.
 You should upgrade your Linux kernel to Linux 5.12 or newer.
 
-WARNING: On an unsupported system, the USB device can still be
-recognized as a USB ACM device, but communication is impossible,
+WARNING: On an unsupported system, the XR21V1410 USB device can still
+be recognized as a USB ACM device, but communication is impossible,
 please don't waste your time on *cdc_acm*.
 
 If you're already running on Linux 5.12 or newer kernels, but still
@@ -97,7 +134,8 @@ report to your Linux distro maintainers and ask them to enable
 *xr_serial* (kernel option `CONFIG_USB_SERIAL_XR`).
 
 When upgrading the Linux kernel isn't an option, or when you are using
-another operating system (e.g. FreeBSD), RS-232 must be used.
+another operating system (e.g. FreeBSD), RS-232 must be used. Even for
+CH341 users, one can try this option if USB somehow refuses to work.
 
 RS-232
 ~~~~~~
@@ -111,7 +149,7 @@ operating system.
 INSTALLATION
 ------------
 
-This driver is not built by default.  You can build it by installing libmodbus
+This driver may be not built by default.  You can build it by installing libmodbus
 (with development packages) and running
 
     configure --with-serial=yes --with-modbus=yes
@@ -288,17 +326,23 @@ normal uses, please file a bug report with full logs attached.
 
 Before troubleshooting or reporting a problem, it's important to check
 your *dmesg* log for USB connect and disconnect events to avoid wasting
-time on the NUT driver when the actual problem is USB. For example, if
-someone yanks the cable out of the USB port, or if a new USB device is
-plugged into a USB host/hub that is struggling to power its ports
-(common on single-board computers like Raspberry Pi), or if you have
-flaky cabling or EMI noise, the serial converter can get disconnected
-from USB, at least briefly. This creates a permanent data stale, the driver
-must be restarted (plugging the USB back won't fix it, since the driver
-is still using the nonexistent serial device). These USB problems usually
-have nothing to do with NUT. If it's the case, you should solve the
-underlying USB problem - check the cable, check the converter, try a
-powered USB hub, try a full-speed USB isolator, etc.
+time on the NUT driver when the actual problem is USB.
+
+For example, if someone yanks the cable out of the USB port, or if a
+new USB device is plugged into a USB host/hub that is struggling to
+power its ports (common on single-board computers like Raspberry Pi),
+or if you have flaky cabling or EMI noise, due to all these and similar
+reasons the serial converter can get disconnected from USB, at least
+briefly.
+
+This creates a permanent data stale situation, and the driver must be
+restarted (plugging the USB back won't fix it, since the driver is still
+using the nonexistent serial device, if the system kernel initializes
+a new device driver instance internally).
+
+These USB problems usually have nothing to do with NUT. If it's the case,
+you should solve the underlying USB problem -- check the cable, check the
+converter, try a powered USB hub, try a full-speed USB isolator, etc.
 
 Serial port becomes unresponsive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -306,8 +350,9 @@ Serial port becomes unresponsive
 Some malformed commands are known to lock up the serial port (including
 USB, which is a USB-to-serial device). Upon receiving them, UPS2000 stops
 all serial communications. The result is a completely unresponsive UPS,
-regardless of what you do - restarting NUT, rebooting the computer -
-cannot restore connectivity, as if someone has unplugged the RS-232 cable.
+regardless of what you do -- restarting NUT, rebooting the computer -- can
+not restore connectivity, as if someone has unplugged the RS-232 cable.
+
 To recover, simply power cycle the UPS: Turn off the UPS output via the
 front panel, then unplug the UPS from line power. Wait for the LCD front
 screen to go black. Finally reconnect line power and restart your UPS.
@@ -320,20 +365,26 @@ they're unlikely to be accidentally generated.
 Still, we recommend to power cycle your UPS after making a cabling change,
 especially after changing from RS-485/USB to RS-232, just to ensure the
 UPS selects the correct communication interface. Also, if you have
-discovered a reproducible serial port lockup problem, it can be an
-previously unknown bug, make sure to file a bug report.
+discovered a reproducible serial port lockup problem, it can be a
+previously unknown bug, so please make sure to file a bug report.
 
-USB is unsupported
-~~~~~~~~~~~~~~~~~~~
+USB chip (MaxLinear/Exar RX21V1410) is unsupported
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As previously stated, only RS-232 is supported on all systems. USB
-requires a device-specific driver, which is only available on Linux
+As previously stated, only RS-232 is supported on all systems. On
+most UPS units, the USB chip RX21V1410 is used, and it requires a
+device-specific driver *xr_serial*, which is only available on Linux
 5.12 and newer kernels.
 
 On an unsupported system, the USB device can still be recognized as a
 USB ACM device, but in reality, communication is impossible. It can
 only be fixed by implementing a driver for your system, nothing can
-be done within NUT.
+be done within NUT. Please use the RS-232 port instead.
+
+Alternatively, if your unit has a WCH CH341 chip (likely only found in
+units made after 2022), it should have better compatibility.
+
+See the previous section *Cabling* for more information.
 
 Finally, in the unlike scenario that you are using NUT on Microsoft
 Windows, you should be able to install the USB device driver following
@@ -342,20 +393,23 @@ Guide.
 
 AUTHOR
 ------
+
 Yifeng Li <tomli@tomli.me>
 
 SEE ALSO
 --------
+
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
-Huawei UPS2000-A (1 kVA-3 kVA) User Manual: https://support.huawei.com/enterprise/en/doc/EDOC1000084260
-
-Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide: https://support.huawei.com/enterprise/en/doc/EDOC1000110696
-
-libmodbus home page: http://libmodbus.org
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* Huawei UPS2000-A (1 kVA-3 kVA) User Manual:
+  https://support.huawei.com/enterprise/en/doc/EDOC1000084260
+* Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide:
+  https://support.huawei.com/enterprise/en/doc/EDOC1000110696
+* libmodbus home page: http://libmodbus.org

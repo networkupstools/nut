@@ -1,9 +1,10 @@
 /*
  *  Copyright (C)
  *    2011 - EATON
- *    2012 - Arnaud Quette <arnaud.quette@free.fr>
+ *    2012 - 2024 Arnaud Quette <arnaud.quette@free.fr>
  *    2016 - EATON - IP addressed XML scan
- *    2016-2021 - EATON - Various threads-related improvements
+ *    2016 - 2021 - EATON - Various threads-related improvements
+ *    2023 - 2024 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,14 +32,36 @@
 #ifndef NUT_SCAN_H
 #define NUT_SCAN_H
 
-#include "config.h"
 #include <sys/types.h>
-#include "nut_stdint.h"
 
-#include <nutscan-init.h>
-#include <nutscan-device.h>
-#include <nutscan-ip.h>
-#include <timehead.h>
+/* Ensure uint16_t et al: */
+#if defined HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
+
+#if defined HAVE_STDINT_H
+#  include <stdint.h>
+#endif
+
+#if defined HAVE_LIMITS_H
+#  include <limits.h>
+#endif
+
+/* Ensure useconds_t et al: */
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
+#include "nutscan-init.h"
+#include "nutscan-device.h"
+#include "nutscan-ip.h"
 
 #ifdef WITH_IPMI
 #include <freeipmi/freeipmi.h>
@@ -47,12 +70,44 @@
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
 
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 #  include <semaphore.h>
 # endif
 
-# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
-extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp;
+# ifdef HAVE_SEMAPHORE_NAMED
+#  ifdef HAVE_FCNTL_H
+#   include <fcntl.h>           /* For O_* constants with sem_open() */
+#  endif
+#  ifdef SYS_STAT_H
+#   include <sys/stat.h>        /* For mode constants */
+#  endif
+# endif
+#endif
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
+#ifdef HAVE_PTHREAD
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
+extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp, max_threads_ipmi;
+# endif
+
+# if defined HAVE_SEMAPHORE_UNNAMED
+#  define REPORT_SEM_INIT_METHOD	"sem_init"
+# elif defined HAVE_SEMAPHORE_NAMED
+#  define REPORT_SEM_INIT_METHOD	"sem_open"
+# endif
+
+# ifdef HAVE_SEMAPHORE_NAMED
+#  define SEMNAME_TOPLEVEL	"/libnutscan-toplevel-bus-scans"
+#  define SEMNAME_NETXML	"/libnutscan-netxml"
+#  define SEMNAME_UPSCLIENT	"/libnutscan-upsclient"
+#  define SEMNAME_EATON_SERIAL	"/libnutscan-eaton-serial"
+#  define SEMNAME_SNMP		"/libnutscan-snmp"
+#  define SEMNAME_IPMI		"/libnutscan-ipmi"
 # endif
 
 # ifdef HAVE_PTHREAD_TRYJOIN
@@ -64,12 +119,6 @@ typedef struct nutscan_thread {
 	int		active;	/* true if the thread was created, false if joined (to not join twice) */
 } nutscan_thread_t;
 #endif /* HAVE_PTHREAD */
-
-#ifdef __cplusplus
-/* *INDENT-OFF* */
-extern "C" {
-/* *INDENT-ON* */
-#endif
 
 /* SNMP structure */
 typedef struct nutscan_snmp {
@@ -85,30 +134,31 @@ typedef struct nutscan_snmp {
 } nutscan_snmp_t;
 
 /* IPMI structure */
-/* Settings for OutofBand (remote) connection */
+/* Settings for Out-of-Band (remote) connection */
 typedef struct nutscan_ipmi {
-	char*			username;            /* IPMI 1.5 and 2.0 */
-	char*			password;            /* IPMI 1.5 and 2.0 */
-	int				authentication_type; /* IPMI 1.5 */
-	int				cipher_suite_id;     /* IPMI 2.0 */
-	char*			K_g_BMC_key;         /* IPMI 2.0, optional key for 2 key auth. */
-	int				privilege_level;     /* for both */
+	char*		username;            /* IPMI 1.5 and 2.0 */
+	char*		password;            /* IPMI 1.5 and 2.0 */
+	int		authentication_type; /* IPMI 1.5 */
+	int		cipher_suite_id;     /* IPMI 2.0 */
+	char*		K_g_BMC_key;         /* IPMI 2.0, optional key for 2 key auth. */
+	int		privilege_level;     /* for both */
 	unsigned int	workaround_flags;    /* for both */
-	int				ipmi_version;        /* IPMI 1.5 or 2.0? */
+	int		ipmi_version;        /* IPMI 1.5 or 2.0? */
+	char*		peername;            /* Hostname or IP for remote scans, NULL for local device bus (populated by scanning methods) */
 } nutscan_ipmi_t;
 
 /* IPMI auth defines, simply using FreeIPMI defines */
 #ifndef IPMI_AUTHENTICATION_TYPE_NONE
-  #define IPMI_AUTHENTICATION_TYPE_NONE                  0x00
-  #define IPMI_AUTHENTICATION_TYPE_MD2                   0x01
-  #define IPMI_AUTHENTICATION_TYPE_MD5                   0x02
-  #define IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY 0x04
-  #define IPMI_AUTHENTICATION_TYPE_OEM_PROP              0x05
-  #define IPMI_AUTHENTICATION_TYPE_RMCPPLUS              0x06
-#endif
+# define IPMI_AUTHENTICATION_TYPE_NONE                  0x00
+# define IPMI_AUTHENTICATION_TYPE_MD2                   0x01
+# define IPMI_AUTHENTICATION_TYPE_MD5                   0x02
+# define IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY 0x04
+# define IPMI_AUTHENTICATION_TYPE_OEM_PROP              0x05
+# define IPMI_AUTHENTICATION_TYPE_RMCPPLUS              0x06
+#endif /* IPMI_AUTHENTICATION_TYPE_NONE */
 #ifndef IPMI_PRIVILEGE_LEVEL_ADMIN
-  #define IPMI_PRIVILEGE_LEVEL_ADMIN                     0x04
-#endif
+# define IPMI_PRIVILEGE_LEVEL_ADMIN                     0x04
+#endif /* IPMI_PRIVILEGE_LEVEL_ADMIN */
 
 #define IPMI_1_5		1
 #define IPMI_2_0		0
@@ -121,34 +171,60 @@ typedef struct nutscan_xml {
 	char *peername;		/* Hostname or NULL for broadcast mode */
 } nutscan_xml_t;
 
+/* USB scan options structure */
+typedef struct nutscan_usb {
+	/* Hardware link related values below are not reliable for run-time
+	 * matching (they can change over time) but can be useful if e.g.
+	 * "serial" is not available or unique */
+	int report_bus;
+	int report_busport;
+	int report_device;
+
+	/* The value is not currently used for device matching, but might be
+	 * used later, and it is available from discovery */
+	int report_bcdDevice;
+} nutscan_usb_t;
+
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, useconds_t usec_timeout, nutscan_snmp_t * sec);
+nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl, useconds_t usec_timeout, nutscan_snmp_t * sec);
 
-nutscan_device_t * nutscan_scan_usb(void);
+nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts);
 
 /* If "ip" == NULL, do a broadcast scan */
 /* If sec->usec_timeout <= 0 then the common usec_timeout arg overrides it */
 nutscan_device_t * nutscan_scan_xml_http_range(const char *start_ip, const char *end_ip, useconds_t usec_timeout, nutscan_xml_t * sec);
+nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl, useconds_t usec_timeout, nutscan_xml_t * sec);
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, useconds_t usec_timeout);
+nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, const char * port, useconds_t usec_timeout);
+
+nutscan_device_t * nutscan_scan_nut_simulation(void);
 
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout);
 
 nutscan_device_t * nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec);
+nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nutscan_ipmi_t * sec);
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
 
 #ifdef HAVE_PTHREAD
-# ifdef HAVE_SEMAPHORE
-/* Expose shared libnutscanner semaphore for overall thread count
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
+/* Expose shared libnutscan semaphore for overall thread count
  * limited across different scanning methods (protocols/media): */
 sem_t * nutscan_semaphore(void);
+void nutscan_semaphore_set(sem_t *s);
 # endif
 #endif
 
 /* Display functions */
 void nutscan_display_ups_conf(nutscan_device_t * device);
 void nutscan_display_parsable(nutscan_device_t * device);
+
+/* Display sanity-check concerns for various fields etc. (if any) */
+void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device);
+void nutscan_display_sanity_check(nutscan_device_t * device);
+void nutscan_display_sanity_check_serial(nutscan_device_t * device);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

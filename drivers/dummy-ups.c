@@ -2,6 +2,7 @@
 
    Copyright (C)
        2005 - 2015  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+       2014 - 2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,18 +32,23 @@
 
 #include "config.h" /* must be the first header */
 
+#ifndef WIN32
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif	/* !WIN32 */
+
+#include <sys/stat.h>
 #include <string.h>
 
 #include "main.h"
 #include "parseconf.h"
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -54,22 +60,46 @@ upsdrv_info_t upsdrv_info =
 	{ NULL }
 };
 
-#define MODE_NONE	0
-#define MODE_DUMMY		1 /* use the embedded defintion or a definition file */
-#define MODE_REPEATER	2 /* use libupsclient to repeat an UPS */
-#define MODE_META		3 /* consolidate data from several UPSs (TBS) */
+enum drivermode {
+	MODE_NONE = 0,
 
-static int mode = MODE_NONE;
+	/* use the embedded defintion or a definition file, parsed in a
+	 * loop again and again (often with TIMER lines to delay changes)
+	 * Default mode for files with *.seq naming pattern
+	 * (legacy-compatibility note: and other patterns except *.dev)
+	 */
+	MODE_DUMMY_LOOP,
+
+	/* use the embedded defintion or a definition file, parsed once
+	 *
+	 * This allows to spin up a dummy device with initial readings
+	 * and retain in memory whatever SET VAR was sent by clients later.
+	 * This is also less stressful on system resources to run the dummy.
+	 *
+	 * Default mode for files with *.dev naming pattern
+	 */
+	MODE_DUMMY_ONCE,
+
+	/* use libupsclient to repeat another UPS */
+	MODE_REPEATER,
+
+	/* consolidate data from several UPSs (TBS) */
+	MODE_META
+};
+typedef enum drivermode drivermode_t;
+
+static drivermode_t mode = MODE_NONE;
 
 /* parseconf context, for dummy mode using a file */
 static PCONF_CTX_t	*ctx = NULL;
 static time_t		next_update = -1;
+static struct stat	datafile_stat;
 
 #define MAX_STRING_SIZE	128
 
 static int setvar(const char *varname, const char *val);
 static int instcmd(const char *cmdname, const char *extra);
-static int parse_data_file(int upsfd);
+static int parse_data_file(TYPE_FD arg_upsfd);
 static dummy_info_t *find_info(const char *varname);
 static int is_valid_data(const char* varname);
 static int is_valid_value(const char* varname, const char *value);
@@ -79,7 +109,10 @@ static int upsclient_update_vars(void);
 /* connection information */
 static char		*client_upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
-static int	port;
+static uint16_t	port;
+
+/* repeater mode parameters */
+static int repeater_disable_strict_start = 0;
 
 /* Driver functions */
 
@@ -89,7 +122,8 @@ void upsdrv_initinfo(void)
 
 	switch (mode)
 	{
-		case MODE_DUMMY:
+		case MODE_DUMMY_ONCE:
+		case MODE_DUMMY_LOOP:
 			/* Initialise basic essential variables */
 			for ( item = nut_data ; item->info_type != NULL ; item++ )
 			{
@@ -100,7 +134,7 @@ void upsdrv_initinfo(void)
 
 					/* Set max length for strings, if needed */
 					if (item->info_flags & ST_FLAG_STRING)
-						dstate_setaux(item->info_type, item->info_len);
+						dstate_setaux(item->info_type, (long)item->info_len);
 				}
 			}
 
@@ -113,6 +147,7 @@ void upsdrv_initinfo(void)
 
 			dstate_dataok();
 			break;
+
 		case MODE_META:
 		case MODE_REPEATER:
 			/* Obtain the target name */
@@ -124,7 +159,17 @@ void upsdrv_initinfo(void)
 			ups = xmalloc(sizeof(*ups));
 			if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 			{
-				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+				if(repeater_disable_strict_start == 1)
+				{
+					upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+				}
+				else
+				{
+					fatalx(EXIT_FAILURE, "Error: %s. "
+					"Any errors encountered starting the repeater mode result in driver termination, "
+					"perhaps you want to set the 'repeater_disable_strict_start' option?"
+					, upscli_strerror(ups));
+				}
 			}
 			else
 			{
@@ -137,17 +182,84 @@ void upsdrv_initinfo(void)
 				{
 					fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
 				}
-				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+
+				if(repeater_disable_strict_start == 1)
+				{
+					upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+				}
+				else
+				{
+					fatalx(EXIT_FAILURE, "Error: %s. "
+					"Any errors encountered starting the repeater mode result in driver termination, "
+					"perhaps you want to set the 'repeater_disable_strict_start' option?"
+					, upscli_strerror(ups));
+				}
 			}
 			/* FIXME: commands and settable variable! */
 			break;
+
 		case MODE_NONE:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
 		default:
 			fatalx(EXIT_FAILURE, "no suitable definition found!");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 	upsh.instcmd = instcmd;
 
 	dstate_addcmd("load.off");
+}
+
+static int prepare_filepath(char *fn, size_t buflen)
+{
+	/* Note: device_path is a global variable,
+	 * the "port=..." value parsed in main.c */
+	if (device_path[0] == '/'
+#ifdef WIN32
+	||  device_path[1] == ':'	/* "C:\..." */
+#endif	/* WIN32 */
+	) {
+		/* absolute path */
+		return snprintf(fn, buflen, "%s", device_path);
+	} else if (device_path[0] == '.') {
+		/* "./" or "../" e.g. via CLI, relative to current working
+		 * directory of the driver process... at this moment */
+		if (getcwd(fn, buflen)) {
+			return snprintf(fn + strlen(fn), buflen - strlen(fn), "/%s", device_path);
+		} else {
+			return snprintf(fn, buflen, "%s", device_path);
+		}
+	} else {
+		/* assumed to be a filename in NUT config file path
+		 * (possibly under, with direct use of dirname without dots)
+		 * Note that we do not fiddle with file-path separator,
+		 * modern Windows (at least via MinGW/MSYS2) supports
+		 * the POSIX slash.
+		 */
+		return snprintf(fn, buflen, "%s/%s", confpath(), device_path);
+	}
 }
 
 void upsdrv_updateinfo(void)
@@ -158,11 +270,64 @@ void upsdrv_updateinfo(void)
 
 	switch (mode)
 	{
-		case MODE_DUMMY:
+		case MODE_DUMMY_LOOP:
 			/* Now get user's defined variables */
 			if (parse_data_file(upsfd) >= 0)
 				dstate_dataok();
 			break;
+
+		case MODE_DUMMY_ONCE:
+			/* less stress on the sys */
+			if (ctx == NULL && next_update == -1) {
+				struct stat	fs;
+				char fn[NUT_PATH_MAX + 1];
+
+				prepare_filepath(fn, sizeof(fn));
+
+				/* Determine if file modification timestamp has changed
+				 * since last use (so we would want to re-read it) */
+#ifndef WIN32
+				/* Either successful stat (zero return) is OK to
+				 * fill the "fs" struct. Note that currently
+				 * "upsfd" is a no-op for files, they are re-opened
+				 * and re-parsed every time so callers can modify
+				 * the data without complications.
+				 */
+				if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &fs)) && 0 != stat (fn, &fs))
+#else	/* WIN32 */
+				/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+				 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
+				 */
+				if (0 != stat (fn, &fs))
+#endif	/* WIN32 */
+				{
+					upsdebugx(2, "%s: MODE_DUMMY_ONCE: Can't stat %s currently", __func__, fn);
+					/* retry ASAP until we get a file */
+					memset(&datafile_stat, 0, sizeof(struct stat));
+					next_update = 1;
+				} else {
+					if (datafile_stat.st_mtime != fs.st_mtime) {
+						upsdebugx(2,
+							"%s: MODE_DUMMY_ONCE: input file was already read once "
+							"to the end, but changed later - re-reading: %s",
+							__func__, fn);
+						/* updated file => retry ASAP */
+						next_update = 1;
+						datafile_stat = fs;
+					}
+				}
+			}
+
+			if (ctx == NULL && next_update == -1) {
+				upsdebugx(2, "%s: MODE_DUMMY_ONCE: NO-OP: input file was already read once to the end", __func__);
+				dstate_dataok();
+			} else {
+				/* initial parsing interrupted by e.g. TIMER line */
+				if (parse_data_file(upsfd) >= 0)
+					dstate_dataok();
+			}
+			break;
+
 		case MODE_META:
 		case MODE_REPEATER:
 			if (upsclient_update_vars() > 0)
@@ -183,18 +348,47 @@ void upsdrv_updateinfo(void)
 				}
 			}
 			break;
+
 		case MODE_NONE:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
 		default:
 			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* replace with a proper shutdown function */
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -220,13 +414,31 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+	addvar(VAR_VALUE,	"mode",	"Specify mode instead of guessing it from port value (dummy = dummy-loop, dummy-once, repeater)"); /* meta */
+	addvar(VAR_FLAG,    "repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
 }
 
 void upsdrv_initups(void)
 {
+	const char *val;
+
+	val = dstate_getinfo("driver.parameter.mode");
+	if (val) {
+		if (!strcmp(val, "dummy-loop")
+		&&  !strcmp(val, "dummy-once")
+		&&  !strcmp(val, "dummy")
+		&&  !strcmp(val, "repeater")
+		/* &&  !strcmp(val, "meta") */
+		) {
+			fatalx(EXIT_FAILURE, "Unsupported mode was specified: %s", val);
+		}
+	}
+
 	/* check the running mode... */
-	if (strchr(device_path, '@'))
-	{
+	if ( (!val && strchr(device_path, '@'))
+	||   (val && !strcmp(val, "repeater"))
+	/*||   (val && !strcmp(val, "meta")) */
+	) {
 		upsdebugx(1, "Repeater mode");
 		mode = MODE_REPEATER;
 		dstate_setinfo("driver.parameter.mode", "repeater");
@@ -234,9 +446,114 @@ void upsdrv_initups(void)
 	}
 	else
 	{
-		upsdebugx(1, "Dummy (simulation) mode");
-		mode = MODE_DUMMY;
-		dstate_setinfo("driver.parameter.mode", "dummy");
+		char fn[NUT_PATH_MAX + 1];
+		mode = MODE_NONE;
+
+		if (val) {
+			if (!strcmp(val, "dummy-loop")) {
+				upsdebugx(2, "Dummy (simulation) mode looping infinitely was explicitly requested");
+				mode = MODE_DUMMY_LOOP;
+			} else
+			if (!strcmp(val, "dummy-once")) {
+				upsdebugx(2, "Dummy (simulation) mode with data read once was explicitly requested");
+				mode = MODE_DUMMY_ONCE;
+			} else
+			if (!strcmp(val, "dummy")) {
+				upsdebugx(2, "Dummy (simulation) mode default (looping infinitely) was explicitly requested");
+				mode = MODE_DUMMY_LOOP;
+			}
+		}
+
+		if (mode == MODE_NONE) {
+			if (str_ends_with(device_path, ".seq")) {
+				upsdebugx(2, "Dummy (simulation) mode with a sequence file name pattern (looping infinitely)");
+				mode = MODE_DUMMY_LOOP;
+			} else if (str_ends_with(device_path, ".dev")) {
+				upsdebugx(2, "Dummy (simulation) mode with a device data dump file name pattern (read once)");
+				mode = MODE_DUMMY_ONCE;
+			}
+		}
+
+		/* Report decisions similar to those above,
+		 * just a bit shorter and at another level */
+		switch (mode) {
+			case MODE_DUMMY_ONCE:
+				upsdebugx(1, "Dummy (simulation) mode using data read once");
+				dstate_setinfo("driver.parameter.mode", "dummy-once");
+				break;
+
+			case MODE_DUMMY_LOOP:
+				upsdebugx(1, "Dummy (simulation) mode looping infinitely");
+				dstate_setinfo("driver.parameter.mode", "dummy-loop");
+				break;
+
+			case MODE_NONE:
+			case MODE_REPEATER:
+			case MODE_META:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
+			default:
+				/* This was the only mode until MODE_DUMMY_LOOP
+				 * got split from MODE_DUMMY_ONCE in NUT v2.8.0
+				 * so we keep the previously known mode string
+				 * and it remains default when we are not sure
+				 */
+				upsdebugx(1, "Dummy (simulation) mode default (looping infinitely)");
+				mode = MODE_DUMMY_LOOP;
+				dstate_setinfo("driver.parameter.mode", "dummy");
+				break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+		}
+
+		prepare_filepath(fn, sizeof(fn));
+
+		/* Update file modification timestamp (and other data) */
+#ifndef WIN32
+		/* Either successful stat (zero return) is OK to fill the
+		 * "datafile_stat" struct. Note that currently "upsfd" is
+		 * a no-op for files, they are re-opened and re-parsed
+		 * every time so callers can modify the data without
+		 * complications.
+		 */
+		if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &datafile_stat)) && 0 != stat (fn, &datafile_stat))
+#else	/* WIN32 */
+		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+		 * NUT_WIN32_INCOMPLETE?
+		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
+		 */
+		if (0 != stat (fn, &datafile_stat))
+#endif	/* WIN32 */
+		{
+			upsdebugx(2, "%s: Can't stat %s (%s) currently", __func__, device_path, fn);
+		} else {
+			upsdebugx(2, "Located %s for device simulation data: %s", device_path, fn);
+		}
+	}
+	if (testvar("repeater_disable_strict_start"))
+	{
+		repeater_disable_strict_start = 1;
 	}
 }
 
@@ -311,7 +628,7 @@ static int setvar(const char *varname, const char *val)
 
 			/* Set max length for strings, if needed */
 			if (item->info_flags & ST_FLAG_STRING)
-				dstate_setaux(item->info_type, item->info_len);
+				dstate_setaux(item->info_type, (long)item->info_len);
 		}
 		else
 		{
@@ -351,7 +668,7 @@ static int upsclient_update_vars(void)
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4)
 		{
-			upsdebugx(1, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			upsdebugx(1, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		upsdebugx(5, "Received: %s %s %s %s",
@@ -375,7 +692,7 @@ static dummy_info_t *find_info(const char *varname)
 			return item;
 	}
 
-	upsdebugx(2, "find_info: unknown variable: %s\n", varname);
+	upsdebugx(2, "find_info: unknown variable: %s", varname);
 
 	return NULL;
 }
@@ -429,9 +746,9 @@ static void upsconf_err(const char *errmsg)
 /* for dummy mode
  * parse the definition file and process its content
  */
-static int parse_data_file(int arg_upsfd)
+static int parse_data_file(TYPE_FD arg_upsfd)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	size_t	value_args = 0, counter;
 	time_t	now;
@@ -452,11 +769,7 @@ static int parse_data_file(int arg_upsfd)
 	{
 		ctx = (PCONF_CTX_t *)xmalloc(sizeof(PCONF_CTX_t));
 
-		if (device_path[0] == '/')
-			snprintf(fn, sizeof(fn), "%s", device_path);
-		else
-			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
-
+		prepare_filepath(fn, sizeof(fn));
 		pconf_init(ctx, upsconf_err);
 
 		if (!pconf_file_begin(ctx, fn))

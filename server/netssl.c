@@ -23,9 +23,16 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
+
 #include <sys/types.h>
+#ifndef WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else	/* WIN32 */
+#include "wincompat.h"
+#endif	/* WIN32 */
 
 #include "upsd.h"
 #include "neterr.h"
@@ -33,19 +40,19 @@
 #include "nut_stdint.h"
 
 #ifdef WITH_NSS
-	#include <pk11pub.h>
-	#include <prinit.h>
-	#include <private/pprio.h>
+#	include <pk11pub.h>
+#	include <prinit.h>
+#	include <private/pprio.h>
 #if defined(NSS_VMAJOR) && (NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && defined(NSS_VMINOR) && NSS_VMINOR >= 39))
-	#include <keyhi.h>
-	#include <keythi.h>
+#	include <keyhi.h>
+#	include <keythi.h>
 #else
-	#include <key.h>
-	#include <keyt.h>
+#	include <key.h>
+#	include <keyt.h>
 #endif /* NSS before 3.39 */
-	#include <secerr.h>
-	#include <sslerr.h>
-	#include <sslproto.h>
+#	include <secerr.h>
+#	include <sslerr.h>
+#	include <sslproto.h>
 #endif /* WITH_NSS */
 
 char	*certfile = NULL;
@@ -136,7 +143,7 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	int	e;
 
 	if (ret >= INT_MAX) {
-		upslogx(LOG_ERR, "ssl_error() ret=%zd would not fit in an int", ret);
+		upslogx(LOG_ERR, "ssl_error() ret=%" PRIiSIZE " would not fit in an int", ret);
 		return -1;
 	}
 	e = SSL_get_error(ssl, (int)ret);
@@ -144,23 +151,23 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	switch (e)
 	{
 	case SSL_ERROR_WANT_READ:
-		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_WANT_READ", ret);
+		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
 		break;
 
 	case SSL_ERROR_WANT_WRITE:
-		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_WANT_WRITE", ret);
+		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
 		break;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
 			upsdebugx(1, "ssl_error() EOF from client");
 		} else {
-			upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_SYSCALL", ret);
+			upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_SYSCALL", ret);
 		}
 		break;
 
 	default:
-		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR %d", ret, e);
+		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR %d", ret, e);
 		ssl_debug();
 	}
 
@@ -189,9 +196,16 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 static void nss_error(const char* text)
 {
 	char buffer[SMALLBUF];
-	PRInt32 length = PR_GetErrorText(buffer);
-	if (length > 0 && length < SMALLBUF) {
-		upsdebugx(1, "nss_error %ld in %s : %s", (long)PR_GetError(), text, buffer);
+	PRErrorCode err_num = PR_GetError();
+	PRInt32 err_len = PR_GetErrorTextLength();
+
+	if (err_len > 0) {
+		if (err_len < SMALLBUF) {
+			PR_GetErrorText(buffer);
+			upsdebugx(1, "nss_error %ld in %s : %s", (long)err_num, text, buffer);
+		}else{
+			upsdebugx(1, "nss_error %ld in %s : Internal error buffer too small, needs %ld bytes", (long)err_num, text, (long)err_len);
+		}
 	}else{
 		upsdebugx(1, "nss_error %ld in %s", (long)PR_GetError(), text);
 	}
@@ -200,17 +214,21 @@ static void nss_error(const char* text)
 static int ssl_error(PRFileDesc *ssl, ssize_t ret)
 {
 	char buffer[256];
+	PRErrorCode err_num = PR_GetError();
+	PRInt32 err_len = PR_GetErrorTextLength();
 	PRInt32 length;
-	PRErrorCode e;
 	NUT_UNUSED_VARIABLE(ssl);
 	NUT_UNUSED_VARIABLE(ret);
 
-	e = PR_GetError();
-	length = PR_GetErrorText(buffer);
-	if (length > 0 && length < 256) {
-		upsdebugx(1, "ssl_error() ret=%d %*s", e, length, buffer);
-	} else {
-		upsdebugx(1, "ssl_error() ret=%d", e);
+	if (err_len > 0) {
+		if (err_len < SMALLBUF) {
+			length = PR_GetErrorText(buffer);
+			upsdebugx(1, "ssl_error %ld : %*s", (long)err_num, length, buffer);
+		}else{
+			upsdebugx(1, "ssl_error %ld : Internal error buffer too small, needs %ld bytes", (long)err_num, (long)err_len);
+		}
+	}else{
+		upsdebugx(1, "ssl_error %ld", (long)err_num);
 	}
 
 	return -1;
@@ -323,68 +341,78 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		upslog_with_errno(LOG_ERR, "SSL_accept do not accept handshake.");
 		ssl_error(client->ssl, ret);
 		break;
+
 	case -1:
 		upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
 		ssl_error(client->ssl, ret);
+		break;
+	default:
 		break;
 	}
 
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	socket = PR_ImportTCPSocket(client->sock_fd);
-	if (socket == NULL){
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+	if (socket == NULL) {
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / PR_ImportTCPSocket");
 		return;
 	}
 
 	client->ssl = SSL_ImportFD(NULL, socket);
-	if (client->ssl == NULL){
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+	if (client->ssl == NULL) {
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ImportFD");
 		return;
 	}
 
-	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1){
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1) {
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_SetPKCS11PinArg");
 		return;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	/* Note cast to SSLAuthCertificate to prevent warning due to
 	 * bad function prototype in NSS.
 	 */
 	status = SSL_AuthCertificateHook(client->ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_AuthCertificateHook");
 		return;
 	}
 
 	status = SSL_BadCertHook(client->ssl, (SSLBadCertHandler)BadCertHandler, client);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_BadCertHook");
 		return;
 	}
 
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_HandshakeCallback");
 		return;
 	}
 
 	status = SSL_ConfigSecureServer(client->ssl, cert, privKey, NSS_FindCertKEAType(cert));
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ConfigSecureServer");
 		return;
 	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ResetHandshake");
 		return;
 	}
@@ -494,24 +522,21 @@ void ssl_init(void)
 
 	PK11_SetPasswordFunc(nss_password_callback);
 
-	if (certfile)
-		/* Note: this call can generate memory leaks not resolvable
-		 * by any release function.
-		 * Probably NSS key module object allocation and
-		 * probably NSS key db object allocation too. */
-		status = NSS_Init(certfile);
-	else
-		status = NSS_NoDB_Init(NULL);
+	/* Note: this call can generate memory leaks not resolvable
+	 * by any release function.
+	 * Probably NSS key module object allocation and
+	 * probably NSS key db object allocation too. */
+	status = NSS_Init(certfile);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
-		nss_error("upscli_init / NSS_[NoDB]_Init");
+		nss_error("ssl_init / NSS_Init");
 		return;
 	}
 
 	status = NSS_SetDomesticPolicy();
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL policy");
-		nss_error("upscli_init / NSS_SetDomesticPolicy");
+		nss_error("ssl_init / NSS_SetDomesticPolicy");
 		return;
 	}
 
@@ -519,7 +544,7 @@ void ssl_init(void)
 	status = SSL_ConfigServerSessionIDCache(0, 0, 0, NULL);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL server cache");
-		nss_error("upscli_init / SSL_ConfigServerSessionIDCache");
+		nss_error("ssl_init / SSL_ConfigServerSessionIDCache");
 		return;
 	}
 
@@ -527,13 +552,13 @@ void ssl_init(void)
 		status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable SSLv3");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
 			return;
 		}
 		status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable TLSv1");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
 			return;
 		}
 	} else {
@@ -541,7 +566,7 @@ void ssl_init(void)
 		status = SSL_VersionRangeGetSupported(ssl_variant_stream, &range);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not get versions supported");
-			nss_error("upscli_init / SSL_VersionRangeGetSupported");
+			nss_error("ssl_init / SSL_VersionRangeGetSupported");
 			return;
 		}
 		range.min = SSL_LIBRARY_VERSION_TLS_1_1;
@@ -551,7 +576,7 @@ void ssl_init(void)
 		status = SSL_VersionRangeSetDefault(ssl_variant_stream, &range);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not set versions supported");
-			nss_error("upscli_init / SSL_VersionRangeSetDefault");
+			nss_error("ssl_init / SSL_VersionRangeSetDefault");
 			return;
 		}
 		/* Disable old/weak ciphers */
@@ -563,13 +588,13 @@ void ssl_init(void)
 		status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_FALSE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not disable SSLv3");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_DISABLE_SSL3)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_DISABLE_SSL3)");
 			return;
 		}
 		status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable TLSv1");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
 			return;
 		}
 #endif
@@ -587,7 +612,7 @@ void ssl_init(void)
 		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable certificate request");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE)");
 			return;
 		}
 	}
@@ -596,7 +621,7 @@ void ssl_init(void)
 		status = SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable certificate requirement");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE)");
 			return;
 		}
 	}
@@ -605,14 +630,14 @@ void ssl_init(void)
 	cert = PK11_FindCertFromNickname(certname, NULL);
 	if(cert==NULL)	{
 		upslogx(LOG_ERR, "Can not find server certificate");
-		nss_error("upscli_init / PK11_FindCertFromNickname");
+		nss_error("ssl_init / PK11_FindCertFromNickname");
 		return;
 	}
 
 	privKey = PK11_FindKeyByAnyCert(cert, NULL);
 	if(privKey==NULL){
 		upslogx(LOG_ERR, "Can not find private key associate to server certificate");
-		nss_error("upscli_init / PK11_FindKeyByAnyCert");
+		nss_error("ssl_init / PK11_FindKeyByAnyCert");
 		return;
 	}
 
@@ -634,6 +659,9 @@ void ssl_init(void)
 ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+#ifdef WITH_OPENSSL
+	int	iret;
+#endif
 
 	if (!client->ssl_connected) {
 		return -1;
@@ -646,7 +674,7 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	int iret = SSL_read(client->ssl, buf, (int)buflen);
+	iret = SSL_read(client->ssl, buf, (int)buflen);
 	assert(iret <= SSIZE_MAX);
 	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
@@ -667,6 +695,9 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+#ifdef WITH_OPENSSL
+	int	iret;
+#endif
 
 	if (!client->ssl_connected) {
 		return -1;
@@ -679,7 +710,7 @@ ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	int iret = SSL_write(client->ssl, buf, (int)buflen);
+	iret = SSL_write(client->ssl, buf, (int)buflen);
 	assert(iret <= SSIZE_MAX);
 	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
@@ -689,7 +720,7 @@ ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	ret = PR_Write(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-	upsdebugx(5, "ssl_write ret=%zd", ret);
+	upsdebugx(5, "ssl_write ret=%" PRIiSIZE, ret);
 
 	return ret;
 }

@@ -1,29 +1,34 @@
 TRIPPLITE_USB(8)
 ================
 
-
 NAME
 ----
+
 tripplite_usb - Driver for older Tripp Lite USB UPSes (not PDC HID)
 
 SYNOPSIS
 --------
+
 *tripplite_usb* -h
 
 *tripplite_usb* -a 'UPS_NAME' ['OPTIONS']
 
 SUPPORTED HARDWARE
 ------------------
-This driver should work with older Tripp Lite UPSes which are detected as USB
-HID-class devices, but are not true HID Power-Device Class devices.  So far,
-the devices supported by tripplite_usb have product ID 0001, and the newer
-units (such as those with "LCD" in the model name) with product ID 2001 require
-the linkman:usbhid-ups[8] driver instead.  Please report success or failure to
-the nut-upsuser mailing list.  A key piece of information is the protocol
-number, returned in `ups.firmware.aux`.  Also, be sure to turn on debugging ('-DDD')
-for more informative log messages.  If your Tripp Lite UPS uses a serial port,
-you may wish to investigate the linkman:tripplite[8] or linkman:tripplitesu[8]
-driver.
+
+This driver should work with older Tripp Lite UPSes which are detected
+as USB HID-class devices, but are not true HID Power-Device Class devices.
+So far, the devices supported by `tripplite_usb` have product ID '0001',
+and the newer units (such as those with "LCD" in the model name) with
+product ID '2001' require the linkman:usbhid-ups[8] driver instead.
+
+Please report success or failure to the nut-upsuser mailing list.
+A key piece of information is the protocol number, returned in
+`ups.firmware.aux`.  Also, be sure to turn on debugging (`-DDD`)
+for more informative log messages.
+
+If your Tripp Lite UPS uses a serial port, you may wish to investigate
+the linkman:tripplite[8] or linkman:tripplitesu[8] drivers.
 
 This driver has been tested with the following models:
 
@@ -35,8 +40,8 @@ This driver has been tested with the following models:
  * SMART2200RMXL2U
  * SMART3000RM2U
 
-If you have used Tripp Lite's PowerAlert software to connect to your UPS, there
-is a good chance that 'tripplite_usb' will work if it uses one of the
+If you have used Tripp Lite's PowerAlert software to connect to your UPS,
+there is a good chance that `tripplite_usb` will work if it uses one of the
 following protocols:
 
  * Protocol 0004
@@ -45,16 +50,49 @@ following protocols:
  * Protocol 3003
  * Protocol 3005
 
-On the other hand, if the web page for your UPS on the Tripp-Lite website says
-"HID-compliant USB port also enables direct integration with built-in power
-management and auto-shutdown features of Windows and MAC OS X", then you should
-use the linkman:usbhid-ups[8] driver instead.
+On the other hand, if the web page for your UPS on the Tripp-Lite website
+says "HID-compliant USB port also enables direct integration with built-in
+power management and auto-shutdown features of Windows and MAC OS X", then
+you should use the linkman:usbhid-ups[8] driver instead.
 
 EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following optional settings in the linkman:ups.conf[5]
 file (or with '-x' on the command line):
+
+include::nut_usb_addvars.txt[]
+
+- `-x upsid="12345"`
+
+Select a specific UPS by its unique UPS ID. The argument is a regular expression
+that must match the UPS ID string. This allows for precise identification of UPS
+devices when multiple devices of the same make and model are connected.
+See below regarding how to read and write the ups id (unit id) using linkman:upsrw[8].
+
+
+[NOTE]
+.Notes for `tripplite_usb` driver handling of common USB matching settings:
+======
+* *product* is a regular expression to match the product string for the UPS.
+This would be useful if you have two different Tripp Lite UPS models connected
+to the same monitoring system, and you want to be sure that you shut them down
+in the correct order.
++
+This regex is matched against the full USB product string as seen in
+lsusb(8). The `ups.model` in the linkman:upsc[1] output only lists the name
+after `TRIPP LITE`, so to match a SMART2200RMXL2U, you could use the regex
+`.*SMART2200.*`.
+
+* The *productid* is a regular expression which matches the UPS PID as four
+hexadecimal digits.  So far, the only known devices that work with this driver
+have PID `0001`.
+
+* The *serial* option may be or not be helpful: it does not appear that these
+particular Tripp Lite UPSes supported by this driver use the `iSerial`
+descriptor field to return a serial number.  However, in case your unit does,
+you may specify it here.
+======
 
 *offdelay*::
 
@@ -70,64 +108,30 @@ range of 10% through 100%, so the resting voltage of the charged battery can be
 used for *battery_max*, and the higher float charge voltage should not cause
 problems.
 
-*bus*::
-
-This regular expression is used to match the USB bus (as seen in
-`/proc/bus/usb/devices` or lsusb(8); including leading zeroes).
-
-*device*::
-
-This regular expression is used to match the USB device (as seen in
-`/proc/bus/usb/devices` or lsusb(8); including leading zeroes).
-Note that device numbers are not guaranteed by the OS to be stable across
-re-boots or device re-plugging.
-
-*product*::
-
-A regular expression to match the product string for the UPS.  This would be
-useful if you have two different Tripp Lite UPS models connected to the
-system, and you want to be sure that you shut them down in the correct order.
-
-NOTE: This regex is matched against the full USB product string as seen in
-lsusb(8). The `ups.model` in the linkman:upsc[1] output only lists the name after
-`TRIPP LITE`, so to match a SMART2200RMXL2U, you could use the regex
-`.*SMART2200.*`.
-
-*productid*::
-
-The productid is a regular expression which matches the UPS PID as four
-hexadecimal digits.  So far, the only devices that work with this driver have
-PID `0001`.
-
-*serial*::
-
-It does not appear that these particular Tripp Lite UPSes use the `iSerial`
-descriptor field to return a serial number.  However, in case your unit does,
-you may specify it here.
-
-For more information on regular expressions, see regex(7)
-
 RUNTIME VARIABLES
 -----------------
 
 *ups.delay.shutdown*::
 
-This variable is the same as the 'offdelay' setting, but it can be changed at
-runtime by linkman:upsrw[8].
+This variable is the same as the 'offdelay' setting, but it can be
+changed at runtime by linkman:upsrw[8].
 
 *ups.id*::
 
-Some SMARTPRO models feature an ID that can be set and retrieved. If your UPS
-supports this feature, this variable will be listed in the output of linkman:upsrw[8].
+Some SMARTPRO models feature an Unit ID (ups.id) that can be set and retrieved.
+If your UPS supports this feature, this variable will be listed in
+the output of linkman:upsrw[8].
 
 *outlet.1.switch*::
 
-Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
-turned on and off by writing '1' or '0', respectively, to `outlet.1.switch`
-with linkman:upsrw[8].
-If your unit has multiple switchable outlets, substitute the outlet number for
-'1' in the variable name. Be sure to test this first - there is no other way to
-be certain that the number used by the driver matches the label on the unit.
+Some Tripp Lite units have a switchable outlet (usually outlet #1)
+which can be turned on and off by writing '1' or '0', respectively,
+to `outlet.1.switch` with linkman:upsrw[8].
++
+If your unit has multiple switchable outlets, substitute the outlet
+number for '1' in the variable name. Be sure to test this first --
+there is no other way to be certain that the number used by the driver
+matches the label on the unit.
 
 KNOWN ISSUES AND BUGS
 ---------------------
@@ -147,16 +151,18 @@ same time, since they have different USB Product ID strings. If you have two
 SMART1500RM2U units, you would have to find which USB bus and device number
 each unit is on (via lsusb(8)).
 
-Some of the SMART*2U models have an ID number, but because this ID is not
-exposed as a USB string descriptor, there is no easy way to use this ID to
-distinguish between multiple UPS units on a single machine. The UPS would need
-to be claimed by the driver in order to read this ID.
+Some of the SMART*2U models have a configurable Unit ID number, and you can now use the `upsid`
+config argument to uniquely specify which UPS a given driver instance should control.
+This allows for precise identification of UPS devices when multiple devices are connected.
+To retrieve or set the upsid use the linkman:upsrw[8] utility.
 
-AUTHOR
-------
-Written by Charles Lepple, based on the linkman:tripplite[8] driver by Rickard E. (Rik)
-Faith and Nicholas Kain. Please do not email the authors directly - use the
-nut-upsdev mailing list.
+AUTHORS
+-------
+
+Written by Charles Lepple, based on the linkman:tripplite[8] driver
+by Rickard E. (Rik) Faith and Nicholas Kain.
+
+Please do not email the authors directly -- use the nut-upsdev mailing list.
 
 A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley
 Feldman (http://www.bradleyloritheo.com)
@@ -166,19 +172,20 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Other drivers for Tripp-Lite hardware:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 linkman:tripplite[8], linkman:tripplitesu[8], linkman:usbhid-ups[8]
 
 Other tools:
 ~~~~~~~~~~~~
+
 regex(7), lsusb(8)
 
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
 
-INTERNET RESOURCES
-------------------
-
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

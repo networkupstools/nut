@@ -10,38 +10,65 @@
 .libs/
 .inst/
 /tmp/
+/obj/
 /_install_pkgprotodir/
 Makefile
 Makefile.in
+
 ## Parent directory only
 /aclocal.m4
+/ar-lib
 /autom4te.cache/
 /ChangeLog
+/ChangeLog.adoc
 /config.guess
 /config.log
+/config.log.inplace-outer
 /config.status
 /config.sub
 /config.h
 /config.cache
 /configure
-/conf_nut_report_feature
+/config.nut_report_feature.log*
 /conf??????/
+/conf??*.file
 /dir.??????/
 /dir?.???????/
 /configure-test*/
+/confdefs.h
+/conftest.*
 /cscope.*
 /depcomp
 /INSTALL
+/INSTALL.nut
+/NEWS
+/README
+/TODO
+/UPGRADING
+/VERSION_DEFAULT
+/VERSION_FORCED
+/VERSION_FORCED_SEMVER
 /install-sh
 /libtool
 /ltmain.sh
 /missing
 /test-driver
-*-spellchecked
+*-contentchecked*
+*-spellchecked*
+*-prepped
+*.usage-report
+*.adoc-parsed
+*.adoc-parsed.*
+*.adoc*.tmp
+*.adoc*.tmp.*
+*.txt*.tmp
+*.txt*.tmp.*
 /cppcheck*.xml
+/.ci*.txt*
 /.ci*.log
 /.ci*.log.*
 .dirstamp
+*.exe
 
 # Python precompiled files
 __pycache__/
@@ -54,6 +81,8 @@ __pycache__/
 /NUT*.local.gz
 /NUT*.p5i
 /NUT*.depot
+/*.msi
+/*.MSI
 
 # Official dist
 /nut-*.tar.gz.md5
@@ -63,3 +92,11 @@ __pycache__/
 # Debuggers and IDEs
 .gdb_history
 /nbproject
+/.idea
+/.vscode
+/*.iml
+
+# Coredumps
+*.stackdump
+*.core
+core

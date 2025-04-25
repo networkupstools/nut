@@ -1,7 +1,7 @@
 Configuration notes
 ===================
 
-This chapter describe most of the configuration and use aspects of NUT,
+This chapter describes most of the configuration and use aspects of NUT,
 including establishing communication with the device and configuring safe
 shutdowns when the UPS battery runs out of power.
 
@@ -9,12 +9,19 @@ There are many programs and <<Features,features>> in this
 package.  You should check out the <<Overview,NUT Overview>>
 and other accompanying documentation to see how it all works.
 
-NOTE: NUT does not currently provide proper graphical configuration tools.
+[NOTE]
+======
+NUT does not currently provide proper graphical configuration tools.
 However, there is now support for linkdoc:developer-guide[Augeas,augeas_user],
 which will enable the easier creation of configuration tools.
+
+The linkman:nutconf[8] tool should also help with programmatic manipulation
+of various NUT configuration files.
+
 Moreover, linkman:nut-scanner[8] is available to discover supported devices
 (USB, SNMP, Eaton XML/HTTP and IPMI) and NUT servers (using Avahi or the
 classic connection method).
+======
 
 Details about the configuration files
 -------------------------------------
@@ -25,7 +32,7 @@ Generalities
 All configuration files within this package are parsed with a common
 state machine, which means they all can use a number of extras described here.
 
-First, most of the programs use an uppercase word to declare a
+First, most of the programs use an upper-case word to declare a
 configuration directive.  This may be something like MONITOR, NOTIFYCMD,
 or ACCESS.  The case does matter here.  "monitor" won't be recognized.
 
@@ -112,32 +119,35 @@ configure <<UPS_shutdown,automatic shutdowns for low battery events>>.
 
 image:images/simple.png[]
 
-On operating systems with service management frameworks (such as Linux systemd
-and Solaris/illumos SMF), the driver, data server and monitoring client daemons'
-life-cycle is managed respectively by `nut-driver` (multi-instance), `nut-server`
-and `nut-monitor` services. These are in turn wrapped by an "umbrella" service
-(or systemd "target") conveniently called `nut` which allows to start or stop
-those of the bundled services, which are enabled on a particular deployment.
+On operating systems with service management frameworks (such as Linux
+systemd and Solaris/illumos SMF), the life-cycle of driver, data server
+and monitoring client daemons is managed respectively by `nut-driver`
+(multi-instance service), `nut-server` and `nut-monitor` services.
+These are in turn wrapped by an "umbrella" service (or systemd "target")
+conveniently called `nut` which allows to easily start or stop all those
+of the bundled services, which are enabled on a particular deployment.
 
 [[Driver_configuration]]
 Driver configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-Create one section per UPS in ups.conf
+Create one section per UPS in linkman:ups.conf[5] file.
 
-NOTE: The default path for a source installation is `/usr/local/ups/etc`, while
-packaged installation will vary. For example, `/etc/nut` is used on Debian and
-derivatives, while `/etc/ups` or `/etc/upsd` is used on RedHat and derivatives.
+NOTE: The default path for a source installation is `/usr/local/ups/etc`,
+while packaged installation will vary.
+For example, `/etc/nut` is used on Debian and derivatives,
+while `/etc/ups` or `/etc/upsd` is used on RedHat and derivatives.
 
-To find out which driver to use, check the <<HCL,Hardware Compatibility List>>,
-or `data/driver.list`.
+To find out which driver to use, check the
+<<HCL,Hardware Compatibility List>>,
+or `data/driver.list(.in)` source file.
 
 Once you have picked a driver, create a section for your UPS in
-`ups.conf`.  You must supply values for "driver" and "port".
+'ups.conf'.  You must supply values at least for "driver" and "port".
 
 Some drivers may require other flags or settings.  The "desc" value
 is optional, but is recommended to provide a better description of
-what your UPS is supporting.
+what useful load your UPS is feeding.
 
 A typical device without any extra settings looks like this:
 
@@ -146,31 +156,46 @@ A typical device without any extra settings looks like this:
 		port = /dev/ttyS1
 		desc = "Workstation"
 
-NOTE: USB drivers (usbhid-ups, bcmxcp_usb, tripplite_usb, blazer_usb and
-richcomm_usb) are special cases and ignore the 'port' value.
+[NOTE]
+======
+USB drivers (such as `usbhid-ups` for non-SHUT mode, `nutdrv_qx` for
+non-serial mode, `bcmxcp_usb`, `tripplite_usb`, `blazer_usb`, `riello_usb`
+and `richcomm_usb`) are special cases and ignore the 'port' value.
+
 You must still set this value, but it does not matter what you set
-it to; a common and good practice is to set 'port' to *auto*, but you can
-put whatever you like. If you only own one USB UPS, the driver will
-find it automatically. If you own more than one, refer to the driver's
-manual page for more information on matching a specific device.
+it to; a common and good practice is to set 'port' to *auto*, but you
+can put whatever you like.
+
+If you only own one USB UPS, the driver will find it automatically
+if it matches the identifiers are built into that driver.
+
+If you own more than one, refer to the driver's manual page for more
+information on matching a specific device, or trying specific subdriver
+or protocol options with a currently unknown device.
+======
+
+NOTE: On Windows systems, the second serial port (`COM2`), equivalent to
+`/dev/ttyS1` on Linux, would be `\\\\.\\COM2`.
 
 References: linkman:ups.conf[5],
 linkman:nutupsdrv[8],
 linkman:bcmxcp_usb[8],
-linkman:blazer[8],
+linkman:blazer_usb[8],
+linkman:nutdrv_qx[8],
 linkman:richcomm_usb[8],
+linkman:riello_usb[8],
 linkman:tripplite_usb[8],
 linkman:usbhid-ups[8]
 
 
 [[Starting_drivers]]
-Starting the driver(s)
-~~~~~~~~~~~~~~~~~~~~~~
+Starting the driver(s) in legacy operating systems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Generally, you can just start the driver(s) for your hardware (all sections
 defined in 'ups.conf') using the following command:
 
-	upsdrvctl start
+	:; upsdrvctl start
 
 Make sure the driver doesn't report any errors.  It should show a
 few details about the hardware and then enter the background.  You
@@ -185,16 +210,22 @@ reference, a successful start of the `usbhid-ups` driver looks like this:
 
 If the driver doesn't start cleanly, make sure you have picked the
 right one for your hardware.  You might need to try other drivers
-by changing the "driver=" value in ups.conf.
+by changing the "driver=" value in 'ups.conf'.
 
 Be sure to check the driver's man page to see if it needs any extra
-settings in `ups.conf` to detect your hardware.
+settings in 'ups.conf' to detect your hardware.
 
 If it says `can't bind /var/state/ups/...` or similar, then your
 state path probably isn't writable by the driver.  Check the
-<<StatePath,permissions and mode on that directory>>.
+<<StatePath,permissions and mode on that directory>> vs. the
+user account your driver starts as.
 
-After making changes, try the <<Ownership, Ownership and permissions>> step again.
+After making changes, try the <<Ownership, Ownership and permissions>>
+step again.
+
+[[Starting_drivers_NDE]]
+Driver(s) as a service
+~~~~~~~~~~~~~~~~~~~~~~
 
 On operating systems with init-scripts managing life-cycle of the operating
 environment, the `upsdrvctl` program is also commonly used in those scripts.
@@ -209,7 +240,7 @@ This can be a big issue on systems which monitor multiple devices, such as
 big servers with multiple power sources, or administrative workstations
 which monitor a datacenter full of UPSes.
 
-For this reason, NUT starting with version 2.7.5 supports startup of its
+For this reason, NUT starting with version 2.8.0 supports startup of its
 drivers as independent instances of a `nut-driver` service under the Linux
 systemd and Solaris/illumos SMF service-management frameworks (corresponding
 files and scripts may be not pre-installed in packaging for other systems).
@@ -223,13 +254,24 @@ disable startup of drivers).
 
 In both cases, a service named `nut-driver-enumerator` is registered, and
 when it is (re-)started it scans the currently defined device sections in
-`ups.conf` and the currently defined instances of `nut-driver` service,
+'ups.conf' and the currently defined instances of `nut-driver` service,
 and brings them in sync (adding or removing service instances), and if
 there were changes -- it restarts the corresponding drivers (via service
 instances) as well as the data server which only reads the list of sections
 at its startup. This helper service should be triggered whenever your system
 (re-)starts the `nut-server` service, so that it runs against an up-to-date
 list of NUT driver processes.
+
+Two service bundles are provided for this feature: a set of
+`nut-driver-enumerator-daemon*` units starts the script as a daemon
+to regularly inspect and apply the NUT configuration to OS service unit
+wrappings (mainly intended for monitoring systems with a dynamic set of
+monitored power devices, or for systems where filesystem events monitoring
+is not a clockwork-reliable mechanism to 100% rely on); while the other
+`nut-driver-enumerator.*` units run the script once per triggering of
+the service (usually during boot-up; configuration file changes can be
+detected and propagated by systemd most of the time, but not by SMF out
+of the box).
 
 A service-oriented solution also allows to consider that different drivers
 have different dependencies -- such as that networked drivers should begin
@@ -257,38 +299,53 @@ of such section names, and the `upsdrvsvcctl` script supports this to map
 the user-friendly NUT configuration section names to actual service names
 that it would manage.
 
-References: man pages: linkman:nutupsdrv[8], linkman:upsdrvctl[8]
+References: man pages: linkman:nutupsdrv[8], linkman:upsdrvctl[8],
+linkman:upsdrvsvcctl[8]
 
 
 Data server configuration (upsd)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Configure upsd, which serves data from the drivers to the clients.
+Configure `upsd`, which serves data from the drivers to the clients.
 
-First, edit upsd.conf to allow access to your client systems. By
-default, upsd will only listen to localhost port 3493/tcp. If you want
+First, edit 'upsd.conf' to allow access to your client systems. By
+default, `upsd` will only listen to `localhost` port 3493/tcp. If you want
 to connect to it from other machines, you must specify each interface you
-want upsd to listen on for connections, optionally with a port number.
+want `upsd` to listen on for connections, optionally with a port number.
 
 	LISTEN 127.0.0.1 3493
 	LISTEN ::1 3493
 
+As a special case, `LISTEN * <port>` (with an asterisk) will try to
+listen on "ANY" IP address for both and IPv6 (`::0`) and IPv4 (`0.0.0.0`),
+subject to `upsd` command-line arguments, or system configuration or support.
+Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
+and does not allow to disable this mode, then there may be one listening
+socket to handle both address families.
+
 NOTE: Refer to the NUT user manual <<NUT_Security,security chapter>> for
 information on how to access and secure upsd clients connections.
 
-Next, create upsd.users.  For now, this can be an empty file.
+Next, create 'upsd.users'.  For now, this can be an empty file.
 You can come back and add more to it later when it's time to
-configure upsmon or run one of the management tools.
+configure `upsmon` or run one of the management tools.
 
 Do not make either file world-readable, since they both hold
 access control data and passwords.  They just need to be readable by
 the user you created in the preparation process.
 
-The suggested configuration is to chown it to root, chgrp it to the
+The suggested configuration is to `chown` it to `root`, `chgrp` it to the
 group you created, then make it readable by the group.
 
-	chown root:nut upsd.conf upsd.users
-	chmod 0640 upsd.conf upsd.users
+NOTE: If you installed NUT from source and used `make install-as-root`,
+or if your distribution packaging did, the sample configuration files
+would have the suggested ownership and permissions assigned, so if you
+use e.g. `cp -pf upsd.users.sample upsd.users` (as `root`) to start out
+with some annotated comments and adapt that to your deployment, the
+copied files should also get the expected safe permissions.
+
+	:; chown root:nut upsd.conf upsd.users
+	:; chmod 0640 upsd.conf upsd.users
 
 References: man pages: linkman:upsd.conf[5],
 linkman:upsd.users[5],
@@ -300,7 +357,7 @@ Starting the data server
 
 Start the network data server:
 
-	upsd
+	:; upsd
 
 Make sure it is able to connect to the driver(s) on your system.
 A successful run looks like this:
@@ -311,14 +368,31 @@ A successful run looks like this:
 	listening on ::1 port 3493
 	Connected to UPS [eaton]: usbhid-ups-eaton
 
-upsd prints dots while it waits for the driver to respond.  Your
+`upsd` prints dots while it waits for the driver to respond.  Your
 system may print more or less depending on how many drivers you
 have and how fast they are.
 
-NOTE: if upsd says that it can't connect to a UPS or that the data
-is stale, then your ups.conf is not configured correctly, or you
+NOTE: If `upsd` says that it can't connect to a UPS or that the data
+is stale, then your 'ups.conf' is not configured correctly, or you
 have a driver that isn't working properly.  You must fix this before
 going on to the next step.
+
+NOTE: Normally `upsd` requires that at least one driver section is
+defined in the 'ups.conf' file, and refuses to start otherwise.
+If you intentionally do not have any driver sections defined (yet)
+but still want the data server to run, respond and report zero devices
+(e.g. on an automatically managed monitoring deployment), you can enable
+the `ALLOW_NO_DEVICE true` option in the 'upsd.conf' file.
+
+NOTE: Normally `upsd` requires that at all `LISTEN` directives defined
+in the 'upsd.conf' file are honoured (except for mishaps possible with
+many names of `localhost`), and refuses to start otherwise. If you want
+to allow start-up in cases where at least one but possibly not all of
+the `LISTEN` directives were honoured, you can enable the
+`ALLOW_NOT_ALL_LISTENERS true` option in the 'upsd.conf' file.
+Note you would have to restart `upsd` to pick up the `LISTEN`ed IP address
+if it appears later, so probably configuring `LISTEN *` is a better choice
+in such cases.
 
 On operating systems with service management frameworks, the data server
 life-cycle is managed by `nut-server` service.
@@ -332,15 +406,16 @@ Status data
 ^^^^^^^^^^^
 
 Make sure that the UPS is providing good status data.
+You can use the `upsc` command-line client for this:
 
-	upsc myupsname@localhost ups.status
+	:; upsc myupsname@localhost ups.status
 
 You should see just one line in response:
 
 	OL
 
-OL means your system is running on line power.  If it says something
-else (like OB -- on battery, or LB -- low battery), your driver was
+`OL` means your system is running on line power.  If it says something
+else (like `OB` -- on battery, or `LB` -- low battery), your driver was
 probably misconfigured during the <<Driver_configuration, Driver configuration>>
 step.  If you reconfigure the driver, use `upsdrvctl stop` to stop it, then
 start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.
@@ -353,11 +428,11 @@ All data
 
 Look at all of the status data which is being monitored.
 
-	upsc myupsname@localhost
+	:; upsc myupsname@localhost
 
 What happens now depends on the kind of device and driver you have.
-In the list, you should see ups.status with the same value you got
-above.  A sample run on a UPS (Eaton Ellipse MAX 1100) looks like this:
+In the list, you should see `ups.status` with the same value you got
+above.  A sample run on an UPS (Eaton Ellipse MAX 1100) looks like this:
 
 	battery.charge: 100
 	battery.charge.low: 20
@@ -415,9 +490,13 @@ NOTE: This step is not necessary if you installed from packages.
 
 Edit your startup scripts, and make sure `upsdrvctl` and `upsd` are run
 every time your system starts. In newer versions of NUT, you may have a
-`nut.conf` file which sets the `MODE` variable for bundled init-scripts,
+'nut.conf' file which sets the `MODE` variable for bundled init-scripts,
 to facilitate enabling of certain features in the specific end-user
 deployments.
+
+If you installed from source, check the `scripts` directory for reference
+init-scripts, as well as systemd or SMF service methods and manifests.
+
 
 [[UPS_shutdown]]
 Configuring automatic shutdowns for low battery events
@@ -435,53 +514,78 @@ Shutdown design
 
 When your UPS batteries get low, the operating system needs to be brought
 down cleanly.  Also, the UPS load should be turned off so that all devices
-that are attached to it are forcibly rebooted.
+that are attached to it are forcibly rebooted, and subsequently start in
+the predictable order and state suitable for your data center.
 
-Here are the steps that occur when a critical power event happens:
+Here are the steps that occur when a critical power event happens,
+for the simpler case of one UPS device feeding one or several systems:
 
 1. The UPS goes on battery
 
-2. The UPS reaches low battery (a "critical" UPS), that is to say
-   upsc displays:
+2. The UPS reaches low battery (a "critical" UPS), that is to say,
+   `upsc` displays:
 +
    ups.status: OB LB
 +
-The exact behavior depends on the specific device, and is related to:
+The exact behavior depends on the specific device, and is related to
+such settings and readings as:
 
-   - battery.charge and battery.charge.low
-   - battery.runtime and battery.runtime.low
+   - `battery.charge` and `battery.charge.low`
+   - `battery.runtime` and `battery.runtime.low`
 
-3. The upsmon primary notices and sets "FSD" -- the "forced shutdown"
-   flag to tell all secondary systems that it will soon power down
-   the load.
+3. The `upsmon` primary notices the "critical UPS" situation and sets
+   "FSD" -- the "forced shutdown" flag to tell all secondary systems
+   that it will soon power down the load.
++
+[WARNING]
+=========
+By design, since we require power-cycling the load and don't
+want some systems to be powered off while others remain running
+if the "wall power" returns at the wrong moment as usual, the "FSD"
+flag can not be removed from the data server unless its daemon is
+restarted. If we do take the first step in critical mode, then we
+intend to go all the way -- shut down all the servers gracefully,
+and power down the UPS.
+
+Keep in mind that some UPS devices and corresponding drivers would
+latch the "FSD" again even if "wall power" is available, but the
+remaining battery charge is below a threshold configured as "safe"
+in the device (usually if you manually power on the UPS after a long
+power outage). This is by design of respective UPS vendors, since
+in such situation they can not guarantee that if a new power outage
+happens, their UPS would safely shut down your systems again.
+So it is deemed better and safer to stay dark until batteries
+become sufficiently charged.
+=========
 +
 (If you have no secondary systems, skip to step 6)
 
-4. upsmon secondary systems see "FSD" and:
+4. `upsmon` secondary systems see "FSD" and:
 
-   - generate a NOTIFY_SHUTDOWN event
-   - wait FINALDELAY seconds -- typically 5
-   - call their SHUTDOWNCMD
-   - disconnect from upsd
+   - generate a `NOTIFY_SHUTDOWN` event
+   - wait `FINALDELAY` seconds -- typically `5`
+   - call their `SHUTDOWNCMD`
+   - disconnect from `upsd`
 
-5. The upsmon primary system waits up to HOSTSYNC seconds (typically 15)
-   for the secondary systems to disconnect from upsd.  If any are still
-   connected after this time, upsmon primary stops waiting and proceeds
+5. The `upsmon` primary system waits up to `HOSTSYNC` seconds (typically `15`)
+   for the secondary systems to disconnect from `upsd`.  If any are still
+   connected after this time, `upsmon` primary stops waiting and proceeds
    with the shutdown process.
 
-6. The upsmon primary:
+6. The `upsmon` primary:
 
-   - generates a NOTIFY_SHUTDOWN event
-   - waits FINALDELAY seconds -- typically 5
-   - creates the POWERDOWNFLAG file -- usually `/etc/killpower`
-   - calls the SHUTDOWNCMD
+   - generates a `NOTIFY_SHUTDOWN` event
+   - waits `FINALDELAY` seconds -- typically `5`
+   - creates the `POWERDOWNFLAG` file in its local filesystem -- usually
+     `/etc/killpower`, or `/run/nut/killpower` in a temporary file system
+   - calls the `SHUTDOWNCMD`
 
-7. On most systems, init takes over, kills your processes, syncs and
+7. On most systems, `init` takes over, kills your processes, syncs and
    unmounts some filesystems, and remounts some read-only.
 
-8. init then runs your shutdown script.  This checks for the
-   POWERDOWNFLAG, finds it, and tells the UPS driver(s) to power off
-   the load.
+8. `init` then runs your shutdown script.  This checks for the
+   `POWERDOWNFLAG`, finds it, and tells the UPS driver(s) to power off
+   the load by sending commands to the connected UPS device(s) they manage.
 
 9. All the systems lose power.
 
@@ -489,6 +593,16 @@ The exact behavior depends on the specific device, and is related to:
 
 11. All systems reboot and go back to work.
 
+///////////////////////////////////
+https://github.com/networkupstools/nut/issues/1370
+
+TODO: Check other docs and code to spell out expected behavior with
+multiple UPS devices (when not all of them go critical or even on battery)
+and servers with multiple inputs.
+
+Does the `upsmon` primary system power-cycle a "critical" UPS if that
+is not the only one feeding it, so it is not shutting down now?
+///////////////////////////////////
 
 How you set it up
 ~~~~~~~~~~~~~~~~~
@@ -497,11 +611,13 @@ How you set it up
 NUT user creation
 ^^^^^^^^^^^^^^^^^
 
-Create a upsd user for upsmon to use while monitoring this UPS.
+Create a `upsd` user for `upsmon` to use while monitoring this UPS.
 
-Edit upsd.users and create a new section.  upsmon will connect
-to upsd and use this user name (in brackets) and password to
-authenticate.  This example is for a user called "monuser":
+Edit 'upsd.users' and create a new section.  The `upsmon` will connect
+to `upsd` and use these user name (in brackets) and password to
+authenticate (as specified in its configuration via `MONITOR` line).
+
+This example is for defining a user called "monuser":
 
 	[monuser]
 		password = mypass
@@ -513,26 +629,38 @@ References: linkman:upsd[8], linkman:upsd.users[5]
 Reloading the data server
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Reload upsd.  Depending on your configuration, you may be able to
-do this without stopping upsd:
+Reload `upsd`.  Depending on your configuration, you may be able to
+do this without stopping the `upsd` daemon process (if it had saved
+a PID file earlier):
 
-	upsd -c reload
+	:; upsd -c reload
 
 If that doesn't work (check the syslog), just restart it:
 
-	upsd -c stop
-	upsd
+	:; upsd -c stop
+	:; upsd
 
-NOTE: if you want to make reloading work later, see the entry in the
-link:FAQ.html[FAQ] about starting upsd as a different user.
+For systems with integrated service management (Linux systemd,
+illumos/Solaris SMF) their corresponding `reload` or `refresh`
+service actions should handle this as well. Note that such integration
+generally forgoes saving of PID files, so `upsd -c <cmd>` would not work.
+If your workflow requires to manage these daemons beside the OS provided
+framework, you can customize it to start `upsd -FF` and save the PID file.
+
+NUT releases after 2.8.0 define aliases for these units, so if your Linux
+distribution uses NUT-provided unit definitions, `systemctl reload upsd`
+may also work.
+
+NOTE: If you want to make reloading work later, see the entry in the
+link:FAQ.html[FAQ] about starting `upsd` as a different user.
 
 Power Off flag file
 ^^^^^^^^^^^^^^^^^^^
 
-Set the POWERDOWNFLAG location for upsmon.
+Set the `POWERDOWNFLAG` location for `upsmon`.
 
-In upsmon.conf, add a POWERDOWNFLAG directive with a filename.
-upsmon will create this file when the UPS needs to be powered off
+In 'upsmon.conf', add a `POWERDOWNFLAG` directive with a filename.
+The `upsmon` will create this file when the UPS needs to be powered off
 during a power failure when low battery is reached.
 
 We will test for the presence of this file in a later step.
@@ -545,27 +673,34 @@ linkman:upsmon.conf[5]
 Securing upsmon.conf
 ^^^^^^^^^^^^^^^^^^^^
 
-The recommended setting is to have it owned by root:nut, then make it readable
-by the group and not world.  This file contains passwords that could be used by
-an attacker to start a shutdown, so keep it secure.
+The recommended setting is to have it owned by `root:nut`, then make it
+readable by the group and not by the world.  This file contains passwords
+that could be used by an attacker to start a shutdown, so keep it secure.
 
-	chown root:nut upsmon.conf
-	chmod 0640 upsmon.conf
+NOTE: If you installed NUT from source and used `make install-as-root`,
+or if your distribution packaging did, the sample configuration files
+would have the suggested ownership and permissions assigned, so if you
+use e.g. `cp -pf upsmon.conf.sample upsmon.conf` (as `root`) to start out
+with some annotated comments and adapt that to your deployment, the
+copied files should also get the expected safe permissions.
 
-This step has been placed early in the process so you secure this file before
-adding sensitive data in the next step.
+	:; chown root:nut upsmon.conf
+	:; chmod 0640 upsmon.conf
+
+This step has been placed early in the process so you secure this file
+before adding sensitive data in the next step.
 
 
 Create a MONITOR directive for upsmon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Edit upsmon.conf and create a MONITOR line with the UPS definition
+Edit 'upsmon.conf' and create a `MONITOR` line with the UPS definition
 (<upsname>@<hostname>), username and password from the
 <<NUT_user_creation, NUT user creation>> step, and the
 "primary" or "secondary" setting.
 
-If this system is the UPS manager (i.e., it's connected to this UPS directly
-and can manage it using a suitable NUT driver), its upsmon is the primary:
+If this system is the UPS manager (i.e. it's connected to this UPS directly
+and can manage it using a suitable NUT driver), its `upsmon` is the primary:
 
 	MONITOR myupsname@mybox 1 monuser mypass primary
 
@@ -574,37 +709,39 @@ system is the primary, then this one is a secondary:
 
 	MONITOR myupsname@mybox 1 monuser mypass secondary
 
-The number "1" here is the power value.  This should always be set
-to 1 unless you have a very special (read: expensive) system with
+The number `1` here is the "power value".  This should always be set
+to 1, unless you have a very special (read: expensive) system with
 redundant power supplies. In such cases, refer to the User Manual:
 
 - <<BigServers,typical setups for big servers>>,
 - <<DataRoom,typical setups for data rooms>>.
 
-Note that the power value may also be 0 for a monitoring system which
-only observes the UPS status but is not impacted by its power events,
-and so does not shut down when the UPS does.
+Note that the "power value" may also be 0 for a monitoring (administrative)
+system which only observes the remote UPS status but is not impacted by its
+power events, and so does not shut down when the UPS does.
 
 References: linkman:upsmon[8], linkman:upsmon.conf[5]
 
 Define a SHUTDOWNCMD for upsmon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Still in upsmon.conf, add a directive that tells upsmon how to shut down your
-system.  This example seems to work on most systems:
+Still in 'upsmon.conf', add a directive that tells `upsmon` how to
+shut down your system.  This example seems to work on most systems:
 
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 
 Notice the presence of "quotes" here to keep it together.
 
-If your system has special needs, you may want to set this to a script which
-does local shutdown tasks before calling init.
+If your system has special needs (e.g. system-provided shutdown handler
+is ungracefully time constrained), you may want to set this to a script
+which does customized local shutdown tasks before calling `init` or
+`shutdown` programs to handle the system side of this operation.
 
 
 Start upsmon
 ^^^^^^^^^^^^
 
-	upsmon
+	:; upsmon
 
 If it complains about something, then check your configuration.
 
@@ -614,8 +751,8 @@ life-cycle is managed by `nut-monitor` service.
 Checking upsmon
 ^^^^^^^^^^^^^^^
 
-Look for messages in the syslog to indicate success.  It should look something
-like this:
+Look for messages in the `syslog` to indicate success.
+It should look something like this:
 
 	May 29 01:11:27 mybox upsmon[102]: Startup successful
 	May 29 01:11:28 mybox upsd[100]: Client monuser@192.168.50.1
@@ -632,10 +769,12 @@ NOTE: This step is not need if you installed from packages.
 
 Edit your startup scripts, and add a call to `upsmon`.
 
-Make sure `upsmon` starts when your system comes up.  Do it after `upsdrvctl`
-and `upsd`, or it will complain about not being able to contact the server.
+Make sure `upsmon` starts when your system comes up.
+On systems with `upsmon` primary (also running the data server),
+do it after `upsdrvctl` and `upsd`, or it will complain about not
+being able to contact the server.
 
-You may delete the POWERDOWNFLAG in the startup scripts, but it is not
+You may delete the `POWERDOWNFLAG` in the startup scripts, but it is not
 necessary. `upsmon` will clear that file for you when it starts.
 
 NOTE: Init script examples are provide in the 'scripts' directory of
@@ -649,13 +788,14 @@ NOTE: This step is not need if you installed from packages.
 
 Edit your shutdown scripts, and add `upsdrvctl shutdown`.
 
-You should configure your system to power down the UPS after the filesystems
-are remounted read-only.  Have it look for the presence of the POWERDOWNFLAG
-(from linkman:upsmon.conf[5]), using this as an example:
+You should configure your system to power down the UPS after the
+filesystems are remounted read-only.  Have it look for the presence
+of the `POWERDOWNFLAG` (from linkman:upsmon.conf[5]), using this
+as an example:
 
 ------------------------------------------------------------------------------
 
-	if (test -f /etc/killpower)
+	if (/sbin/upsmon -K)
 	then
 		echo "Killing the power, bye!"
 		/sbin/upsdrvctl shutdown
@@ -669,15 +809,25 @@ are remounted read-only.  Have it look for the presence of the POWERDOWNFLAG
 
 ------------------------------------------------------------------------------
 
+A more elaborate example can be found in NUT sources, e.g.:
+https://github.com/networkupstools/nut/blob/master/scripts/systemd/nutshutdown.in
+
 [WARNING]
 ==============================================================================
-- Be careful that upsdrvctl command will probably power off your machine.
+- Be careful that `upsdrvctl shutdown` command will probably power off
+your machine and others fed by the UPS(es) which it manages.
 Don't use it unless your system is ready to be halted by force.
 If you run RAID, read the <<_raid_warning,RAID warning>> below!
 
-- Make sure the filesystem(s) containing upsdrvctl, ups.conf and your UPS
-driver(s) are mounted (possibly in read-only mode) when the system gets to
+- Make sure the filesystem(s) containing `upsdrvctl`, `upsmon`,
+the `POWERDOWNFLAG` file, 'ups.conf' and your UPS driver(s) are
+mounted (possibly in read-only mode) when the system gets to
 this point.  Otherwise it won't be able to figure out what to do.
+
+- If for some reason you can not ensure `upsmon` program is executable
+at this point, your script can `(test -f /etc/killpower)` in a somewhat
+non-portable manner, instead of asking `upsmon -K` for the verdict
+according to its current configuration.
 ==============================================================================
 
 
@@ -691,17 +841,17 @@ on your systems before leaving them unattended.  A successful sequence
 is one where the OS halts before the battery runs out, and the system
 restarts when power returns.
 
-The first step is to see how upsdrvctl will behave without actually
-turning off the power. To do so, use the '-t' argument:
+The first step is to see how `upsdrvctl` will behave without actually
+turning off the power. To do so, use the `-t` argument:
 
-	upsdrvctl -t shutdown
+	:; upsdrvctl -t shutdown
 
 It will display the sequence without actually calling the drivers.
 
 
 You can finally test a forced shutdown sequence (FSD) using:
 
-	upsmon -c fsd
+	:; upsmon -c fsd
 
 This will execute a full shutdown sequence, as presented in
 <<Shutdown_design,Shutdown design>>, starting from the 3rd step.
@@ -732,35 +882,44 @@ is turned off and waits for the power to return.
 Once the power is back, the system reboots, pulls the snapshot back in,
 and keeps going from there.  If the user happened to be away when it
 happened, they may return and have no idea that their system actually
-shut down completely in the middle.
+shut down completely in the middle (although network connections will drop).
 
-In order for this to work, you need to shutdown NUT (UPS driver, upsd
-server and upsmon client) in the suspend script and start them again in
-the resume script.  Don't try to keep them running.  The upsd server
+In order for this to work, you need to shutdown NUT (UPS driver, `upsd`
+server and `upsmon` client) in the `suspend` script and start them again in
+the `resume` script.  Don't try to keep them running.  The `upsd` server
 will latch the FSD state (so it won't be usable after resuming) and so
-will the upsmon client.  Some drivers may work after resuming, but many
-don't and some UPSs will require re-initialization, so it's best not
-to keep this running either.
+will the `upsmon` client.  Some drivers may work after resuming, but many
+don't and some UPS devices will require re-initialization, so it's best not
+to keep them running either.
 
-After stopping driver, server and client you'll have to send the UPS
-the command to shutdown only if the POWERDOWNFLAG is present.  Note
-that most likely you'll have to allow for a grace period after sending
-'upsdrvctl shutdown' since the system will still have to take a
-snapshot of itself after that.  Not all drivers support this, so before
-going down this road, make sure that the one you're using does.
+NOTE: Starting with NUT v2.8.3, there is some growing support for system-wide
+sleep on some platforms (e.g. to catch the "going to sleep" event and make
+a note of it in the daemons, to take the least-surprise corrective actions
+after a significant change in system clock readings), but the warnings in
+previous paragraph may still apply.
+
+After stopping NUT driver, server and client you'll have to send the UPS
+the command to shutdown only if the `POWERDOWNFLAG` is present.  Note
+that most likely you'll have to allow for a grace period after calling
+`upsdrvctl shutdown` since the system will still have to take a
+snapshot of itself after that.  Not all drivers and devices support this,
+so before going down this road, make sure that the one you're using does.
+
+- see if you can query or configure settings named like `load.off.delay`,
+  `ups.delay.shutdown`, `offdelay` and/or `shutdown_delay`
 
 RAID warning
 ~~~~~~~~~~~~
 
-If you run any sort of RAID equipment, make sure your arrays are either halted
-(if possible) or switched to "read-only" mode. Otherwise you may suffer a long
-resync once the system comes back up.
+If you run any sort of RAID equipment, make sure your arrays are
+either halted (if possible) or switched to "read-only" mode.
+Otherwise you may suffer a long resync once the system comes back up.
 
-The kernel may not ever run its final shutdown procedure, so you must take care
-of all array shutdowns in userspace before upsdrvctl runs.
+The kernel may not ever run its final shutdown procedure, so you must take
+care of all array shutdowns in userspace before `upsdrvctl shutdown` runs.
 
-If you use software RAID (md) on Linux, get mdadm and try using
-'mdadm --readonly' to put your arrays in a safe state. This has to
+If you use software RAID (md) on Linux, get `mdadm` and try using
+`mdadm --readonly` to put your arrays in a safe state. This has to
 happen after your shutdown scripts have remounted the filesystems.
 
 On hardware RAID or other kernels, you have to do some detective work. It may
@@ -782,8 +941,8 @@ be configured using some general descriptions.
 
 There are two main elements:
 
-1. There's a UPS attached to a communication (serial, USB or network) port on
-this system.
+1. There's a UPS attached to a communication (serial, USB or network) port
+   on this system.
 2. This system depends on a UPS for power.
 
 You can play "mix and match" with those two to arrive at these descriptions
@@ -793,36 +952,37 @@ for individual hosts:
 - B: 2 but not 1
 - C: 1 and 2
 
-A small to medium sized data room usually has one C and a bunch of Bs.
-This means that there's a system (type C) hooked to the UPS which depends
-on it for power.  There are also some other systems in there (type B)
+A small to medium sized data room usually has one 'C' and a bunch of 'Bs'.
+This means that there's a system (type 'C') hooked to the UPS which depends
+on it for power.  There are also some other systems in there (type 'B')
 which depend on that same UPS for power, but aren't directly connected to
-it.
+it communications-wise.
 
 Larger data rooms or those with multiple UPSes may have several "clusters"
-of the "single C, many Bs" depending on how it's all wired.
+of the "single 'C', many 'Bs'" depending on how it's all wired.
 
-Finally, there's a special case.  Type A systems are connected to a UPS's
-serial port, but don't depend on it for power.  This usually happens when
-a UPS is physically close to a box and can reach the serial port, but
-the wiring is such that it doesn't actually feed it.
+Finally, there's a special case.  Type 'A' systems are connected to
+an UPS's communication port, but don't depend on it for power.
+This usually happens when an UPS is physically close to a box and can
+reach the serial port, but the power wiring is such that it doesn't
+actually feed that box.
 
 Once you identify a system's type, use this list to decide which of the
 programs need to be run for monitoring:
 
-- A: driver and upsd
-- B: upsmon (in secondary mode)
-- C: driver, upsd, and upsmon (in primary mode, as the UPS manager)
+- A: driver and `upsd`
+- B: `upsmon` (in secondary mode)
+- C: driver, `upsd`, and `upsmon` (in primary mode, as the UPS manager)
+
+image:images/advanced.png[]
 
 To further complicate things, you can have a system that is hooked to
 multiple UPSes, but only depends on one for power.  This particular
-situation makes it an "A" relative to one UPS, and a "C" relative to the
+situation makes it an `A` relative to one UPS, and a `C` relative to the
 other.  The software can handle this -- you just have to tell it what to do.
 
 NOTE: NUT can also serve as a data proxy to increase the number of clients,
-or share the communication load between several upsd instances.
-
-image:images/advanced.png[]
+or share the communication load between several `upsd` instances.
 
 If you are running large server-class systems that have more than one
 power feed, see the next section for information on how to handle it
@@ -832,8 +992,8 @@ properly.
 Typical setups for big servers with UPS redundancy
 --------------------------------------------------
 
-By using multiple MONITOR statements in upsmon.conf, you can configure an
-environment where a large machine with redundant power monitors multiple
+By using multiple `MONITOR` statements in 'upsmon.conf', you can configure
+an environment where a large machine with redundant power monitors multiple
 separate UPSes.
 
 image:images/bigbox.png[]
@@ -850,29 +1010,30 @@ Two UPSes, 'Alpha' and 'Beta', are each driving two of the power supplies
 This means that either 'Alpha' *or* 'Beta' can totally shut down and the
 server will be able to keep running.
 
-The upsmon.conf configuration that reflect this is the following:
+The 'upsmon.conf' configuration which reflects this is the following:
 
 	MONITOR ups-alpha@myhost 2 monuser mypass primary
-	MONITOR ups-beta@myhost 2 monuser mypass primary
+	MONITOR ups-beta@myhost  2 monuser mypass primary
 	MINSUPPLIES 2
 
-With that configuration, upsmon will only shut down when both UPS reaches
-a critical (on battery + low battery) condition, since 'Alpha' and 'Beta'
-provide the same power value.
+With such configuration, `upsmon` on this system will only shut down when
+both UPS devices reach a critical (on battery + low battery) condition,
+since 'Alpha' and 'Beta' each provide the same power value.
 
 As an added bonus, this means you can move a running server from one UPS
 to another (for maintenance purpose for example) without bringing it down
 since the minimum sufficient power will be provided at all times.
 
-The MINSUPPLIES line tells upsmon that we need at least 2 power supplies
+The `MINSUPPLIES` line tells `upsmon` that we need at least 2 power supplies
 to be receiving power from a good UPS (on line or on battery, just not
-on battery and low battery).
+on battery *and* low battery).
 
-NOTE: we could have used a 'Power Value' of 1 for both UPS, and MINSUPPLIES
-set to 1 too. These values are purely arbitrary, so you are free to use your
-own rules. Here, we have linked these values to the number of power supplies
-that each UPS is feeding (2) since this maps better to physical topology and
-allows to throw a third or fourth UPS into the mix without much headache.
+NOTE: We could have used a 'Power Value' of `1` for both UPS, and have
+`MINSUPPLIES` set to `1` too. These values are purely arbitrary, so
+you are free to use your own rules. Here, we have linked these values
+to the number of power supplies that each UPS is feeding (2) since this
+maps better to physical topology and allows to throw a third or fourth
+UPS into the mix without much configuration headache.
 
 
 Multiple UPS shutdowns ordering
@@ -880,11 +1041,11 @@ Multiple UPS shutdowns ordering
 
 If you have multiple UPSes connected to your system, chances are that you
 need to shut them down in a specific order.  The goal is to shut down
-everything but the one keeping upsmon alive at first, then you do that one
-last.
+everything but the one keeping `upsmon` alive at first, then you do that
+one last.
 
 To set the order in which your UPSes receive the shutdown commands, define
-the 'sdorder' value in your ups.conf.
+the `sdorder` value in your 'ups.conf' device sections.
 
 	[bigone]
 		driver = usbhid-ups
@@ -902,11 +1063,11 @@ the 'sdorder' value in your ups.conf.
 		sdorder = 0
 
 The order runs from 0 to the highest number available.  So, for this
-configuration, the order of shutdowns would be 'misc', 'littleguy', and then
-'bigone'.
+configuration, the order of shutdowns would be 'misc', 'littleguy',
+and then 'bigone'.
 
-NOTE: If you have a UPS that shouldn't be shutdown when running 'upsdrvctl
-shutdown', set the *sdorder* to *-1*.
+NOTE: If you have a UPS that shouldn't be powered off when running
+`upsdrvctl shutdown`, set its `sdorder` to `-1`.
 
 
 Other redundancy configurations
