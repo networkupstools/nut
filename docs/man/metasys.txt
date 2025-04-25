@@ -6,10 +6,14 @@ NAME
 
 metasys - Driver for Meta System UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*metasys* -h
+
+*metasys* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 metasys driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -19,7 +23,7 @@ SUPPORTED HARDWARE
 The *metasys* driver was written with the "Meta System UPS Protocol Rev.1.12"
 kindly supplied from Meta System.
 
-The driver should support all the common features of the ups models:
+The driver should support all the common features of the UPS models:
 
  - HF Line (/2) 1-8 boards
  - HF Millennium (810, 820)
@@ -66,4 +70,5 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* Meta System UPS protocol: https://networkupstools.org/ups-protocols.html#_legrand

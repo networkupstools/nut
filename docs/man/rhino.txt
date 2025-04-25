@@ -6,10 +6,14 @@ NAME
 
 rhino - Driver for Brazilian Microsol RHINO UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*rhino* -h
+
+*rhino* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 rhino driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -31,20 +35,26 @@ EXTRA ARGUMENTS
 This driver support the following extra optional settings in
 linkman:ups.conf[5]:
 
-*battext = n* - (default = 0, no extra battery, where n = Ampere*hour )
+*battext=*'n'::
+Default = 0, no extra battery, where `n` = Ampere*hour.
 
 COMMANDS
 --------
 
- * load.on  - Turn on the load immediately
+*load.on*::
+Turn on the load immediately.
 
- * load.off - Turn off the load immediately
+*load.off*::
+Turn off the load immediately.
 
- * bypass.start - Put the UPS in bypass mode
+*bypass.start*::
+Put the UPS in bypass mode.
 
- * bypass.stop  - Put the UPS out of bypass mode
+*bypass.stop*::
+Put the UPS out of bypass mode.
 
- * shutdown.stayoff - Shut down in 3 minutes and do not return
+*shutdown.stayoff*::
+Shut down in 3 minutes and do not return.
 
 AUTHOR
 ------
@@ -62,4 +72,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

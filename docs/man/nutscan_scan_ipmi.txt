@@ -9,25 +9,38 @@ nutscan_scan_ipmi - Scan local IPMI devices.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- nutscan_device_t * nutscan_scan_ipmi(
-       const char * startIP,
-       const char * stopIP,
-       nutscan_ipmi_t * sec);
+	nutscan_device_t * nutscan_scan_ipmi(
+		const char * startIP,
+		const char * stopIP,
+		nutscan_ipmi_t * sec);
+
+	nutscan_device_t * nutscan_scan_ip_range_ipmi(
+		nutscan_ip_range_list_t * irl,
+		nutscan_ipmi_t * sec);
+------
 
 DESCRIPTION
 -----------
 
-The *nutscan_scan_ipmi()* function tries to detect IPMI manageable devices.
+The *nutscan_scan_ipmi()* and *nutscan_scan_ip_range_ipmi()* functions
+try to detect IPMI manageable devices.
 
-If 'start_ip' is NULL, the function searches for a local PSU.
+If 'start_ip' for the former or 'irl' for the latter are NULL, the
+respective function searches for a local PSU.
 
 Otherwise, it searches for remote hosts that would serve IPMI protocols,
 and would try to authenticate using the data in 'sec' structure.
-It issues a NUT request on every IP ranging from 'startIP' to 'stopIP',
-where 'stopIP' is optional. Those IP arguments may be either IPv4 or IPv6
-addresses or host names.
+
+The former issues an IPMI request on every IP ranging from 'startIP' to
+'stopIP', where 'startIP' is mandatory and 'stopIP' is optional (one
+'startIP' address is scanned if 'stopIP' is NULL); while the latter can
+walk several IP address ranges represented by a `nutscan_ip_range_list_t`
+structure.
+
+Those IP arguments may be either IPv4 or IPv6 addresses or host names.
 
 You MUST call linkman:nutscan_init[3] before using this function.
 
@@ -50,8 +63,14 @@ SEE ALSO
 linkman:nutscan_init[3],
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
-linkman:nutscan_scan_snmp[3], linkman:nutscan_display_ups_conf[3],
+linkman:nutscan_scan_snmp[3],
+linkman:nutscan_display_sanity_check[3],
+linkman:nutscan_display_sanity_check_serial[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
+linkman:nutscan_display_ups_conf[3],
 linkman:nutscan_display_parsable[3], linkman:nutscan_new_device[3],
 linkman:nutscan_free_device[3], linkman:nutscan_add_option_to_device[3],
-linkman:nutscan_add_device_to_device[3], linkman:nutscan_scan_eaton_serial[3],
+linkman:nutscan_init_ip_ranges[3],
+linkman:nutscan_free_ip_ranges[3],
+linkman:nutscan_add_ip_range[3],
 linkman:nutscan_cidr_to_ip[3]

@@ -38,6 +38,7 @@ usb:v047CpFFFF*
 
 # ST Microelectronics
 usb:v0483pA113*
+usb:v0483pA430*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=ST Microelectronics
 
@@ -70,6 +71,7 @@ usb:v050Dp1100*
 usb:v051Dp0000*
 usb:v051Dp0002*
 usb:v051Dp0003*
+usb:v051Dp0004*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=APC
 
@@ -81,6 +83,7 @@ usb:v0592p0004*
 # Delta UPS
 usb:v05DDp041B*
 usb:v05DDpA011*
+usb:v05DDpA0A0*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=Delta UPS
 
@@ -138,6 +141,11 @@ usb:v09AEp4008*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=TrippLite
 
+# KSTAR under Berkeley Varitronics Systems ID
+usb:v09D6p0001*
+ UPOWER_BATTERY_TYPE=ups
+ UPOWER_VENDOR=KSTAR under Berkeley Varitronics Systems ID
+
 # PowerCOM
 usb:v0D9Fp0001*
 usb:v0D9Fp0004*
@@ -150,7 +158,9 @@ usb:v0D9Fp00A6*
  UPOWER_VENDOR=PowerCOM
 
 # Liebert
+usb:v10AFp0000*
 usb:v10AFp0001*
+usb:v10AFp0002*
 usb:v10AFp0004*
 usb:v10AFp0008*
  UPOWER_BATTERY_TYPE=ups
@@ -188,6 +198,7 @@ usb:v2E51pFFFF*
  UPOWER_VENDOR=Ever
 
 # Salicru
+usb:v2E66p0101*
 usb:v2E66p0201*
 usb:v2E66p0202*
 usb:v2E66p0203*
@@ -195,6 +206,11 @@ usb:v2E66p0300*
 usb:v2E66p0302*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=Salicru
+
+# EcoFlow
+usb:v3746pFFFF*
+ UPOWER_BATTERY_TYPE=ups
+ UPOWER_VENDOR=EcoFlow
 
 # Powervar
 usb:v4234p0002*

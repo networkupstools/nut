@@ -9,8 +9,8 @@
  *  https://github.com/networkupstools/nut/issues/1023
  *
  * Copyright (C)
- *      2021    Nick Briggs <nicholas.h.briggs@gmail.com>
- *      2022    Jim Klimov <jimklimov+nut@gmail.com>
+ *      2021         Nick Briggs <nicholas.h.briggs@gmail.com>
+ *      2022-2024    Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,7 @@
 
 #include "config.h"
 
-#include <stdint.h>
-#include <inttypes.h>
+#include "nut_stdint.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,12 +61,12 @@ static void PrintBufAndData(uint8_t *buf, size_t bufSize, HIDData_t *pData) {
 	}
 	printf("%02x\"", buf[bufSize - 1]);
 	printf(" offset %u size %u logmin %ld (0x%lx) logmax %ld (0x%lx)",
-		pData->Offset, pData->Size, pData->LogMin, pData->LogMin, pData->LogMax, pData->LogMax);
+		pData->Offset, pData->Size,
+		pData->LogMin, (unsigned long)pData->LogMin,
+		pData->LogMax, (unsigned long)pData->LogMax);
 }
 
 static int RunBuiltInTests(char *argv[]) {
-	NUT_UNUSED_VARIABLE(argv);
-
 	int exitStatus = 0;
 	size_t i;
 	char *next;
@@ -105,7 +104,15 @@ static int RunBuiltInTests(char *argv[]) {
 		{.buf = "16 0c 00 00 00", .Offset = 10, .Size = 1, .LogMin = 0, .LogMax = 1, .expectedValue =  0}
 	};
 
-	for (i = 0; i < sizeof(testData)/sizeof(testData[0]); i++) {
+	/* See comments below about rdlen calculation emulation for tests */
+	usb_ctrl_char	bufC[2];
+	signed char	bufS[2];
+	unsigned char	bufU[2];
+	int rdlen;
+
+	NUT_UNUSED_VARIABLE(argv);
+
+	for (i = 0; i < SIZEOF_ARRAY(testData); i++) {
 		next = testData[i].buf;
 		for (bufSize = 0; *next != 0; bufSize++) {
 			reportBuf[bufSize] = (uint8_t) strtol(next, (char **)&next, 16);
@@ -118,7 +125,7 @@ static int RunBuiltInTests(char *argv[]) {
 
 		GetValue(reportBuf, &data, &value);
 
-		printf("Test #%" PRIiSIZE " ", i + 1);
+		printf("Test #%" PRIuSIZE " ", i + 1);
 		PrintBufAndData(reportBuf, bufSize,  &data);
 		if (value == testData[i].expectedValue) {
 			printf(" value %ld PASS\n", value);
@@ -135,10 +142,6 @@ static int RunBuiltInTests(char *argv[]) {
 	 * from the protocol buffer, and build a platform
 	 * dependent representation of a two-byte word.
 	 */
-	usb_ctrl_char	bufC[2];
-	signed char	bufS[2];
-	unsigned char	bufU[2];
-	int rdlen;
 
 	/* Example from issue https://github.com/networkupstools/nut/issues/1261
 	 * where resulting length 0x01a9 should be "425" but ended up "-87" */
@@ -152,7 +155,7 @@ static int RunBuiltInTests(char *argv[]) {
 	bufU[1] = (unsigned char)0x01;
 
 	/* Check different conversion methods and hope current build CPU,
-	 * C implementation etc. do not mess up bit-shifting vs rotation,
+	 * C implementation etc. do not mess up bit-shifting vs. rotation,
 	 * zeroing high bits, int type width extension et al. If something
 	 * is mismatched below, the production NUT code may need adaptations
 	 * for that platform to count stuff correctly!

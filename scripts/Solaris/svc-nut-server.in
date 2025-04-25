@@ -19,7 +19,7 @@ NUT_LIB_DIR="${NUT_DIR}/lib"
 
 NUT_RUN_DIR="`svcprop -p nut/NUT_RUN_DIR $SMF_FMRI`" \
 && [ -n "$NUT_RUN_DIR" ] \
-|| NUT_RUN_DIR="@PIDPATH@/nut"
+|| NUT_RUN_DIR="@ALTPIDPATH@"
 
 CONFIG="@CONFPATH@/nut.conf"
 
@@ -31,12 +31,17 @@ NUTGROUP="`svcprop -p nut/NUTGROUP $SMF_FMRI`" \
 && [ -n "$NUTGROUP" ] \
 || NUTGROUP="@RUN_AS_GROUP@"
 
+# We anticipate some tighter integration with SMF later:
+#NUT_QUIET_INIT_UPSNOTIFY=true
+#export NUT_QUIET_INIT_UPSNOTIFY
+
 if [ -f "$CONFIG" ] ; then
 	. "$CONFIG"
 fi
 
 create_run_dir () {
 	# Default rights inspired by NUT scripts/Solaris/postinstall.in
+	#mkdir -p "@PIDPATH@" # (for privileged processes - not upsd)
 	mkdir -p "$NUT_RUN_DIR" && \
 	chown "root:$NUTGROUP" "$NUT_RUN_DIR" && \
 	chmod 770 "$NUT_RUN_DIR" \

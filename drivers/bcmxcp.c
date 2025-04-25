@@ -110,15 +110,13 @@ TODO List:
 
 
 #include "main.h"
-#include <math.h>       /* For ldexp() */
-#include <float.h>      /*for FLT_MAX */
-
-#include "nut_stdint.h" /* for uint8_t, uint16_t, uint32_t, ... */
+#include "nut_float.h"	/* For ldexp(), FLT_MAX */
+#include "nut_stdint.h"	/* for uint8_t, uint16_t, uint32_t, ... */
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRIVER_NAME    "BCMXCP UPS driver"
-#define DRIVER_VERSION "0.32"
+#define DRIVER_NAME	"BCMXCP UPS driver"
+#define DRIVER_VERSION	"0.36"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -354,7 +352,7 @@ float get_float(const unsigned char *data)
 	}
 
 	/* Never happens */
-	upslogx(LOG_ERR, "s = %d, e = %d, f = %lu\n", s, e, f);
+	upslogx(LOG_ERR, "s = %d, e = %d, f = %ld", s, e, f);
 	return 0;
 }
 
@@ -389,7 +387,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 	return c;
 }
 
-void init_command_map()
+void init_command_map(void)
 {
 	int i = 0;
 
@@ -442,7 +440,7 @@ void init_command_map()
 	}
 }
 
-void init_meter_map()
+void init_meter_map(void)
 {
 	/* Clean entire map */
 	memset(&bcmxcp_meter_map, 0, sizeof(BCMXCP_METER_MAP_ENTRY_t) * BCMXCP_METER_MAP_MAX);
@@ -519,7 +517,7 @@ void init_meter_map()
 	bcmxcp_meter_map[BCMXCP_METER_MAP_LINE_EVENT_COUNTER].nut_entity = "input.quality";
 }
 
-void init_alarm_map()
+void init_alarm_map(void)
 {
 	/* Clean entire map */
 	memset(&bcmxcp_alarm_map, 0, sizeof(BCMXCP_ALARM_MAP_ENTRY_t) * BCMXCP_ALARM_MAP_MAX);
@@ -858,7 +856,7 @@ void init_ups_meter_map(const unsigned char *map, unsigned char len)
 			bcmxcp_meter_map[iIndex].meter_block_index = iOffset;
 
 			/* Debug info */
-			upsdebugx(2, "%04d\t%04d\t%2x\t%s", iIndex, iOffset, bcmxcp_meter_map[iIndex].format,
+			upsdebugx(2, "%04u\t%04u\t%2x\t%s", iIndex, iOffset, bcmxcp_meter_map[iIndex].format,
 					(bcmxcp_meter_map[iIndex].nut_entity == NULL ? "None" :bcmxcp_meter_map[iIndex].nut_entity));
 
 			iOffset += 4;
@@ -897,19 +895,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 		fValue = get_float(entry);
 		/* Format is packed BCD */
 		snprintf(sFormat, 31, "%%%d.%df", ((format & 0xf0) >> 4), (format & 0x0f));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		snprintf(value, 127, sFormat, fValue);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		snprintf_dynamic(value, 127, sFormat, "%f", fValue);
 	}
 	else if (format == 0xe2) {
 		/* Seconds */
@@ -1160,6 +1146,8 @@ void init_ext_vars(void)
 						dstate_setaux("battery.packs", 1);
 						break;
 
+			default:
+						break;
 		}
 	}
 }
@@ -1247,8 +1235,8 @@ void init_limit(void)
 
 		if (value != 0) {
 			value /= 100;
-			dstate_setinfo("input.frequency.low", "%u", fnom - value);
-			dstate_setinfo("input.frequency.high", "%u", fnom + value);
+			dstate_setinfo("input.frequency.low",  "%d", fnom - value);
+			dstate_setinfo("input.frequency.high", "%d", fnom + value);
 		}
 	}
 
@@ -1271,7 +1259,7 @@ void init_limit(void)
 	if (bcmxcp_status.shutdowndelay > bcmxcp_status.lowbatt)
 		upslogx(LOG_WARNING,
 			"Shutdown delay longer than battery capacity when Low Battery "
-			"warning is given. (max %d seconds)", bcmxcp_status.lowbatt);
+			"warning is given. (max %u seconds)", bcmxcp_status.lowbatt);
 
 	/* Horn Status: */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
@@ -1948,21 +1936,23 @@ float calculate_ups_load(const unsigned char *answer)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	upsdebugx(1, "upsdrv_shutdown...");
 
-	/* Try to shutdown with delay */
-	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+	/* First try to shutdown with delay;
+	 * if the above doesn't work, try shutdown.stayoff */
+	if (do_loop_shutdown_commands("shutdown.return,shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
-	/* If the above doesn't work, try shutdown.stayoff */
-	if (instcmd("shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 
@@ -2097,6 +2087,8 @@ static int instcmd(const char *cmdname, const char *extra)
 				cbuf[2] = 0x2;
 				break;                  /*mute beeper*/
 				}
+			default:
+				break;
 		}
 		cbuf[3] = 0x0;          /*padding*/
 
@@ -2215,6 +2207,10 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
+	/* NOTE: The USB variant of this driver currently does not
+	 * involve nut_usb_addvars() method like others do. When
+	 * fixing, see also tools/nut-scanner/scan_usb.c "exceptions".
+	 */
 	addvar(VAR_VALUE, "shutdown_delay", "Specify shutdown delay (seconds)");
 	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }

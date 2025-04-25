@@ -33,7 +33,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define EVER_HID_VERSION	"Ever HID 0.1"
+#define EVER_HID_VERSION	"Ever HID 0.10"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Ever */
@@ -41,6 +41,10 @@
 
 /* ST Microelectronics */
 #define STMICRO_VENDORID	0x0483
+/* Please note that USB vendor ID 0x0483 is from ST Microelectronics -
+ * with actual product IDs delegated to different OEMs.
+ * Devices handled in this driver are marketed under Ever brand.
+ */
 
 /* USB IDs device table */
 static usb_device_id_t ever_usb_device_table[] = {
@@ -59,7 +63,7 @@ static usb_device_id_t ever_usb_device_table[] = {
 
 static const char *ever_format_hardware_fun(double value)
 {
-	/*TODO - add exception handling for v1.0b0B */
+	/* TODO - add exception handling for v1.0b0B */
 	const char* hard_rev[27] = {"0", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
 	static char model[10];
 	snprintf(model, sizeof(model), "rev.%sv%02u",
@@ -70,8 +74,9 @@ static const char *ever_format_hardware_fun(double value)
 
 static const char *ever_format_version_fun(double value)
 {
-	/*upsdebugx(1, "UPS ups_firmware_conversion_fun VALUE: %d", (long)value  ); */
 	static char model[10];
+
+	/*upsdebugx(1, "UPS ups_firmware_conversion_fun VALUE: %d", (long)value);*/
 	snprintf(model, sizeof(model), "v%X.%Xb%02d",
 		((unsigned int)value & 0xF000)>>12,
 		((unsigned int)value & 0xF00)>>8,
@@ -81,18 +86,17 @@ static const char *ever_format_version_fun(double value)
 
 static const char *ever_mac_address_fun(double value)
 {
+	int	mac_adress_report_id = 210;
+	int	len = reportbuf->len[mac_adress_report_id];
+	int	n = 0;	/* number of characters currently in line */
+	int	i;	/* number of bytes output from buffer */
+	const void	*buf = reportbuf->data[mac_adress_report_id];
+	static char	line[100];
 	NUT_UNUSED_VARIABLE(value);
 
-	int mac_adress_report_id = 210;
-	int len = reportbuf->len[mac_adress_report_id];
-	const void *buf = reportbuf->data[mac_adress_report_id];
-
-	static char line[100];
 	line[0] = '\0';
-	int n = 0;	/* number of characters currently in line */
-	int i;	/* number of bytes output from buffer */
 
-	/* skip first elemnt which is a report id */
+	/* skip first element which is a report id */
 	for (i = 1; i < len; i++) {
 		n = snprintfcat(line, sizeof(line), n ? ":%02x" : "%02x",
 			((unsigned char *)buf)[i]);
@@ -103,10 +107,13 @@ static const char *ever_mac_address_fun(double value)
 
 static const char *ever_ip_address_fun(double value)
 {
+	static int	report_counter = 1;
+	int	report_id = 211, len;
+	int	n = 0;	/* number of characters currently in line */
+	int	i;	/* number of bytes output from buffer */
+	const void	*buf;
+	static char	line[100];
 	NUT_UNUSED_VARIABLE(value);
-
-	static int report_counter = 1;
-	int report_id = 211;
 
 	if(report_counter == 1)
 		report_id = 211; /* notification dest ip */
@@ -119,15 +126,12 @@ static const char *ever_ip_address_fun(double value)
 
 	report_counter== 4 ? report_counter=1 : report_counter++;
 
-	int len = reportbuf->len[report_id];
-	const void *buf = reportbuf->data[report_id];
+	len = reportbuf->len[report_id];
+	buf = reportbuf->data[report_id];
 
-	static char line[100];
 	line[0] = '\0';
-	int n = 0;	/* number of characters currently in line */
-	int i;	/* number of bytes output from buffer */
 
-	/*skip first element which is a report id */
+	/* skip first element which is a report id */
 	for (i = 1; i < len; i++)
 	{
 		n = snprintfcat(line, sizeof(line), n ? ".%d" : "%d",
@@ -139,10 +143,11 @@ static const char *ever_ip_address_fun(double value)
 
 static const char *ever_packets_fun(double value)
 {
+	static int	report_counter = 1;
+	int	report_id = 215, len, res;
+	const unsigned char	*buf;
+	static char	line[200];
 	NUT_UNUSED_VARIABLE(value);
-
-	static int report_counter = 1;
-	int report_id = 215;
 
 	if(report_counter == 1 )
 		report_id = 215;
@@ -155,18 +160,17 @@ static const char *ever_packets_fun(double value)
 
 	report_counter== 4 ? report_counter=1 : report_counter++;
 
-	int len = reportbuf->len[report_id];
-	const unsigned char *buf = reportbuf->data[report_id];
+	len = reportbuf->len[report_id];
+	buf = reportbuf->data[report_id];
 
-	static char line[100];
 	line[0] = '\0';
 
-	/*skip first elemnt which is a report id */
+	/* skip first element which is a report id */
 
 	if(len < 5)
 		return "";
 
-	int res = (int)buf[1];
+	res  = (int)buf[1];
 	res |= (int)buf[2] << 8;
 	res |= (int)buf[3] << 16;
 	res |= (int)buf[4] << 24;
@@ -178,16 +182,15 @@ static const char *ever_packets_fun(double value)
 
 static const char* ever_workmode_fun(double value)
 {
+	int	workmode_report_id = 74;
+	int	workmode = -1;
+	const unsigned char	*buf = reportbuf->data[workmode_report_id];
+	static char	line[200];
 	NUT_UNUSED_VARIABLE(value);
 
-	int workmode_report_id = 74;
-	int workmode = -1;
-	const unsigned char *buf = reportbuf->data[workmode_report_id];
-
-	static char line[100];
 	line[0] = '\0';
 
-	/*skip first element which is a report id */
+	/* skip first element which is a report id */
 	snprintfcat(line, sizeof(line), "%d", buf[1]);
 
 	workmode = atoi(line);
@@ -223,19 +226,17 @@ static const char* ever_workmode_fun(double value)
 
 static const char* ever_messages_fun(double value)
 {
+	int	messages_report_id = 75, messages;
+	int	n = 0;	/* number of characters currently in line */
+	const unsigned char	*buf = reportbuf->data[messages_report_id];
+	static char	line[200];
 	NUT_UNUSED_VARIABLE(value);
 
-	int messages_report_id = 75;
-	const unsigned char *buf = reportbuf->data[messages_report_id];
-
-	static char line[200];
 	line[0] = '\0';
 
-	/*skip first element which is a report id */
-	int messages = (int)buf[1];
+	/* skip first element which is a report id */
+	messages  = (int)buf[1];
 	messages |= (int)buf[2] << 8;
-
-	int n = 0;	/* number of characters currently in line */
 
 	/* duplicate of ups.status: OB LB */
 	/*
@@ -271,20 +272,17 @@ static const char* ever_messages_fun(double value)
 
 static const char* ever_alarms_fun(double value)
 {
+	int	alarms_report_id = 76, alarms;
+	int	n = 0;	/* number of characters currently in line */
+	const unsigned char	*buf = reportbuf->data[alarms_report_id];
+	static char	line[200];
 	NUT_UNUSED_VARIABLE(value);
 
-	int alarms_report_id = 76;
-
-	const unsigned char *buf = reportbuf->data[alarms_report_id];
-
-	static char line[200];
 	line[0] = '\0';
 
-	/*skip first element which is a report id */
-	int alarms = (int)buf[1];
+	/* skip first element which is a report id */
+	alarms  = (int)buf[1];
 	alarms |= (int)buf[2] << 8;
-
-	int n = 0;	/* number of characters currently in line */
 
 	if(alarms & 0x01)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "OVERLOAD");
@@ -308,16 +306,15 @@ static const char* ever_alarms_fun(double value)
 
 static const char* ever_on_off_fun(double value)
 {
+	int	workmode_report_id = 74;
+	int	workmode = -1;
+	const unsigned char	*buf = reportbuf->data[workmode_report_id];
+	static char	line[200];
 	NUT_UNUSED_VARIABLE(value);
 
-	int workmode_report_id = 74;
-	int workmode = -1;
-	const unsigned char *buf = reportbuf->data[workmode_report_id];
-
-	static char line[100];
 	line[0] = '\0';
 
-	/*skip first element which is a report id */
+	/* skip first element which is a report id */
 	snprintfcat(line, sizeof(line), "%d", buf[1]);
 
 	workmode = atoi(line);
@@ -533,7 +530,7 @@ static hid_info_t ever_hid2nut[] = {
   /* WAS: "experimental.inverter_info.battery_temperature" */
   { "battery.temperature", 0, 0, "UPS.EVER1.EVER43", NULL, "%s", 0, kelvin_celsius_conversion },
   /* WAS: "experimental.ups_info.output_powerfactor" */
-  { "powerfactor", 0, 0, "UPS.EVER1.EVER44", NULL, "%.0f", 0, NULL },
+  { "output.powerfactor", 0, 0, "UPS.EVER1.EVER44", NULL, "%.0f", 0, NULL },
 
   /* experimental: Should these be HU_TYPE_CMD entries?
    * Or are they really settings? */
@@ -687,8 +684,10 @@ static hid_info_t ever_hid2nut[] = {
   /* WAS: experimental.powersummary.delay_before_shutdown */
   { "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
 
+#if WITH_UNMAPPED_DATA_POINTS
   /* not implemented*/
-  /* { "unmapped.ups.powersummary.powersummaryid", 0, 0, "UPS.PowerSummary.PowerSummaryID", NULL, "%.0f", 0, NULL }, */
+  { "unmapped.ups.powersummary.powersummaryid", 0, 0, "UPS.PowerSummary.PowerSummaryID", NULL, "%.0f", 0, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.AwaitingPower", NULL, NULL, HU_FLAG_QUICK_POLL, awaitingpower_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, 0, nobattery_info },

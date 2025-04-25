@@ -9,39 +9,43 @@ nutscan_get_serial_ports_list - Get a port list name from a range of port.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- char ** nutscan_get_serial_ports_list(const char *ports_range);
+	char ** nutscan_get_serial_ports_list(const char *ports_range);
+------
 
 DESCRIPTION
 -----------
 
 The *nutscan_get_serial_ports_list()* function returns a null
 terminated array of strings generated from a port range.
-'ports_range' may be one of:
 
- - a single character from 0 to 9 or a to z representing a serial
-   communication port depending on the operating system. For instance
-   "0" is converted to /dev/ttyS0 and /dev/ttyUSB0 on Linux;
-   "1" is converted to COM1 on Windows;
-   "c" is converted to /dev/ttyc on Solaris...
- - a range of character in the form "X-Y". For instance
-   "0-1" will be converted to /dev/ttyS0, /dev/ttyS1, /dev/ttyUSB0
-   and /dev/ttyUSB1 on Linux;
-   "1-3" will be converted to COM1, COM2 and COM3 on Windows;
-   "a-c" will be converted to /dev/ttya, /dev/ttyb and /dev/ttyc on Solaris.
- - a single port name (/dev/ttyS5, COM4...).
- - a list of port names separated with commas:
-   "/dev/ttyS0,/dev/ttyS2,/dev/ttyS4" or "COM1,COM3"...
+The 'ports_range' may be one of:
+
+* a single character from `0` to `9` or `a` to `z`, representing a serial
+   communication port depending on the operating system. For instance:
+   - `0` is converted to `/dev/ttyS0` and `/dev/ttyUSB0` on Linux;
+   - `1` is converted to `COM1` on Windows;
+   - `c` is converted to `/dev/ttyc` on Solaris...
+* a range of character in the form `X-Y`. For instance
+   - `0-1` will be converted to `/dev/ttyS0`, `/dev/ttyS1`, `/dev/ttyUSB0`
+     and `/dev/ttyUSB1` on Linux;
+   - `1-3` will be converted to `COM1`, `COM2` and `COM3` on Windows;
+   - `a-c` will be converted to `/dev/ttya`, `/dev/ttyb` and `/dev/ttyc`
+     on Solaris.
+* a single port name (`/dev/ttyS5`, `COM4`...).
+* a list of port names separated with commas:
+   `/dev/ttyS0,/dev/ttyS2,/dev/ttyS4` or `COM1,COM3`...
 
 The returned array can be used in a call to *nutscan_scan_eaton_serial*
-to get the serial device on a system.
+to get the serial-port device on a system.
 
 RETURN VALUE
 ------------
 
 The *nutscan_get_serial_ports_list()* function returns NULL if an error
-occurred (invalid port range) or a pointer to a null terminated array
+occurred (invalid port range) or a pointer to a NULL-terminated array
 of strings on success.
 
 NOTES
@@ -56,4 +60,5 @@ linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3],
 linkman:nutscan_scan_eaton_serial[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
 linkman:nutscan_display_parsable[3], linkman:nutscan_display_ups_conf[3]

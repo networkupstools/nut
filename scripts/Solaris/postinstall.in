@@ -35,13 +35,18 @@ for file in nut.conf ups.conf upsd.conf upsmon.conf upsd.users upssched.conf nut
 	fi
 done
 
-# make sure that /var/run/nut exists and has the correct ownerships
-if [ ! -d "@PIDPATH@/nut" ] ; then
-	mkdir -p "@PIDPATH@/nut"
+# make sure that /var/run exists (for privileged processes)
+if [ ! -d "@PIDPATH@" ] ; then
+	mkdir -p "@PIDPATH@"
 fi
-if [ -d "@PIDPATH@/nut" ] ; then
-	chown "root:@RUN_AS_GROUP@" "@PIDPATH@/nut"
-	chmod 770 "@PIDPATH@/nut"
+
+# make sure that /var/run/nut exists and has the correct ownerships
+if [ ! -d "@ALTPIDPATH@" ] ; then
+	mkdir -p "@ALTPIDPATH@"
+fi
+if [ -d "@ALTPIDPATH@" ] ; then
+	chown "root:@RUN_AS_GROUP@" "@ALTPIDPATH@"
+	chmod 770 "@ALTPIDPATH@"
 fi
 
 # make sure that /var/state/ups exists and has the correct ownerships

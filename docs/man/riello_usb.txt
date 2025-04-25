@@ -24,6 +24,37 @@ riello_usb supports all recent Riello UPS with USB.
 
 Older Riello UPS products are not supported.
 
+EXTRA ARGUMENTS
+---------------
+
+include::nut_usb_addvars.txt[]
+
+You may need to tweak some settings, depending on the make and model of your
+UPS (see linkman:ups.conf[5]):
+
+*localcalculation*::
+When enabled, driver will calculate values of `battery.runtime` and
+`battery.charge` "locally" in the driver. This is for some Riello models
+(iPlug and iDialog series) which provide incorrect values in hardware
+readings, or none at all.
+This "local calculation" is done according to nominal battery capacity,
+nominal battery voltage, actual battery charge, maximum and actual UPS
+load.
++
+You may want to also configure 'default.battery.voltage.low' and
+'default.battery.voltage.high' in case the built-in default range
+(from 10.7V to 12.9V) does not match your hardware, or give a shot
+to 'default.battery.voltage.nominal' (e.g. '24') if your device does
+not serve that either.
++
+NOTE: Lead (PbAc) battery charge graph is not linear, so guesstimated
+charge value may not be perfectly accurate. However it should be good
+enough to determine battery actual status and roughly estimate the time
+it can still power the system.
++
+WARNING: This keyword may be deprecated in future releases of the driver,
+in favor of `runtimecal` and other settings which it requires (as seen in
+linkman:nutdrv_qx[8], linkman:blazer_ser[8] and linkman:blazer_usb[8] drivers).
 
 AUTHOR
 ------
@@ -33,12 +64,17 @@ Massimo Zampieri
 SEE ALSO
 --------
 
+Related drivers
+~~~~~~~~~~~~~~~
+
+linkman:riello_ser[8]
+
 The core driver
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 linkman:nutupsdrv[8]
 
 Internet resources
 ~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

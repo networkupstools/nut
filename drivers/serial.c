@@ -23,12 +23,14 @@
 #include "main.h"
 #include "attribute.h"
 
+#ifndef WIN32
 #include <grp.h>
 #include <pwd.h>
+#include <sys/ioctl.h>
+#endif	/* !WIN32 */
 #include <ctype.h>
 #include <sys/file.h>
 #include <sys/types.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 
 #ifdef HAVE_UU_LOCK
@@ -45,8 +47,10 @@ static void ser_open_error(const char *port)
 static void ser_open_error(const char *port)
 {
 	struct	stat	fs;
+#ifndef WIN32
 	struct	passwd	*user;
 	struct	group	*group;
+#endif	/* !WIN32 */
 
 	printf("\n");
 
@@ -60,6 +64,8 @@ static void ser_open_error(const char *port)
 		fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 	}
 
+/* TODO NUT_WIN32_INCOMPLETE? */
+#ifndef WIN32
 	user = getpwuid(getuid());
 
 	if (user)
@@ -77,8 +83,9 @@ static void ser_open_error(const char *port)
 	if (group)
 		printf("Serial port group: %s (%d)\n",
 			group->gr_name, (int) fs.st_gid);
+#endif	/* !WIN32 */
 
-	printf("     Mode of port: %04o\n\n", (int) fs.st_mode & 07777);
+	printf("     Mode of port: %04o\n\n", (unsigned int) fs.st_mode & 07777);
 
 	printf("Things to try:\n\n");
 	printf(" - Use another port (with the right permissions)\n\n");
@@ -89,12 +96,17 @@ static void ser_open_error(const char *port)
 	fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 }
 
-static void lock_set(int fd, const char *port)
+static void lock_set(TYPE_FD_SER fd, const char *port)
 {
 	int	ret;
 
-	if (fd < 0)
+	if (INVALID_FD_SER(fd)) {
+#ifndef WIN32
 		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: fd = %d", fd);
+#else	/* WIN32 */
+		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: struct = %p", fd);
+#endif	/* WIN32 */
+	}
 
 	if (do_lock_port == 0)
 		return;
@@ -124,20 +136,23 @@ static void lock_set(int fd, const char *port)
 
 #else
 
+	NUT_UNUSED_VARIABLE(port);
+	ret = 0; /* Make compiler happy */
+	ret = ret;
 	upslog_with_errno(LOG_WARNING, "Warning: no locking method is available");
 
 #endif
 }
 
 /* Non fatal version of ser_open */
-int ser_open_nf(const char *port)
+TYPE_FD_SER ser_open_nf(const char *port)
 {
-	int	fd;
+	TYPE_FD_SER	fd;
 
 	fd = open(port, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
 
-	if (fd < 0) {
-		return -1;
+	if (INVALID_FD_SER(fd)) {
+		return ERROR_FD_SER;
 	}
 
 	lock_set(fd, port);
@@ -145,19 +160,19 @@ int ser_open_nf(const char *port)
 	return fd;
 }
 
-int ser_open(const char *port)
+TYPE_FD_SER ser_open(const char *port)
 {
-	int res;
+	TYPE_FD_SER res;
 
 	res = ser_open_nf(port);
-	if(res == -1) {
+	if (INVALID_FD_SER(res)) {
 		ser_open_error(port);
 	}
 
 	return res;
 }
 
-int ser_set_speed_nf(int fd, const char *port, speed_t speed)
+int ser_set_speed_nf(TYPE_FD_SER fd, const char *port, speed_t speed)
 {
 	struct	termios	tio;
 	NUT_UNUSED_VARIABLE(port);
@@ -186,7 +201,7 @@ int ser_set_speed_nf(int fd, const char *port, speed_t speed)
 	return 0;
 }
 
-int ser_set_speed(int fd, const char *port, speed_t speed)
+int ser_set_speed(TYPE_FD_SER fd, const char *port, speed_t speed)
 {
 	int res;
 
@@ -198,7 +213,8 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 	return 0;
 }
 
-static int ser_set_control(int fd, int line, int state)
+#ifndef WIN32
+static int ser_set_control(TYPE_FD_SER fd, int line, int state)
 {
 	if (state) {
 		return ioctl(fd, TIOCMBIS, &line);
@@ -206,18 +222,54 @@ static int ser_set_control(int fd, int line, int state)
 		return ioctl(fd, TIOCMBIC, &line);
 	}
 }
+#endif	/* !WIN32 */
 
-int ser_set_dtr(int fd, int state)
+int ser_set_dtr(TYPE_FD_SER fd, int state)
 {
+#ifndef WIN32
 	return ser_set_control(fd, TIOCM_DTR, state);
+#else	/* WIN32 */
+	DWORD action;
+
+	if (state == 0) {
+		action = CLRDTR;
+	}
+	else {
+		action = SETDTR;
+	}
+
+	/* Success */
+	if (EscapeCommFunction(fd->handle,action) != 0) {
+		return 0;
+	}
+
+	return -1;
+#endif	/* WIN32 */
 }
 
-int ser_set_rts(int fd, int state)
+int ser_set_rts(TYPE_FD_SER fd, int state)
 {
+#ifndef WIN32
 	return ser_set_control(fd, TIOCM_RTS, state);
+#else	/* WIN32 */
+	DWORD action;
+
+	if(state == 0) {
+		action = CLRRTS;
+	}
+	else {
+		action = SETRTS;
+	}
+	/* Success */
+	if( EscapeCommFunction(fd->handle,action) != 0) {
+		return 0;
+	}
+	return -1;
+#endif	/* WIN32 */
 }
 
-static int ser_get_control(int fd, int line)
+#ifndef WIN32
+static int ser_get_control(TYPE_FD_SER fd, int line)
 {
 	int	flags;
 
@@ -225,31 +277,53 @@ static int ser_get_control(int fd, int line)
 
 	return (flags & line);
 }
+#endif	/* !WIN32 */
 
-int ser_get_dsr(int fd)
+int ser_get_dsr(TYPE_FD_SER fd)
 {
+#ifndef WIN32
 	return ser_get_control(fd, TIOCM_DSR);
+#else	/* WIN32 */
+	int flags;
+
+	w32_getcomm(fd->handle, &flags);
+	return (flags & TIOCM_DSR);
+#endif	/* WIN32 */
 }
 
-int ser_get_cts(int fd)
+int ser_get_cts(TYPE_FD_SER fd)
 {
+#ifndef WIN32
 	return ser_get_control(fd, TIOCM_CTS);
+#else	/* WIN32 */
+	int flags;
+
+	w32_getcomm(fd->handle, &flags);
+	return (flags & TIOCM_CTS);
+#endif	/* WIN32 */
 }
 
-int ser_get_dcd(int fd)
+int ser_get_dcd(TYPE_FD_SER fd)
 {
+#ifndef WIN32
 	return ser_get_control(fd, TIOCM_CD);
+#else	/* WIN32 */
+	int flags;
+
+	w32_getcomm(fd->handle, &flags);
+	return (flags & TIOCM_CD);
+#endif	/* WIN32 */
 }
 
-int ser_flush_io(int fd)
+int ser_close(TYPE_FD_SER fd, const char *port)
 {
-	return tcflush(fd, TCIOFLUSH);
-}
-
-int ser_close(int fd, const char *port)
-{
-	if (fd < 0)
+	if (INVALID_FD_SER(fd)) {
+#ifndef WIN32
 		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", fd, port);
+#else	/* WIN32 */
+		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: struct=%p port=%s", fd, port);
+#endif	/* WIN32 */
+	}
 
 	if (close(fd) != 0)
 		return -1;
@@ -262,12 +336,12 @@ int ser_close(int fd, const char *port)
 	return 0;
 }
 
-ssize_t ser_send_char(int fd, unsigned char ch)
+ssize_t ser_send_char(TYPE_FD_SER fd, unsigned char ch)
 {
 	return ser_send_buf_pace(fd, 0, &ch, 1);
 }
 
-static ssize_t send_formatted(int fd, const char *fmt, va_list va, useconds_t d_usec)
+static ssize_t send_formatted(TYPE_FD_SER fd, const char *fmt, va_list va, useconds_t d_usec)
 {
 	int	ret;
 	char	buf[LARGEBUF];
@@ -281,6 +355,9 @@ static ssize_t send_formatted(int fd, const char *fmt, va_list va, useconds_t d_
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, technically this one is only used
+	 * locally with args whose validity other methods may check */
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -294,7 +371,7 @@ static ssize_t send_formatted(int fd, const char *fmt, va_list va, useconds_t d_
 }
 
 /* send the results of the format string with d_usec delay after each char */
-ssize_t ser_send_pace(int fd, useconds_t d_usec, const char *fmt, ...)
+ssize_t ser_send_pace(TYPE_FD_SER fd, useconds_t d_usec, const char *fmt, ...)
 {
 	ssize_t	ret;
 	va_list	ap;
@@ -310,6 +387,12 @@ ssize_t ser_send_pace(int fd, useconds_t d_usec, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used from drivers with
+	 * fixed strings (and args).
+	 * TODO: Propose a ser_send_pace_dynamic() in case non-static
+	 * format strings appear? Currently there are none.
+	 */
 	ret = send_formatted(fd, fmt, ap, d_usec);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -321,7 +404,7 @@ ssize_t ser_send_pace(int fd, useconds_t d_usec, const char *fmt, ...)
 }
 
 /* send the results of the format string with no delay */
-ssize_t ser_send(int fd, const char *fmt, ...)
+ssize_t ser_send(TYPE_FD_SER fd, const char *fmt, ...)
 {
 	ssize_t	ret;
 	va_list	ap;
@@ -337,6 +420,12 @@ ssize_t ser_send(int fd, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used from drivers with
+	 * fixed strings (and args).
+	 * TODO: Propose a ser_send_dynamic() in case non-static
+	 * format strings appear? Currently there are none.
+	 */
 	ret = send_formatted(fd, fmt, ap, 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -348,13 +437,13 @@ ssize_t ser_send(int fd, const char *fmt, ...)
 }
 
 /* send buflen bytes from buf with no delay */
-ssize_t ser_send_buf(int fd, const void *buf, size_t buflen)
+ssize_t ser_send_buf(TYPE_FD_SER fd, const void *buf, size_t buflen)
 {
 	return ser_send_buf_pace(fd, 0, buf, buflen);
 }
 
 /* send buflen bytes from buf with d_usec delay after each char */
-ssize_t ser_send_buf_pace(int fd, useconds_t d_usec, const void *buf,
+ssize_t ser_send_buf_pace(TYPE_FD_SER fd, useconds_t d_usec, const void *buf,
 	size_t buflen)
 {
 	ssize_t	ret = 0;
@@ -376,7 +465,7 @@ ssize_t ser_send_buf_pace(int fd, useconds_t d_usec, const void *buf,
 	return sent;
 }
 
-ssize_t ser_get_char(int fd, void *ch, time_t d_sec, useconds_t d_usec)
+ssize_t ser_get_char(TYPE_FD_SER fd, void *ch, time_t d_sec, useconds_t d_usec)
 {
 	/* Per standard below, we can cast here, because required ranges are
 	 * effectively the same (and signed -1 for suseconds_t), and at most long:
@@ -385,7 +474,7 @@ ssize_t ser_get_char(int fd, void *ch, time_t d_sec, useconds_t d_usec)
 	return select_read(fd, ch, 1, d_sec, (suseconds_t)d_usec);
 }
 
-ssize_t ser_get_buf(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
+ssize_t ser_get_buf(TYPE_FD_SER fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
 {
 	memset(buf, '\0', buflen);
 
@@ -393,7 +482,7 @@ ssize_t ser_get_buf(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
-ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
+ssize_t ser_get_buf_len(TYPE_FD_SER fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
 {
 	ssize_t	ret;
 	ssize_t	recv;
@@ -418,7 +507,7 @@ ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, time_t d_sec, useconds
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */
-ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
+ssize_t ser_get_line_alert(TYPE_FD_SER fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, const char *alertset, void handler(char ch),
 	time_t d_sec, useconds_t d_usec)
 {
@@ -463,14 +552,14 @@ ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 }
 
 /* as above, only with no alertset handling (just a wrapper) */
-ssize_t ser_get_line(int fd, void *buf, size_t buflen, char endchar,
+ssize_t ser_get_line(TYPE_FD_SER fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, time_t d_sec, useconds_t d_usec)
 {
 	return ser_get_line_alert(fd, buf, buflen, endchar, ignset, "", NULL,
 		d_sec, d_usec);
 }
 
-ssize_t ser_flush_in(int fd, const char *ignset, int verbose)
+ssize_t ser_flush_in(TYPE_FD_SER fd, const char *ignset, int verbose)
 {
 	ssize_t	ret, extra = 0;
 	char	ch;
@@ -492,6 +581,11 @@ ssize_t ser_flush_in(int fd, const char *ignset, int verbose)
 	}
 
 	return extra;
+}
+
+int ser_flush_io(TYPE_FD_SER fd)
+{
+	return tcflush(fd, TCIOFLUSH);
 }
 
 void ser_comm_fail(const char *fmt, ...)
@@ -527,6 +621,12 @@ void ser_comm_fail(const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used from drivers with
+	 * fixed strings (and args).
+	 * TODO: Propose a ser_comm_fail_dynamic() in case non-static
+	 * format strings appear? Currently there are none.
+	 */
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop

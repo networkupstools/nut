@@ -20,7 +20,10 @@
 #include "main.h"
 
 #include <sys/ioctl.h>
-#include <stdint.h>
+#include "nut_stdint.h"
+
+#define DRIVER_NAME                         "PiJuice UPS driver"
+#define DRIVER_VERSION                      "0.13"
 
 /*
  * Linux I2C userland is a bit of a mess until distros refresh to
@@ -43,6 +46,9 @@
 # endif
 #endif
 
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
+
 /*
  * i2c-tools pre-4.0 has a userspace header with a name that conflicts
  * with a kernel header, so it may be ignored/removed by distributions
@@ -53,7 +59,7 @@
  * situation.
  */
 #if WITH_LINUX_I2C
-#if !HAVE_DECL_I2C_SMBUS_ACCESS
+# if !HAVE_DECL_I2C_SMBUS_ACCESS
 static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
                                      int size, union i2c_smbus_data *data)
 {
@@ -70,9 +76,9 @@ static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
 		err = -errno;
 	return err;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_READ_BYTE_DATA
+# if !HAVE_DECL_I2C_SMBUS_READ_BYTE_DATA
 static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
@@ -84,9 +90,9 @@ static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 	else
 		return 0x0FF & data.byte;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_WRITE_BYTE_DATA
+# if !HAVE_DECL_I2C_SMBUS_WRITE_BYTE_DATA
 static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value)
 {
 	union i2c_smbus_data data;
@@ -99,9 +105,9 @@ static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value
 	else
 		return 0x0FF & data.byte;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_READ_WORD_DATA
+# if !HAVE_DECL_I2C_SMBUS_READ_WORD_DATA
 static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
@@ -113,9 +119,9 @@ static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 	else
 		return 0x0FFFF & data.word;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_WRITE_WORD_DATA
+# if !HAVE_DECL_I2C_SMBUS_WRITE_WORD_DATA
 static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 value)
 {
 	union i2c_smbus_data data;
@@ -128,9 +134,9 @@ static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 valu
 	else
 		return 0x0FFFF & data.word;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_READ_BLOCK_DATA
+# if !HAVE_DECL_I2C_SMBUS_READ_BLOCK_DATA
 static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 length, __u8 *values)
 {
 	union i2c_smbus_data data;
@@ -152,8 +158,8 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 
 	return values;
 }
-#endif
-#endif // if WITH_LINUX_I2C
+# endif
+#endif /* if WITH_LINUX_I2C */
 
 #define STATUS_CMD                          0x40
 #define CHARGE_LEVEL_CMD                    0x41
@@ -216,9 +222,6 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 #define LOW_BATTERY_THRESHOLD               25.0
 #define HIGH_BATTERY_THRESHOLD              75.0
 #define NOMINAL_BATTERY_VOLTAGE             4.18
-
-#define DRIVER_NAME                         "PiJuice UPS driver"
-#define DRIVER_VERSION                      "0.10"
 
 static uint8_t i2c_address    = 0x14;
 static uint8_t shutdown_delay = 30;
@@ -305,7 +308,7 @@ static inline int open_i2c_bus(char *path, uint8_t addr)
 	return file;
 }
 
-static void get_charge_level_hi_res()
+static void get_charge_level_hi_res(void)
 {
 	uint8_t cmd = CHARGE_LEVEL_HI_RES_CMD;
 	uint16_t data;
@@ -334,11 +337,10 @@ static void get_charge_level_hi_res()
 	dstate_setinfo( "battery.charge", "%02.1f", battery_charge_level );
 }
 
-static void get_status()
+static void get_status(void)
 {
-	uint8_t cmd = STATUS_CMD;
-	uint8_t data;
-	char status_buf[ST_MAX_VALUE_LEN];
+	uint8_t	cmd = STATUS_CMD, data, batteryStatus, powerInput, powerInput5vIo;
+	char	status_buf[ST_MAX_VALUE_LEN];
 
 	upsdebugx( 3, __func__ );
 
@@ -346,7 +348,7 @@ static void get_status()
 
 	I2C_READ_BYTE( upsfd, cmd, __func__ )
 
-	uint8_t batteryStatus = data >> 2 & 0x03;
+	batteryStatus = data >> 2 & 0x03;
 	switch( batteryStatus )
 	{
 		case BATT_NORMAL:
@@ -373,7 +375,7 @@ static void get_status()
 			upsdebugx( 1, "battery.status: UNKNOWN" );
 	}
 
-	uint8_t powerInput = data >> 4 & 0x03;
+	powerInput = data >> 4 & 0x03;
 	switch( powerInput )
 	{
 		case POWER_NOT_PRESENT:
@@ -392,7 +394,7 @@ static void get_status()
 			upsdebugx( 1, "Power Input: UNKNOWN" );
 	}
 
-	uint8_t powerInput5vIo = data >> 6 & 0x03;
+	powerInput5vIo = data >> 6 & 0x03;
 	switch( powerInput5vIo )
 	{
 		case POWER_NOT_PRESENT :
@@ -535,7 +537,7 @@ static void get_status()
 	}
 }
 
-static void get_battery_temperature()
+static void get_battery_temperature(void)
 {
 	uint8_t cmd = BATTERY_TEMPERATURE_CMD;
 	int16_t data;
@@ -548,7 +550,7 @@ static void get_battery_temperature()
 	dstate_setinfo( "battery.temperature", "%d", data );
 }
 
-static void get_battery_voltage()
+static void get_battery_voltage(void)
 {
 	uint8_t cmd = BATTERY_VOLTAGE_CMD;
 	int16_t data;
@@ -561,7 +563,7 @@ static void get_battery_voltage()
 	dstate_setinfo( "battery.voltage", "%0.3f", data / 1000.0 );
 }
 
-static void get_battery_current()
+static void get_battery_current(void)
 {
 	uint8_t cmd = BATTERY_CURRENT_CMD;
 	int16_t data;
@@ -583,7 +585,7 @@ static void get_battery_current()
 	dstate_setinfo( "battery.current", "%0.3f", data / 1000.0 );
 }
 
-static void get_io_voltage()
+static void get_io_voltage(void)
 {
 	uint8_t cmd = IO_VOLTAGE_CMD;
 	int16_t data;
@@ -596,7 +598,7 @@ static void get_io_voltage()
 	dstate_setinfo( "input.voltage", "%.3f", data / 1000.0 );
 }
 
-static void get_io_current()
+static void get_io_current(void)
 {
 	uint8_t cmd = IO_CURRENT_CMD;
 	int16_t data;
@@ -618,7 +620,7 @@ static void get_io_current()
 	dstate_setinfo( "input.current", "%.3f", data / 1000.0 );
 }
 
-static void get_firmware_version()
+static void get_firmware_version(void)
 {
 	uint8_t cmd = FIRMWARE_VERSION_CMD;
 	uint16_t data;
@@ -640,7 +642,7 @@ static void get_firmware_version()
 	dstate_setinfo( "ups.firmware", "%d.%d", major, minor );
 }
 
-static void get_battery_profile()
+static void get_battery_profile(void)
 {
 	uint8_t cmd = BATTERY_PROFILE_CMD;
 	__u8 block[I2C_SMBUS_BLOCK_MAX];
@@ -653,7 +655,7 @@ static void get_battery_profile()
 	dstate_setinfo( "battery.capacity", "%0.3f", ( block[1] << 8 | block[0] ) / 1000.0 );
 }
 
-static void get_battery_profile_ext()
+static void get_battery_profile_ext(void)
 {
 	uint8_t cmd = BATTERY_EXT_PROFILE_CMD;
 	__u8 block[I2C_SMBUS_BLOCK_MAX];
@@ -678,7 +680,7 @@ static void get_battery_profile_ext()
 	}
 }
 
-static void get_power_off()
+static void get_power_off(void)
 {
 	uint8_t cmd = POWER_OFF_CMD;
 	uint8_t data;
@@ -697,7 +699,7 @@ static void get_power_off()
 	}
 }
 
-static void set_power_off()
+static void set_power_off(void)
 {
 	uint8_t cmd = POWER_OFF_CMD;
 
@@ -729,7 +731,7 @@ static void set_power_off()
 	I2C_WRITE_BYTE( upsfd, cmd, shutdown_delay, __func__ )
 }
 
-static void get_time()
+static void get_time(void)
 {
 	uint8_t cmd = RTC_TIME_CMD;
 	__u8 block[I2C_SMBUS_BLOCK_MAX];
@@ -755,7 +757,7 @@ static void get_time()
 	dstate_setinfo( "ups.date", "%04d-%02d-%02d", year, month, day );
 }
 
-static void get_i2c_address()
+static void get_i2c_address(void)
 {
 	uint8_t cmd = I2C_ADDRESS_CMD;
 	uint8_t data;
@@ -799,6 +801,15 @@ void upsdrv_initinfo(void)
 	get_i2c_address();
 	get_battery_profile();
 	get_battery_profile_ext();
+
+	/* commands ----------------------------------------------- */
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("shutdown.stayoff");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 void upsdrv_updateinfo(void)
@@ -818,9 +829,37 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	NUT_UNUSED_VARIABLE(extra);
+
+	/* FIXME: Which one is this - "load.off",
+	 * "shutdown.stayoff" or "shutdown.return"? */
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		set_power_off();
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 void upsdrv_shutdown(void)
 {
-	set_power_off();
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	int	ret = do_loop_shutdown_commands("shutdown.stayoff", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

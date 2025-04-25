@@ -22,7 +22,7 @@ DISCOVERY FUNCTIONS
 
 First, include the required header file:
 
- #include <nut-scan.h>
+    #include <nut-scan.h>
 
 Then, to discover new devices, use the appropriate function:
 
@@ -43,7 +43,9 @@ linkman:nutscan_add_device_to_device[3].
 Helper functions are also provided to output data using standard formats:
 
 - linkman:nutscan_display_parsable[3] for parsable output,
-- linkman:nutscan_display_ups_conf[3] for ups.conf style.
+- linkman:nutscan_display_ups_conf[3] for ups.conf style,
+- linkman:nutscan_display_ups_conf_with_sanity_check[3] for ups.conf style
+  with comments for warnings about possible configuration problems (if any).
 
 
 ERROR HANDLING
@@ -59,10 +61,16 @@ linkman:nut-scanner[8],
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_snmp[3],
 linkman:nutscan_scan_xml_http_range[3], linkman:nutscan_scan_nut[3],
 linkman:nutscan_scan_avahi[3], linkman:nutscan_scan_ipmi[3],
+linkman:nutscan_display_sanity_check[3],
+linkman:nutscan_display_sanity_check_serial[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
 linkman:nutscan_display_parsable[3], linkman:nutscan_display_ups_conf[3],
 linkman:nutscan_new_device[3], linkman:nutscan_free_device[3],
 linkman:nutscan_add_device_to_device[3],
 linkman:nutscan_add_option_to_device[3],
+linkman:nutscan_init_ip_ranges[3],
+linkman:nutscan_free_ip_ranges[3],
+linkman:nutscan_add_ip_range[3],
 linkman:nutscan_cidr_to_ip[3]
 
 Internet resources:

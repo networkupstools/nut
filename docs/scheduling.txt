@@ -180,12 +180,12 @@ Executing commands immediately
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As an example, consider the scenario where a UPS goes onto battery power.
-However, the users are not informed until 60 seconds later -- using a timer as
+However, the users are not informed until 30 seconds later -- using a timer as
 described above. Whilst this may let the *logged in* users know that the UPS
 is on battery power, it does not inform any users subsequently logging in. To
 enable this we could, at the same time, create a file which is read and
 displayed to any user trying to login whilst the UPS is on battery power. If
-the UPS comes back onto utility power within 60 seconds, then we can cancel
+the UPS comes back onto utility power within 30 seconds, then we can cancel
 the timer and remove the file, as described above. However, if the UPS comes
 back onto utility power say 5 minutes later then we do not want to use any
 timers but we still want to remove the file. To do this we could use:

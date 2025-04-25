@@ -9,6 +9,24 @@ out changes to their local storage immediately, without any sort of
 prompting from the server.  As a result, the server must always check on
 any driver sockets for activity.
 
+In terms of communications, each driver is a server on the Unix socket
+(or Windows named pipe) which it creates, and the data server `upsd` is
+a client which knows where to find such sockets, how they are named,
+and connects to all of them to send commands and receive data updates.
+
+During development, it is possible to use tools like `socat` to connect
+to the socket (you may want to enable `NOBROADCAST` mode soon), e.g.
+
+	socat - UNIX-CONNECT:/var/state/ups/dummy-ups-UPS1
+
+For more insight, NUT provides an optional tool of its own (not built
+by default): the `sockdebug` which is built when `configure --with-dev`
+is in effect, or can be requested from the root directory of the build
+workspace:
+
+	make sockdebug && \
+	./server/sockdebug dummy-ups-UPS1
+
 Formatting
 ----------
 
@@ -22,6 +40,9 @@ together on its way to the other end.
 
 Commands used by the drivers
 ----------------------------
+
+These commands (or semantically responses to server commands in some cases)
+can be sent by drivers to the data server over the socket protocol.
 
 SETINFO
 ~~~~~~~
@@ -87,9 +108,13 @@ SETFLAGS
 
 Note that this command takes a variable number of arguments, as multiple
 flags are supported.  Also note that they are not crammed together in
-"", since "RW STRING" would mean something completely different.
+"" quotes, since "RW STRING" would mean something completely different.
 
 This also replaces any previous flags for a given variable.
+
+Currently supported flags include `RW`, `STRING` and `NUMBER`
+(detailed in the NUT Network Protocol documentation); unrecognized values
+are quietly ignored.
 
 ADDCMD
 ~~~~~~
@@ -104,6 +129,19 @@ DELCMD
 	DELCMD <cmdname>
 
 	DELCMD load.on
+
+PID
+~~~
+
+	PID <id>
+
+	PID 12345
+
+	PID "StrangeOS process identifier"
+
+Response to `GETPID` query, where we serve platform-specific process
+identifier. On POSIX and many other platforms this would be a numeric
+value, but most generally it should be treated as an opaque string.
 
 DUMPDONE
 ~~~~~~~~
@@ -123,6 +161,14 @@ PONG
 This is sent in response to a PING from the server.  It is only used as
 a sanity check to make sure that the driver has not gotten stuck
 somewhere.
+
+OK
+~~
+
+	OK Goodbye
+
+This is sent in response to a LOGOUT from the server (or more likely from
+a sibling driver or `upsdrvctl` program).
 
 DATAOK
 ~~~~~~
@@ -161,6 +207,10 @@ strings, as per docs/net-protocol.txt GET TRACKING.
 Commands sent by the server
 ---------------------------
 
+The data server `upsd` (or technically any client that connects to a Unix
+socket or Windows named pipe provided by each NUT driver) can send the
+following commands to the driver:
+
 PING
 ~~~~
 
@@ -174,6 +224,12 @@ be the only communications they have with the server on a normal basis.
 If a driver does not respond with the PONG within a few seconds at the
 most, it should be treated as dead/unavailable.  Data stored in the
 server must not be passed on to the clients when this happens.
+
+NOTE: For the `upsd` data server, the MAXAGE setting in upsd.conf controls
+how long since the last message from the driver it is considered stale.
+At 1/3 of this time the server sends a `PING` command to the driver, so
+there is some time for a `PONG` to arrive and reset the timer (any other
+message would serve that goal as well).
 
 INSTCMD
 ~~~~~~~
@@ -205,6 +261,14 @@ NOTE:
 TRACKING was set to ON on upsd. In this case, driver will later return
 the execution status, using TRACKING.
 
+GETPID
+~~~~~~
+
+The server (or sibling driver instances, or `upsdrvctl` tool) can use
+this to request the platform-specific process identifier of the driver
+process. On POSIX and many other platforms this would be a numeric value,
+but most generally it should be treated as an opaque string.
+
 DUMPALL
 ~~~~~~~
 
@@ -218,6 +282,54 @@ result, the same parsing happens either way.
 The server can tell when it has a full copy of the data by waiting for
 DUMPDONE.  That special response from the driver is sent once the entire
 set has been transmitted.
+
+DUMPVALUE
+~~~~~~~~~
+
+	DUMPVALUE <varname>
+
+	DUMPVALUE driver.version
+
+Only request the value of specified variable name (and its additional
+metadata in other lines), same as when `DUMPALL` iterates all such names.
+
+The NUT data server or other socket-protocol client should parse the
+response line by line, looking for the SETINFO line to get the value;
+if a DUMPDONE is seen first, the value was not available in the driver.
+
+DUMPSTATUS
+~~~~~~~~~~
+
+	DUMPSTATUS
+
+Effectively an alias to `DUMPVALUE ups.status`.
+
+NOBROADCAST
+~~~~~~~~~~~
+
+This connection does not want to receive broadcast messages (implemented
+by `send_to_all()` method in `dstate.c`). Default is to receive everything.
+
+BROADCAST (NUM)
+~~~~~~~~~~~~~~~
+
+This connection specified whether it wants to receive broadcast messages
+(implemented by `send_to_all()` method in `dstate.c`), and by default
+enables that -- unless disabled by providing an optional zero or negative
+numeric argument. Note that initial default is to receive everything, so
+this command may be useful for connections that disabled broadcasts at
+some point.
+
+LOGOUT
+~~~~~~
+
+Primarily used by communications between driver processes and/or `upsdrvctl`,
+this command allows clients to gracefully close connection to the NUT driver
+which acts as the server on the socket/pipe, avoiding noisy logs about sudden
+disconnection.
+
+	LOGOUT
+	OK Goodbye
 
 Design notes
 ------------
@@ -262,4 +374,4 @@ Re-establishing communications
 If the server loses its connection to the driver and later reconnects,
 it must flush any local storage and start again with DUMPALL.  The
 driver may have changed the internal state considerably during that
-time, and anything other approach could leave old elements behind.
+time, and any other approach could leave old elements behind.

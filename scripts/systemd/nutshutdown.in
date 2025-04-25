@@ -1,23 +1,91 @@
 #!/bin/sh
 
-# This script requires both nut-server (drivers)
-# and nut-client (upsmon) to be present locally
-# and on mounted filesystems
-[ -x "@SBINDIR@/upsmon" ] && [ -x "@SBINDIR@/upsdrvctl" ] || exit
+# Network UPS Tools (NUT) systemd-shutdown integration handler.
+#
+# NOTE: This script requires both nut-server package (or more specifically,
+# the drivers for your device, which may be in further packages grouped
+# by media/protocol and third-party dependencies), nut-client (upsmon),
+# and their configuration files to be present locally and on still-mounted
+# filesystems (may be read-only).
+#
+# Copyright (C) 2011-2025 by NUT contributors
+# Michal Hlavinka, Laurent Bigonville, Arnaud Quette, Jim Klimov et al.
+#
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+if [ -s "@CONFPATH@/nut.conf" ]; then
+    . "@CONFPATH@/nut.conf" || true
+fi
+
+[ x"${POWEROFF_QUIET-}" = xtrue ] \
+|| POWEROFF_QUIET="false"
+
+[ -x "@SBINDIR@/upsmon" ] || {
+    $POWEROFF_QUIET || echo "$0: SKIP: could not locate '@SBINDIR@/upsmon''" >&2
+    exit 1
+}
+
+# Will at most run the optional power-race avoidance sleep part
+[ -x "@SBINDIR@/upsdrvctl" ] || {
+    $POWEROFF_QUIET || echo "$0: WARNING: could not locate '@SBINDIR@/upsdrvctl' - will not command any UPS devices to shut down" >&2
+}
 
 if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
-  # The argument may be anything compatible with sleep
-  # (not necessarily a non-negative integer)
-  wait_delay="`/bin/sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`" || wait_delay=""
+    if [ -x "@SBINDIR@/upsdrvctl" ] ; then
+        $POWEROFF_QUIET || {
+            echo "$0: Commanding UPSes (if any) to shutdown" >&2
+            [ -w /dev/console ] && echo "`TZ=UTC LANG=C date`: $0: Commanding UPSes (if any) to shutdown" >/dev/console || true
+        }
+        NUT_QUIET_INIT_NDE_WARNING=true
+        export NUT_QUIET_INIT_NDE_WARNING
+        @SBINDIR@/upsdrvctl shutdown || echo "$0: Something failed about UPS shutdown commands" >&2
+    fi
 
-  @SBINDIR@/upsdrvctl shutdown
+    if [ -n "$POWEROFF_WAIT" ] ; then
+        # Avoid the power-race condition (if wall power returned
+        # while we were shutting down, so some UPSes would not
+        # shutdown and/or powercycle the load as commanded above).
+        # Sleep "long enough" to drain the battery if the UPS is
+        # in fact on battery, or reboot if it became alive, so
+        # this computer is not in limbo forever.
+        $POWEROFF_QUIET || {
+            echo "$0: Power-race avoidance: sleeping $POWEROFF_WAIT" >&2
+            [ -w /dev/console ] && echo "`TZ=UTC LANG=C date`: $0: Power-race avoidance: sleeping $POWEROFF_WAIT" >/dev/console || true
+        }
 
-  if [ -n "$wait_delay" ] ; then
-    /bin/sleep $wait_delay
-    # We need to pass --force twice here to bypass systemd and execute the
-    # reboot directly ourself.
-    /bin/systemctl reboot --force --force
-  fi
+        # The argument may be anything compatible with /bin/sleep
+        # (on OSes with systemd - assuming GNU coreutils or compatible,
+        # so not necessarily a non-negative integer)
+        /bin/sleep $POWEROFF_WAIT
+
+        $POWEROFF_QUIET || {
+            echo "$0: Power-race avoidance: sleep finished, rebooting..." >&2
+            [ -w /dev/console ] && echo "`TZ=UTC LANG=C date`: $0: Power-race avoidance: sleep finished, rebooting..." >/dev/console || true
+        }
+
+        # We need to pass --force twice here to bypass systemd
+        # and execute the reboot directly ourself.
+        /bin/systemctl reboot --force --force
+    else
+        $POWEROFF_QUIET || echo "$0: Power-race avoidance: POWEROFF_WAIT is not configured at this time, proceeding to shutdown" >&2
+    fi
+else
+    $POWEROFF_QUIET || echo "$0: SKIP: Not in FSD (killpower) mode at this time" >&2
 fi
 
 exit 0

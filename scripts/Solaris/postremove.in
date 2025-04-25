@@ -16,4 +16,8 @@ rm -f /etc/rc3.d/K10nut
 
 # Remove /var/run/nut
 
-rm -rf "@PIDPATH@/nut"
+rm -rf "@ALTPIDPATH@"
+
+# Remove /var/state/ups
+
+rm -rf "@STATEPATH@"

@@ -4,6 +4,7 @@ Module: NutUpsdUsers
 
 Author: Raphael Pinson <raphink@gmail.com>
         Frederic Bohe  <fredericbohe@eaton.com>
+        Jim Klimov     <jimklimov+nut@gmail.com>
 
 About: License
   This file is licensed under the GPL.
@@ -65,9 +66,11 @@ let upsd_users_instcmds   = [ del_spc
                                . ( sep_spc . upsd_users_instcmds_entry )* 
                                . ( upsd_users_comment|eol ) ]
 
+let upsd_users_upsmon_type_re     = /(master|primary|slave|secondary)/
+
 let upsd_users_upsmon    = [ del_spc
                                . key "upsmon" . sep_spc
-                               . store /master|primary|slave|secondary/ . eol ]
+                               . store upsd_users_upsmon_type_re . eol ]
 
 let upsd_users_title    = IniFile.indented_title IniFile.record_re
 

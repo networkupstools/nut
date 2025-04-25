@@ -1,0 +1,165 @@
+#
+# Network UPS Tools: AppVeyor CI build recipe: NUT for Windows with MSYS2/MinGW x64
+#
+# https://www.msys2.org/docs/ci/
+# https://www.appveyor.com/docs/appveyor-yml/
+# https://www.appveyor.com/docs/build-configuration/
+# https://www.appveyor.com/docs/windows-images-software/
+
+version: 2.8.3.{build}-{branch}
+
+# base image
+image: Visual Studio 2022
+
+# branches to build
+branches:
+  # whitelist
+  only:
+    - master
+    - FTY
+    - fightwarn
+    - /Windows/
+
+platform: x64
+
+# https://www.appveyor.com/docs/build-cache/
+environment:
+  APPVEYOR_SAVE_CACHE_ON_ERROR: true
+  APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma -mx=6
+  CCACHE_DIR: /home/appveyor/.ccache
+
+# https://github.com/networkupstools/nut/blob/Windows-v2.8.0-1/docs/config-prereqs.txt#L951
+# or look for the chapter in nearby lines in later (current) revisions.
+# Note: not using `time` in scripts currently - they did upset
+# AppVeyor console log scanner with a /^sys.*/ match (apparently)
+install:
+  - cmd: |
+        REM Do not give pacman cause for complaints:
+        C:\msys64\usr\bin\bash -lc "mkdir -p /var/cache/pacman/pkg; ls -la /"
+        REM FIXME: Since Jan 2025, normal update below fails with the message:
+        REM   installing mingw-w64-i686-gdb (16.1-1) breaks dependency
+        REM   'mingw-w64-i686-gdb=15.2' required by mingw-w64-i686-gdb-multiarch
+        REM Currently we sweep it away by removing the conflicting package:
+        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -R mingw-w64-i686-gdb-multiarch || true"
+  - cmd: |
+        REM Core update (in case any core packages are outdated):
+        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
+  - cmd: |
+        REM Normal update (same command again):
+        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
+  - cmd: |
+        REM Prerequisites for NUT per https://github.com/networkupstools/nut/blob/master/docs/config-prereqs.txt :
+        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libgd mingw-w64-x86_64-cppunit"
+        REM SKIP mingw-w64-x86_64-libmodbus-git : we custom-build one with USB support
+  - cmd: |
+        REM Assorted stats after package processing:
+        C:\msys64\usr\bin\bash -lc "date -u; ls -la / ; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date -u"
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats" ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true '
+
+
+before_build:
+  - cmd: |
+      REM Ensure we have a net-snmp to build against
+      REM Adapted from scripts/Windows/README.adoc document.
+      REM Here we hope to build it once, then use the
+      REM stashed version across Appveyor rebuilds.
+      REM Preserve the current working directory:
+      set CHERE_INVOKING=yes
+      REM Start a 64 bit Mingw environment:
+      set MSYSTEM=MINGW64
+      C:\msys64\usr\bin\bash -lc 'date -u; export MSYS2_PATH ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" bash ./scripts/Windows/build-mingw-prereqs.sh'
+
+
+build_script:
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh'
+
+
+after_build:
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
+
+
+test_script:
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        REM Start Mingw-based integration and unit checks:
+        C:\msys64\usr\bin\bash -lc 'date -u; NUT_STATEPATH="C:\\Users\\appveyor\\AppData\\Local\\Temp\\nut-test"; mkdir -p "${NUT_STATEPATH}"; export NUT_STATEPATH; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s check || bash -lc "for F in tests/*.log tests/*.trs ; do echo \"===---=== $F :\"; cat \"$F\"; done; exit 1;" '
+        REM Start a Mingw-based documentation spellcheck (note that "make check" above could cover some documents in path of artifact delivery, but maybe not all that we have):
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s -j 8 spellcheck'
+
+
+after_test:
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        REM Oh the joys of shell scripting with strings passed through CMD:
+        REM Note: currently Python installation path with MSYS is buggy [#1584]
+        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; rm -rf ./.inst/NUT-for-Windows-x86_64-SNAPSHOT || true ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; ) ; date -u'
+        cd .inst
+        7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -x || echo "SKIP: Could not query ccache compression stats"'
+
+
+artifacts:
+  - path: 'NUT-for-Windows*.7z'
+    name: Bundle of binary files and FOSS dependencies of NUT for Windows
+
+  - path: config.log
+    name: config.log of recent build of NUT for Windows
+
+  - path: config.nut_report_feature.log
+    name: config.nut_report_feature.log of recent build of NUT for Windows
+
+# Example optional cache (depends on file change):
+# - C:\msys64 -> appveyor.yml
+cache:
+  - C:\msys64\home\appveyor\.ccache
+  - C:\msys64\home\appveyor\ccache # likely missing, no problem - but the name is reported in ccache status
+  - C:\Users\appveyor\AppData\Local\ccache # may be default in newer versions
+  - C:\Users\appveyor\AppData\Local\.ccache # may be missing, but for completeness like above
+  - C:\msys64\var\cache\pacman\pkg
+  - C:\msys64\home\appveyor\nut-win-deps
+
+# Below we tried to stash binaries of MSYS2 environment
+# so VM deployment is faster on subsequent builds
+# (update/install "from scratch" costs about 3 min),
+# but unstashing the archive takes comparable time
+# and often leads to conflicts in pacman book-keeping,
+# while creating/updating the archive costs ~10 min.
+  #- C:\msys64\var\lib\pacman
+  #- C:\msys64\var\lib
+  #- C:\msys64\mingw64
+  #- C:\msys64\mingw32
+  #- C:\msys64\ucrt64
+  #- C:\msys64\clang32
+  #- C:\msys64\clang64
+  #- C:\msys64\clangarm64
+  #- C:\msys64\usr
+  #- C:\msys64\bin
+  #- C:\msys64\etc
+  #- C:\msys64\*.*
+  #- C:\msys64\installerResources

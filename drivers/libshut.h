@@ -27,7 +27,7 @@
 #ifndef NUT_LIBSHUT_H_SEEN
 #define NUT_LIBSHUT_H_SEEN 1
 
-#include "main.h"	/* for subdrv_info_t */
+#include "main.h"	/* for subdrv_info_t and TYPE_FD_SER via "common.h" */
 #include "nut_stdint.h"	/* for uint16_t, size_t, PRIuSIZE etc. */
 
 extern upsdrv_info_t comm_upsdrv_info;
@@ -49,8 +49,10 @@ extern upsdrv_info_t comm_upsdrv_info;
  * my_hid_descriptor struct in libshut.c for practical fixed-size types.
  */
 
-/* Essentially the file descriptor type, "int" - as in ser_get_char() etc.: */
-typedef int usb_dev_handle;
+/* Essentially for SHUT codebase the usb_dev_handle is the file descriptor
+ * type, usually an "int" - as in ser_get_char() etc. on Unix-like platforms,
+ * but a complex structure which includes a HANDLE field in Win32 builds. */
+typedef TYPE_FD_SER usb_dev_handle;
 
 /* Originally "int" cast to "uint8_t" in shut_control_msg(),
  * and "unsigned char" in shut_get_descriptor() */
@@ -114,7 +116,7 @@ typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
 
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
- * the 5 pieces of information by which a SHUT device identifies
+ * the 5 or more pieces of information by which a SHUT device identifies
  * itself, so it serves as a kind of "fingerprint" of the device. This
  * information must be matched exactly when reopening a device, and
  * therefore must not be "improved" or updated by a client
@@ -130,6 +132,9 @@ typedef struct SHUTDevice_s {
 	char*		Bus;       /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
 	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	char		*BusPort;  /*!< Port name, e.g. "001"  */
+#endif
 } SHUTDevice_t;
 
 /*!

@@ -1,11 +1,15 @@
 /* arduino-hid.c - subdriver to monitor Arduino USB/HID devices with NUT
  *
+ *  This was written assuming it would be used to communicate with code
+ *  using this Arduino library: https://github.com/abratchik/HIDPowerDevice
+ *
  *  Copyright (C)
  *  2003 - 2012	Arnaud Quette <ArnaudQuette@Eaton.com>
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *  2013 Charles Lepple <clepple+nut@gmail.com>
  *  2021 Alex Bratchik <alexbratchik@yandex.com>
+ *  2023 Kelly Byrd <kbyrd@memcpy.com>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
@@ -32,7 +36,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define ARDUINO_HID_VERSION	"Arduino HID 0.2"
+#define ARDUINO_HID_VERSION	"Arduino HID 0.21"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Arduino */
@@ -90,6 +94,37 @@ static hid_info_t arduino_hid2nut[] = {
 	{ "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
 	{ "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
 
+	/* Battery */
+	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},
+	/* In the sample for the Arduino library, this isn't a date */
+	/*{ "battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},*/
+	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.2f", HU_FLAG_QUICK_POLL, NULL},
+	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.2f", HU_FLAG_QUICK_POLL, NULL},
+	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+	{ "battery.runtime.low", 0, 0, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	/* Parse `*Capacity` values assuming `UPS.PowerSummary.CapacityMode` is set to 2, which means the `*Capacity`
+	   units are percent. The Arduino HID Powerdevice library is capable of doing other modes, if the Sketch wants
+	   to use them, but it appears most drivers just assume percent.
+	*/
+	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
+	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL},
+	{ "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL},
+
+	/* USB HID PresentStatus Flags
+	   TODO: Parse these into battery.charger.status
+	*/
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info},
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info},
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info},
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info},
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, NULL, 0, overload_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, NULL, 0, timelimitexpired_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, 0, nobattery_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, NULL, HU_FLAG_QUICK_POLL, fullycharged_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FullyDischarged", NULL, NULL, HU_FLAG_QUICK_POLL, depleted_info },
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
@@ -116,18 +151,24 @@ static int arduino_claim(HIDDevice_t *hd)
 		case POSSIBLY_SUPPORTED:
 			/* by default, reject, unless the productid option is given */
 			if (getval("productid")) {
-				usb->hid_ep_in=4;
-				usb->hid_ep_out=5;
-				usb->hid_rep_index = 2;
+				if (!getval("usb_hid_ep_in"))
+					usb->hid_ep_in=4;
+				if (!getval("usb_hid_ep_out"))
+					usb->hid_ep_out=5;
+				if (!getval("usb_hid_rep_index"))
+					usb->hid_rep_index = 2;
 				return 1;
 			}
 			possibly_supported("Arduino", hd);
 			return 0;
 
 		case SUPPORTED:
-			usb->hid_ep_in=4;
-			usb->hid_ep_out=5;
-			usb->hid_rep_index = 2;
+			if (!getval("usb_hid_ep_in"))
+				usb->hid_ep_in=4;
+			if (!getval("usb_hid_ep_out"))
+				usb->hid_ep_out=5;
+			if (!getval("usb_hid_rep_index"))
+				usb->hid_rep_index = 2;
 			return 1;
 
 		case NOT_SUPPORTED:

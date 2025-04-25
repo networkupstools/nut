@@ -23,9 +23,6 @@
 #ifndef NUT_APCSMART_H_SEEN
 #define NUT_APCSMART_H_SEEN 1
 
-#define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.2"
-
 #define ALT_CABLE_1 "940-0095B"
 
 /*
@@ -69,6 +66,10 @@
  * furthermore, since the canonical/non-canonical mode is user selectable now,
  * we have to ignore this character explicitly
  */
+
+#ifndef WIN32
+#include <sys/ioctl.h>
+#endif	/* !WIN32 */
 
 /* Basic UPS reply line structure */
 #define ENDCHAR 10		/* APC ends responses with LF (and CR, but it's IGNCRed) */

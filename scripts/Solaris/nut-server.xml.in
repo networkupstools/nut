@@ -2,14 +2,15 @@
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <!--
 #
-# Copyright 2016-2022 Jim Klimov
-# Service for the upsd daemon (and drivers, if available)
+# Copyright 2016-2024 Jim Klimov
+# Service for the upsd daemon (note: drivers, if available, are
+# wrapped by service instances managed by nut-driver-enumerator)
 #
 -->
 
 <service_bundle type='manifest' name='nut-server'>
 
-	<service name='system/power/nut-server' type='service' version='2'>
+	<service name='system/power/nut-server' type='service' version='3'>
 
 	<!--
 	  Configure a default instance for the service since it doesn't
@@ -130,7 +131,7 @@
 		<!-- Also used by nut-driver.xml to stay in sync regarding the rights -->
 		<property_group name='nut' type='application'>
 			<stability value='Evolving' />
-			<propval name='NUT_RUN_DIR' type='astring' value='@PIDPATH@/nut' />
+			<propval name='NUT_RUN_DIR' type='astring' value='@ALTPIDPATH@' />
 			<propval name='NUTUSER' type='astring' value='@RUN_AS_USER@' />
 			<propval name='NUTGROUP' type='astring' value='@RUN_AS_GROUP@' />
 		</property_group>
@@ -145,16 +146,16 @@
 				</loctext>
 			</common_name>
 			<documentation>
-				<manpage title='upsdrvctl' section='8'
-				manpath='/usr/share/man' />
-				<manpage title='upsd' section='8'
-				manpath='/usr/share/man' />
-				<manpage title='ups.conf' section='5'
-				manpath='/usr/share/man' />
-				<manpage title='upsd.conf' section='5'
-				manpath='/usr/share/man' />
-				<manpage title='upsd.users' section='5'
-				manpath='/usr/share/man' />
+				<doc_link name='upsd online'		uri='@NUT_WEBSITE_BASE@/docs/man/upsd.html' />
+				<manpage title='upsd'			section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
+				<doc_link name='ups.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/ups.conf.html' />
+				<manpage title='ups.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+				<doc_link name='upsd.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/upsd.conf.html' />
+				<manpage title='upsd.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+				<doc_link name='upsd.users online'	uri='@NUT_WEBSITE_BASE@/docs/man/upsd.users.html' />
+				<manpage title='upsd.users'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+				<doc_link name='nut.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/nut.conf.html' />
+				<manpage title='nut.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 			</documentation>
 		</template>
 	</service>

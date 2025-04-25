@@ -1,0 +1,393 @@
+Introduction
+============
+
+The PyNUT module provides an abstraction class `PyNUTClient` written in
+Python, which allows to connect to a NUT (Network UPS Tools) server and
+execute different commands without an application developer needing to
+know the NUT communication protocol. It also includes a small self-test
+application as a consumer of the module.
+
+The project was originally started in 2008 by David Goncalves <david@lestat.st>
+at https://www.lestat.st/informatique/projets/pynut and was soon added to
+the main NUT codebase and further evolved there.
+
+The `PyNUTClient` class was born from another project the original author
+had -- a graphical application to monitor and manage the UPSes connected
+to a NUT server. It is now known as `NUT-Monitor` and is also provided
+along with NUT sources.
+
+With that GUI application being written in Python too, it was decided
+to split the project in two parts (the PyNUT class + GUI application,
+serving as model + view) in order to keep the two parts independent.
+That class was subsequently renamed to `PyNUTClient` since version 1.1
+of the original project, allowing to develop other classes nearby later.
+
+It is published to PyPI repository as
+link:https://pypi.org/project/PyNUTClient/[PyNUTClient]
+and so should be installable with `pip` tooling.
+Note that the file name of the distribution tarball is lower-cased per
+PEP-0625 requirements, while the module name is camel-cased historically.
+
+Currently the module is regularly tested to work with Python interpreter
+versions 2.7, 3.4, 3.5, 3.7, 3.11 and 3.13.
+
+[NOTE]
+======
+Text fields returned by methods are byte sequences (not locale-aware
+strings), except NUT protocol error codes quoted into `PyNUTError`
+exceptions which are decoded into strings as originally `ascii` text.
+This is of little concern for Python 2, but is important in Python 3.
+
+The `ups` argument to methods is handled as a string, so conversion may
+be needed to compare with names returned in the lists and dictionaries,
+e.g.:
+----
+strUps = bUps.decode('ascii')
+bUps = strUps.encode('ascii')
+----
+
+Only the names returned by `GetUPSNames()` method specifically are
+converted into string type.
+
+Since Python 3 support was added just recently, module code may later be
+converted to use string types like `str` or `unicode` in the returned
+dictionaries and sets instead, if the community deems this to be more
+idiomatic.
+
+Examples below *do not* specify the `b'some text'` markup that would be
+pedantically correct (for Python 3 at least).
+======
+
+.List of methods in the class
+------
+class PyNUTClient :
+  def __init__( self, host='127.0.0.1', port=3493,
+    login=None, password=None, debug=False, timeout=5 ) :
+
+  def help( self ) :
+
+  def ver( self ) :
+
+  def DeviceLogin( self, ups="" ) :
+
+  def FSD( self, ups="" ) :
+
+  def CheckUPSAvailable( self, ups="" ) :
+
+  def GetRWVars( self, ups='' ) :
+
+  def GetUPSCommands( self, ups='' ) :
+
+  def GetUPSList( self ) :
+
+  def GetUPSNames( self ) :
+
+  def GetUPSVars( self, ups='' ) :
+
+  def ListClients( self, ups = None ) :
+
+  def RunUPSCommand( self, ups='', command='' ) :
+
+  def SetRWVar( self, ups='', var='', value='' ) :
+------
+
+The module also provides the `PyNUTError` class to represent any exceptions
+raised by `PyNUTClient` logic.
+
+Documentation
+-------------
+
+Although the original project was written in French, for the reasons of general
+distribution with NUT, all of its code is commented in English. While this file
+contains the description from https://www.lestat.st/informatique/projets/pynut
+the class `PyNUTClient` is compatible with the Python module PyDOC, so you can
+type `pydoc PyNUT` to obtain succinct documentation on your current version of
+the module.
+
+For more examples see the provided test script and the NUT-Monitor application
+in the NUT sources.
+
+Commands below are listed in alphabetic order.
+
+__init__
+~~~~~~~~
+
+When you initialize the class instance, it performs the connection to the NUT
+data server or raises a Python exception from the `__connect()` method called
+internally.
+
+
+help
+~~~~
+
+Sends the `HELP` command to the NUT data server and returns whatever bits of
+wisdom it has to offer.
+
+
+ver
+~~~
+
+Sends the `VER` command to the NUT data server and returns its self-reported
+identification such as version, product or distribution it may be bundled with.
+
+Note that the NUT client interactions should not rely on reported versions,
+but follow the protocol as defined.
+
+
+DeviceLogin
+~~~~~~~~~~~
+
+Establish a "client" session with the specified UPS. This uses credentials
+specified earlier to `__init__()` this class instance, and on server side
+(in `upsd.users` file) these credentials must have one of `upsmon` roles.
+
+The command should return `OK` if everything went well, or raise an exception
+in case of failure, such as invalid or insufficiently privileged credentials.
+
+Note there is no `DeviceLogout()`, just the general connection termination.
+
+
+FSD
+~~~
+
+Send the FSD (Forced ShutDown) command to the specified UPS.
+
+The command should return `OK` if everything went well, or raise an exception
+in case of failure, such as that this server does not allow to manage that UPS
+as a "primary" (or "master" before NUT 2.8.0).
+
+
+CheckUPSAvailable
+~~~~~~~~~~~~~~~~~
+
+Returns a boolean state whether the specified UPS is recognized and available
+(`True`), or is not (`False`).
+
+Internally, requests a listing of commands supported by the device name, and
+evaluates the server response.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='server', login='upsadmin', password='upspass' )
+    result = ups.CheckUPSAvailable( ups='ups1' )
+    print( result )
+
+    >> True
+-----
+
+See also: `GetUPSCommands()`
+
+
+GetRWVars
+~~~~~~~~~
+
+Returns a list of modifiable variables on the specified UPS, as a dictionary
+of "variable"-"current value" pairs.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='server', login='upsadmin', password='upspass' )
+    result = ups.GetRWVars( ups='ups1' )
+    print( result )
+
+    >> {'battery.date': '10/25/07', 'ups.id': 'test'}
+-----
+
+See also: `GetUPSVars()`, `SetRWVar()`
+
+
+GetUPSCommands
+~~~~~~~~~~~~~~
+
+Returns a list of commands supported by the specified UPS.
+
+Note that certain commands are not usable without first getting necessary
+rights on the NUT data server.
+
+The result is presented as a dictionary of "command"-"English description"
+pairs.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='server', login='upsadmin', password='upspass' )
+    result = ups.GetRWVars( ups='ups1' )
+    print( result )
+
+    >> {'test.battery.start' : 'Start a battery test',
+        'calibrate.stop'     : 'Stop run time calibration',
+        'shutdown.stayoff'   : 'Turn off the load and remain off',
+        'test.battery.stop'  : 'Stop the battery test',
+        'test.panel.start'   : 'Start testing the UPS panel',
+        'calibrate.start'    : 'Start run time calibration',
+        'load.off'           : 'Turn off the load immediately',
+        'test.failure.start' : 'Start a simulated power failure',
+        'shutdown.return'    : 'Turn off the load and return when power is back'}
+-----
+
+See also: `RunUPSCommand()`
+
+
+GetUPSList
+~~~~~~~~~~
+
+Returns the list of UPSes represented by the NUT server, as a dictionary of
+"name"-"description" pairs.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='server', login='upsadmin', password='upspass' )
+    result = ups.GetUPSList()
+    print( result )
+
+    >> {'UPS1': 'Smart UPS 3000 File server',
+        'UPS2': 'Smart UPS 1000 Serveur de mail'}
+-----
+
+
+GetUPSNames
+~~~~~~~~~~~
+
+Returns just the list of available UPS names from the NUT server.
+
+The result is a set of `str` objects (comparable with `ups="somename"` and
+useful as arguments to other methods). Helps work around Python2/Python3
+string API changes (where `b'string' != 'string'` and not even a type
+comparable to it), and is primarily used as a helper internally in some
+methods.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='Serveur', login='upsadmin', password='upspass' )
+    result = ups.GetUPSNames()
+    print( result )
+
+    >> ['UPS1', 'UPS2']
+-----
+
+
+GetUPSVars
+~~~~~~~~~~
+
+Returns a list of all variables on the specified UPS, as a dictionary
+of "variable"-"current value" pairs.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='Serveur', login='upsadmin', password='upspass' )
+    result = ups.GetUPSVars( ups='UPS1' )
+    print( result )
+
+    >> {'input.transfer.high'           : '253',
+        'battery.charge'                : '100.0',
+        'ups.mfr'                       : 'APC',
+        'battery.voltage.nominal'       : '024',
+        'input.transfer.reason'         : 'S',
+        'ups.test.interval'             : '1209600',
+        'input.transfer.low'            : '208',
+        'output.voltage'                : '234.0',
+        'driver.version'                : '2.2.1-',
+        'battery.charge.restart'        : '00',
+        'ups.id'                        : 'test',
+        'driver.parameter.pollinterval' : '2',
+        'driver.parameter.port'         : '/dev/ttyS0',
+        'battery.voltage'               : '27.10',
+        'ups.test.result'               : 'NO',
+        'ups.status'                    : 'OL',
+        'battery.date'                  : '10/25/07',
+        'ups.model'                     : 'Smart-UPS SC1000',
+        'ups.serial'                    : 'XXXXXXXXXXXX',
+        'output.voltage.nominal'        : '230',
+        'ups.mfr.date'                  : '10/25/07',
+        'driver.version.internal'       : '1.99.8',
+        'input.voltage'                 : '234.0',
+        'battery.runtime.low'           : '120',
+        'input.sensitivity'             : 'H',
+        'ups.load'                      : '001.9',
+        'driver.name'                   : 'apcsmart',
+        'input.voltage.maximum'         : '234.0',
+        'input.frequency'               : '50.00',
+        'ups.delay.shutdown'            : '060',
+        'ups.delay.start'               : '000',
+        'input.voltage.minimum'         : '232.0',
+        'input.quality'                 : 'FF',
+        'battery.runtime'               : '29040',
+        'ups.firmware'                  : '737.3.I',
+        'battery.alarm.threshold'       : '0'}
+-----
+
+See also: `GetRWVars()`
+
+
+ListClients
+~~~~~~~~~~~
+
+Returns the list of connected clients (such as the `NUT-Monitor` application
+or an `upsmon` service) from the NUT server, for a particular UPS or all of
+them by default.
+
+The result is a dictionary containing "upsname"-"client list" pairing 'UPSName'
+and a list of clients for each device if the information was retrieved from
+the NUT data server successfully, or an exception is raised otherwise.
+
+
+RunUPSCommand
+~~~~~~~~~~~~~
+
+Executes the specified command on the specified UPS. It should be one of the
+commands returned by the `GetUPSCommands()` function.
+
+Note that certain commands are not usable without first getting necessary
+rights on the NUT data server.
+
+The command should return `OK` if everything went well, or raise an exception
+in case of failure.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='Serveur', login='upsadmin', password='upspass' )
+    result = ups.RunUPSCommand( ups='UPS1', command='test.panel.start' )
+    print( result )
+
+    >> OK
+-----
+
+See also: `GetUPSCommands()`
+
+
+SetRWVar
+~~~~~~~~
+
+This method adjusts the value of a writable NUT variable on the specified UPS.
+It should be one of the variables listed by the `GetRWVars()` method.
+
+Note that you may need to first get necessary rights on the NUT data server.
+
+The command should return `OK` if everything went well, or raise an exception
+in case of failure.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='Serveur', login='upsadmin', password='upspass' )
+    result = ups.SetRWVar( ups='UPS1', var='battery.date', value='06/17/08' )
+    print( result )
+
+    >> OK
+-----
+
+See also: `GetRWVars()`

@@ -27,7 +27,7 @@
 #ifndef ADELSYSTEM_CBI_H
 #define ADELSYSTEM_CBI_H
 
-#include <stdint.h>
+#include "nut_stdint.h"
 
 /* UPS device details */
 #define DEVICE_MFR	"ADELSYSTEM"
@@ -255,9 +255,9 @@ typedef struct alrm_ar alrm_ar_t;
 
 /* Allocate alarm arrays */
 static inline
-alrm_ar_t *alloc_alrm_ar(int as, size_t n)
+alrm_ar_t *alloc_alrm_ar(int as, size_t extra)
 {
-	alrm_ar_t *ret = xcalloc(sizeof(alrm_t) + n, 1);
+	alrm_ar_t *ret = xcalloc(1, sizeof(alrm_t) + extra);
 	if (ret) {
 	memcpy(ret,
 		   &(alrm_ar_t const) {

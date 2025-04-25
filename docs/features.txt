@@ -5,7 +5,7 @@ NUT provides many features, and is always improving.
 Thus this list may lag behind the current code.
 
 Features frequently appear during the development cycles, so be sure to look at
-the link:http://www.networkupstools.org/download.html[release notes and change logs]
+the link:https://www.networkupstools.org/download.html[release notes and change logs]
 to see the latest additions.
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +18,7 @@ More and more appliances manufacturers are bundling NUT...
 Multiple manufacturer and device support
 ----------------------------------------
 
-- Monitors many UPS, PDU, ATS, PSU and SCD models from more than 140
+- Monitors many UPS, PDU, ATS, PSU and SCD models from more than 170
 manufacturers with a unified interface
 (link:stable-hcl.html[Hardware Compatibility List]).
 
@@ -26,7 +26,7 @@ manufacturers with a unified interface
 common interface:
 	* serial,
 	* USB,
-	* network (SNMP, Eaton / MGE XML/HTTP).
+	* network (SNMP, Eaton / MGE XML/HTTP, IPMI).
 
 Multiple architecture support
 -----------------------------
@@ -38,7 +38,7 @@ common set of tools, even crossing architectures.
 Apple's OS X, commercial Solaris and open-source illumos distros, IRIX,
 HP/UX, Tru64 Unix, and AIX.
 
-- Windows users may be able to build it directly with Cygwin.
+- Windows users may be able to build it directly with MSYS2, MinGW or Cygwin.
 There is also a port of the client-side monitoring to Windows called WinNUT.
 
 - Your system will probably run it too. You just need a good C compiler and
@@ -161,7 +161,7 @@ Monitoring diagrams
 These are the most common situations for monitoring UPS hardware. Other ways
 are possible, but they are mostly variations of these four.
 
-NOTE: these examples show serial communications for simplicity, but USB or
+NOTE: These examples show serial communications for simplicity, but USB or
 SNMP or any other monitoring is also possible.
 
 "Simple" configuration

@@ -6,8 +6,8 @@
  * as published at https://www.jenkins.io/artwork/ collection
  * under https://creativecommons.org/licenses/by-sa/3.0/ license
  *
- * Fosshost logo derived (resized to readable height in banner line)
- * from https://fosshost.org/media/
+ * DigitalOcean logo derived (resized to readable height in banner line)
+ * from https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/PoweredByDO/DO_Powered_by_Badge_blue.png
  */
 
 /* Custom style for Jenkins */
@@ -39,33 +39,45 @@ object-fit: contain;
 }
 
 .logo:after {
-content: "CI for NUT";
+content: "NUT CI farm";
 font-weight: bold;
-font-size: 40px;
+font-size: 24px;
 /* font-family: "Brush Script MT", cursive; */
 margin-left: 20px;
 margin-right: 200px;
 color: Gold;
-line-height: 40px;
+line-height: 24px;
 }
 
+/* For Customizable Theme plugin: */
 .logo {
-background: url("/userContent/layout/fosshost.org_Host_Dark_56px.png");
+background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
   background-repeat: no-repeat;
 /*  background-attachment: fixed; */
   background-position: right;
   background-origin: content-box;
-  padding-right: 4px;
+  padding-right: 14px;
+  /* Glue to the search box, to hide DO logo plank color gap with background on the right side */
+}
+
+/* For Customizable Header plugin: */
+.custom-header__title {
+background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
+  background-repeat: no-repeat;
+/*  background-attachment: fixed; */
+  background-position: right;
+  background-origin: content-box;
+/*  padding-right: 14px; */
   /* Glue to the search box, to hide FH logo plank color gap with background on the right side */
 }
 
-/* Match color of fosshost logo */
+/* Match/contrast color of DigitalOcean logo */
 .page-header {
   background-color: #2a2a2a;
 }
 
 /*
 .page-footer__footer-id-placeholder {
-background: url("/userContent/layout/fosshost.org_Host_Dark_56px.png") no-repeat;
+background: url("/userContent/layout/fosshost_org_Host_Dark_56px.png") no-repeat;
 }
 */

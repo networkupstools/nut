@@ -6,6 +6,7 @@
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   2016      Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
+ *   2020-2025 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -28,50 +29,58 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.49"
+#define DRIVER_VERSION	"0.62"
+
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
-#include "main.h"
+#include "main.h"	/* Must be first, includes "config.h" */
 #include "nut_stdint.h"
 #include "libhid.h"
 #include "usbhid-ups.h"
 #include "hidparser.h"
 #include "hidtypes.h"
+#include "common.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif	/* WIN32 */
 
 /* include all known subdrivers */
 #include "mge-hid.h"
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	/* explore stub goes first, others alphabetically */
-	#include "explore-hid.h"
-	#include "apc-hid.h"
-	#include "arduino-hid.h"
-	#include "belkin-hid.h"
-	#include "cps-hid.h"
-	#include "delta_ups-hid.h"
-	#include "ever-hid.h"
-	#include "idowell-hid.h"
-	#include "legrand-hid.h"
-	#include "liebert-hid.h"
-	#include "openups-hid.h"
-	#include "powercom-hid.h"
-	#include "powervar-hid.h"
-	#include "salicru-hid.h"
-	#include "tripplite-hid.h"
-#endif
+#	include "explore-hid.h"
+#	include "apc-hid.h"
+#	include "arduino-hid.h"
+#	include "belkin-hid.h"
+#	include "cps-hid.h"
+#	include "delta_ups-hid.h"
+#	include "ecoflow-hid.h"
+#	include "ever-hid.h"
+#	include "idowell-hid.h"
+#	include "legrand-hid.h"
+#	include "liebert-hid.h"
+#	include "openups-hid.h"
+#	include "powercom-hid.h"
+#	include "powervar-hid.h"
+#	include "salicru-hid.h"
+#	include "tripplite-hid.h"
+#endif	/* !SHUT_MODE => USB */
 
 /* Reference list of available subdrivers */
 static subdriver_t *subdriver_list[] = {
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	&explore_subdriver,
-#endif
+#endif	/* !SHUT_MODE => USB */
+	/* mge-hid.c supports both SHUT and USB */
 	&mge_subdriver,
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	&apc_subdriver,
 	&arduino_subdriver,
 	&belkin_subdriver,
 	&cps_subdriver,
 	&delta_ups_subdriver,
+	&ecoflow_subdriver,
 	&ever_subdriver,
 	&idowell_subdriver,
 	&legrand_subdriver,
@@ -81,7 +90,7 @@ static subdriver_t *subdriver_list[] = {
 	&powervar_subdriver,
 	&salicru_subdriver,
 	&tripplite_subdriver,
-#endif
+#endif	/* !SHUT_MODE => USB */
 	NULL
 };
 
@@ -93,11 +102,11 @@ upsdrv_info_t upsdrv_info = {
 	"Arjen de Korte <adkorte-guest@alioth.debian.org>\n" \
 	"John Stamp <kinsayder@hotmail.com>",
 	/*FIXME: link the subdrivers? do the same as for the mibs! */
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	DRV_STABLE,
-#else
+#else	/* SHUT_MODE */
 	DRV_EXPERIMENTAL,
-#endif
+#endif	/* SHUT_MODE / USB */
 	{ &comm_upsdrv_info, NULL }
 };
 
@@ -113,12 +122,16 @@ static subdriver_t *subdriver = NULL;
 
 /* Global vars */
 static HIDDevice_t *hd = NULL;
-static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL, 0, NULL };
+static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL, 0, NULL
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	, NULL
+#endif
+};
 static HIDDeviceMatcher_t *subdriver_matcher = NULL;
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 static HIDDeviceMatcher_t *exact_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
-#endif
+#endif	/* !SHUT_MODE => USB */
 static int pollfreq = DEFAULT_POLLFREQ;
 static unsigned ups_status = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
@@ -127,15 +140,112 @@ bool_t use_interrupt_pipe = TRUE;
 #else
 bool_t use_interrupt_pipe = FALSE;
 #endif
+static size_t interrupt_pipe_EIO_count = 0; /* How many times we had I/O errors since last reconnect? */
+
+/**
+ * How many times do we tolerate having "0 HID objects" in a row?
+ * Default -1 means indefinitely, but when some controllers hang,
+ * this is a clue that we want to fully restart the connection.
+ */
+static long interrupt_pipe_no_events_tolerance = -1;
+/* How many times did we actually have "Got 0 HID objects" in a row? */
+static long interrupt_pipe_no_events_count = 0;
+/* How HIDGetEvents() below reports no events found */
+#define	NUT_LIBUSB_CODE_NO_EVENTS	0
+
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
+
+/**
+ * Track when calibration started, whether known from UPS status flags
+ * or interpreted from OL&DISCHRG combo on some devices (see below).
+ * The last_calibration_start is reset to 0 when the status becomes
+ * inactive, and last_calibration_finish is incremented every time.
+ */
+static time_t last_calibration_start = 0;
+static time_t last_calibration_finish = 0;
 
 /**
  * CyberPower UT series sometime need a bit of help deciding their online status.
  * This quirk is to enable the special handling of OL & DISCHRG at the same time
  * as being OB (on battery power/no mains power). Enabled by device config flag.
+ * NOTE: Also known by legacy alias "onlinedischarge", deprecated but tolerated
+ * since NUT v2.8.2.
  */
-static int onlinedischarge = 0;
+static int onlinedischarge_onbattery = 0;
+
+/**
+ * Some UPS models (e.g. APC were seen to do so) report OL & DISCHRG when they
+ * are in calibration mode. This usually happens after a few seconds reporting
+ * an "OFF" state as well, while the hardware is switching to on-battery mode.
+ */
+static int onlinedischarge_calibration = 0;
+
+/**
+ * If/when an UPS reports OL & DISCHRG and we do not use any other special
+ * settings (e.g. they do not match the actual device capabilities/behaviors),
+ * the driver logs messages about the unexpected situation - on every cycle
+ * if must be. This setting allows to throttle frequency of such messages.
+ * A value of 0 is small enough to log on every processing cycle (old noisy
+ * de-facto default before NUT v2.8.2 which this throttle alleviates).
+ * A value of -1 (any negative passed via configuration) disables repeated
+ * messages completely.
+ * Default (-2) below is not final: if this throttle variable is *not* set
+ * in the driver configuration section, and...
+ * - If the device reports a battery.charge, the driver would default to
+ *   only repeat reports about OL & DISCHRG when this charge changes from
+ *   what it was when the previous report was made, independent of time;
+ * - Otherwise 30 sec.
+ * If both the throttle is set and battery.charge is reported (and changes
+ * over time), then hitting either trigger allows the message to be logged.
+ */
+static int onlinedischarge_log_throttle_sec = -2;
+/**
+ * When did we last emit the message?
+ */
+static time_t onlinedischarge_log_throttle_timestamp = 0;
+/**
+ * Last known battery charge (rounded to whole percent units)
+ * as of when we last actually logged about OL & DISCHRG.
+ * Gets reset to -1 whenever this condition is not present.
+ */
+static int onlinedischarge_log_throttle_charge = -1;
+/**
+ * If battery.charge is served and equals or exceeds this value,
+ * suppress logging about OL & DISCHRG if battery.charge varied
+ * since last logged message. Defaults to 100% as some devices
+ * only report this state combo when fully charged (probably
+ * they try to prolong battery life by not over-charging it).
+ */
+static int onlinedischarge_log_throttle_hovercharge = 100;
+
+/**
+ * Per https://github.com/networkupstools/nut/issues/2347 some
+ * APC BXnnnnMI devices made (flashed?) in 2023-2024 irregularly
+ * but frequently spew a series of state changes:
+ * * (maybe OL+DISCHRG),
+ * * LB,
+ * * RB,
+ * * <all ok>
+ * within a couple of seconds. If this tunable is positive, we
+ * would only report the device states on the bus if they persist
+ * that long (or more), only then assuming they reflect a real
+ * problematic state and not some internal calibration.
+ */
+static int lbrb_log_delay_sec = 0;
+/**
+ * By default we only act on (lbrb_log_delay_sec>0) when the device
+ * is in calibration mode of whatever nature (directly reported or
+ * assumed from other flag combos). With this flag we do not check
+ * for calibration and only look at LB + RB timestamps.
+ */
+static int lbrb_log_delay_without_calibrating = 0;
+/**
+ * When did we last enter the situation? (if more than lbrb_log_delay_sec
+ * ago, then set the device status and emit the message)
+ */
+static time_t last_lb_start = 0;
+static time_t last_rb_start = 0;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -184,6 +294,8 @@ static status_lkp_t status_info[] = {
 	{ "boost", STATUS(BOOST) },
 	{ "bypassauto", STATUS(BYPASSAUTO) },
 	{ "bypassman", STATUS(BYPASSMAN) },
+	{ "ecomode", STATUS(ECOMODE) },	/* Should not get used (at least not via */
+	{ "essmode", STATUS(ESSMODE) },	/* ups.status), but tracked just in case */
 	{ "off", STATUS(OFF) },
 	{ "cal", STATUS(CALIB) },
 	{ "overheat", STATUS(OVERHEAT) },
@@ -273,6 +385,15 @@ info_lkp_t bypass_auto_info[] = {
 info_lkp_t bypass_manual_info[] = {
 	{ 1, "bypassman", NULL, NULL },
 	{ 0, "!bypassman", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Should not get used (at least not via ups.status), but tracked just in case.
+ * Currently referenced in mge-hid.c */
+info_lkp_t eco_mode_info[] = {
+	{ 0, "normal", NULL, NULL },
+	{ 1, "ecomode", NULL, NULL },
+	{ 2, "essmode", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
@@ -404,6 +525,12 @@ info_lkp_t on_off_info[] = {
    done with result! */
 static const char *date_conversion_fun(double value)
 {
+	/* Per  spec https://www.usb.org/sites/default/files/pdcv11.pdf (page 38):
+	 * 4.2.6 Battery Settings -> ManufacturerDate
+	 *   The date the pack was manufactured in a packed integer.
+	 *   The date is packed in the following fashion:
+	 *   (year – 1980)*512 + month*32 + day.
+	 */
 	static char buf[32];
 	long year, month, day;
 
@@ -449,7 +576,7 @@ static const char *hex_conversion_fun(double value)
 {
 	static char buf[20];
 
-	snprintf(buf, sizeof(buf), "%08lx", (long)value);
+	snprintf(buf, sizeof(buf), "%08lx", (unsigned long)value);
 
 	return buf;
 }
@@ -491,6 +618,22 @@ info_lkp_t divide_by_10_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
+static const char *divide_by_100_conversion_fun(double value)
+{
+       static char buf[20];
+
+       snprintf(buf, sizeof(buf), "%0.1f", value * 0.01);
+
+       return buf;
+}
+
+/* FIXME? Do we need an inverse "nuf()" here? */
+info_lkp_t divide_by_100_conversion[] = {
+       { 0, NULL, divide_by_100_conversion_fun, NULL }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
 static const char *kelvin_celsius_conversion_fun(double value)
 {
 	static char buf[20];
@@ -515,15 +658,136 @@ info_lkp_t kelvin_celsius_conversion[] = {
 	{ 0, NULL, kelvin_celsius_conversion_fun, NULL }
 };
 
+static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
+	char	*subdrv = getval("subdriver");
+	subdriver_t	*info = NULL;
+
+	/* Pick up the subdriver name if set explicitly */
+	if (subdrv) {
+		int	i, flag_HAVE_LIBREGEX = 0;
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+		int	res;
+		size_t	len;
+		regex_t	*regex_ptr = NULL;
+		flag_HAVE_LIBREGEX = 1;
+#endif
+
+		upsdebugx(2,
+			"%s: matching a subdriver by explicit "
+			"name%s: '%s'...",
+			__func__,
+			flag_HAVE_LIBREGEX ?	"/regex" : "",
+			subdrv);
+
+		/* First try exact match for strings like "TrippLite HID 0.85"
+		 * Not likely to hit (due to versions etc.), but worth a try :)
+		 */
+		for (i=0; subdriver_list[i] != NULL; i++) {
+			if (strcmp_null(subdrv, subdriver_list[i]->name) == 0) {
+				info = subdriver_list[i];
+				goto found;
+			}
+		}
+
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+		/* Then try a case-insensitive regex like "tripplite.*"
+		 * if so provided by caller */
+		upsdebugx(2, "%s: retry matching by regex 'as is'", __func__);
+		res = compile_regex(&regex_ptr, subdrv, REG_ICASE | REG_EXTENDED);
+		if (res == 0 && regex_ptr != NULL) {
+			for (i=0; subdriver_list[i] != NULL; i++) {
+				res = match_regex(regex_ptr, subdriver_list[i]->name);
+				if (res == 1) {
+					free(regex_ptr);
+					info = subdriver_list[i];
+					goto found;
+				}
+			}
+		}
+
+		if (regex_ptr) {
+			free(regex_ptr);
+			regex_ptr = NULL;
+		}
+
+		/* Then try a case-insensitive regex like "tripplite.*"
+		 * with automatically added ".*" */
+		len = strlen(subdrv);
+		if (
+			(len < 3 || (subdrv[len-2] != '.' && subdrv[len-1] != '*'))
+			&& len < (LARGEBUF-3)
+		) {
+			char	buf[LARGEBUF];
+			upsdebugx(2, "%s: retry matching by regex with added '.*'", __func__);
+			snprintf(buf, sizeof(buf), "%s.*", subdrv);
+			res = compile_regex(&regex_ptr, buf, REG_ICASE | REG_EXTENDED);
+			if (res == 0 && regex_ptr != NULL) {
+				for (i=0; subdriver_list[i] != NULL; i++) {
+					res = match_regex(regex_ptr, subdriver_list[i]->name);
+					if (res == 1) {
+						free(regex_ptr);
+						info = subdriver_list[i];
+						goto found;
+					}
+				}
+			}
+
+			if (regex_ptr) {
+				free(regex_ptr);
+				regex_ptr = NULL;
+			}
+		}
+#endif	/* HAVE_LIBREGEX */
+
+		if (fatal_mismatch) {
+			fatalx(EXIT_FAILURE,
+				"Configuration requested subdriver '%s' but none matched",
+				subdrv);
+		} else {
+			upslogx(LOG_WARNING,
+				"Configuration requested subdriver '%s' but none matched; "
+				"will try USB matching by other fields",
+				subdrv);
+		}
+	}
+
+	/* No match (and non-fatal mismatch mode), or no
+	 * "subdriver" was specified in configuration */
+	return NULL;
+
+found:
+	upsdebugx(2, "%s: found a match: %s", __func__, info->name);
+	if (!getval("vendorid") || !getval("productid")) {
+		if (fatal_mismatch) {
+			fatalx(EXIT_FAILURE,
+				"When specifying a subdriver, "
+				"'vendorid' and 'productid' "
+				"are mandatory.");
+		} else {
+			upslogx(LOG_WARNING,
+				"When specifying a subdriver, "
+				"'vendorid' and 'productid' "
+				"are highly recommended.");
+		}
+	}
+
+	return info;
+}
+
 /*!
  * subdriver matcher: only useful for USB mode
  * as SHUT is only supported by MGE UPS SYSTEMS units
  */
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
-	int i;
+	int	i;
 	NUT_UNUSED_VARIABLE(privdata);
+
+	if (match_function_subdriver_name(1)) {
+		/* This driver can handle this device. Guessing so... */
+		return 1;
+	}
 
 	upsdebugx(2, "%s (non-SHUT mode): matching a device...", __func__);
 
@@ -544,7 +808,7 @@ static HIDDeviceMatcher_t subdriver_matcher_struct = {
 	NULL,
 	NULL
 };
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -653,6 +917,10 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* If extradata is empty, use the default value from the HID-to-NUT table */
 	val = extradata ? extradata : hidups_item->dfl;
+	if (!val) {
+		upsdebugx(2, "instcmd: %s requires an explicit parameter\n", cmdname);
+		return STAT_INSTCMD_CONVERSION_FAILED;
+	}
 
 	/* Lookup the new value if needed */
 	if (hidups_item->hid2info != NULL) {
@@ -729,32 +997,44 @@ int setvar(const char *varname, const char *val)
 
 void upsdrv_shutdown(void)
 {
-	upsdebugx(1, "upsdrv_shutdown...");
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	/* Try to shutdown with delay */
-	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
+	char	*cmd_used = NULL;
+
+	upsdebugx(1, "%s...", __func__);
+
+	/* By default:
+	 * - Try to shutdown with delay
+	 * - If the above doesn't work, try shutdown.reboot
+	 * - If the above doesn't work, try load.off.delay
+	 * - Finally, try shutdown.stayoff
+	 */
+	if (do_loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_INFO, "Shutdown successful with '%s'", NUT_STRARG(cmd_used));
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
-	/* If the above doesn't work, try shutdown.reboot */
-	if (instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try load.off.delay */
-	if (instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
 {
-	/* FIXME: to be completed */
+	size_t i;
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf "
+		"in this driver (exact names here, case-insensitive "
+		"sub-strings may be used, as well as regular expressions): ");
+
+	for (i = 0; subdriver_list[i] != NULL; i++) {
+		if (i>0)
+			printf(", ");
+		printf("\"%s\"", subdriver_list[i]->name);
+	}
+	printf("\n");
 }
 
 void upsdrv_makevartable(void)
@@ -769,29 +1049,55 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set shutdown delay, in seconds (default=%s)",
-		DEFAULT_OFFDELAY);
+		"Set shutdown delay, in seconds (default=%s, or %s for CPS devices)",
+		DEFAULT_OFFDELAY, DEFAULT_OFFDELAY_CPS);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set startup delay, in seconds (default=%s)",
-		DEFAULT_ONDELAY);
+		"Set startup delay, in seconds (default=%s, or %s for CPS devices)",
+		DEFAULT_ONDELAY, DEFAULT_ONDELAY_CPS);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set polling frequency, in seconds, to reduce data flow (default=%d)",
-		DEFAULT_POLLFREQ);
+		"Set polling frequency, in seconds, to reduce data flow "
+		"(default=%d, or %d for CPS devices)",
+		DEFAULT_POLLFREQ, DEFAULT_POLLFREQ_CPS);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 
-	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
+	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling (recommended for CPS devices)");
+
+	addvar(VAR_VALUE, "interrupt_pipe_no_events_tolerance", "How many times in a row do we tolerate \"Got 0 HID objects\" from USB interrupts?");
 
 	addvar(VAR_FLAG, "onlinedischarge",
-		"Set to treat discharging while online as being offline");
+		"Set to treat discharging while online as being offline/on-battery (DEPRECATED, use onlinedischarge_onbattery)");
+
+	addvar(VAR_FLAG, "onlinedischarge_onbattery",
+		"Set to treat discharging while online as being offline/on-battery");
+
+	addvar(VAR_FLAG, "onlinedischarge_calibration",
+		"Set to treat discharging while online as doing calibration");
+
+	addvar(VAR_VALUE, "onlinedischarge_log_throttle_sec",
+		"Set to throttle log messages about discharging while online (only so often)");
+
+	addvar(VAR_VALUE, "onlinedischarge_log_throttle_hovercharge",
+		"Set to throttle log messages about discharging while online (only if battery.charge is under this value)");
+
+	addvar(VAR_VALUE, "lbrb_log_delay_sec",
+		"Set to delay status-setting (and log messages) about device in LB or LB+RB state");
+
+	addvar(VAR_FLAG, "lbrb_log_delay_without_calibrating",
+		"Set to apply lbrb_log_delay_sec even if device is not calibrating");
 
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
 
-#ifndef SHUT_MODE
+	addvar(VAR_FLAG, "powercom_sdcmd_byte_order_fallback",
+		"Set to use legacy byte order for Powercom HID shutdown commands. Either it was wrong forever, or some older devices/firmwares had it the other way around");
+
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
+
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
@@ -806,10 +1112,10 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, HU_VAR_WAITBEFORERECONNECT,
 		"Seconds to wait before trying to reconnect");
 
-#else
+#else	/* SHUT_MODE */
 	addvar(VAR_VALUE, "notification",
-		"Set notification type, (ignored, only for backward compatibility)");
-#endif
+		"Set notification type (ignored, only for backward compatibility)");
+#endif	/* SHUT_MODE / USB */
 }
 
 #define	MAX_EVENT_NUM	32
@@ -833,7 +1139,12 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		upsdebugx(1, "Got to reconnect!\n");
+		upsdebugx(1, "Got to reconnect!");
+		if (use_interrupt_pipe == TRUE && interrupt_pipe_EIO_count > 0) {
+			upsdebugx(0, "Reconnecting. If you saw \"nut_libusb_get_interrupt: Input/Output Error\" "
+				"or similar message in the log above, try setting \"pollonly\" flag in \"ups.conf\" "
+				"options section for this driver!");
+		}
 
 		if (!reconnect_ups()) {
 			lastpoll = now;
@@ -842,6 +1153,8 @@ void upsdrv_updateinfo(void)
 		}
 
 		hd = &curDevice;
+		interrupt_pipe_EIO_count = 0;
+		interrupt_pipe_no_events_count = 0;
 
 		if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 			hd = NULL;
@@ -851,6 +1164,7 @@ void upsdrv_updateinfo(void)
 #ifdef DEBUG
 	interval();
 #endif
+
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
@@ -859,12 +1173,21 @@ void upsdrv_updateinfo(void)
 		case LIBUSB_ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 			goto fallthrough_reconnect;
+		case NUT_LIBUSB_CODE_NO_EVENTS:	/* No HID Events */
+			interrupt_pipe_no_events_count++;
+			upsdebugx(1, "Got 0 HID objects (%ld times in a row, tolerance is %ld)...",
+				interrupt_pipe_no_events_count, interrupt_pipe_no_events_tolerance);
+			if (interrupt_pipe_no_events_tolerance >= 0
+			 && interrupt_pipe_no_events_tolerance < interrupt_pipe_no_events_count
+			) {
+				goto fallthrough_reconnect;
+			}
+			break;
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 #endif
 		case LIBUSB_ERROR_NO_DEVICE: /* No such device */
 		case LIBUSB_ERROR_ACCESS:    /* Permission denied */
-		case LIBUSB_ERROR_IO:        /* I/O error */
 #if WITH_LIBUSB_0_1         /* limit to libusb 0.1 implementation */
 		case -ENXIO:		    /* No such device or address */
 #endif
@@ -872,10 +1195,24 @@ void upsdrv_updateinfo(void)
 		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			dstate_setinfo("driver.state", "reconnect.trying");
+			hd = NULL;
+			return;
+		case LIBUSB_ERROR_IO:        /* I/O error */
+			/* Uh oh, got to reconnect, with a special suggestion! */
+			dstate_setinfo("driver.state", "reconnect.trying");
+			interrupt_pipe_EIO_count++;
 			hd = NULL;
 			return;
 		default:
 			upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+			if (evtCount > 0)
+				interrupt_pipe_no_events_count = 0;
+			else
+				upsdebugx(1, "Got unhandled result from HIDGetEvents(): %i\n"
+					"Please report it to NUT developers, with an 'upsc' output for your device,\n"
+					"versions of NUT and libusb used, and verbose driver debug log if possible.",
+					evtCount);
 			break;
 		}
 	} else {
@@ -900,10 +1237,10 @@ void upsdrv_updateinfo(void)
 
 		/* Skip Input reports, if we don't use the Feature report */
 		found_data = FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
-		if(!found_data && !interrupt_only) {
+		if (!found_data && !interrupt_only) {
 			found_data = FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_INPUT);
 		}
-		if(!found_data) {
+		if (!found_data) {
 			upsdebugx(2, "Could not find event as either ITEM_INPUT or ITEM_FEATURE?");
 			continue;
 		}
@@ -919,8 +1256,9 @@ void upsdrv_updateinfo(void)
 	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n",
 		interval());
 #endif
-	/* clear status buffer before begining */
+	/* clear status buffer before beginning */
 	status_init();
+	buzzmode_init();
 
 	/* Do a full update (polling) every pollfreq
 	 * or upon data change (ie setvar/instcmd) */
@@ -946,6 +1284,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	ups_status_set();
+	buzzmode_commit();
 	status_commit();
 
 	dstate_dataok();
@@ -963,10 +1302,20 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.version.data", "%s", subdriver->name);
 
-	/* init polling frequency */
+	/* init polling frequency for full updates */
 	val = getval(HU_VAR_POLLFREQ);
 	if (val) {
 		pollfreq = atoi(val);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	} else {
+		/* note, there is also 'pollinterval'/poll_interval (C var)
+		 * common delay between main.c loops */
+		if (subdriver == &cps_subdriver) {
+			upslogx(LOG_INFO, "Defaulting '%s' to %d for CPS devices",
+				HU_VAR_POLLFREQ, DEFAULT_POLLFREQ_CPS);
+			pollfreq = DEFAULT_POLLFREQ_CPS;
+		}
+#endif
 	}
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
@@ -974,7 +1323,23 @@ void upsdrv_initinfo(void)
 	/* ignore (broken) interrupt pipe */
 	if (testvar("pollonly")) {
 		use_interrupt_pipe = FALSE;
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	} else {
+		if (subdriver == &cps_subdriver) {
+			upslogx(LOG_WARNING, "You may want to set 'pollonly' "
+				"flag on CPS devices");
+		}
+#endif
 	}
+
+	val = getval("interrupt_pipe_no_events_tolerance");
+	if (!val || !str_to_long(val, &interrupt_pipe_no_events_tolerance, 10)) {
+		interrupt_pipe_no_events_tolerance = -1;
+		if (val)
+			upslogx(LOG_WARNING, "Invalid setting for interrupt_pipe_no_events_tolerance: '%s', defaulting to %ld",
+				val, interrupt_pipe_no_events_tolerance);
+	}
+	dstate_setinfo("driver.parameter.interrupt_pipe_no_events_tolerance", "%ld", interrupt_pipe_no_events_tolerance);
 
 	time(&lastpoll);
 
@@ -988,12 +1353,7 @@ void upsdrv_initups(void)
 	int ret;
 	char *val;
 
-	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
-		"(NUT subdriver name='%s' ver='%s')",
-		dstate_getinfo("driver.version.usb"),
-		comm_driver->name, comm_driver->version );
-
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
 	 * only the device path
@@ -1001,10 +1361,16 @@ void upsdrv_initups(void)
 	upsdebugx(1, "upsdrv_initups (SHUT)...");
 
 	subdriver_matcher = device_path;
-#else
-	char *regex_array[7];
+#else	/* !SHUT_MODE => USB */
+	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
+
+	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
+		"(NUT subdriver name='%s' ver='%s')",
+		dstate_getinfo("driver.version.usb"),
+		comm_driver->name, comm_driver->version );
+
 	warn_if_bad_usb_port_filename(device_path);
 
 	subdriver_matcher = &subdriver_matcher_struct;
@@ -1027,6 +1393,13 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	regex_array[7] = getval("busport");
+#else
+	if (getval("busport")) {
+		upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+	}
+#endif
 
 	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	switch(ret)
@@ -1051,7 +1424,28 @@ void upsdrv_initups(void)
 
 	/* link the matchers */
 	subdriver_matcher->next = regex_matcher;
-#endif /* SHUT_MODE */
+#endif /* SHUT_MODE / USB */
+
+	/* First activate the few tweaks which can impact device detection */
+
+	/* Activate Powercom tweaks */
+	if (testvar("interruptonly")) {
+		interrupt_only = 1;
+	}
+
+	val = getval("interruptsize");
+	if (val) {
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			interrupt_size = (unsigned int)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid interruptsize: %d", ipv);
+		}
+	}
+
+	if (testvar("disable_fix_report_desc")) {
+		disable_fix_report_desc = 1;
+	}
 
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
@@ -1065,34 +1459,141 @@ void upsdrv_initups(void)
 		hd->Vendor ? hd->Vendor : "unknown",
 		hd->Product ? hd->Product : "unknown");
 
-	/* Activate Powercom tweaks */
-	if (testvar("interruptonly")) {
-		interrupt_only = 1;
+	/* Later activate the relatively cosmetic tweaks */
+
+	/* Activate Cyberpower/APC tweaks */
+	if (testvar("onlinedischarge") || testvar("onlinedischarge_onbattery")) {
+		onlinedischarge_onbattery = 1;
 	}
 
-	/* Activate Cyberpower tweaks */
-	if (testvar("onlinedischarge")) {
-		onlinedischarge = 1;
+	if (testvar("onlinedischarge_calibration")) {
+		onlinedischarge_calibration = 1;
 	}
 
-	if (testvar("disable_fix_report_desc")) {
-		disable_fix_report_desc = 1;
-	}
-
-	val = getval("interruptsize");
+	val = getval("onlinedischarge_log_throttle_sec");
 	if (val) {
 		int ipv = atoi(val);
-		if (ipv > 0) {
-			interrupt_size = (unsigned int)ipv;
+		if (ipv == 0 && strcmp("0", val)) {
+			onlinedischarge_log_throttle_sec = 30;
+			upslogx(LOG_WARNING,
+				"Warning: invalid value for "
+				"onlinedischarge_log_throttle_sec: %s, "
+				"defaulting to %d",
+				val, onlinedischarge_log_throttle_sec);
 		} else {
-			fatalx(EXIT_FAILURE, "Error: invalid interruptsize: %d", ipv);
+			if (ipv < 0) {
+				/* Has a specific meaning: user said be quiet */
+				onlinedischarge_log_throttle_sec = -1;
+			} else {
+				onlinedischarge_log_throttle_sec = ipv;
+			}
 		}
+	}
+
+	val = getval("onlinedischarge_log_throttle_hovercharge");
+	if (val) {
+		int ipv = atoi(val);
+		if (ipv < 1 || ipv > 100) {
+			onlinedischarge_log_throttle_hovercharge = 100;
+			upslogx(LOG_WARNING,
+				"Warning: invalid value for "
+				"onlinedischarge_log_throttle_hovercharge: %s, "
+				"defaulting to %d",
+				val, onlinedischarge_log_throttle_hovercharge);
+		} else {
+			onlinedischarge_log_throttle_hovercharge = ipv;
+		}
+	}
+
+	val = getval("lbrb_log_delay_sec");
+	if (val) {
+		int ipv = atoi(val);
+		if ((ipv == 0 && strcmp("0", val)) || (ipv < 0)) {
+			lbrb_log_delay_sec = 3;
+			upslogx(LOG_WARNING,
+				"Warning: invalid value for "
+				"lbrb_log_delay_sec: %s, "
+				"defaulting to %d",
+				val, lbrb_log_delay_sec);
+		} else {
+			lbrb_log_delay_sec = ipv;
+		}
+	} else {
+		/* Activate APC BXnnnMI/BXnnnnMI tweaks, for details see
+		 * https://github.com/networkupstools/nut/issues/2347
+		 */
+		size_t	productLen = hd->Product ? strlen(hd->Product) : 0;
+
+		/* FIXME: Consider also ups.mfr.date as 2023 or newer?
+		 * Eventually up to some year this gets fixed?
+		 */
+		if (hd->Vendor
+		&&  productLen > 6	/* BXnnnMI at least */
+		&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+		&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
+		&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I')
+		) {
+			int	got_lbrb_log_delay_without_calibrating = testvar("lbrb_log_delay_without_calibrating") ? 1 : 0,
+				got_onlinedischarge_calibration = testvar("onlinedischarge_calibration") ? 1 : 0,
+				got_onlinedischarge_log_throttle_sec = testvar("onlinedischarge_log_throttle_sec") ? 1 : 0;
+
+			lbrb_log_delay_sec = 3;
+
+			upslogx(LOG_INFO, "Defaulting lbrb_log_delay_sec=%d "
+				"for %s model %s%s%s%s%s%s%s%s%s%s",
+				lbrb_log_delay_sec,
+				hd->Vendor, hd->Product,
+
+				!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration
+				|| !got_onlinedischarge_log_throttle_sec
+				? "; consider also setting the " : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				? "lbrb_log_delay_without_calibrating " : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				&& (!got_onlinedischarge_calibration
+				 || !got_onlinedischarge_log_throttle_sec)
+				? "and/or " : "",
+
+				!got_onlinedischarge_calibration
+				? "onlinedischarge_calibration " : "",
+
+				(!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration )
+				&& !got_onlinedischarge_log_throttle_sec
+				? "and/or " : "",
+
+				!got_onlinedischarge_log_throttle_sec
+				? "onlinedischarge_log_throttle_sec " : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration
+				|| !got_onlinedischarge_log_throttle_sec
+				? "flag" : "",
+
+				2 > ( got_lbrb_log_delay_without_calibrating
+				    + got_onlinedischarge_calibration
+				    + got_onlinedischarge_log_throttle_sec)
+				? "(s)" : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration
+				|| !got_onlinedischarge_log_throttle_sec
+				? " in your configuration" : "");
+		}
+	}
+
+	if (testvar("lbrb_log_delay_without_calibrating")) {
+		lbrb_log_delay_without_calibrating = 1;
 	}
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
 	}
 
+	/* Set values below from user settings only if supported by UPS */
 	if (dstate_getinfo("battery.charge.low")) {
 		/* Retrieve user defined battery settings */
 		val = getval(HU_VAR_LOWBATT);
@@ -1105,7 +1606,15 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_ONDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.start", "%ld", strtol(val, NULL, 10));
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l < 60 || l % 60)
+			) {
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (ondelay=120 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.start", "%ld", l);
 		}
 	}
 
@@ -1113,10 +1622,21 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_OFFDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.shutdown", "%ld", strtol(val, NULL, 10));
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l > 0 && (l < 60 || l % 60))
+			) {
+				/* Note: zero and negative values may
+				 * have special meanings for the firmware */
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (offdelay=60 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.shutdown", "%ld", l);
 		}
 	}
 
+	/* Enable instant commands below only if supported by UPS */
 	if (find_nut_info("load.off.delay")) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.off");
@@ -1141,7 +1661,7 @@ void upsdrv_cleanup(void)
 	comm_driver->close_dev(udev);
 	Free_ReportDesc(pDesc);
 	free_report_buffer(reportbuf);
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	USBFreeExactMatcher(exact_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 
@@ -1150,7 +1670,10 @@ void upsdrv_cleanup(void)
 	free(curDevice.Serial);
 	free(curDevice.Bus);
 	free(curDevice.Device);
-#endif
+# if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(curDevice.BusPort);
+# endif
+#endif	/* !SHUT_MODE => USB */
 }
 
 /**********************************************************************
@@ -1166,6 +1689,11 @@ void possibly_supported(const char *mfr, HIDDevice_t *arghd)
 "'-x productid=%04x' option. Please report your results to the NUT user's\n"
 "mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
 	mfr, arghd->VendorID, arghd->ProductID, arghd->ProductID);
+
+	if (arghd->VendorID == 0x06da) {
+		upsdebugx(0,
+"Please note that this Vendor ID is also known in devices supported by nutdrv_qx");
+	}
 }
 
 /* Update ups_status to remember this status item. Interpretation is
@@ -1207,9 +1735,9 @@ static int callback(
 {
 	int i;
 	const char *mfr = NULL, *model = NULL, *serial = NULL;
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	int ret;
-#endif
+#endif	/* !SHUT_MODE => USB */
 	upsdebugx(2, "Report Descriptor size = %" PRI_NUT_USB_CTRL_CHARBUFSIZE, rdlen);
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
@@ -1253,13 +1781,17 @@ static int callback(
 	}
 
 	/* select the subdriver for this device */
-	for (i=0; subdriver_list[i] != NULL; i++) {
-		if (subdriver_list[i]->claim(hd)) {
-			break;
+	subdriver = match_function_subdriver_name(0);
+	if (!subdriver) {
+		for (i=0; subdriver_list[i] != NULL; i++) {
+			if (subdriver_list[i]->claim(hd)) {
+				break;
+			}
 		}
+
+		subdriver = subdriver_list[i];
 	}
 
-	subdriver = subdriver_list[i];
 	if (!subdriver) {
 		upsdebugx(1, "Manufacturer not supported!");
 		return 0;
@@ -1272,7 +1804,7 @@ static int callback(
 	}
 	HIDDumpTree(udev, arghd, subdriver->utab);
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	/* create a new matcher for later matching */
 	USBFreeExactMatcher(exact_matcher);
 	ret = USBNewExactMatcher(&exact_matcher, hd);
@@ -1282,7 +1814,7 @@ static int callback(
 	}
 
 	regex_matcher->next = exact_matcher;
-#endif /* SHUT_MODE */
+#endif	/* !SHUT_MODE => USB */
 
 	/* apply subdriver specific formatting */
 	mfr = subdriver->format_mfr(hd);
@@ -1348,11 +1880,11 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	double		value;
 	int		retcode;
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	/* extract the VendorId for further testing */
 	int vendorID = curDevice.VendorID;
 	int productID = curDevice.ProductID;
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE
 	 * and HU_WALKMODE_FULL_UPDATE */
@@ -1360,13 +1892,14 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	/* Device data walk ----------------------------- */
 	for (item = subdriver->hid2nut; item->info_type != NULL; item++) {
 
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 		/* Check if we are asked to stop (reactivity++) in SHUT mode.
 		 * In USB mode, looping through this takes well under a second,
 		 * so any effort to improve reactivity here is wasted. */
 		if (exit_flag != 0)
 			return TRUE;
-#endif
+#endif	/* SHUT_MODE */
+
 		/* filter data according to mode */
 		switch (mode)
 		{
@@ -1472,14 +2005,14 @@ static bool_t hid_ups_walk(walkmode_t mode)
 # pragma GCC diagnostic pop
 #endif
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 		/* skip report 0x54 for Tripplite SU3000LCD2UHV due to firmware bug */
 		if ((vendorID == 0x09ae) && (productID == 0x1330)) {
 			if (item->hiddata && (item->hiddata->ReportID == 0x54)) {
 				continue;
 			}
 		}
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 		retcode = HIDGetDataValue(udev, item->hiddata, &value, poll_interval);
 
@@ -1494,7 +2027,6 @@ static bool_t hid_ups_walk(walkmode_t mode)
 #endif
 		case LIBUSB_ERROR_NO_DEVICE: /* No such device */
 		case LIBUSB_ERROR_ACCESS:    /* Permission denied */
-		case LIBUSB_ERROR_IO:        /* I/O error */
 #if WITH_LIBUSB_0_1           /* limit to libusb 0.1 implementation */
 		case -ENXIO:		  /* No such device or address */
 #endif
@@ -1502,6 +2034,14 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			dstate_setinfo("driver.state", "reconnect.trying");
+			hd = NULL;
+			return FALSE;
+
+		case LIBUSB_ERROR_IO:        /* I/O error */
+			/* Uh oh, got to reconnect, with a special suggestion! */
+			dstate_setinfo("driver.state", "reconnect.trying");
+			interrupt_pipe_EIO_count++;
 			hd = NULL;
 			return FALSE;
 
@@ -1512,10 +2052,14 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			continue;
 
 		case LIBUSB_ERROR_TIMEOUT:   /* Connection timed out */
+/* libusb win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
+#ifndef WIN32
 		case LIBUSB_ERROR_OVERFLOW:  /* Value too large for defined data type */
-#if EPROTO && WITH_LIBUSB_0_1
+# if EPROTO && WITH_LIBUSB_0_1
 		case -EPROTO:		/* Protocol error */
-#endif
+# endif
+#endif	/* !WIN32 */
 		case LIBUSB_ERROR_PIPE:      /* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
@@ -1577,16 +2121,22 @@ static int reconnect_ups(void)
 	char	*val;
 	int wait_before_reconnect = 0;
 
+	dstate_setinfo("driver.state", "reconnect.trying");
+
 	/* Init time to wait before trying to reconnect (seconds) */
 	val = getval(HU_VAR_WAITBEFORERECONNECT);
 	if (val) {
 		wait_before_reconnect = atoi(val);
 	}
 
-	upsdebugx(4, "Closing comm_driver previous handle");
 	/* Try to close the previous handle */
-	if (udev)
+	if (udev == HID_DEV_HANDLE_CLOSED) {
+		upsdebugx(4, "Not closing comm_driver previous handle: already closed");
+	} else {
+		upsdebugx(4, "Closing comm_driver previous handle");
 		comm_driver->close_dev(udev);
+		udev = HID_DEV_HANDLE_CLOSED;
+	}
 
 	upsdebugx(4, "===================================================================");
 	if (wait_before_reconnect > 0 ) {
@@ -1605,6 +2155,7 @@ static int reconnect_ups(void)
 		return 1;
 	}
 
+	dstate_setinfo("driver.state", "quiet");
 	return 0;
 }
 
@@ -1648,6 +2199,11 @@ static void ups_alarm_set(void)
 	if (ups_status & STATUS(BYPASSMAN)) {
 		alarm_set("Manual bypass mode!");
 	}
+	if (ups_status & STATUS(ECOMODE)) {
+		buzzmode_set("vendor:default:ECO");
+		/* disable alarm for ECO as we don't want to raise alarm about it */
+		/* alarm_set("ECO(HE) mode!"); */
+	}
 }
 
 /* Return the current value of ups_status */
@@ -1656,10 +2212,49 @@ unsigned ups_status_get(void)
 	return ups_status;
 }
 
+/** Helper to both status_set("CAL") and track last_calibration_start timestamp */
+static void status_set_CAL(void)
+{
+	/* Note: dstate tokens can only be set, not cleared; a
+	 * dstate_init() wipes the whole internal buffer though. */
+	int	wasSet = status_get("CAL");
+	time_t	now;
+
+	time(&now);
+
+	/* A few sanity checks */
+	if (wasSet) {
+		if (!last_calibration_start) {
+			upsdebugx(2, "%s: status was already set but not time-stamped: CAL", __func__);
+		} else {
+			upsdebugx(2, "%s: status was already set %f sec ago : CAL",
+				__func__, difftime(now, last_calibration_start));
+		}
+	} else {
+		if (last_calibration_finish) {
+			upsdebugx(2, "%s: starting a new calibration, last one finished %f sec ago",
+				__func__, difftime(now, last_calibration_finish));
+		} else {
+			upsdebugx(2, "%s: starting a new calibration, first in this driver's lifetime",
+				__func__);
+		}
+	}
+
+	if (!last_calibration_start) {
+		last_calibration_start = now;
+	}
+
+	if (!wasSet) {
+		status_set("CAL");		/* calibration */
+	}
+}
+
 /* Convert the local status information to NUT format and set NUT
    status. */
 static void ups_status_set(void)
 {
+	int	isCalibrating = 0;
+
 	if (ups_status & STATUS(VRANGE)) {
 		dstate_setinfo("input.transfer.reason", "input voltage out of range");
 	} else if (ups_status & STATUS(FRANGE)) {
@@ -1668,28 +2263,182 @@ static void ups_status_set(void)
 		dstate_delinfo("input.transfer.reason");
 	}
 
+	/* Report calibration mode first, because it looks like OFF or OB
+	 * for many implementations (literally, it is a temporary OB state
+	 * managed by the UPS hardware to become OL later... if it guesses
+	 * correctly when to do so), and may cause false alarms for us to
+	 * raise FSD urgently. So we first let upsmon know it is just a drill.
+	 */
+	if (ups_status & STATUS(CALIB)) {
+		status_set_CAL();		/* calibration */
+	}
+
+	if ((!(ups_status & STATUS(DISCHRG))) && (
+		onlinedischarge_log_throttle_timestamp != 0
+		|| onlinedischarge_log_throttle_charge != -1
+	)) {
+		upsdebugx(1,
+			"%s: seems that UPS [%s] was in OL+DISCHRG state "
+			"previously, but no is longer discharging now.",
+			__func__, upsname);
+		onlinedischarge_log_throttle_timestamp = 0;
+		onlinedischarge_log_throttle_charge = -1;
+	}
 
 	if (!(ups_status & STATUS(ONLINE))) {
 		status_set("OB");		/* on battery */
 	} else if ((ups_status & STATUS(DISCHRG))) {
-			/* if online */
-		if (onlinedischarge) {
+		int	do_logmsg = 0, current_charge = 0;
+
+		/* if online but discharging */
+		if (onlinedischarge_calibration) {
+			/* if we treat OL+DISCHRG as calibrating */
+			status_set_CAL();	/* calibration */
+		}
+
+		if (onlinedischarge_onbattery) {
 			/* if we treat OL+DISCHRG as being offline */
 			status_set("OB");	/* on battery */
-		} else {
+		}
+
+		if (!onlinedischarge_onbattery && !onlinedischarge_calibration) {
+			/* Some situation not managed by end-user's hints */
 			if (!(ups_status & STATUS(CALIB))) {
-				/* if in OL+DISCHRG unknowingly, warn user */
-				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
-				"Is it calibrating or do you perhaps want to set 'onlinedischarge' option? "
-				"Some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when offline.",
-				__func__, upsname);
+				/* if in OL+DISCHRG unknowingly, warn user,
+				 * unless we throttle it this time - see below */
+				do_logmsg = 1;
 			}
-			/* if we're calibrating */
+			/* if we're presumably calibrating */
 			status_set("OL");	/* on line */
 		}
+
+		if (do_logmsg) {
+			/* Any throttling to apply? */
+			const char *s;
+
+			/* First disable, then enable if OK for noise*/
+			do_logmsg = 0;
+
+			/* Time or not, did the charge change since last log?
+			 * Reminder: "onlinedischarge_log_throttle_charge" is
+			 * the last-reported charge in OL+DISCHRG situation,
+			 * as the battery remainder trickles down and we only
+			 * report the changes (throttling the message stream).
+			 * The "onlinedischarge_log_throttle_hovercharge" lets
+			 * us ignore sufficiently high battery charges, where
+			 * the user configuration (or defaults at 100%) tell
+			 * us this is just about the battery not accepting the
+			 * external power *all* the time so its charge "hovers"
+			 * (typically between 90%-100%) to benefit the chemical
+			 * process back-end of the battery and its life time.
+			 */
+			if ((s = dstate_getinfo("battery.charge"))) {
+				/* NOTE: exact "0" may mean a conversion error: */
+				current_charge = atoi(s);
+				if (current_charge > 0
+				&&  current_charge != onlinedischarge_log_throttle_charge
+				) {
+					/* Charge has changed, but is it
+					 * now low enough to worry? */
+					if (current_charge
+					    < onlinedischarge_log_throttle_hovercharge
+					) {
+						upsdebugx(3, "%s: current "
+							"battery.charge=%d is under "
+							"onlinedischarge_log_throttle_hovercharge=%d "
+							"(previous onlinedischarge_log_throttle_charge=%d): %s",
+							__func__, current_charge,
+							onlinedischarge_log_throttle_hovercharge,
+							onlinedischarge_log_throttle_charge,
+							(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
+						do_logmsg = 1;
+					} else {
+						/* All seems OK, don't spam log
+						 * unless running at a really
+						 * high debug verbosity */
+						upsdebugx(5, "%s: current "
+							"battery.charge=%d "
+							"is okay compared to "
+							"onlinedischarge_log_throttle_hovercharge=%d "
+							"(previous onlinedischarge_log_throttle_charge=%d): %s",
+							__func__, current_charge,
+							onlinedischarge_log_throttle_hovercharge,
+							onlinedischarge_log_throttle_charge,
+							(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
+					}
+				}
+			} else {
+				/* Should we default the time throttle? */
+				if (onlinedischarge_log_throttle_sec == -2) {
+					onlinedischarge_log_throttle_sec = 30;
+					/* Report once, so almost loud */
+					upsdebugx(1, "%s: seems battery.charge "
+						"is not served by this device "
+						"or subdriver; defaulting "
+						"onlinedischarge_log_throttle_sec "
+						"to %d",
+						__func__,
+						onlinedischarge_log_throttle_sec);
+				}
+			}
+
+			/* Do we track and honor time since last log? */
+			if (onlinedischarge_log_throttle_timestamp > 0
+			&&  onlinedischarge_log_throttle_sec >= 0
+			) {
+				time_t	now;
+				time(&now);
+
+				if ((now - onlinedischarge_log_throttle_timestamp)
+				    >= onlinedischarge_log_throttle_sec
+				) {
+					/* Enough time elapsed */
+					do_logmsg = 1;
+				}
+			}
+		}
+
+		if (do_logmsg) {
+			/* If OL+DISCHRG, and not-throttled against log spam */
+			char	msg_charge[LARGEBUF];
+			msg_charge[0] = '\0';
+
+			/* Remember when we last logged this message */
+			time(&onlinedischarge_log_throttle_timestamp);
+
+			if (current_charge > 0
+			&&  current_charge != onlinedischarge_log_throttle_charge
+			) {
+				/* Charge has changed, report and remember this */
+				if (onlinedischarge_log_throttle_charge < 0) {
+					/* First sequential message like this */
+					snprintf(msg_charge, sizeof(msg_charge),
+						"Battery charge is currently %d. ",
+						current_charge);
+				} else {
+					snprintf(msg_charge, sizeof(msg_charge),
+						"Battery charge changed from %d to %d "
+						"since last such report (%s). ",
+						onlinedischarge_log_throttle_charge,
+						current_charge,
+						(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
+				}
+				onlinedischarge_log_throttle_charge = current_charge;
+			}
+
+			upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. %s"
+			"Is it calibrating (perhaps you want to set 'onlinedischarge_calibration' option)? "
+			"Note that some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when "
+			"in fact offline/on-battery (perhaps you want to set 'onlinedischarge_onbattery' option).",
+			__func__, upsname, msg_charge);
+		}
 	} else if ((ups_status & STATUS(ONLINE))) {
+		/* if simply online */
 		status_set("OL");
 	}
+
+	isCalibrating = status_get("CAL");
+
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {
 		status_set("DISCHRG");		/* discharging */
@@ -1699,13 +2448,58 @@ static void ups_status_set(void)
 		status_set("CHRG");		/* charging */
 	}
 	if (ups_status & (STATUS(LOWBATT) | STATUS(TIMELIMITEXP) | STATUS(SHUTDOWNIMM))) {
-		status_set("LB");		/* low battery */
+		if (lbrb_log_delay_sec < 1
+		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
+		|| !(ups_status & STATUS(ONLINE))	/* assume actual power failure, do not delay */
+		) {
+			/* Quick and easy decision */
+			status_set("LB");		/* low battery */
+		} else {
+			time_t	now;
+			time(&now);
+
+			if (!last_lb_start) {
+				last_lb_start = now;
+			} else {
+				if (difftime(now, last_lb_start) > lbrb_log_delay_sec) {
+					/* Patience expired */
+					status_set("LB");	/* low battery */
+				} else {
+					upsdebugx(2, "%s: throttling LB status due to lbrb_log_delay_sec", __func__);
+				}
+			}
+		}
+	} else {
+		last_lb_start = 0;
 	}
 	if (ups_status & STATUS(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
-	if (ups_status & STATUS(REPLACEBATT)) {
-		status_set("RB");		/* replace batt */
+	if ((ups_status & STATUS(REPLACEBATT)) || (ups_status & STATUS(NOBATTERY))) {
+		if (lbrb_log_delay_sec < 1
+		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
+		|| !last_lb_start	/* Calibration ended (not LB anymore) */
+		|| !(ups_status & STATUS(ONLINE))	/* assume actual power failure, do not delay */
+		) {
+			/* Quick and easy decision */
+			status_set("RB");		/* replace batt */
+		} else {
+			time_t	now;
+			time(&now);
+
+			if (!last_rb_start) {
+				last_rb_start = now;
+			} else {
+				if (difftime(now, last_rb_start) > lbrb_log_delay_sec) {
+					/* Patience expired */
+					status_set("RB");	/* replace batt */
+				} else {
+					upsdebugx(2, "%s: throttling RB status due to lbrb_log_delay_sec", __func__);
+				}
+			}
+		}
+	} else {
+		last_rb_start = 0;
 	}
 	if (ups_status & STATUS(TRIM)) {
 		status_set("TRIM");		/* SmartTrim */
@@ -1716,11 +2510,27 @@ static void ups_status_set(void)
 	if (ups_status & (STATUS(BYPASSAUTO) | STATUS(BYPASSMAN))) {
 		status_set("BYPASS");		/* on bypass */
 	}
+	if (ups_status & STATUS(ECOMODE)) {
+		buzzmode_set("vendor:default:ECO");	/* on ECO(HE) Mode,
+						 * should not happen
+						 * via ups.status anymore */
+	}
+	if (ups_status & STATUS(ESSMODE)) {
+		buzzmode_set("vendor:default:ESS");	/* on ESS Mode,
+						 * should not happen
+						 * via ups.status anymore */
+	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
 	}
-	if (ups_status & STATUS(CALIB)) {
-		status_set("CAL");		/* calibration */
+
+	if (!isCalibrating) {
+		if (last_calibration_start) {
+			time(&last_calibration_finish);
+			upsdebugx(2, "%s: calibration is no longer in place, took %f sec",
+				__func__, difftime(last_calibration_finish, last_calibration_start));
+		}
+		last_calibration_start = 0;
 	}
 }
 
@@ -1851,19 +2661,7 @@ static int ups_infoval_set(hid_info_t *item, double value)
 
 		dstate_setinfo(item->info_type, "%s", nutvalue);
 	} else {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(item->info_type, item->dfl, value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		dstate_setinfo_dynamic(item->info_type, item->dfl, "%f", value);
 	}
 
 	return 1;

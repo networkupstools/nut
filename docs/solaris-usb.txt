@@ -323,7 +323,7 @@ Ap_Id                          Receptacle   Occupant     Condition
 Information
 When         Type         Busy     Phys_Id
 
-usb10/1                        connected    configured   ok         
+usb10/1                        connected    configured   ok
 Mfg: INNO TECH  Product: USB to Serial  NConfigs: 1  Config: 0  : 20100826
 unavailable  usb-input    n        /devices/pci@0,0/pci103c,1609@13:1
 ----
@@ -396,11 +396,15 @@ Additional tricks that can help involve `crontab` for regular automated
 checks if the device got lost. One is just an attempt to "clear" the
 service if its earlier startup failed (repetitively) so SMF gave up:
 
-    * * * * * svcadm clear innotech 2>&1 | grep -v 'is not in a maintenance'
+----
+* * * * * svcadm clear innotech 2>&1 | grep -v 'is not in a maintenance'
+----
 
 Another is more complicated and involves some custom scripting:
 
-    0,5,10,15,20,25,30,35,40,45,50,55 * * * * MODE=optional /etc/nut/reset-ups-usb-solaris.sh
+----
+0,5,10,15,20,25,30,35,40,45,50,55 * * * * MODE=optional /etc/nut/reset-ups-usb-solaris.sh
+----
 
 ...where the script would be a copy (customized to your device(s) and
 connection points!) of `reset-ups-usb-solaris.sh.sample` from either

@@ -1,0 +1,3 @@
+# POWERDOWNFLAG *must* match that in upsmon.conf
+POWERDOWNFLAG="@POWERDOWNFLAG@"
+NUTUSER="@RUN_AS_USER@"

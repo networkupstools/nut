@@ -56,7 +56,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Siemens SITOP UPS500 series driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.06"
 
 #define RX_BUFFER_SIZE 100
 
@@ -98,7 +98,7 @@ static void rm_buffer_head(unsigned int n) {
 /* parse incoming data from the UPS.
  * return true if something new was received.
  */
-static int check_for_new_data() {
+static int check_for_new_data(void) {
 	int new_data_received = 0;
 	int done = 0;
 	ssize_t num_received;
@@ -248,8 +248,14 @@ void upsdrv_updateinfo(void) {
 }
 
 void upsdrv_shutdown(void) {
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-	instcmd("shutdown.return", NULL);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* by default, tell the UPS to shut down,
+	 * then return - DO NOT SLEEP HERE */
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 

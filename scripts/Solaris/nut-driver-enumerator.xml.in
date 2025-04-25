@@ -2,14 +2,14 @@
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <!--
 #
-# Copyright 2016-2018 Jim Klimov
-# Template manifest for instantiated NUT drivers
+# Copyright 2016-2024 Jim Klimov
+# NDE (nut-driver-enumerator) manages definitions of instantiated NUT drivers
 #
 -->
 
 <service_bundle type='manifest' name='nut-driver-enumerator'>
 
-	<service name='system/power/nut-driver-enumerator' type='service' version='1.1'>
+	<service name='system/power/nut-driver-enumerator' type='service' version='2'>
 
 	<!--
 	  Wait for all local and usr filesystem to be mounted - project is
@@ -68,23 +68,35 @@
 			-->
 
 			<exec_method
-			type='method'
-			name='start'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
-			timeout_seconds='0'/>
+				type='method'
+				name='start'
+				exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
+				timeout_seconds='0'>
+				<method_context>
+					<method_environment>
+						<envvar name='REPORT_RESTART_42' value='no'/>
+					</method_environment>
+				</method_context>
+			</exec_method>
 
 			<exec_method
-			type='method'
-			name='refresh'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
-			timeout_seconds='0'/>
+				type='method'
+				name='refresh'
+				exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
+				timeout_seconds='0'>
+				<method_context>
+					<method_environment>
+						<envvar name='REPORT_RESTART_42' value='no'/>
+					</method_environment>
+				</method_context>
+			</exec_method>
 
 <!-- a :KILL does not really apply to a transient service... -->
 			<exec_method
-			type='method'
-			name='stop'
-			exec='/bin/true'
-			timeout_seconds='60' />
+				type='method'
+				name='stop'
+				exec='/bin/true'
+				timeout_seconds='60' />
 
 			<property_group name='startd' type='framework'>
 			<!--
@@ -105,10 +117,12 @@
 					</loctext>
 				</common_name>
 				<documentation>
-					<manpage title='upsdrvsvcctl' section='8'
-					manpath='/usr/share/man' />
-					<manpage title='ups.conf' section='5'
-					manpath='/usr/share/man' />
+					<doc_link name='upsdrvsvcctl online'	uri='@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html' />
+					<manpage title='upsdrvsvcctl'		section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
+					<doc_link name='ups.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/ups.conf.html' />
+					<manpage title='ups.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+					<doc_link name='nut.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/nut.conf.html' />
+					<manpage title='nut.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 				</documentation>
 			</template>
 		</instance>
@@ -126,22 +140,28 @@
 			-->
 
 			<exec_method
-			type='method'
-			name='start'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon'
-			timeout_seconds='0'/>
+				type='method'
+				name='start'
+				exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon-after'
+				timeout_seconds='0'>
+				<method_context>
+					<method_environment>
+						<envvar name='REPORT_RESTART_42' value='no'/>
+					</method_environment>
+				</method_context>
+			</exec_method>
 
 			<exec_method
-			type='method'
-			name='refresh'
-			exec=':kill -SIGHUP'
-			timeout_seconds='0'/>
+				type='method'
+				name='refresh'
+				exec=':kill -SIGHUP'
+				timeout_seconds='0'/>
 
 			<exec_method
-			type='method'
-			name='stop'
-			exec=':kill'
-			timeout_seconds='60' />
+				type='method'
+				name='stop'
+				exec=':kill'
+				timeout_seconds='60' />
 
 			<property_group name='startd' type='framework'>
 			<!--
@@ -162,10 +182,12 @@
 					</loctext>
 				</common_name>
 				<documentation>
-					<manpage title='upsdrvsvcctl' section='8'
-					manpath='/usr/share/man' />
-					<manpage title='ups.conf' section='5'
-					manpath='/usr/share/man' />
+					<doc_link name='upsdrvsvcctl online'	uri='@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html' />
+					<manpage title='upsdrvsvcctl'		section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
+					<doc_link name='ups.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/ups.conf.html' />
+					<manpage title='ups.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+					<doc_link name='nut.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/nut.conf.html' />
+					<manpage title='nut.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 				</documentation>
 			</template>
 		</instance>

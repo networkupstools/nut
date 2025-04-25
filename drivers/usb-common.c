@@ -17,6 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"	/* must be first */
 #include "common.h"
 #include "usb-common.h"
 
@@ -53,27 +54,6 @@ int is_usb_device_supported(usb_device_id_t *usb_device_id_list, USBDevice_t *de
 
 /* ---------------------------------------------------------------------- */
 /* matchers */
-
-/* helper function: version of strcmp that tolerates NULL
- * pointers. NULL is considered to come before all other strings
- * alphabetically.
- */
-static int strcmp_null(char *s1, char *s2)
-{
-	if (s1 == NULL && s2 == NULL) {
-		return 0;
-	}
-
-	if (s1 == NULL) {
-		return -1;
-	}
-
-	if (s2 == NULL) {
-		return 1;
-	}
-
-	return strcmp(s1, s2);
-}
 
 /* private callback function for exact matches
  */
@@ -118,6 +98,15 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 		    __func__, "Bus", hd->Bus, data->Bus);
 		return 0;
 	}
+#endif
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+# ifdef DEBUG_EXACT_MATCH_BUSPORT
+	if (strcmp_null(hd->BusPort, data->BusPort) != 0) {
+		upsdebugx(2, "%s: failed match of %s: %s != %s",
+		    __func__, "BusPort", hd->BusPort, data->BusPort);
+		return 0;
+	}
+# endif
 #endif
 #ifdef DEBUG_EXACT_MATCH_DEVICE
 	if (strcmp_null(hd->Device, data->Device) != 0) {
@@ -164,6 +153,13 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 #ifdef DEBUG_EXACT_MATCH_DEVICE
 	data->Device = hd->Device ? strdup(hd->Device) : NULL;
 #endif
+
+	/* NOTE: Callers must pre-initialize to NULL! */
+	if (matcher && *matcher) {
+		free(*matcher);
+		*matcher = NULL;
+	}
+
 	*matcher = m;
 
 	return 0;
@@ -193,114 +189,9 @@ void USBFreeExactMatcher(USBDeviceMatcher_t *matcher)
 	free(matcher);
 }
 
-/* Private function for compiling a regular expression. On success,
- * store the compiled regular expression (or NULL) in *compiled, and
- * return 0. On error with errno set, return -1. If the supplied
- * regular expression is unparseable, return -2 (an error message can
- * then be retrieved with regerror(3)). Note that *compiled will be an
- * allocated value, and must be freed with regfree(), then free(), see
- * regex(3). As a special case, if regex==NULL, then set
- * *compiled=NULL (regular expression NULL is intended to match
- * anything).
- */
-static int compile_regex(regex_t **compiled, char *regex, int cflags)
-{
-	int	r;
-	regex_t	*preg;
-
-	if (regex == NULL) {
-		*compiled = NULL;
-		return 0;
-	}
-
-	preg = malloc(sizeof(*preg));
-	if (!preg) {
-		return -1;
-	}
-
-	r = regcomp(preg, regex, cflags);
-	if (r) {
-		free(preg);
-		return -2;
-	}
-
-	*compiled = preg;
-
-	return 0;
-}
-
-/* Private function for regular expression matching. Check if the
- * entire string str (minus any initial and trailing whitespace)
- * matches the compiled regular expression preg. Return 1 if it
- * matches, 0 if not. Return -1 on error with errno set. Special
- * cases: if preg==NULL, it matches everything (no contraint).  If
- * str==NULL, then it is treated as "".
- */
-static int match_regex(regex_t *preg, char *str)
-{
-	int	r;
-	size_t	len = 0;
-	char	*string;
-	regmatch_t	match;
-
-	if (!preg) {
-		return 1;
-	}
-
-	if (!str) {
-		string = xstrdup("");
-	} else {
-		/* skip leading whitespace */
-		for (len = 0; len < strlen(str); len++) {
-
-			if (!strchr(" \t\n", str[len])) {
-				break;
-			}
-		}
-
-		string = xstrdup(str+len);
-
-		/* skip trailing whitespace */
-		for (len = strlen(string); len > 0; len--) {
-
-			if (!strchr(" \t\n", string[len-1])) {
-				break;
-			}
-		}
-
-		string[len] = '\0';
-	}
-
-	/* test the regular expression */
-	r = regexec(preg, string, 1, &match, 0);
-	free(string);
-	if (r) {
-		return 0;
-	}
-
-	/* check that the match is the entire string */
-	if ((match.rm_so != 0) || (match.rm_eo != (int)len)) {
-		return 0;
-	}
-
-	return 1;
-}
-
-/* Private function, similar to match_regex, but the argument being
- * matched is a (hexadecimal) number, rather than a string. It is
- * converted to a 4-digit hexadecimal string. */
-static int match_regex_hex(regex_t *preg, int n)
-{
-	char	buf[10];
-
-	snprintf(buf, sizeof(buf), "%04x", n);
-
-	return match_regex(preg, buf);
-}
-
 /* private data type: hold a set of compiled regular expressions. */
 typedef struct regex_matcher_data_s {
-	regex_t	*regex[7];
+	regex_t	*regex[USBMATCHER_REGEXP_ARRAY_LIMIT];
 } regex_matcher_data_t;
 
 /* private callback function for regex matches */
@@ -310,6 +201,9 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	int r;
 
 	upsdebugx(3, "%s: matching a device...", __func__);
+
+	/* NOTE: Here and below the "detailed" logging is commented away
+	 * because data->regex[] elements are not strings anymore! */
 
 	r = match_regex_hex(data->regex[0], hd->VendorID);
 	if (r != 1) {
@@ -387,6 +281,19 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 		    __func__, "Device", hd->Device);
 		return r;
 	}
+
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	r = match_regex(data->regex[7], hd->BusPort);
+	if (r != 1) {
+/*
+		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
+		    __func__, "Device", hd->Device, data->regex[6]);
+*/
+		upsdebugx(2, "%s: failed match of %s: %s",
+		    __func__, "Bus Port", hd->BusPort);
+		return r;
+	}
+#endif
 	return 1;
 }
 
@@ -423,7 +330,7 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 	m->privdata = (void *)data;
 	m->next = NULL;
 
-	for (i=0; i<7; i++) {
+	for (i=0; i < USBMATCHER_REGEXP_ARRAY_LIMIT; i++) {
 		r = compile_regex(&data->regex[i], regex[i], cflags);
 		if (r == -2) {
 			r = i+1;
@@ -432,6 +339,12 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 			USBFreeRegexMatcher(m);
 			return r;
 		}
+	}
+
+	/* NOTE: Callers must pre-initialize to NULL! */
+	if (matcher && *matcher) {
+		free(*matcher);
+		*matcher = NULL;
 	}
 
 	*matcher = m;
@@ -450,7 +363,7 @@ void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher)
 
 	data = (regex_matcher_data_t *)matcher->privdata;
 
-	for (i = 0; i < 7; i++) {
+	for (i = 0; i < USBMATCHER_REGEXP_ARRAY_LIMIT; i++) {
 		if (!data->regex[i]) {
 			continue;
 		}
@@ -496,4 +409,92 @@ void warn_if_bad_usb_port_filename(const char *fn) {
 		"for USB devices to avoid confusion.",
 		__func__, fn);
 	return;
+}
+
+/* Retries were introduced for "Tripp Lite" devices, see
+ * https://github.com/networkupstools/nut/issues/414
+ */
+#define MAX_STRING_DESC_TRIES 3
+
+/* API neutral, handles retries.
+ * Note for future development: a variant of this code is adapted into
+ * tools/nut-scanner/scan_usb.c - please keep in sync if changing here.
+ */
+static int nut_usb_get_string_descriptor(
+	usb_dev_handle *udev,
+	int StringIdx,
+	int langid,
+	char *buf,
+	size_t buflen)
+{
+	int ret = -1;
+	int tries = MAX_STRING_DESC_TRIES;
+
+	while (tries--) {
+		ret = usb_get_string(udev, (usb_ctrl_strindex)StringIdx, langid, (usb_ctrl_charbuf)buf, buflen);
+		if (ret >= 0) {
+			break;
+		} else if (tries) {
+			upsdebugx(1, "%s: string descriptor %d request failed, retrying...", __func__, StringIdx);
+			usleep(50000);	/* 50 ms, might help in some cases */
+		}
+	}
+	return ret;
+}
+
+/* API neutral, assumes en_US if langid descriptor is broken.
+ * Note for future development: a variant of this code is adapted into
+ * tools/nut-scanner/scan_usb.c - please keep in sync if changing here.
+ */
+int nut_usb_get_string(
+	usb_dev_handle *udev,
+	int StringIdx,
+	char *buf,
+	size_t buflen)
+{
+	int ret;
+	char buffer[255];
+	int langid;
+	int len;
+	int i;
+
+	if (!udev || StringIdx < 1 || StringIdx > 255) {
+		return -1;
+	}
+
+	/* request langid descriptor */
+	ret = nut_usb_get_string_descriptor(udev, 0, 0, buffer, 4);
+	if (ret < 0)
+		return ret;
+
+	if (ret == 4 && buffer[0] >= 4 && buffer[1] == USB_DT_STRING) {
+		langid = buffer[2] | (buffer[3] << 8);
+	} else {
+		upsdebugx(1, "%s: Broken language identifier, assuming en_US", __func__);
+		langid = 0x0409;
+	}
+
+	/* retrieve string in preferred language */
+	ret = nut_usb_get_string_descriptor(udev, StringIdx, langid, buffer, sizeof(buffer));
+	if (ret < 0) {
+#ifdef WIN32
+		/* only for libusb0 ? */
+		errno = -ret;
+#endif	/* WIN32 */
+		return ret;
+	}
+
+	/* translate simple UTF-16LE to 8-bit */
+	len = ret < (int)buflen ? ret : (int)buflen;
+	len = len / 2 - 1;	/* 16-bit characters, without header */
+	len = len < (int)buflen - 1 ? len : (int)buflen - 1;	/* reserve for null terminator */
+	for (i = 0; i < len; i++) {
+		if (buffer[2 + i * 2 + 1] == 0)
+			buf[i] = buffer[2 + i * 2];
+		else
+			buf[i] = '?';	/* not decoded */
+	}
+	buf[i] = '\0';
+
+	return len;
 }

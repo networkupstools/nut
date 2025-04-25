@@ -6,10 +6,14 @@ NAME
 
 apcupsd-ups - Driver for apcupsd client access
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the specific features of the
+*apcupsd-ups* -h
+
+*apcupsd-ups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the
 *apcupsd-ups* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -20,7 +24,7 @@ This driver is a client to *apcupsd* (another UPS monitoring project).
 
 *apcupsd-ups* acts as an *apcupsd* client, simply forwarding data.
 This can be useful in cases where both protocols are required in a network,
-or in case apcupsd has a required UPS access mode missing from NUT.
+or in case `apcupsd` code base has a required UPS access mode missing from NUT.
 
 EXTRA ARGUMENTS
 ---------------
@@ -32,7 +36,7 @@ This is the name of a remote host running apcupsd (plus an optional port).
 
 For instance:
 
-    [apcupsd]
+	[apcupsd]
 		driver = apcupsd-ups
 		port = localhost
 		desc = "apcupsd client"
@@ -91,10 +95,11 @@ if you notice a mismatch in units).
 LIMITATIONS
 -----------
 
-Access to *apcupsd* is strictly read only: no commands can be issued. This
-stems from the design of *apcupsd*, where the settings are changed in
-*apctest*. In order to run *apctest*, *apcupsd* must be stopped (and *apcupsd*
-exposes the UPS to the network).
+Access to *apcupsd* is strictly read only: no commands can be issued.
+This stems from the design of *apcupsd*, where the settings are changed
+in *apctest*. In order to run *apctest*, *apcupsd* must be stopped
+(and it is *apcupsd* that exposes the UPS to the network and to this NUT
+driver as its client).
 
 AUTHOR
 ------
@@ -110,5 +115,10 @@ linkman:nutupsdrv[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * The apcupsd home page: http://www.apcupsd.org/
+  - Development of *apcupsd* project itself seems to have stalled
+    in 2016/2017, with release 3.14.14 being the latest official tag.
+    Its community discussions do remain quite active, however.
+  - Just in case, a replica of its sources is stored at
+    https://github.com/networkupstools/apcupsd

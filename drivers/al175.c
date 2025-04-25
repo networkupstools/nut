@@ -52,7 +52,7 @@ typedef	uint8_t byte_t;
 
 
 #define DRIVER_NAME	"Eltek AL175/COMLI driver"
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -332,7 +332,8 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
 		fatalx(EXIT_FAILURE, "too small dest in comli_prepare\n");
 
 	out[0] = STX;
-	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04zX%02zX", h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
+	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04zX%02zX",
+		(unsigned int)h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
 
 	memcpy(out+11, buf, count);
 	reverse_bits(out+11, count);
@@ -553,9 +554,9 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
  *     begin                                                                        end
  */
 
-	int err;
-	size_t i;
-	const byte_t *reply = NULL;
+	int	err;
+	size_t	i, io_buf_len;
+	const byte_t	*reply = NULL;
 
 	/* 1: extract header and parse it */
 	/*const*/ raw_data_t raw_reply_head = raw_reply;
@@ -572,13 +573,13 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	reply = raw_reply.begin - 1;
 
 	if ( (raw_reply.end - raw_reply.begin) != (ptrdiff_t)(10 + io_head->len))  {
-		upsdebugx(3, "%s: corrupt sentence\t(%i != %" PRIiSIZE ")",
+		upsdebugx(3, "%s: corrupt sentence\t(%i != %" PRIuSIZE ")",
 				__func__, (int)(raw_reply.end - raw_reply.begin), 10 + io_head->len);
 		return -1;		/* corrupt sentence	*/
 	}
 
 
-	/* extract the data */
+	/* 3: extract the data */
 	if (io_buf->buf_size < io_head->len)	{
 		upsdebugx(3, "%s: too much data to fit in io_buf\t(%" PRIuSIZE " > %" PRIuSIZE ")",
 				__func__, io_head->len, io_buf->buf_size);
@@ -592,7 +593,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 		*(io_buf->end++) = reply[11+i];
 
 	assert(io_buf->end - io_buf->begin >= 0);
-	size_t io_buf_len = (size_t)(io_buf->end - io_buf->begin);
+	io_buf_len = (size_t)(io_buf->end - io_buf->begin);
 	reverse_bits(io_buf->begin, io_buf_len );
 
 	upsdebug_hex(3, "\t\t--> payload", io_buf->begin, io_buf_len);
@@ -648,7 +649,7 @@ static int al_check_ack(/*const*/ raw_data_t raw_ack)
 	}
 
 	if (ack[5]!=ACK)  {
-		upsdebugx(3, "%s: wrong ack\t(0x%02X != 0x%02X)", __func__, ack[5], ACK);
+		upsdebugx(3, "%s: wrong ack\t(0x%02X != 0x%02X)", __func__, ack[5], (unsigned int)ACK);
 		return -1;		/* wrong ack	*/
 	}
 
@@ -670,14 +671,15 @@ static int al_check_ack(/*const*/ raw_data_t raw_ack)
 /* clear any flow control (copy from powercom.c) */
 static void ser_disable_flow_control (void)
 {
-	struct termios tio;
+	struct termios	tio;
+	tcflag_t	x;
 
 	tcgetattr (upsfd, &tio);
 
 	/* Clumsy rewrite of a one-liner
 	 *   tio.c_iflag &= ~ (IXON | IXOFF);
 	 * to avoid type conversion warnings */
-	tcflag_t x = (IXON | IXOFF);
+	x = (IXON | IXOFF);
 	tio.c_iflag &= ~ x;
 	tio.c_cc[VSTART] = _POSIX_VDISABLE;
 	tio.c_cc[VSTOP] = _POSIX_VDISABLE;
@@ -688,7 +690,7 @@ static void ser_disable_flow_control (void)
 	tcsetattr(upsfd, TCSANOW, &tio);
 }
 
-static void flush_rx_queue()
+static void flush_rx_queue(void)
 {
 	ser_flush_in(upsfd, "", /*verbose=*/nut_debug_level);
 }
@@ -702,16 +704,17 @@ static void flush_rx_queue()
  */
 static int tx(const char *dmsg, /*const*/ raw_data_t frame)
 {
-	ssize_t err;
+	ssize_t	err;
+	size_t	frame_len;
 
 	assert(frame.end - frame.begin >= 0);
-	size_t frame_len = (size_t)(frame.end - frame.begin);
+	frame_len = (size_t)(frame.end - frame.begin);
 
 	upsdebug_ascii(3, dmsg, frame.begin, frame_len);
 
 	err = ser_send_buf(upsfd, frame.begin, frame_len );
 	if (err==-1) {
-		upslogx(LOG_ERR, "failed to send frame to PRS: %s", strerror(errno));
+		upslog_with_errno(LOG_ERR, "failed to send frame to PRS");
 		return -1;
 	}
 
@@ -807,9 +810,9 @@ static int scan_for(char c)
  *
  * @return 0 (ok) -1 (error)
  */
-static int recv_command_ack()
+static int recv_command_ack(void)
 {
-	ssize_t err;
+	ssize_t	err;
 	raw_data_t ack;
 	byte_t     ack_buf[8];
 
@@ -855,12 +858,12 @@ static int recv_command_ack()
  */
 static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 {
-	ssize_t err;
-	int ret;
-	raw_data_t reply_head;
-	raw_data_t reply;
-
-	byte_t     reply_head_buf[11];
+	ssize_t	err;
+	int	ret;
+	size_t	reply_head_len;
+	raw_data_t	reply_head;
+	raw_data_t	reply;
+	byte_t	reply_head_buf[11];
 
 	/* 1:  STX  */
 	err = scan_for(STX);
@@ -897,7 +900,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	reply = raw_xmalloc(11/*head*/ + io->len/*data*/ + 2/*ETX BCC*/);
 
 	assert (reply_head.end - reply_head.begin >= 0);
-	size_t reply_head_len = (size_t)(reply_head.end - reply_head.begin);
+	reply_head_len = (size_t)(reply_head.end - reply_head.begin);
 
 	memcpy(reply.end, reply_head.begin, reply_head_len);
 	reply.end += reply_head_len;
@@ -905,7 +908,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
 	if (err!=(int)(io->len+2)) {
-		upsdebugx(4, "rx_tail failed, err=%" PRIiSIZE " (!= %" PRIiSIZE ")", err, io->len+2);
+		upsdebugx(4, "rx_tail failed, err=%" PRIiSIZE " (!= %" PRIuSIZE ")", err, io->len+2);
 		ret = -1; goto out;
 	}
 
@@ -1053,9 +1056,9 @@ ACT	SWITCH_TEMP_COMP	(uint16_t on);
 ACT	SWITCH_SYM_ALARM	(void);
 
 /* Implement */
-ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
-ACT	CANCEL_BOOST		()		{ return al175_do(0x82, 0x80			Z3);	}
-ACT	STOP_BATTERY_TEST	()		{ return al175_do(0x83, 0x80			Z3);	}
+ACT	TOGGLE_PRS_ONOFF	(void)		{ return al175_do(0x81, 0x80			Z3);	}
+ACT	CANCEL_BOOST		(void)		{ return al175_do(0x82, 0x80			Z3);	}
+ACT	STOP_BATTERY_TEST	(void)		{ return al175_do(0x83, 0x80			Z3);	}
 ACT	START_BATTERY_TEST	(VV_t EndVolt, mm_t Minutes)
 						{ return al175_do(0x83, 0x81, EndVolt, Minutes	Z1);	}
 
@@ -1068,8 +1071,8 @@ ACT	SET_DISCONNECT_LEVEL_AND_DELAY
 				(VV_t level, mm_t delay)
 						{ return al175_do(0x87, 0x84, level, delay	Z1);	}
 
-ACT	RESET_ALARMS		()		{ return al175_do(0x88, 0x80			Z3);	}
-ACT	CHANGE_COMM_PROTOCOL	()		{ return al175_do(0x89, 0x80			Z3);	}
+ACT	RESET_ALARMS		(void)		{ return al175_do(0x88, 0x80			Z3);	}
+ACT	CHANGE_COMM_PROTOCOL	(void)		{ return al175_do(0x89, 0x80			Z3);	}
 ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v)	{ return al175_do(0x8a, 0x80, v			Z2);	}
 ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree)
 						{ return al175_do(0x8a, 0x81, mv_per_degree	Z2);	}
@@ -1078,7 +1081,7 @@ ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x82, v			Z2);	}
 ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x83, v			Z2);	}
 ACT	SWITCH_TEMP_COMP	(uint16_t on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
 
-ACT	SWITCH_SYM_ALARM	()		{ return al175_do(0x8c, 0x80			Z3);	}
+ACT	SWITCH_SYM_ALARM	(void)		{ return al175_do(0x8c, 0x80			Z3);	}
 
 
 /**
@@ -1264,10 +1267,10 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* TODO use TOGGLE_PRS_ONOFF for shutdown */
 
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
@@ -1276,7 +1279,9 @@ void upsdrv_shutdown(void)
 	   it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */
@@ -1285,7 +1290,6 @@ void upsdrv_shutdown(void)
 
 	/* OB: the load must remain off until the power returns */
 }
-
 
 static int instcmd(const char *cmdname, const char *extra)
 {

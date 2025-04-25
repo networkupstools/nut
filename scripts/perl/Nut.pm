@@ -728,7 +728,7 @@ Nut - a module to talk to a UPS via NUT (Network UPS Tools) upsd
 
 This is an object-oriented (whoo!) interface between Perl and upsd from 
 the Network UPS Tools package version 1.5 and above
-(http://www.networkupstools.org/).
+(https://www.networkupstools.org/).
 Note that it only talks to upsd for you in a Perl-ish way.
 It doesn't monitor the UPS continously.
 

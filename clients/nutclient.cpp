@@ -1,6 +1,12 @@
 /* nutclient.cpp - nutclient C++ library implementation
 
-   Copyright (C) 2012  Emilien Kia <emilien.kia@gmail.com>
+    Copyright (C) 2012 Eaton
+
+        Author: Emilien Kia <emilien.kia@gmail.com>
+
+    Copyright (C) 2024-2025 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,9 +23,25 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
 #include "nutclient.h"
 
 #include <sstream>
+
+/* TODO: Make it a run-time option like upsdebugx(),
+ * probably with a verbosity level variable in each
+ * class instance */
+#include <iostream>	/* std::cerr debugging */
+#include <cstdint>
+#include <cstdlib>
+#include <stdlib.h>
+
+#ifndef WIN32
+# ifdef HAVE_PTHREAD
+/* this include is needed on AIX to have errno stored in thread local storage */
+#  include <pthread.h>
+# endif
+#endif	/* !WIN32 */
 
 #include <errno.h>
 #include <string.h>
@@ -29,7 +51,38 @@
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
 #ifdef WIN32
 #  include <winsock2.h>
-#else
+#  define SOCK_OPT_CAST (char *)
+
+/* equivalent of W32_NETWORK_CALL_OVERRIDE
+ * invoked by wincompat.h in upsclient.c:
+ */
+static inline int sktconnect(int fh, struct sockaddr * name, int len)
+{
+	int ret = connect(fh,name,len);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktread(int fh, void *buf, int size)
+{
+	int ret = recv(fh,(char*)buf,size,0);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktwrite(int fh, const void*buf, int size)
+{
+	int ret = send(fh,(char*)buf,size,0);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktclose(int fh)
+{
+	int ret = closesocket((SOCKET)fh);
+	errno = WSAGetLastError();
+	return ret;
+}
+
+#else /* not WIN32 */
+
 #  include <sys/types.h>
 #  include <sys/socket.h>
 #  include <netinet/in.h>
@@ -46,25 +99,56 @@
 #  ifndef closesocket
 #    define closesocket(s) close(s)
 #  endif
+#  define SOCK_OPT_CAST
    typedef int SOCKET;
    typedef struct sockaddr_in SOCKADDR_IN;
    typedef struct sockaddr SOCKADDR;
    typedef struct in_addr IN_ADDR;
-#endif /* WIN32 */
-/* End of Windows/Linux Socket compatibility layer: */
+
+#  define sktconnect(h,n,l)	::connect(h,n,l)
+#  define sktread(h,b,s) 	::read(h,b,s)
+#  define sktwrite(h,b,s) 	::write(h,b,s)
+#  define sktclose(h)		::close(h)
+
+/* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
+#  if (defined NUT_PLATFORM_SOLARIS)
+#    define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
+#  else
+#    define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
+#  endif  /* end of Solaris/i386 WA for non-blocking connect */
+
+/* WA for AIX bug: non-blocking connect sets errno to 0 */
+#  if (defined NUT_PLATFORM_AIX)
+#    define AIX_NBCONNECT_0(status) (0 == (status))
+#  else
+#    define AIX_NBCONNECT_0(status) (0)
+#  endif  /* end of AIX WA for non-blocking connect */
+
+#endif /* !WIN32 */
+/* End of Windows/Linux Socket compatibility layer */
 
 
 /* Include nut common utility functions or define simple ones if not */
 #ifdef HAVE_NUTCOMMON
+/* For C++ code below, we do not actually use the fallback time methods
+ * (on mingw mostly), but in C++ context they happen to conflict with
+ * time.h or ctime headers, while native-C does not. Just disable fallback:
+ */
+# ifndef HAVE_GMTIME_R
+#  define HAVE_GMTIME_R 111
+# endif
+# ifndef HAVE_LOCALTIME_R
+#  define HAVE_LOCALTIME_R 111
+# endif
 #include "common.h"
-#else /* HAVE_NUTCOMMON */
+#else /* not HAVE_NUTCOMMON */
 #include <stdlib.h>
 #include <string.h>
 static inline void *xmalloc(size_t size){return malloc(size);}
 static inline void *xcalloc(size_t number, size_t size){return calloc(number, size);}
 static inline void *xrealloc(void *ptr, size_t size){return realloc(ptr, size);}
 static inline char *xstrdup(const char *string){return strdup(string);}
-#endif /* HAVE_NUTCOMMON */
+#endif /* not HAVE_NUTCOMMON */
 
 #include "nut_stdint.h" /* PRIuMAX etc. */
 
@@ -116,12 +200,12 @@ std::string SystemException::err()
  * https://lgtm.com/rules/2165180572/ like:
  *   NutException& operator=(NutException& rhs) = default;
  */
-NutException::~NutException() {}
-SystemException::~SystemException() {}
-IOException::~IOException() {}
-UnknownHostException::~UnknownHostException() {}
-NotConnectedException::~NotConnectedException() {}
-TimeoutException::~TimeoutException() {}
+NutException::~NutException() noexcept {}
+SystemException::~SystemException() noexcept {}
+IOException::~IOException() noexcept {}
+UnknownHostException::~UnknownHostException() noexcept {}
+NotConnectedException::~NotConnectedException() noexcept {}
+TimeoutException::~TimeoutException() noexcept {}
 
 
 namespace internal
@@ -131,7 +215,7 @@ namespace internal
  * Internal socket wrapper.
  * Provides only client socket functions.
  *
- * Implemented as separate internal class to easily hide plateform specificities.
+ * Implemented as separate internal class to easily hide platform specificities.
  */
 class Socket
 {
@@ -142,6 +226,7 @@ public:
 	void connect(const std::string& host, uint16_t port);
 	void disconnect();
 	bool isConnected()const;
+	void setDebugConnect(bool d);
 
 	void setTimeout(time_t timeout);
 	bool hasTimeout()const{return _tv.tv_sec>=0;}
@@ -155,12 +240,14 @@ public:
 
 private:
 	SOCKET _sock;
+	bool _debugConnect;
 	struct timeval	_tv;
 	std::string _buffer; /* Received buffer, string because data should be text only. */
 };
 
 Socket::Socket():
 _sock(INVALID_SOCKET),
+_debugConnect(false),
 _tv()
 {
 	_tv.tv_sec = -1;
@@ -177,6 +264,11 @@ void Socket::setTimeout(time_t timeout)
 	_tv.tv_sec = timeout;
 }
 
+void Socket::setDebugConnect(bool d)
+{
+	_debugConnect = d;
+}
+
 void Socket::connect(const std::string& host, uint16_t port)
 {
 	int	sock_fd;
@@ -186,20 +278,39 @@ void Socket::connect(const std::string& host, uint16_t port)
 	fd_set 			wfds;
 	int			error;
 	socklen_t		error_size;
-	long			fd_flags;
 
-	_sock = -1;
+#ifndef WIN32
+	long			fd_flags;
+#else	/* WIN32 */
+	HANDLE event = NULL;
+	unsigned long argp;
+
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+#endif	/* WIN32 */
+
+	_sock = INVALID_SOCKET;
 
 	if (host.empty()) {
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): host.empty()" <<
+			std::endl << std::flush;
 		throw nut::UnknownHostException();
 	}
 
 	snprintf(sport, sizeof(sport), "%" PRIuMAX, static_cast<uintmax_t>(port));
 
 	memset(&hints, 0, sizeof(hints));
+	/* TODO? Port IPv4 vs. IPv6 detail from upsclient.c */
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
+
+	if (_debugConnect) std::cerr <<
+		"[D2] Socket::connect(): getaddrinfo(" <<
+		host << ", " <<
+		sport << ", " <<
+		"...)" << std::endl << std::flush;
 
 	while ((v = getaddrinfo(host.c_str(), sport, &hints, &res)) != 0) {
 		switch (v)
@@ -207,19 +318,54 @@ void Socket::connect(const std::string& host, uint16_t port)
 		case EAI_AGAIN:
 			continue;
 		case EAI_NONAME:
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
+				"connect not successful: " <<
+				"UnknownHostException" <<
+				std::endl << std::flush;
 			throw nut::UnknownHostException();
-		case EAI_SYSTEM:
-			throw nut::SystemException();
 		case EAI_MEMORY:
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
+				"connect not successful: " <<
+				"Out of memory" <<
+				std::endl << std::flush;
 			throw nut::NutException("Out of memory");
+#ifndef WIN32
+		case EAI_SYSTEM:
+#else	/* WIN32 */
+		case WSANO_RECOVERY:
+#endif	/* WIN32 */
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
+				"connect not successful: " <<
+				"SystemException" <<
+				std::endl << std::flush;
+			throw nut::SystemException();
 		default:
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
+				"connect not successful: " <<
+				"Unknown error" <<
+				std::endl << std::flush;
 			throw nut::NutException("Unknown error");
 		}
 	}
 
 	for (ai = res; ai != nullptr; ai = ai->ai_next) {
 
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): socket(" <<
+			ai->ai_family << ", " <<
+			ai->ai_socktype << ", " <<
+			ai->ai_protocol << ")" <<
+			std::endl << std::flush;
+
 		sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): socket(): " <<
+			"sock_fd = " << sock_fd <<
+			std::endl << std::flush;
 
 		if (sock_fd < 0) {
 			switch (errno)
@@ -228,39 +374,94 @@ void Socket::connect(const std::string& host, uint16_t port)
 			case EINVAL:
 				break;
 			default:
+				if (_debugConnect) std::cerr <<
+					"[D2] Socket::connect(): " <<
+					"connect not successful: " <<
+					"SystemException" <<
+					std::endl << std::flush;
 				throw nut::SystemException();
 			}
 			continue;
 		}
 
 		/* non blocking connect */
-		if(hasTimeout()) {
+		if (hasTimeout()) {
+#ifndef WIN32
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags |= O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
+#else	/* WIN32 */
+			event = CreateEvent(NULL, /* Security */
+					FALSE, /* auto-reset */
+					FALSE, /* initial state */
+					NULL); /* no name */
+
+			/* Associate socket event to the socket via its Event object */
+			WSAEventSelect( sock_fd, event, FD_CONNECT );
+			CloseHandle(event);
+#endif	/* WIN32 */
 		}
 
-		while ((v = ::connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
-			if(errno == EINPROGRESS) {
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): sktconnect(" <<
+			sock_fd << ", " <<
+			ai->ai_addr << ", " <<
+			ai->ai_addrlen << ")" <<
+			std::endl << std::flush;
+
+		while ((v = sktconnect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
+				"sktconnect() < 0" <<
+				"; errno = " << errno <<
+				"; v = " << v <<
+				std::endl << std::flush;
+
+#ifndef WIN32
+			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
+#else	/* WIN32 */
+			if(errno == WSAEWOULDBLOCK) {
+#endif	/* WIN32 */
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
-				select(sock_fd+1, nullptr, &wfds, nullptr, hasTimeout() ? &_tv : nullptr);
+				select(sock_fd+1, nullptr, &wfds, nullptr,
+					hasTimeout() ? &_tv : nullptr);
 				if (FD_ISSET(sock_fd, &wfds)) {
 					error_size = sizeof(error);
 					getsockopt(sock_fd, SOL_SOCKET, SO_ERROR,
-							&error, &error_size);
+							SOCK_OPT_CAST &error, &error_size);
 					if( error == 0) {
 						/* connect successful */
+						if (_debugConnect) std::cerr <<
+							"[D2] Socket::connect(): " <<
+							"connect-select successful" <<
+							std::endl << std::flush;
 						v = 0;
 						break;
 					}
 					errno = error;
+					if (_debugConnect) std::cerr <<
+						"[D2] Socket::connect(): " <<
+						"connect-select not successful: " <<
+						"errno = " << errno <<
+						std::endl << std::flush;
 				}
 				else {
 					/* Timeout */
 					v = -1;
+					if (_debugConnect) std::cerr <<
+						"[D2] Socket::connect(): " <<
+						"connect-select not successful: timeout" <<
+						std::endl << std::flush;
 					break;
 				}
+			} else {
+				/* WIN32: errno=10061 is actively refusing connection */
+				if (_debugConnect) std::cerr <<
+					"[D2] Socket::connect(): " <<
+					"connect not successful: " <<
+					"errno = " << errno <<
+					std::endl << std::flush;
 			}
 
 			switch (errno)
@@ -279,17 +480,34 @@ void Socket::connect(const std::string& host, uint16_t port)
 		}
 
 		if (v < 0) {
-			close(sock_fd);
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
+				"sktconnect() remains < 0 => sktclose()" <<
+				std::endl << std::flush;
+			sktclose(sock_fd);
 			continue;
 		}
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): " <<
+			"sktconnect() > 0, looks promising" <<
+			std::endl << std::flush;
 
 		/* switch back to blocking operation */
-		if(hasTimeout()) {
+		if (hasTimeout()) {
+#ifndef WIN32
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
+#else	/* WIN32 */
+			argp = 0;
+			ioctlsocket(sock_fd, FIONBIO, &argp);
+#endif	/* WIN32 */
 		}
 
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): " <<
+			"saving sock_fd = " << sock_fd <<
+			std::endl << std::flush;
 		_sock = sock_fd;
 //		ups->upserror = 0;
 //		ups->syserrno = 0;
@@ -298,10 +516,24 @@ void Socket::connect(const std::string& host, uint16_t port)
 
 	freeaddrinfo(res);
 
+#ifndef WIN32
 	if (_sock < 0) {
+#else	/* WIN32 */
+	if (_sock == INVALID_SOCKET) {
+		/* In tracing one may see 18446744073709551615 = "-1" after
+		 * conversion from 'long long unsigned int' to 'int'
+		 * 64-bit WINSOCK API with UINT_PTR , see gory details at e.g.
+		 * https://github.com/openssl/openssl/issues/7282#issuecomment-430633656
+		 */
+#endif	/* WIN32 */
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): " <<
+			"invalid _sock = " << _sock <<
+			std::endl << std::flush;
 		throw nut::IOException("Cannot connect to host");
 	}
 
+	/* TODO? See upsclient.c for NSS/SSL connection handling */
 
 #ifdef OLD
 	struct hostent *hostinfo = nullptr;
@@ -323,7 +555,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 	sin.sin_addr = *(IN_ADDR *) hostinfo->h_addr;
 	sin.sin_port = htons(port);
 	sin.sin_family = AF_INET;
-	if(::connect(_sock,(SOCKADDR *) &sin, sizeof(SOCKADDR)) == SOCKET_ERROR)
+	if(sktconnect(_sock,(SOCKADDR *) &sin, sizeof(SOCKADDR)) == SOCKET_ERROR)
 	{
 		_sock = INVALID_SOCKET;
 		throw nut::IOException("Cannot connect to host");
@@ -364,7 +596,7 @@ size_t Socket::read(void* buf, size_t sz)
 		}
 	}
 
-	ssize_t res = ::read(_sock, buf, sz);
+	ssize_t res = sktread(_sock, buf, sz);
 	if(res==-1)
 	{
 		disconnect();
@@ -391,7 +623,7 @@ size_t Socket::write(const void* buf, size_t sz)
 		}
 	}
 
-	ssize_t res = ::write(_sock, buf, sz);
+	ssize_t res = sktwrite(_sock, buf, sz);
 	if(res==-1)
 	{
 		disconnect();
@@ -592,6 +824,11 @@ void TcpClient::connect(const std::string& host, uint16_t port)
 void TcpClient::connect()
 {
 	_socket->connect(_host, _port);
+}
+
+void TcpClient::setDebugConnect(bool d)
+{
+	_socket->setDebugConnect(d);
 }
 
 std::string TcpClient::getHost()const
@@ -1136,6 +1373,31 @@ std::vector<std::string> TcpClient::explode(const std::string& str, size_t begin
 			}
 			state = QUOTED_STRING;
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		}
 	}
 

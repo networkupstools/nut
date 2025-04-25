@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +20,7 @@
 /*! \file nutscan-init.h
     \brief initialisation data
     \author Frederic Bohe <fredericbohe@eaton.com>
+	\author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #ifndef SCAN_INIT
@@ -33,6 +35,7 @@ extern "C" {
 extern int nutscan_avail_avahi;
 extern int nutscan_avail_ipmi;
 extern int nutscan_avail_nut;
+extern int nutscan_avail_nut_simulation;
 extern int nutscan_avail_snmp;
 extern int nutscan_avail_usb;
 extern int nutscan_avail_xml_http;

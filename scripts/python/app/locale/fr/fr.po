@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: NUT Monitor\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-10-14 22:47+0200\n"
 "PO-Revision-Date: 2013-10-14 22:50+0200\n"
@@ -365,32 +365,68 @@ msgid "Enter a new value for the variable.\n"
 msgstr "Nouvelle valeur de cette variable.\n"
 
 #: gui-1.3.glade.h:29
-msgid "Copyright (c) 2010 David Goncalves"
+msgid "Copyright (c) 2010 David Goncalves, Copyright (c) after 2010 NUT Community"
 msgstr ""
 
-#: gui-1.3.glade.h:30
-msgid ""
-"GUI to manage devices connected a NUT server.\n"
+# NOTE: This plaintext markup of the "comment" is used
+#       in the Python2/GTK2 version of NUT Monitor.
+#       Equivalent "label" text in HTML markup is used in
+#       Python3/Qt5 localization.
+
+#: gui-1.3.glade.h:35
+msgid "GUI to manage devices connected to a NUT server.\n"
+"Provided with NUT version @PACKAGE_VERSION@.\n"
+"\n"
+"For more information about the GUI please visit\n"
+"the author's web-site:\n"
+"https://www.lestat.st/en/informatique/projets/nut-monitor\n"
 "\n"
 "For more information about NUT (Network UPS Tools)\n"
-"please visit the author's website.\n"
+"please visit the project web-site:\n"
+"@NUT_WEBSITE_BASE@\n"
+msgstr "Interface pour gérer les onduleurs connectés à un serveur NUT.\n"
+"Fourni avec la version @PACKAGE_VERSION@ du NUT.\n"
 "\n"
-"http://www.networkupstools.org\n"
-msgstr ""
-"Interface pour gérer les onduleurs connectés à un serveur NUT.\n"
+"Pour plus d'informations sur cet GUI\n"
+"veuillez consulter le site de l'auteur:\n"
+"https://www.lestat.st/en/informatique/projets/nut-monitor\n"
 "\n"
 "Pour plus d'informations sur NUT (Network UPS Tools)\n"
-"veuillez consulter le site de l'auteur.\n"
-"\n"
-"http://www.networkupstools.org\n"
+"veuillez consulter le site de l'projet:\n"
+"@NUT_WEBSITE_BASE@\n"
 
-#: gui-1.3.glade.h:37
-msgid "http://www.lestat.st"
+#: gui-1.3.glade.h:46
+msgid "<h1>NUT-Monitor 2.0.2</h1>\n"
+"<p>GUI to manage devices connected to a NUT server.<br/>\n"
+"Provided with NUT version @PACKAGE_VERSION@.</p>\n"
+"<p style=\" font-size:8pt;\">Copyright (C) 2010 David Goncalves<br/>\n"
+"Copyright (C) since 2010 by NUT Community</p>\n"
+"<p>For more information about NUT (Network UPS Tools)<br/>\n"
+"please visit the project web-site:</p>\n"
+"<p style=\"margin-bottom: 1.5em\"><a href=\"@NUT_WEBSITE_BASE@\">@NUT_WEBSITE_BASE@</a></p>\n"
+"<p>For more information about the GUI please visit<br/>\n"
+"the author's web-site:</p>\n"
+"<p><a href=\"https://www.lestat.st/en/informatique/projets/nut-monitor\">https://www.lestat.st</a></p>"
+msgstr "<h1>NUT-Monitor 2.0.2</h1>\n"
+"<p>Interface pour gérer les onduleurs connectés à un serveur NUT.<br/>\n"
+"Fourni avec la version @PACKAGE_VERSION@ du NUT.</p>\n"
+"<p style=\" font-size:8pt;\">Copyright (C) 2010 David Goncalves<br/>\n"
+"Copyright (C) since 2010 by NUT Community</p>\n"
+"<p>Pour plus d'informations sur NUT (Network UPS Tools)<br/>\n"
+"veuillez consulter le site de l'projet:</p>\n"
+"<p style=\"margin-bottom: 1.5em\"><a href=\"@NUT_WEBSITE_BASE@\">@NUT_WEBSITE_BASE@</a></p>\n"
+"<p>Pour plus d'informations sur cet GUI<br/>\n"
+"veuillez consulter le site de l'auteur:</p>\n"
+"<p><a href=\"https://www.lestat.st/en/informatique/projets/nut-monitor\">https://www.lestat.st</a></p>"
+
+#: gui-1.3.glade.h:58
+msgid "https://www.lestat.st"
 msgstr ""
 
-#: gui-1.3.glade.h:38
+#: gui-1.3.glade.h:59
 msgid ""
 "Copyright (C) 2010 David Goncalves <david@lestat.st>\n"
+"Copyright (C) since 2010 by NUT Community\n"
 "\n"
 "This program is free software: you can redistribute it and/or modify\n"
 "it under the terms of the GNU General Public License as published by\n"

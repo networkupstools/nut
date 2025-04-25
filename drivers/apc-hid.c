@@ -32,7 +32,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.99"
+#define APC_HID_VERSION "APC HID 0.100"
 
 /* APC */
 #define APC_VENDORID 0x051d
@@ -94,6 +94,10 @@ static usb_device_id_t apc_usb_device_table[] = {
 	{ USB_DEVICE(APC_VENDORID, 0x0002), general_apc_check },
 	/* various 5G models */
 	{ USB_DEVICE(APC_VENDORID, 0x0003), disable_interrupt_pipe },
+	/* APC Smart UPS 1000 with latest firmware 04.3
+	 * seems to have bumped the productid from 3 to 4
+	 * See https://github.com/networkupstools/nut/issues/1429 */
+	{ USB_DEVICE(APC_VENDORID, 0x0004), disable_interrupt_pipe },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -239,7 +243,7 @@ static usage_lkp_t apc_usage_lkp[] = {
 	{ "APCPanelTest",		0xff860072 }, /* FIXME: exploit */
 	{ "APCShutdownAfterDelay",	0xff860076 }, /* FIXME: exploit */
 	{ "APC_USB_FirmwareRevision",	0xff860079 }, /* FIXME: exploit */
-	{ "APCDelayBeforeReboot",	0xff86007c },
+	{ "APCDelayBeforeReboot",	0xff86007c }, /* WARNING: apcupsd maps this as APCForceShutdown... which one is right? */
 	{ "APCDelayBeforeShutdown",	0xff86007d },
 	{ "APCDelayBeforeStartup",	0xff86007e }, /* FIXME: exploit */
 	/* usage seen in dumps but unknown:
@@ -539,11 +543,14 @@ static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			"NOT Attempting Report Descriptor fix for UPS: "
 			"Vendor: %04x, Product: %04x "
 			"(got disable_fix_report_desc in config)",
-			vendorID, productID);
+			(unsigned int)vendorID,
+			(unsigned int)productID);
 		return 0;
 	}
 
-	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x", vendorID, productID);
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x",
+		(unsigned int)vendorID,
+		(unsigned int)productID);
 
 	/* Look at the High Voltage Transfer logical max value:
 	 * If the HVT logmax is greater than the configured or input voltage limit

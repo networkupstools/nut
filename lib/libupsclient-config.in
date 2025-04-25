@@ -3,15 +3,21 @@
 # libupsclient-config: helper script for NUT libupsclient   #
 # **********************************************************#
 # Copyright 2003 - Arnaud Quette                            #
-# Distributed under the GNU GPL v2                          #
+# Distributed under the GNU GPL v2+                         #
 # See the distribution lib/README for usage information     #
 # **********************************************************#
 
+# Note: PACKAGE_VERSION is baked into configure script used
+# to prepare the build of NUT deployed here. Actual programs
+# report a NUT_VERSION_MACRO which may differ if NUT was built
+# from Git and not a release or snapshot "dist" tarball (value
+# is determined during build then).
 Version="@PACKAGE_VERSION@"
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-Libs="-L@libdir@ -lupsclient @LIBSSL_LIBS@"
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+Libs="-L@libdir@ @LDFLAGS_NUT_RPATH@ -lupsclient @LIBSSL_LIBS@"
 Cflags="-I@includedir@ @LIBSSL_CFLAGS@"
+ConfigFlags="@CONFIG_FLAGS@"
 
 case "$1" in
 
@@ -22,10 +28,13 @@ case "$1" in
 	echo "$Libs"
 	;;
   --version)
-	echo $Version
+	echo "$Version"
+	;;
+  --config_flags|--config-flags)
+	echo "$ConfigFlags"
 	;;
   *)
-	echo "Usage: libupsclient-config {--cflags|--libs|--version}"
+	echo "Usage: libupsclient-config {--cflags|--libs|--version|--config_flags}"
 	exit 1
 esac
 

@@ -1,0 +1,89 @@
+NHS_SER(8)
+==========
+
+NAME
+----
+
+nhs_ser - Driver for NHS Nobreaks, senoidal line, with serial port
+
+SYNOPSIS
+--------
+
+*nhs_ser* -h
+
+*nhs_ser* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+*nhs_ser* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+*nhs_ser* supports numerous UPS models made by NHS Sistemas Eletronicos LTDA
+and marketed in Brazil. They feature a serial port and a binary wire protocol.
+
+NOTE: Currently this driver only builds on Linux. This is expected to change
+in future revisions of the code.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver also supports the following optional settings:
+
+*baud*='num'::
+Set the value of serial port baud rate (default: 2400)
+
+*ah*='num'::
+Battery discharge capacity in Ampere/hour.
+
+*va*='num'::
+Nobreak NOMINAL POWER in VA.
+
+*pf*='num'::
+Power Factor to use in calculations of battery time (default: 0.90).
+
+*vin_low_warn_perc*='num'::
+Voltage In Percentage to calculate warning low level (default: 2.00).
+
+*vin_low_crit_perc*='num'::
+Voltage In Percentage to calculate critical low level (default: 2.00).
+
+*vin_high_warn_perc*='num'::
+Voltage In Percentage to calculate warning high level (default: 2.00).
+
+*vin_high_crit_perc*='num'::
+Voltage In Percentage to calculate critical high level (default: 2.00).
+
+*numbatteries*='num'::
+Num Batteries (override value from nobreak).
+
+*vbat*='num'::
+Battery Voltage (default: 12.00).
+
+*debug_pkt_raw*::
+Optional flag to enable debug logging of packet bytes.
+
+*debug_pkt_data*::
+Optional flag to enable debug logging of data packet decoding.
+
+*debug_pkt_hwinfo*::
+Optional flag to enable debug logging of hwinfo packet decoding.
+
+AUTHORS
+-------
+
+Lucas Willian Bocchi <lucas@lucas.inf.br>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

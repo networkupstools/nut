@@ -10,19 +10,21 @@ and Q1).
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
+	nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
+------
 
 DESCRIPTION
 -----------
 
 The *nutscan_scan_eaton_serial()* function tries to detect NUT devices
 which are compatible with Eaton's serial device protocols (SHUT, XCP
-and Q1 (aka blazer)).
+and Q1 (aka blazer or megatec)).
 
-'ports_list' is a NULL terminated array of pointers to strings containing
-serial device name (/dev/ttyS0, COM1, /dev/ttya...)
+'ports_list' is a NULL-terminated array of pointers to strings containing
+serial device name (`/dev/ttyS0`, `COM1`, `/dev/ttya`...)
 
 You MUST call linkman:nutscan_init[3] before using this function.
 
@@ -40,6 +42,9 @@ linkman:nutscan_init[3],
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_snmp[3], linkman:nutscan_scan_avahi[3],
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_display_ups_conf[3],
+linkman:nutscan_display_sanity_check[3],
+linkman:nutscan_display_sanity_check_serial[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
 linkman:nutscan_display_parsable[3], linkman:nutscan_new_device[3],
 linkman:nutscan_free_device[3], linkman:nutscan_add_option_to_device[3],
 linkman:nutscan_add_device_to_device[3],

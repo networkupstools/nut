@@ -2,6 +2,9 @@
 #
 # chkconfig: 2345 31 89
 #
+# 2022-01-04 Jim Klimov <jimklimov+nut@gmail.com>
+#  Updated .in template, double-quoted variable expansions
+#
 # 2003-01-31 Antonino Albanese <al.an@monkeysweb.net>
 #  start program as user nut
 #  new style stopping upsmon
@@ -10,7 +13,7 @@
 # description: upsmon talks to upsd and notifies of ups status changes \
 #	also shutting systems down if required.
 # processname: upsmon
-# config: @sysconfdir@/upsmon.conf
+# config: @CONFPATH@/upsmon.conf
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 export PATH
@@ -18,17 +21,24 @@ export PATH
 # Source function library.
 . /etc/rc.d/init.d/functions
 
+NUT_SBINDIR="@SBINDIR@"
 if [ -f /etc/sysconfig/ups ]; then
   . /etc/sysconfig/ups
 else
-  POWERDOWNFLAG=/etc/killpower
-  NUTUSER=nutmon
+  POWERDOWNFLAG="@POWERDOWNFLAG@"
+  NUTUSER="@RUN_AS_USER@"
 fi
+if [ -n "$NUT_SBINDIR" -a -d "$NUT_SBINDIR" ]; then
+  PATH="$NUT_SBINDIR:$PATH"
+fi
+
+NUT_QUIET_INIT_UPSNOTIFY=true
+export NUT_QUIET_INIT_UPSNOTIFY
 
 # See how we are called.
 case "$1" in
   start)
-	action "NUT Starting UPS monitor" upsmon -u $NUTUSER
+	action "NUT Starting UPS monitor" upsmon -u "$NUTUSER"
 	touch /var/lock/subsys/upsmon
 	;;
   stop)
@@ -53,4 +63,3 @@ case "$1" in
 	echo "Usage: upsmon {start|stop|restart|reload|status}"
 	exit 1
 esac
-
