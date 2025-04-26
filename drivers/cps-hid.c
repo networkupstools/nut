@@ -32,7 +32,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.83"
+#define CPS_HID_VERSION      "CyberPower HID 0.84"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
@@ -49,7 +49,9 @@
  */
 #define CPS_VOLTAGE_LOGMIN 0
 #define CPS_VOLTAGE_LOGMAX 511 /* Includes safety margin. */
-#define CPS_WATTAGE_LOGMAX 2048 /* Should cover most affected models. */
+
+/* Should be a realistic max value covering most affected UPS. */
+#define CPS_NOMINALPWR_LOGMAX 2048
 
 /*! Battery voltage scale factor.
  * For some devices, the reported battery voltage is off by factor
@@ -667,7 +669,7 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 		}
 	}
 
-	/* Fix for nominal power reporting getting clipped by LogMax. */
+	/* Fix for nominal power reporting getting clipped by a too restrictive LogMax. */
 	if ((pData=FindObject_with_ID_Node(pDesc_arg, 24 /* 0x18 */, USAGE_POW_CONFIG_ACTIVE_POWER))) {
 		long power_logmax = pData->LogMax;
 
@@ -675,16 +677,14 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			"LogMin: %ld LogMax: %ld",
 			pData->LogMin, power_logmax);
 
-		if (power_logmax < CPS_WATTAGE_LOGMAX) {
-			/* Set a generous maximum that won't restrict UPS reporting.
+		if (power_logmax < CPS_NOMINALPWR_LOGMAX) {
+			/* Set a generous maximum value that will not restrict UPS reporting.
 			*
 			* Current findings suggest that the values sent by the UPS are
-			* accurate, but then get clipped by too strict LogMax thresholds:
+			* accurate, but then get clipped by a too strict LogMax threshold:
 			* https://github.com/networkupstools/nut/issues/2917#issuecomment-2832243477
-			*
-			* This could later be expanded to more advanced fiddling, where necessary.
 			*/
-			pData->LogMax = CPS_WATTAGE_LOGMAX;
+			pData->LogMax = CPS_NOMINALPWR_LOGMAX;
 
 			upsdebugx(3, "Fixing Report Descriptor: "
 				"set ConfigActivePower LogMax = %ld",
