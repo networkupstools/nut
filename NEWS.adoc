@@ -62,6 +62,13 @@ https://github.com/networkupstools/nut/milestone/9
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
 
+ - New NUT drivers:
+   * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
+     monitoring. Most specific reported values are in an `experimental.*`
+     namespace, as a community we need to come up with standard naming for
+     those via `docs/nut-names.txt`. [#440]
+
+
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------
