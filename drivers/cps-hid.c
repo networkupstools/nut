@@ -669,25 +669,29 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 
 	/* Fix for nominal power reporting getting clipped by LogMax. */
 	if ((pData=FindObject_with_ID_Node(pDesc_arg, 24 /* 0x18 */, USAGE_POW_CONFIG_ACTIVE_POWER))) {
+		long power_logmax = pData->LogMax;
+
 		upsdebugx(4, "Original Report Descriptor: ConfigActivePower "
 			"LogMin: %ld LogMax: %ld",
-			pData->LogMin, pData->LogMax);
+			pData->LogMin, power_logmax);
 
-		/* Set a generous maximum that won't restrict UPS reporting.
-		 *
-		 * Current findings suggest that the values sent by the UPS are
-		 * accurate, but then get clipped by too strict LogMax thresholds:
-		 * https://github.com/networkupstools/nut/issues/2917#issuecomment-2832243477
-		 *
-		 * This could later be expanded to more advanced fiddling, where necessary.
-		 */
-		pData->LogMax = CPS_WATTAGE_LOGMAX;
+		if (power_logmax < CPS_WATTAGE_LOGMAX) {
+			/* Set a generous maximum that won't restrict UPS reporting.
+			*
+			* Current findings suggest that the values sent by the UPS are
+			* accurate, but then get clipped by too strict LogMax thresholds:
+			* https://github.com/networkupstools/nut/issues/2917#issuecomment-2832243477
+			*
+			* This could later be expanded to more advanced fiddling, where necessary.
+			*/
+			pData->LogMax = CPS_WATTAGE_LOGMAX;
 
-		upsdebugx(3, "Fixing Report Descriptor: "
-			"set ConfigActivePower LogMax = %ld",
-			pData->LogMax);
+			upsdebugx(3, "Fixing Report Descriptor: "
+				"set ConfigActivePower LogMax = %ld",
+				pData->LogMax);
 
-		retval = 1;
+			retval = 1;
+		}
 	}
 
 	if (!retval) {
