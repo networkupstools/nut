@@ -3494,7 +3494,7 @@ dnl If user passed --with-doc='' they they want nothing, right?
 esac
 
 NUT_REPORT_FEATURE([requested to build and install documentation], ['${nut_with_doc}' => '${nut_doc_build_list}'], [],
-					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
+					[WITH_ASCIIDOC], [Define to enable Asciidoc support], [-])
 
 if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
@@ -3727,7 +3727,7 @@ esac
 AM_CONDITIONAL(WITH_PDF_NONASCII_TITLES, [test x"$can_build_doc_pdf_nonascii_titles" = xyes])
 
 NUT_REPORT_FEATURE([would build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
-					[WITH_DOCS], [Define to enable overall documentation generation])
+					[WITH_DOCS], [Define to enable overall documentation generation], [-])
 
 # To cater for less portable make's, precalculate the target list
 # for "make check" in "docs/" here...
