@@ -3463,9 +3463,6 @@ dnl is set to 'no', we may still want to build some doc targets manually
 dnl (so enable the Makefile recipes for those targets if tools are available)
 NUT_CHECK_ASCIIDOC
 
-NUT_REPORT_FEATURE([requested to build and install documentation], [${nut_with_doc}], [],
-					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
-
 DOC_INSTALL_DISTED_MANS=no
 KNOWN_UNABLE_MANS=no
 
@@ -3495,6 +3492,9 @@ dnl If user passed --with-doc='' they they want nothing, right?
 		AC_MSG_NOTICE([Got explicit list of document formats to build or not: ${nut_doc_build_list}; formats not listed will be silently skipped])
 		;;
 esac
+
+NUT_REPORT_FEATURE([requested to build and install documentation], ['${nut_with_doc}' => '${nut_doc_build_list}'], [],
+					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
 
 if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
