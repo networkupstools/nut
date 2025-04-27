@@ -3692,17 +3692,19 @@ AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 case "${nut_with_doc}" in
 auto)
 	if test -n "${DOC_BUILD_LIST}"; then
+		dnl # We can build at least one format...
 		nut_with_doc="yes"
 	else
+		dnl # We can not build any formats...
 		nut_with_doc="no"
 	fi
 	;;
 no)
 	;;
-*)
+*)  dnl # yes, all, skip...
 	if test -n "${DOC_CANNOTBUILD_LIST}"; then
 		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | grep -vE '^$'`"
-		for DOCTYPE in ${DOC_BUILD_LIST} ; do
+		for DOCTYPE in ${nut_doc_build_list} ; do
 			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(|=yes)\$" ; then
 				AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
 			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" ; then

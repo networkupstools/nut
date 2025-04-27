@@ -41,6 +41,13 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
+ - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2 and/or
+   v2.8.3:
+   * Fixed a regression in recipes of NUT v2.8.3 release (as compared to
+     v2.8.2), where `configure --with-docs=all` no longer failed a run
+     of the `configure` script when some of the required rendering tools
+     were not in fact available. [#2842]
+
  - common code:
    * Revised common `writepid()` to use `altpidpath()` as location for the
      PID file creation, if the default `rootpidpath()` is not accessible
