@@ -1,28 +1,36 @@
 VE-DIRECT(8)
-=============
+============
 
-NAME  
+NAME
 ----
+
 ve-direct - Driver for Victron UPS unit running on VE.Direct serial protocol
 
-NOTE
-----
-This man page only documents the hardware-specific features of the the
-victronups driver.  For information about the core driver, see
+SYNOPSIS
+--------
+
+*ve-direct* -h
+
+*ve-direct* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+*ve-direct* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
-The ve-direct should recognize all Victron models that use a serial VE.Direct
-protocol at 19200 bps.
+
+The ve-direct driver should recognize all Victron models that use a serial
+VE.Direct protocol at 19200 bps.
 
 CABLING
 -------
 
-Use Victron provided USB or serial cable to connect yours Victron UPS.
+Use Victron provided USB or serial cable to connect your Victron UPS.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional setting in the
 linkman:ups.conf[5]:
 
@@ -31,10 +39,12 @@ Set model name
 
 BUGS
 ----
+
 The HEX protocol is not supported at the moment.
 
 AUTHOR
 ------
+
 Petr Kubanek <kubanek@fzu.cz>
 
 SEE ALSO
@@ -42,8 +52,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
