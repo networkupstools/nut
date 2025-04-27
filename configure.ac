@@ -3574,7 +3574,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(no)
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
@@ -3597,7 +3597,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(no)
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
@@ -3623,7 +3623,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(no)
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
@@ -3660,7 +3660,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				KNOWN_UNABLE_MANS=yes
 				if test "${nut_doc_build_target_flag}" = "yes" ; then
-					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 				else
 					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 					if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
