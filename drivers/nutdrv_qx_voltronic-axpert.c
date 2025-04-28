@@ -4094,7 +4094,7 @@ static int	voltronic_sunny_batt_runtime(item_t *item, char *value, const size_t 
 /* Fault reported by the device */
 static int	voltronic_sunny_fault(item_t *item, char *value, const size_t valuelen)
 {
-	char		alarm[SMALLBUF];
+	char		alarm[LARGEBUF];
 	item_t		*unskip;
 
 	upslogx(LOG_INFO, "Checking for faults..");
