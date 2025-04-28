@@ -38,6 +38,11 @@
 # define TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT	0
 #endif
 
+/* NOTE for dev-testing: you can enable single or combo code paths
+ *  with macros below, to enable visibility of certain data point
+ *  or command/setting groups. It suffices to e.g. add `+ 1` to the
+ *  line you want to activate in the custom build of NUT for testing.
+ */
 #define TESTING_AXPERT_CAPS_QUERY	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
 #define TESTING_AXPERT_CAPS_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
 #define TESTING_AXPERT_OPERATIONAL_OPTIONS_QUERY_CHANGE	TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
