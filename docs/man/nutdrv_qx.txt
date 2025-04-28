@@ -88,7 +88,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
+Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-axpert', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Run the driver program with the `--help` option to see the exact list of
 `protocol` values it would currently recognize.
@@ -137,7 +137,7 @@ Some devices "natively" report just report a part of the total battery voltage
 device or properly guessed by the driver otherwise).
 +
 If this flag is set, most of the subdrivers (except those which know about
-more  complicated device-specific nuances, currently: *ablerex*, *masterguard*
+more complicated device-specific nuances, currently: *ablerex*, *masterguard*
 and *voltronic-qs-hex*) adjust their ultimately reported *battery.voltage*
 value as a multiple of *battery.packs* and "native" *battery.voltage*).
 +
@@ -242,6 +242,22 @@ The acceptable range is +60..599940+ seconds.
 
 *offdelay*::
 The acceptable range is +12..540+ seconds.
+
+
+VOLTRONIC-AXPERT PROTOCOL
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE: This protocol is currently largely experimental, many features may
+be only exposed in specially configured builds of the NUT driver program.
+
+*reset_to_default*::
+Reset capability options and their limits to safe default values
+
+*bypass_alarm*::
+Alarm (BEEP!) at Bypass Mode [enabled/disabled]
+
+*battery_alarm*::
+Alarm (BEEP!) at Battery Mode [enabled/disabled]
 
 
 VOLTRONIC PROTOCOL
@@ -769,6 +785,19 @@ MASTERGUARD UNITS
 ~~~~~~~~~~~~~~~~~
 
 The driver is supposed to support both "new" A series (A700/1000/2000/3000 and their -19 cousins) and E series (E60/100/200) but was tested only on A due to lack of E hardware.
+
+
+VOLTRONIC-AXPERT UNITS
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This protocol supports Voltronic Power Axpert inverters, based on P30 protocol
+(used e.g. in photovoltaic equipment, often paired with an UPS charged by the
+solar panels).
+
+The code is currently largely experimental, with data point and command names
+not aligned with concepts that are part of NUT standard vocabulary (this many
+of them are prefixed with `experimental.` namespace). In fact,  many features
+may be only exposed in specially configured builds of the NUT driver program.
 
 
 VOLTRONIC-QS UNITS
