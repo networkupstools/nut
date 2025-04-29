@@ -41,6 +41,13 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
+ - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2 and/or
+   v2.8.3:
+   * Fixed a regression in recipes of NUT v2.8.3 release (as compared to
+     v2.8.2), where `configure --with-docs=all` no longer failed a run
+     of the `configure` script when some of the required rendering tools
+     were not in fact available. [#2842]
+
  - common code:
    * Revised common `writepid()` to use `altpidpath()` as location for the
      PID file creation, if the default `rootpidpath()` is not accessible
@@ -61,6 +68,18 @@ https://github.com/networkupstools/nut/milestone/9
      for this name": the way to extract IP address string was not portable
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
+
+ - `usbhid-ups` updates:
+   * The `cps-hid` subdriver's existing mechanism for fixing broken report
+     descriptors was extended to cover a newly reported case of nominal UPS
+     power being incorrectly reported due to an unrealistically low maximum
+     threshold, as seen with a EC850LCD device. [issue #2917, PR #2919]
+
+ - New NUT drivers:
+   * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
+     monitoring. Most specific reported values are in an `experimental.*`
+     namespace, as a community we need to come up with standard naming for
+     those via `docs/nut-names.txt`. [#440]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
