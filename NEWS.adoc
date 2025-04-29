@@ -76,7 +76,7 @@ https://github.com/networkupstools/nut/milestone/9
      from default NUT builds by being defined in `experimental.*` namespace,
      and should also be enabled by `configure --with-unmapped-data-points`.
      Development was based on work done in the Voltronic Sunny subdriver in
-     https://github.com/nickma82/nut/tree/nutdrv_qx_voltronic-sunny_rebased+command
+     https://github.com/nickma82/nut/tree/nutdrv_qx_voltronic-sunny_rebased%2Bcommand
      [#1407]
 +
 Still TODO:
