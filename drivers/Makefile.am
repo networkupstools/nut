@@ -68,7 +68,7 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser
+ blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser ve-direct
 if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
 SERIAL_DRIVERLIST += nhs_ser
@@ -204,6 +204,8 @@ sms_ser_SOURCES = sms_ser.c
 sms_ser_LDADD = $(LDADD) -lm
 bicker_ser_SOURCES = bicker_ser.c
 bicker_ser_LDADD = $(LDADD) -lm
+ve_direct_SOURCES = ve-direct.c
+ve_direct_LDADD = $(LDADD) -lm
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
