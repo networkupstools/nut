@@ -69,7 +69,12 @@ https://github.com/networkupstools/nut/milestone/9
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
 
- - `usbhid-ups` updates:
+ - `apc_modbus` driver updates:
+   * it should now properly handle mismatches of criteria passed to the
+     regular expression matcher (e.g. serial number) allowing several USB
+     devices to be monitored without conflict. [#2609]
+
+ - `usbhid-ups` driver updates:
    * The `cps-hid` subdriver's existing mechanism for fixing broken report
      descriptors was extended to cover a newly reported case of nominal UPS
      power being incorrectly reported due to an unrealistically low maximum
@@ -581,7 +586,6 @@ This requirement compromises usability of `make distcheck` on platforms without
  - `gamatronic` driver revised for safer memory operations; this was reported
    to have fixed a Segmentation Fault seen in earlier NUT releases with
    some of the devices supported by this driver. [#2427]
-
 
  - `upsd` updates:
    * `upsd_cleanup()` is now traced, to more easily see that the daemon is

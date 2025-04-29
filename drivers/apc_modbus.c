@@ -915,6 +915,18 @@ static void _apc_modbus_create_reopen_matcher(void)
 	int r;
 
 	if (reopen_matcher != NULL) {
+		USBDeviceMatcher_t	*curr, *prev = NULL;
+		for (curr = best_matcher; curr != NULL; curr = curr->next) {
+			if (curr == reopen_matcher) {
+				if (prev) {
+					prev->next = curr->next;
+				} else {
+					best_matcher = curr->next;
+				}
+			} else {
+				prev = curr;
+			}
+		}
 		USBFreeExactMatcher(reopen_matcher);
 		reopen_matcher = NULL;
 	}
@@ -941,8 +953,9 @@ static int _apc_modbus_reopen(void)
 
 #if defined NUT_MODBUS_HAS_USB
 	/* We might have matched a new device in the modbus_connect callback.
-	 * Because of this we want a new exact matcher. */
-	best_matcher = best_matcher->next;
+	 * Because of this we want a new exact matcher. The method will drop
+	 * the old reopen_matcher from our list starting at best_matcher, and
+	 * from memory. */
 	_apc_modbus_create_reopen_matcher();
 #endif /* defined NUT_MODBUS_HAS_USB */
 
@@ -1689,10 +1702,37 @@ static int _apc_modbus_usb_callback(const modbus_usb_device_t *device)
 
 	_apc_modbus_usb_lib_to_nut(device, &usbdevice);
 
+	upsdebugx(2, "- VendorID: %04x", usbdevice.VendorID);
+	upsdebugx(2, "- ProductID: %04x", usbdevice.ProductID);
+	upsdebugx(2, "- Manufacturer: %s", usbdevice.Vendor ? usbdevice.Vendor : "unknown");
+	upsdebugx(2, "- Product: %s", usbdevice.Product ? usbdevice.Product : "unknown");
+	upsdebugx(2, "- Serial Number: %s", usbdevice.Serial ? usbdevice.Serial : "unknown");
+	upsdebugx(2, "- Bus: %s", usbdevice.Bus ? usbdevice.Bus : "unknown");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	upsdebugx(2, "- Bus Port: %s", usbdevice.BusPort ? usbdevice.BusPort : "unknown");
+#endif
+	upsdebugx(2, "- Device: %s", usbdevice.Device ? usbdevice.Device : "unknown");
+	upsdebugx(2, "- Device release number: %04x", usbdevice.bcdDevice);
+
+	upsdebugx(2, "Trying to match device");
 	current_matcher = best_matcher;
+	upsdebugx(5, "%s: current_matcher=%p", __func__, (void*)current_matcher);
 	while (current_matcher != NULL) {
-		if (current_matcher->match_function(&usbdevice, current_matcher->privdata) == 1) {
+		int ret = current_matcher->match_function(&usbdevice, current_matcher->privdata);
+		upsdebugx(5, "%s: Tried matcher %p returned %d", __func__, (void*)current_matcher, ret);
+		if (ret == 1) {
+			/* known good hit */
 			break;
+		} else if (ret == 0) {
+			/* known active rejection */
+			upsdebugx(2, "%s: Device does not match - skipping", __func__);
+			/* go to next device that libmodbus would suggest and use this callback again */
+			return -1;
+		} else if (ret == -1) {
+			fatal_with_errno(EXIT_FAILURE, "%s: matcher", __func__);
+		} else if (ret == -2) {
+			upsdebugx(2, "%s: matcher: unspecified error", __func__);
+			return -1;
 		}
 
 		current_matcher = current_matcher->next;
@@ -1971,6 +2011,9 @@ void upsdrv_cleanup(void)
 
 #if defined NUT_MODBUS_HAS_USB
 	USBFreeExactMatcher(reopen_matcher);
+	reopen_matcher = NULL;
+
 	USBFreeExactMatcher(regex_matcher);
+	regex_matcher = NULL;
 #endif /* defined NUT_MODBUS_HAS_USB */
 }
