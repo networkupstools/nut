@@ -41,6 +41,13 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
+ - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2 and/or
+   v2.8.3:
+   * Fixed a regression in recipes of NUT v2.8.3 release (as compared to
+     v2.8.2), where `configure --with-docs=all` no longer failed a run
+     of the `configure` script when some of the required rendering tools
+     were not in fact available. [#2842]
+
  - common code:
    * Revised common `writepid()` to use `altpidpath()` as location for the
      PID file creation, if the default `rootpidpath()` is not accessible
@@ -62,11 +69,13 @@ https://github.com/networkupstools/nut/milestone/9
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
 
- - New NUT drivers:
-   * Introduced `nutdrv_qx` subdriver for Voltronic Axpert P30 protocol
-     inverters, currently in a highly experimental state -- with initial
-     support for query commands, but most values are "hidden" from default NUT
-     builds as "unmapped". Based on work done in the Voltronic Sunny driver in
+ - `nutdrv_qx` driver updates:
+   * Introduced a `voltronic-axpert` subdriver for Voltronic Axpert inverters
+     which speak the P30 protocol, currently in a highly experimental state:
+     with initial support for query commands, but most values are "hidden"
+     from default NUT builds by being defined in `experimental.*` namespace,
+     and should also be enabled by `configure --with-unmapped-data-points`.
+     Development was based on work done in the Voltronic Sunny subdriver in
      https://github.com/nickma82/nut/tree/nutdrv_qx_voltronic-sunny_rebased+command
      [#1407]
 +
@@ -79,6 +88,18 @@ Still TODO:
        it by discussion and agreement with community -- notably to track
        a `pv.*` namespace for photovoltaic, separately from `ups.*` etc.)
      - Update docs (manpages, acknowledgements...)
+
+- `usbhid-ups` driver updates:
+   * The `cps-hid` subdriver's existing mechanism for fixing broken report
+     descriptors was extended to cover a newly reported case of nominal UPS
+     power being incorrectly reported due to an unrealistically low maximum
+     threshold, as seen with a EC850LCD device. [issue #2917, PR #2919]
+
+ - New NUT drivers:
+   * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
+     monitoring. Most specific reported values are in an `experimental.*`
+     namespace, as a community we need to come up with standard naming for
+     those via `docs/nut-names.txt`. [#440]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
