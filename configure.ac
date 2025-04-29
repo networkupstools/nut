@@ -2153,7 +2153,7 @@ AC_ARG_WITH(drivers,
 								;;
 						esac
 					done
-				) | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ," -e "s,${SPACES}\$,,"
+				) | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ,g" -e "s,${SPACES}\$,,"
 			)
 
 			for DRVLIST_NAME in $DRVLIST_NAMES; do
