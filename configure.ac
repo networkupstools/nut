@@ -2129,7 +2129,7 @@ AC_ARG_WITH(drivers,
 				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST"
 
 			dnl Gets ONE Makefile assignment value
-			get_drvlist() (
+			get_drivers_makefile_value() (
 				dnl Note escaped brackets - "against" m4 parser
 				m4_version_prereq(2.62,
 					[LB="@<:@"; RB="@:>@"],
@@ -2157,7 +2157,7 @@ AC_ARG_WITH(drivers,
 			)
 
 			for DRVLIST_NAME in $DRVLIST_NAMES; do
-				OUT="`get_drvlist "$DRVLIST_NAME"`" \
+				OUT="`get_drivers_makefile_value "$DRVLIST_NAME"`" \
 				&& test -n "$OUT" || OUT=""
 				eval $DRVLIST_NAME="\$OUT"
 				AC_MSG_NOTICE([Will check custom driver selection against $DRVLIST_NAME="$OUT"])
