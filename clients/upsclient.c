@@ -20,6 +20,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#define NUT_WANT_INET_NTOP_XX	1
+
 #include "config.h"	/* safe because it doesn't contain prototypes */
 #include "nut_platform.h"
 
@@ -1162,34 +1164,9 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			    ups->upserror == UPSCLI_ERR_CONNFAILURE &&
 			    ups->syserrno == ETIMEDOUT
 			) {
-				/* https://stackoverflow.com/a/29147085/4715872
-				 * obviously INET6_ADDRSTRLEN is expected to be larger
-				 * than INET_ADDRSTRLEN, but this may be required in case
-				 * if for some unexpected reason IPv6 is not supported, and
-				 * INET6_ADDRSTRLEN is defined as 0
-				 * but this is not very likely and I am aware of no cases of
-				 * this in practice (editor)
-				 */
-				char	addrstr[(INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1];
-				addrstr[0] = '\0';
-				switch (ai->ai_family) {
-					case AF_INET: {
-						struct sockaddr_in addr_in;
-						memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
-						inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, INET_ADDRSTRLEN);
-						break;
-					}
-					case AF_INET6: {
-						struct sockaddr_in6 addr_in6;
-						memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
-						inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, INET6_ADDRSTRLEN);
-						break;
-					}
-					default:
-						break;
-				}
+				const char	*addrstr = inet_ntopAI(ai);
 				upslogx(LOG_WARNING, "%s: Connection to host timed out: '%s'",
-					__func__, *addrstr ? addrstr : NUT_STRARG(host));
+					__func__, (addrstr && *addrstr) ? addrstr : NUT_STRARG(host));
 				break;
 			}
 			continue;

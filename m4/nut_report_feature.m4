@@ -111,7 +111,18 @@ AC_DEFUN([NUT_REPORT_FEATURE],
     dnl arg#3 = value
     dnl arg#4 = autoconf varname
     dnl arg#5 = longer description (autoconf comment)
-    AC_MSG_CHECKING([whether to $1])
+    dnl arg#6 = (OPTIONAL) word(s) after prefix "whether" before "$1",
+    dnl         or nothing if "-"; NOTE: "whether" is not part of this
+    dnl         consideration (see NUT REPORT used below with a partial
+    dnl         message)
+    nrf_tmp="${6-}"
+    AS_CASE([x"${nrf_tmp}"],
+        [x], [nrf_tmp="to "],
+        [x-], [nrf_tmp=""]
+    )
+    AC_MSG_CHECKING([whether ${nrf_tmp}$1])
+    unset nrf_tmp
+
     AC_MSG_RESULT([$2 $3])
     NUT_REPORT([$1], [$2 $3])
 

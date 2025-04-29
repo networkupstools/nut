@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3463 utf-8
+personal_ws-1.1 en 3470 utf-8
 AAC
 AAS
 ABI
@@ -596,6 +596,7 @@ Korte
 Kralewski
 Kroll
 Krpec
+Kubanek
 Kubernetes
 Kx
 LASTXFER
@@ -943,6 +944,7 @@ Pavel
 Pawe
 PbAc
 Perriault
+Petr
 Petri
 Petter
 Pezzini
@@ -2206,6 +2208,7 @@ ina
 includePath
 includedir
 inductor
+inet
 infos
 infoval
 inh
@@ -2624,6 +2627,9 @@ nowarn
 np
 nspr
 nss
+ntopAI
+ntopSS
+ntopW
 nuget
 num
 numOfBytesFromUPS
@@ -3349,6 +3355,7 @@ varname
 varvalue
 vbat
 vbatt
+ve
 vc
 vda
 vendorid

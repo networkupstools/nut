@@ -66,12 +66,25 @@
 #endif
 
 #ifndef WIN32
-#include <syslog.h>
+# include <syslog.h>
 #else	/* WIN32 */
-#include <winsock2.h>
-#include <windows.h>
-#include <ws2tcpip.h>
+# include <winsock2.h>
+# include <windows.h>
+# include <ws2tcpip.h>
 #endif	/* WIN32 */
+
+#ifdef NUT_WANT_INET_NTOP_XX
+/* We currently have a few consumers who should define this macro before
+ * including common.h, while we do not want to encumber preprocessing the
+ * majority of codebase with these headers and our (thread-unsafe) methods.
+ */
+# ifndef WIN32
+#  include <netdb.h>
+#  include <sys/socket.h>
+#  include <arpa/inet.h>
+#  include <netinet/in.h>
+# endif	/* WIN32 */
+#endif	/* NUT_WANT_INET_NTOP_XX */
 
 #include <unistd.h>	/* useconds_t */
 #ifndef HAVE_USECONDS_T
@@ -402,6 +415,14 @@ const char * rootpidpath(void);
 
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);
+
+#ifdef NUT_WANT_INET_NTOP_XX
+/* NOT THREAD SAFE!
+ * Helpers to convert one IP address to string from different structure types
+ * Return pointer to internal buffer, or NULL and errno upon errors */
+const char *inet_ntopSS(struct sockaddr_storage *s);
+const char *inet_ntopAI(struct addrinfo *ai);
+#endif	/* NUT_WANT_INET_NTOP_XX */
 
 /* Provide integration for systemd inhibitor interface (where available,
  * dummy code otherwise) implementing the pseudo-code example from
