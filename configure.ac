@@ -2128,6 +2128,7 @@ AC_ARG_WITH(drivers,
 				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
 				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST"
 
+			dnl Gets ONE Makefile assignment value
 			get_drvlist() (
 				dnl Note escaped brackets - "against" m4 parser
 				m4_version_prereq(2.62,
@@ -2138,12 +2139,12 @@ AC_ARG_WITH(drivers,
 				SPACES="${SPACE}*"
 				sed -e "s/${SPACES}""$LB"'+'"$RB"'*='"${SPACES}/=/" \
 				    -e "s/^${SPACES}//" < "$srcdir/drivers/Makefile.am" \
-				| {
+				| (
 					C=false; V=false
 					while read LINE ; do
 						case "$LINE" in
 							*'\') C=true; if $V ; then echo "$LINE" ; fi ;;
-							*) C=false; V=false ;;
+							*) if $C ; then exit 0; fi ; C=false; V=false ;;
 						esac
 						case "$LINE" in
 							"$1"=*)
@@ -2152,7 +2153,7 @@ AC_ARG_WITH(drivers,
 								;;
 						esac
 					done
-				} | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ," -e "s,${SPACES}\$,,"
+				) | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ," -e "s,${SPACES}\$,,"
 			)
 
 			for DRVLIST_NAME in $DRVLIST_NAMES; do
