@@ -2148,12 +2148,12 @@ AC_ARG_WITH(drivers,
 						esac
 						case "$LINE" in
 							"$1"=*)
-								echo "$LINE" | sed -e 's,^'"$LB"'^='"$RB"'*=,,' -e 's,\$,,'
+								echo "$LINE" | sed -e 's,^'"$LB"'^='"$RB"'*=,,'
 								V=$C
 								;;
 						esac
 					done
-				) | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ,g" -e "s,${SPACES}\$,,"
+				) | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ,g" -e "s,${SPACES}\$,," -e 's,\$(EXEEXT),,'
 			)
 
 			for DRVLIST_NAME in $DRVLIST_NAMES; do
