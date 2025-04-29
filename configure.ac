@@ -3463,9 +3463,6 @@ dnl is set to 'no', we may still want to build some doc targets manually
 dnl (so enable the Makefile recipes for those targets if tools are available)
 NUT_CHECK_ASCIIDOC
 
-NUT_REPORT_FEATURE([requested to build and install documentation], [${nut_with_doc}], [],
-					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
-
 DOC_INSTALL_DISTED_MANS=no
 KNOWN_UNABLE_MANS=no
 
@@ -3495,6 +3492,9 @@ dnl If user passed --with-doc='' they they want nothing, right?
 		AC_MSG_NOTICE([Got explicit list of document formats to build or not: ${nut_doc_build_list}; formats not listed will be silently skipped])
 		;;
 esac
+
+NUT_REPORT_FEATURE([requested to build and install documentation], ['${nut_with_doc}' => '${nut_doc_build_list}'], [],
+					[WITH_ASCIIDOC], [Define to enable Asciidoc support], [-])
 
 if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
@@ -3574,7 +3574,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(no)
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
@@ -3597,7 +3597,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(no)
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
@@ -3623,7 +3623,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(no)
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
@@ -3660,7 +3660,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				KNOWN_UNABLE_MANS=yes
 				if test "${nut_doc_build_target_flag}" = "yes" ; then
-					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 				else
 					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 					if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
@@ -3684,28 +3684,30 @@ done
 rm -rf "${DOCTESTDIR}"
 
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
-    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:       '${DOC_BUILD_LIST}'])
-    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_CANNOTBUILD_LIST: '${DOC_CANNOTBUILD_LIST}'])
-    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:   '${DOC_SKIPBUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:       '${DOC_BUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_CANNOTBUILD_LIST: '${DOC_CANNOTBUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:   '${DOC_SKIPBUILD_LIST}'])
 ])
 
 case "${nut_with_doc}" in
 auto)
 	if test -n "${DOC_BUILD_LIST}"; then
+		dnl # We can build at least one format...
 		nut_with_doc="yes"
 	else
+		dnl # We can not build any formats...
 		nut_with_doc="no"
 	fi
 	;;
 no)
 	;;
-*)
+*)  dnl # yes, all, skip...
 	if test -n "${DOC_CANNOTBUILD_LIST}"; then
 		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | grep -vE '^$'`"
-		for DOCTYPE in ${DOC_BUILD_LIST} ; do
-			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(|=yes)\$" ; then
+		for DOCTYPE in ${nut_doc_build_list} ; do
+			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(|=yes)\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
-			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" ; then
+			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_NOTICE([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above), skipping])
 				fi
 			fi
@@ -3727,7 +3729,7 @@ esac
 AM_CONDITIONAL(WITH_PDF_NONASCII_TITLES, [test x"$can_build_doc_pdf_nonascii_titles" = xyes])
 
 NUT_REPORT_FEATURE([would build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
-					[WITH_DOCS], [Define to enable overall documentation generation])
+					[WITH_DOCS], [Define to enable overall documentation generation], [-])
 
 # To cater for less portable make's, precalculate the target list
 # for "make check" in "docs/" here...
