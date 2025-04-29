@@ -433,6 +433,7 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 		-e 's%\(PR\|pull request\) *networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/pull/\3[\1 \2\#\#\3]\4%g' \
 		-e 's%\([[ ,]\)networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/\2/issues/\3[\2\#\#\3]\4%g' \
 		-e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
+		-e 's,\(https*://[^ \+]*\)[\]*[+],\1%2B,g' \
 	 ; } > "$@.tmp.$$$$" \
 	 && mv -f "$@.tmp.$$$$" "$@"
 	@if [ x'$@' = x'$(top_builddir)/ChangeLog.adoc-parsed' ] ; then \
