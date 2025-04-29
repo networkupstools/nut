@@ -68,6 +68,13 @@ https://github.com/networkupstools/nut/milestone/9
      power being incorrectly reported due to an unrealistically low maximum
      threshold, as seen with a EC850LCD device. [issue #2917, PR #2919]
 
+ - New NUT drivers:
+   * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
+     monitoring. Most specific reported values are in an `experimental.*`
+     namespace, as a community we need to come up with standard naming for
+     those via `docs/nut-names.txt`. [#440]
+
+
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------
 
