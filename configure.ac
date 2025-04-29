@@ -2135,6 +2135,7 @@ AC_ARG_WITH(drivers,
 					[LB="@<:@"; RB="@:>@"],
 					[LB="[["; RB="]]"]
 				)
+				dnl ###DEBUG### echo "RECURSIVE SEARCH FOR: '$1'" >&2
 				SPACE="`printf "$LB"' \t'"$RB"`"
 				SPACES="${SPACE}*"
 				sed -e "s/${SPACES}""$LB"'+'"$RB"'*='"${SPACES}/=/" \
@@ -2153,11 +2154,35 @@ AC_ARG_WITH(drivers,
 								;;
 						esac
 					done
-				) | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ,g" -e "s,${SPACES}\$,," -e 's,\$(EXEEXT),,'
+					echo ""
+				) | tr '\n' ' ' | sed -e 's,\$(EXEEXT),,g' \
+				| tr ' ' '\n' | while read TOKEN ; do
+					case x"${TOKEN}" in
+						x)	;;
+						'x$('*')') get_drivers_makefile_value "`echo "${TOKEN}" | sed -e 's,^\$(,,' -e 's,)$,,'`" ;;
+						'x${'*'}') get_drivers_makefile_value "`echo "${TOKEN}" | sed -e 's,^\${,,' -e 's,}$,,'`" ;;
+						*)	echo "${TOKEN} " ;;
+					esac
+				done dnl ###DEBUG### | tee -a /dev/stderr
+			)
+
+			get_drvlist() (
+				m4_version_prereq(2.62,
+					[LB="@<:@"; RB="@:>@"],
+					[LB="[["; RB="]]"]
+				)
+				dnl ###DEBUG### echo "SEARCH FOR: '$1'" >&2
+				SPACE="`printf "$LB"' \t'"$RB"`"
+				SPACES="${SPACE}*"
+
+				dnl Let it recurse, and only then we collect the
+				dnl result into one string with reduced spaces:
+				get_drivers_makefile_value "$1" \
+				| tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ,g" -e "s,${SPACES}\$,,"
 			)
 
 			for DRVLIST_NAME in $DRVLIST_NAMES; do
-				OUT="`get_drivers_makefile_value "$DRVLIST_NAME"`" \
+				OUT="`get_drvlist "$DRVLIST_NAME"`" \
 				&& test -n "$OUT" || OUT=""
 				eval $DRVLIST_NAME="\$OUT"
 				AC_MSG_NOTICE([Will check custom driver selection against $DRVLIST_NAME="$OUT"])
