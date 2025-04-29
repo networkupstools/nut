@@ -3705,7 +3705,7 @@ no)
 	if test -n "${DOC_CANNOTBUILD_LIST}"; then
 		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | grep -vE '^$'`"
 		for DOCTYPE in ${nut_doc_build_list} ; do
-			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(|=yes)\$" >/dev/null 2>/dev/null ; then
+			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(=yes)?\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
 			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_NOTICE([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above), skipping])

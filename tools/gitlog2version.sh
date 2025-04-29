@@ -197,7 +197,7 @@ getver_git() {
     # string over longer ones if available, or older RC over newer release
     # like "v2.8.2-rc8" preferred over "v2.8.3" if they happen to be tagging
     # the same commit):
-    DESC_PRERELEASE="`git describe --tags | grep -E '^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(|-(rc|alpha|beta)-*[0-9][0-9]*)$'`" \
+    DESC_PRERELEASE="`git describe --tags | grep -E '^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$'`" \
     || DESC_PRERELEASE=""
 
     # How much of the known trunk history is in current HEAD?
@@ -283,7 +283,7 @@ getver_default() {
             # Assume triplet (possibly prefixed with `v`) + suffix
             # like `v2.8.3-rc6` or `2.8.2-beta-1`
             # FIXME: Check the assumption better!
-            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(|-(rc|alpha|beta)-*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
+            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
             && [ -n "${SUFFIX}" ] \
             && SUFFIX_PRERELEASE="`echo "${SUFFIX}" | sed 's/^-*//'`" \
             && NUT_VERSION_DEFAULT="`echo "${NUT_VERSION_DEFAULT}" | sed -e 's/'"${SUFFIX}"'$//'`"
