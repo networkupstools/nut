@@ -1801,6 +1801,7 @@ static int status_set_callback(char *tgt, size_t tgtsize, const char *token)
 		 */
 		upsdebugx(2, "%s: (almost) ignoring ALARM set as a status", __func__);
 		if (!alarm_status && !alarm_active && strlen(alarm_buf) == 0) {
+			upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and did not set an alarm message: set an injected N/A value", __func__);
 			alarm_init();	/* no-op currently, but better be proper about it */
 			alarm_set("[N/A]");
 		}
@@ -1870,7 +1871,18 @@ void status_commit(void)
 	 */
 
 	if (!alarm_active && alarm_status && !strcmp(alarm_buf, "[N/A]")) {
-		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and used status_set(\"ALARM\") instead: commit the injected N/A ups.alarm value", __func__);
+		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and used status_set(\"ALARM\") instead: commit the alarm state entrance", __func__);
+		alarm_commit();
+	}
+
+	if (alarm_active && !alarm_status) {
+		/* The ALARM status token has just disappeared, probably the driver
+		 * removed it without calling the appropriate functions. We also
+		 * need to exit the alarm state here, otherwise the ALARM status
+		 * token will get added back to the UPS status variable later.
+		 */
+		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and just removed previously active ALARM from status: commit the alarm state exit", __func__);
+		alarm_init();
 		alarm_commit();
 	}
 
