@@ -1513,14 +1513,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
-    if [ -z "${WITH_UNMAPPED_DATAPOINTS-}" ] ; then
-        # This is assumed for non-production builds to avoid confusion
-        # with shipped untested code.
-        WITH_UNMAPPED_DATAPOINTS=true
-    fi
-
-    if [ x"${WITH_UNMAPPED_DATAPOINTS-}" = xtrue ] ; then
-        CONFIG_OPTS+=("--with-unmapped-data-points")
+    if [ "${BUILD_TYPE}" != "default-all-errors" ] ; then
+        case x"${WITH_UNMAPPED_DATAPOINTS-}" in
+            [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
+                CONFIG_OPTS+=("--with-unmapped-data-points") ;;
+            [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
+                CONFIG_OPTS+=("--without-unmapped-data-points") ;;
+            *)  ;; # Keep built-in default
+        esac
     fi
 
     if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
