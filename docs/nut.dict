@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3470 utf-8
+personal_ws-1.1 en 3472 utf-8
 AAC
 AAS
 ABI
@@ -2568,8 +2568,10 @@ nde
 nds
 netcat
 netclient
+netget
 netmask
 netserver
+netset
 netsh
 netsnmp
 netvision

@@ -68,8 +68,16 @@ https://github.com/networkupstools/nut/milestone/9
      for this name": the way to extract IP address string was not portable
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
+   * sanity-check `NUMBER` values that they actually resolve as a `double`
+     or `long int`; report an un-flagged type as `STRING` if not (previously
+     blindly defaulted to `NUMBER` always). Debug-print presence of the
+     `IMMUTABLE` flag in `netget.c::get_type()`, and actually consider it
+     in the `netset.c::set_var()` method to abort early. Socket protocol
+     used between a driver and data server to exchange device state was
+     updated to pass `IMMUTABLE` flag, but this change should not impact
+     the NUT network protocol as published in RFC 9271. [issue #266, PR #2549]
 
- - `usbhid-ups` updates:
+ - `usbhid-ups` driver updates:
    * The `cps-hid` subdriver's existing mechanism for fixing broken report
      descriptors was extended to cover a newly reported case of nominal UPS
      power being incorrectly reported due to an unrealistically low maximum

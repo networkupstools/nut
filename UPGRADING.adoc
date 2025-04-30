@@ -26,6 +26,19 @@ Changes from 2.8.3 to 2.8.4
 
 - PLANNED: Keep track of any further API clean-up?
 
+- The `netset.c::set_var()` was updated to consider the `IMMUTABLE` flag on
+  values to reject writing into them quickly. This is currently expected
+  to only impact `override.*` values in vanilla NUT codebase, and should
+  not impact the NUT network protocol as published in RFC 9271 (only the
+  socket protocol used between a driver and data server to exchange device
+  state). [issue #266, PR #2549]
+
+- The `netset.c::get_type()` was updated to sanity-check `NUMBER`-flagged
+  values that the strings actually resolve into `double` or `long int`
+  values. Some codebase does not flag its values properly and warnings
+  can be emitted (to be reported for upstream NUT to fix these use-cases).
+  [issue #266, PR #2549]
+
 Changes from 2.8.2 to 2.8.3
 ---------------------------
 
