@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3460 utf-8
+personal_ws-1.1 en 3472 utf-8
 AAC
 AAS
 ABI
@@ -596,6 +596,7 @@ Korte
 Kralewski
 Kroll
 Krpec
+Kubanek
 Kubernetes
 Kx
 LASTXFER
@@ -943,6 +944,7 @@ Pavel
 Pawe
 PbAc
 Perriault
+Petr
 Petri
 Petter
 Pezzini
@@ -2206,6 +2208,7 @@ ina
 includePath
 includedir
 inductor
+inet
 infos
 infoval
 inh
@@ -2500,6 +2503,7 @@ mirrorlist
 mis
 misconfigured
 mkdir
+mkstr
 mmZ
 mmap
 mn
@@ -2625,6 +2629,9 @@ nowarn
 np
 nspr
 nss
+ntopAI
+ntopSS
+ntopW
 nuget
 num
 numOfBytesFromUPS
@@ -2895,6 +2902,7 @@ rootca
 rootcerts
 rootfs
 rootfs'es
+rootpidpath
 rpath
 rpc
 rpool
@@ -3349,6 +3357,7 @@ varname
 varvalue
 vbat
 vbatt
+ve
 vc
 vda
 vendorid
@@ -3372,6 +3381,8 @@ vo
 volsize
 voltronic
 vscode
+vsnprintf
+vsnprintfcat
 vt
 wDescriptorLength
 waitbeforereconnect
@@ -3398,6 +3409,7 @@ workspaceFolder
 workspaces
 writability
 writeinfo
+writepid
 writeups
 ws
 xAAAA

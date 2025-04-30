@@ -838,6 +838,7 @@ SRC_SERIAL_PAGES = \
 	tripplite.txt	\
 	tripplitesu.txt	\
 	upscode2.txt	\
+	ve-direct.txt	\
 	victronups.txt	\
 	apcupsd-ups.txt
 
@@ -885,6 +886,7 @@ INST_MAN_SERIAL_PAGES = \
 	tripplite.$(MAN_SECTION_CMD_SYS)	\
 	tripplitesu.$(MAN_SECTION_CMD_SYS)	\
 	upscode2.$(MAN_SECTION_CMD_SYS)	\
+	ve-direct.$(MAN_SECTION_CMD_SYS)	\
 	victronups.$(MAN_SECTION_CMD_SYS)	\
 	apcupsd-ups.$(MAN_SECTION_CMD_SYS)
 
@@ -900,7 +902,6 @@ MAN_SERIAL_PAGES += \
 	nhs_ser.$(MAN_SECTION_CMD_SYS)
 endif HAVE_LINUX_SERIAL_H
 endif WITH_MANS
-
 
 if WITH_SERIAL
 mansys_DATA +=  $(MAN_SERIAL_PAGES)
@@ -951,6 +952,7 @@ INST_HTML_SERIAL_MANS = \
 	tripplite.html	\
 	tripplitesu.html	\
 	upscode2.html	\
+	ve-direct.html	\
 	victronups.html	\
 	apcupsd-ups.html
 

@@ -1955,11 +1955,23 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		case HU_WALKMODE_FULL_UPDATE:
 			/* These don't need polling after initinfo() */
-			if (item->hidflags & (HU_FLAG_ABSENT | HU_TYPE_CMD | HU_FLAG_STATIC))
+			if (item->hidflags & (HU_FLAG_ABSENT | HU_TYPE_CMD))
 				continue;
 
-			/* These need to be polled after user changes (setvar / instcmd) */
-			if ( (item->hidflags & HU_FLAG_SEMI_STATIC) && (data_has_changed == FALSE) )
+			/* These don't need polling after initinfo() normally
+			 * However in "pollonly" mode we use these to detect "Data stale"
+			 * condition (e.g. cable disconnected) by failing the reads:
+			 */
+			if ((item->hidflags & HU_FLAG_STATIC) && use_interrupt_pipe)
+				continue;
+
+			/* These need to be polled after user changes (setvar / instcmd)
+			 * or to detect "Data stale" in "pollonly" mode
+			 */
+			if (   (item->hidflags & HU_FLAG_SEMI_STATIC)
+				&& (data_has_changed == FALSE)
+				&& use_interrupt_pipe
+			)
 				continue;
 
 			break;
@@ -2074,7 +2086,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		if (ups_infoval_set(item, value) != 1)
 			continue;
 
-		if (mode == HU_WALKMODE_INIT) {
+		if (mode == HU_WALKMODE_INIT || (!use_interrupt_pipe)) {
 			info_lkp_t	*info_lkp;
 
 			dstate_setflags(item->info_type, item->info_flags);
@@ -2649,19 +2661,7 @@ static int ups_infoval_set(hid_info_t *item, double value)
 
 		dstate_setinfo(item->info_type, "%s", nutvalue);
 	} else {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(item->info_type, item->dfl, value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		dstate_setinfo_dynamic(item->info_type, item->dfl, "%f", value);
 	}
 
 	return 1;
