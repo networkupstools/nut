@@ -820,7 +820,8 @@ static void ups_is_alarm(utype_t *ups)
 				do_notify(ups, NOTIFY_ALARM, alarms);
 			}
 		} else {
-			upsdebugx(4, "%s: %s: still on alarm, failed to get current ups.alarm value",
+			upsdebugx(4, "%s: %s: still on alarm, failed to get current ups.alarm value, "
+				"perhaps it is just a legacy driver (but we keep probing it to be safe)",
 				__func__, ups->sys);
 		}
 		return;
@@ -842,9 +843,10 @@ static void ups_is_alarm(utype_t *ups)
 			__func__, ups->sys, alarms);
 		do_notify(ups, NOTIFY_ALARM, alarms);
 	} else {
-		upsdebugx(4, "%s: %s: failed to get current ups.alarm value",
+		upsdebugx(4, "%s: %s: failed to get current ups.alarm value, perhaps "
+			"it is just a legacy driver (but we keep probing it to be safe)",
 			__func__, ups->sys);
-		do_notify(ups, NOTIFY_ALARM, NULL);
+		do_notify(ups, NOTIFY_ALARM, "n/a");
 		alarms[0] = '\0';
 	}
 	strncpy(alarms_prev, alarms, sizeof(alarms_prev));
