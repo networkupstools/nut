@@ -1797,8 +1797,20 @@ static int status_set_callback(char *tgt, size_t tgtsize, const char *token)
 	}
 
 	if (!strcasecmp(token, "ALARM")) {
+		/* Drivers should not do this anymore, but we continue
+		 * to support it. The upsmon notifiers do not care where
+		 * alarm tokens get set and legacy drivers may still use
+		 * this older method. The only real limitations are that
+		 * the alarm state is very tightly coupled to the UPS status
+		 * and ups.alarm variables do not get published in a controlled
+		 * manner. Rather, these are very dependent on the (legacy) driver,
+		 * and alarm notifications will show placeholder "n/a" if all are missing.
+		 * The status token is ignored to prepend it to other tokens later, within
+		 * the status_commit() function. For more information, see this discussion:
+		 * https://github.com/networkupstools/nut/pull/2931#issuecomment-2841705269
+		 */
 		alarm_legacy_status = 1;
-		return 0;
+		return 0; /* ignore it */
 	}
 
 	/* Proceed adding the token */
@@ -1842,7 +1854,11 @@ void status_commit(void)
 	}
 
 	if (alarm_active || alarm_legacy_status) {
-		dstate_setinfo("ups.status", "ALARM %s", status_buf);
+		if (*status_buf != '\0') {
+			dstate_setinfo("ups.status", "ALARM %s", status_buf);
+		} else {
+			dstate_setinfo("ups.status", "ALARM");
+		}
 	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);
 		alarm_legacy_status = 0; /* just to be sure */
