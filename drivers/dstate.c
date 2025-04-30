@@ -50,7 +50,8 @@
 	static OVERLAPPED	connect_overlapped;
 	static char	*pipename = NULL;
 #endif	/* WIN32 */
-	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
+	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0,
+				alarm_status_set = 0, alarm_legacy_mode = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN],
 			buzzmode_buf[ST_MAX_VALUE_LEN];
 	static conn_t	*connhead = NULL;
@@ -1873,23 +1874,31 @@ void status_commit(void)
 	if (!alarm_active && alarm_status && !strcmp(alarm_buf, "[N/A]")) {
 		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and used status_set(\"ALARM\") instead: commit the alarm state entrance", __func__);
 		alarm_commit();
+		alarm_legacy_mode = 1;
 	}
 
-	if (alarm_active && !alarm_status) {
+	if (alarm_legacy_mode && alarm_status_set && !alarm_status) {
 		/* The ALARM status token has just disappeared, probably the driver
 		 * removed it without calling the appropriate functions. We also
 		 * need to exit the alarm state here, otherwise the ALARM status
 		 * token will get added back to the UPS status variable later.
+		 *
+		 * We only want this to happen for legacy drivers which set
+		 * ALARM without using the appropriate functions, otherwise
+		 * the ALARM state should be decoupled from the UPS status.
 		 */
 		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and just removed previously active ALARM from status: commit the alarm state exit", __func__);
 		alarm_init();
 		alarm_commit();
+		alarm_legacy_mode = 0;
 	}
 
 	if (alarm_active) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
+		alarm_status_set = 1;
 	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);
+		alarm_status_set = 0;
 	}
 }
 
