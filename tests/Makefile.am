@@ -152,11 +152,12 @@ TESTS += $(TESTS_CXX11)
 # Note: we only build it, but do not run directly (NIT prepares the sandbox)
 check_PROGRAMS += cppnit
 
+# NOTE: libnutclientstub includes libnutclient and adds nutclientmem
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 ###cppunittest_CXXFLAGS += -I$(top_srcdir)/include -DTOP_SRCDIR="\"$(top_srcdir)\""
 cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
-cppunittest_LDADD  = $(top_builddir)/clients/libnutclient.la
-cppunittest_LDADD += $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD   = $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD  += $(top_builddir)/clients/libnutclient.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 # Currently nutconf and related codebase causes woes for static analysis
@@ -168,7 +169,8 @@ endif WITH_LIBNUTCONF
 
 cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
-cppnit_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
+cppnit_LDADD   = $(top_builddir)/clients/libnutclientstub.la
+cppnit_LDADD  += $(top_builddir)/clients/libnutclient.la
 cppnit_SOURCES = $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
 
 # Make sure out-of-dir C++ dependencies exist (especially when dev-building

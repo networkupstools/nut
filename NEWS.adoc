@@ -46,7 +46,11 @@ https://github.com/networkupstools/nut/milestone/9
    * Fixed a regression in recipes of NUT v2.8.3 release (as compared to
      v2.8.2), where `configure --with-docs=all` no longer failed a run
      of the `configure` script when some of the required rendering tools
-     were not in fact available. [#2842]
+     were not in fact available. [#2842, fixed by #2921]
+   * A change in `Makefile.am` recipes to evaluate some driver names in the
+     `DRIVERLIST` variables inspected by `configure` script, rather than
+     having all their names hard-coded like before, led to inability to
+     `configure --with-drivers=dummy-ups`. [#2825, #2927, fixed by PR #2929]
 
  - common code:
    * Revised common `writepid()` to use `altpidpath()` as location for the
@@ -69,7 +73,7 @@ https://github.com/networkupstools/nut/milestone/9
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
 
- - `usbhid-ups` updates:
+ - `usbhid-ups` driver updates:
    * The `cps-hid` subdriver's existing mechanism for fixing broken report
      descriptors was extended to cover a newly reported case of nominal UPS
      power being incorrectly reported due to an unrealistically low maximum
