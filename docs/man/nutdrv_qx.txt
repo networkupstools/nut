@@ -137,7 +137,7 @@ Some devices "natively" report just report a part of the total battery voltage
 device or properly guessed by the driver otherwise).
 +
 If this flag is set, most of the subdrivers (except those which know about
-more  complicated device-specific nuances, currently: *ablerex*, *masterguard*
+more complicated device-specific nuances, currently: *ablerex*, *masterguard*
 and *voltronic-qs-hex*) adjust their ultimately reported *battery.voltage*
 value as a multiple of *battery.packs* and "native" *battery.voltage*).
 +

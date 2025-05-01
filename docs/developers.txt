@@ -186,6 +186,38 @@ function do_stuff(void)
 }
 --------------------------------------------------------------------------------
 
+Variable length arrays
+~~~~~~~~~~~~~~~~~~~~~~
+
+We also avoid initialization of arrays using a variable (e.g. a method
+argument) as poorly portable to older compilers, and prefer explicitly
+allocated and freed buffers, if variable size is needed.
+
+This should be avoided:
+--------------------------------------------------------------------------------
+function avoid_vla(int len)
+{
+	char	*buf[len];
+...
+}
+--------------------------------------------------------------------------------
+
+This should be sued instead (preferably with `size_t` arguments right away),
+be sure to `free()` anywhere you `return` from the function:
+--------------------------------------------------------------------------------
+int use_xcalloc(size_t len)
+{
+	char	*buf = xcalloc(len, sizeof(char));
+
+	if (!buf)
+		return -1;
+...
+	free(buf);
+	return 1;
+}
+--------------------------------------------------------------------------------
+
+
 Other hints
 ~~~~~~~~~~~
 
