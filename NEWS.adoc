@@ -46,7 +46,11 @@ https://github.com/networkupstools/nut/milestone/9
    * Fixed a regression in recipes of NUT v2.8.3 release (as compared to
      v2.8.2), where `configure --with-docs=all` no longer failed a run
      of the `configure` script when some of the required rendering tools
-     were not in fact available. [#2842]
+     were not in fact available. [#2842, fixed by #2921]
+   * A change in `Makefile.am` recipes to evaluate some driver names in the
+     `DRIVERLIST` variables inspected by `configure` script, rather than
+     having all their names hard-coded like before, led to inability to
+     `configure --with-drivers=dummy-ups`. [#2825, #2927, fixed by PR #2929]
 
  - common code:
    * Revised common `writepid()` to use `altpidpath()` as location for the

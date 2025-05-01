@@ -2128,31 +2128,57 @@ AC_ARG_WITH(drivers,
 				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
 				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST"
 
-			get_drvlist() (
+			dnl Gets ONE Makefile assignment value
+			get_drivers_makefile_value() (
 				dnl Note escaped brackets - "against" m4 parser
 				m4_version_prereq(2.62,
 					[LB="@<:@"; RB="@:>@"],
 					[LB="[["; RB="]]"]
 				)
+				dnl ###DEBUG### echo "RECURSIVE SEARCH FOR: '$1'" >&2
 				SPACE="`printf "$LB"' \t'"$RB"`"
 				SPACES="${SPACE}*"
 				sed -e "s/${SPACES}""$LB"'+'"$RB"'*='"${SPACES}/=/" \
 				    -e "s/^${SPACES}//" < "$srcdir/drivers/Makefile.am" \
-				| {
+				| (
 					C=false; V=false
 					while read LINE ; do
 						case "$LINE" in
 							*'\') C=true; if $V ; then echo "$LINE" ; fi ;;
-							*) C=false; V=false ;;
+							*) if $C ; then exit 0; fi ; C=false; V=false ;;
 						esac
 						case "$LINE" in
 							"$1"=*)
-								echo "$LINE" | sed -e 's,^'"$LB"'^='"$RB"'*=,,' -e 's,\$,,'
+								echo "$LINE" | sed -e 's,^'"$LB"'^='"$RB"'*=,,'
 								V=$C
 								;;
 						esac
 					done
-				} | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ," -e "s,${SPACES}\$,,"
+					echo ""
+				) | tr '\n' ' ' | sed -e 's,\$(EXEEXT),,g' \
+				| tr ' ' '\n' | while read TOKEN ; do
+					case x"${TOKEN}" in
+						x)	;;
+						'x$('*')') get_drivers_makefile_value "`echo "${TOKEN}" | sed -e 's,^\$(,,' -e 's,)$,,'`" ;;
+						'x${'*'}') get_drivers_makefile_value "`echo "${TOKEN}" | sed -e 's,^\${,,' -e 's,}$,,'`" ;;
+						*)	echo "${TOKEN} " ;;
+					esac
+				done dnl ###DEBUG### | tee -a /dev/stderr
+			)
+
+			get_drvlist() (
+				m4_version_prereq(2.62,
+					[LB="@<:@"; RB="@:>@"],
+					[LB="[["; RB="]]"]
+				)
+				dnl ###DEBUG### echo "SEARCH FOR: '$1'" >&2
+				SPACE="`printf "$LB"' \t'"$RB"`"
+				SPACES="${SPACE}*"
+
+				dnl Let it recurse, and only then we collect the
+				dnl result into one string with reduced spaces:
+				get_drivers_makefile_value "$1" \
+				| tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ,g" -e "s,${SPACES}\$,,"
 			)
 
 			for DRVLIST_NAME in $DRVLIST_NAMES; do
