@@ -2,6 +2,7 @@
  *
  *  Copyright (C)
  *	2025       	Jim Klimov <jimklimov+nut@gmail.com>
+ *  2025        desertwitch <dezertwitsh@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,7 +29,7 @@
 
 /* driver version */
 #define DRIVER_NAME     "Mock driver for unit tests"
-#define DRIVER_VERSION  "0.01"
+#define DRIVER_VERSION  "0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -75,9 +76,10 @@ int main(int argc, char **argv) {
 	cases_passed = 0;
 	cases_failed = 0;
 
-	/* test case #1 (from scratch) */
-	/* we test for duplicate status tokens (no alarms) */
-	/* expectation: no duplicates among status tokens */
+	/* Test case #1 (from scratch)
+	 * We test for duplicate status tokens (no alarms).
+	 * Expectation: no duplicates among status tokens.
+	 */
 	status_init();
 	status_set(" OL ");
 	status_set("OL BOOST");
@@ -89,10 +91,11 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "OL BOOST OB"));
 	printf(" test for ups.status: '%s'; got no duplicates?\n", NUT_STRARG(valueStr));
 
-	/* test case #2 (built on top of #1) */
-	/* we raise an alarm using the modern alarm functions */
-	/* expectation: alarm status token is present */
-	/* note: normally we would re-init and re-set the values */
+	/* Test case #2 (built on top of #1)
+	 * We raise an alarm using the modern alarm functions.
+	 * Expectation: ALARM status token is present.
+	 * Note: normally we would re-init and re-set the values.
+	 */
 	alarm_init();
 	alarm_set("Test alarm 1");
 	alarm_set("[Test alarm 2]");
@@ -104,18 +107,20 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
 	printf(" test for ups.status: '%s'; got alarm, no duplicates?\n", NUT_STRARG(valueStr));
 
-	/* test case #3 (built on top of #2) */
-	/* we raise an alarm using the modern alarm functions */
-	/* expectation: three alarm messages stored in ups.alarm */
-	/* note: normally we would re-init and re-set the values */
+	/* Test case #3 (built on top of #2)
+	 * We raise an alarm using the modern alarm functions.
+	 * Expectation: three alarm messages stored in ups.alarm.
+	 * Note: normally we would re-init and re-set the values.
+	 */
 	valueStr = dstate_getinfo("ups.alarm");
 	report_0_means_pass(strcmp(valueStr, "Test alarm 1 [Test alarm 2] Test alarm 1"));
 	printf(" test for ups.alarm: '%s'; got 3 alarms?\n", NUT_STRARG(valueStr));
 
-	/* test case #4 (built on top of #3) */
-	/* reset the status, see if the raised modern alarm persists */
-	/* expectation: alarm remains, no duplicate tokens reported */
-	/* note: normally we would re-init and re-set the values */
+	/* Test case #4 (built on top of #3)
+	 * Reset the status, see if the raised modern alarm persists.
+	 * Expectation: ALARM remains, no duplicate tokens reported.
+	 * Note: normally we would re-init and re-set the values.
+	 */
 	status_init();
 	status_set(" OL ");
 	status_set("OL BOOST");
@@ -133,23 +138,25 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB BOO OST OOS"));
 	printf(" test for ups.status: '%s'; got alarm, no duplicates?\n", NUT_STRARG(valueStr));
 
-	/* test case #5 (built on top of #4) */
-	/* reset the status, see if the raised modern alarm persists */
-	/* expectation: three alarm messages still stored in ups.alarm */
-	/* note: normally we would re-init and re-set the values */
+	/* Test case #5 (built on top of #4)
+	 * Reset the status, see if the raised modern alarm persists.
+	 * Expectation: three alarm messages still stored in ups.alarm.
+	 * Note: normally we would re-init and re-set the values.
+	 */
 	valueStr = dstate_getinfo("ups.alarm");
 	report_0_means_pass(strcmp(valueStr, "Test alarm 1 [Test alarm 2] Test alarm 1"));
 	printf(" test for ups.alarm: '%s'; got 3 alarms?\n", NUT_STRARG(valueStr));
 
-	/* clear testing state for next from-scratch test */
+	/* Clear the testing stage for the next from-scratch test. */
 	alarm_init();
 	alarm_commit();
 	status_init();
 	status_commit();
 
-	/* test case #6 (from scratch) */
-	/* mix legacy alarm status and modern alarm functions */
-	/* expectation: alarm status token is present, no duplicates */
+	/* Test case #6 (from scratch)
+	 * Mix legacy alarm status and modern alarm functions.
+	 * Expectation: ALARM status token is present, no duplicates.
+	 */
 	status_init();
 	alarm_init();
 	status_set("OL BOOST");
@@ -163,23 +170,25 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
 	printf(" test for ups.status with explicit ALARM set via status_set() and alarm_set() was not used first: '%s'; got alarm, no duplicates?\n", NUT_STRARG(valueStr));
 
-	/* test case #7 (built on top of #6) */
-	/* mix legacy alarm status and modern alarm functions */
-	/* expectation: 1 alarm message is recorded in ups.alarm */
-	/* note: normally we would re-init and re-set the values */
+	/* Test case #7 (built on top of #6)
+	 * Mix legacy alarm status and modern alarm functions.
+	 * Expectation: 1 alarm message is recorded in ups.alarm.
+	 * Note: normally we would re-init and re-set the values.
+	 */
 	valueStr = dstate_getinfo("ups.alarm");
 	report_0_means_pass(strcmp(valueStr, "[Test alarm 2]"));
 	printf(" test for ups.alarm with explicit ALARM set via status_set() and alarm_set() was not used first: '%s'; got 1 alarm?\n", NUT_STRARG(valueStr));
 
-	/* clear testing state for next from-scratch test */
+	/* Clear the testing stage for the next from-scratch test. */
 	alarm_init();
 	alarm_commit();
 	status_init();
 	status_commit();
 
-	/* test case #8 (from scratch) */
-	/* mix legacy alarm status and modern alarm functions (reverse) */
-	/* expectation: alarm status token is present, no duplicates */
+	/* Test case #8 (from scratch)
+	 * Mix legacy alarm status and modern alarm functions (reverse).
+	 * Expectation: ALARM status token is present, no duplicates.
+	 */
 	status_init();
 	alarm_init();
 	status_set("OL BOOST");
@@ -193,23 +202,25 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
 	printf(" test for ups.status with explicit ALARM set via status_set() and alarm_set() was used first: '%s'; got alarm, no duplicates?\n", NUT_STRARG(valueStr));
 
-	/* test case #9 (built on top of #8) */
-	/* mix legacy alarm status and modern alarm functions (reverse) */
-	/* expectation: 1 alarm message is recorded in ups.alarm */
-	/* note: normally we would re-init and re-set the values */
+	/* Test case #9 (built on top of #8)
+	 * Mix legacy alarm status and modern alarm functions (reverse).
+	 * Expectation: 1 alarm message is recorded in ups.alarm.
+	 * Note: normally we would re-init and re-set the values.
+	 */
 	valueStr = dstate_getinfo("ups.alarm");
 	report_0_means_pass(strcmp(valueStr, "[Test alarm 2]"));
 	printf(" test for ups.alarm with explicit ALARM set via status_set() and alarm_set() was used first: '%s'; got 1 alarm?\n", NUT_STRARG(valueStr));
 
-	/* clear testing state for next from-scratch test */
+	/* Clear the testing stage for the next from-scratch test. */
 	alarm_init();
 	alarm_commit();
 	status_init();
 	status_commit();
 
-	/* test case #10 (from scratch) */
-	/* legacy alarm status and no modern alarm functions */
-	/* expectation: alarm status token is present, no duplicates */
+	/* Test case #10 (from scratch)
+	 * Legacy alarm status and no modern alarm functions.
+	 * Expectation: ALARM status token is present, no duplicates.
+	 */
 	status_init();
 	status_set("OL BOOST");
 	status_set("ALARM");
@@ -220,22 +231,25 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
 	printf(" test for ups.status with explicit ALARM set via status_set() and no extra alarm_ funcs: '%s'; got alarm, no duplicates?\n", NUT_STRARG(valueStr));
 
-	/* test case #11 (built on top of #10) */
-	/* legacy alarm status and no modern alarm functions */
-	/* expectation: no alarm message is recorded in ups.alarm */
-	/* note: normally we would re-init and re-set the values */
+	/* Test case #11 (built on top of #10)
+	 * Legacy alarm status and no modern alarm functions.
+	 * Expectation: no alarm message is recorded in ups.alarm.
+	 * Note: normally we would re-init and re-set the values.
+	 */
 	valueStr = dstate_getinfo("ups.alarm");
 	report_0_means_pass(valueStr != NULL); /* should be NULL */
 	printf(" test for ups.alarm with explicit ALARM set via status_set() and no extra alarm_ funcs: '%s'; got NULL?\n", NUT_STRARG(valueStr));
 
-	/* clear testing state for next from-scratch test */
-	/* alarm_ was not used, should be cleared from before */
+	/* Clear testing state for next from-scratch test.
+	 * alarm_ was not used, so it should be cleared from before.
+	 */
 	status_init();
 	status_commit();
 
-	/* test case #12 (from scratch) */
-	/* ignored LB */
-	/* expectation: previous legacy alarm is cleared, LB ignored */
+	/* Test case #12 (from scratch)
+	 * Ignored LB.
+	 * Expectation: previous ALARM is cleared, LB is ignored.
+	 */
 	dstate_setinfo("driver.flag.ignorelb", "enabled");
 
 	status_init();
@@ -246,17 +260,18 @@ int main(int argc, char **argv) {
 
 	valueStr = dstate_getinfo("ups.status");
 	report_0_means_pass(strcmp(valueStr, "OL BOOST OB"));
-	printf(" test for ups.status with ignored LB: '%s'; got no alarm, ignored LB, no duplicates?\n", NUT_STRARG(valueStr));
+	printf(" test for ups.status with ignored LB: '%s'; got no alarm, no LB, no duplicates?\n", NUT_STRARG(valueStr));
 
-	/* clear testing state for next from-scratch test */
+	/* Clear the testing stage for the next from-scratch test. */
 	alarm_init();
 	alarm_commit();
 	status_init();
 	status_commit();
 
-	/* test case #13 (from scratch) */
-	/* alarm raised with modern alarm functions, no status, no status commit */
-	/* expectation: empty status, no whitespace */
+	/* Test case #13 (from scratch)
+	 * Alarm raised with modern alarm functions, no status, no status commit.
+	 * Expectation: empty status, no whitespace.
+	 */
 	alarm_init();
 	alarm_set("[Test alarm]");
 	alarm_commit();
@@ -265,23 +280,25 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "\0"));
 	printf(" test for ups.status with alarm_ set and no status_commit(): '%s'; got empty, no whitespace?\n", NUT_STRARG(valueStr));
 
-	/* test case #14 (built on top of #13) */
-	/* alarm raised with modern alarm functions, no status, no status commit */
-	/* expectation: 1 alarm message is recorded in ups.alarm */
-	/* note: normally we would re-init and re-set the values */
+	/* Test case #14 (built on top of #13)
+	 * Alarm raised with modern alarm functions, no status, no status commit.
+	 * Expectation: 1 alarm message is recorded in ups.alarm.
+	 * Note: normally we would re-init and re-set the values.
+	 */
 	valueStr = dstate_getinfo("ups.alarm");
 	report_0_means_pass(strcmp(valueStr, "[Test alarm]"));
 	printf(" test for ups.status with alarm_ set and no status_commit(): '%s'; got 1 alarm?\n", NUT_STRARG(valueStr));
 
-	/* clear testing state for next from-scratch test */
+	/* Clear the testing stage for the next from-scratch test. */
 	alarm_init();
 	alarm_commit();
 	status_init();
 	status_commit();
 
-	/* test case #15 (from scratch) */
-	/* alarm raised with modern alarm functions, no status, but status commit */
-	/* expectation: alarm status token is present, no leading/trailing spaces */
+	/* Test case #15 (from scratch)
+	 * Alarm raised with modern alarm functions, no status, but status commit.
+	 * Expectation: ALARM status token is present, no leading/trailing spaces.
+	 */
 	alarm_init();
 	alarm_set("alarm");
 	alarm_commit();
@@ -291,15 +308,16 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "ALARM"));
 	printf(" test for ups.status with alarm_ set, no status and status_commit(): '%s'; got alarm, no whitespace?\n", NUT_STRARG(valueStr));
 
-	/* clear testing state for next from-scratch test */
+	/* Clear the testing stage for the next from-scratch test. */
 	alarm_init();
 	alarm_commit();
 	status_init();
 	status_commit();
 
-	/* test case #16 (from scratch) */
-	/* alarm raised with modern alarm functions, status commit before alarm commit */
-	/* expectation: empty status, no whitespace */
+	/* Test case #16 (from scratch)
+	 * Alarm raised with modern alarm functions, status commit before alarm commit.
+	 * Expectation: empty status, no whitespace.
+	 */
 	alarm_init();
 	alarm_set("alarm");
 	status_commit();
@@ -309,13 +327,13 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "\0"));
 	printf(" test for ups.status with alarm_ set, status_commit() before alarm_commit(): '%s'; got empty, no whitespace?\n", NUT_STRARG(valueStr));
 
-	/* clear testing state before finish */
+	/* Clear testing state before finishing. */
 	alarm_init();
 	alarm_commit();
 	status_init();
 	status_commit();
 
-	/* finish */
+	/* Finish */
 	printf("test_rules completed. Total cases %d, passed %d, failed %d\n",
 		cases_passed+cases_failed, cases_passed, cases_failed);
 
