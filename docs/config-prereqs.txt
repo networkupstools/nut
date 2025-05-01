@@ -106,8 +106,14 @@ recommended for build agents with immutable system areas, etc.
 Build prerequisites to make NUT from scratch on various Operating Systems
 -------------------------------------------------------------------------
 
-Debian 10/11/12/13
-~~~~~~~~~~~~~~~~~~
+Debian, Ubuntu and derivatives
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE: Documented according to NUT CI farm build agents and development
+workstation running Debian 10/11/12/13 (should at least partially apply
+as far back as Debian 7/8), Ubuntu 14.x-25.x, and Termux revisions circa
+2023-2025. This section generally covers a very wide family of APT-based
+Debian-derived Linux operating system distributions.
 
 Being a popular baseline among Linux distributions, Debian is an
 important build target. Related common operating systems include

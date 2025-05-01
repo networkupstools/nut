@@ -99,6 +99,10 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
 
     # Similarly for libusb implementations with varying support
     #[ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
+
+    # Similarly for testing builds with and without "unmapped" values
+    # (normally hidden by #ifdef blocks) in certain evolving drivers
+    #[ -n "$NUT_UNMAPPED_VARIANTS" ] || NUT_UNMAPPED_VARIANTS=auto
 fi
 
 # configure default is "no"; an "auto" value is "yes unless CFLAGS say something"
@@ -1513,14 +1517,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
-    if [ -z "${WITH_UNMAPPED_DATAPOINTS-}" ] ; then
-        # This is assumed for non-production builds to avoid confusion
-        # with shipped untested code.
-        WITH_UNMAPPED_DATAPOINTS=true
-    fi
-
-    if [ x"${WITH_UNMAPPED_DATAPOINTS-}" = xtrue ] ; then
-        CONFIG_OPTS+=("--with-unmapped-data-points")
+    if [ "${BUILD_TYPE}" != "default-all-errors" ] ; then
+        case x"${WITH_UNMAPPED_DATAPOINTS-}" in
+            [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
+                CONFIG_OPTS+=("--with-unmapped-data-points") ;;
+            [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
+                CONFIG_OPTS+=("--without-unmapped-data-points") ;;
+            *)  ;; # Keep built-in default
+        esac
     fi
 
     if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
@@ -1977,6 +1981,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 fi
             fi
 
+            if [ -z "$NUT_UNMAPPED_VARIANTS" ] || [ "$NUT_UNMAPPED_VARIANTS" = auto ] ; then
+                case x"${WITH_UNMAPPED_DATAPOINTS-}" in
+                    [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
+                        NUT_UNMAPPED_VARIANTS="yes" ;;
+                    [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
+                        NUT_UNMAPPED_VARIANTS="no" ;;
+                    *)
+                        NUT_UNMAPPED_VARIANTS="yes no" ;;
+                esac
+            fi
+
             # Count our expected build variants, so the last one gets the
             # "maintainer-clean" check and not a mere "distclean" check
             # NOTE: We count different dependency variations separately,
@@ -1990,6 +2005,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
                 BUILDSTODO_USB="`expr $BUILDSTODO_USB + 1`"
             done
+
+            BUILDSTODO_UNMAPPED=0
+            for NUT_UNMAPPED_VARIANT in $NUT_UNMAPPED_VARIANTS ; do
+                BUILDSTODO_UNMAPPED="`expr $BUILDSTODO_UNMAPPED + 1`"
+            done
+            # Use the only one requested right away
+            if [ "${BUILDSTODO_UNMAPPED}" -eq 1 ] ; then
+                CONFIG_OPTS+=("--with-unmapped-data-points=${NUT_UNMAPPED_VARIANT}")
+            fi
 
             if [ "${BUILDSTODO_SSL}" -gt 1 ] \
             && [ "${BUILDSTODO_USB}" -gt 1 ] \
@@ -2022,10 +2046,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Only build USB scenario(s) picking whatever SSL is found"
                     BUILDSTODO="${BUILDSTODO_USB}"
                 fi
+
+            fi
+
+            # Tack a remaining yes/no in the end to whatever scenario is there;
+            # NOT a full matrix
+            if [ "${BUILDSTODO_UNMAPPED}" -gt 1 ] ; then
+                BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_UNMAPPED - 1`"
             fi
 
             BUILDSTODO_INITIAL="$BUILDSTODO"
-            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) variations..."
+            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) and ${BUILDSTODO_UNMAPPED} UNMAPPED ($NUT_UNMAPPED_VARIANTS) variations..."
             # If we don't care about SSL implem and want to pick USB, go straight there
             ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) || \
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
@@ -2140,7 +2171,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
                     fi
                 fi
-            done
+            done	# end of "for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS"
 
             # Effectively, whatever up to one version of LibUSB support
             # was detected (or not), was tested above among SSL builds.
@@ -2288,7 +2319,112 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
                     fi
                 fi
-            done
+            done	# end of "for NUT_USB_VARIANT in $NUT_USB_VARIANTS"
+
+            # Tack a remaining yes/no in the end to whatever scenario is there;
+            # NOT a full matrix
+            if [ "${BUILDSTODO_UNMAPPED}" -gt 1 ] ; then
+                for NUT_UNMAPPED_VARIANT in $NUT_UNMAPPED_VARIANTS ; do
+                    case "${NUT_UNMAPPED_VARIANT}" in
+                        no) ;;	# we already did the default ("no") implicitly
+                        *)	# Try this variant
+                            echo "=== Starting 'NUT_UNMAPPED_VARIANT=$NUT_UNMAPPED_VARIANT', $BUILDSTODO build variants remaining..."
+                            ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                                  CONFIG_OPTS+=("--without-all")
+                                  CONFIG_OPTS+=("--without-ssl")
+                              fi
+                              CONFIG_OPTS+=("--with-serial=auto")
+                              if [ "$NUT_USB_VARIANTS" != "no" ] ; then
+                                  CONFIG_OPTS+=("--with-usb=auto")
+                              fi
+                              CONFIG_OPTS+=("--with-unmapped-data-points=${NUT_UNMAPPED_VARIANT}")
+                              configure_nut
+                            ) || {
+                                RES_ALLERRORS=$?
+                                FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[configure]"
+                                # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                                if [ "$CI_FAILFAST" = true ]; then
+                                    echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                                    break
+                                fi
+                                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
+                                continue
+                            }
+
+                            echo "=== Configured 'NUT_UNMAPPED_VARIANT=$NUT_UNMAPPED_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                            cd "${CI_BUILDDIR}"
+                            # Use default target e.g. "all":
+                            build_to_only_catch_errors_target && {
+                                SUCCEEDED="${SUCCEEDED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[build]"
+                            } || {
+                                RES_ALLERRORS=$?
+                                FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[build]"
+                                # Help find end of build (before cleanup noise) in logs:
+                                echo "=== FAILED 'NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}' build"
+                                if [ "$CI_FAILFAST" = true ]; then
+                                    echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                                    break
+                                fi
+                            }
+
+                            build_to_only_catch_errors_check && {
+                                SUCCEEDED="${SUCCEEDED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[check]"
+                            } || {
+                                RES_ALLERRORS=$?
+                                FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[check]"
+                                # Help find end of build (before cleanup noise) in logs:
+                                echo "=== FAILED 'NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}' check"
+                                if [ "$CI_FAILFAST" = true ]; then
+                                    echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                                    break
+                                fi
+                            }
+
+                            # Note: when `expr` calculates a zero value below, it returns
+                            # an "erroneous" `1` as exit code. Notes above.
+                            BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
+
+                            if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
+                                # For last iteration with DO_CLEAN_CHECK=no,
+                                # we would leave built products in place
+                                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                            fi
+
+                            if can_clean_check ; then
+                                if [ $BUILDSTODO -gt 0 ]; then
+                                    ### Avoid having to re-autogen in a loop:
+                                    optional_dist_clean_check && {
+                                        if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
+                                            SUCCEEDED="${SUCCEEDED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[dist_clean]"
+                                        fi
+                                    } || {
+                                        RES_ALLERRORS=$?
+                                        FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[dist_clean]"
+                                    }
+                                else
+                                    optional_maintainer_clean_check && {
+                                        if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
+                                            SUCCEEDED="${SUCCEEDED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[maintainer_clean]"
+                                        fi
+                                    } || {
+                                        RES_ALLERRORS=$?
+                                        FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[maintainer_clean]"
+                                    }
+                                fi
+                                echo "=== Completed sandbox cleanup-check after NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}, $BUILDSTODO build variants remaining"
+                            else
+                                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
+                                    $MAKE distclean $MAKE_FLAGS_CLEAN -k \
+                                    || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                                    echo "=== Completed sandbox cleanup after NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}, $BUILDSTODO build variants remaining"
+                                else
+                                    echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
+                                fi
+                            fi
+                            ;;	# end of "Try this variant"
+                    esac
+                done	# end of "for NUT_UNMAPPED_VARIANT in $NUT_UNMAPPED_VARIANTS"
+            fi
 
             # TODO: Similar loops for other variations like TESTING,
             # MGE SHUT vs. other serial protocols...
