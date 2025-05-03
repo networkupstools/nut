@@ -50,8 +50,13 @@ static struct {
 		long	start;
 		long	shutdown;
 	} timer;
+	struct {
+		char	*off;
+		char	*on;
+		char	*status;
+	} load;
 	char	status[ST_MAX_VALUE_LEN];
-} ups = { { -1, -1 }, "WAIT" };
+} ups = { { -1, -1 }, { NULL, NULL, NULL }, "WAIT" };
 
 static struct {
 	struct {
@@ -64,7 +69,8 @@ static struct {
 	} runtime;
 } battery = { { 0, 0 }, { 0, 0 } };
 
-static int	dumpdone = 0, online = 1, outlet = 1;
+static int	dumpdone = 0, online = 1, outlet = 1,
+			reported_off = 0;
 static long	offdelay = 120, ondelay = 30;
 
 static PCONF_CTX_t	sock_ctx;
@@ -124,8 +130,6 @@ static int parse_args(size_t numargs, char **arg)
 
 	/* SETINFO <varname> <value> */
 	if (!strcasecmp(arg[0], "SETINFO")) {
-		const char	*val;
-
 		if (!strncasecmp(arg[1], "driver.", 7) ||
 				!strcasecmp(arg[1], "battery.charge.low") ||
 				!strcasecmp(arg[1], "battery.runtime.low") ||
@@ -135,17 +139,16 @@ static int parse_args(size_t numargs, char **arg)
 			return 1;
 		}
 
-		val = getval("load.status");
-		if (val && !strcasecmp(arg[1], val)) {
+		if (ups.load.status && !strcasecmp(arg[1], ups.load.status)) {
 			if (!strcasecmp(arg[2], "off") || !strcasecmp(arg[2], "no")) {
 				outlet = 0;
-				upsdebugx(3, "%s: Outlet %s is reported off (%s), may raise OFF later",
+				upsdebugx(3, "%s: Outlet '%s' is reported off ('%s'), may raise OFF later",
 					__func__, arg[1], arg[2]);
 			}
 
 			if (!strcasecmp(arg[2], "on") || !strcasecmp(arg[2], "yes")) {
 				outlet = 1;
-				upsdebugx(3, "%s: Outlet %s is reported on (%s)",
+				upsdebugx(3, "%s: Outlet '%s' is reported on ('%s')",
 					__func__, arg[1], arg[2]);
 			}
 		}
@@ -572,6 +575,10 @@ void upsdrv_initinfo(void)
 		battery.runtime.low = strtod(val, NULL);
 	}
 
+	ups.load.off = getval("load.off");
+	ups.load.on = getval("load.on");
+	ups.load.status = getval("load.status");
+
 	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
 	dstate_setinfo("ups.delay.start", "%ld", ondelay);
 
@@ -585,7 +592,6 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	const char	*val;
 	time_t	now = time(NULL);
 	double	d;
 
@@ -614,7 +620,13 @@ void upsdrv_updateinfo(void)
 	if (!outlet) {
 		/* Outlet was formally declared OFF */
 		status_set("OFF");
-		upsdebugx(3, "%s: outlet declared off (setting OFF)", __func__);
+		if (!reported_off) { /* first entrance */
+			reported_off = 1;
+			upsdebugx(3, "%s: outlet declared off (setting OFF)", __func__);
+		}
+	} else if (reported_off) { /* first cleared */
+		reported_off = 0;
+		upsdebugx(3, "%s: outlet no longer off (clearing OFF)", __func__);
 	}
 
 	if (ups.timer.shutdown >= 0) {
@@ -629,10 +641,9 @@ void upsdrv_updateinfo(void)
 			upsdebugx(3, "%s: outlet considered off (setting OFF)",
 				__func__);
 
-			val = getval("load.off");
-			if (val) {
+			if (ups.load.off) {
 				char	buf[SMALLBUF];
-				snprintf(buf, sizeof(buf), "INSTCMD %s\n", val);
+				snprintf(buf, sizeof(buf), "INSTCMD %s\n", ups.load.off);
 				sstate_sendline(buf);
 			}
 		}
@@ -650,10 +661,9 @@ void upsdrv_updateinfo(void)
 
 			outlet = 1;
 
-			val = getval("load.on");
-			if (val) {
+			if (ups.load.on) {
 				char	buf[SMALLBUF];
-				snprintf(buf, sizeof(buf), "INSTCMD %s\n", val);
+				snprintf(buf, sizeof(buf), "INSTCMD %s\n", ups.load.on);
 				sstate_sendline(buf);
 			}
 		}
