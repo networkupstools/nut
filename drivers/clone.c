@@ -4,6 +4,7 @@
 *
 * Copyright (C) 2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
 * Copyright (C) 2024 - Jim Klimov <jimklimov+nut@gmail.com>
+* Copyright (C) 2025 - desertwitch <dezertwitsh@gmail.com>
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -87,12 +88,12 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (!strcasecmp(arg[0], "PONG")) {
-		upsdebugx(3, "Got PONG from UPS");
+		upsdebugx(3, "%s: Got PONG from UPS", __func__);
 		return 1;
 	}
 
 	if (!strcasecmp(arg[0], "DUMPDONE")) {
-		upsdebugx(3, "UPS: dump is done");
+		upsdebugx(3, "%s: UPS dump is done", __func__);
 		dumpdone = 1;
 		return 1;
 	}
@@ -123,6 +124,7 @@ static int parse_args(size_t numargs, char **arg)
 
 	/* SETINFO <varname> <value> */
 	if (!strcasecmp(arg[0], "SETINFO")) {
+		const char	*val;
 
 		if (!strncasecmp(arg[1], "driver.", 7) ||
 				!strcasecmp(arg[1], "battery.charge.low") ||
@@ -131,6 +133,21 @@ static int parse_args(size_t numargs, char **arg)
 				!strncasecmp(arg[1], "ups.timer.", 10)) {
 			/* don't pass on upstream driver settings */
 			return 1;
+		}
+
+		val = getval("load.status");
+		if (val && !strcasecmp(arg[1], val)) {
+			if (!strcasecmp(arg[2], "off") || !strcasecmp(arg[2], "no")) {
+				outlet = 0;
+				upsdebugx(3, "%s: Outlet %s is reported off (%s), may raise OFF later",
+					__func__, arg[1], arg[2]);
+			}
+
+			if (!strcasecmp(arg[2], "on") || !strcasecmp(arg[2], "yes")) {
+				outlet = 1;
+				upsdebugx(3, "%s: Outlet %s is reported on (%s)",
+					__func__, arg[1], arg[2]);
+			}
 		}
 
 		if (!strcasecmp(arg[1], "ups.status")) {
@@ -449,7 +466,8 @@ static int sstate_dead(int maxage)
 
 	/* an unconnected ups is always dead */
 	if (INVALID_FD(upsfd)) {
-		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", device_path);
+		upsdebugx(3, "%s: connection to driver socket for UPS [%s] lost",
+			__func__, device_path);
 		return -1;	/* dead */
 	}
 
@@ -457,7 +475,8 @@ static int sstate_dead(int maxage)
 
 	/* ignore DATAOK/DATASTALE unless the dump is done */
 	if (dumpdone && dstate_is_stale()) {
-		upsdebugx(3, "sstate_dead: driver for UPS [%s] says data is stale", device_path);
+		upsdebugx(3, "%s: driver for UPS [%s] says data is stale",
+			__func__, device_path);
 		return -1;	/* dead */
 	}
 
@@ -465,14 +484,14 @@ static int sstate_dead(int maxage)
 
 	/* somewhere beyond a third of the maximum time - prod it to make it talk */
 	if ((elapsed > (maxage / 3)) && (difftime(now, last_ping) > (maxage / 3))) {
-		upsdebugx(3, "Send PING to UPS");
+		upsdebugx(3, "%s: Send PING to UPS", __func__);
 		sstate_sendline("PING\n");
 		last_ping = now;
 	}
 
 	if (elapsed > maxage) {
-		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
-			   device_path, elapsed, maxage);
+		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
+			__func__, device_path, elapsed, maxage);
 		return -1;	/* dead */
 	}
 
@@ -592,17 +611,10 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 
-	val = dstate_getinfo(getval("load.status"));
-	if (val) {
-		if (!strcasecmp(val, "off") || !strcasecmp(val, "no")) {
-			outlet = 0;
-			status_set("OFF");
-			upsdebugx(2, "OFF flag set (outlet reported off)");
-		}
-
-		if (!strcasecmp(val, "on") || !strcasecmp(val, "yes")) {
-			outlet = 1;
-		}
+	if (!outlet) {
+		/* Outlet was formally declared OFF */
+		status_set("OFF");
+		upsdebugx(3, "%s: outlet declared off (setting OFF)", __func__);
 	}
 
 	if (ups.timer.shutdown >= 0) {
@@ -613,8 +625,9 @@ void upsdrv_updateinfo(void)
 			ups.timer.shutdown = -1;
 
 			outlet = 0;
-			status_set("OFF");
-			upsdebugx(2, "OFF flag set (outlet considered off)");
+			status_set("OFF"); /* get the word out ASAP */
+			upsdebugx(3, "%s: outlet considered off (setting OFF)",
+				__func__);
 
 			val = getval("load.off");
 			if (val) {
