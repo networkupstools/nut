@@ -81,7 +81,7 @@ https://github.com/networkupstools/nut/milestone/9
      the `ups.status` variable, with alarms now raised via common alarm
      functions rather than direct manipulation. [issue #2928, PR #2936]
 
- - `nhs_ser`, `nutdrv_qx_ablerex` driver updates:
+ - `clone`, `clone-outlet`, `nhs_ser`, `nutdrv_qx_ablerex` driver updates:
    * Refactored to follow modern handling of status and alarm conditions,
      aligning with current driver design practices. This includes fixing
      copy-paste related issues in alarm reporting and removing some alarm

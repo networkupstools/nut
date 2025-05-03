@@ -33,7 +33,7 @@
 #endif	/* !WIN32 */
 
 #define DRIVER_NAME	"Clone UPS driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -134,14 +134,16 @@ static int parse_args(size_t numargs, char **arg)
 		}
 
 		if (!strcasecmp(arg[1], "ups.status")) {
-			snprintf(ups.status, sizeof(ups.status), "%s", arg[2]);
-
-			online = strstr(ups.status, "OL") ? 1 : 0;
-
+			/* Status itself gets published later in upsdrv_updateinfo() */
 			if (ups.timer.shutdown > 0) {
-				dstate_setinfo("ups.status", "FSD %s", ups.status);
+				snprintf(ups.status, sizeof(ups.status), "FSD %s", arg[2]);
+				online = strstr(ups.status, "OL") ? 1 : 0;
+
 				return 1;
 			}
+
+			snprintf(ups.status, sizeof(ups.status), "%s", arg[2]);
+			online = strstr(ups.status, "OL") ? 1 : 0;
 		}
 
 		if (!strcasecmp(arg[1], "battery.charge")) {
@@ -318,7 +320,9 @@ static TYPE_FD sstate_connect(void)
 	dumpdone = 0;
 
 	/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
-	dstate_setinfo("ups.status", "WAIT");
+	status_init();
+	status_set("WAIT");
+	status_commit();
 
 	upslogx(LOG_INFO, "Connected to UPS [%s]", device_path);
 	return fd;
@@ -494,7 +498,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
-			dstate_setinfo("ups.status", "FSD %s", ups.status);
+			status_set("FSD");
 		}
 		ups.timer.start = ondelay;
 		return STAT_INSTCMD_HANDLED;
@@ -503,7 +507,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
-			dstate_setinfo("ups.status", "FSD %s", ups.status);
+			status_set("FSD");
 		}
 		ups.timer.start = -1;
 		return STAT_INSTCMD_HANDLED;
@@ -598,6 +602,8 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
+	status_init();
+
 	if (ups.timer.shutdown >= 0) {
 
 		ups.timer.shutdown -= (suseconds_t)(difftime(now, last_poll));
@@ -636,8 +642,6 @@ void upsdrv_updateinfo(void)
 				snprintf(buf, sizeof(buf), "INSTCMD %s\n", val);
 				sstate_sendline(buf);
 			}
-
-			dstate_setinfo("ups.status", "%s", ups.status);
 		}
 
 	} else if (!online && outlet) {
@@ -653,6 +657,9 @@ void upsdrv_updateinfo(void)
 
 	dstate_setinfo("ups.timer.shutdown", "%ld", ups.timer.shutdown);
 	dstate_setinfo("ups.timer.start", "%ld", ups.timer.start);
+
+	status_set(ups.status); /* FIXME: Split token words? */
+	status_commit();
 
 	last_poll = now;
 }
