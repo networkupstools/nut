@@ -482,19 +482,6 @@ static int sstate_dead(int maxage)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	const char	*val;
-
-	val = dstate_getinfo(getval("load.status"));
-	if (val) {
-		if (!strcasecmp(val, "off") || !strcasecmp(val, "no")) {
-			outlet = 0;
-		}
-
-		if (!strcasecmp(val, "on") || !strcasecmp(val, "yes")) {
-			outlet = 1;
-		}
-	}
-
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
@@ -579,6 +566,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
+	const char	*val;
 	time_t	now = time(NULL);
 	double	d;
 
@@ -604,15 +592,29 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 
+	val = dstate_getinfo(getval("load.status"));
+	if (val) {
+		if (!strcasecmp(val, "off") || !strcasecmp(val, "no")) {
+			outlet = 0;
+			status_set("OFF");
+			upsdebugx(2, "OFF flag set (outlet reported off)");
+		}
+
+		if (!strcasecmp(val, "on") || !strcasecmp(val, "yes")) {
+			outlet = 1;
+		}
+	}
+
 	if (ups.timer.shutdown >= 0) {
 
 		ups.timer.shutdown -= (suseconds_t)(difftime(now, last_poll));
 
 		if (ups.timer.shutdown < 0) {
-			const char	*val;
-
 			ups.timer.shutdown = -1;
+
 			outlet = 0;
+			status_set("OFF");
+			upsdebugx(2, "OFF flag set (outlet considered off)");
 
 			val = getval("load.off");
 			if (val) {
@@ -631,9 +633,8 @@ void upsdrv_updateinfo(void)
 		}
 
 		if (ups.timer.start < 0) {
-			const char	*val;
-
 			ups.timer.start = -1;
+
 			outlet = 1;
 
 			val = getval("load.on");
