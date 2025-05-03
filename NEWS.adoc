@@ -79,14 +79,13 @@ https://github.com/networkupstools/nut/milestone/9
      in line with modern, real-world UPS driver implementations. This
      follows the updated principle of keeping alarm states decoupled from
      the `ups.status` variable, with alarms now raised via common alarm
-     functions rather than direct manipulation. [issue #2928]
+     functions rather than direct manipulation. [issue #2928, PR #2936]
 
  - `nhs_ser`, `nutdrv_qx_ablerex` driver updates:
    * Refactored to follow modern handling of status and alarm conditions,
      aligning with current driver design practices. This includes fixing
-     copy-paste related issues in alarm reporting and removing some
-     alarm messages that should instead be reflected as status flags.
-     [PR #]
+     copy-paste related issues in alarm reporting and removing some alarm
+     messages that should instead be reflected as status flags. [#2936]
 
  - `usbhid-ups` driver updates:
    * The `cps-hid` subdriver's existing mechanism for fixing broken report
