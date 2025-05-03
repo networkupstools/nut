@@ -66,7 +66,7 @@ NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
- mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino	\
+ mge-utalk microdowell microsol-apc mge-shut nutdrv_hashx oneac optiups powercom rhino	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser ve-direct
 if HAVE_LINUX_SERIAL_H
@@ -180,6 +180,8 @@ microsol_apc_SOURCES = microsol-apc.c microsol-common.c
 microsol_apc_LDADD = $(LDADD) -lm
 nhs_ser_SOURCES = nhs_ser.c
 nhs_ser_LDADD = $(LDADD) -lm
+nutdrv_hashx_SOURCES = nutdrv_hashx.c
+nutdrv_hashx_LDADD = $(LDADD) -lm
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c

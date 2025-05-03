@@ -826,6 +826,7 @@ SRC_SERIAL_PAGES = \
 	oneac.txt	\
 	microdowell.txt	\
 	microsol-apc.txt	\
+	nutdrv_hashx.txt	\
 	nutdrv_siemens_sitop.txt	\
 	optiups.txt	\
 	powercom.txt 	\
@@ -874,6 +875,7 @@ INST_MAN_SERIAL_PAGES = \
 	oneac.$(MAN_SECTION_CMD_SYS)		\
 	microdowell.$(MAN_SECTION_CMD_SYS)	\
 	microsol-apc.$(MAN_SECTION_CMD_SYS)	\
+	nutdrv_hashx.$(MAN_SECTION_CMD_SYS)	\
 	nutdrv_siemens_sitop.$(MAN_SECTION_CMD_SYS)	\
 	optiups.$(MAN_SECTION_CMD_SYS)	\
 	powercom.$(MAN_SECTION_CMD_SYS) 	\
@@ -940,6 +942,7 @@ INST_HTML_SERIAL_MANS = \
 	oneac.html		\
 	microdowell.html	\
 	microsol-apc.html	\
+	nutdrv_hashx.html	\
 	nutdrv_siemens_sitop.html	\
 	optiups.html	\
 	powercom.html 	\
