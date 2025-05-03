@@ -470,7 +470,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-		time_t	now = time(NULL);
+	time_t	now = time(NULL);
 	double	d;
 
 	/* Throttle tight loops to avoid CPU burn, e.g. when the socket to driver
