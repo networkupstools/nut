@@ -125,7 +125,8 @@ static struct hashx_cmd_t {
 {
 	{ "beeper.enable", COMMAND_SET_BEEPER_ENABLED":1" },
 	{ "beeper.disable", COMMAND_SET_BEEPER_ENABLED":0" },
-	/* FIXME: We need a test.beeper command too. */
+	{ "experimental.test.beeper.start", COMMAND_START_BEEPER_TEST },
+	{ "experimental.test.beeper.stop", COMMAND_STOP_TEST },
 	{ "test.battery.start.deep", COMMAND_START_BATTERY_RUNTIME_TEST },
 	{ "test.battery.start.quick", COMMAND_START_BATTERY_TEST },
 	{ "test.battery.stop", COMMAND_STOP_TEST },

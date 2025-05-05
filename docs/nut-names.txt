@@ -1073,9 +1073,9 @@ to last as part of NUT standard protocol in the long run.
 [options="header"]
 |========================================================================
 | Name                              | Driver/Devices        | Description
-| experimental.test.beeper.start    |
+| experimental.test.beeper.start    | nutdrv_hashx => Atlantis Land
     | Start testing the UPS beeper
-| experimental.test.beeper.stop     |
+| experimental.test.beeper.stop     | nutdrv_hashx => Atlantis Land
     | Stop a UPS beeper test
 |========================================================================
 
