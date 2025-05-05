@@ -27,6 +27,7 @@
 #include "powerpanel.h"
 #include "serial.h"
 #include "str.h"
+#include "upshandler.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -117,6 +118,23 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
+static struct hashx_cmd_t {
+	const char *cmd_name;
+	const char *ups_cmd;
+} hashx_cmd[] =
+{
+	{ "beeper.enable", COMMAND_SET_BEEPER_ENABLED":1" },
+	{ "beeper.disable", COMMAND_SET_BEEPER_ENABLED":0" },
+	/* FIXME: We need a test.beeper command too. */
+	{ "test.battery.start.deep", COMMAND_START_BATTERY_RUNTIME_TEST },
+	{ "test.battery.start.quick", COMMAND_START_BATTERY_TEST },
+	{ "test.battery.stop", COMMAND_STOP_TEST },
+	{ "calibrate.start", COMMAND_START_BATTERY_RUNTIME_TEST },
+	{ "calibrate.stop", COMMAND_STOP_TEST },
+};
+
+static int hashx_instcmd(const char *cmd_name, const char *extra);
+
 static ssize_t hashx_recv(char *buf, size_t bufsize)
 {
 	ssize_t nread;
@@ -161,6 +179,26 @@ static int hashx_status_value(char *buf, size_t bufsize)
 
 	upsdebugx(5, "Read status is %d", ret);
 	return ret;
+}
+
+static int hashx_send_command(const char *command)
+{
+	size_t transferred;
+	char buf[16];
+	int status;
+
+	if ((transferred = ser_send(upsfd, "%s%c", command, ENDCHAR)) != strlen (command) + 1) {
+		upslogx(LOG_ERR, "%s: Failed to send command: %s",
+		        __func__, command);
+		return STATUS_UNKNOWN_FAILURE;
+	}
+
+	if ((status = hashx_status_value(buf, sizeof(buf))) != STATUS_SUCCESS) {
+		upslogx(LOG_ERR, "%s: unexpected hash protocol response: %s (status %d)",
+		        __func__, buf, status);
+	}
+
+	return status;
 }
 
 /*
@@ -238,13 +276,9 @@ void upsdrv_initinfo(void)
 	 * uses, but given that the returned value is static, we can just always
 	 * send one value we know about, to verify the protocol.
 	 */
-	if ((transferred = ser_send(upsfd, COMMAND_SET_SESSION_ID":"SESSION_ID"%c", ENDCHAR)) != 21) {
+	if ((status = hashx_send_command(COMMAND_SET_SESSION_ID":"SESSION_ID)) != STATUS_SUCCESS) {
 		fatalx(EXIT_FAILURE, "%s: Failed to set session ID: %s",
-			__func__, SESSION_ID);
-	}
-	if ((status = hashx_status_value(buf, sizeof(buf))) != STATUS_SUCCESS) {
-		fatalx(EXIT_FAILURE, "%s: unexpected hash protocol response: %s (status %d)",
-		       __func__, buf, status);
+		       __func__, SESSION_ID);
 	}
 
 	if ((transferred = ser_send(upsfd, COMMAND_GET_SESSION_HASH"%c", ENDCHAR)) != 4) {
@@ -365,6 +399,11 @@ void upsdrv_initinfo(void)
 		upslogx(LOG_WARNING, "This UPS returns unexpected power info fields (%s), "
 		        "previously decoded values may have not been correctly assigned!",
 		        buf + 1);
+	}
+
+	upsh.instcmd = hashx_instcmd;
+	for (i = 0; i < sizeof (hashx_cmd) / sizeof (*hashx_cmd); ++i) {
+		dstate_addcmd(hashx_cmd[i].cmd_name);
 	}
 }
 
@@ -560,6 +599,29 @@ void upsdrv_updateinfo(void)
 	status_commit();
 	dstate_dataok();
 	alarm_commit();
+}
+
+static int hashx_instcmd(const char *cmd_name, const char *extra)
+{
+	size_t i;
+
+	for (i = 0; i < sizeof (hashx_cmd) / sizeof (*hashx_cmd); ++i) {
+		int status;
+
+		if (strcasecmp(cmd_name, hashx_cmd[i].cmd_name) != 0) {
+			continue;
+		}
+
+		if ((status = hashx_send_command(hashx_cmd[i].ups_cmd)) == STATUS_SUCCESS)
+			return STAT_INSTCMD_HANDLED;
+
+		upslogx(LOG_ERR, "Failed to execute command [%s] [%s]: %d",
+		        cmd_name, extra, status);
+		return STAT_INSTCMD_FAILED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd_name, extra);
+	return STAT_INSTCMD_UNKNOWN;
 }
 
 void upsdrv_shutdown(void)
