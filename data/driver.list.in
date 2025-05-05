@@ -50,6 +50,7 @@
 "Ablerex"	"ups"	"2"	"MSIII series"	"USB"	"nutdrv_qx"
 "Ablerex"	"ups"	"2"	"GRs series"	"USB"	"nutdrv_qx"
 "Ablerex"	"ups"	"2"	"GRs Plus series"	"USB"	"nutdrv_qx"
+"Ablerex"	"ups"	"1"	"(various)" "Serial"	"nutdrv_hashx" # https://www.ablerex.eu/download/
 
 "ActivePower"	"ups"	"2"	"400VA"	""	"blazer_ser"
 "ActivePower"	"ups"	"2"	"1400VA"	""	"blazer_ser"
@@ -156,7 +157,31 @@
 "Atlantis Land"	"ups"	"2"	"OnePower 841+ (A03-P841)"	"USB"	"nutdrv_qx"
 "Atlantis Land"	"ups"	"2"	"(various)"	"Serial"	"nutdrv_qx"
 "Atlantis Land"	"ups"	"2"	"(various)"	"USB"	"nutdrv_qx"
+"Atlantis Land"	"ups"	"1"	"A03-0P10002P-RC"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P1002"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P1002XLN"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P1302-RC"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P1502P"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P1502P-RC"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P2002-RC"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P2002P"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P2002P-RC"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P3002P"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P3002P-RC"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P3002XLN"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-0P6002P-RC"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-HP1003"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-HP1503"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-HP2003"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-HP3003P"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-HP4003P"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-PDU1000-RC"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-S1000LE"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-S1000P"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-S120 (Rev.22.0)"	"Serial"	"nutdrv_hashx"
 "Atlantis Land"	"ups"	"1"	"A03-S1200"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-S1501 (Rev.22.0)"	"Serial"	"nutdrv_hashx"
+"Atlantis Land"	"ups"	"1"	"A03-S2001 (Rev.22.0)"	"Serial"	"nutdrv_hashx"
 
 "Aviem Systems"	"ups"	"2"	"Aviem Power RT 1000-3000VA"	""	"blazer_ser"
 "Aviem Systems"	"ups"	"2"	"Aviem Pro 2000VA"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/827
@@ -237,6 +262,7 @@
 "Crown"	"ups"	"2"	"CMU-SP1200IEC"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/1014
 
 "Cyber Energy"	"ups"	"3"	"Models with USB"	"USB"	"usbhid-ups"	# https://alioth-lists.debian.net/pipermail/nut-upsdev/2024-February/007966.html https://alioth-lists.debian.net/pipermail/nut-upsdev/2024-June/008002.html
+"Cyber Energy"	"ups"	"1"	"Models with Serial"	"Serial"	"nutdrv_hashx"  # https://www.cyberenergy.com/en/Product/software
 
 "Cyber Power Systems"	"ups"	"1"	"550SL"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"1"	"725SL"	""	"genericups upstype=7"
@@ -581,6 +607,7 @@
 "Infosec"	"ups"	"2"	"X2, X3, X4, E2, E3, E4"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 500"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 1000"	""	"blazer_ser"
+"Infosec"	"ups"	"1"	"(various)" "Serial"	"nutdrv_hashx" # https://www.infosec-ups.com/en/powermaster
 
 "IPAR"	"ups"	"2"	"Mini Energy ME 800"	"USB"	"blazer_usb"
 
@@ -1176,6 +1203,7 @@
 "PowerWalker"	"ups"	"3"	"PR1500LCDRT2U"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/818
 "PowerWalker"	"ups"	"2"	"VI 3000 SCL"	"USB"	"blazer_usb" # https://github.com/networkupstools/nut/issues/971
 "PowerWalker"	"ups"	"3"	"VI 750T/HID"	"USB"	"usbhid-ups" # https://powerwalker.com/?page=select&cat=VI_THID&lang=en https://github.com/networkupstools/nut/issues/774
+"PowerWalker"	"ups"	"1"	"(various)" "Serial"	"nutdrv_hashx"  # https://powerwalker.com/software/
 
 "Powerware"	"ups"	"4"	"3110"	""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
@@ -1267,6 +1295,8 @@
 "Riello"	"ups"	"3"	"(various)"	"Netman 204 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as 'Netman Plus', clarification requested
 "Riello"	"ups"	"3"	"(various)"	"Netman 208 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as 'Netman Plus', clarification requested
 
+"Right Power Technology"	"ups"	"1"	"(various)" "Serial"	"nutdrv_hashx"  https://www.rightpowerups.com.my/faq-download/
+
 "Rocketfish"	"ups"	"3"	"RF-1000VA / RF-1025VA"	"USB"	"usbhid-ups"
 
 "Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
@@ -1281,6 +1311,7 @@
 "Salicru"	"ups"	"3"	"SLC TWIN RT3"	"usb"	"usbhid-ups (experimental)"
 "Salicru"	"ups"	"3"	"SPS 850 ADV T"	"usb"	"usbhid-ups (experimental)" # https://www.salicru.com/sps-850-adv-t.html https://github.com/networkupstools/nut/issues/1416
 "Salicru"	"ups"	"3"	"SPS 3000 ADV RT2"	"usb"	"usbhid-ups (experimental)" # https://www.salicru.com/sps-3000-adv-rt2.html
+"Salicru"	"ups"	"1"	"(various)" "Serial"	"nutdrv_hashx"  # https://www.salicru.com/softwares-usb-rs-232.html
 
 "Santak"	"ups"	"2"	"Castle C*K"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
 "Santak"	"ups"	"2"	"MT*-PRO"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
