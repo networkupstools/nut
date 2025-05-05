@@ -1069,6 +1069,16 @@ to last as part of NUT standard protocol in the long run.
     | Take the UPS out of Energy Saver System (aka ESS) mode
 |========================================================================
 
+.Vendor-dependent instant commands
+[options="header"]
+|========================================================================
+| Name                              | Driver/Devices        | Description
+| experimental.test.beeper.start    |
+    | Start testing the UPS beeper
+| experimental.test.beeper.stop     |
+    | Stop a UPS beeper test
+|========================================================================
+
 Currently the commands above are present in one subdriver and are specific
 to the vendor's proposed power state machine. The plan is to generalize the
 concept with vendor specifics, similarly to `experimental.ups.mode.buzzwords`.
