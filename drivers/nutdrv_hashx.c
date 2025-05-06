@@ -510,7 +510,7 @@ void upsdrv_updateinfo(void)
 	upsdebug_hex(6, "Poll: status bytes", status_bytes, status_bytes_size);
 
 	if (!status_bytes || status_bytes_size < 5) {
-		upslogx(LOG_ERR, "Status bytes are not enough: %" PRIiSIZE,
+		upslogx(LOG_ERR, "Status bytes are not enough: %" PRIuSIZE,
 		        status_bytes_size);
 		dstate_dataok();
 		return;
