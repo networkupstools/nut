@@ -85,6 +85,10 @@ https://github.com/networkupstools/nut/milestone/9
      namespace, as a community we need to come up with standard naming for
      those via `docs/nut-names.txt`. [#440]
 
+ - Introduced handling (possibly rewriting) for man page section "Overviews,
+   conventions, and miscellaneous" (commonly number 7), to deliver support
+   for `man nut` queries.
+
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------

@@ -365,6 +365,7 @@ Additional flags with regard to documentation generation include:
 	--with-docs-man-section-cfg=<SN>	(default: 5)
 	--with-docs-man-section-cmd-sys=<SN>	(default: 8)
 	--with-docs-man-section-cmd-usr=<SN>	(default: 1)
+	--with-docs-man-section-misc=<SN>	(default: 7)
 
 Customize man page section identifiers for operating systems whose standards
 do not match defaults listed above for Library and API, Configuration Files,

@@ -26,6 +26,11 @@ Changes from 2.8.3 to 2.8.4
 
 - PLANNED: Keep track of any further API clean-up?
 
+- Introduced handling (possibly rewriting) for man page section "Overviews,
+  conventions, and miscellaneous" (commonly number 7), to deliver support
+  for `man nut` queries.  As a packager, you may have to update the recipes
+  accordingly (especially if your platform rewrites section numbers).
+
 Changes from 2.8.2 to 2.8.3
 ---------------------------
 

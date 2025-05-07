@@ -43,11 +43,18 @@ DIST_ALL_HTML_PAGES = index.html
 # HTML collection is for nut-website primarily, not for tarballs... so far...
 DIST_ALL_PAGES = $(DIST_ALL_MAN_PAGES)
 
-# Possible man page section remapping in some distros:
+### Possible man page section remapping in some distros:
+# (3) Library calls:
 MAN_SECTION_API_BASE=@MAN_SECTION_API_BASE@
+# (5) File formats and configuration files:
 MAN_SECTION_CFG_BASE=@MAN_SECTION_CFG_BASE@
+# (8) System management commands:
 MAN_SECTION_CMD_SYS_BASE=@MAN_SECTION_CMD_SYS_BASE@
+# (1) User commands (Programs):
 MAN_SECTION_CMD_USR_BASE=@MAN_SECTION_CMD_USR_BASE@
+# (7) Overview, conventions, and miscellaneous:
+MAN_SECTION_MISC_BASE=@MAN_SECTION_MISC_BASE@
+
 # Other rewritable properties:
 NUT_WEBSITE_BASE=@NUT_WEBSITE_BASE@
 PACKAGE_VERSION=@PACKAGE_VERSION@
@@ -65,6 +72,9 @@ mansys_DATA =
 
 manusrdir = $(mandir)/man$(MAN_SECTION_CMD_USR_BASE)
 manusr_DATA =
+
+manmiscdir = $(mandir)/man$(MAN_SECTION_MISC_BASE)
+manmisc_DATA =
 
 ALL_TGT =
 if WITH_MANS
@@ -1259,6 +1269,7 @@ MAN_MANS =
 if WITH_MANS
 MAN_MANS += \
 	$(MAN_CONF_PAGES) \
+	$(MAN_MISC_PAGES) \
 	$(MAN_CLIENT_PAGES) \
 	$(MAN_TOOL_PAGES) \
 	$(MAN_CGI_CFG_PAGES) \
@@ -1304,6 +1315,7 @@ endif
 # Note that 'dist' target requires AsciiDoc!
 SRC_ALL_PAGES += \
 	$(SRC_CONF_PAGES) \
+	$(SRC_MISC_PAGES) \
 	$(SRC_CLIENT_PAGES) \
 	$(SRC_TOOL_PAGES) \
 	$(SRC_CGI_PAGES) \
@@ -1513,7 +1525,7 @@ check-man-txt: .check-man-txt
 
 CLEANFILES = *-spellchecked .prep-src-docs *-prepped .check-*
 
-SUFFIXES = .txt-prepped .txt .html .$(MAN_SECTION_CMD_USR) .$(MAN_SECTION_API) .$(MAN_SECTION_CFG) .$(MAN_SECTION_CMD_SYS)
+SUFFIXES = .txt-prepped .txt .html .$(MAN_SECTION_CMD_USR) .$(MAN_SECTION_API) .$(MAN_SECTION_CFG) .$(MAN_SECTION_CMD_SYS) .$(MAN_SECTION_MISC)
 
 # For builds with allowed installation of prebuilt man pages, check that
 # they exist in sources (make would pull them automatically as a fallback
@@ -1528,11 +1540,11 @@ endif
 # Only clean away build products if we can reproduce them
 # including cases where we generate placeholders
 if WITH_MANS
-CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS)
+CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS) *.$(MAN_SECTION_MISC)
 clean-man-pages:
 else !WITH_MANS
 if HAVE_ASCIIDOC
-CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS)
+CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG) *.$(MAN_SECTION_CMD_SYS) *.$(MAN_SECTION_MISC)
 clean-man-pages:
 else !HAVE_ASCIIDOC
 clean-man-pages:
@@ -1615,6 +1627,7 @@ DOCBUILD_END = { \
 		--attribute=MAN_SECTION_CFG_BASE='$(MAN_SECTION_CFG_BASE)' \
 		--attribute=MAN_SECTION_CMD_SYS_BASE='$(MAN_SECTION_CMD_SYS_BASE)' \
 		--attribute=MAN_SECTION_CMD_USR_BASE='$(MAN_SECTION_CMD_USR_BASE)' \
+		--attribute=MAN_SECTION_MISC_BASE='$(MAN_SECTION_MISC_BASE)' \
 		--attribute=NUT_WEBSITE_BASE='$(NUT_WEBSITE_BASE)' \
 		-o "$${A2X_OUTDIR}/$(@F)" '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
@@ -1633,10 +1646,12 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--destination-dir="$${A2X_OUTDIR}"
 
 if KNOWN_UNABLE_MANS
+
 .txt.$(MAN_SECTION_API) .txt-prepped.$(MAN_SECTION_API) \
 .txt.$(MAN_SECTION_CFG) .txt-prepped.$(MAN_SECTION_CFG) \
 .txt.$(MAN_SECTION_CMD_SYS) .txt-prepped.$(MAN_SECTION_CMD_SYS) \
-.txt.$(MAN_SECTION_CMD_USR) .txt-prepped.$(MAN_SECTION_CMD_USR) :
+.txt.$(MAN_SECTION_CMD_USR) .txt-prepped.$(MAN_SECTION_CMD_USR) \
+.txt.$(MAN_SECTION_MISC) .txt-prepped.$(MAN_SECTION_MISC) :
 	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not functional (even though found)." ; \
 	else \
@@ -1646,6 +1661,7 @@ if KNOWN_UNABLE_MANS
 	fi
 
 else !KNOWN_UNABLE_MANS
+
 .txt-prepped.$(MAN_SECTION_CMD_USR):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_CMD_USR).$(@F).$$$$" ; \
 	 echo "  DOC-MAN	Generating $@"; \
@@ -1673,6 +1689,14 @@ else !KNOWN_UNABLE_MANS
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
+
+.txt-prepped.$(MAN_SECTION_MISC):
+	@A2X_OUTDIR="tmp/man$(MAN_SECTION_MISC).$(@F).$$$$" ; \
+	 echo "  DOC-MAN	Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
+
 endif !KNOWN_UNABLE_MANS
 
 else !HAVE_ASCIIDOC
@@ -1714,6 +1738,15 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_CMD_SYS):
+	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
+
+.txt.$(MAN_SECTION_MISC):
 	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
@@ -1777,7 +1810,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	 fi ; \
 	 linkroot="$(abs_builddir)" ; \
 	 MAN_SECTIONS_DEFAULT=false ; \
-	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)" = x3581 ] ; then \
+	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)$(MAN_SECTION_MISC)" = x35817 ] ; then \
 	    MAN_SECTIONS_DEFAULT=true ; \
 	 fi ; \
 	 if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
@@ -1800,10 +1833,12 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
 	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' \
 	                -e '1 s,\(^.*(\)3)$$,\1$(MAN_SECTION_API)),g' \
 	                -e '1 s,\(^.*(\)5)$$,\1$(MAN_SECTION_CFG)),g' \
 	                -e '1 s,\(^.*(\)8)$$,\1$(MAN_SECTION_CMD_SYS)),g' \
-	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' ; \
+	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' \
+	                -e '1 s,\(^.*(\)7)$$,\1$(MAN_SECTION_MISC)),g' ; \
 	        fi < "$${F}" > "$${F}-prepped" || exit ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
@@ -1859,10 +1894,12 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
 	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' \
 	                -e '1 s,\(^.*(\)3)$$,\1$(MAN_SECTION_API)),g' \
 	                -e '1 s,\(^.*(\)5)$$,\1$(MAN_SECTION_CFG)),g' \
 	                -e '1 s,\(^.*(\)8)$$,\1$(MAN_SECTION_CMD_SYS)),g' \
-	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' ; \
+	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' \
+	                -e '1 s,\(^.*(\)7)$$,\1$(MAN_SECTION_MISC)),g' ; \
 	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
 	        || { rm -f "$@.working" ; exit 1 ; } ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
