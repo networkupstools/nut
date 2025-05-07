@@ -25,6 +25,8 @@ Changes from 2.8.3 to 2.8.4
 ---------------------------
 
 - PLANNED: Keep track of any further API clean-up?
+- Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be 
+  necessary to address spurious LOWBATT and REPLACEBATT events. [issue #2942]
 
 Changes from 2.8.2 to 2.8.3
 ---------------------------
