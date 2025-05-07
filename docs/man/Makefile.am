@@ -265,6 +265,24 @@ INST_HTML_CONF_MANS = \
 DIST_ALL_HTML_PAGES += $(INST_HTML_CONF_MANS)
 HTML_CONF_MANS = $(INST_HTML_CONF_MANS)
 
+# "man nut", always installed
+SRC_MISC_PAGES = \
+	nut.txt
+
+INST_MAN_MISC_PAGES = \
+	nut.$(MAN_SECTION_MISC)
+
+DIST_ALL_MAN_PAGES += $(INST_MAN_MISC_PAGES)
+
+if WITH_MANS
+MAN_MISC_PAGES = $(INST_MAN_MISC_PAGES)
+endif WITH_MANS
+
+manmisc_DATA += $(MAN_MISC_PAGES)
+
+INST_HTML_MISC_MANS = \
+	nut.html
+
 # NOTE: Currently SRC_DRIVERTOOL_PAGES are a separate list to generate
 # a linkman-drivertool-names.txt file, but historically remain part of
 # MAN/HTML_CLIENT_PAGES in the bigger picture.

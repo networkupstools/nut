@@ -1,0 +1,191 @@
+NUT(7)
+======
+
+NAME
+----
+
+nut - Overview of the Network UPS Tools (NUT)
+
+DESCRIPTION
+-----------
+
+The Network UPS Tools (NUT) project provides a free and open source tool kit
+for monitoring and managing different types of power distribution devices,
+first released under such name in 1999 and following up from a few earlier
+projects.  Since then, NUT has expanded to cover thousands of devices from
+hundreds of vendors, and to handle various device types (UPS, ePDU, ATS/STS,
+solar, blade server IPMI as a sort of PDU for the blades, etc.) all with
+a consistent API and data model, which has since been published as
+link:https://datatracker.ietf.org/doc/html/rfc9271[The "UPS management
+protocol", Informational RFC 9271].
+
+While the project is in active development to support ever newer devices and
+their firmwares, as well as operating system releases, one of the internally
+recognized goals is to remain compatible with the systems NUT could have been
+once deployed on: even if vendors of those boxes and operating systems no
+longer exist, the venerable hardware deserves to be still protected with
+new UPS devices.
+
+Although the original development involved POSIX-compliant operating systems,
+over time NUT for Windows support was also implemented (however as of NUT
+release v2.8.3, it remains not 100% complete) so it is possible to run the
+whole server and client stack as native Windows programs.
+
+Most operating systems deliver NUT as packages built from a certain release,
+which for the project is just a better-tested snapshot of on-going development.
+Some OS distribution maintainers pick fixes from later releases to update
+their software packages while nominally remaining on the same base line
+version that the distribution's major release originally went with. This
+allows to balance delivering stable programs with well-known qualities
+and minimal downsides for a long stretch of time, but misses out on new
+capabilities, features (and yes, new bugs) which the on-going development
+regularly adds to the current code base du-jour.
+
+As such, NUT community support for releases (or any other non-current code)
+is generally limited to suggestions based on experience, but any fixes happen
+on the main development branch (there are no release-tracking branches to port
+such solutions into), and custom builds of NUT would be required to apply
+them in an end-user environment.  This workflow is highly automated in the
+project code base (its recipes and scripts), and the packaged dependencies
+or toolkits needed for a build are documented for numerous platforms (see
+links at the end of this page).
+
+Thanks to this, the NUT project is also a wider open-source community leader
+and reference in the area of build recipes and testing automation for
+low-level multi-platform Autotools/C/C++ projects in general.
+
+NUT Architecture
+~~~~~~~~~~~~~~~~
+
+The project follows a multi-tiered architecture which may seem a bit complex,
+but allows for flexibility with very different real-life setups to handle.
+In practice, this involves numerous programs (and their configuration files)
+running on the same or different systems (the "network" part in the name).
+
+NUT Drivers
+^^^^^^^^^^^
+
+The lowest tier comprises 'NUT drivers', which are programs that can talk a
+particular protocol over certain media.  Some protocols follow an industry
+standard (like USB HID or SNMP), or are dialects of a de-facto standard (like
+the originally Megatec "Q*" family of protocols used by many other vendors),
+but many others are vendor-specific.  Some devices support several media
+connection types (e.g. Serial and/or USB ports, and/or SNMP for networked
+management), so there may be several suitable NUT drivers to choose from.
+
+The NUT drivers are responsible for translation between NUT standard data
+point or instant command names and whatever strings need to be pulled for
+that particular device.  The data is exposed to other programs on the same
+machine following the 'NUT Driver/Server Socket Protocol', which relies on
+operating system access controls for the UNIX local socket file or a Windows
+named pipe.
+
+For each monitored power distribution device, a NUT driver instance should
+be running on a machine that has a communication link to that device.
+
+NOTE: There is currently no support for "multiplexing" information or commands
+for devices with multiple-media/multiple-driver access, e.g. to gain redundant
+connection or a better data collection than any one driver provides. For some
+devices it may be possible to run several drivers independently (probably for
+your monitoring system to cherry-pick data points from one driver or another),
+while others might only enable any one link exclusively.
+
+NUT Data Server
+^^^^^^^^^^^^^^^
+
+A 'NUT Data Server' (linkman:upsd[8]) represents one or more NUT drivers that
+run on the same machine as itself, to provide networked access to their data
+or pass around the instant command requests and replies.
+
+On one side the data server connects to one or more UNIX local socket files
+or Windows named pipes (one for each running driver), and on another side it
+listens on the TCP/IP network (port '3493' by default) to communicate with
+local or remote client programs.  It is also responsible for communication
+security for driver access, whether by defining the NUT user account names
+and assigned protocol access permissions (for value-setting or commands;
+read access is anonymous), or by handling the TLS/SSL part where enabled.
+
+NUT Clients
+^^^^^^^^^^^
+
+Practical work visible to end-users is done by a multitude of 'NUT clients',
+many of which are delivered by the project itself and more are created and
+maintained by the community at large.  Some standard clients of note include:
+
+* linkman:upsmon[1] is a daemon to monitor primarily the states of UPSes
+  (as opposed to other device types that NUT can handle) which power some
+  power source units of this particular system, and based on how many PSUs
+  are required for the system to run -- initiates a local shutdown when too
+  many UPSes are not in a healthy condition.  Instances of this client allow
+  a single UPS powering a whole rack or desk of computers to be seen by each
+  of them (through a data server running on one of them, on a machine actually
+  connected to the UPS -- the "primary" system).
++
+NUT deployments which desire higher-fidelity control (e.g. different systems
+  shutting down after different time spent on battery) often couple `upsmon`
+  with linkman:upssched[1].
++
+The "primary" system is usually also responsible for commanding the managed
+  UPS to shut itself down and power up when the "wall power" returns (or to
+  reset the load if it is already back), subject to UPS hardware capabilities.
+  Most client integrations also stall the ultimate reboot/power-off of their
+  machine, if its shut down was triggered by `upsmon`, and reboot after a
+  long delay (if the machine is still alive).
+  This combined approach allows to avoid the "power race condition", when
+  systems would otherwise remain shut down indefinitely (until someone comes
+  and reboots them) just because external power returned when the shut down
+  spree had already started.
+* linkman:upsc[1] is a command-line client for anonymous read-only access,
+  used to list devices served by a NUT data server, or to query data points
+  reported by a particular device.
+* linkman:NUT-Monitor[1] is a GUI client for read-only or read-write access.
+* A suite of CGI clients can run on a web server like Apache or nginx to
+  provide a simple HTML interface to your devices.
+
+Many monitoring systems integrate with NUT (and through it -- with a varied
+assortment of power devices), using either simple clients like `upsc` or
+`upslog`, or libraries and bindings provided by the project itself (e.g.
+C, C++, Python, Java in a nearby repository) or by third-party efforts
+(e.g. Perl, Go, C#, REST API).
+
+
+////////////////////////////////////////////
+// Dynamic list of all man pages follows: //
+////////////////////////////////////////////
+
+:leveloffset: 1
+
+include::index.txt[]
+
+:leveloffset: 0
+
+See Also: Internet resources
+----------------------------
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+  and specifically the link:https://networkupstools.org/documentation.html[NUT
+  Documentation collection]
+* Project GitHub repository, wiki and issue tracker:
+  https://github.com/networkupstools/nut
+* Commonly referenced articles include:
+  - link:https://networkupstools.org/docs/FAQ.html[The NUT FAQ page]
+  - link:https://github.com/networkupstools/nut/wiki/Changing-NUT-daemon-debug-verbosity[Changing
+    NUT daemon debug verbosity] should be your first step in any troubleshooting
+  - link:https://networkupstools.org/docs/qa-guide.chunked/_prerequisites_for_building_nut_on_different_oses.html#_build_prerequisites_to_make_nut_from_scratch_on_various_operating_systems[Build
+    prerequisites to make NUT from scratch on various Operating Systems]
+    documents the packages you might need to build NUT on about a dozen
+    operating system distributions (most of those the NUT CI farm tests
+    each development iteration on)
+  - link:https://github.com/networkupstools/nut/wiki/Building-NUT-for-in%E2%80%90place-upgrades-or-non%E2%80%90disruptive-tests[Building
+    NUT for in‐place upgrades or non‐disruptive tests] details how to build
+    a newer version of NUT than your system packaging provides (as a potential
+    replacement of the older installation), e.g. to test if some issue got
+    resolved or if an updated driver sees more information from your device;
+    most such tests can be done without installing the new build into your
+    system (not until you like it better than the current deployment)
+  - Specific bits of know-how and caveats regarding
+    link:https://github.com/networkupstools/nut/wiki/NUT-for-Windows[NUT
+    for Windows]
+* We are on Wikipedia: https://en.wikipedia.org/wiki/Network_UPS_Tools
+* The "UPS management protocol", Informational RFC 9271:
+  https://datatracker.ietf.org/doc/html/rfc9271
