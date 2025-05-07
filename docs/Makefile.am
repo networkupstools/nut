@@ -284,7 +284,7 @@ check-pdf: .check-pdf
 # but causes re-run of the check every time.
 ChangeLog.html-contentchecked:
 	@FAILED=""; \
-	 entry_filter() { sed -e 's/ *[\"<].*//' -e 's/\([[(){}|+?.*]\|]\)/\\\1/g' ; } ; \
+	 entry_filter() { sed -e 's/ *[\"<].*//' -e 's/\([][(){}|+?.*]\)/\\\1/g' ; } ; \
 	 if [ -s '$(top_builddir)/ChangeLog' ] && [ -s ChangeLog.html ] ; then \
 	    SECOND_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | entry_filter`" || SECOND_ENTRY="" ; \
 	    FIRST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | entry_filter`" || FIRST_ENTRY="" ; \
