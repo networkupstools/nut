@@ -311,7 +311,8 @@ This requirement compromises usability of `make distcheck` on platforms without
    * Added Visench C1K (using serial port converter with USB ID `1a86:7523`)
      as known supported by `nutdrv_qx` (Megatec protocol) since at least
      NUT v2.7.4 release. [#2395]
-   * Introduced `innovart31` protocol support for Innova RT 3/1 UPSes. [#2712, #2798]
+   * Introduced `innovart31` protocol support for Ippon Innova RT 3/1 topology
+     UPSes. [#2712, #2798]
    * Introduced `q2` and `q6` protocol support; currently also based/tested
      on Innova devices, but other models than RT 3/1. [#2798]
    * Introduced a `gtec` subdriver and protocol, tested over USB with a
