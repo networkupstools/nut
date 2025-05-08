@@ -60,6 +60,25 @@ Platform management: Windows
 
 - linkman:nut.exe[8]
 
+//////////////////////////////////////////////////////////
+
+Platform management: Linux SystemD
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TBD
+
+Platform management: Solaris/illumos SMF
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TBD
+
+Platform management: MacOS launcher
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TBD
+
+//////////////////////////////////////////////////////////
+
 [[Drivers]]
 Driver control:
 ~~~~~~~~~~~~~~~
