@@ -87,7 +87,7 @@ https://github.com/networkupstools/nut/milestone/9
 
  - Introduced handling (possibly rewriting) for man page section "Overviews,
    conventions, and miscellaneous" (commonly number 7), to deliver support
-   for `man nut` queries.
+   for `man nut` queries (NUT overview manual page also created). [#2945]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
