@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3475 utf-8
+personal_ws-1.1 en 3477 utf-8
 AAC
 AAS
 ABI
@@ -2312,6 +2312,7 @@ labcd
 lan
 langid
 lasaine
+launchd
 lbrb
 ld
 ldd
@@ -2862,6 +2863,7 @@ reentrancy
 refactored
 refactoring
 refreservation
+refsect
 regex
 regtype
 relatime

@@ -153,14 +153,19 @@ C, C++, Python, Java in a nearby repository) or by third-party efforts
 // Dynamic list of all man pages follows: //
 ////////////////////////////////////////////
 
+///////////////
 :leveloffset: 1
+///////////////
 
 include::index.txt[]
 
+///////////////
 :leveloffset: 0
+///////////////
 
-See Also: Internet resources
-----------------------------
+
+Internet resources
+------------------
 
 * The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
   and specifically the link:https://networkupstools.org/documentation.html[NUT
