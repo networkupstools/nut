@@ -317,7 +317,8 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 +
 and attach it to the GitHub release artifacts, and to nut-website via
    the https://github.com/networkupstools/nut-package-archive.git repository
-   (update its `index.html`, possibly reference from NUT Downloads page, etc.)
+   (its `index.html` will get updated as part of subsequent nut-website build,
+   a templated reference from NUT Downloads page is already in place).
 +
 FIXME: get our AppVeyor recipe to name the release archive as such, the scripts
 should already know everything needed for this.  Explore git-tag based builds?
