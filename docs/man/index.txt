@@ -80,13 +80,13 @@ TBD
 //////////////////////////////////////////////////////////
 
 [[Drivers]]
-Driver control:
-~~~~~~~~~~~~~~~
+Driver control
+~~~~~~~~~~~~~~
 
 include::{builddir}linkman-drivertool-names.txt[]
 
-Drivers:
-~~~~~~~~
+Drivers
+~~~~~~~
 
 - linkman:nutupsdrv[8]
 include::{builddir}linkman-driver-names.txt[]
