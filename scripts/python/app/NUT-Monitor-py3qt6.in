@@ -894,7 +894,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class gui_updater :
 
     __parent_class = None
-    __stop_updater  = False
+    __stop_updater = False
 
     def __init__( self, parent_class ) :
         self.__parent_class = parent_class
