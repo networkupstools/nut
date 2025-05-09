@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3473 utf-8
+personal_ws-1.1 en 3480 utf-8
 AAC
 AAS
 ABI
@@ -103,6 +103,8 @@ BTS
 BTV
 BUFRD
 BUZ
+BVKnnnnM
+BVKxxxM
 BXnnnnMI
 BYP
 BZ
@@ -312,6 +314,7 @@ Dsystemtap
 Dynamix
 Dynex
 EAGAIN
+EB
 EE
 EEPROM
 EFI
@@ -358,6 +361,7 @@ Emilien
 Energia
 EnergySaving
 Enphase's
+Epyc
 Erikson
 Eriksson
 Evgeny
@@ -598,6 +602,7 @@ Kroll
 Krpec
 Kubanek
 Kubernetes
+Kuttnig
 Kx
 LASTXFER
 LCDRM
@@ -966,10 +971,12 @@ PowerAlert
 PowerCOM
 PowerCom
 PowerES
+PowerGuide
 PowerKinetics
 PowerMac
 PowerMan
 PowerManagerII
+PowerMaster
 PowerMust
 PowerNet
 PowerOff
@@ -1318,6 +1325,8 @@ TopGuard
 Toth
 TrackingID
 TrackingResult
+Trevisan
+Treviño
 Tripp
 TrippLite
 Tru
@@ -2134,6 +2143,7 @@ gzip
 hal
 hardcoded
 hasFeature
+hashx
 hb
 hcd
 hcl
@@ -2281,6 +2291,7 @@ jdk
 jenkins
 jessie
 jimklimov
+jour
 journalctl
 jpeg
 jpg
@@ -2311,6 +2322,7 @@ labcd
 lan
 langid
 lasaine
+launchd
 lbrb
 ld
 ldd
@@ -2582,6 +2594,7 @@ newmge
 newvictronups
 nf
 ng
+nginx
 nhnl
 nhs
 nielchiano
@@ -2860,6 +2873,7 @@ reentrancy
 refactored
 refactoring
 refreservation
+refsect
 regex
 regtype
 relatime

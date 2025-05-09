@@ -195,3 +195,9 @@ N: zakx
 E: zakx@zakx.de
 D: Updating device support docs after unnecessarily writing a redundant
 D: driver first
+
+N: Marco Trevisan (Treviño)
+E: mail@3v1n0.net
+W: https://3v1n0.net
+D: Author of the nutdrv_hashx driver
+P: rsa4096/D4C501DA 48EB 797A 0817 5093 9449 C2F5 0996 635F
