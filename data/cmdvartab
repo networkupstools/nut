@@ -264,6 +264,8 @@ CMDDESC experimental.ecomode.start.auto "Put UPS in Bypass mode then High Effici
 CMDDESC experimental.ecomode.stop.auto "Take the UPS out of High Efficiency (aka ECO) mode after exiting Bypass mode"
 CMDDESC experimental.essmode.enable "Put UPS in Energy Saver System (aka ESS) mode"
 CMDDESC experimental.essmode.disable "Take the UPS out of Energy Saver System (aka ESS) mode"
+CMDDESC experimental.test.beeper.start "Start testing the UPS beeper"
+CMDDESC experimental.test.beeper.stop "Stop a UPS beeper test"
 CMDDESC reset.input.minmax "Reset minimum and maximum input voltage status"
 CMDDESC reset.watchdog "Reset watchdog timer"
 CMDDESC beeper.on "Obsolete (use beeper.enable)"

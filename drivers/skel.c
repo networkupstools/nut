@@ -5,7 +5,7 @@
 	for more information, refer to:
 	* docs/developers.txt
 	* docs/new-drivers.txt
-	* docs/new-names.txt
+	* docs/nut-names.txt
 
 	and possibly also to:
 	* docs/hid-subdrivers.txt for USB/HID devices

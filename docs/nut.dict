@@ -314,6 +314,7 @@ Dsystemtap
 Dynamix
 Dynex
 EAGAIN
+EB
 EE
 EEPROM
 EFI
@@ -360,6 +361,7 @@ Emilien
 Energia
 EnergySaving
 Enphase's
+Epyc
 Erikson
 Eriksson
 Evgeny
@@ -969,10 +971,12 @@ PowerAlert
 PowerCOM
 PowerCom
 PowerES
+PowerGuide
 PowerKinetics
 PowerMac
 PowerMan
 PowerManagerII
+PowerMaster
 PowerMust
 PowerNet
 PowerOff
@@ -1321,6 +1325,8 @@ TopGuard
 Toth
 TrackingID
 TrackingResult
+Trevisan
+Treviño
 Tripp
 TrippLite
 Tru
@@ -2137,6 +2143,7 @@ gzip
 hal
 hardcoded
 hasFeature
+hashx
 hb
 hcd
 hcl
