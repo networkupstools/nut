@@ -85,6 +85,7 @@
 "APC"	"ups"	"3"	"BACK-UPS XS LCD"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS XS 1000M (Back-UPS Pro 1000, Model BX1000M)"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/139
 "APC"	"ups"	"3"	"Back-UPS BX****MI Series (may need tweaks since 2023)"	"USB"	"usbhid-ups lbrb_log_delay_sec=N lbrb_log_delay_without_calibrating onlinedischarge_calibration"	# https://github.com/networkupstools/nut/issues/2347
+"APC"	"ups"	"3"	"Back-UPS BVK****M2 Series (may need tweaks)"	"USB"	"usbhid-ups lbrb_log_delay_sec=N lbrb_log_delay_without_calibrating onlinedischarge_calibration"	# https://github.com/networkupstools/nut/issues/2942
 "APC"	"ups"	"3"	"SMC2200BI-BR"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/557
 "APC"	"ups"	"3"	"Smart-UPS (USB)"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Smart-UPS 750 (SMT750I, USB)"	"USB"	"usbhid-ups"
