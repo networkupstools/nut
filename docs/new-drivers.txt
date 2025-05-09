@@ -218,6 +218,10 @@ formatting string to those expectations.  In this case, you would use
 	char *fmt = "Mega-Zapper %d";
 	dstate_setinfo_dynamic("ups.model", fmt, "%d", rating);
 
+Please note that `ups.alarm` should no longer be manually set, but rather
+the appropriate alarm functions should be used instead. For more details,
+see below in the `UPS alarms` section.
+
 Setting flags
 ~~~~~~~~~~~~~
 
@@ -261,9 +265,10 @@ Possible values for status_set:
 	BOOST   -- UPS is boosting incoming voltage
 	FSD     -- Forced Shutdown (restricted use, see the note below)
 
-Internally, an `ALARM` value would be added (typically as first in the list)
-if the `ups.alarm` is currently not empty. For more details, see below in
-`alarm_set()` description.
+`ALARM` should no longer be raised through the UPS status.
+An `ALARM` value will be added internally (typically as first in the list)
+if an alarm was set and committed through the appropriate alarm functions.
+For more details, see below in the `UPS alarms` section.
 
 [NOTE]
 ======

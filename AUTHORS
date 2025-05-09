@@ -196,6 +196,12 @@ E: zakx@zakx.de
 D: Updating device support docs after unnecessarily writing a redundant
 D: driver first
 
+N: desertwitch
+E: dezertwitsh@gmail.com
+D: Primarily contributions to upsmon, PR discussions, as well as small-scale
+D: QOL improvements throughout both UPS driver code and other project parts.
+P: 4096R/06FD918F FDE5 DBCF 1792 4276 532B FBCA DDA4 D1A9 06FD 918F
+
 N: Marco Trevisan (Treviño)
 E: mail@3v1n0.net
 W: https://3v1n0.net
