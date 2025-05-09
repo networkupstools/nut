@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.21"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -775,6 +775,10 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		if (!pconf_file_begin(ctx, fn))
 			fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
 				fn, ctx->errmsg);
+
+		/* we need this for parsing alarm instructions later */
+		status_init(); /* in case no ups.status does it */
+		alarm_init(); /* reset alarms at start of parsing */
 	}
 
 	/* Reset the next call time, so that we can loop back on the file
@@ -795,7 +799,7 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		if (ctx->numargs < 1)
 			continue;
 
-		/* Process actions (only "TIMER" ATM) */
+		/* TIMER instruction */
 		if (!strncmp(ctx->arglist[0], "TIMER", 5))
 		{
 			/* TIMER <seconds> will wait "seconds" before
@@ -803,8 +807,35 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 			int delay = atoi (ctx->arglist[1]);
 			time(&next_update);
 			next_update += delay;
+			upsdebugx(3, "parse_data_file: TIMER instruction with value \"%i\"", delay);
 			upsdebugx(1, "suspending execution for %i seconds...", delay);
 			break;
+		}
+
+		/* ALARM instruction */
+		if (!strncmp(ctx->arglist[0], "ALARM", 5))
+		{
+			if (ctx->numargs > 1) {
+				for (counter = 1, value_args = ctx->numargs ;
+					counter < value_args ; counter++)
+				{
+					if (counter == 1) /* don't append the first space separator */
+						snprintf(var_value, sizeof(var_value), "%s", ctx->arglist[counter]);
+					else
+						snprintfcat(var_value, sizeof(var_value), " %s", ctx->arglist[counter]);
+				}
+				if (*var_value != '\0') {
+					alarm_set(var_value);
+					upsdebugx(3, "parse_data_file: ALARM instruction with value \"%s\"", var_value);
+
+					continue;
+				}
+			}
+
+			alarm_init();
+			upsdebugx(3, "parse_data_file: ALARM instruction with no value (reset alarms)");
+
+			continue;
 		}
 
 		/* Remove ":" suffix, after the variable name */
@@ -856,6 +887,9 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 			}
 		}
 	}
+
+	alarm_commit(); /* needs to happen first */
+	status_commit(); /* re-commit status for ALARM */
 
 	/* Cleanup parseconf if there is no pending action */
 	if (next_update == -1)
