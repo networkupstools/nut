@@ -420,12 +420,12 @@ of Python does not matter and the un-versioned `PYTHON` value is substituted
 into files as the script shebang, used to find the `site-packages` location,
 etc.
 
-One exception is generation of NUT-Monitor GUI application which has been
-separated for `NUT-Monitor-py2gtk2` and `NUT-Monitor-py3qt5` due to further
-backend platform technical differences -- these build products specifically
-use `PYTHON2` and `PYTHON3` substitutions. They may be co-installed on the
-same system. A dispatcher shell script `NUT-Monitor` is used to launch the
-preferred (newest) or the only existing implementation.
+One exception is generation of NUT-Monitor GUI application, being separated
+for `NUT-Monitor-py2gtk2`, `NUT-Monitor-py3qt5`, `NUT-Monitor-py3qt6` due
+to further backend platform technical differences -- these build products 
+specifically use `PYTHON2` and `PYTHON3` substitutions. They may also be
+co-installed on the same system. A dispatcher shell script `NUT-Monitor`
+is used to launch the preferred (newest) or only existing implementation.
 
 Please note that by default NUT tries to make use of everything in your
 build environment, so if both Python generation are detected -- the binding

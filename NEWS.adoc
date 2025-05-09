@@ -78,12 +78,18 @@ https://github.com/networkupstools/nut/milestone/9
      descriptors was extended to cover a newly reported case of nominal UPS
      power being incorrectly reported due to an unrealistically low maximum
      threshold, as seen with a EC850LCD device. [issue #2917, PR #2919]
+   * Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
+     necessary to address spurious LOWBATT and REPLACEBATT events. [#2942]
 
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
      monitoring. Most specific reported values are in an `experimental.*`
      namespace, as a community we need to come up with standard naming for
      those via `docs/nut-names.txt`. [#440]
+
+ - NUT Monitor GUI:
+   * Ported Python 3 version to Qt6, now shipped alongside Qt5 for systems
+     with either or both, maximizing compatibility with old and new setups.
 
  - Introduced handling (possibly rewriting) for man page section "Overviews,
    conventions, and miscellaneous" (commonly number 7), to deliver support

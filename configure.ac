@@ -3014,11 +3014,12 @@ dnl Python interpreter versions to care about below, so we only test for
 dnl their existence once (in NUT_CHECK*PYTHON* m4 macros).
 
 dnl ${nut_with_nut_monitor}: TODO: arg values to request Python 2 gtk2,
-dnl Python 3 qt5, or both
+dnl Python 3 Qt5, Python 3 Qt6 or all
 AC_MSG_CHECKING([if we want install NUT-Monitor desktop application])
 AC_MSG_RESULT([${nut_with_nut_monitor}])
 nut_with_nut_monitor_py2gtk2=""
 nut_with_nut_monitor_py3qt5=""
+nut_with_nut_monitor_py3qt6=""
 nut_with_nut_monitor_desktop=""
 dnl TODO: Add a way to define this path? will have app/ maybe module/ inside...
 nut_with_nut_monitor_dir="${datarootdir}/nut-monitor"
@@ -3050,7 +3051,8 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     dnl HACK NOTE: Here we redirect outputs to "&5" which is autoconf stream
     dnl for "config.log" details since... forever? Still, hardcoded numbers...
     PYTHON2_TEST_MODULES="re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser"
-    PYTHON3_TEST_MODULES="re,glob,codecs,PyQt5.uic,configparser"
+    PYTHON3_TEST_MODULES_QT5="re,glob,codecs,PyQt5.uic,configparser"
+    PYTHON3_TEST_MODULES_QT6="re,glob,codecs,PyQt6.uic,configparser"
     if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
         AC_MSG_CHECKING([if we have Python2 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
@@ -3106,38 +3108,68 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     fi
 
     if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
-        AC_MSG_CHECKING([if we have Python3 prerequisites for NUT-Monitor desktop application])
-        if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
+        AC_MSG_CHECKING([if we have Python3 Qt5 prerequisites for NUT-Monitor desktop application])
+        if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES_QT5}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
             AC_MSG_RESULT([yes])
         else
             AC_MSG_RESULT([no])
             if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
-                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 Qt5 modules: '${PYTHON3_TEST_MODULES_QT5}'"
             else
-                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 Qt5 modules: '${PYTHON3_TEST_MODULES_QT5}'"
+            fi
+        fi
+    fi
+
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we have Python3 Qt6 prerequisites for NUT-Monitor desktop application])
+        if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES_QT6}" 1>&5 2>&5 \
+        ; then
+            nut_with_nut_monitor_py3qt6="yes"
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_RESULT([no])
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 Qt6 modules: '${PYTHON3_TEST_MODULES_QT6}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 Qt6 modules: '${PYTHON3_TEST_MODULES_QT6}'"
             fi
         fi
     fi
 
     dnl Fall back to default interpreter
-    if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" \
+    if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}${nut_with_nut_monitor_py3qt6}" \
     && test -n "${PYTHON_VERSION_INFO_REPORT}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
     ; then
-        AC_MSG_CHECKING([if we have Python3 prerequisites for NUT-Monitor desktop application in default Python])
-        if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
+        AC_MSG_CHECKING([if we have Python3 Qt5 prerequisites for NUT-Monitor desktop application in default Python])
+        if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES_QT5}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
             AC_MSG_RESULT([yes])
         else
             AC_MSG_RESULT([no])
             if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
-                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules in default Python: '${PYTHON3_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 Qt5 modules in default Python: '${PYTHON3_TEST_MODULES_QT5}'"
             else
-                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules in default Python: '${PYTHON3_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 Qt5 modules in default Python: '${PYTHON3_TEST_MODULES_QT5}'"
+            fi
+        fi
+
+        AC_MSG_CHECKING([if we have Python3 Qt6 prerequisites for NUT-Monitor desktop application in default Python])
+        if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES_QT6}" 1>&5 2>&5 \
+        ; then
+            nut_with_nut_monitor_py3qt6="yes"
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_RESULT([no])
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 Qt6 modules in default Python: '${PYTHON3_TEST_MODULES_QT6}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 Qt6 modules in default Python: '${PYTHON3_TEST_MODULES_QT6}'"
             fi
         fi
 
@@ -3200,9 +3232,10 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor-3: ${nut_with_nut_monitor}])
         AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor_py2gtk2: ${nut_with_nut_monitor_py2gtk2}])
         AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor_py3qt5: ${nut_with_nut_monitor_py3qt5}])
+        AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor_py3qt6: ${nut_with_nut_monitor_py3qt6}])
     ])
     dnl Can we satisfy any NUT-Monitor installation request?
-    if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" ; then
+    if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}${nut_with_nut_monitor_py3qt6}" ; then
         case "${nut_with_nut_monitor}" in
             "auto") nut_with_nut_monitor="yes" ;;
         esac
@@ -3341,6 +3374,7 @@ if test "${nut_with_nut_monitor}" = force ; then
     nut_with_nut_monitor=yes
     nut_with_nut_monitor_py2gtk2=yes
     nut_with_nut_monitor_py3qt5=yes
+    nut_with_nut_monitor_py3qt6=yes
 fi
 
 if test "${nut_with_pynut}" = force ; then
@@ -3359,9 +3393,12 @@ NUT_REPORT_PROGRAM([install PyNUT binding module], [${nut_with_pynut}], [],
 					[WITH_PYNUT], [Define to enable PyNUT module installation])
 
 dnl One or both of these may be installed:
-AM_CONDITIONAL(WITH_NUT_MONITOR, test "${nut_with_nut_monitor}" = "yes" && test "${nut_with_nut_monitor_py2gtk2}" = "yes" -o "${nut_with_nut_monitor_py3qt5}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR, test "${nut_with_nut_monitor}" = "yes" && test "${nut_with_nut_monitor_py2gtk2}" = "yes" -o "${nut_with_nut_monitor_py3qt5}" = "yes" -o "${nut_with_nut_monitor_py3qt6}" = "yes")
 AM_CONDITIONAL(WITH_NUT_MONITOR_PY2GTK2, test "${nut_with_nut_monitor_py2gtk2}" = "yes")
 AM_CONDITIONAL(WITH_NUT_MONITOR_PY3QT5, test "${nut_with_nut_monitor_py3qt5}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR_PY3QT6, test "${nut_with_nut_monitor_py3qt6}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR_PY3QT5_OR_QT6, test "${nut_with_nut_monitor_py3qt5}" = "yes" -o "${nut_with_nut_monitor_py3qt6}" = "yes")
+
 dnl Install PyNUT as a globally usable module, or just as app internals?
 AM_CONDITIONAL(WITH_PYNUT_PY,  test "${nut_with_pynut_py}" = "yes"  -a "${nut_with_pynut}" = yes)
 AM_CONDITIONAL(WITH_PYNUT_PY2, test "${nut_with_pynut_py2}" = "yes" -a "${nut_with_pynut}" = yes)
@@ -3371,6 +3408,7 @@ AM_CONDITIONAL(WITH_PYNUT_APP, test "${nut_with_pynut}" = "app")
 AC_SUBST([nut_with_nut_monitor_dir], [${nut_with_nut_monitor_dir}])
 AC_SUBST([nut_with_nut_monitor_py2gtk2], [${nut_with_nut_monitor_py2gtk2}])
 AC_SUBST([nut_with_nut_monitor_py3qt5], [${nut_with_nut_monitor_py3qt5}])
+AC_SUBST([nut_with_nut_monitor_py3qt6], [${nut_with_nut_monitor_py3qt6}])
 AC_SUBST([nut_with_nut_monitor_desktop], [${nut_with_nut_monitor_desktop}])
 AC_SUBST([nut_with_nut_monitor], [${nut_with_nut_monitor}])
 AC_SUBST([nut_with_pynut], [${nut_with_pynut}])
@@ -6359,6 +6397,7 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/external_apis/enphase/enphase-monitor
  scripts/python/app/NUT-Monitor-py2gtk2
  scripts/python/app/NUT-Monitor-py3qt5
+ scripts/python/app/NUT-Monitor-py3qt6
  scripts/python/module/test_nutclient.py
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
