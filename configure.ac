@@ -2437,6 +2437,7 @@ NUT_ARG_WITH([docs-man-section-api], [man page section for library APIs], [3])
 NUT_ARG_WITH([docs-man-section-cfg], [man page section for configuration files], [5])
 NUT_ARG_WITH([docs-man-section-cmd-sys], [man page section for system management commands], [8])
 NUT_ARG_WITH([docs-man-section-cmd-usr], [man page section for user commands], [1])
+NUT_ARG_WITH([docs-man-section-misc], [man page section for overviews, conventions, and miscellaneous], [7])
 
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
@@ -3867,31 +3868,37 @@ MAN_SECTION_API="${nut_with_docs_man_section_api}"
 MAN_SECTION_CFG="${nut_with_docs_man_section_cfg}"
 MAN_SECTION_CMD_SYS="${nut_with_docs_man_section_cmd_sys}"
 MAN_SECTION_CMD_USR="${nut_with_docs_man_section_cmd_usr}"
+MAN_SECTION_MISC="${nut_with_docs_man_section_misc}"
 
 MAN_SECTION_API_BASE="`echo "${MAN_SECTION_API}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 MAN_SECTION_CFG_BASE="`echo "${MAN_SECTION_CFG}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 MAN_SECTION_CMD_SYS_BASE="`echo "${MAN_SECTION_CMD_SYS}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 MAN_SECTION_CMD_USR_BASE="`echo "${MAN_SECTION_CMD_USR}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_MISC_BASE="`echo "${MAN_SECTION_MISC}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 
 AC_DEFINE_UNQUOTED([MAN_SECTION_API], ["${MAN_SECTION_API}"], [man page section for library APIs])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CFG], ["${MAN_SECTION_CFG}"], [man page section for configuration files])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS], ["${MAN_SECTION_CMD_SYS}"], [man page section for system management commands])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_USR], ["${MAN_SECTION_CMD_USR}"], [man page section for user commands])
+AC_DEFINE_UNQUOTED([MAN_SECTION_MISC], ["${MAN_SECTION_MISC}"], [man page section for overviews, conventions, and miscellaneous])
 
 AC_DEFINE_UNQUOTED([MAN_SECTION_API_BASE], ["${MAN_SECTION_API_BASE}"], [base (number only) man page section for library APIs])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CFG_BASE], ["${MAN_SECTION_CFG_BASE}"], [base (number only) man page section for configuration files])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS_BASE], ["${MAN_SECTION_CMD_SYS_BASE}"], [base (number only) man page section for system management commands])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_USR_BASE], ["${MAN_SECTION_CMD_USR_BASE}"], [base (number only) man page section for user commands])
+AC_DEFINE_UNQUOTED([MAN_SECTION_MISC_BASE], ["${MAN_SECTION_MISC_BASE}"], [base (number only) man page section for overviews, conventions, and miscellaneous])
 
 AC_SUBST(MAN_SECTION_API)
 AC_SUBST(MAN_SECTION_CFG)
 AC_SUBST(MAN_SECTION_CMD_SYS)
 AC_SUBST(MAN_SECTION_CMD_USR)
+AC_SUBST(MAN_SECTION_MISC)
 
 AC_SUBST(MAN_SECTION_API_BASE)
 AC_SUBST(MAN_SECTION_CFG_BASE)
 AC_SUBST(MAN_SECTION_CMD_SYS_BASE)
 AC_SUBST(MAN_SECTION_CMD_USR_BASE)
+AC_SUBST(MAN_SECTION_MISC_BASE)
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev

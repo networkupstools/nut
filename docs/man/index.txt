@@ -1,5 +1,7 @@
+ifdef::website[]
 NUT manual pages
 ================
+endif::website[]
 
 [[User_man]]
 User manual pages
@@ -48,6 +50,13 @@ CGI programs
 - linkman:upsset.cgi[8]
 - linkman:upsstats.cgi[8]
 
+//////////////////////////////////////////////////////////
+// While nominally asciidoc allows for sect0..sect4 layering,
+// in practice the /etc/asciidoc/docbook*.conf lack the sect4
+// or refsect4 data in many distros. For now we just avoid it
+// by not using the ++++ layer (for un-shifted leveloffset).
+//////////////////////////////////////////////////////////
+
 Platform management
 ~~~~~~~~~~~~~~~~~~~
 
@@ -56,14 +65,33 @@ Windows
 
 - linkman:nut.exe[8]
 
+//////////////////////////////////////////////////////////
+
+Linux systemd
+^^^^^^^^^^^^^
+
+TBD
+
+Solaris/illumos SMF
+^^^^^^^^^^^^^^^^^^^
+
+TBD
+
+MacOS launchd
+^^^^^^^^^^^^^
+
+TBD
+
+//////////////////////////////////////////////////////////
+
 [[Drivers]]
-Driver control:
-~~~~~~~~~~~~~~~
+Driver control
+~~~~~~~~~~~~~~
 
 include::{builddir}linkman-drivertool-names.txt[]
 
-Drivers:
-~~~~~~~~
+Drivers
+~~~~~~~
 
 - linkman:nutupsdrv[8]
 include::{builddir}linkman-driver-names.txt[]

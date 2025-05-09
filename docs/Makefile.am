@@ -42,6 +42,7 @@ MAN_SECTION_API_BASE=@MAN_SECTION_API_BASE@
 MAN_SECTION_CFG_BASE=@MAN_SECTION_CFG_BASE@
 MAN_SECTION_CMD_SYS_BASE=@MAN_SECTION_CMD_SYS_BASE@
 MAN_SECTION_CMD_USR_BASE=@MAN_SECTION_CMD_USR_BASE@
+MAN_SECTION_MISC_BASE=@MAN_SECTION_MISC_BASE@
 # Other rewritable properties:
 NUT_WEBSITE_BASE=@NUT_WEBSITE_BASE@
 PACKAGE_VERSION=@PACKAGE_VERSION@
@@ -609,6 +610,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --attribute=MAN_SECTION_CFG_BASE='$(MAN_SECTION_CFG_BASE)' \
     --attribute=MAN_SECTION_CMD_SYS_BASE='$(MAN_SECTION_CMD_SYS_BASE)' \
     --attribute=MAN_SECTION_CMD_USR_BASE='$(MAN_SECTION_CMD_USR_BASE)' \
+    --attribute=MAN_SECTION_MISC_BASE='$(MAN_SECTION_MISC_BASE)' \
     --attribute=NUT_WEBSITE_BASE='$(NUT_WEBSITE_BASE)' \
     -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
@@ -1115,7 +1117,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	@cd "$(@D)" || exit ; \
 	 linkroot="$(abs_builddir)" ; \
 	 MAN_SECTIONS_DEFAULT=false ; \
-	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)" = x3581 ] ; then \
+	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)$(MAN_SECTION_MISC)" = x35817 ] ; then \
 	    MAN_SECTIONS_DEFAULT=true ; \
 	 fi ; \
 	 if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
@@ -1137,7 +1139,8 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
-	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' ; \
+	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
 	        fi < "$${F}" > "$${F}-prepped" || exit ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
@@ -1193,7 +1196,8 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
-	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' ; \
+	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
 	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
 	        || { rm -f "$@.working" ; exit 1 ; } ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
