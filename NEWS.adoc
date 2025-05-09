@@ -81,7 +81,6 @@ https://github.com/networkupstools/nut/milestone/9
    * Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
      necessary to address spurious LOWBATT and REPLACEBATT events. [#2942]
 
-
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
      monitoring. Most specific reported values are in an `experimental.*`
