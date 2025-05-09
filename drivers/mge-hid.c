@@ -2043,10 +2043,9 @@ static hid_info_t mge_hid2nut[] =
 	/* ECO(HE), ESS Mode switch, to use when 'input.bypass.switch.on' is on */
 	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_eco_mode_on_off_info },
 
-	/* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on before */
-	{ "experimental.ecomode.start.auto", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_eco_mode_auto_on_off_info },
-	/* Command to switch from ECO(HE) Mode with switch from Automatic Bypass Mode on before */
-	{ "experimental.ecomode.stop.auto", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_eco_mode_auto_on_off_info },
+	/* Needs to be Tested */
+	/* Command to switch ECO(HE) Mode on/off with switch to Automatic Bypass Mode on/off before */
+	{ "experimental.ecomode.auto", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_eco_mode_auto_on_off_info },
 
 	/* Auto Bypass Mode on/off, to use when 'input.transfer.bypass.forced' is enabled */
 	{ "input.bypass.switch.on", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_on_info },
