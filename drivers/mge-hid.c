@@ -1213,8 +1213,8 @@ static const char *eaton_input_eco_mode_auto_off_fun(double value)
 
 /* High Efficiency (aka ECO) mode for auto start/stop commands */
 static info_lkp_t eaton_input_eco_mode_auto_on_off_info[] = {
-	{ 1, "dummy", eaton_input_eco_mode_auto_on_fun, NULL },
 	{ 0, "dummy", eaton_input_eco_mode_auto_off_fun, NULL },
+	{ 1, "dummy", eaton_input_eco_mode_auto_on_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
