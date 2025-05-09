@@ -309,6 +309,7 @@ endif !HAVE_WINDOWS
 MAN_CLIENT_PAGES_ADDON_NUT_MONITOR = \
 	NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS) \
 	NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS) \
+	NUT-Monitor-py3qt6.$(MAN_SECTION_CMD_SYS) \
 	NUT-Monitor.$(MAN_SECTION_CMD_SYS)
 
 # Alias page for one text describing two commands:
@@ -316,6 +317,9 @@ NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
 	touch $@
 
 NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+	touch $@
+
+NUT-Monitor-py3qt6.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
 	touch $@
 
 if WITH_NUT_MONITOR
@@ -358,12 +362,16 @@ INST_HTML_CLIENT_MANS += NUT-Monitor.html
 # Anyway it would be the same man-like page for several functions
 INST_HTML_CLIENT_MANS_FICTION = \
 	NUT-Monitor-py2gtk2.html \
-	NUT-Monitor-py3qt5.html
+	NUT-Monitor-py3qt5.html \
+	NUT-Monitor-py3qt6.html
 
 NUT-Monitor-py2gtk2.html: NUT-Monitor.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 NUT-Monitor-py3qt5.html: NUT-Monitor.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+NUT-Monitor-py3qt6.html: NUT-Monitor.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 else !WITH_NUT_MONITOR

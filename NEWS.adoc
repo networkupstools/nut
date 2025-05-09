@@ -87,6 +87,9 @@ https://github.com/networkupstools/nut/milestone/9
      namespace, as a community we need to come up with standard naming for
      those via `docs/nut-names.txt`. [#440]
 
+ - NUT Monitor:
+   * Ported Python 3 version to Qt6, now shipped alongside Qt5 for systems
+     with either or both, maximizing compatibility with old and new setups.
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------
