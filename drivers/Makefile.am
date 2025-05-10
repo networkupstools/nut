@@ -66,7 +66,7 @@ NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
- mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino	\
+ mge-utalk microdowell microsol-apc mge-shut nutdrv_hashx oneac optiups powercom rhino	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser ve-direct
 if HAVE_LINUX_SERIAL_H
@@ -180,6 +180,8 @@ microsol_apc_SOURCES = microsol-apc.c microsol-common.c
 microsol_apc_LDADD = $(LDADD) -lm
 nhs_ser_SOURCES = nhs_ser.c
 nhs_ser_LDADD = $(LDADD) -lm
+nutdrv_hashx_SOURCES = nutdrv_hashx.c
+nutdrv_hashx_LDADD = $(LDADD) -lm
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
@@ -391,6 +393,7 @@ nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif WITH_USB
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
  nutdrv_qx_innovart31.c	\
+ nutdrv_qx_innovart33.c	\
  nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
  nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c nutdrv_qx_voltronic.c	\
@@ -416,7 +419,7 @@ dist_noinst_HEADERS = \
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
- nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
+ nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_innovart33.h nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  upsdrvquery.h \

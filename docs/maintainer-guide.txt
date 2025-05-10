@@ -304,7 +304,26 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
    instructions fit the reality (needed maintainer keys are published, etc.)
 
 * draft and publish a GitHub release based on the signed tag
-** attach the same copy of tarball, checksum and hash files as for nut-website
+** attach *the same copy of* the tarball, checksum and hash files as published
+   on nut-website (prepared by `make dist-files` above)
+** when https://ci.appveyor.com/project/nut-travis/nut is done building the
+   release commit (takes about an hour, more if the build queue is congested),
+   download and rename the 7z archive, e.g.:
++
+----
+:; mv NUT-for-Windows-x86_64-SNAPSHOT-2.8.3.3028-master.7z \
+      NUT-for-Windows-x86_64-RELEASE-2.8.3.7z
+----
++
+and attach it to the GitHub release artifacts, and to nut-website via
+   the https://github.com/networkupstools/nut-package-archive.git repository
+   (its `index.html` will get updated as part of subsequent nut-website build,
+   a templated reference from NUT Downloads page is already in place).
++
+FIXME: get our AppVeyor recipe to name the release archive as such, the scripts
+should already know everything needed for this.  Explore git-tag based builds?
++
+FIXME: eventually get real installer files made, publish them then.
 
 * Make sure that the PyNUT module for the tagged release got published to
   the main PyPI repository, as a build associated with the NUT release

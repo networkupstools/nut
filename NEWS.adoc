@@ -73,17 +73,38 @@ https://github.com/networkupstools/nut/milestone/9
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
 
+ - `nutdrv_qx` driver updates:
+   * Introduced `innovart33` protocol support for Ippon Innova RT 3/3 topology
+     UPSes. [#2938]
+
  - `usbhid-ups` driver updates:
    * The `cps-hid` subdriver's existing mechanism for fixing broken report
      descriptors was extended to cover a newly reported case of nominal UPS
      power being incorrectly reported due to an unrealistically low maximum
      threshold, as seen with a EC850LCD device. [issue #2917, PR #2919]
+   * Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
+     necessary to address spurious LOWBATT and REPLACEBATT events. [#2942]
 
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
      monitoring. Most specific reported values are in an `experimental.*`
      namespace, as a community we need to come up with standard naming for
      those via `docs/nut-names.txt`. [#440]
+   * Introduced a `nutdrv_hashx` driver for numerous devices from Ablerex,
+     Atlantis Land, Epyc, Infosec, ION, PowerWalker, Right Power Technology,
+     Salicru, UPS Solutions and other vendors (originally shipped with a
+     "PowerMaster+", "PowerMaster" or "PowerGuide" software companion suite).
+     This seems to be a protocol developed by Cyber Energy for serial-port
+     devices, subsequently used by different vendors in their own products
+     or re-branded Cyber Energy creations. [#2940]
+
+ - NUT Monitor GUI:
+   * Ported Python 3 version to Qt6, now shipped alongside Qt5 for systems
+     with either or both, maximizing compatibility with old and new setups.
+
+ - Introduced handling (possibly rewriting) for man page section "Overviews,
+   conventions, and miscellaneous" (commonly number 7), to deliver support
+   for `man nut` queries (NUT overview manual page also created). [#2945]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
@@ -307,7 +328,8 @@ This requirement compromises usability of `make distcheck` on platforms without
    * Added Visench C1K (using serial port converter with USB ID `1a86:7523`)
      as known supported by `nutdrv_qx` (Megatec protocol) since at least
      NUT v2.7.4 release. [#2395]
-   * Introduced `innovart31` protocol support for Innova RT 3/1 UPSes. [#2712, #2798]
+   * Introduced `innovart31` protocol support for Ippon Innova RT 3/1 topology
+     UPSes. [#2712, #2798]
    * Introduced `q2` and `q6` protocol support; currently also based/tested
      on Innova devices, but other models than RT 3/1. [#2798]
    * Introduced a `gtec` subdriver and protocol, tested over USB with a
