@@ -85,10 +85,11 @@ int main(int argc, char **argv) {
 	status_set("OL BOOST");
 	status_set("OB ");
 	status_set(" BOOST");
+	status_set(" LB");	/* Initial ignorelb==0 so this should get set */
 	status_commit();
 
 	valueStr = dstate_getinfo("ups.status");
-	report_0_means_pass(strcmp(valueStr, "OL BOOST OB"));
+	report_0_means_pass(strcmp(valueStr, "OL BOOST OB LB"));
 	printf(" test for ups.status: '%s'; got no duplicates?\n", NUT_STRARG(valueStr));
 
 	/* Test case #2 (built on top of #1)
@@ -104,7 +105,7 @@ int main(int argc, char **argv) {
 	status_commit(); /* to register ALARM status */
 
 	valueStr = dstate_getinfo("ups.status");
-	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB LB"));
 	printf(" test for ups.status: '%s'; got alarm, no duplicates?\n", NUT_STRARG(valueStr));
 
 	/* Test case #3 (built on top of #2)
@@ -255,7 +256,7 @@ int main(int argc, char **argv) {
 	status_init();
 	status_set("OL BOOST");
 	status_set("OB");
-	status_set("LB");	/* Should be honoured */
+	status_set("LB");	/* ignorelb should be honoured */
 	status_commit();
 
 	valueStr = dstate_getinfo("ups.status");
@@ -326,6 +327,45 @@ int main(int argc, char **argv) {
 	valueStr = dstate_getinfo("ups.status");
 	report_0_means_pass(strcmp(valueStr, "\0"));
 	printf(" test for ups.status with alarm_ set, status_commit() before alarm_commit(): '%s'; got empty, no whitespace?\n", NUT_STRARG(valueStr));
+
+	/* Test cases #17+#18+#19+#20 (from scratch, checking data step by step)
+	 * Set and commit a status, then add and commit some more (without
+	 * a re-init). The resulting ups.status should contain all set tokens.
+	 */
+	/* NOTE: This is a flag, either present with any value (true) or absent */
+	dstate_delinfo("driver.flag.ignorelb");
+
+	alarm_init();
+	alarm_commit();
+	status_init();
+	status_set("OB");
+	status_set("LB");	/* LB should be honoured when we do not ignorelb */
+
+	/* #17 */
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "\0"));
+	printf(" test for ups.status after status_set() and before status_commit(): '%s'; got empty, no whitespace?\n", NUT_STRARG(valueStr));
+
+	status_commit();
+
+	/* #18 */
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "OB LB"));
+	printf(" test for ups.status with just OB and LB set via status_set() and committed: '%s'; got OB LB?\n", NUT_STRARG(valueStr));
+
+	status_set("FSD");
+
+	/* #19 */
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "OB LB"));
+	printf(" test for ups.status with next token set via status_set() but not yet committed: '%s'; got OB LB, no FSD?\n", NUT_STRARG(valueStr));
+
+	status_commit();
+
+	/* #20 */
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "OB LB FSD"));
+	printf(" test for ups.status with FSD token set and now committed: '%s'; got OB LB FSD?\n", NUT_STRARG(valueStr));
 
 	/* Clear testing state before finishing. */
 	alarm_init();

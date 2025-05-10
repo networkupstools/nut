@@ -1768,9 +1768,8 @@ int dstate_is_stale(void)
 /* clean out the temp space for a new pass */
 void status_init(void)
 {
-	if (dstate_getinfo("driver.flag.ignorelb")) {
-		ignorelb = 1;
-	}
+	/* This does not normally change in driver run-time, but can in tests */
+	ignorelb = (dstate_getinfo("driver.flag.ignorelb") ? 1 : 0);
 
 	memset(status_buf, 0, sizeof(status_buf));
 	alarm_status = 0;
