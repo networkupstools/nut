@@ -76,10 +76,10 @@ https://github.com/networkupstools/nut/milestone/9
  - common driver code:
    * Removed workarounds trying to migrate legacy driver raised `ALARM`
      status tokens into modern `alarm_*` function logic. Rather, we keep
-	   supporting them as separate from the modern logic, seeing as `upsmon`
-	   does not care where the token itself was raised for its notifications.
-	   Driver-code related test-cases were updated to reflect these changes.
-	   [issue #2928, PRs #2931 and #2934]
+     supporting them as separate from the modern logic, seeing as `upsmon`
+     does not care where the token itself was raised for its notifications.
+     Driver-code related test-cases were updated to reflect these changes.
+     [issue #2928, PRs #2931 and #2934]
 
  - `nutdrv_qx` driver updates:
    * Introduced `innovart33` protocol support for Ippon Innova RT 3/3 topology

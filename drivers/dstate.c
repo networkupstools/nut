@@ -5,6 +5,7 @@
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
 	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2025		desertwitch <dezertwitsh@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1801,14 +1802,17 @@ static int status_set_callback(char *tgt, size_t tgtsize, const char *token)
 		 * to support it. The upsmon notifiers do not care where
 		 * alarm tokens get set and legacy drivers may still use
 		 * this older method. The only real limitations are that
-		 * the alarm state is very tightly coupled to the UPS status
-		 * and ups.alarm variables do not get published in a controlled
-		 * manner. Rather, these are very dependent on the (legacy) driver,
-		 * and alarm notifications will show placeholder "n/a" if all are missing.
-		 * The status token is ignored to prepend it to other tokens later, within
-		 * the status_commit() function. For more information, see this discussion:
+		 * the alarm state is very tightly coupled to the UPS
+		 * status, and the ups.alarm variables do not get published
+		 * in a controlled manner. Rather, these are very dependent
+		 * on the (legacy) driver, and alarm notifications via upsmon
+		 * will show placeholder "n/a" if all values are missing.
+		 * The status token is ignored to prepend it to other tokens
+		 * later, within the status_commit() function.
+		 * For more information, see this discussion:
 		 * https://github.com/networkupstools/nut/pull/2931#issuecomment-2841705269
 		 */
+		upsdebugx(6, "%s: caller set ALARM as a status, this is deprecated - please fix the NUT driver code", __func__);
 		alarm_legacy_status = 1;
 		return 0; /* ignore it */
 	}

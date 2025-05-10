@@ -1,8 +1,8 @@
 /*  driver_methods_utest.c - NUT driver code test tool
  *
  *  Copyright (C)
- *	2025       	Jim Klimov <jimklimov+nut@gmail.com>
- *  2025        desertwitch <dezertwitsh@gmail.com>
+ *	2025		Jim Klimov <jimklimov+nut@gmail.com>
+ *	2025		desertwitch <dezertwitsh@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@
 #include "nut_stdint.h"
 
 /* driver version */
-#define DRIVER_NAME     "Mock driver for unit tests"
-#define DRIVER_VERSION  "0.02"
+#define DRIVER_NAME	"Mock driver for unit tests"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
