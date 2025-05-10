@@ -1156,13 +1156,11 @@ static const char *eaton_input_eco_mode_auto_on_fun(double value)
 {
 	const char *bypass_switch_on_str = NULL;
 	const char *eco_switchable_str = NULL;
-	const char *bypass_result = NULL;
-	const char *ecomode_result = NULL;
 
 	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
 	bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
 	if (!strcmp(bypass_switch_on_str, "disabled")) {
-		bypass_result = eaton_input_bypass_check_range(value);
+		bypass_switch_on_str = eaton_input_bypass_check_range(value);
 	} else {
 		upsdebugx(1, "Bypass switch on state is: %s , must be disabled before switching on", bypass_switch_on_str);
 		return NULL;
@@ -1171,14 +1169,14 @@ static const char *eaton_input_eco_mode_auto_on_fun(double value)
 	/* Check if input.eco.switchable is normal and set it to 'ECO' */
 	eco_switchable_str = dstate_getinfo("input.eco.switchable");
 	if (!strcmp(eco_switchable_str, "normal")) {
-		ecomode_result = eaton_input_eco_mode_check_range(value);
+		eco_switchable_str = eaton_input_eco_mode_check_range(value);
 	} else {
 		upsdebugx(1, "ECO switch state is: %s , must be normal before switching to ECO", eco_switchable_str);
 		return NULL;
 	}
 
 	upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
-	return ecomode_result;
+	return eco_switchable_str;
 }
 
 /* Function to stop ECO(HE) Mode automatically instead of manually stoping Bypass and then Online Mode */
@@ -1186,8 +1184,6 @@ static const char *eaton_input_eco_mode_auto_off_fun(double value)
 {
 	const char *bypass_switch_off_str = NULL;
 	const char *eco_switchable_str = NULL;
-	const char *bypass_result = NULL;
-	const char *ecomode_result = NULL;
 
 	NUT_UNUSED_VARIABLE(value);
 
@@ -1204,6 +1200,7 @@ static const char *eaton_input_eco_mode_auto_off_fun(double value)
 	eco_switchable_str = dstate_getinfo("input.eco.switchable");
 	if (!strcmp(eco_switchable_str, "ECO")) {
 		setvar("input.eco.switchable", "normal");
+		buzzmode_set("vendor:mge-hid:normal");
 	} else {
 		upsdebugx(1, "ECO switch state is: %s , must be ECO before switching to normal", eco_switchable_str);
 		return NULL;
