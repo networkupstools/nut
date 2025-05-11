@@ -363,7 +363,7 @@ Additional flags with regard to documentation generation include:
 
 	--with-docs-man-section-api=<SN>	(default: 3)
 	--with-docs-man-section-cfg=<SN>	(default: 5)
-	--with-docs-man-section-cmd-sys=<SN>	(default: 8)
+	--with-docs-man-section-cmd-sys=<SN>	(default: 8, or 1m on Solaris/illumos)
 	--with-docs-man-section-cmd-usr=<SN>	(default: 1)
 	--with-docs-man-section-misc=<SN>	(default: 7)
 

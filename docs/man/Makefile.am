@@ -61,6 +61,8 @@ PACKAGE_VERSION=@PACKAGE_VERSION@
 TREE_VERSION=@TREE_VERSION@
 
 # Groups and locations for man pages
+# NOTE: distros vary about how man page dirs are named
+# (base number only, or full e.g. "man1m" in Solaris)
 manapidir = $(mandir)/man$(MAN_SECTION_API_BASE)
 manapi_DATA =
 

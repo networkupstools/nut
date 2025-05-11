@@ -2438,12 +2438,36 @@ dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
+dnl Different OS distributions have different layouts of man page section
+dnl numbers. The one we treat as default seems to be most wide-spread, in
+dnl Linux and FreeBSD. For others, there are other defaults (see `man man`
+dnl on your platform to port defaults here), and builders can override with
+dnl options further below.
+DEFAULT_MAN_SECTION_API="3"
+DEFAULT_MAN_SECTION_CFG="5"
+DEFAULT_MAN_SECTION_CMD_SYS="8"
+DEFAULT_MAN_SECTION_CMD_USR="1"
+DEFAULT_MAN_SECTION_MISC="7"
+
+case "${target_os}" in
+    solaris*|sunos*|SunOS*|illumos*)
+        DEFAULT_MAN_SECTION_CMD_SYS="1m"
+        ;;
+esac
+
+dnl Report the defaults we would use in args
+AC_MSG_NOTICE([Platform ${target_os} default man page section for library APIs: '${DEFAULT_MAN_SECTION_API}'])
+AC_MSG_NOTICE([Platform ${target_os} default man page section for configuration files: '${DEFAULT_MAN_SECTION_CFG}'])
+AC_MSG_NOTICE([Platform ${target_os} default man page section for system management commands: '${DEFAULT_MAN_SECTION_CMD_SYS}'])
+AC_MSG_NOTICE([Platform ${target_os} default man page section for user commands: '${DEFAULT_MAN_SECTION_CMD_USR}'])
+AC_MSG_NOTICE([Platform ${target_os} default man page section for overviews, conventions, and miscellaneous: '${DEFAULT_MAN_SECTION_MISC}'])
+
 dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
-NUT_ARG_WITH([docs-man-section-api], [man page section for library APIs], [3])
-NUT_ARG_WITH([docs-man-section-cfg], [man page section for configuration files], [5])
-NUT_ARG_WITH([docs-man-section-cmd-sys], [man page section for system management commands], [8])
-NUT_ARG_WITH([docs-man-section-cmd-usr], [man page section for user commands], [1])
-NUT_ARG_WITH([docs-man-section-misc], [man page section for overviews, conventions, and miscellaneous], [7])
+NUT_ARG_WITH([docs-man-section-api], [man page section for library APIs], [${DEFAULT_MAN_SECTION_API}])
+NUT_ARG_WITH([docs-man-section-cfg], [man page section for configuration files], [${DEFAULT_MAN_SECTION_CFG}])
+NUT_ARG_WITH([docs-man-section-cmd-sys], [man page section for system management commands], [${DEFAULT_MAN_SECTION_CMD_SYS}])
+NUT_ARG_WITH([docs-man-section-cmd-usr], [man page section for user commands], [${DEFAULT_MAN_SECTION_CMD_USR}])
+NUT_ARG_WITH([docs-man-section-misc], [man page section for overviews, conventions, and miscellaneous], [${DEFAULT_MAN_SECTION_MISC}])
 
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
@@ -3882,12 +3906,14 @@ MAN_SECTION_CMD_SYS_BASE="`echo "${MAN_SECTION_CMD_SYS}" | sed 's/^\(@<:@0-9@:>@
 MAN_SECTION_CMD_USR_BASE="`echo "${MAN_SECTION_CMD_USR}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 MAN_SECTION_MISC_BASE="`echo "${MAN_SECTION_MISC}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 
+dnl Full man page section IDs (e.g. '1m', '8')
 AC_DEFINE_UNQUOTED([MAN_SECTION_API], ["${MAN_SECTION_API}"], [man page section for library APIs])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CFG], ["${MAN_SECTION_CFG}"], [man page section for configuration files])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS], ["${MAN_SECTION_CMD_SYS}"], [man page section for system management commands])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_USR], ["${MAN_SECTION_CMD_USR}"], [man page section for user commands])
 AC_DEFINE_UNQUOTED([MAN_SECTION_MISC], ["${MAN_SECTION_MISC}"], [man page section for overviews, conventions, and miscellaneous])
 
+dnl Base (number only) man page section IDs (e.g. '1', '8')
 AC_DEFINE_UNQUOTED([MAN_SECTION_API_BASE], ["${MAN_SECTION_API_BASE}"], [base (number only) man page section for library APIs])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CFG_BASE], ["${MAN_SECTION_CFG_BASE}"], [base (number only) man page section for configuration files])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS_BASE], ["${MAN_SECTION_CMD_SYS_BASE}"], [base (number only) man page section for system management commands])
