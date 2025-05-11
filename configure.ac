@@ -1415,7 +1415,13 @@ AC_CACHE_CHECK([for strdup(s)],
             [[int res = 0;
 char *t = "Test";
 char *s = strdup(t);
-if (!s || !(s[0]=='T'&&s[1]=='e'&&s[2]=='s'&&s[3]=='t'&&s[4]=='\0') || s == t) res = 1;
+if (!s || !(
+        s[0]=='T' &&
+        s[1]=='e' &&
+        s[2]=='s' &&
+        s[3]=='t' &&
+        s[4]=='\0'
+    ) || s == t) res = 1;
 if (s) free (s);
 if (res != 0) return res
 /* autoconf adds ";return 0;" */
