@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3480 utf-8
+personal_ws-1.1 en 3493 utf-8
 AAC
 AAS
 ABI
@@ -232,9 +232,11 @@ CygWin
 Cygwin
 DATACABLE
 DATAPATH
+DBCF
 DCE
 DCF
 DCO
+DDA
 DDD
 DDDDD
 DDDDDD
@@ -369,7 +371,9 @@ Exar
 ExecCGI
 ExecStart
 ExecStartPre
+FBCA
 FD
+FDE
 FEMEA
 FFF
 FH
@@ -1029,6 +1033,7 @@ QLDL
 QMD
 QMF
 QMOD
+QOL
 QP
 QPAR
 QPD
@@ -1893,6 +1898,7 @@ desc
 deschis
 descr
 desde
+desertwitch
 designator
 dev
 devclient
