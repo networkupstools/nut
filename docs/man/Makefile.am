@@ -63,19 +63,28 @@ TREE_VERSION=@TREE_VERSION@
 # Groups and locations for man pages
 # NOTE: distros vary about how man page dirs are named
 # (base number only, or full e.g. "man1m" in Solaris)
+if MAN_DIR_AS_BASE
+
 manapidir = $(mandir)/man$(MAN_SECTION_API_BASE)
-manapi_DATA =
-
 mancfgdir = $(mandir)/man$(MAN_SECTION_CFG_BASE)
-mancfg_DATA =
-
 mansysdir = $(mandir)/man$(MAN_SECTION_CMD_SYS_BASE)
-mansys_DATA =
-
 manusrdir = $(mandir)/man$(MAN_SECTION_CMD_USR_BASE)
-manusr_DATA =
-
 manmiscdir = $(mandir)/man$(MAN_SECTION_MISC_BASE)
+
+else !MAN_DIR_AS_BASE
+
+manapidir = $(mandir)/man$(MAN_SECTION_API)
+mancfgdir = $(mandir)/man$(MAN_SECTION_CFG)
+mansysdir = $(mandir)/man$(MAN_SECTION_CMD_SYS)
+manusrdir = $(mandir)/man$(MAN_SECTION_CMD_USR)
+manmiscdir = $(mandir)/man$(MAN_SECTION_MISC)
+
+endif !MAN_DIR_AS_BASE
+
+manapi_DATA =
+mancfg_DATA =
+mansys_DATA =
+manusr_DATA =
 manmisc_DATA =
 
 ALL_TGT =

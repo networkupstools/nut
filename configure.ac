@@ -2449,9 +2449,13 @@ DEFAULT_MAN_SECTION_CMD_SYS="8"
 DEFAULT_MAN_SECTION_CMD_USR="1"
 DEFAULT_MAN_SECTION_MISC="7"
 
+dnl Should we use "man1" or "man1m"?
+DEFAULT_MAN_DIR_AS_BASE="yes"
+
 case "${target_os}" in
     solaris*|sunos*|SunOS*|illumos*)
         DEFAULT_MAN_SECTION_CMD_SYS="1m"
+        DEFAULT_MAN_DIR_AS_BASE="no"
         ;;
 esac
 
@@ -2468,6 +2472,8 @@ NUT_ARG_WITH([docs-man-section-cfg], [man page section for configuration files],
 NUT_ARG_WITH([docs-man-section-cmd-sys], [man page section for system management commands], [${DEFAULT_MAN_SECTION_CMD_SYS}])
 NUT_ARG_WITH([docs-man-section-cmd-usr], [man page section for user commands], [${DEFAULT_MAN_SECTION_CMD_USR}])
 NUT_ARG_WITH([docs-man-section-misc], [man page section for overviews, conventions, and miscellaneous], [${DEFAULT_MAN_SECTION_MISC}])
+
+NUT_ARG_WITH([docs-man-dir-as-base], [are platform man directories named by base number (yes) or full section name (no)], [${DEFAULT_MAN_DIR_AS_BASE}])
 
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
@@ -3931,6 +3937,11 @@ AC_SUBST(MAN_SECTION_CFG_BASE)
 AC_SUBST(MAN_SECTION_CMD_SYS_BASE)
 AC_SUBST(MAN_SECTION_CMD_USR_BASE)
 AC_SUBST(MAN_SECTION_MISC_BASE)
+
+MAN_DIR_AS_BASE="${nut_with_docs_man_dir_as_base}"
+AC_DEFINE_UNQUOTED([MAN_DIR_AS_BASE], ["${MAN_DIR_AS_BASE}"], [are platform man directories named by base number (yes) or full section name (no)])
+AM_CONDITIONAL(MAN_DIR_AS_BASE, test "${MAN_DIR_AS_BASE}" = "yes")
+AC_SUBST(MAN_DIR_AS_BASE)
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev

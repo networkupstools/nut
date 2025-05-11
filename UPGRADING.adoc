@@ -29,8 +29,12 @@ Changes from 2.8.3 to 2.8.4
 - Introduced handling (possibly rewriting) for man page section "Overviews,
   conventions, and miscellaneous" (commonly number 7), to deliver support
   for `man nut` queries (NUT overview manual page also created).
+  A new `configure --with-docs-man-dir-as-base` option was introduced so that
+  directories for man page sections can now be automatically named as either
+  "base" number of the section (e.g. `man1`) or by full section name (`man1m`),
+  as different OS distributions have different preferences in this regard.
   As a packager, you may have to update the recipes accordingly (especially
-  if your platform rewrites section numbers). [#2945]
+  if your platform rewrites section numbers). [#2945, #2950]
 
 - Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
   necessary to address spurious LOWBATT and REPLACEBATT events. [issue #2942]

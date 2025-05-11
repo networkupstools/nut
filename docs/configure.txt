@@ -375,6 +375,12 @@ file names of the manual pages, but also cross-links in generated documents.
 Note that use of these flags does not implicitly enable any `--with-docs=...`
 mode, which should still be specified explicitly.
 
+	--with-docs-man-dir-as-base=(yes/no)	(default: yes, or no Solaris/illumos)
+
+Are platform man directories named by base number (yes) or by full section
+name (no), e.g. given a `1m` man page section, install the pages into `man1`
+or `man1m` directory?
+
 Python support
 ~~~~~~~~~~~~~~
 
