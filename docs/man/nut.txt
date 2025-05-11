@@ -149,6 +149,59 @@ C, C++, Python, Java in a nearby repository) or by third-party efforts
 (e.g. Perl, Go, C#, REST API).
 
 
+NUT Run-time Nuances
+~~~~~~~~~~~~~~~~~~~~
+
+User/Group Accounts
+^^^^^^^^^^^^^^^^^^^
+
+Generally NUT daemon programs avoid running as a highly-privileged `root`
+account (on POSIX platforms), and drop privileges to run as the configured
+user and group accounts such as `nut:nut`.
+
+* One notable exception is the linkman:upsmon[8] daemon which splits into
+  a `root`-owned process which may trigger the OS shutdown routine, and an
+  unprivileged process which does everything else.
+
+File system permissions
+^^^^^^^^^^^^^^^^^^^^^^^
+
+When using NUT drivers with local communications media (USB or Serial ports),
+you must ensure that the unprivileged run-time account like `nut:nut` is
+allowed access to those device file system nodes.  On many platforms this
+can be automated with subsystems like 'udev', 'devd', 'hotplug', 'upower';
+on others (older ones) you may have to `chmod`/`chown`/`chgrp` particular
+devfs nodes (whether on the persistent filesystem, or using an init-script
+for volatile implementations).
+
+Note that there are several run-time locations for data and socket files of
+NUT's privileged and unprivileged programs, and for configuration files.
+Access to these directories and individual files should be secured according
+to NUT documentation; NUT daemons will warn about lax permissions in their
+syslog or console messages.
+
+It is also important to note that (except for linkman:upslog[8]) no NUT
+daemons leave log files on their own: they send syslog messages, or write
+to stdout/stderr, and either or both of these streams can be saved to disk
+by the OS service integration (or a redirection from an init-script).
+
+NUT Drivers as Service instances
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with NUT v2.8.0, on systems with service management frameworks
+(like Linux systemd or Solaris/illumos SMF) you may be even inadvertently
+using the linkman:nut-driver-enumerator[8].  This is a script, which may
+also called automatically (via packaging on impacted platforms) at start-up
+or as a service, to process the linkman:ups.conf[5] file and maintain the
+service units (with their dependencies) for each driver section separately.
+
+This sometimes raises eyebrows when end-users try to manually start a NUT
+driver program (either directly or using linkman:upsdrvctl[8] tool), and
+this either fails (because the device is already busy) or gets to conflict
+with the copy of the driver running as a service instance and they begin
+to terminate each other.
+
+
 ////////////////////////////////////////////
 // Dynamic list of all man pages follows: //
 ////////////////////////////////////////////
