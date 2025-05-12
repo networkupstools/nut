@@ -34,12 +34,13 @@ for drvfile in driver.list.in driver.list
 do
 	if [ -f "${DRVLIST_PATH}/data/${drvfile}" ]; then
 		# For every non-comment line:
-		# * replace quote-spaces-quote with quote-TAB-quote
+		# * replace quote-spaces-quote (or technically any amount
+		#   of blank space/tab characters) with quote-TAB-quote
 		# * strip trailing blank characters at the end of line
 		# * if there is a trailing comment, make sure it is
 		#   also TAB-separated (from the presumed sixth field)
 		sed \
-			-e '/^#/!s/\" \+\"/\"\t\"/g' \
+			-e '/^#/!s/\"[[:blank:]]\+\"/\"\t\"/g' \
 			-e '/^#/!s/[[:blank:]]*$//' \
 			-e '/^#/!s/\" \+\#/\"\t\#/' \
 		< "${DRVLIST_PATH}/data/${drvfile}" \
