@@ -105,11 +105,16 @@ linkman:ups.conf[5]) to at least 5 seconds.
 KNOWN ISSUES
 ------------
 
+HTTP(S) proxies
+~~~~~~~~~~~~~~~
+
 Don't connect to the UPS through a proxy. Although it would be trivial to add
 support for proxies, this is not recommended and don't ask for it. Not only
 because it will prevent the driver to make a persistent connection to the UPS,
 but also it adds an additional failure mode. If the proxy goes down (for
 whatever reason), the driver will no longer be able to reach the UPS.
+
+include::networked_hostnames.txt[]
 
 AUTHORS
 -------
