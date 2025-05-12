@@ -1,7 +1,13 @@
 #!/bin/sh
 ################################################################################
 #
-# Ensure that driver.list and driver.list.in are properly formatted (with tabs)
+# Ensure or read-only check that generated driver.list and source driver.list.in
+# files are properly formatted (non-comment lines contain 6 fields separated
+# with tabs, optionally with a trailing comment).
+#
+# Copyright (C)
+#	2015-2016	Arnaud Quette <arnaud.quette@free.fr>
+#	2025		Jim Klimov <jimklimov+nut@gmail.com>
 #
 ################################################################################
 
