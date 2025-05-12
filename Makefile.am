@@ -38,8 +38,9 @@ ACLOCAL_AMFLAGS = -I m4
 #
 # List of source subdirectories to build and distribute, used to spawn automake
 # (alas sequential) target recipes. The order matters, as several subdirectories
-# depend on stuff in "common" or tools being built first!
-SUBDIRS = include common clients conf data drivers tools \
+# depend on stuff in "common" or tools being built first! Also "data" depends
+# (during "dist" time) on scripts in "tools".
+SUBDIRS = include common clients conf drivers tools data \
   lib scripts server tests docs/man docs
 
 # Note: not generated from SUBDIRS, because not all are recursive:

@@ -6,6 +6,12 @@ dist_data_DATA = cmdvartab
 nodist_data_DATA = driver.list
 EXTRA_DIST = evolution500.seq epdu-managed.dev
 
+dist-hook:
+	@$(distdir)/../tools/driver-list-format.sh
+
+check-local:
+	@$(top_srcdir)/tools/driver-list-format.sh --check
+
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
