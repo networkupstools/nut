@@ -62,6 +62,10 @@ but allows for flexibility with very different real-life setups to handle.
 In practice, this involves numerous programs (and their configuration files)
 running on the same or different systems (the "network" part in the name).
 
+Many deployment scenarios are explored in the famous
+link:https://github.com/networkupstools/ConfigExamples/releases/latest/download/ConfigExamples.pdf[NUT
+Configuration Examples] book maintained by Roger Price.
+
 NUT Drivers
 ^^^^^^^^^^^
 
@@ -222,7 +226,11 @@ Internet resources
 
 * The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
   and specifically the link:https://networkupstools.org/documentation.html[NUT
-  Documentation collection]
+  Documentation collection] with the FAQ page and several books on different
+  aspects of NUT usage and development, maintained as part of the project code
+  base
+* The link:https://github.com/networkupstools/ConfigExamples/releases/latest/download/ConfigExamples.pdf[NUT
+  Configuration Examples] book, maintained by Roger Price
 * Project GitHub repository, wiki and issue tracker:
   https://github.com/networkupstools/nut
 * Commonly referenced articles include:
@@ -244,6 +252,7 @@ Internet resources
   - Specific bits of know-how and caveats regarding
     link:https://github.com/networkupstools/nut/wiki/NUT-for-Windows[NUT
     for Windows]
+* link:https://networkupstools.org/projects.html[Related projects]
 * We are on Wikipedia: https://en.wikipedia.org/wiki/Network_UPS_Tools
 * The "UPS management protocol", Informational RFC 9271:
   https://datatracker.ietf.org/doc/html/rfc9271
