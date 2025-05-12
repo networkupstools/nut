@@ -10,7 +10,7 @@ dist-hook:
 	@$(distdir)/../tools/driver-list-format.sh
 
 check-local:
-	@$(top_srcdir)/tools/driver-list-format.sh --check
+	@abs_top_builddir='$(abs_top_builddir)' abs_top_srcdir='$(abs_top_srcdir)' $(top_srcdir)/tools/driver-list-format.sh --check
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
