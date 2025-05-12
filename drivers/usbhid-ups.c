@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.62"
+#define DRIVER_VERSION	"0.63"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -1519,7 +1519,7 @@ void upsdrv_initups(void)
 			lbrb_log_delay_sec = ipv;
 		}
 	} else {
-		/* Activate APC BXnnnMI/BXnnnnMI tweaks, for details see
+		/* Activate APC BXnnnMI/BXnnnnMI/BVKnnnM2/BVKnnnnM2 tweaks, for details see
 		 * https://github.com/networkupstools/nut/issues/2347
 		 */
 		size_t	productLen = hd->Product ? strlen(hd->Product) : 0;
@@ -1527,11 +1527,16 @@ void upsdrv_initups(void)
 		/* FIXME: Consider also ups.mfr.date as 2023 or newer?
 		 * Eventually up to some year this gets fixed?
 		 */
-		if (hd->Vendor
-		&&  productLen > 6	/* BXnnnMI at least */
-		&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
-		&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
-		&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I')
+		if ((hd->Vendor
+			&&  productLen > 6	/* BXnnnMI at least */
+			&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+			&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
+			&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I'))
+		|| (hd->Vendor
+			&&  productLen > 7	/* BVKnnnM2 at least */
+			&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+			&&  (strstr(hd->Product, " BVK") || strstr(hd->Product, "BVK") == hd->Product)
+			&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == '2'))
 		) {
 			int	got_lbrb_log_delay_without_calibrating = testvar("lbrb_log_delay_without_calibrating") ? 1 : 0,
 				got_onlinedischarge_calibration = testvar("onlinedischarge_calibration") ? 1 : 0,
@@ -1955,11 +1960,23 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		case HU_WALKMODE_FULL_UPDATE:
 			/* These don't need polling after initinfo() */
-			if (item->hidflags & (HU_FLAG_ABSENT | HU_TYPE_CMD | HU_FLAG_STATIC))
+			if (item->hidflags & (HU_FLAG_ABSENT | HU_TYPE_CMD))
 				continue;
 
-			/* These need to be polled after user changes (setvar / instcmd) */
-			if ( (item->hidflags & HU_FLAG_SEMI_STATIC) && (data_has_changed == FALSE) )
+			/* These don't need polling after initinfo() normally
+			 * However in "pollonly" mode we use these to detect "Data stale"
+			 * condition (e.g. cable disconnected) by failing the reads:
+			 */
+			if ((item->hidflags & HU_FLAG_STATIC) && use_interrupt_pipe)
+				continue;
+
+			/* These need to be polled after user changes (setvar / instcmd)
+			 * or to detect "Data stale" in "pollonly" mode
+			 */
+			if (   (item->hidflags & HU_FLAG_SEMI_STATIC)
+				&& (data_has_changed == FALSE)
+				&& use_interrupt_pipe
+			)
 				continue;
 
 			break;
@@ -2074,7 +2091,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		if (ups_infoval_set(item, value) != 1)
 			continue;
 
-		if (mode == HU_WALKMODE_INIT) {
+		if (mode == HU_WALKMODE_INIT || (!use_interrupt_pipe)) {
 			info_lkp_t	*info_lkp;
 
 			dstate_setflags(item->info_type, item->info_flags);

@@ -2128,31 +2128,57 @@ AC_ARG_WITH(drivers,
 				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
 				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST"
 
-			get_drvlist() (
+			dnl Gets ONE Makefile assignment value
+			get_drivers_makefile_value() (
 				dnl Note escaped brackets - "against" m4 parser
 				m4_version_prereq(2.62,
 					[LB="@<:@"; RB="@:>@"],
 					[LB="[["; RB="]]"]
 				)
+				dnl ###DEBUG### echo "RECURSIVE SEARCH FOR: '$1'" >&2
 				SPACE="`printf "$LB"' \t'"$RB"`"
 				SPACES="${SPACE}*"
 				sed -e "s/${SPACES}""$LB"'+'"$RB"'*='"${SPACES}/=/" \
 				    -e "s/^${SPACES}//" < "$srcdir/drivers/Makefile.am" \
-				| {
+				| (
 					C=false; V=false
 					while read LINE ; do
 						case "$LINE" in
 							*'\') C=true; if $V ; then echo "$LINE" ; fi ;;
-							*) C=false; V=false ;;
+							*) if $C ; then exit 0; fi ; C=false; V=false ;;
 						esac
 						case "$LINE" in
 							"$1"=*)
-								echo "$LINE" | sed -e 's,^'"$LB"'^='"$RB"'*=,,' -e 's,\$,,'
+								echo "$LINE" | sed -e 's,^'"$LB"'^='"$RB"'*=,,'
 								V=$C
 								;;
 						esac
 					done
-				} | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ," -e "s,${SPACES}\$,,"
+					echo ""
+				) | tr '\n' ' ' | sed -e 's,\$(EXEEXT),,g' \
+				| tr ' ' '\n' | while read TOKEN ; do
+					case x"${TOKEN}" in
+						x)	;;
+						'x$('*')') get_drivers_makefile_value "`echo "${TOKEN}" | sed -e 's,^\$(,,' -e 's,)$,,'`" ;;
+						'x${'*'}') get_drivers_makefile_value "`echo "${TOKEN}" | sed -e 's,^\${,,' -e 's,}$,,'`" ;;
+						*)	echo "${TOKEN} " ;;
+					esac
+				done dnl ###DEBUG### | tee -a /dev/stderr
+			)
+
+			get_drvlist() (
+				m4_version_prereq(2.62,
+					[LB="@<:@"; RB="@:>@"],
+					[LB="[["; RB="]]"]
+				)
+				dnl ###DEBUG### echo "SEARCH FOR: '$1'" >&2
+				SPACE="`printf "$LB"' \t'"$RB"`"
+				SPACES="${SPACE}*"
+
+				dnl Let it recurse, and only then we collect the
+				dnl result into one string with reduced spaces:
+				get_drivers_makefile_value "$1" \
+				| tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ,g" -e "s,${SPACES}\$,,"
 			)
 
 			for DRVLIST_NAME in $DRVLIST_NAMES; do
@@ -2411,6 +2437,7 @@ NUT_ARG_WITH([docs-man-section-api], [man page section for library APIs], [3])
 NUT_ARG_WITH([docs-man-section-cfg], [man page section for configuration files], [5])
 NUT_ARG_WITH([docs-man-section-cmd-sys], [man page section for system management commands], [8])
 NUT_ARG_WITH([docs-man-section-cmd-usr], [man page section for user commands], [1])
+NUT_ARG_WITH([docs-man-section-misc], [man page section for overviews, conventions, and miscellaneous], [7])
 
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
@@ -2987,11 +3014,12 @@ dnl Python interpreter versions to care about below, so we only test for
 dnl their existence once (in NUT_CHECK*PYTHON* m4 macros).
 
 dnl ${nut_with_nut_monitor}: TODO: arg values to request Python 2 gtk2,
-dnl Python 3 qt5, or both
+dnl Python 3 Qt5, Python 3 Qt6 or all
 AC_MSG_CHECKING([if we want install NUT-Monitor desktop application])
 AC_MSG_RESULT([${nut_with_nut_monitor}])
 nut_with_nut_monitor_py2gtk2=""
 nut_with_nut_monitor_py3qt5=""
+nut_with_nut_monitor_py3qt6=""
 nut_with_nut_monitor_desktop=""
 dnl TODO: Add a way to define this path? will have app/ maybe module/ inside...
 nut_with_nut_monitor_dir="${datarootdir}/nut-monitor"
@@ -3023,7 +3051,8 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     dnl HACK NOTE: Here we redirect outputs to "&5" which is autoconf stream
     dnl for "config.log" details since... forever? Still, hardcoded numbers...
     PYTHON2_TEST_MODULES="re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser"
-    PYTHON3_TEST_MODULES="re,glob,codecs,PyQt5.uic,configparser"
+    PYTHON3_TEST_MODULES_QT5="re,glob,codecs,PyQt5.uic,configparser"
+    PYTHON3_TEST_MODULES_QT6="re,glob,codecs,PyQt6.uic,configparser"
     if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
         AC_MSG_CHECKING([if we have Python2 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
@@ -3079,38 +3108,68 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     fi
 
     if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
-        AC_MSG_CHECKING([if we have Python3 prerequisites for NUT-Monitor desktop application])
-        if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
+        AC_MSG_CHECKING([if we have Python3 Qt5 prerequisites for NUT-Monitor desktop application])
+        if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES_QT5}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
             AC_MSG_RESULT([yes])
         else
             AC_MSG_RESULT([no])
             if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
-                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 Qt5 modules: '${PYTHON3_TEST_MODULES_QT5}'"
             else
-                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 Qt5 modules: '${PYTHON3_TEST_MODULES_QT5}'"
+            fi
+        fi
+    fi
+
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we have Python3 Qt6 prerequisites for NUT-Monitor desktop application])
+        if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES_QT6}" 1>&5 2>&5 \
+        ; then
+            nut_with_nut_monitor_py3qt6="yes"
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_RESULT([no])
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 Qt6 modules: '${PYTHON3_TEST_MODULES_QT6}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 Qt6 modules: '${PYTHON3_TEST_MODULES_QT6}'"
             fi
         fi
     fi
 
     dnl Fall back to default interpreter
-    if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" \
+    if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}${nut_with_nut_monitor_py3qt6}" \
     && test -n "${PYTHON_VERSION_INFO_REPORT}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
     ; then
-        AC_MSG_CHECKING([if we have Python3 prerequisites for NUT-Monitor desktop application in default Python])
-        if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
+        AC_MSG_CHECKING([if we have Python3 Qt5 prerequisites for NUT-Monitor desktop application in default Python])
+        if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES_QT5}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
             AC_MSG_RESULT([yes])
         else
             AC_MSG_RESULT([no])
             if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
-                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules in default Python: '${PYTHON3_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 Qt5 modules in default Python: '${PYTHON3_TEST_MODULES_QT5}'"
             else
-                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules in default Python: '${PYTHON3_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 Qt5 modules in default Python: '${PYTHON3_TEST_MODULES_QT5}'"
+            fi
+        fi
+
+        AC_MSG_CHECKING([if we have Python3 Qt6 prerequisites for NUT-Monitor desktop application in default Python])
+        if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES_QT6}" 1>&5 2>&5 \
+        ; then
+            nut_with_nut_monitor_py3qt6="yes"
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_RESULT([no])
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 Qt6 modules in default Python: '${PYTHON3_TEST_MODULES_QT6}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 Qt6 modules in default Python: '${PYTHON3_TEST_MODULES_QT6}'"
             fi
         fi
 
@@ -3173,9 +3232,10 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor-3: ${nut_with_nut_monitor}])
         AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor_py2gtk2: ${nut_with_nut_monitor_py2gtk2}])
         AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor_py3qt5: ${nut_with_nut_monitor_py3qt5}])
+        AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor_py3qt6: ${nut_with_nut_monitor_py3qt6}])
     ])
     dnl Can we satisfy any NUT-Monitor installation request?
-    if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" ; then
+    if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}${nut_with_nut_monitor_py3qt6}" ; then
         case "${nut_with_nut_monitor}" in
             "auto") nut_with_nut_monitor="yes" ;;
         esac
@@ -3314,6 +3374,7 @@ if test "${nut_with_nut_monitor}" = force ; then
     nut_with_nut_monitor=yes
     nut_with_nut_monitor_py2gtk2=yes
     nut_with_nut_monitor_py3qt5=yes
+    nut_with_nut_monitor_py3qt6=yes
 fi
 
 if test "${nut_with_pynut}" = force ; then
@@ -3332,9 +3393,12 @@ NUT_REPORT_PROGRAM([install PyNUT binding module], [${nut_with_pynut}], [],
 					[WITH_PYNUT], [Define to enable PyNUT module installation])
 
 dnl One or both of these may be installed:
-AM_CONDITIONAL(WITH_NUT_MONITOR, test "${nut_with_nut_monitor}" = "yes" && test "${nut_with_nut_monitor_py2gtk2}" = "yes" -o "${nut_with_nut_monitor_py3qt5}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR, test "${nut_with_nut_monitor}" = "yes" && test "${nut_with_nut_monitor_py2gtk2}" = "yes" -o "${nut_with_nut_monitor_py3qt5}" = "yes" -o "${nut_with_nut_monitor_py3qt6}" = "yes")
 AM_CONDITIONAL(WITH_NUT_MONITOR_PY2GTK2, test "${nut_with_nut_monitor_py2gtk2}" = "yes")
 AM_CONDITIONAL(WITH_NUT_MONITOR_PY3QT5, test "${nut_with_nut_monitor_py3qt5}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR_PY3QT6, test "${nut_with_nut_monitor_py3qt6}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR_PY3QT5_OR_QT6, test "${nut_with_nut_monitor_py3qt5}" = "yes" -o "${nut_with_nut_monitor_py3qt6}" = "yes")
+
 dnl Install PyNUT as a globally usable module, or just as app internals?
 AM_CONDITIONAL(WITH_PYNUT_PY,  test "${nut_with_pynut_py}" = "yes"  -a "${nut_with_pynut}" = yes)
 AM_CONDITIONAL(WITH_PYNUT_PY2, test "${nut_with_pynut_py2}" = "yes" -a "${nut_with_pynut}" = yes)
@@ -3344,6 +3408,7 @@ AM_CONDITIONAL(WITH_PYNUT_APP, test "${nut_with_pynut}" = "app")
 AC_SUBST([nut_with_nut_monitor_dir], [${nut_with_nut_monitor_dir}])
 AC_SUBST([nut_with_nut_monitor_py2gtk2], [${nut_with_nut_monitor_py2gtk2}])
 AC_SUBST([nut_with_nut_monitor_py3qt5], [${nut_with_nut_monitor_py3qt5}])
+AC_SUBST([nut_with_nut_monitor_py3qt6], [${nut_with_nut_monitor_py3qt6}])
 AC_SUBST([nut_with_nut_monitor_desktop], [${nut_with_nut_monitor_desktop}])
 AC_SUBST([nut_with_nut_monitor], [${nut_with_nut_monitor}])
 AC_SUBST([nut_with_pynut], [${nut_with_pynut}])
@@ -3463,9 +3528,6 @@ dnl is set to 'no', we may still want to build some doc targets manually
 dnl (so enable the Makefile recipes for those targets if tools are available)
 NUT_CHECK_ASCIIDOC
 
-NUT_REPORT_FEATURE([requested to build and install documentation], [${nut_with_doc}], [],
-					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
-
 DOC_INSTALL_DISTED_MANS=no
 KNOWN_UNABLE_MANS=no
 
@@ -3495,6 +3557,9 @@ dnl If user passed --with-doc='' they they want nothing, right?
 		AC_MSG_NOTICE([Got explicit list of document formats to build or not: ${nut_doc_build_list}; formats not listed will be silently skipped])
 		;;
 esac
+
+NUT_REPORT_FEATURE([requested to build and install documentation], ['${nut_with_doc}' => '${nut_doc_build_list}'], [],
+					[WITH_ASCIIDOC], [Define to enable Asciidoc support], [-])
 
 if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
@@ -3574,7 +3639,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(no)
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
@@ -3597,7 +3662,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(no)
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
@@ -3623,7 +3688,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_RESULT(no)
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
@@ -3660,7 +3725,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				KNOWN_UNABLE_MANS=yes
 				if test "${nut_doc_build_target_flag}" = "yes" ; then
-					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 				else
 					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 					if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
@@ -3684,28 +3749,30 @@ done
 rm -rf "${DOCTESTDIR}"
 
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
-    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:       '${DOC_BUILD_LIST}'])
-    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_CANNOTBUILD_LIST: '${DOC_CANNOTBUILD_LIST}'])
-    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:   '${DOC_SKIPBUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:       '${DOC_BUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_CANNOTBUILD_LIST: '${DOC_CANNOTBUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:   '${DOC_SKIPBUILD_LIST}'])
 ])
 
 case "${nut_with_doc}" in
 auto)
 	if test -n "${DOC_BUILD_LIST}"; then
+		dnl # We can build at least one format...
 		nut_with_doc="yes"
 	else
+		dnl # We can not build any formats...
 		nut_with_doc="no"
 	fi
 	;;
 no)
 	;;
-*)
+*)  dnl # yes, all, skip...
 	if test -n "${DOC_CANNOTBUILD_LIST}"; then
 		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | grep -vE '^$'`"
-		for DOCTYPE in ${DOC_BUILD_LIST} ; do
-			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(|=yes)\$" ; then
+		for DOCTYPE in ${nut_doc_build_list} ; do
+			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(=yes)?\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
-			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" ; then
+			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_NOTICE([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above), skipping])
 				fi
 			fi
@@ -3727,7 +3794,7 @@ esac
 AM_CONDITIONAL(WITH_PDF_NONASCII_TITLES, [test x"$can_build_doc_pdf_nonascii_titles" = xyes])
 
 NUT_REPORT_FEATURE([would build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
-					[WITH_DOCS], [Define to enable overall documentation generation])
+					[WITH_DOCS], [Define to enable overall documentation generation], [-])
 
 # To cater for less portable make's, precalculate the target list
 # for "make check" in "docs/" here...
@@ -3801,31 +3868,37 @@ MAN_SECTION_API="${nut_with_docs_man_section_api}"
 MAN_SECTION_CFG="${nut_with_docs_man_section_cfg}"
 MAN_SECTION_CMD_SYS="${nut_with_docs_man_section_cmd_sys}"
 MAN_SECTION_CMD_USR="${nut_with_docs_man_section_cmd_usr}"
+MAN_SECTION_MISC="${nut_with_docs_man_section_misc}"
 
 MAN_SECTION_API_BASE="`echo "${MAN_SECTION_API}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 MAN_SECTION_CFG_BASE="`echo "${MAN_SECTION_CFG}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 MAN_SECTION_CMD_SYS_BASE="`echo "${MAN_SECTION_CMD_SYS}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 MAN_SECTION_CMD_USR_BASE="`echo "${MAN_SECTION_CMD_USR}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_MISC_BASE="`echo "${MAN_SECTION_MISC}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 
 AC_DEFINE_UNQUOTED([MAN_SECTION_API], ["${MAN_SECTION_API}"], [man page section for library APIs])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CFG], ["${MAN_SECTION_CFG}"], [man page section for configuration files])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS], ["${MAN_SECTION_CMD_SYS}"], [man page section for system management commands])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_USR], ["${MAN_SECTION_CMD_USR}"], [man page section for user commands])
+AC_DEFINE_UNQUOTED([MAN_SECTION_MISC], ["${MAN_SECTION_MISC}"], [man page section for overviews, conventions, and miscellaneous])
 
 AC_DEFINE_UNQUOTED([MAN_SECTION_API_BASE], ["${MAN_SECTION_API_BASE}"], [base (number only) man page section for library APIs])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CFG_BASE], ["${MAN_SECTION_CFG_BASE}"], [base (number only) man page section for configuration files])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS_BASE], ["${MAN_SECTION_CMD_SYS_BASE}"], [base (number only) man page section for system management commands])
 AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_USR_BASE], ["${MAN_SECTION_CMD_USR_BASE}"], [base (number only) man page section for user commands])
+AC_DEFINE_UNQUOTED([MAN_SECTION_MISC_BASE], ["${MAN_SECTION_MISC_BASE}"], [base (number only) man page section for overviews, conventions, and miscellaneous])
 
 AC_SUBST(MAN_SECTION_API)
 AC_SUBST(MAN_SECTION_CFG)
 AC_SUBST(MAN_SECTION_CMD_SYS)
 AC_SUBST(MAN_SECTION_CMD_USR)
+AC_SUBST(MAN_SECTION_MISC)
 
 AC_SUBST(MAN_SECTION_API_BASE)
 AC_SUBST(MAN_SECTION_CFG_BASE)
 AC_SUBST(MAN_SECTION_CMD_SYS_BASE)
 AC_SUBST(MAN_SECTION_CMD_USR_BASE)
+AC_SUBST(MAN_SECTION_MISC_BASE)
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
@@ -6324,6 +6397,7 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/external_apis/enphase/enphase-monitor
  scripts/python/app/NUT-Monitor-py2gtk2
  scripts/python/app/NUT-Monitor-py3qt5
+ scripts/python/app/NUT-Monitor-py3qt6
  scripts/python/module/test_nutclient.py
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl

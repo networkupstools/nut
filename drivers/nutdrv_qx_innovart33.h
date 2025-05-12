@@ -1,8 +1,7 @@
-/* nutdrv_qx_ablerex.h - Subdriver for Ablerex Qx protocol based UPSes
+/* nutdrv_qx_innovart33.h - Subdriver for INNOVA RT 3/3 UPSes
  *
  * Copyright (C)
- *   2013 Daniele Pezzini <hyouko@gmail.com>
- *   2021 Ablerex Software <Ablerex.software@ablerex.com.tw>
+ *   2025 Viktor Drobot <linux776@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,11 +19,11 @@
  *
  */
 
-#ifndef NUTDRV_QX_ABLEREX_H
-#define NUTDRV_QX_ABLEREX_H
+#ifndef NUTDRV_QX_INNOVART33_H
+#define NUTDRV_QX_INNOVART33_H
 
 #include "nutdrv_qx.h"
 
-extern subdriver_t	ablerex_subdriver;
+extern subdriver_t	innovart33_subdriver;
 
-#endif /* NUTDRV_QX_ABLEREX_H */
+#endif /* NUTDRV_QX_INNOVART33_H */

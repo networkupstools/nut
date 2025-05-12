@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3467 utf-8
+personal_ws-1.1 en 3493 utf-8
 AAC
 AAS
 ABI
@@ -103,6 +103,8 @@ BTS
 BTV
 BUFRD
 BUZ
+BVKnnnnM
+BVKxxxM
 BXnnnnMI
 BYP
 BZ
@@ -230,9 +232,11 @@ CygWin
 Cygwin
 DATACABLE
 DATAPATH
+DBCF
 DCE
 DCF
 DCO
+DDA
 DDD
 DDDDD
 DDDDDD
@@ -312,6 +316,7 @@ Dsystemtap
 Dynamix
 Dynex
 EAGAIN
+EB
 EE
 EEPROM
 EFI
@@ -358,6 +363,7 @@ Emilien
 Energia
 EnergySaving
 Enphase's
+Epyc
 Erikson
 Eriksson
 Evgeny
@@ -365,7 +371,9 @@ Exar
 ExecCGI
 ExecStart
 ExecStartPre
+FBCA
 FD
+FDE
 FEMEA
 FFF
 FH
@@ -596,7 +604,9 @@ Korte
 Kralewski
 Kroll
 Krpec
+Kubanek
 Kubernetes
+Kuttnig
 Kx
 LASTXFER
 LCDRM
@@ -943,6 +953,7 @@ Pavel
 Pawe
 PbAc
 Perriault
+Petr
 Petri
 Petter
 Pezzini
@@ -964,10 +975,12 @@ PowerAlert
 PowerCOM
 PowerCom
 PowerES
+PowerGuide
 PowerKinetics
 PowerMac
 PowerMan
 PowerManagerII
+PowerMaster
 PowerMust
 PowerNet
 PowerOff
@@ -1020,6 +1033,7 @@ QLDL
 QMD
 QMF
 QMOD
+QOL
 QP
 QPAR
 QPD
@@ -1316,6 +1330,8 @@ TopGuard
 Toth
 TrackingID
 TrackingResult
+Trevisan
+Treviño
 Tripp
 TrippLite
 Tru
@@ -1882,6 +1898,7 @@ desc
 deschis
 descr
 desde
+desertwitch
 designator
 dev
 devclient
@@ -2132,6 +2149,7 @@ gzip
 hal
 hardcoded
 hasFeature
+hashx
 hb
 hcd
 hcl
@@ -2242,6 +2260,7 @@ interruptonly
 interruptsize
 intltool
 inverter
+inverters
 invmode
 io
 ioLogik
@@ -2278,6 +2297,7 @@ jdk
 jenkins
 jessie
 jimklimov
+jour
 journalctl
 jpeg
 jpg
@@ -2308,6 +2328,7 @@ labcd
 lan
 langid
 lasaine
+launchd
 lbrb
 ld
 ldd
@@ -2579,6 +2600,7 @@ newmge
 newvictronups
 nf
 ng
+nginx
 nhnl
 nhs
 nielchiano
@@ -2727,6 +2749,7 @@ pfy
 ph
 phoenixcontact
 phoenixtec
+photovoltaic
 picocom
 pid
 pidpath
@@ -2856,6 +2879,7 @@ reentrancy
 refactored
 refactoring
 refreservation
+refsect
 regex
 regtype
 relatime
@@ -3355,6 +3379,7 @@ vbat
 vbatt
 vc
 vda
+ve
 vendorid
 ver
 verifySourceSig
@@ -3372,6 +3397,7 @@ virtinst
 virtualization
 virtualized
 vivo
+vla
 vo
 volsize
 voltronic
