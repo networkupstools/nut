@@ -59,7 +59,13 @@ do
 			fi
 		} && \
 		if [ x"${ACTION}" = xEnsuring ] ; then
-			mv -f "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}"
+			if diff "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}" >/dev/null ; then
+				# Same content
+				rm -f "${DRVLIST_PATH}/data/${drvfile}.tabbed"
+			else
+				# Ensure new content is applied
+				mv -f "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}"
+			fi
 		else # Checking
 			diff -u "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}" \
 			|| { GITACT=""
