@@ -14,7 +14,7 @@ if [ -f "${CURRENT_PATH}/data/driver.list.in" ]; then
 elif [ -f "${CURRENT_PATH}/../data/driver.list.in" ]; then
 	DRVLIST_PATH="${CURRENT_PATH}/.."
 else
-	echo "Can't find driver.list in . or .."
+	echo "$0: Can't find driver.list in . or .., aborting" >&2
 	exit 1
 fi
 
@@ -25,7 +25,7 @@ fi
 
 RES=0
 
-echo "$ACTION whether driver.list[.in] are well formatted"
+echo "$0: $ACTION whether driver.list[.in] are well formatted"
 for drvfile in driver.list.in driver.list
 do
 	if [ -f "${DRVLIST_PATH}/data/${drvfile}" ]; then
@@ -44,16 +44,20 @@ do
 		if [ x"${ACTION}" = xEnsuring ] ; then
 			mv -f "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}"
 		else # Checking
-			diff "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}" >/dev/null \
-			|| { echo "File '${DRVLIST_PATH}/data/${drvfile}' markup needs to be fixed (run $0 and commit the git change, please)" >&2 ; RES=1 ; }
+			diff -u "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}" \
+			|| { GITACT=""
+			     case "${drvfile}" in *.in) GITACT=" and commit the git change" ;; esac
+			     echo "$0: ERROR: markup of '${DRVLIST_PATH}/data/${drvfile}' needs to be fixed: re-run this script without args${GITACT}, please" >&2
+			     RES=1
+			   }
 		fi \
 		|| RES=$?
 
-		echo "Processed ${DRVLIST_PATH}/data/${drvfile}"
+		echo "$0: Processed ${DRVLIST_PATH}/data/${drvfile}"
 	else
-		echo "Skipping ${drvfile} as it is missing..."
+		echo "$0: Skipping ${drvfile} as it is missing..."
 	fi
 done
-echo "done"
+echo "$0: done ($RES)"
 
 exit $RES
