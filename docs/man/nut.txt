@@ -156,6 +156,51 @@ C, C++, Python, Java in a nearby repository) or by third-party efforts
 NUT Run-time Nuances
 ~~~~~~~~~~~~~~~~~~~~
 
+For many more notes, please see the Frequently Asked Questions document in
+NUT sources or on the web site.  A copy may be delivered by your packaging.
+
+"File or directory not found" messages
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When NUT daemon programs start, they check for existence of certain files
+they would create themselves (PID files, local sockets, etc.) and report
+when such file does not exist.  Similarly, some programs try to signal an
+earlier instance (if the PID is known) and would report if that failed.
+
+While this does look scary and confusing to people who use NUT for the first
+time and it greets them with what looks like error messages (we did work on
+improving the wording during the NUT v2.8.x release lineage due to frequent
+questions), these messages are in fact just a troubleshooting aspect that
+is useful at that point in program life cycle: if you expect "other" program
+instances to be running when they are not seen, this message helps catch the
+error.  If this is a first run, so no "other" program instance's artifacts
+should be there, the message says just that.  If your program starts and
+sees an older instance already running, further behavior depends on the
+situation (e.g. did you start a copy to signal the already running daemon
+with some command? did you start a new copy and so any old one is assumed
+stuck and should be terminated automatically?)
+
+The "directory" part of the wording, which may be present in these messages,
+comes from the standard system library.  It does not mean you should blindly
+create a directory (or any other object) for the file names listed in such
+reports.
+
+That said, NUT does use directories (known in code and the `configure` script
+options as `--with-pidpath`, `--with-altpidpath` and `--with-statepath`)
+which should be created and assigned certain permissions each (the latter
+two may overlap).  Generally this is done either by packaging, or by manual
+steps according to documentation when building NUT from sources.  On some
+platforms (e.g. Linux with systemd and its `systemd-tmpfiles` subsystem) they
+may be maintained at run-time by configuration files delivered to the system.
+
+The message can also be seen from linkman:upsmon[8] being unable to populate
+the `POWERDOWNFLAG` if the location it points to (`/etc/killpower` by default)
+does not exist or is read-only, or from a late shutdown integration script like
+the `nutshutdown` hook if that location was un-mounted by the time it runs.
+It is recommended to store that file on a volatile file system (under `/run`
+on most modern distributions; typically the `pidpath` is located there too),
+which remains until reboot and disappears during reboot.
+
 User/Group Accounts
 ^^^^^^^^^^^^^^^^^^^
 
@@ -182,7 +227,10 @@ Note that there are several run-time locations for data and socket files of
 NUT's privileged and unprivileged programs, and for configuration files.
 Access to these directories and individual files should be secured according
 to NUT documentation; NUT daemons will warn about lax permissions in their
-syslog or console messages.
+syslog or console messages. Generally, `root:nut` and `0640` permissions
+are correct for most of the files (so the run-time NUT programs may only
+read them but can not rewrite them, not even if there happens to be an
+exploitable code problem discovered in them over time).
 
 It is also important to note that (except for linkman:upslog[8]) no NUT
 daemons leave log files on their own: they send syslog messages, or write
@@ -205,6 +253,57 @@ this either fails (because the device is already busy) or gets to conflict
 with the copy of the driver running as a service instance and they begin
 to terminate each other.
 
+Configuring NUT Drivers
+^^^^^^^^^^^^^^^^^^^^^^^
+
+To get started with the NUT server system, you should populate the
+linkman:ups.conf[5] file with a section per device, which informs both the
+respective drivers, and tools like service-aware linkman:upsdrvsvcctl[8]
+and linkman:nut-driver-enumerator[8] or the legacy linkman:upsdrvctl[8],
+and the linkman:upsd[8] data server, to name a few.
+
+In many typical cases, the linkman:nut-scanner[8] tool can get you started
+by discovering supported USB, Serial, SNMP, NetXML, IPMI devices, or remote
+NUT deployments using Avahi mDNS or the good old port-knocking scan.
+This tool would propose a complete section content that you can copy-paste
+into your `ups.conf` file (possibly review and adapt the contents first,
+to e.g. add a description meaningful to you like "UPS in garage", etc.)
+
+Other configuration files
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+NUT sample configuration files (packaged or seen in sources under
+https://github.com/networkupstools/nut/tree/master/conf directory)
+start with a heading comment about the minimal set of their required
+options.  Note that many of these files can contain credentials
+(either for NUT roles, or for networked power devices as part of
+their NUT driver section configuration) and so these files and any
+of their backup copies should be secured accordingly.
+
+The linkman:nut.conf[5] may be used by init-scripts or other system
+integration code (it notably contains the `MODE` setting to choose
+which profile of NUT services to start or not on this particular
+system).
+
+On the NUT server you would need at least minimally configured:
+linkman:ups.conf[5], linkman:upsd.conf[5], linkman:upsd.users[5].
+
+On the majority of NUT clients (meaning each system monitoring the
+UPS state so it knows when to trigger its local shutdown), you would
+need linkman:upsmon.conf[5] and depending on your setup, may need a
+custom `NOTIFYCMD` or `SHUTDOWNCMD` (if you script something complex),
+and/or linkman:upssched.conf[5] and a custom `CMDSCRIPT` for it.
+
+For NUT CGI clients several files may need to be adapted and placed
+into certain directories according to their documentation:
+linkman:hosts.conf[5] and linkman:upsset.conf[5] for configuration,
+and `upsstats-single.html` and `upsstats.html` for HTML UI templates.
+
+Other clients, whether delivered by NUT project (linkman:NUT-Monitor[1]
+GUI) or co-located (link:https://github.com/networkupstools/wmnut[WMNut])
+or third-party (see https://networkupstools.org/projects.html) would
+probably support saving their settings or "favorites".  Do not forget
+to secure access to those files and their copies as well.
 
 ////////////////////////////////////////////
 // Dynamic list of all man pages follows: //
