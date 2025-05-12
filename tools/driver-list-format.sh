@@ -25,6 +25,10 @@ fi
 
 RES=0
 
+# Some sed/grep implementations tend to have a problem with "\t"
+# (treat it as escaped "t" character); substitutions are okay:
+TABCHAR="`printf '\t'`"
+
 echo "$0: $ACTION whether driver.list[.in] are well formatted"
 for drvfile in driver.list.in driver.list
 do
@@ -41,6 +45,18 @@ do
 		< "${DRVLIST_PATH}/data/${drvfile}" \
 		> "${DRVLIST_PATH}/data/${drvfile}.tabbed" \
 		&& \
+		{
+			# verify that lines are either empty, all-comments,
+			# or have six quoted fields (and optional comment);
+			# the fields may be empty (just two double-quotes).
+			BADLINES="`grep -vE '(^$|^#|^"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*("|"'"${TABCHAR}"'#.*)$)' < "${DRVLIST_PATH}/data/${drvfile}.tabbed"`"
+			if [ x"${BADLINES}" != x ] ; then
+				echo "$0: ERROR: markup of '${DRVLIST_PATH}/data/${drvfile}' needs to be fixed: some lines are not exactly 6 fields (and optional comment)" >&2
+				echo "$BADLINES" | head -5
+				RES=1
+				false
+			fi
+		} && \
 		if [ x"${ACTION}" = xEnsuring ] ; then
 			mv -f "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}"
 		else # Checking
