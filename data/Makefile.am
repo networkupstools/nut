@@ -26,4 +26,4 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="cmdvartab" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
-CLEANFILES = *.pdf *.html *-spellchecked
+CLEANFILES = *.pdf *.html *-spellchecked *.tabbed
