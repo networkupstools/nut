@@ -57,6 +57,7 @@ RES=0
 # Some sed/grep implementations tend to have a problem with "\t"
 # (treat it as escaped "t" character); substitutions are okay:
 TABCHAR="`printf '\t'`"
+VALID_LINE='(^$|^#|^"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*("|"'"${TABCHAR}"'#.*)$)'
 
 echo "$0: $ACTION whether driver.list[.in] are well formatted"
 for drvfile in driver.list.in driver.list
@@ -79,7 +80,7 @@ do
 			# verify that lines are either empty, all-comments,
 			# or have six quoted fields (and optional comment);
 			# the fields may be empty (just two double-quotes).
-			BADLINES="`grep -vE '(^$|^#|^"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*"'"${TABCHAR}"'"[^"]*("|"'"${TABCHAR}"'#.*)$)' < "${TMPBUILD_PATH}/${drvfile}.tabbed"`"
+			BADLINES="`grep -vE "${VALID_LINE}" < "${TMPBUILD_PATH}/${drvfile}.tabbed"`"
 			if [ x"${BADLINES}" != x ] ; then
 				echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: some lines are not exactly 6 fields (and optional comment)" >&2
 				echo "$BADLINES" | head -5
