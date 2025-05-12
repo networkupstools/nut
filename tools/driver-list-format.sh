@@ -32,13 +32,20 @@ do
 		# For every non-comment line:
 		# * replace quote-spaces-quote with quote-TAB-quote
 		# * strip trailing blank characters at the end of line
-		sed -e '/^#/!s/\" \+\"/\"\t\"/g' -e "/^#/!s/[[:blank:]]*$//" < "${DRVLIST_PATH}/data/${drvfile}" > "${DRVLIST_PATH}/data/${drvfile}.tabbed" && \
+		sed \
+			-e '/^#/!s/\" \+\"/\"\t\"/g' \
+			-e '/^#/!s/[[:blank:]]*$//' \
+		< "${DRVLIST_PATH}/data/${drvfile}" \
+		> "${DRVLIST_PATH}/data/${drvfile}.tabbed" \
+		&& \
 		if [ x"${ACTION}" = xEnsuring ] ; then
 			mv -f "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}"
 		else # Checking
 			diff "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}" >/dev/null \
 			|| { echo "File '${DRVLIST_PATH}/data/${drvfile}' markup needs to be fixed (run $0 and commit the git change, please)" >&2 ; RES=1 ; }
-		fi || RES=$?
+		fi \
+		|| RES=$?
+
 		echo "Processed ${DRVLIST_PATH}/data/${drvfile}"
 	else
 		echo "Skipping ${drvfile} as it is missing..."
