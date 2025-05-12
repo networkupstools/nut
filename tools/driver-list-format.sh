@@ -29,6 +29,9 @@ echo "$ACTION whether driver.list[.in] are well formatted"
 for drvfile in driver.list.in driver.list
 do
 	if [ -f "${DRVLIST_PATH}/data/${drvfile}" ]; then
+		# For every non-comment line:
+		# * replace quote-spaces-quote with quote-TAB-quote
+		# * strip trailing blank characters at the end of line
 		sed -e '/^#/!s/\" \+\"/\"\t\"/g' -e "/^#/!s/[[:blank:]]*$//" < "${DRVLIST_PATH}/data/${drvfile}" > "${DRVLIST_PATH}/data/${drvfile}.tabbed" && \
 		if [ x"${ACTION}" = xEnsuring ] ; then
 			mv -f "${DRVLIST_PATH}/data/${drvfile}.tabbed" "${DRVLIST_PATH}/data/${drvfile}"
