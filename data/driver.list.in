@@ -638,6 +638,23 @@
 "Ippon"	"ups"	"2"	"(various)"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"(various)"	"USB"	"blazer_usb"
 "Ippon"	"ups"	"2"	"INNOVA RT 1K/1.5K/2K/3K"	"USB"	"blazer_usb"
+"Ippon"	"ups"	"2"	"2049878 UPS Ippon Na+ TA 1000 (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2055083 UPS Ippon Na+ TAE 1000 (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049879 UPS Ippon Na+ TA 2000 (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2055084 UPS Ippon Na+ TAE 2000 (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049880 UPS Ippon Na+ TA 3000 (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2055085 UPS Ippon Na+ TAE 3000 (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049881 UPS Ippon Na+ TA 6K (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049882 UPS Ippon Na+ TA 10K (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049895 Battery for UPS Ippon NA+ TA 6/10K"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049883 UPS Ippon Na+ RTA 1000 (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049884 UPS Ippon Na+ RTA 2000 (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049885 UPS Ippon Na+ RTA 3000 (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049886 UPS Ippon Na+ RTA 6K (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049888 UPS Ippon Na+ RTA 10K (white)"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2058874 Battery for UPS Ippon NA+ RTA 2000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049899 Battery for UPS Ippon NA+ RTA 3000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"2049897 Battery for UPS Ippon NA+ RTA 6/10K"	"Serial port"	"blazer_ser"
 
 "IVT"	"scd"	"1"	"SCD series"	""	"ivtscd"
 
@@ -1382,6 +1399,15 @@
 "Syndome"	"ups"	"3"	"Atom LCD-1000"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/483
 
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
+
+"Talegent"	"ups"	"2"	"Vitality 1KS/2KS/3KS/6KS/10KS"	"Serial port"	"blazer_ser"
+"Talegent"	"ups"	"2"	"EBP6K-UP/EBP10K-UP"	"Serial port"	"blazer_ser"
+"Talegent"	"ups"	"2"	"RT01S-36HV-Na"	"Serial port"	"blazer_ser"
+"Talegent"	"ups"	"2"	"RT02S-72HV-Na"	"Serial port"	"blazer_ser"
+"Talegent"	"ups"	"2"	"RT03S-96HV-Na"	"Serial port"	"blazer_ser"
+"Talegent"	"ups"	"2"	"RT06H-192HVEBP6K/10K-RTPDU"	"Serial port"	"blazer_ser"
+"Talegent"	"ups"	"2"	"RT10H-240HVEBP6K/10K-RTPDU"	"Serial port"	"blazer_ser"
+"Talegent"	"ups"	"2"	"EBP2K-RT/EBP3K-RT/EBP6K/10K-RT"	"Serial port"	"blazer_ser"
 
 "Techly"	"ups"	"2"	"1000VA"	"USB"	"nutdrv_qx (very little data available with subdriver/protocol=hunnox)"	# https://github.com/networkupstools/nut/issues/2651
 
