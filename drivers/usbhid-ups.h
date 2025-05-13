@@ -4,6 +4,7 @@
  *  2003-2009 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
  *  2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *  2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2017-2025 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
