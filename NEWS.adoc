@@ -129,6 +129,12 @@ https://github.com/networkupstools/nut/milestone/9
    conventions, and miscellaneous" (commonly number 7), to deliver support
    for `man nut` queries (NUT overview manual page also created). [#2945]
 
+ - A new `configure --with-docs-man-dir-as-base` option was introduced so
+   that directories for man page sections can now be automatically named
+   as either "base" number of the section (e.g. `man1`) or by full section
+   name (`man1m`), as different OS distributions have different preferences
+   in this regard. [#2950]
+
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------

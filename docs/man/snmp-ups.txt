@@ -186,6 +186,8 @@ command. The driver attempts to send +shutdown.return+, +shutdown.reboot+,
 and +load.off.delay+ commands to the UPS in sequence, stopping after the first
 supported command.
 
+include::networked_hostnames.txt[]
+
 INSTALLATION
 ------------
 

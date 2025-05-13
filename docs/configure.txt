@@ -363,7 +363,7 @@ Additional flags with regard to documentation generation include:
 
 	--with-docs-man-section-api=<SN>	(default: 3)
 	--with-docs-man-section-cfg=<SN>	(default: 5)
-	--with-docs-man-section-cmd-sys=<SN>	(default: 8)
+	--with-docs-man-section-cmd-sys=<SN>	(default: 8, or 1m on Solaris/illumos)
 	--with-docs-man-section-cmd-usr=<SN>	(default: 1)
 	--with-docs-man-section-misc=<SN>	(default: 7)
 
@@ -374,6 +374,12 @@ systems might use `--with-docs-man-section-cmd-sys=1m`). This impacts not only
 file names of the manual pages, but also cross-links in generated documents.
 Note that use of these flags does not implicitly enable any `--with-docs=...`
 mode, which should still be specified explicitly.
+
+	--with-docs-man-dir-as-base=(yes/no)	(default: yes, or no Solaris/illumos)
+
+Are platform man directories named by base number (yes) or by full section
+name (no), e.g. given a `1m` man page section, install the pages into `man1`
+or `man1m` directory?
 
 Python support
 ~~~~~~~~~~~~~~
@@ -811,7 +817,18 @@ By GNU Autotools default, this is `<prefix>/share` (same as the
 system-wide "data root" which we also consult for third-party data
 such as Augeas lens delivery locations), i.e. `/usr/local/ups/share`.
 +
-Typically this is reconfigured to a `'${datarootdir}/nut'` value.
+Typically this is reconfigured to a `--datadir='${datarootdir}/nut'` value.
++
+[NOTE]
+======
+This long-established practice with NUT packaging differs from current
+recommendations of GNU Automake/Autoconf ecosystem listed at
+https://www.gnu.org/prep/standards/html_node/Directory-Variables.html :
+
+	The definition of `datadir` is the same for all packages,
+	so you should install your data in a subdirectory thereof.
+	Most packages install their data under `$(datadir)/package-name/`.
+======
 +
 At the moment, this directory only holds two files by default -- the
 optional `cmdvartab` and `driver.list`, but may hold additional data
