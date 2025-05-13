@@ -189,6 +189,31 @@ a bit between file-reading cycles (currently this delay is hardcoded to one
 second), independently of (and/or in addition to) any `TIMER` keywords and
 possibly the common `pollinterval` setting.
 
+Another, more recently introduced instruction is `ALARM`, which allows
+the simulation of UPS alarms in much the same way they would be raised
+by real driver implementations. Modern drivers decouple alarm states
+from the `ups.status` variable, and raising `ALARM` by setting it as a
+status token is discouraged in favor of using modern, common functions
+for raising alarms within the driver code.
+
+The `ALARM` instruction is intended to simulate this behavior as closely
+as possible. The value following an `ALARM` instruction is treated as
+the alarm message and is eventually published as the `ups.alarm`
+variable, with the `ALARM` token also set in `ups.status` by internal
+driver mechanisms, rather than by directly manipulating the variable.
+Multiple `ALARM` instructions will have their messages combined into
+the `ups.alarm` variable, just as would happen with real driver logic.
+
+Conversely, any `ALARM` instruction on its own will clear active alarm
+states. See below for an example of setting and resetting alarms:
+
+	ALARM [UPS too warm to charge]
+	ALARM [UPS circuit is overheating]
+	TIMER 5
+	ALARM
+	TIMER 5
+	ALARM [UPS too cold to charge]
+
 Repeater Mode
 ~~~~~~~~~~~~~
 

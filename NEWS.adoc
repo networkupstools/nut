@@ -73,6 +73,29 @@ https://github.com/networkupstools/nut/milestone/9
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
 
+ - common driver code:
+   * Removed workarounds trying to migrate legacy driver raised `ALARM`
+     status tokens into modern `alarm_*` function logic. Rather, we keep
+     supporting them as separate from the modern logic, seeing as `upsmon`
+     does not care where the token itself was raised for its notifications.
+     Driver-code related test-cases were updated to reflect these changes.
+     [issue #2928, PRs #2931 and #2934]
+
+ - `dummy-ups` driver updates:
+   * A new instruction `ALARM` was added for the `Dummy Mode` operation
+     of the driver, enabling simulation of UPS alarm states more closely
+     in line with modern, real-world UPS driver implementations. This
+     follows the updated principle of keeping alarm states decoupled from
+     the `ups.status` variable, with alarms now raised via common alarm
+     functions rather than direct manipulation. [issue #2928, PR #2936]
+
+ - `clone`, `clone-outlet`, `nhs_ser` driver and `nutdrv_qx_ablerex`
+   subdriver updates:
+   * Refactored to follow modern handling of status and alarm conditions,
+     aligning with current driver design practices. This includes fixing
+     copy-paste related issues in alarm reporting and removing some alarm
+     messages that should instead be reflected as status flags. [#2936]
+
  - `nutdrv_qx` driver updates:
    * Introduced `innovart33` protocol support for Ippon Innova RT 3/3 topology
      UPSes. [#2938]
