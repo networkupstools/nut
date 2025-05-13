@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.63"
+#define DRIVER_VERSION	"0.64"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -918,8 +918,19 @@ int instcmd(const char *cmdname, const char *extradata)
 	/* If extradata is empty, use the default value from the HID-to-NUT table */
 	val = extradata ? extradata : hidups_item->dfl;
 	if (!val) {
-		upsdebugx(2, "instcmd: %s requires an explicit parameter", cmdname);
-		return STAT_INSTCMD_CONVERSION_FAILED;
+		if (hidups_item->hidflags & HU_FLAG_CMD_PARAM_REQUIRED) {
+			upsdebugx(2, "instcmd: %s requires an explicit or default parameter", cmdname);
+			return STAT_INSTCMD_CONVERSION_FAILED;
+		}
+
+		/* If we end up with atol() below, it should return 0 on error
+		 * anyway (on platforms where it would not crash due to NULL),
+		 * so we make it portably explicit here as a string "0" to be
+		 * handled below.
+		 */
+		upsdebugx(4, "instcmd: %s got no explicit nor default parameter, "
+			"but does not require one: falling back to \"0\"", cmdname);
+		val = "0";
 	}
 
 	/* Lookup the new value if needed */

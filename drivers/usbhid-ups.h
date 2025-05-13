@@ -200,9 +200,13 @@ typedef struct {
 #define HU_FLAG_STALE			32		/* data stale, don't try too often. */
 /* see 64 below */
 #define HU_FLAG_ENUM			128		/* enum values exist. */
+#define HU_FLAG_CMD_PARAM_REQUIRED	256		/* if also HU_TYPE_CMD, require during
+							 * instcmd() that a non-trivial command
+							 * parameter is passed. */
 
 /* hints for su_ups_set, applicable only to rw vars */
 #define HU_TYPE_CMD			64		/* instant command */
+#define HU_TYPE_CMD_PARAM_REQUIRED	(HU_TYPE_CMD | HU_FLAG_CMD_PARAM_REQUIRED)	/* Shortcut for setting in the mapping tables */
 
 #define HU_CMD_MASK		0x2000
 
