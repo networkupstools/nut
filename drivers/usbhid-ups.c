@@ -900,7 +900,7 @@ int instcmd(const char *cmdname, const char *extradata)
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
 
-		upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
+		upsdebugx(2, "instcmd: info element unavailable %s", cmdname);
 		return STAT_INSTCMD_INVALID;
 	}
 
@@ -911,14 +911,14 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Check if the item is an instant command */
 	if (!(hidups_item->hidflags & HU_TYPE_CMD)) {
-		upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
+		upsdebugx(2, "instcmd: %s is not an instant command", cmdname);
 		return STAT_INSTCMD_INVALID;
 	}
 
 	/* If extradata is empty, use the default value from the HID-to-NUT table */
 	val = extradata ? extradata : hidups_item->dfl;
 	if (!val) {
-		upsdebugx(2, "instcmd: %s requires an explicit parameter\n", cmdname);
+		upsdebugx(2, "instcmd: %s requires an explicit parameter", cmdname);
 		return STAT_INSTCMD_CONVERSION_FAILED;
 	}
 
@@ -931,13 +931,13 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
-		upsdebugx(3, "instcmd: SUCCEED\n");
+		upsdebugx(3, "instcmd: SUCCEED");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
+	upsdebugx(3, "instcmd: FAILED"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -953,26 +953,26 @@ int setvar(const char *varname, const char *val)
 	hidups_item = find_nut_info(varname);
 
 	if (hidups_item == NULL) {
-		upsdebugx(2, "setvar: info element unavailable %s\n", varname);
+		upsdebugx(2, "setvar: info element unavailable %s", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
 	/* Checking item writability and HID Path */
 	if (!(hidups_item->info_flags & ST_FLAG_RW)) {
-		upsdebugx(2, "setvar: not writable %s\n", varname);
+		upsdebugx(2, "setvar: not writable %s", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
 	/* handle server side variable */
 	if (hidups_item->hidflags & HU_FLAG_ABSENT) {
-		upsdebugx(2, "setvar: setting server side variable %s\n", varname);
+		upsdebugx(2, "setvar: setting server side variable %s", varname);
 		dstate_setinfo(hidups_item->info_type, "%s", val);
 		return STAT_SET_HANDLED;
 	}
 
 	/* HU_FLAG_ABSENT is the only case of HID Path == NULL */
 	if (hidups_item->hidpath == NULL) {
-		upsdebugx(2, "setvar: ID Path is NULL for %s\n", varname);
+		upsdebugx(2, "setvar: ID Path is NULL for %s", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
@@ -985,13 +985,13 @@ int setvar(const char *varname, const char *val)
 
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
-		upsdebugx(5, "setvar: SUCCEED\n");
+		upsdebugx(5, "setvar: SUCCEED");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_SET_HANDLED;
 	}
 
-	upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
+	upsdebugx(3, "setvar: FAILED"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
 	return STAT_SET_UNKNOWN;
 }
 
@@ -1253,7 +1253,7 @@ void upsdrv_updateinfo(void)
 		ups_infoval_set(item, value);
 	}
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n",
+	upsdebugx(1, "took %.3f seconds handling interrupt reports...",
 		interval());
 #endif
 	/* clear status buffer before beginning */
@@ -1289,7 +1289,7 @@ void upsdrv_updateinfo(void)
 
 	dstate_dataok();
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling feature reports...\n",
+	upsdebugx(1, "took %.3f seconds handling feature reports...",
 		interval());
 #endif
 }
