@@ -48,7 +48,7 @@ int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.84"
+#define DRIVER_VERSION	"0.85"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -853,7 +853,9 @@ int instcmd(const char *cmdname, const char *extra)
 {
 	int i;
 
-	upsdebugx(2, "In instcmd with %s and extra %s.", cmdname, extra);
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
 		ser_send(upsfd, "%s%s", SIM_PWR_FAIL, COMMAND_END);
@@ -938,14 +940,14 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 
 int setcmd(const char* varname, const char* setvalue)
 {
-	upsdebugx(2, "In setcmd for %s with %s...", varname, setvalue);
+	upsdebug_SET_STARTING(varname, setvalue);
 
 	if (!strcasecmp(varname, "ups.delay.shutdown"))
 	{
@@ -954,6 +956,7 @@ int setcmd(const char* varname, const char* setvalue)
 		{
 			if (atoi(setvalue) > 65535)
 			{
+				/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
 				upsdebugx(2, "Too big for OZ/OB (>65535)...(%s)", setvalue);
 				return STAT_SET_UNKNOWN;
 			}
@@ -962,6 +965,7 @@ int setcmd(const char* varname, const char* setvalue)
 		{
 			if (atoi(setvalue) > 999)
 			{
+				/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
 				upsdebugx(2, "Too big for EG/ON (>999)...(%s)", setvalue);
 				return STAT_SET_UNKNOWN;
 			}
@@ -1059,7 +1063,6 @@ int setcmd(const char* varname, const char* setvalue)
 		return STAT_SET_UNKNOWN;
 	}
 
-	upslogx(LOG_NOTICE, "setcmd: unknown command [%s]", varname);
-
+	upslog_SET_UNKNOWN(varname, setvalue);
 	return STAT_SET_UNKNOWN;
 }

@@ -36,7 +36,7 @@
 
 #include <ctype.h>
 
-#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.63"
+#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.64"
 
 typedef struct {
 	float          i_volt;
@@ -146,6 +146,10 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		return powpan_instcmd("beeper.enable", NULL);
 	}
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	for (i = 0; cmdtab[i].cmd != NULL; i++) {
 
 		if (strcasecmp(cmdname, cmdtab[i].cmd)) {
@@ -156,7 +160,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
+		upslog_INSTCMD_FAILED(cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -179,7 +183,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			snprintf(command, sizeof(command), "S%02ldR%04ld\r", offdelay / 60, ondelay);
 		}
 	} else {
-		upslogx(LOG_NOTICE, "%s: command [%s] [%s] unknown", __func__, cmdname, extra);
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -187,7 +191,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
+	upslog_INSTCMD_FAILED(cmdname, extra);
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -195,6 +199,8 @@ static int powpan_setvar(const char *varname, const char *val)
 {
 	char	command[SMALLBUF];
 	int 	i;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	for (i = 0;  vartab[i].var != NULL; i++) {
 
@@ -214,11 +220,11 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: setting variable [%s] to [%s] failed", __func__, varname, val);
-		return STAT_SET_UNKNOWN;
+		upslog_SET_FAILED(varname, val);
+		return STAT_SET_UNKNOWN;	/* FIXME: ..._FAILED? */
 	}
 
-	upslogx(LOG_ERR, "%s: variable [%s] not found", __func__, varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

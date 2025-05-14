@@ -940,7 +940,7 @@ int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmd
 	}
 
 	if (sdret == STAT_INSTCMD_HANDLED) {
-		upslogx(LOG_INFO, "UPS [%s]: shutdown request was successful with '%s'",
+		upslogx(LOG_CRIT, "UPS [%s]: shutdown request was successful with '%s'",
 			NUT_STRARG(upsname), NUT_STRARG(sdcmd_used));
 
 		/* Pass it up to caller? */
@@ -965,6 +965,10 @@ int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmd
 /* handle instant commands common for all drivers */
 int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 	char buf[SMALLBUF];
+
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+
 	if (conn)
 #ifndef WIN32
 		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
@@ -975,7 +979,8 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		snprintf(buf, sizeof(buf), "(null)");
 
 	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s] on %s",
-		cmdname, extra, NUT_STRARG(upsname), buf);
+		NUT_STRARG(cmdname), NUT_STRARG(extra),
+		NUT_STRARG(upsname), buf);
 
 	if (!strcmp(cmdname, "shutdown.default")) {
 		/* Call the default implementation of UPS shutdown as
@@ -1003,7 +1008,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		 * flag involved.
 		 */
 		if (!strcmp("1", dstate_getinfo("driver.flag.allow_killpower"))) {
-			upslogx(LOG_WARNING, "Requesting UPS [%s] to power off, "
+			upslogx(LOG_CRIT, "Requesting UPS [%s] to power off, "
 				"as/if handled by its driver by default (may exit), "
 				"due to socket protocol request", NUT_STRARG(upsname));
 			if (handling_upsdrv_shutdown == 0)
@@ -1013,7 +1018,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 			dstate_setinfo("driver.state", "quiet");
 			return STAT_INSTCMD_HANDLED;
 		} else {
-			upslogx(LOG_WARNING, "Got socket protocol request for UPS [%s] "
+			upslogx(LOG_CRIT, "Got socket protocol request for UPS [%s] "
 				"to power off, but driver.flag.allow_killpower does not"
 				"permit this - request was currently ignored!",
 				NUT_STRARG(upsname));
@@ -1128,8 +1133,8 @@ int main_setvar(const char *varname, const char *val, conn_t *conn) {
 	return STAT_SET_UNKNOWN;
 
 invalid:
-	upsdebugx(1, "Error: UPS [%s]: invalid %s value: %s",
-		NUT_STRARG(upsname), varname, val);
+	upsdebugx(1, "shared %s(): Error: UPS [%s]: invalid %s value: %s",
+		__func__, NUT_STRARG(upsname), varname, val);
 	return STAT_SET_INVALID;
 }
 

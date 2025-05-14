@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.98"
+#define DRIVER_VERSION	"0.99"
 
 
 /* driver description structure */
@@ -543,6 +543,10 @@ int instcmd(const char *cmdname, const char *extra)
 {
 	char temp[BUFFLEN];
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	/* Start battery test */
 	if (!strcasecmp(cmdname, "test.battery.start"))
 	{
@@ -648,7 +652,7 @@ int instcmd(const char *cmdname, const char *extra)
 		}
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -659,6 +663,8 @@ int setvar(const char *varname, const char *val)
 {
 	char temp[BUFFLEN];
 	char cmd[15];
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* TODO : add some controls */
 
@@ -675,6 +681,7 @@ int setvar(const char *varname, const char *val)
 	}
 
 	upsdebugx(1, "setvar: Variable %s not supported by UPS", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

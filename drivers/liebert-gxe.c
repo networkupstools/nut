@@ -24,7 +24,7 @@
 #include "ydn23.h"
 
 #define DRIVER_NAME	"Liebert GXE Series UPS driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 #define PROBE_RETRIES	3
 #define DEFAULT_STALE_RETRIES	3
@@ -99,6 +99,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	int	retry, ret, len = 4;
 	char	*data = NULL;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.start"))
 		data = "1002";
 	else if (!strcasecmp(cmdname, "test.battery.stop"))
@@ -108,7 +112,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	else if (!strcasecmp(cmdname, "load.off"))
 		data = "2003";
 	else {
-		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -125,7 +129,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 	}
 
-	upslogx(LOG_WARNING, "instcmd: remote failed response, try again");
+	upslogx(LOG_INSTCMD_FAILED, "instcmd: remote failed response, try again");
 	return STAT_INSTCMD_FAILED;
 }
 

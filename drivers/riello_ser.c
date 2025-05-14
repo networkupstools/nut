@@ -48,7 +48,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.15"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -407,6 +407,10 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	uint16_t delay;
 	const char	*delay_char;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
 		if (!strcasecmp(cmdname, "load.off")) {
 			delay = 0;
@@ -686,7 +690,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -1209,12 +1213,14 @@ void upsdrv_shutdown(void)
 /*
 static int setvar(const char *varname, const char *val)
 {
-	if (!strcasecmp(varname, "ups.test.interval")) {
+	upsdebug_SET_STARTING(varname, val);
+
+ 	if (!strcasecmp(varname, "ups.test.interval")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 */

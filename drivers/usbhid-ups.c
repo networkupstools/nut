@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.64"
+#define DRIVER_VERSION	"0.65"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -836,9 +836,7 @@ int instcmd(const char *cmdname, const char *extradata)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "instcmd(%s, %s)",
-		cmdname,
-		extradata ? extradata : "[NULL]");
+	upsdebug_INSTCMD_STARTING(cmdname, extradata);
 
 	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
@@ -900,7 +898,9 @@ int instcmd(const char *cmdname, const char *extradata)
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
 
+		/* FIXME: ..._UNKNOWN? */
 		upsdebugx(2, "instcmd: info element unavailable %s", cmdname);
+		upslog_INSTCMD_INVALID(cmdname, extradata);
 		return STAT_INSTCMD_INVALID;
 	}
 
@@ -948,7 +948,8 @@ int instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upsdebugx(3, "instcmd: FAILED"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
+	/* upsdebugx(3, "instcmd: FAILED"); / * FIXME: return HANDLED but FAILED, not UNKNOWN! */
+	upslog_INSTCMD_FAILED(cmdname, extradata);
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -958,13 +959,14 @@ int setvar(const char *varname, const char *val)
 	hid_info_t	*hidups_item;
 	double		value;
 
-	upsdebugx(1, "setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	/* retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(varname);
 
 	if (hidups_item == NULL) {
 		upsdebugx(2, "setvar: info element unavailable %s", varname);
+		upslog_SET_UNKNOWN(varname, val);
 		return STAT_SET_UNKNOWN;
 	}
 
@@ -1002,7 +1004,8 @@ int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
-	upsdebugx(3, "setvar: FAILED"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
+	/* upsdebugx(3, "setvar: FAILED"); / * FIXME: return HANDLED but FAILED, not UNKNOWN! */
+	upslog_SET_FAILED(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

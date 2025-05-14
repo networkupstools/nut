@@ -94,7 +94,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Belkin 'Universal UPS' driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1204,6 +1204,10 @@ int instcmd(const char *cmdname, const char *extra)
 {
 	int r;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	/* We use test.failure.start to initiate a "deep battery test".
 	   This does not really simulate a 'power failure', because we
 	   won't start shutdown procedures during a test.
@@ -1290,7 +1294,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -1298,6 +1302,8 @@ int instcmd(const char *cmdname, const char *extra)
 static int setvar(const char *varname, const char *val)
 {
 	int i;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	if (!strcasecmp(varname, "input.sensitivity")) {
 		for (i=0; i<asize(voltsens); i++) {
@@ -1329,7 +1335,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;  /* Future: failure if result==-1 */
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown var [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

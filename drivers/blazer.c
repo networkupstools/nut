@@ -409,7 +409,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	char	buf[SMALLBUF] = "";
 	int	i;
 
-	upslogx(LOG_INFO, "instcmd(%s, %s)", cmdname, extra ? extra : "[NULL]");
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	for (i = 0; instcmd[i].cmd; i++) {
 
@@ -426,7 +426,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		 */
 		if (blazer_command(buf, buf, sizeof(buf)) > 0) {
 			if (strncmp(buf, "ACK", 3) && strncmp(buf, "(ACK", 4)) {
-				upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+				upslogx(LOG_INSTCMD_FAILED, "instcmd: command [%s] failed", cmdname);
 				return STAT_INSTCMD_FAILED;
 			}
 		}
@@ -485,7 +485,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		long	delay = extra ? strtol(extra, NULL, 10) : 10;
 
 		if ((delay < 1) || (delay > 99)) {
-			upslogx(LOG_ERR,
+			upslogx(LOG_INSTCMD_FAILED,
 				"instcmd: command [%s] failed, delay [%s] out of range",
 				cmdname, extra);
 			return STAT_INSTCMD_FAILED;
@@ -493,7 +493,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 
 		snprintf(buf, sizeof(buf), "T%02ld\r", delay);
 	} else {
-		upslogx(LOG_ERR, "instcmd: command [%s] not found", cmdname);
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -504,7 +504,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	 */
 	if (blazer_command(buf, buf, sizeof(buf)) > 0) {
 		if (strncmp(buf, "ACK", 3) && strncmp(buf, "(ACK", 4)) {
-			upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+			upslogx(LOG_INSTCMD_FAILED, "instcmd: command [%s] failed", cmdname);
 			return STAT_INSTCMD_FAILED;
 		}
 	}

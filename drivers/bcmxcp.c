@@ -116,7 +116,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.36"
+#define DRIVER_VERSION	"0.37"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -1967,7 +1967,9 @@ static int instcmd(const char *cmdname, const char *extra)
 	int sec, outlet_num;
 	int sddelay = 0x03; /* outlet off in 3 seconds, by default */
 
-	upsdebugx(1, "entering instcmd(%s)(%s)", cmdname, extra);
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
@@ -2152,14 +2154,14 @@ static int instcmd(const char *cmdname, const char *extra)
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int decode_instcmd_exec(const ssize_t res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
 {
 	if (res <= 0) {
-		upslogx(LOG_ERR, "[%s] Short read from UPS", cmdname);
+		upslogx(LOG_INSTCMD_FAILED, "[%s] Short read from UPS", cmdname);
 		dstate_datastale();
 		return STAT_INSTCMD_FAILED;
 	}
@@ -2178,23 +2180,23 @@ static int decode_instcmd_exec(const ssize_t res, const unsigned char exec_statu
 			return STAT_INSTCMD_HANDLED;
 			}
 		case BCMXCP_RETURN_BUSY: {
-			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
+			upslogx(LOG_INSTCMD_FAILED, "[%s] Busy or disabled by front panel", cmdname);
 			return STAT_INSTCMD_FAILED;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
-			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
+			upslogx(LOG_INSTCMD_FAILED, "[%s] Unrecognized command byte or corrupt checksum", cmdname);
 			return STAT_INSTCMD_FAILED;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
-			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+			upslogx(LOG_INSTCMD_INVALID, "[%s] Invalid parameter", cmdname);
 			return STAT_INSTCMD_INVALID;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
-			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
+			upslogx(LOG_INSTCMD_INVALID, "[%s] Parameter out of range", cmdname);
 			return STAT_INSTCMD_INVALID;
 			}
 		default: {
-			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
+			upslogx(LOG_INSTCMD_INVALID, "[%s] Not supported", cmdname);
 			return STAT_INSTCMD_INVALID;
 			}
 	}
@@ -2224,7 +2226,7 @@ int setvar (const char *varname, const char *val)
 	int sec, outlet_num, tmp;
 	int onOff_setting = PW_AUTO_OFF_DELAY;
 
-	upsdebugx(1, "entering setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	if (!strcasecmp(varname, "input.transfer.boost.high")) {
 
@@ -2511,7 +2513,7 @@ int setvar (const char *varname, const char *val)
 static int decode_setvar_exec(const ssize_t res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
 {
 	if (res <= 0) {
-		upslogx(LOG_ERR, "[%s] Short read from UPS", cmdname);
+		upslogx(LOG_SET_FAILED, "[%s] Short read from UPS", cmdname);
 		dstate_datastale();
 		return STAT_SET_FAILED;
 	}
@@ -2530,23 +2532,23 @@ static int decode_setvar_exec(const ssize_t res, const unsigned char exec_status
 			return STAT_SET_HANDLED;
 			}
 		case BCMXCP_RETURN_BUSY: {
-			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
+			upslogx(LOG_SET_FAILED, "[%s] Busy or disabled by front panel", cmdname);
 			return STAT_SET_FAILED;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
-			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
+			upslogx(LOG_SET_FAILED, "[%s] Unrecognized command byte or corrupt checksum", cmdname);
 			return STAT_SET_FAILED;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
-			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+			upslogx(LOG_SET_INVALID, "[%s] Invalid parameter", cmdname);
 			return STAT_SET_INVALID;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
-			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
+			upslogx(LOG_SET_INVALID, "[%s] Parameter out of range", cmdname);
 			return STAT_SET_INVALID;
 			}
 		default: {
-			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
+			upslogx(LOG_SET_INVALID, "[%s] Not supported", cmdname);
 			return STAT_SET_INVALID;
 			}
 	}

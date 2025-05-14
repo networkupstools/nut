@@ -29,7 +29,7 @@
 #include "IOKit/ps/IOPSKeys.h"
 
 #define DRIVER_NAME	"Mac OS X UPS meta-driver"
-#define DRIVER_VERSION	"1.42"
+#define DRIVER_VERSION	"1.43"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -292,12 +292,16 @@ void upsdrv_shutdown(void)
 /*
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/ * May be used in logging below, but not as a command argument * /
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 */
@@ -320,12 +324,14 @@ static int instcmd(const char *cmdname, const char *extra)
 /*
 static int setvar(const char *varname, const char *val)
 {
-	if (!strcasecmp(varname, "ups.test.interval")) {
+	upsdebug_SET_STARTING(varname, val);
+
+ 	if (!strcasecmp(varname, "ups.test.interval")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 */

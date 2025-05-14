@@ -32,7 +32,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"GE/IMV/Victron UPS driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -99,6 +99,10 @@ static int get_data (const char *out_string, char *in_string)
 static int instcmd(const char *cmdname, const char *extra)
 {
 	char temp[ LENGTH_TEMP ];
+
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if(!strcasecmp(cmdname, "calibrate.start"))
 	{
@@ -210,7 +214,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else
 	{
-		upsdebugx(1, "instcmd: unknown command: [%s] [%s]", cmdname, extra);
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 }

@@ -86,7 +86,7 @@
 #include "nut_float.h"
 
 #define DRIVER_NAME	"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -317,6 +317,10 @@ static void shutdown_ret(void)
 /* registered instant commands */
 static int instcmd (const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 	    ser_send_char (upsfd, BATTERY_TEST);
 	    return STAT_INSTCMD_HANDLED;
@@ -333,7 +337,7 @@ static int instcmd (const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

@@ -38,7 +38,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Rhino UPS driver"
-#define DRIVER_VERSION	"0.55"
+#define DRIVER_VERSION	"0.56"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -656,6 +656,10 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	ssize_t ret = 0;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		/* shutdown now (one way) */
@@ -700,7 +704,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

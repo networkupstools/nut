@@ -30,8 +30,8 @@
 
 #define ENDCHAR '\r'
 
-#define DRIVER_NAME "SMS Brazil UPS driver"
-#define DRIVER_VERSION "1.02"
+#define DRIVER_NAME	"SMS Brazil UPS driver"
+#define DRIVER_VERSION	"1.03"
 
 #define QUERY_SIZE 7
 #define BUFFER_SIZE 18
@@ -254,6 +254,8 @@ static int get_ups_features(void) {
 static int sms_instcmd(const char *cmdname, const char *extra) {
     size_t length;
 
+    upsdebug_INSTCMD_STARTING(cmdname, extra);
+
     if (!strcasecmp(cmdname, "test.battery.start")) {
         long delay = extra ? strtol(extra, NULL, 10) : 10;
         length = sms_prepare_test_battery_nsec(&bufOut[0], delay);
@@ -347,11 +349,13 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
         return STAT_INSTCMD_HANDLED;
     }
 
-    upslogx(LOG_NOTICE, "sms_instcmd: unknown command [%s]", cmdname);
+    upslog_INSTCMD_UNKNOWN(cmdname, extra);
     return STAT_INSTCMD_UNKNOWN;
 }
 
 static int sms_setvar(const char *varname, const char *val) {
+    upsdebug_SET_STARTING(varname, val);
+
     if (!strcasecmp(varname, "ups.delay.reboot")) {
         int ipv = atoi(val);
         if (ipv >= 0)
@@ -359,6 +363,8 @@ static int sms_setvar(const char *varname, const char *val) {
         dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
         return STAT_SET_HANDLED;
     }
+
+    upslog_SET_UNKNOWN(varname, val);
     return STAT_SET_UNKNOWN;
 }
 

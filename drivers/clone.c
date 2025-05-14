@@ -498,6 +498,10 @@ static int sstate_dead(int maxage)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
@@ -518,13 +522,15 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+
 	if (!strcasecmp(varname, "battery.charge.low")) {
 		battery.charge.low = strtod(val, NULL);
 		dstate_setinfo("battery.charge.low", "%f", battery.charge.low);
@@ -537,7 +543,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

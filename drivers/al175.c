@@ -52,7 +52,7 @@ typedef	uint8_t byte_t;
 
 
 #define DRIVER_NAME	"Eltek AL175/COMLI driver"
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.17"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1295,7 +1295,9 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	int err;
 
-	upsdebugx(1, "INSTCMD: %s", cmdname);
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	io_new_transaction(/*timeout=*/5);
 
@@ -1314,7 +1316,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return (!err ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED);
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

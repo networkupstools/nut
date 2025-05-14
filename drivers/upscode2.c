@@ -43,7 +43,7 @@
 #include "nut_float.h"
 
 #define DRIVER_NAME	"UPScode II UPS driver"
-#define DRIVER_VERSION	"0.93"
+#define DRIVER_VERSION	"0.94"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -907,7 +907,7 @@ static int instcmd (const char *auxcmd, const char *data)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "Instcmd: %s %s", auxcmd, data ? data : "\"\"");
+	upsdebug_INSTCMD_STARTING(auxcmd, (data ? data : "\"\""));
 
 	for (cp = commands; cp->cmd; cp++) {
 		if (strcasecmp(cp->cmd, auxcmd)) {
@@ -922,7 +922,7 @@ static int instcmd (const char *auxcmd, const char *data)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_INFO, "instcmd: unknown command %s", auxcmd);
+	upslog_INSTCMD_UNKNOWN(auxcmd, data);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -931,7 +931,7 @@ static int setvar (const char *var, const char *data)
 {
 	cmd_t *cp;
 
-	upsdebugx(1, "Setvar: %s %s", var, data);
+	upsdebug_SET_STARTING(var, data);
 
 	for (cp = variables; cp->cmd; cp++) {
 		if (strcasecmp(cp->cmd, var)) {
@@ -941,7 +941,8 @@ static int setvar (const char *var, const char *data)
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_INFO, "Setvar: unsettable variable %s", var);
+	upslogx(LOG_SET_UNKNOWN, "%s: unsettable variable %s",
+		__func__, NUT_STRARG(var));
 	return STAT_SET_UNKNOWN;
 }
 

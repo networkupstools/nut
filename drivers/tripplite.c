@@ -117,7 +117,7 @@
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.97"
+#define DRIVER_VERSION	"0.98"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -235,6 +235,10 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	char buf[256];
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		send_cmd(":A\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
@@ -280,12 +284,14 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
 		int ipv = atoi(val);
 		if (ipv >= 0)
@@ -307,6 +313,8 @@ static int setvar(const char *varname, const char *val)
 		dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
 		return STAT_SET_HANDLED;
 	}
+
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

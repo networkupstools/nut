@@ -36,7 +36,7 @@
 
 #include <math.h>
 
-#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.62"
+#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.64"
 
 typedef struct {
 	unsigned char	start;
@@ -260,6 +260,10 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 {
 	int	i;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	for (i = 0; cmdtab[i].cmd != NULL; i++) {
 		ssize_t	ret;
 
@@ -276,11 +280,11 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
+		upslog_INSTCMD_FAILED(cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
-	upslogx(LOG_ERR, "%s: command [%s] not found", __func__, cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -288,6 +292,8 @@ static int powpan_setvar(const char *varname, const char *val)
 {
 	char	command[SMALLBUF];
 	int 	i, j;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	for (i = 0;  vartab[i].var != NULL; i++) {
 
@@ -314,15 +320,15 @@ static int powpan_setvar(const char *varname, const char *val)
 				return STAT_SET_HANDLED;
 			}
 
-			upslogx(LOG_ERR, "powpan_setvar: setting variable [%s] to [%s] failed", varname, val);
-			return STAT_SET_UNKNOWN;
+			upslog_SET_FAILED(varname, val);
+			return STAT_SET_UNKNOWN;	/* FIXME: ..._FAILED ? */
 		}
 
-		upslogx(LOG_ERR, "powpan_setvar: [%s] is not valid for variable [%s]", val, varname);
-		return STAT_SET_UNKNOWN;
+		upslog_SET_INVALID(varname, val);
+		return STAT_SET_UNKNOWN;	/* FIXME: ..._INVALID? */
 	}
 
-	upslogx(LOG_ERR, "powpan_setvar: variable [%s] not found", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.43"
+#define DRIVER_VERSION	"0.44"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -2462,8 +2462,12 @@ int	instcmd(const char *cmdname, const char *extradata)
 		return instcmd("beeper.enable", NULL);
 	}
 
+	upsdebug_INSTCMD_STARTING(cmdname, extradata);
+
+	/* Historically we did user-visible LOG_INFO in this driver
+	 * with this markup, so we still do */
 	upslogx(LOG_INFO, "%s(%s, %s)",
-		__func__, cmdname,
+		__func__, NUT_STRARG(cmdname),
 		extradata ? extradata : "[NULL]");
 
 	/* Retrieve item by command name */
@@ -2487,7 +2491,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 			/* Ensure "ups.start.auto" is set to "yes", if supported */
 			if (dstate_getinfo("ups.start.auto")) {
 				if (setvar("ups.start.auto", "yes") != STAT_SET_HANDLED) {
-					upslogx(LOG_ERR, "%s: FAILED", __func__);
+					upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
 					return STAT_INSTCMD_FAILED;
 				}
 			}
@@ -2509,7 +2513,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 			/* Ensure "ups.start.auto" is set to "no", if supported */
 			if (dstate_getinfo("ups.start.auto")) {
 				if (setvar("ups.start.auto", "no") != STAT_SET_HANDLED) {
-					upslogx(LOG_ERR, "%s: FAILED", __func__);
+					upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
 					return STAT_INSTCMD_FAILED;
 				}
 			}
@@ -2538,7 +2542,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 	&&  item->preprocess(item, value, sizeof(value))
 	) {
 		/* Something went wrong */
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
+		upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -2549,7 +2553,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 	/* Send the command, get the reply */
 	if (qx_process(item, strlen(value) > 0 ? value : NULL)) {
 		/* Something went wrong */
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
+		upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -2568,7 +2572,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
+		upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
 		return STAT_INSTCMD_FAILED;
 
 	}
@@ -2587,6 +2591,8 @@ int	setvar(const char *varname, const char *val)
 	char		value[SMALLBUF];
 	st_tree_t	*root = (st_tree_t *)dstate_getroot();
 	int		ok = 0;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* Retrieve variable */
 	item = find_nut_info(varname, QX_FLAG_SETVAR, QX_FLAG_SKIP);
@@ -2625,7 +2631,8 @@ int	setvar(const char *varname, const char *val)
 			strlen(val) ? val : "[NULL]");
 
 		if (!strlen(val)) {
-			upslogx(LOG_ERR, "%s: value not given for %s",
+			/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: value not given for %s",
 				__func__, item->info_type);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2647,7 +2654,8 @@ int	setvar(const char *varname, const char *val)
 		long	valuetoset, min, max;
 
 		if (strspn(value, "0123456789 .") != strlen(value)) {
-			upslogx(LOG_ERR, "%s: non numerical value [%s: %s]",
+			/* FIXME: ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: non numerical value [%s: %s]",
 				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2661,7 +2669,8 @@ int	setvar(const char *varname, const char *val)
 			info_rw_t	*rvalue;
 
 			if (!strlen(value)) {
-				upslogx(LOG_ERR, "%s: value not given for %s",
+				/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+				upslogx(LOG_SET_UNKNOWN, "%s: value not given for %s",
 					__func__, item->info_type);
 				return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 			}
@@ -2724,7 +2733,8 @@ int	setvar(const char *varname, const char *val)
 		}
 
 		if (!ok) {
-			upslogx(LOG_ERR, "%s: value out of range [%s: %s]",
+			/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: value out of range [%s: %s]",
 				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2739,7 +2749,8 @@ int	setvar(const char *varname, const char *val)
 			info_rw_t	*envalue;
 
 			if (!strlen(value)) {
-				upslogx(LOG_ERR, "%s: value not given for %s",
+				/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+				upslogx(LOG_SET_UNKNOWN, "%s: value not given for %s",
 					__func__, item->info_type);
 				return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 			}
@@ -2791,7 +2802,8 @@ int	setvar(const char *varname, const char *val)
 		}
 
 		if (!ok) {
-			upslogx(LOG_ERR, "%s: value out of range [%s: %s]",
+			/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: value out of range [%s: %s]",
 				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2813,7 +2825,8 @@ int	setvar(const char *varname, const char *val)
 		 * even on architectures with a moderate INTMAX
 		 */
 		if (aux < (int)strlen(value)) {
-			upslogx(LOG_ERR, "%s: value is too long [%s: %s]",
+			/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: value is too long [%s: %s]",
 				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2825,7 +2838,8 @@ int	setvar(const char *varname, const char *val)
 	&&  item->preprocess(item, value, sizeof(value))
 	) {
 		/* Something went wrong */
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
+		/* FIXME: Actually ..._FAILED? */
+		upslogx(LOG_SET_UNKNOWN, "%s: FAILED", __func__);
 		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 	}
 
@@ -2845,7 +2859,8 @@ int	setvar(const char *varname, const char *val)
 	/* Actual variable setting */
 	if (qx_process(item, strlen(value) > 0 ? value : NULL)) {
 		/* Something went wrong */
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
+		/* FIXME: Actually ..._FAILED? */
+		upslogx(LOG_SET_UNKNOWN, "%s: FAILED", __func__);
 		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 	}
 
@@ -2863,7 +2878,8 @@ int	setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
+		/* FIXME: Actually ..._FAILED? */
+		upslogx(LOG_SET_UNKNOWN, "%s: FAILED", __func__);
 		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 
 	}

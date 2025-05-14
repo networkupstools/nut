@@ -126,7 +126,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -472,6 +472,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	int i;
 	char parm[20];
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "load.off")) {
 		for (i = 0; i < ups.outlet_banks; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
@@ -523,12 +527,14 @@ static int instcmd(const char *cmdname, const char *extra)
 		do_command(SET, TEST, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
 
 	if (!strcasecmp(varname, "ups.id")) {
 		set_identification(val);
@@ -551,7 +557,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown var [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

@@ -177,7 +177,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.34"
+#define DRIVER_VERSION	"1.35"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -3675,7 +3675,8 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	char template_count_var[SU_BUFSIZE];
 
 	upsdebugx(2, "entering %s(%s, %s, %s)", __func__,
-		(mode==SU_MODE_INSTCMD)?"instcmd":"setvar", varname, val);
+		(mode==SU_MODE_INSTCMD)?"instcmd":"setvar",
+		NUT_STRARG(varname), NUT_STRARG(val));
 
 	memset(setOID, 0, SU_INFOSIZE);
 	memset(template_count_var, 0, SU_BUFSIZE);
@@ -3989,7 +3990,20 @@ static int su_setOID(int mode, const char *varname, const char *val)
  * FIXME: make a common function with su_instcmd! */
 int su_setvar(const char *varname, const char *val)
 {
-	return su_setOID(SU_MODE_SETVAR, varname, val);
+	int	ret;
+
+	upsdebug_SET_STARTING(varname, val);
+
+	ret = su_setOID(SU_MODE_SETVAR, varname, val);
+
+	if (ret == STAT_SET_FAILED)
+		upslog_SET_FAILED(varname, val);
+	else if (ret == STAT_SET_UNKNOWN)
+		upslog_SET_UNKNOWN(varname, val);
+	else if (ret == STAT_SET_INVALID)
+		upslog_SET_INVALID(varname, val);
+
+	return ret;
 }
 
 /* Daisychain-aware function to add instant commands:
@@ -4020,7 +4034,20 @@ int su_addcmd(snmp_info_t *su_info_p)
 /* process instant command and take action. */
 int su_instcmd(const char *cmdname, const char *extradata)
 {
-	return su_setOID(SU_MODE_INSTCMD, cmdname, extradata);
+	int	ret;
+
+	upsdebug_INSTCMD_STARTING(cmdname, extradata);
+
+	ret = su_setOID(SU_MODE_INSTCMD, cmdname, extradata);
+
+	if (ret == STAT_INSTCMD_FAILED)
+		upslog_INSTCMD_FAILED(cmdname, extradata);
+	else if (ret == STAT_INSTCMD_UNKNOWN)
+		upslog_INSTCMD_UNKNOWN(cmdname, extradata);
+	else if (ret == STAT_INSTCMD_INVALID)
+		upslog_INSTCMD_INVALID(cmdname, extradata);
+
+	return ret;
 }
 
 /* FIXME: the below functions can be removed since these were for loading

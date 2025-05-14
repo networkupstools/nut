@@ -44,7 +44,7 @@
 #define MAX_SHUTDOWN_DELAY_LEN 5
 
 #define DRIVER_NAME	"MICRODOWELL UPS driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -655,8 +655,9 @@ int instcmd(const char *cmdname, const char *extra)
 	unsigned char *p ;
 	/* int i ; */
 
-	upsdebugx(1, "instcmd(%s, %s)", cmdname, extra);
-
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (strcasecmp(cmdname, "load.on") == 0)
 		{
@@ -772,6 +773,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 		}
 
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -791,13 +793,16 @@ int setvar(const char *varname, const char *val)
 {
 	unsigned int delay;
 
+	upsdebug_SET_STARTING(varname, val);
+
 	if (sscanf(val, "%u", &delay) != 1)
-		{
+	{
+		/* FIXME: ..._CONVERSION_FAILED? log it? */
 		return STAT_SET_UNKNOWN;
-		}
+	}
 
 	if (strcasecmp(varname, "ups.delay.start") == 0)
-		{
+	{
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE) )
 # pragma GCC diagnostic push
 #endif
@@ -828,10 +833,10 @@ int setvar(const char *varname, const char *val)
 		dstate_setinfo("ups.delay.start", "%u", ups.WakeUpDelay);
 		dstate_dataok();
 		return STAT_SET_HANDLED;
-		}
+	}
 
 	if (strcasecmp(varname, "ups.delay.shutdown") == 0)
-		{
+	{
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE) )
 # pragma GCC diagnostic push
 #endif
@@ -862,8 +867,9 @@ int setvar(const char *varname, const char *val)
 		dstate_setinfo("ups.delay.shutdown", "%u", ups.ShutdownDelay);
 		dstate_dataok();
 		return STAT_SET_HANDLED;
-		}
+	}
 
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE_BESIDEFUNC) )

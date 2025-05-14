@@ -108,7 +108,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Bicker serial protocol"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 #define BICKER_SOH	0x01
 #define BICKER_EOT	0x04
@@ -671,13 +671,15 @@ static ssize_t bicker_shutdown(void)
 
 static int bicker_instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		bicker_shutdown();
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -686,6 +688,8 @@ static int bicker_setvar(const char *varname, const char *val)
 	const BickerMapping *mapping;
 	unsigned i;
 	BickerParameter parameter;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* This should not be needed because when `bicker_write()` is
 	 * successful the `parameter` struct is populated but gcc seems
@@ -718,7 +722,7 @@ static int bicker_setvar(const char *varname, const char *val)
 		}
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

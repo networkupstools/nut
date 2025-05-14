@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.39"
+#define DRIVER_VERSION	"0.40"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -920,7 +920,11 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char buf[10];
 
-	if(is_smart_protocol()) {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (is_smart_protocol()) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
 			send_cmd((const unsigned char *)"A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
@@ -957,12 +961,14 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
 		int ival = atoi(val);
 		if (ival >= 0) {
@@ -970,7 +976,7 @@ static int setvar(const char *varname, const char *val)
 			dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 			return STAT_SET_HANDLED;
 		} else {
-			upslogx(LOG_NOTICE, "FAILED to set '%s' to %d", varname, ival);
+			upslogx(LOG_SET_UNKNOWN, "FAILED to set '%s' to %d", varname, ival);
 			return STAT_SET_UNKNOWN;
 		}
 	}
@@ -986,7 +992,7 @@ static int setvar(const char *varname, const char *val)
 		ret = send_cmd(J_msg, sizeof(J_msg), buf, sizeof(buf));
 
 		if(ret <= 0) {
-			upslogx(LOG_NOTICE, "Could not set Unit ID (return code: %d).", ret);
+			upslogx(LOG_SET_UNKNOWN, "Could not set Unit ID (return code: %d).", ret);
 			return STAT_SET_UNKNOWN;
 		}
 
@@ -1003,13 +1009,15 @@ static int setvar(const char *varname, const char *val)
 		first_dot = strstr(varname, ".");
 		next_dot = strstr(first_dot + 1, ".");
 		if (!next_dot) {
-			upslogx(LOG_NOTICE, "FAILED to get outlet index from '%s' (no second dot)", varname);
+			upslogx(LOG_SET_UNKNOWN, "FAILED to get outlet index from '%s' (no second dot)", varname);
 			return STAT_SET_UNKNOWN;
 		}
 		index_chars = next_dot - (first_dot + 1);
 
-		if(index_chars > 9 || index_chars < 0) return STAT_SET_UNKNOWN;
-		if(strcmp(next_dot, ".switch")) return STAT_SET_UNKNOWN;
+		if (index_chars > 9 || index_chars < 0)
+			return STAT_SET_UNKNOWN;
+		if (strcmp(next_dot, ".switch"))
+			return STAT_SET_UNKNOWN;
 
 		strncpy(index_str, first_dot + 1, (size_t)index_chars);
 		index_str[index_chars] = 0;
@@ -1048,6 +1056,8 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 #endif
+
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
