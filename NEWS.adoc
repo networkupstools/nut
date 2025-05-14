@@ -86,6 +86,9 @@ https://github.com/networkupstools/nut/milestone/9
      does not care where the token itself was raised for its notifications.
      Driver-code related test-cases were updated to reflect these changes.
      [issue #2928, PRs #2931 and #2934]
+   * Introduced some macros in `drivers/upshandler.h` for common syslog level
+     definitions and message wording for beginning and failing `instcmd()` or
+     `setvar()` operations consistently in different drivers.
 
  - `dummy-ups` driver updates:
    * A new instruction `ALARM` was added for the `Dummy Mode` operation
