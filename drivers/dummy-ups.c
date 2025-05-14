@@ -393,6 +393,10 @@ void upsdrv_shutdown(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		ser_send_buf(upsfd, ...);
@@ -404,7 +408,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * if (mode == MODE_META) => ?
 	 */
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -582,7 +586,7 @@ static int setvar(const char *varname, const char *val)
 {
 	dummy_info_t *item;
 
-	upsdebugx(2, "entering setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	/* FIXME: the below is only valid if (mode == MODE_DUMMY)
 	 * if (mode == MODE_REPEATER) => forward
