@@ -671,9 +671,10 @@ int setvar(const char *varname, const char *val)
 		/* Execute command */
 		mge_command(temp, sizeof(temp), cmd);
 		upslogx(LOG_INFO, "setvar: UPS response to Set %s to %s was %s", varname, val, temp);
-	} else
-		upsdebugx(1, "setvar: Variable %s not supported by UPS", varname);
+		return STAT_SET_HANDLED;
+	}
 
+	upsdebugx(1, "setvar: Variable %s not supported by UPS", varname);
 	return STAT_SET_UNKNOWN;
 }
 
