@@ -856,7 +856,7 @@ int instcmd(const char *cmdname, const char *extra)
 	upsdebugx(2, "In instcmd with %s and extra %s.", cmdname, extra);
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
-		ser_send(upsfd,"%s%s",SIM_PWR_FAIL,COMMAND_END);
+		ser_send(upsfd, "%s%s", SIM_PWR_FAIL, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -868,24 +868,24 @@ int instcmd(const char *cmdname, const char *extra)
 			(strncmp (UpsFamily, FAMILY_OB, FAMILY_SIZE) == 0))
 		{
 			upsdebugx(3, "Shutdown using %c%d...", DELAYED_SHUTDOWN_PREFIX, i);
-			ser_send(upsfd,"%c%d%s",DELAYED_SHUTDOWN_PREFIX, i, COMMAND_END);
+			ser_send(upsfd, "%c%d%s", DELAYED_SHUTDOWN_PREFIX, i, COMMAND_END);
 		}
 		else
 		{
 			upsdebugx(3, "Shutdown using %c%03d...",DELAYED_SHUTDOWN_PREFIX, i);
-			ser_send(upsfd,"%c%03d%s",DELAYED_SHUTDOWN_PREFIX, i, COMMAND_END);
+			ser_send(upsfd, "%c%03d%s", DELAYED_SHUTDOWN_PREFIX, i, COMMAND_END);
 		}
 
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if(!strcasecmp(cmdname, "shutdown.reboot")) {
+	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		ser_send(upsfd, "%s", SHUTDOWN);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
-		ser_send(upsfd,"%c%s",DELAYED_SHUTDOWN_PREFIX,COMMAND_END);
+		ser_send(upsfd, "%c%s", DELAYED_SHUTDOWN_PREFIX, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -904,37 +904,37 @@ int instcmd(const char *cmdname, const char *extra)
 		if ((strncmp (UpsFamily, FAMILY_EG, FAMILY_SIZE) == 0) ||
 			(strncmp (UpsFamily, FAMILY_ON, FAMILY_SIZE) == 0))
 		{
-			ser_send(upsfd,"%s00%s",BAT_TEST_PREFIX,COMMAND_END);
+			ser_send(upsfd, "%s00%s", BAT_TEST_PREFIX, COMMAND_END);
 		}
 		else
 		{
-			ser_send(upsfd,"%c%s",TEST_ABORT,COMMAND_END);
+			ser_send(upsfd, "%c%s", TEST_ABORT, COMMAND_END);
 		}
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "reset.input.minmax")) {
-		ser_send(upsfd,"%c%s",RESET_MIN_MAX, COMMAND_END);
+		ser_send(upsfd, "%c%s", RESET_MIN_MAX, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "beeper.enable")) {
-		ser_send(upsfd,"%c%c%s",SETX_BUZZER_PREFIX, BUZZER_ENABLED,COMMAND_END);
+		ser_send(upsfd, "%c%c%s", SETX_BUZZER_PREFIX, BUZZER_ENABLED, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "beeper.disable")) {
-		ser_send(upsfd,"%c%c%s",SETX_BUZZER_PREFIX,BUZZER_DISABLED,COMMAND_END);
+		ser_send(upsfd, "%c%c%s", SETX_BUZZER_PREFIX, BUZZER_DISABLED, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "beeper.mute")) {
-		ser_send(upsfd,"%c%c%s",SETX_BUZZER_PREFIX, BUZZER_MUTED, COMMAND_END);
+		ser_send(upsfd, "%c%c%s", SETX_BUZZER_PREFIX, BUZZER_MUTED, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.panel.start")) {
-		ser_send(upsfd,"%s%s",TEST_INDICATORS, COMMAND_END);
+		ser_send(upsfd, "%s%s", TEST_INDICATORS, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
