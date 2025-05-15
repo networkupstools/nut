@@ -973,12 +973,12 @@ void upsdrv_shutdown(void) {
 	 * general handling of other `sdcommands` here */
 
 	if (!SourceFail) {     /* on line */
-		upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.return", NULL);
+		upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.return", (char *)NULL);
 		upslogx(LOG_NOTICE, "On line, sending shutdown+return command...\n");
 		ser_send_char(upsfd, CMD_SHUTRET );
 		/* Seems AKA: instcmd("shutdown.return", NULL); */
 	} else {
-		upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.stayoff", NULL);
+		upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.stayoff", (char *)NULL);
 		upslogx(LOG_NOTICE, "On battery, sending normal shutdown command...\n");
 		ser_send_char(upsfd, CMD_SHUT);
 		/* Seems AKA: instcmd("shutdown.stayoff", NULL); */
