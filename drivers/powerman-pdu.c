@@ -99,7 +99,7 @@ void upsdrv_updateinfo(void)
 	pm_err_t rv = PM_ESUCCESS;
 
 	if ( (rv = query_all(pm, WALKMODE_UPDATE)) != PM_ESUCCESS) {
-		upslogx(2, "Error: %s (%i)\n", pm_strerror(rv, ebuf, sizeof(ebuf)), errno);
+		upsdebugx(2, "Error: %s (%i)\n", pm_strerror(rv, ebuf, sizeof(ebuf)), errno);
 		/* FIXME: try to reconnect?
 		 *	dstate_datastale();
 		 */
@@ -122,7 +122,7 @@ void upsdrv_initinfo(void)
 
 	/* Now walk the data tree */
 	if ( (rv = query_all(pm, WALKMODE_INIT)) != PM_ESUCCESS) {
-		upslogx(2, "Error: %s\n", pm_strerror(rv, ebuf, sizeof(ebuf)));
+		upsdebugx(2, "Error: %s\n", pm_strerror(rv, ebuf, sizeof(ebuf)));
 		/* FIXME: try to reconnect?
 		 *	dstate_datastale();
 		 */

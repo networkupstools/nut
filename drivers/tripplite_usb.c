@@ -513,24 +513,24 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 
 static enum tl_model_t decode_protocol(unsigned int proto)
 {
-	switch(proto) {
+	switch (proto) {
 		case 0x0004:
-			upslogx(3, "Using older SMART protocol (%04x)", proto);
+			upslogx(LOG_INFO, "Using older SMART protocol (%04x)", proto);
 			return TRIPP_LITE_SMART_0004;
 		case 0x1001:
-			upslogx(3, "Using OMNIVS protocol (%x)", proto);
+			upslogx(LOG_INFO, "Using OMNIVS protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS;
 		case 0x2001:
-			upslogx(3, "Using OMNIVS 2001 protocol (%x)", proto);
+			upslogx(LOG_INFO, "Using OMNIVS 2001 protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS_2001;
 		case 0x3003:
-			upslogx(3, "Using SMARTPRO protocol (%x)", proto);
+			upslogx(LOG_INFO, "Using SMARTPRO protocol (%x)", proto);
 			return TRIPP_LITE_SMARTPRO;
 		case 0x3005:
-			upslogx(3, "Using binary SMART protocol (%x)", proto);
+			upslogx(LOG_INFO, "Using binary SMART protocol (%x)", proto);
 			return TRIPP_LITE_SMART_3005;
 		default:
-			printf("Unknown protocol (%04x)", proto);
+			upslogx(LOG_INFO, "Unknown protocol (%04x)", proto);
 			break;
 	}
 
@@ -576,7 +576,7 @@ static void decode_v(const unsigned char *value)
 			  break;
 
 		default:
-			  upslogx(2, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
+			  upslogx(LOG_WARNING, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
 			  break;
 	}
 
@@ -587,7 +587,7 @@ static void decode_v(const unsigned char *value)
 			switchable_load_banks = lb;
 		} else {
 			if( lb != 'X' ) {
-				upslogx(2, "Unknown number of switchable load banks: 0x%02x",
+				upslogx(LOG_WARNING, "Unknown number of switchable load banks: 0x%02x",
 					(unsigned int)lb);
 			}
 		}
@@ -689,7 +689,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 			(usb_ctrl_charbufsize)sizeof(buffer_out));
 
 		if(ret != sizeof(buffer_out)) {
-			upslogx(1, "libusb_set_report() returned %d instead of %" PRIuSIZE,
+			upsdebugx(3, "libusb_set_report() returned %d instead of %" PRIuSIZE,
 				ret, sizeof(buffer_out));
 			return ret;
 		}
@@ -705,7 +705,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 				(usb_ctrl_charbufsize)sizeof(buffer_out),
 				RECV_WAIT_MSEC);
 			if(ret != sizeof(buffer_out)) {
-				upslogx(1, "libusb_get_interrupt() returned %d instead of %u while sending %s",
+				upsdebugx(3, "libusb_get_interrupt() returned %d instead of %u while sending %s",
 					ret, (unsigned)(sizeof(buffer_out)),
 					hexascdump(buffer_out, sizeof(buffer_out)));
 			}
@@ -1088,7 +1088,7 @@ void upsdrv_initinfo(void)
 				fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
 						"see if usbhid-ups(8) works with this UPS.");
 			} else {
-				upslogx(3, "Could not reset watchdog. Please send model "
+				upslogx(LOG_ERR, "Could not reset watchdog. Please send model "
 						"information to nut-upsdev mailing list");
 			}
 		}
@@ -1677,7 +1677,7 @@ void upsdrv_initups(void)
 
 	hd = &curDevice;
 
-	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
+	upslogx(LOG_INFO, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
 	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
 	dstate_setinfo("ups.productid", "%04x", hd->ProductID);

@@ -695,7 +695,7 @@ void upsdrv_initups(void)
 	}
 
 	if (status == TRUE)
-		upslogx(0, "Detected %s on host %s (mib: %s %s)",
+		upslogx(LOG_INFO, "Detected %s on host %s (mib: %s %s)",
 			 model, device_path, mibname, mibvers);
 	else
 		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);

@@ -68,7 +68,7 @@ static int ve_process_text_buffer(void)
 	ch = ~ch + 1;
 	if (ch != checksum[9])
 	{
-		upslogx(1, "invalid checksum: %d %d", ch, checksum[9]);
+		upsdebugx(1, "invalid checksum: %d %d", ch, checksum[9]);
 		ve_copy(checksum + 10);
 		return 0;
 	}

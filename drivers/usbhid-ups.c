@@ -1813,7 +1813,7 @@ static int callback(
 		return 0;
 	}
 
-	upslogx(2, "Using subdriver: %s", subdriver->name);
+	upslogx(LOG_INFO, "Using subdriver: %s", subdriver->name);
 
 	if (subdriver->fix_report_desc(arghd, pDesc)) {
 		upsdebugx(2, "Report Descriptor Fixed");
