@@ -76,18 +76,21 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	/* Power on the outlet */
 	if (!strcasecmp(cmdsuffix, "on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		rv = pm_node_on(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_INSTCMD_INVALID;
 	}
 
 	/* Power off the outlet */
 	if (!strcasecmp(cmdsuffix, "off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		rv = pm_node_off(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_INSTCMD_INVALID;
 	}
 
 	/* Cycle the outlet */
 	if (!strcasecmp(cmdsuffix, "cycle")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		rv = pm_node_cycle(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_INSTCMD_INVALID;
 	}

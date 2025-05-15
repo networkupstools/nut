@@ -106,6 +106,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if(!strcasecmp(cmdname, "calibrate.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if(get_data("vTi5!",temp))
 		{
 			upsdebugx(1, "instcmd: ser_send calibrate.start failed");
@@ -120,6 +121,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else if(!strcasecmp(cmdname, "calibrate.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if(get_data("vTi2!",temp))
 		{
 			upsdebugx(1, "instcmd: ser_send calibrate.stop failed");
@@ -133,6 +135,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else if(!strcasecmp(cmdname, "test.battery.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if(get_data("vTi2!",temp))
 		{
 			upsdebugx(1, "instcmd: ser_send test.battery.stop failed");
@@ -146,6 +149,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else if(!strcasecmp(cmdname, "test.battery.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if(get_data("vTi4!",temp))
 		{
 			upsdebugx(1, "instcmd: ser_send test.battery.start failed");
@@ -187,6 +191,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else if(!strcasecmp(cmdname, "bypass.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if(get_data("vTi2!",temp))
 		{
 			upsdebugx(1, "instcmd: ser_send bypass.stop failed");
@@ -200,6 +205,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else if(!strcasecmp(cmdname, "bypass.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if(get_data("vTi101!",temp))
 		{
 			upsdebugx(1, "instcmd: ser_send bypass.start failed");

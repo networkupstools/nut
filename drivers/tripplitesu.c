@@ -477,6 +477,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		for (i = 0; i < ups.outlet_banks; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			do_command(SET, RELAY_OFF, parm, NULL);
@@ -484,6 +485,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		for (i = 0; i < ups.outlet_banks; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			do_command(SET, RELAY_ON, parm, NULL);
@@ -491,18 +493,21 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(1);
 		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(1);
 		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "60", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(1);
 		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
@@ -510,20 +515,24 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 #if 0 /* doesn't seem to work */
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(0);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 #endif
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_command(SET, TEST, "3", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_command(SET, TEST, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}

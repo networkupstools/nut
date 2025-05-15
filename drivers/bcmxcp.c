@@ -1980,6 +1980,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff); /* "delay" sec delay for shutdown, */
 		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);     /* high byte sec. From ups.conf. */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		res = command_write_sequence(cbuf, 3, answer);
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
@@ -1993,6 +1994,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		res = command_read_sequence(PW_UPS_OFF, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Going down NOW");
@@ -2003,6 +2005,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		res = command_read_sequence(PW_UPS_ON, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Enabling");
@@ -2013,6 +2016,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		res = command_read_sequence(PW_GO_TO_BYPASS, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Bypass enabled");
@@ -2030,6 +2034,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[1] = 0x0A; /* 10 sec start delay for test.*/
 		cbuf[2] = 0x1E; /* 30 sec test duration.*/
 
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		res = command_write_sequence(cbuf, 3, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing battery now");
@@ -2047,6 +2052,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		cbuf[0] = PW_INIT_SYS_TEST;
 		cbuf[1] = PW_SYS_TEST_GENERAL;
+
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		res = command_write_sequence(cbuf, 2, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing system now");
@@ -2124,6 +2131,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[2] = (unsigned char)(sddelay >> 8);     /* high byte of the 2 byte time argument */
 		cbuf[3] = (unsigned char)outlet_num; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		res = command_write_sequence(cbuf, 4, answer);
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
@@ -2141,8 +2149,14 @@ static int instcmd(const char *cmdname, const char *extra)
 		if (outlet_num < 1 || outlet_num > 9)
 			return STAT_INSTCMD_FAILED;
 
-
-		cbuf[0] = (cmdname[NUT_OUTLET_POSITION+8] == 'n') ? PW_UPS_ON : PW_UPS_OFF;        /* Cmd oN or not*/
+		/* Cmd oN or not? */
+		if (cmdname[NUT_OUTLET_POSITION+8] == 'n') {
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+			cbuf[0] = PW_UPS_ON;
+		} else {
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+			cbuf[0] = PW_UPS_OFF;
+		}
 		cbuf[1] = (unsigned char)outlet_num;                           /* Outlet number */
 
 		res = command_write_sequence(cbuf, 2, answer);

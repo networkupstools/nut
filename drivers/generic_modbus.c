@@ -576,6 +576,7 @@ int upscmd(const char *cmd, const char *arg)
 	upsdebug_INSTCMD_STARTING(cmd, arg);
 
 	if (!strcasecmp(cmd, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, arg);
 		if (sigar[FSD_T].addr != NOTUSED &&
 		    (sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)
 		) {
@@ -639,6 +640,7 @@ int upscmd(const char *cmd, const char *arg)
 		 * "shutdown.stayoff" or "shutdown.return"? */
 		int cnt = FSD_REPEAT_CNT;    /* shutdown repeat counter */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, arg);
 		/* retry sending shutdown command on error */
 		while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
 			rval = gettimeofday(&start, NULL);

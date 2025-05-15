@@ -503,6 +503,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
 			status_set("FSD");
@@ -513,6 +514,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
 			status_set("FSD");

@@ -842,6 +842,8 @@ int instcmd(const char *cmdname, const char *extra)
 
 	/* Shutdown UPS */
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		set_power_off();
 
 		return STAT_INSTCMD_HANDLED;

@@ -669,6 +669,9 @@ int instcmd(const char *cmdname, const char *extra)
 		OutBuff[5] = 0 ;
 		OutBuff[6] = 0 ;
 		OutBuff[7] = 0 ;
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 			{
 			p += 3 ;	/* 'p' points to received data */
@@ -693,6 +696,9 @@ int instcmd(const char *cmdname, const char *extra)
 		OutBuff[5] = 0 ;
 		OutBuff[6] = 0 ;
 		OutBuff[7] = 0 ;
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 			{
 			p += 3 ;	/* 'p' points to received data */
@@ -726,6 +732,8 @@ int instcmd(const char *cmdname, const char *extra)
 		OutBuff[6] = (ups.WakeUpDelay >> 8) & 0xFF ;		/* WUDELAY (...) */
 		OutBuff[7] = (ups.WakeUpDelay & 0xFF ) ;			/* WUDELAY (LSB) */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 			{
 			p += 3 ;	/* 'p' points to received data */
@@ -758,6 +766,8 @@ int instcmd(const char *cmdname, const char *extra)
 		OutBuff[5] = 0 ;	/* WUDELAY (MSB)	Wakeup value (seconds) */
 		OutBuff[6] = 0 ;	/* WUDELAY (...) */
 		OutBuff[7] = 0 ;	/* WUDELAY (LSB) */
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 			{

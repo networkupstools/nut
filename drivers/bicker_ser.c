@@ -646,7 +646,7 @@ static ssize_t bicker_delayed_shutdown(uint8_t seconds)
 
 	ret = bicker_receive_known(0x03, 0x32, &response, 1);
 	if (ret >= 0) {
-		upslogx(LOG_INFO, "Shutting down in %d seconds: response = 0x%02X",
+		upslogx(LOG_INSTCMD_POWERSTATE, "Shutting down in %d seconds: response = 0x%02X",
 			seconds, (unsigned)response);
 	}
 
@@ -676,7 +676,9 @@ static int bicker_instcmd(const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		bicker_shutdown();
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		if (bicker_shutdown() >= 0)
+			return STAT_INSTCMD_HANDLED;
 	}
 
 	upslog_INSTCMD_UNKNOWN(cmdname, extra);

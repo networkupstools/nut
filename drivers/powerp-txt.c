@@ -156,6 +156,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			continue;
 		}
 
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
 		if ((powpan_command(cmdtab[i].command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
 			return STAT_INSTCMD_HANDLED;
 		}
@@ -165,18 +166,21 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (offdelay < 60) {
 			snprintf(command, sizeof(command), "Z.%ld\r", offdelay / 6);
 		} else {
 			snprintf(command, sizeof(command), "Z%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (offdelay < 60) {
 			snprintf(command, sizeof(command), "S.%ld\r", offdelay / 6);
 		} else {
 			snprintf(command, sizeof(command), "S%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (offdelay < 60) {
 			snprintf(command, sizeof(command), "S.%ldR%04ld\r", offdelay / 6, ondelay);
 		} else {

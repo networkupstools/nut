@@ -3921,6 +3921,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			upsdebugx(1, "%s: cannot execute command '%s': a provided or default value is needed!", __func__, varname);
 			return STAT_SET_INVALID;
 		}
+		upslog_INSTCMD_POWERSTATE_CHECKED(varname, val);
 	}
 
 	if (su_info_p->info_flags & ST_FLAG_STRING) {

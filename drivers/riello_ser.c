@@ -413,6 +413,8 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
 		if (!strcasecmp(cmdname, "load.off")) {
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay = 0;
 			riello_init_serial();
 
@@ -443,6 +445,9 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
 			int	ipv;
+
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.shutdown");
 			ipv = atoi(delay_char);
 			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
@@ -475,6 +480,8 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on")) {
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 			delay = 0;
 			riello_init_serial();
 
@@ -524,6 +531,9 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
 			int	ipv;
+
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.reboot");
 			ipv = atoi(delay_char);
 			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
@@ -578,6 +588,9 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	else {
 		if (!strcasecmp(cmdname, "shutdown.return")) {
 			int	ipv;
+
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.shutdown");
 			ipv = atoi(delay_char);
 			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
@@ -612,6 +625,8 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		riello_init_serial();
 
 		if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -664,6 +679,8 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		riello_init_serial();
 		if (typeRielloProtocol == DEV_RIELLOGPSER)
 			length = riello_prepare_tb(bufOut, gpser_error_control);

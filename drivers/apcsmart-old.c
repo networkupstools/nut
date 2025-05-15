@@ -1434,11 +1434,17 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
-	if (!strcasecmp(cmdname, "calibrate.start"))
+	if (!strcasecmp(cmdname, "calibrate.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		return do_cal(1);
+	}
 
-	if (!strcasecmp(cmdname, "calibrate.stop"))
+	if (!strcasecmp(cmdname, "calibrate.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		return do_cal(0);
+	}
+
+	upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
 
 	if (ct->flags & APC_NASTY)
 		return instcmd_chktime(ct);

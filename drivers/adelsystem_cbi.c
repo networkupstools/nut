@@ -822,6 +822,7 @@ int upscmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.off")) {
 		data = 1;
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		rval = register_write(mbctx, regs[FSD].xaddr, regs[FSD].type, &data);
 		if (rval == -1) {
 			upsdebugx(2,
@@ -844,6 +845,8 @@ int upscmd(const char *cmdname, const char *extra)
 		int cnt = FSD_REPEAT_CNT;	 /* shutdown repeat counter */
 		struct timeval start;
 		long etime;
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		/* retry sending shutdown command on error */
 		while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {

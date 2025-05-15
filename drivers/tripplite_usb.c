@@ -926,37 +926,44 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (is_smart_protocol()) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 			send_cmd((const unsigned char *)"A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		if(!strcasecmp(cmdname, "reset.input.minmax")) {
+		if (!strcasecmp(cmdname, "reset.input.minmax")) {
 			return (send_cmd((const unsigned char *)"Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 	}
 
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		return control_outlet(0, 0) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		return control_outlet(0, 1) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 	}
 	/* code for individual outlets is in setvar() */
 #if 0
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		hard_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 #endif
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		soft_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}

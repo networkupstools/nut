@@ -761,6 +761,7 @@ int instcmd(const char *cmdname, const char *extra)
 		char	restart[QUERY_PACKETSIZE] = { 0x02, 0x01, 0x00, 0x00 };
 		char	reply[REPLY_PACKETSIZE];
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		execute_and_retrieve_query(prepare, reply);
 
 		/*

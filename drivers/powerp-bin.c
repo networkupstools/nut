@@ -271,6 +271,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			continue;
 		}
 
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
 		ret = powpan_command(cmdtab[i].command, cmdtab[i].len);
 		assert(cmdtab[i].len < SSIZE_MAX);
 		if (ret >= 0 &&

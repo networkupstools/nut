@@ -240,6 +240,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.failure.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		optiquery( "Ts" );
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -248,6 +249,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		/* You do realize this will kill power to ourself.
 		 * Would probably only be useful for killing power for
 		 * a computer with upsmon in "secondary" mode */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -261,6 +263,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else if (!strcasecmp(cmdname, "load.on"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -276,6 +279,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	{
 		/* This shuts down the UPS.  When the power returns to the UPS,
 		 *   it will power back up in its default state. */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -292,6 +296,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		/* This actually stays off as long as the batteries hold,
 		 *   if the line power comes back before the batteries die,
 		 *   the UPS will never powerup its output stage!!! */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -305,6 +310,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	else if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
 		/* Aborts a shutdown that is counting down via the Cs command */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		optiquery( "Cs-0000001" );
 		return STAT_INSTCMD_HANDLED;
 	}

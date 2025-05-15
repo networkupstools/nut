@@ -88,7 +88,10 @@ https://github.com/networkupstools/nut/milestone/9
      [issue #2928, PRs #2931 and #2934]
    * Introduced some macros in `drivers/upshandler.h` for common syslog level
      definitions and message wording for beginning and failing `instcmd()` or
-     `setvar()` operations consistently in different drivers.
+     `setvar()` operations consistently in different drivers. As a related
+     change, operations that intend to turn off or restart the load, or can
+     do that by side effect (e.g. calibration if batteries are old or dead),
+     would explicitly `upslogx(LOG_CRIT,...)` by default before commencing.
 
  - `dummy-ups` driver updates:
    * A new instruction `ALARM` was added for the `Dummy Mode` operation

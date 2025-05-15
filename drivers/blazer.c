@@ -424,6 +424,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		 * As an exception, Best UPS units will report "ACK" in case of success!
 		 * Other UPSes will reply "(ACK" in case of success.
 		 */
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
 		if (blazer_command(buf, buf, sizeof(buf)) > 0) {
 			if (strncmp(buf, "ACK", 3) && strncmp(buf, "(ACK", 4)) {
 				upslogx(LOG_INSTCMD_FAILED, "instcmd: command [%s] failed", cmdname);
@@ -436,6 +437,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		/*
 		 * Sn: Shutdown after n minutes and then turn on when mains is back
@@ -468,6 +470,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		}
 
 	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		/*
 		 * SnR0000
@@ -491,6 +494,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_FAILED;
 		}
 
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		snprintf(buf, sizeof(buf), "T%02ld\r", delay);
 	} else {
 		upslog_INSTCMD_UNKNOWN(cmdname, extra);

@@ -477,6 +477,8 @@ int instcmd(const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* NB: hard-wired password */
 		ser_send(upsfd, "pw377\r");
 		/* power off in 10 seconds and restart when line power returns,

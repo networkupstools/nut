@@ -843,6 +843,8 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
+		/* Process alias/fallback names */
+
 		upsdebugx(3, "%s: cmdname '%s' not found; "
 			"checking for alternatives",
 			__func__, cmdname);
@@ -940,7 +942,14 @@ int instcmd(const char *cmdname, const char *extradata)
 		value = atol(val);
 	}
 
-	/* Actual variable setting */
+	/* Actual variable setting (as far as firmware is concerned) */
+	{	/* scoping + workaround for "error: the address of `argtmp` will always evaluate as `true`" */
+		char	argtmp[LARGEBUF], *s = NULL;
+		if (snprintf(argtmp, sizeof(argtmp), "%s (%f)",
+			NUT_STRARG(extradata), value) > 0)
+			s = argtmp;
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, s);
+	}
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
 		upsdebugx(3, "instcmd: SUCCEED");
 		/* Set the status so that SEMI_STATIC vars are polled */

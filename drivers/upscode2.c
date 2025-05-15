@@ -913,6 +913,9 @@ static int instcmd (const char *auxcmd, const char *data)
 		if (strcasecmp(cp->cmd, auxcmd)) {
 			continue;
 		}
+
+		upslog_INSTCMD_POWERSTATE_CHECKED(auxcmd, data);
+
 		upscsend(cp->upsc);
 		if (cp->upsp) {
 			upscsend(cp->upsp);

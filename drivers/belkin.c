@@ -426,6 +426,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		ssize_t	res;
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		res = init_communication();
 		if (res < 0) {
 			printf("Detection failed.  Trying a shutdown command anyway.\n");
@@ -448,26 +449,31 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_off();
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,POWER_ON,"1;1");
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.quick")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,TEST,TEST_10SEC);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.deep")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,TEST,TEST_DEEP);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,TEST,TEST_CANCEL);
 		return STAT_INSTCMD_HANDLED;
 	}

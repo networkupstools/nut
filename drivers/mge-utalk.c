@@ -550,6 +550,8 @@ int instcmd(const char *cmdname, const char *extra)
 	/* Start battery test */
 	if (!strcasecmp(cmdname, "test.battery.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		mge_command(temp, sizeof(temp), "Bx 1");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 
@@ -575,18 +577,22 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		sdtype = SD_STAYOFF;
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		upsdrv_shutdown();
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
 		sdtype = SD_RETURN;
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		upsdrv_shutdown();
 	}
 
 	/* Power Off [all] plugs */
 	if (!strcasecmp(cmdname, "load.off"))
 	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* TODO: Powershare (per plug) control */
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
@@ -607,6 +613,8 @@ int instcmd(const char *cmdname, const char *extra)
 	/* Power On all plugs */
 	if (!strcasecmp(cmdname, "load.on"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* TODO: add per plug control */
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
@@ -626,10 +634,11 @@ int instcmd(const char *cmdname, const char *extra)
 
 	/* Switch on/off Maintenance Bypass */
 	if ((!strcasecmp(cmdname, "bypass.start"))
-		|| (!strcasecmp(cmdname, "bypass.stop")))
+	 || (!strcasecmp(cmdname, "bypass.stop")))
 	{
 		/* TODO: add control on bypass value */
 		/* read maintenance bypass status */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if(mge_command(temp, sizeof(temp), "Ps") > 0)
 		{
 			if (temp[0] == '1')

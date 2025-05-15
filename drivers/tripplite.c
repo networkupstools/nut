@@ -240,46 +240,57 @@ static int instcmd(const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":A\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		send_cmd(":K0\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":K1\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "outlet.1.load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		send_cmd(":K2\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "outlet.1.load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":K3\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "outlet.2.load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		send_cmd(":K4\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "outlet.2.load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":K5\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		soft_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		hard_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}

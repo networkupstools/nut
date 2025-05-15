@@ -1420,6 +1420,7 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 
 	addr = apc_command->modbus_addr;
 	nb = apc_command->modbus_len;
+	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 	if (modbus_write_registers(modbus_ctx, addr, nb, value) < 0) {
 		upslogx(LOG_INSTCMD_FAILED, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
 		_apc_modbus_handle_error(modbus_ctx);

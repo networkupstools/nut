@@ -352,6 +352,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -362,6 +363,7 @@ int instcmd(const char *cmdname, const char *extra)
 		char msgbuf[SMALLBUF];
 
 		msglen = snprintf(msgbuf, sizeof(msgbuf), "-1");
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
 
 		msglen = snprintf(msgbuf, sizeof(msgbuf), "1");

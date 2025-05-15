@@ -1489,6 +1489,8 @@ static int instcmd(const char *cmd, const char *extra)
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
+	upslog_INSTCMD_POWERSTATE_CHECKED(cmd, extra);
+
 	if (cmd_action->handler_func) {
 		/* handled by a function */
 		if (cmd_action->reg1 < 0) {

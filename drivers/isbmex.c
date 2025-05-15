@@ -390,6 +390,7 @@ int instcmd(const char *cmdname, const char *extra)
 			set_exit_flag(EF_EXIT_FAILURE);
 */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		for (i = 0; i <= 5; i++)
 		{
 			ser_send_char(upsfd, '#');

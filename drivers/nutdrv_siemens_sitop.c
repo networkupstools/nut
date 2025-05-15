@@ -172,13 +172,15 @@ static int instcmd(const char *cmdname, const char *extra) {
 	 * lost as well.
 	 */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		upslogx(LOG_NOTICE, "instcmd: sending command R");
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		upsdebugx(1, "instcmd: sending command R");
 		ser_send_pace(upsfd, 200000, "\n\nR\n\n");
 		ser_send_pace(upsfd, 200000, "R\n\n");
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		upslogx(LOG_NOTICE, "instcmd: sending command S");
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		upsdebugx(1, "instcmd: sending command S");
 		ser_send_pace(upsfd, 200000, "\n\nS\n\n");
 		ser_send_pace(upsfd, 200000, "S\n\n");
 		return STAT_INSTCMD_HANDLED;

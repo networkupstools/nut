@@ -2092,22 +2092,34 @@ static int instcmd(const char *cmd, const char *ext)
 
 	/* we're good to go, handle special stuff first, then generic cmd */
 
-	if (!strcasecmp(cmd, "calibrate.start"))
+	if (!strcasecmp(cmd, "calibrate.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmd, ext);
 		return do_cal(1);
+	}
 
-	if (!strcasecmp(cmd, "calibrate.stop"))
+	if (!strcasecmp(cmd, "calibrate.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmd, ext);
 		return do_cal(0);
+	}
 
-	if (!strcasecmp(cmd, "load.on"))
+	if (!strcasecmp(cmd, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmd, ext);
 		return do_loadon();
+	}
 
-	if (!strcasecmp(cmd, "load.off"))
+	if (!strcasecmp(cmd, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, ext);
 		return sdcmd_Z(0);
+	}
 
-	if (!strcasecmp(cmd, "shutdown.stayoff"))
+	if (!strcasecmp(cmd, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, ext);
 		return sdcmd_K(0);
+	}
 
 	if (!strcasecmp(cmd, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, ext);
+
 		if (!ext || !*ext)
 			return sdcmd_S(0);
 
@@ -2119,6 +2131,7 @@ static int instcmd(const char *cmd, const char *ext)
 	}
 
 	/* nothing special here */
+	upslog_INSTCMD_POWERSTATE_CHECKED(cmd, ext);
 	return do_cmd(ct);
 }
 

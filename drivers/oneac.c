@@ -858,11 +858,13 @@ int instcmd(const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send(upsfd, "%s%s", SIM_PWR_FAIL, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		i = atoi(dstate_getinfo("ups.delay.shutdown"));
 
@@ -882,27 +884,32 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ser_send(upsfd, "%s", SHUTDOWN);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send(upsfd, "%c%s", DELAYED_SHUTDOWN_PREFIX, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.quick")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_battery_test();
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.deep")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send(upsfd, "%s%s", TEST_BATT_DEEP, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if ((strncmp (UpsFamily, FAMILY_EG, FAMILY_SIZE) == 0) ||
 			(strncmp (UpsFamily, FAMILY_ON, FAMILY_SIZE) == 0))
 		{

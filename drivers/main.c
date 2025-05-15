@@ -830,6 +830,8 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 				upsdebugx(1, "Handle 'shutdown.default' directly, "
 					"ignore other `sdcommands` (if any): %s",
 					sdcmds);
+				/* TOTHINK : These logs are handled in driver codes */
+				/* upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.default", NULL); */
 				upsdrv_shutdown();
 				cmdret = STAT_INSTCMD_HANDLED;
 				/* commented below */
@@ -846,9 +848,14 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 			continue;
 
 		if (!strcmp(s, "shutdown.default")) {
+			/* TOTHINK : These logs are handled in driver codes */
+			/* We are trying (if at all implemented), so "maybe"... */
+			/* upslog_INSTCMD_POWERSTATE_MAYBE(s, NULL); */
 			upsdrv_shutdown();
 			cmdret = STAT_INSTCMD_HANDLED;
 		} else {
+			/* TOTHINK : These logs are handled in driver codes */
+			/* upslog_INSTCMD_POWERSTATE_CHECKED(s, NULL); */
 			cmdret = upsh.instcmd(s, NULL);
 		}
 

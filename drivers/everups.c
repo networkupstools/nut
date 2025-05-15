@@ -187,6 +187,7 @@ int instcmd(const char *cmdname, const char *extra)
 	/* Shutdown UPS */
 	if (!strcasecmp(cmdname, "load.off"))
 	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (!Code(2)) {
 			upslog_with_errno(LOG_INSTCMD_UNKNOWN, "Code failed");
 			return STAT_INSTCMD_UNKNOWN;

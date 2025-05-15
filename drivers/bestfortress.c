@@ -531,7 +531,8 @@ static int instcmd (const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "load.off")) {
-		upslogx(LOG_CRIT, "%s: %s: OFF/stayoff in 1s",
+		/* upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra); */
+		upslogx(LOG_INSTCMD_POWERSTATE, "%s: %s: OFF/stayoff in 1s",
 			__func__, cmdname);
 		autorestart (0);
 		upssend ("OFF1\r");
@@ -549,7 +550,9 @@ static int instcmd (const char *cmdname, const char *extra)
 			grace = "30";
 		}
 
-		upslogx(LOG_CRIT, "%s: OFF/restart in %s seconds", __func__, grace);
+		/* upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra); */
+		upslogx(LOG_INSTCMD_POWERSTATE, "%s: OFF/restart in %s seconds",
+			__func__, grace);
 
 		/* Start again, overriding front panel setting. */
 		autorestart (1);

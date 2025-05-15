@@ -2475,6 +2475,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 
 	/* Check for fallback if not found */
 	if (item == NULL) {
+		/* Process aliases/fallbacks */
 
 		if (!strcasecmp(cmdname, "load.on")) {
 			return instcmd("load.on.delay", "0");
@@ -2551,6 +2552,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 		snprintf(value, sizeof(value), "%s", "");
 
 	/* Send the command, get the reply */
+	upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extradata);
 	if (qx_process(item, strlen(value) > 0 ? value : NULL)) {
 		/* Something went wrong */
 		upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);

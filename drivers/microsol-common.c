@@ -666,12 +666,14 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	/* Power-cycle UPS */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ser_send_char(upsfd, CMD_SHUTRET);	/* 0xDE */
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	/* Power-off UPS */
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ser_send_char(upsfd, CMD_SHUT);	/* 0xDD */
 		return STAT_INSTCMD_HANDLED;
 	}

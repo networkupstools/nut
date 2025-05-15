@@ -617,6 +617,7 @@ static int hashx_instcmd(const char *cmd_name, const char *extra)
 			continue;
 		}
 
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmd_name, extra);
 		if ((status = hashx_send_command(hashx_cmd[i].ups_cmd)) == STATUS_SUCCESS)
 			return STAT_INSTCMD_HANDLED;
 

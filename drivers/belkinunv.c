@@ -1229,21 +1229,25 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		r = belkin_nut_write_int(REG_TESTSTATUS, 2);
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.failure.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		r = belkin_nut_write_int(REG_TESTSTATUS, 1);
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
@@ -1264,12 +1268,14 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 0);
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 1); /* 1 second */
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		/* restarttimer is in minutes, shutdowntimer is in
 		   seconds.  Still, restarttimer=1 is not safe,
 		   because it might be decremented before
@@ -1282,6 +1288,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 2); /* 2 minutes */
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 40); /* 40 seconds */
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);

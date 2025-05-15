@@ -322,17 +322,20 @@ static int instcmd (const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
-	    ser_send_char (upsfd, BATTERY_TEST);
-	    return STAT_INSTCMD_HANDLED;
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		ser_send_char (upsfd, BATTERY_TEST);
+		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		/* NOTE: In this context, "return" is UPS behavior after the
 		 * wall-power gets restored. The routine exits the driver anyway.
 		 */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		shutdown_ret();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		shutdown_halt();
 		return STAT_INSTCMD_HANDLED;
 	}

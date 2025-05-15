@@ -683,6 +683,7 @@ int instcmd(const char *cmdname, const char *extra)
 			"%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)",
 			__func__);
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ret = usb_interrupt_write(udev,
 			SHUTDOWN_ENDPOINT, (usb_ctrl_charbuf)shutdown_packet,
 			SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);

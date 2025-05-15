@@ -663,6 +663,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		/* shutdown now (one way) */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		/* send_command( CMD_SHUT ); */
 		sendshut();
 		return STAT_INSTCMD_HANDLED;
@@ -671,6 +672,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "load.on"))
 	{
 		/* liga Saida */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ret = send_command( 3 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 3 failed");
@@ -680,6 +682,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "load.off"))
 	{
 		/* desliga Saida */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ret = send_command( 4 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 4 failed");
@@ -689,6 +692,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "bypass.start"))
 	{
 		/* liga Bypass */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ret = send_command( 5 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 5 failed");
@@ -698,6 +702,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "bypass.stop"))
 	{
 		/* desliga Bypass */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ret = send_command( 6 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 6 failed");

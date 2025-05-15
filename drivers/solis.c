@@ -904,6 +904,7 @@ static int instcmd(const char *cmdname, const char *extra) {
 		/* shutdown and restart */
 		/* FIXME: check with HW if this is not
 		 *  a "shutdown.reboot" instead (or also)? */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ser_send_char(upsfd, CMD_SHUTRET); /* 0xDE */
 		/* ser_send_char(upsfd, ENDCHAR); */
 		return STAT_INSTCMD_HANDLED;
@@ -911,6 +912,7 @@ static int instcmd(const char *cmdname, const char *extra) {
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		/* shutdown now (one way) */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ser_send_char(upsfd, CMD_SHUT); /* 0xDD */
 		/* ser_send_char(upsfd, ENDCHAR); */
 		return STAT_INSTCMD_HANDLED;
@@ -971,10 +973,12 @@ void upsdrv_shutdown(void) {
 	 * general handling of other `sdcommands` here */
 
 	if (!SourceFail) {     /* on line */
+		upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.return", NULL);
 		upslogx(LOG_NOTICE, "On line, sending shutdown+return command...\n");
 		ser_send_char(upsfd, CMD_SHUTRET );
 		/* Seems AKA: instcmd("shutdown.return", NULL); */
 	} else {
+		upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.stayoff", NULL);
 		upslogx(LOG_NOTICE, "On battery, sending normal shutdown command...\n");
 		ser_send_char(upsfd, CMD_SHUT);
 		/* Seems AKA: instcmd("shutdown.stayoff", NULL); */

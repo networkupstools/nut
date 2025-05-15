@@ -550,6 +550,8 @@ int instcmd(const char *cmdname, const char *extra)
 	/* Shutdown UPS */
 	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* ups will come up within a minute if utility is restored */
 		ser_send_pace(upsfd, UPS_PACE, "%s", "S.2R0001\x0D" );
 

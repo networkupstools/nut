@@ -123,11 +123,13 @@ static int instcmd(const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_pace(upsfd, UPSDELAY, "CT\r");
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_pace(upsfd, UPSDELAY, "T\r");
 		return STAT_INSTCMD_HANDLED;
 	}

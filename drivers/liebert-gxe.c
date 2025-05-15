@@ -103,15 +103,19 @@ static int instcmd(const char *cmdname, const char *extra)
 	NUT_UNUSED_VARIABLE(extra);
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
-	if (!strcasecmp(cmdname, "test.battery.start"))
+	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		data = "1002";
-	else if (!strcasecmp(cmdname, "test.battery.stop"))
+	} else if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		data = "1003";
-	else if (!strcasecmp(cmdname, "load.on"))
+	} else if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		data = "2001";
-	else if (!strcasecmp(cmdname, "load.off"))
+	} else if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		data = "2003";
-	else {
+	} else {
 		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
