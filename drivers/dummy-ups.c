@@ -591,7 +591,11 @@ static int setvar(const char *varname, const char *val)
 	if (!strncmp(varname, "ups.status", 10))
 	{
 		status_init();
-		 /* FIXME: split and check values (support multiple values), à la usbhid-ups */
+		/* FIXME: split and check values (support multiple values),
+		 *  à la usbhid-ups.
+		 * UPDATE: Since NUT v2.8.3, status_set() does the splitting,
+		 *  but what about "checking values"?
+		 */
 		status_set(val);
 		status_commit();
 
