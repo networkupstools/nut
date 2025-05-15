@@ -56,6 +56,14 @@ struct ups_handler
 # define UPSHANDLER_LOGLEVEL_DIFFERENTIATE	1 /* 0 to LOG_NOTICE everything by default */
 #endif
 
+#ifndef LOG_INSTCMD_POWERSTATE
+# if UPSHANDLER_LOGLEVEL_DIFFERENTIATE
+#  define	LOG_INSTCMD_POWERSTATE	LOG_CRIT
+# else
+#  define	LOG_INSTCMD_POWERSTATE	LOG_NOTICE
+# endif
+#endif
+
 #ifndef LOG_INSTCMD_UNKNOWN
 # if UPSHANDLER_LOGLEVEL_DIFFERENTIATE
 #  define	LOG_INSTCMD_UNKNOWN	LOG_WARNING
@@ -88,8 +96,9 @@ struct ups_handler
 # endif
 #endif
 
-/* FIXME: Define here and apply in drivers log levels for mere HANDLED
- *  states (INFO), and for instcmd about shutdowns (CRIT) in particular;
+/* FIXME: Define here and apply in drivers log levels for
+ *  mere HANDLED states (INFO?),
+ *  like for instcmd about shutdowns (CRIT) in particular;
  *  see bestfortress.c for some practical inspiration.
  */
 
@@ -128,9 +137,61 @@ struct ups_handler
 /* Call upslogx() with certain log level and wording/markup, so different
  * driver programs present a consistent picture to their end-users.
  */
-/* instcmd(), upscmd() et al -- note an argument is optional: */
-#define upsdebug_INSTCMD_STARTING(cmdname, extra)	do {		\
-	upsdebugx(1, "Starting %s::%s('%s', '%s')",		\
+
+/* Block of loggers instcmd(), upscmd() et al -- note an argument is optional.
+ * Many drivers have their own detailed messages, but are encouraged to follow
+ * the markup precedent here (NUT_STRARG and all).
+ * If they have non-standard commands (e.g. "experimental.eco*") they can use
+ * the upslog_INSTCMD_POWERSTATE*() macros directly in those clauses.
+ */
+#define upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra)	do {		\
+	upslogx(LOG_INSTCMD_POWERSTATE, "%s: attempting a power state change operation [%s] [%s] on [%s]",	\
+		__func__, NUT_STRARG(cmdname), NUT_STRARG(extra), NUT_STRARG(upsname));	\
+	} while(0)
+
+/* When calibration goes wrong on an UPS that overestimated itself,
+ * it may suddenly turn off (e.g. old battery never tested before)
+ * DUE TO running the test.
+ */
+#define upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra)	do {			\
+	upslogx(LOG_INSTCMD_POWERSTATE, "%s: attempting an operation [%s] [%s] which may impact power state on [%s]",	\
+		__func__, NUT_STRARG(cmdname), NUT_STRARG(extra), NUT_STRARG(upsname));	\
+	} while(0)
+
+/* This macro should simplify the call especially for drivers with mapping
+ * tables, where we do not have a preceding "if strcmp" to certainly know
+ * which command string we are acting on (at a cost of checking for several
+ * string matches, so direct-action macros above are preferable where we
+ * know the command for sure).
+ * Patterns matched below follow docs/nut-names.txt (INSTCMD section).
+ */
+#define upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra)	do {		\
+	if (cmdname) {								\
+		if (								\
+			strstr(cmdname, "shutdown.stop") == cmdname ||		\
+			strstr(cmdname, "load.on") == cmdname ||		\
+			strstr(cmdname, "test.battery.st") == cmdname ||	\
+			strstr(cmdname, "test.failure.st") == cmdname ||	\
+			strstr(cmdname, "test.system.st") == cmdname ||		\
+			strstr(cmdname, "calibrate.st") == cmdname ||		\
+			strstr(cmdname, "bypass.st") == cmdname			\
+		) {								\
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra) ;	\
+		} else if (							\
+			strstr(cmdname, "shutdown.") == cmdname ||		\
+			strstr(cmdname, "load.off") == cmdname ||		\
+			strstr(cmdname, "load.cycle") == cmdname ||		\
+			( strstr(cmdname, "outlet.") == cmdname && (		\
+			  strstr(cmdname, "shutdown.") ||			\
+			  strstr(cmdname, "load")				\
+			) )							\
+		) {								\
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra) ;	\
+		}								\
+	} } while(0)
+
+#define upsdebug_INSTCMD_STARTING(cmdname, extra)	do {			\
+	upsdebugx(1, "Starting %s::%s('%s', '%s')",				\
 		__FILE__, __func__, NUT_STRARG(cmdname), NUT_STRARG(extra));	\
 	} while(0)
 
