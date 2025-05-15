@@ -113,6 +113,14 @@ static void sock_fail(const char *fn)
 		printf(" - mkdir %s\n", dflt_statepath());
 		break;
 
+	case EADDRINUSE:
+	case EADDRNOTAVAIL:
+		printf("\nThings to try:\n\n");
+		printf(" - ps -ef | grep '%s'\n   To check if another copy of the driver is running; if not:\n\n", progname);
+		printf(" - ls -la %s\n   To check if a (non-socket) filesystem object already exists there\n\n", fn);
+		printf(" - rm -rf %s\n   To remove any offending files (a new driver instance creates its own)\n", fn);
+		break;
+
 	default:
 		break;
 	}
