@@ -919,27 +919,32 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* If extradata is empty, use the default value from the HID-to-NUT table */
 	val = extradata ? extradata : hidups_item->dfl;
-	if (!val) {
-		if (hidups_item->hidflags & HU_FLAG_CMD_PARAM_REQUIRED) {
-			upsdebugx(2, "instcmd: %s requires an explicit or default parameter", cmdname);
-			return STAT_INSTCMD_CONVERSION_FAILED;
-		}
-
-		/* If we end up with atol() below, it should return 0 on error
-		 * anyway (on platforms where it would not crash due to NULL),
-		 * so we make it portably explicit here as a string "0" to be
-		 * handled below.
-		 */
-		upsdebugx(4, "instcmd: %s got no explicit nor default parameter, "
-			"but does not require one: falling back to \"0\"", cmdname);
-		val = "0";
+	if (!val && hidups_item->hidflags & HU_FLAG_PARAM_REQUIRED) {
+		upsdebugx(2, "instcmd: %s requires an explicit or default parameter", cmdname);
+		return STAT_INSTCMD_CONVERSION_FAILED;
 	}
 
 	/* Lookup the new value if needed */
 	if (hidups_item->hid2info != NULL) {
+		/* item->nuf() is expected to handle NULL if it must */
 		value = hu_find_valinfo(hidups_item->hid2info, val);
 	} else {
-		value = atol(val);
+		if (!val) {
+			/* If we end up with atol(NULL) below, it should return
+			 * 0 on error anyway (on platforms where it would not
+			 * crash instead due to the NULL), so we make it portably
+			 * explicit here.
+			 */
+			/* FIXME: Look up data points (maybe via override.* or
+			 * default.* settings) for delay/etc. when handling
+			 * commands like shutdown.* or load.* ?
+			 */
+			upsdebugx(4, "instcmd: %s got no explicit nor default parameter, "
+				"but does not require one: falling back to 0", cmdname);
+			value = 0;
+		} else {
+			value = atol(val);
+		}
 	}
 
 	/* Actual variable setting (as far as firmware is concerned) */
@@ -998,11 +1003,32 @@ int setvar(const char *varname, const char *val)
 		return STAT_SET_UNKNOWN;
 	}
 
+	/* FIXME: This code did not use "dfl"; should it start to?
+	 * If val is empty, use the default value from the HID-to-NUT table */
+	/* if (!val) val = hidups_item->dfl; */
+
+	if (!val && hidups_item->hidflags & HU_FLAG_PARAM_REQUIRED) {
+		upsdebugx(2, "setvar: %s requires an explicit or default parameter", varname);
+		return STAT_SET_CONVERSION_FAILED;
+	}
+
 	/* Lookup the new value if needed */
 	if (hidups_item->hid2info != NULL) {
+		/* item->nuf() is expected to handle NULL if it must */
 		value = hu_find_valinfo(hidups_item->hid2info, val);
 	} else {
-		value = atol(val);
+		if (!val) {
+			/* If we end up with atol(NULL) below, it should return
+			 * 0 on error anyway (on platforms where it would not
+			 * crash instead due to the NULL), so we make it portably
+			 * explicit here.
+			 */
+			upsdebugx(4, "setvar: %s got no explicit nor default parameter, "
+				"but does not require one: falling back to 0", varname);
+			value = 0;
+		} else {
+			value = atol(val);
+		}
 	}
 
 	/* Actual variable setting */
