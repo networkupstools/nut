@@ -116,7 +116,10 @@ static void sock_fail(const char *fn)
 	case EADDRINUSE:
 	case EADDRNOTAVAIL:
 		printf("\nThings to try:\n\n");
-		printf(" - ps -ef | grep '%s'\n   To check if another copy of the driver is running; if not:\n\n", progname);
+		printf(" - ps -ef | grep '%s'\t(Linux, GNU userland)\n"
+		       " - ps -xawwu | grep '%s'\t(BSD, Solaris, embedded)\n"
+		       "   To check if another copy of the driver is running; if not:\n\n",
+		       progname, progname);
 		printf(" - ls -la %s\n   To check if a (non-socket) filesystem object already exists there\n\n", fn);
 		printf(" - rm -rf %s\n   To remove any offending files (a new driver instance creates its own)\n", fn);
 		break;
