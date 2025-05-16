@@ -22,7 +22,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Victron Energy Direct UPS and solar controller driver"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.22"
 
 #define VE_GET	7
 #define VE_SET	8
@@ -68,7 +68,7 @@ static int ve_process_text_buffer(void)
 	ch = ~ch + 1;
 	if (ch != checksum[9])
 	{
-		upslogx(1, "invalid checksum: %d %d", ch, checksum[9]);
+		upsdebugx(1, "invalid checksum: %d %d", ch, checksum[9]);
 		ve_copy(checksum + 10);
 		return 0;
 	}
@@ -187,7 +187,7 @@ static int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, 
 		}
 		else
 		{
-			upslogx(1, "invalid checksum on reply to command %c", line[1]);
+			upslogx(LOG_INSTCMD_FAILED, "invalid checksum on reply to command %c", line[1]);
 			return STAT_INSTCMD_FAILED;
 		}
 
@@ -211,6 +211,8 @@ static int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, 
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	/* experimental: many of the names below are not among
 	 * standard docs/nut-names.txt
 	 */
@@ -224,7 +226,8 @@ static int instcmd(const char *cmdname, const char *extra)
 		return ve_command(VE_SET, "FCEE0000", NULL, 0);
 	if (!strcasecmp(cmdname, "beeper.enable"))
 		return ve_command(VE_SET, "FCEE0001", NULL, 0);
-	upsdebugx(1, "instcmd: unknown command: %s", cmdname);
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

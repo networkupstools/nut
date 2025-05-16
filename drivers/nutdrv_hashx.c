@@ -36,7 +36,7 @@
 #define IGNCHARS	""
 
 #define DRIVER_NAME	"Generic #* Serial driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 #define SESSION_ID	"OoNUTisAMAZINGoO"
 #define SESSION_HASH	"74279F35A48F5F13"
@@ -606,6 +606,10 @@ static int hashx_instcmd(const char *cmd_name, const char *extra)
 {
 	size_t i;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmd_name, extra);
+
 	for (i = 0; i < sizeof (hashx_cmd) / sizeof (*hashx_cmd); ++i) {
 		int status;
 
@@ -613,15 +617,16 @@ static int hashx_instcmd(const char *cmd_name, const char *extra)
 			continue;
 		}
 
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmd_name, extra);
 		if ((status = hashx_send_command(hashx_cmd[i].ups_cmd)) == STATUS_SUCCESS)
 			return STAT_INSTCMD_HANDLED;
 
-		upslogx(LOG_ERR, "Failed to execute command [%s] [%s]: %d",
-		        cmd_name, extra, status);
+		upslogx(LOG_INSTCMD_FAILED, "Failed to execute command [%s] [%s]: %d",
+		        NUT_STRARG(cmd_name), NUT_STRARG(extra), status);
 		return STAT_INSTCMD_FAILED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd_name, extra);
+	upslog_INSTCMD_UNKNOWN(cmd_name, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

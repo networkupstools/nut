@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.64"
+#define DRIVER_VERSION	"0.65"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -836,15 +836,15 @@ int instcmd(const char *cmdname, const char *extradata)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "instcmd(%s, %s)",
-		cmdname,
-		extradata ? extradata : "[NULL]");
+	upsdebug_INSTCMD_STARTING(cmdname, extradata);
 
 	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
+		/* Process alias/fallback names */
+
 		upsdebugx(3, "%s: cmdname '%s' not found; "
 			"checking for alternatives",
 			__func__, cmdname);
@@ -900,7 +900,9 @@ int instcmd(const char *cmdname, const char *extradata)
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
 
+		/* FIXME: ..._UNKNOWN? */
 		upsdebugx(2, "instcmd: info element unavailable %s", cmdname);
+		upslog_INSTCMD_INVALID(cmdname, extradata);
 		return STAT_INSTCMD_INVALID;
 	}
 
@@ -945,7 +947,14 @@ int instcmd(const char *cmdname, const char *extradata)
 		}
 	}
 
-	/* Actual variable setting */
+	/* Actual variable setting (as far as firmware is concerned) */
+	{	/* scoping + workaround for "error: the address of `argtmp` will always evaluate as `true`" */
+		char	argtmp[LARGEBUF], *s = NULL;
+		if (snprintf(argtmp, sizeof(argtmp), "%s (%f)",
+			NUT_STRARG(extradata), value) > 0)
+			s = argtmp;
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, s);
+	}
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
 		upsdebugx(3, "instcmd: SUCCEED");
 		/* Set the status so that SEMI_STATIC vars are polled */
@@ -953,7 +962,8 @@ int instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upsdebugx(3, "instcmd: FAILED"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
+	/* upsdebugx(3, "instcmd: FAILED"); / * FIXME: return HANDLED but FAILED, not UNKNOWN! */
+	upslog_INSTCMD_FAILED(cmdname, extradata);
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -963,13 +973,14 @@ int setvar(const char *varname, const char *val)
 	hid_info_t	*hidups_item;
 	double		value;
 
-	upsdebugx(1, "setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	/* retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(varname);
 
 	if (hidups_item == NULL) {
 		upsdebugx(2, "setvar: info element unavailable %s", varname);
+		upslog_SET_UNKNOWN(varname, val);
 		return STAT_SET_UNKNOWN;
 	}
 
@@ -1028,7 +1039,8 @@ int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
-	upsdebugx(3, "setvar: FAILED"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
+	/* upsdebugx(3, "setvar: FAILED"); / * FIXME: return HANDLED but FAILED, not UNKNOWN! */
+	upslog_SET_FAILED(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -1839,7 +1851,7 @@ static int callback(
 		return 0;
 	}
 
-	upslogx(2, "Using subdriver: %s", subdriver->name);
+	upslogx(LOG_INFO, "Using subdriver: %s", subdriver->name);
 
 	if (subdriver->fix_report_desc(arghd, pDesc)) {
 		upsdebugx(2, "Report Descriptor Fixed");

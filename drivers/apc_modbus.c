@@ -44,7 +44,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.14"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1224,6 +1224,8 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	apc_modbus_register_t *apc_map = NULL, *apc_value = NULL;
 	uint16_t reg_value[16];
 
+	upsdebug_SET_STARTING(nut_varname, str_value);
+
 	for (mi = 0; mi < SIZEOF_ARRAY(apc_modbus_register_maps) && apc_value == NULL; mi++) {
 		apc_map = apc_modbus_register_maps[mi];
 
@@ -1236,12 +1238,12 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	}
 
 	if (!apc_map || !apc_value) {
-		upslogx(LOG_WARNING, "%s: [%s] is unknown", __func__, nut_varname);
+		upslog_SET_UNKNOWN(nut_varname, str_value);
 		return STAT_SET_UNKNOWN;
 	}
 
 	if (!(apc_value->value_flags & APC_VF_RW)) {
-		upslogx(LOG_WARNING, "%s: [%s] is not writable", __func__, nut_varname);
+		upslogx(LOG_SET_INVALID, "%s: [%s] is not writable", __func__, nut_varname);
 		return STAT_SET_INVALID;
 	}
 
@@ -1249,7 +1251,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 
 	if (apc_value->value_converter && apc_value->value_converter->nut_to_apc) {
 		if (!apc_value->value_converter->nut_to_apc(str_value, reg_value, apc_value->modbus_len)) {
-			upslogx(LOG_WARNING, "%s: [%s] failed to convert value", __func__, nut_varname);
+			upslogx(LOG_SET_CONVERSION_FAILED, "%s: [%s] failed to convert value", __func__, nut_varname);
 			return STAT_SET_CONVERSION_FAILED;
 		}
 	} else {
@@ -1292,7 +1294,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 		}
 
 		if (!r) {
-			upslogx(LOG_WARNING, "%s: [%s] failed to convert value", __func__, nut_varname);
+			upslogx(LOG_SET_CONVERSION_FAILED, "%s: [%s] failed to convert value", __func__, nut_varname);
 			return STAT_SET_CONVERSION_FAILED;
 		}
 	}
@@ -1393,7 +1395,9 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	apc_modbus_command_t *apc_command = NULL;
 	uint16_t value[4]; /* Max 64-bit */
 
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(nut_cmdname, extra);
 
 	for (i = 0; apc_modbus_command_map[i].nut_command_name; i++) {
 		if (!strcasecmp(nut_cmdname, apc_modbus_command_map[i].nut_command_name)) {
@@ -1403,21 +1407,22 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	}
 
 	if (!apc_command) {
-		upslogx(LOG_WARNING, "%s: [%s] is unknown", __func__, nut_cmdname);
+		upslog_INSTCMD_UNKNOWN(nut_cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
 	assert(apc_command->modbus_len <= SIZEOF_ARRAY(value));
 
 	if (!_apc_modbus_from_uint64(apc_command->value, value, apc_command->modbus_len)) {
-		upslogx(LOG_WARNING, "%s: [%s] failed to convert value", __func__, nut_cmdname);
+		upslogx(LOG_INSTCMD_CONVERSION_FAILED, "%s: [%s] failed to convert value", __func__, nut_cmdname);
 		return STAT_INSTCMD_CONVERSION_FAILED;
 	}
 
 	addr = apc_command->modbus_addr;
 	nb = apc_command->modbus_len;
+	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 	if (modbus_write_registers(modbus_ctx, addr, nb, value) < 0) {
-		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
+		upslogx(LOG_INSTCMD_FAILED, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
 		_apc_modbus_handle_error(modbus_ctx);
 		return STAT_INSTCMD_FAILED;
 	}

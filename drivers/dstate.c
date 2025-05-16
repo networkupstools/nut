@@ -840,7 +840,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			cmdparam = arg[2];
 			cmdid = arg[4];
 		} else if (numarg != 2) {
-			upslogx(LOG_NOTICE, "Malformed INSTCMD request");
+			upslogx(LOG_INSTCMD_INVALID, "Malformed INSTCMD request");
 			return 0;
 		}
 
@@ -876,11 +876,11 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		}
 
 		if (cmdparam) {
-			upslogx(LOG_NOTICE,
+			upslogx(LOG_INSTCMD_UNKNOWN,
 				"Got INSTCMD '%s' '%s', but driver lacks a handler",
 				NUT_STRARG(cmdname), NUT_STRARG(cmdparam));
 		} else {
-			upslogx(LOG_NOTICE,
+			upslogx(LOG_INSTCMD_UNKNOWN,
 				"Got INSTCMD '%s', but driver lacks a handler",
 				NUT_STRARG(cmdname));
 		}
@@ -914,7 +914,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 				setid = arg[4];
 			}
 			else {
-				upslogx(LOG_NOTICE, "Got SET <var> with unsupported parameters (%s/%s)",
+				upslogx(LOG_SET_INVALID, "Got SET <var> with unsupported parameters (%s/%s)",
 					arg[3], arg[4]);
 				return 0;
 			}
@@ -949,7 +949,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			return 1;
 		}
 
-		upslogx(LOG_NOTICE, "Got SET, but driver lacks a handler");
+		upslogx(LOG_SET_UNKNOWN, "Got SET, but driver lacks a handler");
 		return 1;
 	}
 

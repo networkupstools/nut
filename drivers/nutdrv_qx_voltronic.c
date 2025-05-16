@@ -1863,6 +1863,8 @@ static int	voltronic_process_setvar(item_t *item, char *value, const size_t valu
 {
 	double	val;
 
+	/* upsdebug_SET_STARTING(item->info_type, value); */
+
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
 		return -1;
@@ -1938,6 +1940,8 @@ static int	voltronic_process_setvar(item_t *item, char *value, const size_t valu
 static int	voltronic_process_command(item_t *item, char *value, const size_t valuelen)
 {
 	char	buf[SMALLBUF] = "";
+
+	/* upsdebug_INSTCMD_STARTING(item->info_type, value); */
 
 	if (!strcasecmp(item->info_type, "shutdown.return")) {
 
@@ -2060,7 +2064,8 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 
 	} else {
 
-		/* Don't know what happened */
+		/* Don't know what happened: unknown entry for pre-processing? */
+		/* upslog_INSTCMD_UNKNOWN(item->info_type, value); */
 		return -1;
 
 	}

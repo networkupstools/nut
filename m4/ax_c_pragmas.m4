@@ -1286,7 +1286,7 @@ if (strstr(buf, "null") == NULL) {
 }
 fprintf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a variable NULL string argument: '%s'\n", buf);
 
-res = printf("%s", NULL);
+res = printf("%s", (char*)NULL);
 if (res < 0) {
     fprintf(stderr, "FAILED to printf() an explicit NULL string argument (to stdout)\n");
     return 1;
@@ -1299,6 +1299,55 @@ return 0;
         ],
         [${myWARN_CFLAGS}]
     )]
+  )
+
+  AS_IF([test "${GCC}" = "yes" || test "${CLANGCC}" = "yes"], [
+    myWARN_CFLAGS="-Wformat -Werror -Wall --pedantic"
+    AC_CACHE_CHECK([for compiler acceptance of printf("%s", NULL) if warnings are enabled],
+      [ax_cv__printf_string_null_nowarn],
+      [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([dnl
+#include <stdio.h>
+#include <string.h>
+], [[
+char buf[128];
+char *s = NULL;
+/* The following line may issue pedantic static analysis warnings (ignored);
+ * it may also crash (segfault) during a run on some systems - hence the test.
+ */
+int res = snprintf(buf, sizeof(buf), "%s", s);
+buf[sizeof(buf)-1] = '\0';
+if (res < 0) {
+    fprintf(stderr, "FAILED to snprintf() a variable NULL string argument\n");
+    return 1;
+}
+if (buf[0] == '\0') {
+    fprintf(stderr, "RETURNED empty string from snprintf() with a variable NULL string argument\n");
+    return 0;
+}
+if (strstr(buf, "null") == NULL) {
+    fprintf(stderr, "RETURNED some string from snprintf() with a variable NULL string argument: '%s'\n", buf);
+    return 0;
+}
+fprintf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a variable NULL string argument: '%s'\n", buf);
+
+/* Note that with warnings in place, default (void*)NULL is also a problem,
+ * so we must cast it out */
+res = printf("%s", (char*)NULL);
+if (res < 0) {
+    fprintf(stderr, "FAILED to printf() an explicit NULL string argument (to stdout)\n");
+    return 1;
+}
+return 0;
+            ]])],
+        [ax_cv__printf_string_null_nowarn=yes
+        ],
+        [ax_cv__printf_string_null_nowarn=no
+        ],
+        [${myWARN_CFLAGS}]
+      )]
+    )],
+    [ax_cv__printf_string_null_nowarn=""]
   )
   unset myWARN_CFLAGS
 
@@ -1315,7 +1364,11 @@ return 0;
   ])
   AS_IF([test x"$nut_enable_NUT_STRARG_always" = xauto], [
     nut_enable_NUT_STRARG_always=no
-    AS_IF([test "${CLANGCC}" = "yes"], [
+    AS_IF([test x"${ax_cv__printf_string_null_nowarn}" = xno],
+      [nut_enable_NUT_STRARG_always=yes
+       AC_MSG_NOTICE([Automatically enabled NUT_STRARG-always due to compiler stance on warnings])
+      ],
+      [AS_IF([test "${CLANGCC}" = "yes"], [
         true dnl no-op at the moment
 dnl        AS_CASE(["$CC_VERSION"],
 dnl            [*" "18.*], [nut_enable_NUT_STRARG_always=yes]
@@ -1326,9 +1379,10 @@ dnl        )
                 [*" "13.*], [nut_enable_NUT_STRARG_always=yes]
             )
         ])
-    ])
-    AS_IF([test x"$nut_enable_NUT_STRARG_always" = xyes],
+      ])
+      AS_IF([test x"$nut_enable_NUT_STRARG_always" = xyes],
         [AC_MSG_NOTICE([Automatically enabled NUT_STRARG-always due to compiler version used])])
+    ])
   ])
 
   AS_IF([test "$ax_cv__printf_string_null" = "yes" && test x"$nut_enable_NUT_STRARG_always" != xyes],[

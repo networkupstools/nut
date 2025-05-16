@@ -191,6 +191,8 @@ void	blazer_initups_light(item_t *qx2nut)
 /* Preprocess setvars */
 int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
+	/* upsdebug_SET_STARTING(item->info_type, value); */
+
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
 		return -1;
@@ -231,7 +233,8 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 
 	} else {
 
-		/* Don't know what happened */
+		/* Don't know what happened: unknown entry for pre-processing? */
+		/* upslog_SET_UNKNOWN(item->info_type, value); */
 		return -1;
 
 	}
@@ -242,6 +245,8 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 /* Preprocess instant commands */
 int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 {
+	/* upsdebug_INSTCMD_STARTING(item->info_type, value); */
+
 	if (!strcasecmp(item->info_type, "shutdown.return")) {
 
 		/* Sn: Shutdown after n minutes and then turn on when mains is back
@@ -351,7 +356,8 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 
 	} else {
 
-		/* Don't know what happened */
+		/* Don't know what happened: unknown entry for pre-processing? */
+		/* upslog_INSTCMD_UNKNOWN(item->info_type, value); */
 		return -1;
 
 	}

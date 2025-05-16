@@ -55,7 +55,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.10"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -1198,6 +1198,8 @@ static int setvar(const char *name, const char *val)
 	int i;
 	int r;
 
+	upsdebug_SET_STARTING(name, val);
+
 	for (i = 0; ups2000_rw_var[i].name != NULL; i++) {
 		if (!strcasecmp(ups2000_rw_var[i].name, name)) {
 			r = ups2000_rw_var[i].setter(ups2000_rw_var[i].reg, val);
@@ -1212,13 +1214,14 @@ static int setvar(const char *name, const char *val)
 		}
 	}
 
+	upslog_SET_UNKNOWN(name, val);
 	return STAT_SET_UNKNOWN;
 
 found:
 	if (r == STAT_SET_FAILED)
-		upslogx(LOG_ERR, "setvar: setting variable [%s] to [%s] failed", name, val);
+		upslog_SET_FAILED(name, val);
 	else if (r == STAT_SET_INVALID)
-		upslogx(LOG_WARNING, "setvar: [%s] is not valid for variable [%s]", val, name);
+		upslog_SET_INVALID(name, val);
 	return r;
 }
 
@@ -1470,7 +1473,10 @@ static int instcmd(const char *cmd, const char *extra)
 	int i;
 	int status;
 	struct ups2000_cmd_t *cmd_action = NULL;
+
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmd, extra);
 
 	for (i = 0; ups2000_cmd[i].cmd != NULL; i++) {
 		if (!strcasecmp(cmd, ups2000_cmd[i].cmd)) {
@@ -1479,14 +1485,17 @@ static int instcmd(const char *cmd, const char *extra)
 	}
 
 	if (!cmd_action) {
-		upslogx(LOG_WARNING, "instcmd: command [%s] unknown", cmd);
+		upslog_INSTCMD_UNKNOWN(cmd, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
+
+	upslog_INSTCMD_POWERSTATE_CHECKED(cmd, extra);
 
 	if (cmd_action->handler_func) {
 		/* handled by a function */
 		if (cmd_action->reg1 < 0) {
-			upslogx(LOG_WARNING, "instcmd: command [%s] reg1 is negative", cmd);
+			/* FIXME: ...INSTCMD_CONVERSION_FAILED ? */
+			upslogx(LOG_INSTCMD_UNKNOWN, "instcmd: command [%s] reg1 is negative", cmd);
 			return STAT_INSTCMD_UNKNOWN;
 		} else {
 			status = cmd_action->handler_func((uint16_t)cmd_action->reg1);
@@ -1521,7 +1530,7 @@ static int instcmd(const char *cmd, const char *extra)
 	}
 
 	if (status == STAT_INSTCMD_FAILED)
-		upslogx(LOG_ERR, "instcmd: command [%s] failed", cmd);
+		upslog_INSTCMD_FAILED(cmd, extra);
 	else if (status == STAT_INSTCMD_HANDLED)
 		upslogx(LOG_INFO, "instcmd: command [%s] handled", cmd);
 	return status;
@@ -1565,13 +1574,15 @@ static int ups2000_instcmd_load_on(const uint16_t reg)
 		 * enter normal mode, but "load.on" is not supposed to affect the
 		 * normal/bypass status. Also log an error and suggest "bypass.stop".
 		 */
-		upslogx(LOG_ERR, "load.on error: UPS is already on, and is in bypass mode. "
+		/* FIXME: ..._INVALID ? */
+		upslogx(LOG_INSTCMD_FAILED, "load.on error: UPS is already on, and is in bypass mode. "
 				 "To enter normal mode, use bypass.stop");
 		return STAT_INSTCMD_FAILED;
 	}
 	else {
 		/* unreachable, see comments for r != 0 at the beginning */
-		upslogx(LOG_ERR, "load.on error: invalid ups.status (%s) detected. "
+		/* FIXME: ..._INVALID ? */
+		upslogx(LOG_INSTCMD_FAILED, "load.on error: invalid ups.status (%s) detected. "
 				 "Please file a bug report!", status);
 		return STAT_INSTCMD_FAILED;
 	}
@@ -1597,7 +1608,7 @@ static int ups2000_instcmd_bypass_start(const uint16_t reg)
 
 	/* bypass input has a power failure, refuse to bypass */
 	if (!bypass_available) {
-		upslogx(LOG_ERR, "bypass input is abnormal, refuse to enter bypass mode.");
+		upslogx(LOG_INSTCMD_FAILED, "bypass input is abnormal, refuse to enter bypass mode.");
 		return STAT_INSTCMD_FAILED;
 	}
 

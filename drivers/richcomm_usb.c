@@ -30,7 +30,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.15"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -716,7 +716,9 @@ void upsdrv_updateinfo(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* Shutdown UPS */
 	if (!strcasecmp(cmdname, "shutdown.return"))
@@ -759,6 +761,7 @@ int instcmd(const char *cmdname, const char *extra)
 		char	restart[QUERY_PACKETSIZE] = { 0x02, 0x01, 0x00, 0x00 };
 		char	reply[REPLY_PACKETSIZE];
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		execute_and_retrieve_query(prepare, reply);
 
 		/*
@@ -773,7 +776,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
