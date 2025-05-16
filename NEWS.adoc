@@ -82,6 +82,8 @@ https://github.com/networkupstools/nut/milestone/9
      potential for buffer overflow. [#2915]
 
  - common driver code:
+   * Update reports of failed socket file creation, to help troubleshooting
+     some error cases in the field.
    * Removed workarounds trying to migrate legacy driver raised `ALARM`
      status tokens into modern `alarm_*` function logic. Rather, we keep
      supporting them as separate from the modern logic, seeing as `upsmon`

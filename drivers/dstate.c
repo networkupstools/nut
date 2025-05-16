@@ -79,24 +79,27 @@ static void sock_fail(const char *fn)
 	printf("\nFatal error: unable to create listener socket\n\n");
 	printf("bind %s failed: %s\n", fn, strerror(sockerr));
 
-	pwuser = getpwuid(getuid());
-
-	if (!pwuser) {
-		fatal_with_errno(EXIT_FAILURE, "getpwuid");
-	}
-
 	/* deal with some common problems */
 	switch (errno)
 	{
 	case EACCES:
-		printf("\nCurrent user: %s (UID %d)\n\n",
-			pwuser->pw_name, (int)pwuser->pw_uid);
+		pwuser = getpwuid(getuid());
+
+		if (pwuser) {
+			printf("\nCurrent user: %s (UID %" PRIiMAX ")\n\n",
+				NUT_STRARG(pwuser->pw_name),
+				(intmax_t)pwuser->pw_uid);
+		}
 
 		printf("Things to try:\n\n");
 		printf(" - set different owners or permissions on %s\n\n",
 			dflt_statepath());
-		printf(" - run this as some other user "
+		printf(" - run this program as some other user "
 			"(try -u <username>)\n");
+
+		if (!pwuser) {
+			fatal_with_errno(EXIT_FAILURE, "getpwuid");
+		}
 		break;
 
 	case ENOENT:
@@ -108,6 +111,17 @@ static void sock_fail(const char *fn)
 		printf("\nThings to try:\n\n");
 		printf(" - rm %s\n\n", dflt_statepath());
 		printf(" - mkdir %s\n", dflt_statepath());
+		break;
+
+	case EADDRINUSE:
+	case EADDRNOTAVAIL:
+		printf("\nThings to try:\n\n");
+		printf(" - ps -ef | grep '%s'\t(Linux, GNU userland)\n"
+		       " - ps -xawwu | grep '%s'\t(BSD, Solaris, embedded)\n"
+		       "   To check if another copy of the driver is running; if not:\n\n",
+		       progname, progname);
+		printf(" - ls -la %s\n   To check if a (non-socket) filesystem object already exists there\n\n", fn);
+		printf(" - rm -rf %s\n   To remove any offending files (a new driver instance creates its own)\n", fn);
 		break;
 
 	default:
