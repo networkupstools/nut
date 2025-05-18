@@ -27,7 +27,7 @@
 #include <string.h>
 
 #define DRIVER_NAME	"ISBMEX UPS driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -362,7 +362,9 @@ void upsdrv_updateinfo(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* FIXME: Which one is this - "load.off",
 	 * "shutdown.stayoff" or "shutdown.return"? */
@@ -388,6 +390,7 @@ int instcmd(const char *cmdname, const char *extra)
 			set_exit_flag(EF_EXIT_FAILURE);
 */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		for (i = 0; i <= 5; i++)
 		{
 			ser_send_char(upsfd, '#');
@@ -397,7 +400,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
