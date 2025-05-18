@@ -157,11 +157,7 @@ EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 LICENSE-DCO MAINTAINERS
 # Since the renaming of documentation to `*.adoc` extension to help IDE
 # and GitHub UIs to render the source files in a pretty fashion, we need
 # to list them:
-EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc
-
-# As long as we do not tarball the script (or should we?), do not deliver
-# its doc either:
-# EXTRA_DIST += ci_build.adoc
+EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc ci_build.adoc
 
 # Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
 # but lack NUT magic logic to recreate the `configure` script if someone would
