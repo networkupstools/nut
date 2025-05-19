@@ -324,7 +324,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	upslogx(LOG_ERR, "%s: %s: Shutdown is not supported by this driver, "
+		"monitored upstream drivers will shutdown when called to do so",
+		progname, __func__);
 
+	if (handling_upsdrv_shutdown > 0) {
+		set_exit_flag(EF_EXIT_FAILURE);
+	}
 }
 
 void upsdrv_help(void)
