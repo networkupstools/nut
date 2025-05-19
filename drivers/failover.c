@@ -412,39 +412,43 @@ void upsdrv_cleanup(void)
 	for (i = 0; i < ups_count; ++i) {
 		ups_device_t *ups = ups_list[i];
 
-		if (primary_ups == ups) {
-			primary_ups = NULL;
+		if (ups) {
+			if (primary_ups == ups) {
+				primary_ups = NULL;
+			}
+
+			if (last_primary_ups == ups) {
+				last_primary_ups = NULL;
+			}
+
+			ups_disconnect(ups); /* free conn + ctx */
+
+			ups_free_ups_state(ups); /* free status, vars, subvars + cmds */
+
+			if (ups->name) {
+				free(ups->name);
+				ups->name = NULL;
+			}
+
+			if (ups->drivername) {
+				free(ups->drivername);
+				ups->drivername = NULL;
+			}
+
+			if (ups->socketname) {
+				free(ups->socketname);
+				ups->socketname = NULL;
+			}
+
+			free(ups);
+			ups_list[i] = NULL;
 		}
-
-		if (last_primary_ups == ups) {
-			last_primary_ups = NULL;
-		}
-
-		ups_disconnect(ups); /* free conn + ctx */
-
-		ups_free_ups_state(ups); /* free status, vars, subvars + cmds */
-
-		if (ups->name) {
-			free(ups->name);
-			ups->name = NULL;
-		}
-
-		if (ups->drivername) {
-			free(ups->drivername);
-			ups->drivername = NULL;
-		}
-
-		if (ups->socketname) {
-			free(ups->socketname);
-			ups->socketname = NULL;
-		}
-
-		free(ups);
-		ups_list[i] = NULL;
 	}
 
-	free(ups_list);
-	ups_list = NULL;
+	if (ups_list) {
+		free(ups_list);
+		ups_list = NULL;
+	}
 
 	free_status_filters(); /* free status filters */
 }
@@ -2189,6 +2193,7 @@ static void free_status_filters(void)
 	if (arg_status_filters.have_any) {
 		for (i = 0; i < arg_status_filters.have_any_count; ++i) {
 			free(arg_status_filters.have_any[i]);
+			arg_status_filters.have_any[i] = NULL;
 		}
 		free(arg_status_filters.have_any);
 		arg_status_filters.have_any = NULL;
@@ -2198,6 +2203,7 @@ static void free_status_filters(void)
 	if (arg_status_filters.have_all) {
 		for (i = 0; i < arg_status_filters.have_all_count; ++i) {
 			free(arg_status_filters.have_all[i]);
+			arg_status_filters.have_all[i] = NULL;
 		}
 		free(arg_status_filters.have_all);
 		arg_status_filters.have_all = NULL;
@@ -2207,6 +2213,7 @@ static void free_status_filters(void)
 	if (arg_status_filters.nothave_any) {
 		for (i = 0; i < arg_status_filters.nothave_any_count; ++i) {
 			free(arg_status_filters.nothave_any[i]);
+			arg_status_filters.nothave_any[i] = NULL;
 		}
 		free(arg_status_filters.nothave_any);
 		arg_status_filters.nothave_any = NULL;
@@ -2216,6 +2223,7 @@ static void free_status_filters(void)
 	if (arg_status_filters.nothave_all) {
 		for (i = 0; i < arg_status_filters.nothave_all_count; ++i) {
 			free(arg_status_filters.nothave_all[i]);
+			arg_status_filters.nothave_all[i] = NULL;
 		}
 		free(arg_status_filters.nothave_all);
 		arg_status_filters.nothave_all = NULL;
