@@ -23,7 +23,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME                         "PiJuice UPS driver"
-#define DRIVER_VERSION                      "0.13"
+#define DRIVER_VERSION                      "0.14"
 
 /*
  * Linux I2C userland is a bit of a mess until distros refresh to
@@ -833,19 +833,23 @@ void upsdrv_updateinfo(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* FIXME: Which one is this - "load.off",
 	 * "shutdown.stayoff" or "shutdown.return"? */
 
 	/* Shutdown UPS */
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		set_power_off();
 
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

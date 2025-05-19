@@ -79,24 +79,27 @@ static void sock_fail(const char *fn)
 	printf("\nFatal error: unable to create listener socket\n\n");
 	printf("bind %s failed: %s\n", fn, strerror(sockerr));
 
-	pwuser = getpwuid(getuid());
-
-	if (!pwuser) {
-		fatal_with_errno(EXIT_FAILURE, "getpwuid");
-	}
-
 	/* deal with some common problems */
 	switch (errno)
 	{
 	case EACCES:
-		printf("\nCurrent user: %s (UID %d)\n\n",
-			pwuser->pw_name, (int)pwuser->pw_uid);
+		pwuser = getpwuid(getuid());
+
+		if (pwuser) {
+			printf("\nCurrent user: %s (UID %" PRIiMAX ")\n\n",
+				NUT_STRARG(pwuser->pw_name),
+				(intmax_t)pwuser->pw_uid);
+		}
 
 		printf("Things to try:\n\n");
 		printf(" - set different owners or permissions on %s\n\n",
 			dflt_statepath());
-		printf(" - run this as some other user "
+		printf(" - run this program as some other user "
 			"(try -u <username>)\n");
+
+		if (!pwuser) {
+			fatal_with_errno(EXIT_FAILURE, "getpwuid");
+		}
 		break;
 
 	case ENOENT:
@@ -108,6 +111,17 @@ static void sock_fail(const char *fn)
 		printf("\nThings to try:\n\n");
 		printf(" - rm %s\n\n", dflt_statepath());
 		printf(" - mkdir %s\n", dflt_statepath());
+		break;
+
+	case EADDRINUSE:
+	case EADDRNOTAVAIL:
+		printf("\nThings to try:\n\n");
+		printf(" - ps -ef | grep '%s'\t(Linux, GNU userland)\n"
+		       " - ps -xawwu | grep '%s'\t(BSD, Solaris, embedded)\n"
+		       "   To check if another copy of the driver is running; if not:\n\n",
+		       progname, progname);
+		printf(" - ls -la %s\n   To check if a (non-socket) filesystem object already exists there\n\n", fn);
+		printf(" - rm -rf %s\n   To remove any offending files (a new driver instance creates its own)\n", fn);
 		break;
 
 	default:
@@ -840,7 +854,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			cmdparam = arg[2];
 			cmdid = arg[4];
 		} else if (numarg != 2) {
-			upslogx(LOG_NOTICE, "Malformed INSTCMD request");
+			upslogx(LOG_INSTCMD_INVALID, "Malformed INSTCMD request");
 			return 0;
 		}
 
@@ -876,11 +890,11 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		}
 
 		if (cmdparam) {
-			upslogx(LOG_NOTICE,
+			upslogx(LOG_INSTCMD_UNKNOWN,
 				"Got INSTCMD '%s' '%s', but driver lacks a handler",
 				NUT_STRARG(cmdname), NUT_STRARG(cmdparam));
 		} else {
-			upslogx(LOG_NOTICE,
+			upslogx(LOG_INSTCMD_UNKNOWN,
 				"Got INSTCMD '%s', but driver lacks a handler",
 				NUT_STRARG(cmdname));
 		}
@@ -914,7 +928,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 				setid = arg[4];
 			}
 			else {
-				upslogx(LOG_NOTICE, "Got SET <var> with unsupported parameters (%s/%s)",
+				upslogx(LOG_SET_INVALID, "Got SET <var> with unsupported parameters (%s/%s)",
 					arg[3], arg[4]);
 				return 0;
 			}
@@ -949,7 +963,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			return 1;
 		}
 
-		upslogx(LOG_NOTICE, "Got SET, but driver lacks a handler");
+		upslogx(LOG_SET_UNKNOWN, "Got SET, but driver lacks a handler");
 		return 1;
 	}
 

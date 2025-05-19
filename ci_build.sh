@@ -2323,7 +2323,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             # Tack a remaining yes/no in the end to whatever scenario is there;
             # NOT a full matrix
-            if [ "${BUILDSTODO_UNMAPPED}" -gt 1 ] ; then
+            if [ "${BUILDSTODO_UNMAPPED}" -gt 1 ] && \
+            (   [ "$CI_FAILFAST" != "true" ] \
+             || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
+            ) ; then
                 for NUT_UNMAPPED_VARIANT in $NUT_UNMAPPED_VARIANTS ; do
                     case "${NUT_UNMAPPED_VARIANT}" in
                         no) ;;	# we already did the default ("no") implicitly

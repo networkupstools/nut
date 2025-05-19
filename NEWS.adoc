@@ -39,7 +39,15 @@ https://github.com/networkupstools/nut/milestone/9
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
- - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
+ - Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+:
+   * In `usbhid-ups` sources, introduced optional `HU_FLAG_PARAM_REQUIRED` for
+     `setvar()` or `instcmd()` handling (and a `HU_TYPE_CMD_PARAM_REQUIRED`
+     shortcut) for setting in the mapping table flags, to specify variables
+     or instant commands that require an argument (either from caller or a
+     non-`NULL` default in the run-time table after device data discovery);
+     if the flag is not set, a zero value is assumed. Incomplete code was a
+     regression of NUT v2.8.3 causing some instant commands to fail. [#2860,
+     #2955]
 
  - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2 and/or
    v2.8.3:
@@ -74,12 +82,20 @@ https://github.com/networkupstools/nut/milestone/9
      potential for buffer overflow. [#2915]
 
  - common driver code:
+   * Update reports of failed socket file creation, to help troubleshooting
+     some error cases in the field.
    * Removed workarounds trying to migrate legacy driver raised `ALARM`
      status tokens into modern `alarm_*` function logic. Rather, we keep
      supporting them as separate from the modern logic, seeing as `upsmon`
      does not care where the token itself was raised for its notifications.
      Driver-code related test-cases were updated to reflect these changes.
      [issue #2928, PRs #2931 and #2934]
+   * Introduced some macros in `drivers/upshandler.h` for common syslog level
+     definitions and message wording for beginning and failing `instcmd()` or
+     `setvar()` operations consistently in different drivers. As a related
+     change, operations that intend to turn off or restart the load, or can
+     do that by side effect (e.g. calibration if batteries are old or dead),
+     would explicitly `upslogx(LOG_CRIT,...)` by default before commencing.
 
  - `dummy-ups` driver updates:
    * A new instruction `ALARM` was added for the `Dummy Mode` operation
