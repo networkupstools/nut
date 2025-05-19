@@ -62,7 +62,7 @@ endif HAVE_LIBREGEX
 # in top level.
 NUTSW_DRIVERLIST_DUMMY_UPS = dummy-ups$(EXEEXT)
 NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
- clone clone-outlet apcupsd-ups skel
+ clone clone-outlet failover apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
@@ -225,6 +225,9 @@ endif WITH_SSL
 # Clone drivers (in NUTSW_DRIVERLIST)
 clone_SOURCES = clone.c
 clone_outlet_SOURCES = clone-outlet.c
+
+# failover driver (in NUTSW_DRIVERLIST)
+failover_SOURCES = failover.c
 
 # apcupsd client driver (in NUTSW_DRIVERLIST)
 apcupsd_ups_SOURCES = apcupsd-ups.c
