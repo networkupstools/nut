@@ -197,7 +197,7 @@ static int ups_passes_status_filters(const ups_device_t *ups);
 static void ups_promote_primary(ups_device_t *ups);
 static void ups_demote_primary(ups_device_t *ups);
 static void ups_export_dstate(ups_device_t *ups);
-static void ups_clean_dstate(ups_device_t *ups);
+static void ups_clean_dstate(const ups_device_t *ups);
 
 static int ups_get_cmd_pos(const ups_device_t *ups, const char *cmd);
 static int ups_add_cmd(ups_device_t *ups, const char *val);
@@ -301,6 +301,7 @@ void upsdrv_updateinfo(void)
 			/* Special handling for fsdmode 0 where primary was never demoted */
 			upslogx(LOG_NOTICE, "%s: [%s] was declared to be a suitable primary (again)",
 				__func__, primary_candidate->socketname);
+			ups_clean_dstate(primary_candidate);
 			primary_candidate->force_dstate_export = 1;
 		}
 		primaries_gone = 0;
@@ -709,9 +710,9 @@ static void parse_port_argument(void)
 			free(new_ups->socketname);
 			free(new_ups);
 			free(tmp);
-			fatalx(EXIT_FAILURE, "%s: %s: the 'port' argument has an invalid format, "
-				"[%s] is not a valid splittable socket name, please correct the argument",
-				progname, __func__, token);
+			fatalx(EXIT_FAILURE, "%s: %s: the 'port' argument contains at least one "
+				"invalid and non-splittable socket name, please correct the argument",
+				progname, __func__);
 		} else {
 			upsdebugx(3, "%s: [%s] was parsed into UPS driver [%s] and UPS [%s]",
 				__func__, new_ups->socketname, new_ups->drivername, new_ups->name);
@@ -1702,7 +1703,7 @@ static void ups_export_dstate(ups_device_t *ups)
 	ups->force_dstate_export = 0;
 }
 
-static void ups_clean_dstate(ups_device_t *ups)
+static void ups_clean_dstate(const ups_device_t *ups)
 {
 	size_t i = 0;
 
