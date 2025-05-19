@@ -707,12 +707,16 @@ static void parse_port_argument(void)
 		new_ups->socketname = xstrdup(token);
 
 		if (!split_socket_name(new_ups->socketname, &new_ups->drivername, &new_ups->name)) {
+			char buf[SMALLBUF];
+			snprintf(buf, sizeof(buf), "%s", token); /* for fatalx */
+
 			free(new_ups->socketname);
 			free(new_ups);
 			free(tmp);
-			fatalx(EXIT_FAILURE, "%s: %s: the 'port' argument contains at least one "
-				"invalid and non-splittable socket name, please correct the argument",
-				progname, __func__);
+
+			fatalx(EXIT_FAILURE, "%s: %s: the 'port' argument has an invalid format, "
+				"[%s] is not a valid splittable socket name, please correct the argument",
+				progname, __func__, buf);
 		} else {
 			upsdebugx(3, "%s: [%s] was parsed into UPS driver [%s] and UPS [%s]",
 				__func__, new_ups->socketname, new_ups->drivername, new_ups->name);
