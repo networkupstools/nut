@@ -139,6 +139,7 @@ https://github.com/networkupstools/nut/milestone/9
    * Introduced a `failover` driver for monitoring multiple UPS driver sockets
      and seamless switching out of UPS data in a failover situation, includes
      support for end-to-end tracked instant commands and also variable updating.
+     [#2962]
 
  - NUT Monitor GUI:
    * Ported Python 3 version to Qt6, now shipped alongside Qt5 for systems

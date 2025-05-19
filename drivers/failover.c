@@ -192,7 +192,7 @@ static void ups_is_dead(ups_device_t *ups);
 static void ups_is_online(ups_device_t *ups);
 static void ups_is_offline(ups_device_t *ups);
 
-static ups_device_t *get_primary_candidate();
+static ups_device_t *get_primary_candidate(void);
 static int ups_passes_status_filters(const ups_device_t *ups);
 static void ups_promote_primary(ups_device_t *ups);
 static void ups_demote_primary(ups_device_t *ups);
@@ -876,6 +876,17 @@ static void handle_no_primaries(void)
 
 				dstate_dataok();
 				break;
+
+			default:
+				/* Should never happen, as we validate the argument */
+				if (!primaries_gone) {
+					upslogx(LOG_WARNING, "%s: 'fsdmode' has unknown value [%d]: "
+						"keeping last primary and declaring data stale immediately",
+						__func__, arg_fsdmode);
+				}
+
+				dstate_datastale();
+				break;
 		}
 		primaries_gone = 1;
 	} else {
@@ -1390,7 +1401,7 @@ static void ups_is_offline(ups_device_t *ups) {
 	}
 }
 
-static ups_device_t *get_primary_candidate()
+static ups_device_t *get_primary_candidate(void)
 {
 	time_t now;
 	size_t i = 0;
@@ -1424,7 +1435,7 @@ static ups_device_t *get_primary_candidate()
 			ups->force_ignore_time = 0;
 		}
 
-		if (ups_has_flag(ups, UPS_FLAG_ALIVE | UPS_FLAG_DUMPED)) {
+		if (ups_has_flag(ups, (ups_flags_t)(UPS_FLAG_ALIVE | UPS_FLAG_DUMPED))) {
 			if (ups->force_ignore < 0) {
 				ups->priority = PRIORITY_SKIPPED;
 
@@ -1461,7 +1472,7 @@ static ups_device_t *get_primary_candidate()
 					"only status filters, but not the default set of lower priorities",
 					__func__, ups->socketname);
 			}
-			else if (ups_has_flag(ups, UPS_FLAG_DATA_OK | UPS_FLAG_ONLINE)) {
+			else if (ups_has_flag(ups, (ups_flags_t)(UPS_FLAG_DATA_OK | UPS_FLAG_ONLINE))) {
 				priority = PRIORITY_GOOD;
 			}
 			else if (ups_has_flag(ups, UPS_FLAG_DATA_OK)) {
