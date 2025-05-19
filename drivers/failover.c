@@ -708,6 +708,7 @@ static void parse_port_argument(void)
 		if (!split_socket_name(new_ups->socketname, &new_ups->drivername, &new_ups->name)) {
 			free(new_ups->socketname);
 			free(new_ups);
+			free(tmp);
 			fatalx(EXIT_FAILURE, "%s: %s: the 'port' argument has an invalid format, "
 				"[%s] is not a valid splittable socket name, please correct the argument",
 				progname, __func__, token);
