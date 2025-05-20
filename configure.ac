@@ -1436,24 +1436,19 @@ AS_IF([test x"${ac_cv_func_strdup}" = xyes],
 AC_CACHE_CHECK([for va_copy(dest,src)],
   [ac_cv_have_va_copy],
   [
-    save_CFLAGS="$CFLAGS"
-    CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
-
-    AC_COMPILE_IFELSE(
+    AX_RUN_OR_LINK_IFELSE(
       [AC_LANG_PROGRAM(
         [[#include <stdarg.h>
-          void test(const char *fmt, ...) {
+          void check_va_copy(const char *fmt, ...) {
             va_list ap1, ap2;
             va_start(ap1, fmt);
             va_copy(ap2, ap1);
             va_end(ap1);
             va_end(ap2);
           }]],
-        [[]])],
+        [[check_va_copy("%s", "test");]])],
       [ac_cv_have_va_copy=yes],
       [ac_cv_have_va_copy=no])
-
-    CFLAGS="$save_CFLAGS"
   ])
 
 AS_IF([test x"$ac_cv_have_va_copy" = xyes],
@@ -1462,24 +1457,19 @@ AS_IF([test x"$ac_cv_have_va_copy" = xyes],
 AC_CACHE_CHECK([for __va_copy(dest,src)],
   [ac_cv_have___va_copy],
   [
-    save_CFLAGS="$CFLAGS"
-    CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
-
-    AC_COMPILE_IFELSE(
+    AX_RUN_OR_LINK_IFELSE(
       [AC_LANG_PROGRAM(
         [[#include <stdarg.h>
-          void test(const char *fmt, ...) {
+          void check___va_copy(const char *fmt, ...) {
             va_list ap1, ap2;
             va_start(ap1, fmt);
             __va_copy(ap2, ap1);
             va_end(ap1);
             va_end(ap2);
           }]],
-        [[]])],
+        [[check___va_copy("%s", "test");]])],
       [ac_cv_have___va_copy=yes],
       [ac_cv_have___va_copy=no])
-
-    CFLAGS="$save_CFLAGS"
   ])
 
 AS_IF([test x"$ac_cv_have___va_copy" = xyes],
