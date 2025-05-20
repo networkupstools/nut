@@ -681,7 +681,8 @@ ssize_t upsdrvquery_oneshot(
 	}
 
 	if (buf) {
-		snprintf(buf, bufsz, "%.*s", (int)(ret > INT_MAX ? INT_MAX : ret), conn->buf);
+		size_t len = strnlen(conn->buf, sizeof(conn->buf));
+		snprintf(buf, bufsz, "%.*s", (int)(len > INT_MAX ? INT_MAX : len), conn->buf);
 	}
 finish:
 	upsdrvquery_close(conn);
