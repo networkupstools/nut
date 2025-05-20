@@ -1457,38 +1457,39 @@ AC_CACHE_CHECK([for va_copy(dest,src)],
   ])
 
 AS_IF([test x"$ac_cv_have_va_copy" = xyes],
-  [AC_DEFINE([HAVE_VA_COPY], [1], [defined if va_copy(dest,src) is available])],
+  [AC_DEFINE([HAVE_VA_COPY], [1], [defined if va_copy(dest,src) is available])])
+
+AC_CACHE_CHECK([for __va_copy(dest,src)],
+  [ac_cv_have___va_copy],
   [
-    dnl If va_copy not available, try __va_copy
-    AC_CACHE_CHECK([for __va_copy(dest,src)],
-      [ac_cv_have___va_copy],
-      [
-        save_CFLAGS="$CFLAGS"
-        CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
+    save_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
 
-        AC_COMPILE_IFELSE(
-          [AC_LANG_PROGRAM(
-            [[#include <stdarg.h>
-              void test(const char *fmt, ...) {
-                va_list ap1, ap2;
-                va_start(ap1, fmt);
-                __va_copy(ap2, ap1);
-                va_end(ap1);
-                va_end(ap2);
-              }]],
-            [[]])],
-          [ac_cv_have___va_copy=yes],
-          [ac_cv_have___va_copy=no])
+    AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM(
+        [[#include <stdarg.h>
+          void test(const char *fmt, ...) {
+            va_list ap1, ap2;
+            va_start(ap1, fmt);
+            __va_copy(ap2, ap1);
+            va_end(ap1);
+            va_end(ap2);
+          }]],
+        [[]])],
+      [ac_cv_have___va_copy=yes],
+      [ac_cv_have___va_copy=no])
 
-        CFLAGS="$save_CFLAGS"
-      ])
+    CFLAGS="$save_CFLAGS"
+  ])
 
-    AS_IF([test x"$ac_cv_have___va_copy" = xyes],
-      [AC_DEFINE([HAVE___VA_COPY], [1], [defined if __va_copy(dest,src) is available])],
-      [AC_MSG_WARN([No va_copy(dest,src) or __va_copy(dest,src) available - may truncate oversized logs])]
-    )
-  ]
-)
+AS_IF([test x"$ac_cv_have___va_copy" = xyes],
+  [AC_DEFINE([HAVE___VA_COPY], [1], [defined if __va_copy(dest,src) is available])])
+
+AS_IF([test x"$ac_cv_have_va_copy" = xyes -o x"$ac_cv_have___va_copy" = xyes],
+  [AC_DEFINE([HAVE_VA_COPY_VARIANT], [1], [defined if va_copy or __va_copy is available])])
+
+AS_IF([test x"$ac_cv_have_va_copy" != xyes -a x"$ac_cv_have___va_copy" != xyes],
+  [AC_MSG_WARN([No va_copy(dest,src) or __va_copy(dest,src) available - may truncate oversized logs])])
 
 AC_CHECK_HEADER([sys/select.h],
     [AC_DEFINE([HAVE_SYS_SELECT_H], [1],

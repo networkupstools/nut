@@ -546,6 +546,13 @@ int vsnprintfcat(char *dst, size_t size, const char *fmt, va_list ap);
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
 
+/* Define a missing va_copy using __va_copy, if available: */
+#ifndef va_copy
+# ifdef HAVE___VA_COPY
+#  define va_copy(dest, src) __va_copy(dest, src)
+# endif
+#endif
+
 /* Mitigate the inherent insecurity of dynamically constructed formatting
  * strings vs. a fixed vararg list with its amounts and types of variables
  * printed by this or that method and pre-compiled in the program.
