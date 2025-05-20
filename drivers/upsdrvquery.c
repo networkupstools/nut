@@ -489,13 +489,17 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	}
 
 	/* Check that we can have a civilized dialog --
-	 * nope, this one is for network protocol */
+	 * nope, this one is for network protocol
+	 *
+	 * FIXME: strcmp(conn->buf, "ON") -> buf is NOT null terminated!
+	 * The above FIXME is not the reason this block is/was commented out.
+	 */
 /*
 	if (upsdrvquery_write(conn, "GET TRACKING\n") < 0)
 		goto socket_error;
 	if (upsdrvquery_read_timeout(conn, tv) < 1)
 		goto socket_error;
-	if (strcmp(conn->buf, "ON")) { -- WARNING: conn->buf is NOT null terminated --
+	if (strcmp(conn->buf, "ON")) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
 			upslog_with_errno(LOG_ERR, "Driver does not have TRACKING support enabled");
 		goto socket_error;
