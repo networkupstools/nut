@@ -364,8 +364,10 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 #endif  /* WIN32 */
 
 	upsdebugx(ret > 0 ? 5 : 6,
-		"%s: received %" PRIiMAX " bytes from driver socket: %s",
-		__func__, (intmax_t)ret, (ret > 0 ? conn->buf : "<null>"));
+		"%s: received %" PRIiMAX " bytes from driver socket: %.*s",
+		__func__, (intmax_t)ret, (int)(ret > INT_MAX ? INT_MAX : ret),
+		conn->buf);
+
 	if (ret > 0 && conn->buf[0] == '\0')
 		upsdebug_hex(5, "payload starts with zero byte: ",
 			conn->buf, ((size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret));
@@ -486,7 +488,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		goto socket_error;
 	if (upsdrvquery_read_timeout(conn, tv) < 1)
 		goto socket_error;
-	if (strcmp(conn->buf, "ON")) {
+	if (strcmp(conn->buf, "ON")) { -- WARNING: conn->buf is NOT null terminated --
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
 			upslog_with_errno(LOG_ERR, "Driver does not have TRACKING support enabled");
 		goto socket_error;
@@ -679,7 +681,7 @@ ssize_t upsdrvquery_oneshot(
 	}
 
 	if (buf) {
-		snprintf(buf, bufsz, "%s", conn->buf);
+		snprintf(buf, bufsz, "%.*s", (int)(ret > INT_MAX ? INT_MAX : ret), conn->buf);
 	}
 finish:
 	upsdrvquery_close(conn);
