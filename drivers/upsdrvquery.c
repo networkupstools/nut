@@ -364,7 +364,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 #endif  /* WIN32 */
 
 	if (ret > 0) {
-		int printable_len = (ret > INT_MAX) ? INT_MAX : (int)ret;
+		int printable_len = (ret > (ssize_t)INT_MAX) ? INT_MAX : (int)ret;
 
 		upsdebugx(5, "%s: received %" PRIiMAX " bytes from driver socket: %.*s",
 			__func__, (intmax_t)ret, printable_len, conn->buf);
