@@ -363,14 +363,21 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		ret = -1;
 #endif  /* WIN32 */
 
-	upsdebugx(ret > 0 ? 5 : 6,
-		"%s: received %" PRIiMAX " bytes from driver socket: %.*s",
-		__func__, (intmax_t)ret, (int)(ret > INT_MAX ? INT_MAX : ret),
-		conn->buf);
+	if (ret > 0) {
+		int printable_len = (ret > INT_MAX) ? INT_MAX : (int)ret;
 
-	if (ret > 0 && conn->buf[0] == '\0')
-		upsdebug_hex(5, "payload starts with zero byte: ",
-			conn->buf, ((size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret));
+		upsdebugx(5, "%s: received %" PRIiMAX " bytes from driver socket: %.*s",
+			__func__, (intmax_t)ret, printable_len, conn->buf);
+
+		if (conn->buf[0] == '\0') {
+			upsdebug_hex(5, "payload starts with zero byte: ",
+				conn->buf, ((size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret));
+		}
+	} else {
+		upsdebugx(6, "%s: received %" PRIiMAX " bytes from driver socket: <null>",
+			__func__, (intmax_t)ret);
+	}
+
 	return ret;
 }
 
@@ -682,7 +689,8 @@ ssize_t upsdrvquery_oneshot(
 
 	if (buf) {
 		size_t len = strnlen(conn->buf, sizeof(conn->buf));
-		snprintf(buf, bufsz, "%.*s", (int)(len > INT_MAX ? INT_MAX : len), conn->buf);
+		int printable_len = (len > (size_t)INT_MAX) ? INT_MAX : (int)len;
+		snprintf(buf, bufsz, "%.*s", printable_len, conn->buf);
 	}
 finish:
 	upsdrvquery_close(conn);
