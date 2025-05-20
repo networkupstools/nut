@@ -3178,6 +3178,9 @@ char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
+#if defined(HAVE_VA_COPY) || defined(HAVE___VA_COPY)
+	va_list	va_snprintf;
+#endif
 	int	ret, errno_orig = errno;
 	size_t	bufsize = LARGEBUF;
 	char	*buf = xcalloc(bufsize, sizeof(char));
@@ -3206,9 +3209,21 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	 * or the calling methods should check it against their
 	 * "fmt_dynamic" expectations). */
 	do {
+#if defined(HAVE_VA_COPY)
+		va_copy(va_snprintf, va);
+		ret = vsnprintf(buf, bufsize, fmt, va_snprintf);
+		va_end(va_snprintf);
+#elif defined(HAVE___VA_COPY)
+		__va_copy(va_snprintf, va);
+		ret = vsnprintf(buf, bufsize, fmt, va_snprintf);
+		va_end(va_snprintf);
+#else
+		/* Cannot retry with a larger buffer - va_list is consumed */
 		ret = vsnprintf(buf, bufsize, fmt, va);
+#endif
 
 		if ((ret < 0) || ((uintmax_t)ret >= (uintmax_t)bufsize)) {
+#if defined(HAVE_VA_COPY) || defined(HAVE___VA_COPY)
 			/* Try to adjust bufsize until we can print the
 			 * whole message. Note that standards only require
 			 * up to 4095 bytes to be manageable in printf-like
@@ -3261,6 +3276,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		/* Arbitrary limit, gotta stop somewhere */
 		if (bufsize > LARGEBUF * 64) {
 vupslog_too_long:
+#endif
 			if (syslog_is_disabled()) {
 				fprintf(stderr, "vupslog: vsnprintf needed "
 					"more than %" PRIuSIZE " bytes; logged "
