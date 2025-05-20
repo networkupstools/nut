@@ -3178,9 +3178,6 @@ char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
-#ifdef HAVE_VA_COPY_VARIANT
-	va_list	va_snprintf;
-#endif
 	int	ret, errno_orig = errno;
 	size_t	bufsize = LARGEBUF;
 	char	*buf = xcalloc(bufsize, sizeof(char));
@@ -3210,12 +3207,16 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	 * "fmt_dynamic" expectations). */
 	do {
 #ifdef HAVE_VA_COPY_VARIANT
-		/* Copy to avoid mangling VA on re-use (see issue #2948) */
+		va_list	va_snprintf;
+
+		/* va_copy() to avoid mangling on re-use (see issue #2948),
+		 * this lets us retry safely vsnprintf() with the VA copies */
 		va_copy(va_snprintf, va);
 		ret = vsnprintf(buf, bufsize, fmt, va_snprintf);
 		va_end(va_snprintf);
 #else
-		/* Without va_copy, we cannot safely retry vsnprintf() */
+		/* Without va_copy(), we cannot safely retry vsnprintf()
+		 * and will accept truncation if the buffer is too small */
 		ret = vsnprintf(buf, bufsize, fmt, va);
 #endif
 
