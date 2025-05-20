@@ -547,7 +547,7 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
 
 /* Define a missing va_copy using __va_copy, if available: */
-#ifndef va_copy
+#ifndef HAVE_VA_COPY
 # ifdef HAVE___VA_COPY
 #  define va_copy(dest, src) __va_copy(dest, src)
 # endif
