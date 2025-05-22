@@ -908,7 +908,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C89/C++98 standard builds with fatal warnings (auto level) and GCC toolkits, without distcheck and docs (must pass)',
+        ,[name: 'Strict and GNU C89/C++98 standard builds with fatal warnings (auto level) and GCC toolkits, without distcheck and docs (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
@@ -925,7 +925,7 @@ set | sort -n """
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'] ],
-                    'CSTDVARIANT': ['gnu'],
+                    'CSTDVARIANT': ['c', 'gnu'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
