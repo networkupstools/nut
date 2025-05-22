@@ -325,8 +325,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	upslogx(LOG_ERR, "%s: %s: Shutdown is not supported by this driver, "
-		"monitored upstream drivers will shutdown when called to do so",
+	upslogx(LOG_ERR, "%s: %s: Shutdown is not supported by this proxying driver. "
+		"Upstream drivers may implement their own shutdown handling, which would be "
+		"called directly or by upsdrvctl to shut down any specific upstream driver.",
 		progname, __func__);
 
 	if (handling_upsdrv_shutdown > 0) {
