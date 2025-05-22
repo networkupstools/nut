@@ -3223,7 +3223,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		if ((ret < 0) || ((uintmax_t)ret >= (uintmax_t)bufsize)) {
 			/* Not building the below block on systems without va_copy(),
 			 * otherwise consumed VAs would get re-used & mangled on retries.
-			 * Instead, we want fall-through directly to the trunctation message. */
+			 * Instead, we want fall-through directly to the truncation message. */
 #ifdef HAVE_VA_COPY_VARIANT
 			/* Try to adjust bufsize until we can print the
 			 * whole message. Note that standards only require
