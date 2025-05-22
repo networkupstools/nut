@@ -872,7 +872,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C99+/C++11+ standard builds with non-fatal warnings (auto level), without distcheck and docs (must pass)',
+        ,[name: 'GNU C99+/C++11+ standard builds with fatal warnings (auto level), without distcheck and docs (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -893,7 +893,7 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      'BUILD_TYPE=default-all-errors',
-                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=auto'
                     ]
                     ],
                 allowedFailure: [
@@ -908,7 +908,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C89/C++98 standard builds with non-fatal warnings (auto level) and GCC toolkits, without distcheck and docs (must pass)',
+        ,[name: 'GNU C89/C++98 standard builds with fatal warnings (auto level) and GCC toolkits, without distcheck and docs (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
@@ -930,7 +930,7 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      'BUILD_TYPE=default-all-errors',
-                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=auto'
                     ]
                     ],
                 allowedFailure: [
