@@ -4,7 +4,7 @@ FAILOVER(8)
 NAME
 ----
 
-failover - UPS Failover Driver
+failover — UPS Failover Driver
 
 SYNOPSIS
 --------
