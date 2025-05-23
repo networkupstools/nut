@@ -756,11 +756,10 @@ static void handle_no_primaries(void)
 						__func__, ALARM_PROPAG_TIME);
 				}
 
-				status_init();
-				alarm_init();
+				/* dstate is already clean at this point, hence no _init() calls */
 				alarm_set("No suitable primaries for failover");
 				alarm_commit();
-				status_commit();
+				status_commit(); /* publish ALARM */
 
 				if (elapsed < arg_noprimary_timeout + ALARM_PROPAG_TIME) {
 					/* make sure ALARM propagates to all clients first... */
@@ -778,12 +777,11 @@ static void handle_no_primaries(void)
 						__func__);
 				}
 
-				status_init();
-				alarm_init();
+				/* dstate is already clean at this point, hence no _init() calls */
 				status_set("FSD");
 				alarm_set("No suitable primaries for failover");
 				alarm_commit();
-				status_commit();
+				status_commit(); /* publish ALARM + FSD */
 
 				dstate_dataok();
 				break;
