@@ -232,7 +232,13 @@ benefit from further integration with the `clone` family of drivers, such as
 linkman:clone[8] or linkman:clone-outlet[8], for greater granularity and
 monitoring control down to the outlet level.
 
-Ultimately, `failover` enables more nuanced power monitoring and control than
+Additionally, in more niche scenarios, some third-party NUT integrations or
+graphical interfaces may be limited to monitoring a single UPS device. In such
+cases, `failover` can help by exposing only the most relevant or
+highest-priority data source, allowing those tools to operate within their
+constraints without missing critical information.
+
+Ultimately, this driver enables more nuanced power monitoring and control than
 binary online/offline logic alone, allowing administrators to respond to
 degraded conditions early — before they escalate into critical events or require
 linkman:upsmon[8] to take action.
