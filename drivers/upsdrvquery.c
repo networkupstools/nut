@@ -636,9 +636,30 @@ ssize_t upsdrvquery_oneshot(
 	char *buf, const size_t bufsz,
 	struct timeval *ptv
 ) {
+	udq_pipe_conn_t	*conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
+
+	return upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+}
+
+ssize_t upsdrvquery_oneshot_sockfn(
+	const char *sockfn,
+	const char *query,
+	char *buf, const size_t bufsz,
+	struct timeval *ptv
+) {
+	udq_pipe_conn_t	*conn = upsdrvquery_connect(sockfn);
+
+	return upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+}
+
+ssize_t upsdrvquery_oneshot_conn(
+	udq_pipe_conn_t *conn,
+	const char *query,
+	char *buf, const size_t bufsz,
+	struct timeval *ptv
+) {
 	struct timeval	tv;
 	ssize_t	ret;
-	udq_pipe_conn_t	*conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
 
 	if (!conn || INVALID_FD(conn->sockfd))
 		return -1;

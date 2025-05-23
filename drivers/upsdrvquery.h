@@ -47,6 +47,8 @@ ssize_t upsdrvquery_request(udq_pipe_conn_t *conn, struct timeval tv, const char
 
 /* if buf != NULL, last reply is copied there */
 ssize_t upsdrvquery_oneshot(const char *drvname, const char *upsname, const char *query, char *buf, const size_t bufsz, struct timeval *tv);
+ssize_t upsdrvquery_oneshot_sockfn(const char *sockfn, const char *query, char *buf, const size_t bufsz, struct timeval *tv);
+ssize_t upsdrvquery_oneshot_conn(udq_pipe_conn_t *conn, const char *query, char *buf, const size_t bufsz, struct timeval *tv);
 
 /* Internal toggle for some NUT programs that deal with Unix socket chatter.
  * For a detailed rationale comment see upsdrvquery.c */
