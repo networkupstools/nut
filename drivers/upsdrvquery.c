@@ -637,8 +637,17 @@ ssize_t upsdrvquery_oneshot(
 	struct timeval *ptv
 ) {
 	udq_pipe_conn_t	*conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
+	ssize_t	ret;
 
-	return upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	ret = upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+
+	upsdrvquery_close(conn);
+	free(conn);
+
+	return ret;
 }
 
 ssize_t upsdrvquery_oneshot_sockfn(
@@ -648,10 +657,20 @@ ssize_t upsdrvquery_oneshot_sockfn(
 	struct timeval *ptv
 ) {
 	udq_pipe_conn_t	*conn = upsdrvquery_connect(sockfn);
+	ssize_t	ret;
 
-	return upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	ret = upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+
+	upsdrvquery_close(conn);
+	free(conn);
+
+	return ret;
 }
 
+/* One-shot using an existing connection (caller must close + free connection) */
 ssize_t upsdrvquery_oneshot_conn(
 	udq_pipe_conn_t *conn,
 	const char *query,
@@ -702,8 +721,7 @@ ssize_t upsdrvquery_oneshot_conn(
 	if (buf) {
 		snprintf(buf, bufsz, "%s", conn->buf);
 	}
+
 finish:
-	upsdrvquery_close(conn);
-	free(conn);
 	return ret;
 }
