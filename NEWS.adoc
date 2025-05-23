@@ -74,6 +74,14 @@ https://github.com/networkupstools/nut/milestone/9
    * Refactored repetitive implementations of `inet_ntopSS()` (nee
      `inet_ntopW()` in `upsd.c`) and `inet_ntopAI()` methods into `common.c`,
      so now they can be re-used or expanded more easily. [#2916]
+   * Extended the `upsdrvquery` API with two new functions:
+     `upsdrvquery_oneshot_conn()` for issuing one-shot queries using an existing
+     `udq_pipe_conn_t *` connection structure, and
+     `upsdrvquery_oneshot_sockfn()` for initiating queries via socket filename.
+     Internally refactored to share logic with the existing
+     `upsdrvquery_oneshot()` implementation, which remains unchanged. This
+     improves maintainability and offers more flexible usage patterns without
+     affecting the existing API behavior.
 
  - `upsd` updates:
    * Fixed two bugs about printing the "further (ignored) addresses resolved
