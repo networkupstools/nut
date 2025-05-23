@@ -44,13 +44,6 @@
 #define DEFAULT_FSD_MODE              0
 #define DEFAULT_STRICT_FILTERING      0
 
-#define PRIORITY_SKIPPED      -1
-#define PRIORITY_FORCED        0
-#define PRIORITY_USERFILTERS   1
-#define PRIORITY_GOOD          2
-#define PRIORITY_WEAK          3
-#define PRIORITY_LASTRESORT    4
-
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
@@ -58,6 +51,15 @@ upsdrv_info_t upsdrv_info = {
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
+
+typedef enum {
+    PRIORITY_SKIPPED = -1,
+    PRIORITY_FORCED = 0,
+    PRIORITY_USERFILTERS = 1,
+    PRIORITY_GOOD = 2,
+    PRIORITY_WEAK = 3,
+    PRIORITY_LASTRESORT = 4
+} ups_priority_t;
 
 typedef enum {
 	UPS_FLAG_NONE      = 0,
@@ -135,7 +137,7 @@ typedef struct {
 	time_t force_primary_time;
 
 	ups_flags_t flags;
-	int priority;
+	ups_priority_t priority;
 	int failure_count;
 
 	int force_ignore;
