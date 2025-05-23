@@ -138,18 +138,18 @@ void upsdrv_initinfo(void)
 		dstate_addcmd(buf);
 
 		if ((size_t)required >= sizeof(buf)) {
-			upslogx(LOG_WARNING, "%s: truncated administrative command [%s] "
-				"size [%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]",
-				__func__, buf, (size_t)required, sizeof(buf));
+			upslogx(LOG_WARNING, "%s: truncated administrative command size "
+				"[%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]: %s",
+				__func__, (size_t)required, sizeof(buf), buf);
 		}
 
 		required = snprintf(buf, sizeof(buf), "%s.force.primary", ups->socketname);
 		dstate_addcmd(buf);
 
 		if ((size_t)required >= sizeof(buf)) {
-			upslogx(LOG_WARNING, "%s: truncated administrative command [%s] "
-				"size [%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]",
-				__func__, buf, (size_t)required, sizeof(buf));
+			upslogx(LOG_WARNING, "%s: truncated administrative command size "
+				"[%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]: %s",
+				__func__, (size_t)required, sizeof(buf), buf);
 		}
 	}
 
@@ -421,9 +421,9 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 
 		if ((size_t)required >= sizeof(msgbuf)) {
-			upslogx(LOG_WARNING, "%s: truncated INSTCMD command [%s] "
-				"size [%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]",
-				__func__, msgbuf, (size_t)required, sizeof(msgbuf));
+			upslogx(LOG_WARNING, "%s: truncated INSTCMD command size "
+				"[%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]: %s",
+				__func__, (size_t)required, sizeof(msgbuf), msgbuf);
 		}
 
 		tv.tv_sec = CONN_CMD_TIMEOUT;
@@ -484,9 +484,9 @@ static int setvar(const char *varname, const char *val)
 		required = snprintf(msgbuf, sizeof(msgbuf), "SET %s \"%s\"\n", var, val);
 
 		if ((size_t)required >= sizeof(msgbuf)) {
-			upslogx(LOG_WARNING, "%s: truncated SET command [%s] "
-				"size [%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]",
-				__func__, msgbuf, (size_t)required, sizeof(msgbuf));
+			upslogx(LOG_WARNING, "%s: truncated SET command size "
+				"[%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]: %s",
+				__func__, (size_t)required, sizeof(msgbuf), msgbuf);
 		}
 
 		tv.tv_sec = CONN_CMD_TIMEOUT;
@@ -1034,9 +1034,9 @@ static int ups_parse_protocol(ups_device_t *ups, size_t numargs, char **arg)
 		required = snprintf(buf, sizeof(buf), "upstream.%s", arg[1]);
 
 		if ((size_t)required >= sizeof(buf)) {
-			upslogx(LOG_WARNING, "%s: truncated DELCMD command [%s] "
-				"size [%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]",
-				__func__, buf, (size_t)required, sizeof(buf));
+			upslogx(LOG_WARNING, "%s: truncated DELCMD command size "
+				"[%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]: %s",
+				__func__, (size_t)required, sizeof(buf), buf);
 		}
 
 		ups_del_cmd(ups, buf);
@@ -1052,9 +1052,9 @@ static int ups_parse_protocol(ups_device_t *ups, size_t numargs, char **arg)
 		required = snprintf(buf, sizeof(buf), "upstream.%s", arg[1]);
 
 		if ((size_t)required >= sizeof(buf)) {
-			upslogx(LOG_WARNING, "%s: truncated ADDCMD command [%s] "
-				"size [%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]",
-				__func__, buf, (size_t)required, sizeof(buf));
+			upslogx(LOG_WARNING, "%s: truncated ADDCMD command size "
+				"[%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]: %s",
+				__func__, (size_t)required, sizeof(buf), buf);
 		}
 
 		ups_add_cmd(ups, buf);
@@ -1213,9 +1213,9 @@ skip_out:
 			msgbuf[len - 1] = '\0';
 		}
 		if ((size_t)len >= sizeof(msgbuf)) {
-			upsdebugx(6, "%s: truncated DBG output [%s]"
-				"size [%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]",
-				__func__, msgbuf, (size_t)len, sizeof(msgbuf));
+			upsdebugx(6, "%s: truncated DBG output size "
+				"[%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]: %s",
+				__func__, (size_t)len, sizeof(msgbuf), msgbuf);
 		}
 
 		upsdebugx(6, "%s: [%s]: ignored protocol line with %" PRIuSIZE " keyword(s): %s",
@@ -2216,9 +2216,9 @@ static const char *rewrite_driver_prefix(const char *in, char *out, size_t outle
 		required = snprintf(out, outlen, "upstream.%s", in);
 
 		if ((size_t)required >= outlen) {
-			upslogx(LOG_WARNING, "%s: truncated variable name [%s] "
-				"size [%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]",
-				__func__, out, (size_t)required, outlen);
+			upslogx(LOG_WARNING, "%s: truncated variable name size "
+				"[%" PRIuSIZE "] exceeds buffer of size [%" PRIuSIZE "]: %s",
+				__func__, (size_t)required, outlen, out);
 		}
 
 		return out;
