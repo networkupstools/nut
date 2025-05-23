@@ -154,8 +154,8 @@ void upsdrv_initinfo(void)
 	}
 
 	if (!ups_alive_count) {
-		upslogx(LOG_WARNING, "%s: %s: none of the tracked UPS drivers were connectable",
-			progname, __func__);
+		upslogx(LOG_WARNING, "%s: none of the tracked UPS drivers were connectable",
+			__func__);
 	}
 
 	status_init();
