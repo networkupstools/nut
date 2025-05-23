@@ -1487,8 +1487,18 @@ static int ups_passes_status_filters(const ups_device_t *ups)
 	return 1;
 }
 
+/* Promote a UPS driver that is not NULL and not already the current primary */
 static void ups_promote_primary(ups_device_t *ups)
 {
+	if (!ups || primary_ups == ups) {
+		upslogx(LOG_WARNING, "%s: Unsupported function call, "
+			"argument was either NULL or a UPS driver already declared as primary. "
+			"Please notify the NUT developers (on GitHub) to check this driver's code.",
+			__func__);
+
+		return;
+	}
+
 	if (primary_ups) {
 		ups_demote_primary(primary_ups);
 	}
