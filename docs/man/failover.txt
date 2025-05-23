@@ -66,7 +66,9 @@ underlying UPS drivers to be tracked. Entries must follow the format
 
 *inittime*='seconds'::
 Optional. Sets a grace period after driver startup during which the absence of a
-primary UPS is tolerated. This allows time for underlying drivers to initialize.
+primary is tolerated. This allows time for underlying drivers to initialize. For
+networked connections or drivers that require "lock-picking" their communication
+protocol, consider increasing this value to accommodate potential longer delays.
 Defaults to 30 seconds.
 
 *deadtime*='seconds'::
