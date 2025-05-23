@@ -49,14 +49,9 @@ When no suitable primary is available, a configurable fallback state is entered:
 - Raise `ALARM` and declare the data as stale
 - Raise `ALARM` and set forced shutdown (`FSD`)
 
-How the UPS are connected (be it corded, networked, ...) to the machine does not
-matter, `failover` is also not reliant on linkman:upsd[8] itself running. In
-principle, it could even be used on multiple drivers connected to the same UPS,
-but do note that any missing data would not be multiplexed between the drivers.
-
-In summary, `failover` simplifies multi UPS driver setups by consolidating
-monitoring and control into a single NUT-visible "device", reducing complexity
-and ensuring seamless transitions in high-availability environments.
+Different communication media can be used to connect to individual UPS drivers
+(e.g., USB, Serial, Ethernet). `failover` communicates directly at the socket
+level and therefore does not rely on linkman:upsd[8] being active.
 
 EXTRA ARGUMENTS
 ---------------
@@ -98,49 +93,57 @@ after exceeding `maxconnfails`. Defaults to 15 seconds.
 Optional. Defines the behavior when no suitable primary UPS driver is found
 after `noprimarytime` has elapsed. Defaults to 0.
 
-- `0`: *Do not demote the last primary, but mark its data stale.* This is
+- `0`: *Do not demote the last primary, but mark its data as stale.* This is
 similar to how a regular UPS driver would behave when it loses its connection to
 the target UPS device. linkman:upsmon[8] will act on the last known (online or
 not) status, and decide itself whether that UPS should be considered critical.
 
-- `1`: *Demote the primary, raise `ALARM` and mark the data stale after an
+- `1`: *Demote the primary, raise `ALARM`, and mark the data as stale after an
 additional few seconds have elapsed (ensuring full propagation).* This will
-force monitoring linkman:upsmon[8] to see a previously in an alarm state device
-having lost its connection and consider the UPS driver critical, possibly
-resulting in forced shutdown (`FSD`) by depletion of `MINSUPPLIES`.
+cause linkman:upsmon[8] to detect that a device previously in an alarm state has
+lost its connection, consider the UPS driver critical, and possibly trigger a
+forced shutdown (`FSD`) due to depletion of `MINSUPPLIES`.
 
-- `2`: *Demote the primary, raise `ALARM` and set immediate `FSD`.* This will
-set `FSD` from the driver side and omit linkman:upsmon[8] to raise it itself.
-This mode is for setups where immediate shutdown is warranted, regardless of
-anything else, and getting `FSD` out to the clients as fast as just possible.
+- `2`: *Demote the primary, raise `ALARM`, and immediately set `FSD`.* This will
+set `FSD` from the driver side and preempt linkman:upsmon[8] from raising it
+itself. This mode is for setups where immediate shutdown is warranted,
+regardless of anything else, and getting `FSD` out to the clients as fast as
+just possible.
 
-*strictfiltering*='0|1':: Optional. If set to 1, only UPS matching the
+*strictfiltering*='0|1':: Optional. If set to 1, only UPS drivers matching the
 configured status filters are considered for promotion to primary. If set to 0,
 the hard-coded default logic is also considered when no status filters match
-(read more about this further down). Defaults to 0.
+(read more about this in the section `PRIORITIES`). Defaults to 0.
 
 *status_have_any*='OL,CHRG,...'::
 Optional. If any of these comma-separated tokens are present in a UPS driver's
-`ups.status`, it qualifies for promotion to primary. Defaults to unset.
+`ups.status`, it passes this status filtering criteria. Defaults to unset.
 
 *status_have_all*='OL,CHRG,...'::
 Optional. All listed comma-separated tokens must be present in `ups.status` for
-the UPS driver to be eligible for promotion to primary. Defaults to unset.
+the UPS driver to pass this status filtering criteria. Defaults to unset.
 
 *status_nothave_any*='OB,OFF,...'::
 Optional. If any of these comma-separated tokens are present in `ups.status`,
-the UPS driver is disqualified as a primary candidate. Defaults to unset.
+the UPS driver does not pass this status filtering criteria. Defaults to unset.
 
 *status_nothave_all*='OB,LB,...'::
 Optional. If all of these comma-separated tokens are present in `ups.status`,
-the UPS driver is disqualified as a primary candidate. Defaults to unset.
+the UPS driver does not pass this status filtering criteria. Defaults to unset.
+
+NOTE: The `status_*` arguments are primarily intended to adjust the weighting of
+UPS drivers, allowing some to be prioritized over others based on their status.
+For example, a driver reporting `OL` might be preferred over one reporting
+`ALARM OL`. While `strictfiltering` can be enabled, status filters are most
+effective when used in combination with the default set of connectivity-based
+`PRIORITIES`. For more details, see the respective section further below.
 
 IMPLEMENTATION
 --------------
 
 The port argument in the linkman:ups.conf[5] should reference the local driver
-sockets (or Windows named pipes) that the "real" UPS drivers are using. A most
-basic defaults setup with multiple drivers could look like this:
+sockets (or Windows named pipes) that the "real" UPS drivers are using. A basic
+default setup with multiple drivers could look like this:
 
 ------
   [realups]
@@ -167,16 +170,16 @@ is to clearly separate the upstream commands from those of `failover` itself.
 For your convenience, additional administrative commands are exposed to directly
 influence and override the primary election process, e.g. for maintenance:
 
-- `<socketname>.force.ignore [seconds]` will prevent that UPS driver from ever
-becoming primary within the given timeframe, or permanently in case of a
-negative value. A value of 0 resets the override state back to disabled.
+- `<socketname>.force.ignore [seconds]` prevents the specified UPS driver from
+being selected as primary for the given duration, or permanently if a negative
+value is used. A value of `0` resets this override and re-enables selection.
 
-- `<socketname>.force.primary [seconds]` will force that UPS driver to the
-highest priority within the given timeframe, or permanently in case of a
-negative value. A value of 0 resets the override state back to disabled.
+- `<socketname>.force.primary [seconds]` forces the specified UPS driver to be
+treated with the highest priority for the given duration, or permanently if a
+negative value is used. A value of `0` resets this override.
 
-If either command is executed without any argument, active overrides for that
-UPS driver will be reset and returned to their default state of being disabled.
+Calling either command without an argument has the same effect as passing `0`,
+but only for that specific override — it does not affect the other.
 
 PRIORITIES
 ----------
@@ -208,6 +211,30 @@ NOTE: The base requirement for any election is the UPS socket being connectable
 and the UPS driver having published at least one full batch of data during its
 lifetime. UPS driver not fulfilling that requirement are always disqualified.
 
+RATIONALE
+---------
+
+In complex power environments, presenting a single, consistent source of UPS
+information to linkman:upsmon[8] is sometimes preferable to monitoring multiple
+independent drivers directly. The `failover` driver serves as a bridge, allowing
+linkman:upsmon[8] to make decisions based on the most suitable available data,
+without having to interpret conflicting inputs or degraded sources.
+
+Originally designed for use cases such as dual-PSU systems or redundant
+communication paths to a single UPS, `failover` also supports more advanced
+setups — for example, when multiple UPSes feed a shared downstream load (via
+STS/ATS switches), or when drivers vary in reliability. In these cases, the
+driver can be combined with external logic or scripting to dynamically adjust
+primary selection and facilitate graceful degradation. Such setups may also
+benefit from further integration with the `clone` family of drivers, such as
+linkman:clone[8] or linkman:clone-outlet[8], for greater granularity and
+monitoring control down to the outlet level.
+
+Ultimately, `failover` enables more nuanced power monitoring and control than
+binary online/offline logic alone, allowing administrators to respond to
+degraded conditions early — before they escalate into critical events or require
+linkman:upsmon[8] to take action.
+
 AUTHOR
 ------
 
@@ -221,7 +248,9 @@ linkman:upsrw[1],
 linkman:ups.conf[5],
 linkman:upsc[8],
 linkman:upsmon[8],
-linkman:nutupsdrv[8]
+linkman:nutupsdrv[8],
+linkman:clone[8],
+linkman:clone-outlet[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
