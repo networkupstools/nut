@@ -500,7 +500,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!primary_ups) {
 		upslogx(LOG_INSTCMD_FAILED, "%s: received [%s] [%s], but"
 			"there is currently no elected primary able to handle it",
-			__func__, cmdname, extra ? extra : "");
+			__func__, cmdname, NUT_STRARG(extra));
 
 		return STAT_INSTCMD_FAILED;
 	}
@@ -541,13 +541,13 @@ static int instcmd(const char *cmdname, const char *extra)
 		if (cmdret >= 0) {
 			upslogx(LOG_NOTICE, "%s: sent [%s] [%s], "
 				"received response code: [%" PRIiSIZE "]",
-				__func__, cmdname, extra ? extra : "", cmdret);
+				__func__, cmdname, NUT_STRARG(extra), cmdret);
 
 			return cmdret;
 		} else {
 			upslog_with_errno(LOG_INSTCMD_FAILED, "%s: sent [%s] [%s], "
 				"received no response code due to socket failure",
-				__func__, cmdname, extra ? extra : "");
+				__func__, cmdname, NUT_STRARG(extra));
 
 			return STAT_INSTCMD_FAILED;
 		}
@@ -555,7 +555,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	upslogx(LOG_INSTCMD_UNKNOWN, "%s: received [%s] [%s], "
 		"but it is not among the primary's supported commands",
-		__func__, cmdname, extra ? extra : "");
+		__func__, cmdname, NUT_STRARG(extra));
 
 	return STAT_INSTCMD_UNKNOWN;
 }
