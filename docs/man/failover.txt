@@ -237,6 +237,13 @@ binary online/offline logic alone, allowing administrators to respond to
 degraded conditions early — before they escalate into critical events or require
 linkman:upsmon[8] to take action.
 
+LIMITATIONS
+-----------
+
+When using `failover` for redundancy between multiple UPS drivers connected to
+the same underlying UPS device, data is not multiplexed between the drivers. As
+a result, some data points may be available in some drivers but not in others.
+
 AUTHOR
 ------
 
