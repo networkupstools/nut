@@ -364,10 +364,8 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 #endif  /* WIN32 */
 
 	if (ret > 0) {
-		int printable_len = (ret > (ssize_t)INT_MAX) ? INT_MAX : (int)ret;
-
 		upsdebugx(5, "%s: received %" PRIiMAX " bytes from driver socket: %.*s",
-			__func__, (intmax_t)ret, printable_len, conn->buf);
+			__func__, (intmax_t)ret, (int)ret, conn->buf);
 
 		if (conn->buf[0] == '\0') {
 			upsdebug_hex(5, "payload starts with zero byte: ",
@@ -693,8 +691,7 @@ ssize_t upsdrvquery_oneshot(
 
 	if (buf) {
 		size_t len = strnlen(conn->buf, sizeof(conn->buf));
-		int printable_len = (len > (size_t)INT_MAX) ? INT_MAX : (int)len;
-		snprintf(buf, bufsz, "%.*s", printable_len, conn->buf);
+		snprintf(buf, bufsz, "%.*s", (int)len, conn->buf);
 	}
 finish:
 	upsdrvquery_close(conn);
