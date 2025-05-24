@@ -364,12 +364,14 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 #endif  /* WIN32 */
 
 	if (ret > 0) {
+		size_t len = ((size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret);
+
 		upsdebugx(5, "%s: received %" PRIiMAX " bytes from driver socket: %.*s",
-			__func__, (intmax_t)ret, (int)ret, conn->buf);
+			__func__, (intmax_t)ret, (int)len, conn->buf);
 
 		if (conn->buf[0] == '\0') {
 			upsdebug_hex(5, "payload starts with zero byte: ",
-				conn->buf, ((size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret));
+				conn->buf, len);
 		}
 	} else {
 		upsdebugx(6, "%s: received %" PRIiMAX " bytes from driver socket: <null>",
