@@ -62,7 +62,7 @@ endif HAVE_LIBREGEX
 # in top level.
 NUTSW_DRIVERLIST_DUMMY_UPS = dummy-ups$(EXEEXT)
 NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
- clone clone-outlet apcupsd-ups skel
+ clone clone-outlet failover apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
@@ -225,6 +225,9 @@ endif WITH_SSL
 # Clone drivers (in NUTSW_DRIVERLIST)
 clone_SOURCES = clone.c
 clone_outlet_SOURCES = clone-outlet.c
+
+# failover driver (in NUTSW_DRIVERLIST)
+failover_SOURCES = failover.c
 
 # apcupsd client driver (in NUTSW_DRIVERLIST)
 apcupsd_ups_SOURCES = apcupsd-ups.c
@@ -409,7 +412,7 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 dist_noinst_HEADERS = \
  apc_modbus.h apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h baytech-rpc3nc-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
- dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
+ dummy-ups.h explore-hid.h failover.h gamatronic.h genericups.h	\
  generic_gpio_common.h generic_gpio_libgpiod.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3495 utf-8
+personal_ws-1.1 en 3509 utf-8
 AAC
 AAS
 ABI
@@ -371,6 +371,7 @@ Exar
 ExecCGI
 ExecStart
 ExecStartPre
+FAILOVER
 FBCA
 FD
 FDE
@@ -1807,6 +1808,8 @@ configureaza
 confpath
 const
 contrib
+cooldown
+coolofftime
 copyrightable
 coreutils
 cout
@@ -1876,6 +1879,7 @@ ddk
 ddl
 de
 deUNV
+deadtime
 debian
 debootstrap
 debouncing
@@ -2035,6 +2039,7 @@ faa
 fabula
 facto
 failmode
+failover
 fallthrough
 fasttrack
 fatalx
@@ -2076,6 +2081,7 @@ frob
 frontends
 fs
 fsd
+fsdmode
 fsr
 fstab
 ftdi
@@ -2227,6 +2233,7 @@ includePath
 includedir
 inductor
 inet
+influenceable
 infos
 infoval
 inh
@@ -2237,6 +2244,7 @@ initializer
 initializers
 initinfo
 initscripts
+inittime
 initups
 inline
 inlined
@@ -2478,6 +2486,7 @@ manpage
 manpages
 masterguard
 matcher
+maxconnfails
 maxd
 maxlength
 maxreport
@@ -2632,12 +2641,14 @@ nombattvolt
 noncommercially
 noout
 nooutstats
+noprimarytime
 norating
 noro
 noscanlangid
 nosnap
 nosuid
 notAfter
+nothave
 notifyflags
 notifyme
 notifymsg
@@ -2826,6 +2837,7 @@ proc
 productid
 prog
 progname
+proxied
 prtconf
 ps
 psu
@@ -2887,6 +2899,7 @@ regtype
 relatime
 releasekeyring
 relicensing
+relogtime
 remoteip
 renderer
 renderers
@@ -3102,6 +3115,7 @@ strcpy
 strdup
 strerror
 strftime
+strictfiltering
 stringify
 strlen
 strncpy
