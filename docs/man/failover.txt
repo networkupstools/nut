@@ -4,7 +4,7 @@ FAILOVER(8)
 NAME
 ----
 
-failover — UPS Failover Driver
+failover - UPS Failover Driver
 
 SYNOPSIS
 --------
@@ -181,7 +181,7 @@ treated with the highest priority for the given duration, or permanently if a
 negative value is used. A value of `0` resets this override.
 
 Calling either command without an argument has the same effect as passing `0`,
-but only for that specific override — it does not affect the other.
+but only for that specific override - it does not affect the other.
 
 PRIORITIES
 ----------
@@ -224,7 +224,7 @@ without having to interpret conflicting inputs or degraded sources.
 
 Originally designed for use cases such as dual-PSU systems or redundant
 communication paths to a single UPS, `failover` also supports more advanced
-setups — for example, when multiple UPSes feed a shared downstream load (via
+setups - for example, when multiple UPSes feed a shared downstream load (via
 STS/ATS switches), or when drivers vary in reliability. In these cases, the
 driver can be combined with external logic or scripting to dynamically adjust
 primary selection and facilitate graceful degradation. Such setups may also
@@ -240,7 +240,7 @@ constraints without missing critical information.
 
 Ultimately, this driver enables more nuanced power monitoring and control than
 binary online/offline logic alone, allowing administrators to respond to
-degraded conditions early — before they escalate into critical events or require
+degraded conditions early - before they escalate into critical events or require
 linkman:upsmon[8] to take action.
 
 LIMITATIONS
