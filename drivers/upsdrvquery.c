@@ -507,23 +507,22 @@ socket_error:
 
 ssize_t upsdrvquery_restore_broadcast(udq_pipe_conn_t *conn)
 {
-	ssize_t	ret;
-
 	if (!conn || INVALID_FD(conn->sockfd))
 		return -1;
 
-	ret = upsdrvquery_write(conn, "BROADCAST 1\n");
-
-	if (ret < 0) {
-		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
+	if (upsdrvquery_write(conn, "BROADCAST 1\n") < 0) {
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG) {
 			upslog_with_errno(LOG_ERR, "%s: could not restore broadcast, write to socket [%d] failed",
 				__func__, conn->sockfd);
-	} else {
-		upsdebugx(5, "%s: restored broadcast for connection on socket [%d]",
-			__func__, conn->sockfd);
+		}
+
+		return -1;
 	}
 
-	return ret;
+	upsdebugx(5, "%s: restored broadcast for connection on socket [%d]",
+		__func__, conn->sockfd);
+
+	return 1;
 }
 
 /* UUID v4 basic implementation
