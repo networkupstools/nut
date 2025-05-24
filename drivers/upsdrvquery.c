@@ -505,6 +505,27 @@ socket_error:
 	return -1;
 }
 
+ssize_t upsdrvquery_restore_broadcast(udq_pipe_conn_t *conn)
+{
+	ssize_t	ret;
+
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	ret = upsdrvquery_write(conn, "BROADCAST 1\n");
+
+	if (ret < 0) {
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
+			upslog_with_errno(LOG_ERR, "%s: could not restore broadcast, write to socket [%d] failed",
+				__func__, conn->sockfd);
+	} else {
+		upsdebugx(5, "%s: restored broadcast for connection on socket [%d]",
+			__func__, conn->sockfd);
+	}
+
+	return ret;
+}
+
 /* UUID v4 basic implementation
  * Note: 'dest' must be at least `UUID4_LEN` long */
 #define UUID4_BYTESIZE 16
@@ -729,5 +750,6 @@ ssize_t upsdrvquery_oneshot_conn(
 	}
 
 finish:
+	upsdrvquery_restore_broadcast(conn); /* best effort */
 	return ret;
 }
