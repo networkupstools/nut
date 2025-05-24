@@ -418,6 +418,9 @@ socket_error:
 ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	struct timeval	start, now;
 
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
 	/* Avoid noise */
 	if (upsdrvquery_write(conn, "NOBROADCAST\n") < 0)
 		goto socket_error;
@@ -498,7 +501,7 @@ finish:
 	return 1;
 
 socket_error:
-	upsdrvquery_close(conn);
+	/* upsdrvquery_close(conn); */
 	return -1;
 }
 
@@ -538,6 +541,9 @@ ssize_t upsdrvquery_request(
 	size_t	qlen;
 	char	tracking_id[UUID4_LEN];
 	struct timeval	start, now;
+
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
 
 	if (snprintf(qbuf, sizeof(qbuf), "%s", query) < 0)
 		goto socket_error;
@@ -626,7 +632,7 @@ ssize_t upsdrvquery_request(
 	}
 
 socket_error:
-	upsdrvquery_close(conn);
+	/* upsdrvquery_close(conn); */
 	return -1;
 }
 
