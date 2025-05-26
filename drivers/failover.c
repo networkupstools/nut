@@ -112,7 +112,8 @@ static void ups_free_ups_state(ups_device_t *ups);
 static void ups_free_var_state(ups_var_t *var);
 static const char *rewrite_driver_prefix(const char *in, char *out, size_t outlen);
 static int split_socket_name(const char *input, char **driver, char **ups);
-static void csv_arg_to_array(const char *argname, const char *argcsv, char ***array, size_t *countvar);
+static int str_arg_to_int(const char *arg, const char *argval, int *destvar, int defval, int min, int max);
+static void csv_arg_to_array(const char *arg, const char *argcsv, char ***array, size_t *countvar);
 
 static inline void ups_set_flag(ups_device_t *ups, ups_flags_t flag);
 static inline void ups_clear_flag(ups_device_t *ups, ups_flags_t flag);
@@ -519,73 +520,33 @@ static int setvar(const char *varname, const char *val)
 
 static void handle_arguments(void)
 {
-	const char *val = NULL;
-
 	parse_port_argument();
 	parse_status_filters();
 
-	val = getval("inittime");
-	if (val) {
-		arg_init_timeout = atoi(val);
-		upsdebugx(1, "%s: set 'inittime' to [%d] from configuration",
-			__func__, arg_init_timeout);
-	}
+	str_arg_to_int("inittime", getval("inittime"),
+		&arg_init_timeout, DEFAULT_INIT_TIMEOUT, 0, INT_MAX);
 
-	val = getval("deadtime");
-	if (val) {
-		arg_dead_timeout = atoi(val);
-		upsdebugx(1, "%s: set 'deadtime' to [%d] from configuration",
-			__func__, arg_dead_timeout);
-	}
+	str_arg_to_int("deadtime", getval("deadtime"),
+		&arg_dead_timeout, DEFAULT_DEAD_TIMEOUT, 0, INT_MAX);
 
-	val = getval("relogtime");
-	if (val) {
-		arg_relog_timeout = atoi(val);
-		upsdebugx(1, "%s: set 'relogtime' to [%d] from configuration",
-			__func__, arg_relog_timeout);
-	}
+	str_arg_to_int("relogtime", getval("relogtime"),
+		&arg_relog_timeout, DEFAULT_RELOG_TIMEOUT, 0, INT_MAX);
 
-	val = getval("noprimarytime");
-	if (val) {
-		arg_noprimary_timeout = atoi(val);
-		upsdebugx(1, "%s: set 'noprimarytime' to [%d] from configuration",
-			__func__, arg_noprimary_timeout);
-	}
+	str_arg_to_int("noprimarytime", getval("noprimarytime"),
+		&arg_noprimary_timeout, DEFAULT_NO_PRIMARY_TIMEOUT, 0, INT_MAX);
 
-	val = getval("maxconnfails");
-	if (val) {
-		arg_maxconnfails = atoi(val);
-		upsdebugx(1, "%s: set 'maxconnfails' to [%d] from configuration",
-			__func__, arg_maxconnfails);
-	}
+	str_arg_to_int("maxconnfails", getval("maxconnfails"),
+		&arg_maxconnfails, DEFAULT_MAX_CONNECT_FAILS, 0, INT_MAX);
 
-	val = getval("coolofftime");
-	if (val) {
-		arg_coolofftimeout = atoi(val);
-		upsdebugx(1, "%s: set 'coolofftime' to [%d] from configuration",
-			__func__, arg_coolofftimeout);
-	}
+	str_arg_to_int("coolofftime", getval("coolofftime"),
+		&arg_coolofftimeout, DEFAULT_CONNECTION_COOLOFF, 0, INT_MAX);
 
-	val = getval("fsdmode");
-	if (val) {
-		arg_fsdmode = atoi(val);
-		if (arg_fsdmode >= 0 && arg_fsdmode <= 2) {
-			upsdebugx(1, "%s: set 'fsdmode' to [%d] from configuration",
-				__func__, arg_fsdmode);
-		} else {
-			upslogx(LOG_ERR, "%s: invalid 'fsdmode' of [%d] from configuration, "
-				"set to the default 'fsdmode' value of [%d] instead",
-				__func__, arg_fsdmode, DEFAULT_FSD_MODE);
-			arg_fsdmode = DEFAULT_FSD_MODE;
-		}
-	}
+	str_arg_to_int("fsdmode", getval("fsdmode"),
+		&arg_fsdmode, DEFAULT_FSD_MODE, 0, 2);
 
-	val = getval("strictfiltering");
-	if (val) {
-		arg_strict_filtering = atoi(val);
-		upsdebugx(1, "%s: set 'strictfiltering' to [%d] from configuration",
-			__func__, arg_strict_filtering);
-	}
+	str_arg_to_int("strictfiltering", getval("strictfiltering"),
+		&arg_strict_filtering, DEFAULT_STRICT_FILTERING, 0, 1);
+
 }
 
 static void parse_port_argument(void)
@@ -594,6 +555,11 @@ static void parse_port_argument(void)
 	char *token = NULL;
 	const char *str = device_path;
 
+	if (!device_path) {
+		fatalx(EXIT_FAILURE, "%s: %s: device_path ('port' argument) is NULL",
+			progname, __func__);
+	}
+
 	tmp = xstrdup(str);
 
 	token = strtok(tmp, ",");
@@ -601,6 +567,12 @@ static void parse_port_argument(void)
 		ups_device_t *new_ups = NULL;
 
 		str_trim_space(token);
+
+		if (*token == '\0') {
+			token = strtok(NULL, ",");
+
+			continue;
+		}
 
 		new_ups = xcalloc(1, sizeof(**ups_list));
 		new_ups->socketname = xstrdup(token);
@@ -632,6 +604,7 @@ static void parse_port_argument(void)
 	}
 
 	free(tmp);
+	tmp = NULL;
 }
 
 static void parse_status_filters(void)
@@ -1111,12 +1084,18 @@ static int ups_parse_protocol(ups_device_t *ups, size_t numargs, char **arg)
 
 	/* SETAUX <varname> <numeric value> */
 	if (!strcasecmp(arg[0], "SETAUX")) {
+		long auxval;
+
 		varptr = rewrite_driver_prefix(arg[1], buf, sizeof(buf));
 
+		if (str_to_long(arg[2], &auxval, 10)) {
 		upsdebugx(6, "%s: [%s]: got SETAUX [%s] from UPS driver",
 			__func__, ups->socketname, arg[1]);
-
-		ups_set_var_aux(ups, varptr, atol(arg[2]));
+			ups_set_var_aux(ups, varptr, auxval);
+		} else {
+			upsdebugx(5, "%s: [%s]: got non-numeric SETAUX [%s] from UPS driver",
+				__func__, ups->socketname, arg[1]);
+		}
 
 		return 1;
 	}
@@ -1177,24 +1156,38 @@ static int ups_parse_protocol(ups_device_t *ups, size_t numargs, char **arg)
 
 	/* DELRANGE <varname> <minvalue> <maxvalue> */
 	if (!strcasecmp(arg[0], "DELRANGE")) {
+		int minval;
+		int maxval;
+
 		varptr = rewrite_driver_prefix(arg[1], buf, sizeof(buf));
 
+		if (str_to_int(arg[2], &minval, 10) && str_to_int(arg[3], &maxval, 10)) {
 		upsdebugx(6, "%s: [%s]: got DELRANGE [%s] from UPS driver",
 			__func__, ups->socketname, arg[1]);
-
-		ups_del_range(ups, varptr, atoi(arg[2]), atoi(arg[3]));
+			ups_del_range(ups, varptr, minval, maxval);
+		} else {
+			upsdebugx(5, "%s: [%s]: got non-numeric DELRANGE [%s] from UPS driver",
+				__func__, ups->socketname, arg[1]);
+		}
 
 		return 1;
 	}
 
 	/* ADDRANGE <varname> <minvalue> <maxvalue> */
 	if (!strcasecmp(arg[0], "ADDRANGE")) {
+		int minval;
+		int maxval;
+
 		varptr = rewrite_driver_prefix(arg[1], buf, sizeof(buf));
 
+		if (str_to_int(arg[2], &minval, 10) && str_to_int(arg[3], &maxval, 10)) {
 		upsdebugx(6, "%s: [%s]: got ADDRANGE [%s] from UPS driver",
 			__func__, ups->socketname, arg[1]);
-
-		ups_add_range(ups, varptr, atoi(arg[2]), atoi(arg[3]));
+			ups_add_range(ups, varptr, minval, maxval);
+		} else {
+			upsdebugx(5, "%s: [%s]: got non-numeric ADDRANGE [%s] from UPS driver",
+				__func__, ups->socketname, arg[1]);
+		}
 
 		return 1;
 	}
@@ -2265,11 +2258,47 @@ static int split_socket_name(const char *input, char **driver, char **ups)
 	return 1;
 }
 
-static void csv_arg_to_array(const char *argname, const char *argcsv, char ***array, size_t *countvar)
+static int str_arg_to_int(const char *arg, const char *argval, int *destvar, int defval, int min, int max)
+{
+	if (!arg || !argval || !destvar) {
+		return 0;
+	}
+
+	if (str_to_int(argval, destvar, 10)) {
+		if (!(min == -1 && max == -1) && (*destvar < min || *destvar > max)) {
+			upslogx(LOG_ERR, "%s: '%s' value [%d] out of range [%d..%d], "
+				"set to the default '%s' value of [%d] instead",
+				__func__, arg, *destvar, min, max, arg, defval);
+
+			*destvar = defval;
+
+			return 0;
+		}
+
+		upsdebugx(1, "%s: set '%s' to [%d] from configuration",
+			__func__, arg, *destvar);
+
+		return 1;
+	}
+
+	upslogx(LOG_ERR, "%s: invalid '%s' of [%s] from configuration, "
+		"set to the default '%s' value of [%d] instead",
+		__func__, arg, argval, arg, defval);
+
+	*destvar = defval;
+
+	return 0;
+}
+
+static void csv_arg_to_array(const char *arg, const char *argcsv, char ***array, size_t *countvar)
 {
 	char *tmp = NULL;
 	char *token = NULL;
 	char *str = NULL;
+
+	if (!arg || !array || !countvar) {
+		return;
+	}
 
 	if (!argcsv) {
 		*array = NULL;
@@ -2284,6 +2313,12 @@ static void csv_arg_to_array(const char *argname, const char *argcsv, char ***ar
 	while (token) {
 		str_trim_space(token);
 
+		if (*token == '\0') {
+			token = strtok(NULL, ",");
+
+			continue;
+		}
+
 		str = xstrdup(token);
 
 		*array = xrealloc(*array, sizeof(**array) * (*countvar + 1));
@@ -2291,7 +2326,7 @@ static void csv_arg_to_array(const char *argname, const char *argcsv, char ***ar
 		(*countvar)++;
 
 		upsdebugx(1, "%s: added [%s] to [%s] from configuration",
-			__func__, str, argname);
+			__func__, str, arg);
 
 		token = strtok(NULL, ",");
 	}
