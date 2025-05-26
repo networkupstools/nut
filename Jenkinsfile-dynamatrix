@@ -1263,7 +1263,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Strict C and GNU (C99+/C++98+) standard builds (hard warnings level) on native-Windows platforms, without distcheck and docs (allowed to fail)',
+        ,[name: 'Strict C and GNU C99+/C++98+ standard builds (hard warnings level) on native-Windows platforms, without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
          branchRegexTarget: ~/fightwarn|Windows-.*/,
@@ -1304,7 +1304,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: (dynacfgPipeline.disableStrictCIBuild_CrossWindows ? '' : 'Strict C and ') + 'GNU (C99/C++11) standard builds with fatal warnings (hard level) on cross-Windows platforms (Linux+mingw), without distcheck and docs (allowed to fail)',
+        ,[name: (dynacfgPipeline.disableStrictCIBuild_CrossWindows ? '' : 'Strict C and ') + 'GNU C99/C++11 standard builds with fatal warnings (hard level) on cross-Windows platforms (Linux+mingw), without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
          //branchRegexTarget: ~/fightwarn|Windows-.*/,
