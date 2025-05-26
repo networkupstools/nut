@@ -773,7 +773,18 @@ smf_registerInstance() {
                          OTHERDRV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $2 }'`" && \
                          [ x"${DEPDRV}" = x"${OTHERDRV}-${OTHERDEV}" ] && \
                          [ x"${OTHERDEV}" != x"${DEVICE}" ] \
-                         || { OTHERDEV="" ; OTHERDRV="" ; }
+                         || {
+                             for OTHERDEV in $UPSLIST_FILE ; do
+                                case "${DEPDRV}" in
+                                    *-"${OTHERDEV}")
+                                        OTHERDRV="'`echo "${OTHERLIST}" | awk '($1 == "'"${OTHERDEV}"'") { print $2 }'`'" || OTHERDRV="<N/A>"
+                                        echo "WARNING: Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}" >&2
+                                        ;;
+                                esac
+                             done
+                             OTHERDEV=""
+                             OTHERDRV=""
+                            }
                         ;;
                     *)  OTHERDEV="${DEPDRV}" ;;
                 esac
@@ -1026,7 +1037,18 @@ systemd_registerInstance() {
                          OTHERDRV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $2 }'`" && \
                          [ x"${DEPDRV}" = x"${OTHERDRV}-${OTHERDEV}" ] && \
                          [ x"${OTHERDEV}" != x"${DEVICE}" ] \
-                         || { OTHERDEV="" ; OTHERDRV="" ; }
+                         || {
+                             for OTHERDEV in $UPSLIST_FILE ; do
+                                case "${DEPDRV}" in
+                                    *-"${OTHERDEV}")
+                                        OTHERDRV="'`echo "${OTHERLIST}" | awk '($1 == "'"${OTHERDEV}"'") { print $2 }'`'" || OTHERDRV="<N/A>"
+                                        echo "WARNING: Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}" >&2
+                                        ;;
+                                esac
+                             done
+                             OTHERDEV=""
+                             OTHERDRV=""
+                            }
                         ;;
                     *)  OTHERDEV="${DEPDRV}" ;;
                 esac
