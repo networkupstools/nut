@@ -598,7 +598,7 @@ RELOADING NUANCES
 
 upsmon usually gives up root powers for the process that does most of
 the work, including handling signals like SIGHUP to reload the configuration
-file.  This means your linkman:upsmon.conf[8] file must be readable by
+file.  This means your linkman:upsmon.conf[5] file must be readable by
 the non-root account that upsmon switches to.
 
 If you want reloads to work, upsmon must run as some user that has
@@ -607,7 +607,7 @@ user just for this purpose, as making the file readable by "nobody"
 (the default user) would be a bad idea; packages typically ship with
 a `nut` or `ups` user to run NUT daemon services.
 
-See the `RUN_AS_USER` section in linkman:upsmon.conf[8] for more on this topic.
+See the `RUN_AS_USER` section in linkman:upsmon.conf[5] for more on this topic.
 
 Additionally, you can't change the `SHUTDOWNCMD` or `POWERDOWNFLAG`
 definitions with a reload due to the split-process model.  If you change
