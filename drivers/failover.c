@@ -113,7 +113,7 @@ static void ups_free_var_state(ups_var_t *var);
 static const char *rewrite_driver_prefix(const char *in, char *out, size_t outlen);
 static int split_socket_name(const char *input, char **driver, char **ups);
 static int str_arg_to_int(const char *arg, const char *argval, int *destvar, int defval, int min, int max);
-static void csv_arg_to_array(const char *arg, const char *argcsv, char ***array, size_t *countvar);
+static ssize_t csv_arg_to_array(const char *arg, const char *argcsv, char ***array, size_t *countvar);
 
 static inline void ups_set_flag(ups_device_t *ups, ups_flags_t flag);
 static inline void ups_clear_flag(ups_device_t *ups, ups_flags_t flag);
@@ -2290,21 +2290,19 @@ static int str_arg_to_int(const char *arg, const char *argval, int *destvar, int
 	return 0;
 }
 
-static void csv_arg_to_array(const char *arg, const char *argcsv, char ***array, size_t *countvar)
+static ssize_t csv_arg_to_array(const char *arg, const char *argcsv, char ***array, size_t *countvar)
 {
 	char *tmp = NULL;
 	char *token = NULL;
 	char *str = NULL;
+	ssize_t count = 0;
 
-	if (!arg || !array || !countvar) {
-		return;
+	if (!arg || !argcsv || !array || !countvar) {
+		return -1;
 	}
 
-	if (!argcsv) {
-		*array = NULL;
-		*countvar = 0;
-
-		return;
+	if (*argcsv == '\0') {
+		return 0;
 	}
 
 	tmp = xstrdup(argcsv);
@@ -2325,6 +2323,8 @@ static void csv_arg_to_array(const char *arg, const char *argcsv, char ***array,
 		(*array)[*countvar] = str;
 		(*countvar)++;
 
+		count++;
+
 		upsdebugx(1, "%s: added [%s] to [%s] from configuration",
 			__func__, str, arg);
 
@@ -2333,6 +2333,8 @@ static void csv_arg_to_array(const char *arg, const char *argcsv, char ***array,
 
 	free(tmp);
 	tmp = NULL;
+
+	return count;
 }
 
 static inline void ups_set_flag(ups_device_t *ups, ups_flags_t flag)
