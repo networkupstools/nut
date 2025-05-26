@@ -2265,7 +2265,7 @@ static int str_arg_to_int(const char *arg, const char *argval, int *destvar, int
 	}
 
 	if (str_to_int(argval, destvar, 10)) {
-		if (!(min == -1 && max == -1) && (*destvar < min || *destvar > max)) {
+		if ((min != INT_MIN && *destvar < min) || (max != INT_MAX && *destvar > max)) {
 			upslogx(LOG_ERR, "%s: '%s' value [%d] out of range [%d..%d], "
 				"set to the default '%s' value of [%d] instead",
 				__func__, arg, *destvar, min, max, arg, defval);
