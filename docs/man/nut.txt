@@ -125,6 +125,14 @@ maintained by the community at large.  Some standard clients of note include:
   of them (through a data server running on one of them, on a machine actually
   connected to the UPS -- the "primary" system).
 +
+NOTE: The `upsmon` client typically splits into two processes: an unprivileged
+  one running with credentials of its `RUN_AS_USER` configured in the
+  linkman:upsmon.conf[5] file (or a built-in/packaged default like `nut`,
+  `monuser` or `nobody`) which does most of the work (including notification
+  scripts called via `NOTIFYCMD` setting), and the part which remains owned
+  by `root` to initiate the system shutdown by calling `SHUTDOWNCMD` when/if
+  the time comes.
++
 NUT deployments which desire higher-fidelity control (e.g. different systems
   shutting down after different time spent on battery) often couple `upsmon`
   with linkman:upssched[1].
