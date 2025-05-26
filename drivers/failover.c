@@ -364,11 +364,20 @@ static int instcmd(const char *cmdname, const char *extra)
 
 			if (!strcmp(subcmd, ".force.ignore")) {
 				time_t now;
+				int ignoreval = 0;
+
+				if (extra && !str_to_int(extra, &ignoreval, 10)) {
+					upslogx(LOG_INSTCMD_CONVERSION_FAILED, "%s: "
+						"conversion failed setting [force_ignore] to [%s] on [%s]",
+						__func__, extra, ups->socketname);
+
+					return STAT_INSTCMD_CONVERSION_FAILED;
+				}
 
 				time(&now);
 
-				ups->force_ignore = extra ? atoi(extra) : 0;
-				ups->force_ignore_time = ups->force_ignore ? now : 0;
+				ups->force_ignore = ignoreval;
+				ups->force_ignore_time = ignoreval ? now : 0;
 
 				upslogx(LOG_NOTICE, "%s: set [force_ignore] to [%d] on [%s]",
 					__func__, ups->force_ignore, ups->socketname);
@@ -378,11 +387,20 @@ static int instcmd(const char *cmdname, const char *extra)
 
 			if (!strcmp(subcmd, ".force.primary")) {
 				time_t now;
+				int primaryval = 0;
+
+				if (extra && !str_to_int(extra, &primaryval, 10)) {
+					upslogx(LOG_INSTCMD_CONVERSION_FAILED, "%s: "
+						"conversion failed setting [force_primary] to [%s] on [%s]",
+						__func__, extra, ups->socketname);
+
+					return STAT_INSTCMD_CONVERSION_FAILED;
+				}
 
 				time(&now);
 
-				ups->force_primary = extra ? atoi(extra) : 0;
-				ups->force_primary_time = ups->force_primary ? now : 0;
+				ups->force_primary = primaryval;
+				ups->force_primary_time = primaryval ? now : 0;
 
 				upslogx(LOG_NOTICE, "%s: set [force_primary] to [%d] on [%s]",
 					__func__, ups->force_primary, ups->socketname);
