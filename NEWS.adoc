@@ -88,6 +88,23 @@ https://github.com/networkupstools/nut/milestone/9
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
 
+ - `upsdrvquery` API updates [#2969]:
+   * Added `upsdrvquery_oneshot_conn()` for issuing one-shot queries using an
+     existing `udq_pipe_conn_t *` connection. The caller manages the
+     connection's lifecycle, and the function includes a best-effort call to
+     restore broadcast mode after the query to return the connection as it was.
+   * Added `upsdrvquery_oneshot_sockfn()` for initiating one-shot queries using
+     a socket filename. Shares internal logic with the existing
+     `upsdrvquery_oneshot()`, which uses a UPS and driver name, respectively.
+   * Introduced `upsdrvquery_restore_broadcast()` to explicitly restore
+     broadcast mode (`BROADCAST 1`) on a connection, helping return it to a
+     consistent and talkative state.
+   * Revised connection ownership handling: internal functions like
+     `upsdrvquery_prepare()` and `upsdrvquery_request()` no longer close
+     connections they do not own. Responsibility for cleanup is now delegated to
+     the caller to avoid unintended side effects and better align with expected
+     usage patterns.
+
  - common driver code:
    * Update reports of failed socket file creation, to help troubleshooting
      some error cases in the field.
