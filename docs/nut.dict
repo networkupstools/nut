@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3499 utf-8
+personal_ws-1.1 en 3502 utf-8
 AAC
 AAS
 ABI
@@ -614,6 +614,7 @@ LCDRM
 LCDRT
 LCDRTXL
 LDADD
+LDAP
 LDFLAGS
 LDLC
 LDRIVER
@@ -1045,6 +1046,7 @@ QVFW
 QWS
 QinHeng
 Quette
+RBAC
 RBWARNTIME
 RDLCK
 RDNT
@@ -3135,6 +3137,7 @@ subnet
 subnets
 subtree
 sudo
+sudoers
 suggestsrcdoc
 suid
 suppressions

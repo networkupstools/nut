@@ -1,4 +1,4 @@
-snmp-ups(8)
+SNMP-UPS(8)
 ===========
 
 NAME
