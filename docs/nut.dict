@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3498 utf-8
+personal_ws-1.1 en 3502 utf-8
 AAC
 AAS
 ABI
@@ -1807,6 +1807,7 @@ configurationProvider
 configureaz
 configureaza
 confpath
+conn
 const
 contrib
 copyrightable
@@ -2693,6 +2694,7 @@ onbattery
 onbattwarn
 ondelay
 oneac
+oneshot
 online
 onlinedischarge
 ont
@@ -3047,6 +3049,7 @@ snr
 socat
 sockdebug
 socketname
+sockfn
 socomec
 solari
 solaris
@@ -3254,6 +3257,7 @@ ucd
 ucrt
 udev
 udevadm
+udq
 ufw
 ugen
 ui
