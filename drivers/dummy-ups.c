@@ -571,15 +571,15 @@ void upsdrv_cleanup(void)
 			upscli_disconnect(ups);
 		}
 
-		if (ctx)
-		{
-			pconf_finish(ctx);
-			free(ctx);
-		}
-
 		free(client_upsname);
 		free(hostname);
 		free(ups);
+	}
+
+	if (ctx)
+	{
+		pconf_finish(ctx);
+		free(ctx);
 	}
 }
 
