@@ -363,12 +363,21 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		ret = -1;
 #endif  /* WIN32 */
 
-	upsdebugx(ret > 0 ? 5 : 6,
-		"%s: received %" PRIiMAX " bytes from driver socket: %s",
-		__func__, (intmax_t)ret, (ret > 0 ? conn->buf : "<null>"));
-	if (ret > 0 && conn->buf[0] == '\0')
-		upsdebug_hex(5, "payload starts with zero byte: ",
-			conn->buf, ((size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret));
+	if (ret > 0) {
+		size_t len = (size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret;
+
+		upsdebugx(5, "%s: received %" PRIiMAX " bytes from driver socket: %.*s",
+			__func__, (intmax_t)ret, (int)len, conn->buf);
+
+		if (conn->buf[0] == '\0') {
+			upsdebug_hex(5, "payload starts with zero byte: ",
+				conn->buf, len);
+		}
+	} else {
+		upsdebugx(6, "%s: received %" PRIiMAX " bytes from driver socket: <null>",
+			__func__, (intmax_t)ret);
+	}
+
 	return ret;
 }
 
@@ -483,7 +492,11 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	}
 
 	/* Check that we can have a civilized dialog --
-	 * nope, this one is for network protocol */
+	 * nope, this one is for network protocol
+	 *
+	 * FIXME: strcmp(conn->buf, "ON") -> buf is NOT null terminated!
+	 * The above FIXME is not the reason this block is/was commented out.
+	 */
 /*
 	if (upsdrvquery_write(conn, "GET TRACKING\n") < 0)
 		goto socket_error;
@@ -745,7 +758,8 @@ ssize_t upsdrvquery_oneshot_conn(
 	}
 
 	if (buf) {
-		snprintf(buf, bufsz, "%s", conn->buf);
+		size_t len = strnlen(conn->buf, sizeof(conn->buf));
+		snprintf(buf, bufsz, "%.*s", (int)len, conn->buf);
 	}
 
 finish:

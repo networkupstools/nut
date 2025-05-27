@@ -59,6 +59,13 @@ https://github.com/networkupstools/nut/milestone/9
      `DRIVERLIST` variables inspected by `configure` script, rather than
      having all their names hard-coded like before, led to inability to
      `configure --with-drivers=dummy-ups`. [#2825, #2927, fixed by PR #2929]
+   * A problem noted with `upsdrvquery` (since NUT v2.8.1) message logging
+     at high debug verbosity levels (5+) with very large blocks of content
+     has exposed a deficiency in variable-argument handling, and specifically
+     adaptive resizing of the output buffer or truncation of logged inputs
+     (which is something NUT code tried to do since the beginning of time),
+     and could lead to "segmentation fault" crashes on some platforms.
+     [issue #2948, PR #2963]
 
  - common code:
    * Revised common `writepid()` to use `altpidpath()` as location for the
