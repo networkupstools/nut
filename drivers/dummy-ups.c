@@ -564,22 +564,26 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	if ( (mode == MODE_META) || (mode == MODE_REPEATER) )
-	{
-		if (ups)
-		{
-			upscli_disconnect(ups);
-		}
-
-		free(client_upsname);
-		free(hostname);
+	if (ups) {
+		upscli_disconnect(ups);
 		free(ups);
+		ups = NULL;
 	}
 
-	if (ctx)
-	{
+	if (client_upsname) {
+		free(client_upsname);
+		client_upsname = NULL;
+	}
+
+	if (hostname) {
+		free(hostname);
+		hostname = NULL;
+	}
+
+	if (ctx) {
 		pconf_finish(ctx);
 		free(ctx);
+		ctx = NULL;
 	}
 }
 
