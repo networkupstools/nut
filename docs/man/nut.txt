@@ -323,6 +323,7 @@ to secure access to those files and their copies as well.
 :leveloffset: 1
 ///////////////
 
+:in-nut-manpage: true
 include::index.txt[]
 
 ///////////////
