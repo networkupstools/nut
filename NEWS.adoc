@@ -165,6 +165,12 @@ https://github.com/networkupstools/nut/milestone/9
      support for end-to-end tracked instant commands and also variable updating.
      [#2962]
 
+ - The `nut-driver-enumerator.sh` script (NDE) now internally tracks dependency
+   of one driver on another one that should be locally running to serve the
+   "original" data points (`clone`, `clone-outlet`, `dummy-ups`, `failover`).
+   It should create soft dependencies between respective service instances
+   to order their start-up sequence. [#2962]
+
  - NUT Monitor GUI:
    * Ported Python 3 version to Qt6, now shipped alongside Qt5 for systems
      with either or both, maximizing compatibility with old and new setups.
