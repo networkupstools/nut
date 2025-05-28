@@ -1459,7 +1459,7 @@ echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
 
 case "$BUILD_TYPE" in
-default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-spellcheck|default-spellcheck-quick|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
+default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-all-errors-exhaustive|default-all-errors-quick|default-spellcheck|default-spellcheck-quick|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -1517,15 +1517,18 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
-    if [ "${BUILD_TYPE}" != "default-all-errors" ] ; then
-        case x"${WITH_UNMAPPED_DATAPOINTS-}" in
-            [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
-                CONFIG_OPTS+=("--with-unmapped-data-points") ;;
-            [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
-                CONFIG_OPTS+=("--without-unmapped-data-points") ;;
-            *)  ;; # Keep built-in default
-        esac
-    fi
+    case "${BUILD_TYPE}" in
+        "default-all-errors"*) ;;	# Treated below
+        *)
+            case x"${WITH_UNMAPPED_DATAPOINTS-}" in
+                [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
+                    CONFIG_OPTS+=("--with-unmapped-data-points") ;;
+                [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
+                    CONFIG_OPTS+=("--without-unmapped-data-points") ;;
+                *)  ;; # Keep built-in default
+            esac
+            ;;
+    esac
 
     if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
         CONFIG_OPTS+=("--enable-inplace-runtime")
@@ -1686,7 +1689,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 DO_CLEAN_CHECK=no
             fi
             ;;
-        "default-all-errors")
+        "default-all-errors"*)
             # This mode aims to build as many codepaths (to collect warnings)
             # as it can, so help it enable (require) as many options as we can.
 
@@ -1842,9 +1845,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         sudo dpkg -r --force all pkg-config
     fi
 
-    if [ "$BUILD_TYPE" != "default-all-errors" ] ; then
-        configure_nut
-    fi
+    case "$BUILD_TYPE" in
+        "default-all-errors"*) ;;	# Treated below
+        *) configure_nut ;;
+    esac
 
     # NOTE: There is also a case "$BUILD_TYPE" above for setting CONFIG_OPTS
     # This case runs some specially handled BUILD_TYPEs and exists; support
@@ -1916,9 +1920,26 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             ( $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE shellcheck check-scripts-syntax )
             exit $?
             ;;
-        "default-all-errors")
-            # This mode aims to build as many codepaths (to collect warnings)
-            # as it can, so help it enable (require) as many options as we can.
+        "default-all-errors"|"default-all-errors-exhaustive"|"default-all-errors-quick")
+            # These modes aim to build as many codepaths (to collect warnings)
+            # as they can, so help'em enable (require) as many options as we can.
+            # The legacy "exhaustive" mode iterates each axis separately (not
+            # as a full matrix, but still with pretty many sub-builds done);
+            # the "quick" mode aims to ensure that each requested variable
+            # value is tried, but their combos are randomly mixed to ensure
+            # the smallest amount of builds / quickest turnaround possible.
+            # This has a small chance to miss some explosive combos, for which
+            # we compensate in the NUT CI farm by running many scenarios on
+            # many systems and toolkits, so different combos are expected to
+            # happen (maybe even more overall than with the legacy mode).
+            if [ x"${BUILD_TYPE}" = x"default-all-errors" ] ; then
+                # CI builds on Jenkins?
+                [ -z "$NODE_LABELS" ] \
+                && BUILD_TYPE="default-all-errors-exhaustive" \
+                || BUILD_TYPE="default-all-errors-quick"
+
+                echo "NOTE: adapted BUILD_TYPE 'default-all-errors' => '${BUILD_TYPE}'" >&2
+            fi
 
             # Try to run various build scenarios to collect build errors
             # (no checks here) as configured further by caller's choice
