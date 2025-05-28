@@ -40,6 +40,7 @@
 #define DEFAULT_NO_PRIMARY_TIMEOUT   15
 #define DEFAULT_MAX_CONNECT_FAILS     5
 #define DEFAULT_RELOG_TIMEOUT         5
+#define DEFAULT_CHECK_RUNTIME         1
 #define DEFAULT_FSD_MODE              0
 #define DEFAULT_STRICT_FILTERING      0
 

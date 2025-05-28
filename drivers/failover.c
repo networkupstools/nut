@@ -47,6 +47,7 @@ static int arg_maxconnfails        = DEFAULT_MAX_CONNECT_FAILS;
 static int arg_coolofftimeout      = DEFAULT_CONNECTION_COOLOFF;
 static int arg_fsdmode             = DEFAULT_FSD_MODE;
 static int arg_strict_filtering    = DEFAULT_STRICT_FILTERING;
+static int arg_check_runtime       = DEFAULT_CHECK_RUNTIME;
 
 static int init_time_elapsed;
 static int primaries_gone;
@@ -97,6 +98,8 @@ static int ups_get_cmd_pos(const ups_device_t *ups, const char *cmd);
 static int ups_add_cmd(ups_device_t *ups, const char *val);
 static int ups_del_cmd(ups_device_t *ups, const char *val);
 
+static void ups_get_runtimes(const ups_device_t *ups, int *runtime, int *runtime_low);
+static int has_better_runtime(int rt, int rt_low, int best_rt, int best_rt_low, int mode);
 static int ups_get_var_pos(const ups_device_t *ups, const char *key);
 static int ups_set_var(ups_device_t *ups, const char *key, const char *value);
 static int ups_del_var(ups_device_t *ups, const char *key);
@@ -285,6 +288,12 @@ void upsdrv_makevartable(void)
 		"UPS driver to be electable as primary (default: %d)",
 		arg_strict_filtering);
 	addvar(VAR_VALUE, "strictfiltering", buf);
+
+	snprintf(buf, sizeof(buf),
+		"Sets if runtime remaining variables should resolve ties for non-OL priorities "
+		"3 and lower (0: disabled, 1: runtime, 2: runtime low, 3: both) (default: %d)",
+		arg_check_runtime);
+	addvar(VAR_VALUE, "checkruntime", buf);
 
 	addvar(VAR_VALUE, "status_have_any",
 		"Comma separated list of status tokens, any present qualifies "
@@ -554,6 +563,8 @@ static void handle_arguments(void)
 	str_arg_to_int("strictfiltering", getval("strictfiltering"),
 		&arg_strict_filtering, DEFAULT_STRICT_FILTERING, 0, 1);
 
+	str_arg_to_int("checkruntime", getval("checkruntime"),
+		&arg_check_runtime, DEFAULT_CHECK_RUNTIME, 0, 3);
 }
 
 static void parse_port_argument(void)
@@ -1076,8 +1087,8 @@ static int ups_parse_protocol(ups_device_t *ups, size_t numargs, char **arg)
 		varptr = rewrite_driver_prefix(arg[1], buf, sizeof(buf));
 
 		if (str_to_long(arg[2], &auxval, 10)) {
-		upsdebugx(6, "%s: [%s]: got SETAUX [%s] from UPS driver",
-			__func__, ups->socketname, arg[1]);
+			upsdebugx(6, "%s: [%s]: got SETAUX [%s] from UPS driver",
+				__func__, ups->socketname, arg[1]);
 			ups_set_var_aux(ups, varptr, auxval);
 		} else {
 			upsdebugx(5, "%s: [%s]: got non-numeric SETAUX [%s] from UPS driver",
@@ -1149,8 +1160,8 @@ static int ups_parse_protocol(ups_device_t *ups, size_t numargs, char **arg)
 		varptr = rewrite_driver_prefix(arg[1], buf, sizeof(buf));
 
 		if (str_to_int(arg[2], &minval, 10) && str_to_int(arg[3], &maxval, 10)) {
-		upsdebugx(6, "%s: [%s]: got DELRANGE [%s] from UPS driver",
-			__func__, ups->socketname, arg[1]);
+			upsdebugx(6, "%s: [%s]: got DELRANGE [%s] from UPS driver",
+				__func__, ups->socketname, arg[1]);
 			ups_del_range(ups, varptr, minval, maxval);
 		} else {
 			upsdebugx(5, "%s: [%s]: got non-numeric DELRANGE [%s] from UPS driver",
@@ -1168,8 +1179,8 @@ static int ups_parse_protocol(ups_device_t *ups, size_t numargs, char **arg)
 		varptr = rewrite_driver_prefix(arg[1], buf, sizeof(buf));
 
 		if (str_to_int(arg[2], &minval, 10) && str_to_int(arg[3], &maxval, 10)) {
-		upsdebugx(6, "%s: [%s]: got ADDRANGE [%s] from UPS driver",
-			__func__, ups->socketname, arg[1]);
+			upsdebugx(6, "%s: [%s]: got ADDRANGE [%s] from UPS driver",
+				__func__, ups->socketname, arg[1]);
 			ups_add_range(ups, varptr, minval, maxval);
 		} else {
 			upsdebugx(5, "%s: [%s]: got non-numeric ADDRANGE [%s] from UPS driver",
@@ -1296,6 +1307,8 @@ static ups_device_t *get_primary_candidate(void)
 	size_t i = 0;
 	size_t primaries = 0;
 	int best_priority = 100;
+	int best_runtime = -1;
+	int best_runtime_low = -1;
 	ups_device_t *best_choice = NULL;
 
 	time(&now);
@@ -1373,21 +1386,43 @@ static ups_device_t *get_primary_candidate(void)
 		}
 
 		if (priority >= 0) {
+			int rt = -1;
+			int rt_low = -1;
+
 			primaries++;
+
+			if (arg_check_runtime && priority >= PRIORITY_WEAK) {
+				ups_get_runtimes(ups, &rt, &rt_low);
+			}
 
 			if (priority < best_priority) {
 				best_choice = ups;
 				best_priority = priority;
+				best_runtime = rt;
+				best_runtime_low = rt_low;
+			}
+			else if (priority == best_priority && arg_check_runtime && priority >= PRIORITY_WEAK) {
+				/* All devices are not fully online and runtime checking is enabled, compare values: */
+				if (has_better_runtime(rt, rt_low, best_runtime, best_runtime_low, arg_check_runtime)) {
+					best_choice = ups;
+					best_runtime = rt;
+					best_runtime_low = rt_low;
+				}
 			}
 
-			upsdebugx(4, "%s: [%s]: is a primary candidate with priority [%d]",
-				__func__, ups->socketname, priority);
+			upsdebugx(4, "%s: [%s]: is candidate (priority [%d], runtime [%d]/[%d])",
+				__func__, ups->socketname, priority, rt, rt_low);
 		}
 
 		ups->priority = priority;
 	}
 
 	ups_primary_count = primaries;
+
+	if (best_choice) {
+		upsdebugx(4, "%s: [%s]: was selected (priority [%d], runtime [%d]/[%d])",
+			__func__, best_choice->socketname, best_priority, best_runtime, best_runtime_low);
+	}
 
 	return best_choice;
 }
@@ -1702,6 +1737,49 @@ static int ups_del_cmd(ups_device_t *ups, const char *val)
 		__func__, ups->socketname, val);
 
 	return 0;
+}
+
+static void ups_get_runtimes(const ups_device_t *ups, int *runtime, int *runtime_low)
+{
+	int tmp = -1;
+	int pos_rt = -1;
+	int pos_rt_low = -1;
+
+	if (!ups || !runtime || !runtime_low) {
+		return;
+	}
+
+	pos_rt = ups_get_var_pos(ups, "battery.runtime");
+	pos_rt_low = ups_get_var_pos(ups, "battery.runtime.low");
+
+	*runtime = -1;
+	*runtime_low = -1;
+
+	if (pos_rt >= 0 && str_to_int(ups->var_list[pos_rt]->value, &tmp, 10)) {
+		*runtime = tmp;
+	}
+
+	if (pos_rt_low >= 0 && str_to_int(ups->var_list[pos_rt_low]->value, &tmp, 10)) {
+		*runtime_low = tmp;
+	}
+}
+
+static int has_better_runtime(int rt, int rt_low, int best_rt, int best_rt_low, int mode)
+{
+	switch (mode) {
+		case 1:
+			/* compare runtime */
+			return rt > best_rt;
+		case 2:
+			/* compare runtime low */
+			return rt_low > best_rt_low;
+		case 3:
+			/* compare runtime + runtime low */
+			return (rt > best_rt && rt_low > best_rt_low);
+		default:
+			/* invalid mode */
+			return 0;
+	}
 }
 
 static int ups_get_var_pos(const ups_device_t *ups, const char *key)
