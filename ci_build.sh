@@ -1952,88 +1952,121 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             BUILDSTODO=0
 
             # Technically, let caller provide this setting explicitly
-            if [ -z "$NUT_SSL_VARIANTS" ] ; then
-                NUT_SSL_VARIANTS="auto"
-                if $PKG_CONFIG --exists nss && $PKG_CONFIG --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
+            if [ -n "$NUT_SSL_VARIANTS" ] ; then
+                TMP="$NUT_SSL_VARIANTS"
+                NUT_SSL_VARIANTS=()
+                for VAL in $TMP ; do
+                    if [ x"${VAL}" = x -o x"${VAL}" = xdefault ] ; then VAL=auto; fi
+                    NUT_SSL_VARIANTS+=("$VAL")
+                done
+            else
+                NUT_SSL_VARIANTS=()
+                if [ "${BUILD_SSL_ONCE-}" != "true" ]; then
                     # Try builds for both cases as they are ifdef-ed
                     # TODO: Extend if we begin to care about different
                     # major versions of openssl (with their APIs), etc.
-                    NUT_SSL_VARIANTS="openssl nss"
-                else
-                    if [ "${BUILD_SSL_ONCE-}" != "true" ]; then
-                        $PKG_CONFIG --exists nss 2>/dev/null && NUT_SSL_VARIANTS="nss"
-                        $PKG_CONFIG --exists openssl 2>/dev/null && NUT_SSL_VARIANTS="openssl"
-                    fi  # else leave at "auto", if we skipped building
-                        # two variants while having two possibilities
+                    $PKG_CONFIG --exists nss 2>/dev/null && NUT_SSL_VARIANTS+=("nss")
+                    $PKG_CONFIG --exists openssl 2>/dev/null && NUT_SSL_VARIANTS+=("openssl")
                 fi
 
-                # Consider also a build --without-ssl to test that codepath?
-                if [ "$NUT_SSL_VARIANTS" != auto ] && [ "${BUILD_SSL_ONCE-}" != "true" ]; then
-                    NUT_SSL_VARIANTS="$NUT_SSL_VARIANTS no"
+                if [ "${#NUT_SSL_VARIANTS[@]}" = 0 ] ; then
+                    # Either BUILD_SSL_ONCE or nothing supported found; let configure figure it out
+                    NUT_SSL_VARIANTS+=("auto")
+                fi
+
+                # If we did successfully find at least one SSL implementation,
+                # consider also a build --without-ssl to test that codepath?
+                if [ "${NUT_SSL_VARIANTS[*]}" != auto ] && [ "${BUILD_SSL_ONCE-}" != "true" ]; then
+                    NUT_SSL_VARIANTS+=("no")
                 fi
             fi
 
-            if [ -z "$NUT_USB_VARIANTS" ] ; then
+            if [ -n "$NUT_USB_VARIANTS" ] ; then
+                TMP="$NUT_USB_VARIANTS"
+                NUT_USB_VARIANTS=()
+                for VAL in $TMP ; do
+                    if [ x"${VAL}" = x -o x"${VAL}" = xdefault ] ; then VAL=auto; fi
+                    NUT_USB_VARIANTS+=("$VAL")
+                done
+            else
+                NUT_USB_VARIANTS=()
                 # Check preferred version first, in case BUILD_USB_ONCE==true
                 if $PKG_CONFIG --exists libusb-1.0 ; then
-                    NUT_USB_VARIANTS="1.0"
+                    NUT_USB_VARIANTS+=("1.0")
                 fi
 
                 # TODO: Is there anywhere a `pkg-config --exists libusb-0.1`?
                 if $PKG_CONFIG --exists libusb || ( command -v libusb-config || which libusb-config ) 2>/dev/null >/dev/null ; then
-                    if [ -z "$NUT_USB_VARIANTS" ] ; then
-                        NUT_USB_VARIANTS="0.1"
-                    else
-                        if [ "${BUILD_USB_ONCE-}" != "true" ] ; then
-                            NUT_USB_VARIANTS="$NUT_USB_VARIANTS 0.1"
-                        fi
+                    if [ "${#NUT_USB_VARIANTS[@]}" = 0 ] || [ "${BUILD_USB_ONCE-}" != "true" ] ; then
+                        NUT_USB_VARIANTS+=("0.1")
                     fi
                 fi
 
-                if [ -z "$NUT_USB_VARIANTS" ] ; then
-                    # Nothing supported detected...
+                if [ "${#NUT_USB_VARIANTS[@]}" = 0 ] ; then
+                    # Nothing supported detected... ; let configure figure it out
                     NUT_USB_VARIANTS="auto"
                 fi
 
                 # Consider also a build --without-usb to test that codepath?
                 # (e.g. for nutdrv_qx that has both serial and USB parts)
-                if [ "$NUT_USB_VARIANTS" != auto ] && [ "${BUILD_USB_ONCE-}" != "true" ]; then
-                    NUT_USB_VARIANTS="$NUT_USB_VARIANTS no"
+                if [ "${NUT_USB_VARIANTS[*]}" != auto ] && [ "${BUILD_USB_ONCE-}" != "true" ]; then
+                    NUT_USB_VARIANTS+=("no")
                 fi
             fi
 
-            if [ -z "$NUT_UNMAPPED_VARIANTS" ] || [ "$NUT_UNMAPPED_VARIANTS" = auto ] ; then
+            if [ -z "$NUT_UNMAPPED_VARIANTS" ] || [ "$NUT_UNMAPPED_VARIANTS" = auto ] || [ "$NUT_UNMAPPED_VARIANTS" = default ] ; then
+                # Unlike USB/SSL, here we choose according to another toggle value
+                # (and there is no "auto" mode really, just pure "yes" or "no"):
+                NUT_UNMAPPED_VARIANTS=()
                 case x"${WITH_UNMAPPED_DATAPOINTS-}" in
                     [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
-                        NUT_UNMAPPED_VARIANTS="yes" ;;
+                        NUT_UNMAPPED_VARIANTS+=("yes") ;;
                     [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
-                        NUT_UNMAPPED_VARIANTS="no" ;;
+                        NUT_UNMAPPED_VARIANTS+=("no") ;;
                     *)
-                        NUT_UNMAPPED_VARIANTS="yes no" ;;
+                        NUT_UNMAPPED_VARIANTS+=("yes" "no") ;;
                 esac
+            else
+                TMP="$NUT_UNMAPPED_VARIANTS"
+                NUT_UNMAPPED_VARIANTS=()
+                for VAL in $TMP ; do
+                    NUT_UNMAPPED_VARIANTS+=("$VAL")
+                done
             fi
 
             # Count our expected build variants, so the last one gets the
             # "maintainer-clean" check and not a mere "distclean" check
             # NOTE: We count different dependency variations separately,
             # and analyze later, to avoid building same (auto+auto) twice
+            BUILDSTODO_LIST=()
             BUILDSTODO_SSL=0
-            for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
+            for NUT_SSL_VARIANT in "${NUT_SSL_VARIANTS[@]}" ; do
                 BUILDSTODO_SSL="`expr $BUILDSTODO_SSL + 1`"
+                if [ x"${BUILD_TYPE}" = x"default-all-errors-exhaustive" ] ; then
+                    BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}")
+                fi
             done
 
             BUILDSTODO_USB=0
-            for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
+            for NUT_USB_VARIANT in "${NUT_USB_VARIANTS[@]}" ; do
                 BUILDSTODO_USB="`expr $BUILDSTODO_USB + 1`"
+                if [ x"${BUILD_TYPE}" = x"default-all-errors-exhaustive" ] ; then
+                    BUILDSTODO_LIST+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}")
+                fi
             done
 
             BUILDSTODO_UNMAPPED=0
-            for NUT_UNMAPPED_VARIANT in $NUT_UNMAPPED_VARIANTS ; do
+            for NUT_UNMAPPED_VARIANT in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
                 BUILDSTODO_UNMAPPED="`expr $BUILDSTODO_UNMAPPED + 1`"
             done
+
             # Use the only one requested right away
             if [ "${BUILDSTODO_UNMAPPED}" -eq 1 ] ; then
                 CONFIG_OPTS+=("--with-unmapped-data-points=${NUT_UNMAPPED_VARIANT}")
+            else
+                if [ x"${BUILD_TYPE}" = x"default-all-errors-exhaustive" ] ; then
+                    BUILDSTODO_LIST+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}")
+                fi
             fi
 
             if [ "${BUILDSTODO_SSL}" -gt 1 ] \
@@ -2053,15 +2086,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 # Adding up only if we are building several USB variants
                 # or a single non-default variant (maybe a "no" option),
                 # so we should be trying both SSL's and that/those USB
-                ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
-                ###{ [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ; } || \
+                ###[ "${NUT_USB_VARIANTS[*]}" = "auto" ] || \
+                ###{ [ "${BUILDSTODO_USB}" -le 1 ] && [ "${NUT_USB_VARIANTS[*]}" != "no" ] ; } || \
                 if [ "${BUILDSTODO_USB}" -gt 1 ] \
-                || [ "$NUT_USB_VARIANTS" != "auto" ] \
+                || [ "${NUT_USB_VARIANTS[*]}" != "auto" ] \
                 ; then
                     BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_USB`"
                 fi
 
-                if [ "$NUT_SSL_VARIANTS" = "auto" ] \
+                if [ "${NUT_SSL_VARIANTS[*]}" = "auto" ] \
                 && [ "${BUILDSTODO_USB}" -gt 0 ] \
                 ; then
                     echo "=== Only build USB scenario(s) picking whatever SSL is found"
@@ -2077,10 +2110,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             fi
 
             BUILDSTODO_INITIAL="$BUILDSTODO"
-            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) and ${BUILDSTODO_UNMAPPED} UNMAPPED ($NUT_UNMAPPED_VARIANTS) variations..."
+            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL (${NUT_SSL_VARIANTS[*]}) and ${BUILDSTODO_USB} USB (${NUT_USB_VARIANTS[*]}) and ${BUILDSTODO_UNMAPPED} UNMAPPED (${NUT_UNMAPPED_VARIANTS[*]}) variations..."
             # If we don't care about SSL implem and want to pick USB, go straight there
-            ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) || \
-            for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
+            ( [ "${NUT_SSL_VARIANTS[*]}" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) || \
+            for NUT_SSL_VARIANT in "${NUT_SSL_VARIANTS[@]}" ; do
                 # NOTE: Do not repeat a distclean before the loop,
                 # we have cleaned above before autogen, and here it
                 # would just re-evaluate `configure` to update the
@@ -2192,7 +2225,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
                     fi
                 fi
-            done	# end of "for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS"
+            done	# end of "for NUT_SSL_VARIANT in ${NUT_SSL_VARIANTS[@]}"
 
             # Effectively, whatever up to one version of LibUSB support
             # was detected (or not), was tested above among SSL builds.
@@ -2200,23 +2233,23 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             # or when caller explicitly requested to only test without it,
             # and then we only attempt the serial and/or USB options while
             # disabling other drivers for faster turnaround.
-            ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
-            ###( [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ) || \
-            ( ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) \
+            ###[ "${NUT_USB_VARIANTS[*]}" = "auto" ] || \
+            ###( [ "${BUILDSTODO_USB}" -le 1 ] && [ "${NUT_USB_VARIANTS[*]}" != "no" ] ) || \
+            ( ( [ "${NUT_SSL_VARIANTS[*]}" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) \
              || [ "${BUILDSTODO_USB}" -gt 1 ] \
-             || [ "$NUT_USB_VARIANTS" != "auto" ] \
+             || [ "${NUT_USB_VARIANTS[*]}" != "auto" ] \
             ) && \
             (   [ "$CI_FAILFAST" != "true" ] \
              || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
             ) && \
-            for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
+            for NUT_USB_VARIANT in "${NUT_USB_VARIANTS[@]}" ; do
                 echo "=== Starting 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_USB_VARIANT" in
                     ""|auto|default)
                         # Quietly build one scenario, whatever we can (or not)
                         # configure regarding USB and other features
                         NUT_USB_VARIANT=auto
-                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                        ( if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
                           fi
@@ -2227,7 +2260,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ;;
                     no)
                         echo "=== Building without USB support (check mixed drivers coded for Serial/USB support)..."
-                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                        ( if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
                           fi
@@ -2238,7 +2271,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ;;
                     libusb-*)
                         echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
-                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                        ( if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
                           fi
@@ -2249,7 +2282,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ;;
                     *)
                         echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
-                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                        ( if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
                           fi
@@ -2340,7 +2373,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
                     fi
                 fi
-            done	# end of "for NUT_USB_VARIANT in $NUT_USB_VARIANTS"
+            done	# end of "for NUT_USB_VARIANT in ${NUT_USB_VARIANTS[@]}"
 
             # Tack a remaining yes/no in the end to whatever scenario is there;
             # NOT a full matrix
@@ -2348,17 +2381,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             (   [ "$CI_FAILFAST" != "true" ] \
              || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
             ) ; then
-                for NUT_UNMAPPED_VARIANT in $NUT_UNMAPPED_VARIANTS ; do
+                for NUT_UNMAPPED_VARIANT in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
                     case "${NUT_UNMAPPED_VARIANT}" in
                         no) ;;	# we already did the default ("no") implicitly
                         *)	# Try this variant
                             echo "=== Starting 'NUT_UNMAPPED_VARIANT=$NUT_UNMAPPED_VARIANT', $BUILDSTODO build variants remaining..."
-                            ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                            ( if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] ; then
                                   CONFIG_OPTS+=("--without-all")
                                   CONFIG_OPTS+=("--without-ssl")
                               fi
                               CONFIG_OPTS+=("--with-serial=auto")
-                              if [ "$NUT_USB_VARIANTS" != "no" ] ; then
+                              if [ "${NUT_USB_VARIANTS[*]}" != "no" ] ; then
                                   CONFIG_OPTS+=("--with-usb=auto")
                               fi
                               CONFIG_OPTS+=("--with-unmapped-data-points=${NUT_UNMAPPED_VARIANT}")
@@ -2447,7 +2480,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                             fi
                             ;;	# end of "Try this variant"
                     esac
-                done	# end of "for NUT_UNMAPPED_VARIANT in $NUT_UNMAPPED_VARIANTS"
+                done	# end of "for NUT_UNMAPPED_VARIANT in ${NUT_UNMAPPED_VARIANTS[@]}"
             fi
 
             # TODO: Similar loops for other variations like TESTING,
