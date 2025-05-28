@@ -2107,6 +2107,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             # NOT a full matrix
             if [ "${BUILDSTODO_UNMAPPED}" -gt 1 ] ; then
                 BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_UNMAPPED - 1`"
+                echo "=== Would build one 'unmapped' variant as part of other scenarios, will only explicitly test the other"
             fi
 
             BUILDSTODO_INITIAL="$BUILDSTODO"
