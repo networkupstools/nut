@@ -1947,8 +1947,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             # Note this is one scenario where we did not configure_nut()
             # in advance.
             RES_ALLERRORS=0
-            FAILED=""
-            SUCCEEDED=""
+            FAILED=()
+            SUCCEEDED=()
             BUILDSTODO=0
 
             # Technically, let caller provide this setting explicitly
@@ -2110,7 +2110,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ;;
                 esac || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
+                    FAILED+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]")
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
@@ -2124,10 +2124,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 cd "${CI_BUILDDIR}"
                 # Use default target e.g. "all":
                 build_to_only_catch_errors_target && {
-                    SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                    SUCCEEDED+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]")
                 } || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                    FAILED+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]")
                     # Help find end of build (before cleanup noise) in logs:
                     echo "=== FAILED 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' build"
                     if [ "$CI_FAILFAST" = true ]; then
@@ -2137,10 +2137,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 }
 
                 build_to_only_catch_errors_check && {
-                    SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]"
+                    SUCCEEDED+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]")
                 } || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]"
+                    FAILED+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]")
                     # Help find end of build (before cleanup noise) in logs:
                     echo "=== FAILED 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' check"
                     if [ "$CI_FAILFAST" = true ]; then
@@ -2166,20 +2166,20 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ### Avoid having to re-autogen in a loop:
                         optional_dist_clean_check && {
                             if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
-                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                                SUCCEEDED+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]")
                             fi
                         } || {
                             RES_ALLERRORS=$?
-                            FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                            FAILED+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]")
                         }
                     else
                         optional_maintainer_clean_check && {
                             if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
-                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                                SUCCEEDED+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]")
                             fi
                         } || {
                             RES_ALLERRORS=$?
-                            FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                            FAILED+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]")
                         }
                     fi
                     echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
@@ -2260,7 +2260,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ;;
                 esac || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[configure]"
+                    FAILED+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}[configure]")
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
@@ -2274,10 +2274,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 cd "${CI_BUILDDIR}"
                 # Use default target e.g. "all":
                 build_to_only_catch_errors_target && {
-                    SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
+                    SUCCEEDED+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]")
                 } || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
+                    FAILED+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]")
                     # Help find end of build (before cleanup noise) in logs:
                     echo "=== FAILED 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' build"
                     if [ "$CI_FAILFAST" = true ]; then
@@ -2287,10 +2287,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 }
 
                 build_to_only_catch_errors_check && {
-                    SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]"
+                    SUCCEEDED+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]")
                 } || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]"
+                    FAILED+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]")
                     # Help find end of build (before cleanup noise) in logs:
                     echo "=== FAILED 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' check"
                     if [ "$CI_FAILFAST" = true ]; then
@@ -2314,20 +2314,20 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ### Avoid having to re-autogen in a loop:
                         optional_dist_clean_check && {
                             if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
-                                SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
+                                SUCCEEDED+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]")
                             fi
                         } || {
                             RES_ALLERRORS=$?
-                            FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
+                            FAILED+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]")
                         }
                     else
                         optional_maintainer_clean_check && {
                             if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
-                                SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
+                                SUCCEEDED+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]")
                             fi
                         } || {
                             RES_ALLERRORS=$?
-                            FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
+                            FAILED+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]")
                         }
                     fi
                     echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
@@ -2365,7 +2365,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                               configure_nut
                             ) || {
                                 RES_ALLERRORS=$?
-                                FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[configure]"
+                                FAILED+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[configure]")
                                 # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
                                 if [ "$CI_FAILFAST" = true ]; then
                                     echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
@@ -2379,10 +2379,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                             cd "${CI_BUILDDIR}"
                             # Use default target e.g. "all":
                             build_to_only_catch_errors_target && {
-                                SUCCEEDED="${SUCCEEDED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[build]"
+                                SUCCEEDED+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[build]")
                             } || {
                                 RES_ALLERRORS=$?
-                                FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[build]"
+                                FAILED+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[build]")
                                 # Help find end of build (before cleanup noise) in logs:
                                 echo "=== FAILED 'NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}' build"
                                 if [ "$CI_FAILFAST" = true ]; then
@@ -2392,10 +2392,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                             }
 
                             build_to_only_catch_errors_check && {
-                                SUCCEEDED="${SUCCEEDED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[check]"
+                                SUCCEEDED+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[check]")
                             } || {
                                 RES_ALLERRORS=$?
-                                FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[check]"
+                                FAILED+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[check]")
                                 # Help find end of build (before cleanup noise) in logs:
                                 echo "=== FAILED 'NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}' check"
                                 if [ "$CI_FAILFAST" = true ]; then
@@ -2419,20 +2419,20 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                                     ### Avoid having to re-autogen in a loop:
                                     optional_dist_clean_check && {
                                         if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
-                                            SUCCEEDED="${SUCCEEDED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[dist_clean]"
+                                            SUCCEEDED+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[dist_clean]")
                                         fi
                                     } || {
                                         RES_ALLERRORS=$?
-                                        FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[dist_clean]"
+                                        FAILED+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[dist_clean]")
                                     }
                                 else
                                     optional_maintainer_clean_check && {
                                         if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
-                                            SUCCEEDED="${SUCCEEDED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[maintainer_clean]"
+                                            SUCCEEDED+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[maintainer_clean]")
                                         fi
                                     } || {
                                         RES_ALLERRORS=$?
-                                        FAILED="${FAILED} NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[maintainer_clean]"
+                                        FAILED+=("NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}[maintainer_clean]")
                                     }
                                 fi
                                 echo "=== Completed sandbox cleanup-check after NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}, $BUILDSTODO build variants remaining"
@@ -2457,22 +2457,22 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 echo "=== One final try for optional_maintainer_clean_check:"
                 optional_maintainer_clean_check && {
                     if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
-                        SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                        SUCCEEDED+=("[final_maintainer_clean]")
                     fi
                 } || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} [final_maintainer_clean]"
+                    FAILED+=("[final_maintainer_clean]")
                 }
                 echo "=== Completed sandbox maintainer-cleanup-check after all builds"
             fi
 
-            if [ -n "$SUCCEEDED" ]; then
-                echo "SUCCEEDED build(s) with:${SUCCEEDED}" >&2
+            if [ "${#SUCCEEDED[*]}" -gt 0 ]; then
+                echo "SUCCEEDED build(s) with: ${SUCCEEDED[*]}" >&2
             fi
 
             if [ "$RES_ALLERRORS" != 0 ]; then
                 # Leading space is included in FAILED
-                echo "FAILED build(s) with code ${RES_ALLERRORS}:${FAILED}" >&2
+                echo "FAILED build(s) with code ${RES_ALLERRORS}: ${FAILED[*]}" >&2
             else
                 echo "(and no build scenarios had failed)" >&2
             fi
