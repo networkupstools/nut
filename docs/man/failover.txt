@@ -112,6 +112,24 @@ itself. This mode is for setups where immediate shutdown is warranted,
 regardless of anything else, and getting `FSD` out to the clients as fast as
 just possible.
 
+*checkruntime*='0|1|2|3'::
+Optional. Controls how `battery.runtime` values are used to break ties between
+non-fully-online UPS devices **at priority 3 or lower**. Has no effect on
+initial priority selection or when `strictfiltering` is enabled. Defaults to 1.
+
+- `0`: *Disabled.* No runtime comparison is done. The first candidate with the
+best priority is selected according to the order of the port argument.
+
+- `1`: *Compare `battery.runtime`.* The UPS with the higher value is preferred.
+If the value is missing or invalid, the UPS cannot win the tie-break.
+
+- `2`: *Compare `battery.runtime.low`.* The UPS with the higher value is
+preferred. If the value is missing or invalid, the UPS cannot win the tie-break.
+
+- `3`: *Compare both variables strictly.* The UPS is preferred only if it has
+both a higher `battery.runtime` and `battery.runtime.low` value. If either is
+missing or invalid, the UPS cannot win the tie-break.
+
 *strictfiltering*='0|1':: Optional. If set to 1, only UPS drivers matching the
 configured status filters are considered for promotion to primary. If set to 0,
 the hard-coded default logic is also considered when no status filters match
@@ -249,6 +267,11 @@ LIMITATIONS
 When using `failover` for redundancy between multiple UPS drivers connected to
 the same underlying UPS device, data is not multiplexed between the drivers. As
 a result, some data points may be available in some drivers but not in others.
+
+For `checkruntime` considerations, the unit of both `battery.runtime` and
+`battery.runtime.low` is assumed to be **seconds**. UPS drivers that report
+these values using different units are considered non-compliant with the NUT
+variable standards and should be reported to the NUT developers as faulty.
 
 AUTHOR
 ------
