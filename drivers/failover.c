@@ -98,8 +98,8 @@ static int ups_get_cmd_pos(const ups_device_t *ups, const char *cmd);
 static int ups_add_cmd(ups_device_t *ups, const char *val);
 static int ups_del_cmd(ups_device_t *ups, const char *val);
 
-static void ups_get_runtimes(const ups_device_t *ups, int *runtime, int *runtime_low);
 static int has_better_runtime(int rt, int rt_low, int best_rt, int best_rt_low, int mode);
+static void ups_get_runtimes(const ups_device_t *ups, int *runtime, int *runtime_low);
 static int ups_get_var_pos(const ups_device_t *ups, const char *key);
 static int ups_set_var(ups_device_t *ups, const char *key, const char *value);
 static int ups_del_var(ups_device_t *ups, const char *key);
@@ -284,16 +284,16 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "fsdmode", buf);
 
 	snprintf(buf, sizeof(buf),
-		"Sets if only the given status filters should be considered for "
-		"UPS driver to be electable as primary (default: %d)",
-		arg_strict_filtering);
-	addvar(VAR_VALUE, "strictfiltering", buf);
-
-	snprintf(buf, sizeof(buf),
 		"Sets if runtime remaining variables should resolve ties for non-OL priorities "
 		"3 and lower (0: disabled, 1: runtime, 2: runtime low, 3: both) (default: %d)",
 		arg_check_runtime);
 	addvar(VAR_VALUE, "checkruntime", buf);
+
+	snprintf(buf, sizeof(buf),
+		"Sets if only the given status filters should be considered for "
+		"UPS driver to be electable as primary (default: %d)",
+		arg_strict_filtering);
+	addvar(VAR_VALUE, "strictfiltering", buf);
 
 	addvar(VAR_VALUE, "status_have_any",
 		"Comma separated list of status tokens, any present qualifies "
@@ -560,11 +560,11 @@ static void handle_arguments(void)
 	str_arg_to_int("fsdmode", getval("fsdmode"),
 		&arg_fsdmode, DEFAULT_FSD_MODE, 0, 2);
 
-	str_arg_to_int("strictfiltering", getval("strictfiltering"),
-		&arg_strict_filtering, DEFAULT_STRICT_FILTERING, 0, 1);
-
 	str_arg_to_int("checkruntime", getval("checkruntime"),
 		&arg_check_runtime, DEFAULT_CHECK_RUNTIME, 0, 3);
+
+	str_arg_to_int("strictfiltering", getval("strictfiltering"),
+		&arg_strict_filtering, DEFAULT_STRICT_FILTERING, 0, 1);
 }
 
 static void parse_port_argument(void)
@@ -681,7 +681,7 @@ static void export_driver_state(void)
 		dstate_delinfo("driver.primary.stats.vars");
 	}
 
-	upsdebugx(4, "%s: exported internal driver state to dstate",
+	upsdebugx(5, "%s: exported internal driver state to dstate",
 		__func__);
 }
 
@@ -1443,7 +1443,7 @@ static int ups_passes_status_filters(const ups_device_t *ups)
 		arg_status_filters.nothave_any_count == 0 &&
 		arg_status_filters.nothave_all_count == 0) {
 
-		upsdebugx(4, "%s: [%s]: no status filters are set, disregarding filtering",
+		upsdebugx(5, "%s: [%s]: no status filters are set, disregarding filtering",
 			__func__, ups->socketname);
 
 		return 0;
@@ -1739,6 +1739,24 @@ static int ups_del_cmd(ups_device_t *ups, const char *val)
 	return 0;
 }
 
+static int has_better_runtime(int rt, int rt_low, int best_rt, int best_rt_low, int mode)
+{
+	switch (mode) {
+		case 1:
+			/* compare runtime */
+			return rt > best_rt;
+		case 2:
+			/* compare runtime low */
+			return rt_low > best_rt_low;
+		case 3:
+			/* compare runtime + runtime low */
+			return (rt > best_rt && rt_low > best_rt_low);
+		default:
+			/* invalid mode */
+			return 0;
+	}
+}
+
 static void ups_get_runtimes(const ups_device_t *ups, int *runtime, int *runtime_low)
 {
 	int tmp = -1;
@@ -1761,24 +1779,6 @@ static void ups_get_runtimes(const ups_device_t *ups, int *runtime, int *runtime
 
 	if (pos_rt_low >= 0 && str_to_int(ups->var_list[pos_rt_low]->value, &tmp, 10)) {
 		*runtime_low = tmp;
-	}
-}
-
-static int has_better_runtime(int rt, int rt_low, int best_rt, int best_rt_low, int mode)
-{
-	switch (mode) {
-		case 1:
-			/* compare runtime */
-			return rt > best_rt;
-		case 2:
-			/* compare runtime low */
-			return rt_low > best_rt_low;
-		case 3:
-			/* compare runtime + runtime low */
-			return (rt > best_rt && rt_low > best_rt_low);
-		default:
-			/* invalid mode */
-			return 0;
 	}
 }
 
