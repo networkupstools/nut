@@ -47,10 +47,10 @@
 typedef enum {
     PRIORITY_SKIPPED = -1,
     PRIORITY_FORCED = 0,
-    PRIORITY_USERFILTERS = 1,
-    PRIORITY_GOOD = 2,
-    PRIORITY_WEAK = 3,
-    PRIORITY_LASTRESORT = 4
+    PRIORITY_STATUSFILTERS = 1,
+    PRIORITY_ONLINE = 2,
+    PRIORITY_BATTERY = 3,
+    PRIORITY_STALE = 4
 } ups_priority_t;
 
 typedef enum {

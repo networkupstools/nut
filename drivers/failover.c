@@ -1381,7 +1381,7 @@ static ups_device_t *get_primary_candidate(void)
 					__func__, ups->socketname, elapsed_force, ups->force_primary);
 			}
 			else if (ups_passes_status_filters(ups)) {
-				priority = PRIORITY_USERFILTERS;
+				priority = PRIORITY_STATUSFILTERS;
 			}
 			else if (arg_strict_filtering) {
 				upsdebugx(4, "%s: [%s]: 'strict_filtering' is enabled, considering "
@@ -1389,13 +1389,13 @@ static ups_device_t *get_primary_candidate(void)
 					__func__, ups->socketname);
 			}
 			else if (ups_has_flag(ups, (ups_flags_t)(UPS_FLAG_DATA_OK | UPS_FLAG_ONLINE))) {
-				priority = PRIORITY_GOOD;
+				priority = PRIORITY_ONLINE;
 			}
 			else if (ups_has_flag(ups, UPS_FLAG_DATA_OK)) {
-				priority = PRIORITY_WEAK;
+				priority = PRIORITY_BATTERY;
 			}
 			else {
-				priority = PRIORITY_LASTRESORT;
+				priority = PRIORITY_STALE;
 			}
 		}
 
@@ -1411,7 +1411,7 @@ static ups_device_t *get_primary_candidate(void)
 				best_runtime = rt;
 				best_runtime_low = rt_low;
 			}
-			else if (priority == best_priority && arg_check_runtime && priority >= PRIORITY_WEAK) {
+			else if (priority == best_priority && arg_check_runtime && priority >= PRIORITY_BATTERY) {
 				/* All devices are not fully online and runtime checking is enabled, compare values: */
 				if (has_better_runtime(rt, rt_low, best_runtime, best_runtime_low, arg_check_runtime)) {
 					best_choice = ups;
