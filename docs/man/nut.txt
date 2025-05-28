@@ -147,6 +147,7 @@ The "primary" system is usually also responsible for commanding the managed
   systems would otherwise remain shut down indefinitely (until someone comes
   and reboots them) just because external power returned when the shut down
   spree had already started.
+
 * linkman:upsc[1] is a command-line client for anonymous read-only access,
   used to list devices served by a NUT data server, or to query data points
   reported by a particular device.
