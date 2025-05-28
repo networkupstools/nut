@@ -104,8 +104,6 @@ typedef struct {
 } status_filters_t;
 
 typedef struct {
-	char *name;
-	char *drivername;
 	char *socketname;
 
 	udq_pipe_conn_t *conn;

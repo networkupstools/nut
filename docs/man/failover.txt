@@ -59,10 +59,10 @@ EXTRA ARGUMENTS
 This driver supports the following settings:
 
 *port*='drivername-devicename,drivername2-devicename2,...'::
-Required. Specifies the local socket names (or Windows named pipes) of the
-underlying UPS drivers to be tracked. Entries must follow the format
+Required. Specifies the local sockets (or Windows named pipes) of the underlying
+UPS drivers to be tracked. Entries must either be a path or follow the format
 `drivername-devicename`, as used by NUT's internal socket naming convention
-(e.g. `usbhid-ups-ups1`). Multiple entries are comma-separated with no spaces.
+(e.g. `usbhid-ups-myups`). Multiple entries are comma-separated with no spaces.
 
 *inittime*='seconds'::
 Optional. Sets a grace period after driver startup during which the absence of a

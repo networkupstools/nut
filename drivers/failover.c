@@ -111,7 +111,6 @@ static void free_status_filters(void);
 static void ups_free_ups_state(ups_device_t *ups);
 static void ups_free_var_state(ups_var_t *var);
 static const char *rewrite_driver_prefix(const char *in, char *out, size_t outlen);
-static int split_socket_name(const char *input, char **driver, char **ups);
 static int str_arg_to_int(const char *arg, const char *argval, int *destvar, int defval, int min, int max);
 static ssize_t csv_arg_to_array(const char *arg, const char *argcsv, char ***array, size_t *countvar);
 
@@ -321,16 +320,6 @@ void upsdrv_cleanup(void)
 
 			ups_free_ups_state(ups); /* free status, vars, subvars + cmds */
 
-			if (ups->name) {
-				free(ups->name);
-				ups->name = NULL;
-			}
-
-			if (ups->drivername) {
-				free(ups->drivername);
-				ups->drivername = NULL;
-			}
-
 			if (ups->socketname) {
 				free(ups->socketname);
 				ups->socketname = NULL;
@@ -448,7 +437,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		tv.tv_sec = CONN_CMD_TIMEOUT;
 		tv.tv_usec = 0;
 
-		cmdret = upsdrvquery_oneshot(primary_ups->drivername, primary_ups->name,
+		cmdret = upsdrvquery_oneshot_sockfn(primary_ups->socketname,
 			msgbuf, NULL, 0, &tv);
 
 		if (cmdret >= 0) {
@@ -511,7 +500,7 @@ static int setvar(const char *varname, const char *val)
 		tv.tv_sec = CONN_CMD_TIMEOUT;
 		tv.tv_usec = 0;
 
-		cmdret = upsdrvquery_oneshot(primary_ups->drivername, primary_ups->name,
+		cmdret = upsdrvquery_oneshot_sockfn(primary_ups->socketname,
 			msgbuf, NULL, 0, &tv);
 
 		if (cmdret >= 0) {
@@ -595,22 +584,6 @@ static void parse_port_argument(void)
 		new_ups = xcalloc(1, sizeof(**ups_list));
 		new_ups->socketname = xstrdup(token);
 
-		if (!split_socket_name(new_ups->socketname, &new_ups->drivername, &new_ups->name)) {
-			char buf[SMALLBUF];
-			snprintf(buf, sizeof(buf), "%s", token); /* for fatalx */
-
-			free(new_ups->socketname);
-			free(new_ups);
-			free(tmp);
-
-			fatalx(EXIT_FAILURE, "%s: %s: the 'port' argument has an invalid format, "
-				"[%s] is not a valid splittable socket name, please correct the argument",
-				progname, __func__, buf);
-		} else {
-			upsdebugx(3, "%s: [%s] was parsed into UPS driver [%s] and UPS [%s]",
-				__func__, new_ups->socketname, new_ups->drivername, new_ups->name);
-		}
-
 		ups_list = xrealloc(ups_list, sizeof(*ups_list) * (ups_count + 1));
 		ups_list[ups_count] = new_ups;
 		ups_count++;
@@ -686,16 +659,12 @@ static void export_driver_state(void)
 	dstate_setinfo("driver.stats.total_drivers", "%" PRIuSIZE, ups_count);
 
 	if (primary_ups) {
-		dstate_setinfo("driver.primary.upsname", "%s", primary_ups->name);
-		dstate_setinfo("driver.primary.drvname", "%s", primary_ups->drivername);
-		dstate_setinfo("driver.primary.sockname", "%s", primary_ups->socketname);
+		dstate_setinfo("driver.primary.socketname", "%s", primary_ups->socketname);
 		dstate_setinfo("driver.primary.priority", "%d", primary_ups->priority);
 		dstate_setinfo("driver.primary.stats.cmds", "%" PRIuSIZE, primary_ups->cmd_count);
 		dstate_setinfo("driver.primary.stats.vars", "%" PRIuSIZE, primary_ups->var_count);
 	} else {
-		dstate_delinfo("driver.primary.upsname");
-		dstate_delinfo("driver.primary.drvname");
-		dstate_delinfo("driver.primary.sockname");
+		dstate_delinfo("driver.primary.socketname");
 		dstate_delinfo("driver.primary.priority");
 		dstate_delinfo("driver.primary.stats.cmds");
 		dstate_delinfo("driver.primary.stats.vars");
@@ -2246,34 +2215,6 @@ static const char *rewrite_driver_prefix(const char *in, char *out, size_t outle
 	}
 
 	return in;
-}
-
-static int split_socket_name(const char *input, char **driver, char **ups)
-{
-	size_t drv_len = 0;
-	size_t ups_len = 0;
-	const char *last_dash = strrchr(input, '-');
-
-	if (!input || !last_dash || last_dash == input || *(last_dash + 1) == '\0') {
-		*driver = NULL;
-		*ups = NULL;
-
-		return 0;
-	}
-
-	drv_len = last_dash - input;
-	ups_len = strlen(last_dash + 1);
-
-	*driver = xmalloc(drv_len + 1);
-	*ups = xmalloc(ups_len + 1);
-
-	snprintf(*driver, (drv_len + 1), "%.*s", (int)drv_len, input);
-	snprintf(*ups, (ups_len + 1), "%s", last_dash + 1);
-
-	str_trim_space(*driver);
-	str_trim_space(*ups);
-
-	return 1;
 }
 
 static int str_arg_to_int(const char *arg, const char *argval, int *destvar, int defval, int min, int max)
