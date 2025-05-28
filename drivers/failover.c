@@ -89,6 +89,7 @@ static void ups_is_offline(ups_device_t *ups);
 
 static ups_device_t *get_primary_candidate(void);
 static int ups_passes_status_filters(const ups_device_t *ups);
+static int has_better_runtime(int rt, int rt_low, int best_rt, int best_rt_low, int mode);
 static void ups_promote_primary(ups_device_t *ups);
 static void ups_demote_primary(ups_device_t *ups);
 static void ups_export_dstate(ups_device_t *ups);
@@ -98,8 +99,6 @@ static int ups_get_cmd_pos(const ups_device_t *ups, const char *cmd);
 static int ups_add_cmd(ups_device_t *ups, const char *val);
 static int ups_del_cmd(ups_device_t *ups, const char *val);
 
-static int has_better_runtime(int rt, int rt_low, int best_rt, int best_rt_low, int mode);
-static void ups_get_runtimes(const ups_device_t *ups, int *runtime, int *runtime_low);
 static int ups_get_var_pos(const ups_device_t *ups, const char *key);
 static int ups_set_var(ups_device_t *ups, const char *key, const char *value);
 static int ups_del_var(ups_device_t *ups, const char *key);
@@ -844,6 +843,9 @@ static int ups_connect(ups_device_t *ups)
 			ups_free_ups_state(ups); /* free any previous state */
 			ups->force_dstate_export = 1;
 
+			ups->runtime = -1;
+			ups->runtime_low = -1;
+
 			ups_is_alive(ups);
 			time(&ups->last_heard_time);
 
@@ -1143,6 +1145,18 @@ static int ups_parse_protocol(ups_device_t *ups, size_t numargs, char **arg)
 			}
 		}
 
+		if (!strcmp(arg[1], "battery.runtime")) {
+			if (!str_to_int(arg[2], &ups->runtime, 10)) {
+				ups->runtime = -1;
+			}
+		}
+
+		if (!strcmp(arg[1], "battery.runtime.low")) {
+			if (!str_to_int(arg[2], &ups->runtime_low, 10)) {
+				ups->runtime_low = -1;
+			}
+		}
+
 		ups_set_var(ups, varptr, arg[2]);
 
 		return 1;
@@ -1386,14 +1400,10 @@ static ups_device_t *get_primary_candidate(void)
 		}
 
 		if (priority >= 0) {
-			int rt = -1;
-			int rt_low = -1;
+			int rt = ups->runtime;
+			int rt_low = ups->runtime_low;
 
 			primaries++;
-
-			if (arg_check_runtime && priority >= PRIORITY_WEAK) {
-				ups_get_runtimes(ups, &rt, &rt_low);
-			}
 
 			if (priority < best_priority) {
 				best_choice = ups;
@@ -1410,7 +1420,7 @@ static ups_device_t *get_primary_candidate(void)
 				}
 			}
 
-			upsdebugx(4, "%s: [%s]: is candidate (priority [%d], runtime [%d]/[%d])",
+			upsdebugx(4, "%s: [%s]: is a candidate (priority [%d], runtime [%d]/[%d])",
 				__func__, ups->socketname, priority, rt, rt_low);
 		}
 
@@ -1420,7 +1430,7 @@ static ups_device_t *get_primary_candidate(void)
 	ups_primary_count = primaries;
 
 	if (best_choice) {
-		upsdebugx(4, "%s: [%s]: was selected (priority [%d], runtime [%d]/[%d])",
+		upsdebugx(4, "%s: [%s]: is best candidate (priority [%d], runtime [%d]/[%d])",
 			__func__, best_choice->socketname, best_priority, best_runtime, best_runtime_low);
 	}
 
@@ -1502,7 +1512,24 @@ static int ups_passes_status_filters(const ups_device_t *ups)
 	return 1;
 }
 
-/* Promote a UPS driver that is not NULL and not already the current primary */
+static int has_better_runtime(int rt, int rt_low, int best_rt, int best_rt_low, int mode)
+{
+	switch (mode) {
+		case 1:
+			/* compare runtime */
+			return rt > best_rt;
+		case 2:
+			/* compare runtime low */
+			return rt_low > best_rt_low;
+		case 3:
+			/* compare runtime + runtime low */
+			return (rt > best_rt && rt_low > best_rt_low);
+		default:
+			/* invalid mode */
+			return 0;
+	}
+}
+
 static void ups_promote_primary(ups_device_t *ups)
 {
 	if (!ups || primary_ups == ups) {
@@ -1737,49 +1764,6 @@ static int ups_del_cmd(ups_device_t *ups, const char *val)
 		__func__, ups->socketname, val);
 
 	return 0;
-}
-
-static int has_better_runtime(int rt, int rt_low, int best_rt, int best_rt_low, int mode)
-{
-	switch (mode) {
-		case 1:
-			/* compare runtime */
-			return rt > best_rt;
-		case 2:
-			/* compare runtime low */
-			return rt_low > best_rt_low;
-		case 3:
-			/* compare runtime + runtime low */
-			return (rt > best_rt && rt_low > best_rt_low);
-		default:
-			/* invalid mode */
-			return 0;
-	}
-}
-
-static void ups_get_runtimes(const ups_device_t *ups, int *runtime, int *runtime_low)
-{
-	int tmp = -1;
-	int pos_rt = -1;
-	int pos_rt_low = -1;
-
-	if (!ups || !runtime || !runtime_low) {
-		return;
-	}
-
-	pos_rt = ups_get_var_pos(ups, "battery.runtime");
-	pos_rt_low = ups_get_var_pos(ups, "battery.runtime.low");
-
-	*runtime = -1;
-	*runtime_low = -1;
-
-	if (pos_rt >= 0 && str_to_int(ups->var_list[pos_rt]->value, &tmp, 10)) {
-		*runtime = tmp;
-	}
-
-	if (pos_rt_low >= 0 && str_to_int(ups->var_list[pos_rt_low]->value, &tmp, 10)) {
-		*runtime_low = tmp;
-	}
 }
 
 static int ups_get_var_pos(const ups_device_t *ups, const char *key)

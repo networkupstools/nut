@@ -128,11 +128,14 @@ typedef struct {
 
 	ups_flags_t flags;
 	ups_priority_t priority;
-	int failure_count;
+	int runtime;
+	int runtime_low;
 
 	int force_ignore;
 	int force_primary;
 	int force_dstate_export;
+
+	int failure_count;
 } ups_device_t;
 
 #endif	/* FAILOVER_H_SEEN */
