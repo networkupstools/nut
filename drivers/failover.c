@@ -1284,14 +1284,14 @@ static void ups_is_dead(ups_device_t *ups) {
 		ups_alive_count--;
 		upsdebugx(2, "%s: [%s]: is now dead "
 			"with (last known) status [%s] (alive devices: %" PRIuSIZE ")",
-			__func__, ups->socketname, ups->status, ups_alive_count);
+			__func__, ups->socketname, NUT_STRARG(ups->status), ups_alive_count);
 	}
 
 	if (ups_has_flag(ups, UPS_FLAG_ONLINE)) {
 		ups_online_count--;
 		upsdebugx(3, "%s: [%s]: was online with (last known) "
 			"status [%s] and is now dead (online devices: %" PRIuSIZE ")",
-			__func__, ups->socketname, ups->status, ups_online_count);
+			__func__, ups->socketname, NUT_STRARG(ups->status), ups_online_count);
 	}
 }
 
@@ -1301,7 +1301,7 @@ static void ups_is_online(ups_device_t *ups) {
 		ups_online_count++;
 		upsdebugx(2, "%s: [%s]: is now online "
 			"with status [%s] (online devices: %" PRIuSIZE ")",
-			__func__, ups->socketname, ups->status, ups_online_count);
+			__func__, ups->socketname, NUT_STRARG(ups->status), ups_online_count);
 	}
 }
 
@@ -1311,7 +1311,7 @@ static void ups_is_offline(ups_device_t *ups) {
 		ups_online_count--;
 		upsdebugx(2, "%s: [%s]: is now offline "
 			"with status [%s] (online devices: %" PRIuSIZE ")",
-			__func__, ups->socketname, ups->status, ups_online_count);
+			__func__, ups->socketname, NUT_STRARG(ups->status), ups_online_count);
 	}
 }
 
@@ -1440,13 +1440,13 @@ static ups_device_t *get_primary_candidate(void)
 static int ups_passes_status_filters(const ups_device_t *ups)
 {
 	size_t i = 0;
-	const char *status = NULL;
 
-	if (!*ups->status) {
+	if (!ups->status || *ups->status == '\0') {
+		upsdebugx(4, "%s: [%s]: no status is available, disregarding filtering",
+			__func__, ups->socketname);
+
 		return 0;
 	}
-
-	status = ups->status;
 
 	if (arg_status_filters.have_any_count == 0 &&
 		arg_status_filters.have_all_count == 0 &&
@@ -1460,7 +1460,7 @@ static int ups_passes_status_filters(const ups_device_t *ups)
 	}
 
 	for (i = 0; i < arg_status_filters.nothave_any_count; ++i) {
-		if (str_contains_token(status, arg_status_filters.nothave_any[i])) {
+		if (str_contains_token(ups->status, arg_status_filters.nothave_any[i])) {
 			upsdebugx(4, "%s: [%s]: nothave_any: [%s] was found, excluded",
 				__func__, ups->socketname, arg_status_filters.nothave_any[i]);
 
@@ -1469,7 +1469,7 @@ static int ups_passes_status_filters(const ups_device_t *ups)
 	}
 
 	for (i = 0; i < arg_status_filters.have_all_count; ++i) {
-		if (!str_contains_token(status, arg_status_filters.have_all[i])) {
+		if (!str_contains_token(ups->status, arg_status_filters.have_all[i])) {
 			upsdebugx(4, "%s: [%s]: have_all: [%s] not found, excluded",
 				__func__, ups->socketname, arg_status_filters.have_all[i]);
 
@@ -1480,7 +1480,7 @@ static int ups_passes_status_filters(const ups_device_t *ups)
 	if (arg_status_filters.nothave_all_count > 0) {
 		int all_found = 1;
 		for (i = 0; i < arg_status_filters.nothave_all_count; ++i) {
-			if (!str_contains_token(status, arg_status_filters.nothave_all[i])) {
+			if (!str_contains_token(ups->status, arg_status_filters.nothave_all[i])) {
 				all_found = 0;
 				break;
 			}
@@ -1496,7 +1496,7 @@ static int ups_passes_status_filters(const ups_device_t *ups)
 	if (arg_status_filters.have_any_count > 0) {
 		int any_found = 0;
 		for (i = 0; i < arg_status_filters.have_any_count; ++i) {
-			if (str_contains_token(status, arg_status_filters.have_any[i])) {
+			if (str_contains_token(ups->status, arg_status_filters.have_any[i])) {
 				any_found = 1;
 				break;
 			}
@@ -1552,7 +1552,8 @@ static void ups_promote_primary(ups_device_t *ups)
 
 	upslogx(LOG_NOTICE, "%s: [%s]: was promoted "
 		"to primary with status [%s] and priority [%d]",
-		__func__, primary_ups->socketname, primary_ups->status, primary_ups->priority);
+		__func__, primary_ups->socketname,
+		NUT_STRARG(primary_ups->status), primary_ups->priority);
 
 	ups_export_dstate(primary_ups);
 }
@@ -1566,7 +1567,8 @@ static void ups_demote_primary(ups_device_t *ups)
 
 	upslogx(LOG_NOTICE, "%s: [%s]: is no longer "
 		"primary with (last known) status [%s] and priority [%d]",
-		__func__, last_primary_ups->socketname, last_primary_ups->status, last_primary_ups->priority);
+		__func__, last_primary_ups->socketname,
+		NUT_STRARG(last_primary_ups->status), last_primary_ups->priority);
 
 	ups_clean_dstate(last_primary_ups);
 }
