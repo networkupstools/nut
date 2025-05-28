@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3509 utf-8
+personal_ws-1.1 en 3517 utf-8
 AAC
 AAS
 ABI
@@ -615,6 +615,7 @@ LCDRM
 LCDRT
 LCDRTXL
 LDADD
+LDAP
 LDFLAGS
 LDLC
 LDRIVER
@@ -1046,6 +1047,7 @@ QVFW
 QWS
 QinHeng
 Quette
+RBAC
 RBWARNTIME
 RDLCK
 RDNT
@@ -1806,6 +1808,7 @@ configurationProvider
 configureaz
 configureaza
 confpath
+conn
 const
 contrib
 cooldown
@@ -2702,6 +2705,7 @@ onbattery
 onbattwarn
 ondelay
 oneac
+oneshot
 online
 onlinedischarge
 ont
@@ -2911,6 +2915,7 @@ reposurgeon
 repotec
 req
 resetter
+resizing
 resolv
 restoreconf
 resync
@@ -3058,6 +3063,7 @@ snr
 socat
 sockdebug
 socketname
+sockfn
 socomec
 solari
 solaris
@@ -3146,6 +3152,7 @@ subnet
 subnets
 subtree
 sudo
+sudoers
 suggestsrcdoc
 suid
 suppressions
@@ -3265,6 +3272,7 @@ ucd
 ucrt
 udev
 udevadm
+udq
 ufw
 ugen
 ui

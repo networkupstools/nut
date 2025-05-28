@@ -59,6 +59,13 @@ https://github.com/networkupstools/nut/milestone/9
      `DRIVERLIST` variables inspected by `configure` script, rather than
      having all their names hard-coded like before, led to inability to
      `configure --with-drivers=dummy-ups`. [#2825, #2927, fixed by PR #2929]
+   * A problem noted with `upsdrvquery` (since NUT v2.8.1) message logging
+     at high debug verbosity levels (5+) with very large blocks of content
+     has exposed a deficiency in variable-argument handling, and specifically
+     adaptive resizing of the output buffer or truncation of logged inputs
+     (which is something NUT code tried to do since the beginning of time),
+     and could lead to "segmentation fault" crashes on some platforms.
+     [issue #2948, PR #2963]
 
  - common code:
    * Revised common `writepid()` to use `altpidpath()` as location for the
@@ -80,6 +87,23 @@ https://github.com/networkupstools/nut/milestone/9
      for this name": the way to extract IP address string was not portable
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
+
+ - `upsdrvquery` API updates [#2969]:
+   * Added `upsdrvquery_oneshot_conn()` for issuing one-shot queries using an
+     existing `udq_pipe_conn_t *` connection. The caller manages the
+     connection's lifecycle, and the function includes a best-effort call to
+     restore broadcast mode after the query to return the connection as it was.
+   * Added `upsdrvquery_oneshot_sockfn()` for initiating one-shot queries using
+     a socket filename. Shares internal logic with the existing
+     `upsdrvquery_oneshot()`, which uses a UPS and driver name, respectively.
+   * Introduced `upsdrvquery_restore_broadcast()` to explicitly restore
+     broadcast mode (`BROADCAST 1`) on a connection, helping return it to a
+     consistent and talkative state.
+   * Revised connection ownership handling: internal functions like
+     `upsdrvquery_prepare()` and `upsdrvquery_request()` no longer close
+     connections they do not own. Responsibility for cleanup is now delegated to
+     the caller to avoid unintended side effects and better align with expected
+     usage patterns.
 
  - common driver code:
    * Update reports of failed socket file creation, to help troubleshooting

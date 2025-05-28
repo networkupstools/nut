@@ -92,6 +92,29 @@ if test -z "${nut_have_libnss_seen}"; then
 		nut_ssl_lib="(Mozilla NSS)"
 		AC_DEFINE(WITH_SSL, 1, [Define to enable SSL support])
 		AC_DEFINE(WITH_NSS, 1, [Define to enable SSL support using Mozilla NSS])
+
+		dnl # Repeat some tricks from nut_compiler_family.m4
+		AS_IF([test "x$cross_compiling" != xyes], [
+			AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
+				dnl # CLANG dislikes MPS headers for use of reserved
+				dnl # identifiers (starting with underscores, some
+				dnl # with upper-case letters afterwards - oh, the
+				dnl # blasphemers!)
+				addCFLAGS=""
+				for TOKEN in ${depCFLAGS} ; do
+					case "${TOKEN}" in
+						-I*)	TOKENDIR="`echo "$TOKEN" | sed 's,^-I,,'`"
+							case " ${CFLAGS} ${addCFLAGS} " in
+								*" -isystem $TOKENDIR "*) ;;
+								*) addCFLAGS="${addCFLAGS} -isystem $TOKENDIR" ;;
+							esac ;;
+					esac
+				done
+				test -z "${addCFLAGS}" || depCFLAGS="${depCFLAGS} ${addCFLAGS}"
+				unset addCFLAGS
+			])
+		])
+
 		LIBSSL_CFLAGS="${depCFLAGS}"
 		LIBSSL_LIBS="${depLIBS}"
 		LIBSSL_REQUIRES="${depREQUIRES}"
@@ -111,6 +134,7 @@ if test -z "${nut_have_libnss_seen}"; then
 dnl		if test x"$LIBSSL_LDFLAGS_RPATH" != x ; then
 dnl			LIBSSL_LDFLAGS_RPATH="--enable-new-dtags $LIBSSL_LDFLAGS_RPATH"
 dnl		fi
+
 	fi
 
 	unset depCFLAGS
