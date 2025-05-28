@@ -2039,25 +2039,25 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             # NOTE: We count different dependency variations separately,
             # and analyze later, to avoid building same (auto+auto) twice
             BUILDSTODO_LIST=()
-            BUILDSTODO_SSL=0
+            BUILDSTODO_SSL="${#NUT_SSL_VARIANTS[@]}"
             for NUT_SSL_VARIANT in "${NUT_SSL_VARIANTS[@]}" ; do
-                BUILDSTODO_SSL="`expr $BUILDSTODO_SSL + 1`"
+                #BUILDSTODO_SSL="`expr $BUILDSTODO_SSL + 1`"
                 if [ x"${BUILD_TYPE}" = x"default-all-errors-exhaustive" ] ; then
                     BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${NUT_SSL_VARIANT}")
                 fi
             done
 
-            BUILDSTODO_USB=0
+            BUILDSTODO_USB="${#NUT_USB_VARIANTS[@]}"
             for NUT_USB_VARIANT in "${NUT_USB_VARIANTS[@]}" ; do
-                BUILDSTODO_USB="`expr $BUILDSTODO_USB + 1`"
+                #BUILDSTODO_USB="`expr $BUILDSTODO_USB + 1`"
                 if [ x"${BUILD_TYPE}" = x"default-all-errors-exhaustive" ] ; then
                     BUILDSTODO_LIST+=("NUT_USB_VARIANT=${NUT_USB_VARIANT}")
                 fi
             done
 
-            BUILDSTODO_UNMAPPED=0
+            BUILDSTODO_UNMAPPED="${#NUT_UNMAPPED_VARIANTS[@]}"
             for NUT_UNMAPPED_VARIANT in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
-                BUILDSTODO_UNMAPPED="`expr $BUILDSTODO_UNMAPPED + 1`"
+                : # BUILDSTODO_UNMAPPED="`expr $BUILDSTODO_UNMAPPED + 1`"
             done
 
             # Use the only one requested right away
