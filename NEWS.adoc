@@ -178,6 +178,14 @@ https://github.com/networkupstools/nut/milestone/9
    name (`man1m`), as different OS distributions have different preferences
    in this regard. [#2950]
 
+ - The `BUILD_TYPE=default-all-errors ci_build.sh` script handling was
+   revised to simplify code, and to default in CI builds to a quicker
+   mode which randomly mixes the selected SSL, USB and UNMAPPED variants
+   (and relies on the dozens of NUT CI farm runs per iteration to likely
+   cover all possible combinations), which should roughly halve the CI
+   build times. Default activity for developer builds should remain as
+   it was -- to try each such "axis" sequentially. [#2973]
+
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------
