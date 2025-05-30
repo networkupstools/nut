@@ -2396,12 +2396,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             fi
 
             if [ "${#SUCCEEDED[*]}" -gt 0 ]; then
-                echo "SUCCEEDED build(s) with: ${SUCCEEDED[*]}" >&2
+                echo "SUCCEEDED ${#SUCCEEDED[@]} build(s) with: ${SUCCEEDED[*]}" >&2
             fi
 
             if [ "$RES_ALLERRORS" != 0 ]; then
                 # Leading space is included in FAILED
-                echo "FAILED build(s) with code ${RES_ALLERRORS}: ${FAILED[*]}" >&2
+                echo "FAILED ${#FAILED[@]} build(s) with code ${RES_ALLERRORS}: ${FAILED[*]}" >&2
             else
                 echo "(and no build scenarios had failed)" >&2
             fi
