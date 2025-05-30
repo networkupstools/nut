@@ -232,6 +232,10 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 #
 # Adjust this to keep upsmon from flooding your network, but don't make
 # it too high or it may miss certain short-lived power events.
+#
+# NOTE: This setting is different from a `pollfreq` supported by some of
+# the NUT driver programs, such as usbhid-ups (about how often the driver
+# polls a particular device).
 
 POLLFREQ 5
 
