@@ -857,6 +857,7 @@ SRC_SERIAL_PAGES = \
 	clone.txt	\
 	clone-outlet.txt	\
 	dummy-ups.txt	\
+	failover.txt	\
 	etapro.txt	\
 	everups.txt	\
 	gamatronic.txt	\
@@ -909,6 +910,7 @@ INST_MAN_SERIAL_PAGES = \
 	dummy-ups.$(MAN_SECTION_CMD_SYS)	\
 	etapro.$(MAN_SECTION_CMD_SYS)	\
 	everups.$(MAN_SECTION_CMD_SYS)	\
+	failover.$(MAN_SECTION_CMD_SYS)	\
 	gamatronic.$(MAN_SECTION_CMD_SYS)	\
 	genericups.$(MAN_SECTION_CMD_SYS)	\
 	isbmex.$(MAN_SECTION_CMD_SYS)	\
@@ -976,6 +978,7 @@ INST_HTML_SERIAL_MANS = \
 	dummy-ups.html	\
 	etapro.html	\
 	everups.html	\
+	failover.html	\
 	gamatronic.html	\
 	genericups.html	\
 	isbmex.html	\
