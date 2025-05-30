@@ -1426,7 +1426,11 @@ git-realclean-check:
 # quickly handled by external tools, to group (in life and log) various checks
 # separately from the probably slower/louder stages for test programs like
 # check-NIT:
-check-files-quick: spellcheck-quick check-man
+CHECK_FILES_QUICK_TARGETS = check-man
+if WITH_SPELLCHECK
+CHECK_FILES_QUICK_TARGETS += spellcheck-quick
+endif WITH_SPELLCHECK
+check-files-quick: $(CHECK_FILES_QUICK_TARGETS)
 
 # Autotools hook: run the quick checks before recursing for defaults:
 check-recursive: check-files-quick

@@ -55,6 +55,12 @@ https://github.com/networkupstools/nut/milestone/9
      v2.8.2), where `configure --with-docs=all` no longer failed a run
      of the `configure` script when some of the required rendering tools
      were not in fact available. [#2842, fixed by #2921]
+   * Some recipe improvements in earlier releases led to `make check` always
+     running a spelling check (if tools are available), even if the explicit
+     `configure --disable-spellcheck` option was used. Now it would not run
+     if disabled (e.g. to speed up CI builds in scenarios that focus on other
+     aspects of the code base), although developers can still use the explicit
+     `make spellcheck*` goals, when tools are in fact available. [#2973]
    * A change in `Makefile.am` recipes to evaluate some driver names in the
      `DRIVERLIST` variables inspected by `configure` script, rather than
      having all their names hard-coded like before, led to inability to
