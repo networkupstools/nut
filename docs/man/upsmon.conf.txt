@@ -361,6 +361,10 @@ Second, there is a point of diminishing returns if you set it too low.
 While upsd normally has all of the data available to it instantly, most
 drivers only refresh the UPS status once every 2 seconds.  Polling any
 more than that usually doesn't get you the information any faster.
++
+NOTE: This setting is different from a `pollfreq` supported by some of
+the NUT driver programs, such as linkman:usbhid-ups[8] (about how often
+the driver polls a particular device).
 
 *POLLFREQALERT* 'seconds'::
 
