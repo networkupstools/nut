@@ -3581,6 +3581,8 @@ AM_CONDITIONAL(WITH_CHECK_NIT, test "${nut_enable_check_NIT}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --enable-spellcheck
+dnl NOTE: If the tools are present, you can "make spellcheck" explicitly;
+dnl  this setting is about trying or not to run it as part of "make check".
 
 NUT_CHECK_ASPELL
 NUT_ARG_ENABLE([spellcheck], [Run spellcheck among default checks], [auto])
@@ -3602,7 +3604,8 @@ case "${nut_enable_spellcheck}" in
 esac
 AC_MSG_RESULT([${WITH_SPELLCHECK}])
 
-AM_CONDITIONAL(WITH_SPELLCHECK, test "${WITH_SPELLCHECK}" = "yes")
+NUT_REPORT_FEATURE([requested to spell-check the documentation], [${WITH_SPELLCHECK}], [],
+					[WITH_SPELLCHECK], [Define to enable documentation spell checking as part of default checks], [-])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-doc
