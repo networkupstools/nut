@@ -1433,6 +1433,54 @@ AS_IF([test x"${ac_cv_func_strdup}" = xyes],
     [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
+AC_CACHE_CHECK([for va_copy(dest,src)],
+  [ac_cv_have_va_copy],
+  [
+    AX_RUN_OR_LINK_IFELSE(
+      [AC_LANG_PROGRAM(
+        [[#include <stdarg.h>
+          void check_va_copy(const char *fmt, ...) {
+            va_list ap1, ap2;
+            va_start(ap1, fmt);
+            va_copy(ap2, ap1);
+            va_end(ap1);
+            va_end(ap2);
+          }]],
+        [[check_va_copy("%s", "test");]])],
+      [ac_cv_have_va_copy=yes],
+      [ac_cv_have_va_copy=no])
+  ])
+
+AS_IF([test x"$ac_cv_have_va_copy" = xyes],
+  [AC_DEFINE([HAVE_VA_COPY], [1], [defined if va_copy(dest,src) is available])])
+
+AC_CACHE_CHECK([for __va_copy(dest,src)],
+  [ac_cv_have___va_copy],
+  [
+    AX_RUN_OR_LINK_IFELSE(
+      [AC_LANG_PROGRAM(
+        [[#include <stdarg.h>
+          void check___va_copy(const char *fmt, ...) {
+            va_list ap1, ap2;
+            va_start(ap1, fmt);
+            __va_copy(ap2, ap1);
+            va_end(ap1);
+            va_end(ap2);
+          }]],
+        [[check___va_copy("%s", "test");]])],
+      [ac_cv_have___va_copy=yes],
+      [ac_cv_have___va_copy=no])
+  ])
+
+AS_IF([test x"$ac_cv_have___va_copy" = xyes],
+  [AC_DEFINE([HAVE___VA_COPY], [1], [defined if __va_copy(dest,src) is available])])
+
+AS_IF([test x"$ac_cv_have_va_copy" = xyes -o x"$ac_cv_have___va_copy" = xyes],
+  [AC_DEFINE([HAVE_VA_COPY_VARIANT], [1], [defined if va_copy or __va_copy is available])])
+
+AS_IF([test x"$ac_cv_have_va_copy" != xyes -a x"$ac_cv_have___va_copy" != xyes],
+  [AC_MSG_WARN([No va_copy(dest,src) or __va_copy(dest,src) available - may truncate oversized logs])])
+
 AC_CHECK_HEADER([sys/select.h],
     [AC_DEFINE([HAVE_SYS_SELECT_H], [1],
         [Define to 1 if you have <sys/select.h>.])])
@@ -3533,6 +3581,8 @@ AM_CONDITIONAL(WITH_CHECK_NIT, test "${nut_enable_check_NIT}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --enable-spellcheck
+dnl NOTE: If the tools are present, you can "make spellcheck" explicitly;
+dnl  this setting is about trying or not to run it as part of "make check".
 
 NUT_CHECK_ASPELL
 NUT_ARG_ENABLE([spellcheck], [Run spellcheck among default checks], [auto])
@@ -3554,7 +3604,8 @@ case "${nut_enable_spellcheck}" in
 esac
 AC_MSG_RESULT([${WITH_SPELLCHECK}])
 
-AM_CONDITIONAL(WITH_SPELLCHECK, test "${WITH_SPELLCHECK}" = "yes")
+NUT_REPORT_FEATURE([requested to spell-check the documentation], [${WITH_SPELLCHECK}], [],
+					[WITH_SPELLCHECK], [Define to enable documentation spell checking as part of default checks], [-])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-doc

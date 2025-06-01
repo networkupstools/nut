@@ -125,6 +125,14 @@ maintained by the community at large.  Some standard clients of note include:
   of them (through a data server running on one of them, on a machine actually
   connected to the UPS -- the "primary" system).
 +
+NOTE: The `upsmon` client typically splits into two processes: an unprivileged
+  one running with credentials of its `RUN_AS_USER` configured in the
+  linkman:upsmon.conf[5] file (or a built-in/packaged default like `nut`,
+  `monuser` or `nobody`) which does most of the work (including notification
+  scripts called via `NOTIFYCMD` setting), and the part which remains owned
+  by `root` to initiate the system shutdown by calling `SHUTDOWNCMD` when/if
+  the time comes.
++
 NUT deployments which desire higher-fidelity control (e.g. different systems
   shutting down after different time spent on battery) often couple `upsmon`
   with linkman:upssched[1].
@@ -139,6 +147,7 @@ The "primary" system is usually also responsible for commanding the managed
   systems would otherwise remain shut down indefinitely (until someone comes
   and reboots them) just because external power returned when the shut down
   spree had already started.
+
 * linkman:upsc[1] is a command-line client for anonymous read-only access,
   used to list devices served by a NUT data server, or to query data points
   reported by a particular device.
@@ -242,15 +251,16 @@ NUT Drivers as Service instances
 
 Starting with NUT v2.8.0, on systems with service management frameworks
 (like Linux systemd or Solaris/illumos SMF) you may be even inadvertently
-using the linkman:nut-driver-enumerator[8].  This is a script, which may
-also called automatically (via packaging on impacted platforms) at start-up
-or as a service, to process the linkman:ups.conf[5] file and maintain the
-service units (with their dependencies) for each driver section separately.
+using the linkman:nut-driver-enumerator[8] (also known as "NDE") facility.
+This is a script, which may be also called automatically (via packaging on
+supported platforms) at start-up or may be running continuously as a service,
+to process the linkman:ups.conf[5] file and maintain the service units
+(with their dependencies) for each driver section separately.
 
 This sometimes raises eyebrows when end-users try to manually start a NUT
 driver program (either directly or using linkman:upsdrvctl[8] tool), and
 this either fails (because the device is already busy) or gets to conflict
-with the copy of the driver running as a service instance and they begin
+with the copy of the driver running as a service instance, and they begin
 to terminate each other.
 
 Configuring NUT Drivers
@@ -313,6 +323,7 @@ to secure access to those files and their copies as well.
 :leveloffset: 1
 ///////////////
 
+:in-nut-manpage: true
 include::index.txt[]
 
 ///////////////

@@ -55,10 +55,23 @@ https://github.com/networkupstools/nut/milestone/9
      v2.8.2), where `configure --with-docs=all` no longer failed a run
      of the `configure` script when some of the required rendering tools
      were not in fact available. [#2842, fixed by #2921]
+   * Some recipe improvements in earlier releases led to `make check` always
+     running a spelling check (if tools are available), even if the explicit
+     `configure --disable-spellcheck` option was used. Now it would not run
+     if disabled (e.g. to speed up CI builds in scenarios that focus on other
+     aspects of the code base), although developers can still use the explicit
+     `make spellcheck*` goals, when tools are in fact available. [#2973]
    * A change in `Makefile.am` recipes to evaluate some driver names in the
      `DRIVERLIST` variables inspected by `configure` script, rather than
      having all their names hard-coded like before, led to inability to
      `configure --with-drivers=dummy-ups`. [#2825, #2927, fixed by PR #2929]
+   * A problem noted with `upsdrvquery` (since NUT v2.8.1) message logging
+     at high debug verbosity levels (5+) with very large blocks of content
+     has exposed a deficiency in variable-argument handling, and specifically
+     adaptive resizing of the output buffer or truncation of logged inputs
+     (which is something NUT code tried to do since the beginning of time),
+     and could lead to "segmentation fault" crashes on some platforms.
+     [issue #2948, PR #2963]
 
  - common code:
    * Revised common `writepid()` to use `altpidpath()` as location for the
@@ -81,9 +94,26 @@ https://github.com/networkupstools/nut/milestone/9
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
 
+ - `upsdrvquery` API updates [#2969]:
+   * Added `upsdrvquery_oneshot_conn()` for issuing one-shot queries using an
+     existing `udq_pipe_conn_t *` connection. The caller manages the
+     connection's lifecycle, and the function includes a best-effort call to
+     restore broadcast mode after the query to return the connection as it was.
+   * Added `upsdrvquery_oneshot_sockfn()` for initiating one-shot queries using
+     a socket filename. Shares internal logic with the existing
+     `upsdrvquery_oneshot()`, which uses a UPS and driver name, respectively.
+   * Introduced `upsdrvquery_restore_broadcast()` to explicitly restore
+     broadcast mode (`BROADCAST 1`) on a connection, helping return it to a
+     consistent and talkative state.
+   * Revised connection ownership handling: internal functions like
+     `upsdrvquery_prepare()` and `upsdrvquery_request()` no longer close
+     connections they do not own. Responsibility for cleanup is now delegated to
+     the caller to avoid unintended side effects and better align with expected
+     usage patterns.
+
  - common driver code:
    * Update reports of failed socket file creation, to help troubleshooting
-     some error cases in the field.
+     some error cases in the field. [#2959]
    * Removed workarounds trying to migrate legacy driver raised `ALARM`
      status tokens into modern `alarm_*` function logic. Rather, we keep
      supporting them as separate from the modern logic, seeing as `upsmon`
@@ -96,6 +126,9 @@ https://github.com/networkupstools/nut/milestone/9
      change, operations that intend to turn off or restart the load, or can
      do that by side effect (e.g. calibration if batteries are old or dead),
      would explicitly `upslogx(LOG_CRIT,...)` by default before commencing.
+     [#2957]
+   * Fixed a couple of ancient memory leaks: one "shared" during driver
+     program initialization, and one specific to `dummy-ups` wind-down. [#2972]
 
  - `dummy-ups` driver updates:
    * A new instruction `ALARM` was added for the `Dummy Mode` operation
@@ -136,6 +169,16 @@ https://github.com/networkupstools/nut/milestone/9
      This seems to be a protocol developed by Cyber Energy for serial-port
      devices, subsequently used by different vendors in their own products
      or re-branded Cyber Energy creations. [#2940]
+   * Introduced a `failover` driver for monitoring multiple UPS driver sockets
+     and seamless switching out of UPS data in a failover situation, includes
+     support for end-to-end tracked instant commands and also variable updating.
+     [#2962]
+
+ - The `nut-driver-enumerator.sh` script (NDE) now internally tracks dependency
+   of one driver on another one that should be locally running to serve the
+   "original" data points (`clone`, `clone-outlet`, `dummy-ups`, `failover`).
+   It should create soft dependencies between respective service instances
+   to order their start-up sequence. [#2962]
 
  - NUT Monitor GUI:
    * Ported Python 3 version to Qt6, now shipped alongside Qt5 for systems
@@ -150,6 +193,14 @@ https://github.com/networkupstools/nut/milestone/9
    as either "base" number of the section (e.g. `man1`) or by full section
    name (`man1m`), as different OS distributions have different preferences
    in this regard. [#2950]
+
+ - The `BUILD_TYPE=default-all-errors ci_build.sh` script handling was
+   revised to simplify code, and to default in CI builds to a quicker
+   mode which randomly mixes the selected SSL, USB and UNMAPPED variants
+   (and relies on the dozens of NUT CI farm runs per iteration to likely
+   cover all possible combinations), which should roughly halve the CI
+   build times. Default activity for developer builds should remain as
+   it was -- to try each such "axis" sequentially. [#2973]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2

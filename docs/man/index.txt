@@ -7,6 +7,13 @@ endif::website[]
 User manual pages
 -----------------
 
+ifndef::in-nut-manpage[]
+NUT overview
+~~~~~~~~~~~~
+
+- linkman:nut[7]
+endif::in-nut-manpage[]
+
 Configuration files
 ~~~~~~~~~~~~~~~~~~~
 

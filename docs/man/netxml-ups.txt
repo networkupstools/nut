@@ -1,4 +1,4 @@
-netxml-ups(8)
+NETXML-UPS(8)
 =============
 
 NAME

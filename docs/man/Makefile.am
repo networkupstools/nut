@@ -284,6 +284,7 @@ INST_MAN_MISC_PAGES = \
 	nut.$(MAN_SECTION_MISC)
 
 DIST_ALL_MAN_PAGES += $(INST_MAN_MISC_PAGES)
+HTML_MISC_MANS = $(INST_HTML_MISC_MANS)
 
 if WITH_MANS
 MAN_MISC_PAGES = $(INST_MAN_MISC_PAGES)
@@ -856,6 +857,7 @@ SRC_SERIAL_PAGES = \
 	clone.txt	\
 	clone-outlet.txt	\
 	dummy-ups.txt	\
+	failover.txt	\
 	etapro.txt	\
 	everups.txt	\
 	gamatronic.txt	\
@@ -908,6 +910,7 @@ INST_MAN_SERIAL_PAGES = \
 	dummy-ups.$(MAN_SECTION_CMD_SYS)	\
 	etapro.$(MAN_SECTION_CMD_SYS)	\
 	everups.$(MAN_SECTION_CMD_SYS)	\
+	failover.$(MAN_SECTION_CMD_SYS)	\
 	gamatronic.$(MAN_SECTION_CMD_SYS)	\
 	genericups.$(MAN_SECTION_CMD_SYS)	\
 	isbmex.$(MAN_SECTION_CMD_SYS)	\
@@ -975,6 +978,7 @@ INST_HTML_SERIAL_MANS = \
 	dummy-ups.html	\
 	etapro.html	\
 	everups.html	\
+	failover.html	\
 	gamatronic.html	\
 	genericups.html	\
 	isbmex.html	\
@@ -1403,6 +1407,7 @@ dist-hook:
 HTML_MANS = \
 	index.html \
 	$(HTML_CONF_MANS) \
+	$(HTML_MISC_MANS) \
 	$(HTML_CLIENT_MANS) \
 	$(HTML_TOOL_MANS) \
 	$(HTML_CGI_MANS) \

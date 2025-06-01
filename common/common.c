@@ -3206,9 +3206,25 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	 * or the calling methods should check it against their
 	 * "fmt_dynamic" expectations). */
 	do {
+#ifdef HAVE_VA_COPY_VARIANT
+		va_list	va_snprintf;
+
+		/* va_copy() to avoid mangling on re-use (see issue #2948),
+		 * this lets us retry safely vsnprintf() with the VA copies */
+		va_copy(va_snprintf, va);
+		ret = vsnprintf(buf, bufsize, fmt, va_snprintf);
+		va_end(va_snprintf);
+#else
+		/* Without va_copy(), we cannot safely retry vsnprintf()
+		 * and will accept truncation if the buffer is too small */
 		ret = vsnprintf(buf, bufsize, fmt, va);
+#endif
 
 		if ((ret < 0) || ((uintmax_t)ret >= (uintmax_t)bufsize)) {
+			/* Not building the below block on systems without va_copy(),
+			 * otherwise consumed VAs would get re-used & mangled on retries.
+			 * Instead, we want fall-through directly to the truncation message. */
+#ifdef HAVE_VA_COPY_VARIANT
 			/* Try to adjust bufsize until we can print the
 			 * whole message. Note that standards only require
 			 * up to 4095 bytes to be manageable in printf-like
@@ -3261,6 +3277,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		/* Arbitrary limit, gotta stop somewhere */
 		if (bufsize > LARGEBUF * 64) {
 vupslog_too_long:
+#endif
 			if (syslog_is_disabled()) {
 				fprintf(stderr, "vupslog: vsnprintf needed "
 					"more than %" PRIuSIZE " bytes; logged "
