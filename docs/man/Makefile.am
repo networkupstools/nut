@@ -1593,7 +1593,7 @@ CLEANFILES = linkman-*.txt.tmp
 # e.g. no man page building tools are locally available (we might not be
 # able to render a new instance though). At least do not let "$@" confuse
 # us into overwriting its instance in srcdir (if differs from builddir).
-linkman-driver-names.txt: Makefile.am
+linkman-driver-names.txt: Makefile
 	@echo "  GENERATE-LINKMAN	$@"
 	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERS) ; do echo "$$F" ; done \
@@ -1615,7 +1615,7 @@ linkman-driver-names.txt: Makefile.am
 	    rm -f "$(builddir)/$(@F).tmp" ; \
 	 fi
 
-linkman-drivertool-names.txt: Makefile.am
+linkman-drivertool-names.txt: Makefile
 	@echo "  GENERATE-LINKMAN	$@"
 	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERTOOLS) ; do echo "$$F" ; done \
