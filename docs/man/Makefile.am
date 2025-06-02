@@ -1436,38 +1436,55 @@ endif !WITH_HTML_SINGLE
 
 # Note: target documents, except nutupsdrv.txt itself, start the
 # list of drivers with `- linkman:nutupsdrv[$(MAN_SECTION_CMD_SYS)]` entry
-# To regenerate these files, do `make distclean` first
+# To regenerate these files, you may have to `make distclean` first
+# FIXME: Track also clients (e.g. NUT-Monitor UI, etc.), development-only tools
+#  (sockdebug), or platform-specific progs (nut.exe)
 LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.txt
 LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt nut.txt
+CLEANFILES = linkman-*.txt.tmp
 
+# Note we can have a pre-built file from the tarball, sort of useful when
+# e.g. no man page building tools are locally available (we might not be
+# able to render a new instance though). At least do not let "$@" confuse
+# us into overwriting its instance in srcdir (if differs from builddir).
 linkman-driver-names.txt: Makefile.am
-	@if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
-	    if ! test -s "$(builddir)/$@" && test -s "$(srcdir)/$(@F)" ; then \
-	        ln -fs "$(srcdir)/$(@F)" "$(builddir)/" ; \
-	    fi ; \
-	 fi
-	@if test -s "$@" ; then exit 0 ; fi ; \
-	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(SRC_DRIVERS_PAGES) ; do echo "$$F" ; done \
 	    | grep -vE '^nutupsdrv\.txt$$' \
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[$(MAN_SECTION_CMD_SYS)],' ; \
-	 ) > "$@"
-	@if test ! -s "$@" ; then echo "- No NUT drivers were built" > "$@" ; fi
+	 ) > "$(builddir)/$(@F).tmp"
+	@if test ! -s "$(builddir)/$(@F).tmp" \
+	 && test x"$(abs_srcdir)" != x"$(abs_builddir)" \
+	 && test -s "$(srcdir)/$(@F)" \
+	 ; then \
+	    cat "$(srcdir)/$(@F)" "$(builddir)/$(@F).tmp" ; \
+	 fi
+	@if test ! -s "$(builddir)/$(@F).tmp" ; then echo "- No NUT drivers were built" > "$(builddir)/$(@F).tmp" ; fi
+	@if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; then \
+	    mv -f "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; \
+	 else \
+	    rm -f "$(builddir)/$(@F).tmp" ; \
+	 fi
 
 linkman-drivertool-names.txt: Makefile.am
-	@if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
-	    if ! test -s "$(builddir)/$@" && test -s "$(srcdir)/$(@F)" ; then \
-	        ln -fs "$(srcdir)/$(@F)" "$(builddir)/" ; \
-	    fi ; \
-	 fi
-	@if test -s "$@" ; then exit 0 ; fi ; \
-	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(SRC_DRIVERTOOL_PAGES) ; do echo "$$F" ; done \
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[$(MAN_SECTION_CMD_SYS)],' ; \
-	 ) > "$@"
-	@if test ! -s "$@" ; then echo "- No NUT driver tools were built" > "$@" ; fi
+	 ) > "$(builddir)/$(@F).tmp"
+	@if test ! -s "$(builddir)/$(@F).tmp" \
+	 && test x"$(abs_srcdir)" != x"$(abs_builddir)" \
+	 && test -s "$(srcdir)/$(@F)" \
+	 ; then \
+	    cat "$(srcdir)/$(@F)" "$(builddir)/$(@F).tmp" ; \
+	 fi
+	@if test ! -s "$(builddir)/$(@F).tmp" ; then echo "- No NUT driver tools were built" > "$(builddir)/$(@F).tmp" ; fi
+	@if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; then \
+	    mv -f "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; \
+	 else \
+	    rm -f "$(builddir)/$(@F).tmp" ; \
+	 fi
 
 # Dependencies are about particular filenames, since over time
 # we might have several use-cases for LINKMAN_INCLUDE_GENERATED:
@@ -1569,7 +1586,7 @@ check-man-txt: .check-man-txt
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
 	@touch $@
 
-CLEANFILES = *-spellchecked .prep-src-docs *-prepped .check-*
+CLEANFILES += *-spellchecked .prep-src-docs *-prepped .check-*
 
 SUFFIXES = .txt-prepped .txt .html .$(MAN_SECTION_CMD_USR) .$(MAN_SECTION_API) .$(MAN_SECTION_CFG) .$(MAN_SECTION_CMD_SYS) .$(MAN_SECTION_MISC)
 

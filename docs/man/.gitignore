@@ -11,6 +11,7 @@
 /tmp/
 /linkman-driver-names.txt
 /linkman-drivertool-names.txt
+/linkman-*.txt.tmp
 /.check-html-man
 /.check-man-pages
 /.check-man-txt
