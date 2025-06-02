@@ -325,18 +325,6 @@ Other values understood for this option are listed below:
   formats with an `=auto` but should not fail the build if something
   can not be generated.
 
-* An (explicit!) `--with-doc=all=mans-all` argument tries to enable all
-  supported formats, choosing to build and install all known MAN pages
-  and other document types. A `--with-doc=mans-all` argument selects only
-  those MAN pages and would `=skip` generation of other document formats.
-
-* A `--with-doc=all=mans-builtprogs` argument tries to enable all
-  supported formats, choosing to build and install MAN pages only
-  for the NUT programs being built in this run (this is the legacy
-  default selection for `auto`, `dist-auto` or `yes` options).
-  A `--with-doc=mans-builtprogs` argument selects only those MAN pages
-  and would `=skip` generation of other document formats.
-
 * A `--with-doc=no` quietly skips generation of all types of documentation,
   including man pages.
 
@@ -372,6 +360,13 @@ Example valid formats of this flag:
 * `--with-doc=man=no,pdf=auto,html-single`
 
 Additional flags with regard to documentation generation include:
+
+	--enable-docs-man-for-progs-built-only=<yes|no>
+
+Choose to build and install MAN pages only for the NUT programs being built
+in this run (this is the legacy default selection), or all known MAN pages
+(including for NUT programs and drivers not being built now). Should not
+affect the API manual pages (but note they may be impacted by `--with-dev`).
 
 	--with-docs-man-section-api=<SN>	(default: 3)
 	--with-docs-man-section-cfg=<SN>	(default: 5)

@@ -2486,6 +2486,8 @@ dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
+NUT_ARG_ENABLE([docs-man-for-progs-built-only], [build and install man pages (if enabled) only for built programs (yes, default) or all known pages (no)], [yes])
+
 dnl Different OS distributions have different layouts of man page section
 dnl numbers. The one we treat as default seems to be most wide-spread, in
 dnl Linux and FreeBSD. For others, there are other defaults (see `man man`
@@ -3620,20 +3622,10 @@ DOC_INSTALL_SELECTED_MANS=""
 KNOWN_UNABLE_MANS=no
 
 case "${nut_with_doc}" in
-	yes|all|all=yes|all=progs|all=mans-builtprogs)
-		nut_doc_build_list="man=mans-builtprogs html-single html-chunked pdf"
+	yes|all|all=yes)
+		nut_doc_build_list="man html-single html-chunked pdf"
 		;;
-	all=mans-all) dnl Strike a balance between building all known man pages
-		 dnl vs. only those for all programs currently built
-		nut_doc_build_list="man=mans-all html-single html-chunked pdf"
-		;;
-	mans-builtprogs) dnl Only request man pages for built progs, but not other docs (skip them):
-		nut_doc_build_list="man=mans-builtprogs html-single=skip html-chunked=skip pdf=skip"
-		;;
-	mans-all) dnl Only request all known man pages but not other docs (skip them):
-		nut_doc_build_list="man=mans-all html-single=skip html-chunked=skip pdf=skip"
-		;;
-	auto|all=auto) dnl For legacy compatibility, would choose man=progs (if possible)
+	auto|all=auto)
 		nut_doc_build_list="man=auto html-single=auto html-chunked=auto pdf=auto"
 		;;
 	skip|all=skip)
@@ -3704,7 +3696,7 @@ for nut_doc_build_target in $nut_doc_build_list; do
 	esac
 
 	case "${nut_doc_build_target_flag}" in
-	yes|no|auto|skip|dist-auto|mans-builtprogs|mans-all) ;;
+	yes|no|auto|skip|dist-auto) ;;
 	"") nut_doc_build_target_flag="yes" ;;
 	*)	rm -rf "${DOCTESTDIR}"
 		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
@@ -3834,7 +3826,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 					case "${nut_doc_build_target_flag}" in
 					no|skip) ;;
-					auto|dist-auto|mans-builtprogs|mans-all)
+					auto|dist-auto)
 						if test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ; then
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 							DOC_INSTALL_DISTED_MANS="yes"
@@ -3852,14 +3844,13 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		fi
 
 		if test "${can_install_doc_man}" = yes ; then
-			case "${nut_doc_build_target_flag}" in
-			no|skip) ;;
-			auto|dist-auto|yes)
+			case "${nut_enable_docs_man_for_progs_built_only}" in
+			yes)
 				dnl Legacy default for auto builds: build/deliver only mans for built progs:
-				DOC_INSTALL_SELECTED_MANS="mans-builtprogs"
+				DOC_INSTALL_SELECTED_MANS="mans-progs-built"
 				;;
-			mans-builtprogs|mans-all)
-				DOC_INSTALL_SELECTED_MANS="${nut_doc_build_target_flag}"
+			no)
+				DOC_INSTALL_SELECTED_MANS="mans-progs-all"
 				;;
 			esac
 		fi
@@ -3896,7 +3887,7 @@ no)
 	if test -n "${DOC_CANNOTBUILD_LIST}"; then
 		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | grep -vE '^$'`"
 		for DOCTYPE in ${nut_doc_build_list} ; do
-			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(=yes|=mans-builtprogs|=mans-all)?\$" >/dev/null 2>/dev/null ; then
+			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(=yes)?\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
 			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_NOTICE([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above), skipping])
@@ -3955,8 +3946,8 @@ AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes
 dnl TOTHINK: Expand more flexibly? Currently we either (build and) install
 dnl  all known man pages, or only those for programs we currently build,
 dnl  so a boolean-ish toggle suffices.
-AM_CONDITIONAL(DOC_INSTALL_SELECTED_MANS_ALL, test x"${DOC_INSTALL_SELECTED_MANS}" = x"mans-all")
-AM_CONDITIONAL(DOC_INSTALL_SELECTED_MANS_BUILTPROGS, test x"${DOC_INSTALL_SELECTED_MANS}" = x"mans-builtprogs")
+dnl AM_CONDITIONAL(DOC_INSTALL_SELECTED_MANS_PROGS_ALL, test x"${DOC_INSTALL_SELECTED_MANS}" = x"mans-progs-all")
+AM_CONDITIONAL(DOC_INSTALL_SELECTED_MANS_PROGS_BUILT, test x"${DOC_INSTALL_SELECTED_MANS}" = x"mans-progs-built")
 dnl Reporting have_disted_doc_man not DOC_INSTALL_DISTED_MANS because the former has more values
 AS_IF([test x"${have_disted_doc_man}" = x], [have_disted_doc_man="did not check"])
 NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${have_disted_doc_man}"])
