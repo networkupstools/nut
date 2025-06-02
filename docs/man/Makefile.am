@@ -1594,6 +1594,7 @@ CLEANFILES = linkman-*.txt.tmp
 # able to render a new instance though). At least do not let "$@" confuse
 # us into overwriting its instance in srcdir (if differs from builddir).
 linkman-driver-names.txt: Makefile.am
+	@echo "  GENERATE-LINKMAN	$@"
 	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERS) ; do echo "$$F" ; done \
 	    | grep -vE '^nutupsdrv\.txt$$' \
@@ -1610,10 +1611,12 @@ linkman-driver-names.txt: Makefile.am
 	@if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; then \
 	    mv -f "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; \
 	 else \
+	    echo "  GENERATE-LINKMAN	$@ : SKIP (keep existing file)" ; \
 	    rm -f "$(builddir)/$(@F).tmp" ; \
 	 fi
 
 linkman-drivertool-names.txt: Makefile.am
+	@echo "  GENERATE-LINKMAN	$@"
 	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERTOOLS) ; do echo "$$F" ; done \
 	    | sort -n | uniq \
@@ -1629,6 +1632,7 @@ linkman-drivertool-names.txt: Makefile.am
 	@if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; then \
 	    mv -f "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; \
 	 else \
+	    echo "  GENERATE-LINKMAN	$@ : SKIP (keep existing file)" ; \
 	    rm -f "$(builddir)/$(@F).tmp" ; \
 	 fi
 
