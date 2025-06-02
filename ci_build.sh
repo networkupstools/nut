@@ -1534,6 +1534,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         CONFIG_OPTS+=("--enable-inplace-runtime")
     fi
 
+    # If we end up building and/or installing documentation, do
+    # parse all files (even if we do not build some programs here)
+    CONFIG_OPTS+=("--enable-docs-man-for-progs-built-only=no")
+
     # TODO: Consider `--enable-maintainer-mode` to add recipes that
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # TODO: Resolve port-collision reliably (for multi-executor agents)
@@ -2539,6 +2543,10 @@ bindings)
         xdoc*) CONFIG_OPTS+=("--with-${BUILD_TYPE}") ;;
         *) CONFIG_OPTS+=("--with-doc=skip") ;;
     esac
+
+    # If we end up building and/or installing documentation, do
+    # parse all files (even if we do not build some programs here)
+    CONFIG_OPTS+=("--enable-docs-man-for-progs-built-only=no")
 
     detect_platform_PKG_CONFIG_PATH_and_FLAGS
     if [ -n "$PKG_CONFIG_PATH" ] ; then
