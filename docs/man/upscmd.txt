@@ -1,4 +1,4 @@
-UPSCMD(8)
+UPSCMD(1)
 =========
 
 NAME
@@ -128,7 +128,7 @@ It involves magic cookies.
 SEE ALSO
 --------
 
-linkman:upsd[8], linkman:upsrw[8]
+linkman:upsd[8], linkman:upsrw[1]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

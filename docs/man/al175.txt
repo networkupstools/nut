@@ -40,7 +40,7 @@ linkman:ups.conf[5].
 INSTANT COMMANDS
 ----------------
 
-This driver supports some extra commands (see linkman:upscmd[8]):
+This driver supports some extra commands (see linkman:upscmd[1]):
 
 *test.battery.start*::
 Start a battery test.

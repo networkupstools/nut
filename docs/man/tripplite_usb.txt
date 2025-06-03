@@ -68,7 +68,8 @@ include::nut_usb_addvars.txt[]
 Select a specific UPS by its unique UPS ID. The argument is a regular expression
 that must match the UPS ID string. This allows for precise identification of UPS
 devices when multiple devices of the same make and model are connected.
-See below regarding how to read and write the ups id (unit id) using linkman:upsrw[8].
+See below regarding how to read and write the ups id (unit id) using
+linkman:upsrw[1].
 
 
 [NOTE]
@@ -80,7 +81,7 @@ to the same monitoring system, and you want to be sure that you shut them down
 in the correct order.
 +
 This regex is matched against the full USB product string as seen in
-linkmanext:lsusb[8]. The `ups.model` in the linkman:upsc[8] output only lists
+linkmanext:lsusb[8]. The `ups.model` in the linkman:upsc[1] output only lists
 the name after `TRIPP LITE`, so to match a 'SMART2200RMXL2U', you could use the
 regex like `.*SMART2200.*`.
 
@@ -114,19 +115,19 @@ RUNTIME VARIABLES
 *ups.delay.shutdown*::
 
 This variable is the same as the 'offdelay' setting, but it can be
-changed at runtime by linkman:upsrw[8].
+changed at runtime by linkman:upsrw[1].
 
 *ups.id*::
 
 Some SMARTPRO models feature an Unit ID (ups.id) that can be set and retrieved.
 If your UPS supports this feature, this variable will be listed in
-the output of linkman:upsrw[8].
+the output of linkman:upsrw[1].
 
 *outlet.1.switch*::
 
 Some Tripp Lite units have a switchable outlet (usually outlet #1)
 which can be turned on and off by writing '1' or '0', respectively,
-to `outlet.1.switch` with linkman:upsrw[8].
+to `outlet.1.switch` with linkman:upsrw[1].
 +
 If your unit has multiple switchable outlets, substitute the outlet
 number for '1' in the variable name. Be sure to test this first --
@@ -155,7 +156,7 @@ Some of the SMART*2U models have a configurable Unit ID number, and you can
 now use the `upsid` config argument to uniquely specify which UPS a given
 driver instance should control.  This allows for precise identification of
 UPS devices when multiple devices are connected.  To retrieve or set the
-`upsid`, you can use the linkman:upsrw[8] utility.
+`upsid`, you can use the linkman:upsrw[1] utility.
 
 AUTHORS
 -------

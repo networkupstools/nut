@@ -421,7 +421,7 @@ probably misconfigured during the <<Driver_configuration, Driver configuration>>
 step.  If you reconfigure the driver, use `upsdrvctl stop` to stop it, then
 start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.
 
-Reference: man page: linkman:upsc[8]
+Reference: man page: linkman:upsc[1]
 
 
 All data
@@ -481,7 +481,7 @@ above.  A sample run on an UPS (Eaton Ellipse MAX 1100) looks like this:
 	ups.timer.start: -1
 	ups.vendorid: 0463
 
-Reference: man page: linkman:upsc[8],
+Reference: man page: linkman:upsc[1],
 <<nut-names,NUT command and variable naming scheme>>
 
 Startup scripts

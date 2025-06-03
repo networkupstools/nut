@@ -1,4 +1,4 @@
-UPSRW(8)
+UPSRW(1)
 ========
 
 NAME
@@ -140,7 +140,7 @@ confusing.
 SEE ALSO
 --------
 
-linkman:upsd[8], linkman:upscmd[8]
+linkman:upsd[8], linkman:upscmd[1]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
