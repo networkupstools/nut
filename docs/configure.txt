@@ -361,6 +361,15 @@ Example valid formats of this flag:
 
 Additional flags with regard to documentation generation include:
 
+	--enable-docs-man-for-progs-built-only=<yes|no>
+
+Choose to build and install MAN pages only for the NUT programs being built
+in this run (this is the legacy default selection), or all known MAN pages
+(including for NUT programs and drivers not being built now). Should not
+affect the API manual pages (but note they may be impacted by `--with-dev`).
+
+NOTE: You want this set to `no` when preparing NUT distribution tarballs.
+
 	--with-docs-man-section-api=<SN>	(default: 3)
 	--with-docs-man-section-cfg=<SN>	(default: 5)
 	--with-docs-man-section-cmd-sys=<SN>	(default: 8, or 1m on Solaris/illumos)
