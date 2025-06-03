@@ -209,7 +209,7 @@ void Usage::print(const std::string & bin) {
 
 	std::cerr
 		/* << std::endl // last line of s_text is blank */
-		<< suggest_doc_links(bin.c_str(), nullptr);
+		<< suggest_doc_links_CMD_SYS(bin.c_str(), nullptr);
 		/* Method output brings its own endl */
 }
 

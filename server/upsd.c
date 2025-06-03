@@ -1825,7 +1825,7 @@ static void help(const char *arg_progname)
 
 	nut_report_config_flags();
 
-	printf("\n%s", suggest_doc_links(progname, "ups.conf, upsd.conf and upsd.users"));
+	printf("\n%s", suggest_doc_links_CMD_SYS(progname, "ups.conf, upsd.conf and upsd.users"));
 
 	exit(EXIT_SUCCESS);
 }

@@ -270,7 +270,7 @@ void nut_report_config_flags(void)
 	}
 }
 
-const char *suggest_doc_links(const char *progname, const char *progconf) {
+static const char *do_suggest_doc_links(const char *progname, const char *progconf, const char *mansection) {
 	static char	buf[LARGEBUF];
 
 	buf[0] = '\0';
@@ -297,7 +297,9 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 		 */
 		snprintfcat(buf, sizeof(buf),
 			"Read The Fine Manual ('man %s %s') and/or ",
-			MAN_SECTION_CMD_SYS, buf2);
+			mansection, buf2);
+#else
+		NUT_UNUSED_VARIABLE(mansection);
 #endif
 		snprintfcat(buf, sizeof(buf),
 			"see\n\t%s/docs/man/%s.html\n",
@@ -313,4 +315,12 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 			progconf);
 
 	return buf;
+}
+
+const char *suggest_doc_links_CMD_SYS(const char *progname, const char *progconf) {
+	return do_suggest_doc_links(progname, progconf, MAN_SECTION_CMD_SYS);
+}
+
+const char *suggest_doc_links_CMD_USR(const char *progname, const char *progconf) {
+	return do_suggest_doc_links(progname, progconf, MAN_SECTION_CMD_USR);
 }

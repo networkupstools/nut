@@ -129,6 +129,10 @@ https://github.com/networkupstools/nut/milestone/9
      [#2957]
    * Fixed a couple of ancient memory leaks: one "shared" during driver
      program initialization, and one specific to `dummy-ups` wind-down. [#2972]
+   * Refactored `suggest_doc_links()` introduced in a recent NUT release into
+     separate `suggest_doc_links_CMD_SYS()` and `suggest_doc_links_CMD_USR()`
+     helper methods (used in command-line help of programs that refer to their
+     manual pages), wrapping a common implementation. [#2977]
 
  - `dummy-ups` driver updates:
    * A new instruction `ALARM` was added for the `Dummy Mode` operation
@@ -289,6 +293,8 @@ https://github.com/networkupstools/nut/milestone/11
      (development or release snapshot); many programs now display such
      references in their command-line usage help, method `suggest_doc_links()`
      was introduced for this purpose. [issue #722, PR #2733]
+     - Note that this method was split into several with NUT v2.843, with
+       similar names. [PR #2977]
 
  - A technologically and practically interesting revamp of NUT mesh of
    link:https://www.gnu.org/software/automake/[automake] (`Makefile.am`)
