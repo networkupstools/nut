@@ -183,16 +183,20 @@ https://github.com/networkupstools/nut/milestone/9
  - NUT Monitor GUI:
    * Ported Python 3 version to Qt6, now shipped alongside Qt5 for systems
      with either or both, maximizing compatibility with old and new setups.
+     [#2946]
 
- - Introduced handling (possibly rewriting) for man page section "Overviews,
-   conventions, and miscellaneous" (commonly number 7), to deliver support
-   for `man nut` queries (NUT overview manual page also created). [#2945]
-
- - A new `configure --with-docs-man-dir-as-base` option was introduced so
-   that directories for man page sections can now be automatically named
-   as either "base" number of the section (e.g. `man1`) or by full section
-   name (`man1m`), as different OS distributions have different preferences
-   in this regard. [#2950]
+ - Manual page recipes and contents:
+   * Introduced handling (possibly rewriting) for man page section "Overviews,
+     conventions, and miscellaneous" (commonly number 7), to deliver support
+     for `man nut` queries (NUT overview manual page also created). [#2945]
+   * A new `configure --with-docs-man-dir-as-base` option was introduced so
+     that directories for man page sections can now be automatically named
+     as either "base" number of the section (e.g. `man1`) or by full section
+     name (`man1m`), as different OS distributions have different preferences
+     in this regard. [#2950]
+   * Option to `configure --enable-docs-man-for-progs-built-only` was added,
+     to differentiate NUT builds that deliver man pages for only built programs
+     (legacy default) or for all of them (as needed for docs sites). [#2976]
 
  - The `BUILD_TYPE=default-all-errors ci_build.sh` script handling was
    revised to simplify code, and to default in CI builds to a quicker
