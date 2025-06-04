@@ -201,6 +201,10 @@ https://github.com/networkupstools/nut/milestone/9
    * Option to `configure --enable-docs-man-for-progs-built-only` was added,
      to differentiate NUT builds that deliver man pages for only built programs
      (legacy default) or for all of them (as needed for docs sites). [#2976]
+   * Several man page sources revised to tack the correct section code (e.g.
+     `upsc`, `upscmd`, `upsrw` and `NUT-Monitor` are clients that end-users
+     can interact with (section 1), while `upsmon` and `upssched` are rather
+     system services (section 8). [#2977]
 
  - The `BUILD_TYPE=default-all-errors ci_build.sh` script handling was
    revised to simplify code, and to default in CI builds to a quicker
