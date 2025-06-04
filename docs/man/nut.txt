@@ -134,8 +134,8 @@ NOTE: The `upsmon` client typically splits into two processes: an unprivileged
   the time comes.
 +
 NUT deployments which desire higher-fidelity control (e.g. different systems
-  shutting down after different time spent on battery) often couple `upsmon`
-  with linkman:upssched[8].
+  shutting down after different time spent on battery) often couple the
+  linkman:upsmon[8] with linkman:upssched[8] as their `NOTIFYCMD` handler.
 +
 The "primary" system is usually also responsible for commanding the managed
   UPS to shut itself down and power up when the "wall power" returns (or to
