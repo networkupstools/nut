@@ -67,26 +67,38 @@ static item_t	megatec_qx2nut[] = {
 	{ "input.frequency.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	17,	20,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 
 	/*
+	 * Common Qx protocols might only return ups.firmware here:
+	 *
 	 * > [I\r]
 	 * < [#-------------   ------     VT12046Q  \r]
 	 *    012345678901234567890123456789012345678
 	 *    0         1         2         3
+	 *
+	 *  Megatec IC adds serial/runtime support function into the response:
+	 *
+	 *  pc->ups:
+	 * > [I\r]
+	 *  ups->pc:
+	 * < [#MegaTecabcedfhi k130v12345 v3.400000\r]
+	 *    01234567890123456789012345678901234567
+	 *    0         1         2         3
+	 * where:
+	 *  device.mfr=MegaTec
+	 *  ups.serial=abcedfhi
+	 *  device.model=k130v
+	 *  battery.runtime=12345
+	 *  ups.firmware=v3.400000
+	 *
+	 * FIXME: Per example above, this reply is 38 bytes
+	 *  long (including '\r') not 39 as in other dialects
+	 *  and the mappings below; which part is wrong - the
+	 *  example or code?
 	 */
-    /***********
-	Megatec IC adds serial/runtime support function
-	pc->ups:   I\r
-	ups->pc:   #MegaTecabcedfhi k130v12345 v3.400000\r
-	device.mfr=MegaTec
-	ups.serial=abcedfhi
-	device.model=k130v
-	battery.runtime=12345
-	ups.firmware=v3.400000
-	***************/
-	{ "device.mfr",			0,	NULL,	"I\r",	"",	39,	'#',	"",	1,	7,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },//
-	{ "ups.serial",			0,	NULL,	"I\r",	"",	39,	'#',	"",	8,	15,	"%s",	0,	NULL,	NULL,	NULL },//Megatec IC adds "ups.serial" support function
-	{ "device.model",		0,	NULL,	"I\r",	"",	39,	'#',	"",	17,	21,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },
-	{ "battery.runtime",		0,	NULL,	"I\r",	"",	39,	'#',	"",	22,	26,	"%s",	0,	NULL,	NULL,	NULL },//Megatec IC adds "ups.runtime" support function 
-	{ "ups.firmware",		0,	NULL,	"I\r",	"",	39,	'#',	"",	28,	37,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },//
+	{ "device.mfr",			0,	NULL,	"I\r",	"",	39,	'#',	"",	1,	7,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Shorter field than in other dialects */
+	{ "ups.serial",			0,	NULL,	"I\r",	"",	39,	'#',	"",	8,	15,	"%s",	0,	NULL,	NULL,	NULL },	/* Megatec IC adds "ups.serial" support function */
+	{ "device.model",		0,	NULL,	"I\r",	"",	39,	'#',	"",	17,	21,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Shorter field than in other dialects */
+	{ "battery.runtime",		0,	NULL,	"I\r",	"",	39,	'#',	"",	22,	26,	"%s",	0,	NULL,	NULL,	NULL },	/* Megatec IC adds "ups.runtime" support function */
+	{ "ups.firmware",		0,	NULL,	"I\r",	"",	39,	'#',	"",	28,	37,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* FIXME: Per example above, this should end at 36 not 37; which part is wrong - example or code? */
 
 	/* Instant commands */
 	{ "beeper.toggle",		0,	NULL,	"Q\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
