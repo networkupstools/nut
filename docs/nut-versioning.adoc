@@ -405,12 +405,12 @@ Variables propagated by nut_version.h
 Use in C code
 -------------
 
-common.c
-~~~~~~~~
+common-nut_version.c
+~~~~~~~~~~~~~~~~~~~~
 
-* The `NUT_VERSION_MACRO` is used in `common/common.c` and further made known
-  to all code base as a static string `UPS_VERSION` linked via `libcommon*.la`
-  internal libraries.
+* The `NUT_VERSION_MACRO` is used in `common/common-nut_version.c` and further
+  made known to all code base as a static string `UPS_VERSION` linked via
+  `libcommon*.la` internal libraries.
 * Method `describe_NUT_VERSION_once()` prepares the string which combines the
   `NUT_VERSION_MACRO` with comments that it is either a `release` or a
   `(development iteration after $NUT_VERSION_SEMVER_MACRO)`, based on

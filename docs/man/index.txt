@@ -7,6 +7,8 @@ endif::website[]
 User manual pages
 -----------------
 
+include::{builddir}linkman-docbuildmode-note.txt[]
+
 ifndef::in-nut-manpage[]
 NUT overview
 ~~~~~~~~~~~~

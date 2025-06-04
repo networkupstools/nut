@@ -1585,7 +1585,7 @@ endif !WITH_HTML_SINGLE
 # To regenerate these files, you may have to `make distclean` first
 # FIXME: Track also clients (e.g. NUT-Monitor UI, etc.), development-only tools
 #  (sockdebug), or platform-specific progs (nut.exe)
-LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.txt
+LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.txt linkman-docbuildmode-note.txt
 LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt nut.txt
 CLEANFILES = linkman-*.txt.tmp
 
@@ -1636,9 +1636,38 @@ linkman-drivertool-names.txt: Makefile
 	    rm -f "$(builddir)/$(@F).tmp" ; \
 	 fi
 
+# Doing this dynamically as here, so we may later deliver some more dynamic
+# content if desired (e.g. lists of built/not-built programs, date, version,
+# etc.). Or maybe not, we'll see :)
+if DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
+
+linkman-docbuildmode-note.txt: Makefile
+	@echo "  GENERATE-LINKMAN	$@"
+	@(  echo 'NOTE: This build of NUT was configured to deliver only manual pages for programs that were actually built. For more information about the ecosystem please see '; \
+	    echo 'ifndef::website[]' ; \
+	    echo 'the NUT website listing at https://networkupstools.org/docs/man/index.html or ' ; \
+	    echo 'endif::website[]' ; \
+	    echo 'the sources of these pages at https://github.com/networkupstools/nut/tree/master/docs/man'; \
+	 ) > "$(builddir)/$(@F)"
+
+else !DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
+
+linkman-docbuildmode-note.txt: Makefile
+	@echo "  GENERATE-LINKMAN	$@"
+	@(  echo 'NOTE: This build of NUT was configured to deliver all available manual'; \
+	    echo 'ifndef::website[]' ; \
+	    echo 'pages, and may include those for programs that were not actually built or installed.' ; \
+	    echo 'endif::website[]' ; \
+	    echo 'ifdef::website[]' ; \
+	    echo 'pages.' ; \
+	    echo 'endif::website[]' ; \
+	 ) > "$(builddir)/$(@F)"
+
+endif !DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
+
 # Dependencies are about particular filenames, since over time
 # we might have several use-cases for LINKMAN_INCLUDE_GENERATED:
-$(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.txt
+$(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.txt linkman-docbuildmode-note.txt
 
 # These files are generated when we build from git source so not tracked in
 # git, and not part of tarball (to be in builddir) - so not in EXTRA_DIST.

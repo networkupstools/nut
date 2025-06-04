@@ -33,8 +33,8 @@ Dummy Mode
 In this mode, *dummy-ups* looks like a standard NUT device driver to
 linkman:upsd[8] and allows one to change any value for testing purposes.
 
-It is both interactive, controllable through the linkman:upsrw[1] and
-linkman:upscmd[1] commands (or equivalent graphical tool), and batchable
+It is both interactive, controllable through the linkman:upsrw[8] and
+linkman:upscmd[8] commands (or equivalent graphical tool), and batchable
 through script files.
 
 It can be configured, launched and used as any other "real" NUT driver.
@@ -250,7 +250,7 @@ INTERACTION
 Once the driver is loaded in dummy mode, you can change any variables, except
 those of the `driver.*` and `server.*` collections.
 You can do this by either editing the definition file, or use the
-linkman:upsrw[1] and linkman:upscmd[1] commands.
+linkman:upsrw[8] and linkman:upscmd[8] commands.
 
 Note that in simulation mode, new variables can be added on the fly, but only
 by adding these to the definition file (and waiting for it to be re-read).
@@ -315,8 +315,8 @@ Arnaud Quette
 SEE ALSO
 --------
 
-linkman:upscmd[1],
-linkman:upsrw[1],
+linkman:upscmd[8],
+linkman:upsrw[8],
 linkman:ups.conf[5],
 linkman:nutupsdrv[8]
 
