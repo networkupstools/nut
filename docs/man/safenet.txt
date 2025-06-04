@@ -49,7 +49,7 @@ Time to wait before shutting down the UPS (seconds). Defaults to 30 seconds.
 INSTANT COMMANDS
 ----------------
 
-This driver supports some instant commands (see linkman:upscmd[8]):
+This driver supports some instant commands (see linkman:upscmd[1]):
 
 *test.battery.start*::
 Start UPS self test

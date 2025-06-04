@@ -148,10 +148,10 @@ The "primary" system is usually also responsible for commanding the managed
   and reboots them) just because external power returned when the shut down
   spree had already started.
 
-* linkman:upsc[8] is a command-line client for anonymous read-only access,
+* linkman:upsc[1] is a command-line client for anonymous read-only access,
   used to list devices served by a NUT data server, or to query data points
   reported by a particular device.
-* linkman:NUT-Monitor[8] is a GUI client for read-only or read-write access.
+* linkman:NUT-Monitor[1] is a GUI client for read-only or read-write access.
 * A suite of CGI clients can run on a web server like Apache or nginx to
   provide a simple HTML interface to your devices.
 
@@ -309,7 +309,7 @@ into certain directories according to their documentation:
 linkman:hosts.conf[5] and linkman:upsset.conf[5] for configuration,
 and `upsstats-single.html` and `upsstats.html` for HTML UI templates.
 
-Other clients, whether delivered by NUT project (linkman:NUT-Monitor[8]
+Other clients, whether delivered by NUT project (linkman:NUT-Monitor[1]
 GUI) or co-located (link:https://github.com/networkupstools/wmnut[WMNut])
 or third-party (see https://networkupstools.org/projects.html) would
 probably support saving their settings or "favorites".  Do not forget

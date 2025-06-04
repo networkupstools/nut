@@ -45,8 +45,8 @@ Change shutdown delay time from 0 second default.
 INSTANT COMMANDS
 ----------------
 
-This driver supports the following Instant Commands.
-(See linkman:upscmd[8])
+This driver supports the following Instant Commands
+(see linkman:upscmd[1]):
 
 All UPS units
 ~~~~~~~~~~~~~
@@ -104,7 +104,7 @@ Mutes the UPS beeper/buzzer for the current alarm condition(s).
 Writable Variables
 ------------------
 
-See linkman:upsrw[8] to see what variables are writable for the UPS.
+See linkman:upsrw[1] to see what variables are writable for the UPS.
 
 NOTE: If your UPS supports writing `battery.runtime.low`, the new set value
 is to be entered in minutes (up to '99') but the reported value is reported

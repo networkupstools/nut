@@ -30,21 +30,21 @@ Configuration files
 - linkman:upsset.conf[5]
 - linkman:upsstats.html[5]
 
-Daemons
-~~~~~~~
+Server and Client Daemons
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - linkman:upsd[8]
 - linkman:upsmon[8]
 - linkman:upssched[8]
 - linkman:upslog[8]
 
-Clients commands
-~~~~~~~~~~~~~~~~
+End-User Clients and Commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- linkman:upsc[8]
-- linkman:upscmd[8]
-- linkman:upsrw[8]
-- linkman:NUT-Monitor[8]
+- linkman:upsc[1]
+- linkman:upscmd[1]
+- linkman:upsrw[1]
+- linkman:NUT-Monitor[1]
 
 Configuration commands
 ~~~~~~~~~~~~~~~~~~~~~~

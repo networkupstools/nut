@@ -197,7 +197,7 @@ as line power is restored.
 INSTANT COMMANDS
 ----------------
 
-This driver supports some instant commands (see linkman:upscmd[8]):
+This driver supports some instant commands (see linkman:upscmd[1]):
 
 *shutdown.stayoff*::
 After an *offdelay*, turn off the load. When line power is back,
@@ -277,7 +277,7 @@ Stop a running battery test.
 VARIABLES
 ---------
 
-This driver supports some writable runtime variables (see linkman:upsrw[8]):
+This driver supports some writable runtime variables (see linkman:upsrw[1]):
 
 **ups.beeper.status**::
 Enable or disable the UPS beeper, *disabled* or *enabled*.

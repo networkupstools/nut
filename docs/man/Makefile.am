@@ -334,13 +334,13 @@ SRC_CLIENT_PAGES = \
 
 INST_MAN_CLIENT_PAGES = \
 	nutupsdrv.$(MAN_SECTION_CMD_SYS) \
-	upsc.$(MAN_SECTION_CMD_SYS) \
-	upscmd.$(MAN_SECTION_CMD_SYS) \
+	upsc.$(MAN_SECTION_CMD_USR) \
+	upscmd.$(MAN_SECTION_CMD_USR) \
 	upsd.$(MAN_SECTION_CMD_SYS) \
 	upsdrvctl.$(MAN_SECTION_CMD_SYS) \
 	upslog.$(MAN_SECTION_CMD_SYS) \
 	upsmon.$(MAN_SECTION_CMD_SYS) \
-	upsrw.$(MAN_SECTION_CMD_SYS) \
+	upsrw.$(MAN_SECTION_CMD_USR) \
 	upssched.$(MAN_SECTION_CMD_SYS)
 
 INST_HTML_CLIENT_MANS = \
@@ -399,19 +399,19 @@ DIST_ALL_MAN_PAGES += $(MAN_CLIENT_PAGES_ADDON_NUT_EXE)
 endif !HAVE_WINDOWS
 
 MAN_CLIENT_PAGES_ADDON_NUT_MONITOR = \
-	NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS) \
-	NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS) \
-	NUT-Monitor-py3qt6.$(MAN_SECTION_CMD_SYS) \
-	NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+	NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_USR) \
+	NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_USR) \
+	NUT-Monitor-py3qt6.$(MAN_SECTION_CMD_USR) \
+	NUT-Monitor.$(MAN_SECTION_CMD_USR)
 
 # Alias page for one text describing two commands:
-NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_USR): NUT-Monitor.$(MAN_SECTION_CMD_USR)
 	touch $@
 
-NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_USR): NUT-Monitor.$(MAN_SECTION_CMD_USR)
 	touch $@
 
-NUT-Monitor-py3qt6.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+NUT-Monitor-py3qt6.$(MAN_SECTION_CMD_USR): NUT-Monitor.$(MAN_SECTION_CMD_USR)
 	touch $@
 
 if WITH_NUT_MONITOR
