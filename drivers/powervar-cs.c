@@ -45,7 +45,7 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 #include "powervar-cx.h"	/* Common driver defines, variables, and functions */
 
 #define DRIVER_NAME	"Powervar-CS UPS driver (Serial)"
-#define DRIVER_VERSION	"0.80"
+#define DRIVER_VERSION	"1.00"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

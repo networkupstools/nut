@@ -58,7 +58,7 @@ static uint ReconnectFlag = 0;
 #include "powervar-cx.h"	/* Common driver variables and functions */
 
 #define DRIVER_NAME	"Powervar-CU UPS driver (USB)"
-#define DRIVER_VERSION	"0.80"
+#define DRIVER_VERSION	"1.00"
 
 /* USB comm stuff here */
 #define USB_RESPONSE_SIZE	8
