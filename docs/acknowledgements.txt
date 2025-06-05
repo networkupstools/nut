@@ -99,9 +99,10 @@ provide you with official support from Eaton, or a better level of device
 support in NUT.*
 ================================================================================
 
-* link:https://www.ametek.com/products/businessunits/powersystemsandinstruments/powervar[AMETEK
-Powervar], through Andrew McCartney, has added support for all AMETEK Powervar
-UPM models as usb-hid UPS.
+* link:https://www.powervar.com/products/single-phase-ups [AMETEK Powervar],
+through Andrew McCartney, has added support for all AMETEK Powervar
+UPM models as usb-hid UPS. Through Bill Elliot, has added support for AMETEK
+Powervar'S UPM and GTS models using their CUSPP protocol over USB or serial.
 
 * link:http://www.gamatronic.com[Gamatronic], through Nadav Moskovitch, has
 revived the 'sec' driver (as gamatronic), and expanded a bit genericups for its
