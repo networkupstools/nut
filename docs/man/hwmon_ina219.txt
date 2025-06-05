@@ -4,7 +4,7 @@ HWMON_INA219(8)
 NAME
 ----
 
-hwmon_ina219 - driver for UPS based on INA219
+hwmon_ina219 - Driver for UPS based on INA219
 
 SYNOPSIS
 --------

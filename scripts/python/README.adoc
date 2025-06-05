@@ -35,21 +35,6 @@ and protocol support.
 
 For one practical example, you can research `tests/NIT/nit.sh` in NUT sources.
 
-telnetlib
-^^^^^^^^^
-
-Historically, the `PyNUTClient` class relied on `telnetlib` module for socket
-communications with the NUT data server, which was provided as part of Python
-core installation with tested 2.6+ and 3.* versions. The module was, however,
-marked deprecated since Python 3.11 and not provided since 3.13. Due to this,
-as a quick stop-gap solution, NUT sources provide `nut_telnetlib.py` -- a copy
-of the module from Python 3.10 installation, and no longer should require its
-presence in the Python deployment.
-
-A better solution would be to find or create a new layer for the constrained
-use-case of NUT client interactions with a data server, which do not need the
-fully fledged Telnet-like capabilities.
-
 app
 ~~~
 
@@ -59,21 +44,22 @@ This directory contains the `NUT-Monitor` UI application, which uses the
 NOTE: Do not mistake it for `nut-monitor` service for the `upsmon` client in
 some distributions' NUT packaging.
 
-There are two closely related separate implementations, for Python 2 with GTK2
-and for Python 3 with Qt5. Both can be installed at the same time, if your
-distribution has not yet outlawed the obsolete Python 2 interpreters.
+There are three closely related separate implementations, for Python 2 with GTK2
+and for Python 3 with Qt5 and Qt6. Either can be installed at the same time, if 
+your distribution has not yet outlawed the obsolete Python 2 interpreters.
 
 To install it, you will either need to keep the files together, or to install:
 
 - Depending on the Python version(s) your system has, put `NUT-Monitor-py2gtk2`
-  and/or `NUT-Monitor-py3qt5` to `/usr/bin/`, `/usr/X11R6/bin/` or something
-  like that (optionally making a simple `NUT-Monitor` symlink to the preferred
-  implementation version or using the provided wrapper script),
-- `ui/*.glade` (for `NUT-Monitor-py2gtk2`) or `ui/*.ui` (for `NUT-Monitor-py3qt5`)
-  files to `/usr/share/nut-monitor/`,
+  and/or `NUT-Monitor-py3qt5` and/or `NUT-Monitor-py3qt6` to `/usr/bin/`, 
+  `/usr/X11R6/bin/` or something like that (optionally making a simple `NUT-Monitor`
+  symlink the preferred implementation version or using the provided wrapper script),
+- `ui/*.glade` (for `NUT-Monitor-py2gtk2`) or `ui/*.ui` (for `NUT-Monitor-py3qt5` or
+  `NUT-Monitor-py3qt6`) files to `/usr/share/nut-monitor/`,
 - `nut-monitor.png` to something like `/usr/share/pixmaps/`,
 - finally, `nut-monitor-py2gtk2.desktop` and/or `nut-monitor-py3qt5.desktop`
-  (optionally symlinked as `nut-monitor.desktop`) to `/usr/share/applications/`
+  and/or `nut-monitor-py3qt6.desktop` (optionally symlinked as `nut-monitor.desktop`)
+  to `/usr/share/applications/`
 
 The `PyNUT` module can be kept nearby, or must be installed as a "site" or
 "vendor" provided script into your Python modules location. See the wrapper

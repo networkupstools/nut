@@ -30,7 +30,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.15"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -213,6 +213,10 @@ static void usb_comm_fail(const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) */
+	/* FIXME: Actually, only fixed strings, no formatting here. */
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -591,11 +595,11 @@ void upsdrv_initups(void)
 
 #ifndef WIN32
 		if ((i < 32) && (sleep(5) == 0)) {
-#else
-/*FIXME*/
+#else	/* WIN32 */
+/* FIXME NUT_WIN32_INCOMPLETE? */
 		sleep(5);
 		if ((i < 32)) {
-#endif
+#endif	/* WIN32 */
 			usb_comm_fail("Can't open USB device, retrying ...");
 			continue;
 		}
@@ -712,7 +716,9 @@ void upsdrv_updateinfo(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* Shutdown UPS */
 	if (!strcasecmp(cmdname, "shutdown.return"))
@@ -755,6 +761,7 @@ int instcmd(const char *cmdname, const char *extra)
 		char	restart[QUERY_PACKETSIZE] = { 0x02, 0x01, 0x00, 0x00 };
 		char	reply[REPLY_PACKETSIZE];
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		execute_and_retrieve_query(prepare, reply);
 
 		/*
@@ -769,7 +776,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

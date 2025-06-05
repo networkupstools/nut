@@ -20,7 +20,7 @@ check-local:
 tox: dist .pypi-tools-tox
 	tox
 
-EXTRA_DIST = tox.ini MANIFEST.in nut_telnetlib.py
+EXTRA_DIST = tox.ini MANIFEST.in
 
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON = @PYTHON@
@@ -61,17 +61,15 @@ PyNUTClient: .pypi-src
 
 # Tagged releases should only have three blocks of digits separated by dots
 upload publish:
-	+@echo "  PYPI  Checking upload type for module version '$(NUT_SOURCE_GITREV_NUMERIC)'" ; \
+	+@echo "  PYPI	Checking upload type for module version '$(NUT_SOURCE_GITREV_NUMERIC)'" ; \
 	 case x"`echo "$(NUT_SOURCE_GITREV_NUMERIC)" | tr -d '[0-9]'`" in \
-		x..) echo "  PYPI  ...release"; $(MAKE) $(AM_MAKEFLAGS) upload-pypi ;; \
-		x*)  echo "  PYPI  ...testing"; $(MAKE) $(AM_MAKEFLAGS) upload-testpypi ;; \
+		x..) echo "  PYPI	...release"; $(MAKE) $(AM_MAKEFLAGS) upload-pypi ;; \
+		x*)  echo "  PYPI	...testing"; $(MAKE) $(AM_MAKEFLAGS) upload-testpypi ;; \
 	 esac
 
 # README.txt is also a part of module standard expectations
-# nut_telnetlib.py is not converted from a .in template, it
-# does not even have a shebang line.
-.pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in nut_telnetlib.py README.adoc Makefile $(top_srcdir)/LICENSE-GPL3
-	@echo "  PYPI  Generate PyPI module source"
+.pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in README.adoc Makefile $(top_srcdir)/LICENSE-GPL3
+	@echo "  PYPI	Generate PyPI module source"
 	@rm -rf $(GENERATED_SRC) "$@"
 	@mkdir -p PyNUTClient
 	@for S in "$(srcdir)"/*.py.in ; do \
@@ -89,39 +87,35 @@ upload publish:
 		sed -e "s,[@]PYTHON[@],@PYTHON@," < "$(srcdir)/$${B}.in" > "PyNUTClient/$${B}" || exit ; \
 		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "PyNUTClient/$${B}"; fi ; \
 	 done ; \
-	 cp -pf "$(srcdir)/nut_telnetlib.py" PyNUTClient/ || exit ; \
-	 if [ x"$(abs_srcdir)" != x"$(abs_builddir)" ] ; then \
-		cp -pf "$(srcdir)/nut_telnetlib.py" . || exit ; \
-	 fi ; \
 	 cp -pf "$(srcdir)/README.adoc" README.txt || exit ; \
 	 cp -pf "$(top_srcdir)/LICENSE-GPL3" . || exit ; \
 	 echo "from . import PyNUT" > PyNUTClient/__init__.py || exit
 	@touch "$@"
 
 .pypi-tools-python:
-	@echo "  PYPI  Checking that PYTHON variable is defined and usable: $(PYTHON)"
+	@echo "  PYPI	Checking that PYTHON variable is defined and usable: $(PYTHON)"
 	@test -n "$(PYTHON)" && command -v $(PYTHON)
 	@touch "$@"
 
 .pypi-tools-dist-wheel: .pypi-tools-python
-	@echo "  PYPI  Prepare PyPI tools to generate a distribution (wheel)"
+	@echo "  PYPI	Prepare PyPI tools to generate a distribution (wheel)"
 	@$(PYTHON) -m pip install wheel
 	@touch "$@"
 
 .pypi-tools-dist-build: .pypi-tools-python
-	@echo "  PYPI  Prepare PyPI tools to generate a distribution (build)"
+	@echo "  PYPI	Prepare PyPI tools to generate a distribution (build)"
 	@$(PYTHON) -m pip install build
 	@touch "$@"
 
 .pypi-tools-tox: .pypi-tools-python
-	@echo "  PYPI  Prepare Python multi-environment testing tools (tox)"
+	@echo "  PYPI	Prepare Python multi-environment testing tools (tox)"
 	@$(PYTHON) -m pip install tox
 	@touch "$@"
 
 # Install via OS packaging or pip?
 # https://twine.readthedocs.io/en/stable/
 .pypi-tools-upload: .pypi-tools-python
-	@echo "  PYPI  Prepare PyPI tools and resources to upload a distribution (twine)"
+	@echo "  PYPI	Prepare PyPI tools and resources to upload a distribution (twine)"
 	@$(PYTHON) -m pip install twine
 	@command -v twine
 	@test -s $(HOME)/.pypirc
@@ -136,7 +130,7 @@ upload publish:
 
 # The most modern approach as of 2023
 .pypi-dist-pip-build: .pypi-tools-dist-build .pypi-src
-	@echo "  PYPI  Generate PyPI module distribution (using 'build' module)"
+	@echo "  PYPI	Generate PyPI module distribution (using 'build' module)"
 	@rm -rf $(GENERATED_DIST) "$@"
 	@$(PYTHON) -m build --skip-dependency-check --no-isolation
 	@touch "$@"
@@ -146,13 +140,13 @@ upload publish:
 # it "knows what it's doing" and goes quietly about its work :)
 # Does not support "sdis" though. Oh well.
 .pypi-dist-pip-wheel: .pypi-tools-dist-wheel .pypi-src
-	@echo "  PYPI  Generate PyPI module distribution (using 'pip wheel')"
+	@echo "  PYPI	Generate PyPI module distribution (using 'pip wheel')"
 	@rm -rf $(GENERATED_DIST) "$@"
 	@$(PYTHON) -m pip wheel --no-deps -w dist .
 	@touch "$@"
 
 .pypi-dist-obsolete: .pypi-tools-dist-wheel .pypi-src
-	@echo "  PYPI  Generate PyPI module distribution (using setup.py directly)"
+	@echo "  PYPI	Generate PyPI module distribution (using setup.py directly)"
 	@rm -rf $(GENERATED_DIST) "$@"
 	@$(PYTHON) setup.py sdist bdist_wheel
 	@touch "$@"
@@ -161,9 +155,9 @@ upload publish:
 # https://pypi.org/manage/account/ and https://test.pypi.org/manage/account/
 # TODO: .asc/.sig files for releases?
 upload-pypi: .pypi-dist .pypi-tools-upload
-	@echo "  PYPI  Upload PyPI module distribution to production/release PyPI repository"
+	@echo "  PYPI	Upload PyPI module distribution to production/release PyPI repository"
 	@twine upload dist/*
 
 upload-testpypi: .pypi-dist .pypi-tools-upload
-	@echo "  PYPI  Upload PyPI module distribution to testing/staging PyPI repository"
+	@echo "  PYPI	Upload PyPI module distribution to testing/staging PyPI repository"
 	@twine upload -r testpypi dist/*

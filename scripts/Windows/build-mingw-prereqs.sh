@@ -206,11 +206,11 @@ provide_libmodbus_git() (
 	# Provide the libmodbus version with RTU USB support
 	PKGCFG_NAME="libmodbus"
 	DEP_PRJNAME="libmodbus-git"
-	#DEP_GITREPO="https://github.com/networkupstools/libmodbus"
-	#DEP_VERSION="rtu_usb"	# Git branch/tag/commit point
+	DEP_GITREPO="https://github.com/networkupstools/libmodbus"
+	DEP_VERSION="rtu_usb"	# Git branch/tag/commit point
 	# Use PR #3 temporarily:
-	DEP_GITREPO="https://github.com/jimklimov/libmodbus"	# TEMP
-	DEP_VERSION="fix-mingw-build"	# TEMP
+	#DEP_GITREPO="https://github.com/jimklimov/libmodbus"	# TEMP
+	#DEP_VERSION="fix-mingw-build"	# TEMP
 	DEP_DIRNAME="${DEP_PRJNAME}-${DEP_VERSION}"
 
 	FORCE=false
@@ -234,15 +234,15 @@ provide_libmodbus_git() (
 				git checkout "${DEP_VERSION}" && \
 				_GITDIFF="`git diff "origin/${DEP_VERSION}"`" && \
 				if [ -n "${_GITDIFF}" ] ; then
-					FORCE=true
 					# Ensure rebase etc. or fail
-					git pull || exit
-					./autogen.sh || exit
+					git pull && \
+					./autogen.sh && \
+					FORCE=true
 				else
 					echo "Current content in '`pwd`' matches current '${DEP_VERSION}' in '${DEP_GITREPO}'" >&2
 				fi
 			fi
-		} || { chmod -R +w "${DEP_DIRNAME}" || echo "" ; rm -rf "${DEP_DIRNAME}" ; }
+		} || { cd "${DLDIR}" ; chmod -R +w "${DEP_DIRNAME}" || echo "" ; rm -rf "${DEP_DIRNAME}" ; }
 	fi
 
 	cd "${DLDIR}"

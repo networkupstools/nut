@@ -16,30 +16,47 @@ EXTRA_DIST =
 CLEANFILES =
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
+lib_LTLIBRARIES =
+
+# We define the recipe below in any case, but only activate it by default
+# if the build configuration tells us to:
+if WITH_DEV_LIBNUTCONF
+# We want it built and delivered (standalone or with tool)
+  lib_LTLIBRARIES += libnutconf.la
+else !WITH_DEV_LIBNUTCONF
 if WITH_NUTCONF
-  # We define the recipe below in any case, but only activate it by default
-  # if the build configuration tells us to:
+# We only want the tool, make a private build
   noinst_LTLIBRARIES += libnutconf.la
+# else do not build at all, e.g. do not have C++ support
 endif WITH_NUTCONF
+endif !WITH_DEV_LIBNUTCONF
 
 libparseconf_la_SOURCES = parseconf.c
-
-libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else... but do depend on its build area:
 if BUILDING_IN_TREE
-  # No need for symlink hack
-  common.c: $(top_builddir)/include/nut_version.h
+# No need for symlink hack, just rebuild if header gets updated:
+  common-nut_version.c: $(top_builddir)/include/nut_version.h
 else !BUILDING_IN_TREE
-  # Surprisingly, for some "make" implementations this dependency means
-  # that the "common.c" required for builds below will be seeked in the
-  # current directory. So for out-of-tree builds like distcheck, we have
-  # to symlink the "real" source to build area:
-  common.c: $(top_builddir)/include/nut_version.h $(srcdir)/common.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/common/common.c" "$@"
+# Surprisingly, for some "make" implementations this dependency means that
+# the "common-nut_version.c" required for builds below will be seeked in the
+# current directory. So for out-of-tree builds like distcheck, we have
+# to symlink the "real" source to build area. And then when we handle
+# subsequent dependencies, we already have a filename that "make" now
+# discovers and is confused about:
+  common-nut_version.c: $(top_builddir)/include/nut_version.h $(srcdir)/common-nut_version.c
+	@if [ x"$(abs_top_srcdir)" = x"$(abs_top_builddir)" ] || test -s "$@" ; then \
+		exit 0 ; \
+	 else \
+		echo "  LN	$(top_srcdir)/common/common-nut_version.c => $@ (relative to `pwd`)" ; \
+		ln -s -f "$(top_srcdir)/common/common-nut_version.c" "$@" ; \
+	 fi
+
+  CLEANFILES += $(top_builddir)/common/nut_version.c
+  BUILT_SOURCES = common-nut_version.c
 endif !BUILDING_IN_TREE
 
 $(top_builddir)/include/nut_version.h:
@@ -51,24 +68,34 @@ $(top_builddir)/include/nut_version.h:
 libcommon_la_SOURCES = state.c str.c upsconf.c
 libcommonclient_la_SOURCES = state.c str.c
 
-# several other Makefiles include the two helpers common.c str.c (and
-# perhaps some other string-related code), so make them a library too;
+# several other Makefiles include the three helpers common.c common-nut_version.c str.c
+# (and perhaps some other string-related code), so we make them a library too;
 # note that LTLIBOBJS pulls in snprintf.c contents too.
 noinst_LTLIBRARIES += libcommonstr.la
 libcommonstr_la_SOURCES = str.c
 libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 libcommonstr_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
 
+# This one includes only version-related data and methods and should be
+# linked along with one of the other libcommon*.la for logging methods:
+noinst_LTLIBRARIES += libcommonversion.la
+libcommonversion_la_SOURCES = common-nut_version.c
+#libcommonversion_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
+#libcommonversion_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
+
+# Eventually we expect more sources as the big common.c source gets split
+# into smaller better-focused files.
+COMMON_SRC = \
+    common.c
+
 if BUILDING_IN_TREE
-  libcommon_la_SOURCES += common.c
-  libcommonstr_la_SOURCES += common.c
-  libcommonclient_la_SOURCES += common.c
+  libcommon_la_SOURCES += $(COMMON_SRC)
+  libcommonstr_la_SOURCES += $(COMMON_SRC)
+  libcommonclient_la_SOURCES += $(COMMON_SRC)
 else !BUILDING_IN_TREE
-  nodist_libcommon_la_SOURCES = common.c
-  nodist_libcommonstr_la_SOURCES = common.c
-  nodist_libcommonclient_la_SOURCES = common.c
-  CLEANFILES += $(top_builddir)/common/common.c
-  BUILT_SOURCES = common.c
+  nodist_libcommon_la_SOURCES = $(COMMON_SRC)
+  nodist_libcommonstr_la_SOURCES = $(COMMON_SRC)
+  nodist_libcommonclient_la_SOURCES = $(COMMON_SRC)
 endif !BUILDING_IN_TREE
 
 if HAVE_STRPTIME
@@ -129,10 +156,26 @@ libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@ @BSDKVMPROCLIB
 libcommon_la_CFLAGS = $(AM_CFLAGS)
 libcommonclient_la_CFLAGS = $(AM_CFLAGS)
 
-if WITH_NUTCONF
+if WITH_LIBNUTCONF
+if WITH_DEV_LIBNUTCONF
+  # libnutconf version information and build
+  # currently considered a highly experimental and so unstable API at least
+  # (at least, headers contain a lot of data/code, not sure they should)
+  libnutconf_la_LDFLAGS = -version-info 0:1:0
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutconf_la_LDFLAGS += -no-undefined
+endif HAVE_WINDOWS
+endif WITH_DEV_LIBNUTCONF
   libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
-  libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@ libcommonclient.la
-endif WITH_NUTCONF
+  # NOTE: No @LTLIBOBJS@ here, because libcommonclient.la includes them (if any)
+  libnutconf_la_LIBADD = @NETLIBS@ libcommonclient.la
+  libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp \
+	../include/nutconf.hpp ../include/nutipc.hpp \
+	../include/nutstream.hpp ../include/nutwriter.hpp
+else !WITH_LIBNUTCONF
+  EXTRA_DIST += nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
+endif !WITH_LIBNUTCONF
 
 if HAVE_LIBREGEX
   libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)
@@ -162,5 +205,11 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
-#clean-local:
+clean-local:
+	if test -L $(builddir)/common-nut_version.c \
+	|| test -h $(builddir)/common-nut_version.c \
+	; then rm -f $(builddir)/common-nut_version.c ; fi
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

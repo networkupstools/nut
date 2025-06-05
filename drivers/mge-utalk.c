@@ -57,7 +57,7 @@
 #include <ctype.h>
 #ifndef WIN32
 #include <sys/ioctl.h>
-#endif
+#endif	/* !WIN32 */
 #include "timehead.h"
 #include "main.h"
 #include "serial.h"
@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.97"
+#define DRIVER_VERSION	"0.99"
 
 
 /* driver description structure */
@@ -169,7 +169,7 @@ void upsdrv_initups(void)
 	char buf[BUFFLEN];
 #ifndef WIN32
 	int RTS = TIOCM_RTS;
-#endif
+#endif	/* !WIN32 */
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
@@ -181,14 +181,14 @@ void upsdrv_initups(void)
 
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
-#else
+#else	/* WIN32 */
 	if (testvar ("oldmac")) {
 		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,CLRRTS);
 	}
 	else {
 		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,SETRTS);
 	}
-#endif
+#endif	/* WIN32 */
 	enable_ups_comm();
 
 	/* Try to set "Low Battery Level" (if supported and given) */
@@ -543,9 +543,15 @@ int instcmd(const char *cmdname, const char *extra)
 {
 	char temp[BUFFLEN];
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	/* Start battery test */
 	if (!strcasecmp(cmdname, "test.battery.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		mge_command(temp, sizeof(temp), "Bx 1");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 
@@ -571,18 +577,22 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		sdtype = SD_STAYOFF;
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		upsdrv_shutdown();
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
 		sdtype = SD_RETURN;
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		upsdrv_shutdown();
 	}
 
 	/* Power Off [all] plugs */
 	if (!strcasecmp(cmdname, "load.off"))
 	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* TODO: Powershare (per plug) control */
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
@@ -603,6 +613,8 @@ int instcmd(const char *cmdname, const char *extra)
 	/* Power On all plugs */
 	if (!strcasecmp(cmdname, "load.on"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* TODO: add per plug control */
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
@@ -622,10 +634,11 @@ int instcmd(const char *cmdname, const char *extra)
 
 	/* Switch on/off Maintenance Bypass */
 	if ((!strcasecmp(cmdname, "bypass.start"))
-		|| (!strcasecmp(cmdname, "bypass.stop")))
+	 || (!strcasecmp(cmdname, "bypass.stop")))
 	{
 		/* TODO: add control on bypass value */
 		/* read maintenance bypass status */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if(mge_command(temp, sizeof(temp), "Ps") > 0)
 		{
 			if (temp[0] == '1')
@@ -648,7 +661,7 @@ int instcmd(const char *cmdname, const char *extra)
 		}
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -659,6 +672,8 @@ int setvar(const char *varname, const char *val)
 {
 	char temp[BUFFLEN];
 	char cmd[15];
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* TODO : add some controls */
 
@@ -671,9 +686,11 @@ int setvar(const char *varname, const char *val)
 		/* Execute command */
 		mge_command(temp, sizeof(temp), cmd);
 		upslogx(LOG_INFO, "setvar: UPS response to Set %s to %s was %s", varname, val, temp);
-	} else
-		upsdebugx(1, "setvar: Variable %s not supported by UPS", varname);
+		return STAT_SET_HANDLED;
+	}
 
+	upsdebugx(1, "setvar: Variable %s not supported by UPS", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -731,6 +748,10 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings from the mge_info[] mapping table */
+
 	/* write into infostr with proper formatting */
 	if ( strpbrk(item->fmt, "feEgG") ) {           /* float */
 		snprintf(infostr, infolen, item->fmt,
@@ -758,7 +779,7 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
    NOTE: MGE counts bytes/chars the opposite way as C,
          see mge-utalk manpage.  If status commands send two
          data items, these are separated by a space, so
-	 the elements of the second item are in buf[16..9].
+         the elements of the second item are in buf[16..9].
 */
 
 static int get_ups_status(void)
@@ -775,7 +796,8 @@ static int get_ups_status(void)
 		if (exit_flag != 0)
 			return FALSE;
 
-		/* must clear status buffer before each round */
+		/* must clear alarm and status buffers before each round */
+		alarm_init();
 		status_init();
 
 		/* system status */
@@ -803,11 +825,10 @@ static int get_ups_status(void)
 			}
 			/* buf[2] not used */
 			if (buf[1] == '1')
-				status_set("COMMFAULT"); /* self-invented */
+				alarm_set("COMMFAULT"); /* self-invented */
 				/* FIXME: better to call datastale()?! */
 			if (buf[0] == '1')
-				status_set("ALARM");     /* self-invented */
-				/* FIXME: better to use ups.alarm */
+				alarm_set("DEVICEALARM");     /* self-invented */
 		}  /* if strlen */
 
 		/* battery status */
@@ -866,6 +887,7 @@ static int get_ups_status(void)
 
 	} while ( !ok && tries++ < MAXTRIES );
 
+	alarm_commit();
 	status_commit();
 
 	return ok;
@@ -929,6 +951,9 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) quite intensively */
 	ret = vsnprintf(command, sizeof(command), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop

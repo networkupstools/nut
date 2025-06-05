@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.19"
+#define DRIVER_VERSION	"1.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -183,6 +183,10 @@ static void usb_comm_fail(const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) */
+	/* FIXME: Actually, only fixed strings, no formatting here. */
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -541,14 +545,14 @@ void upsdrv_initups(void)
 		if (i < 3) {
 #ifdef WIN32
 			sleep(5);
-#else
+#else	/* !WIN32 */
 			if (sleep(5) == 0) {
-#endif
+#endif	/* !WIN32 */
 				usb_comm_fail("Can't open USB device, retrying ...");
 				continue;
 #ifndef WIN32
 			}
-#endif
+#endif	/* !WIN32 */
 		}
 
 		fatalx(EXIT_FAILURE,
@@ -657,7 +661,9 @@ void upsdrv_updateinfo(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* FIXME: Which one is this - "load.off",
 	 * "shutdown.stayoff" or "shutdown.return"? */
@@ -677,6 +683,7 @@ int instcmd(const char *cmdname, const char *extra)
 			"%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)",
 			__func__);
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ret = usb_interrupt_write(udev,
 			SHUTDOWN_ENDPOINT, (usb_ctrl_charbuf)shutdown_packet,
 			SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
@@ -707,7 +714,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

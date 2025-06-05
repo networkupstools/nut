@@ -61,7 +61,7 @@ connections, tcp for TCP/IP connections and usb for USB connections.
 *port*='value'::
 Depending on the port type you can select a port here. For usb only auto is
 supported, for serial you can pass a device path like /dev/ttyS0 and for tcp you
-can pass a hostname with optional port like example.com:502.
+can pass an IP address or a hostname with optional port like example.com:502.
 
 *baudrate*='num'::
 Set the speed of the serial connection. The default baudrate is 9600.
@@ -85,6 +85,9 @@ be good to set a higher timeout on TCP connections with high latency.
 
 BUGS
 ----
+
+RTU USB support
+~~~~~~~~~~~~~~~
 
 This driver relies on advanced features of `libmodbus` to talk Modbus protocol
 over USB specifically (Serial and TCP are part of common library codebase).
@@ -142,6 +145,8 @@ your packaged or otherwise preceding NUT installation.
 The `./configure --enable-inplace-runtime` may be a good start to inherit
 build configuration from an existing NUT deployment, as further detailed at
 https://github.com/networkupstools/nut/wiki/Building-NUT-for-in%E2%80%90place-upgrades-or-non%E2%80%90disruptive-tests
+
+include::networked_hostnames.txt[]
 
 AUTHORS
 -------

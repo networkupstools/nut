@@ -42,7 +42,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.47"
+#define DRIVER_VERSION	"0.48"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -50,7 +50,7 @@
 #ifdef WIN32 /* FIXME ?? skip alarm handling */
 #define HAVE_NE_SET_CONNECT_TIMEOUT  1
 #define HAVE_NE_SOCK_CONNECT_TIMEOUT 1
-#endif
+#endif	/* WIN32 */
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -283,10 +283,11 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("driver.version.data", "%s", subdriver->version);
 
 		if (testvar("subscribe") && (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK)) {
-/* TODO: port extrafd to Windows */
 #ifndef WIN32
 			extrafd = ne_sock_fd(sock);
-#endif
+#else	/* WIN32 */
+			NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
 			time(&lastheard);
 		}
 
@@ -342,19 +343,23 @@ void upsdrv_updateinfo(void)
 			ne_sock_close(sock);
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
-/* TODO: port extrafd to Windows */
 #ifndef WIN32
 				extrafd = ne_sock_fd(sock);
-#endif
+#else	/* WIN32 */
+				NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
 				time(&lastheard);
 				return;
 			}
 
 			dstate_datastale();
-/* TODO: port extrafd to Windows */
+
 #ifndef WIN32
 			extrafd = ERROR_FD;
-#endif
+#else	/* WIN32 */
+			NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
+
 			return;
 		}
 	}
@@ -481,14 +486,21 @@ void upsdrv_shutdown(void) {
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	/* FIXME: shutdown per above? */
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
 */
 
-	upslogx(LOG_NOTICE, "%s: unknown command [%s] [%s]", __func__, cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -497,6 +509,8 @@ static int setvar(const char *varname, const char *val) {
 
 	object_query_t *resp = NULL;
 	object_query_t *req  = NULL;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* Pragmatic do { ... } while (0) loop allowing break to cleanup */
 	do {
@@ -517,6 +531,7 @@ static int setvar(const char *varname, const char *val) {
 
 		/* Check if setting was done */
 		if (1 > object_query_size(resp)) {
+			upslog_SET_UNKNOWN(varname, val);
 			status = STAT_SET_UNKNOWN;
 
 			break;
@@ -533,6 +548,8 @@ static int setvar(const char *varname, const char *val) {
 	if (NULL != resp)
 		object_query_destroy(resp);
 
+	if (status == STAT_SET_FAILED)
+		upslog_SET_FAILED(varname, val);
 	return status;
 }
 
@@ -661,9 +678,9 @@ void upsdrv_initups(void)
 	if (!nut_debug_level) {
 #ifndef WIN32
 		fp = fopen("/dev/null", "w");
-#else
+#else	/* WIN32 */
 		fp = fopen("nul", "w");
-#endif
+#endif	/* WIN32 */
 	} else {
 		fp = stderr;
 	}

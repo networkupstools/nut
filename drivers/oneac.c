@@ -51,7 +51,7 @@ int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.84"
+#define DRIVER_VERSION	"0.85"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -853,16 +853,20 @@ int instcmd(const char *cmdname, const char *extra)
 {
 	int i;
 
-	upsdebugx(2, "In instcmd with %s and extra %s.", cmdname, extra);
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "test.failure.start"))
 	{
-		ser_send(upsfd,"%s%s",SIM_PWR_FAIL,COMMAND_END);
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		ser_send(upsfd, "%s%s", SIM_PWR_FAIL, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		i = atoi(dstate_getinfo("ups.delay.shutdown"));
 
@@ -870,7 +874,7 @@ int instcmd(const char *cmdname, const char *extra)
 			(strncmp (UpsFamily, FAMILY_OB, FAMILY_SIZE) == 0))
 		{
 			upsdebugx(3, "Shutdown using %c%d...", DELAYED_SHUTDOWN_PREFIX, i);
-			ser_send(upsfd,"%c%d%s", DELAYED_SHUTDOWN_PREFIX, i, COMMAND_END);
+			ser_send(upsfd, "%c%d%s", DELAYED_SHUTDOWN_PREFIX, i, COMMAND_END);
 		}
 		else
 		{
@@ -881,32 +885,36 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if(!strcasecmp(cmdname, "shutdown.reboot"))
+	if (!strcasecmp(cmdname, "shutdown.reboot"))
 	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ser_send(upsfd, "%s", SHUTDOWN);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send(upsfd, "%c%s", DELAYED_SHUTDOWN_PREFIX, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.quick"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_battery_test();
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "test.battery.start.deep"))
-	{
+	if (!strcasecmp(cmdname, "test.battery.start.deep")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send(upsfd, "%s%s", TEST_BATT_DEEP, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if ((strncmp (UpsFamily, FAMILY_EG, FAMILY_SIZE) == 0) ||
 			(strncmp (UpsFamily, FAMILY_ON, FAMILY_SIZE) == 0))
 		{
@@ -949,14 +957,14 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 
 int setcmd(const char* varname, const char* setvalue)
 {
-	upsdebugx(2, "In setcmd for %s with %s...", varname, setvalue);
+	upsdebug_SET_STARTING(varname, setvalue);
 
 	if (!strcasecmp(varname, "ups.delay.shutdown"))
 	{
@@ -965,6 +973,7 @@ int setcmd(const char* varname, const char* setvalue)
 		{
 			if (atoi(setvalue) > 65535)
 			{
+				/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
 				upsdebugx(2, "Too big for OZ/OB (>65535)...(%s)", setvalue);
 				return STAT_SET_UNKNOWN;
 			}
@@ -973,6 +982,7 @@ int setcmd(const char* varname, const char* setvalue)
 		{
 			if (atoi(setvalue) > 999)
 			{
+				/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
 				upsdebugx(2, "Too big for EG/ON (>999)...(%s)", setvalue);
 				return STAT_SET_UNKNOWN;
 			}
@@ -1070,7 +1080,6 @@ int setcmd(const char* varname, const char* setvalue)
 		return STAT_SET_UNKNOWN;
 	}
 
-	upslogx(LOG_NOTICE, "setcmd: unknown command [%s]", varname);
-
+	upslog_SET_UNKNOWN(varname, setvalue);
 	return STAT_SET_UNKNOWN;
 }

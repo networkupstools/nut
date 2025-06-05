@@ -29,19 +29,22 @@ $(NUT_SCANNER_DEPS): dummy
 	+@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
-$(top_builddir)/include/nut_version.h \
 $(top_builddir)/clients/libupsclient-version.h \
 $(top_builddir)/common/libnutwincompat.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonstr.la \
+$(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-# do not hard depend on '../include/nut_version.h', since it blocks
+# do not hard depend on '../clients/libupsclient-version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
-# BUILT_SOURCES (in ../include) will ensure nut_version.h will
+# BUILT_SOURCES (in ../clients) will ensure libupsclient-version.h will
 # be built before anything else
-nut-scanner.c: $(top_builddir)/include/nut_version.h
+# FIXME: this can cause re-evaluation, possibly rebuilds, of libupsclient.la
+#  to look up its metadata and generate libupsclient-version.h which
+#  may be a bit of overkill (especially in cross-build cases etc.)
+#  Notably this pops up in `configure && make dist(check)` rituals.
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
 # We optionally append values to this below
@@ -61,6 +64,10 @@ libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
 libnutscan_la_LIBADD = $(NETLIBS)
 libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
+
+# Make sure generated sources are there when needed
+scan_snmp.c: nutscan-snmp.h
+scan_usb.c: nutscan-usb.h
 
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
@@ -89,7 +96,7 @@ libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:6:0
+libnutscan_la_LDFLAGS += -version-info 4:0:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -100,13 +107,15 @@ libnutscan_la_LDFLAGS += -version-info 2:6:0
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|snprintf_dynamic|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
 libnutscan_la_CFLAGS = \
 			-I$(top_builddir)/clients -I$(top_srcdir)/clients \
 			-I$(top_builddir)/include -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
-libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
+libnutscan_la_LIBADD += \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libcommonstr.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = \
@@ -127,8 +136,8 @@ nut_scanner_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
-  libnutscan_la_LIBADD += $(LIBSSL_LIBS)
-  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+  libnutscan_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
+  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
 endif WITH_SSL
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
@@ -182,3 +191,6 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # the root Makefile.am takes care of that!
 #clean-local:
 #	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

@@ -232,6 +232,10 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 #
 # Adjust this to keep upsmon from flooding your network, but don't make
 # it too high or it may miss certain short-lived power events.
+#
+# NOTE: This setting is different from a `pollfreq` supported by some of
+# the NUT driver programs, such as usbhid-ups (about how often the driver
+# polls a particular device).
 
 POLLFREQ 5
 
@@ -334,9 +338,17 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 # NOTIFYMSG ECO		"UPS %s: in ECO mode (as defined by vendor)"
 # NOTIFYMSG NOTECO	"UPS %s: no longer in ECO mode (as defined by vendor)"
+#
 # NOTIFYMSG ALARM	"UPS %s: one or more active alarms: [%s]"
 # or NOTIFYMSG ALARM	"UPS %s: one or more active alarms (check ups.alarm)"
 # NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
+#
+# NOTIFYMSG OVER	"UPS %s: overloaded"
+# NOTIFYMSG NOTOVER	"UPS %s: no longer overloaded"
+# NOTIFYMSG TRIM	"UPS %s: trimming incoming voltage"
+# NOTIFYMSG NOTTRIM	"UPS %s: no longer trimming incoming voltage"
+# NOTIFYMSG BOOST	"UPS %s: boosting incoming voltage"
+# NOTIFYMSG NOTBOOST	"UPS %s: no longer boosting incoming voltage"
 #
 # Special handling is provided for surprise tokens seen in ups.status, which
 # are not in the standard NUT dictionary (but some drivers are known to use);
@@ -431,6 +443,25 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # immediate. Built-in default value is 30 (seconds).
 
 OFFDURATION 30
+
+# --------------------------------------------------------------------------
+# OVERDURATION - timeout after which OVER status can cause a critical UPS
+# OVERDURATION -1
+#
+# This setting handles how a UPS that is overloaded should be treated in
+# situations when it is not fully communicating. Because such a UPS may be
+# in a potentially severe state, some users may want their systems to be
+# shutdown either immediately or after a set timeout has elapsed. The
+# OVERDURATION setting defines this timeout (in seconds), after which an
+# overloaded UPS that is not communicating will be considered critical.
+#
+# A value of zero means the UPS will instantly be considered critical when
+# overloaded and not communicating. In case a negative value is set (the
+# default), such a UPS will never be considered critical, at least not
+# because of the overload itself.
+#
+
+OVERDURATION -1
 
 # --------------------------------------------------------------------------
 # OBLBDURATION - put "OB LB" state into effect if it persists for this many

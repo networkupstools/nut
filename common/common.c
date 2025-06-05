@@ -1,7 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2024  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#define NUT_WANT_INET_NTOP_XX	1
+
 #include "common.h"
 #include "timehead.h"
 
@@ -28,11 +30,11 @@
 # include <pwd.h>
 # include <grp.h>
 # include <sys/un.h>
-#else
-# include <wincompat.h>
+#else	/* WIN32 */
+# include "wincompat.h"
 # include <processthreadsapi.h>
 # include <psapi.h>
-#endif
+#endif	/* WIN32 */
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>	/* readlink */
@@ -447,14 +449,6 @@ static int upsnotify_reported_disabled_systemd = 0;
 static int upsnotify_reported_disabled_notech = 0;
 static int upsnotify_report_verbosity = -1;
 
-/* the reason we define UPS_VERSION as a static string, rather than a
-	macro, is to make dependency tracking easier (only common.o depends
-	on nut_version.h), and also to prevent all sources from
-	having to be recompiled each time the version changes (they only
-	need to be re-linked). */
-#include "nut_version.h"
-const char *UPS_VERSION = NUT_VERSION_MACRO;
-
 #include <stdio.h>
 
 /* Know which bitness we were built for,
@@ -531,9 +525,14 @@ pid_t get_max_pid_t(void)
 
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
-	static	int	upslog_flags = UPSLOG_STDERR;
 
-	static struct timeval	upslog_start = { 0, 0 };
+	/* Declare so it can be privately externalized for nut_version.c */
+	extern struct timeval	upslog_start;
+	extern int	upslog_flags;
+
+	int	upslog_flags = UPSLOG_STDERR;
+
+	struct timeval	upslog_start = { 0, 0 };
 
 static void xbit_set(int *val, int flag)
 {
@@ -545,7 +544,9 @@ static void xbit_clear(int *val, int flag)
 	*val ^= (*val & flag);
 }
 
-static int xbit_test(int val, int flag)
+/* Declare so it can be privately externalized for nut_version.c */
+int xbit_test(int val, int flag);
+int xbit_test(int val, int flag)
 {
 	return ((val & flag) == flag);
 }
@@ -574,137 +575,6 @@ int syslog_is_disabled(void)
 	}
 
 	return value;
-}
-
-int banner_is_disabled(void)
-{
-	static int value = -1;
-
-	if (value < 0) {
-		char *s = getenv("NUT_QUIET_INIT_BANNER");
-		/* Envvar present and empty or true-ish means NUT tool name+version
-		 * banners disabled by the setting: default is enabled (inversed per
-		 * method name) */
-		value = 0;
-		if (s) {
-			if (*s == '\0' || !strcasecmp(s, "true") || strcmp(s, "1")) {
-				value = 1;
-			}
-		}
-	}
-
-	return value;
-}
-
-const char *describe_NUT_VERSION_once(void)
-{
-	static char	buf[LARGEBUF];
-	static const char	*printed = NULL;
-
-	if (printed)
-		return printed;
-
-	memset(buf, 0, sizeof(buf));
-
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
-	/* NOTE: Some compilers deduce that macro-based decisions about
-	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
-	 * a particular build. So we pragmatically handwave this away.
-	 */
-	if (1 < snprintf(buf, sizeof(buf),
-		"%s %s%s%s",
-		NUT_VERSION_MACRO,
-		NUT_VERSION_IS_RELEASE ? "release" : "(development iteration after ",
-		NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
-		NUT_VERSION_IS_RELEASE ? "" : ")"
-	)) {
-		printed = buf;
-	} else {
-		upslogx(LOG_WARNING, "%s: failed to report detailed NUT version", __func__);
-		printed = UPS_VERSION;
-	}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
-
-	return printed;
-}
-
-int print_banner_once(const char *prog, int even_if_disabled)
-{
-	static int	printed = 0;
-	static int	ret = -1;
-
-	if (printed)
-		return ret;
-
-	if (!banner_is_disabled() || even_if_disabled) {
-		ret = printf("Network UPS Tools %s %s%s\n",
-			prog, describe_NUT_VERSION_once(),
-			even_if_disabled == 2 ? "\n" : "");
-		fflush(stdout);
-		if (ret > 0)
-			printed = 1;
-	}
-
-	return ret;
-}
-
-const char *suggest_doc_links(const char *progname, const char *progconf) {
-	static char	buf[LARGEBUF];
-
-	buf[0] = '\0';
-
-	if (progname) {
-		char	*s = NULL, *buf2 = xstrdup(xbasename(progname));
-		size_t	i;
-
-		for (i = 0; buf2[i]; i++) {
-			buf2[i] = tolower(buf2[i]);
-		}
-
-		if ((s = strstr(buf2, ".exe")) && strcmp(buf2, "nut.exe"))
-			*s = '\0';
-
-		snprintf(buf, sizeof(buf),
-			"For more information please ");
-#if defined(WITH_DOCS) && WITH_DOCS
-		/* FIXME: Currently all NUT tools and drivers are in same
-		 *  man page section for "System Management Programs".
-		 *  If this ever changes (e.g. clients like `upsc` can be
-		 *  a "User Program" just as well), we may need an extra
-		    method argument here.
-		 */
-		snprintfcat(buf, sizeof(buf),
-			"Read The Fine Manual ('man %s %s') and/or ",
-			MAN_SECTION_CMD_SYS, buf2);
-#endif
-		snprintfcat(buf, sizeof(buf),
-			"see\n\t%s/docs/man/%s.html\n",
-			NUT_WEBSITE_BASE, buf2);
-
-		free(buf2);
-	}
-
-	if (progconf)
-		snprintfcat(buf, sizeof(buf),
-			"%s check documentation and samples of %s\n",
-			progname ? "Also" : "Please",
-			progconf);
-
-	return buf;
 }
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
@@ -770,9 +640,9 @@ void open_syslog(const char *progname)
 		break;
 # endif	/* HAVE_SETLOGMASK && HAVE_DECL_LOG_UPTO */
 	}
-#else
+#else	/* WIN32 */
 	EventLogName = progname;
-#endif	/* WIND32 */
+#endif	/* WIN32 */
 }
 
 /* close ttys and become a daemon */
@@ -789,7 +659,7 @@ void background(void)
 
 	if ((pid = fork()) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
-#endif
+#endif	/* !WIN32 */
 
 	if (!syslog_disabled)
 		/* not disabled: NUT_DEBUG_SYSLOG is unset or invalid */
@@ -865,7 +735,9 @@ void background(void)
 # ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
 # endif
-#endif	/* not WIN32 */
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 
 	upslogx(LOG_INFO, "Startup successful");
 }
@@ -886,8 +758,9 @@ struct passwd *get_user_pwent(const char *name)
 		fatalx(EXIT_FAILURE, "OS user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
-#else
+#else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(name);
+	/* NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE(); */
 #endif /* WIN32 */
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN) )
@@ -962,10 +835,11 @@ void become_user(struct passwd *pw)
 
 	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
 		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
-#else
+#else	/* WIN32 */
+	/* NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE(); */
 	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
 		pw ? pw->pw_name : "<null>");
-#endif
+#endif	/* WIN32 */
 }
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
@@ -987,16 +861,17 @@ void chroot_start(const char *path)
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
 
-#else
+#else	/* WIN32 */
+	/* NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE(); */
 	upsdebugx(1, "Can not chroot into %s: not implemented on this platform", path);
-#endif
+#endif	/* WIN32 */
 
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
 
 #ifndef WIN32
 	upsdebugx(1, "chrooted into %s", path);
-#endif
+#endif	/* !WIN32 */
 }
 
 char * getprocname(pid_t pid)
@@ -1012,7 +887,7 @@ char * getprocname(pid_t pid)
 	 */
 	char	*procname = NULL;
 	size_t	procnamelen = 0;
-	char	pathname[NUT_PATH_MAX];
+	char	pathname[NUT_PATH_MAX + 1];
 	struct stat	st;
 
 #ifdef WIN32
@@ -1076,7 +951,7 @@ char * getprocname(pid_t pid)
 			LocalFree(WinBuf);
 		}
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (stat("/proc", &st) == 0 && ((st.st_mode & S_IFMT) == S_IFDIR)) {
 		upsdebugx(3, "%s: /proc is an accessible directory, investigating", __func__);
@@ -1409,7 +1284,7 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
 		if (progname[i] == '/'
 #ifdef WIN32
 		||  progname[i] == '\\'
-#endif
+#endif	/* WIN32 */
 		) {
 			progbasenamelen = 0;
 			progbasenamedot = 0;
@@ -1469,7 +1344,7 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	size_t	procbasenamelen = 0, progbasenamelen = 0;
 	/* Track where the last dot is in the basename; 0 means none */
 	size_t	procbasenamedot = 0, progbasenamedot = 0;
-	char	procbasename[NUT_PATH_MAX], progbasename[NUT_PATH_MAX];
+	char	procbasename[NUT_PATH_MAX + 1], progbasename[NUT_PATH_MAX + 1];
 
 	if (checkprocname_ignored(__func__)) {
 		ret = -3;
@@ -1526,7 +1401,7 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 			goto finish;
 		}
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* TOTHINK: Developer builds wrapped with libtool may be prefixed
 	 * by "lt-" in the filename. Should we re-enter (or wrap around)
@@ -1661,7 +1536,7 @@ finish:
    depending on the .exe path */
 char * getfullpath(char * relative_path)
 {
-	char buf[NUT_PATH_MAX];
+	char buf[NUT_PATH_MAX + 1];
 	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
 		return NULL;
 	}
@@ -1676,15 +1551,16 @@ char * getfullpath(char * relative_path)
 
 	return(xstrdup(buf));
 }
-#endif
+#endif	/* WIN32 */
 
 /* drop off a pidfile for this process */
 void writepid(const char *name)
 {
 #ifndef WIN32
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	FILE	*pidf;
 	mode_t	mask;
+	intmax_t	initial_uid = getuid();
 
 	/* use full path if present, else build filename in PIDPATH */
 	if (*name == '/')
@@ -1694,6 +1570,10 @@ void writepid(const char *name)
 
 	mask = umask(022);
 	pidf = fopen(fn, "w");
+	if (!pidf && initial_uid) {
+		snprintf(fn, sizeof(fn), "%s/%s.pid", altpidpath(), name);
+		pidf = fopen(fn, "w");
+	}
 
 	if (pidf) {
 		intmax_t pid = (intmax_t)getpid();
@@ -1705,9 +1585,10 @@ void writepid(const char *name)
 	}
 
 	umask(mask);
-#else
+#else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(name);
-#endif
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
 }
 
 /* send sig to pid, returns -1 for error, or
@@ -1883,18 +1764,19 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 
 	return 0;
-#else
+#else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(pid);
 	NUT_UNUSED_VARIABLE(sig);
 	NUT_UNUSED_VARIABLE(progname);
 	NUT_UNUSED_VARIABLE(check_current_progname);
 	/* Windows builds use named pipes, not signals per se */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
 	upslogx(LOG_ERR,
 		"%s: not implemented for Win32 and "
 		"should not have been called directly!",
 		__func__);
 	return -1;
-#endif
+#endif	/* WIN32 */
 }
 
 /* parses string buffer into a pid_t if it passes
@@ -2008,9 +1890,8 @@ int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignor
 }
 #endif	/* WIN32 */
 
-int snprintfcat(char *dst, size_t size, const char *fmt, ...)
+int vsnprintfcat(char *dst, size_t size, const char *fmt, va_list ap)
 {
-	va_list ap;
 	size_t len = strlen(dst);
 	int ret;
 
@@ -2021,7 +1902,6 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 		return -1;
 	}
 
-	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -2036,7 +1916,6 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
-	va_end(ap);
 
 	dst[size] = '\0';
 
@@ -2057,17 +1936,202 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	return (int)len + ret;
 }
 
+int snprintfcat(char *dst, size_t size, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
+	ret = vsnprintfcat(dst, size, fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	return ret;
+}
+
+/*****************************************************************************
+ * String methods for space-separated token lists, used originally in dstate *
+ *****************************************************************************/
+
+/* Return non-zero if "string" contains "token" (case-sensitive),
+ * either surrounded by space character(s) or start/end of "string",
+ * or 0 if that token is not there, or if either string is NULL or empty.
+ */
+int	str_contains_token(const char *string, const char *token)
+{
+	char	*s = NULL;
+	size_t	offset = 0, toklen = 0;
+
+	if (!token || !*token || !string || !*string)
+		return 0;
+
+	s = strstr(string, token);
+	toklen = strlen(token);
+
+repeat:
+	/* not found or hit end of line */
+	if (!s || !*s)
+		return 0;
+
+	offset = s - string;
+#ifdef DEBUG
+	upsdebugx(3, "%s: '%s' in '%s': offset=%" PRIuSIZE" toklen=%" PRIuSIZE" s[toklen]='0x%2X'\n",
+		__func__, token, string, offset, toklen, s[toklen]);
+#endif
+	if (offset == 0 || string[offset - 1] == ' ') {
+		/* We have hit the start of token */
+		if (s[toklen] == '\0' || s[toklen] == ' ') {
+			/* And we have hit the end of token */
+			return 1;
+		}
+	}
+
+	/* token was a substring of some other token */
+	s = strstr(s + 1, token);
+	goto repeat;
+}
+
+/* Add "token" to end of string "tgt", if it is not yet there
+ * (prefix it with a space character if "tgt" is not empty).
+ * Return 0 if already there, 1 if token was added successfully,
+ * -1 if we needed to add it but it did not fit under the tgtsize limit,
+ * -2 if either string was NULL or "token" was empty.
+ * NOTE: If token contains space(s) inside, recurse to treat it
+ * as several tokens to add independently.
+ * Optionally calls "callback_always" (if not NULL) after checking
+ * for spaces (and maybe recursing) and before checking if the token
+ * is already there, and/or "callback_unique" (if not NULL) after
+ * checking for uniqueness and going to add a newly seen token.
+ * If such callback returns 0, abort the addition of token.
+ */
+int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+			    int (*callback_always)(char *, size_t, const char *),
+			    int (*callback_unique)(char *, size_t, const char *)
+)
+{
+	size_t	toklen = 0, tgtlen = 0;
+
+#ifdef DEBUG
+	upsdebugx(3, "%s: '%s'\n", __func__, token);
+#endif
+
+	if (!tgt || !token || !*token)
+		return -2;
+
+	if (strstr(token, " ")) {
+		/* Recurse adding each sub-token one by one (avoid duplicates)
+		 * We frown upon adding "A FEW TOKENS" at once, but in e.g.
+		 * code with mapping tables this is not easily avoidable...
+		 */
+		char	*tmp = xstrdup(token), *p = tmp, *s = tmp;
+		int	retval = -2, ret = 0;
+
+		while (*p) {
+			if (*p == ' ') {
+				*p = '\0';
+				if (s != p) {
+					/* Only recurse to set non-trivial tokens */
+					ret = str_add_unique_token(tgt, tgtsize, s, callback_always, callback_unique);
+
+					/* Only remember this ret if we are just
+					 * starting, or it is a failure, or
+					 * if we never failed and keep up the
+					 * successful streak */
+					if ( (retval == -2)
+					||   (ret < 0)
+					||   (retval >= 0 && ret >= retval) )
+						retval = ret;
+				}
+				p++;
+				s = p;	/* Start of new word... or a consecutive space to ignore on next cycle */
+			} else {
+				p++;
+			}
+		}
+
+		if (s != p) {
+			/* Last valid token did end with (*p=='\0') */
+			ret = str_add_unique_token(tgt, tgtsize, s, callback_always, callback_unique);
+			if ( (retval == -2)
+			||   (ret < 0)
+			||   (retval >= 0 && ret >= retval) )
+				retval = ret;
+		}
+
+		free(tmp);
+
+		/* Return 0 if all tokens were already there,
+		 * or 1 if all tokens were successfully added
+		 * (and there was at least one non-trivial token) */
+		return retval;
+	}
+
+	if (callback_always) {
+		int	cbret = callback_always(tgt, tgtsize, token);
+		if (!cbret) {
+			upsdebugx(2, "%s: skip token '%s': due to callback_always()", __func__, token);
+			return -3;
+		}
+	}
+
+	if (str_contains_token(tgt, token)) {
+		upsdebugx(2, "%s: skip token '%s': was already set", __func__, token);
+		return 0;
+	}
+
+	if (callback_unique) {
+		int	cbret = callback_unique(tgt, tgtsize, token);
+		if (!cbret) {
+			upsdebugx(2, "%s: skip token '%s': due to callback_unique()", __func__, token);
+			return -3;
+		}
+	}
+
+	/* separate with a space if multiple elements are present */
+	toklen = strlen(token);
+	tgtlen = strlen(tgt);
+
+	if (tgtsize < (tgtlen + (tgtlen > 0 ? 1 : 0) + toklen + 1)) {
+		upsdebugx(1, "%s: skip token '%s': too long for target string", __func__, token);
+		return -1;
+	}
+
+	if (snprintfcat(tgt, tgtsize, "%s%s", (tgtlen > 0) ? " " : "", token) < 0) {
+		upsdebugx(1, "%s: error adding token '%s': snprintfcat() failed", __func__, token);
+		return -1;
+	}
+
+	/* Added successfully */
+	return 1;
+}
+
 /* lazy way to send a signal if the program uses the PIDPATH */
 #ifndef WIN32
 int sendsignal(const char *progname, int sig, int check_current_progname)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
+	struct stat	st;
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
+	if (stat(fn, &st) != 0) {
+		snprintf(fn, sizeof(fn), "%s/%s.pid", altpidpath(), progname);
+	}
 
 	return sendsignalfn(fn, sig, progname, check_current_progname);
 }
-#else
+#else	/* WIN32 */
 int sendsignal(const char *progname, const char * sig, int check_current_progname)
 {
 	/* progname is used as the pipe name for WIN32
@@ -2075,20 +2139,20 @@ int sendsignal(const char *progname, const char * sig, int check_current_prognam
 	 */
 	return sendsignalfn(progname, sig, NULL, check_current_progname);
 }
-#endif
+#endif	/* WIN32 */
 
 const char *xbasename(const char *file)
 {
 #ifndef WIN32
 	const char *p = strrchr(file, '/');
-#else
+#else	/* WIN32 */
 	const char *p = strrchr(file, '\\');
 	const char *r = strrchr(file, '/');
 	/* if not found, try '/' */
 	if( r > p ) {
 		p = r;
 	}
-#endif
+#endif	/* WIN32 */
 
 	if (p == NULL)
 		return file;
@@ -2334,6 +2398,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 		/* generic message... */
+		/* Note: this code intentionally uses a caller-provided
+		 * format string (we do not get it from configs etc.) */
 		ret = vsnprintf(msgbuf, sizeof(msgbuf), fmt, va);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -2669,12 +2735,34 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #endif
 	) {
 		if (ret == -127) {
-			if (!upsnotify_reported_disabled_notech)
-				upsdebugx(upsnotify_report_verbosity,
+			if (!upsnotify_reported_disabled_notech) {
+				int	verbosity = upsnotify_report_verbosity;
+
+				if (state == NOTIFY_STATE_STOPPING && upsnotify_report_verbosity == 0) {
+					/* By default, do not spam even this if our
+					 * first-most message to be suppressed is
+					 * already about stopping (e.g. a failed
+					 * driver) unless explicitly requested to.
+					 */
+					char	*s = getenv("NUT_QUIET_INIT_UPSNOTIFY");
+
+					/* FIXME: Make an INVERTED server/conf.c::parse_boolean() reusable */
+					if (s && *s &&
+					    ( (!strcasecmp(s, "false")) || (!strcasecmp(s, "off")) || (!strcasecmp(s, "no")) || (!strcasecmp(s, "0")))
+					) {
+						upsdebugx(1, "Caller WANTS to see all these messages: NUT_QUIET_INIT_UPSNOTIFY=%s", NUT_STRARG(s));
+					} else {
+						/* Hide this one by default */
+						verbosity = 1;
+					}
+				}
+
+				upsdebugx(verbosity,
 					"%s: failed to notify about state %s: "
 					"no notification tech defined, "
 					"will not spam more about it",
 					__func__, str_upsnotify_state(state));
+			}
 			upsnotify_reported_disabled_notech = 1;
 			upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 		} else {
@@ -2699,95 +2787,393 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	return ret;
 }
 
-void nut_report_config_flags(void)
+char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int verbosity)
 {
-	/* Roughly similar to upslogx() but without the buffer-size limits and
-	 * timestamp/debug-level prefixes. Only printed if debug (any) is on.
-	 * Depending on amount of configuration tunables involved by a particular
-	 * build of NUT, the string can be quite long (over 1KB).
+	/* Return the bare-bone formatting string contained in "fmt"
+	 * as "%" characters followed immediately by ASCII letters,
+	 * or null if "fmt" is null (empty string if it has no "%"),
+	 * or "buf" is null, or "buflen" is too short.
+	 * Allows to compare different formatting strings to check
+	 * if they describe the same expected amounts of arguments
+	 * and their types.
+	 * Uses a caller-specified buffer and returns a pointer to
+	 * it, or NULL upon errors.
+	 * WARNING: Does not try to be a pedantically correct printf
+	 * style parser and allows foolishness like "%llhhG" which
+	 * the real methods would reject (and which would fail any
+	 * conparison with e.g. "%G" proper).
 	 */
-#if 0
-	const char *acinit_ver = NULL;
-#endif
-	/* Pass these as variables to avoid warning about never reaching one
-	 * of compiled codepaths: */
-	const char *compiler_ver = CC_VERSION;
-	const char *config_flags = CONFIG_FLAGS;
-	struct timeval		now;
+	const char	*p;
+	char	*b, inEscape;
+	size_t	i;
 
-	if (nut_debug_level < 1)
-		return;
+	if (!fmt || !buf || buflen == 0)
+		return NULL;
 
-#if 0
-	/* Only report git revision if NUT_VERSION_MACRO in nut_version.h aka
-	 * UPS_VERSION here is remarkably different from PACKAGE_VERSION from
-	 * configure.ac AC_INIT() -- which may be e.g. "2.8.0.1" although some
-	 * distros, especially embedders, tend to place their product IDs here).
-	 * The macro may be that fixed version or refer to git source revision,
-	 * as decided when generating nut_version.h (and if it was re-generated
-	 * in case of rebuilds while developers are locally iterating -- this
-	 * may be disabled for faster local iterations at a cost of a little lie).
-	 */
-	if (PACKAGE_VERSION && UPS_VERSION &&
-		(strlen(UPS_VERSION) < 12 || !strstr(UPS_VERSION, PACKAGE_VERSION))
+	for (b = buf, p = fmt, i = 0, inEscape = 0;
+		(*p != '\0' && i < buflen);
+		p++
 	) {
-		/* If UPS_VERSION is too short (so likely a static string
-		 * from configure.ac AC_INIT() -- although some distros,
-		 * especially embedders, tend to place their product IDs here),
-		 * or if PACKAGE_VERSION *is NOT* a substring of it: */
-		acinit_ver = PACKAGE_VERSION;
-/*
-		// Triplet that was printed below:
-		(acinit_ver ? " (release/snapshot of " : ""),
-		(acinit_ver ? acinit_ver : ""),
-		(acinit_ver ? ")" : ""),
-*/
-	}
-#endif
+		if (*p == '%') {
+			if (*(p+1) == '%') {
+				/* Escaped percent character, not a variable indicator; skip it right away */
+				p++;
+			} else {
+				inEscape = 1;
+				*b++ = *p;
+				i++;
+			}
+			continue;
+		}
 
-	/* NOTE: If changing wording here, keep in sync with configure.ac logic
-	 * looking for CONFIG_FLAGS_DEPLOYED via "configured with flags:" string!
+		if (inEscape) {
+			/* Did we hit a printf format conversion character?
+			 * Or another character that is critical for stack
+			 * intepretation as a variable argument list?
+			 * https://cplusplus.com/reference/cstdio/printf/
+			 * Note that some widths are only required with
+			 * C99 and C++11 standards, and may be not available
+			 * before. Still, since we rely on macro names from
+			 * those standards (or inspired by them) like PRIiMAX
+			 * or PRIuSIZE, defined (if missing in OS headers)
+			 * by our "nut_stdint.h".
+			 */
+			switch (*p) {
+				/* We care about integer/pointer type size "width" modifiers, e.g.: */
+				case 'l':	/* long (long) int */
+				case 'L':	/* long double */
+				case 'h':	/* short int/char */
+#if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) || (defined _STDC_C99) || (defined __C99FEATURES__) /* C99+ build mode */ || (defined PRIiMAX && defined PRIiSIZE)
+				/* Technically, double "ll" and "hh" are also new */
+				case 'z':	/* size_t */
+				case 'j':	/* intmax_t */
+				case 't':	/* ptrdiff_t */
+#endif
+				/* and here field length will be in another vararg on the stack: */
+				case '*':
+					*b++ = *p;
+					i++;
+					continue;
+
+				/* Known conversion characters, collapse some numeric format
+				 * specifiers to unambiguous basic type for later comparisons */
+				case 'd':
+				case 'i':
+					inEscape = 0;
+					*b++ = 'i';
+					i++;
+					continue;
+
+				case 'u':
+				case 'o':
+				case 'x':
+				case 'X':
+					inEscape = 0;
+					*b++ = 'u';
+					i++;
+					continue;
+
+				case 'f':
+				case 'e':
+				case 'E':
+				case 'g':
+				case 'G':
+#if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) || (defined _STDC_C99) || (defined __C99FEATURES__) /* C99+ build mode */
+				case 'F':
+				case 'a':
+				case 'A':
+#endif
+					inEscape = 0;
+					*b++ = 'f';
+					i++;
+					continue;
+
+				case 'c':
+				case 's':
+				case 'p':
+				case 'n':
+					inEscape = 0;
+					*b++ = *p;
+					i++;
+					continue;
+				default:
+					upsdebugx(1, "%s: in-escape: unexpected formatting char: '%c'", __func__, *p);
+			}
+
+			/* Assume and skip a flags/width/precision character
+			 * (non-POSIX standards-dependent), inconsequential
+			 * for printf style stack parsing and memory-safety.
+			 */
+		}
+	}
+
+	if (inEscape) {
+		if (verbosity >= 0)
+			upsdebugx(verbosity, "%s: error parsing '%s' as a formatting string - "
+				"got a dangling percent character", __func__, fmt);
+	}
+
+	*b = '\0';
+	return buf;
+}
+
+char * minimize_formatting_string_staticbuf(const char *fmt, int verbosity)
+{
+	/* Return the bare-bone formatting string contained in "fmt"
+	 * as "%" characters followed immediately by ASCII letters,
+	 * or null if "fmt" is null (empty string if it has no "%").
+	 * Allows to compare different formatting strings to check
+	 * if they describe the same expected amounts of arguments
+	 * and their types.
+	 * Returns a pointer to a static buffer; callers should
+	 * xstrdup() and free() the returned value where applicable
+	 * (e.g. if there is a need to compare several strings), or
+	 * just use minimize_formatting_string() with their own
+	 * buffers right away.
 	 */
 
-	gettimeofday(&now, NULL);
+	static char	buf[LARGEBUF];
 
-	if (upslog_start.tv_sec == 0) {
-		upslog_start = now;
+	return minimize_formatting_string(buf, sizeof(buf), fmt, verbosity);
+}
+
+int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference, int verbosity)
+{
+	/* Work around the insecurity of dynamic formatting strings (created
+	 * or selected at run-time and potentially mis-matching the stack of
+	 * subsequent varargs) by checking that the dynamic formatting string
+	 * to be used in practice matches the reference expectation. Compiler
+	 * is in position to statically check that the actual varargs match
+	 * that reference during build.
+	 * Returns 0 if the two reference strings minimize to the same value,
+	 * a positive value if they are sufficiently compatible (but not equal):
+	 *    1  dynamic format is the beginning of reference format
+	 *       (and there are some ignored left-over arguments)
+	 * ...or a negative value (and sets errno) in case of errors:
+	 *   -1  for memory-related errors
+	 *   -2  for minimize_formatting_string() returning NULL
+	 *       (also likely memory errors)
+	 *   -3  and errno=EINVAL for successfully checked formatting strings
+	 *       that were found to be not equivalent
+	 */
+	if (!fmt_dynamic || !fmt_reference) {
+		errno = EFAULT;
+		return -1;
+	} else {
+		/* Prepare buffers for minimized formatting strings.
+		 * To err on the safe side, size them same as originals.
+		 */
+		size_t lenD = strlen(fmt_dynamic) + 1;
+		size_t lenR = strlen(fmt_reference) + 1;
+		char *bufD = xcalloc(lenD, sizeof(char)), *bufR = xcalloc(lenR, sizeof(char));
+		size_t lenBufD;
+
+		if (!bufD || !bufR) {
+			if (bufD)
+				free(bufD);
+			if (bufR)
+				free(bufR);
+			errno = ENOMEM;
+			return -1;
+		}
+
+		if (!minimize_formatting_string(bufD, lenD, fmt_dynamic, verbosity)
+		||  !minimize_formatting_string(bufR, lenR, fmt_reference, verbosity)
+		) {
+			free(bufD);
+			free(bufR);
+			errno = ERANGE;
+			return -2;
+		}
+
+		if (!strcmp(bufD, bufR)) {
+			/* Two strings compared as equals, good to go */
+			free(bufD);
+			free(bufR);
+			return 0;
+		}
+
+		/* Does the reference format start with the complete
+		 * value of the dynamic format? (so bufR is same or
+		 * longer than bufD, and with operation just ignoring
+		 * extra passed arguments, if any)
+		 */
+
+		/* First, strip dangling non-conversion characters */
+		lenBufD = strlen(bufD);
+		while (lenBufD > 0) {
+			switch (bufD[lenBufD-1]) {
+				case '*':
+				case 'i':
+				case 'u':
+				case 'f':
+				case 'c':
+				case 's':
+				case 'p':
+				case 'n':
+					break;
+
+				default:
+					lenBufD--;
+					bufD[lenBufD] = '\0';
+					continue;
+			}
+			break;
+		}
+
+		if (!strncmp(bufD, bufR, strlen(bufD))) {
+			if (verbosity >= 0)
+				upsdebugx(verbosity,
+					"%s: dynamic formatting string '%s' (normalized as '%s') "
+					"is a subset of expected '%s' (normalized as '%s'); "
+					"ignoring some passed arguments but okay",
+					__func__, fmt_dynamic, bufD, fmt_reference, bufR);
+			free(bufD);
+			free(bufR);
+			return 1;
+		}
+
+		/* This be should not be fatal right here, but may be in the caller logic */
+		if (verbosity >= 0)
+			upsdebugx(verbosity,
+				"%s: dynamic formatting string '%s' is not equivalent to expected '%s'",
+				__func__, fmt_dynamic, fmt_reference);
+		free(bufD);
+		free(bufR);
+		errno = EINVAL;
+		return -3;
 	}
+}
 
-	if (upslog_start.tv_usec > now.tv_usec) {
-		now.tv_usec += 1000000;
-		now.tv_sec -= 1;
-	}
-
-	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
-		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s %s%s\n",
-			difftime(now.tv_sec, upslog_start.tv_sec),
-			(long)(now.tv_usec - upslog_start.tv_usec),
-			describe_NUT_VERSION_once(),
-			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
-			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
-			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
-			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
-			(config_flags && *config_flags != '\0' ? config_flags : "")
-		);
-#ifdef WIN32
-		fflush(stderr);
+int vsnprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list ap)
+{
+	if (!dst || size == 0 || validate_formatting_string(fmt_dynamic, fmt_reference, NUT_DYNAMICFORMATTING_DEBUG_LEVEL) < 0) {
+		return -1;
+	} else {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* Note: this code intentionally uses a caller-provided format string */
+		return vsnprintfcat(dst, size, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
 #endif
 	}
+}
 
-	/* NOTE: May be ignored or truncated by receiver if that syslog server
-	 * (and/or OS sender) does not accept messages of such length */
-	if (xbit_test(upslog_flags, UPSLOG_SYSLOG)) {
-		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s %s%s",
-			describe_NUT_VERSION_once(),
-			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
-			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
-			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
-			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
-			(config_flags && *config_flags != '\0' ? config_flags : "")
-		);
+int snprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
+	ret = vsnprintfcat_dynamic(dst, size, fmt_dynamic, fmt_reference, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	return ret;
+}
+
+int vsnprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list ap)
+{
+	/* NOTE: Not checking for NULL "dst" or its "size", this is a valid
+	 * use-case for vsnprintf() to gauge how long the string would be.
+	 */
+	if (validate_formatting_string(fmt_dynamic, fmt_reference, NUT_DYNAMICFORMATTING_DEBUG_LEVEL) < 0) {
+		return -1;
+	} else {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* Note: this code intentionally uses a caller-provided format string */
+		return vsnprintf(dst, size, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
+}
+
+int snprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
+	ret = vsnprintf_dynamic(dst, size, fmt_dynamic, fmt_reference, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	return ret;
+}
+
+char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	/* Practical helper with a static buffer which we can use for setting
+	 * values as a "%s" string e.g. in calls to dstate_setinfo(), etc.
+	 * Sets buffer to empty string in case of errors.
+	 */
+	static char buf[LARGEBUF];
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
+	ret = vsnprintf_dynamic(buf, sizeof(buf), fmt_dynamic, fmt_reference, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	if (ret < 0) {
+		buf[0] = '\0';
+	}
+
+	return buf;
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
@@ -2815,10 +3201,30 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #endif
 	/* Note: errors here can reset errno,
 	 * so errno_orig is stashed beforehand */
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	do {
+#ifdef HAVE_VA_COPY_VARIANT
+		va_list	va_snprintf;
+
+		/* va_copy() to avoid mangling on re-use (see issue #2948),
+		 * this lets us retry safely vsnprintf() with the VA copies */
+		va_copy(va_snprintf, va);
+		ret = vsnprintf(buf, bufsize, fmt, va_snprintf);
+		va_end(va_snprintf);
+#else
+		/* Without va_copy(), we cannot safely retry vsnprintf()
+		 * and will accept truncation if the buffer is too small */
 		ret = vsnprintf(buf, bufsize, fmt, va);
+#endif
 
 		if ((ret < 0) || ((uintmax_t)ret >= (uintmax_t)bufsize)) {
+			/* Not building the below block on systems without va_copy(),
+			 * otherwise consumed VAs would get re-used & mangled on retries.
+			 * Instead, we want fall-through directly to the truncation message. */
+#ifdef HAVE_VA_COPY_VARIANT
 			/* Try to adjust bufsize until we can print the
 			 * whole message. Note that standards only require
 			 * up to 4095 bytes to be manageable in printf-like
@@ -2871,6 +3277,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		/* Arbitrary limit, gotta stop somewhere */
 		if (bufsize > LARGEBUF * 64) {
 vupslog_too_long:
+#endif
 			if (syslog_is_disabled()) {
 				fprintf(stderr, "vupslog: vsnprintf needed "
 					"more than %" PRIuSIZE " bytes; logged "
@@ -2896,7 +3303,7 @@ vupslog_too_long:
 #ifdef WIN32
 		LPVOID WinBuf;
 		DWORD WinErr = GetLastError();
-#endif
+#endif	/* WIN32 */
 
 		snprintfcat(buf, bufsize, ": %s", strerror(errno_orig));
 
@@ -2914,7 +3321,7 @@ vupslog_too_long:
 
 		snprintfcat(buf, bufsize, " [%s]", (char *)WinBuf);
 		LocalFree(WinBuf);
-#endif
+#endif	/* WIN32 */
 	}
 
 	/* Note: nowadays debug level can be changed during run-time,
@@ -2948,7 +3355,7 @@ vupslog_too_long:
 		}
 #ifdef WIN32
 		fflush(stderr);
-#endif
+#endif	/* WIN32 */
 	}
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(priority, "%s", buf);
@@ -2972,7 +3379,7 @@ const char * confpath(void)
 		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_ETC);
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* We assume, here and elsewhere, that
 	 * at least CONFPATH is always defined */
@@ -2998,7 +3405,7 @@ const char * dflt_statepath(void)
 		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_VAR_RUN);
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* We assume, here and elsewhere, that
 	 * at least STATEPATH is always defined */
@@ -3031,7 +3438,7 @@ const char * altpidpath(void)
 			/* fall back to built-in pathname relative to binary/workdir */
 			path = getfullpath(PATH_VAR_RUN);
 		}
-#endif
+#endif	/* WIN32 */
 	}
 
 	if ( (path != NULL) && (*path != '\0') )
@@ -3067,7 +3474,7 @@ const char * rootpidpath(void)
 		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_ETC);
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* We assume, here and elsewhere, that
 	 * at least PIDPATH is always defined */
@@ -3080,11 +3487,11 @@ const char * rootpidpath(void)
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn) {
 	size_t len = strlen(fn);
-	size_t max = NUT_PATH_MAX;
+	size_t max = NUT_PATH_MAX;	/* no +1 here */
 #ifndef WIN32
 	struct sockaddr_un	ssaddr;
 	max = sizeof(ssaddr.sun_path);
-#endif
+#endif	/* WIN32 */
 
 	if (len < max)
 		return;
@@ -3121,6 +3528,10 @@ void upslog_with_errno(int priority, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(priority, fmt, va, 1);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3143,6 +3554,10 @@ void upslogx(int priority, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(priority, fmt, va, 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3205,6 +3620,10 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(LOG_DEBUG, fmt, va, 1);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3260,6 +3679,10 @@ void s_upsdebugx(int level, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(LOG_DEBUG, fmt, va, 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3400,6 +3823,10 @@ static void vfatal(const char *fmt, va_list va, int use_strerror)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vupslog(LOG_ERR, fmt, va, use_strerror);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3420,6 +3847,10 @@ void fatal_with_errno(int status, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vfatal(fmt, va, (errno > 0) ? 1 : 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3443,6 +3874,10 @@ void fatalx(int status, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	vfatal(fmt, va, 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3464,7 +3899,7 @@ void *xmalloc(size_t size)
 #ifdef WIN32
 	/* FIXME: This is what (x)calloc() is for! */
 	memset(p, 0, size);
-#endif
+#endif	/* WIN32 */
 
 	return p;
 }
@@ -3479,7 +3914,7 @@ void *xcalloc(size_t number, size_t size)
 #ifdef WIN32
 	/* FIXME: calloc() above should have initialized this already! */
 	memset(p, 0, size * number);
-#endif
+#endif	/* WIN32 */
 
 	return p;
 }
@@ -3533,7 +3968,7 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d
 
 	return read(fd, buf, buflen);
 }
-#else
+#else	/* WIN32 */
 ssize_t select_read(serial_handler_t *fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	/* This function is only called by serial drivers right now */
@@ -3555,7 +3990,7 @@ ssize_t select_read(serial_handler_t *fd, void *buf, const size_t buflen, const 
 
 	return res;
 }
-#endif
+#endif	/* WIN32 */
 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
@@ -3581,7 +4016,7 @@ ssize_t select_write(const int fd, const void *buf, const size_t buflen, const t
 
 	return write(fd, buf, buflen);
 }
-#else
+#else	/* WIN32 */
 /* Note: currently not implemented de-facto for Win32 */
 ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
@@ -3590,10 +4025,13 @@ ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen,
 	NUT_UNUSED_VARIABLE(buflen);
 	NUT_UNUSED_VARIABLE(d_sec);
 	NUT_UNUSED_VARIABLE(d_usec);
-	upsdebugx(1, "WARNING: method %s() is not implemented yet for WIN32", __func__);
+
+	NUT_WIN32_INCOMPLETE_LOGWARN();
+	/* upsdebugx(1, "WARNING: method %s() is not implemented yet for WIN32", __func__); */
+
 	return 0;
 }
-#endif
+#endif	/* WIN32 */
 
 /* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
  * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
@@ -3678,7 +4116,7 @@ static const char * search_paths_builtin[] = {
 	 * Perhaps a decent fallback idea for all platforms, not just WIN32.
 	 */
 	".",
-#endif
+#endif	/* WIN32 */
 	NULL
 };
 
@@ -3866,7 +4304,7 @@ void upsdebugx_report_search_paths(int level, int report_search_paths_builtin) {
 	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
 		upsdebugx(level, "\tWindows via %s:\t%s", varname, s);
 	}
-#endif
+#endif	/* WIN32 */
 }
 
 static char * get_libname_in_dir(const char* base_libname, size_t base_libname_length, const char* dirname, int index) {
@@ -3880,7 +4318,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	DIR *dp;
 	struct dirent *dirp;
 	char *libname_path = NULL, *libname_alias = NULL;
-	char current_test_path[NUT_PATH_MAX];
+	char current_test_path[NUT_PATH_MAX + 1];
 
 	upsdebugx(3, "%s('%s', %" PRIuSIZE ", '%s', %i): Entering method...",
 		__func__, base_libname, base_libname_length, dirname, index);
@@ -4182,9 +4620,10 @@ void set_close_on_exec(int fd) {
 # ifdef WIN32
 	/* Find a way, if possible at all (WIN32: get INT fd from the HANDLE?) */
 	NUT_UNUSED_VARIABLE(fd);
-# else
+	NUT_WIN32_INCOMPLETE();
+# else	/* !WIN32 */
 	fcntl(fd, F_SETFD, FD_CLOEXEC);
-# endif
+# endif	/* !WIN32 */
 #endif
 }
 
@@ -4293,3 +4732,67 @@ int match_regex_hex(const regex_t *preg, const int n)
 	return match_regex(preg, buf);
 }
 #endif	/* HAVE_LIBREGEX */
+
+/* NOT THREAD SAFE!
+ * Helpers to convert one IP address to string from different structure types
+ * Return pointer to internal buffer, or NULL and errno upon errors */
+const char *inet_ntopSS(struct sockaddr_storage *s)
+{
+	static char str[40];
+
+	if (!s) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	switch (s->ss_family)
+	{
+	case AF_INET:
+		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), str, 16);
+	case AF_INET6:
+		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), str, 40);
+	default:
+		errno = EAFNOSUPPORT;
+		return NULL;
+	}
+}
+
+const char *inet_ntopAI(struct addrinfo *ai)
+{
+	/* Note: below we manipulate copies of ai - cannot cast into
+	 * specific structure type pointers right away because:
+	 *   error: cast from 'struct sockaddr *' to 'struct sockaddr_storage *'
+	 *          increases required alignment from 2 to 8
+	 */
+	/* https://stackoverflow.com/a/29147085/4715872
+	 * obviously INET6_ADDRSTRLEN is expected to be larger
+	 * than INET_ADDRSTRLEN, but this may be required in case
+	 * if for some unexpected reason IPv6 is not supported, and
+	 * INET6_ADDRSTRLEN is defined as 0
+	 * but this is not very likely and I am aware of no cases of
+	 * this in practice (editor)
+	 */
+	static char	addrstr[(INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1];
+
+	if (!ai || !ai->ai_addr) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	addrstr[0] = '\0';
+	switch (ai->ai_family) {
+		case AF_INET: {
+			struct sockaddr_in	addr_in;
+			memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
+			return inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, INET_ADDRSTRLEN);
+		}
+		case AF_INET6: {
+			struct sockaddr_in6	addr_in6;
+			memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
+			return inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, INET6_ADDRSTRLEN);
+		}
+		default:
+			errno = EAFNOSUPPORT;
+			return NULL;
+	}
+}

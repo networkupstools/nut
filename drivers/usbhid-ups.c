@@ -6,7 +6,7 @@
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   2016      Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
- *   2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
+ *   2020-2025 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.60"
+#define DRIVER_VERSION	"0.65"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -42,7 +42,7 @@
 #include "common.h"
 #ifdef WIN32
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 /* include all known subdrivers */
 #include "mge-hid.h"
@@ -55,6 +55,7 @@
 #	include "belkin-hid.h"
 #	include "cps-hid.h"
 #	include "delta_ups-hid.h"
+#	include "ecoflow-hid.h"
 #	include "ever-hid.h"
 #	include "idowell-hid.h"
 #	include "legrand-hid.h"
@@ -79,6 +80,7 @@ static subdriver_t *subdriver_list[] = {
 	&belkin_subdriver,
 	&cps_subdriver,
 	&delta_ups_subdriver,
+	&ecoflow_subdriver,
 	&ever_subdriver,
 	&idowell_subdriver,
 	&legrand_subdriver,
@@ -292,8 +294,8 @@ static status_lkp_t status_info[] = {
 	{ "boost", STATUS(BOOST) },
 	{ "bypassauto", STATUS(BYPASSAUTO) },
 	{ "bypassman", STATUS(BYPASSMAN) },
-	{ "ecomode", STATUS(ECOMODE) },
-	{ "essmode", STATUS(ESSMODE) },
+	{ "ecomode", STATUS(ECOMODE) },	/* Should not get used (at least not via */
+	{ "essmode", STATUS(ESSMODE) },	/* ups.status), but tracked just in case */
 	{ "off", STATUS(OFF) },
 	{ "cal", STATUS(CALIB) },
 	{ "overheat", STATUS(OVERHEAT) },
@@ -385,11 +387,14 @@ info_lkp_t bypass_manual_info[] = {
 	{ 0, "!bypassman", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
+
+/* Should not get used (at least not via ups.status), but tracked just in case.
+ * Currently referenced in mge-hid.c */
 info_lkp_t eco_mode_info[] = {
 	{ 0, "normal", NULL, NULL },
-    { 1, "ecomode", NULL, NULL },
-    { 2, "essmode", NULL, NULL },
-    { 0, NULL, NULL, NULL }
+	{ 1, "ecomode", NULL, NULL },
+	{ 2, "essmode", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
    off" rather than "being on", so that devices that don't implement
@@ -831,15 +836,15 @@ int instcmd(const char *cmdname, const char *extradata)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "instcmd(%s, %s)",
-		cmdname,
-		extradata ? extradata : "[NULL]");
+	upsdebug_INSTCMD_STARTING(cmdname, extradata);
 
 	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
+		/* Process alias/fallback names */
+
 		upsdebugx(3, "%s: cmdname '%s' not found; "
 			"checking for alternatives",
 			__func__, cmdname);
@@ -895,7 +900,9 @@ int instcmd(const char *cmdname, const char *extradata)
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
 
-		upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
+		/* FIXME: ..._UNKNOWN? */
+		upsdebugx(2, "instcmd: info element unavailable %s", cmdname);
+		upslog_INSTCMD_INVALID(cmdname, extradata);
 		return STAT_INSTCMD_INVALID;
 	}
 
@@ -906,29 +913,57 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Check if the item is an instant command */
 	if (!(hidups_item->hidflags & HU_TYPE_CMD)) {
-		upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
+		upsdebugx(2, "instcmd: %s is not an instant command", cmdname);
 		return STAT_INSTCMD_INVALID;
 	}
 
 	/* If extradata is empty, use the default value from the HID-to-NUT table */
 	val = extradata ? extradata : hidups_item->dfl;
+	if (!val && hidups_item->hidflags & HU_FLAG_PARAM_REQUIRED) {
+		upsdebugx(2, "instcmd: %s requires an explicit or default parameter", cmdname);
+		return STAT_INSTCMD_CONVERSION_FAILED;
+	}
 
 	/* Lookup the new value if needed */
 	if (hidups_item->hid2info != NULL) {
+		/* item->nuf() is expected to handle NULL if it must */
 		value = hu_find_valinfo(hidups_item->hid2info, val);
 	} else {
-		value = atol(val);
+		if (!val) {
+			/* If we end up with atol(NULL) below, it should return
+			 * 0 on error anyway (on platforms where it would not
+			 * crash instead due to the NULL), so we make it portably
+			 * explicit here.
+			 */
+			/* FIXME: Look up data points (maybe via override.* or
+			 * default.* settings) for delay/etc. when handling
+			 * commands like shutdown.* or load.* ?
+			 */
+			upsdebugx(4, "instcmd: %s got no explicit nor default parameter, "
+				"but does not require one: falling back to 0", cmdname);
+			value = 0;
+		} else {
+			value = atol(val);
+		}
 	}
 
-	/* Actual variable setting */
+	/* Actual variable setting (as far as firmware is concerned) */
+	{	/* scoping + workaround for "error: the address of `argtmp` will always evaluate as `true`" */
+		char	argtmp[LARGEBUF], *s = NULL;
+		if (snprintf(argtmp, sizeof(argtmp), "%s (%f)",
+			NUT_STRARG(extradata), value) > 0)
+			s = argtmp;
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, s);
+	}
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
-		upsdebugx(3, "instcmd: SUCCEED\n");
+		upsdebugx(3, "instcmd: SUCCEED");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
+	/* upsdebugx(3, "instcmd: FAILED"); / * FIXME: return HANDLED but FAILED, not UNKNOWN! */
+	upslog_INSTCMD_FAILED(cmdname, extradata);
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -938,51 +973,74 @@ int setvar(const char *varname, const char *val)
 	hid_info_t	*hidups_item;
 	double		value;
 
-	upsdebugx(1, "setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	/* retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(varname);
 
 	if (hidups_item == NULL) {
-		upsdebugx(2, "setvar: info element unavailable %s\n", varname);
+		upsdebugx(2, "setvar: info element unavailable %s", varname);
+		upslog_SET_UNKNOWN(varname, val);
 		return STAT_SET_UNKNOWN;
 	}
 
 	/* Checking item writability and HID Path */
 	if (!(hidups_item->info_flags & ST_FLAG_RW)) {
-		upsdebugx(2, "setvar: not writable %s\n", varname);
+		upsdebugx(2, "setvar: not writable %s", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
 	/* handle server side variable */
 	if (hidups_item->hidflags & HU_FLAG_ABSENT) {
-		upsdebugx(2, "setvar: setting server side variable %s\n", varname);
+		upsdebugx(2, "setvar: setting server side variable %s", varname);
 		dstate_setinfo(hidups_item->info_type, "%s", val);
 		return STAT_SET_HANDLED;
 	}
 
 	/* HU_FLAG_ABSENT is the only case of HID Path == NULL */
 	if (hidups_item->hidpath == NULL) {
-		upsdebugx(2, "setvar: ID Path is NULL for %s\n", varname);
+		upsdebugx(2, "setvar: ID Path is NULL for %s", varname);
 		return STAT_SET_UNKNOWN;
+	}
+
+	/* FIXME: This code did not use "dfl"; should it start to?
+	 * If val is empty, use the default value from the HID-to-NUT table */
+	/* if (!val) val = hidups_item->dfl; */
+
+	if (!val && hidups_item->hidflags & HU_FLAG_PARAM_REQUIRED) {
+		upsdebugx(2, "setvar: %s requires an explicit or default parameter", varname);
+		return STAT_SET_CONVERSION_FAILED;
 	}
 
 	/* Lookup the new value if needed */
 	if (hidups_item->hid2info != NULL) {
+		/* item->nuf() is expected to handle NULL if it must */
 		value = hu_find_valinfo(hidups_item->hid2info, val);
 	} else {
-		value = atol(val);
+		if (!val) {
+			/* If we end up with atol(NULL) below, it should return
+			 * 0 on error anyway (on platforms where it would not
+			 * crash instead due to the NULL), so we make it portably
+			 * explicit here.
+			 */
+			upsdebugx(4, "setvar: %s got no explicit nor default parameter, "
+				"but does not require one: falling back to 0", varname);
+			value = 0;
+		} else {
+			value = atol(val);
+		}
 	}
 
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
-		upsdebugx(5, "setvar: SUCCEED\n");
+		upsdebugx(5, "setvar: SUCCEED");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_SET_HANDLED;
 	}
 
-	upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
+	/* upsdebugx(3, "setvar: FAILED"); / * FIXME: return HANDLED but FAILED, not UNKNOWN! */
+	upslog_SET_FAILED(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -1244,11 +1302,12 @@ void upsdrv_updateinfo(void)
 		ups_infoval_set(item, value);
 	}
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n",
+	upsdebugx(1, "took %.3f seconds handling interrupt reports...",
 		interval());
 #endif
 	/* clear status buffer before beginning */
 	status_init();
+	buzzmode_init();
 
 	/* Do a full update (polling) every pollfreq
 	 * or upon data change (ie setvar/instcmd) */
@@ -1274,11 +1333,12 @@ void upsdrv_updateinfo(void)
 	}
 
 	ups_status_set();
+	buzzmode_commit();
 	status_commit();
 
 	dstate_dataok();
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling feature reports...\n",
+	upsdebugx(1, "took %.3f seconds handling feature reports...",
 		interval());
 #endif
 }
@@ -1508,7 +1568,7 @@ void upsdrv_initups(void)
 			lbrb_log_delay_sec = ipv;
 		}
 	} else {
-		/* Activate APC BXnnnMI/BXnnnnMI tweaks, for details see
+		/* Activate APC BXnnnMI/BXnnnnMI/BVKnnnM2/BVKnnnnM2 tweaks, for details see
 		 * https://github.com/networkupstools/nut/issues/2347
 		 */
 		size_t	productLen = hd->Product ? strlen(hd->Product) : 0;
@@ -1516,11 +1576,16 @@ void upsdrv_initups(void)
 		/* FIXME: Consider also ups.mfr.date as 2023 or newer?
 		 * Eventually up to some year this gets fixed?
 		 */
-		if (hd->Vendor
-		&&  productLen > 6	/* BXnnnMI at least */
-		&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
-		&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
-		&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I')
+		if ((hd->Vendor
+			&&  productLen > 6	/* BXnnnMI at least */
+			&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+			&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
+			&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I'))
+		|| (hd->Vendor
+			&&  productLen > 7	/* BVKnnnM2 at least */
+			&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+			&&  (strstr(hd->Product, " BVK") || strstr(hd->Product, "BVK") == hd->Product)
+			&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == '2'))
 		) {
 			int	got_lbrb_log_delay_without_calibrating = testvar("lbrb_log_delay_without_calibrating") ? 1 : 0,
 				got_onlinedischarge_calibration = testvar("onlinedischarge_calibration") ? 1 : 0,
@@ -1786,7 +1851,7 @@ static int callback(
 		return 0;
 	}
 
-	upslogx(2, "Using subdriver: %s", subdriver->name);
+	upslogx(LOG_INFO, "Using subdriver: %s", subdriver->name);
 
 	if (subdriver->fix_report_desc(arghd, pDesc)) {
 		upsdebugx(2, "Report Descriptor Fixed");
@@ -1944,11 +2009,23 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		case HU_WALKMODE_FULL_UPDATE:
 			/* These don't need polling after initinfo() */
-			if (item->hidflags & (HU_FLAG_ABSENT | HU_TYPE_CMD | HU_FLAG_STATIC))
+			if (item->hidflags & (HU_FLAG_ABSENT | HU_TYPE_CMD))
 				continue;
 
-			/* These need to be polled after user changes (setvar / instcmd) */
-			if ( (item->hidflags & HU_FLAG_SEMI_STATIC) && (data_has_changed == FALSE) )
+			/* These don't need polling after initinfo() normally
+			 * However in "pollonly" mode we use these to detect "Data stale"
+			 * condition (e.g. cable disconnected) by failing the reads:
+			 */
+			if ((item->hidflags & HU_FLAG_STATIC) && use_interrupt_pipe)
+				continue;
+
+			/* These need to be polled after user changes (setvar / instcmd)
+			 * or to detect "Data stale" in "pollonly" mode
+			 */
+			if (   (item->hidflags & HU_FLAG_SEMI_STATIC)
+				&& (data_has_changed == FALSE)
+				&& use_interrupt_pipe
+			)
 				continue;
 
 			break;
@@ -2036,7 +2113,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 # if EPROTO && WITH_LIBUSB_0_1
 		case -EPROTO:		/* Protocol error */
 # endif
-#endif
+#endif	/* !WIN32 */
 		case LIBUSB_ERROR_PIPE:      /* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
@@ -2063,7 +2140,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		if (ups_infoval_set(item, value) != 1)
 			continue;
 
-		if (mode == HU_WALKMODE_INIT) {
+		if (mode == HU_WALKMODE_INIT || (!use_interrupt_pipe)) {
 			info_lkp_t	*info_lkp;
 
 			dstate_setflags(item->info_type, item->info_flags);
@@ -2176,9 +2253,11 @@ static void ups_alarm_set(void)
 	if (ups_status & STATUS(BYPASSMAN)) {
 		alarm_set("Manual bypass mode!");
 	}
-	/*if (ups_status & STATUS(ECOMODE)) {
-		alarm_set("ECO(HE) mode!");
-	}*/ /* disable alarm for eco as we dont want raise alarm ? */
+	if (ups_status & STATUS(ECOMODE)) {
+		buzzmode_set("vendor:default:ECO");
+		/* disable alarm for ECO as we don't want to raise alarm about it */
+		/* alarm_set("ECO(HE) mode!"); */
+	}
 }
 
 /* Return the current value of ups_status */
@@ -2486,10 +2565,14 @@ static void ups_status_set(void)
 		status_set("BYPASS");		/* on bypass */
 	}
 	if (ups_status & STATUS(ECOMODE)) {
-		status_set("ECO");		/* on ECO(HE) Mode */
+		buzzmode_set("vendor:default:ECO");	/* on ECO(HE) Mode,
+						 * should not happen
+						 * via ups.status anymore */
 	}
 	if (ups_status & STATUS(ESSMODE)) {
-		status_set("ESS");		/* on ESS Mode */
+		buzzmode_set("vendor:default:ESS");	/* on ESS Mode,
+						 * should not happen
+						 * via ups.status anymore */
 	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
@@ -2632,19 +2715,7 @@ static int ups_infoval_set(hid_info_t *item, double value)
 
 		dstate_setinfo(item->info_type, "%s", nutvalue);
 	} else {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(item->info_type, item->dfl, value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		dstate_setinfo_dynamic(item->info_type, item->dfl, "%f", value);
 	}
 
 	return 1;

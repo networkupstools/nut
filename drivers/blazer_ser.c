@@ -31,7 +31,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol serial driver"
-#define DRIVER_VERSION	"1.63"
+#define DRIVER_VERSION	"1.64"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -120,7 +120,7 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 #ifndef TESTING
-#ifndef WIN32 /* TODO : Correctly set the port parameters for WIN32 */
+# ifndef WIN32
 	const struct {
 		const char	*val;
 		const int	dtr;
@@ -187,10 +187,12 @@ void upsdrv_initups(void)
 	 * Allow some time to settle for the cablepower
 	 */
 	usleep(100000);
-#else
-	upsdebugx(0, "blazer_ser: upsdrv_init(): serial port setup for WIN32 currently has not been ported (TODO)");
-#endif /* WIN32 */
-#endif /* TESTING */
+# else	/* WIN32 */
+	/* TODO : Correctly set the port parameters for WIN32 */
+	NUT_WIN32_INCOMPLETE_LOGWARN();
+	/* upsdebugx(0, "blazer_ser: upsdrv_init(): serial port setup for WIN32 currently has not been ported (TODO)"); */
+# endif	/* WIN32 */
+#endif	/* !TESTING */
 	blazer_initups();
 }
 

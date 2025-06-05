@@ -1,9 +1,13 @@
 /*
     nutwriter.cpp - NUT writer
 
-    Copyright (C)
-        2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
-        2024	Jim Klimov <jimklimov+nut@gmail.com>
+    Copyright (C) 2012 Eaton
+
+        Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
+
+    Copyright (C) 2024-2025 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -404,10 +408,16 @@ const NotifyFlagsStrings::TypeStrings NotifyFlagsStrings::type_str = {
 	"NOTOFF",	// NOTIFY_NOTOFF
 	"BYPASS",	// NOTIFY_BYPASS
 	"NOTBYPASS",	// NOTIFY_NOTBYPASS
-	"ECO\t",	// NOTIFY_ECO (including padding)
+	"ECO\t",	// NOTIFY_ECO (including padding); NOTE: inverter mode, not ups state, for notifications
 	"NOTECO",	// NOTIFY_NOTECO
 	"ALARM",	// NOTIFY_ALARM
 	"NOTALARM",	// NOTIFY_NOTALARM
+	"OVER",		// NOTIFY_OVER
+	"NOTOVER",	// NOTIFY_NOTOVER
+	"TRIM",		// NOTIFY_TRIM
+	"NOTTRIM",	// NOTIFY_NOTTRIM
+	"BOOST",	// NOTIFY_BOOST
+	"NOTBOOST",	// NOTIFY_NOTBOOST
 	"OTHER",	// NOTIFY_OTHER
 	"NOTOTHER",	// NOTIFY_NOTOTHER
 	"SUSPEND_STARTING",	// NOTIFY_SUSPEND_STARTING
@@ -615,8 +625,8 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	UPSMON_DIRECTIVEX("POLLFAIL_LOG_THROTTLE_MAX", int, config.pollFailLogThrottleMax,  false);
 	UPSMON_DIRECTIVEX("OFFDURATION",    int,          config.offDuration,    false);
 	UPSMON_DIRECTIVEX("OBLBDURATION",   int,          config.oblbDuration,   false);
+	UPSMON_DIRECTIVEX("OVERDURATION",   int,          config.overDuration,   false);
 	UPSMON_DIRECTIVEX("SHUTDOWNEXIT",   nut::BoolInt, config.shutdownExit,   false);
-
 	UPSMON_DIRECTIVEX("CERTPATH",       std::string,  config.certPath,       true);
 
 	// Spec says to write these as 0/1 integers
@@ -650,6 +660,15 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 		bi2 = i;
 		bis = bi2;
 		UPSMON_DIRECTIVEX("FORCESSL",       nut::BoolInt, bis,                   false);
+	}
+
+	if (config.alarmCritical.set()) {
+		bi = config.alarmCritical;
+		bi.bool01 = true;
+		i = bi;
+		bi2 = i;
+		bis = bi2;
+		UPSMON_DIRECTIVEX("ALARMCRITICAL",  nut::BoolInt, bis,                   false);
 	}
 
 	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hostSync,       false);

@@ -84,14 +84,44 @@ if test -z "${nut_have_gpio_seen}"; then
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
 	LIBS="${LIBS_ORIG} ${depLIBS}"
 	AC_CHECK_HEADERS(gpiod.h, [nut_have_gpio=yes], [nut_have_gpio=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(gpiod_chip_open_by_name gpiod_chip_close, [nut_gpio_lib="libgpiod"], [nut_have_gpio=no])
+	AS_IF([test x"${nut_have_gpio}" = xyes], [AC_CHECK_FUNCS(gpiod_chip_close, [], [nut_have_gpio=no])])
+	AS_IF([test x"${nut_have_gpio}" = xyes], [
+		AS_CASE(["${GPIO_VERSION}"],
+			[2.*], [AC_CHECK_FUNCS(gpiod_chip_open, [nut_gpio_lib="libgpiod"], [nut_have_gpio=no])],
+			[1.*], [AC_CHECK_FUNCS(gpiod_chip_open_by_name, [nut_gpio_lib="libgpiod"], [nut_have_gpio=no])],
+				[AC_CHECK_FUNCS(gpiod_chip_open_by_name, [
+					nut_gpio_lib="libgpiod"
+					AS_IF([test x"${GPIO_VERSION}" = xnone], [GPIO_VERSION="1.x"])
+				 ], [
+					AC_CHECK_FUNCS(gpiod_chip_open, [
+						nut_gpio_lib="libgpiod"
+						AS_IF([test x"${GPIO_VERSION}" = xnone], [GPIO_VERSION="2.x"])
+					])]
+				 )]
+		)
+	])
 
 	if test "${nut_have_gpio}" = "yes"; then
 		LIBGPIO_CFLAGS="${depCFLAGS}"
 		LIBGPIO_LIBS="${depLIBS}"
+
+		dnl Normally this would be in library headers, but they do not seem forthcoming
+		AS_CASE([${GPIO_VERSION}],
+			[2.*], [
+				AC_DEFINE(WITH_LIBGPIO_VERSION, 0x00020000, [Define libgpio C API version generation])
+				AC_DEFINE_UNQUOTED(WITH_LIBGPIO_VERSION_STR, ["0x00020000"], [Define libgpio C API version generation as string])
+				],
+			[1.*], [
+				AC_DEFINE(WITH_LIBGPIO_VERSION, 0x00010000, [Define libgpio C API version generation])
+				AC_DEFINE_UNQUOTED(WITH_LIBGPIO_VERSION_STR, ["0x00010000"], [Define libgpio C API version generation as string])
+				]
+		)
 	else
 		dnl FIXME: Report "none" here?
 		nut_gpio_lib=""
+
+		AC_DEFINE(WITH_LIBGPIO_VERSION, 0x00000000, [Define libgpio C API version generation])
+		AC_DEFINE_UNQUOTED(WITH_LIBGPIO_VERSION_STR, ["0x00000000"], [Define libgpio C API version generation as string])
 	fi
 
 	unset CFLAGS

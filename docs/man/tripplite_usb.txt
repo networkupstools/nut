@@ -18,13 +18,13 @@ SUPPORTED HARDWARE
 
 This driver should work with older Tripp Lite UPSes which are detected
 as USB HID-class devices, but are not true HID Power-Device Class devices.
-So far, the devices supported by `tripplite_usb` have product ID 0001,
+So far, the devices supported by `tripplite_usb` have product ID '0001',
 and the newer units (such as those with "LCD" in the model name) with
-product ID 2001 require the linkman:usbhid-ups[8] driver instead.
+product ID '2001' require the linkman:usbhid-ups[8] driver instead.
 
 Please report success or failure to the nut-upsuser mailing list.
 A key piece of information is the protocol number, returned in
-`ups.firmware.aux`.  Also, be sure to turn on debugging ('-DDD')
+`ups.firmware.aux`.  Also, be sure to turn on debugging (`-DDD`)
 for more informative log messages.
 
 If your Tripp Lite UPS uses a serial port, you may wish to investigate
@@ -41,7 +41,7 @@ This driver has been tested with the following models:
  * SMART3000RM2U
 
 If you have used Tripp Lite's PowerAlert software to connect to your UPS,
-there is a good chance that 'tripplite_usb' will work if it uses one of the
+there is a good chance that `tripplite_usb` will work if it uses one of the
 following protocols:
 
  * Protocol 0004
@@ -65,8 +65,8 @@ include::nut_usb_addvars.txt[]
 
 - `-x upsid="12345"`
 
-Select a specific UPS by its unique UPS ID. The argument is a regular expression 
-that must match the UPS ID string. This allows for precise identification of UPS 
+Select a specific UPS by its unique UPS ID. The argument is a regular expression
+that must match the UPS ID string. This allows for precise identification of UPS
 devices when multiple devices of the same make and model are connected.
 See below regarding how to read and write the ups id (unit id) using linkman:upsrw[8].
 
@@ -80,9 +80,9 @@ to the same monitoring system, and you want to be sure that you shut them down
 in the correct order.
 +
 This regex is matched against the full USB product string as seen in
-lsusb(8). The `ups.model` in the linkman:upsc[1] output only lists the name
-after `TRIPP LITE`, so to match a SMART2200RMXL2U, you could use the regex
-`.*SMART2200.*`.
+linkmanext:lsusb[8]. The `ups.model` in the linkman:upsc[8] output only lists
+the name after `TRIPP LITE`, so to match a 'SMART2200RMXL2U', you could use the
+regex like `.*SMART2200.*`.
 
 * The *productid* is a regular expression which matches the UPS PID as four
 hexadecimal digits.  So far, the only known devices that work with this driver
@@ -149,12 +149,13 @@ instance should control.
 For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the
 same time, since they have different USB Product ID strings. If you have two
 SMART1500RM2U units, you would have to find which USB bus and device number
-each unit is on (via lsusb(8)).
+each unit is on (via linkmanext:lsusb[8]).
 
-Some of the SMART*2U models have a configurable Unit ID number, and you can now use the `upsid` 
-config argument to uniquely specify which UPS a given driver instance should control. 
-This allows for precise identification of UPS devices when multiple devices are connected.
-To retrieve or set the upsid use the linkman:upsrw[8] utility.
+Some of the SMART*2U models have a configurable Unit ID number, and you can
+now use the `upsid` config argument to uniquely specify which UPS a given
+driver instance should control.  This allows for precise identification of
+UPS devices when multiple devices are connected.  To retrieve or set the
+`upsid`, you can use the linkman:upsrw[8] utility.
 
 AUTHORS
 -------
@@ -162,7 +163,7 @@ AUTHORS
 Written by Charles Lepple, based on the linkman:tripplite[8] driver
 by Rickard E. (Rik) Faith and Nicholas Kain.
 
-Please do not email the authors directly - use the nut-upsdev mailing list.
+Please do not email the authors directly -- use the nut-upsdev mailing list.
 
 A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley
 Feldman (http://www.bradleyloritheo.com)
@@ -183,7 +184,7 @@ linkman:tripplite[8], linkman:tripplitesu[8], linkman:usbhid-ups[8]
 Other tools:
 ~~~~~~~~~~~~
 
-regex(7), lsusb(8)
+linkmanext:regex[7], linkmanext:lsusb[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

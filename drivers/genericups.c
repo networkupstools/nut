@@ -21,9 +21,9 @@
 
 #ifndef WIN32
 #include <sys/ioctl.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "main.h"
 #include "serial.h"
@@ -224,9 +224,9 @@ void upsdrv_updateinfo(void)
 
 #ifndef WIN32
 	ret = ioctl(upsfd, TIOCMGET, &flags);
-#else
+#else	/* WIN32 */
 	ret = w32_getcomm( upsfd, &flags );
-#endif
+#endif	/* WIN32 */
 
 	if (ret != 0) {
 		upslog_with_errno(LOG_INFO, "ioctl failed");
@@ -334,13 +334,15 @@ void upsdrv_shutdown(void)
 	if (flags == TIOCM_ST) {
 
 #ifndef WIN32
-#ifndef HAVE_TCSENDBREAK
+# ifndef HAVE_TCSENDBREAK
 		upslogx(LOG_ERR, "Need to send a BREAK, but don't have tcsendbreak!");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
 	        return;
-#endif
-#endif
+# endif
+#else	/* WIN32 */
+		NUT_WIN32_INCOMPLETE_DETAILED("Need to send a BREAK at this point, but not addressed for WIN32 yet");
+#endif	/* WIN32 */
 
 		ret = tcsendbreak(upsfd, 4901);
 
@@ -355,9 +357,9 @@ void upsdrv_shutdown(void)
 
 #ifndef WIN32
 	ret = ioctl(upsfd, TIOCMSET, &flags);
-#else
+#else	/* WIN32 */
 	ret = w32_setcomm(upsfd,&flags);
-#endif
+#endif	/* WIN32 */
 
 	if (ret != 0) {
 		upslog_with_errno(LOG_ERR, "ioctl TIOCMSET");
@@ -459,9 +461,9 @@ void upsdrv_initups(void)
 
 #ifndef WIN32
 	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm)) {
-#else
+#else	/* WIN32 */
 	if (w32_setcomm(upsfd,&upstab[upstype].line_norm)) {
-#endif
+#endif	/* WIN32 */
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
 	}
 }

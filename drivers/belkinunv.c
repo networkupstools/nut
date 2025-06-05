@@ -94,7 +94,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Belkin 'Universal UPS' driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -452,7 +452,7 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 	struct termios tios;
 #ifndef WIN32
 	struct flock flock;
-#endif
+#endif	/* !WIN32 */
 	char buf[128];
 	ssize_t r;
 
@@ -492,7 +492,6 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 		return ERROR_FD_SER;
 	}
 
-/* TODO: port to WIN32 */
 #ifndef WIN32
 	/* lock the port */
 	memset(&flock, 0, sizeof(flock));
@@ -502,7 +501,10 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 		close(fd);
 		return ERROR_FD_SER;
 	}
-#endif
+#else	/* WIN32 */
+	/* TODO: port to WIN32 */
+	NUT_WIN32_INCOMPLETE_DETAILED("port locking");
+#endif	/* WIN32 */
 
 	/* sleep at least 0.25 seconds for the UPS to wake up. Belkin's own
 	   software sleeps 1 second, so that's what we do, too. */
@@ -518,11 +520,11 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 
 #ifndef WIN32
 	r = read(fd, buf, 127);
-#else
+#else	/* WIN32 */
 /* WIN32 : w32_serial_read is blocking, using select_read with 0ms timeout
  * is non-blocking */
 	r = select_read(fd, buf, 127, 0, 0);
-#endif
+#endif	/* WIN32 */
 
 	if (r == -1 && errno != EAGAIN) {
 		close(fd);
@@ -543,11 +545,11 @@ static int belkin_std_upsread(TYPE_FD_SER fd, unsigned char *buf, int n) {
 	while (count < n) {
 #ifndef WIN32
 		r = read(fd, &buf[count], (size_t)(n-count));
-#else
+#else	/* WIN32 */
 		/* WIN32 : w32_serial_read is blocking, using select_read
 		 * with 0ms timeout is non-blocking */
 		r = select_read(fd, buf, (size_t)(n-count), 0, 0);
-#endif
+#endif	/* WIN32 */
 		if (r==-1 && errno==EAGAIN) {
 			/* non-blocking i/o, no data available */
 			usleep(100000);
@@ -744,6 +746,9 @@ static void updatestatus(int smode, const char *fmt, ...) {
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) a few times */
 	vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -1199,6 +1204,10 @@ int instcmd(const char *cmdname, const char *extra)
 {
 	int r;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	/* We use test.failure.start to initiate a "deep battery test".
 	   This does not really simulate a 'power failure', because we
 	   won't start shutdown procedures during a test.
@@ -1220,21 +1229,25 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		r = belkin_nut_write_int(REG_TESTSTATUS, 2);
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.failure.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		r = belkin_nut_write_int(REG_TESTSTATUS, 1);
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
@@ -1255,12 +1268,14 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 0);
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 1); /* 1 second */
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		/* restarttimer is in minutes, shutdowntimer is in
 		   seconds.  Still, restarttimer=1 is not safe,
 		   because it might be decremented before
@@ -1273,6 +1288,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 2); /* 2 minutes */
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 40); /* 40 seconds */
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
@@ -1285,7 +1301,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -1293,6 +1309,8 @@ int instcmd(const char *cmdname, const char *extra)
 static int setvar(const char *varname, const char *val)
 {
 	int i;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	if (!strcasecmp(varname, "input.sensitivity")) {
 		for (i=0; i<asize(voltsens); i++) {
@@ -1324,7 +1342,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;  /* Future: failure if result==-1 */
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown var [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

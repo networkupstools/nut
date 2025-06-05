@@ -1314,36 +1314,42 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.battery.start.quick"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		SendCommand (TST_BATQCK_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.deep"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		SendCommand (TST_BATDEP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		SendCommand (TST_ABORT_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		SendCommand (TST_BATDEP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		SendCommand (TST_ABORT_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		SendCommand (SET_OFFSTP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -1394,6 +1400,7 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.return") ||
 	    !strcasecmp(cmdname, "shutdown.reboot"))
 	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		SendCommand (SET_ATOSRT1_REQ);
 		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
@@ -1401,6 +1408,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		SendCommand (SET_ATOSRT0_REQ);
 		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
@@ -1408,6 +1416,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		SendCommand (SET_OFFSTP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}

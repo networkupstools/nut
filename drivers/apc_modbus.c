@@ -34,11 +34,17 @@
 #include <modbus.h>
 
 #if defined NUT_MODBUS_HAS_USB
-# define DRIVER_NAME "NUT APC Modbus driver with USB support"
+# define DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR	"with"
 #else
-# define DRIVER_NAME "NUT APC Modbus driver without USB support"
+# define DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR	"without"
 #endif
-#define DRIVER_VERSION "0.11"
+
+#if !(defined NUT_MODBUS_LINKTYPE_STR)
+# define NUT_MODBUS_LINKTYPE_STR	"unknown"
+#endif
+
+#define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
+#define DRIVER_VERSION	"0.14"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -419,16 +425,8 @@ static int _apc_modbus_double_to_nut(const apc_modbus_value_t *value, char *outp
 	if (value->format != NULL)
 		format = value->format;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-	res = snprintf(output, output_len, format, double_value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	res = snprintf_dynamic(output, output_len, format, "%f", double_value);
+
 	if (res < 0 || (size_t)res >= output_len) {
 		return 0;
 	}
@@ -462,16 +460,8 @@ static int _apc_modbus_power_to_nut(const apc_modbus_value_t *value, char *outpu
 	if (value->format != NULL)
 		format = value->format;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-	res = snprintf(output, output_len, format, double_value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	res = snprintf_dynamic(output, output_len, format, "%f", double_value);
+
 	if (res < 0 || (size_t)res >= output_len) {
 		return 0;
 	}
@@ -1020,11 +1010,11 @@ static void _apc_modbus_handle_error(modbus_t *ctx)
 	if (wsa_error == WSAETIMEDOUT) {
 		flush = 1;
 	}
-#else
+#else	/* !WIN32 */
 	if (errno == ETIMEDOUT) {
 		flush = 1;
 	}
-#endif /* WIN32 */
+#endif /* !WIN32 */
 
 	if (flush > 0 && flush_retries++ < 5) {
 		usleep(1000000);
@@ -1114,22 +1104,16 @@ static int _apc_modbus_update_value(apc_modbus_register_t *regs_info, const uint
 		}
 		dstate_setinfo(regs_info->nut_variable_name, "%s", nutvbuf);
 	} else {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
 		assert(regs_info->value_type <= apc_modbus_value_types_max);
 		switch (regs_info->value_type) {
 		case APC_VT_STRING:
-			dstate_setinfo(regs_info->nut_variable_name, regs_info->value_format, value.data.string_value);
+			dstate_setinfo_dynamic(regs_info->nut_variable_name, regs_info->value_format, "%s", value.data.string_value);
 			break;
 		case APC_VT_INT:
-			dstate_setinfo(regs_info->nut_variable_name, regs_info->value_format, value.data.int_value);
+			dstate_setinfo_dynamic(regs_info->nut_variable_name, regs_info->value_format, "%" PRIi64, value.data.int_value);
 			break;
 		case APC_VT_UINT:
-			dstate_setinfo(regs_info->nut_variable_name, regs_info->value_format, value.data.uint_value);
+			dstate_setinfo_dynamic(regs_info->nut_variable_name, regs_info->value_format, "%" PRIu64, value.data.uint_value);
 			break;
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
@@ -1157,9 +1141,6 @@ static int _apc_modbus_update_value(apc_modbus_register_t *regs_info, const uint
 # pragma GCC diagnostic pop
 #endif
 		}
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
 	}
 
 	dstate_flags = 0;
@@ -1243,6 +1224,8 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	apc_modbus_register_t *apc_map = NULL, *apc_value = NULL;
 	uint16_t reg_value[16];
 
+	upsdebug_SET_STARTING(nut_varname, str_value);
+
 	for (mi = 0; mi < SIZEOF_ARRAY(apc_modbus_register_maps) && apc_value == NULL; mi++) {
 		apc_map = apc_modbus_register_maps[mi];
 
@@ -1255,12 +1238,12 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	}
 
 	if (!apc_map || !apc_value) {
-		upslogx(LOG_WARNING, "%s: [%s] is unknown", __func__, nut_varname);
+		upslog_SET_UNKNOWN(nut_varname, str_value);
 		return STAT_SET_UNKNOWN;
 	}
 
 	if (!(apc_value->value_flags & APC_VF_RW)) {
-		upslogx(LOG_WARNING, "%s: [%s] is not writable", __func__, nut_varname);
+		upslogx(LOG_SET_INVALID, "%s: [%s] is not writable", __func__, nut_varname);
 		return STAT_SET_INVALID;
 	}
 
@@ -1268,7 +1251,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 
 	if (apc_value->value_converter && apc_value->value_converter->nut_to_apc) {
 		if (!apc_value->value_converter->nut_to_apc(str_value, reg_value, apc_value->modbus_len)) {
-			upslogx(LOG_WARNING, "%s: [%s] failed to convert value", __func__, nut_varname);
+			upslogx(LOG_SET_CONVERSION_FAILED, "%s: [%s] failed to convert value", __func__, nut_varname);
 			return STAT_SET_CONVERSION_FAILED;
 		}
 	} else {
@@ -1311,7 +1294,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 		}
 
 		if (!r) {
-			upslogx(LOG_WARNING, "%s: [%s] failed to convert value", __func__, nut_varname);
+			upslogx(LOG_SET_CONVERSION_FAILED, "%s: [%s] failed to convert value", __func__, nut_varname);
 			return STAT_SET_CONVERSION_FAILED;
 		}
 	}
@@ -1412,7 +1395,9 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	apc_modbus_command_t *apc_command = NULL;
 	uint16_t value[4]; /* Max 64-bit */
 
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(nut_cmdname, extra);
 
 	for (i = 0; apc_modbus_command_map[i].nut_command_name; i++) {
 		if (!strcasecmp(nut_cmdname, apc_modbus_command_map[i].nut_command_name)) {
@@ -1422,21 +1407,22 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	}
 
 	if (!apc_command) {
-		upslogx(LOG_WARNING, "%s: [%s] is unknown", __func__, nut_cmdname);
+		upslog_INSTCMD_UNKNOWN(nut_cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
 	assert(apc_command->modbus_len <= SIZEOF_ARRAY(value));
 
 	if (!_apc_modbus_from_uint64(apc_command->value, value, apc_command->modbus_len)) {
-		upslogx(LOG_WARNING, "%s: [%s] failed to convert value", __func__, nut_cmdname);
+		upslogx(LOG_INSTCMD_CONVERSION_FAILED, "%s: [%s] failed to convert value", __func__, nut_cmdname);
 		return STAT_INSTCMD_CONVERSION_FAILED;
 	}
 
 	addr = apc_command->modbus_addr;
 	nb = apc_command->modbus_len;
+	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 	if (modbus_write_registers(modbus_ctx, addr, nb, value) < 0) {
-		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
+		upslogx(LOG_INSTCMD_FAILED, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
 		_apc_modbus_handle_error(modbus_ctx);
 		return STAT_INSTCMD_FAILED;
 	}
@@ -1480,6 +1466,7 @@ void upsdrv_updateinfo(void)
 
 	alarm_init();
 	status_init();
+	buzzmode_init();
 
 	/* Status Data */
 	if (_apc_modbus_read_registers(modbus_ctx, 0, 27, regbuf)) {
@@ -1507,7 +1494,7 @@ void upsdrv_updateinfo(void)
 			status_set("TEST");
 		}
 		if (value & (1 << 13)) {
-			status_set("HE"); /* High efficiency / ECO mode*/
+			buzzmode_set("vendor:apc:HE"); /* High efficiency / ECO mode*/
 		}
 		if (value & (1 << 21)) {
 			status_set("OVER");
@@ -1564,6 +1551,7 @@ void upsdrv_updateinfo(void)
 
 	alarm_commit();
 	status_commit();
+	buzzmode_commit();
 	dstate_dataok();
 }
 

@@ -29,8 +29,12 @@
 #include <modbus.h>
 #include <timehead.h>
 
-#define DRIVER_NAME "NUT ADELSYSTEM DC-UPS CB/CBI driver"
-#define DRIVER_VERSION "0.04"
+#if !(defined NUT_MODBUS_LINKTYPE_STR)
+# define NUT_MODBUS_LINKTYPE_STR	"unknown"
+#endif
+
+#define DRIVER_NAME	"NUT ADELSYSTEM DC-UPS CB/CBI driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
+#define DRIVER_VERSION	"0.05"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -77,7 +81,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
 int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
 
 /* instant command triggered by upsd */
-int upscmd(const char *cmd, const char *arg);
+int upscmd(const char *cmdname, const char *extra);
 
 /* count the time elapsed since start */
 long time_elapsed(struct timeval *start);
@@ -807,35 +811,42 @@ long time_elapsed(struct timeval *start)
 }
 
 /* instant command triggered by upsd */
-int upscmd(const char *cmd, const char *arg)
+int upscmd(const char *cmdname, const char *extra)
 {
 	int rval;
 	int data;
 
-	if (!strcasecmp(cmd, "load.off")) {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (!strcasecmp(cmdname, "load.off")) {
 		data = 1;
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		rval = register_write(mbctx, regs[FSD].xaddr, regs[FSD].type, &data);
 		if (rval == -1) {
-			upslogx(2,
+			upsdebugx(2,
 				"ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s",
 				modbus_strerror(errno),
 				(unsigned int)(regs[FSD].xaddr),
 				regs[FSD].type,
 				device_path
 			);
-			upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
+			upslogx(LOG_INSTCMD_FAILED, "load.off: failed (communication error) [%s] [%s]", NUT_STRARG(cmdname), NUT_STRARG(extra));
 			rval = STAT_INSTCMD_FAILED;
 		} else {
 			upsdebugx(2, "load.off: addr: 0x%x, data: %d",
 				(unsigned int)(regs[FSD].xaddr), data);
 			rval = STAT_INSTCMD_HANDLED;
 		}
-	} else if (!strcasecmp(cmd, "shutdown.stayoff")) {
+	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		/* FIXME: Which one is this actually -
 		 * "shutdown.stayoff" or "shutdown.return"? */
 		int cnt = FSD_REPEAT_CNT;	 /* shutdown repeat counter */
 		struct timeval start;
 		long etime;
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		/* retry sending shutdown command on error */
 		while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
@@ -852,12 +863,12 @@ int upscmd(const char *cmd, const char *arg)
 		switch (rval) {
 			case STAT_INSTCMD_FAILED:
 			case STAT_INSTCMD_INVALID:
-				upslog_with_errno(LOG_ERR, "instcmd: %s failed", cmd);
+				upslog_with_errno(LOG_INSTCMD_FAILED, "instcmd: %s failed", cmdname);
 				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				break;
 			case STAT_INSTCMD_UNKNOWN:
-				upslog_with_errno(LOG_ERR, "instcmd: %s not supported", cmd);
+				upslog_with_errno(LOG_INSTCMD_UNKNOWN, "instcmd: %s not supported", cmdname);
 				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				break;
@@ -868,7 +879,7 @@ int upscmd(const char *cmd, const char *arg)
 				break;
 		}
 	} else {
-		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd, arg);
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		rval = STAT_INSTCMD_UNKNOWN;
 	}
 	return rval;

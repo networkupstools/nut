@@ -35,7 +35,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.10"
+#define DRIVER_VERSION  "0.13"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -185,19 +185,7 @@ static inline void setinfo_float (const char *key, const char * fmt, const char 
 	strncpy (buf, s, len);
 	buf[len] = 0;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	dstate_setinfo (key, fmt, factor * (double)(atoi (buf)));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	dstate_setinfo_dynamic (key, fmt, "%f", factor * (double)(atoi (buf)));
 }
 
 static int upssend(const char *fmt,...) {
@@ -217,6 +205,9 @@ static int upssend(const char *fmt,...) {
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) */
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -234,12 +225,12 @@ static int upssend(const char *fmt,...) {
 	for (p = buf; *p && sent < INT_MAX - 1; p++) {
 #ifndef WIN32
 		if (write(upsfd, p, 1) != 1)
-#else
+#else	/* WIN32 */
 		DWORD bytes_written;
 		BOOL res;
 		res = WriteFile(upsfd, p, 1, &bytes_written,NULL);
 		if (res == 0 || bytes_written == 0)
-#endif
+#endif	/* WIN32 */
 			return -1;
 
 		/* Note: LGTM.com analysis warns that here
@@ -401,13 +392,13 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 	if (low_batt)
-		status_set("LB ");
+		status_set("LB");
 	else if (trimming)
 		status_set("TRIM");
 	else if (boosting)
 		status_set("BOOST");
 	else
-		status_set(is_online ? (is_off ? "OFF " : "OL ") : "OB ");
+		status_set(is_online ? (is_off ? "OFF" : "OL") : "OB");
 
 	/* setinfo(INFO_STATUS, "%s%s",
 	 *	(util < lownorm) ? "BOOST ", "",
@@ -470,7 +461,10 @@ static void autorestart (int restart)
 static int upsdrv_setvar (const char *var, const char * data) {
 	int parameter;
 	size_t len = strlen(data);
-	upsdebugx(1, "%s: %s %s (%" PRIuSIZE " bytes)", __func__, var, data, len);
+
+	upsdebug_SET_STARTING(var, data);
+	upsdebugx(1, "%s: (%" PRIuSIZE " bytes)", __func__, len);
+
 	if (strcmp("input.transfer.low", var) == 0) {
 		parameter = 7;
 	}
@@ -487,15 +481,17 @@ static int upsdrv_setvar (const char *var, const char * data) {
 		 * exist.  If the former, change to LOG_ERR and if the
 		 * latter change to LOG_DEBUG.
 		 */
-		upslogx(LOG_INFO, "%s: unsettable variable %s", __func__, var);
+		upslog_SET_UNKNOWN(var, data);
 		return STAT_SET_UNKNOWN;
 	}
+
 	ups_setsuper (1);
 	assert (len < INT_MAX);
 	if (setparam (parameter, (int)len, data)) {
 		dstate_setinfo (var, "%*s", (int)len, data);
 	}
 	ups_setsuper (0);
+
 	return STAT_SET_HANDLED;
 }
 
@@ -530,8 +526,13 @@ void upsdrv_shutdown(void)
 
 static int instcmd (const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "load.off")) {
-		upslogx(LOG_CRIT, "%s: %s: OFF/stayoff in 1s",
+		/* upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra); */
+		upslogx(LOG_INSTCMD_POWERSTATE, "%s: %s: OFF/stayoff in 1s",
 			__func__, cmdname);
 		autorestart (0);
 		upssend ("OFF1\r");
@@ -549,7 +550,9 @@ static int instcmd (const char *cmdname, const char *extra)
 			grace = "30";
 		}
 
-		upslogx(LOG_CRIT, "%s: OFF/restart in %s seconds", __func__, grace);
+		/* upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra); */
+		upslogx(LOG_INSTCMD_POWERSTATE, "%s: OFF/restart in %s seconds",
+			__func__, grace);
 
 		/* Start again, overriding front panel setting. */
 		autorestart (1);
@@ -560,9 +563,9 @@ static int instcmd (const char *cmdname, const char *extra)
 		upsdebugx(2, "%s: %s: end", __func__, cmdname);
 		return STAT_INSTCMD_HANDLED;
 	}
+
 	/* \todo Software error or user error? */
-	upslogx(LOG_ERR, "%s: unknown command [%s] [%s]",
-		__func__, cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

@@ -3,7 +3,7 @@
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
-	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 
 #ifdef WIN32
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
@@ -48,7 +48,7 @@ typedef struct conn_s {
 #ifdef WIN32
 	char    buf[LARGEBUF];
 	OVERLAPPED read_overlapped;
-#endif
+#endif	/* WIN32 */
 	PCONF_CTX_t	ctx;
 	struct conn_s	*prev;
 	struct conn_s	*next;
@@ -73,10 +73,16 @@ typedef struct conn_s {
 
 char * dstate_init(const char *prog, const char *devname);
 int dstate_poll_fds(struct timeval timeout, TYPE_FD extrafd);
+int vdstate_setinfo(const char *var, const char *fmt, va_list ap);
 int dstate_setinfo(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
+int dstate_setinfo_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 3, 4)));
+int vdstate_addenum(const char *var, const char *fmt, va_list ap);
 int dstate_addenum(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
+int dstate_addenum_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 3, 4)));
 int dstate_addrange(const char *var, const int min, const int max);
 void dstate_setflags(const char *var, int flags);
 void dstate_addflags(const char *var, const int addflags);
@@ -110,6 +116,13 @@ void status_set(const char *buf);
 
 /* write the temporary status_buf into ups.status */
 void status_commit(void);
+
+/* similar functions for experimental.ups.mode.buzzwords, where tracked
+ * dynamically (e.g. due to ECO/ESS/HE/Smart modes supported by the device) */
+void buzzmode_init(void);
+int  buzzmode_get(const char *buf);
+void buzzmode_set(const char *buf);
+void buzzmode_commit(void);
 
 /* similar functions for ups.alarm */
 void alarm_init(void);

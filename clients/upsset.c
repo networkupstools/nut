@@ -24,9 +24,9 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#else
+#else	/* WIN32 */
 #include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -43,6 +43,9 @@ struct list_t {
 
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
+
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char	*monups, *username, *password, *function, *upscommand;
 
@@ -194,7 +197,7 @@ static void upsset_hosts_err(const char *errmsg)
 /* this defaults to wherever we are now, ups and function-wise */
 static void do_pickups(const char *currfunc)
 {
-	char	hostfn[NUT_PATH_MAX];
+	char	hostfn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	snprintf(hostfn, sizeof(hostfn), "%s/hosts.conf", confpath());
@@ -278,6 +281,9 @@ static void error_page(const char *next, const char *title,
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) quite extensively. */
 	vsnprintf(msg, sizeof(msg), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -344,7 +350,7 @@ static void upsd_connect(void)
 		/* NOTREACHED */
 	}
 
-	if (upscli_connect(&ups, hostname, port, 0) < 0) {
+	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		error_page("showsettings", "Connect failure",
 			"Unable to connect to %s: %s",
 			monups, upscli_strerror(&ups));
@@ -1020,7 +1026,7 @@ static void upsset_conf_err(const char *errmsg)
 /* see if the user has confirmed their cgi directory's secure state */
 static void check_conf(void)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upsset.conf", confpath());
@@ -1081,6 +1087,8 @@ int main(int argc, char **argv)
 
 	/* see if the magic string is present in the config file */
 	check_conf();
+
+	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
 	/* see if there's anything waiting .. the server my not close STDIN properly */
 	if (1) {

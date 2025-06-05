@@ -40,7 +40,7 @@ typedef struct upstype_s {
 #ifdef WIN32
 	char 			buf[SMALLBUF];
 	OVERLAPPED		read_overlapped;
-#endif
+#endif	/* WIN32 */
 	int			stale;
 	int			dumpdone;
 	int			data_ok;

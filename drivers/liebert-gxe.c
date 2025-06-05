@@ -24,7 +24,7 @@
 #include "ydn23.h"
 
 #define DRIVER_NAME	"Liebert GXE Series UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.04"
 
 #define PROBE_RETRIES	3
 #define DEFAULT_STALE_RETRIES	3
@@ -99,16 +99,24 @@ static int instcmd(const char *cmdname, const char *extra)
 	int	retry, ret, len = 4;
 	char	*data = NULL;
 
-	if (!strcasecmp(cmdname, "test.battery.start"))
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		data = "1002";
-	else if (!strcasecmp(cmdname, "test.battery.stop"))
+	} else if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		data = "1003";
-	else if (!strcasecmp(cmdname, "load.on"))
+	} else if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		data = "2001";
-	else if (!strcasecmp(cmdname, "load.off"))
+	} else if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		data = "2003";
-	else {
-		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	} else {
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -125,7 +133,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 	}
 
-	upslogx(LOG_WARNING, "instcmd: remote failed response, try again");
+	upslogx(LOG_INSTCMD_FAILED, "instcmd: remote failed response, try again");
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -173,9 +181,10 @@ static void upsdrv_updateinfo_onoff(void)
 		status_set("OB");
 	else if (pwrval == 0x01)
 		status_set("OL");
-	else if (pwrval == 0x02)
-		status_set("OL BYPASS");
-	else
+	else if (pwrval == 0x02) {
+		status_set("OL");
+		status_set("BYPASS");
+	} else
 		upslogx(LOG_WARNING, "unknown ups state: %x %x",
 			(unsigned int)pwrval,
 			(unsigned int)rectval);

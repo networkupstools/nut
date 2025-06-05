@@ -9,16 +9,18 @@ nutscan_scan_ipmi - Scan local IPMI devices.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- nutscan_device_t * nutscan_scan_ipmi(
-        const char * startIP,
-        const char * stopIP,
-        nutscan_ipmi_t * sec);
+	nutscan_device_t * nutscan_scan_ipmi(
+		const char * startIP,
+		const char * stopIP,
+		nutscan_ipmi_t * sec);
 
- nutscan_device_t * nutscan_scan_ip_range_ipmi(
-        nutscan_ip_range_list_t * irl,
-        nutscan_ipmi_t * sec);
+	nutscan_device_t * nutscan_scan_ip_range_ipmi(
+		nutscan_ip_range_list_t * irl,
+		nutscan_ipmi_t * sec);
+------
 
 DESCRIPTION
 -----------
@@ -31,9 +33,13 @@ respective function searches for a local PSU.
 
 Otherwise, it searches for remote hosts that would serve IPMI protocols,
 and would try to authenticate using the data in 'sec' structure.
+
 The former issues an IPMI request on every IP ranging from 'startIP' to
-'stopIP', where 'stopIP' is optional; the latter can walk several IP
-address ranges represented by a `nutscan_ip_range_list_t` structure.
+'stopIP', where 'startIP' is mandatory and 'stopIP' is optional (one
+'startIP' address is scanned if 'stopIP' is NULL); while the latter can
+walk several IP address ranges represented by a `nutscan_ip_range_list_t`
+structure.
+
 Those IP arguments may be either IPv4 or IPv6 addresses or host names.
 
 You MUST call linkman:nutscan_init[3] before using this function.

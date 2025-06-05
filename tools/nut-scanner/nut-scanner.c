@@ -49,7 +49,7 @@
 # include <netdb.h>
 # include <sys/ioctl.h>
 # include <net/if.h>
-#else
+#else	/* WIN32 */
 # if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
 #  include <winsock2.h>
 # endif
@@ -62,7 +62,7 @@
 #  define AI_NUMERICSERV NI_NUMERICSERV
 # endif
 # include "wincompat.h"
-#endif
+#endif	/* WIN32 */
 
 #include "nut_stdint.h"
 
@@ -514,7 +514,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 			if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 				FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 
 				NULL, dwRetVal, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),   
-				// Default language
+				/* Default language */
 				(LPTSTR) & lpMsgBuf, 0, NULL) && lpMsgBuf
 			) {
 				fatalx(EXIT_FAILURE, "%s: %s",
@@ -1257,7 +1257,7 @@ int main(int argc, char *argv[])
 
 		switch(opt_ret) {
 			case 't':
-				{ // scoping
+				{ /* scoping */
 					long	l;
 					char	*s = NULL;
 					int	errno_saved;

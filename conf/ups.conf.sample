@@ -48,21 +48,6 @@
 # These directives are used by upsdrvctl only and should be specified outside
 # of a driver definition:
 #
-#    maxretry: OPTIONAL.  Specify the number of attempts to start the driver(s),
-#              in case of failure, before giving up. A delay of 'retrydelay' is
-#              inserted between each attempt. Caution should be taken when using
-#              this option, since it can impact the time taken by your system to
-#              start.
-#
-#              The built-in default is 1 attempt.
-#
-#  retrydelay: OPTIONAL.  Specify the delay between each restart attempt of the
-#              driver(s), as specified by 'maxretry'. Caution should be taken
-#              when using this option, since it can impact the time taken by your
-#              system to start.
-#
-#              The default is 5 seconds.
-#
 #      chroot: OPTIONAL. Used for securing. See man page for details.
 #
 #  driverpath: OPTIONAL. Used for custom setups. See man page for details.
@@ -94,6 +79,21 @@ maxretry = 3
 # These directives can be set outside and inside a driver definition,
 # sometimes with slightly different meanings per context:
 #
+#    maxretry: OPTIONAL.  Specify the number of attempts to start the driver(s),
+#              in case of failure, before giving up. A delay of 'retrydelay' is
+#              inserted between each attempt. Caution should be taken when using
+#              this option, since it can impact the time taken by your system to
+#              start.
+#
+#              The built-in default is 1 attempt.
+#
+#  retrydelay: OPTIONAL.  Specify the delay between each restart attempt of the
+#              driver(s), as specified by 'maxretry'. Caution should be taken
+#              when using this option, since it can impact the time taken by your
+#              system to start.
+#
+#              The default is 5 seconds.
+#
 # maxstartdelay: OPTIONAL.  This can be set as a global variable
 #                above your first UPS definition and it can also be
 #                set in a UPS section.  This value controls how long
@@ -110,7 +110,7 @@ maxretry = 3
 #                They would not be actively killed by upsdrvctl after
 #                this timeout expires.
 #
-#                The default is 45 seconds.
+#                The default is 75 seconds.
 #
 #   debug_min: OPTIONAL.  Specify a minimum debug level for all driver daemons
 #              (when specified at global level), or for this driver daemon

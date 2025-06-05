@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs.h"
 
-#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.09"
+#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.10"
 
 /* Support functions */
 static int	voltronic_qs_claim(void);
@@ -204,19 +204,7 @@ static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuele
 	if (ret == -1) {
 		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
 	} else {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		snprintf(value, valuelen, item->dfl, item->value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", item->value);
 	}
 
 	return ret;
