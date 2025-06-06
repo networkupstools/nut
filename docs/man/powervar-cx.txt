@@ -1,18 +1,21 @@
 POWERVAR(8)
-========
+===========
 
 NAME
 ----
 
-powervar-cu - Driver for Powervar GTS and UPM Series UPS equipment (USB)
-powervar-cs - Driver for Powervar UPM Series UPS equipment (Serial)
+powervar-cx - Driver for Powervar GTS (USB) and UPM (USB, Serial) Series UPS equipment
 
 SYNOPSIS
 --------
 
-*powervar-cx* -h
+For USB connected devices:
+*powervar-cu* -h
+*powervar-cu* -a 'UPS_NAME' ['OPTIONS']
 
-*powervar-cx* -a 'UPS_NAME' ['OPTIONS']
+For serial connected devices:
+*powervar-cs* -h
+*powervar-cs* -a 'UPS_NAME' ['OPTIONS']
 
 NOTE: This man page only documents the hardware-specific features of the
 powervar driver.  For information about the core driver, see
