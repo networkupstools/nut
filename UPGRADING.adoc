@@ -36,6 +36,10 @@ Changes from 2.8.3 to 2.8.4
   As a packager, you may have to update the recipes accordingly (especially
   if your platform rewrites section numbers). [#2945, #2950]
 
+- Option to `configure --enable-docs-man-for-progs-built-only` was added,
+  to differentiate NUT builds that deliver man pages for only built programs
+  (legacy default) or for all of them (as needed for docs sites). [#2976]
+
 - Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
   necessary to address spurious LOWBATT and REPLACEBATT events. [issue #2942]
 

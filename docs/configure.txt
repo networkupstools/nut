@@ -808,7 +808,14 @@ See also `--with-drvpath` below.
 	--with-drvpath=PATH
 
 The UPS drivers will be installed to this path.  By default they
-install to `<exec_prefix>/bin`, i.e. `/usr/local/ups/bin`.
+install to `<exec_prefix>/bin`, i.e. `/usr/local/ups/bin`, but it
+may be quite reasonable to install them into a sub-directory of
+your `libexec` location or similar (e.g. `/usr/libexec/nut/drv`):
+on one hand, to avoid potential conflicts with unrelated programs
+that happen to have same names, and on another -- to keep these
+NUT programs which should not normally be executed by neither
+unprivileged users nor systems administrators, out of default
+`PATH` settings.
 
 You would want a location that remains mounted when most of the system
 is prepared to turn off, so some distributions package NUT drivers into

@@ -80,7 +80,7 @@ to the same monitoring system, and you want to be sure that you shut them down
 in the correct order.
 +
 This regex is matched against the full USB product string as seen in
-linkmanext:lsusb[8]. The `ups.model` in the linkman:upsc[1] output only lists
+linkmanext:lsusb[8]. The `ups.model` in the linkman:upsc[8] output only lists
 the name after `TRIPP LITE`, so to match a 'SMART2200RMXL2U', you could use the
 regex like `.*SMART2200.*`.
 
