@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_megatec.h"
 
-#define MEGATEC_VERSION "Megatec 0.07"
+#define MEGATEC_VERSION "Megatec 0.08"
 
 /* qx2nut lookup table */
 static item_t	megatec_qx2nut[] = {
@@ -89,16 +89,18 @@ static item_t	megatec_qx2nut[] = {
 	 *  battery.runtime=12345
 	 *  ups.firmware=v3.400000
 	 *
-	 * FIXME: Per example above, this reply is 38 bytes
+	 * NOTE: Per example above, this reply is 38 bytes
 	 *  long (including '\r') not 39 as in other dialects
 	 *  and the mappings below; which part is wrong - the
-	 *  example or code?
+	 *  example or code? The "answer_len" field should be
+	 *  about "expected min length of answer" so 38 here
+	 * should cover both variants.
 	 */
-	{ "device.mfr",			0,	NULL,	"I\r",	"",	39,	'#',	"",	1,	7,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Shorter field than in other dialects */
-	{ "ups.serial",			0,	NULL,	"I\r",	"",	39,	'#',	"",	8,	15,	"%s",	0,	NULL,	NULL,	NULL },	/* Megatec IC adds "ups.serial" support function */
-	{ "device.model",		0,	NULL,	"I\r",	"",	39,	'#',	"",	17,	21,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Shorter field than in other dialects */
-	{ "battery.runtime",		0,	NULL,	"I\r",	"",	39,	'#',	"",	22,	26,	"%s",	0,	NULL,	NULL,	NULL },	/* Megatec IC adds "ups.runtime" support function */
-	{ "ups.firmware",		0,	NULL,	"I\r",	"",	39,	'#',	"",	28,	37,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* FIXME: Per example above, this should end at 36 not 37; which part is wrong - example or code? */
+	{ "device.mfr",			0,	NULL,	"I\r",	"",	38,	'#',	"",	1,	7,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Shorter field than in other dialects */
+	{ "ups.serial",			0,	NULL,	"I\r",	"",	38,	'#',	"",	8,	15,	"%s",	0,	NULL,	NULL,	NULL },	/* Megatec IC adds "ups.serial" support function */
+	{ "device.model",		0,	NULL,	"I\r",	"",	38,	'#',	"",	17,	21,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Shorter field than in other dialects */
+	{ "battery.runtime",		0,	NULL,	"I\r",	"",	38,	'#',	"",	22,	26,	"%s",	0,	NULL,	NULL,	NULL },	/* Megatec IC adds "ups.runtime" support function */
+	{ "ups.firmware",		0,	NULL,	"I\r",	"",	38,	'#',	"",	28,	0,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Note: Per example above, this should end at 36 not 37 as in other dialects; we say 0 to go to end of line, wherever that is in fact */
 
 	/* Instant commands */
 	{ "beeper.toggle",		0,	NULL,	"Q\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
