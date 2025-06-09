@@ -237,6 +237,7 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 :; rm -f Makefile configure
 :; ./autogen.sh && \
    ./configure --with-all --with-dev --with-doc --enable-spellcheck \
+      --enable-docs-man-for-progs-built-only=no                     \
       --enable-warnings --enable-Werror --enable-maintainer-mode && \
    make -j 8 all && \
    make -j 8 spellcheck && \

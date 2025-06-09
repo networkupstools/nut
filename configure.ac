@@ -2486,6 +2486,8 @@ dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
+NUT_ARG_ENABLE([docs-man-for-progs-built-only], [build and install man pages (if enabled) only for built programs (yes, default) or all known pages (no)], [yes])
+
 dnl Different OS distributions have different layouts of man page section
 dnl numbers. The one we treat as default seems to be most wide-spread, in
 dnl Linux and FreeBSD. For others, there are other defaults (see `man man`
@@ -3616,6 +3618,7 @@ dnl (so enable the Makefile recipes for those targets if tools are available)
 NUT_CHECK_ASCIIDOC
 
 DOC_INSTALL_DISTED_MANS=no
+DOC_INSTALL_SELECTED_MANS=""
 KNOWN_UNABLE_MANS=no
 
 case "${nut_with_doc}" in
@@ -3691,12 +3694,14 @@ for nut_doc_build_target in $nut_doc_build_list; do
 		nut_doc_build_target_flag="yes"
 		;;
 	esac
+
 	case "${nut_doc_build_target_flag}" in
 	yes|no|auto|skip|dist-auto) ;;
 	"") nut_doc_build_target_flag="yes" ;;
 	*)	rm -rf "${DOCTESTDIR}"
 		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
 	esac
+
 	AC_MSG_CHECKING([desire and ability to build ${nut_doc_build_target_base} documentation])
 	AC_MSG_RESULT([${nut_doc_build_target_flag}])
 
@@ -3786,19 +3791,22 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		dnl Experimental support for --with-doc=man=dist-auto to prefer pre-disted docs if available, below
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
-		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test "${nut_doc_build_target_flag}" = "dist-auto"; then
+		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test x"${nut_doc_build_target_flag}" = x"dist-auto"; then
 			want_disted_doc_man=yes
 		fi
 		if test "${nut_have_asciidoc}" = yes ; then
 			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
+		can_install_doc_man=no
 		if test "${want_disted_doc_man}" = yes && ( test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ) ; then
 			AC_MSG_NOTICE([Requested, and can, install pre-built distributed copies of ${nut_doc_build_target_base} documentation])
 			DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			DOC_INSTALL_DISTED_MANS="yes"
-			dnl Avoid rebuilding existing build products due to their timestamp dependencies:
+			dnl Avoid rebuilding existing build products due to their timestamp dependencies;
+			dnl ignore "touch" errors due to e.g. read-only sources (distcheck, ISO image, etc.):
 			touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
+			can_install_doc_man=yes
 		else
 			if test "${can_build_doc_man}" = yes ; then
 				AC_MSG_RESULT(yes)
@@ -3807,6 +3815,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 					dnl is satisfied that directory "man" exists:
 					[DOC_BUILD_LIST="${DOC_BUILD_LIST} man-man"],
 					[DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"])
+				can_install_doc_man=yes
 			else
 				AC_MSG_RESULT(no)
 				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
@@ -3815,16 +3824,35 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested; will reflect on this below])
 				else
 					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
-					if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
+					case "${nut_doc_build_target_flag}" in
+					no|skip) ;;
+					auto|dist-auto)
 						if test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ; then
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 							DOC_INSTALL_DISTED_MANS="yes"
+							can_install_doc_man=yes
 						else
-							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
+							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent; will reflect on this below])
 						fi
-					fi  # Other variants include "no", "skip"...
+						;;
+					*)
+						AC_MSG_ERROR([Unexpected flag value '${nut_doc_build_target_flag}' for ${nut_doc_build_target_base} documentation])
+						;;
+					esac
 				fi
 			fi
+		fi
+
+		if test "${can_install_doc_man}" = yes ; then
+			case "${nut_enable_docs_man_for_progs_built_only}" in
+			yes)
+				dnl Legacy default for auto builds: build/deliver only mans for built progs:
+				DOC_INSTALL_SELECTED_MANS="mans-progs-built"
+				;;
+			no)
+				DOC_INSTALL_SELECTED_MANS="mans-progs-all"
+				;;
+			esac
 		fi
 		;;
 
@@ -3836,9 +3864,11 @@ done
 rm -rf "${DOCTESTDIR}"
 
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
-	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:       '${DOC_BUILD_LIST}'])
-	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_CANNOTBUILD_LIST: '${DOC_CANNOTBUILD_LIST}'])
-	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:   '${DOC_SKIPBUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:            '${DOC_BUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_CANNOTBUILD_LIST:      '${DOC_CANNOTBUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:        '${DOC_SKIPBUILD_LIST}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_INSTALL_DISTED_MANS:   '${DOC_INSTALL_DISTED_MANS}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_INSTALL_SELECTED_MANS: '${DOC_INSTALL_SELECTED_MANS}'])
 ])
 
 case "${nut_with_doc}" in
@@ -3880,7 +3910,7 @@ esac
 
 AM_CONDITIONAL(WITH_PDF_NONASCII_TITLES, [test x"$can_build_doc_pdf_nonascii_titles" = xyes])
 
-NUT_REPORT_FEATURE([would build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
+NUT_REPORT_FEATURE([would build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST} ${DOC_INSTALL_SELECTED_MANS}],
 					[WITH_DOCS], [Define to enable overall documentation generation], [-])
 
 # To cater for less portable make's, precalculate the target list
@@ -3913,6 +3943,11 @@ AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
 AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 AM_CONDITIONAL(KNOWN_UNABLE_MANS, test "${KNOWN_UNABLE_MANS}" = "yes")
 AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
+dnl TOTHINK: Expand more flexibly? Currently we either (build and) install
+dnl  all known man pages, or only those for programs we currently build,
+dnl  so a boolean-ish toggle suffices.
+dnl AM_CONDITIONAL(DOC_INSTALL_SELECTED_MANS_PROGS_ALL, test x"${DOC_INSTALL_SELECTED_MANS}" = x"mans-progs-all")
+AM_CONDITIONAL(DOC_INSTALL_SELECTED_MANS_PROGS_BUILT, test x"${DOC_INSTALL_SELECTED_MANS}" = x"mans-progs-built")
 dnl Reporting have_disted_doc_man not DOC_INSTALL_DISTED_MANS because the former has more values
 AS_IF([test x"${have_disted_doc_man}" = x], [have_disted_doc_man="did not check"])
 NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${have_disted_doc_man}"])
@@ -4183,7 +4218,7 @@ dnl    POWERDOWNFLAG, "${POWERDOWNFLAG}", [Default path for upsmon POWERDOWNFLAG
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(if requested driver path)
 AC_ARG_WITH(drvpath,
-	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (EPREFIX/bin)]),
+	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (legacy default: EPREFIX/bin; recommended: a subdir of libexecdir)]),
 [
 	case "${withval}" in
 	yes|no)

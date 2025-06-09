@@ -361,6 +361,15 @@ Example valid formats of this flag:
 
 Additional flags with regard to documentation generation include:
 
+	--enable-docs-man-for-progs-built-only=<yes|no>
+
+Choose to build and install MAN pages only for the NUT programs being built
+in this run (this is the legacy default selection), or all known MAN pages
+(including for NUT programs and drivers not being built now). Should not
+affect the API manual pages (but note they may be impacted by `--with-dev`).
+
+NOTE: You want this set to `no` when preparing NUT distribution tarballs.
+
 	--with-docs-man-section-api=<SN>	(default: 3)
 	--with-docs-man-section-cfg=<SN>	(default: 5)
 	--with-docs-man-section-cmd-sys=<SN>	(default: 8, or 1m on Solaris/illumos)
@@ -799,7 +808,14 @@ See also `--with-drvpath` below.
 	--with-drvpath=PATH
 
 The UPS drivers will be installed to this path.  By default they
-install to `<exec_prefix>/bin`, i.e. `/usr/local/ups/bin`.
+install to `<exec_prefix>/bin`, i.e. `/usr/local/ups/bin`, but it
+may be quite reasonable to install them into a sub-directory of
+your `libexec` location or similar (e.g. `/usr/libexec/nut/drv`):
+on one hand, to avoid potential conflicts with unrelated programs
+that happen to have same names, and on another -- to keep these
+NUT programs which should not normally be executed by neither
+unprivileged users nor systems administrators, out of default
+`PATH` settings.
 
 You would want a location that remains mounted when most of the system
 is prepared to turn off, so some distributions package NUT drivers into
