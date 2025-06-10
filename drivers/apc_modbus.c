@@ -88,6 +88,7 @@ static int is_usb = 0;
 static int is_open = 0;
 static double power_nominal;
 static double realpower_nominal;
+static int64_t last_send_time = 0;
 
 /* Function declarations */
 static int _apc_modbus_read_inventory(void);
@@ -958,20 +959,24 @@ static int _apc_modbus_reopen(void)
 	return 1;
 }
 
-static useconds_t _apc_modbus_get_time_us(void)
+static int64_t _apc_modbus_get_time_us(void)
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return ((useconds_t)tv.tv_sec * (useconds_t)1000000) + (useconds_t)tv.tv_usec;
+	return ((int64_t)tv.tv_sec * (int64_t)1000000) + (int64_t)tv.tv_usec;
+}
+
+static void _apc_modbus_interframe_delay_reset(void)
+{
+	last_send_time = _apc_modbus_get_time_us();
 }
 
 static void _apc_modbus_interframe_delay(void)
 {
 	/* 4.2.2 Modbus Message RTU Framing, interframe delay */
 
-	static useconds_t last_send_time = 0;
-	static const useconds_t inter_frame_delay = 35000;
-	useconds_t current_time, delta_time;
+	static const int64_t inter_frame_delay = 35000;
+	int64_t current_time, delta_time;
 
 	current_time = _apc_modbus_get_time_us();
 	delta_time = current_time - last_send_time;
@@ -1032,6 +1037,7 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 	_apc_modbus_interframe_delay();
 
 	if (modbus_read_registers(ctx, addr, nb, dest) > 0) {
+		_apc_modbus_interframe_delay_reset();
 		return 1;
 	} else {
 		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
