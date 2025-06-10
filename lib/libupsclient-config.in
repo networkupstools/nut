@@ -23,7 +23,7 @@ includedir="@includedir@"
 sysconfdir="@sysconfdir@"
 Libs="-L@libdir@ @LDFLAGS_NUT_RPATH@ -lupsclient @LIBSSL_LIBS@"
 Cflags="-I@includedir@ @LIBSSL_CFLAGS@"
-ConfigFlags="@CONFIG_FLAGS@"
+ConfigFlags='@CONFIG_FLAGS@'
 
 case "$1" in
 
