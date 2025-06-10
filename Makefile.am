@@ -1254,11 +1254,15 @@ install-as-root:
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ disable nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 			fi ; \
-			echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart udev && applied_udev=true || true ; \
-			$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
+			if [ -s '@sysconfdir@/ups.conf' ] ; then \
+				echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
+				$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
+			fi; \
 			echo "$@: Restart NUT services" >&2 ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart nut-driver-enumerator.service nut-monitor.service nut-server.service || exit ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart nut-driver-enumerator.service nut-monitor.service nut-server.service \
+			|| if [ -s '@sysconfdir@/ups.conf' -a -s '@sysconfdir@/upsd.conf' -a -s '@sysconfdir@/upsd.users' -a -s '@sysconfdir@/upsmon.conf' ] ; then exit 1 ; \
+			else echo "$@: some configs are missing, assuming new NUT installation" >&2; fi; \
 		fi ; \
 		if ! $${applied_udev} && (command -v udevadm); then \
 			udevadm control --reload-rules && udevadm trigger && applied_udev=true || true ; \
