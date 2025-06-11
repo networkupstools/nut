@@ -1184,6 +1184,10 @@ static double eaton_input_eco_mode_auto_on_nuf(const char *value)
 {
 	const char *bypass_switch_on_str = NULL;
 	const char *eco_switchable_str = NULL;
+	double eco_mode_auto_on = 1;
+	double eco_mode_auto_off = 0;
+
+	NUT_UNUSED_VARIABLE(value);
 
 	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
 	bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
@@ -1191,7 +1195,7 @@ static double eaton_input_eco_mode_auto_on_nuf(const char *value)
 		bypass_switch_on_str = eaton_input_bypass_check_range(1);
 	} else {
 		upsdebugx(1, "%s: Bypass switch on state is: %s , must be disabled before switching on", __func__, bypass_switch_on_str);
-		return 0;
+		return eco_mode_auto_off;
 	}
 
 	/* Check if input.eco.switchable is normal and set it to 'ECO' */
@@ -1200,11 +1204,11 @@ static double eaton_input_eco_mode_auto_on_nuf(const char *value)
 		eco_switchable_str = eaton_input_eco_mode_check_range(1);
 	} else {
 		upsdebugx(1, "%s: ECO switch state is: %s , must be normal before switching to ECO", __func__, eco_switchable_str);
-		return 0;
+		return eco_mode_auto_off;
 	}
 
 	upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
-	return 1;
+	return eco_mode_auto_on;
 }
 
 /* Function to stop ECO(HE) Mode automatically instead of manually stoping Bypass and then Online Mode */
@@ -1245,6 +1249,8 @@ static const char *eaton_input_eco_mode_auto_off_nuf(double value)
 {
 	const char *bypass_switch_off_str = NULL;
 	const char *eco_switchable_str = NULL;
+    double eco_mode_auto_on = 1;
+	double eco_mode_auto_off = 0;
 
 	NUT_UNUSED_VARIABLE(value);
 
@@ -1254,7 +1260,7 @@ static const char *eaton_input_eco_mode_auto_off_nuf(double value)
 		setvar("input.bypass.switch.off", "off");
 	} else {
 		upsdebugx(1, "%s: Bypass switch off state is: %s , must be disabled before switching off", __func__, bypass_switch_off_str);
-		return 1;
+		return eco_mode_auto_on;
 	}
 
 	/* Check if input.eco.switchable is 'ECO' and set it to normal */
@@ -1266,11 +1272,11 @@ static const char *eaton_input_eco_mode_auto_off_nuf(double value)
         eco_switchable_str = dstate_getinfo("input.eco.switchable");
 	} else {
 		upsdebugx(1, "%s: ECO switch state is: %s , must be ECO before switching to normal", __func__, eco_switchable_str);
-		return 1;
+		return eco_mode_auto_on;
 	}
 
 	upsdebugx(1, "%s: ECO Mode was disabled after switching from Bypass Mode", __func__);
-	return 0;
+	return eco_mode_auto_off;
 }
 
 /* High Efficiency (aka ECO) mode for auto start/stop commands */
