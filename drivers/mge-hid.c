@@ -1245,7 +1245,7 @@ static const char *eaton_input_eco_mode_auto_off_fun(double value)
 }
 
 /* Conversion back of eaton_input_eco_mode_auto_off_fun() */
-static const char *eaton_input_eco_mode_auto_off_nuf(double value)
+static double eaton_input_eco_mode_auto_off_nuf(const char *value)
 {
 	const char *bypass_switch_off_str = NULL;
 	const char *eco_switchable_str = NULL;
