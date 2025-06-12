@@ -1,7 +1,9 @@
+ifndef::included-skip-title[]
 ifdef::website[]
 NUT manual pages
 ================
 endif::website[]
+endif::included-skip-title[]
 
 [[User_man]]
 User manual pages
