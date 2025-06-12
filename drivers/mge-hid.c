@@ -1183,7 +1183,7 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 		if (!strcmp(bypass_switch_str, "disabled")) {
 			setvar("input.bypass.switch.off", "off");
 		} else {
-			upsdebugx(1, "%s: Bypass switch off state is: %s , must be disabled before switching off", __func__, bypass_switch_off_str);
+			upsdebugx(1, "%s: Bypass switch off state is: %s , must be disabled before switching off", __func__, bypass_switch_str);
 			return NULL;
 		}
 
