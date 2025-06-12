@@ -1177,6 +1177,8 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 		}
 
 		upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
+        return "on";
+
 	} else {
 		/* Check if input.bypass.switch.off is disabled and set it to 'off' */
 		bypass_switch_str = dstate_getinfo("input.bypass.switch.off");
@@ -1200,9 +1202,8 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 		}
 
 		upsdebugx(1, "%s: ECO Mode was disabled after switching from Bypass Mode", __func__);
+    	return "off";
 	}
-
-	return eco_switchable_str;
 }
 
 /* Conversion back of eaton_input_eco_mode_auto_on_off_fun() */
