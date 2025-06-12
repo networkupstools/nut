@@ -34,6 +34,11 @@ The required parameter for this driver is the I2C bus name:
 
 *port*='dev-node'::
 On the PiJuice HAT, this should be `/dev/i2c-1`.
++
+NOTE: You may want to add the driver run-time unprivileged user (e.g. `nut`)
+to the `i2c` group as a secondary group -- typically in `/etc/group` (along
+with `pijuice`, if vendor CLI/GUI/automation packages are also installed), e.g.
+`sudo usermod -a -G i2c nut`. Otherwise you may have to run the driver as `root`.
 
 INSTALLATION
 ------------
@@ -66,6 +71,22 @@ apply to PiJuice HAT, patches are welcome.
 
 The driver shutdown function is not implemented, so other arrangements must be
 made to turn off the UPS.
+
+The `battery.current` and `input.current` may be reported as negative, if it
+is being charged and wall power is plugged into the Pi itself (not the HAT).
+This reflects the direction of electric current over the GPIO pins; vendor
+tools like `pijuice_cli` or `pijuice_gui` also show this.  The reported
+`input.current` value was seen to fluctuate and even change the sign back
+and forth as the `battery.charge` value rose from zero into tens of percents
+with this connectivity setup.
+
+If the `ups.date` and `ups.time` look bogus, use vendor tools to set the RTC
+clock of the HAT (check in Alarms section).
+
+The `battery.temperature` report may depend on capabilities of the actual
+battery and methods used to poll it for information. Vendor tools provide
+several settings for tuning this, but they don't seem to impact what the
+driver reports (pull requests welcome); bogus negative values were seen.
 
 AUTHORS
 -------
