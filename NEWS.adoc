@@ -148,6 +148,13 @@ https://github.com/networkupstools/nut/milestone/9
  - `nutdrv_qx` driver updates:
    * Introduced `innovart33` protocol support for Ippon Innova RT 3/3 topology
      UPSes. [#2938]
+   * Updated `megatec` protocol for more detailed responses to `I` query
+     which may return `ups.serial` (after a shorter `device.mfr`) and the
+     `battery.runtime` (after a shorter `device.model`). Note that the
+     expected response is shorter than in other dialects (38 vs. 39 bytes),
+     so if this change breaks anything for your UPS that reported the values
+     above correctly (e.g. the `ups.firmware` version becomes shorter or
+     none of these are reported), please let NUT developers know. [#2980]
 
  - `usbhid-ups` driver updates:
    * The `cps-hid` subdriver's existing mechanism for fixing broken report
