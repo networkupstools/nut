@@ -6266,7 +6266,18 @@ EOF
             [*/run|*/tmp|*/shm], [], dnl Do not intrude into system paths; TODO: add more if appropriate for some Linux distro
             [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 # Primarily used by upsmon and upslog, possibly running as root:
+EOF
+             AS_IF([test -z "$ALTPIDPATH" -o x"$ALTPIDPATH" != x"${PIDPATH}" && test -z "$ALTSTATEPATH" -o x"$ALTSTATEPATH" != x"${PIDPATH}"], [
+                cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
+d @PIDPATH@ 0750 root @RUN_AS_GROUP@ - -
+EOF
+                ], [
+                cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 d @PIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+EOF
+                ])
+
+            cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 X @PIDPATH@
 EOF
 ])])
