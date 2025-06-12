@@ -324,7 +324,11 @@ to secure access to those files and their copies as well.
 ///////////////
 
 :in-nut-manpage: true
+:included-skip-title: true
+
 include::index.txt[]
+
+:!included-skip-title:
 
 ///////////////
 :leveloffset: 0
