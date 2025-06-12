@@ -38,7 +38,7 @@ If your UPS doesn't support any read/write variables, there will be
 nothing to do on this page.
 
 Setting values in read/write variables can also be done from the command
-line with linkman:upsrw[8].
+line with linkman:upsrw[1].
 
 INSTANT COMMANDS
 ----------------
@@ -65,7 +65,7 @@ you do it too quickly or slowly, you have to wait at least 3 seconds
 but not 15 seconds again.
 
 You can also invoke instant commands from the command line with
-linkman:upscmd[8].
+linkman:upscmd[1].
 
 ACCESS CONTROL
 --------------

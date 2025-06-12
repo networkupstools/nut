@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 			argv[0]);
 		fprintf(stderr, "  for socket files placed in the standard location\n");
 
-		fprintf(stderr, "\n%s", suggest_doc_links(prog, NULL));
+		fprintf(stderr, "\n%s", suggest_doc_links_CMD_SYS(prog, NULL));
 
 		exit(EXIT_SUCCESS);
 	}
