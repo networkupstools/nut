@@ -1157,7 +1157,7 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 	const char *bypass_switch_str = NULL;
 	const char *eco_switchable_str = NULL;
 
-	if (value == 1) {
+	if ((int)value == 1) {
 		/* Check if input.bypass.switch.on is disabled and set it to 'on' */
 		bypass_switch_str = dstate_getinfo("input.bypass.switch.on");
 		if (!strcmp(bypass_switch_str, "disabled")) {
@@ -1216,7 +1216,7 @@ static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
 		if (!strcmp(bypass_switch_str, "disabled")) {
 			bypass_switch_str = eaton_input_bypass_check_range(1);
 		} else {
-			upsdebugx(1, "%s: Bypass switch on state is: %s , must be disabled before switching on", __func__, bypass_switch_on_str);
+			upsdebugx(1, "%s: Bypass switch on state is: %s , must be disabled before switching on", __func__, bypass_switch_str);
 			return 0.0;
 		}
 
@@ -1236,7 +1236,7 @@ static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
 		if (!strcmp(bypass_switch_str, "disabled")) {
 			setvar("input.bypass.switch.off", "off");
 		} else {
-			upsdebugx(1, "%s: Bypass switch off state is: %s , must be disabled before switching off", __func__, bypass_switch_off_str);
+			upsdebugx(1, "%s: Bypass switch off state is: %s , must be disabled before switching off", __func__, bypass_switch_str);
 			return 1.0;
 		}
 
