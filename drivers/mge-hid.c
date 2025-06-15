@@ -1257,10 +1257,15 @@ static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
 	}
 }
 
-/* High Efficiency (aka ECO) mode for auto start/stop commands */
-static info_lkp_t eaton_input_eco_mode_auto_on_off_info[] = {
-	{ 0, "off", eaton_input_eco_mode_auto_on_off_fun, eaton_input_eco_mode_auto_on_off_nuf },
+/* High Efficiency (aka ECO) mode for auto start commands */
+static info_lkp_t eaton_input_eco_mode_auto_on_info[] = {
 	{ 1, "on", eaton_input_eco_mode_auto_on_off_fun, eaton_input_eco_mode_auto_on_off_nuf },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* High Efficiency (aka ECO) mode for auto stop commands */
+static info_lkp_t eaton_input_eco_mode_auto_off_info[] = {
+	{ 0, "off", eaton_input_eco_mode_auto_on_off_fun, eaton_input_eco_mode_auto_on_off_nuf },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -2207,9 +2212,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "experimental.essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
 
     /* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on before */
-	{ "experimental.bypass.ecomode.start", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_off_info },
+	{ "experimental.bypass.ecomode.start", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_info },
 	/* Command to switch from ECO(HE) Mode with switch from Automatic Bypass Mode on before */
-	{ "experimental.bypass.ecomode.stop", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_off_info },
+	{ "experimental.bypass.ecomode.stop", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, eaton_input_eco_mode_auto_off_info },
 
 	/* Command to switch Automatic Bypass Mode on/off */
 	{ "bypass.start", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, NULL },
