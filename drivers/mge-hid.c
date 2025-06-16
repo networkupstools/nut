@@ -1212,7 +1212,7 @@ static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
 	const char *bypass_switch_str = NULL;
 	const char *eco_switchable_str = NULL;
 
-	if (!strcmp(value, "on")) {
+	if (!strcmp(value, "1")) {
 		bypass_switch_str = dstate_getinfo("input.bypass.switch.on");
 		if (!strcmp(bypass_switch_str, "disabled")) {
 			bypass_switch_str = eaton_input_bypass_check_range(1);
@@ -1229,7 +1229,6 @@ static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
 			return 0.0;
 		}
 
-		upsdebugx(1, "%s: The value is:", value);
 		upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
 		return 1.0;
 
@@ -1253,7 +1252,6 @@ static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
 			return 1.0;
 		}
 
-		upsdebugx(1, "%s: The value is:", value);
 		upsdebugx(1, "%s: ECO Mode was disabled after switching from Bypass Mode", __func__);
 		return 0.0;
 	}
