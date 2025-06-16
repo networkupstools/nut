@@ -32,7 +32,7 @@
  #endif
  
  #define DRIVER_NAME	"NUT PhoenixContact Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
- #define DRIVER_VERSION	"0.1"
+ #define DRIVER_VERSION	"0.09"
  
  #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
  #define MODBUS_SLAVE_ID 192
@@ -73,34 +73,34 @@
  
  /* --- Shutdown & Mode Configuration --- */
  
- // Macro for fetching a uint16_t config value with fallback
+ /* Macro for fetching a uint16_t config value with fallback*/
  #define GETVAL_U16(name, fallback) (getval(name) ? (uint16_t)atoi(getval(name)) : (fallback))
  
- // Time [s] after entering battery mode before shutdown signal (bit 15) is triggered
- #define REG_PC_SHUTDOWN_DELAY        0x105A  // default: 60s, range: 1–65535
+ /* Time [s] after entering battery mode before shutdown signal (bit 15) is triggered */
+ #define REG_PC_SHUTDOWN_DELAY        0x105A  /*default: 60s, range: 1–65535*/
  
- // Time [s] allowed for PC to shut down before output turns off
- #define REG_PC_SHUTDOWN_TIME         0x105D  // default: 120s, range: 1–3600
+ /*Time [s] allowed for PC to shut down before output turns off*/
+ #define REG_PC_SHUTDOWN_TIME         0x105D  /*default: 120s, range: 1–3600*/
  
- // Time [s] output is off after PC shutdown before reboot
- #define REG_PC_RESET_TIME            0x105E  // default: 10s, range: 0–60
+ /*Time [s] output is off after PC shutdown before reboot*/
+ #define REG_PC_RESET_TIME            0x105E  /*default: 10s, range: 0–60*/
  
- // Time [s] input voltage must be above threshold to return to mains
- #define REG_MAINS_RETURN_DELAY       0x1058  // default: 10s
+ /*Time [s] input voltage must be above threshold to return to mains*/
+ #define REG_MAINS_RETURN_DELAY       0x1058  /*default: 10s*/
  
- // Selector mode switch: PC-Mode = 9
- #define REG_MODE_SELECTOR_SWITCH     0x1074  // default: 0–9
+ /*Selector mode switch: PC-Mode = 9*/
+ #define REG_MODE_SELECTOR_SWITCH     0x1074  /*default: 0–9*/
  
  /* --- Battery Monitoring --- */
  
- // SOH warning threshold [%]
- #define REG_WARNING_SOH_THRESHOLD    0x1071  // default: 0 (disabled), range: 1–100
+ /*SOH warning threshold [%]*/
+ #define REG_WARNING_SOH_THRESHOLD    0x1071  /*default: 0 (disabled), range: 1–100*/
  
- // Switch to battery mode if below this input voltage [mV]
- #define REG_VOLTAGE_BELOW_BATTERY    0x1056  // example: 21000
+ /*Switch to battery mode if below this input voltage [mV]*/
+ #define REG_VOLTAGE_BELOW_BATTERY    0x1056  /*example: 21000*/
  
- // Switch to mains mode if above this voltage [mV]
- #define REG_VOLTAGE_ABOVE_MAINS      0x1057  // example: 23000
+ /*Switch to mains mode if above this voltage [mV]*/
+ #define REG_VOLTAGE_ABOVE_MAINS      0x1057  /*example: 23000*/
  
  typedef enum
  {
@@ -126,13 +126,13 @@
  
  static const delay_param_t delay_params[] = {
 	 { "ups.delay.shutdown",     REG_PC_SHUTDOWN_DELAY},
-	 { "ups.delay.pc_shutdown",  REG_PC_SHUTDOWN_TIME},
-	 { "ups.delay.pc_reset",     REG_PC_RESET_TIME},
-	 { "ups.delay.mains_return", REG_MAINS_RETURN_DELAY},
+	 { "ups.timer.shutdown",  REG_PC_SHUTDOWN_TIME},
+	 { "ups.timer.start",     REG_PC_RESET_TIME},
+	 { "ups.delay.start", REG_MAINS_RETURN_DELAY},
 	 { "ups.mode.selector",      REG_MODE_SELECTOR_SWITCH},
-	 { "ups.bat.warning_soh",    REG_WARNING_SOH_THRESHOLD},
-	 { "ups.bat.voltage_low",    REG_VOLTAGE_BELOW_BATTERY},
-	 { "ups.mains.voltage_high", REG_VOLTAGE_ABOVE_MAINS } 
+	 { "battery.warning_soh",    REG_WARNING_SOH_THRESHOLD},
+	 { "input.voltage.low.critical",    REG_VOLTAGE_BELOW_BATTERY},
+	 { "input.voltage.high.critical", REG_VOLTAGE_ABOVE_MAINS } 
  };
  
  
@@ -148,7 +148,7 @@
  upsdrv_info_t upsdrv_info = {
 	 DRIVER_NAME,
 	 DRIVER_VERSION,
-	 "Ulfat Hasangarayev <ulfathasangarayev@gmail.com>\n",
+	 "Spiros Ioannou <sivann@inaccess.com>\n",
 	 DRV_BETA,
 	 {NULL}
  };
@@ -156,8 +156,8 @@
  int write_uint32_register(modbus_t *ctx, int reg, uint32_t value)
  {
 	 uint16_t regs[2];
-	 regs[0] = value >> 16;      // High word
-	 regs[1] = value & 0xFFFF;   // Low word
+	 regs[0] = value >> 16;      /*High word*/
+	 regs[1] = value & 0xFFFF;   /*Low word*/
  
 	 int ret = modbus_write_registers(ctx, reg, 2, regs);
 	 if (ret == -1) {
@@ -170,12 +170,14 @@
  int write_uint32_reg_bit(modbus_t *ctx, int reg, int bit_index, bool bit_value)
  {
 	 uint16_t regs[2];
+	 uint32_t val;
+
 	 if (modbus_read_registers(ctx, reg, 2, regs) != 2) {
 		 upslogx(LOG_ERR, "Failed to read 32-bit register 0x%04X: %s", reg, modbus_strerror(errno));
 		 return -1;
 	 }
  
-	 uint32_t val = ((uint32_t)regs[0] << 16) | regs[1];
+	 val = ((uint32_t)regs[0] << 16) | regs[1];
  
 	 if (bit_value)
 		 val |= (1U << bit_index);
@@ -198,14 +200,14 @@
 	 
 	 write_uint32_reg_bit(ctx, 0x1040, 5, false);
  
-	 modbus_write_register(ctx, REG_PC_SHUTDOWN_DELAY,      GETVAL_U16("delay.shutdown",         60));
-	 modbus_write_register(ctx, REG_PC_SHUTDOWN_TIME,       GETVAL_U16("delay.pc_shutdown",      60));
-	 modbus_write_register(ctx, REG_PC_RESET_TIME,          GETVAL_U16("delay.pc_reset",         5));
-	 modbus_write_register(ctx, REG_WARNING_SOH_THRESHOLD,  GETVAL_U16("bat.warning_soh",        20));
-	 modbus_write_register(ctx, REG_MODE_SELECTOR_SWITCH,   GETVAL_U16("mode.selector",          9));
-	 modbus_write_register(ctx, REG_VOLTAGE_BELOW_BATTERY,  GETVAL_U16("bat.voltage_low",        21000));
-	 modbus_write_register(ctx, REG_VOLTAGE_ABOVE_MAINS,    GETVAL_U16("mains.voltage_high",     23000));
-	 modbus_write_register(ctx, REG_MAINS_RETURN_DELAY,     GETVAL_U16("mains.return_delay",     10));
+	 modbus_write_register(ctx, REG_PC_SHUTDOWN_DELAY,      GETVAL_U16("delay.shutdown",                    60));
+	 modbus_write_register(ctx, REG_PC_SHUTDOWN_TIME,       GETVAL_U16("timer.shutdown",                    60));
+	 modbus_write_register(ctx, REG_PC_RESET_TIME,          GETVAL_U16("timer.start",                       5));
+	 modbus_write_register(ctx, REG_WARNING_SOH_THRESHOLD,  GETVAL_U16("battery.warning_soh",               20));
+	 modbus_write_register(ctx, REG_MODE_SELECTOR_SWITCH,   GETVAL_U16("mode.selector",                     9));
+	 modbus_write_register(ctx, REG_VOLTAGE_BELOW_BATTERY,  GETVAL_U16("voltage.low.critical",              21000));
+	 modbus_write_register(ctx, REG_VOLTAGE_ABOVE_MAINS,    GETVAL_U16("voltage.high.critical",             29000));
+	 modbus_write_register(ctx, REG_MAINS_RETURN_DELAY,     GETVAL_U16("delay.start",                       10));
  
 	 /* the value 0xFFFDFFFF sets bit 17 low so that the mode selector switch is overwritten in software */
 	 write_uint32_register(ctx, 0x1076, 0xFFFDFFFF);
@@ -232,11 +234,13 @@
  
 	 mrir(modbus_ctx, 0x0005, 4, tab_reg);
  
-	 /*	Method provided from Phoenix Conatct to establish the UPS model:
+	 /*	
+	     Method provided from Phoenix Conatct to establish the UPS model:
 		 Read registers from 0x0005 to 0x0008 and "concatenate" them with the order
 		 0x0008 0x0007 0x0006 0x0005 in hex form, convert the obtained number from hex to dec.
 		 The first 7 most significant digits of the number in dec form are the part number of
-		 the UPS.*/
+		 the UPS.
+	 */
  
 	 PartNumber = (tab_reg[3] << 16) + tab_reg[2];
 	 PartNumber = (PartNumber << 16) + tab_reg[1];
@@ -337,6 +341,7 @@
 	 uint16_t battery_runtime;
 	 uint16_t battery_capacity;
 	 uint16_t output_current;
+	 uint16_t value = 0;
  
 	 errcount = 0;
  
@@ -348,7 +353,6 @@
 	 case QUINT4_UPS:
 		 
 		 for (size_t i = 0; i < sizeof(delay_params) / sizeof(delay_params[0]); i++) {
-			 uint16_t value = 0;
 			 if (modbus_read_registers(modbus_ctx, delay_params[i].reg_addr, 1, &value) != -1) {
 				 dstate_setinfo(delay_params[i].nut_name, "%d", value);
 			 } else {
@@ -790,14 +794,13 @@
  void upsdrv_makevartable(void)
  {
 	 addvar(VAR_VALUE, "delay.shutdown", "Delay before initiating PC shutdown (in seconds)");
-	 addvar(VAR_VALUE, "delay.pc_shutdown", "Time allowed for PC to shutdown (in seconds)");
-	 addvar(VAR_VALUE, "delay.pc_reset", "Duration of output off before reboot (in seconds)");
-	 addvar(VAR_VALUE, "delay.mains_return", "Delay before switching back to mains (in seconds)");
+	 addvar(VAR_VALUE, "timer.shutdown", "Time allowed for PC to shutdown (in seconds)");
+	 addvar(VAR_VALUE, "timer.start", "Duration of output off before reboot (in seconds)");
+	 addvar(VAR_VALUE, "delay.start", "Delay before switching back to mains (in seconds)");
 	 addvar(VAR_VALUE, "mode.selector", "UPS operating mode (e.g. 9 = PC-Mode)");
-	 addvar(VAR_VALUE, "bat.warning_soh", "Battery warning SOH threshold (%)");
-	 addvar(VAR_VALUE, "bat.voltage_low", "Threshold [V] to switch to battery mode");
-	 addvar(VAR_VALUE, "mains.voltage_high", "Threshold [V] to return to mains mode");
-	 addvar(VAR_VALUE, "mains.return_delay", "Time [s] above threshold before switching back to mains");
+	 addvar(VAR_VALUE, "battery.warning_soh", "Battery warning SOH threshold (%)");
+	 addvar(VAR_VALUE, "voltage.low.critical", "Threshold [V] to switch to battery mode");
+	 addvar(VAR_VALUE, "voltage.high.critical", "Threshold [V] to return to mains mode");
  }
  
  void upsdrv_initups(void)
