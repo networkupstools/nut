@@ -9,6 +9,9 @@
 # MINSUPPLIES (may be 0 if this system is only monitoring other NUT servers),
 # and a POWERDOWNFLAG if this machine is a "primary" system connected to
 # the UPS and drives its late-shutdown power-off command in an emergency.
+# You should also define a SHUTDOWNCMD (like the example below, or something
+# special for your deployment) if MINSUPPLIES is at least 1 and you MONITOR
+# an UPS. A NOTIFYCMD integrating with `upssched` is a common situation too.
 
 # --------------------------------------------------------------------------
 # RUN_AS_USER <userid>
