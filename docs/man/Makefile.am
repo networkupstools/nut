@@ -2065,6 +2065,9 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	                    cd "$(abs_top_builddir)" ; \
 	                fi ;; \
 	        esac ; \
+	        case "$$F" in \
+	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
+	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
@@ -2081,7 +2084,8 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e '1 s,\(^.*(\)8)$$,\1$(MAN_SECTION_CMD_SYS)),g' \
 	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' \
 	                -e '1 s,\(^.*(\)7)$$,\1$(MAN_SECTION_MISC)),g' ; \
-	        fi < "$${F}" > "$${F}-prepped" || exit ; \
+	        fi < "$${F}" > "$${F}-prepped" || exit ;; \
+	        esac ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 else \
@@ -2126,6 +2130,9 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	        if $$IS_TEXT ; then \
 	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
+	        case "$$F" in \
+	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
+	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
@@ -2143,7 +2150,8 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' \
 	                -e '1 s,\(^.*(\)7)$$,\1$(MAN_SECTION_MISC)),g' ; \
 	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
-	        || { rm -f "$@.working" ; exit 1 ; } ; \
+	        || { rm -f "$@.working" ; exit 1 ; } ;; \
+	        esac ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 fi ; \

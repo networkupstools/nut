@@ -72,6 +72,10 @@ https://github.com/networkupstools/nut/milestone/9
      (which is something NUT code tried to do since the beginning of time),
      and could lead to "segmentation fault" crashes on some platforms.
      [issue #2948, PR #2963]
+   * Documentation build recipes overly zealously pre-processed source files,
+     which was not applicable for each and every document type we have (e.g.
+     binary images for illustrations); this caused grief with some toolkits.
+     [issue #2989]
 
  - common code:
    * Revised common `writepid()` to use `altpidpath()` as location for the
