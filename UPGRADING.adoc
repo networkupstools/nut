@@ -36,6 +36,12 @@ Changes from 2.8.3 to 2.8.4
   As a packager, you may have to update the recipes accordingly (especially
   if your platform rewrites section numbers). [#2945, #2950]
 
+- Introduced `powervar-cs` (Serial) and `powervar-cu` (USB) drivers which share
+  a `powervar-cx` manual page, rendered once, with pages named after the driver
+  aliased to it in post-processing. This may impact packaging, depending on its
+  technology. Feel free to deliver file copies, symbolic or hard links as seems
+  right for your platform. [#2988]
+
 - Option to `configure --enable-docs-man-for-progs-built-only` was added,
   to differentiate NUT builds that deliver man pages for only built programs
   (legacy default) or for all of them (as needed for docs sites). [#2976]
