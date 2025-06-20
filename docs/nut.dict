@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3525 utf-8
+personal_ws-1.1 en 3527 utf-8
 AAC
 AAS
 ABI
@@ -1080,6 +1080,7 @@ RRR
 RSA
 RSM
 RST
+RTC
 RTU
 RTXL
 RUPS
@@ -3381,6 +3382,7 @@ useradd
 userid
 userland
 usermap
+usermod
 username
 usernames
 userspace

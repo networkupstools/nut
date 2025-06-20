@@ -49,6 +49,14 @@ Changes from 2.8.3 to 2.8.4
 - Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
   necessary to address spurious LOWBATT and REPLACEBATT events. [issue #2942]
 
+- In `nutdrv_qx`, updated `megatec` protocol subdriver for more detailed
+  responses to `I` query which may return `ups.serial` (after a shorter
+  `device.mfr`) and the `battery.runtime` (after a shorter `device.model`).
+  Note that the expected response is shorter than in other dialects (38 vs.
+  39 bytes), so if this change breaks anything for your UPS that reported
+  the values above correctly (e.g. the `ups.firmware` version becomes shorter
+  or none of these are reported), please let NUT developers know. [#2980]
+
 Changes from 2.8.2 to 2.8.3
 ---------------------------
 
