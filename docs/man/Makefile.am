@@ -1039,7 +1039,6 @@ INST_HTML_SERIAL_MANS = \
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
-	powervar-cs.html \
 	rhino.html		\
 	riello_ser.html	\
 	sms_ser.html \
@@ -1055,6 +1054,11 @@ INST_HTML_SERIAL_MANS = \
 # Alias page for one text describing two commands:
 powervar-cs.$(MAN_SECTION_CMD_SYS): powervar-cx.$(MAN_SECTION_CMD_SYS)
 	touch $@
+
+# Can't make this work on all make implementations at once, so disabled for now
+# Anyway it would be the same man-like page for several functions
+INST_HTML_SERIAL_MANS_FICTION = \
+	powervar-cs.html
 
 powervar-cs.html: powervar-cx.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
@@ -1156,7 +1160,6 @@ INST_HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	blazer_usb.html	\
 	nutdrv_atcl_usb.html \
-	powervar-cu.html	\
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
@@ -1165,6 +1168,11 @@ INST_HTML_USB_LIBUSB_MANS = \
 # Alias page for one text describing two commands:
 powervar-cu.$(MAN_SECTION_CMD_SYS): powervar-cx.$(MAN_SECTION_CMD_SYS)
 	touch $@
+
+# Can't make this work on all make implementations at once, so disabled for now
+# Anyway it would be the same man-like page for several functions
+INST_HTML_USB_LIBUSB_MANS_FICTION = \
+	powervar-cu.html
 
 powervar-cu.html: powervar-cx.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
