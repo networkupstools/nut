@@ -1,20 +1,28 @@
-POWERVAR(8)
-===========
+POWERVAR-CX(8)
+==============
 
 NAME
 ----
 
-powervar-cx - Driver for Powervar GTS (USB) and UPM (USB, Serial) Series UPS equipment
+powervar-cx - Drivers for Powervar GTS (USB) and UPM (USB, Serial) Series UPS equipment
 
 SYNOPSIS
 --------
 
+This page describes two drivers:
+
+
 For USB connected devices:
+
 *powervar-cu* -h
+
 *powervar-cu* -a 'UPS_NAME' ['OPTIONS']
 
+
 For serial connected devices:
+
 *powervar-cs* -h
+
 *powervar-cs* -a 'UPS_NAME' ['OPTIONS']
 
 NOTE: This man page only documents the hardware-specific features of the
@@ -24,9 +32,9 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-This driver supports two Powervar UPS families:
+These drivers support two Powervar UPS families:
 
- - UPM (Either USB or Serial)
+ - UPM (either USB or Serial)
  - GTS (USB only)
 
 EXTRA ARGUMENTS
@@ -47,20 +55,20 @@ Change display test time from the 10 second default (UPM only).
 INSTANT COMMANDS
 ----------------
 
-This driver supports the following Instant Commands.
-(See linkman:upscmd[8])
+This driver supports the following Instant Commands
+(see linkman:upscmd[8]):
 
 All GTS and UPM UPS units
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *beeper.disable*::
-Disable the UPS beeper
+Disable the UPS beeper.
 
 *beeper.enable*::
-Enable the UPS beeper
+Enable the UPS beeper.
 
 *beeper.mute*::
-Temporarily mute the UPS beeper
+Temporarily mute the UPS beeper.
 
 *shutdown.return*::
 Turn off the load possibly after a delay and return when power is back.
