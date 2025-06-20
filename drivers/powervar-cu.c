@@ -134,7 +134,7 @@ static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
 }
 
 
-int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
+static int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
 	int i;
 	char sData[BIG_BUFFER];
@@ -178,7 +178,7 @@ int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_cha
 /* This function is called to flush the USB hardware of any remaining data */
 /* Would like to find a way to avoid 'nut_libusb_get_interrupt: Connection timed out' */
 /*  debug level 2 message. */
-void USBFlushReceive (void)
+static void USBFlushReceive (void)
 {
 	uint uiCount = 0;
 	char response_in[USB_RESPONSE_SIZE + 1];
