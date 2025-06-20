@@ -307,10 +307,10 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 
 void upsdrv_initups(void)
 {
-	upsdebugx(2, "In upsdrv_initups");
-
- 	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
+	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 	int ret = 1;
+
+	upsdebugx(2, "In upsdrv_initups");
 
 	warn_if_bad_usb_port_filename(device_path);
 

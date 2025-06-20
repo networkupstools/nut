@@ -308,8 +308,8 @@ void ShowStringHex (const char* pS)
 */
 static void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFSize, char* sD, const size_t sDSize)
 {
-char sRequest[15];
-uint SendTries = 0;
+	char sRequest[15];
+	uint SendTries = 0;
 
 	upsdebugx (5, "In GetInitFormatAndOrData...");
 
@@ -399,8 +399,8 @@ uint SendTries = 0;
 */
 static uint8_t GetUPSData (char* sReq, char* sD, const size_t sDSize)
 {
-uint8_t byReturn = 1;		/* Set up for good return, '0' is bad */
-uint SendTries = 0;		/* Try sending request twice */
+	uint8_t byReturn = 1;		/* Set up for good return, '0' is bad */
+	uint SendTries = 0;		/* Try sending request twice */
 
 	memset(sD, 0, sDSize);
 
@@ -467,11 +467,11 @@ static size_t SendCommand (const char* sCmd)
 
 static uint GetSubstringFromBuffer (char* chDst, const char* chSrc, const uint SubPosition)
 {
-uint RetVal = 0;		/* Start with a bad return value */
-char WorkBuffer [BUFFSIZE];	/* For copy of passed in buffer */
-char* chWork;			/* Pointer into working buffer */
-char* chTok;			/* Pointer to token */
-uint Pos;			/* Token position down-counter */
+	uint RetVal = 0;		/* Start with a bad return value */
+	char WorkBuffer [BUFFSIZE];	/* For copy of passed in buffer */
+	char* chWork;			/* Pointer into working buffer */
+	char* chTok;			/* Pointer to token */
+	uint Pos;			/* Token position down-counter */
 
 	if (SubPosition)	/* Don't accept a '0' request */
 	{
@@ -523,12 +523,12 @@ uint Pos;			/* Token position down-counter */
 /* This function finds the position of a substring in a CUSPP Format response. */
 static uint GetSubstringPosition (const char* chResponse, const char* chSub)
 {
-uint uiReturn = 0;		/* Substring position or 0 if not found */
-uint uiPos = 1;			/* Substring position counter */
-uint uiLen = 0;
-char WorkBuffer [BUFFSIZE];
-char* chSrc;
-char* chTok;			/* Individual tokens as they are found */
+	uint uiReturn = 0;		/* Substring position or 0 if not found */
+	uint uiPos = 1;			/* Substring position counter */
+	uint uiLen = 0;
+	char WorkBuffer [BUFFSIZE];
+	char* chSrc;
+	char* chTok;			/* Individual tokens as they are found */
 
 	/* Make a local copy of the source string so strtok doesn't corrupt original. */
 	strcpy (WorkBuffer, chResponse);
@@ -1160,7 +1160,7 @@ void PvarCommon_Updateinfo (void)
 		/* Handle OFFDLY status information...*/
 		if(GetSubstringFromBuffer (SubString, sData, bySETOffdlyPos))
 		{
- 			if (SubString[0] == '0')
+			if (SubString[0] == '0')
 			{
 				dstate_delinfo("ups.timer.shutdown");
 			}
@@ -1478,7 +1478,7 @@ int setcmd(const char* varname, const char* setvalue)
 	{
 		char chBuff[SUBBUFFSIZE];
 
- 		if(strlen(setvalue) == GETX_DATE_RESP_SIZE)
+		if(strlen(setvalue) == GETX_DATE_RESP_SIZE)
 		{
 			memset (chBuff, 0, sizeof(chBuff));
 			strcpy (chBuff, SYS_BATDTE_CMD);
