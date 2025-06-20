@@ -879,6 +879,7 @@ mansys_DATA += $(DRIVER_MAN_LIST)
 endif
 
 # (--with-serial)
+# NOTE: There is no powervar-cs.txt, the rendered pages are aliased from powervar-cx
 SRC_SERIAL_PAGES = \
 	al175.txt	\
 	apcsmart.txt	\
@@ -919,7 +920,6 @@ SRC_SERIAL_PAGES = \
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
-	powervar-cx.txt \
 	rhino.txt		\
 	riello_ser.txt	\
 	sms_ser.txt \
@@ -970,7 +970,7 @@ INST_MAN_SERIAL_PAGES = \
 	optiups.$(MAN_SECTION_CMD_SYS)	\
 	powercom.$(MAN_SECTION_CMD_SYS) 	\
 	powerpanel.$(MAN_SECTION_CMD_SYS)	\
-	powervar-cx.$(MAN_SECTION_CMD_SYS)	\
+	powervar-cs.$(MAN_SECTION_CMD_SYS)	\
 	rhino.$(MAN_SECTION_CMD_SYS)		\
 	riello_ser.$(MAN_SECTION_CMD_SYS)	\
 	sms_ser.$(MAN_SECTION_CMD_SYS) \
@@ -1039,7 +1039,7 @@ INST_HTML_SERIAL_MANS = \
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
-	powervar-cx.html \
+	powervar-cs.html \
 	rhino.html		\
 	riello_ser.html	\
 	sms_ser.html \
@@ -1051,6 +1051,13 @@ INST_HTML_SERIAL_MANS = \
 	ve-direct.html	\
 	victronups.html	\
 	apcupsd-ups.html
+
+# Alias page for one text describing two commands:
+powervar-cs.$(MAN_SECTION_CMD_SYS): powervar-cx.$(MAN_SECTION_CMD_SYS)
+	touch $@
+
+powervar-cs.html: powervar-cx.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
@@ -1110,6 +1117,7 @@ LINKMAN_PAGES_DRIVERS += $(SRC_SNMP_PAGES)
 endif !DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
 
 # (--with-usb)
+# NOTE: There is no powervar-cu.txt, the rendered pages are aliased from powervar-cx
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
 	blazer-common.txt	\
@@ -1125,6 +1133,7 @@ INST_MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.$(MAN_SECTION_CMD_SYS) \
 	blazer_usb.$(MAN_SECTION_CMD_SYS) \
 	nutdrv_atcl_usb.$(MAN_SECTION_CMD_SYS) \
+	powervar-cu.$(MAN_SECTION_CMD_SYS)	\
 	richcomm_usb.$(MAN_SECTION_CMD_SYS) \
 	riello_usb.$(MAN_SECTION_CMD_SYS)	\
 	tripplite_usb.$(MAN_SECTION_CMD_SYS) \
@@ -1147,10 +1156,18 @@ INST_HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	blazer_usb.html	\
 	nutdrv_atcl_usb.html \
+	powervar-cu.html	\
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
 	usbhid-ups.html
+
+# Alias page for one text describing two commands:
+powervar-cu.$(MAN_SECTION_CMD_SYS): powervar-cx.$(MAN_SECTION_CMD_SYS)
+	touch $@
+
+powervar-cu.html: powervar-cx.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 DIST_ALL_HTML_PAGES += $(INST_HTML_USB_LIBUSB_MANS)
 
@@ -1169,10 +1186,12 @@ endif !DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
 
 # (--with-serial / --with-usb)
 SRC_SERIAL_USB_PAGES = \
-	nutdrv_qx.txt
+	nutdrv_qx.txt	\
+	powervar-cx.txt
 
 INST_MAN_SERIAL_USB_PAGES = \
-	nutdrv_qx.$(MAN_SECTION_CMD_SYS)
+	nutdrv_qx.$(MAN_SECTION_CMD_SYS)	\
+	powervar-cx.$(MAN_SECTION_CMD_SYS)
 
 DIST_ALL_MAN_PAGES += $(INST_MAN_SERIAL_USB_PAGES)
 if ! SOME_DRIVERS
@@ -1190,7 +1209,8 @@ endif !WITH_SERIAL
 endif ! SOME_DRIVERS
 
 INST_HTML_SERIAL_USB_MANS = \
-	nutdrv_qx.html
+	nutdrv_qx.html	\
+	powervar-cx.html
 DIST_ALL_HTML_PAGES += $(INST_HTML_SERIAL_USB_MANS)
 
 if ! SOME_DRIVERS
