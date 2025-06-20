@@ -204,7 +204,7 @@ static size_t SendRequest (const char* sRequest)
 	char outbuff[40];
 	size_t ret = 0;
 	size_t ReqLen = strlen(sRequest);
-	uint8_t i;
+	size_t i;
 
 	/* Clear output buffer area */
 	for(i = 0; i < 40; i++) outbuff[i] = '\0';
