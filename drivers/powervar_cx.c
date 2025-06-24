@@ -342,7 +342,7 @@ static unsigned int GetSubstringFromBuffer (char* chDst, size_t szDst, const cha
 	if (SubPosition)	/* Don't accept a '0' request */
 	{
 		/* Make a local copy of the source string so strtok doesn't corrupt original. */
-		strncpy (WorkBuffer, chSrc, sizeof(WorkBuffer));
+		snprintf (WorkBuffer, sizeof(WorkBuffer), "%s", chSrc);
 
 		/* Get to '=' of request response and then point at next character... */
 		chWork = strchr (WorkBuffer, CHAR_EQ);
@@ -368,7 +368,7 @@ static unsigned int GetSubstringFromBuffer (char* chDst, size_t szDst, const cha
 		if (chTok != 0)
 		{
 			/* Copy substring to destination buffer */
-			strncpy(chDst, chTok, szDst);
+			snprintf(chDst, szDst, "%s", chTok);
 			RetVal = 1;
 
 			upsdebugx (3, "Substring %d returned: \"%s\".", SubPosition, chDst);
@@ -397,7 +397,7 @@ static unsigned int GetSubstringPosition (const char* chResponse, const char* ch
 	char* chTok;			/* Individual tokens as they are found */
 
 	/* Make a local copy of the source string so strtok doesn't corrupt original. */
-	strncpy (WorkBuffer, chResponse, sizeof(WorkBuffer));
+	snprintf (WorkBuffer, sizeof(WorkBuffer), "%s", chResponse);
 
 	/* Find the '=' in the response string and get past it */
 	chSrc = strchr (WorkBuffer, CHAR_EQ);
@@ -474,7 +474,7 @@ void PvarCommon_Initinfo (void)
 	byPIDVerPos = GetSubstringPosition (sFBuff, PID_VER_SUB);
 
 	GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byPIDVerPos);
-	strncpy (UpsProtVersion, SubBuff, sizeof(UpsProtVersion));
+	snprintf (UpsProtVersion, sizeof(UpsProtVersion), "%s", SubBuff);
 
 	/* If we have gotten this far, the UPS being talked to will have some
 	 *  portion of the following requested variables.
