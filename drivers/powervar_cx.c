@@ -1296,7 +1296,7 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "test.panel.start"))
 	{
 		char chBuff[REQBUFFSIZE];
-		unsigned int ShowTime = 10;
+		int ShowTime = 10;
 
 		if (getval("disptesttime") != NULL)
 		{
