@@ -183,8 +183,7 @@ void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFSize, ch
 	if (sFSize)
 	{
 		memset(sF, 0, sFSize);
-		strcpy(sRequest, sReq);
-		strcat(sRequest, FORMAT_TAIL);
+		snprintf(sRequest, sizeof(sRequest), "%s%s", sReq, FORMAT_TAIL);
 
 		/* Get sReq.FORMAT response */
 		upsdebugx (2, "Requesting '%s'", sRequest);
@@ -332,7 +331,7 @@ static size_t SendCommand (const char* sCmd)
  *  substring is not found.
  */
 
-static unsigned int GetSubstringFromBuffer (char* chDst, const char* chSrc, const unsigned int SubPosition)
+static unsigned int GetSubstringFromBuffer (char* chDst, size_t szDst, const char* chSrc, const unsigned int SubPosition)
 {
 	unsigned int RetVal = 0;		/* Start with a bad return value */
 	char WorkBuffer [BUFFSIZE];	/* For copy of passed in buffer */
@@ -343,7 +342,7 @@ static unsigned int GetSubstringFromBuffer (char* chDst, const char* chSrc, cons
 	if (SubPosition)	/* Don't accept a '0' request */
 	{
 		/* Make a local copy of the source string so strtok doesn't corrupt original. */
-		strcpy (WorkBuffer, chSrc);
+		strncpy (WorkBuffer, chSrc, sizeof(WorkBuffer));
 
 		/* Get to '=' of request response and then point at next character... */
 		chWork = strchr (WorkBuffer, CHAR_EQ);
@@ -369,7 +368,7 @@ static unsigned int GetSubstringFromBuffer (char* chDst, const char* chSrc, cons
 		if (chTok != 0)
 		{
 			/* Copy substring to destination buffer */
-			strcpy(chDst, chTok);
+			strncpy(chDst, chTok, szDst);
 			RetVal = 1;
 
 			upsdebugx (3,"Substring %d returned: \"%s\".", SubPosition, chDst);
@@ -398,7 +397,7 @@ static unsigned int GetSubstringPosition (const char* chResponse, const char* ch
 	char* chTok;			/* Individual tokens as they are found */
 
 	/* Make a local copy of the source string so strtok doesn't corrupt original. */
-	strcpy (WorkBuffer, chResponse);
+	strncpy (WorkBuffer, chResponse, sizeof(WorkBuffer));
 
 	/* Find the '=' in the response string and get past it */
 	chSrc = strchr (WorkBuffer, CHAR_EQ);
@@ -464,7 +463,7 @@ void PvarCommon_Initinfo (void)
 
 	/* Check for 'CUSPP' */
 
-	GetSubstringFromBuffer (SubBuff, sDBuff, byPIDProtPos);
+	GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byPIDProtPos);
 
 	if(strcmp(SubBuff, PID_PROT_DATA) != 0)
 	{
@@ -474,8 +473,8 @@ void PvarCommon_Initinfo (void)
 	/* Keep CUSPP version string ... for now. */
 	byPIDVerPos = GetSubstringPosition (sFBuff, PID_VER_SUB);
 
-	GetSubstringFromBuffer (SubBuff, sDBuff, byPIDVerPos);
-	strcpy (UpsProtVersion, SubBuff);
+	GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byPIDVerPos);
+	strncpy (UpsProtVersion, SubBuff, sizeof(UpsProtVersion));
 
 	/* If we have gotten this far, the UPS being talked to will have some
 	 *  portion of the following requested variables.
@@ -514,14 +513,14 @@ void PvarCommon_Initinfo (void)
 
 	/* Finally begin to populate NUT data */
 	/* Get FAMILY substring and keep for any later messages */
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, byUIDFamilyPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byUIDFamilyPos))
 	{
 		memcpy (UpsFamily, SubBuff, STDREQSIZE);	/* "GTS" or "UPM" */
 		dstate_setinfo("device.description", "%s", UpsFamily);
 		dstate_setinfo("ups.id", "%s", UpsFamily);
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, byUIDModelPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byUIDModelPos))
 	{
 		dstate_setinfo("device.model", "%s",SubBuff);
 	}
@@ -530,30 +529,30 @@ void PvarCommon_Initinfo (void)
 	dstate_setinfo("ups.type", "%s", "Line Interactive");
 
 	/* Manufacturer */
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, byUIDManufPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byUIDManufPos))
 	{
 		dstate_setinfo("device.mfr", "%s", SubBuff);
 	}
 
 	/* Manufacture date (UPM only) */
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, byUIDMfgdtPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byUIDMfgdtPos))
 	{
 		dstate_setinfo("ups.mfr.date", "%s (yyyymmdd)", SubBuff);
 	}
 
 	/* Firmware revision(s) */
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, byUIDSwverPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byUIDSwverPos))
 	{
 		dstate_setinfo("ups.firmware", "%s", SubBuff);
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, byUIDCSWVERPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byUIDCSWVERPos))
 	{
 		dstate_setinfo("ups.firmware.aux", "%s", SubBuff);
 	}
 
 	/* Serial number */
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, byUIDSernumPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byUIDSernumPos))
 	{
 		dstate_setinfo("device.serial", "%s", SubBuff);
 
@@ -580,7 +579,7 @@ void PvarCommon_Initinfo (void)
 		byBATPVoltPos = GetSubstringPosition (sFBuff, BAT_PVOLT_SUB);
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, byBATVoltPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byBATVoltPos))
 	{
 		Vlts = atoi(SubBuff);
 		dstate_setinfo("battery.voltage.nominal", "%s", (Vlts < 36 ? (Vlts < 18 ? "12" : "24") : "48"));
@@ -626,39 +625,39 @@ void PvarCommon_Initinfo (void)
 		bySYSBtstdyPos = GetSubstringPosition (sFBuff, SYS_BTSTDY_SUB);
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSInvoltPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySYSInvoltPos))
 	{
 		dstate_setinfo("input.voltage.nominal", "%s", SubBuff);
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSInfrqPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySYSInfrqPos))
 	{
 		dstate_setinfo("input.frequency.nominal", "%s", SubBuff);
 	}
 
 	/* Keep the next two 'if's' together as they potentially share Vlts information */
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSOutvltPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySYSOutvltPos))
 	{
 		dstate_setinfo("output.voltage.nominal", "%s", SubBuff);
 		Vlts = atoi(SubBuff);		/* Keep for nominal current calc */
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSOutvaPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySYSOutvaPos))
 	{
 		dstate_setinfo("output.current.nominal", "%d", atoi(SubBuff)/Vlts);
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSOutfrqPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySYSOutfrqPos))
 	{
 		dstate_setinfo("output.frequency.nominal", "%s", SubBuff);
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSBtstdyPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySYSBtstdyPos))
 	{
 		dstate_setinfo("ups.test.interval", "%ld", atoi(SubBuff) * 86400L);
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSBatdtePos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySYSBatdtePos))
 	{
 		dstate_setinfo("battery.date", "%s (yyyymm)", SubBuff);
 		dstate_setflags("battery.date", ST_FLAG_STRING | ST_FLAG_RW);
@@ -675,7 +674,7 @@ void PvarCommon_Initinfo (void)
 		dstate_setinfo("battery.type", "%s", "PbAc");
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSOvrlodPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySYSOvrlodPos))
 	{
 		dstate_setinfo("ups.load.high", "%s", SubBuff);
 	}
@@ -699,7 +698,7 @@ void PvarCommon_Initinfo (void)
 		bySETRsttmpPos = GetSubstringPosition (sFBuff, SET_RSTTMP_SUB);
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySETAtosrtPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySETAtosrtPos))
 	{
 		/* Set up ups.start.auto to be writable */
 		if (SubBuff[0] == '1')
@@ -717,7 +716,7 @@ void PvarCommon_Initinfo (void)
 		dstate_setinfo("ups.shutdown", "enabled");
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySETOffdlyPos))
+	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, bySETOffdlyPos))
 	{
 		if (SubBuff[0] != '0')
 		{
@@ -764,7 +763,7 @@ void PvarCommon_Initinfo (void)
 			byEVTUptimePos = GetSubstringPosition (sFBuff, EVT_UPTIME_SUB);
 		}
 
-		if (GetSubstringFromBuffer (SubBuff, sDBuff, byEVTUptimePos))
+		if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byEVTUptimePos))
 		{
 			dstate_setinfo("device.uptime", "%s", SubBuff);
 		}
@@ -879,7 +878,7 @@ void PvarCommon_Updateinfo (void)
 		alarm_init();
 
 		/* Handle output source information...*/
-		if (GetSubstringFromBuffer (SubString, sData, byOUTSourcePos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTSourcePos))
 		{
 			chC = SubString[0];
 
@@ -907,25 +906,25 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle output percent information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byOUTPercntPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTPercntPos))
 		{
 			dstate_setinfo ("ups.load", "%s", SubString);
 		}
 
 		/* Handle output voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byOUTVoltPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTVoltPos))
 		{
 			dstate_setinfo ("output.voltage", "%s", SubString);
 		}
 
 		/* Handle output frequency information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byOUTFreqPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTFreqPos))
 		{
 			dstate_setinfo ("output.frequency", "%s", SubString);
 		}
 
 		/* Handle output current information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byOUTAmpPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTAmpPos))
 		{
 			dstate_setinfo ("output.current", "%s", SubString);
 		}
@@ -935,31 +934,31 @@ void PvarCommon_Updateinfo (void)
 	if (byPIDInpPos && GetUPSData (INP_DATA_REQ, sData, sizeof (sData)))
 	{
 		/* Handle input voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byINPVoltPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPVoltPos))
 		{
 			dstate_setinfo ("input.voltage", "%s", SubString);
 		}
 
 		/* Handle input frequency information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byINPFreqPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPFreqPos))
 		{
 			dstate_setinfo ("input.frequency", "%s", SubString);
 		}
 
 		/* Handle input max-voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byINPMaxvltPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPMaxvltPos))
 		{
 			dstate_setinfo ("input.voltage.maximum", "%s", SubString);
 		}
 
 		/* Handle input min-voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byINPMinvltPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPMinvltPos))
 		{
 			dstate_setinfo ("input.voltage.minimum", "%s", SubString);
 		}
 
 		/* Handle input current information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byINPAmpPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPAmpPos))
 		{
 			dstate_setinfo ("input.current", "%s", SubString);
 		}
@@ -969,7 +968,7 @@ void PvarCommon_Updateinfo (void)
 	if (byPIDBatPos && GetUPSData (BAT_REQ, sData, sizeof (sData)))
 	{
 		/* Handle battery status information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byBATStatusPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATStatusPos))
 		{
 			if ((byOnBat) && (SubString[0] == '3'))
 			{
@@ -978,26 +977,26 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle battery estimated charge information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byBATEstcrgPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATEstcrgPos))
 		{
 			dstate_setinfo ("battery.charge", "%s", SubString);
 		}
 
 		/* Handle battery voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byBATVoltPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATVoltPos))
 		{
 			dstate_setinfo ("battery.voltage", "%s", SubString);
 		}
 
 		/* Handle battery temperature information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byBATTempPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATTempPos))
 		{
 			dstate_setinfo ("battery.temperature", "%s", SubString);
 			dstate_setinfo ("ups.temperature", "%s", SubString);
 		}
 
 		/* Handle battery time left information...*/
-		if (GetSubstringFromBuffer (SubString, sData, byBATTmleftPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATTmleftPos))
 		{
 			timevalue = (int)(strtol(SubString, 0, 10) * 60);    /* Min to Secs */
 			dstate_setinfo ("battery.runtime", "%d", timevalue);
@@ -1008,7 +1007,7 @@ void PvarCommon_Updateinfo (void)
 	if (byPIDSetPos && GetUPSData (SET_REQ, sData, sizeof (sData)))
 	{
 		/* Handle audible status information...*/
-		if(GetSubstringFromBuffer (SubString, sData, bySETAudiblPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, bySETAudiblPos))
 		{
 			if (SubString[0] == '1')
 			{
@@ -1025,7 +1024,7 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle OFFDLY status information...*/
-		if(GetSubstringFromBuffer (SubString, sData, bySETOffdlyPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, bySETOffdlyPos))
 		{
 			if (SubString[0] == '0')
 			{
@@ -1038,7 +1037,7 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle SRTDLY status information...*/
-		if(GetSubstringFromBuffer (SubString, sData, bySETSrtdlyPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, bySETSrtdlyPos))
 		{
 			if (SubString[0] == '0')
 			{
@@ -1056,7 +1055,7 @@ void PvarCommon_Updateinfo (void)
 	if (byPIDAlmPos && GetUPSData (ALM_REQ, sData, sizeof (sData)))
 	{
 		/* Handle replace battery alarm information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byALMBadbatPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byALMBadbatPos))
 		{
 			if (SubString[0] == '1')
 			{
@@ -1065,7 +1064,7 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle overload alarm information...*/
-		if(GetSubstringFromBuffer (SubString, sData, byALMOvrlodPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byALMOvrlodPos))
 		{
 			if (SubString[0] == '1')
 			{
@@ -1075,7 +1074,7 @@ void PvarCommon_Updateinfo (void)
 
 		/* Handle testing alarm information...*/
 		/* UPM only. Means Battery Life Test failed. */
-		if(GetSubstringFromBuffer (SubString, sData, byALMTstbadPos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byALMTstbadPos))
 		{
 			if (SubString[0] == '1')
 			{
@@ -1093,7 +1092,7 @@ void PvarCommon_Updateinfo (void)
 	/* Get EVT data next... */
 	if (byPIDEvtPos && GetUPSData (EVT_REQ, sData, sizeof (sData)))
 	{
-		if(GetSubstringFromBuffer (SubString, sData, byEVTUptimePos))
+		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byEVTUptimePos))
 		{
 			dstate_setinfo("device.uptime", "%s", SubString);
 		}
@@ -1348,8 +1347,7 @@ int setcmd(const char* varname, const char* setvalue)
 		if(strlen(setvalue) == GETX_DATE_RESP_SIZE)
 		{
 			memset (chBuff, 0, sizeof(chBuff));
-			strcpy (chBuff, SYS_BATDTE_CMD);
-			strcat (chBuff, setvalue);
+			snprintf (chBuff, sizeof(chBuff), "%s%s", SYS_BATDTE_CMD, setvalue);
 			SendRequest(chBuff);
 
 			dstate_setinfo("battery.date", "%s (yyyymm)", setvalue);
