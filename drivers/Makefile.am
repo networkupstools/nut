@@ -188,7 +188,8 @@ powercom_SOURCES = powercom.c
 powercom_LDADD = $(LDADD) -lm
 powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
 powerpanel_LDADD = $(LDADD) -lm
-powervar_cx_ser_SOURCES = powervar_cx_ser.c
+powervar_cx_ser_SOURCES = powervar_cx_ser.c powervar_cx.c
+powervar_cx_ser_CFLAGS = $(AM_CFLAGS) -DPVAR_SERIAL=1
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
@@ -255,7 +256,8 @@ usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
-powervar_cx_usb_SOURCES = powervar_cx_usb.c $(LIBUSB_IMPL) usb-common.c
+powervar_cx_usb_SOURCES = powervar_cx_usb.c powervar_cx.c $(LIBUSB_IMPL) usb-common.c
+powervar_cx_usb_CFLAGS = $(AM_CFLAGS) -DPVAR_USB=1
 powervar_cx_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 tripplite_usb_SOURCES = tripplite_usb.c $(LIBUSB_IMPL) usb-common.c

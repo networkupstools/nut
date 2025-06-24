@@ -34,17 +34,11 @@
 #include "serial.h"
 #include "nut_stdint.h"
 
-/* Prototypes to allow setting pointer before function is defined */
-int setcmd(const char* varname, const char* setvalue);
-int instcmd(const char *cmdname, const char *extra);
-static size_t SendRequest (const char* sRequest);
-static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
-
 /* Two drivers include the following. Provide some identifier for differences */
 #define PVAR_SERIAL	1	/* This is the serial comm driver */
 #include "powervar_cx.h"	/* Common driver defines, variables, and functions */
 
-#define DRIVER_NAME	"Powervar-CS UPS driver (Serial)"
+#define DRIVER_NAME	"Powervar-CUSSP UPS driver (Serial)"
 #define DRIVER_VERSION	"1.00"
 
 /* driver description structure */
@@ -68,7 +62,7 @@ upsdrv_info_t upsdrv_info = {
  *******************************************/
 
 /* This function is called to send the request to the initialized device. */
-static size_t SendRequest (const char* sRequest)
+size_t SendRequest (const char* sRequest)
 {
 	ssize_t Ret;
 
@@ -81,7 +75,7 @@ static size_t SendRequest (const char* sRequest)
  *  the UPS allow for a repeat of the get request.
  */
 #define RETRIES 4
-static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
+ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 {
 	int Retries = RETRIES;		/* x/2 seconds max with 500000 USEC */
 	ssize_t return_val;
@@ -208,4 +202,4 @@ void upsdrv_cleanup(void)
 	ser_close(upsfd, device_path);
 }
 
-/* End of powervar-cs.c file */
+/* End of powervar_cx_ser.c file */

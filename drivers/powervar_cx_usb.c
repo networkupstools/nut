@@ -40,24 +40,11 @@
 
 #include "usb-common.h"
 
-/* Prototypes to allow setting pointer before function is defined */
-int setcmd(const char* varname, const char* setvalue);
-int instcmd(const char *cmdname, const char *extra);
-static int subdriver_match_func(USBDevice_t *arghd, void *privdata);
-static size_t SendRequest (const char* sRequest);
-static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
-
-#define BIG_BUFFER		512
-
 /* Two drivers include the following. Provide some identifier for any differences */
 #define PVAR_USB	1	/* This is the USB comm driver */
-
-/* Flag indicating a disconnected USB cable...and need to reconnect */
-static unsigned int ReconnectFlag = 0;
-
 #include "powervar_cx.h"	/* Common driver variables and functions */
 
-#define DRIVER_NAME	"Powervar-CU UPS driver (USB)"
+#define DRIVER_NAME	"Powervar-CUSSP UPS driver (USB)"
 #define DRIVER_VERSION	"1.00"
 
 /* USB comm stuff here */
@@ -66,6 +53,11 @@ static unsigned int ReconnectFlag = 0;
 
 /* Powervar */
 #define POWERVAR_VENDORID	0x4234
+
+#define BIG_BUFFER		512
+
+/* Flag indicating a disconnected USB cable...and need to reconnect */
+static unsigned int ReconnectFlag = 0;
 
 static USBDevice_t *hd = NULL;
 static USBDevice_t curDevice;
@@ -199,7 +191,7 @@ static void USBFlushReceive (void)
 
 /* This function is called to send the data request to the initialized device. */
 /* Return value should be >0 for success. */
-static size_t SendRequest (const char* sRequest)
+size_t SendRequest (const char* sRequest)
 {
 	char outbuff[40];
 	int ret = 0;
@@ -248,7 +240,7 @@ static size_t SendRequest (const char* sRequest)
 /* Get the response from the UPS */
 /* chBuff is the buffer to receive the response into */
 /* BuffSize is the size, in chars, of chBuff */
-static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
+ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 {
 	unsigned char response_in[USB_RESPONSE_SIZE + 2];
 	int ret = 0, done = 0;
@@ -474,3 +466,4 @@ void upsdrv_cleanup(void)
 #endif
 }
 
+/* End of powervar_cx_usb.c file */
