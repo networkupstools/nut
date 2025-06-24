@@ -202,7 +202,7 @@ static void USBFlushReceive (void)
 static size_t SendRequest (const char* sRequest)
 {
 	char outbuff[40];
-	size_t ret = 0;
+	int ret = 0;
 	size_t ReqLen = strlen(sRequest);
 	size_t i;
 
@@ -215,7 +215,7 @@ static size_t SendRequest (const char* sRequest)
 		outbuff[i] = sRequest[i];
 	}
 
-	upsdebugx(3, "SendRequest('%s', size: %lu)", outbuff, ReqLen);
+	upsdebugx(3, "SendRequest('%s', size: %" PRIuSIZE ")", outbuff, ReqLen);
 
 	outbuff[i] = ENDCHAR;
 	ReqLen++;			/* Add one for added CR */
@@ -224,14 +224,17 @@ static size_t SendRequest (const char* sRequest)
 		(usb_ctrl_charbuf)outbuff,
 		(usb_ctrl_charbufsize)ReqLen);
 
-	upsdebugx(5, "set_report ret:   %ld", ret);
+	upsdebugx(5, "set_report ret:   %d", ret);
 
-	if(ret != ReqLen)
+	if (ret < 0 || (size_t)ret != ReqLen)
 	{
-		upslogx(1, "libusb_set_report() returned %ld instead of %" PRIuSIZE, ret, ReqLen);
+		upsdebugx(1, "libusb_set_report() returned %d instead of %" PRIuSIZE, ret, ReqLen);
 	}
 
-	return ret;
+	if (ret < 1)
+		return 0;
+
+	return (size_t)ret;
 }
 
 /* Get the response from the UPS */
@@ -250,7 +253,7 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 
 	for (i = 0 ; (done == 0) && (i < BuffSize) ; )
 	{
-		upsdebugx(5, "Receive Loop: %ld", i);
+		upsdebugx(5, "Receive Loop: %" PRIuSIZE, i);
 
 		ret = comm_driver->get_interrupt(udev,
 			(usb_ctrl_charbuf)response_in,
@@ -263,7 +266,7 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 			{
 				if (response_in[j] == ENDCHAR)
 				{
-					upsdebugx(5, "<CR> found in response @ pos: %ld.",j);
+					upsdebugx(5, "<CR> found in response @ pos: %" PRIuSIZE ".", j);
 					done = 1;
 					break;
 				}
