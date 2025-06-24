@@ -206,11 +206,19 @@ static size_t SendRequest (const char* sRequest)
 	size_t ReqLen = strlen(sRequest);
 	size_t i;
 
-	/* Clear output buffer area */
-	for(i = 0; i < 40; i++) outbuff[i] = '\0';
+	/* Last char reserved for ENDCHAR, so sizeof-1 for the string */
+	if (sizeof(outbuff) - 1 < ReqLen) {
+		upsdebugx(1, "SendRequest(): request too long, will be truncated");
+		/* FIXME: unexpected situation, abort? */
+	}
 
-	/* Move command into USB buffer and add terminating character */
-	for(i = 0; i < ReqLen; i++)
+	/* Clear output buffer area */
+	memset(outbuff, 0, sizeof(outbuff));
+
+	/* Move command into USB buffer and add terminating character
+	 * Not strncpy because we want to add ENDCHAR to a known position anyway
+	 */
+	for(i = 0; i < ReqLen && i < sizeof(outbuff) - 1; i++)
 	{
 		outbuff[i] = sRequest[i];
 	}
