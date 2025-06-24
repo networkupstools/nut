@@ -1,5 +1,5 @@
 /*vim ts=4*/
-/* powervar-cx.c - Common items for Powervar UPS CUSPP drivers.
+/* powervar_cx.h - Common items for Powervar UPS CUSPP drivers.
  *
  * Copyright (C)
  *     2024, 2025 by Bill Elliot <bill@wreassoc.com>

@@ -1,5 +1,5 @@
 /*vim ts=4*/
-/* powervar-cs.c - Serial driver for Powervar UPM UPSs using CUSPP.
+/* powervar_cx_ser.c - Serial driver for Powervar UPM UPSs using CUSPP.
  *
  * Supported Powervar UPS families in this driver:
  * UPM (All)
@@ -42,7 +42,7 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 
 /* Two drivers include the following. Provide some identifier for differences */
 #define PVAR_SERIAL	1	/* This is the serial comm driver */
-#include "powervar-cx.h"	/* Common driver defines, variables, and functions */
+#include "powervar_cx.h"	/* Common driver defines, variables, and functions */
 
 #define DRIVER_NAME	"Powervar-CS UPS driver (Serial)"
 #define DRIVER_VERSION	"1.00"

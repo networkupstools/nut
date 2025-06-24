@@ -1,5 +1,5 @@
 /*vim ts=4*/
-/* powervar-cu.c - USB Driver for Powervar UPSs using CUSPP.
+/* powervar_cx_usb.c - USB Driver for Powervar UPSs using CUSPP.
  *
  * Supported Powervar UPS families in this driver:
  * UPM Family (All)
@@ -55,7 +55,7 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 /* Flag indicating a disconnected USB cable...and need to reconnect */
 static unsigned int ReconnectFlag = 0;
 
-#include "powervar-cx.h"	/* Common driver variables and functions */
+#include "powervar_cx.h"	/* Common driver variables and functions */
 
 #define DRIVER_NAME	"Powervar-CU UPS driver (USB)"
 #define DRIVER_VERSION	"1.00"
