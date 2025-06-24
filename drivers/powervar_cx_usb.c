@@ -288,7 +288,7 @@ ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 		}
 	}
 
-	upsdebugx (4,"PowervarGetResponse buffer: '%s'",chBuff);
+	upsdebugx (4, "PowervarGetResponse buffer: '%s'", chBuff);
 
 	if (ret > 0)
 	{

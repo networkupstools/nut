@@ -356,7 +356,7 @@ static unsigned int GetSubstringFromBuffer (char* chDst, size_t szDst, const cha
 
 		if (chTok == NULL)
 		{
-			upsdebugx (4,"First Token == 0!");
+			upsdebugx (4, "First Token == 0!");
 		}
 
 		while ((chTok != NULL) && (Pos > 0))
@@ -371,16 +371,16 @@ static unsigned int GetSubstringFromBuffer (char* chDst, size_t szDst, const cha
 			strncpy(chDst, chTok, szDst);
 			RetVal = 1;
 
-			upsdebugx (3,"Substring %d returned: \"%s\".", SubPosition, chDst);
+			upsdebugx (3, "Substring %d returned: \"%s\".", SubPosition, chDst);
 		}
 		else
 		{
-			upsdebugx (3,"Substring not found!");
+			upsdebugx (3, "Substring not found!");
 		}
 	}
 	else
 	{
-		upsdebugx (4,"GetSubstringFromBuffer: Position parameter was zero!");
+		upsdebugx (4, "GetSubstringFromBuffer: Position parameter was zero!");
 	}
 
 	return RetVal;
@@ -416,7 +416,7 @@ static unsigned int GetSubstringPosition (const char* chResponse, const char* ch
 			if (strcmp (chTok, chSub) == 0)
 			{
 				uiReturn = uiPos;
-				upsdebugx (3,"Found substring '%s' at position: %d.", chSub, uiReturn);
+				upsdebugx (3, "Found substring '%s' at position: %d.", chSub, uiReturn);
 				break;
 			}
 
@@ -428,7 +428,7 @@ static unsigned int GetSubstringPosition (const char* chResponse, const char* ch
 
 	if (uiReturn == 0)
 	{
-		upsdebugx (3,"GetSubstringPosition: Substring was not found!");
+		upsdebugx (3, "GetSubstringPosition: Substring was not found!");
 	}
 
 	return uiReturn;
@@ -522,7 +522,7 @@ void PvarCommon_Initinfo (void)
 
 	if (GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byUIDModelPos))
 	{
-		dstate_setinfo("device.model", "%s",SubBuff);
+		dstate_setinfo("device.model", "%s", SubBuff);
 	}
 
 	dstate_setinfo("device.type", "ups");
@@ -1078,12 +1078,12 @@ void PvarCommon_Updateinfo (void)
 		{
 			if (SubString[0] == '1')
 			{
-				dstate_setinfo("ups.test.result","Change Battery");
+				dstate_setinfo("ups.test.result", "Change Battery");
 				status_set ("RB");
 			}
 			else
 			{
-				dstate_setinfo("ups.test.result","Normal");
+				dstate_setinfo("ups.test.result", "Normal");
 
 			}
 		}
@@ -1142,11 +1142,11 @@ static void HandleOnDelay (void)
 
 	if (dstate_getinfo("ups.delay.start") == NULL)
 	{
-		sprintf(chBuff,"%s1", SET_SRTDLY_REQ);
+		sprintf(chBuff, "%s1", SET_SRTDLY_REQ);
 	}
 	else
 	{
-		sprintf(chBuff,"%s%s", SET_SRTDLY_REQ, dstate_getinfo("ups.delay.start"));
+		sprintf(chBuff, "%s%s", SET_SRTDLY_REQ, dstate_getinfo("ups.delay.start"));
 	}
 
 	SendCommand (chBuff);

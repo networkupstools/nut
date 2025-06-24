@@ -93,18 +93,18 @@ ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 
 	} while (--Retries > 0);
 
-	upsdebugx (4,"PowervarGetResponse buffer: %s",chBuff);
+	upsdebugx (4, "PowervarGetResponse buffer: %s", chBuff);
 
 	if (Retries == 0)
 	{
-		upsdebugx (2,"!!PowervarGetResponse timeout...");
+		upsdebugx (2, "!!PowervarGetResponse timeout...");
 		return_val = 1;					/* Comms error */
 	}
 	else
 	{
 		if (Retries < RETRIES)
 		{
-			upsdebugx (2,"PowervarGetResponse recovered (%d)...", Retries);
+			upsdebugx (2, "PowervarGetResponse recovered (%d)...", Retries);
 		}
 
 		return_val = 0;					/* Good comms */
@@ -130,7 +130,7 @@ void upsdrv_initups(void)
 	{
 		ser_set_speed(upsfd, device_path, B9600);
 
-		upsdebugx (4,"Serial baud set to 9600.");
+		upsdebugx (4, "Serial baud set to 9600.");
 	}
 	else
 	{
@@ -140,21 +140,21 @@ void upsdrv_initups(void)
 		if (ulBaud == 38400)
 		{
 			ser_set_speed(upsfd, device_path, B38400);
-			upsdebugx (4,"Serial baud set to 38400.");
+			upsdebugx (4, "Serial baud set to 38400.");
 		}
 		else if (ulBaud == 57600)
 		{
 			ser_set_speed(upsfd, device_path, B57600);
-			upsdebugx (4,"Serial baud set to 57600.");
+			upsdebugx (4, "Serial baud set to 57600.");
 		}
 		else if (ulBaud == 115200)	/* The only other baud known to be available. */
 		{
 			ser_set_speed(upsfd, device_path, B115200);
-			upsdebugx (4,"Serial baud set to 115200.");
+			upsdebugx (4, "Serial baud set to 115200.");
 		}
 		else
 		{
-			upsdebugx (4,"Serial baud not set!! (%d).", ulBaud);
+			upsdebugx (4, "Serial baud not set!! (%d).", ulBaud);
 		}
 	}
 
@@ -168,7 +168,7 @@ void upsdrv_initups(void)
 void upsdrv_initinfo(void)
 {
 	/* Get serial port ready */
-	ser_flush_in(upsfd,"",0);
+	ser_flush_in(upsfd, "", 0);
 
 	PvarCommon_Initinfo ();
 }
@@ -178,7 +178,7 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	/* Get serial port ready */
-	ser_flush_in(upsfd,"",0);
+	ser_flush_in(upsfd, "", 0);
 
 	PvarCommon_Updateinfo ();
 
