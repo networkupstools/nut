@@ -39,7 +39,7 @@ uint8_t GetUPSData (char* sReq, char* sD, const size_t sDSize);
 int instcmd(const char *cmdname, const char *extra);
 int setcmd(const char* varname, const char* setvalue);
 
-unsigned int GetSubstringPosition (const char* chResponse, const char* chSub);
+size_t GetSubstringPosition (const char* chResponse, const char* chSub);
 
 void PvarCommon_Initinfo(void);
 void PvarCommon_Updateinfo(void);

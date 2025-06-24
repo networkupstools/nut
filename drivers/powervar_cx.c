@@ -387,11 +387,11 @@ static unsigned int GetSubstringFromBuffer (char* chDst, size_t szDst, const cha
 }
 
 /* This function finds the position of a substring in a CUSPP Format response. */
-unsigned int GetSubstringPosition (const char* chResponse, const char* chSub)
+size_t GetSubstringPosition (const char* chResponse, const char* chSub)
 {
-	unsigned int uiReturn = 0;		/* Substring position or 0 if not found */
-	unsigned int uiPos = 1;			/* Substring position counter */
-	unsigned int uiLen = 0;
+	size_t uiReturn = 0;		/* Substring position or 0 if not found */
+	size_t uiPos = 1;			/* Substring position counter */
+	size_t uiLen = 0;
 	char WorkBuffer [BUFFSIZE];
 	char* chSrc;
 	char* chTok;			/* Individual tokens as they are found */
@@ -416,7 +416,7 @@ unsigned int GetSubstringPosition (const char* chResponse, const char* chSub)
 			if (strcmp (chTok, chSub) == 0)
 			{
 				uiReturn = uiPos;
-				upsdebugx (3, "Found substring '%s' at position: %d.", chSub, uiReturn);
+				upsdebugx (3, "Found substring '%s' at position: %" PRIuSIZE ".", chSub, uiReturn);
 				break;
 			}
 
