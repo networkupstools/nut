@@ -408,7 +408,7 @@ void upsdrv_updateinfo(void)
 		ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, match_by_something);
 		if (ret < 1)
 		{
-			if(CnctAttempts >= MAX_CNCT_ATTMPTS)
+			if (CnctAttempts >= MAX_CNCT_ATTMPTS)
 			{
 				upsdebugx(4, "Exceeded max reconnect attemtps.");
 				fatalx(EXIT_FAILURE, "Exceeded max reconnect attempts.");

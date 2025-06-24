@@ -192,7 +192,7 @@ void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFSize, ch
 		{
 			SendRequest ((const char*)sRequest);
 
-			if(PowervarGetResponse (sF, sFSize))
+			if (PowervarGetResponse (sF, sFSize))
 			{
 				fatalx(EXIT_FAILURE, "'%s.FORMAT' timeout getting UPS data on %s\n", sReq, device_path);
 			}
@@ -230,7 +230,7 @@ void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFSize, ch
 
 			SendRequest((const char*)sReq);
 
-			if(PowervarGetResponse (sD, sDSize))
+			if (PowervarGetResponse (sD, sDSize))
 			{
 				fatalx(EXIT_FAILURE, "'%s' timeout getting UPS data on '%s'\n", sReq, device_path);
 			}
@@ -277,7 +277,7 @@ uint8_t GetUPSData (char* sReq, char* sD, const size_t sDSize)
 	{
 		SendRequest((const char*)sReq);
 
-		if((PowervarGetResponse (sD, sDSize) != 0) || (strncmp(sReq, sD, STDREQSIZE) != 0))
+		if ((PowervarGetResponse (sD, sDSize) != 0) || (strncmp(sReq, sD, STDREQSIZE) != 0))
 		{
 			byReturn = 0;		/* Show invalid data */
 
@@ -453,7 +453,7 @@ void PvarCommon_Initinfo (void)
 
 	GetInitFormatAndOrData (PID_REQ, sFBuff, sizeof(sFBuff), sDBuff, sizeof(sDBuff));
 
-	if(!sFBuff[0] || !sDBuff[0])
+	if (!sFBuff[0] || !sDBuff[0])
 	{
 		fatalx(EXIT_FAILURE, "[%s] Comm error or not a UPS that handles CUSPP\n", PID_REQ);
 	}
@@ -465,7 +465,7 @@ void PvarCommon_Initinfo (void)
 
 	GetSubstringFromBuffer (SubBuff, sizeof(SubBuff), sDBuff, byPIDProtPos);
 
-	if(strcmp(SubBuff, PID_PROT_DATA) != 0)
+	if (strcmp(SubBuff, PID_PROT_DATA) != 0)
 	{
 		fatalx(EXIT_FAILURE, "[%s] Not a UPS that handles CUSPP\n", PID_PROT_DATA);
 	}
@@ -500,7 +500,7 @@ void PvarCommon_Initinfo (void)
 	/* Get UID format and data then populate needed data string positions... */
 	GetInitFormatAndOrData(UID_REQ, sFBuff, sizeof(sFBuff), sDBuff, sizeof(sDBuff));
 
-	if(sFBuff[0])
+	if (sFBuff[0])
 	{
 		byUIDManufPos = GetSubstringPosition (sFBuff, UID_MANUF_SUB);
 		byUIDModelPos = GetSubstringPosition (sFBuff, UID_MODEL_SUB);
@@ -556,7 +556,7 @@ void PvarCommon_Initinfo (void)
 	{
 		dstate_setinfo("device.serial", "%s", SubBuff);
 
-		if(!byUIDMfgdtPos)
+		if (!byUIDMfgdtPos)
 		{
 			dstate_setinfo("ups.mfr.date", "%.3s (yyq)", (strrchr(SubBuff, '-') + 1));
 		}
@@ -569,7 +569,7 @@ void PvarCommon_Initinfo (void)
 	/* Get BAT format and populate needed data string positions... */
 	GetInitFormatAndOrData(BAT_REQ, sFBuff, sizeof(sFBuff), sDBuff, sizeof(sDBuff));
 
-	if(sFBuff[0])
+	if (sFBuff[0])
 	{
 		byBATStatusPos = GetSubstringPosition (sFBuff, X_STATUS_SUB);
 		byBATTmleftPos = GetSubstringPosition (sFBuff, BAT_TMLEFT_SUB);
@@ -588,7 +588,7 @@ void PvarCommon_Initinfo (void)
 	/* Get INP format and populate needed data string positions... */
 	GetInitFormatAndOrData(INP_FMT_REQ, sFBuff, sizeof(sFBuff), 0, 0);
 
-	if(sFBuff[0])
+	if (sFBuff[0])
 	{
 		byINPStatusPos = GetSubstringPosition (sFBuff, X_STATUS_SUB);
 		byINPFreqPos = GetSubstringPosition (sFBuff, X_FREQ_SUB);
@@ -601,7 +601,7 @@ void PvarCommon_Initinfo (void)
 	/* Get OUT format and populate needed data string positions... */
 	GetInitFormatAndOrData(OUT_REQ, sFBuff, sizeof(sFBuff), 0, 0);
 
-	if(sFBuff[0])
+	if (sFBuff[0])
 	{
 		byOUTSourcePos = GetSubstringPosition (sFBuff, OUT_SOURCE_SUB);
 		byOUTFreqPos = GetSubstringPosition (sFBuff, X_FREQ_SUB);
@@ -613,7 +613,7 @@ void PvarCommon_Initinfo (void)
 	/* Get SYS format and populate needed data string positions... */
 	GetInitFormatAndOrData(SYS_REQ, sFBuff, sizeof(sFBuff), sDBuff, sizeof(sDBuff));
 
-	if(sFBuff[0])
+	if (sFBuff[0])
 	{
 		bySYSInvoltPos = GetSubstringPosition (sFBuff, SYS_INVOLT_SUB);
 		bySYSInfrqPos = GetSubstringPosition (sFBuff, SYS_INFRQ_SUB);
@@ -686,7 +686,7 @@ void PvarCommon_Initinfo (void)
 	/* Get SET format and populate needed data string positions... */
 	GetInitFormatAndOrData(SET_REQ, sFBuff, sizeof(sFBuff), sDBuff, sizeof(sDBuff));
 
-	if(sFBuff[0])
+	if (sFBuff[0])
 	{
 		bySETAudiblPos = GetSubstringPosition (sFBuff, SET_AUDIBL_SUB);
 		bySETAtosrtPos = GetSubstringPosition (sFBuff, SET_ATOSRT_SUB);
@@ -727,7 +727,7 @@ void PvarCommon_Initinfo (void)
 	/* Get ALM format and populate needed data string positions... */
 	GetInitFormatAndOrData(ALM_REQ, sFBuff, sizeof(sFBuff), 0, 0);
 
-	if(sFBuff[0])
+	if (sFBuff[0])
 	{
 		byALMOnbatPos = GetSubstringPosition (sFBuff, ALM_ONBAT_SUB);
 		byALMLowbatPos = GetSubstringPosition (sFBuff, ALM_LOWBAT_SUB);
@@ -742,7 +742,7 @@ void PvarCommon_Initinfo (void)
 	/* Get TST format and populate needed data string positions... */
 	GetInitFormatAndOrData(TST_REQ, sFBuff, sizeof(sFBuff), 0, 0);
 
-	if(sFBuff[0])
+	if (sFBuff[0])
 	{
 		byTSTTimermPos = GetSubstringPosition (sFBuff, TST_TIMERM_SUB);
 		byTSTAbortPos = GetSubstringPosition (sFBuff, TST_ABORT_SUB);
@@ -754,11 +754,11 @@ void PvarCommon_Initinfo (void)
 	}
 
 	/* Get EVT format and populate possible data string postions... */
-	if(byPIDEvtPos)
+	if (byPIDEvtPos)
 	{
 		GetInitFormatAndOrData(EVT_REQ, sFBuff, sizeof(sFBuff), sDBuff, sizeof(sDBuff));
 
-		if(sFBuff[0])
+		if (sFBuff[0])
 		{
 			byEVTUptimePos = GetSubstringPosition (sFBuff, EVT_UPTIME_SUB);
 		}
@@ -770,12 +770,12 @@ void PvarCommon_Initinfo (void)
 	}
 
 	/* Add NUT commands that are available to either GTS or UPM */
-	if(byTSTBatqckPos)
+	if (byTSTBatqckPos)
 	{
 		dstate_addcmd("test.battery.start.quick");
 	}
 
-	if(byTSTBatdepPos)
+	if (byTSTBatdepPos)
 	{
 		dstate_addcmd("test.battery.start.deep");
 
@@ -784,12 +784,12 @@ void PvarCommon_Initinfo (void)
 		dstate_addcmd("test.failure.stop");
 	}
 
-	if(byTSTAbortPos)
+	if (byTSTAbortPos)
 	{
 		dstate_addcmd("test.battery.stop");
 	}
 
-	if(bySETOffnowPos || bySETOffdlyPos || bySETOffstpPos)
+	if (bySETOffnowPos || bySETOffdlyPos || bySETOffstpPos)
 	{
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stop");
@@ -798,19 +798,19 @@ void PvarCommon_Initinfo (void)
 		dstate_addcmd("load.off.delay");
 	}
 
-	if(bySETAtosrtPos)
+	if (bySETAtosrtPos)
 	{
 		dstate_addcmd("shutdown.stayoff");
 	}
 
-	if(bySETAudiblPos)
+	if (bySETAudiblPos)
 	{
 		dstate_addcmd("beeper.enable");
 		dstate_addcmd("beeper.disable");
 		dstate_addcmd("beeper.mute");
 	}
 
-	if(bySETSrtdlyPos)
+	if (bySETSrtdlyPos)
 	{
 		dstate_addcmd("load.on");
 		dstate_addcmd("load.on.delay");
@@ -821,7 +821,7 @@ void PvarCommon_Initinfo (void)
 		dstate_addcmd("reset.input.minmax");
 	}
 
-	if(byTSTDispPos)	/* UPM only */
+	if (byTSTDispPos)	/* UPM only */
 	{
 		dstate_addcmd("test.panel.start");
 	}
@@ -906,25 +906,25 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle output percent information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTPercntPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTPercntPos))
 		{
 			dstate_setinfo ("ups.load", "%s", SubString);
 		}
 
 		/* Handle output voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTVoltPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTVoltPos))
 		{
 			dstate_setinfo ("output.voltage", "%s", SubString);
 		}
 
 		/* Handle output frequency information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTFreqPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTFreqPos))
 		{
 			dstate_setinfo ("output.frequency", "%s", SubString);
 		}
 
 		/* Handle output current information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTAmpPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byOUTAmpPos))
 		{
 			dstate_setinfo ("output.current", "%s", SubString);
 		}
@@ -934,31 +934,31 @@ void PvarCommon_Updateinfo (void)
 	if (byPIDInpPos && GetUPSData (INP_DATA_REQ, sData, sizeof (sData)))
 	{
 		/* Handle input voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPVoltPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPVoltPos))
 		{
 			dstate_setinfo ("input.voltage", "%s", SubString);
 		}
 
 		/* Handle input frequency information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPFreqPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPFreqPos))
 		{
 			dstate_setinfo ("input.frequency", "%s", SubString);
 		}
 
 		/* Handle input max-voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPMaxvltPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPMaxvltPos))
 		{
 			dstate_setinfo ("input.voltage.maximum", "%s", SubString);
 		}
 
 		/* Handle input min-voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPMinvltPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPMinvltPos))
 		{
 			dstate_setinfo ("input.voltage.minimum", "%s", SubString);
 		}
 
 		/* Handle input current information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPAmpPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byINPAmpPos))
 		{
 			dstate_setinfo ("input.current", "%s", SubString);
 		}
@@ -968,7 +968,7 @@ void PvarCommon_Updateinfo (void)
 	if (byPIDBatPos && GetUPSData (BAT_REQ, sData, sizeof (sData)))
 	{
 		/* Handle battery status information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATStatusPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATStatusPos))
 		{
 			if ((byOnBat) && (SubString[0] == '3'))
 			{
@@ -977,19 +977,19 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle battery estimated charge information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATEstcrgPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATEstcrgPos))
 		{
 			dstate_setinfo ("battery.charge", "%s", SubString);
 		}
 
 		/* Handle battery voltage information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATVoltPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATVoltPos))
 		{
 			dstate_setinfo ("battery.voltage", "%s", SubString);
 		}
 
 		/* Handle battery temperature information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATTempPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byBATTempPos))
 		{
 			dstate_setinfo ("battery.temperature", "%s", SubString);
 			dstate_setinfo ("ups.temperature", "%s", SubString);
@@ -1007,7 +1007,7 @@ void PvarCommon_Updateinfo (void)
 	if (byPIDSetPos && GetUPSData (SET_REQ, sData, sizeof (sData)))
 	{
 		/* Handle audible status information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, bySETAudiblPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, bySETAudiblPos))
 		{
 			if (SubString[0] == '1')
 			{
@@ -1024,7 +1024,7 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle OFFDLY status information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, bySETOffdlyPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, bySETOffdlyPos))
 		{
 			if (SubString[0] == '0')
 			{
@@ -1037,7 +1037,7 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle SRTDLY status information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, bySETSrtdlyPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, bySETSrtdlyPos))
 		{
 			if (SubString[0] == '0')
 			{
@@ -1055,7 +1055,7 @@ void PvarCommon_Updateinfo (void)
 	if (byPIDAlmPos && GetUPSData (ALM_REQ, sData, sizeof (sData)))
 	{
 		/* Handle replace battery alarm information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byALMBadbatPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byALMBadbatPos))
 		{
 			if (SubString[0] == '1')
 			{
@@ -1064,7 +1064,7 @@ void PvarCommon_Updateinfo (void)
 		}
 
 		/* Handle overload alarm information...*/
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byALMOvrlodPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byALMOvrlodPos))
 		{
 			if (SubString[0] == '1')
 			{
@@ -1074,7 +1074,7 @@ void PvarCommon_Updateinfo (void)
 
 		/* Handle testing alarm information...*/
 		/* UPM only. Means Battery Life Test failed. */
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byALMTstbadPos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byALMTstbadPos))
 		{
 			if (SubString[0] == '1')
 			{
@@ -1092,7 +1092,7 @@ void PvarCommon_Updateinfo (void)
 	/* Get EVT data next... */
 	if (byPIDEvtPos && GetUPSData (EVT_REQ, sData, sizeof (sData)))
 	{
-		if(GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byEVTUptimePos))
+		if (GetSubstringFromBuffer (SubString, sizeof(SubString), sData, byEVTUptimePos))
 		{
 			dstate_setinfo("device.uptime", "%s", SubString);
 		}
@@ -1344,7 +1344,7 @@ int setcmd(const char* varname, const char* setvalue)
 	{
 		char chBuff[SUBBUFFSIZE];
 
-		if(strlen(setvalue) == GETX_DATE_RESP_SIZE)
+		if (strlen(setvalue) == GETX_DATE_RESP_SIZE)
 		{
 			memset (chBuff, 0, sizeof(chBuff));
 			snprintf (chBuff, sizeof(chBuff), "%s%s", SYS_BATDTE_CMD, setvalue);
