@@ -79,13 +79,6 @@ static usb_device_id_t powervar_usb_device_table[] = {
 };
 
 
-static USBDeviceMatcher_t subdriver_matcher = {
-	&subdriver_match_func,
-	NULL,
-	NULL
-};
-
-
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -124,6 +117,13 @@ static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
 			return 0;
 	}
 }
+
+
+static USBDeviceMatcher_t subdriver_matcher = {
+	&subdriver_match_func,
+	NULL,
+	NULL
+};
 
 
 static int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)

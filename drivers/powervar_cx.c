@@ -387,7 +387,7 @@ static unsigned int GetSubstringFromBuffer (char* chDst, size_t szDst, const cha
 }
 
 /* This function finds the position of a substring in a CUSPP Format response. */
-static unsigned int GetSubstringPosition (const char* chResponse, const char* chSub)
+unsigned int GetSubstringPosition (const char* chResponse, const char* chSub)
 {
 	unsigned int uiReturn = 0;		/* Substring position or 0 if not found */
 	unsigned int uiPos = 1;			/* Substring position counter */
