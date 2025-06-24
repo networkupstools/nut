@@ -53,7 +53,7 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 #define PVAR_USB	1	/* This is the USB comm driver */
 
 /* Flag indicating a disconnected USB cable...and need to reconnect */
-static uint ReconnectFlag = 0;
+static unsigned int ReconnectFlag = 0;
 
 #include "powervar-cx.h"	/* Common driver variables and functions */
 
@@ -180,7 +180,7 @@ static int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_c
 /*  debug level 2 message. */
 static void USBFlushReceive (void)
 {
-	uint uiCount = 0;
+	unsigned int uiCount = 0;
 	char response_in[USB_RESPONSE_SIZE + 1];
 
 	upsdebugx(3, "Flushing USB receive.");
