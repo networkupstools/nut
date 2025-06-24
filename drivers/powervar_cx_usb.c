@@ -201,7 +201,11 @@ size_t SendRequest (const char* sRequest)
 	/* Last char reserved for ENDCHAR, so sizeof-1 for the string */
 	if (sizeof(outbuff) - 1 < ReqLen) {
 		upsdebugx(1, "SendRequest(): request too long, will be truncated");
-		/* FIXME: unexpected situation, abort? */
+		/* FIXME(no): unexpected situation, abort? */
+		/* Since problem is logged above and we can not abort for all
+		 *  calls to this function, we have nothing more to do. An
+		 *  improperly formatted request will be ignored by the unit.
+		 */
 	}
 
 	/* Clear output buffer area */

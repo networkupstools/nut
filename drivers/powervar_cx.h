@@ -19,6 +19,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  * History:
+ * - 24 June 2025
+ * Common file structure improved by Jim K.
+ * Driver file names changed to powervar_cx_ser and powervar_cx_usb.
  * - 7 February 2025, Bill Elliot
  * Working well with USB (...-cu) or serial (...-cs)
  * - 2 December 2024.  Bill Elliot
