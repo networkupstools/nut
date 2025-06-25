@@ -92,31 +92,31 @@ CONFIGURABLE VARIABLES
 The following variables can be set in the NUT configuration to override or monitor
 UPS behavior using the `phoenixcontact_modbus` driver:
 
-.B delay.shutdown
+*delay.shutdown*='num'::
 Delay before initiating PC shutdown (in seconds).
 
-.B delay.pc_shutdown
+*delay.pc_shutdown*='num'::
 Time allowed for PC to shutdown (in seconds). Maximum is 300 seconds.
 
-.B delay.pc_reset
+*delay.pc_reset*='num'::
 Duration for which output power remains off before rebooting the system (in seconds).
 
-.B delay.mains_return
+*delay.mains_return*='num'::
 Delay before switching back to mains after power is restored (in seconds).
 
-.B mode.selector
-UPS operating mode. For example, `9` corresponds to PC-Mode.
+*mode.selector*='num'::
+UPS operating mode. For example, `9` corresponds to PC-Mode (vendor-defined).
 
-.B bat.warning_soh
+*bat.warning_soh*='num'::
 Battery warning threshold for State of Health, in percent.
 
-.B bat.voltage_low
+*bat.voltage_low*='num'::
 Threshold voltage (in V) below which the UPS will switch to battery mode.
 
-.B mains.voltage_high
+*mains.voltage_high*='num'::
 Voltage threshold (in V) above which the UPS will consider mains power restored.
 
-.B mains.return_delay
+*mains.return_delay*='num'::
 Time (in seconds) that mains voltage must remain above the `voltage_high` threshold before switching back.
 
 AUTHORS
