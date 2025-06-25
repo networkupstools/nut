@@ -119,10 +119,12 @@ Voltage threshold (in V) above which the UPS will consider mains power restored.
 .B mains.return_delay
 Time (in seconds) that mains voltage must remain above the `voltage_high` threshold before switching back.
 
-AUTHOR
-------
+AUTHORS
+-------
 
-Spiros Ioannou <sivann@gmail.com>
+* Spiros Ioannou <sivann@gmail.com>
+* Ricardo Rodriguez <rikyrod2001@gmail.com>
+* Ulfat Hasangarayev <ulfathasangarayev@gmail.com>
 
 SEE ALSO
 --------
