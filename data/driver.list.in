@@ -36,6 +36,10 @@
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
 #
 # The entry may be followed by comments. Be sure to not use double-quotes there!
+#
+# Fields must be double-quoted (except for optional trailing comment) and
+# separated by a single TAB character. An empty field value is thus just
+# two double-quotes surreounded by TABs.
 
 "2E"	"ups"	"2"	"PS1000L"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut-ddl/issues/41
 "2E"	"ups"	"2"	"PS1000L"	"serial"	"nutdrv_qx"	# https://github.com/networkupstools/nut-ddl/issues/41
@@ -1198,6 +1202,11 @@
 
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 "PowerTech"	"ups"	"2"	"SMK-800"	""	"blazer_ser"
+
+"Powervar"	"ups"	"5"	"GTS Series"	"USB"	"powervar-cu"
+"Powervar"	"ups"	"5"	"UPM Series"	"USB"	"powervar-cu"
+"Powervar"	"ups"	"5"	"UPM Series"	"Serial"	"powervar-cs"
+"Powervar"	"ups"	"5"	"UPM Series"	"USB"	"usbhid-ups"
 
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 400/800"	""	"blazer_ser"
