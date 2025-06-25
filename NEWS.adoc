@@ -184,6 +184,9 @@ https://github.com/networkupstools/nut/milestone/9
      and seamless switching out of UPS data in a failover situation, includes
      support for end-to-end tracked instant commands and also variable updating.
      [#2962]
+   * Introduced USB (`powervar_cx_usb`) and Serial (`powervar_cx_ser`) drivers
+     for Powervar CUSPP protocol, tested with GTS (USB) and UPM (USB, Serial)
+     models. [#2988]
 
  - The `nut-driver-enumerator.sh` script (NDE) now internally tracks dependency
    of one driver on another one that should be locally running to serve the
