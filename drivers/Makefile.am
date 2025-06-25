@@ -66,7 +66,7 @@ NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
- mge-utalk microdowell microsol-apc mge-shut nutdrv_hashx oneac optiups powercom rhino	\
+ mge-utalk microdowell microsol-apc mge-shut nutdrv_hashx oneac optiups powercom powervar_cx_ser rhino	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser ve-direct
 if HAVE_LINUX_SERIAL_H
@@ -75,7 +75,7 @@ SERIAL_DRIVERLIST += nhs_ser
 endif HAVE_LINUX_SERIAL_H
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
- blazer_usb richcomm_usb riello_usb \
+ blazer_usb richcomm_usb riello_usb powervar_cx_usb \
  nutdrv_atcl_usb
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 SERIAL_USB_DRIVERLIST = \
@@ -188,6 +188,8 @@ powercom_SOURCES = powercom.c
 powercom_LDADD = $(LDADD) -lm
 powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
 powerpanel_LDADD = $(LDADD) -lm
+powervar_cx_ser_SOURCES = powervar_cx_ser.c powervar_cx.c
+powervar_cx_ser_CFLAGS = $(AM_CFLAGS) -DPVAR_SERIAL=1
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
@@ -248,10 +250,15 @@ LIBUSB_IMPL = libusb1.c
 endif WITH_LIBUSB_1_0
 USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
- openups-hid.c powervar-hid.c delta_ups-hid.c ecoflow-hid.c ever-hid.c legrand-hid.c salicru-hid.c
+ openups-hid.c powervar-hid.c delta_ups-hid.c ecoflow-hid.c ever-hid.c \
+ legrand-hid.c salicru-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+
+powervar_cx_usb_SOURCES = powervar_cx_usb.c powervar_cx.c $(LIBUSB_IMPL) usb-common.c
+powervar_cx_usb_CFLAGS = $(AM_CFLAGS) -DPVAR_USB=1
+powervar_cx_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 tripplite_usb_SOURCES = tripplite_usb.c $(LIBUSB_IMPL) usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
@@ -417,7 +424,7 @@ dist_noinst_HEADERS = \
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
- powercom.h powerpanel.h powerp-bin.h powerp-txt.h raritan-pdu-mib.h	\
+ powercom.h powerpanel.h powerp-bin.h powerp-txt.h powervar_cx.h raritan-pdu-mib.h	\
  safenet.h serial.h sms_ser.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \

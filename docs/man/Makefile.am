@@ -919,6 +919,7 @@ SRC_SERIAL_PAGES = \
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
+	powervar_cx_ser.txt	\
 	rhino.txt		\
 	riello_ser.txt	\
 	sms_ser.txt \
@@ -969,6 +970,7 @@ INST_MAN_SERIAL_PAGES = \
 	optiups.$(MAN_SECTION_CMD_SYS)	\
 	powercom.$(MAN_SECTION_CMD_SYS) 	\
 	powerpanel.$(MAN_SECTION_CMD_SYS)	\
+	powervar_cx_ser.$(MAN_SECTION_CMD_SYS)	\
 	rhino.$(MAN_SECTION_CMD_SYS)		\
 	riello_ser.$(MAN_SECTION_CMD_SYS)	\
 	sms_ser.$(MAN_SECTION_CMD_SYS) \
@@ -1037,6 +1039,7 @@ INST_HTML_SERIAL_MANS = \
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
+	powervar_cx_ser.html	\
 	rhino.html		\
 	riello_ser.html	\
 	sms_ser.html \
@@ -1113,6 +1116,7 @@ SRC_USB_LIBUSB_PAGES = \
 	blazer_usb.txt	\
 	nutdrv_atcl_usb.txt \
 	nut_usb_addvars.txt \
+	powervar_cx_usb.txt	\
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
@@ -1122,6 +1126,7 @@ INST_MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.$(MAN_SECTION_CMD_SYS) \
 	blazer_usb.$(MAN_SECTION_CMD_SYS) \
 	nutdrv_atcl_usb.$(MAN_SECTION_CMD_SYS) \
+	powervar_cx_usb.$(MAN_SECTION_CMD_SYS)	\
 	richcomm_usb.$(MAN_SECTION_CMD_SYS) \
 	riello_usb.$(MAN_SECTION_CMD_SYS)	\
 	tripplite_usb.$(MAN_SECTION_CMD_SYS) \
@@ -1144,6 +1149,7 @@ INST_HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	blazer_usb.html	\
 	nutdrv_atcl_usb.html \
+	powervar_cx_usb.html	\
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
@@ -1188,6 +1194,7 @@ endif ! SOME_DRIVERS
 
 INST_HTML_SERIAL_USB_MANS = \
 	nutdrv_qx.html
+
 DIST_ALL_HTML_PAGES += $(INST_HTML_SERIAL_USB_MANS)
 
 if ! SOME_DRIVERS
@@ -2065,6 +2072,9 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	                    cd "$(abs_top_builddir)" ; \
 	                fi ;; \
 	        esac ; \
+	        case "$$F" in \
+	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
+	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
@@ -2081,7 +2091,8 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e '1 s,\(^.*(\)8)$$,\1$(MAN_SECTION_CMD_SYS)),g' \
 	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' \
 	                -e '1 s,\(^.*(\)7)$$,\1$(MAN_SECTION_MISC)),g' ; \
-	        fi < "$${F}" > "$${F}-prepped" || exit ; \
+	        fi < "$${F}" > "$${F}-prepped" || exit ;; \
+	        esac ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 else \
@@ -2126,6 +2137,9 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	        if $$IS_TEXT ; then \
 	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
+	        case "$$F" in \
+	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
+	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
@@ -2143,7 +2157,8 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' \
 	                -e '1 s,\(^.*(\)7)$$,\1$(MAN_SECTION_MISC)),g' ; \
 	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
-	        || { rm -f "$@.working" ; exit 1 ; } ; \
+	        || { rm -f "$@.working" ; exit 1 ; } ;; \
+	        esac ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 fi ; \

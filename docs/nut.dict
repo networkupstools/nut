@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3522 utf-8
+personal_ws-1.1 en 3527 utf-8
 AAC
 AAS
 ABI
@@ -193,6 +193,7 @@ CSN
 CSS
 CTB
 CUDA
+CUSPP
 CVE
 CXR
 CXX
@@ -435,6 +436,7 @@ GPLv
 GPSER
 GRs
 GTK
+GTS
 GUESSTIMATION
 GUID
 GUIs
@@ -1003,6 +1005,7 @@ PowerWare
 Powerchute
 Powercool
 Powervar
+Powervar's
 Powerwell
 Prachi
 Prereqs
@@ -1927,6 +1930,7 @@ dir
 disassembly
 discardable
 disp
+disptesttime
 distcheck
 distclean
 distro
@@ -2817,6 +2821,7 @@ powerpanel
 powershell
 powerup
 powervalue
+powervar
 powerware
 ppc
 pprint
