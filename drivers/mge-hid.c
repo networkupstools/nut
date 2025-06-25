@@ -1161,7 +1161,9 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 		/* Check if input.bypass.switch.on is disabled and set it to 'on' */
 		bypass_switch_str = dstate_getinfo("input.bypass.switch.on");
 		if (!strcmp(bypass_switch_str, "disabled")) {
+			/* Enter Bypass mode */
 			bypass_switch_str = eaton_input_bypass_check_range(value);
+			upsdebugx(1, "%s: Entering auto Bypass mode.", __func__);
 		} else {
 			upsdebugx(1, "%s: Bypass switch on state is: %s , must be disabled before switching on", __func__, bypass_switch_str);
 			return NULL;
@@ -1170,7 +1172,9 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 		/* Check if input.eco.switchable is normal and set it to 'ECO' */
 		eco_switchable_str = dstate_getinfo("input.eco.switchable");
 		if (!strcmp(eco_switchable_str, "normal")) {
+            /* Enter ECO mode */
 			eco_switchable_str = eaton_input_eco_mode_check_range(value);
+			upsdebugx(1, "%s: Entering ECO mode.", __func__);
 		} else {
 			upsdebugx(1, "%s: ECO switch state is: %s , must be normal before switching to ECO", __func__, eco_switchable_str);
 			return NULL;
@@ -1183,7 +1187,9 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 		/* Check if input.bypass.switch.off is disabled and set it to 'off' */
 		bypass_switch_str = dstate_getinfo("input.bypass.switch.off");
 		if (!strcmp(bypass_switch_str, "disabled")) {
+			/* Exit Bypass mode */
 			setvar("input.bypass.switch.off", "off");
+			upsdebugx(1, "%s: Exiting auto Bypass mode.", __func__);
 		} else {
 			upsdebugx(1, "%s: Bypass switch off state is: %s , must be disabled before switching off", __func__, bypass_switch_str);
 			return NULL;
@@ -1192,8 +1198,10 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 		/* Check if input.eco.switchable is 'ECO' and set it to normal */
 		eco_switchable_str = dstate_getinfo("input.eco.switchable");
 		if (!strcmp(eco_switchable_str, "ECO")) {
+			/* Exit ECO mode */
 			setvar("input.eco.switchable", "normal");
 			buzzmode_set("vendor:mge-hid:normal");
+			upsdebugx(1, "%s: Exiting ECO mode.", __func__);
 			/* Get the updated value of input.eco.switchable after setting it to "normal */
             eco_switchable_str = dstate_getinfo("input.eco.switchable");
 		} else {
