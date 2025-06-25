@@ -3,6 +3,7 @@
  *  Copyright (C)
  *    2017  Spiros Ioannou <sivann@inaccess.com>
  *    2024  Ricardo Rodriguez <rikyrod2001@gmail.com>
+ *    2025  Ulfat Hasangarayev <ulfathasangarayev@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -147,7 +148,9 @@ static const delay_param_t delay_params[] = {
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Spiros Ioannou <sivann@inaccess.com>\n",
+	"Spiros Ioannou <sivann@inaccess.com>\n"
+	"Ricardo Rodriguez <rikyrod2001@gmail.com>\n"
+	"Ulfat Hasangarayev <ulfathasangarayev@gmail.com>",
 	DRV_BETA,
 	{NULL}
 };
