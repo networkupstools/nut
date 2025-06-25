@@ -155,27 +155,29 @@ upsdrv_info_t upsdrv_info = {
 	{NULL}
 };
 
-int write_uint32_register(modbus_t *ctx, int reg, uint32_t value)
+static int write_uint32_register(modbus_t *ctx, int reg, uint32_t value)
 {
 	uint16_t regs[2];
+	int ret;
+
 	regs[0] = value >> 16;      /*High word*/
 	regs[1] = value & 0xFFFF;   /*Low word*/
 
-	int ret = modbus_write_registers(ctx, reg, 2, regs);
+	ret = modbus_write_registers(ctx, reg, 2, regs);
 	if (ret == -1) {
-		upslogx(LOG_ERR, "Failed to write 32-bit value to reg 0x%04X: %s", reg, modbus_strerror(errno));
+		upslogx(LOG_ERR, "Failed to write 32-bit value to reg 0x%04X: %s", (unsigned int)reg, modbus_strerror(errno));
 	}
 	return ret;
 }
 
 
-int write_uint32_reg_bit(modbus_t *ctx, int reg, int bit_index, bool bit_value)
+static int write_uint32_reg_bit(modbus_t *ctx, int reg, int bit_index, bool bit_value)
 {
 	uint16_t regs[2];
 	uint32_t val;
 
 	if (modbus_read_registers(ctx, reg, 2, regs) != 2) {
-		upslogx(LOG_ERR, "Failed to read 32-bit register 0x%04X: %s", reg, modbus_strerror(errno));
+		upslogx(LOG_ERR, "Failed to read 32-bit register 0x%04X: %s", (unsigned int)reg, modbus_strerror(errno));
 		return -1;
 	}
 
@@ -190,7 +192,7 @@ int write_uint32_reg_bit(modbus_t *ctx, int reg, int bit_index, bool bit_value)
 	regs[1] = val & 0xFFFF;
 
 	if (modbus_write_registers(ctx, reg, 2, regs) == -1) {
-		upslogx(LOG_ERR, "Failed to write modified 32-bit value to 0x%04X: %s", reg, modbus_strerror(errno));
+		upslogx(LOG_ERR, "Failed to write modified 32-bit value to 0x%04X: %s", (unsigned int)reg, modbus_strerror(errno));
 		return -1;
 	}
 	return 0;
