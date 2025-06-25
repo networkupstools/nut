@@ -374,7 +374,7 @@ static unsigned int GetSubstringFromBuffer (char* chDst, size_t szDst, const cha
 			snprintf(chDst, szDst, "%s", chTok);
 			RetVal = 1;
 
-			upsdebugx (3, "Substring %d returned: \"%s\".", SubPosition, chDst);
+			upsdebugx (3, "Substring %u returned: \"%s\".", SubPosition, chDst);
 		}
 		else
 		{

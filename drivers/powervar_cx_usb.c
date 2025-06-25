@@ -185,7 +185,7 @@ static void USBFlushReceive (void)
 		uiCount++;
 	}
 
-	upsdebugx(6, "Flush Count: %d.", uiCount);
+	upsdebugx(6, "Flush Count: %u.", uiCount);
 }
 
 

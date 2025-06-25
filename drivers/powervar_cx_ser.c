@@ -154,7 +154,7 @@ void upsdrv_initups(void)
 		}
 		else
 		{
-			upsdebugx (4, "Serial baud not set!! (%d).", ulBaud);
+			upsdebugx (4, "Serial baud not set!! (%" PRIu32 ").", ulBaud);
 		}
 	}
 
