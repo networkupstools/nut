@@ -913,7 +913,7 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 SPELLCHECK_AUTO_ONE = ( \
 	SPELLCHECK_SRC_ONE="`basename '$?'`" ; \
 	rm -f "$@".failed ; \
-	$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${SPELLCHECK_SRC_ONE}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${SPELLCHECK_SRC_ONE}-spellchecked" \
+	$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${SPELLCHECK_SRC_ONE}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" "$(SPELLCHECK_BUILDDIR)/$${SPELLCHECK_SRC_ONE}-spellchecked" \
 	|| { RES=$$? ; touch "$@".failed; exit $$RES; } \
 )
 
@@ -947,7 +947,7 @@ spellcheck:
 			if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 				echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
 			else true ; fi ; \
-			$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+			$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
 			|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 		done ; \
 	 else \
@@ -957,12 +957,12 @@ spellcheck:
 			echo "ASPELL MAKEFILE DEBUG: from `pwd`: SPELLCHECK_NOEXT_DOCS='$${SPELLCHECK_NOEXT_DOCS}' SPELLCHECK_AUTO_TGT='$${SPELLCHECK_AUTO_TGT}'" ; \
 		else true ; fi ; \
 		if [ x"$${SPELLCHECK_AUTO_TGT}" != x ] ; then \
-			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" $${SPELLCHECK_AUTO_TGT} ; \
+			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" $${SPELLCHECK_AUTO_TGT} ; \
 			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ] ; then printf '%s ' "$(SPELLCHECK_SRCDIR)/$${docsrc}" ; rm -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ; fi ; done`" ; \
 		fi ; \
 		if [ x"$${SPELLCHECK_NOEXT_DOCS}" != x ] ; then \
 			for docsrc in $${SPELLCHECK_NOEXT_DOCS} ; do \
-				$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+				$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
 				|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 			done ; \
 		fi ; \
@@ -1027,7 +1027,7 @@ spellcheck-interactive:
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 			echo "ASPELL (INTERACTIVE) MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
 		else true ; fi ; \
-		$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_INTERACTIVE="true" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+		$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_INTERACTIVE="true" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
 		|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
@@ -1131,6 +1131,9 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	                    cd "$(abs_top_builddir)" ; \
 	                fi ;; \
 	        esac ; \
+	        case "$$F" in \
+	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
+	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
@@ -1142,7 +1145,8 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
 	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
 	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
-	        fi < "$${F}" > "$${F}-prepped" || exit ; \
+	        fi < "$${F}" > "$${F}-prepped" || exit ;; \
+	        esac; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	    if ! test -e "$@" ; then touch "$@" ; fi ; \
@@ -1188,6 +1192,9 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	        if $$IS_TEXT ; then \
 	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
+	        case "$$F" in \
+	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
+	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
@@ -1200,7 +1207,8 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
 	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
 	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
-	        || { rm -f "$@.working" ; exit 1 ; } ; \
+	        || { rm -f "$@.working" ; exit 1 ; } ;; \
+	        esac ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 fi ; \
