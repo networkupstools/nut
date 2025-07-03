@@ -172,6 +172,10 @@ https://github.com/networkupstools/nut/milestone/9
    * The time stamp and inter-frame delay accounting was fixed, alleviating
      one of the problems reported in issue #2609. [PR #2982]
 
+ - `bcmxcp` driver updates:
+   * The latching on to a previous replace battery status was fixed, with its
+     alarm state variable now correctly being reset; issue #2999. [PR #3002]
+
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
      monitoring. Most specific reported values are in an `experimental.*`
