@@ -156,7 +156,7 @@ endif::blazer_usb[]
 UPS COMMANDS
 ------------
 
-This driver supports some instant commands (see linkman:upscmd[8]):
+This driver supports some instant commands (see linkman:upscmd[1]):
 
 *beeper.toggle*::
 
@@ -305,7 +305,8 @@ endif::blazer_usb[]
 ifndef::blazer_usb[]
 linkman:blazer_usb[8],
 endif::blazer_usb[]
-linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
+linkman:nutupsdrv[8],
+linkman:upsc[1], linkman:upscmd[1], linkman:upsrw[1]
 
 
 Internet Resources:

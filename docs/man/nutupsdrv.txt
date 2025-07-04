@@ -40,7 +40,7 @@ systems attached must be turned off to ensure a proper reboot when power
 returns.
 
 In the third mode, using *-d*, the driver will exit after some update loops,
-dumping the data tree (in linkman:upsc[8]-like format) to `stdout`.
+dumping the data tree (in linkman:upsc[1]-like format) to `stdout`.
 This can be useful to complement the linkman:nut-scanner[8] to discover
 devices, along with in-depth data.
 
@@ -83,7 +83,7 @@ output.  More often than not, if you just pick a level, the output may be
 either too limited or too verbose to be of any use.
 
 *-d* 'update_count'::
-Dump the data tree (in linkman:upsc[8]-like format) to `stdout` after running
+Dump the data tree (in linkman:upsc[1]-like format) to `stdout` after running
 the driver update loop for the specified 'update_count' times and exit.
 +
 By default this prevents the driver process from backgrounding after startup.
@@ -206,7 +206,7 @@ Information about the startup process is printed to `stdout` and/or `stderr`.
 Additional messages after that point are only available in the syslog, unless
 the driver remains in foreground (e.g. due to raised debugging verbosity).
 
-After linkman:upsd[8] starts, the UPS clients such as linkman:upsc[8] can
+After linkman:upsd[8] starts, the UPS clients such as linkman:upsc[1] can
 be used to query the status of an UPS.
 
 PROGRAM CONTROL
@@ -279,9 +279,9 @@ Server:
 Clients:
 ~~~~~~~~
 
-- linkman:upsc[8]
-- linkman:upscmd[8]
-- linkman:upsrw[8]
+- linkman:upsc[1]
+- linkman:upscmd[1]
+- linkman:upsrw[1]
 - linkman:upslog[8]
 - linkman:upsmon[8]
 

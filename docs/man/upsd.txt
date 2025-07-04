@@ -191,9 +191,9 @@ SEE ALSO
 Clients:
 ~~~~~~~~
 
-- linkman:upsc[8]
-- linkman:upscmd[8]
-- linkman:upsrw[8]
+- linkman:upsc[1]
+- linkman:upscmd[1]
+- linkman:upsrw[1]
 - linkman:upslog[8]
 - linkman:upsmon[8]
 

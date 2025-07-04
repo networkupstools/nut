@@ -308,9 +308,9 @@ exit 0
 %{_libdir}/libupsclient.so*
 %{_mandir}/man5/upsmon.conf.5
 %{_mandir}/man5/upssched.conf.5
-%{_mandir}/man8/upsc.8
-%{_mandir}/man8/upscmd.8
-%{_mandir}/man8/upsrw.8
+%{_mandir}/man1/upsc.1
+%{_mandir}/man1/upscmd.1
+%{_mandir}/man1/upsrw.1
 %{_mandir}/man8/upslog.8
 %{_mandir}/man8/upsmon.8
 %{_mandir}/man8/upssched.8

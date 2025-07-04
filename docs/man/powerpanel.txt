@@ -60,7 +60,7 @@ VARIABLES
 ---------
 
 Depending on the type of your UPS unit, some of the following variables may
-be changed with linkman:upsrw[8]. If the driver can't read a variable from the
+be changed with linkman:upsrw[1]. If the driver can't read a variable from the
 UPS, it will not be made available.
 
 *input.transfer.high*::

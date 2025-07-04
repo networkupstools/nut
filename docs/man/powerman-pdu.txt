@@ -39,7 +39,7 @@ prerequisites and using `configure --with-powerman=yes`.
 UPS COMMANDS
 ------------
 
-The following instant commands (see linkman:upscmd[8]) are available for each
+The following instant commands (see linkman:upscmd[1]) are available for each
 outlet of the PDU, with *X* standing for the outlet number:
 
 *outlet.X.load.on*::
