@@ -116,7 +116,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.37"
+#define DRIVER_VERSION	"0.38"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -1656,6 +1656,7 @@ void upsdrv_updateinfo(void)
 	{
 		bcmxcp_status.alarm_on_battery = 0;
 		bcmxcp_status.alarm_low_battery = 0;
+		bcmxcp_status.alarm_replace_battery = 0;
 
 		/* Set alarms */
 		alarm_init();
