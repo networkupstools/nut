@@ -140,7 +140,9 @@ https://github.com/networkupstools/nut/milestone/9
 
  - `bcmxcp` driver updates:
    * The latching on to a previous replace battery status was fixed, with its
-     alarm state variable now correctly being reset; issue #2999. [PR #3002]
+     alarm state variable now correctly being reset; previously a factually
+     replaced battery did not clear the alarm and the whole driver needed to
+     be restarted. [issue #2999, PR #3002]
 
  - `clone`, `clone-outlet`, `nhs_ser` driver and `nutdrv_qx_ablerex`
    subdriver updates:
