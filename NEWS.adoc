@@ -168,6 +168,10 @@ https://github.com/networkupstools/nut/milestone/9
    * Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
      necessary to address spurious LOWBATT and REPLACEBATT events. [#2942]
 
+ - `pijuice` driver updates:
+   * Converted to NUT standard use of `status_set()` with single-token values.
+     [issue #2708]
+
  - `apc_modbus` driver updates:
    * The time stamp and inter-frame delay accounting was fixed, alleviating
      one of the problems reported in issue #2609. [PR #2982]
