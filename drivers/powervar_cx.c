@@ -975,7 +975,7 @@ void PvarCommon_Updateinfo (void)
 		{
 			if ((byOnBat) && (SubString[0] == '3'))
 			{
-				status_set ("LB");
+				status_set("LB");
 			}
 		}
 
@@ -1062,7 +1062,7 @@ void PvarCommon_Updateinfo (void)
 		{
 			if (SubString[0] == '1')
 			{
-				status_set ("RB");
+				status_set("RB");
 			}
 		}
 
@@ -1071,7 +1071,7 @@ void PvarCommon_Updateinfo (void)
 		{
 			if (SubString[0] == '1')
 			{
-				status_set ("OVER");
+				status_set("OVER");
 			}
 		}
 
@@ -1082,7 +1082,7 @@ void PvarCommon_Updateinfo (void)
 			if (SubString[0] == '1')
 			{
 				dstate_setinfo("ups.test.result", "Change Battery");
-				status_set ("RB");
+				status_set("RB");
 			}
 			else
 			{
