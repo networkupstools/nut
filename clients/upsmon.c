@@ -3823,11 +3823,13 @@ int main(int argc, char *argv[])
 	if (checking_flag)
 		exit(check_pdflag());
 
-	if (shutdowncmd == NULL)
+	if (shutdowncmd == NULL) {
 		printf("Warning: no shutdown command defined%s\n",
 			(minsupplies < 1)
 			? ", but that is OK for a monitoring-only client."
 			: "!");
+		fflush(stdout);
+	}
 
 	/* we may need to get rid of a flag from a previous shutdown */
 	if (powerdownflag != NULL)
