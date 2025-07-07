@@ -97,14 +97,15 @@ NUT variables in a later revision, pre-configurable using `override.*` or
 `default.*` names.
 
 *delay.shutdown*='num'::
-Delay before initiating PC shutdown (in seconds).
+Time after entering battery mode before PC shutdown signal is triggered
+by the UPS (in seconds).
 
 *delay.pc_shutdown*='num'::
 Time allowed for PC to shutdown (in seconds). Maximum is 300 seconds.
 
 *delay.pc_reset*='num'::
-Duration for which output power remains off before rebooting the system
-(in seconds).
+Duration for which output power remains turned off before rebooting the
+PC system back on (in seconds).
 
 *delay.mains_return*='num'::
 Delay before switching back to mains after power is restored (in seconds).
