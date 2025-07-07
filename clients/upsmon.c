@@ -3829,6 +3829,15 @@ int main(int argc, char *argv[])
 			? ", but that is OK for a monitoring-only client."
 			: "!");
 		fflush(stdout);
+	} else {
+		upsdebugx(1, "will use a shutdown command (SHUTDOWNCMD): '%s'", shutdowncmd);
+	}
+
+	if (notifycmd == NULL) {
+		printf("Warning: no custom notification command defined, just so you know\n");
+		fflush(stdout);
+	} else {
+		upsdebugx(1, "will use custom notification command (NOTIFYCMD): '%s'", notifycmd);
 	}
 
 	/* we may need to get rid of a flag from a previous shutdown */
