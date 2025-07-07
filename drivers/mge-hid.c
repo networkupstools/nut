@@ -52,7 +52,7 @@
 # endif
 #endif	/* WIN32 */
 
-#define MGE_HID_VERSION		"MGE HID 1.54"
+#define MGE_HID_VERSION		"MGE HID 1.55"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -879,11 +879,8 @@ static double pegasus_yes_no_info_nuf(const char *value)
 		return 0;
 }
 
-/* FIXME/Note: If a mapping method is used, numeric/string mapping values
- *  (and lines other than first) are ignored */
 static info_lkp_t pegasus_yes_no_info[] = {
-	{ 0, "no", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
-	{ 1, "yes", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
+	{ 0, "dummy", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -1025,16 +1022,35 @@ static const char *eaton_input_ess_mode_report(double value)
 }
 
 /* High Efficiency (aka ECO) mode, Energy Saver System (aka ESS) mode makes sense for UPS like (93PM G2, 9395P) */
-/* FIXME/Note: If a mapping method is used, numeric/string mapping values
- *  (and lines other than first) are ignored */
+static const char *eaton_input_buzzwordmode_report(double value) {
+	switch ((long)value) {
+		case 0:
+			return "normal";
+
+		case 1:
+			/* "ECO" where suitable; lots of other activity done */
+			/* NOTE: "ECO" = tested on 9SX model and working fine,
+			 * but the 9E model can get stuck in ECO mode, see
+			 * https://github.com/networkupstools/nut/issues/2719
+			 */
+			return eaton_input_eco_mode_check_range(value);
+
+		case 2:
+			/* "ESS" and internal buzzmode_set() */
+			return eaton_input_ess_mode_report(value);
+
+		default:
+			return NULL;
+	}
+}
+
 static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
-	{ 0, "normal", NULL, NULL },
-	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ECO" = tested on 9SX model and working fine, 9E model can stuck in ECO mode https://github.com/networkupstools/nut/issues/2719 */
-	{ 2, "ESS", eaton_input_ess_mode_report, NULL },
+	{ 0, "dummy", eaton_input_buzzwordmode_report, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Function to check if the current Bypass transfer voltage/frequency is within the configured limits */
+/* Function to check if the current Bypass transfer voltage/frequency
+ * is within the configured limits (for value==1) */
 static const char *eaton_input_bypass_check_range(double value)
 {
 	double	bypass_voltage;
@@ -1058,8 +1074,10 @@ static const char *eaton_input_bypass_check_range(double value)
 	const char	*frequency_range_transfer_str = dstate_getinfo("input.transfer.frequency.bypass.range");
 	const char	*out_frequency_nominal_str = dstate_getinfo("output.frequency.nominal");
 
-	NUT_UNUSED_VARIABLE(value);
+	if (d_equal(value, 0))
+		return "disabled";
 
+	/* assuming value==1 */
 	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
 	 || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL
 	) {
@@ -1151,11 +1169,8 @@ static const char *eaton_input_bypass_check_range(double value)
 }
 
 /* Automatic Bypass mode on */
-/* FIXME/Note: If a mapping method is used, numeric/string mapping values
- *  (and lines other than first) are ignored */
 static info_lkp_t eaton_input_bypass_mode_on_info[] = {
-	{ 0, "disabled", NULL, NULL },
-	{ 1, "on", eaton_input_bypass_check_range, NULL },
+	{ 0, "dummy", eaton_input_bypass_check_range, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -1281,11 +1296,8 @@ static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
 }
 
 /* High Efficiency (aka ECO) mode for auto start/stop commands */
-/* FIXME/Note: If a mapping method is used, numeric/string mapping values
- *  (and lines other than first) are ignored */
 static info_lkp_t eaton_input_eco_mode_auto_on_off_info[] = {
-	{ 0, "off", eaton_input_eco_mode_auto_on_off_fun, eaton_input_eco_mode_auto_on_off_nuf },
-	{ 1, "on", eaton_input_eco_mode_auto_on_off_fun, eaton_input_eco_mode_auto_on_off_nuf },
+	{ 0, "dummy", eaton_input_eco_mode_auto_on_off_fun, eaton_input_eco_mode_auto_on_off_nuf },
 	{ 0, NULL, NULL, NULL }
 };
 
