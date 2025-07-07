@@ -94,38 +94,44 @@ or monitor UPS behavior using the `phoenixcontact_modbus` driver.
 
 NOTE: Some or all of these settings may be replaced by equivalent standard
 NUT variables in a later revision, pre-configurable using `override.*` or
-`default.*` names.
+`default.*` names.  Currently these driver setting names are just aligned
+with NUT standard names, where applicable, to minimize surprise later.
 
 *delay.shutdown*='num'::
 Time after entering battery mode before PC shutdown signal is triggered
 by the UPS (in seconds).
 
-*delay.pc_shutdown*='num'::
+*timer.shutdown*='num'::
 Time allowed for PC to shutdown (in seconds). Maximum is 300 seconds.
 
-*delay.pc_reset*='num'::
+*timer.start*='num'::
 Duration for which output power remains turned off before rebooting the
 PC system back on (in seconds).
 
+////////
 *delay.mains_return*='num'::
+////////
+*delay.start*='num'::
 Delay before switching back to mains after power is restored (in seconds).
+
+////////
+*mains.return_delay*='num'::
+Time (in seconds) that mains voltage must remain above the `voltage_high`
+threshold (see above) before switching back.
+////////
 
 *mode.selector*='num'::
 UPS operating mode. For example, `9` corresponds to PC-Mode (vendor-defined).
 
-*bat.warning_soh*='num'::
+*battery.warning_soh*='num'::
 Battery warning threshold for State of Health, in percent.
 
-*bat.voltage_low*='num'::
+*voltage.low.critical*='num'::
 Threshold voltage (in V) below which the UPS will switch to battery mode.
 
-*mains.voltage_high*='num'::
+*voltage.high.critical*='num'::
 Voltage threshold (in V) above which the UPS will consider mains power restored
 (see also below).
-
-*mains.return_delay*='num'::
-Time (in seconds) that mains voltage must remain above the `voltage_high`
-threshold (see above) before switching back.
 
 AUTHORS
 -------
