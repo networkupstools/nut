@@ -4164,8 +4164,10 @@ int main(int argc, char *argv[])
 		}
 
 end_loop_cycle:
-		/* No-op to avoid a warning about label at end of compound statement */
-		(void)1;
+		/* If anyone printed anything, be sure it is output
+		 * in a timely manner, not buffered indefinitely: */
+		fflush(stdout);
+		fflush(stderr);
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
