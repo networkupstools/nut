@@ -179,8 +179,9 @@ https://github.com/networkupstools/nut/milestone/9
      descriptors was extended to cover a newly reported case of nominal UPS
      power being incorrectly reported due to an unrealistically low maximum
      threshold, as seen with a EC850LCD device. [issue #2917, PR #2919]
-   * Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
-     necessary to address spurious LOWBATT and REPLACEBATT events. [#2942]
+   * Added APC BKxxxM2-CH to list of devices where `lbrb_log_delay_sec=N` may be
+     necessary to address spurious LOWBATT and REPLACEBATT events. [PR #3007,
+     issue #2347, issue #3006]
 
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
@@ -507,7 +508,8 @@ This requirement compromises usability of `make distcheck` on platforms without
    * Added support for `lbrb_log_delay_sec=N` setting to delay propagation of
      `LB` or `LB+RB` state (buggy with APC BXnnnnMI devices circa 2023-2024).
      This may work better with flags like `onlinedischarge_calibration` and
-     `lbrb_log_delay_without_calibrating` for some devices. [#2347]
+     `lbrb_log_delay_without_calibrating` for some devices. [issue #2347,
+     PR #2565]
    * General suggestion from `possibly_supported()` message method for devices
      with VendorID=`0x06da` (Phoenixtec), seen in some models supported by
      MGE HID or Liebert HID, updated to suggest trying `nutdrv_qx`. [#334]
