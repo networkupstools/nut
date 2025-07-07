@@ -219,6 +219,10 @@ https://github.com/networkupstools/nut/milestone/9
      and after each main loop cycle, so any emitted text is seen in a timely
      manner. [issue #3003, PR #3008]
 
+ - The `nutshutdown` script (end-game integration for UPS power-off in case
+   of FSD initiated by `upsmon`) was updated to consider `MODE=none` set in
+   `nut.conf` and bail out quietly. [issue #2935, PR #3008]
+
  - Manual page recipes and contents:
    * Introduced handling (possibly rewriting) for man page section "Overviews,
      conventions, and miscellaneous" (commonly number 7), to deliver support
