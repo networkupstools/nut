@@ -816,10 +816,19 @@ static const char *eaton_check_pegasus_fun(double value)
 		return NULL;
 	}
 
+	/* FIXME: Expected values (not checked for) seem to be 10, 25 or 60
+	 *  according to originally improperly defined mapping table.
+	 *  Should we check for these numbers explicitly?
+	 *  What should we do with others (if any) -- accept (least surprise)
+	 *  or reject?
+	 */
+
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
 	return mge_scratch_buf;
 }
 
+/* FIXME/Note: If a mapping method is used, numeric/string mapping values
+ *  (and lines other than first) are in fact ignored */
 static info_lkp_t pegasus_threshold_info[] = {
 	{ 10, "10", eaton_check_pegasus_fun, NULL },
 	{ 25, "25", eaton_check_pegasus_fun, NULL },
@@ -866,10 +875,12 @@ static double pegasus_yes_no_info_nuf(const char *value)
 
 	if (!strncmp(value, "yes", 3))
 		return 1;
-	else
+	else	/* assuming "no" */
 		return 0;
 }
 
+/* FIXME/Note: If a mapping method is used, numeric/string mapping values
+ *  (and lines other than first) are ignored */
 static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, "no", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
 	{ 1, "yes", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
@@ -1014,6 +1025,8 @@ static const char *eaton_input_ess_mode_report(double value)
 }
 
 /* High Efficiency (aka ECO) mode, Energy Saver System (aka ESS) mode makes sense for UPS like (93PM G2, 9395P) */
+/* FIXME/Note: If a mapping method is used, numeric/string mapping values
+ *  (and lines other than first) are ignored */
 static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
 	{ 0, "normal", NULL, NULL },
 	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ECO" = tested on 9SX model and working fine, 9E model can stuck in ECO mode https://github.com/networkupstools/nut/issues/2719 */
@@ -1138,6 +1151,8 @@ static const char *eaton_input_bypass_check_range(double value)
 }
 
 /* Automatic Bypass mode on */
+/* FIXME/Note: If a mapping method is used, numeric/string mapping values
+ *  (and lines other than first) are ignored */
 static info_lkp_t eaton_input_bypass_mode_on_info[] = {
 	{ 0, "disabled", NULL, NULL },
 	{ 1, "on", eaton_input_bypass_check_range, NULL },
@@ -1266,6 +1281,8 @@ static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
 }
 
 /* High Efficiency (aka ECO) mode for auto start/stop commands */
+/* FIXME/Note: If a mapping method is used, numeric/string mapping values
+ *  (and lines other than first) are ignored */
 static info_lkp_t eaton_input_eco_mode_auto_on_off_info[] = {
 	{ 0, "off", eaton_input_eco_mode_auto_on_off_fun, eaton_input_eco_mode_auto_on_off_nuf },
 	{ 1, "on", eaton_input_eco_mode_auto_on_off_fun, eaton_input_eco_mode_auto_on_off_nuf },
@@ -1413,6 +1430,8 @@ static const char *nominal_output_voltage_fun(double value)
 	return mge_scratch_buf;
 }
 
+/* FIXME/Note: If a mapping method is used, numeric/string mapping values
+ *  (and lines other than first) are in fact ignored */
 static info_lkp_t nominal_output_voltage_info[] = {
 	/* line-interactive, starting with Evolution, support both HV values */
 	/* HV models */
