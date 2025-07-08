@@ -81,7 +81,7 @@ static double powercom_startup_nuf(const char *value)
 	//iv = atoi(value ? value : s) / 60;
 	iv = atoi(value ? value : s);
 	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT32_MAX) {
-		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
+		upsdebugx(0, "%s: value = %d is not in uint32_t range", __func__, iv);
 		return 0;
 	}
 
@@ -124,7 +124,7 @@ static double powercom_shutdown_nuf(const char *value)
 
 	iv = atoi(value ? value : s);
 	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT8_MAX) {
-		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
+		upsdebugx(0, "%s: value = %d is not in uint8_t range", __func__, iv);
 		return 0;
 	}
 
