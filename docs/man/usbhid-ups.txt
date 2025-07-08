@@ -221,6 +221,15 @@ firmwares out there with opposite behaviors, we provide this toggle to use
 old behavior in a particular deployment.  Maybe it was just a bug and nobody
 needs this fall-back...
 
+*powercom_sdcmd_discrete_delay*::
+Some devices (Raptor and Smart KING Pro series) follow the protocol
+where we can not set arbitrary value of shutdown delay in seconds
+(like in other powercom UPSes), but must use values only from the
+"Table of possible delays for Shutdown commands" specified in the
+protocol document. This option causes the driver to convert delays
+between seconds (in standard NUT variables) and nearest indexed
+entry from that table.
+
 *explore*::
 With this option, the driver will connect to any device, including
 ones that are not yet supported. This must always be combined with the

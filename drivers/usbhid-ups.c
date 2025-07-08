@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.65"
+#define DRIVER_VERSION	"0.66"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -1143,6 +1143,9 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "powercom_sdcmd_byte_order_fallback",
 		"Set to use legacy byte order for Powercom HID shutdown commands. Either it was wrong forever, or some older devices/firmwares had it the other way around");
+
+	addvar(VAR_FLAG, "powercom_sdcmd_discrete_delay",
+		"Set to use discrete timing table for Powercom HID shutdown commands (Raptor and Smart KING Pro series)");
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");

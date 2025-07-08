@@ -185,7 +185,8 @@ https://github.com/networkupstools/nut/milestone/9
      properly, at least as of RAPTOR RPT-1500AP LCD models. The RPT series
      seem to have same USB protocol like Smart KING Pro series, and that
      only supports a specific set of possible delays for Shutdown commands
-     (certain fractions or counts of whole minutes). [issue #3000]
+     (certain fractions or counts of whole minutes) -- which should now be
+     handled if `powercom_sdcmd_discrete_delay` flag is set. [issue #3000]
 
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
