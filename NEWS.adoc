@@ -181,6 +181,11 @@ https://github.com/networkupstools/nut/milestone/9
      threshold, as seen with a EC850LCD device. [issue #2917, PR #2919]
    * Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
      necessary to address spurious LOWBATT and REPLACEBATT events. [#2942]
+   * The `powercom-hid` subdriver did not handle delayed shutdown commands
+     properly, at least as of RAPTOR RPT-1500AP LCD models. The RPT series
+     seem to have same USB protocol like Smart KING Pro series, and that
+     only supports a specific set of possible delays for Shutdown commands
+     (certain fractions or counts of whole minutes). [issue #3000]
 
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
