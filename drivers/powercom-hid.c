@@ -75,19 +75,21 @@ static const char *powercom_startup_fun(double value)
 static double powercom_startup_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.start");
-	uint16_t	val, command;
+	uint32_t	val, command;
 	int iv;
 
-	iv = atoi(value ? value : s) / 60;
-	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
+	//iv = atoi(value ? value : s) / 60;
+	iv = atoi(value ? value : s);
+	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT32_MAX) {
 		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
 		return 0;
 	}
 
 	/* COMMENTME: What are we doing here, a byte-swap in the word? */
-	val = (uint16_t)iv;
-	command =  (uint16_t)(val << 8);
-	command += (uint16_t)(val >> 8);
+	// val = (uint16_t)iv;
+	// command =  (uint16_t)(val << 8);
+	// command += (uint16_t)(val >> 8);
+	command = (uint32_t)iv;
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
 
 	return command;
@@ -117,28 +119,30 @@ static const char *powercom_shutdown_fun(double value)
 static double powercom_shutdown_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
-	uint16_t	val, command;
+	uint8_t	val, command;
 	int iv;
 
 	iv = atoi(value ? value : s);
-	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
+	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT8_MAX) {
 		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
 		return 0;
 	}
 
-	val = (uint16_t)iv;
-	val = val ? val : 1;    /* 0 sets the maximum delay */
-	if (powercom_sdcmd_byte_order_fallback) {
-		/* Legacy behavior */
-		command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
-		command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
-	} else {
-		/* New default */
-		command = ((uint16_t)((val / 60) << 8)) + (uint16_t)(val % 60);
-		command |= 0x0040;	/* AC RESTART NORMAL ENABLE */
-	}
+	command = (uint8_t)iv;
 
-	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
+	// val = (uint16_t)iv;
+	// val = val ? val : 1;    /* 0 sets the maximum delay */
+	// if (powercom_sdcmd_byte_order_fallback) {
+	// 	/* Legacy behavior */
+	// 	command = ((uint16_t)((val % 60) <<  8)) + (uint16_t)(val / 60);
+	// 	command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
+	// } else {
+	// 	/* New default */
+	// 	command = ((uint16_t)((val / 60) << 8)) + (uint16_t)(val % 60);
+	// 	command |= 0x0040;	/* AC RESTART NORMAL ENABLE */
+	// }
+
+	upsdebugx(3, "%s: value = %s, command = %02X", __func__, value, command);
 
 	return command;
 }
