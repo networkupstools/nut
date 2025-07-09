@@ -1571,25 +1571,35 @@ void upsdrv_initups(void)
 			lbrb_log_delay_sec = ipv;
 		}
 	} else {
-		/* Activate APC BXnnnMI/BXnnnnMI/BVKnnnM2/BVKnnnnM2 tweaks, for details see
+		/* Activate APC BXnnnMI/BXnnnnMI/BVKnnnM2/BVKnnnnM2/BKnnnM2[_-]CH tweaks, for details see
 		 * https://github.com/networkupstools/nut/issues/2347
+		 * https://github.com/networkupstools/nut/issues/2565
+		 * https://github.com/networkupstools/nut/issues/2944
+		 * https://github.com/networkupstools/nut/issues/3006
 		 */
 		size_t	productLen = hd->Product ? strlen(hd->Product) : 0;
 
 		/* FIXME: Consider also ups.mfr.date as 2023 or newer?
 		 * Eventually up to some year this gets fixed?
 		 */
-		if ((hd->Vendor
-			&&  productLen > 6	/* BXnnnMI at least */
-			&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+		if (hd->Vendor && productLen > 0
+		&& (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+		&& ((
+			    productLen > 6	/* BXnnnMI at least */
 			&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
-			&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I'))
-		|| (hd->Vendor
-			&&  productLen > 7	/* BVKnnnM2 at least */
-			&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+			&&   hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I'
+			) || (
+			    productLen > 7	/* BVKnnnM2 at least */
 			&&  (strstr(hd->Product, " BVK") || strstr(hd->Product, "BVK") == hd->Product)
-			&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == '2'))
-		) {
+			&&   hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == '2'
+			) || (
+			    productLen > 9	/* BKnnnM2-CH at least, e.h. "Back-UPS BK650M2_CH" */
+			&&  (strstr(hd->Product, " BK") || strstr(hd->Product, "BK") == hd->Product)
+			&&   hd->Product[productLen - 5] == 'M' && hd->Product[productLen - 4] == '2'
+			&&  (hd->Product[productLen - 3] == '-' || hd->Product[productLen - 3] == '_')
+			&&   hd->Product[productLen - 2] == 'C' && hd->Product[productLen - 1] == 'H'
+			)
+		)) {
 			int	got_lbrb_log_delay_without_calibrating = testvar("lbrb_log_delay_without_calibrating") ? 1 : 0,
 				got_onlinedischarge_calibration = testvar("onlinedischarge_calibration") ? 1 : 0,
 				got_onlinedischarge_log_throttle_sec = testvar("onlinedischarge_log_throttle_sec") ? 1 : 0;
