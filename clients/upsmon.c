@@ -3823,11 +3823,22 @@ int main(int argc, char *argv[])
 	if (checking_flag)
 		exit(check_pdflag());
 
-	if (shutdowncmd == NULL)
+	if (shutdowncmd == NULL) {
 		printf("Warning: no shutdown command defined%s\n",
 			(minsupplies < 1)
 			? ", but that is OK for a monitoring-only client."
 			: "!");
+		fflush(stdout);
+	} else {
+		upsdebugx(1, "will use a shutdown command (SHUTDOWNCMD): '%s'", shutdowncmd);
+	}
+
+	if (notifycmd == NULL) {
+		printf("Warning: no custom notification command defined, just so you know\n");
+		fflush(stdout);
+	} else {
+		upsdebugx(1, "will use custom notification command (NOTIFYCMD): '%s'", notifycmd);
+	}
 
 	/* we may need to get rid of a flag from a previous shutdown */
 	if (powerdownflag != NULL)
@@ -4162,8 +4173,10 @@ int main(int argc, char *argv[])
 		}
 
 end_loop_cycle:
-		/* No-op to avoid a warning about label at end of compound statement */
-		(void)1;
+		/* If anyone printed anything, be sure it is output
+		 * in a timely manner, not buffered indefinitely: */
+		fflush(stdout);
+		fflush(stderr);
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);

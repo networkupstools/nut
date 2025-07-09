@@ -189,9 +189,11 @@ Set to delay status-setting (and log messages) about device entering `LB` or
 `LB+RB` state.
 +
 Some APC BXnnnnMI device models or firmware versions (reportedly 2023-2024),
-or APC BVKnnnnM2 device models, frequently report "low battery", "replace
-battery", and "all ok" states changing rapidly within a couple of seconds,
-sometimes (but not always) preceded by `OL+DISCHRG` (presumably calibration).
+or APC BVKnnnnM2 device models, or APC BKnnnnM2-CH (a China-market-only model),
+frequently report "low battery", "replace battery", and "all ok" states
+changing rapidly within a couple of seconds, sometimes (but not always)
+preceded by `OL+DISCHRG` (presumably calibration).
++
 This setting lets the driver ignore short-lived states and only pay attention
 if they persist longer than this setting (and the device power state is `OL`).
 
