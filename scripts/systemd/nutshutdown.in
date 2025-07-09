@@ -37,6 +37,17 @@ if [ -s "@CONFPATH@/nut.conf" ]; then
     . "@CONFPATH@/nut.conf" || true
 fi
 
+if [ x"${MODE}" = xnone ]; then
+    # Per https://github.com/networkupstools/nut/issues/2935
+    # it is possible that NUT gets administratively disabled
+    # some time after a POWERDOWNFLAG file is created, and
+    # before it is deleted. In this case it never got deleted,
+    # and if that was in a persistent location - then every OS
+    # shutdown or reboot got treated as FSD with UPS power-off.
+    echo "$@: MODE=none so quetly exiting" >&2
+    exit 0
+fi
+
 [ x"${POWEROFF_QUIET-}" = xtrue ] \
 || POWEROFF_QUIET="false"
 
