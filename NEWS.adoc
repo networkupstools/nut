@@ -179,9 +179,9 @@ https://github.com/networkupstools/nut/milestone/9
      descriptors was extended to cover a newly reported case of nominal UPS
      power being incorrectly reported due to an unrealistically low maximum
      threshold, as seen with a EC850LCD device. [issue #2917, PR #2919]
-   * Added APC BKxxxM2-CH to list of devices where `lbrb_log_delay_sec=N` may be
-     necessary to address spurious LOWBATT and REPLACEBATT events. [PR #3007,
-     issue #2347, issue #3006]
+   * Added APC BVKxxxM2 and BKxxxM2-CH to list of devices where
+     `lbrb_log_delay_sec=N` may be necessary to address spurious LOWBATT
+     and REPLACEBATT events. [PR #2942, PR #3007, issue #2347, issue #3006]
 
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
