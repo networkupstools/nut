@@ -177,6 +177,8 @@ https://github.com/networkupstools/nut/milestone/9
  - `snmp-ups` driver updates:
    * Fixed `ups.test.date` to be semi-static in `apc-mib` mapping, so it
      would be queried more than once per driver up-time. [issue #3011]
+   * Fixed debug-logging around `SU_FLAG_STATIC` entries to clarify when
+     they get skipped. [issue #3011]
 
  - `usbhid-ups` driver updates:
    * The `cps-hid` subdriver's existing mechanism for fixing broken report
