@@ -52,7 +52,7 @@
 # endif
 #endif	/* WIN32 */
 
-#define MGE_HID_VERSION		"MGE HID 1.54"
+#define MGE_HID_VERSION		"MGE HID 1.55"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -816,10 +816,19 @@ static const char *eaton_check_pegasus_fun(double value)
 		return NULL;
 	}
 
+	/* FIXME: Expected values (not checked for) seem to be 10, 25 or 60
+	 *  according to originally improperly defined mapping table.
+	 *  Should we check for these numbers explicitly?
+	 *  What should we do with others (if any) -- accept (least surprise)
+	 *  or reject?
+	 */
+
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
 	return mge_scratch_buf;
 }
 
+/* FIXME/Note: If a mapping method is used, numeric/string mapping values
+ *  (and lines other than first) are in fact ignored */
 static info_lkp_t pegasus_threshold_info[] = {
 	{ 10, "10", eaton_check_pegasus_fun, NULL },
 	{ 25, "25", eaton_check_pegasus_fun, NULL },
@@ -866,13 +875,12 @@ static double pegasus_yes_no_info_nuf(const char *value)
 
 	if (!strncmp(value, "yes", 3))
 		return 1;
-	else
+	else	/* assuming "no" */
 		return 0;
 }
 
 static info_lkp_t pegasus_yes_no_info[] = {
-	{ 0, "no", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
-	{ 1, "yes", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
+	{ 0, "dummy", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -991,10 +999,10 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	} else {
 		/* Condensed debug messages for out of range voltage and frequency */
 		if (bypass_voltage < lower_voltage_limit || bypass_voltage > upper_voltage_limit) {
-			upsdebugx(1, "Input Bypass voltage is outside ECO transfer limits: %.1f V", bypass_voltage);
+			upsdebugx(1, "%s: Input Bypass voltage is outside ECO transfer limits: %.1f V", __func__, bypass_voltage);
 		}
 		if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
-			upsdebugx(1, "Input Bypass frequency is outside ECO transfer limits: %.1f Hz", bypass_frequency);
+			upsdebugx(1, "%s: Input Bypass frequency is outside ECO transfer limits: %.1f Hz", __func__, bypass_frequency);
 		}
 		/* Disable ECO mode switching, do not enter ECO mode */
 		dstate_setinfo("input.eco.switchable", "normal");
@@ -1014,14 +1022,35 @@ static const char *eaton_input_ess_mode_report(double value)
 }
 
 /* High Efficiency (aka ECO) mode, Energy Saver System (aka ESS) mode makes sense for UPS like (93PM G2, 9395P) */
+static const char *eaton_input_buzzwordmode_report(double value) {
+	switch ((long)value) {
+		case 0:
+			return "normal";
+
+		case 1:
+			/* "ECO" where suitable; lots of other activity done */
+			/* NOTE: "ECO" = tested on 9SX model and working fine,
+			 * but the 9E model can get stuck in ECO mode, see
+			 * https://github.com/networkupstools/nut/issues/2719
+			 */
+			return eaton_input_eco_mode_check_range(value);
+
+		case 2:
+			/* "ESS" and internal buzzmode_set() */
+			return eaton_input_ess_mode_report(value);
+
+		default:
+			return NULL;
+	}
+}
+
 static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
-	{ 0, "normal", NULL, NULL },
-	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ECO" = tested on 9SX model and working fine, 9E model can stuck in ECO mode https://github.com/networkupstools/nut/issues/2719 */
-	{ 2, "ESS", eaton_input_ess_mode_report, NULL },
+	{ 0, "dummy", eaton_input_buzzwordmode_report, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Function to check if the current Bypass transfer voltage/frequency is within the configured limits */
+/* Function to check if the current Bypass transfer voltage/frequency
+ * is within the configured limits (for value==1) */
 static const char *eaton_input_bypass_check_range(double value)
 {
 	double	bypass_voltage;
@@ -1045,8 +1074,10 @@ static const char *eaton_input_bypass_check_range(double value)
 	const char	*frequency_range_transfer_str = dstate_getinfo("input.transfer.frequency.bypass.range");
 	const char	*out_frequency_nominal_str = dstate_getinfo("output.frequency.nominal");
 
-	NUT_UNUSED_VARIABLE(value);
+	if (d_equal(value, 0))
+		return "disabled";
 
+	/* assuming value==1 */
 	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
 	 || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL
 	) {
@@ -1125,10 +1156,10 @@ static const char *eaton_input_bypass_check_range(double value)
 	} else {
 		/* Condensed debug messages for out of range voltage and frequency */
 		if (bypass_voltage < lower_voltage_limit || bypass_voltage > upper_voltage_limit) {
-			upsdebugx(1, "Input Bypass voltage is outside Bypass transfer limits: %.1f V", bypass_voltage);
+			upsdebugx(1, "%s: Input Bypass voltage is outside Bypass transfer limits: %.1f V", __func__, bypass_voltage);
 		}
 		if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
-			upsdebugx(1, "Input Bypass frequency is outside Bypass transfer limits: %.1f Hz", bypass_frequency);
+			upsdebugx(1, "%s: Input Bypass frequency is outside Bypass transfer limits: %.1f Hz", __func__, bypass_frequency);
 		}
 		/* Disable Bypass mode switching, do not enter Bypass mode */
 		dstate_setinfo("input.bypass.switch.off", "off");
@@ -1139,8 +1170,7 @@ static const char *eaton_input_bypass_check_range(double value)
 
 /* Automatic Bypass mode on */
 static info_lkp_t eaton_input_bypass_mode_on_info[] = {
-	{ 0, "disabled", NULL, NULL },
-	{ 1, "on", eaton_input_bypass_check_range, NULL },
+	{ 0, "dummy", eaton_input_bypass_check_range, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -1148,6 +1178,126 @@ static info_lkp_t eaton_input_bypass_mode_on_info[] = {
 static info_lkp_t eaton_input_bypass_mode_off_info[] = {
 	{ 0, "disabled", NULL, NULL },
 	{ 1, "off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Function to start or stop ECO(HE) Mode automatically instead of manually starting/stoping Bypass and then ECO(HE) Mode */
+static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
+{
+	const char *bypass_switch_str = NULL;
+	const char *eco_switchable_str = NULL;
+
+	if ((int)value == 1) {
+		/* Check if input.bypass.switch.on is disabled and set it to 'on' */
+		bypass_switch_str = dstate_getinfo("input.bypass.switch.on");
+		if (!strcmp(bypass_switch_str, "disabled")) {
+			/* Enter Bypass mode */
+			bypass_switch_str = eaton_input_bypass_check_range(value);
+			upsdebugx(1, "%s: Entering auto Bypass mode.", __func__);
+		} else {
+			upsdebugx(1, "%s: Bypass switch on state is: %s , must be disabled before switching on", __func__, bypass_switch_str);
+			return NULL;
+		}
+
+		/* Check if input.eco.switchable is normal and set it to 'ECO' */
+		eco_switchable_str = dstate_getinfo("input.eco.switchable");
+		if (!strcmp(eco_switchable_str, "normal")) {
+            /* Enter ECO mode */
+			eco_switchable_str = eaton_input_eco_mode_check_range(value);
+			upsdebugx(1, "%s: Entering ECO mode.", __func__);
+		} else {
+			upsdebugx(1, "%s: ECO switch state is: %s , must be normal before switching to ECO", __func__, eco_switchable_str);
+			return NULL;
+		}
+
+		upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
+        return "on";
+
+	} else {
+		/* Check if input.bypass.switch.off is disabled and set it to 'off' */
+		bypass_switch_str = dstate_getinfo("input.bypass.switch.off");
+		if (!strcmp(bypass_switch_str, "disabled")) {
+			/* Exit Bypass mode */
+			setvar("input.bypass.switch.off", "off");
+			upsdebugx(1, "%s: Exiting auto Bypass mode.", __func__);
+		} else {
+			upsdebugx(1, "%s: Bypass switch off state is: %s , must be disabled before switching off", __func__, bypass_switch_str);
+			return NULL;
+		}
+
+		/* Check if input.eco.switchable is 'ECO' and set it to normal */
+		eco_switchable_str = dstate_getinfo("input.eco.switchable");
+		if (!strcmp(eco_switchable_str, "ECO")) {
+			/* Exit ECO mode */
+			setvar("input.eco.switchable", "normal");
+			buzzmode_set("vendor:mge-hid:normal");
+			upsdebugx(1, "%s: Exiting ECO mode.", __func__);
+			/* Get the updated value of input.eco.switchable after setting it to "normal */
+            eco_switchable_str = dstate_getinfo("input.eco.switchable");
+		} else {
+			upsdebugx(1, "%s: ECO switch state is: %s , must be ECO before switching to normal", __func__, eco_switchable_str);
+			return NULL;
+		}
+
+		upsdebugx(1, "%s: ECO Mode was disabled after switching from Bypass Mode", __func__);
+    	return "off";
+	}
+}
+
+/* Conversion back of eaton_input_eco_mode_auto_on_off_fun() */
+static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
+{
+	const char *bypass_switch_str = NULL;
+	const char *eco_switchable_str = NULL;
+
+	if (!strcmp(value, "1")) {
+		bypass_switch_str = dstate_getinfo("input.bypass.switch.on");
+		if (!strcmp(bypass_switch_str, "disabled")) {
+			bypass_switch_str = eaton_input_bypass_check_range(1);
+		} else {
+			upsdebugx(1, "%s: Bypass switch on state is: %s , must be disabled before switching on", __func__, bypass_switch_str);
+			return 0;
+		}
+
+		eco_switchable_str = dstate_getinfo("input.eco.switchable");
+		if (!strcmp(eco_switchable_str, "normal")) {
+			eco_switchable_str = eaton_input_eco_mode_check_range(1);
+		} else {
+			upsdebugx(1, "%s: ECO switch state is: %s , must be normal before switching to ECO", __func__, eco_switchable_str);
+			return 0;
+		}
+
+		upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
+		return 1;
+
+	} else {
+		bypass_switch_str = dstate_getinfo("input.bypass.switch.off");
+		if (!strcmp(bypass_switch_str, "disabled")) {
+			setvar("input.bypass.switch.off", "off");
+		} else {
+			upsdebugx(1, "%s: Bypass switch off state is: %s , must be disabled before switching off", __func__, bypass_switch_str);
+			return 1;
+		}
+
+		eco_switchable_str = dstate_getinfo("input.eco.switchable");
+		if (!strcmp(eco_switchable_str, "ECO")) {
+			setvar("input.eco.switchable", "normal");
+			buzzmode_set("vendor:mge-hid:normal");
+			/* Get the updated value of input.eco.switchable after setting it to "normal */
+            eco_switchable_str = dstate_getinfo("input.eco.switchable");
+		} else {
+			upsdebugx(1, "%s: ECO switch state is: %s , must be ECO before switching to normal", __func__, eco_switchable_str);
+			return 1;
+		}
+
+		upsdebugx(1, "%s: ECO Mode was disabled after switching from Bypass Mode", __func__);
+		return 0;
+	}
+}
+
+/* High Efficiency (aka ECO) mode for auto start/stop commands */
+static info_lkp_t eaton_input_eco_mode_auto_on_off_info[] = {
+	{ 0, "dummy", eaton_input_eco_mode_auto_on_off_fun, eaton_input_eco_mode_auto_on_off_nuf },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -1292,6 +1442,8 @@ static const char *nominal_output_voltage_fun(double value)
 	return mge_scratch_buf;
 }
 
+/* FIXME/Note: If a mapping method is used, numeric/string mapping values
+ *  (and lines other than first) are in fact ignored */
 static info_lkp_t nominal_output_voltage_info[] = {
 	/* line-interactive, starting with Evolution, support both HV values */
 	/* HV models */
@@ -2088,10 +2240,15 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
 	/* Command to switch ECO(HE), ESS Mode */
-	{ "experimental.ecomode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
-	{ "experimental.ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, NULL },
-	{ "experimental.essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
-	{ "experimental.essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "experimental.ecomode.stop", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "experimental.ecomode.start", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "experimental.essmode.start", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
+	{ "experimental.essmode.stop", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
+
+    /* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on before */
+	{ "experimental.bypass.ecomode.start", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_off_info },
+	/* Command to switch from ECO(HE) Mode with switch from Automatic Bypass Mode on before */
+	{ "experimental.bypass.ecomode.stop", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_off_info },
 
 	/* Command to switch Automatic Bypass Mode on/off */
 	{ "bypass.start", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, NULL },
