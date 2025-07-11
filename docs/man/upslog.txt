@@ -215,8 +215,8 @@ linkman:upsd[8]
 Clients:
 ~~~~~~~~
 
-linkman:upsc[8], linkman:upscmd[8],
-linkman:upsrw[8], linkman:upsmon[8], linkman:upssched[8]
+linkman:upsc[1], linkman:upscmd[1],
+linkman:upsrw[1], linkman:upsmon[8], linkman:upssched[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

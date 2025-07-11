@@ -297,7 +297,7 @@ static void help_msg(void)
 
 	upsdrv_help();
 
-	printf("\n%s", suggest_doc_links(progname, "ups.conf"));
+	printf("\n%s", suggest_doc_links_CMD_SYS(progname, "ups.conf"));
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 

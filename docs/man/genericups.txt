@@ -284,7 +284,7 @@ Start the driver with the type you want to try, e.g.:
 
         genericups -x upstype=n /dev/port
 
-Let linkman:upsd[8] sync up (watch the syslog), and then run linkman:upsc[8]
+Let linkman:upsd[8] sync up (watch the syslog), and then run linkman:upsc[1]
 to see what it found.  If the `STATUS` is correct (should be "OL" for online),
 continue to <<_step_3,Step 3>>, otherwise go back to step 1.
 

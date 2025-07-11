@@ -284,7 +284,7 @@ Optional.  This allows you to request `driver.killpower` instant command,
 to immediately call the driver-specific default implementation of
 `upsdrv_shutdown()` method, for same effect as when a NUT driver is
 started with `-k` command-line flag.  This option can be toggled with
-linkman:upsrw[8] as `driver.flag.allow_killpower` during run-time.
+linkman:upsrw[1] as `driver.flag.allow_killpower` during run-time.
 
 *desc*::
 
@@ -442,7 +442,7 @@ Each driver looks up its section and uses that to configure itself.
 linkman:upsd[8] learns about which UPSes are installed on this system by
 reading this file.  If this system is called "doghouse" and you have
 defined a UPS in your *ups.conf* called "snoopy", then you can monitor it
-from linkman:upsc[8] or similar as "snoopy@doghouse".
+from linkman:upsc[1] or similar as "snoopy@doghouse".
 
 SEE ALSO
 --------

@@ -23,7 +23,7 @@ DESCRIPTION
 
 The *upscli_init_default_connect_timeout()* function initializes upsclient module
 aspect of default connection timeout for linkman:upscli_connect[3], which
-may be important when e.g. linkman:upsc[8] scripting or linkman:upsmon[8]
+may be important when e.g. linkman:upsc[1] scripting or linkman:upsmon[8]
 configuration refers to unresponsive hosts, or when the host name resolution
 lags, etc.  By default, linkman:upscli_connect[3] blocks indefinitely in
 its attempts to connect (or until the system transport layer interrupts

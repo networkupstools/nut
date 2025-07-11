@@ -46,6 +46,11 @@ Changes from 2.8.3 to 2.8.4
   to differentiate NUT builds that deliver man pages for only built programs
   (legacy default) or for all of them (as needed for docs sites). [#2976]
 
+- Man pages for `upsc`, `upscmd`, `upsrw` and `NUT-Monitor` were consistently
+  assigned to man page section 1 (end-user programs).  This may require some
+  changes in packaging recipes to deliver built pages with a different filename
+  extension and/or into different directories. [#2977]
+
 - Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
   necessary to address spurious LOWBATT and REPLACEBATT events. [issue #2942]
 

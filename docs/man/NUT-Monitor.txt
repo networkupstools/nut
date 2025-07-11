@@ -1,4 +1,4 @@
-NUT-Monitor(8)
+NUT-Monitor(1)
 ==============
 
 NAME
@@ -47,9 +47,9 @@ actual Python UI client.
 
 For each individual run, the UI client can connect to a single NUT data server
 and a device on it.  This can use either anonymous read-only connections (like
-linkman:upsc[8]), or authenticated connections (see linkman:upsd.users[5])
-which can also issue commands to the driver (like linkman:upscmd[8]) and
-set supported variables (like linkman:upsrw[8]) -- propagated to the device,
+linkman:upsc[1]), or authenticated connections (see linkman:upsd.users[5])
+which can also issue commands to the driver (like linkman:upscmd[1]) and
+set supported variables (like linkman:upsrw[1]) -- propagated to the device,
 where applicable.
 
 The Python UI client can be used on a system different from the NUT data
@@ -96,9 +96,9 @@ AUTHORS
 SEE ALSO
 --------
 
-linkman:upsc[8],
-linkman:upscmd[8],
-linkman:upsrw[8],
+linkman:upsc[1],
+linkman:upscmd[1],
+linkman:upsrw[1],
 linkman:upsd.users[5]
 
 Internet resources:

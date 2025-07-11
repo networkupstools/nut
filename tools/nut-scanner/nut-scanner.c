@@ -1155,7 +1155,7 @@ static void show_usage(const char *arg_progname)
 	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
 	printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
 
-	printf("\n%s", suggest_doc_links(arg_progname, "ups.conf"));
+	printf("\n%s", suggest_doc_links_CMD_SYS(arg_progname, "ups.conf"));
 }
 
 int main(int argc, char *argv[])

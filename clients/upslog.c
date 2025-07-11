@@ -235,7 +235,7 @@ static void help(const char *prog)
 
 	nut_report_config_flags();
 
-	printf("\n%s", suggest_doc_links(prog, NULL));
+	printf("\n%s", suggest_doc_links_CMD_SYS(prog, NULL));
 
 	exit(EXIT_SUCCESS);
 }

@@ -76,7 +76,7 @@ static void usage(const char *prog)
 
 	nut_report_config_flags();
 
-	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
+	printf("\n%s", suggest_doc_links_CMD_USR(prog, "upsd.users"));
 }
 
 static void clean_exit(void)

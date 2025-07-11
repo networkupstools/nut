@@ -68,7 +68,7 @@ static void usage(const char *prog)
 
 	nut_report_config_flags();
 
-	printf("\n%s", suggest_doc_links(prog, NULL));
+	printf("\n%s", suggest_doc_links_CMD_USR(prog, NULL));
 }
 
 static void printvar(const char *var)

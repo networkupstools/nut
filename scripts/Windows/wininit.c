@@ -723,7 +723,7 @@ static void help(const char *arg_progname)
 	printf("    -V	Display NUT version and exit\n");
 	printf("    -h	Display this help and exit\n");	/* also /? but be hush about the one slash */
 
-	printf("\n%s", suggest_doc_links(
+	printf("\n%s", suggest_doc_links_CMD_SYS(
 		"nut.exe" /*arg_progname*/,
 		"nut.conf, ups.conf, upsmon.conf, upsd.conf and upsd.users"
 		));

@@ -27,7 +27,7 @@ for "primary" duty according to a set of user configurable rules and priorities.
 At any given time, `failover` designates one UPS driver as the *primary*, and
 presents its commands, variables and status to the outside world as if it were
 directly talking to that UPS. From the perspective of the clients (such as
-linkman:upsmon[8] or linkman:upsc[8]), the `failover` driver behaves like any
+linkman:upsmon[8] or linkman:upsc[1]), the `failover` driver behaves like any
 single UPS, abstracting away the underlying redundancy, and allowing for
 seamless transitioning between all monitored UPS drivers and their datasets.
 
@@ -183,7 +183,7 @@ Any linkman:upsmon[8] clients would be set to monitor the `failover` UPS.
 
 The driver fully supports setting variables and performing instant commands on
 the currently elected primary UPS driver, which are proxied and with end-to-end
-tracking also being possible (linkman:upscmd[8] and linkman:upsrw[8] `-w`). You
+tracking also being possible (linkman:upscmd[1] and linkman:upsrw[1] `-w`). You
 may notice some variables and commands will be prefixed with `upstream.`, this
 is to clearly separate the upstream commands from those of `failover` itself.
 
@@ -281,10 +281,10 @@ Sebastian Kuttnig <sebastian.kuttnig@gmail.com>
 SEE ALSO
 --------
 
-linkman:upscmd[8],
-linkman:upsrw[8],
+linkman:upscmd[1],
+linkman:upsrw[1],
 linkman:ups.conf[5],
-linkman:upsc[8],
+linkman:upsc[1],
 linkman:upsmon[8],
 linkman:nutupsdrv[8],
 linkman:clone[8],

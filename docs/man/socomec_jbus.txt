@@ -92,7 +92,7 @@ This driver does not (yet?) support sending commands to the UPS.
 VARIABLES
 ---------
 
-This driver does not support writable runtime variables (see linkman:upsrw[8]):
+This driver does not support writable runtime variables (see linkman:upsrw[1])
 for the same reasons.
 Both should be trivial to implement, but since I've already found one or two
 inconsistencies in the documentation, I'm withholding from trying them.
