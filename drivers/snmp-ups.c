@@ -177,7 +177,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.35"
+#define DRIVER_VERSION	"1.36"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -3201,13 +3201,16 @@ bool_t snmp_ups_walk(int mode)
 			}
 
 			/* skip static elements in update mode */
-			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC))
+			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC)) {
+				upsdebugx(1, "Skipping static entry %s", su_info_p->OID);
 				continue;
+			}
 
 			/* Set default value if we cannot fetch it */
 			/* and set static flag on this element.
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
-			if ((su_info_p->flags & SU_FLAG_ABSENT)
+			if (
+				    (su_info_p->flags & SU_FLAG_ABSENT)
 				&& !(su_info_p->flags & SU_OUTLET)
 				&& !(su_info_p->flags & SU_OUTLET_GROUP)
 				&& !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
@@ -3229,6 +3232,9 @@ bool_t snmp_ups_walk(int mode)
 							/* Set default value if we cannot fetch it from ups. */
 							su_setinfo(su_info_p, NULL);
 						}
+						upsdebugx(1, "Defaulting absent entry and setting to static: %s", su_info_p->OID);
+					} else {
+						upsdebugx(1, "Setting absent entry to static (no defautl provided): %s", su_info_p->OID);
 					}
 					su_info_p->flags |= SU_FLAG_STATIC;
 				}
