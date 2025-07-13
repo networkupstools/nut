@@ -26,6 +26,7 @@ Tested with the following hardware:
  - SMT1500 (Smart-UPS 1500, Firmware 9.6)
  - SMX750  (Smart-UPS X 750, Firmware 10.1)
  - SMX1500 (Smart-UPS X 1500, Firmware 15.0)
+ - SMX2200 (Smart-UPS X 2200, Firmware 15.0)
 
 Note that you will have to enable Modbus communication. In the front panel of
 the UPS, go to Advanced Menu mode, under Configuration and enable Modbus.
