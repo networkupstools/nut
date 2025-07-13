@@ -88,6 +88,7 @@ static int is_usb = 0;
 static int is_open = 0;
 static double power_nominal;
 static double realpower_nominal;
+static double battery_charge;
 static int64_t last_send_time = 0;
 
 /* Function declarations */
@@ -850,7 +851,7 @@ static apc_modbus_register_t apc_modbus_register_map_status[] = {
 
 static apc_modbus_register_t apc_modbus_register_map_dynamic[] = {
 	{ "battery.runtime",                128,    2,  APC_VT_UINT,     0,         NULL,                                           "%" PRIu64, 0,  NULL    },
-	{ "battery.charge",                 130,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     9,  NULL    },
+	{ "battery.charge",                 130,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     9,  &battery_charge     },
 	{ "battery.voltage",                131,    1,  APC_VT_INT,      0,         &_apc_modbus_double_conversion,                 "%.2f",     5,  NULL    },
 	{ "battery.date.maintenance",       133,    1,  APC_VT_UINT,     0,         &_apc_modbus_date_conversion,                   NULL,       0,  NULL    },
 	{ "battery.temperature",            135,    1,  APC_VT_INT,      0,         &_apc_modbus_double_conversion,                 "%.2f",     7,  NULL    },
@@ -1532,16 +1533,24 @@ void upsdrv_updateinfo(void)
 
 	/* Dynamic Data */
 	if (_apc_modbus_read_registers(modbus_ctx, 128, 32, regbuf)) {
+		_apc_modbus_process_registers(apc_modbus_register_map_dynamic, regbuf, 32, 128);
+
 		/* InputStatus_BF, 1 register */
 		_apc_modbus_to_uint64(&regbuf[22], 1, &value);
+		if (value & (1 << 0)) {
+			// Acceptable input
+			if (battery_charge < 100.0) {
+				status_set("CHRG");
+			}
+		} else {
+			status_set("DISCHRG");
+		}
 		if (value & (1 << 5)) {
 			status_set("BOOST");
 		}
 		if (value & (1 << 6)) {
 			status_set("TRIM");
 		}
-
-		_apc_modbus_process_registers(apc_modbus_register_map_dynamic, regbuf, 32, 128);
 	} else {
 		dstate_datastale();
 		return;

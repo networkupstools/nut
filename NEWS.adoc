@@ -138,6 +138,7 @@ https://github.com/networkupstools/nut/milestone/9
    * The time stamp and inter-frame delay accounting was fixed, alleviating
      one of the problems reported in issue #2609. [PR #2982]
    * Fix missing variables due to mismatching format string. [PR #3013]
+   * Add CHRG and DISCHRG status. [PR #3014]
 
  - `bcmxcp` driver updates:
    * The latching on to a previous replace battery status was fixed, with its
