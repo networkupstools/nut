@@ -1514,7 +1514,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* BatterySystemError_BF, 1 register */
-		_apc_modbus_to_uint64(&regbuf[18], 1, &value);
+		_apc_modbus_to_uint64(&regbuf[22], 1, &value);
 		if (value & (1 << 1)) { /* NeedsReplacement */
 			status_set("RB");
 		}
