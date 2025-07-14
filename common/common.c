@@ -2911,6 +2911,32 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 					*b++ = *p;
 					i++;
 					continue;
+
+				/* Non-functional characters as far as vararg
+				 * stack size is concerned: always-signed,
+				 * left/right alignment, padding, minimal width,
+				 * floating-point precision (note: asterisk is
+				 * special, not skipped - handled above)... */
+				case '+':
+				case '-':
+				case '.':
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					/* Skip as irrelevant to memory access;
+					 * log just in case of deep troubleshooting,
+					 * but do not be noisy.
+					 */
+					upsdebugx(6, "%s: in-escape: assuming a cosmetic formatting char: '%c'", __func__, *p);
+					break;
+
 				default:
 					upsdebugx(1, "%s: in-escape: unexpected formatting char: '%c'", __func__, *p);
 			}
