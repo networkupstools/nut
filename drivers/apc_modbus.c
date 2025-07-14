@@ -1461,6 +1461,8 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	uint16_t regbuf[32];
+	uint64_t ups_status;
+	uint64_t bat_system_err;
 	uint64_t value;
 
 	if (!is_open) {
@@ -1478,32 +1480,32 @@ void upsdrv_updateinfo(void)
 	/* Status Data */
 	if (_apc_modbus_read_registers(modbus_ctx, 0, 27, regbuf)) {
 		/* UPSStatus_BF, 2 registers */
-		_apc_modbus_to_uint64(&regbuf[0], 2, &value);
-		if (value & (1 << 1)) {
+		_apc_modbus_to_uint64(&regbuf[0], 2, &ups_status);
+		if (ups_status & (1 << 1)) {
 			status_set("OL");
 		}
-		if (value & (1 << 2)) {
+		if (ups_status & (1 << 2)) {
 			status_set("OB");
 		}
-		if (value & (1 << 3)) {
+		if (ups_status & (1 << 3)) {
 			status_set("BYPASS");
 		}
-		if (value & (1 << 4)) {
+		if (ups_status & (1 << 4)) {
 			status_set("OFF");
 		}
-		if (value & (1 << 5)) {
+		if (ups_status & (1 << 5)) {
 			alarm_set("General fault");
 		}
-		if (value & (1 << 6)) {
+		if (ups_status & (1 << 6)) {
 			alarm_set("Input not acceptable");
 		}
-		if (value & (1 << 7)) {
+		if (ups_status & (1 << 7)) {
 			status_set("TEST");
 		}
-		if (value & (1 << 13)) {
+		if (ups_status & (1 << 13)) {
 			buzzmode_set("vendor:apc:HE"); /* High efficiency / ECO mode*/
 		}
-		if (value & (1 << 21)) {
+		if (ups_status & (1 << 21)) {
 			status_set("OVER");
 		}
 
@@ -1514,8 +1516,8 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* BatterySystemError_BF, 1 register */
-		_apc_modbus_to_uint64(&regbuf[22], 1, &value);
-		if (value & (1 << 1)) { /* NeedsReplacement */
+		_apc_modbus_to_uint64(&regbuf[22], 1, &bat_system_err);
+		if (bat_system_err & (1 << 1)) { /* NeedsReplacement */
 			status_set("RB");
 		}
 
@@ -1523,6 +1525,17 @@ void upsdrv_updateinfo(void)
 		_apc_modbus_to_uint64(&regbuf[24], 1, &value);
 		if (value & (1 << 1)) { /* InProgress */
 			status_set("CAL");
+		}
+
+		/* No battery error ? */
+		if (bat_system_err == 0) {
+			if (ups_status & (1 << 1)) {
+				status_set("CHRG");
+			}
+			if (ups_status & (1 << 2)) {
+				status_set("DISCHRG");
+			}
+
 		}
 
 		_apc_modbus_process_registers(apc_modbus_register_map_status, regbuf, 27, 0);
