@@ -3941,7 +3941,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		if (mode==SU_MODE_INSTCMD) {
 			if ( !str_to_long(val ? val : su_info_p->dfl, &value, 10) ) {
 				upsdebugx(1, "%s: cannot execute command '%s': value is not a number!", __func__, varname);
-				return STAT_INSTCMD_INVALID;
+				return STAT_INSTCMD_CONVERSION_FAILED;
 			}
 		}
 		else {
@@ -3953,7 +3953,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 				/* Convert value and apply multiplier */
 				if ( !str_to_long(val, &value, 10) ) {
 					upsdebugx(1, "%s: cannot set '%s': value is not a number!", __func__, varname);
-					return STAT_SET_INVALID;
+					return STAT_SET_CONVERSION_FAILED;
 				}
 				value = (long)((double)value / su_info_p->info_len);
 			}
@@ -4010,12 +4010,7 @@ int su_setvar(const char *varname, const char *val)
 
 	ret = su_setOID(SU_MODE_SETVAR, varname, val);
 
-	if (ret == STAT_SET_FAILED)
-		upslog_SET_FAILED(varname, val);
-	else if (ret == STAT_SET_UNKNOWN)
-		upslog_SET_UNKNOWN(varname, val);
-	else if (ret == STAT_SET_INVALID)
-		upslog_SET_INVALID(varname, val);
+	upslog_SET_RESULT(ret, varname, val);
 
 	return ret;
 }
@@ -4054,12 +4049,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 
 	ret = su_setOID(SU_MODE_INSTCMD, cmdname, extradata);
 
-	if (ret == STAT_INSTCMD_FAILED)
-		upslog_INSTCMD_FAILED(cmdname, extradata);
-	else if (ret == STAT_INSTCMD_UNKNOWN)
-		upslog_INSTCMD_UNKNOWN(cmdname, extradata);
-	else if (ret == STAT_INSTCMD_INVALID)
-		upslog_INSTCMD_INVALID(cmdname, extradata);
+	upslog_INSTCMD_RESULT(ret, cmdname, extradata);
 
 	return ret;
 }
