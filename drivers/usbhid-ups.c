@@ -1990,6 +1990,36 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			if (item->hiddata == NULL)
 				continue;
 
+			/* Sanity-check that if we setvar() via mapping table
+			 * which refers us to a method, that such method entry
+			 * is not NULL (then we might get ERR READONLY later)
+			 */
+			if (ST_FLAG_RW && item->hid2info) {
+				if (
+					(item->hid2info->fun && !(item->hid2info->nuf) && (item->info_flags & ST_FLAG_RW))
+				||	(item->hid2info->nuf && !(item->hid2info->fun))
+				) {
+					/* Only one of these pointers is set - expecting
+					 * iteration for the other values until a sentinel
+					 * entry which then must exist; is it right there
+					 * in the next table line? */
+					if (item->hid2info[1].nut_value == NULL) {
+						/* The first line of that table is the
+						 * only meaningful one */
+						upsdebugx(1, "%s: WARNING: values for '%s' are handled with a mapping table "
+							"which only defines one dynamic method and can not let us %s "
+							"(or, technically it would map one value '%s'='%ld')."
+							"This may be a bug - please raise an issue with NUT maintainers "
+							"if this proves to be a practical problem with that data point.",
+							__func__, NUT_STRARG(item->info_type),
+							(item->hid2info->fun ? "write (setvar)" : "read"),
+							NUT_STRARG(item->hid2info->nut_value),
+							item->hid2info->hid_value
+						);
+					}
+				}
+			}
+
 			/* Special case for handling server side variables */
 			if (item->hidflags & HU_FLAG_ABSENT) {
 
