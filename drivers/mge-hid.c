@@ -1202,7 +1202,7 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 		/* Check if input.eco.switchable is normal and set it to 'ECO' */
 		eco_switchable_str = dstate_getinfo("input.eco.switchable");
 		if (!strcmp(eco_switchable_str, "normal")) {
-            /* Enter ECO mode */
+			/* Enter ECO mode */
 			eco_switchable_str = eaton_input_eco_mode_check_range(value);
 			upsdebugx(1, "%s: Entering ECO mode.", __func__);
 		} else {
@@ -1211,7 +1211,7 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 		}
 
 		upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
-        return "on";
+		return "on";
 
 	} else {
 		/* Check if input.bypass.switch.off is disabled and set it to 'off' */
@@ -1233,14 +1233,14 @@ static const char *eaton_input_eco_mode_auto_on_off_fun(double value)
 			buzzmode_set("vendor:mge-hid:normal");
 			upsdebugx(1, "%s: Exiting ECO mode.", __func__);
 			/* Get the updated value of input.eco.switchable after setting it to "normal */
-            eco_switchable_str = dstate_getinfo("input.eco.switchable");
+			eco_switchable_str = dstate_getinfo("input.eco.switchable");
 		} else {
 			upsdebugx(1, "%s: ECO switch state is: %s , must be ECO before switching to normal", __func__, eco_switchable_str);
 			return NULL;
 		}
 
 		upsdebugx(1, "%s: ECO Mode was disabled after switching from Bypass Mode", __func__);
-    	return "off";
+		return "off";
 	}
 }
 
@@ -1284,7 +1284,7 @@ static double eaton_input_eco_mode_auto_on_off_nuf(const char *value)
 			setvar("input.eco.switchable", "normal");
 			buzzmode_set("vendor:mge-hid:normal");
 			/* Get the updated value of input.eco.switchable after setting it to "normal */
-            eco_switchable_str = dstate_getinfo("input.eco.switchable");
+			eco_switchable_str = dstate_getinfo("input.eco.switchable");
 		} else {
 			upsdebugx(1, "%s: ECO switch state is: %s , must be ECO before switching to normal", __func__, eco_switchable_str);
 			return 1;
@@ -2245,7 +2245,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "experimental.essmode.start", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "experimental.essmode.stop", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
 
-    /* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on before */
+	/* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on before */
 	{ "experimental.bypass.ecomode.start", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_off_info },
 	/* Command to switch from ECO(HE) Mode with switch from Automatic Bypass Mode on before */
 	{ "experimental.bypass.ecomode.stop", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_off_info },
