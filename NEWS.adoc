@@ -160,6 +160,10 @@ https://github.com/networkupstools/nut/milestone/9
      functions rather than direct manipulation. [issue #2928, PR #2936]
 
  - `nutdrv_qx` driver updates:
+   * Added support for "preprocess"/"process" methods called from mapping tables
+     to report back to the driver that an argument value was not supported,
+     so `setvar()` or `instcmd()` can not proceed safely and should return
+     `STAT_SET_CONVERSION_FAILED` or `STAT_INSTCMD_CONVERSION_FAILED`. [#3017]
    * Introduced `innovart33` protocol support for Ippon Innova RT 3/3 topology
      UPSes. [#2938]
    * Updated `megatec` protocol for more detailed responses to `I` query
