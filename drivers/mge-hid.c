@@ -1044,8 +1044,33 @@ static const char *eaton_input_buzzwordmode_report(double value) {
 	}
 }
 
+static double eaton_input_buzzwordmode_setvar_nuf(const char *value)
+{
+	errno = 0;
+
+	if (!value || !*value) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (!strcmp(value, "normal") || !strcmp(value, "vendor:mge-hid:normal")) {
+		return 0;
+	}
+
+	if (!strcmp(value, "ECO") || !strcmp(value, "vendor:mge-hid:ECO")) {
+		return 1;
+	}
+
+	if (!strcmp(value, "ESS") || !strcmp(value, "vendor:mge-hid:ESS")) {
+		return 2;
+	}
+
+	errno = EINVAL;
+	return -1;
+}
+
 static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
-	{ 0, "dummy", eaton_input_buzzwordmode_report, NULL },
+	{ 0, "dummy", eaton_input_buzzwordmode_report, eaton_input_buzzwordmode_setvar_nuf },
 	{ 0, NULL, NULL, NULL }
 };
 
