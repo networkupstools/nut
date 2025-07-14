@@ -175,6 +175,10 @@ https://github.com/networkupstools/nut/milestone/9
      [issue #2708]
 
  - `snmp-ups` driver updates:
+   * Added support for "fun"/"nuf" methods called from mapping tables to
+     report back to the driver that an argument value was not supported,
+     so `setvar()` or `instcmd()` can not proceed safely and should return
+     `STAT_SET_CONVERSION_FAILED` or `STAT_INSTCMD_CONVERSION_FAILED`. [#3017]
    * Fixed `ups.test.date` to be semi-static in `apc-mib` mapping, so it
      would be queried more than once per driver up-time. [issue #3011]
    * Fixed debug-logging around `SU_FLAG_STATIC` entries to clarify when

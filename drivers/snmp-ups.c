@@ -177,7 +177,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.36"
+#define DRIVER_VERSION	"1.37"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -2123,7 +2123,9 @@ bool_t load_mib2nut(const char *mib)
 	return FALSE;
 }
 
-/* find the OID value matching that INFO_* value */
+/* find the OID value matching that INFO_* value
+ * Return -1 and errno==EINVAL for unsupported inputs.
+ */
 long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 {
 	info_lkp_t *info_lkp;
@@ -2135,14 +2137,19 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 			upsdebugx(1, "%s: found %s (value: %s)",
 					__func__, info_lkp->info_value, value);
 
+			errno = 0;
 			return info_lkp->oid_value;
 		}
 	}
+
 	upsdebugx(1, "%s: no matching INFO_* value for this OID value (%s)", __func__, value);
+	errno = EINVAL;
 	return -1;
 }
 
-/* String reformatting function */
+/* String reformatting function.
+ * Return NULL and errno==EINVAL for unsupported inputs.
+ */
 const char *su_find_strval(info_lkp_t *oid2info, void *value)
 {
 #if WITH_SNMP_LKP_FUN
@@ -2151,8 +2158,12 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 		const char	*retvalue;
 
 		upsdebugx(2, "%s: using generic lookup function (string reformatting)", __func__);
+		errno = 0;
 		retvalue = oid2info->fun_vp2s(value);
-		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		upsdebugx(2, "%s: got value '%s'%s",
+			__func__, retvalue,
+			(errno == EINVAL ? ", invalid input" : "")
+		);
 		return retvalue;
 	}
 	upsdebugx(1, "%s: no result value for this OID string value (%s)", __func__, (char*)value);
@@ -2160,10 +2171,14 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 	NUT_UNUSED_VARIABLE(oid2info);
 	upsdebugx(1, "%s: no mapping function for this OID string value (%s)", __func__, (char*)value);
 #endif /* WITH_SNMP_LKP_FUN */
+
+	errno = EINVAL;
 	return NULL;
 }
 
-/* find the INFO_* value matching that OID numeric (long) value */
+/* Find the INFO_* value matching that OID numeric (long) value.
+ * Return NULL and errno==EINVAL for unsupported inputs.
+ */
 const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 {
 	info_lkp_t *info_lkp;
@@ -2175,8 +2190,12 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 		const char	*retvalue;
 
 		upsdebugx(2, "%s: using generic lookup function", __func__);
+		errno = 0;
 		retvalue = oid2info->fun_vp2s(raw_value);
-		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		upsdebugx(2, "%s: got value '%s'%s",
+			__func__, retvalue,
+			(errno == EINVAL ? ", invalid input" : "")
+		);
 		return retvalue;
 	}
 #endif /* WITH_SNMP_LKP_FUN */
@@ -2189,10 +2208,13 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 			upsdebugx(1, "%s: found %s (value: %ld)",
 					__func__, info_lkp->info_value, value);
 
+			errno = 0;
 			return info_lkp->info_value;
 		}
 	}
+
 	upsdebugx(1, "%s: no matching INFO_* value for this OID value (%ld)", __func__, value);
+	errno = EINVAL;
 	return NULL;
 }
 
@@ -2838,6 +2860,7 @@ bool_t daisychain_init(void)
 		{
 #if WITH_SNMP_LKP_FUN
 			devices_count = -1;
+			errno = 0;
 			/* First test if we have a generic lookup function
 			 * FIXME: Check if the field type is a string?
 			 */
@@ -2849,11 +2872,14 @@ bool_t daisychain_init(void)
 				upsdebugx(2, "%s: using generic string-to-long lookup function", __func__);
 				if (TRUE == nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info)) {
 					devices_count = su_info_p->oid2info->nuf_s2l(buf);
-					upsdebugx(2, "%s: got value '%ld'", __func__, devices_count);
+					upsdebugx(2, "%s: got value '%ld'%s",
+						__func__, devices_count,
+						(errno == EINVAL ? ", invalid input" : "")
+					);
 				}
 			}
 
-			if (devices_count == -1) {
+			if (devices_count == -1 || errno == EINVAL) {
 #endif /* WITH_SNMP_LKP_FUN */
 
 				if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE) {
@@ -3948,6 +3974,11 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			/* non string data may imply a value lookup */
 			if (su_info_p->oid2info) {
 				value = su_find_valinfo(su_info_p->oid2info, val ? val : su_info_p->dfl);
+				if (value == -1 && errno == EINVAL) {
+					upsdebugx(1, "%s: cannot set '%s': value %s is not supported by lookup mapping!",
+						__func__, varname, NUT_STRARG(val ? val : su_info_p->dfl));
+					return STAT_SET_CONVERSION_FAILED;
+				}
 			}
 			else {
 				/* Convert value and apply multiplier */
