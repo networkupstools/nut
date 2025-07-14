@@ -3705,6 +3705,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	int daisychain_device_number = -1;
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
+	const char *val_practical = NULL;
 	char setOID[SU_INFOSIZE];
 	/* Used for potentially appending "device.X." to {outlet,outlet.group}.count */
 	char template_count_var[SU_BUFSIZE];
@@ -3960,12 +3961,13 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		upslog_INSTCMD_POWERSTATE_CHECKED(varname, val);
 	}
 
+	val_practical = val ? val : su_info_p->dfl;
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
-		status = nut_snmp_set_str(su_info_p->OID, val ? val : su_info_p->dfl);
+		status = nut_snmp_set_str(su_info_p->OID, val_practical);
 	}
 	else {
 		if (mode==SU_MODE_INSTCMD) {
-			if ( !str_to_long(val ? val : su_info_p->dfl, &value, 10) ) {
+			if ( !str_to_long(val_practical, &value, 10) ) {
 				upsdebugx(1, "%s: cannot execute command '%s': value is not a number!", __func__, varname);
 				return STAT_INSTCMD_CONVERSION_FAILED;
 			}
@@ -3973,10 +3975,10 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		else {
 			/* non string data may imply a value lookup */
 			if (su_info_p->oid2info) {
-				value = su_find_valinfo(su_info_p->oid2info, val ? val : su_info_p->dfl);
+				value = su_find_valinfo(su_info_p->oid2info, val_practical);
 				if (value == -1 && errno == EINVAL) {
 					upsdebugx(1, "%s: cannot set '%s': value %s is not supported by lookup mapping!",
-						__func__, varname, NUT_STRARG(val ? val : su_info_p->dfl));
+						__func__, varname, NUT_STRARG(val_practical));
 					return STAT_SET_CONVERSION_FAILED;
 				}
 			}
