@@ -828,7 +828,8 @@ static const char *eaton_check_pegasus_fun(double value)
 }
 
 /* FIXME/Note: If a mapping method is used, numeric/string mapping values
- *  (and lines other than first) are in fact ignored */
+ *  (and lines other than first) are in fact ignored for that direction,
+ *  but can be still useful for opposite */
 static info_lkp_t pegasus_threshold_info[] = {
 	{ 10, "10", eaton_check_pegasus_fun, NULL },
 	{ 25, "25", eaton_check_pegasus_fun, NULL },
@@ -916,6 +917,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 
 	NUT_UNUSED_VARIABLE(value);
 
+	errno = 0;
 	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
 	 || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL
 	) {
@@ -933,6 +935,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 		/* Disable ECO mode switching, do not enter ECO mode */
 		dstate_setinfo("input.eco.switchable", "normal");
 		upsdebugx(1, "%s: Disable ECO mode due to missing input/output variables.", __func__);
+		errno = EINVAL;
 		return NULL;
 	}
 
@@ -995,6 +998,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	) {
 		upsdebugx(1, "%s: Entering ECO mode due to input conditions being within the transfer limits.", __func__);
 		buzzmode_set("vendor:mge-hid:ECO");
+		errno = 0;
 		return "ECO"; /* Enter ECO mode */
 	} else {
 		/* Condensed debug messages for out of range voltage and frequency */
@@ -1008,6 +1012,8 @@ static const char *eaton_input_eco_mode_check_range(double value)
 		dstate_setinfo("input.eco.switchable", "normal");
 		buzzmode_set("vendor:mge-hid:normal");
 		upsdebugx(1, "%s: Disable ECO mode due to input conditions being outside the transfer limits.", __func__);
+		/* NOT "errno = EINVAL;" here */
+		errno = 0;
 		return NULL;
 	}
 }
@@ -1023,6 +1029,7 @@ static const char *eaton_input_ess_mode_report(double value)
 
 /* High Efficiency (aka ECO) mode, Energy Saver System (aka ESS) mode makes sense for UPS like (93PM G2, 9395P) */
 static const char *eaton_input_buzzwordmode_report(double value) {
+	errno = 0;
 	switch ((long)value) {
 		case 0:
 			return "normal";
@@ -1040,6 +1047,7 @@ static const char *eaton_input_buzzwordmode_report(double value) {
 			return eaton_input_ess_mode_report(value);
 
 		default:
+			errno = EINVAL;
 			return NULL;
 	}
 }
@@ -1099,8 +1107,14 @@ static const char *eaton_input_bypass_check_range(double value)
 	const char	*frequency_range_transfer_str = dstate_getinfo("input.transfer.frequency.bypass.range");
 	const char	*out_frequency_nominal_str = dstate_getinfo("output.frequency.nominal");
 
+	errno = 0;
 	if (d_equal(value, 0))
 		return "disabled";
+
+	if (!(d_equal(value, 0))) {
+		errno = EINVAL;
+		return NULL;
+	}
 
 	/* assuming value==1 */
 	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
@@ -1120,6 +1134,7 @@ static const char *eaton_input_bypass_check_range(double value)
 		/* Disable Bypass mode switching, do not enter Bypass mode */
 		dstate_setinfo("input.bypass.switch.off", "off");
 		upsdebugx(1, "%s: Disable Bypass mode due to missing input/output variables.", __func__);
+		errno = EINVAL;
 		return NULL;
 	}
 
@@ -1177,6 +1192,7 @@ static const char *eaton_input_bypass_check_range(double value)
 	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
 	) {
 		upsdebugx(1, "%s: Entering Bypass mode due to input conditions being within the transfer limits.", __func__);
+		errno = 0;
 		return "on"; /* Enter Bypass mode */
 	} else {
 		/* Condensed debug messages for out of range voltage and frequency */
@@ -1189,13 +1205,18 @@ static const char *eaton_input_bypass_check_range(double value)
 		/* Disable Bypass mode switching, do not enter Bypass mode */
 		dstate_setinfo("input.bypass.switch.off", "off");
 		upsdebugx(1, "%s: Disable Bypass mode due to input conditions being outside the transfer limits.", __func__);
+		/* NOT "errno = EINVAL;" here */
+		errno = 0;
 		return NULL;
 	}
 }
 
-/* Automatic Bypass mode on */
+/* Automatic Bypass mode on
+ * Mapping back is simply tabular
+ */
 static info_lkp_t eaton_input_bypass_mode_on_info[] = {
-	{ 0, "dummy", eaton_input_bypass_check_range, NULL },
+	{ 0, "disabled", eaton_input_bypass_check_range, NULL },
+	{ 1, "on", eaton_input_bypass_check_range, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -1468,7 +1489,8 @@ static const char *nominal_output_voltage_fun(double value)
 }
 
 /* FIXME/Note: If a mapping method is used, numeric/string mapping values
- *  (and lines other than first) are in fact ignored */
+ *  (and lines other than first) are in fact ignored for that direction,
+ *  but can be still useful for opposite */
 static info_lkp_t nominal_output_voltage_info[] = {
 	/* line-interactive, starting with Evolution, support both HV values */
 	/* HV models */
