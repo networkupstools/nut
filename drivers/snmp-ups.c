@@ -3659,10 +3659,13 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
  * @varname: name of variable or command to set the OID from
  * @val: value for settings, NULL for commands
 
- * Returns
- *   STAT_SET_HANDLED if OK,
- *   STAT_SET_INVALID or STAT_SET_UNKNOWN if the command / setting is not supported
- *   STAT_SET_FAILED otherwise
+ * Returns respectively (for instcmd or setvar activity):
+ *   STAT_INSTCMD_HANDLED or STAT_SET_HANDLED if OK,
+ *   STAT_*_CONVERSION_FAILED if the value was invalid
+ *       (not a number when expected one,
+ *        not a key in mapping table when used)
+ *   STAT_*_INVALID or STAT_*_UNKNOWN if the command / setting is not supported
+ *   STAT_*_FAILED otherwise
  */
 static int su_setOID(int mode, const char *varname, const char *val)
 {
@@ -3755,7 +3758,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		upsdebugx(2, "daisychain %s for device.0 are not yet supported!",
 			(mode==SU_MODE_INSTCMD)?"command":"setting");
 		free(tmp_varname);
-		return STAT_SET_INVALID;
+		return (mode==SU_MODE_INSTCMD ? STAT_INSTCMD_INVALID : STAT_SET_INVALID);
 	}
 
 	/* Check if it is outlet / outlet.group, or standard variable */
@@ -3822,7 +3825,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			/* out of bound item number */
 			upsdebugx(2, "%s: item is out of bound (%i / %i)",
 				__func__, item_number, total_items);
-			return STAT_SET_INVALID;
+			return (mode==SU_MODE_INSTCMD ? STAT_INSTCMD_INVALID : STAT_SET_INVALID);
 		}
 		/* find back the item template */
 		item_varname = (char *)xmalloc(SU_INFOSIZE);
@@ -3891,8 +3894,9 @@ static int su_setOID(int mode, const char *varname, const char *val)
 					tmp_info_p->OID, "%i", item_number);
 			}
 		}
-		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR since we
-		 * can be setting a server side variable! */
+		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR
+		 * since we can be setting a server side variable - but
+		 * note this consideration does not apply to instcmd's! */
 		else {
 			if (mode==SU_MODE_INSTCMD) {
 				free_info(su_info_p);
@@ -3917,7 +3921,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		if (tmp_varname != NULL)
 			free(tmp_varname);
 
-		return STAT_SET_UNKNOWN;
+		return (mode==SU_MODE_INSTCMD ? STAT_INSTCMD_UNKNOWN : STAT_SET_UNKNOWN);
 	}
 
 	/* set value into the device, using the provided one, or the default one otherwise */
@@ -3925,7 +3929,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		/* Sanity check: commands should either have a value or a default */
 		if ( (val == NULL) && (su_info_p->dfl == NULL) ) {
 			upsdebugx(1, "%s: cannot execute command '%s': a provided or default value is needed!", __func__, varname);
-			return STAT_SET_INVALID;
+			return STAT_INSTCMD_INVALID;
 		}
 		upslog_INSTCMD_POWERSTATE_CHECKED(varname, val);
 	}
@@ -3937,7 +3941,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		if (mode==SU_MODE_INSTCMD) {
 			if ( !str_to_long(val ? val : su_info_p->dfl, &value, 10) ) {
 				upsdebugx(1, "%s: cannot execute command '%s': value is not a number!", __func__, varname);
-				return STAT_SET_INVALID;
+				return STAT_INSTCMD_INVALID;
 			}
 		}
 		else {
@@ -3965,23 +3969,26 @@ static int su_setOID(int mode, const char *varname, const char *val)
 
 	/* Process result */
 	if (status == FALSE) {
-		if (mode==SU_MODE_INSTCMD)
+		if (mode==SU_MODE_INSTCMD) {
 			upsdebugx(1, "%s: cannot execute command '%s'", __func__, varname);
-		else
+			retval = STAT_INSTCMD_FAILED;
+		}
+		else {
 			upsdebugx(1, "%s: cannot set value %s on OID %s", __func__, val, su_info_p->OID);
-
-		retval = STAT_SET_FAILED;
+			retval = STAT_SET_FAILED;
+		}
 	}
 	else {
-		retval = STAT_SET_HANDLED;
-		if (mode==SU_MODE_INSTCMD)
+		if (mode==SU_MODE_INSTCMD) {
 			upsdebugx(1, "%s: successfully sent command %s", __func__, varname);
-		else {
+			retval = STAT_INSTCMD_HANDLED;
+		} else {
 			upsdebugx(1, "%s: successfully set %s to \"%s\"", __func__, varname, val);
 
 			/* update info array: call dstate_setinfo, since flags and aux are
 			 * already published, and this saves us some processing */
 			dstate_setinfo(varname, "%s", val);
+			retval = STAT_SET_HANDLED;
 		}
 	}
 
