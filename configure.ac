@@ -6701,6 +6701,7 @@ AC_CONFIG_FILES([
 
 AC_MSG_NOTICE([Generating templated script files that should be marked executable])
 m4_foreach_w([SCRIPTFILE], [
+ docs/docinfo.xml.sh
  lib/libupsclient-config
  scripts/Aix/nut.init
  scripts/HP-UX/postinstall

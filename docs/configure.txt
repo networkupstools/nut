@@ -412,6 +412,10 @@ release/pre-release builds, or when local Git version metadata could not be
 retrieved, and the most-recent release tag (or `master` as fallback) for usual
 build iterations.
 
+NOTE: The resulting `GITLOG_START_POINT` value may also impact the oldest
+version considered by maintainer helper script `docs/docinfo.xml.sh` (if it
+specifies a `v*` tag, otherwise `v2.6.0` is used).
+
 Python support
 ~~~~~~~~~~~~~~
 
