@@ -150,7 +150,6 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
 EXTRA_DIST += sms-brazil-protocol.txt
 
 ASCIIDOC_HTML_SINGLE = \
-	$(top_builddir)/docs/ChangeLog.html \
 	user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
@@ -160,8 +159,11 @@ ASCIIDOC_HTML_SINGLE = \
 	cables.html \
 	FAQ.html
 
+if WITH_CHANGELOG_HTML_SINGLE
+ASCIIDOC_HTML_SINGLE += $(top_builddir)/docs/ChangeLog.html
+endif
+
 ASCIIDOC_HTML_CHUNKED = \
-	$(top_builddir)/docs/ChangeLog.chunked \
 	user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
@@ -171,8 +173,11 @@ ASCIIDOC_HTML_CHUNKED = \
 	cables.chunked \
 	FAQ.chunked
 
+if WITH_CHANGELOG_HTML_CHUNKED
+ASCIIDOC_HTML_CHUNKED += $(top_builddir)/docs/ChangeLog.chunked
+endif
+
 ASCIIDOC_PDF = \
-	$(top_builddir)/docs/ChangeLog.pdf \
 	user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
@@ -181,6 +186,20 @@ ASCIIDOC_PDF = \
 	solaris-usb.pdf \
 	cables.pdf \
 	FAQ.pdf
+
+if WITH_CHANGELOG_PDF
+ASCIIDOC_PDF += $(top_builddir)/docs/ChangeLog.pdf
+endif
+
+DOC_BUILD_CHANGELOG_TEXT =
+if WITH_CHANGELOG_TEXT
+DOC_BUILD_CHANGELOG_TEXT += $(top_builddir)/ChangeLog
+endif
+
+DOC_BUILD_CHANGELOG_ADOC =
+if WITH_CHANGELOG_ADOC
+DOC_BUILD_CHANGELOG_ADOC += $(top_builddir)/ChangeLog.adoc $(top_builddir)/ChangeLog.adoc-parsed $(top_builddir)/ChangeLog.adoc-parsed.latest
+endif
 
 # Note: "man" subdir is handled separately via all-local and check-local
 # for a few goals, and among SUBDIRs directly from the top-level Makefile
@@ -203,17 +222,19 @@ check-local: $(CHECK_LOCAL_TARGETS)
 
 # Make sure sources are there for out-of-tree builds:
 all-local all-am-local \
+$(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) \
 @DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(abs_top_builddir)/docs/.prep-src-docs
 
 all-local:
 	+@cd $(builddir)/man && $(MAKE) $(AM_MAKEFLAGS) all-optional
 
 # This list is defined by configure script choices and options:
-doc: $(abs_top_builddir)/docs/.prep-src-docs @DOC_BUILD_LIST@
+doc: $(abs_top_builddir)/docs/.prep-src-docs $(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
-# script choices at their risk (e.g. missing tools are possible):
-docs: pdf html-single html-chunked man-man html-man
+# script choices at their risk (e.g. missing tools are possible) and
+# try to build all documentation file types:
+docs: $(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) pdf html-single html-chunked man-man html-man
 
 all-docs: docs
 

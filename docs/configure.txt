@@ -390,6 +390,16 @@ Are platform man directories named by base number (yes) or by full section
 name (no), e.g. given a `1m` man page section, install the pages into `man1`
 or `man1m` directory?
 
+	--enable-docs-changelog=<yes|no|skip|auto|{format,list}>
+
+This option was added specifically to allow developer iterations to not waste
+CPU time rebuilding the huge `ChangeLog*` files whenever their Git index
+changes. For troubleshooting purposes, this option supports specifying the
+list of formats ('text', 'adoc', 'html-single', 'html-chunked', 'pdf') with
+optional suffixes to build (empty/'=yes'), consider ('=auto') or not-build
+('=no' or '=skip') specific formats; note that some are prerequisites for
+others (plain 'text' and prepared 'adoc' are needed to generate HTML and PDF).
+
 Python support
 ~~~~~~~~~~~~~~
 

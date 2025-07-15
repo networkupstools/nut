@@ -242,6 +242,9 @@ https://github.com/networkupstools/nut/milestone/9
    * Option to `configure --enable-docs-man-for-progs-built-only` was added,
      to differentiate NUT builds that deliver man pages for only built programs
      (legacy default) or for all of them (as needed for docs sites). [#2976]
+   * Option to `configure --enable-docs-changelog` was added, specifically
+     to allow developer iterations to not waste CPU time rebuilding the huge
+     `ChangeLog*` files whenever their Git index changes.
 
  - The `BUILD_TYPE=default-all-errors ci_build.sh` script handling was
    revised to simplify code, and to default in CI builds to a quicker
