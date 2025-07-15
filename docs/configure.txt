@@ -400,6 +400,18 @@ optional suffixes to build (empty/'=yes'), consider ('=auto') or not-build
 ('=no' or '=skip') specific formats; note that some are prerequisites for
 others (plain 'text' and prepared 'adoc' are needed to generate HTML and PDF).
 
+	--with-docs-changelog-start=<auto|git-tree-ish>
+
+This option was added to allow developers (and CI build agents) to customize
+the size of `ChangeLog*` files when they are generated. Balancing against the
+option above to not build `ChangeLog*` files at all, this one allows quicker
+builds that exercise all relevant recipe code paths.
+
+Default value is `auto`, which applies the legacy default `v2.6.0` either to
+release/pre-release builds, or when local Git version metadata could not be
+retrieved, and the most-recent release tag (or `master` as fallback) for usual
+build iterations.
+
 Python support
 ~~~~~~~~~~~~~~
 

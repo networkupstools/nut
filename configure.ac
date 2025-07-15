@@ -2489,6 +2489,8 @@ NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for
 NUT_ARG_ENABLE([docs-man-for-progs-built-only], [build and install man pages (if enabled) only for built programs (yes, default) or all known pages (no)], [yes])
 NUT_ARG_ENABLE([docs-changelog], [(re-)generate ChangeLog* files - and do so whenever git info changes? (default: auto; yes, no, "adoc,html,pdf"...)], [auto])
 
+NUT_ARG_WITH([docs-changelog-start], [Starting point when generating ChangeLog* files (default: auto; otherwise Git commit ID)], [auto])
+
 dnl Different OS distributions have different layouts of man page section
 dnl numbers. The one we treat as default seems to be most wide-spread, in
 dnl Linux and FreeBSD. For others, there are other defaults (see `man man`
@@ -4129,7 +4131,31 @@ AM_CONDITIONAL(WITH_CHANGELOG_HTML_SINGLE, test "${WITH_CHANGELOG_HTML_SINGLE}" 
 AM_CONDITIONAL(WITH_CHANGELOG_HTML_CHUNKED, test "${WITH_CHANGELOG_HTML_CHUNKED}" = "yes")
 AM_CONDITIONAL(WITH_CHANGELOG_PDF, test "${WITH_CHANGELOG_PDF}" = "yes")
 
-NUT_REPORT([Would generate ChangeLog* file formats], [text:${WITH_CHANGELOG_TEXT} adoc:${WITH_CHANGELOG_ADOC} html-single:${WITH_CHANGELOG_HTML_SINGLE} html-chunked:${WITH_CHANGELOG_HTML_CHUNKED} pdf:${WITH_CHANGELOG_PDF}])
+case "${nut_with_docs_changelog_start}" in
+	yes|no|skip|"")
+		AC_MSG_WARN([Option value --with-docs-changelog-start='${nut_with_docs_changelog_start}' is not supported, switching to 'auto'])
+		nut_with_docs_changelog_start=auto
+		;;
+esac
+
+case "${nut_with_docs_changelog_start}" in
+	auto)
+		AS_IF([$NUT_SOURCE_GITREV_IS_RELEASE || $NUT_SOURCE_GITREV_IS_PRERELEASE || test x"${NUT_SOURCE_GITREV_NUMERIC}" = x],
+			[dnl # NUT v2.6.0 is the oldest release with asciidoc rendered into PDF
+			 GITLOG_START_POINT=v2.6.0
+			],
+			[dnl # Try to cut off from preceding release tag (as known in this git workspace index)
+			 GITLOG_START_POINT=v"`echo "${NUT_SOURCE_GITREV_NUMERIC}" | sed -e 's/^\(@<:@0-9@:>@*\.@<:@0-9@:>@*\.@<:@0-9@:>@*\)@<:@^0-9@:>@*.*$/\1/'`" \
+			 && test x"${GITLOG_START_POINT}" != xv \
+			 || GITLOG_START_POINT="master"
+			])
+		;;
+	*) dnl # Else assume this is a git hash/tag/branch...
+		GITLOG_START_POINT="${nut_with_docs_changelog_start}"
+		;;
+esac
+
+NUT_REPORT([would generate ChangeLog* file formats], [text:${WITH_CHANGELOG_TEXT} adoc:${WITH_CHANGELOG_ADOC} html-single:${WITH_CHANGELOG_HTML_SINGLE} html-chunked:${WITH_CHANGELOG_HTML_CHUNKED} pdf:${WITH_CHANGELOG_PDF} starting from '${GITLOG_START_POINT}'])
 
 dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
 MAN_SECTION_API="${nut_with_docs_man_section_api}"
@@ -5867,6 +5893,7 @@ AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
 AC_SUBST(FORCE_NUT_VERSION)
+AC_SUBST(GITLOG_START_POINT)
 AC_SUBST(NUT_SOURCE_GITREV)
 AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_IS_PRERELEASE)

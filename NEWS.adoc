@@ -245,6 +245,14 @@ https://github.com/networkupstools/nut/milestone/9
    * Option to `configure --enable-docs-changelog` was added, specifically
      to allow developer iterations to not waste CPU time rebuilding the huge
      `ChangeLog*` files whenever their Git index changes.
+   * Option to `configure --with-docs-changelog-start` was added to allow
+     developers to customize the size of `ChangeLog*` files when they are
+     generated. Default value is `auto` which applies the legacy default
+     `v2.6.0` to release/pre-release builds, or when local Git version info
+     could not be retrieved, and the most-recent release tag (or `master`
+     as fallback) for usual build iterations. Balancing against the option
+     to not build `ChangeLog*` files at all, this one allows quicker builds
+     that exercise all relevant recipe code paths.
 
  - The `BUILD_TYPE=default-all-errors ci_build.sh` script handling was
    revised to simplify code, and to default in CI builds to a quicker
