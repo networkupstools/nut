@@ -434,7 +434,11 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 # the asciidoc markup (use double-hash to avoid conversion).
 # The $< is okay here, it is used in a suffix rule below
 .adoc.adoc-parsed:
-	@if [ -s '$@' ] && [ x"`find '$@' -newer '$<'`" != x ] ; then \
+	+@if [ ! -s '$<' ] ; then \
+		echo "  DOC-ASCIIDOC-GITHUB-LINKS	STRANGE: input $< does not exist or is empty" >&2 ; \
+		$(MAKE) $(AM_MAKEFLAGS) '$<' ; \
+	 fi
+	@if [ -s '$@' ] && [ -s '$<' ] && [ x"`find '$@' -newer '$<'`" != x ] ; then \
 		echo "  DOC-ASCIIDOC-GITHUB-LINKS	SKIP: $@ already exists and is newer than $<" ; \
 		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
 			ls -lad $@ $< || true ; \
