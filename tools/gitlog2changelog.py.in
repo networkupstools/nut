@@ -36,7 +36,7 @@ if len(sys.argv) > 1:
 
 # Execute git log with the desired command line options.
 # Support Python2 and Python3 (esp. 3.6 and earlier) semantics
-# with regard to utf-8 content support (avois ascii decoding in Py3)
+# with regard to utf-8 content support (avoids ascii decoding in Py3)
 fin_mode = 0
 # Remove trailing end of line? spitlines() in py3 variant takes care of them
 fin_chop = 0
