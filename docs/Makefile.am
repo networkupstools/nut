@@ -462,7 +462,9 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 		-e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
 		-e 's,\(https*://[^ \+]*\)[\]*[+],\1%2B,g' \
 	 ; } > "$@.tmp.$$$$" \
-	 && mv -f "$@.tmp.$$$$" "$@"
+	 && test -s "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@" \
+	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
 	@if [ x'$@' = x'$(top_builddir)/ChangeLog.adoc-parsed' ] ; then \
 		touch -r '$@' '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' || touch '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' ; \
 	 fi
@@ -536,8 +538,12 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
 	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
 	   < "$${INPUT}" >> "$@.tmp.$$$$" \
-	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
-	    else mv -f "$@.tmp.$$$$" "$@" ; fi
+	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then \
+	        echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
+	    else \
+	        test -s "$@.tmp.$$$$" && mv -f "$@.tmp.$$$$" "$@" \
+	        || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; } ; \
+	    fi
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \
@@ -1116,8 +1122,9 @@ $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 			fi; \
 		); \
 	 done > "$@.tmp.$$$$" \
-	 && test -f "$@.tmp.$$$$" \
-	 && mv -f "$@.tmp.$$$$" "$@"
+	 && test -s "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@" \
+	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
 	@echo "Reporting words from $? possibly not used in current inspected code base revision under $(abs_top_srcdir)" >&2 ; \
 	 grep -E '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
 
