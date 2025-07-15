@@ -2490,6 +2490,7 @@ NUT_ARG_ENABLE([docs-man-for-progs-built-only], [build and install man pages (if
 NUT_ARG_ENABLE([docs-changelog], [(re-)generate ChangeLog* files - and do so whenever git info changes? (default: auto; yes, no, "adoc,html,pdf"...)], [auto])
 
 NUT_ARG_WITH([docs-changelog-start], [Starting point when generating ChangeLog* files (default: auto; otherwise Git commit ID)], [auto])
+NUT_ARG_WITH([docs-changelog-end], [Ending point when generating ChangeLog* files (default: HEAD; otherwise Git commit ID)], [HEAD])
 
 dnl Different OS distributions have different layouts of man page section
 dnl numbers. The one we treat as default seems to be most wide-spread, in
@@ -4155,7 +4156,12 @@ case "${nut_with_docs_changelog_start}" in
 		;;
 esac
 
-NUT_REPORT([would generate ChangeLog* file formats], [text:${WITH_CHANGELOG_TEXT} adoc:${WITH_CHANGELOG_ADOC} html-single:${WITH_CHANGELOG_HTML_SINGLE} html-chunked:${WITH_CHANGELOG_HTML_CHUNKED} pdf:${WITH_CHANGELOG_PDF} starting from '${GITLOG_START_POINT}'])
+case "${nut_with_docs_changelog_end}" in
+	yes|no|skip|""|auto)	GITLOG_END_POINT=HEAD ;;
+	*)	GITLOG_END_POINT="${nut_with_docs_changelog_end}" ;;
+esac
+
+NUT_REPORT([would generate ChangeLog* file formats], [text:${WITH_CHANGELOG_TEXT} adoc:${WITH_CHANGELOG_ADOC} html-single:${WITH_CHANGELOG_HTML_SINGLE} html-chunked:${WITH_CHANGELOG_HTML_CHUNKED} pdf:${WITH_CHANGELOG_PDF} starting from '${GITLOG_START_POINT}' to '${GITLOG_END_POINT}'])
 
 dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
 MAN_SECTION_API="${nut_with_docs_man_section_api}"
@@ -5894,6 +5900,7 @@ AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
 AC_SUBST(FORCE_NUT_VERSION)
 AC_SUBST(GITLOG_START_POINT)
+AC_SUBST(GITLOG_END_POINT)
 AC_SUBST(NUT_SOURCE_GITREV)
 AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_IS_PRERELEASE)
