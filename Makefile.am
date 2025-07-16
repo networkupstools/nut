@@ -1246,11 +1246,13 @@ install-as-root:
 			fi ; \
 			echo "$@: Learn systemd definition changes" >&2 ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ daemon-reload || exit ; \
+			APPLIED_SYSTEMD_PRESET=false ; \
 			if $(WITH_SYSTEMD_PRESET) ; then \
 				echo "$@: Apply systemd enabled/disabled service presets" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all || exit ; \
-			else \
-				echo "$@: Apply systemd enabled/disabled service defaults" >&2 ; \
+				@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all && APPLIED_SYSTEMD_PRESET=true || APPLIED_SYSTEMD_PRESET=false ; \
+			fi ; \
+			if [ x"$${APPLIED_SYSTEMD_PRESET}" = x"false" ] ; then \
+				echo "$@: Apply systemd enabled/disabled service defaults in a legacy manner" >&2 ; \
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ disable nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 			fi ; \
@@ -1268,7 +1270,7 @@ install-as-root:
 			udevadm control --reload-rules && udevadm trigger && applied_udev=true || true ; \
 		fi ; \
 	 fi ; \
-	 echo "$@: finished SUCCESSFULLY" >&2
+	 echo "$@: Finished SUCCESSFULLY" >&2
 
 # Clean the dist tarball and packages
 MAINTAINERCLEANFILES_DISTBALL = nut-*.tar.gz
