@@ -3785,7 +3785,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		upsdebugx(2, "daisychain %s for device.0 are not yet supported!",
 			(mode==SU_MODE_INSTCMD)?"command":"setting");
 		free(tmp_varname);
-		return (mode==SU_MODE_INSTCMD ? STAT_INSTCMD_INVALID : STAT_SET_INVALID);
+		return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_INVALID : (int)STAT_SET_INVALID);
 	}
 
 	/* Check if it is outlet / outlet.group, or standard variable */
@@ -3852,7 +3852,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			/* out of bound item number */
 			upsdebugx(2, "%s: item is out of bound (%i / %i)",
 				__func__, item_number, total_items);
-			return (mode==SU_MODE_INSTCMD ? STAT_INSTCMD_INVALID : STAT_SET_INVALID);
+			return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_INVALID : (int)STAT_SET_INVALID);
 		}
 		/* find back the item template */
 		item_varname = (char *)xmalloc(SU_INFOSIZE);
@@ -3948,7 +3948,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		if (tmp_varname != NULL)
 			free(tmp_varname);
 
-		return (mode==SU_MODE_INSTCMD ? STAT_INSTCMD_UNKNOWN : STAT_SET_UNKNOWN);
+		return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_UNKNOWN : (int)STAT_SET_UNKNOWN);
 	}
 
 	/* set value into the device, using the provided one, or the default one otherwise */
