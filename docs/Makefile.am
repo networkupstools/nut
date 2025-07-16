@@ -504,9 +504,16 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 10
 # already running and bail out early if the file exists. Otherwise we bite
 # the bullet and spend a few seconds, and then re-check if another thread
 # did exist and finished first.
+# Weird ways about "INPUT": in some cases the "$?" came in empty, in others
+# it has several files listed, e.g. full paths to "ChangeLog .prep-src-docs".
+# The "$<" may only be used for suffix rules (and nothing forbids it from
+# reporting the two changed files noted above, either). The approach below
+# allows us to get a most-reasonably populated path to the original (from
+# tarball or freshly generated) plain-text ChangeLog file across a lot
+# of "make" implementations.
 # FIXME: Fallback URL should refer not to "master" but current commit/tag?
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
-	@INPUT="$<"; \
+	@INPUT="`for F in $? ; do case "$$F" in */ChangeLog) [ -s "$$F" ] && echo "$$F"; exit 0 ;; esac; done`"; \
 	 test -n "$${INPUT}" || INPUT="$(top_builddir)/ChangeLog" ; \
 	 test -n "$${INPUT}" && test -n "$@" && test -s "$${INPUT}" \
 	 || { \
