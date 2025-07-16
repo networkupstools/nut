@@ -36,6 +36,8 @@
 # include <psapi.h>
 #endif	/* WIN32 */
 
+#include "nut_platform.h"
+
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>	/* readlink */
 #endif
@@ -1345,6 +1347,9 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	/* Track where the last dot is in the basename; 0 means none */
 	size_t	procbasenamedot = 0, progbasenamedot = 0;
 	char	procbasename[NUT_PATH_MAX + 1], progbasename[NUT_PATH_MAX + 1];
+#ifdef NUT_PLATFORM_LINUX
+	char	*s = NULL;
+#endif
 
 	if (checkprocname_ignored(__func__)) {
 		ret = -3;
@@ -1403,6 +1408,30 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	}
 #endif	/* WIN32 */
 
+#ifdef NUT_PLATFORM_LINUX
+	/* According to https://stackoverflow.com/a/58105245/4715872
+	 * the Linux kernel function d_path() (convert a dentry into
+	 * an ASCII path name) can report if the original file was
+	 * deleted since the process started.
+	 */
+	if ((s = strstr(procname, " (deleted)")) != NULL && s[10] == '\0') {
+		char	pntmp[NUT_PATH_MAX + 1];
+		int	restmp;
+
+		strncpy(pntmp, procname, sizeof(pntmp) - 1);
+		pntmp[s - procname] = '\0';
+
+		upsdebugx(2, "%s: re-evaluate the substring without a special tail: '%s'=>'%s'",
+			__func__, procname, pntmp);
+		restmp = compareprocname(pid, pntmp, progname);
+		if (restmp <= 0)
+			return restmp;
+
+		ret = 6;
+		goto finish;
+	}
+#endif	/* LINUX */
+
 	/* TOTHINK: Developer builds wrapped with libtool may be prefixed
 	 * by "lt-" in the filename. Should we re-enter (or wrap around)
 	 * this search with a set of variants with/without the prefix on
@@ -1414,6 +1443,15 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 
 finish:
 	switch (ret) {
+		case 6:
+			upsdebugx(1,
+				"%s: original program file of running "
+				"PID %" PRIuMAX " named '%s' was removed "
+				"or replaced, but matches our '%s'",
+				__func__, (uintmax_t)pid,
+				procname, progname);
+			break;
+
 		case 5:
 			upsdebugx(1,
 				"%s: case-insensitive base name hit with "
