@@ -2839,7 +2839,8 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 	 * WARNING: Does not try to be a pedantically correct printf
 	 * style parser and allows foolishness like "%llhhG" which
 	 * the real methods would reject (and which would fail any
-	 * conparison with e.g. "%G" proper).
+	 * comparison with e.g. "%G" proper).
+	 * See also: https://en.cppreference.com/w/c/io/fprintf.html
 	 */
 	const char	*p;
 	char	*b, inEscape;
@@ -2877,24 +2878,30 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 			 * by our "nut_stdint.h".
 			 */
 			switch (*p) {
-				/* We care about integer/pointer type size "width" modifiers, e.g.: */
+				/* Here we care about integer/pointer type size "length"
+				 * modifiers (byte size of corresponding vararg on stack): */
 				case 'l':	/* long (long) int */
 				case 'L':	/* long double */
 				case 'h':	/* short int/char */
 #if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) || (defined _STDC_C99) || (defined __C99FEATURES__) /* C99+ build mode */ || (defined PRIiMAX && defined PRIiSIZE)
-				/* Technically, double "ll" and "hh" are also new */
-				case 'z':	/* size_t */
+				/* Technically, double "ll" and "hh" are also new
+				 * but are covered above already.
+				 */
+				case 'z':	/* (s)size_t */
 				case 'j':	/* intmax_t */
 				case 't':	/* ptrdiff_t */
 #endif
-				/* and here field length will be in another vararg on the stack: */
+				/* ...and here field length and/or precison will each
+				 * be in another vararg (an "int") on the stack: */
 				case '*':
 					*b++ = *p;
 					i++;
 					continue;
 
 				/* Known conversion characters, collapse some numeric format
-				 * specifiers to unambiguous basic type for later comparisons */
+				 * specifiers to unambiguous basic type for later comparisons: */
+
+				/* - Equivalents of "signed int": */
 				case 'd':
 				case 'i':
 					inEscape = 0;
@@ -2902,6 +2909,7 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 					i++;
 					continue;
 
+				/* - Equivalents of "unsigned int": */
 				case 'u':
 				case 'o':
 				case 'x':
@@ -2911,6 +2919,8 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 					i++;
 					continue;
 
+				/* - Equivalents of "double" (note there is no "float"
+				 *   support, printf/scanf varargs expand them to double): */
 				case 'f':
 				case 'e':
 				case 'E':
@@ -2926,14 +2936,45 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 					i++;
 					continue;
 
+				/* - Basic types (char, string, pointer)... */
 				case 'c':
 				case 's':
 				case 'p':
+				/* ...and a (s)size_t target (signed when %zn) for
+				 *   printf to write the count of chars printed so
+				 *   far into:
+				 */
 				case 'n':
 					inEscape = 0;
 					*b++ = *p;
 					i++;
 					continue;
+
+				/* Non-functional characters as far as vararg
+				 * stack size is concerned: always-signed,
+				 * left/right alignment, padding, minimal width,
+				 * floating-point precision (note: asterisk is
+				 * special, not skipped - handled above)... */
+				case '+':
+				case '-':
+				case '.':
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					/* Skip as irrelevant to memory access;
+					 * log just in case of deep troubleshooting,
+					 * but do not be noisy.
+					 */
+					upsdebugx(6, "%s: in-escape: assuming a cosmetic formatting char: '%c'", __func__, *p);
+					break;
+
 				default:
 					upsdebugx(1, "%s: in-escape: unexpected formatting char: '%c'", __func__, *p);
 			}

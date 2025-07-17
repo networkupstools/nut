@@ -91,7 +91,7 @@ https://github.com/networkupstools/nut/milestone/9
      by development iterations. [issue #2097]
    * Common code hardening: added sanity-checking for dynamically constructed
      or selected formatting strings with variable-argument list methods
-     (typically used with log printing, `dstate` setting, etc.) [#2450]
+     (typically used with log printing, `dstate` setting, etc.) [#2450, #3016]
    * Refactored repetitive implementations of `inet_ntopSS()` (nee
      `inet_ntopW()` in `upsd.c`) and `inet_ntopAI()` methods into `common.c`,
      so now they can be re-used or expanded more easily. [#2916]
