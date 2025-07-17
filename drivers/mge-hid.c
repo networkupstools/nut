@@ -915,7 +915,11 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	const char	*frequency_range_transfer_str = dstate_getinfo("input.transfer.frequency.eco.range");
 	const char	*bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
 
-	NUT_UNUSED_VARIABLE(value);
+	if ((int)value != 1) {
+		upsdebugx(1, "%s: wrong 'value' parameter '%f' for this method, should be '1'",
+			__func__, value);
+		return NULL;
+	}
 
 	errno = 0;
 	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
