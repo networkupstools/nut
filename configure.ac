@@ -50,7 +50,7 @@ dnl # Example:   NUT_SOURCE_GITREV='2.8.2.695.1-696+g0e00f0777'
 NUT_SOURCE_GITREV="`NUT_VERSION_QUERY=DESC50 "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
 
 dnl A true/false (literally) response that can be used for prettier messages
-dnl emitted by NUT code.
+dnl emitted by NUT code, or make some "auto" configuration choices below.
 NUT_SOURCE_GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null || echo false`"
 NUT_SOURCE_GITREV_IS_PRERELEASE="`NUT_VERSION_QUERY=IS_PRERELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null || echo false`"
 
@@ -2487,6 +2487,10 @@ NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [m
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
 NUT_ARG_ENABLE([docs-man-for-progs-built-only], [build and install man pages (if enabled) only for built programs (yes, default) or all known pages (no)], [yes])
+NUT_ARG_ENABLE([docs-changelog], [(re-)generate ChangeLog* files - and do so whenever git info changes? (default: auto; yes, no, "adoc,html,pdf"...)], [auto])
+
+NUT_ARG_WITH([docs-changelog-start], [Starting point when generating ChangeLog* files (default: auto; otherwise Git commit ID)], [auto])
+NUT_ARG_WITH([docs-changelog-end], [Ending point when generating ChangeLog* files (default: HEAD; otherwise Git commit ID)], [HEAD])
 
 dnl Different OS distributions have different layouts of man page section
 dnl numbers. The one we treat as default seems to be most wide-spread, in
@@ -3984,6 +3988,180 @@ if echo "${DOC_SKIPBUILD_LIST}" | grep -w "pdf" >/dev/null ; then
 fi
 AM_CONDITIONAL(WITH_PDFS, test "${WITH_PDFS}" = "yes")
 AM_CONDITIONAL(SKIP_PDFS, test "${SKIP_PDFS}" = "yes")
+
+dnl # NUT ChangeLog* files can consume a lot of build time,
+dnl # so we want to let developers skip (re-)building them
+dnl # if they enable docs and then iterate their code base.
+WITH_CHANGELOG_TEXT=no
+WITH_CHANGELOG_ADOC=no
+WITH_CHANGELOG_HTML_SINGLE=no
+WITH_CHANGELOG_HTML_CHUNKED=no
+WITH_CHANGELOG_PDF=no
+
+dnl # Correlate "auto" with some measure of development iterations (quick) vs. release/tarball build (full). Can maintainer-mode be it?
+AS_IF([($NUT_SOURCE_GITREV_IS_RELEASE || $NUT_SOURCE_GITREV_IS_PRERELEASE) && test "${nut_enable_docs_changelog}" = auto],
+	[nut_enable_docs_changelog=yes]
+)
+
+case "${nut_enable_docs_changelog}" in
+	no|skip)	AC_MSG_NOTICE([Requested to not enable WITH_CHANGELOG_*])
+		;;
+	yes)
+		AS_IF([test "${nut_with_doc}" != yes], [AC_MSG_ERROR([Can not enable WITH_CHANGELOG_* due to build settings or environment])])
+		WITH_CHANGELOG_TEXT=yes
+		WITH_CHANGELOG_ADOC=yes
+		AS_IF([test "${WITH_HTML_SINGLE}" = "yes" -a "${SKIP_HTML_SINGLE}" = no],
+			[WITH_CHANGELOG_HTML_SINGLE=yes],
+			[AC_MSG_ERROR([Can not enable WITH_CHANGELOG_HTML_SINGLE due to build settings or environment])])
+		AS_IF([test "${WITH_HTML_CHUNKED}" = "yes" -a "${SKIP_HTML_CHUNKED}" = no],
+			[WITH_CHANGELOG_HTML_CHUNKED=yes],
+			[AC_MSG_ERROR([Can not enable WITH_CHANGELOG_HTML_CHUNKED due to build settings or environment])])
+		AS_IF([test "${WITH_PDFS}" = "yes" -a "${SKIP_PDFS}" = no],
+			[WITH_CHANGELOG_PDF=yes],
+			[AC_MSG_ERROR([Can not enable WITH_CHANGELOG_PDF due to build settings or environment])])
+		;;
+	auto|yes=auto|"")
+		AS_IF([test "${nut_with_doc}" = yes], [
+			WITH_CHANGELOG_TEXT=yes
+			WITH_CHANGELOG_ADOC=yes
+			AS_IF([test "${WITH_HTML_SINGLE}" = "yes" -a "${SKIP_HTML_SINGLE}" = no],
+				[WITH_CHANGELOG_HTML_SINGLE=yes],
+				[WITH_CHANGELOG_HTML_SINGLE=no
+				 AC_MSG_WARN([Can not enable WITH_CHANGELOG_HTML_SINGLE due to build settings or environment])
+				])
+			AS_IF([test "${WITH_HTML_CHUNKED}" = "yes" -a "${SKIP_HTML_CHUNKED}" = no],
+				[WITH_CHANGELOG_HTML_CHUNKED=yes],
+				[WITH_CHANGELOG_HTML_CHUNKED=no
+				 AC_MSG_WARN([Can not enable WITH_CHANGELOG_HTML_CHUNKED due to build settings or environment])
+				])
+			AS_IF([test "${WITH_PDFS}" = "yes" -a "${SKIP_PDFS}" = no],
+				[WITH_CHANGELOG_PDF=yes],
+				[WITH_CHANGELOG_PDF=no
+				 AC_MSG_WARN([Can not enable WITH_CHANGELOG_PDF due to build settings or environment])
+				])
+		], [
+			AC_MSG_WARN([Can not enable WITH_CHANGELOG_* due to build settings or environment])
+		])
+		;;
+	*)
+		AS_IF([test "${nut_with_doc}" = yes], [
+
+			dnl # Check each complex format desire independently:
+			case "${nut_enable_docs_changelog}" in
+			html-single=no*|*,html-single=no*|html-single=skip*|*,html-single=skip*) ;;
+			html-single*|*,html-single*)
+			AS_IF([test "${WITH_HTML_SINGLE}" = "yes" -a "${SKIP_HTML_SINGLE}" = no],
+				[WITH_CHANGELOG_HTML_SINGLE=yes],
+				[WITH_CHANGELOG_HTML_SINGLE=no
+				 case "${nut_enable_docs_changelog}" in
+				    *html-single=auto*)	AC_MSG_WARN([Can not enable WITH_CHANGELOG_HTML_SINGLE due to build settings or environment]) ;;
+				    *)	AC_MSG_ERROR([Can not enable WITH_CHANGELOG_HTML_SINGLE due to build settings or environment]) ;;
+				 esac
+				])
+			;; esac
+
+			case "${nut_enable_docs_changelog}" in
+			html-chunked=no*|*,html-chunked=no*|html-chunked=skip*|*,html-chunked=skip*) ;;
+			html-chunked*|*,html-chunked*)
+			AS_IF([test "${WITH_HTML_CHUNKED}" = "yes" -a "${SKIP_HTML_CHUNKED}" = no],
+				[WITH_CHANGELOG_HTML_CHUNKED=yes],
+				[WITH_CHANGELOG_HTML_CHUNKED=no
+				 case "${nut_enable_docs_changelog}" in
+				    *html-chunked=auto*)	AC_MSG_WARN([Can not enable WITH_CHANGELOG_HTML_CHUNKED due to build settings or environment]) ;;
+				    *)	AC_MSG_ERROR([Can not enable WITH_CHANGELOG_HTML_CHUNKED due to build settings or environment]) ;;
+				 esac
+				])
+			;; esac
+
+			case "${nut_enable_docs_changelog}" in
+			pdf=no*|*,pdf=no*|pdf=skip*|*,pdf=skip*) ;;
+			pdf*|*,pdf*)
+			AS_IF([test "${WITH_PDFS}" = "yes" -a "${SKIP_PDFS}" = no],
+				[WITH_CHANGELOG_PDF=yes],
+				[WITH_CHANGELOG_PDF=no
+				 case "${nut_enable_docs_changelog}" in
+				    *pdf=auto*)	AC_MSG_WARN([Can not enable WITH_CHANGELOG_PDF due to build settings or environment]) ;;
+				    *)	AC_MSG_ERROR([Can not enable WITH_CHANGELOG_PDF due to build settings or environment]) ;;
+				 esac
+				])
+			;; esac
+
+			case "${nut_enable_docs_changelog}" in
+			adoc=no*|*,adoc=no*)
+				AS_IF([test "${WITH_HTML_SINGLE}${WITH_CHANGELOG_HTML_CHUNKED}${WITH_CHANGELOG_PDF}" != "nonono"],
+					[AC_MSG_ERROR([Can not disable WITH_CHANGELOG_ADOC when HTML and/or PDF build is required])])
+				;;
+			adoc=yes*|*,adoc=yes*|adoc|adoc,*|*,adoc|*,adoc,*)	dnl Require enabled
+				WITH_CHANGELOG_ADOC=yes
+				;;
+			adoc=skip*|*,adoc=skip*|adoc=auto*|*,adoc=auto*|*)
+				AS_IF([test "${WITH_HTML_SINGLE}${WITH_CHANGELOG_HTML_CHUNKED}${WITH_CHANGELOG_PDF}" = "nonono"],
+					[WITH_CHANGELOG_ADOC=no],
+					[case "${nut_enable_docs_changelog}" in
+					 *adoc=skip*)
+						AC_MSG_WARN([Can not disable WITH_CHANGELOG_ADOC when HTML and/or PDF build is required, so enabling it])
+						;;
+					 esac
+					 WITH_CHANGELOG_ADOC=yes
+					])
+				;;
+			esac
+
+			WITH_CHANGELOG_TEXT=yes
+			case "${nut_enable_docs_changelog}" in
+			text=no|*,text=no)
+				AS_IF([test "${WITH_CHANGELOG_ADOC}${WITH_HTML_SINGLE}${WITH_CHANGELOG_HTML_CHUNKED}${WITH_CHANGELOG_PDF}" != "nononono"],
+					[AC_MSG_ERROR([Can not disable WITH_CHANGELOG_TEXT when ADOC, HTML and/or PDF build is required])])
+				WITH_CHANGELOG_TEXT=no
+				;;
+			text=skip|*,text=skip)
+				AS_IF([test "${WITH_CHANGELOG_ADOC}${WITH_HTML_SINGLE}${WITH_CHANGELOG_HTML_CHUNKED}${WITH_CHANGELOG_PDF}" = "nononono"],
+					[WITH_CHANGELOG_TEXT=no]
+					[AC_MSG_WARN([Can not disable WITH_CHANGELOG_TEXT when ADOC, HTML and/or PDF build is required, so enabling it])])
+				;;
+			esac
+		], [
+			AC_MSG_WARN([Can not enable WITH_CHANGELOG_* due to build settings or environment])
+		])
+		;;
+esac
+
+AM_CONDITIONAL(WITH_CHANGELOG_TEXT, test "${WITH_CHANGELOG_TEXT}" = "yes")
+AM_CONDITIONAL(WITH_CHANGELOG_ADOC, test "${WITH_CHANGELOG_ADOC}" = "yes")
+AM_CONDITIONAL(WITH_CHANGELOG_HTML_SINGLE, test "${WITH_CHANGELOG_HTML_SINGLE}" = "yes")
+AM_CONDITIONAL(WITH_CHANGELOG_HTML_CHUNKED, test "${WITH_CHANGELOG_HTML_CHUNKED}" = "yes")
+AM_CONDITIONAL(WITH_CHANGELOG_PDF, test "${WITH_CHANGELOG_PDF}" = "yes")
+
+case "${nut_with_docs_changelog_start}" in
+	yes|no|skip|"")
+		AC_MSG_WARN([Option value --with-docs-changelog-start='${nut_with_docs_changelog_start}' is not supported, switching to 'auto'])
+		nut_with_docs_changelog_start=auto
+		;;
+esac
+
+case "${nut_with_docs_changelog_start}" in
+	auto)
+		AS_IF([$NUT_SOURCE_GITREV_IS_RELEASE || $NUT_SOURCE_GITREV_IS_PRERELEASE || test x"${NUT_SOURCE_GITREV_NUMERIC}" = x],
+			[dnl # NUT v2.6.0 is the oldest release with asciidoc rendered into PDF
+			 GITLOG_START_POINT=v2.6.0
+			],
+			[dnl # Try to cut off from preceding release tag (as known in this git workspace index)
+			 GITLOG_START_POINT=v"`echo "${NUT_SOURCE_GITREV_NUMERIC}" | sed -e 's/^\(@<:@0-9@:>@*\.@<:@0-9@:>@*\.@<:@0-9@:>@*\)@<:@^0-9@:>@*.*$/\1/'`" \
+			 && test x"${GITLOG_START_POINT}" != xv \
+			 || GITLOG_START_POINT="master"
+			])
+		;;
+	*) dnl # Else assume this is a git hash/tag/branch...
+		GITLOG_START_POINT="${nut_with_docs_changelog_start}"
+		;;
+esac
+
+case "${nut_with_docs_changelog_end}" in
+	yes|no|skip|""|auto)	GITLOG_END_POINT=HEAD ;;
+	*)	GITLOG_END_POINT="${nut_with_docs_changelog_end}" ;;
+esac
+
+NUT_REPORT([would generate ChangeLog* file formats], [text:${WITH_CHANGELOG_TEXT} adoc:${WITH_CHANGELOG_ADOC} html-single:${WITH_CHANGELOG_HTML_SINGLE} html-chunked:${WITH_CHANGELOG_HTML_CHUNKED} pdf:${WITH_CHANGELOG_PDF} starting from '${GITLOG_START_POINT}' to '${GITLOG_END_POINT}'])
 
 dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
 MAN_SECTION_API="${nut_with_docs_man_section_api}"
@@ -5721,6 +5899,8 @@ AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
 AC_SUBST(FORCE_NUT_VERSION)
+AC_SUBST(GITLOG_START_POINT)
+AC_SUBST(GITLOG_END_POINT)
 AC_SUBST(NUT_SOURCE_GITREV)
 AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_IS_PRERELEASE)
@@ -6528,6 +6708,7 @@ AC_CONFIG_FILES([
 
 AC_MSG_NOTICE([Generating templated script files that should be marked executable])
 m4_foreach_w([SCRIPTFILE], [
+ docs/docinfo.xml.sh
  lib/libupsclient-config
  scripts/Aix/nut.init
  scripts/HP-UX/postinstall

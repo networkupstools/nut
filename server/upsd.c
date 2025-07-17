@@ -705,7 +705,28 @@ int ups_available(const upstype_t *ups, nut_ctype_t *client)
 static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 	const char **arg)
 {
-	upsdebugx(6, "Entering %s: %s", __func__, numarg > 0 ? arg[0] : "<>");
+	char	*cmdstr = (numarg > 0 ? (char*)arg[0] : "<>");
+	int	cmdstr_allocated = 0;
+
+	if (nut_debug_level > 5 && numarg > 1
+	 && (nut_debug_level > 9 || strcmp(arg[0], "PASSWORD"))	/* Do not log credentials by default */
+	) {
+		/* Not xcalloc() here, not too fatal if we fail */
+		char *s = calloc(LARGEBUF, sizeof(char));
+		if (s) {
+			size_t	i;
+
+			snprintf(s, LARGEBUF, "%s", arg[0]);
+			for (i = 1; i < numarg; i++) {
+				snprintfcat(s, LARGEBUF, " [%s]", arg[i]);
+			}
+
+			cmdstr = s;
+			cmdstr_allocated = 1;
+		}
+	}
+
+	upsdebugx(6, "Entering %s: %s", __func__, cmdstr);
 
 	if (netcmds[cmdnum].flags & FLAG_USER) {
 		/* command requires previous authentication */
@@ -716,12 +737,16 @@ static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 		if (!client->username) {
 			upsdebugx(1, "%s: client not logged in yet", __func__);
 			send_err(client, NUT_ERR_USERNAME_REQUIRED);
+			if (cmdstr_allocated)
+				free(cmdstr);
 			return;
 		}
 
 		if (!client->password) {
 			upsdebugx(1, "%s: client not logged in yet", __func__);
 			send_err(client, NUT_ERR_PASSWORD_REQUIRED);
+			if (cmdstr_allocated)
+				free(cmdstr);
 			return;
 		}
 
@@ -735,12 +760,17 @@ static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 				"tcp-wrappers says access should be denied",
 				__func__, client->username);
 			send_err(client, NUT_ERR_ACCESS_DENIED);
+			if (cmdstr_allocated)
+				free(cmdstr);
 			return;
 		}
 #endif	/* HAVE_WRAP */
 	}
 
-	upsdebugx(6, "%s: Calling command handler for %s", __func__, numarg > 0 ? arg[0] : "<>");
+	upsdebugx(6, "%s: Calling command handler for %s", __func__, cmdstr);
+
+	if (cmdstr_allocated)
+		free(cmdstr);
 
 	/* looks good - call the command */
 	netcmds[cmdnum].func(client, (numarg < 2) ? 0 : (numarg - 1), (numarg > 1) ? &arg[1] : NULL);

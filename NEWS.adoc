@@ -82,12 +82,16 @@ https://github.com/networkupstools/nut/milestone/9
      PID file creation, if the default `rootpidpath()` is not accessible
      (e.g. daemon was not initially started as `root`). Likewise updated
      short PID file based signal sending to consult both locations. [#1717]
+   * Linux may report a `/proc/X/exe` symlink with an embedded "(deleted)"
+     suffix, if the binary was removed (or replaced) since the running process
+     started. This confused our code which verifies that when it is sending a
+     signal to a PID, that PID does reflect the expected NUT program. [#3021]
    * Refactored NUT "common" sources to reference `nut_version.h` macros from
      a smaller C source file, to minimize the compilation unit size impacted
      by development iterations. [issue #2097]
    * Common code hardening: added sanity-checking for dynamically constructed
      or selected formatting strings with variable-argument list methods
-     (typically used with log printing, `dstate` setting, etc.) [#2450]
+     (typically used with log printing, `dstate` setting, etc.) [#2450, #3016]
    * Refactored repetitive implementations of `inet_ntopSS()` (nee
      `inet_ntopW()` in `upsd.c`) and `inet_ntopAI()` methods into `common.c`,
      so now they can be re-used or expanded more easily. [#2916]
@@ -97,6 +101,10 @@ https://github.com/networkupstools/nut/milestone/9
      for this name": the way to extract IP address string was not portable
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
+   * Print arguments of a processed command into the debug log, to help track
+     down what unsupported queries are about, etc. (but only endeavor to spend
+     time, RAM and CPU on this if debug verbosity is high enough). Hide the
+     sensitive commands' parameters unless verbosity is unusually high. [#3023]
 
  - `upsdrvquery` API updates [#2969]:
    * Added `upsdrvquery_oneshot_conn()` for issuing one-shot queries using an
@@ -137,6 +145,7 @@ https://github.com/networkupstools/nut/milestone/9
  - `apc_modbus` driver updates:
    * The time stamp and inter-frame delay accounting was fixed, alleviating
      one of the problems reported in issue #2609. [PR #2982]
+   * Fix missing variables due to mismatching format string. [PR #3013]
 
  - `bcmxcp` driver updates:
    * The latching on to a previous replace battery status was fixed, with its
@@ -160,6 +169,10 @@ https://github.com/networkupstools/nut/milestone/9
      functions rather than direct manipulation. [issue #2928, PR #2936]
 
  - `nutdrv_qx` driver updates:
+   * Added support for "preprocess"/"process" methods called from mapping tables
+     to report back to the driver that an argument value was not supported,
+     so `setvar()` or `instcmd()` can not proceed safely and should return
+     `STAT_SET_CONVERSION_FAILED` or `STAT_INSTCMD_CONVERSION_FAILED`. [#3017]
    * Introduced `innovart33` protocol support for Ippon Innova RT 3/3 topology
      UPSes. [#2938]
    * Updated `megatec` protocol for more detailed responses to `I` query
@@ -175,6 +188,10 @@ https://github.com/networkupstools/nut/milestone/9
      [issue #2708]
 
  - `snmp-ups` driver updates:
+   * Added support for "fun"/"nuf" methods called from mapping tables to
+     report back to the driver that an argument value was not supported,
+     so `setvar()` or `instcmd()` can not proceed safely and should return
+     `STAT_SET_CONVERSION_FAILED` or `STAT_INSTCMD_CONVERSION_FAILED`. [#3017]
    * Fixed `ups.test.date` to be semi-static in `apc-mib` mapping, so it
      would be queried more than once per driver up-time. [issue #3011]
    * Fixed debug-logging around `SU_FLAG_STATIC` entries to clarify when
@@ -251,6 +268,28 @@ https://github.com/networkupstools/nut/milestone/9
    * Option to `configure --enable-docs-man-for-progs-built-only` was added,
      to differentiate NUT builds that deliver man pages for only built programs
      (legacy default) or for all of them (as needed for docs sites). [#2976]
+   * Option to `configure --enable-docs-changelog` was added, specifically
+     to allow developer iterations to not waste CPU time rebuilding the huge
+     `ChangeLog*` files whenever their Git index changes. [#3019]
+   * Options to `configure --with-docs-changelog-start` and/or
+     `configure --with-docs-changelog-end` were added to allow developers
+     to customize the size of `ChangeLog*` files when they are generated.
+     Default starting value is `auto` which applies the legacy default
+     `v2.6.0` to release/pre-release builds, or when local Git version info
+     could not be retrieved, and the most-recent release tag (or `master`
+     as fallback) for usual build iterations. Default ending value is `HEAD`
+     for the current git commit at the moment the ChangeLog is (re-)generated.
+     Balancing against the option to not build `ChangeLog*` files at all,
+     this couple allows quicker builds that exercise all relevant recipe
+     code paths. [#3019]
+
+ - Extended the `gitlog2changelog.py` helper script to report start/end commits
+   actually used, and to allow callers to tweak them better (not only `HEAD`
+   for the end of range); this may be of interest to other projects which use
+   this script. Allow `configure` to disable generation of either certain
+   `ChangeLog*` rendering formats or completely, to speed up developer
+   iterations (much time is wasted when dev-testing new code, due to git
+   index changes if NUT was configured to build with documentation). [#3019]
 
  - The `BUILD_TYPE=default-all-errors ci_build.sh` script handling was
    revised to simplify code, and to default in CI builds to a quicker
@@ -259,6 +298,10 @@ https://github.com/networkupstools/nut/milestone/9
    cover all possible combinations), which should roughly halve the CI
    build times. Default activity for developer builds should remain as
    it was -- to try each such "axis" sequentially. [#2973]
+
+ - Revised `make install-as-root` to fall back to legacy ways of enabling
+   services, if `systemctl preset-all` fails (assumed due to a systemd 252
+   bug). [#3022]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2

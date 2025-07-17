@@ -150,7 +150,6 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
 EXTRA_DIST += sms-brazil-protocol.txt
 
 ASCIIDOC_HTML_SINGLE = \
-	$(top_builddir)/docs/ChangeLog.html \
 	user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
@@ -160,8 +159,11 @@ ASCIIDOC_HTML_SINGLE = \
 	cables.html \
 	FAQ.html
 
+if WITH_CHANGELOG_HTML_SINGLE
+ASCIIDOC_HTML_SINGLE += $(top_builddir)/docs/ChangeLog.html
+endif
+
 ASCIIDOC_HTML_CHUNKED = \
-	$(top_builddir)/docs/ChangeLog.chunked \
 	user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
@@ -171,8 +173,11 @@ ASCIIDOC_HTML_CHUNKED = \
 	cables.chunked \
 	FAQ.chunked
 
+if WITH_CHANGELOG_HTML_CHUNKED
+ASCIIDOC_HTML_CHUNKED += $(top_builddir)/docs/ChangeLog.chunked
+endif
+
 ASCIIDOC_PDF = \
-	$(top_builddir)/docs/ChangeLog.pdf \
 	user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
@@ -181,6 +186,20 @@ ASCIIDOC_PDF = \
 	solaris-usb.pdf \
 	cables.pdf \
 	FAQ.pdf
+
+if WITH_CHANGELOG_PDF
+ASCIIDOC_PDF += $(top_builddir)/docs/ChangeLog.pdf
+endif
+
+DOC_BUILD_CHANGELOG_TEXT =
+if WITH_CHANGELOG_TEXT
+DOC_BUILD_CHANGELOG_TEXT += $(top_builddir)/ChangeLog
+endif
+
+DOC_BUILD_CHANGELOG_ADOC =
+if WITH_CHANGELOG_ADOC
+DOC_BUILD_CHANGELOG_ADOC += $(top_builddir)/ChangeLog.adoc $(top_builddir)/ChangeLog.adoc-parsed $(top_builddir)/ChangeLog.adoc-parsed.latest
+endif
 
 # Note: "man" subdir is handled separately via all-local and check-local
 # for a few goals, and among SUBDIRs directly from the top-level Makefile
@@ -203,17 +222,19 @@ check-local: $(CHECK_LOCAL_TARGETS)
 
 # Make sure sources are there for out-of-tree builds:
 all-local all-am-local \
+$(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) \
 @DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(abs_top_builddir)/docs/.prep-src-docs
 
 all-local:
 	+@cd $(builddir)/man && $(MAKE) $(AM_MAKEFLAGS) all-optional
 
 # This list is defined by configure script choices and options:
-doc: $(abs_top_builddir)/docs/.prep-src-docs @DOC_BUILD_LIST@
+doc: $(abs_top_builddir)/docs/.prep-src-docs $(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
-# script choices at their risk (e.g. missing tools are possible):
-docs: pdf html-single html-chunked man-man html-man
+# script choices at their risk (e.g. missing tools are possible) and
+# try to build all documentation file types:
+docs: $(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) pdf html-single html-chunked man-man html-man
 
 all-docs: docs
 
@@ -394,7 +415,7 @@ man:
 	+@if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOC-NOT-MAN	SKIP: $@ called in docs/Makefile" ; exit 0 ; fi ; \
 	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked* *-contentchecked* .check-* docbook-xsl.css docinfo.xml.in.tmp docinfo-since-v*.xml* *-docinfo.xml*
+CLEANFILES = *.xml *.html *.pdf *-spellchecked* *-contentchecked* .check-* docbook-xsl.css docinfo.xml.in.tmp docinfo-since-v*.xml* *-docinfo.xml* docinfo.xml.sh
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/ChangeLog.adoc
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 # These two "must be" there per autotools standards, so a "make clean"
@@ -413,7 +434,11 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 # the asciidoc markup (use double-hash to avoid conversion).
 # The $< is okay here, it is used in a suffix rule below
 .adoc.adoc-parsed:
-	@if [ -s '$@' ] && [ x"`find '$@' -newer '$<'`" != x ] ; then \
+	+@if [ ! -s '$<' ] ; then \
+		echo "  DOC-ASCIIDOC-GITHUB-LINKS	STRANGE: input $< does not exist or is empty" >&2 ; \
+		$(MAKE) $(AM_MAKEFLAGS) '$<' ; \
+	 fi
+	@if [ -s '$@' ] && [ -s '$<' ] && [ x"`find '$@' -newer '$<'`" != x ] ; then \
 		echo "  DOC-ASCIIDOC-GITHUB-LINKS	SKIP: $@ already exists and is newer than $<" ; \
 		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
 			ls -lad $@ $< || true ; \
@@ -437,7 +462,9 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 		-e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
 		-e 's,\(https*://[^ \+]*\)[\]*[+],\1%2B,g' \
 	 ; } > "$@.tmp.$$$$" \
-	 && mv -f "$@.tmp.$$$$" "$@"
+	 && test -s "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@" \
+	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
 	@if [ x'$@' = x'$(top_builddir)/ChangeLog.adoc-parsed' ] ; then \
 		touch -r '$@' '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' || touch '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' ; \
 	 fi
@@ -477,9 +504,17 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 10
 # already running and bail out early if the file exists. Otherwise we bite
 # the bullet and spend a few seconds, and then re-check if another thread
 # did exist and finished first.
+# Weird ways about "INPUT": in some cases the "$?" came in empty, in others
+# it has several files listed, e.g. full paths to "ChangeLog .prep-src-docs".
+# The "$<" may only be used for suffix rules (and nothing forbids it from
+# reporting the two changed files noted above, either). The approach below
+# allows us to get a most-reasonably populated path to the original (from
+# tarball or freshly generated) plain-text ChangeLog file across a lot
+# of "make" implementations.
+# FIXME: Fallback URL should refer not to "master" but current commit/tag?
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
-	@INPUT="$?"; \
-	 test -n "$${INPUT}" || INPUT="$$(top_builddir)/ChangeLog" ; \
+	@INPUT="`for F in $? ; do case "$$F" in */ChangeLog) [ -s "$$F" ] && echo "$$F"; exit 0 ;; esac; done`"; \
+	 test -n "$${INPUT}" || INPUT="$(top_builddir)/ChangeLog" ; \
 	 test -n "$${INPUT}" && test -n "$@" && test -s "$${INPUT}" \
 	 || { \
 	     MSG="FAILED to resolve input or output filename with this make implementation, or input was not generated!"; \
@@ -511,8 +546,12 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
 	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
 	   < "$${INPUT}" >> "$@.tmp.$$$$" \
-	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
-	    else mv -f "$@.tmp.$$$$" "$@" ; fi
+	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then \
+	        echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
+	    else \
+	        test -s "$@.tmp.$$$$" && mv -f "$@.tmp.$$$$" "$@" \
+	        || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; } ; \
+	    fi
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \
@@ -1091,8 +1130,9 @@ $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 			fi; \
 		); \
 	 done > "$@.tmp.$$$$" \
-	 && test -f "$@.tmp.$$$$" \
-	 && mv -f "$@.tmp.$$$$" "$@"
+	 && test -s "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@" \
+	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
 	@echo "Reporting words from $? possibly not used in current inspected code base revision under $(abs_top_srcdir)" >&2 ; \
 	 grep -E '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
 
