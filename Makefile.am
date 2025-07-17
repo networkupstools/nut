@@ -899,7 +899,10 @@ MAINTAINERCLEANFILES += config.nut_report_feature.log*
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...
 # See gitrevisions for more information on specifying ranges
-GITLOG_START_POINT=v2.6.0
+#GITLOG_START_POINT=v2.6.0
+#GITLOG_END_POINT=HEAD
+GITLOG_START_POINT=@GITLOG_START_POINT@
+GITLOG_END_POINT=@GITLOG_END_POINT@
 
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
@@ -948,7 +951,7 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	            fi ; \
 	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
 	            CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR="$(CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR)" \
-	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) \
+	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) $(GITLOG_END_POINT) \
 	              && { echo "  DOC-CHANGELOG-GENERATE	$@ : SUCCESS"; } \
 	              || { \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : FAILED (non-fatal)" >&2 ; \
@@ -1246,11 +1249,13 @@ install-as-root:
 			fi ; \
 			echo "$@: Learn systemd definition changes" >&2 ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ daemon-reload || exit ; \
+			APPLIED_SYSTEMD_PRESET=false ; \
 			if $(WITH_SYSTEMD_PRESET) ; then \
 				echo "$@: Apply systemd enabled/disabled service presets" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all || exit ; \
-			else \
-				echo "$@: Apply systemd enabled/disabled service defaults" >&2 ; \
+				@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all && APPLIED_SYSTEMD_PRESET=true || APPLIED_SYSTEMD_PRESET=false ; \
+			fi ; \
+			if [ x"$${APPLIED_SYSTEMD_PRESET}" = x"false" ] ; then \
+				echo "$@: Apply systemd enabled/disabled service defaults in a legacy manner" >&2 ; \
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ disable nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 			fi ; \
@@ -1268,7 +1273,7 @@ install-as-root:
 			udevadm control --reload-rules && udevadm trigger && applied_udev=true || true ; \
 		fi ; \
 	 fi ; \
-	 echo "$@: finished SUCCESSFULLY" >&2
+	 echo "$@: Finished SUCCESSFULLY" >&2
 
 # Clean the dist tarball and packages
 MAINTAINERCLEANFILES_DISTBALL = nut-*.tar.gz
