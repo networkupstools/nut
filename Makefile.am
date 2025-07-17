@@ -899,7 +899,10 @@ MAINTAINERCLEANFILES += config.nut_report_feature.log*
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...
 # See gitrevisions for more information on specifying ranges
-GITLOG_START_POINT=v2.6.0
+#GITLOG_START_POINT=v2.6.0
+#GITLOG_END_POINT=HEAD
+GITLOG_START_POINT=@GITLOG_START_POINT@
+GITLOG_END_POINT=@GITLOG_END_POINT@
 
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
@@ -948,7 +951,7 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	            fi ; \
 	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
 	            CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR="$(CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR)" \
-	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) \
+	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) $(GITLOG_END_POINT) \
 	              && { echo "  DOC-CHANGELOG-GENERATE	$@ : SUCCESS"; } \
 	              || { \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : FAILED (non-fatal)" >&2 ; \

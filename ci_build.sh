@@ -2566,6 +2566,10 @@ bindings)
     else
         # Help developers debug:
         CONFIG_OPTS+=("--disable-silent-rules")
+
+        # In developer iterations, avoid burning CPU every
+        # time our git index changes
+        CONFIG_OPTS+=("--enable-docs-changelog=no")
     fi
 
     if [ -z "${WITH_UNMAPPED_DATAPOINTS-}" ] ; then

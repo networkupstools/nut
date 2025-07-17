@@ -390,6 +390,36 @@ Are platform man directories named by base number (yes) or by full section
 name (no), e.g. given a `1m` man page section, install the pages into `man1`
 or `man1m` directory?
 
+	--enable-docs-changelog=<yes|no|skip|auto|{format,list}>
+
+This option was added specifically to allow developer iterations to not waste
+CPU time rebuilding the huge `ChangeLog*` files whenever their Git index
+changes. For troubleshooting purposes, this option supports specifying the
+list of formats ('text', 'adoc', 'html-single', 'html-chunked', 'pdf') with
+optional suffixes to build (empty/'=yes'), consider ('=auto') or not-build
+('=no' or '=skip') specific formats; note that some are prerequisites for
+others (plain 'text' and prepared 'adoc' are needed to generate HTML and PDF).
+
+	--with-docs-changelog-start=<auto|git-tree-ish>
+	--with-docs-changelog-end=<auto|git-tree-ish>
+
+This option was added to allow developers (and CI build agents) to customize
+the size of `ChangeLog*` files when they are generated. Balancing against the
+option above to not build `ChangeLog*` files at all, this couple allows quicker
+builds that exercise all relevant recipe code paths.
+
+Default value for the starting point is `auto`, which applies the legacy
+default `v2.6.0` either to release/pre-release builds, or when local Git
+version metadata could not be retrieved, and the most-recent release tag
+(or `master` as fallback) for usual build iterations.
+
+Default value for the ending point is `HEAD` to represent the current commit
+at the moment the `ChangeLog` file and its derivatives are (re-)generated.
+
+NOTE: The resulting `GITLOG_START_POINT` value may also impact the oldest
+version considered by maintainer helper script `docs/docinfo.xml.sh` (if it
+specifies a `v*` tag, otherwise `v2.6.0` is used).
+
 Python support
 ~~~~~~~~~~~~~~
 
