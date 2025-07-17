@@ -2302,7 +2302,7 @@ static hid_info_t mge_hid2nut[] =
 	 * Note that this calls complex logic based on a number of other values
 	 * determined in the table above, so this mapping is defined much later.
 	 */
-	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_eco_mode_on_off_info },
+	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", 0 /* HU_FLAG_SEMI_STATIC */, eaton_input_eco_mode_on_off_info },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
