@@ -1127,7 +1127,7 @@ static const char *eaton_input_bypass_check_range(double value)
 	if (d_equal(value, 0))
 		return "disabled";
 
-	if (!(d_equal(value, 0))) {
+	if (!(d_equal(value, 1))) {
 		errno = EINVAL;
 		return NULL;
 	}
