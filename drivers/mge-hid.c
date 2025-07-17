@@ -951,7 +951,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	if (eco_low_transfer_str == NULL || eco_high_transfer_str == NULL
 	 || frequency_range_transfer_str == NULL
 	) {
-		upsdebugx(2, "%s: Failed to get values: "
+		upsdebugx(2, "%s: Failed to get values (but can use defaults): "
 			"input.transfer.eco.low = %s, "
 			"input.transfer.eco.high = %s, "
 			"input.transfer.frequency.eco.range = %s",
@@ -1000,25 +1000,37 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	if ((bypass_voltage >= lower_voltage_limit && bypass_voltage <= upper_voltage_limit)
 	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
 	) {
-		upsdebugx(1, "%s: Entering ECO mode due to input conditions being within the transfer limits.", __func__);
+		const char	*oldval = dstate_getinfo("input.eco.switchable");
+
+		if (!oldval || strcmp(oldval, "ECO")) {
+			upsdebugx(1, "%s: Entering ECO mode due to input conditions being within the transfer limits.", __func__);
+		} else {
+			upsdebugx(4, "%s: Still in ECO mode due to input conditions being within the transfer limits.", __func__);
+		}
 		buzzmode_set("vendor:mge-hid:ECO");
 		errno = 0;
 		return "ECO"; /* Enter ECO mode */
 	} else {
+		const char	*oldval = dstate_getinfo("input.eco.switchable");
+
 		/* Condensed debug messages for out of range voltage and frequency */
 		if (bypass_voltage < lower_voltage_limit || bypass_voltage > upper_voltage_limit) {
-			upsdebugx(1, "%s: Input Bypass voltage is outside ECO transfer limits: %.1f V", __func__, bypass_voltage);
+			upsdebugx(2, "%s: Input Bypass voltage is outside ECO transfer limits: %.1f V", __func__, bypass_voltage);
 		}
 		if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
-			upsdebugx(1, "%s: Input Bypass frequency is outside ECO transfer limits: %.1f Hz", __func__, bypass_frequency);
+			upsdebugx(2, "%s: Input Bypass frequency is outside ECO transfer limits: %.1f Hz", __func__, bypass_frequency);
 		}
 		/* Disable ECO mode switching, do not enter ECO mode */
 		dstate_setinfo("input.eco.switchable", "normal");
 		buzzmode_set("vendor:mge-hid:normal");
-		upsdebugx(1, "%s: Disable ECO mode due to input conditions being outside the transfer limits.", __func__);
+		if (!oldval || strcmp(oldval, "normal")) {
+			upsdebugx(1, "%s: Disable ECO mode due to input conditions being outside the transfer limits.", __func__);
+		} else {
+			upsdebugx(4, "%s: Still without ECO mode due to input conditions being outside the transfer limits.", __func__);
+		}
 		/* NOT "errno = EINVAL;" here */
 		errno = 0;
-		return NULL;
+		return NULL;	/* FIXME? Return "normal"? */
 	}
 }
 
