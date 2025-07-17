@@ -210,6 +210,23 @@ struct ups_handler
 		__func__, NUT_STRARG(cmdname), NUT_STRARG(extra));	\
 	} while(0)
 
+#define upslog_INSTCMD_CONVERSION_FAILED(cmdname, extra)	do {	\
+	upslogx(LOG_INSTCMD_CONVERSION_FAILED, "%s: parameter value [%s] is invalid for command [%s]",	\
+		__func__, NUT_STRARG(extra), NUT_STRARG(cmdname));	\
+	} while(0)
+
+/* Note: log only faults; nothing for successful handling */
+#define upslog_INSTCMD_RESULT(ret, cmdname, extra)	do {		\
+	if (ret == STAT_INSTCMD_FAILED)					\
+		upslog_INSTCMD_FAILED(cmdname, extra);			\
+	else if (ret == STAT_INSTCMD_UNKNOWN)				\
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);			\
+	else if (ret == STAT_INSTCMD_INVALID)				\
+		upslog_INSTCMD_INVALID(cmdname, extra);			\
+	else if (ret == STAT_INSTCMD_CONVERSION_FAILED)			\
+		upslog_INSTCMD_CONVERSION_FAILED(cmdname, extra);	\
+	} while(0)
+
 /* setvar(), setcmd() et al -- note they MUST have an argument: */
 #define upsdebug_SET_STARTING(varname, value)	do {		\
 	upsdebugx(1, "Starting %s::%s('%s', '%s')",		\
@@ -229,6 +246,23 @@ struct ups_handler
 #define upslog_SET_FAILED(varname, value)	do {		\
 	upslogx(LOG_SET_FAILED, "%s: FAILED to set variable [%s] to value [%s]",	\
 		__func__, NUT_STRARG(varname), NUT_STRARG(value));	\
+	} while(0)
+
+#define upslog_SET_CONVERSION_FAILED(cmdname, extra)	do {	\
+	upslogx(LOG_SET_CONVERSION_FAILED, "%s: value [%s] is invalid for variable [%s]",	\
+		__func__, NUT_STRARG(extra), NUT_STRARG(cmdname));	\
+	} while(0)
+
+/* Note: log only faults; nothing for successful handling */
+#define upslog_SET_RESULT(ret, cmdname, extra)	do {		\
+	if (ret == STAT_SET_FAILED)				\
+		upslog_SET_FAILED(cmdname, extra);		\
+	else if (ret == STAT_SET_UNKNOWN)			\
+		upslog_SET_UNKNOWN(cmdname, extra);		\
+	else if (ret == STAT_SET_INVALID)			\
+		upslog_SET_INVALID(cmdname, extra);		\
+	else if (ret == STAT_SET_CONVERSION_FAILED)		\
+		upslog_SET_CONVERSION_FAILED(cmdname, extra);	\
 	} while(0)
 
 #endif /* NUT_UPSHANDLER_H */

@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.44"
+#define DRIVER_VERSION	"0.45"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -2538,13 +2538,14 @@ int	instcmd(const char *cmdname, const char *extradata)
 	extradata = extradata ? extradata : item->dfl;
 	snprintf(value, sizeof(value), "%s", extradata ? extradata : "");
 
+	errno = 0;
 	/* Preprocess command */
 	if (item->preprocess != NULL
 	&&  item->preprocess(item, value, sizeof(value))
 	) {
 		/* Something went wrong */
 		upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
-		return STAT_INSTCMD_FAILED;
+		return (errno == EINVAL ? STAT_INSTCMD_CONVERSION_FAILED : STAT_INSTCMD_FAILED);
 	}
 
 	/* No preprocess function -> nothing to do with extradata */
@@ -2553,10 +2554,11 @@ int	instcmd(const char *cmdname, const char *extradata)
 
 	/* Send the command, get the reply */
 	upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extradata);
+	errno = 0;
 	if (qx_process(item, strlen(value) > 0 ? value : NULL)) {
 		/* Something went wrong */
 		upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
-		return STAT_INSTCMD_FAILED;
+		return (errno == EINVAL ? STAT_INSTCMD_CONVERSION_FAILED : STAT_INSTCMD_FAILED);
 	}
 
 	/* We got a reply from the UPS:
@@ -2836,13 +2838,15 @@ int	setvar(const char *varname, const char *val)
 	}
 
 	/* Preprocess value: from NUT-compliant to UPS-compliant */
+	errno = 0;
 	if (item->preprocess != NULL
 	&&  item->preprocess(item, value, sizeof(value))
 	) {
 		/* Something went wrong */
 		/* FIXME: Actually ..._FAILED? */
 		upslogx(LOG_SET_UNKNOWN, "%s: FAILED", __func__);
-		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
+		/* TODO: HANDLED but FAILED, not UNKNOWN! */
+		return (errno == EINVAL ? STAT_SET_CONVERSION_FAILED : STAT_SET_UNKNOWN);
 	}
 
 	/* Handle server side variable */
@@ -2859,11 +2863,13 @@ int	setvar(const char *varname, const char *val)
 		snprintf(value, sizeof(value), "%s", "");
 
 	/* Actual variable setting */
+	errno = 0;
 	if (qx_process(item, strlen(value) > 0 ? value : NULL)) {
 		/* Something went wrong */
 		/* FIXME: Actually ..._FAILED? */
 		upslogx(LOG_SET_UNKNOWN, "%s: FAILED", __func__);
-		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
+		/* TODO: HANDLED but FAILED, not UNKNOWN! */
+		return (errno == EINVAL ? STAT_SET_CONVERSION_FAILED : STAT_SET_UNKNOWN);
 	}
 
 	/* We got a reply from the UPS:
@@ -4391,13 +4397,19 @@ item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsig
 }
 
 /* Process the answer we got back from the UPS
- * Return -1 on errors, 0 on success */
+ * Return -1 on errors, 0 on success
+ * Can set errno, note that EINVAL means unsupported
+ * parameter value here!
+ */
 static int	qx_process_answer(item_t *item, const size_t len)
 {
+	errno = 0;
+
 	/* Query rejected by the UPS */
 	if (subdriver->rejected && !strcasecmp(item->answer, subdriver->rejected)) {
 		upsdebugx(2, "%s: query rejected by the UPS (%s)",
 			__func__, item->info_type);
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -4405,6 +4417,7 @@ static int	qx_process_answer(item_t *item, const size_t len)
 	if (item->answer_len && len < item->answer_len) {
 		upsdebugx(2, "%s: short reply (%s)",
 			__func__, item->info_type);
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -4434,6 +4447,7 @@ static int	qx_process_answer(item_t *item, const size_t len)
 		snprintf(item->value, sizeof(item->value), "%s", "");
 	}
 
+	errno = 0;
 	return 0;
 }
 
@@ -4455,6 +4469,10 @@ int	qx_process(item_t *item, const char *command)
 	/* Prepare the command to be used */
 	memset(cmd, 0, cmdsz);
 	snprintf(cmd, cmdsz, "%s", command ? command : item->command);
+
+	/* Whether the sub-driver code sets errno or not, so be it;
+	 * note that EINVAL means unsupported parameter value here!
+	 */
 
 	/* Preprocess the command */
 	if (

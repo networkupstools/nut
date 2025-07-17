@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3532 utf-8
+personal_ws-1.1 en 3534 utf-8
 AAC
 AAS
 ABI
@@ -1762,6 +1762,7 @@ cgi
 cgipath
 cgroup
 cgroupsv
+changelog
 chargetime
 charset
 checkruntime
@@ -2677,6 +2678,7 @@ nss
 ntopAI
 ntopSS
 ntopW
+nuf
 nuget
 num
 numOfBytesFromUPS

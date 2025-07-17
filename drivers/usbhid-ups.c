@@ -29,12 +29,13 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.66"
+#define DRIVER_VERSION	"0.67"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
 #include "main.h"	/* Must be first, includes "config.h" */
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include "libhid.h"
 #include "usbhid-ups.h"
 #include "hidparser.h"
@@ -928,6 +929,11 @@ int instcmd(const char *cmdname, const char *extradata)
 	if (hidups_item->hid2info != NULL) {
 		/* item->nuf() is expected to handle NULL if it must */
 		value = hu_find_valinfo(hidups_item->hid2info, val);
+		if (d_equal(value, -1) && errno == EINVAL) {
+			upsdebugx(2, "instcmd: %s does not support parameter %s",
+				cmdname, NUT_STRARG(val));
+			return STAT_INSTCMD_CONVERSION_FAILED;
+		}
 	} else {
 		if (!val) {
 			/* If we end up with atol(NULL) below, it should return
@@ -1016,6 +1022,11 @@ int setvar(const char *varname, const char *val)
 	if (hidups_item->hid2info != NULL) {
 		/* item->nuf() is expected to handle NULL if it must */
 		value = hu_find_valinfo(hidups_item->hid2info, val);
+		if (d_equal(value, -1) && errno == EINVAL) {
+			upsdebugx(2, "setvar: %s does not support parameter %s",
+				varname, NUT_STRARG(val));
+			return STAT_SET_CONVERSION_FAILED;
+		}
 	} else {
 		if (!val) {
 			/* If we end up with atol(NULL) below, it should return
@@ -2166,8 +2177,11 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			}
 
 			/* Loop on all existing values */
-			for (info_lkp = item->hid2info; info_lkp != NULL
-				&& info_lkp->nut_value != NULL; info_lkp++) {
+			for (
+				info_lkp = item->hid2info;
+				info_lkp != NULL && info_lkp->nut_value != NULL;
+				info_lkp++
+			) {
 				/* Check if this value is supported */
 				if (hu_find_infoval(item->hid2info, info_lkp->hid_value) != NULL) {
 					dstate_addenum(item->info_type, "%s", info_lkp->nut_value);
@@ -2599,61 +2613,87 @@ static void ups_status_set(void)
 }
 
 /* find info element definition in info array
- * by NUT varname.
+ * by NUT varname, or NULL if not found.
  */
 static hid_info_t *find_nut_info(const char *varname)
 {
 	hid_info_t *hidups_item;
 
-	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
+	if (!varname) {
+		upsdebugx(2, "%s: varname == NULL", __func__);
+		errno = EINVAL;
+		return NULL;
+	}
 
+	if (!*varname) {
+		upsdebugx(2, "%s: varname is an empty string", __func__);
+		errno = EINVAL;
+		return NULL;
+	}
+
+	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 		if (strcasecmp(hidups_item->info_type, varname))
 			continue;
 
-		if (hidups_item->hiddata != NULL)
+		if (hidups_item->hiddata != NULL) {
+			errno = 0;
 			return hidups_item;
+		}
 	}
 
-	upsdebugx(2, "find_nut_info: unknown info type: %s", varname);
+	upsdebugx(2, "%s: unknown info type: %s", __func__, varname);
+	errno = EINVAL;
 	return NULL;
 }
 
 /* find info element definition in info array
- * by HID data pointer.
+ * by HID data pointer, or NULL if not found.
  */
 static hid_info_t *find_hid_info(const HIDData_t *hiddata)
 {
 	hid_info_t *hidups_item;
 
-	if(!hiddata) {
+	if (!hiddata) {
 		upsdebugx(2, "%s: hiddata == NULL", __func__);
+		errno = EINVAL;
 		return NULL;
 	}
 
 	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
-
 		/* Skip server side vars */
 		if (hidups_item->hidflags & HU_FLAG_ABSENT)
 			continue;
 
-		if (hidups_item->hiddata == hiddata)
+		if (hidups_item->hiddata == hiddata) {
+			errno = 0;
 			return hidups_item;
+		}
 	}
 
+	errno = EINVAL;
 	return NULL;
 }
 
-/* find the HID Item value matching that NUT value */
-/* useful for set with value lookup... */
+/* Find the HID Item value matching that NUT value;
+ * useful for setvar() with a value lookup...
+ * This method (and hid2info->nuf(value)) can return
+ * a long value to be set, or "-1" AND errno==EINVAL
+ * to propagate an error.
+ */
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 {
 	info_lkp_t	*info_lkp;
+
+	errno = 0;
 
 	/* if a conversion function is defined, use 'value' as argument for it */
 	if (hid2info->nuf != NULL) {
 		double	hid_value;
 		hid_value = hid2info->nuf(value);
-		upsdebugx(5, "hu_find_valinfo: found %g (value: %s)", hid_value, value);
+		upsdebugx(5, "hu_find_valinfo: found %g (value: '%s'%s)",
+			hid_value, value,
+			(errno == EINVAL ? ", invalid input" : "")
+		);
 		return hid_value;
 	}
 
@@ -2669,13 +2709,21 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 	upsdebugx(3,
 		"hu_find_valinfo: no matching HID value for this INFO_* value (%s)",
 		value);
+	errno = EINVAL;
 	return -1;
 }
 
-/* find the NUT value matching that HID Item value */
+/* find the NUT value matching that HID Item value
+ * This method (and hid2info->fun(value)) can return
+ * a string value to be set, or NULL AND errno==EINVAL
+ * to propagate an error (in practice, a NULL suffices
+ * to not-set a dstate).
+ */
 static const char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 {
 	info_lkp_t	*info_lkp;
+
+	errno = 0;
 
 	/* if a conversion function is defined, use 'value' as argument for it */
 	if (hid2info->fun != NULL) {
@@ -2695,6 +2743,7 @@ static const char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 	upsdebugx(3,
 		"hu_find_infoval: no matching INFO_* value for this HID value (%g)",
 		value);
+	errno = EINVAL;
 	return NULL;
 }
 
