@@ -82,6 +82,10 @@ https://github.com/networkupstools/nut/milestone/9
      PID file creation, if the default `rootpidpath()` is not accessible
      (e.g. daemon was not initially started as `root`). Likewise updated
      short PID file based signal sending to consult both locations. [#1717]
+   * Linux may report a `/proc/X/exe` symlink with an embedded "(deleted)"
+     suffix, if the binary was removed (or replaced) since the running process
+     started. This confused our code which verifies that when it is sending a
+     signal to a PID, that PID does reflect the expected NUT program. [#3021]
    * Refactored NUT "common" sources to reference `nut_version.h` macros from
      a smaller C source file, to minimize the compilation unit size impacted
      by development iterations. [issue #2097]
@@ -97,6 +101,10 @@ https://github.com/networkupstools/nut/milestone/9
      for this name": the way to extract IP address string was not portable
      and misfired on some platforms, and the way to print had a theoretical
      potential for buffer overflow. [#2915]
+   * Print arguments of a processed command into the debug log, to help track
+     down what unsupported queries are about, etc. (but only endeavor to spend
+     time, RAM and CPU on this if debug verbosity is high enough). Hide the
+     sensitive commands' parameters unless verbosity is unusually high. [#3023]
 
  - `upsdrvquery` API updates [#2969]:
    * Added `upsdrvquery_oneshot_conn()` for issuing one-shot queries using an
@@ -257,6 +265,14 @@ https://github.com/networkupstools/nut/milestone/9
      this couple allows quicker builds that exercise all relevant recipe
      code paths. [#3019]
 
+ - Extended the `gitlog2changelog.py` helper script to report start/end commits
+   actually used, and to allow callers to tweak them better (not only `HEAD`
+   for the end of range); this may be of interest to other projects which use
+   this script. Allow `configure` to disable generation of either certain
+   `ChangeLog*` rendering formats or completely, to speed up developer
+   iterations (much time is wasted when dev-testing new code, due to git
+   index changes if NUT was configured to build with documentation). [#3019]
+
  - The `BUILD_TYPE=default-all-errors ci_build.sh` script handling was
    revised to simplify code, and to default in CI builds to a quicker
    mode which randomly mixes the selected SSL, USB and UNMAPPED variants
@@ -264,6 +280,10 @@ https://github.com/networkupstools/nut/milestone/9
    cover all possible combinations), which should roughly halve the CI
    build times. Default activity for developer builds should remain as
    it was -- to try each such "axis" sequentially. [#2973]
+
+ - Revised `make install-as-root` to fall back to legacy ways of enabling
+   services, if `systemctl preset-all` fails (assumed due to a systemd 252
+   bug). [#3022]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
