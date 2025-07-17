@@ -169,6 +169,10 @@ https://github.com/networkupstools/nut/milestone/9
      functions rather than direct manipulation. [issue #2928, PR #2936]
 
  - `nutdrv_qx` driver updates:
+   * Added support for "preprocess"/"process" methods called from mapping tables
+     to report back to the driver that an argument value was not supported,
+     so `setvar()` or `instcmd()` can not proceed safely and should return
+     `STAT_SET_CONVERSION_FAILED` or `STAT_INSTCMD_CONVERSION_FAILED`. [#3017]
    * Introduced `innovart33` protocol support for Ippon Innova RT 3/3 topology
      UPSes. [#2938]
    * Updated `megatec` protocol for more detailed responses to `I` query
@@ -184,12 +188,20 @@ https://github.com/networkupstools/nut/milestone/9
      [issue #2708]
 
  - `snmp-ups` driver updates:
+   * Added support for "fun"/"nuf" methods called from mapping tables to
+     report back to the driver that an argument value was not supported,
+     so `setvar()` or `instcmd()` can not proceed safely and should return
+     `STAT_SET_CONVERSION_FAILED` or `STAT_INSTCMD_CONVERSION_FAILED`. [#3017]
    * Fixed `ups.test.date` to be semi-static in `apc-mib` mapping, so it
      would be queried more than once per driver up-time. [issue #3011]
    * Fixed debug-logging around `SU_FLAG_STATIC` entries to clarify when
      they get skipped. [issue #3011]
 
  - `usbhid-ups` driver updates:
+   * Added support for "fun"/"nuf" methods called from mapping tables to
+     report back to the driver that an argument value was not supported,
+     so `setvar()` or `instcmd()` can not proceed safely and should return
+     `STAT_SET_CONVERSION_FAILED` or `STAT_INSTCMD_CONVERSION_FAILED`. [#3017]
    * The `cps-hid` subdriver's existing mechanism for fixing broken report
      descriptors was extended to cover a newly reported case of nominal UPS
      power being incorrectly reported due to an unrealistically low maximum
