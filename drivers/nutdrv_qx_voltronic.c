@@ -3661,7 +3661,7 @@ static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 	{
 	case 'P':
 
-		alarm = "UPS is going ON";
+		alarm = "UPS is going ON.";
 		break;
 
 	case 'S':
