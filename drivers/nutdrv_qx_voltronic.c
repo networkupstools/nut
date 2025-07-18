@@ -3642,6 +3642,21 @@ static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 {
 	char	*status = NULL, *alarm = NULL, *buzzword = NULL;
 
+	if (nut_debug_level > 3) {
+		char	buf[SMALLBUF];
+		size_t	buflen;
+
+		/* Just in case item->value is somehow not NUL-terminated */
+		memset(buf, 0, sizeof(buf));
+		buflen = snprintf(buf, sizeof(buf), "%s", item->value);
+		if (buflen > 0 && buf[buflen - 1] == '\n')
+			buf[buflen - 1] = '\0';
+		upsdebugx(4, "%s: entering, item->info_type='%s', full item->value='%s'%s",
+			__func__, NUT_STRARG(item->info_type), buf,
+			(buflen + 3 > sizeof(buf) ? " (truncated)" : "")
+			);
+	}
+
 	switch (item->value[0])
 	{
 	case 'P':
@@ -3721,6 +3736,9 @@ static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 
 	if (buzzword)
 		buzzmode_set(buzzword);
+
+	upsdebugx(4, "%s: done, item->value[0]='%c' determined status='%s' alarm='%s' buzzword='%s'",
+		__func__, item->value[0], NUT_STRARG(status), NUT_STRARG(alarm), NUT_STRARG(buzzword));
 
 	return 0;
 }
