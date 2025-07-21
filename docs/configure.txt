@@ -422,11 +422,13 @@ specifies a `v*` tag, otherwise `v2.6.0` is used).
 
 	--with-docs-man-linkmanext-template='https://linux.die.net/man/{0}/{target}'
 	--with-docs-man-linkmanext2-template='https://linux.die.net/man/{2}/{target}'
+	--enable-docs-man-linkmanext-section-rewrite
 
 NUT manual pages can refer to system-provided programs, files or syscalls
 using custom-defined `linkmanext` or `linkmanext2` asciidoc macros.
-The options above should help packagers manage this; defaults are set for
-Linux standard filesystem layout.
+They in turn use man page sections, which may be subject to rewrites similar
+to those applied to NUT pages themselves. The options above should help
+packagers manage this; defaults are set for Linux standard filesystem layout.
 
 Python support
 ~~~~~~~~~~~~~~

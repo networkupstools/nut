@@ -2531,6 +2531,7 @@ NUT_ARG_WITH([docs-man-dir-as-base], [are platform man directories named by base
 
 NUT_ARG_WITH([docs-man-linkmanext-template], [asciidoc template for "linkmanext" tags (distro-dependent)], [auto])
 NUT_ARG_WITH([docs-man-linkmanext2-template], [asciidoc template for "linkmanext2" tags (distro-dependent)], [auto])
+NUT_ARG_ENABLE([docs-man-linkmanext-section-rewrite], [Should external man page sections be adjusted in URL references?], [auto])
 
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
@@ -4225,6 +4226,20 @@ AS_CASE([${nut_with_docs_man_linkmanext2_template}],
 		[ASCIIDOC_TEMPLATE_LINKMANEXT2="${nut_with_docs_man_linkmanext2_template}"])
 AC_SUBST([ASCIIDOC_TEMPLATE_LINKMANEXT2])
 AC_MSG_RESULT([${ASCIIDOC_TEMPLATE_LINKMANEXT2}])
+
+AC_MSG_CHECKING([whether to rewrite man page sections in linkmanext* macro URLs])
+AS_CASE([${nut_docs_man_linkmanext_section_rewrite}],
+	[yes|""], [ASCIIDOC_LINKMANEXT_SECTION_REWRITE="yes"],
+	[no], [ASCIIDOC_LINKMANEXT_SECTION_REWRITE="no"],
+	[auto], [AS_IF([test "${MAN_SECTION_API}${MAN_SECTION_CFG}${MAN_SECTION_CMD_SYS}${MAN_SECTION_CMD_USR}${MAN_SECTION_MISC}" = x35817],
+			[ASCIIDOC_LINKMANEXT_SECTION_REWRITE="no"],
+			[ASCIIDOC_LINKMANEXT_SECTION_REWRITE="yes"])
+		],
+		[ASCIIDOC_LINKMANEXT_SECTION_REWRITE="yes"]
+	)
+AM_CONDITIONAL(ASCIIDOC_LINKMANEXT_SECTION_REWRITE, [test "${ASCIIDOC_LINKMANEXT_SECTION_REWRITE}" = yes])
+AC_SUBST(ASCIIDOC_LINKMANEXT_SECTION_REWRITE)
+AC_MSG_RESULT([${ASCIIDOC_LINKMANEXT_SECTION_REWRITE}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
