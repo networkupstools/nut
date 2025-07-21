@@ -4212,17 +4212,25 @@ AM_CONDITIONAL(MAN_DIR_AS_BASE, test "${MAN_DIR_AS_BASE}" = "yes")
 AC_SUBST(MAN_DIR_AS_BASE)
 
 dnl FIXME: handle "no" in a way to not link to distro man pages?
-dnl FIXME: spread out default templates per platform/distro
+dnl FIXME: spread out default templates per platform/distro some more
 AC_MSG_CHECKING([asciidoc template to use for linkmanext macro])
 AS_CASE([${nut_with_docs_man_linkmanext_template}],
-	[auto|yes|""|no], [ASCIIDOC_TEMPLATE_LINKMANEXT='https://linux.die.net/man/{0}/{target}'],
+	[auto|yes|""|no], [AS_CASE([${target_os}],
+		[solaris*|sunos*|SunOS*|illumos*], [ASCIIDOC_TEMPLATE_LINKMANEXT='https://docs.oracle.com/cd/E86824_01/html/E54763/{target}-{0}.html'],
+		[freebsd*], [ASCIIDOC_TEMPLATE_LINKMANEXT='https://man.freebsd.org/cgi/man.cgi?query={target}&sektion={0}'],
+		[openbsd*], [ASCIIDOC_TEMPLATE_LINKMANEXT='https://man.openbsd.org/man{0}/{target}.{0}],
+			[ASCIIDOC_TEMPLATE_LINKMANEXT='https://linux.die.net/man/{0}/{target}'])],
 		[ASCIIDOC_TEMPLATE_LINKMANEXT="${nut_with_docs_man_linkmanext_template}"])
 AC_SUBST([ASCIIDOC_TEMPLATE_LINKMANEXT])
 AC_MSG_RESULT([${ASCIIDOC_TEMPLATE_LINKMANEXT}])
 
 AC_MSG_CHECKING([asciidoc template to use for linkmanext2 macro])
 AS_CASE([${nut_with_docs_man_linkmanext2_template}],
-	[auto|yes|""|no], [ASCIIDOC_TEMPLATE_LINKMANEXT2='https://linux.die.net/man/{2}/{target}'],
+	[auto|yes|""|no], [AS_CASE([${target_os}],
+		[solaris*|sunos*|SunOS*|illumos*], [ASCIIDOC_TEMPLATE_LINKMANEXT2='https://docs.oracle.com/cd/E86824_01/html/E54763/{target}-{2}.html'],
+		[freebsd*], [ASCIIDOC_TEMPLATE_LINKMANEXT2='https://man.freebsd.org/cgi/man.cgi?query={target}&sektion={2}'],
+		[openbsd*], [ASCIIDOC_TEMPLATE_LINKMANEXT2='https://man.openbsd.org/man{2}/{target}.{2}],
+			[ASCIIDOC_TEMPLATE_LINKMANEXT2='https://linux.die.net/man/{2}/{target}'])],
 		[ASCIIDOC_TEMPLATE_LINKMANEXT2="${nut_with_docs_man_linkmanext2_template}"])
 AC_SUBST([ASCIIDOC_TEMPLATE_LINKMANEXT2])
 AC_MSG_RESULT([${ASCIIDOC_TEMPLATE_LINKMANEXT2}])
