@@ -302,6 +302,10 @@ https://github.com/networkupstools/nut/milestone/9
  - Revised generation of links to external manual pages in HTML rendering
    of NUT manual pages (previous recipe iterations left DocBook XML `ulink`
    tag "as is", which was not understood by web browsers).
+   [follow-up to PR #2797]
+
+ - Made the distro-dependent URL template for man pages configurable.
+   [follow-up to PR #2797]
 
  - Revised `make install-as-root` to fall back to legacy ways of enabling
    services, if `systemctl preset-all` fails (assumed due to a systemd 252

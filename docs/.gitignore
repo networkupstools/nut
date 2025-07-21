@@ -33,3 +33,4 @@ docinfo.xml.in.tmp
 /.check-pdf
 /.check-html-single
 /.check-html-chunked
+/asciidoc.conf

@@ -2529,6 +2529,9 @@ NUT_ARG_WITH([docs-man-section-misc], [man page section for overviews, conventio
 
 NUT_ARG_WITH([docs-man-dir-as-base], [are platform man directories named by base number (yes) or full section name (no)], [${DEFAULT_MAN_DIR_AS_BASE}])
 
+NUT_ARG_WITH([docs-man-linkmanext-template], [asciidoc template for "linkmanext" tags (distro-dependent)], [auto])
+NUT_ARG_WITH([docs-man-linkmanext2-template], [asciidoc template for "linkmanext2" tags (distro-dependent)], [auto])
+
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
     [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')],
@@ -4206,6 +4209,22 @@ MAN_DIR_AS_BASE="${nut_with_docs_man_dir_as_base}"
 AC_DEFINE_UNQUOTED([MAN_DIR_AS_BASE], ["${MAN_DIR_AS_BASE}"], [are platform man directories named by base number (yes) or full section name (no)])
 AM_CONDITIONAL(MAN_DIR_AS_BASE, test "${MAN_DIR_AS_BASE}" = "yes")
 AC_SUBST(MAN_DIR_AS_BASE)
+
+dnl FIXME: handle "no" in a way to not link to distro man pages?
+dnl FIXME: spread out default templates per platform/distro
+AC_MSG_CHECKING([asciidoc template to use for linkmanext macro])
+AS_CASE([${nut_with_docs_man_linkmanext_template}],
+	[auto|yes|""|no], [ASCIIDOC_TEMPLATE_LINKMANEXT='https://linux.die.net/man/{0}/{target}'],
+		[ASCIIDOC_TEMPLATE_LINKMANEXT="${nut_with_docs_man_linkmanext_template}"])
+AC_SUBST([ASCIIDOC_TEMPLATE_LINKMANEXT])
+AC_MSG_RESULT([${ASCIIDOC_TEMPLATE_LINKMANEXT}])
+
+AC_MSG_CHECKING([asciidoc template to use for linkmanext2 macro])
+AS_CASE([${nut_with_docs_man_linkmanext2_template}],
+	[auto|yes|""|no], [ASCIIDOC_TEMPLATE_LINKMANEXT2='https://linux.die.net/man/{2}/{target}'],
+		[ASCIIDOC_TEMPLATE_LINKMANEXT2="${nut_with_docs_man_linkmanext2_template}"])
+AC_SUBST([ASCIIDOC_TEMPLATE_LINKMANEXT2])
+AC_MSG_RESULT([${ASCIIDOC_TEMPLATE_LINKMANEXT2}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
@@ -6633,9 +6652,11 @@ AC_CONFIG_FILES([
  data/html/Makefile
  data/Makefile
  data/driver.list
+ docs/asciidoc.conf
  docs/Makefile
  docs/cables/Makefile
  docs/docinfo.xml
+ docs/man/asciidoc.conf
  docs/man/Makefile
  drivers/Makefile
  include/Makefile

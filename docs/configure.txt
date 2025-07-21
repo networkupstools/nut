@@ -420,6 +420,14 @@ NOTE: The resulting `GITLOG_START_POINT` value may also impact the oldest
 version considered by maintainer helper script `docs/docinfo.xml.sh` (if it
 specifies a `v*` tag, otherwise `v2.6.0` is used).
 
+	--with-docs-man-linkmanext-template='https://linux.die.net/man/{0}/{target}'
+	--with-docs-man-linkmanext2-template='https://linux.die.net/man/{2}/{target}'
+
+NUT manual pages can refer to system-provided programs, files or syscalls
+using custom-defined `linkmanext` or `linkmanext2` asciidoc macros.
+The options above should help packagers manage this; defaults are set for
+Linux standard filesystem layout.
+
 Python support
 ~~~~~~~~~~~~~~
 
