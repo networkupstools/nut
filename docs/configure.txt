@@ -430,6 +430,11 @@ They in turn use man page sections, which may be subject to rewrites similar
 to those applied to NUT pages themselves. The options above should help
 packagers manage this; defaults are set for Linux standard filesystem layout.
 
+NOTE: Avoid characters special for XML or HTML mark-up needed in the template
+(notably the `&` "ampersand" in HTML URLs with queries), entities like `&amp;`
+must be used to pass docbook part (not man page generation though) and then
+it stays in the final document, making the URL invalid. PRs welcome :)
+
 Python support
 ~~~~~~~~~~~~~~
 
