@@ -1142,6 +1142,7 @@ MAINTAINERCLEANFILES += $(NUT_SPELL_DICT).usage-report
 # When building out-of-tree, be sure to have all asciidoc resources
 # under the same dir structure (tool limitation)
 PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
+ASCIIDOC_LINKMANEXT_SECTION_REWRITE = @ASCIIDOC_LINKMANEXT_SECTION_REWRITE@
 
 # NOTE: Some "make" implementations prefix a relative or absent path to
 # the filenames in PREP_SRC, others (e.g. Sun make) prepend the absolute
@@ -1184,7 +1185,15 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
 	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
-	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
+	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' | \
+	            if [ x"$(ASCIIDOC_LINKMANEXT_SECTION_REWRITE)" = xyes ] ; then \
+	                sed \
+	                -e 's,\(linkmanext2?:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
+	            else cat ; fi; \
 	        fi < "$${F}" > "$${F}-prepped" || exit ;; \
 	        esac; \
 	        COUNT="`expr $$COUNT + 1`" ; \
@@ -1245,7 +1254,15 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
 	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
-	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
+	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' | \
+	            if [ x"$(ASCIIDOC_LINKMANEXT_SECTION_REWRITE)" = xyes ] ; then \
+	                sed \
+	                -e 's,\(linkmanext2?:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
+	            else cat ; fi; \
 	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
 	        || { rm -f "$@.working" ; exit 1 ; } ;; \
 	        esac ; \

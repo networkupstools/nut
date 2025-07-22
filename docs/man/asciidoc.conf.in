@@ -4,7 +4,7 @@
 # Usage: linkman:command[manpage-section]
 # Usage: linkman2:command-page[displayed-command,manpage-section]
 #
-# Note:
+# Notes:
 # - in linkman, {0} is the manpage section, while {target} is the command.
 # - in linkman2, {0} is the whole list of attributes, {1} is the command to be
 #   shown, {2} is the manpage section, while {target} is the command page.
@@ -12,6 +12,8 @@
 #   These macros are intended for system man pages (e.g. HTML links might lead
 #   to a generic internet site, or possibly to a distro-provided library
 #   online or locally).
+# - UNLIKE docs/asciidoc.conf we should not use "ulink" here, otherwise it
+#   goes "as is" into the generated HTML (and is not understood by browsers)!
 
 #
 # Show NUT link as: <command>(<section>); if section is defined, else just show
@@ -54,9 +56,9 @@ ifdef::backend-xhtml11[]
 # FIXME: Allow to define external man page URL structure and whether
 #  sections should change via configure script options:
 [linkmanext-inlinemacro]
-<ulink url="https://linux.die.net/man/{0}/{target}">{target}{0?({0})}</ulink>
+<a href="@ASCIIDOC_TEMPLATE_LINKMANEXT@">{target}{0?({0})}</a>
 [linkmanext2-inlinemacro]
-<ulink url="https://linux.die.net/man/{2}/{target}">{1={target}}{2?({2})}</ulink>
+<a href="@ASCIIDOC_TEMPLATE_LINKMANEXT2@">{1={target}}{2?({2})}</a>
 # Override HTML footer, to include NUT version
 [footer-text]
 Last updated {docdate} {doctime} -- Network UPS Tools {nutversion}

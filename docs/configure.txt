@@ -420,6 +420,21 @@ NOTE: The resulting `GITLOG_START_POINT` value may also impact the oldest
 version considered by maintainer helper script `docs/docinfo.xml.sh` (if it
 specifies a `v*` tag, otherwise `v2.6.0` is used).
 
+	--with-docs-man-linkmanext-template='https://linux.die.net/man/{0}/{target}'
+	--with-docs-man-linkmanext2-template='https://linux.die.net/man/{2}/{target}'
+	--enable-docs-man-linkmanext-section-rewrite
+
+NUT manual pages can refer to system-provided programs, files or syscalls
+using custom-defined `linkmanext` or `linkmanext2` asciidoc macros.
+They in turn use man page sections, which may be subject to rewrites similar
+to those applied to NUT pages themselves. The options above should help
+packagers manage this; defaults are set for Linux standard filesystem layout.
+
+NOTE: Avoid characters special for XML or HTML mark-up needed in the template
+(notably the `&` "ampersand" in HTML URLs with queries), entities like `&amp;`
+must be used to pass docbook part (not man page generation though) and then
+it stays in the final document, making the URL invalid. PRs welcome :)
+
 Python support
 ~~~~~~~~~~~~~~
 
