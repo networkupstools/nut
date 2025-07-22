@@ -97,7 +97,7 @@ NUT variables in a later revision, pre-configurable using `override.*` or
 `default.*` names.  Currently these driver setting names are just aligned
 with NUT standard names, where applicable, to minimize surprise later.
 
-*delay.shutdown*='num'::
+*energysave.delay*='num'::
 Time after entering battery mode before PC shutdown signal is triggered
 by the UPS (in seconds).
 

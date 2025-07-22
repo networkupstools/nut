@@ -125,7 +125,7 @@ typedef struct {
 } delay_param_t;
 
 static const delay_param_t delay_params[] = {
-	{ "ups.delay.shutdown",		REG_PC_SHUTDOWN_DELAY},
+	{ "battery.energysave.delay",	REG_PC_SHUTDOWN_DELAY},
 	{ "ups.timer.shutdown",		REG_PC_SHUTDOWN_TIME},
 	{ "ups.timer.start",		REG_PC_RESET_TIME},
 	{ "ups.delay.start",		REG_MAINS_RETURN_DELAY},
@@ -204,7 +204,8 @@ static void phoenixcontact_apply_advanced_config(modbus_t *ctx)
 
 	write_uint32_reg_bit(ctx, 0x1040, 5, false);
 
-	modbus_write_register(ctx, REG_PC_SHUTDOWN_DELAY,      GETVAL_U16("delay.shutdown",                    60));
+	/* NOTE: Not nut-names here (so far) but driver config variables - see addvar() below */
+	modbus_write_register(ctx, REG_PC_SHUTDOWN_DELAY,      GETVAL_U16("energysave.delay",                  60));	/* FIXME: default.battery.energysave.delay */
 	modbus_write_register(ctx, REG_PC_SHUTDOWN_TIME,       GETVAL_U16("timer.shutdown",                    60));
 	modbus_write_register(ctx, REG_PC_RESET_TIME,          GETVAL_U16("timer.start",                       5));
 	modbus_write_register(ctx, REG_WARNING_SOH_THRESHOLD,  GETVAL_U16("battery.warning_soh",               20));
@@ -796,7 +797,7 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "delay.shutdown", "Delay before initiating PC shutdown (in seconds)");
+	addvar(VAR_VALUE, "energysave.delay", "Delay after going on-battery before initiating PC shutdown (in seconds)");
 	addvar(VAR_VALUE, "timer.shutdown", "Time allowed for PC to shutdown (in seconds)");
 	addvar(VAR_VALUE, "timer.start", "Duration of output off before reboot (in seconds)");
 	addvar(VAR_VALUE, "delay.start", "Delay before switching back to mains (in seconds)");
