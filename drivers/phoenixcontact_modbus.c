@@ -74,7 +74,7 @@
 /* --- Shutdown & Mode Configuration --- */
 
 /* Macro for fetching a uint16_t config value with fallback */
-#define GETVAL_U16(name, fallback) (getval(name) ? (uint16_t)atoi(getval(name)) : (fallback))
+#define GETVAL_U16(name, fallback) (dstate_getinfo(name) ? (uint16_t)atoi(dstate_getinfo(name)) : (fallback))
 
 /* Time [s] after entering battery mode before shutdown signal (bit 15) is triggered */
 #define REG_PC_SHUTDOWN_DELAY        0x105A  /* default: 60s, range: 1–65535 */
@@ -129,8 +129,8 @@ static const delay_param_t delay_params[] = {
 	{ "ups.timer.shutdown",		REG_PC_SHUTDOWN_TIME},
 	{ "ups.timer.start",		REG_PC_RESET_TIME},
 	{ "ups.delay.start",		REG_MAINS_RETURN_DELAY},
-	{ "ups.mode.selector",		REG_MODE_SELECTOR_SWITCH},
-	{ "battery.warning_soh",	REG_WARNING_SOH_THRESHOLD},
+	{ "experimental.ups.mode.selector",	REG_MODE_SELECTOR_SWITCH},
+	{ "experimental.battery.warning_soh",	REG_WARNING_SOH_THRESHOLD},
 	{ "input.voltage.low.critical",	REG_VOLTAGE_BELOW_BATTERY},
 	{ "input.voltage.high.critical",	REG_VOLTAGE_ABOVE_MAINS }
 };
@@ -204,15 +204,15 @@ static void phoenixcontact_apply_advanced_config(modbus_t *ctx)
 
 	write_uint32_reg_bit(ctx, 0x1040, 5, false);
 
-	/* NOTE: Not nut-names here (so far) but driver config variables - see addvar() below */
-	modbus_write_register(ctx, REG_PC_SHUTDOWN_DELAY,      GETVAL_U16("energysave.delay",                  60));	/* FIXME: default.battery.energysave.delay */
-	modbus_write_register(ctx, REG_PC_SHUTDOWN_TIME,       GETVAL_U16("timer.shutdown",                    60));	/* FIXME: default.ups.timer.shutdown */
-	modbus_write_register(ctx, REG_PC_RESET_TIME,          GETVAL_U16("timer.start",                       5));	/* FIXME: default.ups.timer.start */
-	modbus_write_register(ctx, REG_WARNING_SOH_THRESHOLD,  GETVAL_U16("battery.warning_soh",               20));	/* FIXME: default.experimental.battery.warning_soh */
-	modbus_write_register(ctx, REG_MODE_SELECTOR_SWITCH,   GETVAL_U16("mode.selector",                     9));	/* FIXME: default.experimental.ups.mode.selector */
-	modbus_write_register(ctx, REG_VOLTAGE_BELOW_BATTERY,  GETVAL_U16("voltage.low.critical",              21000));	/* FIXME: default.input.voltage.low.critical */
-	modbus_write_register(ctx, REG_VOLTAGE_ABOVE_MAINS,    GETVAL_U16("voltage.high.critical",             29000));	/* FIXME: default.input.voltage.high.critical */
-	modbus_write_register(ctx, REG_MAINS_RETURN_DELAY,     GETVAL_U16("delay.start",                       10));	/* FIXME: default.ups.delay.start */
+	/* NOTE: you can configure these via override.* or default.* settings */
+	modbus_write_register(ctx, REG_PC_SHUTDOWN_DELAY,      GETVAL_U16("battery.energysave.delay",         60));
+	modbus_write_register(ctx, REG_PC_SHUTDOWN_TIME,       GETVAL_U16("ups.timer.shutdown",               60));
+	modbus_write_register(ctx, REG_PC_RESET_TIME,          GETVAL_U16("ups.timer.start",                   5));
+	modbus_write_register(ctx, REG_WARNING_SOH_THRESHOLD,  GETVAL_U16("experimental.battery.warning_soh", 20));
+	modbus_write_register(ctx, REG_MODE_SELECTOR_SWITCH,   GETVAL_U16("experimental.ups.mode.selector",    9));
+	modbus_write_register(ctx, REG_VOLTAGE_BELOW_BATTERY,  GETVAL_U16("input.voltage.low.critical",    21000));
+	modbus_write_register(ctx, REG_VOLTAGE_ABOVE_MAINS,    GETVAL_U16("input.voltage.high.critical",   29000));
+	modbus_write_register(ctx, REG_MAINS_RETURN_DELAY,     GETVAL_U16("ups.delay.start",                  10));
 
 	/* the value 0xFFFDFFFF sets bit 17 low so that the mode selector switch is overwritten in software */
 	write_uint32_register(ctx, 0x1076, 0xFFFDFFFF);
@@ -785,26 +785,28 @@ void upsdrv_shutdown(void)
 	 */
 
 	/* replace with a proper shutdown function */
-	upslogx(LOG_ERR, "shutdown not supported");
+	upslogx(LOG_ERR, "active shutdown not supported");
 	if (handling_upsdrv_shutdown > 0)
 		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
 {
+	printf("\nConsider setting default.* values for the following tweaks:"
+		"\nbattery.energysave.delay\tDelay after going on-battery before initiating PC shutdown (in seconds)"
+		"\nups.timer.shutdown\tTime allowed for PC to shutdown (in seconds)"
+		"\nups.timer.start\tDuration of output off before reboot (in seconds)"
+		"\nups.delay.start\tDelay before switching back to mains (in seconds)"
+		"\nexperimental.ups.mode.selector\tUPS operating mode (e.g. 9 = PC-Mode)"
+		"\nexperimental.battery.warning_soh\tBattery warning SOH threshold (%)"
+		"\ninput.voltage.low.critical\tThreshold [V] to switch to battery mode"
+		"\ninput.voltage.high.critical\tThreshold [V] to return to mains mode"
+		"\n");
 }
 
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "energysave.delay", "Delay after going on-battery before initiating PC shutdown (in seconds)");
-	addvar(VAR_VALUE, "timer.shutdown", "Time allowed for PC to shutdown (in seconds)");
-	addvar(VAR_VALUE, "timer.start", "Duration of output off before reboot (in seconds)");
-	addvar(VAR_VALUE, "delay.start", "Delay before switching back to mains (in seconds)");
-	addvar(VAR_VALUE, "mode.selector", "UPS operating mode (e.g. 9 = PC-Mode)");
-	addvar(VAR_VALUE, "battery.warning_soh", "Battery warning SOH threshold (%)");
-	addvar(VAR_VALUE, "voltage.low.critical", "Threshold [V] to switch to battery mode");
-	addvar(VAR_VALUE, "voltage.high.critical", "Threshold [V] to return to mains mode");
 }
 
 void upsdrv_initups(void)
