@@ -206,13 +206,13 @@ static void phoenixcontact_apply_advanced_config(modbus_t *ctx)
 
 	/* NOTE: Not nut-names here (so far) but driver config variables - see addvar() below */
 	modbus_write_register(ctx, REG_PC_SHUTDOWN_DELAY,      GETVAL_U16("energysave.delay",                  60));	/* FIXME: default.battery.energysave.delay */
-	modbus_write_register(ctx, REG_PC_SHUTDOWN_TIME,       GETVAL_U16("timer.shutdown",                    60));
-	modbus_write_register(ctx, REG_PC_RESET_TIME,          GETVAL_U16("timer.start",                       5));
-	modbus_write_register(ctx, REG_WARNING_SOH_THRESHOLD,  GETVAL_U16("battery.warning_soh",               20));
-	modbus_write_register(ctx, REG_MODE_SELECTOR_SWITCH,   GETVAL_U16("mode.selector",                     9));
-	modbus_write_register(ctx, REG_VOLTAGE_BELOW_BATTERY,  GETVAL_U16("voltage.low.critical",              21000));
-	modbus_write_register(ctx, REG_VOLTAGE_ABOVE_MAINS,    GETVAL_U16("voltage.high.critical",             29000));
-	modbus_write_register(ctx, REG_MAINS_RETURN_DELAY,     GETVAL_U16("delay.start",                       10));
+	modbus_write_register(ctx, REG_PC_SHUTDOWN_TIME,       GETVAL_U16("timer.shutdown",                    60));	/* FIXME: default.ups.timer.shutdown */
+	modbus_write_register(ctx, REG_PC_RESET_TIME,          GETVAL_U16("timer.start",                       5));	/* FIXME: default.ups.timer.start */
+	modbus_write_register(ctx, REG_WARNING_SOH_THRESHOLD,  GETVAL_U16("battery.warning_soh",               20));	/* FIXME: default.experimental.battery.warning_soh */
+	modbus_write_register(ctx, REG_MODE_SELECTOR_SWITCH,   GETVAL_U16("mode.selector",                     9));	/* FIXME: default.experimental.ups.mode.selector */
+	modbus_write_register(ctx, REG_VOLTAGE_BELOW_BATTERY,  GETVAL_U16("voltage.low.critical",              21000));	/* FIXME: default.input.voltage.low.critical */
+	modbus_write_register(ctx, REG_VOLTAGE_ABOVE_MAINS,    GETVAL_U16("voltage.high.critical",             29000));	/* FIXME: default.input.voltage.high.critical */
+	modbus_write_register(ctx, REG_MAINS_RETURN_DELAY,     GETVAL_U16("delay.start",                       10));	/* FIXME: default.ups.delay.start */
 
 	/* the value 0xFFFDFFFF sets bit 17 low so that the mode selector switch is overwritten in software */
 	write_uint32_register(ctx, 0x1076, 0xFFFDFFFF);
