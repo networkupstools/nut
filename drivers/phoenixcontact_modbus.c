@@ -798,7 +798,7 @@ void upsdrv_help(void)
 		"\nups.timer.start\tDuration of output off before reboot (in seconds)"
 		"\nups.delay.start\tDelay before switching back to mains (in seconds)"
 		"\nexperimental.ups.mode.selector\tUPS operating mode (e.g. 9 = PC-Mode)"
-		"\nexperimental.battery.warning_soh\tBattery warning SOH threshold (%)"
+		"\nexperimental.battery.warning_soh\tBattery warning SOH threshold (%%)"
 		"\ninput.voltage.low.critical\tThreshold [V] to switch to battery mode"
 		"\ninput.voltage.high.critical\tThreshold [V] to return to mains mode"
 		"\n");
