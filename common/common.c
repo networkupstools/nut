@@ -2970,9 +2970,12 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 				case '9':
 					/* Skip as irrelevant to memory access;
 					 * log just in case of deep troubleshooting,
-					 * but do not be noisy.
+					 * but do not be noisy. In fact, most NUT
+					 * blogs and other instructions suggest at
+					 * most -DDDDDD 6 levels of debug verbosity,
+					 * so we hide this one deeper :)
 					 */
-					upsdebugx(6, "%s: in-escape: assuming a cosmetic formatting char: '%c'", __func__, *p);
+					upsdebugx(7, "%s: in-escape: assuming a cosmetic formatting char: '%c'", __func__, *p);
 					break;
 
 				default:

@@ -208,10 +208,15 @@ https://github.com/networkupstools/nut/milestone/9
      report back to the driver that an argument value was not supported,
      so `setvar()` or `instcmd()` can not proceed safely and should return
      `STAT_SET_CONVERSION_FAILED` or `STAT_INSTCMD_CONVERSION_FAILED`. [#3017]
+   * `hid_ups_walk(HU_WALKMODE_INIT)`: report if exactly one of "fun" or "nuf"
+     dynamic value mapping methods is defined in a one-line table, and this
+     may preclude reads/writes of that variable. [#2956]
    * The `cps-hid` subdriver's existing mechanism for fixing broken report
      descriptors was extended to cover a newly reported case of nominal UPS
      power being incorrectly reported due to an unrealistically low maximum
      threshold, as seen with a EC850LCD device. [issue #2917, PR #2919]
+   * Further revision of "ECO mode" related code in `mge-hid` subdriver,
+     following up from work started for NUT v2.8.3 release. [PR #2956]
    * Added APC BVKxxxM2 and BKxxxM2-CH to list of devices where
      `lbrb_log_delay_sec=N` may be necessary to address spurious LOWBATT
      and REPLACEBATT events. [PR #2942, PR #3007, issue #2347, issue #3006]
