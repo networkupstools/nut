@@ -302,7 +302,7 @@ The UPS will still charge battery under this mode.
 Enable or disable ECO Mode [+enabled+/+disabled+].
 When input voltage/frequency are within acceptable range, the UPS will bypass voltage to output for energy saving.
 PFC and INVERTER are still active at this mode.
-Settable also `on the fly' with *bypass.start* and *bypass.stop* instant commands.
+Settable also "on the fly" with *bypass.start* and *bypass.stop* instant commands.
 
 *advanced_eco_mode =* 'string'::
 Enable or disable Advanced ECO Mode [+enabled+/+disabled+].
