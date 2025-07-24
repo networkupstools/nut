@@ -3,6 +3,7 @@
  *  Copyright (C)
  *    2017  Spiros Ioannou <sivann@inaccess.com>
  *    2024  Ricardo Rodriguez <rikyrod2001@gmail.com>
+ *    2025  Ulfat Hasangarayev <ulfathasangarayev@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,13 +25,14 @@
 #include "main.h"
 #include <modbus.h>
 #include "nut_stdint.h"
+#include <stdbool.h>
 
 #if !(defined NUT_MODBUS_LINKTYPE_STR)
 # define NUT_MODBUS_LINKTYPE_STR	"unknown"
 #endif
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
@@ -68,6 +70,38 @@
 #define TRIO_2G_20A_UPS_PARTNUMBER 1105556
 #define TRIO_2G_20A_UPS_DESCRIPTION "TRIO-UPS-2G/1AC/24DC/20"
 
+
+/* --- Shutdown & Mode Configuration --- */
+
+/* Macro for fetching a uint16_t config value with fallback */
+#define GETVAL_U16(name, fallback) (dstate_getinfo(name) ? (uint16_t)atoi(dstate_getinfo(name)) : (fallback))
+
+/* Time [s] after entering battery mode before shutdown signal (bit 15) is triggered */
+#define REG_PC_SHUTDOWN_DELAY        0x105A  /* default: 60s, range: 1–65535 */
+
+/* Time [s] allowed for PC to shut down before output turns off */
+#define REG_PC_SHUTDOWN_TIME         0x105D  /* default: 120s, range: 1–3600 */
+
+/* Time [s] output is off after PC shutdown before reboot */
+#define REG_PC_RESET_TIME            0x105E  /* default: 10s, range: 0–60 */
+
+/* Time [s] input voltage must be above threshold to return to mains*/
+#define REG_MAINS_RETURN_DELAY       0x1058  /* default: 10s */
+
+/* Selector mode switch: PC-Mode = 9 */
+#define REG_MODE_SELECTOR_SWITCH     0x1074  /* default: 0–9 */
+
+/* --- Battery Monitoring --- */
+
+/* SOH warning threshold [%] */
+#define REG_WARNING_SOH_THRESHOLD    0x1071  /* default: 0 (disabled), range: 1–100 */
+
+/* Switch to battery mode if below this input voltage [mV] */
+#define REG_VOLTAGE_BELOW_BATTERY    0x1056  /* example: 21000 */
+
+/* Switch to mains mode if above this voltage [mV] */
+#define REG_VOLTAGE_ABOVE_MAINS      0x1057  /* example: 23000 */
+
 typedef enum
 {
 	NONE,
@@ -85,6 +119,23 @@ static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest);
 
 static models UPSModel = NONE;
 
+typedef struct {
+	const char *nut_name;
+	uint16_t reg_addr;
+} delay_param_t;
+
+static const delay_param_t delay_params[] = {
+	{ "battery.energysave.delay",	REG_PC_SHUTDOWN_DELAY},
+	{ "ups.timer.shutdown",		REG_PC_SHUTDOWN_TIME},
+	{ "ups.timer.start",		REG_PC_RESET_TIME},
+	{ "ups.delay.start",		REG_MAINS_RETURN_DELAY},
+	{ "experimental.ups.mode.selector",	REG_MODE_SELECTOR_SWITCH},
+	{ "experimental.battery.warning_soh",	REG_WARNING_SOH_THRESHOLD},
+	{ "input.voltage.low.critical",	REG_VOLTAGE_BELOW_BATTERY},
+	{ "input.voltage.high.critical",	REG_VOLTAGE_ABOVE_MAINS }
+};
+
+
 /*
 	For the QUINT ups (first implementation of the driver) the modbus addresses
 	are reported in dec format,for the QUINT4 ups they are reported in hex format.
@@ -97,10 +148,76 @@ static models UPSModel = NONE;
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Spiros Ioannou <sivann@inaccess.com>\n",
+	"Spiros Ioannou <sivann@inaccess.com>\n"
+	"Ricardo Rodriguez <rikyrod2001@gmail.com>\n"
+	"Ulfat Hasangarayev <ulfathasangarayev@gmail.com>",
 	DRV_BETA,
 	{NULL}
 };
+
+static int write_uint32_register(modbus_t *ctx, int reg, uint32_t value)
+{
+	uint16_t regs[2];
+	int ret;
+
+	regs[0] = value >> 16;      /*High word*/
+	regs[1] = value & 0xFFFF;   /*Low word*/
+
+	ret = modbus_write_registers(ctx, reg, 2, regs);
+	if (ret == -1) {
+		upslogx(LOG_ERR, "Failed to write 32-bit value to reg 0x%04X: %s", (unsigned int)reg, modbus_strerror(errno));
+	}
+	return ret;
+}
+
+
+static int write_uint32_reg_bit(modbus_t *ctx, int reg, int bit_index, bool bit_value)
+{
+	uint16_t regs[2];
+	uint32_t val;
+
+	if (modbus_read_registers(ctx, reg, 2, regs) != 2) {
+		upslogx(LOG_ERR, "Failed to read 32-bit register 0x%04X: %s", (unsigned int)reg, modbus_strerror(errno));
+		return -1;
+	}
+
+	val = ((uint32_t)regs[0] << 16) | regs[1];
+
+	if (bit_value)
+		val |= (1U << bit_index);
+	else
+		val &= ~(1U << bit_index);
+
+	regs[0] = val >> 16;
+	regs[1] = val & 0xFFFF;
+
+	if (modbus_write_registers(ctx, reg, 2, regs) == -1) {
+		upslogx(LOG_ERR, "Failed to write modified 32-bit value to 0x%04X: %s", (unsigned int)reg, modbus_strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+static void phoenixcontact_apply_advanced_config(modbus_t *ctx)
+{
+	upslogx(LOG_NOTICE, "Applying advanced Phoenix Contact configuration...");
+
+	write_uint32_reg_bit(ctx, 0x1040, 5, false);
+
+	/* NOTE: you can configure these via override.* or default.* settings */
+	modbus_write_register(ctx, REG_PC_SHUTDOWN_DELAY,      GETVAL_U16("battery.energysave.delay",         60));
+	modbus_write_register(ctx, REG_PC_SHUTDOWN_TIME,       GETVAL_U16("ups.timer.shutdown",               60));
+	modbus_write_register(ctx, REG_PC_RESET_TIME,          GETVAL_U16("ups.timer.start",                   5));
+	modbus_write_register(ctx, REG_WARNING_SOH_THRESHOLD,  GETVAL_U16("experimental.battery.warning_soh", 20));
+	modbus_write_register(ctx, REG_MODE_SELECTOR_SWITCH,   GETVAL_U16("experimental.ups.mode.selector",    9));
+	modbus_write_register(ctx, REG_VOLTAGE_BELOW_BATTERY,  GETVAL_U16("input.voltage.low.critical",    21000));
+	modbus_write_register(ctx, REG_VOLTAGE_ABOVE_MAINS,    GETVAL_U16("input.voltage.high.critical",   29000));
+	modbus_write_register(ctx, REG_MAINS_RETURN_DELAY,     GETVAL_U16("ups.delay.start",                  10));
+
+	/* the value 0xFFFDFFFF sets bit 17 low so that the mode selector switch is overwritten in software */
+	write_uint32_register(ctx, 0x1076, 0xFFFDFFFF);
+}
+
 
 void upsdrv_initinfo(void)
 {
@@ -122,22 +239,24 @@ void upsdrv_initinfo(void)
 
 	mrir(modbus_ctx, 0x0005, 4, tab_reg);
 
-	/*	Method provided from Phoenix Conatct to establish the UPS model:
-		Read registers from 0x0005 to 0x0008 and "concatenate" them with the order
-		0x0008 0x0007 0x0006 0x0005 in hex form, convert the obtained number from hex to dec.
-		The first 7 most significant digits of the number in dec form are the part number of
-		the UPS.*/
+	/*
+	 * Method provided from Phoenix Conatct to establish the UPS model:
+	 * Read registers from 0x0005 to 0x0008 and "concatenate" them with the order
+	 * 0x0008 0x0007 0x0006 0x0005 in hex form, convert the obtained number from hex to dec.
+	 * The first 7 most significant digits of the number in dec form are the part number of
+	 * the UPS.
+	 */
 
 	PartNumber = (tab_reg[3] << 16) + tab_reg[2];
 	PartNumber = (PartNumber << 16) + tab_reg[1];
 	PartNumber = (PartNumber << 16) + tab_reg[0];
 
-	while(PartNumber > 10000000)
+	while (PartNumber > 10000000)
 	{
 		PartNumber /= 10;
 	}
 
-	switch(PartNumber)
+	switch (PartNumber)
 	{
 	case QUINT_5A_UPS_1_3AH_BATTERY_PARTNUMBER:
 		UPSModel = QUINT_UPS;
@@ -227,6 +346,8 @@ void upsdrv_updateinfo(void)
 	uint16_t battery_runtime;
 	uint16_t battery_capacity;
 	uint16_t output_current;
+	uint16_t value = 0;
+	size_t i;
 
 	errcount = 0;
 
@@ -235,6 +356,17 @@ void upsdrv_updateinfo(void)
 	switch (UPSModel)
 	{
 	case QUINT4_UPS:
+		for (i = 0; i < sizeof(delay_params) / sizeof(delay_params[0]); i++) {
+			if (modbus_read_registers(modbus_ctx, delay_params[i].reg_addr, 1, &value) != -1) {
+				dstate_setinfo(delay_params[i].nut_name, "%d", value);
+			} else {
+				upslogx(LOG_WARNING, "Failed to read %s (0x%04X): %s",
+						delay_params[i].nut_name,
+						delay_params[i].reg_addr,
+						modbus_strerror(errno));
+			}
+		}
+
 		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
 
 		tab_reg[0] = CHECK_BIT(actual_code_functions, 2); /* Battery mode is the 2nd bit of the register 0x2000 */
@@ -392,9 +524,9 @@ void upsdrv_updateinfo(void)
 # pragma GCC diagnostic pop
 #endif
 	}
-	if(UPSModel != TRIO_2G_UPS && UPSModel != TRIO_UPS)
+	if (UPSModel != TRIO_2G_UPS && UPSModel != TRIO_UPS)
 		dstate_setinfo("battery.charge", "%d", tab_reg[0]);
-	/* dstate_setinfo("battery.runtime",tab_reg[1]*60); */ /* also reported on this address, but less accurately */
+	/* dstate_setinfo("battery.runtime", tab_reg[1]*60); */ /* also reported on this address, but less accurately */
 
 	switch (UPSModel)
 	{
@@ -467,22 +599,22 @@ void upsdrv_updateinfo(void)
 #endif
 	}
 
-	if(UPSModel != TRIO_2G_UPS)
+	if (UPSModel != TRIO_2G_UPS)
 	{
 		dstate_setinfo("battery.voltage", "%f", (double) (tab_reg[0]) / 1000.0);
-		if(UPSModel != TRIO_UPS)
+		if (UPSModel != TRIO_UPS)
 		{
 			dstate_setinfo("battery.capacity", "%d", tab_reg[8] * 10);
 			dstate_setinfo("battery.temperature", "%d", tab_reg[1] - 273);
 			dstate_setinfo("battery.runtime", "%d", tab_reg[3]);
 		}
 	}
-	
-	if(UPSModel != TRIO_UPS)
+
+	if (UPSModel != TRIO_UPS)
 	{
 		dstate_setinfo("output.current", "%f", (double) (tab_reg[6]) / 1000.0);
 	}
-	
+
 
 	/* ALARMS */
 
@@ -552,7 +684,7 @@ void upsdrv_updateinfo(void)
 
 		if (CHECK_BIT(actual_alarms1, 14))
 			alarm_set("Low Battery (Service)");
-		
+
 		break;
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29840, 1, tab_reg);
@@ -653,13 +785,23 @@ void upsdrv_shutdown(void)
 	 */
 
 	/* replace with a proper shutdown function */
-	upslogx(LOG_ERR, "shutdown not supported");
+	upslogx(LOG_ERR, "active shutdown not supported");
 	if (handling_upsdrv_shutdown > 0)
 		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
 {
+	printf("\nConsider setting default.* values for the following tweaks:"
+		"\nbattery.energysave.delay\tDelay after going on-battery before initiating PC shutdown (in seconds)"
+		"\nups.timer.shutdown\tTime allowed for PC to shutdown (in seconds)"
+		"\nups.timer.start\tDuration of output off before reboot (in seconds)"
+		"\nups.delay.start\tDelay before switching back to mains (in seconds)"
+		"\nexperimental.ups.mode.selector\tUPS operating mode (e.g. 9 = PC-Mode)"
+		"\nexperimental.battery.warning_soh\tBattery warning SOH threshold (%%)"
+		"\ninput.voltage.low.critical\tThreshold [V] to switch to battery mode"
+		"\ninput.voltage.high.critical\tThreshold [V] to return to mains mode"
+		"\n");
 }
 
 /* list flags and values that you want to receive via -x */
@@ -674,24 +816,25 @@ void upsdrv_initups(void)
 	upsdebugx(2, "upsdrv_initups");
 
 	modbus_ctx = modbus_new_rtu(device_path, 115200, 'E', 8, 1);
+
 	if (modbus_ctx == NULL)
 		fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
 	r = modbus_set_slave(modbus_ctx, MODBUS_SLAVE_ID);	/* slave ID */
-	if (r < 0) 
+	if (r < 0)
 	{
 		modbus_free(modbus_ctx);
-		fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d",MODBUS_SLAVE_ID);
+		fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d", MODBUS_SLAVE_ID);
 	}
 
-	if (modbus_connect(modbus_ctx) == -1) 
+	if (modbus_connect(modbus_ctx) == -1)
 	{
 		modbus_free(modbus_ctx);
 		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
 	}
 
 	result = mrir(modbus_ctx, 0x0004, 1, &FWVersion);
-	if(result == -1)
+	if (result == -1)
 	{
 		modbus_close(modbus_ctx);
 		modbus_free(modbus_ctx);
@@ -701,13 +844,13 @@ void upsdrv_initups(void)
 			fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
 		r = modbus_set_slave(modbus_ctx, MODBUS_SLAVE_ID);	/* slave ID */
-		if (r < 0) 
+		if (r < 0)
 		{
 			modbus_free(modbus_ctx);
-			fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d",MODBUS_SLAVE_ID);
+			fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d", MODBUS_SLAVE_ID);
 		}
 
-		if (modbus_connect(modbus_ctx) == -1) 
+		if (modbus_connect(modbus_ctx) == -1)
 		{
 			modbus_free(modbus_ctx);
 			fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
@@ -715,14 +858,15 @@ void upsdrv_initups(void)
 
 		r = mrir(modbus_ctx, 0x0004, 1, &FWVersion);
 
-		if(r < 0)
+		if (r < 0)
 		{
 			fatalx(EXIT_FAILURE, "UPS does not repond to read requests.");
 		}
-		
-	}
-	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
 
+	}
+
+	phoenixcontact_apply_advanced_config(modbus_ctx);
+	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
 }
 
 
