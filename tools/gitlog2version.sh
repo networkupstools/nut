@@ -440,14 +440,65 @@ report_output() {
 }
 
 DESC=""
+NUT_VERSION_TRIED_GIT=false
 if $NUT_VERSION_PREFER_GIT ; then
     if (command -v git && git rev-parse --show-toplevel) >/dev/null 2>/dev/null ; then
         getver_git || { echo "$0: Fall back to pre-set default version information" >&2 ; DESC=""; }
+        NUT_VERSION_TRIED_GIT=true
+    else
+        NUT_VERSION_PREFER_GIT=false
     fi
 fi
 
 if [ x"$DESC" = x ]; then
     getver_default
+    if $NUT_VERSION_TRIED_GIT ; then
+        if CURRENT_COMMIT="`git log -1 --format='%h'`" && [ -n "${CURRENT_COMMIT}" ] ; then
+            # Cases help rule out values populated via fallbacks from files;
+            # try to not add inconsistencies though (only add if nobody has it)
+            CAN_TACK=true
+            case "$VER5" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+            case "$VER50" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+            case "$DESC5" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+            case "$DESC50" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+
+            if ${CAN_TACK} ; then
+                echo "$0: Git failed originally, but current commit '${CURRENT_COMMIT}' is known (shallow checkout?); tack it to values that lack it" >&2
+                case "$VER5" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        VER5="${VER5}+g${CURRENT_COMMIT}" ;;
+                    *)  VER5="${VER5}-0+g${CURRENT_COMMIT}" ;;
+                esac
+                case "$VER50" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        VER50="${VER50}+g${CURRENT_COMMIT}" ;;
+                    *)  VER50="${VER50}-0+g${CURRENT_COMMIT}" ;;
+                esac
+                case "$DESC5" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        DESC5="${DESC5}+g${CURRENT_COMMIT}" ;;
+                    *)  DESC5="${DESC5}-0+g${CURRENT_COMMIT}" ;;
+                esac
+                case "$DESC50" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        DESC50="${DESC50}+g${CURRENT_COMMIT}" ;;
+                    *)  DESC50="${DESC50}-0+g${CURRENT_COMMIT}" ;;
+                esac
+            fi
+        fi
+    fi
 fi
 
 report_debug
