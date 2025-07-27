@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.42"
+#define DRIVER_VERSION	"0.45"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -72,6 +72,7 @@
 #include "nutdrv_qx_bestups.h"
 #include "nutdrv_qx_hunnox.h"
 #include "nutdrv_qx_innovart31.h"
+#include "nutdrv_qx_innovart33.h"
 #include "nutdrv_qx_mecer.h"
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
@@ -102,6 +103,7 @@ static subdriver_t	*subdriver_list[] = {
 	&hunnox_subdriver,
 	&ablerex_subdriver,
 	&innovart31_subdriver,
+	&innovart33_subdriver,
 	&q2_subdriver,
 	&q6_subdriver,
 	&gtec_subdriver,
@@ -2460,8 +2462,12 @@ int	instcmd(const char *cmdname, const char *extradata)
 		return instcmd("beeper.enable", NULL);
 	}
 
+	upsdebug_INSTCMD_STARTING(cmdname, extradata);
+
+	/* Historically we did user-visible LOG_INFO in this driver
+	 * with this markup, so we still do */
 	upslogx(LOG_INFO, "%s(%s, %s)",
-		__func__, cmdname,
+		__func__, NUT_STRARG(cmdname),
 		extradata ? extradata : "[NULL]");
 
 	/* Retrieve item by command name */
@@ -2469,6 +2475,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 
 	/* Check for fallback if not found */
 	if (item == NULL) {
+		/* Process aliases/fallbacks */
 
 		if (!strcasecmp(cmdname, "load.on")) {
 			return instcmd("load.on.delay", "0");
@@ -2485,7 +2492,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 			/* Ensure "ups.start.auto" is set to "yes", if supported */
 			if (dstate_getinfo("ups.start.auto")) {
 				if (setvar("ups.start.auto", "yes") != STAT_SET_HANDLED) {
-					upslogx(LOG_ERR, "%s: FAILED", __func__);
+					upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
 					return STAT_INSTCMD_FAILED;
 				}
 			}
@@ -2507,7 +2514,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 			/* Ensure "ups.start.auto" is set to "no", if supported */
 			if (dstate_getinfo("ups.start.auto")) {
 				if (setvar("ups.start.auto", "no") != STAT_SET_HANDLED) {
-					upslogx(LOG_ERR, "%s: FAILED", __func__);
+					upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
 					return STAT_INSTCMD_FAILED;
 				}
 			}
@@ -2531,13 +2538,14 @@ int	instcmd(const char *cmdname, const char *extradata)
 	extradata = extradata ? extradata : item->dfl;
 	snprintf(value, sizeof(value), "%s", extradata ? extradata : "");
 
+	errno = 0;
 	/* Preprocess command */
 	if (item->preprocess != NULL
 	&&  item->preprocess(item, value, sizeof(value))
 	) {
 		/* Something went wrong */
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
-		return STAT_INSTCMD_FAILED;
+		upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
+		return (errno == EINVAL ? STAT_INSTCMD_CONVERSION_FAILED : STAT_INSTCMD_FAILED);
 	}
 
 	/* No preprocess function -> nothing to do with extradata */
@@ -2545,10 +2553,12 @@ int	instcmd(const char *cmdname, const char *extradata)
 		snprintf(value, sizeof(value), "%s", "");
 
 	/* Send the command, get the reply */
+	upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extradata);
+	errno = 0;
 	if (qx_process(item, strlen(value) > 0 ? value : NULL)) {
 		/* Something went wrong */
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
-		return STAT_INSTCMD_FAILED;
+		upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
+		return (errno == EINVAL ? STAT_INSTCMD_CONVERSION_FAILED : STAT_INSTCMD_FAILED);
 	}
 
 	/* We got a reply from the UPS:
@@ -2566,7 +2576,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
+		upslogx(LOG_INSTCMD_FAILED, "%s: FAILED", __func__);
 		return STAT_INSTCMD_FAILED;
 
 	}
@@ -2585,6 +2595,8 @@ int	setvar(const char *varname, const char *val)
 	char		value[SMALLBUF];
 	st_tree_t	*root = (st_tree_t *)dstate_getroot();
 	int		ok = 0;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* Retrieve variable */
 	item = find_nut_info(varname, QX_FLAG_SETVAR, QX_FLAG_SKIP);
@@ -2623,7 +2635,8 @@ int	setvar(const char *varname, const char *val)
 			strlen(val) ? val : "[NULL]");
 
 		if (!strlen(val)) {
-			upslogx(LOG_ERR, "%s: value not given for %s",
+			/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: value not given for %s",
 				__func__, item->info_type);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2645,7 +2658,8 @@ int	setvar(const char *varname, const char *val)
 		long	valuetoset, min, max;
 
 		if (strspn(value, "0123456789 .") != strlen(value)) {
-			upslogx(LOG_ERR, "%s: non numerical value [%s: %s]",
+			/* FIXME: ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: non numerical value [%s: %s]",
 				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2659,7 +2673,8 @@ int	setvar(const char *varname, const char *val)
 			info_rw_t	*rvalue;
 
 			if (!strlen(value)) {
-				upslogx(LOG_ERR, "%s: value not given for %s",
+				/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+				upslogx(LOG_SET_UNKNOWN, "%s: value not given for %s",
 					__func__, item->info_type);
 				return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 			}
@@ -2722,7 +2737,8 @@ int	setvar(const char *varname, const char *val)
 		}
 
 		if (!ok) {
-			upslogx(LOG_ERR, "%s: value out of range [%s: %s]",
+			/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: value out of range [%s: %s]",
 				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2737,7 +2753,8 @@ int	setvar(const char *varname, const char *val)
 			info_rw_t	*envalue;
 
 			if (!strlen(value)) {
-				upslogx(LOG_ERR, "%s: value not given for %s",
+				/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+				upslogx(LOG_SET_UNKNOWN, "%s: value not given for %s",
 					__func__, item->info_type);
 				return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 			}
@@ -2789,7 +2806,8 @@ int	setvar(const char *varname, const char *val)
 		}
 
 		if (!ok) {
-			upslogx(LOG_ERR, "%s: value out of range [%s: %s]",
+			/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: value out of range [%s: %s]",
 				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2811,7 +2829,8 @@ int	setvar(const char *varname, const char *val)
 		 * even on architectures with a moderate INTMAX
 		 */
 		if (aux < (int)strlen(value)) {
-			upslogx(LOG_ERR, "%s: value is too long [%s: %s]",
+			/* FIXME: ..._INVALID? ..._CONVERSION_FAILED? */
+			upslogx(LOG_SET_UNKNOWN, "%s: value is too long [%s: %s]",
 				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
@@ -2819,12 +2838,15 @@ int	setvar(const char *varname, const char *val)
 	}
 
 	/* Preprocess value: from NUT-compliant to UPS-compliant */
+	errno = 0;
 	if (item->preprocess != NULL
 	&&  item->preprocess(item, value, sizeof(value))
 	) {
 		/* Something went wrong */
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
-		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
+		/* FIXME: Actually ..._FAILED? */
+		upslogx(LOG_SET_UNKNOWN, "%s: FAILED", __func__);
+		/* TODO: HANDLED but FAILED, not UNKNOWN! */
+		return (errno == EINVAL ? STAT_SET_CONVERSION_FAILED : STAT_SET_UNKNOWN);
 	}
 
 	/* Handle server side variable */
@@ -2841,10 +2863,13 @@ int	setvar(const char *varname, const char *val)
 		snprintf(value, sizeof(value), "%s", "");
 
 	/* Actual variable setting */
+	errno = 0;
 	if (qx_process(item, strlen(value) > 0 ? value : NULL)) {
 		/* Something went wrong */
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
-		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
+		/* FIXME: Actually ..._FAILED? */
+		upslogx(LOG_SET_UNKNOWN, "%s: FAILED", __func__);
+		/* TODO: HANDLED but FAILED, not UNKNOWN! */
+		return (errno == EINVAL ? STAT_SET_CONVERSION_FAILED : STAT_SET_UNKNOWN);
 	}
 
 	/* We got a reply from the UPS:
@@ -2861,7 +2886,8 @@ int	setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: FAILED", __func__);
+		/* FIXME: Actually ..._FAILED? */
+		upslogx(LOG_SET_UNKNOWN, "%s: FAILED", __func__);
 		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 
 	}
@@ -4371,13 +4397,19 @@ item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsig
 }
 
 /* Process the answer we got back from the UPS
- * Return -1 on errors, 0 on success */
+ * Return -1 on errors, 0 on success
+ * Can set errno, note that EINVAL means unsupported
+ * parameter value here!
+ */
 static int	qx_process_answer(item_t *item, const size_t len)
 {
+	errno = 0;
+
 	/* Query rejected by the UPS */
 	if (subdriver->rejected && !strcasecmp(item->answer, subdriver->rejected)) {
 		upsdebugx(2, "%s: query rejected by the UPS (%s)",
 			__func__, item->info_type);
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -4385,6 +4417,7 @@ static int	qx_process_answer(item_t *item, const size_t len)
 	if (item->answer_len && len < item->answer_len) {
 		upsdebugx(2, "%s: short reply (%s)",
 			__func__, item->info_type);
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -4414,6 +4447,7 @@ static int	qx_process_answer(item_t *item, const size_t len)
 		snprintf(item->value, sizeof(item->value), "%s", "");
 	}
 
+	errno = 0;
 	return 0;
 }
 
@@ -4435,6 +4469,10 @@ int	qx_process(item_t *item, const char *command)
 	/* Prepare the command to be used */
 	memset(cmd, 0, cmdsz);
 	snprintf(cmd, cmdsz, "%s", command ? command : item->command);
+
+	/* Whether the sub-driver code sets errno or not, so be it;
+	 * note that EINVAL means unsupported parameter value here!
+	 */
 
 	/* Preprocess the command */
 	if (
@@ -4527,19 +4565,7 @@ int	ups_infoval_set(item_t *item)
 				return -1;
 			}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-			snprintf(value, sizeof(value), item->dfl, strtod(value, NULL));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+			snprintf_dynamic(value, sizeof(value), item->dfl, "%f", strtod(value, NULL));
 		}
 
 	}

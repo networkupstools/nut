@@ -237,6 +237,7 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 :; rm -f Makefile configure
 :; ./autogen.sh && \
    ./configure --with-all --with-dev --with-doc --enable-spellcheck \
+      --enable-docs-man-for-progs-built-only=no                     \
       --enable-warnings --enable-Werror --enable-maintainer-mode && \
    make -j 8 all && \
    make -j 8 spellcheck && \
@@ -254,8 +255,10 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 * don't forget to push not only the code, but also the tag:
 +
 ----
-:; git push upstream && git push --tags upstream
+:; git push upstream && git push upstream v2.8.0
 ----
+** avoid `git push --tags` so your experimental tags do not pollute common
+   NUT repository
 
 * `make dist-files` (especially if you did not `make distcheck` above,
   or had some changes since then) to store the source tarball, checksum
@@ -283,7 +286,8 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 ** in `source` submodule add a copy of tarball, checksum and hash files for
    download: `make dist{,-hash,-sig}` (or since NUT v2.8.3, `make dist-files`)
 *** for a `new-X.Y.Z.txt` file use the `NEWS.adoc` with a stripped title
-    (see existing files)
+    and prominent `link:` asciidoc markup (see existing files)
+** update `historic/index.txt` with an entry for the new release tag and date
 ** `git tag` the website release
 ** generate and publish a "historic" sub-site snapshot (currently manually,
    check comments in nut-website's `ci_build.sh` script and/or its README file)
@@ -301,7 +305,26 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
    instructions fit the reality (needed maintainer keys are published, etc.)
 
 * draft and publish a GitHub release based on the signed tag
-** attach the same copy of tarball, checksum and hash files as for nut-website
+** attach *the same copy of* the tarball, checksum and hash files as published
+   on nut-website (prepared by `make dist-files` above)
+** when https://ci.appveyor.com/project/nut-travis/nut is done building the
+   release commit (takes about an hour, more if the build queue is congested),
+   download and rename the 7z archive, e.g.:
++
+----
+:; mv NUT-for-Windows-x86_64-SNAPSHOT-2.8.3.3028-master.7z \
+      NUT-for-Windows-x86_64-RELEASE-2.8.3.7z
+----
++
+and attach it to the GitHub release artifacts, and to nut-website via
+   the https://github.com/networkupstools/nut-package-archive.git repository
+   (its `index.html` will get updated as part of subsequent nut-website build,
+   a templated reference from NUT Downloads page is already in place).
++
+FIXME: get our AppVeyor recipe to name the release archive as such, the scripts
+should already know everything needed for this.  Explore git-tag based builds?
++
+FIXME: eventually get real installer files made, publish them then.
 
 * Make sure that the PyNUT module for the tagged release got published to
   the main PyPI repository, as a build associated with the NUT release

@@ -11,6 +11,7 @@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libupsclient.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
@@ -18,7 +19,10 @@ $(top_builddir)/clients/libupsclient.la: dummy
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
-LDADD_COMMON = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
+LDADD_COMMON = \
+	$(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libparseconf.la
 LDADD_DRIVERS = libdummy.la libdummy_upsdrvquery.la $(LDADD_COMMON)
 LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
@@ -58,13 +62,13 @@ endif HAVE_LIBREGEX
 # in top level.
 NUTSW_DRIVERLIST_DUMMY_UPS = dummy-ups$(EXEEXT)
 NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
- clone clone-outlet apcupsd-ups skel
+ clone clone-outlet failover apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
- mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino	\
+ mge-utalk microdowell microsol-apc mge-shut nutdrv_hashx oneac optiups powercom powervar_cx_ser rhino	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser
+ blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser ve-direct
 if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
 SERIAL_DRIVERLIST += nhs_ser
@@ -74,7 +78,7 @@ if WITH_DMFMIB
   SNMP_DRIVERLIST += snmp-ups-dmf
 endif
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
- blazer_usb richcomm_usb riello_usb \
+ blazer_usb richcomm_usb riello_usb powervar_cx_usb \
  nutdrv_atcl_usb
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 SERIAL_USB_DRIVERLIST = \
@@ -179,12 +183,16 @@ microsol_apc_SOURCES = microsol-apc.c microsol-common.c
 microsol_apc_LDADD = $(LDADD) -lm
 nhs_ser_SOURCES = nhs_ser.c
 nhs_ser_LDADD = $(LDADD) -lm
+nutdrv_hashx_SOURCES = nutdrv_hashx.c
+nutdrv_hashx_LDADD = $(LDADD) -lm
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
 powercom_LDADD = $(LDADD) -lm
 powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
 powerpanel_LDADD = $(LDADD) -lm
+powervar_cx_ser_SOURCES = powervar_cx_ser.c powervar_cx.c
+powervar_cx_ser_CFLAGS = $(AM_CFLAGS) -DPVAR_SERIAL=1
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
@@ -203,6 +211,8 @@ sms_ser_SOURCES = sms_ser.c
 sms_ser_LDADD = $(LDADD) -lm
 bicker_ser_SOURCES = bicker_ser.c
 bicker_ser_LDADD = $(LDADD) -lm
+ve_direct_SOURCES = ve-direct.c
+ve_direct_LDADD = $(LDADD) -lm
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
@@ -220,6 +230,9 @@ endif WITH_SSL
 # Clone drivers (in NUTSW_DRIVERLIST)
 clone_SOURCES = clone.c
 clone_outlet_SOURCES = clone-outlet.c
+
+# failover driver (in NUTSW_DRIVERLIST)
+failover_SOURCES = failover.c
 
 # apcupsd client driver (in NUTSW_DRIVERLIST)
 apcupsd_ups_SOURCES = apcupsd-ups.c
@@ -240,10 +253,15 @@ LIBUSB_IMPL = libusb1.c
 endif WITH_LIBUSB_1_0
 USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
- openups-hid.c powervar-hid.c delta_ups-hid.c ecoflow-hid.c ever-hid.c legrand-hid.c salicru-hid.c
+ openups-hid.c powervar-hid.c delta_ups-hid.c ecoflow-hid.c ever-hid.c \
+ legrand-hid.c salicru-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+
+powervar_cx_usb_SOURCES = powervar_cx_usb.c powervar_cx.c $(LIBUSB_IMPL) usb-common.c
+powervar_cx_usb_CFLAGS = $(AM_CFLAGS) -DPVAR_USB=1
+powervar_cx_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 tripplite_usb_SOURCES = tripplite_usb.c $(LIBUSB_IMPL) usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
@@ -411,6 +429,7 @@ nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif WITH_USB
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
  nutdrv_qx_innovart31.c	\
+ nutdrv_qx_innovart33.c	\
  nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
  nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c nutdrv_qx_voltronic.c	\
@@ -426,17 +445,17 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 dist_noinst_HEADERS = \
  apc_modbus.h apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h baytech-rpc3nc-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
- dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
+ dummy-ups.h explore-hid.h failover.h gamatronic.h genericups.h	\
  generic_gpio_common.h generic_gpio_libgpiod.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
- powercom.h powerpanel.h powerp-bin.h powerp-txt.h raritan-pdu-mib.h	\
+ powercom.h powerpanel.h powerp-bin.h powerp-txt.h powervar_cx.h raritan-pdu-mib.h	\
  safenet.h serial.h sms_ser.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
- nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
+ nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_innovart33.h nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  upsdrvquery.h \
@@ -466,7 +485,11 @@ libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
 EXTRA_LTLIBRARIES += libdummy_mockdrv.la
 libdummy_mockdrv_la_SOURCES = main.c dstate.c
 libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
-libdummy_mockdrv_la_LDFLAGS = -static $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
+libdummy_mockdrv_la_LDFLAGS = \
+	-static \
+	$(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libparseconf.la
 
 # Also define a library with serial-port UPS routines needed for nut-scanner
 noinst_LTLIBRARIES = libserial-nutscan.la

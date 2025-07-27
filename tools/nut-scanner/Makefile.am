@@ -38,20 +38,18 @@ $(top_builddir)/common/libnutdmfsnmp.la \
 $(top_builddir)/common/libnutwincompat.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonstr.la \
+$(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-# do not hard depend on '../include/nut_version.h', since it blocks
+# do not hard depend on '../clients/libupsclient-version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
-# BUILT_SOURCES (in ../include) will ensure nut_version.h will
+# BUILT_SOURCES (in ../clients) will ensure libupsclient-version.h will
 # be built before anything else
-# FIXME: this can cause rebuilds of nut_version.h for every mention
-#  (especially if we `configire --enable-force-nut-version-header`,
-#  which is default). This also causes binary build of libupsclient.la
+# FIXME: this can cause re-evaluation, possibly rebuilds, of libupsclient.la
 #  to look up its metadata and generate libupsclient-version.h which
 #  may be a bit of overkill (especially in cross-build cases etc.)
 #  Notably this pops up in `configure && make dist(check)` rituals.
-nut-scanner.c: $(top_builddir)/include/nut_version.h
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
 # We optionally append values to this below
@@ -140,7 +138,7 @@ libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 3:0:0
+libnutscan_la_LDFLAGS += -version-info 4:0:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -152,9 +150,9 @@ libnutscan_la_LDFLAGS += -version-info 3:0:0
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
 if WITH_DMF
-libnutscan_la_LDFLAGS += -export-symbols-regex '^((dmf)?nutscan_|uninit_snmp_device_table|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^((dmf)?nutscan_|uninit_snmp_device_table|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|snprintf_dynamic|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
 else !WITH_DMF
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|snprintf_dynamic|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
 endif !WITH_DMF
 
 libnutscan_la_CFLAGS = \
@@ -179,7 +177,9 @@ endif !WITH_DMF
 endif WITH_SNMP
 endif WITH_NEON
 
-libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
+libnutscan_la_LIBADD += \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libcommonstr.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = \

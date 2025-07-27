@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3505 utf-8
+personal_ws-1.1 en 3579 utf-8
 AAC
 AAS
 ABI
@@ -92,6 +92,8 @@ BCD
 BCHARGE
 BCM
 BD
+BKnnnnM
+BKxxxM
 BMC
 BNT
 BOH
@@ -103,6 +105,8 @@ BTS
 BTV
 BUFRD
 BUZ
+BVKnnnnM
+BVKxxxM
 BXnnnnMI
 BYP
 BZ
@@ -191,6 +195,7 @@ CSN
 CSS
 CTB
 CUDA
+CUSPP
 CVE
 CXR
 CXX
@@ -230,9 +235,11 @@ CygWin
 Cygwin
 DATACABLE
 DATAPATH
+DBCF
 DCE
 DCF
 DCO
+DDA
 DDD
 DDDDD
 DDDDDD
@@ -313,6 +320,7 @@ Dsystemtap
 Dynamix
 Dynex
 EAGAIN
+EB
 EE
 EEPROM
 EFI
@@ -359,6 +367,7 @@ Emilien
 Energia
 EnergySaving
 Enphase's
+Epyc
 Erikson
 Eriksson
 Evgeny
@@ -366,7 +375,10 @@ Exar
 ExecCGI
 ExecStart
 ExecStartPre
+FAILOVER
+FBCA
 FD
+FDE
 FEMEA
 FFF
 FH
@@ -428,6 +440,7 @@ GPLv
 GPSER
 GRs
 GTK
+GTS
 GUESSTIMATION
 GUID
 GUIs
@@ -482,6 +495,7 @@ HOWTO
 HPE
 HPUX
 HREF
+HU
 HUPCL
 HUZKVEIkHnC
 HV
@@ -598,13 +612,16 @@ Korte
 Kralewski
 Kroll
 Krpec
+Kubanek
 Kubernetes
+Kuttnig
 Kx
 LASTXFER
 LCDRM
 LCDRT
 LCDRTXL
 LDADD
+LDAP
 LDFLAGS
 LDLC
 LDRIVER
@@ -948,6 +965,7 @@ Pavel
 Pawe
 PbAc
 Perriault
+Petr
 Petri
 Petter
 Pezzini
@@ -969,10 +987,12 @@ PowerAlert
 PowerCOM
 PowerCom
 PowerES
+PowerGuide
 PowerKinetics
 PowerMac
 PowerMan
 PowerManagerII
+PowerMaster
 PowerMust
 PowerNet
 PowerOff
@@ -992,6 +1012,7 @@ PowerWare
 Powerchute
 Powercool
 Powervar
+Powervar's
 Powerwell
 Prachi
 Prereqs
@@ -1025,6 +1046,7 @@ QLDL
 QMD
 QMF
 QMOD
+QOL
 QP
 QPAR
 QPD
@@ -1035,6 +1057,7 @@ QVFW
 QWS
 QinHeng
 Quette
+RBAC
 RBWARNTIME
 RDLCK
 RDNT
@@ -1064,6 +1087,7 @@ RRR
 RSA
 RSM
 RST
+RTC
 RTU
 RTXL
 RUPS
@@ -1324,6 +1348,8 @@ TopGuard
 Toth
 TrackingID
 TrackingResult
+Trevisan
+Treviño
 Tripp
 TrippLite
 Tru
@@ -1746,8 +1772,10 @@ cgi
 cgipath
 cgroup
 cgroupsv
+changelog
 chargetime
 charset
+checkruntime
 checksum
 checksums
 chgrp
@@ -1800,8 +1828,11 @@ configurationProvider
 configureaz
 configureaza
 confpath
+conn
 const
 contrib
+cooldown
+coolofftime
 copyrightable
 coreutils
 cout
@@ -1871,6 +1902,7 @@ ddk
 ddl
 de
 deUNV
+deadtime
 debian
 debootstrap
 debouncing
@@ -1895,12 +1927,14 @@ desc
 deschis
 descr
 desde
+desertwitch
 designator
 dev
 devclient
 devctl
 devd
 devel
+devfs
 deviceGetClients
 deviceamperes
 devicelua
@@ -1916,6 +1950,7 @@ dirpath
 disassembly
 discardable
 disp
+disptesttime
 distcheck
 distclean
 distro
@@ -1937,6 +1972,7 @@ dnf
 dnl
 dnsmasq
 docbook
+docbuildmode
 docdir
 docinfo
 docs
@@ -2040,6 +2076,7 @@ faa
 fabula
 facto
 failmode
+failover
 fallthrough
 fasttrack
 fatalx
@@ -2082,6 +2119,7 @@ frob
 frontends
 fs
 fsd
+fsdmode
 fsr
 fstab
 ftdi
@@ -2158,6 +2196,7 @@ gzip
 hal
 hardcoded
 hasFeature
+hashx
 hb
 hcd
 hcl
@@ -2232,6 +2271,8 @@ ina
 includePath
 includedir
 inductor
+inet
+influenceable
 infos
 infoval
 inh
@@ -2242,6 +2283,7 @@ initializer
 initializers
 initinfo
 initscripts
+inittime
 initups
 inline
 inlined
@@ -2267,6 +2309,7 @@ interruptonly
 interruptsize
 intltool
 inverter
+inverters
 invmode
 io
 ioLogik
@@ -2303,6 +2346,7 @@ jdk
 jenkins
 jessie
 jimklimov
+jour
 journalctl
 jpeg
 jpg
@@ -2334,6 +2378,7 @@ labcd
 lan
 langid
 lasaine
+launchd
 lbrb
 ld
 ldd
@@ -2484,6 +2529,7 @@ manpage
 manpages
 masterguard
 matcher
+maxconnfails
 maxd
 maxlength
 maxreport
@@ -2531,6 +2577,7 @@ mis
 misconfigured
 mk
 mkdir
+mkstr
 mmZ
 mmap
 mn
@@ -2609,6 +2656,7 @@ newmge
 newvictronups
 nf
 ng
+nginx
 nhnl
 nhs
 nielchiano
@@ -2638,12 +2686,14 @@ nombattvolt
 noncommercially
 noout
 nooutstats
+noprimarytime
 norating
 noro
 noscanlangid
 nosnap
 nosuid
 notAfter
+nothave
 notifyflags
 notifyme
 notifymsg
@@ -2656,6 +2706,10 @@ nowarn
 np
 nspr
 nss
+ntopAI
+ntopSS
+ntopW
+nuf
 nuget
 num
 numOfBytesFromUPS
@@ -2696,6 +2750,7 @@ onbattery
 onbattwarn
 ondelay
 oneac
+oneshot
 online
 onlinedischarge
 ont
@@ -2758,6 +2813,7 @@ pfy
 ph
 phoenixcontact
 phoenixtec
+photovoltaic
 picocom
 pid
 pidpath
@@ -2805,6 +2861,7 @@ powerpanel
 powershell
 powerup
 powervalue
+powervar
 powerware
 ppc
 pprint
@@ -2833,7 +2890,9 @@ proc
 productid
 prog
 progname
+progs
 prototyped
+proxied
 prtconf
 ps
 psu
@@ -2889,12 +2948,14 @@ reentrancy
 refactored
 refactoring
 refreservation
+refsect
 regex
 regtype
 reindex
 relatime
 releasekeyring
 relicensing
+relogtime
 remoteip
 renderer
 renderers
@@ -2906,6 +2967,7 @@ reposurgeon
 repotec
 req
 resetter
+resizing
 resolv
 restoreconf
 resync
@@ -2932,6 +2994,7 @@ rootca
 rootcerts
 rootfs
 rootfs'es
+rootpidpath
 rpath
 rpc
 rpool
@@ -3053,6 +3116,7 @@ snr
 socat
 sockdebug
 socketname
+sockfn
 socomec
 solari
 solaris
@@ -3110,6 +3174,7 @@ strcpy
 strdup
 strerror
 strftime
+strictfiltering
 stringify
 strlen
 strncpy
@@ -3140,6 +3205,7 @@ subnet
 subnets
 subtree
 sudo
+sudoers
 suggestsrcdoc
 suid
 suppressions
@@ -3260,6 +3326,7 @@ ucd
 ucrt
 udev
 udevadm
+udq
 ufw
 ugen
 ui
@@ -3267,6 +3334,7 @@ uid
 uint
 ukUNV
 ul
+ulink
 un
 uname
 uncomment
@@ -3360,6 +3428,7 @@ useradd
 userid
 userland
 usermap
+usermod
 username
 usernames
 userspace
@@ -3390,6 +3459,7 @@ vbat
 vbatt
 vc
 vda
+ve
 vendorid
 ver
 verifySourceSig
@@ -3408,10 +3478,13 @@ virtualenv
 virtualization
 virtualized
 vivo
+vla
 vo
 volsize
 voltronic
 vscode
+vsnprintf
+vsnprintfcat
 vt
 wDescriptorLength
 waitbeforereconnect
@@ -3439,6 +3512,7 @@ workspaceFolder
 workspaces
 writability
 writeinfo
+writepid
 writeups
 ws
 xAAAA

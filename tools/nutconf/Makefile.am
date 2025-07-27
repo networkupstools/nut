@@ -19,8 +19,10 @@ if WITH_NUTCONF
 bin_PROGRAMS += nutconf
 nutconf_SOURCES = nutconf-cli.cpp
 nutconf_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-nutconf_LDADD = $(top_builddir)/common/libcommon.la \
-                $(top_builddir)/common/libnutconf.la
+nutconf_LDADD = \
+	$(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libnutconf.la
 
 # Add support for device scanning
 if WITH_LIBLTDL
@@ -32,6 +34,7 @@ endif WITH_NUTCONF
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libnutconf.la \
 $(top_builddir)/tools/nut-scanner/libnutscan.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)

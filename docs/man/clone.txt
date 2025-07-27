@@ -216,8 +216,8 @@ Arjen de Korte <adkorte-guest@alioth.debian.org>
 SEE ALSO
 --------
 
-linkman:upscmd[1],
-linkman:upsrw[1],
+linkman:upscmd[8],
+linkman:upsrw[8],
 linkman:ups.conf[5],
 linkman:clone-outlet[8],
 linkman:nutupsdrv[8]

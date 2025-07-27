@@ -11,6 +11,7 @@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libparseconf.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -18,7 +19,11 @@ $(top_builddir)/common/libparseconf.la: dummy
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
 AM_CFLAGS = -I$(top_srcdir)/include
-LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
+LDADD = \
+	$(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libparseconf.la \
+	$(NETLIBS)
 
 sbin_PROGRAMS = upsd
 EXTRA_PROGRAMS = sockdebug

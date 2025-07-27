@@ -1,0 +1,372 @@
+NUT(7)
+======
+
+NAME
+----
+
+nut - Overview of the Network UPS Tools (NUT)
+
+DESCRIPTION
+-----------
+
+The Network UPS Tools (NUT) project provides a free and open source tool kit
+for monitoring and managing different types of power distribution devices,
+first released under such name in 1999 and following up from a few earlier
+projects.  Since then, NUT has expanded to cover thousands of devices from
+hundreds of vendors, and to handle various device types (UPS, ePDU, ATS/STS,
+solar, blade server IPMI as a sort of PDU for the blades, etc.) all with
+a consistent API and data model, which has since been published as
+link:https://datatracker.ietf.org/doc/html/rfc9271[The "UPS management
+protocol", Informational RFC 9271].
+
+While the project is in active development to support ever newer devices and
+their firmwares, as well as operating system releases, one of the internally
+recognized goals is to remain compatible with the systems NUT could have been
+once deployed on: even if vendors of those boxes and operating systems no
+longer exist, the venerable hardware deserves to be still protected with
+new UPS devices.
+
+Although the original development involved POSIX-compliant operating systems,
+over time NUT for Windows support was also implemented (however as of NUT
+release v2.8.3, it remains not 100% complete) so it is possible to run the
+whole server and client stack as native Windows programs.
+
+Most operating systems deliver NUT as packages built from a certain release,
+which for the project is just a better-tested snapshot of on-going development.
+Some OS distribution maintainers pick fixes from later releases to update
+their software packages while nominally remaining on the same base line
+version that the distribution's major release originally went with. This
+allows to balance delivering stable programs with well-known qualities
+and minimal downsides for a long stretch of time, but misses out on new
+capabilities, features (and yes, new bugs) which the on-going development
+regularly adds to the current code base du-jour.
+
+As such, NUT community support for releases (or any other non-current code)
+is generally limited to suggestions based on experience, but any fixes happen
+on the main development branch (there are no release-tracking branches to port
+such solutions into), and custom builds of NUT would be required to apply
+them in an end-user environment.  This workflow is highly automated in the
+project code base (its recipes and scripts), and the packaged dependencies
+or toolkits needed for a build are documented for numerous platforms (see
+links at the end of this page).
+
+Thanks to this, the NUT project is also a wider open-source community leader
+and reference in the area of build recipes and testing automation for
+low-level multi-platform Autotools/C/C++ projects in general.
+
+NUT Architecture
+~~~~~~~~~~~~~~~~
+
+The project follows a multi-tiered architecture which may seem a bit complex,
+but allows for flexibility with very different real-life setups to handle.
+In practice, this involves numerous programs (and their configuration files)
+running on the same or different systems (the "network" part in the name).
+
+Many deployment scenarios are explored in the famous
+link:https://github.com/networkupstools/ConfigExamples/releases/latest/download/ConfigExamples.pdf[NUT
+Configuration Examples] book maintained by Roger Price.
+
+NUT Drivers
+^^^^^^^^^^^
+
+The lowest tier comprises 'NUT drivers', which are programs that can talk a
+particular protocol over certain media.  Some protocols follow an industry
+standard (like USB HID or SNMP), or are dialects of a de-facto standard (like
+the originally Megatec "Q*" family of protocols used by many other vendors),
+but many others are vendor-specific.  Some devices support several media
+connection types (e.g. Serial and/or USB ports, and/or SNMP for networked
+management), so there may be several suitable NUT drivers to choose from.
+
+The NUT drivers are responsible for translation between NUT standard data
+point or instant command names and whatever strings need to be pulled for
+that particular device.  The data is exposed to other programs on the same
+machine following the 'NUT Driver/Server Socket Protocol', which relies on
+operating system access controls for the UNIX local socket file or a Windows
+named pipe.
+
+For each monitored power distribution device, a NUT driver instance should
+be running on a machine that has a communication link to that device.
+
+NOTE: There is currently no support for "multiplexing" information or commands
+for devices with multiple-media/multiple-driver access, e.g. to gain redundant
+connection or a better data collection than any one driver provides. For some
+devices it may be possible to run several drivers independently (probably for
+your monitoring system to cherry-pick data points from one driver or another),
+while others might only enable any one link exclusively.
+
+NUT Data Server
+^^^^^^^^^^^^^^^
+
+A 'NUT Data Server' (linkman:upsd[8]) represents one or more NUT drivers that
+run on the same machine as itself, to provide networked access to their data
+or pass around the instant command requests and replies.
+
+On one side the data server connects to one or more UNIX local socket files
+or Windows named pipes (one for each running driver), and on another side it
+listens on the TCP/IP network (port '3493' by default) to communicate with
+local or remote client programs.  It is also responsible for communication
+security for driver access, whether by defining the NUT user account names
+and assigned protocol access permissions (for value-setting or commands;
+read access is anonymous), or by handling the TLS/SSL part where enabled.
+
+NUT Clients
+^^^^^^^^^^^
+
+Practical work visible to end-users is done by a multitude of 'NUT clients',
+many of which are delivered by the project itself and more are created and
+maintained by the community at large.  Some standard clients of note include:
+
+* linkman:upsmon[8] is a daemon to monitor primarily the states of UPSes
+  (as opposed to other device types that NUT can handle) which power some
+  power source units of this particular system, and based on how many PSUs
+  are required for the system to run -- initiates a local shutdown when too
+  many UPSes are not in a healthy condition.  Instances of this client allow
+  a single UPS powering a whole rack or desk of computers to be seen by each
+  of them (through a data server running on one of them, on a machine actually
+  connected to the UPS -- the "primary" system).
++
+NOTE: The `upsmon` client typically splits into two processes: an unprivileged
+  one running with credentials of its `RUN_AS_USER` configured in the
+  linkman:upsmon.conf[5] file (or a built-in/packaged default like `nut`,
+  `monuser` or `nobody`) which does most of the work (including notification
+  scripts called via `NOTIFYCMD` setting), and the part which remains owned
+  by `root` to initiate the system shutdown by calling `SHUTDOWNCMD` when/if
+  the time comes.
++
+NUT deployments which desire higher-fidelity control (e.g. different systems
+  shutting down after different time spent on battery) often couple the
+  linkman:upsmon[8] with linkman:upssched[8] as their `NOTIFYCMD` handler.
++
+The "primary" system is usually also responsible for commanding the managed
+  UPS to shut itself down and power up when the "wall power" returns (or to
+  reset the load if it is already back), subject to UPS hardware capabilities.
+  Most client integrations also stall the ultimate reboot/power-off of their
+  machine, if its shut down was triggered by `upsmon`, and reboot after a
+  long delay (if the machine is still alive).
+  This combined approach allows to avoid the "power race condition", when
+  systems would otherwise remain shut down indefinitely (until someone comes
+  and reboots them) just because external power returned when the shut down
+  spree had already started.
+
+* linkman:upsc[8] is a command-line client for anonymous read-only access,
+  used to list devices served by a NUT data server, or to query data points
+  reported by a particular device.
+* linkman:NUT-Monitor[8] is a GUI client for read-only or read-write access.
+* A suite of CGI clients can run on a web server like Apache or nginx to
+  provide a simple HTML interface to your devices.
+
+Many monitoring systems integrate with NUT (and through it -- with a varied
+assortment of power devices), using either simple clients like `upsc` or
+`upslog`, or libraries and bindings provided by the project itself (e.g.
+C, C++, Python, Java in a nearby repository) or by third-party efforts
+(e.g. Perl, Go, C#, REST API).
+
+
+NUT Run-time Nuances
+~~~~~~~~~~~~~~~~~~~~
+
+For many more notes, please see the Frequently Asked Questions document in
+NUT sources or on the web site.  A copy may be delivered by your packaging.
+
+"File or directory not found" messages
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When NUT daemon programs start, they check for existence of certain files
+they would create themselves (PID files, local sockets, etc.) and report
+when such file does not exist.  Similarly, some programs try to signal an
+earlier instance (if the PID is known) and would report if that failed.
+
+While this does look scary and confusing to people who use NUT for the first
+time and it greets them with what looks like error messages (we did work on
+improving the wording during the NUT v2.8.x release lineage due to frequent
+questions), these messages are in fact just a troubleshooting aspect that
+is useful at that point in program life cycle: if you expect "other" program
+instances to be running when they are not seen, this message helps catch the
+error.  If this is a first run, so no "other" program instance's artifacts
+should be there, the message says just that.  If your program starts and
+sees an older instance already running, further behavior depends on the
+situation (e.g. did you start a copy to signal the already running daemon
+with some command? did you start a new copy and so any old one is assumed
+stuck and should be terminated automatically?)
+
+The "directory" part of the wording, which may be present in these messages,
+comes from the standard system library.  It does not mean you should blindly
+create a directory (or any other object) for the file names listed in such
+reports.
+
+That said, NUT does use directories (known in code and the `configure` script
+options as `--with-pidpath`, `--with-altpidpath` and `--with-statepath`)
+which should be created and assigned certain permissions each (the latter
+two may overlap).  Generally this is done either by packaging, or by manual
+steps according to documentation when building NUT from sources.  On some
+platforms (e.g. Linux with systemd and its `systemd-tmpfiles` subsystem) they
+may be maintained at run-time by configuration files delivered to the system.
+
+The message can also be seen from linkman:upsmon[8] being unable to populate
+the `POWERDOWNFLAG` if the location it points to (`/etc/killpower` by default)
+does not exist or is read-only, or from a late shutdown integration script like
+the `nutshutdown` hook if that location was un-mounted by the time it runs.
+It is recommended to store that file on a volatile file system (under `/run`
+on most modern distributions; typically the `pidpath` is located there too),
+which remains until reboot and disappears during reboot.
+
+User/Group Accounts
+^^^^^^^^^^^^^^^^^^^
+
+Generally NUT daemon programs avoid running as a highly-privileged `root`
+account (on POSIX platforms), and drop privileges to run as the configured
+user and group accounts such as `nut:nut`.
+
+* One notable exception is the linkman:upsmon[8] daemon which splits into
+  a `root`-owned process which may trigger the OS shutdown routine, and an
+  unprivileged process which does everything else.
+
+File system permissions
+^^^^^^^^^^^^^^^^^^^^^^^
+
+When using NUT drivers with local communications media (USB or Serial ports),
+you must ensure that the unprivileged run-time account like `nut:nut` is
+allowed access to those device file system nodes.  On many platforms this
+can be automated with subsystems like 'udev', 'devd', 'hotplug', 'upower';
+on others (older ones) you may have to `chmod`/`chown`/`chgrp` particular
+devfs nodes (whether on the persistent filesystem, or using an init-script
+for volatile implementations).
+
+Note that there are several run-time locations for data and socket files of
+NUT's privileged and unprivileged programs, and for configuration files.
+Access to these directories and individual files should be secured according
+to NUT documentation; NUT daemons will warn about lax permissions in their
+syslog or console messages. Generally, `root:nut` and `0640` permissions
+are correct for most of the files (so the run-time NUT programs may only
+read them but can not rewrite them, not even if there happens to be an
+exploitable code problem discovered in them over time).
+
+It is also important to note that (except for linkman:upslog[8]) no NUT
+daemons leave log files on their own: they send syslog messages, or write
+to stdout/stderr, and either or both of these streams can be saved to disk
+by the OS service integration (or a redirection from an init-script).
+
+NUT Drivers as Service instances
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with NUT v2.8.0, on systems with service management frameworks
+(like Linux systemd or Solaris/illumos SMF) you may be even inadvertently
+using the linkman:nut-driver-enumerator[8] (also known as "NDE") facility.
+This is a script, which may be also called automatically (via packaging on
+supported platforms) at start-up or may be running continuously as a service,
+to process the linkman:ups.conf[5] file and maintain the service units
+(with their dependencies) for each driver section separately.
+
+This sometimes raises eyebrows when end-users try to manually start a NUT
+driver program (either directly or using linkman:upsdrvctl[8] tool), and
+this either fails (because the device is already busy) or gets to conflict
+with the copy of the driver running as a service instance, and they begin
+to terminate each other.
+
+Configuring NUT Drivers
+^^^^^^^^^^^^^^^^^^^^^^^
+
+To get started with the NUT server system, you should populate the
+linkman:ups.conf[5] file with a section per device, which informs both the
+respective drivers, and tools like service-aware linkman:upsdrvsvcctl[8]
+and linkman:nut-driver-enumerator[8] or the legacy linkman:upsdrvctl[8],
+and the linkman:upsd[8] data server, to name a few.
+
+In many typical cases, the linkman:nut-scanner[8] tool can get you started
+by discovering supported USB, Serial, SNMP, NetXML, IPMI devices, or remote
+NUT deployments using Avahi mDNS or the good old port-knocking scan.
+This tool would propose a complete section content that you can copy-paste
+into your `ups.conf` file (possibly review and adapt the contents first,
+to e.g. add a description meaningful to you like "UPS in garage", etc.)
+
+Other configuration files
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+NUT sample configuration files (packaged or seen in sources under
+https://github.com/networkupstools/nut/tree/master/conf directory)
+start with a heading comment about the minimal set of their required
+options.  Note that many of these files can contain credentials
+(either for NUT roles, or for networked power devices as part of
+their NUT driver section configuration) and so these files and any
+of their backup copies should be secured accordingly.
+
+The linkman:nut.conf[5] may be used by init-scripts or other system
+integration code (it notably contains the `MODE` setting to choose
+which profile of NUT services to start or not on this particular
+system).
+
+On the NUT server you would need at least minimally configured:
+linkman:ups.conf[5], linkman:upsd.conf[5], linkman:upsd.users[5].
+
+On the majority of NUT clients (meaning each system monitoring the
+UPS state so it knows when to trigger its local shutdown), you would
+need linkman:upsmon.conf[5] and depending on your setup, may need a
+custom `NOTIFYCMD` or `SHUTDOWNCMD` (if you script something complex),
+and/or linkman:upssched.conf[5] and a custom `CMDSCRIPT` for it.
+
+For NUT CGI clients several files may need to be adapted and placed
+into certain directories according to their documentation:
+linkman:hosts.conf[5] and linkman:upsset.conf[5] for configuration,
+and `upsstats-single.html` and `upsstats.html` for HTML UI templates.
+
+Other clients, whether delivered by NUT project (linkman:NUT-Monitor[8]
+GUI) or co-located (link:https://github.com/networkupstools/wmnut[WMNut])
+or third-party (see https://networkupstools.org/projects.html) would
+probably support saving their settings or "favorites".  Do not forget
+to secure access to those files and their copies as well.
+
+////////////////////////////////////////////
+// Dynamic list of all man pages follows: //
+////////////////////////////////////////////
+
+///////////////
+:leveloffset: 1
+///////////////
+
+:in-nut-manpage: true
+:included-skip-title: true
+
+include::index.txt[]
+
+:!included-skip-title:
+
+///////////////
+:leveloffset: 0
+///////////////
+
+
+Internet resources
+------------------
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+  and specifically the link:https://networkupstools.org/documentation.html[NUT
+  Documentation collection] with the FAQ page and several books on different
+  aspects of NUT usage and development, maintained as part of the project code
+  base
+* The link:https://github.com/networkupstools/ConfigExamples/releases/latest/download/ConfigExamples.pdf[NUT
+  Configuration Examples] book, maintained by Roger Price
+* Project GitHub repository, wiki and issue tracker:
+  https://github.com/networkupstools/nut
+* Commonly referenced articles include:
+  - link:https://networkupstools.org/docs/FAQ.html[The NUT FAQ page]
+  - link:https://github.com/networkupstools/nut/wiki/Changing-NUT-daemon-debug-verbosity[Changing
+    NUT daemon debug verbosity] should be your first step in any troubleshooting
+  - link:https://networkupstools.org/docs/qa-guide.chunked/_prerequisites_for_building_nut_on_different_oses.html#_build_prerequisites_to_make_nut_from_scratch_on_various_operating_systems[Build
+    prerequisites to make NUT from scratch on various Operating Systems]
+    documents the packages you might need to build NUT on about a dozen
+    operating system distributions (most of those the NUT CI farm tests
+    each development iteration on)
+  - link:https://github.com/networkupstools/nut/wiki/Building-NUT-for-in%E2%80%90place-upgrades-or-non%E2%80%90disruptive-tests[Building
+    NUT for in‐place upgrades or non‐disruptive tests] details how to build
+    a newer version of NUT than your system packaging provides (as a potential
+    replacement of the older installation), e.g. to test if some issue got
+    resolved or if an updated driver sees more information from your device;
+    most such tests can be done without installing the new build into your
+    system (not until you like it better than the current deployment)
+  - Specific bits of know-how and caveats regarding
+    link:https://github.com/networkupstools/nut/wiki/NUT-for-Windows[NUT
+    for Windows]
+* link:https://networkupstools.org/projects.html[Related projects]
+* We are on Wikipedia: https://en.wikipedia.org/wiki/Network_UPS_Tools
+* The "UPS management protocol", Informational RFC 9271:
+  https://datatracker.ietf.org/doc/html/rfc9271

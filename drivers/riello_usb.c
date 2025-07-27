@@ -36,7 +36,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.15"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -589,9 +589,15 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	uint16_t delay;
 	const char	*delay_char;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
 
 		if (!strcasecmp(cmdname, "load.off")) {
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay = 0;
 
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
@@ -618,6 +624,9 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
 			int ipv;
+
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.shutdown");
 			ipv = atoi(delay_char);
 			/* With a "char" in the name, might assume we fit... but :) */
@@ -647,6 +656,8 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on")) {
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 			delay = 0;
 
 			length = riello_prepare_cr(bufOut, gpser_error_control, delay);
@@ -673,6 +684,9 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
 			int ipv;
+
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.reboot");
 			ipv = atoi(delay_char);
 			/* With a "char" in the name, might assume we fit... but :) */
@@ -704,6 +718,9 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	else {
 		if (!strcasecmp(cmdname, "shutdown.return")) {
 			int ipv;
+
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.shutdown");
 			ipv = atoi(delay_char);
 			/* With a "char" in the name, might assume we fit... but :) */
@@ -734,6 +751,8 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		length = riello_prepare_cd(bufOut, gpser_error_control);
 		recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 
@@ -780,6 +799,8 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		length = riello_prepare_tb(bufOut, gpser_error_control);
 		recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 
@@ -802,7 +823,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
