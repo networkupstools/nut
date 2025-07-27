@@ -47,8 +47,11 @@
 #include "netvision-mib.h"
 #include "eaton-pdu-genesis2-mib.h"
 #include "eaton-pdu-marlin-mib.h"
+#include "eaton-pdu-nlogic-mib.h"
 #include "eaton-pdu-pulizzi-mib.h"
 #include "eaton-pdu-revelation-mib.h"
+#include "eaton-ups-pwnm2-mib.h"
+#include "eaton-ups-pxg-mib.h"
 #include "raritan-pdu-mib.h"
 #include "raritan-px2-mib.h"
 #include "baytech-mib.h"
@@ -69,9 +72,6 @@
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
 #include "hpe-pdu3-cis-mib.h"
-#include "eaton-pdu-nlogic-mib.h"
-#include "eaton-ups-pwnm2-mib.h"
-#include "eaton-ups-pxg-mib.h"
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
