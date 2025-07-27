@@ -33,13 +33,25 @@ $(NUT_SCANNER_DEPS): dummy
 	+@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/clients/libupsclient-version.h \
+$(top_builddir)/common/libparseconf.la \
 $(top_builddir)/common/libnutwincompat.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+# Builds from root dir arrange stuff decently. Make sure parallel builds
+# started from scratch right in this dir get dependencies in proper order
+# (sub-makes are independent as far as trying to write into same files):
+$(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
+# To extract the values used in the factually built library, this header's
+# recipe internally (clients/Makefile.am) requires libupsclient.la, and in
+# turn libcommonclient.la and in turn libparseconf.la:
+$(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/common/libparseconf.la
 
 # do not hard depend on '../clients/libupsclient-version.h', since it blocks
 # 'dist', and is only required for actual build, in which case

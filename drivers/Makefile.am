@@ -16,6 +16,14 @@ $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libupsclient.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+# Builds from root dir arrange stuff decently. Make sure parallel builds
+# started from scratch right in this dir get dependencies in proper order
+# (sub-makes are independent as far as trying to write into same files):
+$(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
+# Internally (clients/Makefile.am) libupsclient.la requires libcommonclient.la
+# and that in turn libparseconf.la:
+$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libparseconf.la
+
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
@@ -459,11 +467,11 @@ libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
 EXTRA_LTLIBRARIES += libdummy_mockdrv.la
 libdummy_mockdrv_la_SOURCES = main.c dstate.c
 libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
-libdummy_mockdrv_la_LDFLAGS = \
-	-static \
+libdummy_mockdrv_la_LIBADD = \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la \
 	$(top_builddir)/common/libparseconf.la
+libdummy_mockdrv_la_LDFLAGS = -static
 
 # Also define a library with serial-port UPS routines needed for nut-scanner
 noinst_LTLIBRARIES = libserial-nutscan.la
