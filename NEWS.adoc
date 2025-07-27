@@ -316,7 +316,8 @@ https://github.com/networkupstools/nut/milestone/9
    starting from scratch there. This is a workflow useful for NUT development
    (e.g. to focus only on drivers, or tests, or nut-scanner) but not so much
    for end-user packaging where everything builds from the root directory.
-   [follows up from PR #2825, highlights why issue #2584 better be solved]
+   [PR #3030, follows up from PR #2825, highlights why issue #2584 better
+   be solved]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
