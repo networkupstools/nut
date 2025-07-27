@@ -23,6 +23,10 @@ BUILT_SOURCES = $(NUT_SCANNER_DEPS)
 CLEANFILES = $(BUILT_SOURCES)
 EXTRA_DIST = README.adoc
 
+# Built by same rule, so order them and avoid stepping on each other's toes
+# (TODO: Better deps automation than hard-coding here?)
+nutscan-usb.h: nutscan-snmp.h
+
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
 $(NUT_SCANNER_DEPS): dummy
