@@ -75,15 +75,15 @@ jobs:
         sudo apt install libltdl-dev libtool libtool-bin cppcheck ccache libgd-dev libcppunit-dev libsystemd-dev libssl-dev libnss3-dev augeas-tools libaugeas-dev augeas-lenses libusb-dev libusb-1.0-0-dev libmodbus-dev libsnmp-dev libpowerman0-dev libfreeipmi-dev libipmimonitoring-dev libavahi-common-dev libavahi-core-dev libavahi-client-dev libgpiod-dev libneon27-dev libi2c-dev i2c-tools lm-sensors
 
     # Make build identification more useful (no fallbacks)
-    - name: Try to get more Git metadata
-      run: |
-        git remote -v || true
-        git branch -a || true
-        for R in `git remote` ; do git fetch $R master ; done || true
-        git fetch --tags
+    #- name: Try to get more Git metadata
+    #  run: |
+    #    git remote -v || true
+    #    git branch -a || true
+    #    for R in `git remote` ; do git fetch $R master ; done || true
+    #    git fetch --tags
 
-    - name: Debug gitlog2version processing
-      run: bash -x ./tools/gitlog2version.sh || true
+    #- name: Debug gitlog2version processing
+    #  run: bash -x ./tools/gitlog2version.sh || true
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
