@@ -140,7 +140,7 @@ fi
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ -e "${abs_top_srcdir}/.git" ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
 
 check_shallow_git() {
-    if git log --oneline --decorate=short | tail -1 | grep -w grafted || [ 10 -gt `git log --oneline | wc -l` ] ; then
+    if git log --oneline --decorate=short | tail -1 | grep -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
         echo "$0: $1" >&2
     fi
 }
