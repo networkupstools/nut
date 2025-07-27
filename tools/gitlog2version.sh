@@ -139,6 +139,12 @@ fi
 # Must be "true" or "false" exactly, interpreted as such below:
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ -e "${abs_top_srcdir}/.git" ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
 
+check_shallow_git() {
+    if git log --oneline --decorate=short | tail -1 | grep -w grafted || [ 10 -gt `git log --oneline | wc -l` ] ; then
+        echo "$0: $1" >&2
+    fi
+}
+
 getver_git() {
     # NOTE: The chosen trunk branch must be up to date (may be "origin/master"
     # or "upstream/master", etc.) for resulting version discovery to make sense.
@@ -161,6 +167,7 @@ getver_git() {
         done
         if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
             echo "$0: FAILED to discover a NUT_VERSION_GIT_TRUNK in this workspace" >&2
+            check_shallow_git "NOTE: Current checkout is shallow, the workspace may not include enough context to describe it"
             return 1
         fi
     fi
@@ -188,7 +195,11 @@ getver_git() {
     # Follow https://semver.org/#spec-item-10 about build metadata:
     # it is (a dot-separated list) separated by a plus sign from preceding
     DESC="`echo "${DESC}" | sed 's/\(-[0-9][0-9]*\)-\(g[0-9a-fA-F][0-9a-fA-F]*\)$/\1+\2/'`"
-    if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return 1 ; fi
+    if [ x"${DESC}" = x ] ; then
+        echo "$0: FAILED to 'git describe' this codebase" >&2
+        check_shallow_git "NOTE: Current checkout is shallow, may not include enough history to describe it"
+        return 1
+    fi
 
     # Does the current commit correspond to an `(alpha|beta|rc)NUM` git tag
     # (may be un-annotated)? Note that `git describe` picks the value to
@@ -206,7 +217,12 @@ getver_git() {
     # at the tagged commit (it is the merge base for itself and any of
     # its descendants):
     BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`" || BASE=""
-    if [ x"${BASE}" = x ] ; then echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2 ; DESC=""; return  1; fi
+    if [ x"${BASE}" = x ] ; then
+        echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2
+        check_shallow_git "NOTE: Current checkout is shallow, may not include enough history to describe it or find intersections with other trees"
+        DESC=""
+        return 1
+    fi
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
     TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
