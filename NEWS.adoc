@@ -187,7 +187,9 @@ https://github.com/networkupstools/nut/milestone/9
    * Added more settings that can be tuned -- support for shutdown variables,
      UPS mode selector, PC reset delay after main power recovers, and
      automatic switch to battery mode (and back) if main power is below
-     or above a defined threshold. [#2986]
+     or above a defined threshold (see the new "Configurable Values" section
+     in the man page). They can be configured via `default.*` values in
+     `ups.conf`. [#2986]
 
  - `pijuice` driver updates:
    * Converted to NUT standard use of `status_set()` with single-token values.
