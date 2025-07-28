@@ -1548,3 +1548,38 @@ check-files-quick: $(CHECK_FILES_QUICK_TARGETS)
 
 # Autotools hook: run the quick checks before recursing for defaults:
 check-recursive: check-files-quick
+
+# Not pulled in directly so far, can be used by developers to verify that build
+# rules (inlcuding dependencies pulled from other directories) make sense and
+# do not cause conflict by writing into same file names. Something that builds
+# from root directory arrange nicely, but needs careful balancing on a tightrope
+# if developers build pieces of code right in the directory of their interest.
+# It is recommended to have "ccache" (or similar) setup working, to minimize the
+# time cost and workload of compilations involved in these looped build retries.
+# Auto-parallel recipe (if current 'make' implementation supports the "-j N"
+# syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
+check-parallel-builds:
+	automake -f
+	./config.status
+	+@MAXPARMAKES_OPT=""; \
+	  case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+		*"j"*) ;; \
+		*) \
+			if ! [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
+				MAXPARMAKES=8 ; \
+			fi ; \
+			MAXPARMAKES_OPT="-j $${MAXPARMAKES}" ; \
+		;; \
+	  esac ; \
+	  DIRS=""; \
+	  for D in `find . -name '*.c' -o -name '*.cpp' | sed 's,/[^/]*\.cp*$$,,' | uniq` ; do \
+		[ -e "$$D/Makefile.am" ] && [ -s "$$D/Makefile" ] || continue ; \
+		$(MAKE) $(AM_MAKEFLAGS) -k -s $${MAXPARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
+		echo "  $@	in $${D}" ; \
+		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${MAXPARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
+		  echo "To investigate, try:  $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $${MAXPARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) V=1 $${MAXPARMAKES_OPT} 2>&1 ; echo $?) | tee /tmp/make.log ; grep -E '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log"; \
+		  echo "If builds were interrupted before, you may also have to re-initialize the build area completely, e.g.:  git clean -fdX ; ./ci_build.sh && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $@" ; \
+		  exit $$RES; } ; \
+		DIRS="$${DIRS} $${D}" ; \
+	  done ; \
+	  echo "$@: SUCCESS in all checked directories:$${DIRS}" >&2

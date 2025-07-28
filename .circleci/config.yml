@@ -173,7 +173,15 @@ jobs:
             ./ci_build.sh
 
       - run:
-          name: "ccache stats after build"
+          name: "ccache stats after initial build"
+          command: ccache -s || true
+
+      - run:
+          name: "verify parallel build recipes in subdirs"
+          command: make -s -j check-parallel-builds || exit
+
+      - run:
+          name: "ccache stats after a few rebuilds"
           command: ccache -s || true
 
       # NOTE: Detailed key name allows every scenario to only track its

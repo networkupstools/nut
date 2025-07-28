@@ -74,6 +74,17 @@ jobs:
         case x"${{matrix.compiler}}" in x*clang*) sudo apt install clang ;; x*) sudo apt install gcc g++ ;; esac
         sudo apt install libltdl-dev libtool libtool-bin cppcheck ccache libgd-dev libcppunit-dev libsystemd-dev libssl-dev libnss3-dev augeas-tools libaugeas-dev augeas-lenses libusb-dev libusb-1.0-0-dev libmodbus-dev libsnmp-dev libpowerman0-dev libfreeipmi-dev libipmimonitoring-dev libavahi-common-dev libavahi-core-dev libavahi-client-dev libgpiod-dev libneon27-dev libi2c-dev i2c-tools lm-sensors
 
+    # Make build identification more useful (no fallbacks)
+    #- name: Try to get more Git metadata
+    #  run: |
+    #    git remote -v || true
+    #    git branch -a || true
+    #    for R in `git remote` ; do git fetch $R master ; done || true
+    #    git fetch --tags
+
+    #- name: Debug gitlog2version processing
+    #  run: bash -x ./tools/gitlog2version.sh || true
+
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
     #- name: Autobuild
@@ -97,7 +108,11 @@ jobs:
       run: |
         ./autogen.sh
         ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
-        make -s -j 8
+        make -s -j 8 || exit
+
+    - if: matrix.language == 'cpp'
+      name: NUT CI Build to verify parallel build recipes in subdirs
+      run: make -s -j check-parallel-builds || exit
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun

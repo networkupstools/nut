@@ -15,6 +15,11 @@ $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libparseconf.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+# Builds from root dir arrange stuff decently. Make sure parallel builds
+# started from scratch right in this dir get dependencies in proper order
+# (sub-makes are independent as far as trying to write into same files):
+$(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
+
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.

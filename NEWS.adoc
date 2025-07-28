@@ -311,6 +311,14 @@ https://github.com/networkupstools/nut/milestone/9
    services, if `systemctl preset-all` fails (assumed due to a systemd 252
    bug). [#3022]
 
+ - Added a `make check-parallel-builds` recipe to help troubleshoot recipes
+   in sub-directories, and improved build-ability of existing NUT sources
+   starting from scratch there. This is a workflow useful for NUT development
+   (e.g. to focus only on drivers, or tests, or nut-scanner) but not so much
+   for end-user packaging where everything builds from the root directory.
+   [PR #3030, follows up from PR #2825, highlights why issue #2584 better
+   be solved]
+
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------
