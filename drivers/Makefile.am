@@ -13,6 +13,7 @@
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libparseconf.la \
+$(top_builddir)/common/libnutdmfsnmp.la \
 $(top_builddir)/clients/libupsclient.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
