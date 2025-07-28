@@ -93,6 +93,10 @@ The following variables can be set in the NUT configuration as `default.*`
 values to override or monitor UPS behavior using the `phoenixcontact_modbus`
 driver.
 
+NOTE: As of NUT v2.8.4, there is currently no support for run-time setting
+of these values (e.g. with linkman:upsrw[8]).  Currently they are only
+considered once, during driver initialization.
+
 *battery.energysave.delay*='num'::
 Time after entering battery mode before PC shutdown signal is triggered
 by the UPS (in seconds).
