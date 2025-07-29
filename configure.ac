@@ -2503,14 +2503,8 @@ NUT_ARG_WITH([dev-libnutconf], [deliver the C++ library behind the nutconf tool 
 dnl Activate WITH_UNMAPPED_DATA_POINTS for troubleshooting and evolution?
 dnl Note that production drivers must conform to docs/nut-names.txt
 NUT_ARG_WITH([unmapped-data-points],
-    [represent USB-HID and SNMP data points discovered during subdriver generation but not mapped to nut-names yet],
+    [represent USB-HID and SNMP data points discovered during subdriver generation but not mapped to nut-names yet (no, yes, yes-if-not-DMF)],
     [no])
-AS_IF([test x"${nut_with_unmapped_data_points}" = xyes],
-    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 1,
-        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])],
-    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 0,
-        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])]
-)
 
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
@@ -6309,6 +6303,20 @@ esac
 NUT_REPORT_FEATURE([enable regeneration of DMF SNMP mapping files from C sources], [${with_regenerate_dmf_snmp}], [],
 				[WITH_REGENERATE_DMF_SNMP], [enable validation of DMF for snmp-ups])
 AM_CONDITIONAL([WITH_REGENERATE_DMF_SNMP], [test "${with_regenerate_dmf_snmp}" = "yes"])
+
+dnl DMF generation also impacts whether we would enable unmapped data points
+dnl or not, in some cases where CI.dev-builds leave it to chance:
+AS_IF([test x"${nut_with_unmapped_data_points}" = xyes-if-not-DMF], [
+	AS_IF([test "${with_regenerate_dmf_snmp}" = "yes"], [nut_with_unmapped_data_points=no], [nut_with_unmapped_data_points=yes])
+])
+
+AS_IF([test x"${nut_with_unmapped_data_points}" = xyes],
+    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 1,
+        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])],
+    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 0,
+        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])]
+)
+
 
 dnl Note: this regeneration is done by a custom-built dmf-reindexer tool
 dnl It does not directly rely on Python etc. It may also be skipped if

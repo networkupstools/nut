@@ -2586,7 +2586,7 @@ bindings)
         if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
             WITH_UNMAPPED_DATAPOINTS=false
         else
-            WITH_UNMAPPED_DATAPOINTS=true
+            WITH_UNMAPPED_DATAPOINTS=true-if-not-DMF
         fi
     fi
 
@@ -2595,7 +2595,9 @@ bindings)
         # for end-users (not dev/testers).
         # See above for defaulting of this vs. inplace builds.
         CONFIG_OPTS+=("--with-unmapped-data-points")
-    fi
+    else if [ x"${WITH_UNMAPPED_DATAPOINTS-}" = xtrue-if-not-DMF ] || [ x"${WITH_UNMAPPED_DATAPOINTS-}" = xyes-if-not-DMF ] ; then
+        CONFIG_OPTS+=("--with-unmapped-data-points=yes-if-not-DMF")
+    fi; fi
 
     if [ -n "${BUILD_DEBUGINFO-}" ]; then
         CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
