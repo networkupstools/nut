@@ -25,7 +25,7 @@
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.11"
+#define VOLTRONIC_VERSION "Voltronic 0.12"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -2173,7 +2173,6 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 
 			if (strchr(enabled, 'e')) {
 				val = eco_mode = "enabled";
-				buzzmode_set("vendor:voltronic:ECO-inverter-on");
 			} else if (strchr(disabled, 'e')) {
 				val = eco_mode = "disabled";
 			}
@@ -2259,7 +2258,6 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 
 		if (strchr(enabled, 'n')) {
 			val = advanced_eco_mode = "enabled";
-			buzzmode_set("vendor:voltronic:ECO-inverter-off");
 		} else if (strchr(disabled, 'n')) {
 			val = advanced_eco_mode = "disabled";
 		}
@@ -3642,13 +3640,28 @@ static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 /* Working mode reported by the UPS */
 static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 {
-	char	*status = NULL, *alarm = NULL;
+	char	*status = NULL, *alarm = NULL, *buzzword = NULL;
+
+	if (nut_debug_level > 3) {
+		char	buf[SMALLBUF];
+		size_t	buflen;
+
+		/* Just in case item->value is somehow not NUL-terminated */
+		memset(buf, 0, sizeof(buf));
+		buflen = snprintf(buf, sizeof(buf), "%s", item->value);
+		if (buflen > 0 && buf[buflen - 1] == '\n')
+			buf[buflen - 1] = '\0';
+		upsdebugx(4, "%s: entering, item->info_type='%s', full item->value='%s'%s",
+			__func__, NUT_STRARG(item->info_type), buf,
+			(buflen + 3 > sizeof(buf) ? " (truncated)" : "")
+			);
+	}
 
 	switch (item->value[0])
 	{
 	case 'P':
 
-		alarm = "UPS is going ON";
+		alarm = "UPS is going ON.";
 		break;
 
 	case 'S':
@@ -3683,12 +3696,23 @@ static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 
 	case 'E':
 
-		alarm = "UPS is in ECO Mode.";
+		/* From man page: When input voltage/frequency are within acceptable
+		 * range, the UPS will bypass voltage to output for energy saving.
+		 * PFC and INVERTER are still active at this mode. */
+
+		/* FIXME: Any char for advanced ECO mode? (PFC and INVERTER are off, the UPS will bypass voltage to output for energy saving)*/
+		buzzword = "vendor:voltronic:ECO-inverter-on";
+		upsdebugx(2, "%s: UPS is in ECO Mode", __func__);
 		break;
 
 	case 'C':
 
-		alarm = "UPS is in Converter Mode.";
+		/* From man page: When input frequency is within 40 Hz to 70 Hz,
+		 * the UPS can be set at a constant output frequency, 50 Hz or 60 Hz.
+		 * The UPS will still charge battery under this mode. */
+
+		buzzword = "vendor:voltronic:freq-converter-on";
+		upsdebugx(2, "%s: UPS is in Converter Mode", __func__);
 		break;
 
 	case 'D':
@@ -3709,6 +3733,12 @@ static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 	} else if (status && !strcasecmp(item->info_type, "ups.status")) {
 		snprintf_dynamic(value, valuelen, item->dfl, "%s", status);
 	}
+
+	if (buzzword)
+		buzzmode_set(buzzword);
+
+	upsdebugx(4, "%s: done, item->value[0]='%c' determined status='%s' alarm='%s' buzzword='%s'",
+		__func__, item->value[0], NUT_STRARG(status), NUT_STRARG(alarm), NUT_STRARG(buzzword));
 
 	return 0;
 }
