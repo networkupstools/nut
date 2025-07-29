@@ -186,6 +186,24 @@ https://github.com/networkupstools/nut/milestone/9
      using "buzzword mode" settings more correctly than in the previous
      iteration, shipped in NUT v2.8.3 release (as PR #2750 for issue #2708).
      [issue #2494]
+   * Introduced a `voltronic-axpert` subdriver for Voltronic Axpert inverters
+     which speak the P30 protocol, currently in a highly experimental state:
+     with initial support for query commands, but most values are "hidden"
+     from default NUT builds by being defined in `experimental.*` namespace,
+     and should also be enabled by `configure --with-unmapped-data-points`.
+     Development was based on work done in the Voltronic Sunny subdriver in
+     https://github.com/nickma82/nut/tree/nutdrv_qx_voltronic-sunny_rebased%2Bcommand
+     [#1407]
++
+Still TODO:
+     - Implement commands to write to the inverter.
+     - Remove commented code originating from `sunny` driver.
+     - Further testing.
+     - Understand how to map values we can read/set with those devices
+       to the NUT standard vocabulary at `docs/nut-names.txt` (or extend
+       it by discussion and agreement with community -- notably to track
+       a `pv.*` namespace for photovoltaic, separately from `ups.*` etc.)
+     - Update docs (manpages, acknowledgements...)
 
  - `phoenixcontact_modbus` driver updates:
    * Added more settings that can be tuned -- support for shutdown variables,
@@ -208,26 +226,6 @@ https://github.com/networkupstools/nut/milestone/9
      would be queried more than once per driver up-time. [issue #3011]
    * Fixed debug-logging around `SU_FLAG_STATIC` entries to clarify when
      they get skipped. [issue #3011]
-
- - `nutdrv_qx` driver updates:
-   * Introduced a `voltronic-axpert` subdriver for Voltronic Axpert inverters
-     which speak the P30 protocol, currently in a highly experimental state:
-     with initial support for query commands, but most values are "hidden"
-     from default NUT builds by being defined in `experimental.*` namespace,
-     and should also be enabled by `configure --with-unmapped-data-points`.
-     Development was based on work done in the Voltronic Sunny subdriver in
-     https://github.com/nickma82/nut/tree/nutdrv_qx_voltronic-sunny_rebased%2Bcommand
-     [#1407]
-+
-Still TODO:
-     - Implement commands to write to the inverter.
-     - Remove commented code originating from `sunny` driver.
-     - Further testing.
-     - Understand how to map values we can read/set with those devices
-       to the NUT standard vocabulary at `docs/nut-names.txt` (or extend
-       it by discussion and agreement with community -- notably to track
-       a `pv.*` namespace for photovoltaic, separately from `ups.*` etc.)
-     - Update docs (manpages, acknowledgements...)
 
  - `usbhid-ups` driver updates:
    * Added support for "fun"/"nuf" methods called from mapping tables to
