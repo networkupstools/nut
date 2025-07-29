@@ -24,6 +24,12 @@ $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libparseconf.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+# Builds from root dir arrange stuff decently. Make sure parallel builds
+# started from scratch right in this dir get dependencies in proper order
+# (sub-makes are independent as far as trying to write into same files):
+$(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
+
 LDADD_FULL = \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la \
