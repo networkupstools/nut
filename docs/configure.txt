@@ -361,10 +361,20 @@ Example valid formats of this flag:
 
 Additional flags with regard to documentation generation include:
 
+	--enable-docs-man-for-progs-built-only=<yes|no>
+
+Choose to build and install MAN pages only for the NUT programs being built
+in this run (this is the legacy default selection), or all known MAN pages
+(including for NUT programs and drivers not being built now). Should not
+affect the API manual pages (but note they may be impacted by `--with-dev`).
+
+NOTE: You want this set to `no` when preparing NUT distribution tarballs.
+
 	--with-docs-man-section-api=<SN>	(default: 3)
 	--with-docs-man-section-cfg=<SN>	(default: 5)
-	--with-docs-man-section-cmd-sys=<SN>	(default: 8)
+	--with-docs-man-section-cmd-sys=<SN>	(default: 8, or 1m on Solaris/illumos)
 	--with-docs-man-section-cmd-usr=<SN>	(default: 1)
+	--with-docs-man-section-misc=<SN>	(default: 7)
 
 Customize man page section identifiers for operating systems whose standards
 do not match defaults listed above for Library and API, Configuration Files,
@@ -373,6 +383,57 @@ systems might use `--with-docs-man-section-cmd-sys=1m`). This impacts not only
 file names of the manual pages, but also cross-links in generated documents.
 Note that use of these flags does not implicitly enable any `--with-docs=...`
 mode, which should still be specified explicitly.
+
+	--with-docs-man-dir-as-base=(yes/no)	(default: yes, or no Solaris/illumos)
+
+Are platform man directories named by base number (yes) or by full section
+name (no), e.g. given a `1m` man page section, install the pages into `man1`
+or `man1m` directory?
+
+	--enable-docs-changelog=<yes|no|skip|auto|{format,list}>
+
+This option was added specifically to allow developer iterations to not waste
+CPU time rebuilding the huge `ChangeLog*` files whenever their Git index
+changes. For troubleshooting purposes, this option supports specifying the
+list of formats ('text', 'adoc', 'html-single', 'html-chunked', 'pdf') with
+optional suffixes to build (empty/'=yes'), consider ('=auto') or not-build
+('=no' or '=skip') specific formats; note that some are prerequisites for
+others (plain 'text' and prepared 'adoc' are needed to generate HTML and PDF).
+
+	--with-docs-changelog-start=<auto|git-tree-ish>
+	--with-docs-changelog-end=<auto|git-tree-ish>
+
+This option was added to allow developers (and CI build agents) to customize
+the size of `ChangeLog*` files when they are generated. Balancing against the
+option above to not build `ChangeLog*` files at all, this couple allows quicker
+builds that exercise all relevant recipe code paths.
+
+Default value for the starting point is `auto`, which applies the legacy
+default `v2.6.0` either to release/pre-release builds, or when local Git
+version metadata could not be retrieved, and the most-recent release tag
+(or `master` as fallback) for usual build iterations.
+
+Default value for the ending point is `HEAD` to represent the current commit
+at the moment the `ChangeLog` file and its derivatives are (re-)generated.
+
+NOTE: The resulting `GITLOG_START_POINT` value may also impact the oldest
+version considered by maintainer helper script `docs/docinfo.xml.sh` (if it
+specifies a `v*` tag, otherwise `v2.6.0` is used).
+
+	--with-docs-man-linkmanext-template='https://linux.die.net/man/{0}/{target}'
+	--with-docs-man-linkmanext2-template='https://linux.die.net/man/{2}/{target}'
+	--enable-docs-man-linkmanext-section-rewrite
+
+NUT manual pages can refer to system-provided programs, files or syscalls
+using custom-defined `linkmanext` or `linkmanext2` asciidoc macros.
+They in turn use man page sections, which may be subject to rewrites similar
+to those applied to NUT pages themselves. The options above should help
+packagers manage this; defaults are set for Linux standard filesystem layout.
+
+NOTE: Avoid characters special for XML or HTML mark-up needed in the template
+(notably the `&` "ampersand" in HTML URLs with queries), entities like `&amp;`
+must be used to pass docbook part (not man page generation though) and then
+it stays in the final document, making the URL invalid. PRs welcome :)
 
 Python support
 ~~~~~~~~~~~~~~
@@ -419,12 +480,12 @@ of Python does not matter and the un-versioned `PYTHON` value is substituted
 into files as the script shebang, used to find the `site-packages` location,
 etc.
 
-One exception is generation of NUT-Monitor GUI application which has been
-separated for `NUT-Monitor-py2gtk2` and `NUT-Monitor-py3qt5` due to further
-backend platform technical differences -- these build products specifically
-use `PYTHON2` and `PYTHON3` substitutions. They may be co-installed on the
-same system. A dispatcher shell script `NUT-Monitor` is used to launch the
-preferred (newest) or the only existing implementation.
+One exception is generation of NUT-Monitor GUI application, being separated
+for `NUT-Monitor-py2gtk2`, `NUT-Monitor-py3qt5`, `NUT-Monitor-py3qt6` due
+to further backend platform technical differences -- these build products 
+specifically use `PYTHON2` and `PYTHON3` substitutions. They may also be
+co-installed on the same system. A dispatcher shell script `NUT-Monitor`
+is used to launch the preferred (newest) or only existing implementation.
 
 Please note that by default NUT tries to make use of everything in your
 build environment, so if both Python generation are detected -- the binding
@@ -792,7 +853,14 @@ See also `--with-drvpath` below.
 	--with-drvpath=PATH
 
 The UPS drivers will be installed to this path.  By default they
-install to `<exec_prefix>/bin`, i.e. `/usr/local/ups/bin`.
+install to `<exec_prefix>/bin`, i.e. `/usr/local/ups/bin`, but it
+may be quite reasonable to install them into a sub-directory of
+your `libexec` location or similar (e.g. `/usr/libexec/nut/drv`):
+on one hand, to avoid potential conflicts with unrelated programs
+that happen to have same names, and on another -- to keep these
+NUT programs which should not normally be executed by neither
+unprivileged users nor systems administrators, out of default
+`PATH` settings.
 
 You would want a location that remains mounted when most of the system
 is prepared to turn off, so some distributions package NUT drivers into
@@ -810,7 +878,18 @@ By GNU Autotools default, this is `<prefix>/share` (same as the
 system-wide "data root" which we also consult for third-party data
 such as Augeas lens delivery locations), i.e. `/usr/local/ups/share`.
 +
-Typically this is reconfigured to a `'${datarootdir}/nut'` value.
+Typically this is reconfigured to a `--datadir='${datarootdir}/nut'` value.
++
+[NOTE]
+======
+This long-established practice with NUT packaging differs from current
+recommendations of GNU Automake/Autoconf ecosystem listed at
+https://www.gnu.org/prep/standards/html_node/Directory-Variables.html :
+
+	The definition of `datadir` is the same for all packages,
+	so you should install your data in a subdirectory thereof.
+	Most packages install their data under `$(datadir)/package-name/`.
+======
 +
 At the moment, this directory only holds two files by default -- the
 optional `cmdvartab` and `driver.list`, but may hold additional data

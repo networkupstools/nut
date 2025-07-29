@@ -820,7 +820,8 @@ static void ups_is_alarm(utype_t *ups)
 				do_notify(ups, NOTIFY_ALARM, alarms);
 			}
 		} else {
-			upsdebugx(4, "%s: %s: still on alarm, failed to get current ups.alarm value",
+			upsdebugx(4, "%s: %s: still on alarm, failed to get current ups.alarm value, "
+				"perhaps it is just a legacy driver (but we keep probing it to be safe)",
 				__func__, ups->sys);
 		}
 		return;
@@ -842,9 +843,10 @@ static void ups_is_alarm(utype_t *ups)
 			__func__, ups->sys, alarms);
 		do_notify(ups, NOTIFY_ALARM, alarms);
 	} else {
-		upsdebugx(4, "%s: %s: failed to get current ups.alarm value",
+		upsdebugx(4, "%s: %s: failed to get current ups.alarm value, perhaps "
+			"it is just a legacy driver (but we keep probing it to be safe)",
 			__func__, ups->sys);
-		do_notify(ups, NOTIFY_ALARM, NULL);
+		do_notify(ups, NOTIFY_ALARM, "n/a");
 		alarms[0] = '\0';
 	}
 	strncpy(alarms_prev, alarms, sizeof(alarms_prev));
@@ -3821,8 +3823,22 @@ int main(int argc, char *argv[])
 	if (checking_flag)
 		exit(check_pdflag());
 
-	if (shutdowncmd == NULL)
-		printf("Warning: no shutdown command defined!\n");
+	if (shutdowncmd == NULL) {
+		printf("Warning: no shutdown command defined%s\n",
+			(minsupplies < 1)
+			? ", but that is OK for a monitoring-only client."
+			: "!");
+		fflush(stdout);
+	} else {
+		upsdebugx(1, "will use a shutdown command (SHUTDOWNCMD): '%s'", shutdowncmd);
+	}
+
+	if (notifycmd == NULL) {
+		printf("Warning: no custom notification command defined, just so you know\n");
+		fflush(stdout);
+	} else {
+		upsdebugx(1, "will use custom notification command (NOTIFYCMD): '%s'", notifycmd);
+	}
 
 	/* we may need to get rid of a flag from a previous shutdown */
 	if (powerdownflag != NULL)
@@ -4157,8 +4173,10 @@ int main(int argc, char *argv[])
 		}
 
 end_loop_cycle:
-		/* No-op to avoid a warning about label at end of compound statement */
-		(void)1;
+		/* If anyone printed anything, be sure it is output
+		 * in a timely manner, not buffered indefinitely: */
+		fflush(stdout);
+		fflush(stderr);
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);

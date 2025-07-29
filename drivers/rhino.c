@@ -38,7 +38,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Rhino UPS driver"
-#define DRIVER_VERSION	"0.55"
+#define DRIVER_VERSION	"0.56"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -656,9 +656,14 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	ssize_t ret = 0;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		/* shutdown now (one way) */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		/* send_command( CMD_SHUT ); */
 		sendshut();
 		return STAT_INSTCMD_HANDLED;
@@ -667,6 +672,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "load.on"))
 	{
 		/* liga Saida */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ret = send_command( 3 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 3 failed");
@@ -676,6 +682,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "load.off"))
 	{
 		/* desliga Saida */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ret = send_command( 4 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 4 failed");
@@ -685,6 +692,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "bypass.start"))
 	{
 		/* liga Bypass */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ret = send_command( 5 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 5 failed");
@@ -694,13 +702,14 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "bypass.stop"))
 	{
 		/* desliga Bypass */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ret = send_command( 6 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 6 failed");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

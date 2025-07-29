@@ -1,0 +1,80 @@
+NUTDRV_HASHX(8)
+===============
+
+NAME
+----
+
+nutdrv_hashx - Driver for #* protocol serial based UPS equipment
+
+SYNOPSIS
+--------
+
+*nutdrv_hashx* -h
+
+*nutdrv_hashx* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+*nutdrv_hashx* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+The protocol originates from Cyber Energy that apparently developed the
+protocol for their UPS and it was used then by various other vendors
+(that in some cases they just re-brand the Cyber Energy products).
+
+The *nutdrv_hashx* driver is expected to work with various UPSes from
+'Ablerex', 'Atlantis Land', 'Epyc', 'Infosec', 'ION', 'PowerWalker',
+'Right Power Technology', 'Salicru', 'UPS Solutions' and various others.
+
+Long story short: if your UPS came with a software called 'PowerMaster+'
+(or the older 'PowerMaster' and 'PowerGuide'), chances are high that it
+works with this driver.
+
+Only devices with a serial interface are supported.
+
+KNOWN ISSUES AND BUGS
+---------------------
+
+The driver has only been tested with a single line-interactive device
+(Atlantis Land A03-S1200) so far, thus the protocol reverse engineering
+has been currently limited to what such device supports.
+
+Thus the lack of these features:
+
+* Specific support for PDU or ATS devices.
+* Detection of the UPS type (line-interactive / online).
+* Detection of max/min voltage ratings.
+* Detection of load banks.
+* Detection of Extended battery modules.
+* Detection of Over voltage state.
+* Detection of Under voltage state.
+* Detection of Frequency failure state.
+* Detection of Wiring Fault state.
+* Detection of lack of Neutral line connection.
+* Detection of UPS generators.
+* Detection of other Battery / UPS error states.
+* Reading of actual Voltage, Frequency, Current, Power factor, Temperature values.
+* Reading the status of the battery packs.
+* Bypass modes usage and detection.
+* USB Support (PM+ mentions being it supported, unsure if with the same protocol).
+
+The driver shutdown function is not implemented (while it's supported), so other
+arrangements must be made to turn off the UPS.
+
+AUTHORS
+-------
+
+Marco Trevisan <mail@3v1n0.net>
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* PowerMaster+: https://www.powermonitor.software/

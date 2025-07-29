@@ -69,15 +69,16 @@ scripts to know when to call linkman:upsdrvctl[8] to shut down the UPS.
 *-p*::
 Run privileged all the time.  Normally upsmon will split into two
 processes.  The majority of the code runs as an unprivileged user, and
-only a tiny stub runs as root.  This switch will disable that mode, and
-run the old "all root all the time" system.
+only a tiny stub runs as `root` to eventually call `SHUTDOWNCMD` if needed.
+This switch will disable that mode, and run the old "all root all the time"
+system.
 +
 This is not the recommended mode, and you should not use this unless you
 have a very good reason.
 
 *-u* 'user'::
 Set the user for the unprivileged monitoring process.  This has no effect
-when using -p.
+when using '-p'.
 +
 The default 'user' is set at build configuration time with
 `configure --with-user=...`.  Typically this is 'nobody' (if not
@@ -597,17 +598,18 @@ RELOADING NUANCES
 
 upsmon usually gives up root powers for the process that does most of
 the work, including handling signals like SIGHUP to reload the configuration
-file.  This means your linkman:upsmon.conf[8] file must be readable by
+file.  This means your linkman:upsmon.conf[5] file must be readable by
 the non-root account that upsmon switches to.
 
 If you want reloads to work, upsmon must run as some user that has
-permissions to read the configuration file.  I recommend making a new
+permissions to read the configuration file.  We recommend making a new
 user just for this purpose, as making the file readable by "nobody"
-(the default user) would be a bad idea.
+(the default user) would be a bad idea; packages typically ship with
+a `nut` or `ups` user to run NUT daemon services.
 
-See the RUN_AS_USER section in linkman:upsmon.conf[8] for more on this topic.
+See the `RUN_AS_USER` section in linkman:upsmon.conf[5] for more on this topic.
 
-Additionally, you can't change the SHUTDOWNCMD or POWERDOWNFLAG
+Additionally, you can't change the `SHUTDOWNCMD` or `POWERDOWNFLAG`
 definitions with a reload due to the split-process model.  If you change
 those values, you *must* stop upsmon and start it back up.  upsmon
 will warn you in the syslog if you make changes to either of those

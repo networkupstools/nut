@@ -1021,7 +1021,7 @@ want to delete from list...
     <property name="window_position">center-always</property>
     <property name="type_hint">normal</property>
     <property name="program_name">NUT-Monitor</property>
-    <property name="version">2.0.2</property>
+    <property name="version">2.0.3</property>
     <property name="copyright" translatable="yes">Copyright (c) 2010 David Goncalves, Copyright (c) since 2010 by NUT Community</property>
     <!-- NOTE: This plaintext markup of the "comment" is used
          in the Python2/GTK2 version of NUT Monitor.

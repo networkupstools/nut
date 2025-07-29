@@ -38,8 +38,9 @@ ACLOCAL_AMFLAGS = -I m4
 #
 # List of source subdirectories to build and distribute, used to spawn automake
 # (alas sequential) target recipes. The order matters, as several subdirectories
-# depend on stuff in "common" or tools being built first!
-SUBDIRS = include common clients conf data drivers tools \
+# depend on stuff in "common" or tools being built first! Also "data" depends
+# (during "dist" time) on scripts in "tools".
+SUBDIRS = include common clients conf drivers tools data \
   lib scripts server tests docs/man docs
 
 # Note: not generated from SUBDIRS, because not all are recursive:
@@ -156,7 +157,12 @@ EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 LICENSE-DCO MAINTAINERS
 # Since the renaming of documentation to `*.adoc` extension to help IDE
 # and GitHub UIs to render the source files in a pretty fashion, we need
 # to list them:
-EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc ci_build.adoc
+EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc
+
+# The document is now part of qa-guide; the script might be a bit git-oriented,
+# but can be useful in builds from tarball, probably. Anyhow, having the doc
+# without the tool which it documents is odd.
+EXTRA_DIST += ci_build.sh ci_build.adoc
 
 # Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
 # but lack NUT magic logic to recreate the `configure` script if someone would
@@ -436,9 +442,9 @@ all-recursive/scripts: all/scripts/Windows
 # tweak paths not using ${prefix} so `make distcheck` fails for it as
 # it does not play with a `DESTDIR` either.
 
-DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
-DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
-DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
+DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
+DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
+DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
 DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='@NUT_CONFIG_CXXFLAGS@ -g' CFLAGS='@NUT_CONFIG_CFLAGS@ -g' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@' --with-pynut=app --with-nut_monitor=force
 
 # Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time
@@ -893,7 +899,10 @@ MAINTAINERCLEANFILES += config.nut_report_feature.log*
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...
 # See gitrevisions for more information on specifying ranges
-GITLOG_START_POINT=v2.6.0
+#GITLOG_START_POINT=v2.6.0
+#GITLOG_END_POINT=HEAD
+GITLOG_START_POINT=@GITLOG_START_POINT@
+GITLOG_END_POINT=@GITLOG_END_POINT@
 
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
@@ -942,7 +951,7 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	            fi ; \
 	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
 	            CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR="$(CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR)" \
-	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) \
+	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) $(GITLOG_END_POINT) \
 	              && { echo "  DOC-CHANGELOG-GENERATE	$@ : SUCCESS"; } \
 	              || { \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : FAILED (non-fatal)" >&2 ; \
@@ -1240,25 +1249,31 @@ install-as-root:
 			fi ; \
 			echo "$@: Learn systemd definition changes" >&2 ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ daemon-reload || exit ; \
+			APPLIED_SYSTEMD_PRESET=false ; \
 			if $(WITH_SYSTEMD_PRESET) ; then \
 				echo "$@: Apply systemd enabled/disabled service presets" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all || exit ; \
-			else \
-				echo "$@: Apply systemd enabled/disabled service defaults" >&2 ; \
+				@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all && APPLIED_SYSTEMD_PRESET=true || APPLIED_SYSTEMD_PRESET=false ; \
+			fi ; \
+			if [ x"$${APPLIED_SYSTEMD_PRESET}" = x"false" ] ; then \
+				echo "$@: Apply systemd enabled/disabled service defaults in a legacy manner" >&2 ; \
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ disable nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 			fi ; \
-			echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart udev && applied_udev=true || true ; \
-			$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
+			if [ -s '@sysconfdir@/ups.conf' ] ; then \
+				echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
+				$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
+			fi; \
 			echo "$@: Restart NUT services" >&2 ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart nut-driver-enumerator.service nut-monitor.service nut-server.service || exit ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart nut-driver-enumerator.service nut-monitor.service nut-server.service \
+			|| if [ -s '@sysconfdir@/ups.conf' -a -s '@sysconfdir@/upsd.conf' -a -s '@sysconfdir@/upsd.users' -a -s '@sysconfdir@/upsmon.conf' ] ; then exit 1 ; \
+			else echo "$@: some configs are missing, assuming new NUT installation" >&2; fi; \
 		fi ; \
 		if ! $${applied_udev} && (command -v udevadm); then \
 			udevadm control --reload-rules && udevadm trigger && applied_udev=true || true ; \
 		fi ; \
 	 fi ; \
-	 echo "$@: finished SUCCESSFULLY" >&2
+	 echo "$@: Finished SUCCESSFULLY" >&2
 
 # Clean the dist tarball and packages
 MAINTAINERCLEANFILES_DISTBALL = nut-*.tar.gz
@@ -1420,7 +1435,46 @@ git-realclean-check:
 # quickly handled by external tools, to group (in life and log) various checks
 # separately from the probably slower/louder stages for test programs like
 # check-NIT:
-check-files-quick: spellcheck-quick check-man
+CHECK_FILES_QUICK_TARGETS = check-man
+if WITH_SPELLCHECK
+CHECK_FILES_QUICK_TARGETS += spellcheck-quick
+endif WITH_SPELLCHECK
+check-files-quick: $(CHECK_FILES_QUICK_TARGETS)
 
 # Autotools hook: run the quick checks before recursing for defaults:
 check-recursive: check-files-quick
+
+# Not pulled in directly so far, can be used by developers to verify that build
+# rules (inlcuding dependencies pulled from other directories) make sense and
+# do not cause conflict by writing into same file names. Something that builds
+# from root directory arrange nicely, but needs careful balancing on a tightrope
+# if developers build pieces of code right in the directory of their interest.
+# It is recommended to have "ccache" (or similar) setup working, to minimize the
+# time cost and workload of compilations involved in these looped build retries.
+# Auto-parallel recipe (if current 'make' implementation supports the "-j N"
+# syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
+check-parallel-builds:
+	automake -f
+	./config.status
+	+@MAXPARMAKES_OPT=""; \
+	  case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+		*"j"*) ;; \
+		*) \
+			if ! [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
+				MAXPARMAKES=8 ; \
+			fi ; \
+			MAXPARMAKES_OPT="-j $${MAXPARMAKES}" ; \
+		;; \
+	  esac ; \
+	  DIRS=""; \
+	  for D in `find . -name '*.c' -o -name '*.cpp' | sed 's,/[^/]*\.cp*$$,,' | uniq` ; do \
+		[ -e "$$D/Makefile.am" ] && [ -s "$$D/Makefile" ] || continue ; \
+		$(MAKE) $(AM_MAKEFLAGS) -k -s $${MAXPARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
+		echo "  $@	in $${D}" ; \
+		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${MAXPARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
+		  echo "To investigate, try:  $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $${MAXPARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) V=1 $${MAXPARMAKES_OPT} 2>&1 ; echo $?) | tee /tmp/make.log ; grep -E '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log"; \
+		  echo "If builds were interrupted before, you may also have to re-initialize the build area completely, e.g.:  git clean -fdX ; ./ci_build.sh && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $@" ; \
+		  exit $$RES; } ; \
+		DIRS="$${DIRS} $${D}" ; \
+	  done ; \
+	  echo "$@: SUCCESS in all checked directories:$${DIRS}" >&2

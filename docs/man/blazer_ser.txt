@@ -15,3 +15,7 @@ SYNOPSIS
 *blazer_ser* -a 'UPS_NAME' ['OPTIONS']
 
 include::blazer-common.txt[]
+
+////
+// dummy linkman for .txt-prepped rewrite
+////

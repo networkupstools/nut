@@ -202,7 +202,7 @@ function avoid_vla(int len)
 }
 --------------------------------------------------------------------------------
 
-This should be sued instead (preferably with `size_t` arguments right away),
+This should be used instead (preferably with `size_t` arguments right away),
 be sure to `free()` anywhere you `return` from the function:
 --------------------------------------------------------------------------------
 int use_xcalloc(size_t len)

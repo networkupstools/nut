@@ -887,11 +887,11 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		upsdebugx(3, "SSL connected (%s)", SSL_get_version(ups->ssl));
 		break;
 	case 0:
-		upslog_with_errno(1, "SSL_connect do not accept handshake.");
+		upsdebug_with_errno(1, "SSL_connect do not accept handshake.");
 		ssl_error(ups->ssl, res);
 		return -1;
 	default:
-		upslog_with_errno(1, "Unknown return value from SSL_connect %d", res);
+		upsdebug_with_errno(1, "Unknown return value from SSL_connect %d", res);
 		ssl_error(ups->ssl, res);
 		return -1;
 	}

@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.22"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -393,8 +393,13 @@ void upsdrv_shutdown(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -404,7 +409,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * if (mode == MODE_META) => ?
 	 */
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -559,22 +564,26 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	if ( (mode == MODE_META) || (mode == MODE_REPEATER) )
-	{
-		if (ups)
-		{
-			upscli_disconnect(ups);
-		}
-
-		if (ctx)
-		{
-			pconf_finish(ctx);
-			free(ctx);
-		}
-
-		free(client_upsname);
-		free(hostname);
+	if (ups) {
+		upscli_disconnect(ups);
 		free(ups);
+		ups = NULL;
+	}
+
+	if (client_upsname) {
+		free(client_upsname);
+		client_upsname = NULL;
+	}
+
+	if (hostname) {
+		free(hostname);
+		hostname = NULL;
+	}
+
+	if (ctx) {
+		pconf_finish(ctx);
+		free(ctx);
+		ctx = NULL;
 	}
 }
 
@@ -582,7 +591,7 @@ static int setvar(const char *varname, const char *val)
 {
 	dummy_info_t *item;
 
-	upsdebugx(2, "entering setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	/* FIXME: the below is only valid if (mode == MODE_DUMMY)
 	 * if (mode == MODE_REPEATER) => forward
@@ -591,7 +600,11 @@ static int setvar(const char *varname, const char *val)
 	if (!strncmp(varname, "ups.status", 10))
 	{
 		status_init();
-		 /* FIXME: split and check values (support multiple values), à la usbhid-ups */
+		/* FIXME: split and check values (support multiple values),
+		 *  à la usbhid-ups.
+		 * UPDATE: Since NUT v2.8.3, status_set() does the splitting,
+		 *  but what about "checking values"?
+		 */
 		status_set(val);
 		status_commit();
 
@@ -775,6 +788,10 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		if (!pconf_file_begin(ctx, fn))
 			fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
 				fn, ctx->errmsg);
+
+		/* we need this for parsing alarm instructions later */
+		status_init(); /* in case no ups.status does it */
+		alarm_init(); /* reset alarms at start of parsing */
 	}
 
 	/* Reset the next call time, so that we can loop back on the file
@@ -795,7 +812,7 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		if (ctx->numargs < 1)
 			continue;
 
-		/* Process actions (only "TIMER" ATM) */
+		/* TIMER instruction */
 		if (!strncmp(ctx->arglist[0], "TIMER", 5))
 		{
 			/* TIMER <seconds> will wait "seconds" before
@@ -803,8 +820,35 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 			int delay = atoi (ctx->arglist[1]);
 			time(&next_update);
 			next_update += delay;
+			upsdebugx(3, "parse_data_file: TIMER instruction with value \"%i\"", delay);
 			upsdebugx(1, "suspending execution for %i seconds...", delay);
 			break;
+		}
+
+		/* ALARM instruction */
+		if (!strncmp(ctx->arglist[0], "ALARM", 5))
+		{
+			if (ctx->numargs > 1) {
+				for (counter = 1, value_args = ctx->numargs ;
+					counter < value_args ; counter++)
+				{
+					if (counter == 1) /* don't append the first space separator */
+						snprintf(var_value, sizeof(var_value), "%s", ctx->arglist[counter]);
+					else
+						snprintfcat(var_value, sizeof(var_value), " %s", ctx->arglist[counter]);
+				}
+				if (*var_value != '\0') {
+					alarm_set(var_value);
+					upsdebugx(3, "parse_data_file: ALARM instruction with value \"%s\"", var_value);
+
+					continue;
+				}
+			}
+
+			alarm_init();
+			upsdebugx(3, "parse_data_file: ALARM instruction with no value (reset alarms)");
+
+			continue;
 		}
 
 		/* Remove ":" suffix, after the variable name */
@@ -856,6 +900,9 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 			}
 		}
 	}
+
+	alarm_commit(); /* needs to happen first */
+	status_commit(); /* re-commit status for ALARM */
 
 	/* Cleanup parseconf if there is no pending action */
 	if (next_update == -1)

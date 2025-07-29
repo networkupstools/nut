@@ -47,8 +47,11 @@
 #include "netvision-mib.h"
 #include "eaton-pdu-genesis2-mib.h"
 #include "eaton-pdu-marlin-mib.h"
+#include "eaton-pdu-nlogic-mib.h"
 #include "eaton-pdu-pulizzi-mib.h"
 #include "eaton-pdu-revelation-mib.h"
+#include "eaton-ups-pwnm2-mib.h"
+#include "eaton-ups-pxg-mib.h"
 #include "raritan-pdu-mib.h"
 #include "raritan-px2-mib.h"
 #include "baytech-mib.h"
@@ -69,9 +72,6 @@
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
 #include "hpe-pdu3-cis-mib.h"
-#include "eaton-pdu-nlogic-mib.h"
-#include "eaton-ups-pwnm2-mib.h"
-#include "eaton-ups-pxg-mib.h"
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
@@ -177,7 +177,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.34"
+#define DRIVER_VERSION	"1.37"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -695,7 +695,7 @@ void upsdrv_initups(void)
 	}
 
 	if (status == TRUE)
-		upslogx(0, "Detected %s on host %s (mib: %s %s)",
+		upslogx(LOG_INFO, "Detected %s on host %s (mib: %s %s)",
 			 model, device_path, mibname, mibvers);
 	else
 		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);
@@ -2123,7 +2123,9 @@ bool_t load_mib2nut(const char *mib)
 	return FALSE;
 }
 
-/* find the OID value matching that INFO_* value */
+/* find the OID value matching that INFO_* value
+ * Return -1 and errno==EINVAL for unsupported inputs.
+ */
 long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 {
 	info_lkp_t *info_lkp;
@@ -2135,14 +2137,19 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 			upsdebugx(1, "%s: found %s (value: %s)",
 					__func__, info_lkp->info_value, value);
 
+			errno = 0;
 			return info_lkp->oid_value;
 		}
 	}
+
 	upsdebugx(1, "%s: no matching INFO_* value for this OID value (%s)", __func__, value);
+	errno = EINVAL;
 	return -1;
 }
 
-/* String reformatting function */
+/* String reformatting function.
+ * Return NULL and errno==EINVAL for unsupported inputs.
+ */
 const char *su_find_strval(info_lkp_t *oid2info, void *value)
 {
 #if WITH_SNMP_LKP_FUN
@@ -2151,8 +2158,12 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 		const char	*retvalue;
 
 		upsdebugx(2, "%s: using generic lookup function (string reformatting)", __func__);
+		errno = 0;
 		retvalue = oid2info->fun_vp2s(value);
-		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		upsdebugx(2, "%s: got value '%s'%s",
+			__func__, retvalue,
+			(errno == EINVAL ? ", invalid input" : "")
+		);
 		return retvalue;
 	}
 	upsdebugx(1, "%s: no result value for this OID string value (%s)", __func__, (char*)value);
@@ -2160,10 +2171,14 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 	NUT_UNUSED_VARIABLE(oid2info);
 	upsdebugx(1, "%s: no mapping function for this OID string value (%s)", __func__, (char*)value);
 #endif /* WITH_SNMP_LKP_FUN */
+
+	errno = EINVAL;
 	return NULL;
 }
 
-/* find the INFO_* value matching that OID numeric (long) value */
+/* Find the INFO_* value matching that OID numeric (long) value.
+ * Return NULL and errno==EINVAL for unsupported inputs.
+ */
 const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 {
 	info_lkp_t *info_lkp;
@@ -2175,8 +2190,12 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 		const char	*retvalue;
 
 		upsdebugx(2, "%s: using generic lookup function", __func__);
+		errno = 0;
 		retvalue = oid2info->fun_vp2s(raw_value);
-		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		upsdebugx(2, "%s: got value '%s'%s",
+			__func__, retvalue,
+			(errno == EINVAL ? ", invalid input" : "")
+		);
 		return retvalue;
 	}
 #endif /* WITH_SNMP_LKP_FUN */
@@ -2189,10 +2208,13 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 			upsdebugx(1, "%s: found %s (value: %ld)",
 					__func__, info_lkp->info_value, value);
 
+			errno = 0;
 			return info_lkp->info_value;
 		}
 	}
+
 	upsdebugx(1, "%s: no matching INFO_* value for this OID value (%ld)", __func__, value);
+	errno = EINVAL;
 	return NULL;
 }
 
@@ -2838,6 +2860,7 @@ bool_t daisychain_init(void)
 		{
 #if WITH_SNMP_LKP_FUN
 			devices_count = -1;
+			errno = 0;
 			/* First test if we have a generic lookup function
 			 * FIXME: Check if the field type is a string?
 			 */
@@ -2849,11 +2872,14 @@ bool_t daisychain_init(void)
 				upsdebugx(2, "%s: using generic string-to-long lookup function", __func__);
 				if (TRUE == nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info)) {
 					devices_count = su_info_p->oid2info->nuf_s2l(buf);
-					upsdebugx(2, "%s: got value '%ld'", __func__, devices_count);
+					upsdebugx(2, "%s: got value '%ld'%s",
+						__func__, devices_count,
+						(errno == EINVAL ? ", invalid input" : "")
+					);
 				}
 			}
 
-			if (devices_count == -1) {
+			if (devices_count == -1 || errno == EINVAL) {
 #endif /* WITH_SNMP_LKP_FUN */
 
 				if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE) {
@@ -3201,13 +3227,16 @@ bool_t snmp_ups_walk(int mode)
 			}
 
 			/* skip static elements in update mode */
-			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC))
+			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC)) {
+				upsdebugx(1, "Skipping static entry %s", su_info_p->OID);
 				continue;
+			}
 
 			/* Set default value if we cannot fetch it */
 			/* and set static flag on this element.
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
-			if ((su_info_p->flags & SU_FLAG_ABSENT)
+			if (
+				    (su_info_p->flags & SU_FLAG_ABSENT)
 				&& !(su_info_p->flags & SU_OUTLET)
 				&& !(su_info_p->flags & SU_OUTLET_GROUP)
 				&& !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
@@ -3229,6 +3258,9 @@ bool_t snmp_ups_walk(int mode)
 							/* Set default value if we cannot fetch it from ups. */
 							su_setinfo(su_info_p, NULL);
 						}
+						upsdebugx(1, "Defaulting absent entry and setting to static: %s", su_info_p->OID);
+					} else {
+						upsdebugx(1, "Setting absent entry to static (no defautl provided): %s", su_info_p->OID);
 					}
 					su_info_p->flags |= SU_FLAG_STATIC;
 				}
@@ -3653,10 +3685,13 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
  * @varname: name of variable or command to set the OID from
  * @val: value for settings, NULL for commands
 
- * Returns
- *   STAT_SET_HANDLED if OK,
- *   STAT_SET_INVALID or STAT_SET_UNKNOWN if the command / setting is not supported
- *   STAT_SET_FAILED otherwise
+ * Returns respectively (for instcmd or setvar activity):
+ *   STAT_INSTCMD_HANDLED or STAT_SET_HANDLED if OK,
+ *   STAT_*_CONVERSION_FAILED if the value was invalid
+ *       (not a number when expected one,
+ *        not a key in mapping table when used)
+ *   STAT_*_INVALID or STAT_*_UNKNOWN if the command / setting is not supported
+ *   STAT_*_FAILED otherwise
  */
 static int su_setOID(int mode, const char *varname, const char *val)
 {
@@ -3670,12 +3705,14 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	int daisychain_device_number = -1;
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
+	const char *val_practical = NULL;
 	char setOID[SU_INFOSIZE];
 	/* Used for potentially appending "device.X." to {outlet,outlet.group}.count */
 	char template_count_var[SU_BUFSIZE];
 
 	upsdebugx(2, "entering %s(%s, %s, %s)", __func__,
-		(mode==SU_MODE_INSTCMD)?"instcmd":"setvar", varname, val);
+		(mode==SU_MODE_INSTCMD)?"instcmd":"setvar",
+		NUT_STRARG(varname), NUT_STRARG(val));
 
 	memset(setOID, 0, SU_INFOSIZE);
 	memset(template_count_var, 0, SU_BUFSIZE);
@@ -3748,7 +3785,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		upsdebugx(2, "daisychain %s for device.0 are not yet supported!",
 			(mode==SU_MODE_INSTCMD)?"command":"setting");
 		free(tmp_varname);
-		return STAT_SET_INVALID;
+		return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_INVALID : (int)STAT_SET_INVALID);
 	}
 
 	/* Check if it is outlet / outlet.group, or standard variable */
@@ -3815,7 +3852,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			/* out of bound item number */
 			upsdebugx(2, "%s: item is out of bound (%i / %i)",
 				__func__, item_number, total_items);
-			return STAT_SET_INVALID;
+			return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_INVALID : (int)STAT_SET_INVALID);
 		}
 		/* find back the item template */
 		item_varname = (char *)xmalloc(SU_INFOSIZE);
@@ -3884,8 +3921,9 @@ static int su_setOID(int mode, const char *varname, const char *val)
 					tmp_info_p->OID, "%i", item_number);
 			}
 		}
-		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR since we
-		 * can be setting a server side variable! */
+		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR
+		 * since we can be setting a server side variable - but
+		 * note this consideration does not apply to instcmd's! */
 		else {
 			if (mode==SU_MODE_INSTCMD) {
 				free_info(su_info_p);
@@ -3910,7 +3948,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		if (tmp_varname != NULL)
 			free(tmp_varname);
 
-		return STAT_SET_UNKNOWN;
+		return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_UNKNOWN : (int)STAT_SET_UNKNOWN);
 	}
 
 	/* set value into the device, using the provided one, or the default one otherwise */
@@ -3918,30 +3956,37 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		/* Sanity check: commands should either have a value or a default */
 		if ( (val == NULL) && (su_info_p->dfl == NULL) ) {
 			upsdebugx(1, "%s: cannot execute command '%s': a provided or default value is needed!", __func__, varname);
-			return STAT_SET_INVALID;
+			return STAT_INSTCMD_INVALID;
 		}
+		upslog_INSTCMD_POWERSTATE_CHECKED(varname, val);
 	}
 
+	val_practical = val ? val : su_info_p->dfl;
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
-		status = nut_snmp_set_str(su_info_p->OID, val ? val : su_info_p->dfl);
+		status = nut_snmp_set_str(su_info_p->OID, val_practical);
 	}
 	else {
 		if (mode==SU_MODE_INSTCMD) {
-			if ( !str_to_long(val ? val : su_info_p->dfl, &value, 10) ) {
+			if ( !str_to_long(val_practical, &value, 10) ) {
 				upsdebugx(1, "%s: cannot execute command '%s': value is not a number!", __func__, varname);
-				return STAT_SET_INVALID;
+				return STAT_INSTCMD_CONVERSION_FAILED;
 			}
 		}
 		else {
 			/* non string data may imply a value lookup */
 			if (su_info_p->oid2info) {
-				value = su_find_valinfo(su_info_p->oid2info, val ? val : su_info_p->dfl);
+				value = su_find_valinfo(su_info_p->oid2info, val_practical);
+				if (value == -1 && errno == EINVAL) {
+					upsdebugx(1, "%s: cannot set '%s': value %s is not supported by lookup mapping!",
+						__func__, varname, NUT_STRARG(val_practical));
+					return STAT_SET_CONVERSION_FAILED;
+				}
 			}
 			else {
 				/* Convert value and apply multiplier */
 				if ( !str_to_long(val, &value, 10) ) {
 					upsdebugx(1, "%s: cannot set '%s': value is not a number!", __func__, varname);
-					return STAT_SET_INVALID;
+					return STAT_SET_CONVERSION_FAILED;
 				}
 				value = (long)((double)value / su_info_p->info_len);
 			}
@@ -3957,23 +4002,26 @@ static int su_setOID(int mode, const char *varname, const char *val)
 
 	/* Process result */
 	if (status == FALSE) {
-		if (mode==SU_MODE_INSTCMD)
+		if (mode==SU_MODE_INSTCMD) {
 			upsdebugx(1, "%s: cannot execute command '%s'", __func__, varname);
-		else
+			retval = STAT_INSTCMD_FAILED;
+		}
+		else {
 			upsdebugx(1, "%s: cannot set value %s on OID %s", __func__, val, su_info_p->OID);
-
-		retval = STAT_SET_FAILED;
+			retval = STAT_SET_FAILED;
+		}
 	}
 	else {
-		retval = STAT_SET_HANDLED;
-		if (mode==SU_MODE_INSTCMD)
+		if (mode==SU_MODE_INSTCMD) {
 			upsdebugx(1, "%s: successfully sent command %s", __func__, varname);
-		else {
+			retval = STAT_INSTCMD_HANDLED;
+		} else {
 			upsdebugx(1, "%s: successfully set %s to \"%s\"", __func__, varname, val);
 
 			/* update info array: call dstate_setinfo, since flags and aux are
 			 * already published, and this saves us some processing */
 			dstate_setinfo(varname, "%s", val);
+			retval = STAT_SET_HANDLED;
 		}
 	}
 
@@ -3989,7 +4037,15 @@ static int su_setOID(int mode, const char *varname, const char *val)
  * FIXME: make a common function with su_instcmd! */
 int su_setvar(const char *varname, const char *val)
 {
-	return su_setOID(SU_MODE_SETVAR, varname, val);
+	int	ret;
+
+	upsdebug_SET_STARTING(varname, val);
+
+	ret = su_setOID(SU_MODE_SETVAR, varname, val);
+
+	upslog_SET_RESULT(ret, varname, val);
+
+	return ret;
 }
 
 /* Daisychain-aware function to add instant commands:
@@ -4020,7 +4076,15 @@ int su_addcmd(snmp_info_t *su_info_p)
 /* process instant command and take action. */
 int su_instcmd(const char *cmdname, const char *extradata)
 {
-	return su_setOID(SU_MODE_INSTCMD, cmdname, extradata);
+	int	ret;
+
+	upsdebug_INSTCMD_STARTING(cmdname, extradata);
+
+	ret = su_setOID(SU_MODE_INSTCMD, cmdname, extradata);
+
+	upslog_INSTCMD_RESULT(ret, cmdname, extradata);
+
+	return ret;
 }
 
 /* FIXME: the below functions can be removed since these were for loading
