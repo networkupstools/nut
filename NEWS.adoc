@@ -247,11 +247,14 @@ https://github.com/networkupstools/nut/milestone/9
      for Powervar CUSPP protocol, tested with GTS (USB) and UPM (USB, Serial)
      models. [#2988]
 
- - The `nut-driver-enumerator.sh` script (NDE) now internally tracks dependency
-   of one driver on another one that should be locally running to serve the
-   "original" data points (`clone`, `clone-outlet`, `dummy-ups`, `failover`).
-   It should create soft dependencies between respective service instances
-   to order their start-up sequence. [#2962]
+ - The `nut-driver-enumerator.sh` script (NDE) updates:
+   * Now NDE internally tracks dependency of one driver on another one that
+     should be locally running to serve the "original" data points (`clone`,
+     `clone-outlet`, `dummy-ups`, `failover`). It should create "soft"
+     dependencies between respective service instances to order their
+     start-up sequence. [#2962]
+   * Fixed NDE to not consider "masked" systemd units as non-existent or
+     as syntactically failed instantiated unit names. [#3033]
 
  - NUT Monitor GUI:
    * Ported Python 3 version to Qt6, now shipped alongside Qt5 for systems

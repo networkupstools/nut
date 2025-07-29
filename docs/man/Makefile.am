@@ -1617,7 +1617,7 @@ endif !WITH_HTML_SINGLE
 #  (sockdebug), or platform-specific progs (nut.exe)
 LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.txt linkman-docbuildmode-note.txt
 LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt nut.txt
-CLEANFILES = linkman-*.txt.tmp
+CLEANFILES = linkman-*.txt.tmp*
 
 # Note we can have a pre-built file from the tarball, sort of useful when
 # e.g. no man page building tools are locally available (we might not be
@@ -1630,19 +1630,19 @@ linkman-driver-names.txt: Makefile
 	    | grep -vE '^nutupsdrv\.txt$$' \
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[$(MAN_SECTION_CMD_SYS)],' ; \
-	 ) > "$(builddir)/$(@F).tmp"
-	@if test ! -s "$(builddir)/$(@F).tmp" \
+	 ) > "$(builddir)/$(@F).tmp.$$$$" || exit ; \
+	 if test ! -s "$(builddir)/$(@F).tmp.$$$$" \
 	 && test x"$(abs_srcdir)" != x"$(abs_builddir)" \
 	 && test -s "$(srcdir)/$(@F)" \
 	 ; then \
-	    cat "$(srcdir)/$(@F)" "$(builddir)/$(@F).tmp" ; \
-	 fi
-	@if test ! -s "$(builddir)/$(@F).tmp" ; then echo "- No NUT drivers were built" > "$(builddir)/$(@F).tmp" ; fi
-	@if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; then \
-	    mv -f "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; \
+	    cat "$(srcdir)/$(@F)" "$(builddir)/$(@F).tmp.$$$$" || exit ; \
+	 fi ; \
+	 if test ! -s "$(builddir)/$(@F).tmp.$$$$" ; then echo "- No NUT drivers were built" > "$(builddir)/$(@F).tmp.$$$$" ; fi ; \
+	 if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; then \
+	    mv -f "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; \
 	 else \
 	    echo "  GENERATE-LINKMAN	$@ : SKIP (keep existing file)" ; \
-	    rm -f "$(builddir)/$(@F).tmp" ; \
+	    rm -f "$(builddir)/$(@F).tmp.$$$$" ; \
 	 fi
 
 linkman-drivertool-names.txt: Makefile
@@ -1651,19 +1651,19 @@ linkman-drivertool-names.txt: Makefile
 	  for F in $(LINKMAN_PAGES_DRIVERTOOLS) ; do echo "$$F" ; done \
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[$(MAN_SECTION_CMD_SYS)],' ; \
-	 ) > "$(builddir)/$(@F).tmp"
-	@if test ! -s "$(builddir)/$(@F).tmp" \
+	 ) > "$(builddir)/$(@F).tmp.$$$$" || exit ; \
+	 if test ! -s "$(builddir)/$(@F).tmp.$$$$" \
 	 && test x"$(abs_srcdir)" != x"$(abs_builddir)" \
 	 && test -s "$(srcdir)/$(@F)" \
 	 ; then \
-	    cat "$(srcdir)/$(@F)" "$(builddir)/$(@F).tmp" ; \
-	 fi
-	@if test ! -s "$(builddir)/$(@F).tmp" ; then echo "- No NUT driver tools were built" > "$(builddir)/$(@F).tmp" ; fi
-	@if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; then \
-	    mv -f "$(builddir)/$(@F).tmp" "$(builddir)/$(@F)" ; \
+	    cat "$(srcdir)/$(@F)" "$(builddir)/$(@F).tmp.$$$$" || exit ; \
+	 fi ; \
+	 if test ! -s "$(builddir)/$(@F).tmp.$$$$" ; then echo "- No NUT driver tools were built" > "$(builddir)/$(@F).tmp.$$$$" ; fi ; \
+	 if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; then \
+	    mv -f "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; \
 	 else \
 	    echo "  GENERATE-LINKMAN	$@ : SKIP (keep existing file)" ; \
-	    rm -f "$(builddir)/$(@F).tmp" ; \
+	    rm -f "$(builddir)/$(@F).tmp.$$$$" ; \
 	 fi
 
 # Doing this dynamically as here, so we may later deliver some more dynamic
