@@ -23,7 +23,7 @@ $(top_builddir)/tools/nut-scanner/libnutscan.la: dummy
 # Builds from root dir arrange stuff decently. Make sure parallel builds
 # started from scratch right in this dir get dependencies in proper order
 # (sub-makes are independent as far as trying to write into same files):
-$(top_builddir)/tools/nut-scanner/libnutscan.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la
+$(top_builddir)/tools/nut-scanner/libnutscan.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libcommonclient.la
 $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
 
