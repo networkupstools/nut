@@ -1000,8 +1000,21 @@ systemd_registerInstance() {
     DEVICE="$1"
     SVCINST="$1"
     /bin/systemctl enable 'nut-driver@'"$DEVICE".service || \
-    { SVCINST="`systemd_validInstanceName "$1"`" && \
-      /bin/systemctl enable 'nut-driver@'"$SVCINST".service || return ; }
+    { if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | grep -E "^nut-driver@${DEVICE}.service$"; then
+        echo "SKIP: Unit 'nut-driver@${DEVICE}.service' seems deliberately masked" >&2
+        return 0
+      fi
+      echo "RETRY with validInstanceName of '$1'" >&2
+      SVCINST="`systemd_validInstanceName "$1"`" && \
+      /bin/systemctl enable 'nut-driver@'"$SVCINST".service || {
+        RES=$?
+        if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | grep -E "^nut-driver@${SVCINST}.service$"; then
+          echo "SKIP: Unit 'nut-driver@${SVCINST}.service' seems deliberately masked" >&2
+          return 0
+        fi
+        return $RES
+        }
+      }
     echo "Enabled instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
 
     DEPSVC=""
@@ -1101,7 +1114,7 @@ systemd_refreshSupervizor() {
     /bin/systemctl daemon-reload
 }
 systemd_listInstances_raw() {
-    /bin/systemctl show 'nut-driver@*' -p Id | grep -E '=nut-driver' | sed 's,^Id=,,'
+    /bin/systemctl show --all 'nut-driver@*' -p Id | grep -E '=nut-driver' | sed 's,^Id=,,'
 }
 systemd_listInstances() {
     systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -k1n -k1
