@@ -2318,6 +2318,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ;;
                 esac
 
+                # Snippet from autogen.sh: restore files required by autoconf
+                # for non-"foreign" projects that a deep clean in other loops
+                # could have destroyed:
+                [ -f "${SCRIPTDIR}/NEWS" ] || { echo "Please see NEWS.adoc for actual contents" > "${SCRIPTDIR}/NEWS"; }
+                [ -f "${SCRIPTDIR}/README" ] || { echo "Please see README.adoc for actual contents" > "${SCRIPTDIR}/README"; }
+
                 configure_nut
                 ) || {
                     RES_ALLERRORS=$?
