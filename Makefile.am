@@ -1476,7 +1476,7 @@ check-parallel-builds:
 		$(MAKE) $(AM_MAKEFLAGS) -k -s $${MAXPARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
 		echo "  $@	in $${D}" ; \
 		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${MAXPARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
-		  echo "To investigate, try:  $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $${MAXPARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) V=1 $${MAXPARMAKES_OPT} 2>&1 ; echo $?) | tee /tmp/make.log ; grep -E '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log"; \
+		  echo "To investigate, try:  (MAKEFLAGS='$(MAKEFLAGS)' ; export MAKEFLAGS; $(MAKE) $(AM_MAKEFLAGS) $${MAXPARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(AM_MAKEFLAGS) V=1 $${MAXPARMAKES_OPT} 2>&1 ; echo $$?) | tee /tmp/make.log ; RES=$$? ; grep -E '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log ; exit $$RES )"; \
 		  echo "If builds were interrupted before, you may also have to re-initialize the build area completely, e.g.:  git clean -fdX ; ./ci_build.sh && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $@" ; \
 		  exit $$RES; } ; \
 		DIRS="$${DIRS} $${D}" ; \
