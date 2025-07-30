@@ -513,9 +513,14 @@ fi
 # For two-phase builds (quick parallel make first, sequential retry if failed)
 # how verbose should that first phase be? Nothing, automake list of ops, CLIs?
 # See build_to_only_catch_errors_target() for a consumer of this setting.
+# CI_PARMAKE_VERBOSITY_CPB is for "check-parallel-builds" part below.
 case "${CI_PARMAKE_VERBOSITY-}" in
-    silent|quiet|verbose|default) ;;
-    *) CI_PARMAKE_VERBOSITY=silent ;;
+    silent|quiet|verbose|default)
+        [ -n "${CI_PARMAKE_VERBOSITY_CPB-}" ] || CI_PARMAKE_VERBOSITY_CPB="${CI_PARMAKE_VERBOSITY-}"
+        ;;
+    *)  CI_PARMAKE_VERBOSITY=silent
+        [ -n "${CI_PARMAKE_VERBOSITY_CPB-}" ] || CI_PARMAKE_VERBOSITY_CPB=quiet
+        ;;
 esac
 
 # Set up the parallel make with reasonable limits, using several ways to
@@ -1945,6 +1950,16 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 echo "NOTE: adapted BUILD_TYPE 'default-all-errors' => '${BUILD_TYPE}'" >&2
             fi
 
+            if [ x"${HAVE_CCACHE-}" = xyes ] && [ x"${CI_DO_CHECK_PARALLEL_BUILDS-}" = x ] ; then
+                # Ideally massive-build CI recipes would set this option
+                # for scenarios they are interested in, e.g. once per OS
+                # and make implementation, not all hundreds of builds?..
+                # On the other hand, catching issues (race conditions in
+                # recipes) is a big-numbers game...
+                CI_DO_CHECK_PARALLEL_BUILDS=true
+                echo "NOTE: we have ccache, so enabled 'make check-parallel-builds' for combos below" >&2
+            fi
+
             # Try to run various build scenarios to collect build errors
             # (no checks here) as configured further by caller's choice
             # of BUILD_WARNFATAL and/or BUILD_WARNOPT envvars above.
@@ -2339,6 +2354,27 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         break
                     fi
                 }
+
+                # Check that the current MAKE implementation deals with parallel
+                # recipes properly. Ideally this is sped up by ccache. At least
+                # privately CI_FAILFAST=true to not retry this one sequentially:
+                if [ x"$CI_DO_CHECK_PARALLEL_BUILDS" = xtrue ] ; then
+                    CI_FAILFAST=true \
+                    CI_PARMAKE_VERBOSITY="${CI_PARMAKE_VERBOSITY_CPB-}" \
+                    CHECK_PARALLEL_BUILDS_REGEN=false \
+                    build_to_only_catch_errors_target check-parallel-builds && {
+                        SUCCEEDED+=("TESTCOMBO=${TESTCOMBO}[check-parallel-builds]")
+                    } || {
+                        RES_ALLERRORS=$?
+                        FAILED+=("TESTCOMBO=${TESTCOMBO}[check-parallel-builds]")
+                        # Help find end of build (before cleanup noise) in logs:
+                        echo "=== FAILED 'TESTCOMBO=${TESTCOMBO}' check-parallel-builds"
+                        if [ "$CI_FAILFAST" = true ]; then
+                            echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                            break
+                        fi
+                    }
+                fi
 
                 # Note: when `expr` calculates a zero value below, it returns
                 # an "erroneous" `1` as exit code. Why oh why?..
