@@ -641,6 +641,11 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=no ;;
         "NUT_BUILD_CAPS=libltdl"|"NUT_BUILD_CAPS=libltdl=yes")
             [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=yes ;;
+
+        # For now like this; VM systems with a clock skew can have natural
+        # problems with parallel tasks, which we can not do much about.
+        "NUT_BUILD_CAPS=check-parallel-builds=no")
+            [ -n "${CI_DO_CHECK_PARALLEL_BUILDS-}" ] || CI_DO_CHECK_PARALLEL_BUILDS=false ;;
     esac
 done
 
