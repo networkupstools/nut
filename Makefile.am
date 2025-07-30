@@ -697,16 +697,21 @@ spellcheck spellcheck-interactive:
 
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
-spellcheck-quick:
-	+@case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
-		*"j"*) $(MAKE) $(AM_MAKEFLAGS) -k -s spellcheck && exit ;; \
+SET_PARMAKES_OPT = \
+	+@PARMAKES_OPT=""; \
+	  case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+		*"j"*) ;; \
 		*) \
 			if ! [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
 				MAXPARMAKES=8 ; \
 			fi ; \
-			$(MAKE) $(AM_MAKEFLAGS) -k -s -j $${MAXPARMAKES} spellcheck \
-			&& exit ;; \
+			PARMAKES_OPT="-j $${MAXPARMAKES}" ; \
+		;; \
 	  esac
+
+spellcheck-quick:
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s ${PARMAKES_OPT} spellcheck
 
 # Run auto-parallel recipe, and if something fails - re-run interactively:
 spellcheck-interactive-quick:
@@ -1460,23 +1465,14 @@ CHECK_PARALLEL_BUILDS_REGEN = true
 check-parallel-builds:
 	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then automake -f ; fi
 	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then ./config.status ; fi
-	+@MAXPARMAKES_OPT=""; \
-	  case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
-		*"j"*) ;; \
-		*) \
-			if ! [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
-				MAXPARMAKES=8 ; \
-			fi ; \
-			MAXPARMAKES_OPT="-j $${MAXPARMAKES}" ; \
-		;; \
-	  esac ; \
+	+@$(SET_PARMAKES_OPT); \
 	  DIRS=""; \
 	  for D in `find . -name '*.c' -o -name '*.cpp' | sed 's,/[^/]*\.cp*$$,,' | uniq` ; do \
 		[ -e "$$D/Makefile.am" ] && [ -s "$$D/Makefile" ] || continue ; \
-		$(MAKE) $(AM_MAKEFLAGS) -k -s $${MAXPARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
+		$(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
 		echo "  $@	in $${D}" ; \
-		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${MAXPARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
-		  echo "To investigate, try:  (MAKEFLAGS='$(MAKEFLAGS)' ; export MAKEFLAGS; $(MAKE) $(AM_MAKEFLAGS) $${MAXPARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(AM_MAKEFLAGS) V=1 $${MAXPARMAKES_OPT} 2>&1 ; echo $$?) | tee /tmp/make.log ; RES=$$? ; grep -E '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log ; exit $$RES )"; \
+		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
+		  echo "To investigate, try:  (MAKEFLAGS='$(MAKEFLAGS)' ; export MAKEFLAGS; $(MAKE) $(AM_MAKEFLAGS) $${PARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(AM_MAKEFLAGS) V=1 $${PARMAKES_OPT} 2>&1 ; echo $$?) | tee /tmp/make.log ; RES=$$? ; grep -E '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log ; exit $$RES )"; \
 		  echo "If builds were interrupted before, you may also have to re-initialize the build area completely, e.g.:  git clean -fdX ; ./ci_build.sh && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $@" ; \
 		  exit $$RES; } ; \
 		DIRS="$${DIRS} $${D}" ; \
