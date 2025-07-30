@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3535 utf-8
+personal_ws-1.1 en 3538 utf-8
 AAC
 AAS
 ABI
@@ -80,6 +80,7 @@ Autobook
 Autoconfigure
 Avocent
 Axel
+Axpert
 Axxium
 BATGNn
 BATNn
@@ -1642,6 +1643,7 @@ avahi
 avr
 awd
 awk
+axpert
 b'some
 b'string
 bAlternateSetting
@@ -2866,6 +2868,7 @@ pts
 ptv
 pty
 pulizzi
+pv
 pw
 pwd
 pwmib
