@@ -1444,6 +1444,10 @@ check-files-quick: $(CHECK_FILES_QUICK_TARGETS)
 # Autotools hook: run the quick checks before recursing for defaults:
 check-recursive: check-files-quick
 
+# Caller can set this to "false" to not regenerate below
+# (e.g. in CI vs. developer iterations):
+CHECK_PARALLEL_BUILDS_REGEN = true
+
 # Not pulled in directly so far, can be used by developers to verify that build
 # rules (inlcuding dependencies pulled from other directories) make sense and
 # do not cause conflict by writing into same file names. Something that builds
@@ -1454,8 +1458,8 @@ check-recursive: check-files-quick
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
 check-parallel-builds:
-	automake -f
-	./config.status
+	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then automake -f ; fi
+	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then ./config.status ; fi
 	+@MAXPARMAKES_OPT=""; \
 	  case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
 		*"j"*) ;; \
