@@ -1,0 +1,23 @@
+= Packaging recipes for OBS
+
+This directory holds reference NUT packaging recipes for RPM, DEB and
+other formats, and is primarily aimed at automation of builds with the
+link:https://openbuildservice.org/[Open Build Service (OBS)].  Note that
+beside the on-line service, the software is open-source and any project
+may install and run their own; back-end scripts may be added to support
+more operating systems (even not necessarily Linux).
+
+NOTE: The layout of files and directories here is dictated by current
+expectations of the OBS software (if at some point it has to be a flat
+mess with no structure -- so be it).
+
+The recipe files themselves would likely cross-pollinate with popular
+distributions, to allow easier replacement of standard, supported and
+stale package builds with those of experimental development iterations.
+
+This should be in part facilitated by the NUT Semantic Versioning scheme (see
+linkdoc:developer-guide[NUT Semantic Versioning,versioning,docs/nut-versioning.adoc])
+which adds version number components to expose the "age" of each such
+iteration as a number of commits merged into the common development trunk
+since a preceding release, and a number of commits unique to a feature
+branch.
