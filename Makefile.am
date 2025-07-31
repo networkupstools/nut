@@ -1463,7 +1463,7 @@ CHECK_PARALLEL_BUILDS_REGEN = true
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
 check-parallel-builds:
-	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then cd '$(top_srcdir)' && automake -f ; fi
+	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then cd '$(top_srcdir)' && $(AUTOMAKE) -f ; fi
 	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then ./config.status ; fi
 	+@$(SET_PARMAKES_OPT); \
 	  DIRS=""; \
