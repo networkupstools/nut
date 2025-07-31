@@ -1467,8 +1467,8 @@ check-parallel-builds:
 	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then ./config.status ; fi
 	+@$(SET_PARMAKES_OPT); \
 	  DIRS=""; \
-	  for D in `find . -name '*.c' -o -name '*.cpp' | sed 's,/[^/]*\.cp*$$,,' | uniq` ; do \
-		[ -e "$$D/Makefile.am" ] && [ -s "$$D/Makefile" ] || continue ; \
+	  for D in `cd '$(top_srcdir)' && find . -name '*.c' -o -name '*.cpp' | sed 's,/[^/]*\.cp*$$,,' | uniq` ; do \
+		[ -e "$(top_srcdir)/$$D/Makefile.am" ] && [ -s "$$D/Makefile" ] || continue ; \
 		$(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
 		echo "  $@	in $${D}" ; \
 		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
