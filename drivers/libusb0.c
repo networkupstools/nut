@@ -754,6 +754,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				"requested criteria",
 				count_open_attempts - count_open_errors);
 		}
+		suggest_NDE_conflict();
 	}
 
 #ifdef WIN32

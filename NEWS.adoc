@@ -141,6 +141,13 @@ https://github.com/networkupstools/nut/milestone/9
      [#2957]
    * Fixed a couple of ancient memory leaks: one "shared" during driver
      program initialization, and one specific to `dummy-ups` wind-down. [#2972]
+   * Added a `suggest_NDE_conflict()` method so drivers which lack access
+     to the expected device can consistently suggest that this may be because
+     of running both an NDE-wrapped service unit and a manually launched
+     driver program at the same time. Currently added to `libusb{0,1}.c`
+     code, but may later be expanded to e.g. serial drivers and other media,
+     when their behavior in such situations gets identified. [follow-up to
+     issue #477, PR #3041]
 
  - `apc_modbus` driver updates:
    * The time stamp and inter-frame delay accounting was fixed, alleviating

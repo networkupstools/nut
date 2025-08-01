@@ -229,6 +229,16 @@ const char *describe_NUT_VERSION_once(void);
  */
 const char *suggest_doc_links(const char *progname, const char *progconf);
 
+/* For drivers that failed to start because they could not hold on to a
+ * device, on systems where the nut-driver-enumerator could produce units
+ * that conflict with a manually-launched driver program, suggest that
+ * this may be the case. Has some work on systems where NDE can be used
+ * (currently where SMF or SystemD were considered during build), no-op
+ * on others.
+ * We define this in one spot, to change conditions or wording easily.
+ */
+void suggest_NDE_conflict(void);
+
 /* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
  * hide the NUT tool name+version banners; show them by default */
 int banner_is_disabled(void);
