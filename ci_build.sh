@@ -1161,7 +1161,7 @@ build_to_only_catch_errors_target() {
           $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" >/dev/null ;;
         quiet)
           $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" ;;
-        silent)
+        verbose)
           $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE -k $PARMAKE_FLAGS "$@" ;;
         default)
           $CI_TIME $MAKE -k $PARMAKE_FLAGS "$@" ;;
