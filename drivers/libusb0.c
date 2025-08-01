@@ -755,6 +755,11 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				count_open_attempts - count_open_errors);
 		}
 		suggest_NDE_conflict();
+		/* FIXME: Wiki names are inherently volatile;
+		 * maybe keep a more persistent copy in the
+		 * NUT-website with some knowledge-base ID? */
+		upsdebugx(1, "For more ideas, please check a NUT GitHub Wiki page named like "
+			"https://github.com/networkupstools/nut/wiki/%%22Insufficient-permissions%%22-when-starting-USB-drivers");
 	}
 
 #ifdef WIN32
