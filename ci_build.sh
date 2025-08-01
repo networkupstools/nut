@@ -2368,12 +2368,20 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
                 # Check that the current MAKE implementation deals with parallel
                 # recipes properly. Ideally this is sped up by ccache. At least
-                # privately CI_FAILFAST=true to not retry this one sequentially:
+                # privately CI_FAILFAST=true to not retry this one sequentially.
+                # Note two passings of CHECK_PARALLEL_BUILDS_REGEN=false - as an
+                # envvar and as a make argument, to ensure that different `make`
+                # implementations honour our desire.
+                # WARNING: This check does repetitively `make clean` along the
+                # way, so should be the last operation before scenario clean-up!
                 if [ x"$CI_DO_CHECK_PARALLEL_BUILDS" = xtrue ] ; then
                     CI_FAILFAST=true \
                     CI_PARMAKE_VERBOSITY="${CI_PARMAKE_VERBOSITY_CPB-}" \
                     CHECK_PARALLEL_BUILDS_REGEN=false \
-                    build_to_only_catch_errors_target check-parallel-builds && {
+                    build_to_only_catch_errors_target \
+                        CHECK_PARALLEL_BUILDS_REGEN=false \
+                        check-parallel-builds \
+                    && {
                         SUCCEEDED+=("TESTCOMBO=${TESTCOMBO}[check-parallel-builds]")
                     } || {
                         RES_ALLERRORS=$?
