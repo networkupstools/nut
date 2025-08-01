@@ -287,13 +287,10 @@ sub find_usbdevs
 		print stderr "find_usbdevs(): pwd='" . Cwd::cwd() . "' nameFile='" . $_ . "'\n";
 	}
 
-	# maybe there's an option to turn off all .* files, but anyway this is stupid
 	# Note that on some platforms "." and ".." do also pop up;
 	# take care to NOT prune (avoid recursion into) the "." one:
-	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.(orig|o|la|lo|exe)$/) || ($_ eq '.libs') || ($_ eq '.deps') || ($_ eq '..');
 	return $File::Find::prune = 0 if ($_ eq '.');
-	# FIXME: Skip libtool wrappers or binary builds of drivers without extension
-	# Maybe ONLY walk *.c and *.h files (and subdirs)?..
+	return $File::Find::prune = 1 if ($_ eq '..') || ($_ =~ /^\.#/) || ($_ eq '.libs') || ($_ eq '.deps') || ($_ eq '.svn') || ($_ eq '.git');
 
 	if (-d $_) {
 		# FIXME: in current NUT vanilla code we do not support subdirs
@@ -303,6 +300,12 @@ sub find_usbdevs
 		print stderr "find_usbdevs(): SKIP: nameFile='" . $_ . "' is a directory\n";
 		return $File::Find::prune = 1;
 	}
+
+	# To skip libtool wrappers or binary builds of drivers without
+	# extension as well as temporary make files that appear and
+	# dissipate (especially during parallel builds), ONLY walk
+	# the *.c and *.h files (and subdirs):
+	return $File::Find::prune = 1 if !($_ =~ /\.[ch]$/);
 
 	my $nameFile=$_;
 	my $lastComment="";
