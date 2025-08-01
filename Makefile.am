@@ -1460,13 +1460,19 @@ CHECK_PARALLEL_BUILDS_REGEN = true
 # if developers build pieces of code right in the directory of their interest.
 # It is recommended to have "ccache" (or similar) setup working, to minimize the
 # time cost and workload of compilations involved in these looped build retries.
+# Oddly, the NetBSD 9.2 `bmake` faced with out-of-tree (subdir) builds does
+# find itself work to do even if called in the root dir (with no `Makefile`
+# generated there -- it detects a build to do under e.g. `obj/` in CI tests),
+# but also tends to have that directory as current at the time we try to call
+# the `./config.status` line -- and fails there. Hence the `cd top_builddir`.
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
 check-parallel-builds:
 	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then cd '$(top_srcdir)' && $(AUTOMAKE) -f ; fi
-	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then ./config.status ; fi
+	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then cd '$(top_builddir)' && ./config.status ; fi
 	+@$(SET_PARMAKES_OPT); \
 	  DIRS=""; \
+	  cd '$(abs_top_builddir)' || exit ; \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make pre-clean before checking subdirs for sources" >&2; exit $$RES; } ; \
 	  for D in `cd '$(top_srcdir)' && find . -name '*.c' -o -name '*.cpp' | sed 's,/[^/]*\.cp*$$,,' | uniq` ; do \
 		[ -e "$(top_srcdir)/$$D/Makefile.am" ] && [ -s "$$D/Makefile" ] || continue ; \
