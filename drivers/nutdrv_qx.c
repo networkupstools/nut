@@ -4483,11 +4483,11 @@ int	qx_process(item_t *item, const char *command)
 {
 	char	buf[sizeof(item->answer) - 1] = "", *cmd;
 	ssize_t	len;
-	size_t cmdlen = command ?
+	size_t	cmdlen = command ?
 		(strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) :
 		(item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF);
-	size_t cmdsz = (sizeof(char) * cmdlen); /* in bytes, to be pedantic */
-	int cmd_len;
+	size_t	cmdsz = (sizeof(char) * cmdlen); /* in bytes, to be pedantic */
+	int	cmd_len;
 
 	if ( !(cmd = xmalloc(cmdsz)) ) {
 		upslogx(LOG_ERR, "qx_process() failed to allocate buffer");
@@ -4496,7 +4496,7 @@ int	qx_process(item_t *item, const char *command)
 
 	/* Prepare the command to be used */
 	memset(cmd, 0, cmdsz);
-	snprintf(cmd, cmdsz, "%s%n", command ? command : item->command, &cmd_len);
+	cmd_len = snprintf(cmd, cmdsz, "%s", command ? command : item->command);
 
 	/* Whether the sub-driver code sets errno or not, so be it;
 	 * note that EINVAL means unsupported parameter value here!
