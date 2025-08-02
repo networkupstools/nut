@@ -513,9 +513,14 @@ fi
 # For two-phase builds (quick parallel make first, sequential retry if failed)
 # how verbose should that first phase be? Nothing, automake list of ops, CLIs?
 # See build_to_only_catch_errors_target() for a consumer of this setting.
+# CI_PARMAKE_VERBOSITY_CPB is for "check-parallel-builds" part below.
 case "${CI_PARMAKE_VERBOSITY-}" in
-    silent|quiet|verbose|default) ;;
-    *) CI_PARMAKE_VERBOSITY=silent ;;
+    silent|quiet|verbose|default)
+        [ -n "${CI_PARMAKE_VERBOSITY_CPB-}" ] || CI_PARMAKE_VERBOSITY_CPB="${CI_PARMAKE_VERBOSITY-}"
+        ;;
+    *)  CI_PARMAKE_VERBOSITY=silent
+        [ -n "${CI_PARMAKE_VERBOSITY_CPB-}" ] || CI_PARMAKE_VERBOSITY_CPB=quiet
+        ;;
 esac
 
 # Set up the parallel make with reasonable limits, using several ways to
@@ -641,6 +646,11 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=no ;;
         "NUT_BUILD_CAPS=libltdl"|"NUT_BUILD_CAPS=libltdl=yes")
             [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=yes ;;
+
+        # For now like this; VM systems with a clock skew can have natural
+        # problems with parallel tasks, which we can not do much about.
+        "NUT_BUILD_CAPS=check-parallel-builds=no")
+            [ -n "${CI_DO_CHECK_PARALLEL_BUILDS-}" ] || CI_DO_CHECK_PARALLEL_BUILDS=false ;;
     esac
 done
 
@@ -1156,7 +1166,7 @@ build_to_only_catch_errors_target() {
           $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" >/dev/null ;;
         quiet)
           $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" ;;
-        silent)
+        verbose)
           $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE -k $PARMAKE_FLAGS "$@" ;;
         default)
           $CI_TIME $MAKE -k $PARMAKE_FLAGS "$@" ;;
@@ -1956,6 +1966,16 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 echo "NOTE: adapted BUILD_TYPE 'default-all-errors' => '${BUILD_TYPE}'" >&2
             fi
 
+            if [ x"${HAVE_CCACHE-}" = xyes ] && [ x"${CI_DO_CHECK_PARALLEL_BUILDS-}" = x ] ; then
+                # Ideally massive-build CI recipes would set this option
+                # for scenarios they are interested in, e.g. once per OS
+                # and make implementation, not all hundreds of builds?..
+                # On the other hand, catching issues (race conditions in
+                # recipes) is a big-numbers game...
+                CI_DO_CHECK_PARALLEL_BUILDS=true
+                echo "NOTE: we have ccache, so enabled 'make check-parallel-builds' for combos below" >&2
+            fi
+
             # Try to run various build scenarios to collect build errors
             # (no checks here) as configured further by caller's choice
             # of BUILD_WARNFATAL and/or BUILD_WARNOPT envvars above.
@@ -2309,6 +2329,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ;;
                 esac
 
+                # Snippet from autogen.sh: restore files required by autoconf
+                # for non-"foreign" projects that a deep clean in other loops
+                # could have destroyed:
+                [ -f "${SCRIPTDIR}/NEWS" ] || { echo "Please see NEWS.adoc for actual contents" > "${SCRIPTDIR}/NEWS"; }
+                [ -f "${SCRIPTDIR}/README" ] || { echo "Please see README.adoc for actual contents" > "${SCRIPTDIR}/README"; }
+
                 configure_nut
                 ) || {
                     RES_ALLERRORS=$?
@@ -2350,6 +2376,35 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         break
                     fi
                 }
+
+                # Check that the current MAKE implementation deals with parallel
+                # recipes properly. Ideally this is sped up by ccache. At least
+                # privately CI_FAILFAST=true to not retry this one sequentially.
+                # Note two passings of CHECK_PARALLEL_BUILDS_REGEN=false - as an
+                # envvar and as a make argument, to ensure that different `make`
+                # implementations honour our desire.
+                # WARNING: This check does repetitively `make clean` along the
+                # way, so should be the last operation before scenario clean-up!
+                if [ x"$CI_DO_CHECK_PARALLEL_BUILDS" = xtrue ] ; then
+                    CI_FAILFAST=true \
+                    CI_PARMAKE_VERBOSITY="${CI_PARMAKE_VERBOSITY_CPB-}" \
+                    CHECK_PARALLEL_BUILDS_REGEN=false \
+                    build_to_only_catch_errors_target \
+                        CHECK_PARALLEL_BUILDS_REGEN=false \
+                        check-parallel-builds \
+                    && {
+                        SUCCEEDED+=("TESTCOMBO=${TESTCOMBO}[check-parallel-builds]")
+                    } || {
+                        RES_ALLERRORS=$?
+                        FAILED+=("TESTCOMBO=${TESTCOMBO}[check-parallel-builds]")
+                        # Help find end of build (before cleanup noise) in logs:
+                        echo "=== FAILED 'TESTCOMBO=${TESTCOMBO}' check-parallel-builds"
+                        if [ "$CI_FAILFAST" = true ]; then
+                            echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                            break
+                        fi
+                    }
+                fi
 
                 # Note: when `expr` calculates a zero value below, it returns
                 # an "erroneous" `1` as exit code. Why oh why?..

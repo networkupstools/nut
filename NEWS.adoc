@@ -141,6 +141,13 @@ https://github.com/networkupstools/nut/milestone/9
      [#2957]
    * Fixed a couple of ancient memory leaks: one "shared" during driver
      program initialization, and one specific to `dummy-ups` wind-down. [#2972]
+   * Added a `suggest_NDE_conflict()` method so drivers which lack access
+     to the expected device can consistently suggest that this may be because
+     of running both an NDE-wrapped service unit and a manually launched
+     driver program at the same time. Currently added to `libusb{0,1}.c`
+     code, but may later be expanded to e.g. serial drivers and other media,
+     when their behavior in such situations gets identified. [follow-up to
+     issue #477, PR #3041]
 
  - `apc_modbus` driver updates:
    * The time stamp and inter-frame delay accounting was fixed, alleviating
@@ -186,6 +193,24 @@ https://github.com/networkupstools/nut/milestone/9
      using "buzzword mode" settings more correctly than in the previous
      iteration, shipped in NUT v2.8.3 release (as PR #2750 for issue #2708).
      [issue #2494]
+   * Introduced a `voltronic-axpert` subdriver for Voltronic Axpert inverters
+     which speak the P30 protocol, currently in a highly experimental state:
+     with initial support for query commands, but most values are "hidden"
+     from default NUT builds by being defined in `experimental.*` namespace,
+     and should also be enabled by `configure --with-unmapped-data-points`.
+     Development was based on work done in the Voltronic Sunny subdriver in
+     https://github.com/nickma82/nut/tree/nutdrv_qx_voltronic-sunny_rebased%2Bcommand
+     [#1407]
++
+Still TODO:
+     - Implement commands to write to the inverter.
+     - Remove commented code originating from `sunny` driver.
+     - Further testing.
+     - Understand how to map values we can read/set with those devices
+       to the NUT standard vocabulary at `docs/nut-names.txt` (or extend
+       it by discussion and agreement with community -- notably to track
+       a `pv.*` namespace for photovoltaic, separately from `ups.*` etc.)
+     - Update docs (manpages, acknowledgements...)
 
  - `phoenixcontact_modbus` driver updates:
    * Added more settings that can be tuned -- support for shutdown variables,
