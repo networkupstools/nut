@@ -78,8 +78,8 @@ GLOBAL DIRECTIVES
 
 *chroot*::
 
-Optional.  The driver will chroot(2) to this directory during initialization.
-This can be useful when securing systems.
+Optional.  The driver will linkmanext:chroot[2] to this directory during
+initialization.  This can be useful when securing systems.
 
 *driverpath*::
 

@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT Generic Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -571,20 +571,26 @@ int upscmd(const char *cmd, const char *arg)
 	struct timeval start;
 	long etime;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(arg);
+	upsdebug_INSTCMD_STARTING(cmd, arg);
+
 	if (!strcasecmp(cmd, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, arg);
 		if (sigar[FSD_T].addr != NOTUSED &&
 		    (sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)
 		) {
 			data = 1 ^ sigar[FSD_T].noro;
 			rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
 			if (rval == -1) {
-				upslogx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s",
+				upsdebugx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s",
 					modbus_strerror(errno),
 					(unsigned int)(sigar[FSD_T].addr),
 					sigar[FSD_T].type,
 					device_path
 				);
-				upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
+
+				upslogx(LOG_INSTCMD_FAILED, "load.off: failed (communication error) [%s] [%s]", cmd, NUT_STRARG(arg));
 				rval = STAT_INSTCMD_FAILED;
 			} else {
 				upsdebugx(2, "load.off: addr: 0x%x, data: %d",
@@ -605,13 +611,14 @@ int upscmd(const char *cmd, const char *arg)
 				data = 0 ^ sigar[FSD_T].noro;
 				rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
 				if (rval == -1) {
-					upslogx(LOG_ERR, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s\n",
+					upsdebugx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s\n",
 						modbus_strerror(errno),
 						(unsigned int)(sigar[FSD_T].addr),
 						sigar[FSD_T].type,
 						device_path
 					);
-					upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
+
+					upslogx(LOG_INSTCMD_FAILED, "load.off: failed (communication error) [%s] [%s]", cmd, NUT_STRARG(arg));
 					rval = STAT_INSTCMD_FAILED;
 				} else {
 					upsdebugx(2, "load.off: addr: 0x%x, data: %d, elapsed time: %lims",
@@ -623,9 +630,8 @@ int upscmd(const char *cmd, const char *arg)
 				}
 			}
 		} else {
-			upslogx(LOG_NOTICE,"load.off: failed (FSD address undefined or invalid register type)  [%s] [%s]",
-				cmd,
-				arg
+			upslogx(LOG_INSTCMD_FAILED, "load.off: failed (FSD address undefined or invalid register type)  [%s] [%s]",
+				NUT_STRARG(cmd), NUT_STRARG(arg)
 			);
 			rval = STAT_INSTCMD_FAILED;
 		}
@@ -634,6 +640,7 @@ int upscmd(const char *cmd, const char *arg)
 		 * "shutdown.stayoff" or "shutdown.return"? */
 		int cnt = FSD_REPEAT_CNT;    /* shutdown repeat counter */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, arg);
 		/* retry sending shutdown command on error */
 		while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
 			rval = gettimeofday(&start, NULL);
@@ -649,12 +656,12 @@ int upscmd(const char *cmd, const char *arg)
 		switch (rval) {
 			case STAT_INSTCMD_FAILED:
 			case STAT_INSTCMD_INVALID:
-				upslogx(LOG_ERR, "shutdown failed");
+				upslogx(LOG_INSTCMD_FAILED, "shutdown failed");
 				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				return rval;
 			case STAT_INSTCMD_UNKNOWN:
-				upslogx(LOG_ERR, "shutdown not supported");
+				upslogx(LOG_INSTCMD_UNKNOWN, "shutdown not supported");
 				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				return rval;
@@ -665,7 +672,7 @@ int upscmd(const char *cmd, const char *arg)
 				break;
 		}
 	} else {
-		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd, arg);
+		upslog_INSTCMD_UNKNOWN(cmd, arg);
 		rval = STAT_INSTCMD_UNKNOWN;
 	}
 	return rval;

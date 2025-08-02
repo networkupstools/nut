@@ -413,6 +413,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) */
+	/* FIXME: Actually, only fixed strings, no formatting here. */
 	vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop

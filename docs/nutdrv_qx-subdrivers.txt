@@ -25,6 +25,13 @@ the main `nutdrv_qx.c` file.  However, in `ups.conf` this entity is referred
 to via the communication `protocol` keyword, if the end-user wants to pick
 one explicitly (bypassing auto-detection).
 
+The string value of each `protocol` setting is derived from the respective
+source module's self-identification, by picking the first space-separated token
+(its `NAME`, assuming a `NAME VERSION` pattern) and making a case-insensitive
+comparison.  The self-identification value is maintained as a string macro at
+the top of each module's C source file, and is passed to the main driver code
+as part of `subdriver_t` structure instance defined in the end of the file.
+
 Confusingly, there *is* also an optional USB `subdriver` setting (available
 when the driver is built with USB support), for "Serial-over-USB subdriver
 selection", corresponding to entries in the `usbsubdriver` array and several
@@ -1172,6 +1179,7 @@ For more details, have a look at the currently available subdrivers:
 
 - +nutdrv_qx_bestups.+{+c+,+h+}
 - +nutdrv_qx_innovart31.+{+c+,+h+}
+- +nutdrv_qx_innovart33.+{+c+,+h+}
 - +nutdrv_qx_masterguard.+{+c+,+h+}
 - +nutdrv_qx_mecer.+{+c+,+h+}
 - +nutdrv_qx_megatec.+{+c+,+h+}

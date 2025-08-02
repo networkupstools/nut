@@ -5,6 +5,7 @@
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
 	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2025		desertwitch <dezertwitsh@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -50,7 +51,8 @@
 	static OVERLAPPED	connect_overlapped;
 	static char	*pipename = NULL;
 #endif	/* WIN32 */
-	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
+	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0,
+				alarm_legacy_status = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN],
 			buzzmode_buf[ST_MAX_VALUE_LEN];
 	static conn_t	*connhead = NULL;
@@ -77,24 +79,27 @@ static void sock_fail(const char *fn)
 	printf("\nFatal error: unable to create listener socket\n\n");
 	printf("bind %s failed: %s\n", fn, strerror(sockerr));
 
-	pwuser = getpwuid(getuid());
-
-	if (!pwuser) {
-		fatal_with_errno(EXIT_FAILURE, "getpwuid");
-	}
-
 	/* deal with some common problems */
 	switch (errno)
 	{
 	case EACCES:
-		printf("\nCurrent user: %s (UID %d)\n\n",
-			pwuser->pw_name, (int)pwuser->pw_uid);
+		pwuser = getpwuid(getuid());
+
+		if (pwuser) {
+			printf("\nCurrent user: %s (UID %" PRIiMAX ")\n\n",
+				NUT_STRARG(pwuser->pw_name),
+				(intmax_t)pwuser->pw_uid);
+		}
 
 		printf("Things to try:\n\n");
 		printf(" - set different owners or permissions on %s\n\n",
 			dflt_statepath());
-		printf(" - run this as some other user "
+		printf(" - run this program as some other user "
 			"(try -u <username>)\n");
+
+		if (!pwuser) {
+			fatal_with_errno(EXIT_FAILURE, "getpwuid");
+		}
 		break;
 
 	case ENOENT:
@@ -106,6 +111,17 @@ static void sock_fail(const char *fn)
 		printf("\nThings to try:\n\n");
 		printf(" - rm %s\n\n", dflt_statepath());
 		printf(" - mkdir %s\n", dflt_statepath());
+		break;
+
+	case EADDRINUSE:
+	case EADDRNOTAVAIL:
+		printf("\nThings to try:\n\n");
+		printf(" - ps -ef | grep '%s'\t(Linux, GNU userland)\n"
+		       " - ps -xawwu | grep '%s'\t(BSD, Solaris, embedded)\n"
+		       "   To check if another copy of the driver is running; if not:\n\n",
+		       progname, progname);
+		printf(" - ls -la %s\n   To check if a (non-socket) filesystem object already exists there\n\n", fn);
+		printf(" - rm -rf %s\n   To remove any offending files (a new driver instance creates its own)\n", fn);
 		break;
 
 	default:
@@ -264,6 +280,10 @@ static void send_to_all(const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -360,6 +380,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations). */
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -830,7 +854,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			cmdparam = arg[2];
 			cmdid = arg[4];
 		} else if (numarg != 2) {
-			upslogx(LOG_NOTICE, "Malformed INSTCMD request");
+			upslogx(LOG_INSTCMD_INVALID, "Malformed INSTCMD request");
 			return 0;
 		}
 
@@ -866,11 +890,11 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		}
 
 		if (cmdparam) {
-			upslogx(LOG_NOTICE,
+			upslogx(LOG_INSTCMD_UNKNOWN,
 				"Got INSTCMD '%s' '%s', but driver lacks a handler",
 				NUT_STRARG(cmdname), NUT_STRARG(cmdparam));
 		} else {
-			upslogx(LOG_NOTICE,
+			upslogx(LOG_INSTCMD_UNKNOWN,
 				"Got INSTCMD '%s', but driver lacks a handler",
 				NUT_STRARG(cmdname));
 		}
@@ -904,7 +928,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 				setid = arg[4];
 			}
 			else {
-				upslogx(LOG_NOTICE, "Got SET <var> with unsupported parameters (%s/%s)",
+				upslogx(LOG_SET_INVALID, "Got SET <var> with unsupported parameters (%s/%s)",
 					arg[3], arg[4]);
 				return 0;
 			}
@@ -939,7 +963,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			return 1;
 		}
 
-		upslogx(LOG_NOTICE, "Got SET, but driver lacks a handler");
+		upslogx(LOG_SET_UNKNOWN, "Got SET, but driver lacks a handler");
 		return 1;
 	}
 
@@ -1326,13 +1350,11 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
  * COMMON
  ******************************************************************/
 
-int dstate_setinfo(const char *var, const char *fmt, ...)
+int vdstate_setinfo(const char *var, const char *fmt, va_list ap)
 {
 	int	ret;
 	char	value[ST_MAX_VALUE_LEN];
-	va_list	ap;
 
-	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -1342,11 +1364,15 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_setinfo_dynamic() method). */
 	vsnprintf(value, sizeof(value), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
-	va_end(ap);
 
 	ret = state_setinfo(&dtree_root, var, value);
 
@@ -1357,10 +1383,9 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 	return ret;
 }
 
-int dstate_addenum(const char *var, const char *fmt, ...)
+int dstate_setinfo(const char *var, const char *fmt, ...)
 {
 	int	ret;
-	char	value[ST_MAX_VALUE_LEN];
 	va_list	ap;
 
 	va_start(ap, fmt);
@@ -1373,11 +1398,72 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	vsnprintf(value, sizeof(value), fmt, ap);
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_setinfo_dynamic() method). */
+	ret = vdstate_setinfo(var, fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 	va_end(ap);
+
+	return ret;
+}
+
+int dstate_setinfo_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	if (!var || validate_formatting_string(fmt_dynamic, fmt_reference, NUT_DYNAMICFORMATTING_DEBUG_LEVEL) < 0) {
+		return -1;
+	} else {
+		int	ret;
+		va_list	ap;
+
+		va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* Using validated formatting string here */
+		ret = vdstate_setinfo(var, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		va_end(ap);
+
+		return ret;
+	}
+}
+
+int vdstate_addenum(const char *var, const char *fmt, va_list ap)
+{
+	int	ret;
+	char	value[ST_MAX_VALUE_LEN];
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_addenum_dynamic() method). */
+	vsnprintf(value, sizeof(value), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	ret = state_addenum(dtree_root, var, value);
 
@@ -1386,6 +1472,64 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 	}
 
 	return ret;
+}
+
+int dstate_addenum(const char *var, const char *fmt, ...)
+{
+	int	ret;
+	va_list	ap;
+
+	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided
+	 * format string (we should not get it from configs etc.
+	 * or the calling methods should check it against their
+	 * "fmt_dynamic" expectations e.g. by using the
+	 * dstate_addenum_dynamic() method). */
+	ret = vdstate_addenum(var, fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	return ret;
+}
+
+int dstate_addenum_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	if (!var || validate_formatting_string(fmt_dynamic, fmt_reference, NUT_DYNAMICFORMATTING_DEBUG_LEVEL) < 0) {
+		return -1;
+	} else {
+		int	ret;
+		va_list	ap;
+
+		va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* Using validated formatting string here */
+		ret = vdstate_addenum(var, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		va_end(ap);
+
+		return ret;
+	}
 }
 
 int dstate_addrange(const char *var, const int min, const int max)
@@ -1638,12 +1782,12 @@ int dstate_is_stale(void)
 /* clean out the temp space for a new pass */
 void status_init(void)
 {
-	if (dstate_getinfo("driver.flag.ignorelb")) {
-		ignorelb = 1;
-	}
+	/* This does not normally change in driver run-time, but can in tests */
+	ignorelb = (dstate_getinfo("driver.flag.ignorelb") ? 1 : 0);
 
 	memset(status_buf, 0, sizeof(status_buf));
 	alarm_status = 0;
+	alarm_legacy_status = 0;
 }
 
 /* check if a status element has been set, return 0 if not, 1 if yes
@@ -1667,17 +1811,23 @@ static int status_set_callback(char *tgt, size_t tgtsize, const char *token)
 	}
 
 	if (!strcasecmp(token, "ALARM")) {
-		/* Drivers really should not raise alarms this way,
-		 * but for the sake of third-party forks, we handle
-		 * the possibility...
+		/* Drivers should not do this anymore, but we continue
+		 * to support it. The upsmon notifiers do not care where
+		 * alarm tokens get set and legacy drivers may still use
+		 * this older method. The only real limitations are that
+		 * the alarm state is very tightly coupled to the UPS
+		 * status, and the ups.alarm variables do not get published
+		 * in a controlled manner. Rather, these are very dependent
+		 * on the (legacy) driver, and alarm notifications via upsmon
+		 * will show placeholder "n/a" if all values are missing.
+		 * The status token is ignored to prepend it to other tokens
+		 * later, within the status_commit() function.
+		 * For more information, see this discussion:
+		 * https://github.com/networkupstools/nut/pull/2931#issuecomment-2841705269
 		 */
-		upsdebugx(2, "%s: (almost) ignoring ALARM set as a status", __func__);
-		if (!alarm_status && !alarm_active && strlen(alarm_buf) == 0) {
-			alarm_init();	/* no-op currently, but better be proper about it */
-			alarm_set("[N/A]");
-		}
-		alarm_status++;
-		return 0;
+		upsdebugx(6, "%s: caller set ALARM as a status, this is deprecated - please fix the NUT driver code", __func__);
+		alarm_legacy_status = 1;
+		return 0; /* ignore it */
 	}
 
 	/* Proceed adding the token */
@@ -1720,36 +1870,15 @@ void status_commit(void)
 		break;
 	}
 
-	/* NOTE: Not sure if any clients rely on ALARM being first if raised,
-	 * but note that if someone also uses status_set("ALARM") we can end
-	 * up with a "[N/A]" alarm value injected (if no other alarm was set)
-	 * and only add the token here so it remains first.
-	 *
-	 * NOTE: alarm_commit() must be executed before status_commit() for
-	 * this report to work!
-	 * * If a driver only called status_set("ALARM") and did not bother
-	 *   with alarm_commit(), the "ups.alarm" value queries would have
-	 *   returned NULL if not for the "sloppy driver" fix below, although
-	 *   the "ups.status" value would report an ALARM token.
-	 * * If a driver properly used alarm_init() and alarm_set(), but then
-	 *   called status_commit() before alarm_commit(), the "ups.status"
-	 *   value would not know to report an ALARM token, as before.
-	 * * If a driver used both status_set("ALARM") and alarm_set() later,
-	 *   the injected "[N/A]" value of the alarm (if that's its complete
-	 *   value) would be overwritten by the explicitly assigned contents,
-	 *   and an explicit alarm_commit() would be required for proper
-	 *   reporting from a non-sloppy driver.
-	 */
-
-	if (!alarm_active && alarm_status && !strcmp(alarm_buf, "[N/A]")) {
-		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and used status_set(\"ALARM\") instead: commit the injected N/A ups.alarm value", __func__);
-		alarm_commit();
-	}
-
-	if (alarm_active) {
-		dstate_setinfo("ups.status", "ALARM %s", status_buf);
+	if (alarm_active || alarm_legacy_status) {
+		if (*status_buf != '\0') {
+			dstate_setinfo("ups.status", "ALARM %s", status_buf);
+		} else {
+			dstate_setinfo("ups.status", "ALARM");
+		}
 	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);
+		alarm_legacy_status = 0; /* just to be sure */
 	}
 }
 

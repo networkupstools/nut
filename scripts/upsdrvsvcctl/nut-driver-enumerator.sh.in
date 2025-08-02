@@ -118,6 +118,9 @@ DEPSVC_NET_FULL_SYSTEMD="network-online.target systemd-resolved.service ifplugd.
 DEPREQ_NET_FULL_SYSTEMD="Wants"
 DEPSVC_NET_LOCAL_SYSTEMD="network.target"
 DEPREQ_NET_LOCAL_SYSTEMD="Wants"
+# For dependency of one driver on anoter (clone*, dummy, failover):
+DEPREQ_DRV_LOCAL_SYSTEMD="Wants"
+SVCNAMESEP_SYSTEMD="@"
 SVCNAME_SYSTEMD="nut-driver"
 
 # Some or all of these FMRIs may be related to dynamically changing hardware
@@ -135,6 +138,9 @@ DEPSVC_NET_FULL_SMF="svc:/network/physical svc:/milestone/name-services"
 DEPREQ_NET_FULL_SMF="optional_all"
 DEPSVC_NET_LOCAL_SMF="svc:/network/loopback:default"
 DEPREQ_NET_LOCAL_SMF="optional_all"
+# For dependency of one driver on anoter (clone*, dummy, failover):
+DEPREQ_DRV_LOCAL_SMF="require_any"
+SVCNAMESEP_SMF=":"
 SVCNAME_SMF="svc:/system/power/nut-driver"
 
 [ -z "${NUT_DRIVER_ENUMERATOR_CONF-}" ] && \
@@ -636,17 +642,21 @@ upsconf_getDriverMedia() {
                     printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
             esac
             ;;
-        *dummy*|*clone*) # May be networked (proxy to remote NUT)
+        *dummy*) # May be networked (proxy to remote NUT)
             CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
             case "$CURR_PORT" in
                 *@localhost|*@|*@127.0.0.1|*@::1)
-                    printf '%s\n%s\n' "$CURR_DRV" "network-localhost" ; return ;;
-                *@*)
+                    printf '%s\n%s\n' "$CURR_DRV" "network-localhost,drivers=`echo "${CURR_PORT}" | sed 's,@.*$,,'`" ; return ;;
+                *@"`hostname`"*)  # Technically also local host, but via public host name (so networking must be up)
+                    printf '%s\n%s\n' "$CURR_DRV" "network,drivers=`echo "${CURR_PORT}" | sed 's,@.*$,,'`" ; return ;;
+                *@*)  # Might be local host via public IP address, but harder to detect portably
                     printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
-                *)
+                *)  # Assume DEV/SEQ file:
                     printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
             esac
             ;;
+        *clone*|failover) # Talk to another driver via local socket/pipe:
+            printf '%s\n%s\n' "$CURR_DRV" "drivers=${CURR_PORT}" ; return ;;
         # FIXME: other modbus? sysfs like INA219? GPIO? Other local devices?
         *)  printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
     esac
@@ -656,6 +666,22 @@ upsconf_getMedia() {
     _DRVMED="`upsconf_getDriverMedia "$1"`" || return
     echo "${_DRVMED}" | tail -n +2
     return 0
+}
+
+upsconf_list_dev_drv_socket_checksum() {
+    # NOTE: Output column order matters, it is parsed e.g. to check
+    # for driver-on-driver dependencies when adding services
+    upslist_readFile_once && [ "${#UPSLIST_FILE}" != 0 ] \
+        || { echo "No devices detected in '$UPSCONF'" >&2 ; return 1 ; }
+    # Use the section-driver-port subset
+    if [ x"${AVOID_REPARSE}" != xyes ] ; then
+        upslist_normalizeFile_once || return    # Propagate errors upwards
+    fi
+    for _DEV in $UPSLIST_FILE ; do
+        _DRV="`upsconf_getDriver "${_DEV}"`"
+        _MD5="`upsconf_getSection_MD5 "${_DEV}"`"
+        printf '%s\t%s\t%s\t%s\n' "${_DEV}" "${_DRV}" "${_DRV}-${_DEV}" "${_MD5}"
+    done
 }
 
 upsconf_debug() {
@@ -720,18 +746,56 @@ smf_registerInstance() {
     DEPREQ=""
     _MED="`upsconf_getMedia "$DEVICE"`"
     case "${_MED}" in
-        usb)
+        usb|usb,*)
             DEPSVC="$DEPSVC_USB_SMF"
             DEPREQ="$DEPREQ_USB_SMF" ;;
-        network-localhost)
+        network-localhost|network-localhost,*)
             DEPSVC="$DEPSVC_NET_LOCAL_SMF"
             DEPREQ="$DEPREQ_NET_LOCAL_SMF" ;;
-        network)
+        network|network,*)
             DEPSVC="$DEPSVC_NET_FULL_SMF"
             DEPREQ="$DEPREQ_NET_FULL_SMF" ;;
-        serial) ;;
+        serial|serial,*) ;;
+        drivers=*) ;; # Handled just below
         '') ;;
+        # FIXME: modbus? sysfs like INA219? GPIO? Other local devices?
         *)  echo "WARNING: Unexpected NUT media type ignored: '${_MED}'" >&2 ;;
+    esac
+
+    case "${_MED}" in
+        drivers=*|*,drivers=*)
+            OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
+            for DEPDRV in `echo "${_MED}" | sed -e 's/^\(.*,d\|d\)rivers=//' -e 's/,/ /g'` ; do
+                case "${DEPDRV}" in
+                    *-*) # May be "drivername-upsname", where either sub-string
+                         # may have dashes inside too; try to find the right one:
+                         OTHERDEV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $1 }'`" && \
+                         OTHERDRV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $2 }'`" && \
+                         [ x"${DEPDRV}" = x"${OTHERDRV}-${OTHERDEV}" ] && \
+                         [ x"${OTHERDEV}" != x"${DEVICE}" ] \
+                         || {
+                             for OTHERDEV in $UPSLIST_FILE ; do
+                                case "${DEPDRV}" in
+                                    *-"${OTHERDEV}")
+                                        OTHERDRV="'`echo "${OTHERLIST}" | awk '($1 == "'"${OTHERDEV}"'") { print $2 }'`'" || OTHERDRV="<N/A>"
+                                        echo "WARNING: Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}" >&2
+                                        ;;
+                                esac
+                             done
+                             OTHERDEV=""
+                             OTHERDRV=""
+                            }
+                        ;;
+                    *)  OTHERDEV="${DEPDRV}" ;;
+                esac
+                if [ x"${OTHERDEV}" = x ] || ! (echo "$OTHERLIST" | grep -E "^${OTHERDEV}\t") >/dev/null ; then
+                    echo "WARNING: Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it" >&2
+                else
+                    DEPSVC="$DEPSVC ${SVCNAME_SMF}${SVCNAMESEP_SMF}`smf_validInstanceName ${OTHERDEV}`"
+                fi
+            done
+            if [ x"`echo "$DEPSVC" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SMF" ; fi
+            ;;
     esac
 
     TARGET_FMRI="nut-driver:$SVCINST"
@@ -936,30 +1000,81 @@ systemd_registerInstance() {
     DEVICE="$1"
     SVCINST="$1"
     /bin/systemctl enable 'nut-driver@'"$DEVICE".service || \
-    { SVCINST="`systemd_validInstanceName "$1"`" && \
-      /bin/systemctl enable 'nut-driver@'"$SVCINST".service || return ; }
+    { if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | grep -E "^nut-driver@${DEVICE}.service$"; then
+        echo "SKIP: Unit 'nut-driver@${DEVICE}.service' seems deliberately masked" >&2
+        return 0
+      fi
+      echo "RETRY with validInstanceName of '$1'" >&2
+      SVCINST="`systemd_validInstanceName "$1"`" && \
+      /bin/systemctl enable 'nut-driver@'"$SVCINST".service || {
+        RES=$?
+        if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | grep -E "^nut-driver@${SVCINST}.service$"; then
+          echo "SKIP: Unit 'nut-driver@${SVCINST}.service' seems deliberately masked" >&2
+          return 0
+        fi
+        return $RES
+        }
+      }
     echo "Enabled instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
 
     DEPSVC=""
     DEPREQ=""
     _MED="`upsconf_getMedia "$DEVICE"`"
     case "${_MED}" in
-        usb)
+        usb|usb,*)
             DEPSVC="$DEPSVC_USB_SYSTEMD"
             DEPREQ="$DEPREQ_USB_SYSTEMD" ;;
-        network-localhost)
+        network-localhost|network-localhost,*)
             DEPSVC="$DEPSVC_NET_LOCAL_SYSTEMD"
             DEPREQ="$DEPREQ_NET_LOCAL_SYSTEMD" ;;
-        network)
+        network|network,*)
             DEPSVC="$DEPSVC_NET_FULL_SYSTEMD"
             DEPREQ="$DEPREQ_NET_FULL_SYSTEMD" ;;
-        serial)
+        serial|serial,*)
             DEPSVC="$DEPSVC_SERIAL_SYSTEMD"
             DEPREQ="$DEPREQ_SERIAL_SYSTEMD" ;;
+        drivers=*) ;; # Handled just below
         '') ;;
         # FIXME: modbus? sysfs like INA219? GPIO? Other local devices?
         *)  echo "WARNING: Unexpected NUT media type ignored: '${_MED}'" >&2 ;;
     esac
+
+    case "${_MED}" in
+        drivers=*|*,drivers=*)
+            OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
+            for DEPDRV in `echo "${_MED}" | sed -e 's/^\(.*,d\|d\)rivers=//' -e 's/,/ /g'` ; do
+                case "${DEPDRV}" in
+                    *-*) # May be "drivername-upsname", where either sub-string
+                         # may have dashes inside too; try to find the right one:
+                         OTHERDEV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $1 }'`" && \
+                         OTHERDRV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $2 }'`" && \
+                         [ x"${DEPDRV}" = x"${OTHERDRV}-${OTHERDEV}" ] && \
+                         [ x"${OTHERDEV}" != x"${DEVICE}" ] \
+                         || {
+                             for OTHERDEV in $UPSLIST_FILE ; do
+                                case "${DEPDRV}" in
+                                    *-"${OTHERDEV}")
+                                        OTHERDRV="'`echo "${OTHERLIST}" | awk '($1 == "'"${OTHERDEV}"'") { print $2 }'`'" || OTHERDRV="<N/A>"
+                                        echo "WARNING: Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}" >&2
+                                        ;;
+                                esac
+                             done
+                             OTHERDEV=""
+                             OTHERDRV=""
+                            }
+                        ;;
+                    *)  OTHERDEV="${DEPDRV}" ;;
+                esac
+                if [ x"${OTHERDEV}" = x ] || ! (echo "$OTHERLIST" | grep -E "^${OTHERDEV}\t") >/dev/null ; then
+                    echo "WARNING: Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it" >&2
+                else
+                    DEPSVC="$DEPSVC ${SVCNAME_SYSTEMD}${SVCNAMESEP_SYSTEMD}`systemd_validInstanceName ${OTHERDEV}`"
+                fi
+            done
+            if [ x"`echo "$DEPSVC" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SYSTEMD" ; fi
+            ;;
+    esac
+
     if [ -n "$DEPSVC" ]; then
         [ -n "$DEPREQ" ] || DEPREQ="#Wants"
         echo "Adding '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'..."
@@ -999,7 +1114,7 @@ systemd_refreshSupervizor() {
     /bin/systemctl daemon-reload
 }
 systemd_listInstances_raw() {
-    /bin/systemctl show 'nut-driver@*' -p Id | grep -E '=nut-driver' | sed 's,^Id=,,'
+    /bin/systemctl show --all 'nut-driver@*' -p Id | grep -E '=nut-driver' | sed 's,^Id=,,'
 }
 systemd_listInstances() {
     systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -k1n -k1

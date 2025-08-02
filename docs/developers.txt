@@ -21,6 +21,23 @@ exploit.
 Don't use `strcat()`.  We have a neat wrapper for `snprintf()` called
 `snprintfcat()` that allows you to append to `char *` with a format
 string and all the usual string length checking of `snprintf()` routine.
+There is also a `vsnprintfcat()` (with a single `va_list` argument) for
+API completeness.
+
+In a few cases you can use a formatting string coming from a mapping
+table or constructed during run-time.  This is generally not safe (due
+to references into the stack when handling the variable argument list),
+and modern compilers warn against doing so.  While it is possible to
+quiesce the warnings with pragmas, it is better to play safe with the
+"dynamic" versions of methods provided by NUT -- they allow to combine
+both compile-time checks of expected formatting string vs. types of data
+in the method arguments, and run-time equivalence of the actual dynamic
+formatting string to those expectations.  Such hardened methods include
+`snprintf_dynamic()`, `vsnprintf_dynamic()`, `snprintfcat_dynamic()`,
+`vsnprintfcat_dynamic()`, and `mkstr_dynamic()` which returns a `char *`
+to its statically allocated buffer.  Common string operations in drivers
+in this case can benefit from similar `dstate_setinfo_dynamic()` or
+`dstate_addenum_dynamic()` methods.
 
 Error reporting
 ~~~~~~~~~~~~~~~
@@ -168,6 +185,38 @@ function do_stuff(void)
 	for (int i = 10; i < 15; ++i) { ... }
 }
 --------------------------------------------------------------------------------
+
+Variable length arrays
+~~~~~~~~~~~~~~~~~~~~~~
+
+We also avoid initialization of arrays using a variable (e.g. a method
+argument) as poorly portable to older compilers, and prefer explicitly
+allocated and freed buffers, if variable size is needed.
+
+This should be avoided:
+--------------------------------------------------------------------------------
+function avoid_vla(int len)
+{
+	char	*buf[len];
+...
+}
+--------------------------------------------------------------------------------
+
+This should be used instead (preferably with `size_t` arguments right away),
+be sure to `free()` anywhere you `return` from the function:
+--------------------------------------------------------------------------------
+int use_xcalloc(size_t len)
+{
+	char	*buf = xcalloc(len, sizeof(char));
+
+	if (!buf)
+		return -1;
+...
+	free(buf);
+	return 1;
+}
+--------------------------------------------------------------------------------
+
 
 Other hints
 ~~~~~~~~~~~

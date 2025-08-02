@@ -9,6 +9,9 @@
 # MINSUPPLIES (may be 0 if this system is only monitoring other NUT servers),
 # and a POWERDOWNFLAG if this machine is a "primary" system connected to
 # the UPS and drives its late-shutdown power-off command in an emergency.
+# You should also define a SHUTDOWNCMD (like the example below, or something
+# special for your deployment) if MINSUPPLIES is at least 1 and you MONITOR
+# an UPS. A NOTIFYCMD integrating with `upssched` is a common situation too.
 
 # --------------------------------------------------------------------------
 # RUN_AS_USER <userid>
@@ -158,9 +161,11 @@ MINSUPPLIES 1
 # such as posting a message with 'logger' or 'wall' or 'mailx'. Do be careful
 # to plug the UPS back into the wall in a timely fashion.
 #
-# For Windows setup use something like:
+# For Windows setup you should escape backslashes (or use forward slashes in
+# recent OS releases). To shut down, use something like:
 # SHUTDOWNCMD "C:\\WINDOWS\\system32\\shutdown.exe -s -t 0"
-# If you have command line using space character you have to add double quote to them, like this:
+# If you have a command line using space characters, you have to add double
+# quote to them, like this:
 # SHUTDOWNCMD "\"C:\\Program Files\\some command.bat\" -first_arg -second_arg"
 # Or use the old DOS 8.3 file name, like this:
 # SHUTDOWNCMD "C:\\PROGRA~1\\SOMECO~1.bat -first_arg -second_arg"
@@ -232,6 +237,10 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 #
 # Adjust this to keep upsmon from flooding your network, but don't make
 # it too high or it may miss certain short-lived power events.
+#
+# NOTE: This setting is different from a `pollfreq` supported by some of
+# the NUT driver programs, such as usbhid-ups (about how often the driver
+# polls a particular device).
 
 POLLFREQ 5
 

@@ -7,6 +7,7 @@ nut_with_nut_monitor = @nut_with_nut_monitor@
 nut_with_nut_monitor_dir = @nut_with_nut_monitor_dir@
 nut_with_nut_monitor_py2gtk2 = @nut_with_nut_monitor_py2gtk2@
 nut_with_nut_monitor_py3qt5 =  @nut_with_nut_monitor_py3qt5@
+nut_with_nut_monitor_py3qt6 =  @nut_with_nut_monitor_py3qt6@
 
 # Note: this may be "desktop-file-install" to use in e.g.
 # packaging postinstall scripts for tighter OS integration;
@@ -36,11 +37,13 @@ NUT_MONITOR_PY2GTK2_TEMPLATE = \
 NUT_MONITOR_PY2GTK2_GENERATED_SCRIPT = \
 	app/NUT-Monitor-py2gtk2
 
-NUT_MONITOR_PY3QT5 = \
+NUT_MONITOR_PY3_COMMON = \
 	app/ui/aboutdialog1.ui \
 	app/ui/dialog1.ui \
 	app/ui/dialog2.ui \
-	app/ui/window1.ui \
+	app/ui/window1.ui
+
+NUT_MONITOR_PY3QT5 = \
 	app/nut-monitor-py3qt5.desktop
 
 NUT_MONITOR_PY3QT5_TEMPLATE = \
@@ -48,6 +51,15 @@ NUT_MONITOR_PY3QT5_TEMPLATE = \
 
 NUT_MONITOR_PY3QT5_GENERATED_SCRIPT = \
 	app/NUT-Monitor-py3qt5
+
+NUT_MONITOR_PY3QT6 = \
+	app/nut-monitor-py3qt6.desktop
+
+NUT_MONITOR_PY3QT6_TEMPLATE = \
+	app/NUT-Monitor-py3qt6.in
+
+NUT_MONITOR_PY3QT6_GENERATED_SCRIPT = \
+	app/NUT-Monitor-py3qt6
 
 NUT_MONITOR_COMMON = \
 	README.adoc \
@@ -138,7 +150,9 @@ EXTRA_DIST = \
 	$(PYNUT_COMMON) $(PYNUT_TEMPLATE)
 
 EXTRA_DIST += $(NUT_MONITOR_PY2GTK2) $(NUT_MONITOR_PY2GTK2_TEMPLATE)
-EXTRA_DIST += $(NUT_MONITOR_PY3QT5) $(NUT_MONITOR_PY3QT5_TEMPLATE)
+EXTRA_DIST += $(NUT_MONITOR_PY3_COMMON) \
+	$(NUT_MONITOR_PY3QT5) $(NUT_MONITOR_PY3QT5_TEMPLATE) \
+	$(NUT_MONITOR_PY3QT6) $(NUT_MONITOR_PY3QT6_TEMPLATE)
 
 #################################################################
 # `make install` handling (nobase_ to keep tree structure):
@@ -190,10 +204,19 @@ nobase_nutmonitor_DATA += $(NUT_MONITOR_PY2GTK2)
 nobase_nutmonitor_SCRIPTS += $(NUT_MONITOR_PY2GTK2_GENERATED_SCRIPT)
 endif WITH_NUT_MONITOR_PY2GTK2
 
+if WITH_NUT_MONITOR_PY3QT5_OR_QT6
+nobase_nutmonitor_DATA += $(NUT_MONITOR_PY3_COMMON)
+endif
+
 if WITH_NUT_MONITOR_PY3QT5
 nobase_nutmonitor_DATA += $(NUT_MONITOR_PY3QT5)
 nobase_nutmonitor_SCRIPTS += $(NUT_MONITOR_PY3QT5_GENERATED_SCRIPT)
 endif WITH_NUT_MONITOR_PY3QT5
+
+if WITH_NUT_MONITOR_PY3QT6
+nobase_nutmonitor_DATA += $(NUT_MONITOR_PY3QT6)
+nobase_nutmonitor_SCRIPTS += $(NUT_MONITOR_PY3QT6_GENERATED_SCRIPT)
+endif WITH_NUT_MONITOR_PY3QT6
 
 if WITH_PYNUT_APP
 nobase_nutmonitor_DATA += $(PYNUT_COMMON) $(PYNUT_GENERATED_NOEXEC)

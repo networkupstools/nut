@@ -168,6 +168,7 @@ Overview of the package tree
 FIXME: make a dependency graph
 
 - <<pkg-nut,nut>>
+- <<pkg-nut-common,nut-common>>
 - <<pkg-libupsclient1,libupsclient1>>
 - <<pkg-libupsclient1-dev,libupsclient1-dev>>
 - <<pkg-nut-cgi,nut-cgi>>
@@ -211,6 +212,16 @@ name may vary across the various systems.
 - The *Comment* field is used to place comment for points subject to
 discussion.
 ========================================================================
+
+[[pkg-nut-common]]
+nut
+^^^
+- Desc:
+- Files: install scripts to register user/group accounts in the OS;
+  shared data and configuration files (e.g. systemd-tmpfiles, maybe
+  systemd-presets, in case of Linux packaging)
+- Size:
+- Deps:
 
 [[pkg-nut]]
 nut
