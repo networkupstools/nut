@@ -1,4 +1,4 @@
-HUAWEI_UPS2000(8)
+HUAWEI-UPS2000(8)
 =================
 
 NAME

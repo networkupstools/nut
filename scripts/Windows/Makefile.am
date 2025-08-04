@@ -2,6 +2,7 @@
 
 AM_CFLAGS = -I$(top_srcdir)/include
 
+$(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: FORCE
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -63,7 +64,10 @@ if HAVE_WINDOWS
 bin_PROGRAMS += nut halt
 
 nut_SOURCES = wininit.c
-nut_LDADD = $(top_builddir)/common/libcommon.la winevent.o
+nut_LDADD = \
+	$(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libcommonversion.la \
+	winevent.o
 
 halt_SOURCES = halt.c
 endif HAVE_WINDOWS

@@ -841,8 +841,9 @@ Running one agent at a time
 Another aspect of farm management is that emulation is a slow and intensive
 operation, so we can not run all agents and execute builds at the same time.
 
-The current solution relies on
-https://github.com/jimklimov/conflict-aware-ondemand-retention-strategy-plugin
+The current solution relies on the
+https://github.com/jenkinsci/conflict-aware-ondemand-strategy-plugin[Conflict-Aware
+On Demand Retention Strategy plugin]
 to allow co-located build agents to "conflict" with each other -- when one
 picks up a job from the queue, it blocks neighbors from starting; when it
 is done, another may start.

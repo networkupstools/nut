@@ -355,6 +355,9 @@ static ssize_t send_formatted(TYPE_FD_SER fd, const char *fmt, va_list va, useco
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, technically this one is only used
+	 * locally with args whose validity other methods may check */
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -384,6 +387,12 @@ ssize_t ser_send_pace(TYPE_FD_SER fd, useconds_t d_usec, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used from drivers with
+	 * fixed strings (and args).
+	 * TODO: Propose a ser_send_pace_dynamic() in case non-static
+	 * format strings appear? Currently there are none.
+	 */
 	ret = send_formatted(fd, fmt, ap, d_usec);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -411,6 +420,12 @@ ssize_t ser_send(TYPE_FD_SER fd, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used from drivers with
+	 * fixed strings (and args).
+	 * TODO: Propose a ser_send_dynamic() in case non-static
+	 * format strings appear? Currently there are none.
+	 */
 	ret = send_formatted(fd, fmt, ap, 0);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -606,6 +621,12 @@ void ser_comm_fail(const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used from drivers with
+	 * fixed strings (and args).
+	 * TODO: Propose a ser_comm_fail_dynamic() in case non-static
+	 * format strings appear? Currently there are none.
+	 */
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop

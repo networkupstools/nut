@@ -73,10 +73,16 @@ typedef struct conn_s {
 
 char * dstate_init(const char *prog, const char *devname);
 int dstate_poll_fds(struct timeval timeout, TYPE_FD extrafd);
+int vdstate_setinfo(const char *var, const char *fmt, va_list ap);
 int dstate_setinfo(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
+int dstate_setinfo_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 3, 4)));
+int vdstate_addenum(const char *var, const char *fmt, va_list ap);
 int dstate_addenum(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
+int dstate_addenum_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 3, 4)));
 int dstate_addrange(const char *var, const int min, const int max);
 void dstate_setflags(const char *var, int flags);
 void dstate_addflags(const char *var, const int addflags);

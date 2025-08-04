@@ -4,6 +4,7 @@
 *
 * Copyright (C) 2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
 * Copyright (C) 2024 - Jim Klimov <jimklimov+nut@gmail.com>
+* Copyright (C) 2025 - desertwitch <dezertwitsh@gmail.com>
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -33,7 +34,7 @@
 #endif	/* !WIN32 */
 
 #define DRIVER_NAME	"Clone UPS driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -49,8 +50,13 @@ static struct {
 		long	start;
 		long	shutdown;
 	} timer;
+	struct {
+		char	*off;
+		char	*on;
+		char	*status;
+	} load;
 	char	status[ST_MAX_VALUE_LEN];
-} ups = { { -1, -1 }, "WAIT" };
+} ups = { { -1, -1 }, { NULL, NULL, NULL }, "WAIT" };
 
 static struct {
 	struct {
@@ -63,7 +69,8 @@ static struct {
 	} runtime;
 } battery = { { 0, 0 }, { 0, 0 } };
 
-static int	dumpdone = 0, online = 1, outlet = 1;
+static int	dumpdone = 0, online = 1, outlet = 1,
+			reported_off = 0, reported_ob = 0;
 static long	offdelay = 120, ondelay = 30;
 
 static PCONF_CTX_t	sock_ctx;
@@ -87,12 +94,12 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (!strcasecmp(arg[0], "PONG")) {
-		upsdebugx(3, "Got PONG from UPS");
+		upsdebugx(3, "%s: Got PONG from UPS", __func__);
 		return 1;
 	}
 
 	if (!strcasecmp(arg[0], "DUMPDONE")) {
-		upsdebugx(3, "UPS: dump is done");
+		upsdebugx(3, "%s: UPS dump is done", __func__);
 		dumpdone = 1;
 		return 1;
 	}
@@ -123,7 +130,6 @@ static int parse_args(size_t numargs, char **arg)
 
 	/* SETINFO <varname> <value> */
 	if (!strcasecmp(arg[0], "SETINFO")) {
-
 		if (!strncasecmp(arg[1], "driver.", 7) ||
 				!strcasecmp(arg[1], "battery.charge.low") ||
 				!strcasecmp(arg[1], "battery.runtime.low") ||
@@ -136,11 +142,21 @@ static int parse_args(size_t numargs, char **arg)
 		if (!strcasecmp(arg[1], "ups.status")) {
 			snprintf(ups.status, sizeof(ups.status), "%s", arg[2]);
 
-			online = strstr(ups.status, "OL") ? 1 : 0;
+			/* Status is published later in upsdrv_updateinfo() */
+			return 1;
+		}
 
-			if (ups.timer.shutdown > 0) {
-				dstate_setinfo("ups.status", "FSD %s", ups.status);
-				return 1;
+		if (ups.load.status && !strcasecmp(arg[1], ups.load.status)) {
+			if (!strcasecmp(arg[2], "off") || !strcasecmp(arg[2], "no")) {
+				outlet = 0;
+				upsdebugx(3, "%s: Outlet '%s' is reported off ('%s'), may raise OFF later",
+					__func__, arg[1], arg[2]);
+			}
+
+			if (!strcasecmp(arg[2], "on") || !strcasecmp(arg[2], "yes")) {
+				outlet = 1;
+				upsdebugx(3, "%s: Outlet '%s' is reported on ('%s')",
+					__func__, arg[1], arg[2]);
 			}
 		}
 
@@ -318,7 +334,9 @@ static TYPE_FD sstate_connect(void)
 	dumpdone = 0;
 
 	/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
-	dstate_setinfo("ups.status", "WAIT");
+	status_init();
+	status_set("WAIT");
+	status_commit();
 
 	upslogx(LOG_INFO, "Connected to UPS [%s]", device_path);
 	return fd;
@@ -445,7 +463,8 @@ static int sstate_dead(int maxage)
 
 	/* an unconnected ups is always dead */
 	if (INVALID_FD(upsfd)) {
-		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", device_path);
+		upsdebugx(3, "%s: connection to driver socket for UPS [%s] lost",
+			__func__, device_path);
 		return -1;	/* dead */
 	}
 
@@ -453,7 +472,8 @@ static int sstate_dead(int maxage)
 
 	/* ignore DATAOK/DATASTALE unless the dump is done */
 	if (dumpdone && dstate_is_stale()) {
-		upsdebugx(3, "sstate_dead: driver for UPS [%s] says data is stale", device_path);
+		upsdebugx(3, "%s: driver for UPS [%s] says data is stale",
+			__func__, device_path);
 		return -1;	/* dead */
 	}
 
@@ -461,14 +481,14 @@ static int sstate_dead(int maxage)
 
 	/* somewhere beyond a third of the maximum time - prod it to make it talk */
 	if ((elapsed > (maxage / 3)) && (difftime(now, last_ping) > (maxage / 3))) {
-		upsdebugx(3, "Send PING to UPS");
+		upsdebugx(3, "%s: Send PING to UPS", __func__);
 		sstate_sendline("PING\n");
 		last_ping = now;
 	}
 
 	if (elapsed > maxage) {
-		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
-			   device_path, elapsed, maxage);
+		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
+			__func__, device_path, elapsed, maxage);
 		return -1;	/* dead */
 	}
 
@@ -478,44 +498,41 @@ static int sstate_dead(int maxage)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	const char	*val;
-
-	val = dstate_getinfo(getval("load.status"));
-	if (val) {
-		if (!strcasecmp(val, "off") || !strcasecmp(val, "no")) {
-			outlet = 0;
-		}
-
-		if (!strcasecmp(val, "on") || !strcasecmp(val, "yes")) {
-			outlet = 1;
-		}
-	}
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
-			dstate_setinfo("ups.status", "FSD %s", ups.status);
+			status_set("FSD");
+			status_commit();
 		}
 		ups.timer.start = ondelay;
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
-			dstate_setinfo("ups.status", "FSD %s", ups.status);
+			status_set("FSD");
+			status_commit();
 		}
 		ups.timer.start = -1;
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+
 	if (!strcasecmp(varname, "battery.charge.low")) {
 		battery.charge.low = strtod(val, NULL);
 		dstate_setinfo("battery.charge.low", "%f", battery.charge.low);
@@ -528,7 +545,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -561,6 +578,10 @@ void upsdrv_initinfo(void)
 	if (val) {
 		battery.runtime.low = strtod(val, NULL);
 	}
+
+	ups.load.off = getval("load.off");
+	ups.load.on = getval("load.on");
+	ups.load.status = getval("load.status");
 
 	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
 	dstate_setinfo("ups.delay.start", "%ld", ondelay);
@@ -598,21 +619,53 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
+	status_init();
+	status_set(ups.status); /* FIXME: Split token words? */
+
+	online = status_get("OL");
+
+	if (!outlet) {
+		/* Outlet was declared OFF (by upstream or assumption) */
+		status_set("OFF");
+		if (ups.load.status && !reported_off) { /* first entrance */
+			reported_off = 1;
+			upslogx(LOG_WARNING, "%s: upstream reports outlet off (setting OFF)",
+				__func__);
+		}
+	} else if (ups.load.status && reported_off) { /* first cleared */
+		reported_off = 0;
+		upslogx(LOG_INFO, "%s: upstream reports outlet no longer off (clearing OFF)",
+			__func__);
+	}
+
 	if (ups.timer.shutdown >= 0) {
+
+		status_set("FSD");
+		upslogx(LOG_WARNING, "%s: outlet shutdown initiated (setting FSD)",
+			__func__);
 
 		ups.timer.shutdown -= (suseconds_t)(difftime(now, last_poll));
 
 		if (ups.timer.shutdown < 0) {
-			const char	*val;
-
 			ups.timer.shutdown = -1;
-			outlet = 0;
 
-			val = getval("load.off");
-			if (val) {
+			if (ups.load.off) {
 				char	buf[SMALLBUF];
-				snprintf(buf, sizeof(buf), "INSTCMD %s\n", val);
+				upslogx(LOG_WARNING, "%s: sending '%s' to upstream (load.off)",
+					__func__, ups.load.off);
+				snprintf(buf, sizeof(buf), "INSTCMD %s\n", ups.load.off);
 				sstate_sendline(buf);
+			}
+
+			if (!ups.load.status) {
+				/* Better than nothing if no load.status argument was given,
+				 * otherwise we want to confirm the outlet is actually offline,
+				 * which would normally happen right within the next update cycle.
+				 */
+				outlet = 0;
+				upslogx(LOG_WARNING, "%s: outlet now assumed off (setting OFF), "
+					"for more precision do consider setting 'load.status'",
+					__func__);
 			}
 		}
 
@@ -625,34 +678,60 @@ void upsdrv_updateinfo(void)
 		}
 
 		if (ups.timer.start < 0) {
-			const char	*val;
-
 			ups.timer.start = -1;
-			outlet = 1;
 
-			val = getval("load.on");
-			if (val) {
+			if (ups.load.on) {
 				char	buf[SMALLBUF];
-				snprintf(buf, sizeof(buf), "INSTCMD %s\n", val);
+				upslogx(LOG_INFO, "%s: sending '%s' to upstream (load.on)",
+					__func__, ups.load.on);
+				snprintf(buf, sizeof(buf), "INSTCMD %s\n", ups.load.on);
 				sstate_sendline(buf);
 			}
 
-			dstate_setinfo("ups.status", "%s", ups.status);
+			if (!ups.load.status) {
+				/* Better than nothing if no load.status argument was given,
+				 * otherwise we want to confirm the outlet is actually online,
+				 * which would normally happen right within the next update cycle.
+				 */
+				outlet = 1;
+				upslogx(LOG_INFO, "%s: outlet now assumed on (clearing OFF), "
+					"for more precision do consider setting 'load.status'",
+					__func__);
+			}
 		}
 
 	} else if (!online && outlet) {
 
+		if(!reported_ob) {
+			upslogx(LOG_WARNING, "%s: upstream is not (fully) online, "
+				"continuing to monitor closely for any shutdown criteria",
+				__func__);
+			reported_ob = 1;
+		}
+
 		if (battery.charge.act < battery.charge.low) {
-			upslogx(LOG_INFO, "Battery charge low");
+			upslogx(LOG_WARNING, "%s: upstream battery charge low, "
+				"sending 'shutdown.return' to myself to raise FSD on outlet",
+				__func__);
 			instcmd("shutdown.return", NULL);
 		} else if (battery.runtime.act < battery.runtime.low) {
-			upslogx(LOG_INFO, "Battery runtime low");
+			upslogx(LOG_WARNING, "%s: upstream battery runtime low, "
+				"sending 'shutdown.return' to myself to raise FSD on outlet",
+				__func__);
 			instcmd("shutdown.return", NULL);
 		}
 	}
 
+	if (reported_ob && online) {
+		upslogx(LOG_INFO, "%s: upstream is now back online",
+			__func__);
+		reported_ob = 0;
+	}
+
 	dstate_setinfo("ups.timer.shutdown", "%ld", ups.timer.shutdown);
 	dstate_setinfo("ups.timer.start", "%ld", ups.timer.start);
+
+	status_commit();
 
 	last_poll = now;
 }

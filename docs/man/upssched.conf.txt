@@ -38,7 +38,7 @@ your OS ignores the permissions on a FIFO, then you MUST put this in a
 protected directory!
 
 NOTE: by default, linkman:upsmon[8] will run upssched as whatever user
-you have defined with RUN_AS_USER in linkman:upsmon.conf[8].  Make sure
+you have defined with RUN_AS_USER in linkman:upsmon.conf[5].  Make sure
 that user can create files and write to files in the path you use for
 PIPEFN and LOCKFN.
 

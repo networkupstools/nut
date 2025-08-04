@@ -86,10 +86,52 @@ INSTANT COMMANDS
 
 This driver doesn't support any instant commands.
 
-AUTHOR
-------
+CONFIGURABLE VARIABLES
+----------------------
 
-Spiros Ioannou <sivann@gmail.com>
+The following variables can be set in the NUT configuration as `default.*`
+values to override or monitor UPS behavior using the `phoenixcontact_modbus`
+driver.
+
+NOTE: As of NUT v2.8.4, there is currently no support for run-time setting
+of these values (e.g. with linkman:upsrw[8]).  Currently they are only
+considered once, during driver initialization.
+
+*battery.energysave.delay*='num'::
+Time after entering battery mode before PC shutdown signal is triggered
+by the UPS (in seconds).
+
+*ups.timer.shutdown*='num'::
+Time allowed for PC to shutdown (in seconds). Maximum is 300 seconds.
+
+*ups.timer.start*='num'::
+Duration for which output power remains turned off before rebooting the
+PC system back on (in seconds).
+
+*ups.delay.start*='num'::
+Delay before switching back to mains after power is restored (in seconds).
+The mains voltage must be within the threshold for this time, to initiate
+automatic PC restart.
+
+*experimental.ups.mode.selector*='num'::
+UPS operating mode. For example, `9` corresponds to PC-Mode (vendor-defined).
+
+*experimental.battery.warning_soh*='num'::
+Battery warning threshold for State of Health, in percent.
+
+*input.voltage.low.critical*='num'::
+Threshold voltage (in V) below which the UPS will switch to battery mode.
+
+*input.voltage.high.critical*='num'::
+Voltage threshold (in V) above which the UPS will consider mains power restored
+(see also below).
+
+AUTHORS
+-------
+
+* Spiros Ioannou <sivann@gmail.com>
+* Ricardo Rodriguez <rikyrod2001@gmail.com>
+* Ulfat Hasangarayev <ulfathasangarayev@gmail.com>
 
 SEE ALSO
 --------

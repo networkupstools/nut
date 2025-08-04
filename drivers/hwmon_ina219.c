@@ -455,7 +455,7 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("battery.charge", "%u", charge);
 
 	if (charge <= battery_charge_low && current > 0)
-		dstate_setinfo("battery.runtime", "%d", 60); // 1 minute
+		dstate_setinfo("battery.runtime", "%d", 60);	/* 1 minute */
 
 	status_commit();
 	dstate_dataok();

@@ -34,6 +34,28 @@ check_SCRIPTS =
 check-NIT check-NIT-devel:
 	+cd "$(builddir)/NIT" && $(MAKE) $(AM_MAKEFLAGS) $@
 
+# Make sure out-of-dir dependencies exist (especially when dev-building
+# only some parts of NUT; note libnutclient* are for C++ but would not
+# be referenced unless that build ability is detected and enabled):
+$(top_builddir)/drivers/libdummy_mockdrv.la \
+$(top_builddir)/common/libnutconf.la \
+$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libparseconf.la \
+$(top_builddir)/clients/libnutclient.la \
+$(top_builddir)/clients/libnutclientstub.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+# Builds from root dir arrange stuff decently. Make sure parallel builds
+# started from scratch right in this dir get dependencies in proper order
+# (sub-makes are independent as far as trying to write into same files):
+$(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommon.la
+#... $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libparseconf.la
+$(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/clients/libnutclientstub.la: $(top_builddir)/clients/libnutclient.la
+
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
 
@@ -123,13 +145,6 @@ driver_methods_utest_SOURCES = driver_methods_utest.c
 driver_methods_utest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
-# Make sure out-of-dir dependencies exist (especially when dev-building parts):
-$(top_builddir)/drivers/libdummy_mockdrv.la \
-$(top_builddir)/common/libnutconf.la \
-$(top_builddir)/common/libcommonclient.la \
-$(top_builddir)/common/libcommon.la: dummy
-	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
-
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
@@ -152,11 +167,12 @@ TESTS += $(TESTS_CXX11)
 # Note: we only build it, but do not run directly (NIT prepares the sandbox)
 check_PROGRAMS += cppnit
 
+# NOTE: libnutclientstub includes libnutclient and adds nutclientmem
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 ###cppunittest_CXXFLAGS += -I$(top_srcdir)/include -DTOP_SRCDIR="\"$(top_srcdir)\""
 cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
-cppunittest_LDADD  = $(top_builddir)/clients/libnutclient.la
-cppunittest_LDADD += $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD   = $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD  += $(top_builddir)/clients/libnutclient.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 # Currently nutconf and related codebase causes woes for static analysis
@@ -168,14 +184,10 @@ endif WITH_LIBNUTCONF
 
 cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
-cppnit_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
+cppnit_LDADD   = $(top_builddir)/clients/libnutclientstub.la
+cppnit_LDADD  += $(top_builddir)/clients/libnutclient.la
 cppnit_SOURCES = $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
 
-# Make sure out-of-dir C++ dependencies exist (especially when dev-building
-# only some parts of NUT):
-$(top_builddir)/clients/libnutclient.la \
-$(top_builddir)/clients/libnutclientstub.la: dummy
-	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 else !HAVE_CPPUNIT
 # Just redistribute test source into tarball if not building tests

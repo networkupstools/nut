@@ -34,7 +34,9 @@
 #include "nut_stdint.h"
 #include "nut_float.h"
 
-#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.61"
+#include <math.h>
+
+#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.64"
 
 typedef struct {
 	unsigned char	start;
@@ -258,6 +260,10 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 {
 	int	i;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	for (i = 0; cmdtab[i].cmd != NULL; i++) {
 		ssize_t	ret;
 
@@ -265,6 +271,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			continue;
 		}
 
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
 		ret = powpan_command(cmdtab[i].command, cmdtab[i].len);
 		assert(cmdtab[i].len < SSIZE_MAX);
 		if (ret >= 0 &&
@@ -274,11 +281,11 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
+		upslog_INSTCMD_FAILED(cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
-	upslogx(LOG_ERR, "%s: command [%s] not found", __func__, cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -286,6 +293,8 @@ static int powpan_setvar(const char *varname, const char *val)
 {
 	char	command[SMALLBUF];
 	int 	i, j;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	for (i = 0;  vartab[i].var != NULL; i++) {
 
@@ -304,35 +313,23 @@ static int powpan_setvar(const char *varname, const char *val)
 				continue;
 			}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-			snprintf(command, sizeof(command), vartab[i].set,
-				vartab[i].map[type][j].command);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+			snprintf_dynamic(command, sizeof(command), vartab[i].set,
+				"%c", vartab[i].map[type][j].command);
 
 			if ((powpan_command(command, 4) == 3) && (!memcmp(powpan_answer, command, 3))) {
 				dstate_setinfo(varname, "%s", val);
 				return STAT_SET_HANDLED;
 			}
 
-			upslogx(LOG_ERR, "powpan_setvar: setting variable [%s] to [%s] failed", varname, val);
-			return STAT_SET_UNKNOWN;
+			upslog_SET_FAILED(varname, val);
+			return STAT_SET_UNKNOWN;	/* FIXME: ..._FAILED ? */
 		}
 
-		upslogx(LOG_ERR, "powpan_setvar: [%s] is not valid for variable [%s]", val, varname);
-		return STAT_SET_UNKNOWN;
+		upslog_SET_INVALID(varname, val);
+		return STAT_SET_UNKNOWN;	/* FIXME: ..._INVALID? */
 	}
 
-	upslogx(LOG_ERR, "powpan_setvar: variable [%s] not found", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
