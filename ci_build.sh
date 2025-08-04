@@ -562,6 +562,25 @@ if [ -z "$PARMAKE_FLAGS" ]; then
     fi
 fi
 
+# Try to avoid faults like:
+#   clang-cpp: error: unable to execute command: posix_spawn failed: Resource temporarily unavailable
+#   scripts/DMF/nut_cpp: fork: retry: Resource temporarily unavailable
+# We may lack permissions to change limits though -
+# better use /etc/login.conf or similar OS settings.
+# FIXME: Align numbers with desired parallelism or vice versa?
+if (command -v ulimit) >/dev/null 2>&1 ; then
+    for K in "-n" "-u" ; do
+        if { V="`ulimit $K`" && [ "$V" -gt 0 ] ; } 2>/dev/null ; then
+            if [ "$V" -lt 1024 ] ; then
+                echo "TRY TO ADJUST: ulimit $K 1024" >&2
+                ulimit $K 1024 || true
+                echo "RESULT: `ulimit $K`" || true
+            fi
+        fi
+    done
+    ulimit -a || true
+fi
+
 # Stash the value provided by caller, if any
 ORIG_DISTCHECK_TGT="${DISTCHECK_TGT-}"
 
