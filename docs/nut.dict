@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3538 utf-8
+personal_ws-1.1 en 3545 utf-8
 AAC
 AAS
 ABI
@@ -1886,6 +1886,7 @@ datarootdir
 dataset
 datasets
 datasheet
+datasize
 datastale
 dblatex
 dcd
@@ -2506,6 +2507,7 @@ matcher
 maxconnfails
 maxd
 maxlength
+maxproc
 maxreport
 maxretry
 maxstartdelay
@@ -2549,6 +2551,8 @@ mips
 mirrorlist
 mis
 misconfigured
+mk
+mkdb
 mkdir
 mkstr
 mmZ
@@ -2728,6 +2732,7 @@ onwards
 ooce
 openSUSE
 opencollective
+openfiles
 openipmi
 openjdk
 openlog
@@ -3115,6 +3120,7 @@ sshd
 ssize
 ssl
 sstate
+stacksize
 stan
 startIP
 startdelay
@@ -3299,6 +3305,7 @@ uid
 uint
 ukUNV
 ul
+ulimit
 ulink
 un
 uname
