@@ -2940,11 +2940,18 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 				case 'c':
 				case 's':
 				case 'p':
+					inEscape = 0;
+					*b++ = *p;
+					i++;
+					continue;
+
 				/* ...and a (s)size_t target (signed when %zn) for
 				 *   printf to write the count of chars printed so
 				 *   far into:
 				 */
 				case 'n':
+					upsdebugx(4, "%s: WARNING: escape sequence %%n is deprecated "
+						"on some systems due to security concerns", __func__);
 					inEscape = 0;
 					*b++ = *p;
 					i++;
