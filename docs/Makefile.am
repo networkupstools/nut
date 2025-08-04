@@ -544,7 +544,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	        -e 's,^\([ '"$${TABCHAR}"'][^+]*\)\([^+/\]\)[+],\1\2\\\+,g' \
 	        -e 's,^\([ '"$${TABCHAR}"'].*\)\([~|^]\),\1\\\2,g' \
 	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
-	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
+	        -e 's,^\([ '"$${TABCHAR}"'][ '"$${TABCHAR}"']*\)\([0-9]\),\1{empty}\2,g' \
 	   < "$${INPUT}" >> "$@.tmp.$$$$" \
 	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then \
 	        echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
