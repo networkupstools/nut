@@ -36,17 +36,23 @@ install:
   - cmd: |
         REM Do not give pacman cause for complaints:
         C:\msys64\usr\bin\bash -lc "mkdir -p /var/cache/pacman/pkg; ls -la /"
-        REM FIXME: Since Jan 2025, normal update below fails with the message:
-        REM   installing mingw-w64-i686-gdb (16.1-1) breaks dependency
-        REM   'mingw-w64-i686-gdb=15.2' required by mingw-w64-i686-gdb-multiarch
-        REM Currently we sweep it away by removing the conflicting package:
-        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -R mingw-w64-i686-gdb-multiarch || true"
-  - cmd: |
-        REM Core update (in case any core packages are outdated):
-        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
-  - cmd: |
-        REM Normal update (same command again):
-        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
+
+#  - cmd: |
+#        REM FIXME: Since Jan 2025, normal update below fails with the message:
+#        REM   installing mingw-w64-i686-gdb (16.1-1) breaks dependency
+#        REM   'mingw-w64-i686-gdb=15.2' required by mingw-w64-i686-gdb-multiarch
+#        REM Currently we sweep it away by removing the conflicting package:
+#        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -R mingw-w64-i686-gdb-multiarch || true"
+
+# FIXME: Make this update or not of the ecosystem conditional?
+#  Store a copy of C:\msys64 elsewhere as a tarball?
+#  - cmd: |
+#        REM Core update (in case any core packages are outdated):
+#        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
+#  - cmd: |
+#        REM Normal update (same command again):
+#        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
+
   - cmd: |
         REM Prerequisites for NUT per https://github.com/networkupstools/nut/blob/master/docs/config-prereqs.txt :
         C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libgd mingw-w64-x86_64-cppunit"
