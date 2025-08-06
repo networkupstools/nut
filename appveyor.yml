@@ -80,10 +80,10 @@ install:
         C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats" ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true '
 
 
-# FIXME: Configure for minimal build results, e.g. no tools and docs?
-#  Ensure parallel builds...
-# As of Aug 2025, in cases these artifacts (nor ~/.ccache) were not cached
-# and the step did run, it cost us 22min.
+# NOTE: The script aims to configure for minimal build results, e.g.
+# no tools and docs, and to ensure parallel builds via MAKEFLAGS...
+# As of Aug 2025, in cases these artifacts (and ~/.ccache) were not cached
+# and the step did run, it cost us 22min (before disabling tools and docs).
 before_build:
   - cmd: |
       REM Ensure we have a net-snmp to build against
