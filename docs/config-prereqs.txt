@@ -1981,6 +1981,10 @@ export PATH
 :; pacman -S --needed \
     mingw-w64-x86_64-neon libneon-devel
 
+# For DMF XML capability, also add libxml:
+:; pacman -S --needed \
+    mingw-w64-x86_64-libxml2
+
 # Other dependencies:
 :; pacman -S --needed \
     mingw-w64-x86_64-libmodbus-git \
