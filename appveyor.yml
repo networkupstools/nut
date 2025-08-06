@@ -164,8 +164,8 @@ cache:
   - C:\msys64\home\appveyor\ccache # likely missing, no problem - but the name is reported in ccache status
   - C:\Users\appveyor\AppData\Local\ccache # may be default in newer versions
   - C:\Users\appveyor\AppData\Local\.ccache # may be missing, but for completeness like above
-  - C:\msys64\var\cache\pacman\pkg
   - C:\msys64\home\appveyor\nut-win-deps
+  - C:\msys64\var\cache\pacman\pkg
 
 # Below we tried to stash binaries of MSYS2 environment
 # so VM deployment is faster on subsequent builds
