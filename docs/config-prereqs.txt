@@ -943,15 +943,39 @@ To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
 base installation. It is not required for "legacy" builds arranged by just
 `autogen.sh` and `configure` scripts.
 
-NOTE: The OpenBSD 6.5 `install65.iso` installation includes a set of packages
+[NOTE]
+=====
+The OpenBSD 6.5 `install65.iso` installation includes a set of packages
 that seems to exceed whatever is available on network mirrors; for example,
 the CD image included `clang` program while it is not available to `pkg_add`,
 at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.5/packages/amd64/
 mirror. The `gcc` version on CD image differed notably from that in the
 networked repository (4.2.x vs. 4.9.x).
+
 You may have to echo a working base URL (part before "6.5/..." into the
 `/etc/installurl` file, since the old distribution is no longer served by
 default site.
+======
+
+Verify that the unprivileged account used for builds (e.g. `abuild`) has
+sufficient resource permissions, especially for "open files" and "max user
+processes", by running `ulimit -a`.  You can ensure larger values if needed
+via `/etc/login.conf` e.g. add this new login class per example below
+(see https://man.openbsd.org/login.conf.5 and
+https://wiki.ircnow.org/index.php?n=Openbsd.Loginconf for more details),
+assign the login class to your CI and/or personal account with
+`usermod -L abuild $USER`, and run `cap_mkdb /etc/login.conf`
+and re-login that account to check that the change got applied:
+
+------
+abuild:\
+	:maxproc=infinity:\
+	:datasize=infinity:\
+	:openfiles=infinity:\
+	:stacksize-cur=8M
+------
+
+Finally, as `root` add the packages:
 
 ------
 # Optionally, make the environment comfortable, e.g.:
