@@ -35,7 +35,7 @@ environment:
 install:
   - cmd: |
         REM Do not give pacman cause for complaints:
-        C:\msys64\usr\bin\bash -lc "mkdir -p /var/cache/pacman/pkg; ls -la /"
+        C:\msys64\usr\bin\bash -lc "date -u; mkdir -p /var/cache/pacman/pkg; ls -la /"
 
 #  - cmd: |
 #        REM FIXME: Since Jan 2025, normal update below fails with the message:
@@ -46,6 +46,8 @@ install:
 
 # FIXME: Make this update or not of the ecosystem conditional?
 #  Store a copy of C:\msys64 elsewhere as a tarball?
+#  As of Aug 2025, the first update is quick (15sec, 18Mb DL, 91MB installed),
+#  the second is costlier (6.5min, 378MB DL, 2.5GB installed)
 #  - cmd: |
 #        REM Core update (in case any core packages are outdated):
 #        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
@@ -53,13 +55,24 @@ install:
 #        REM Normal update (same command again):
 #        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
 
+# As of Aug 2025, with updates commented away above still in place
+# so many packages skipped, this step did cost additional 58MB DL,
+# 392MB installed (new data), 1min of work.
+# Without the ecosystem update above, the overhead of this step remained
+# similar. It did however use a smaller population (via deps) and older
+# versions of packages.
   - cmd: |
         REM Prerequisites for NUT per https://github.com/networkupstools/nut/blob/master/docs/config-prereqs.txt :
         C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libgd mingw-w64-x86_64-cppunit"
         REM SKIP mingw-w64-x86_64-libmodbus-git : we custom-build one with USB support
+
+# FIXME: Make these stats conditional for just troubleshooting sessions?
+#  It seems the first "du" call costs us about 1-2 minutes (different runs):
+#  - cmd: |
+#        REM Assorted stats after package processing:
+#        C:\msys64\usr\bin\bash -lc "date -u; ls -la / ; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date -u"
+
   - cmd: |
-        REM Assorted stats after package processing:
-        C:\msys64\usr\bin\bash -lc "date -u; ls -la / ; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date -u"
         REM Preserve the current working directory:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
@@ -67,6 +80,10 @@ install:
         C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats" ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true '
 
 
+# FIXME: Configure for minimal build results, e.g. no tools and docs?
+#  Ensure parallel builds...
+# As of Aug 2025, in cases these artifacts (nor ~/.ccache) were not cached
+# and the step did run, it cost us 22min.
 before_build:
   - cmd: |
       REM Ensure we have a net-snmp to build against
