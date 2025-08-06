@@ -182,6 +182,8 @@ provide_netsnmp() (
 	tar xzf "$DLDIR/${DEP_ARCHIVE}" || exit
 	cd "./${DEP_DIRNAME}" || exit
 
+	# NOTE: --disable-daemon may be from a different version,
+	# just in case present here to simplify variant builds.
 	date -u || true
 	yes "" | time ./configure --prefix="${PREFIX}" --with-default-snmp-version=3 \
 		--disable-agent --disable-daemon --with-sys-contact="" --with-sys-location="" \
