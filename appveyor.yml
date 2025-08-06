@@ -103,8 +103,7 @@ build_script:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./autogen.sh'
-#        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh docs=no'
 
 
 after_build:
@@ -148,15 +147,15 @@ after_build:
 #        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -x || echo "SKIP: Could not query ccache compression stats"'
 
 
-#artifacts:
+artifacts:
 #  - path: 'NUT-for-Windows*.7z'
 #    name: Bundle of binary files and FOSS dependencies of NUT for Windows
 
-#  - path: config.log
-#    name: config.log of recent build of NUT for Windows
+  - path: config.log
+    name: config.log of recent build of NUT for Windows
 
-#  - path: config.nut_report_feature.log
-#    name: config.nut_report_feature.log of recent build of NUT for Windows
+  - path: config.nut_report_feature.log
+    name: config.nut_report_feature.log of recent build of NUT for Windows
 
 # Example optional cache (depends on file change):
 # - C:\msys64 -> appveyor.yml
