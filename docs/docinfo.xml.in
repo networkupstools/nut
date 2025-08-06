@@ -21,6 +21,19 @@
     -->
   <!-- AUTOINSERT LOCATION -->
   <revision>
+    <revnumber>2.8.4</revnumber>
+    <date>2025-08-07</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Fixed a few regressions introduced by release v2.8.3.
+        Some changes to docs and recipes, especially for parallel builds.
+        Updated NUT SEMVER definition some more.
+        Some rounds of code-hardening project.
+        Numerous driver updates, some new ones introduced.
+    </revremark>
+  </revision>
+
+  <revision>
     <revnumber>2.8.3</revnumber>
     <date>2025-04-07</date>
     <authorinitials>JK</authorinitials>
