@@ -361,6 +361,9 @@ Still TODO:
    [PR #3030, follows up from PR #2825, highlights why issue #2584 better
    be solved]
 
+ - Revised `appveyor.yml` to run CI builds faster (forfeit MSYS2 ecosystem
+   updates and some other steps) and more likely fit in one-hour allocation.
+
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
 ----------------------------------------------------
