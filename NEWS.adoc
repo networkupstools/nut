@@ -18,27 +18,6 @@ PLANNED: Release notes for NUT 2.8.4 - what's new since 2.8.3
 
 https://github.com/networkupstools/nut/milestone/9
 
- - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
-   the driver binaries to be built once and data mappings to be loaded
-   and modernized on the fly (porting from 42ITy project)
-
- - (expected) Porting of reference packaging from 42ITy project
-
- - (expected) Porting of patches suggested by different distribution packages
-
- - (expected) C code clean-up/consistency (string format security, work with
-   Boolean values, string to number conversions, etc. in the same manner)
-
- - (expected) clean-up of libusb API variants support [#300 and follow-ups]
-
- - (expected) CI automation for coding style
-
- - (expected) CI automation for driver flags and variables to be certainly
-   documented, handled in augeas lenses, nutconf classes, etc.
-
- - (expected) CI automation for use of data points in drivers that conform
-   to patterns defined in link:docs/nut-names.txt[]
-
  - Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+:
    * In `usbhid-ups` sources, introduced optional `HU_FLAG_PARAM_REQUIRED` for
      `setvar()` or `instcmd()` handling (and a `HU_TYPE_CMD_PARAM_REQUIRED`
