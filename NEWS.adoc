@@ -363,6 +363,9 @@ Still TODO:
 
  - Revised `appveyor.yml` to run CI builds faster (forfeit MSYS2 ecosystem
    updates and some other steps) and more likely fit in one-hour allocation.
+   Also have it install `mingw-w64-x86_64-python-pyqt6` so the `NUT-Monitor`
+   application can get packaged (would need a capable Python run-time though).
+   [#3046]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2
