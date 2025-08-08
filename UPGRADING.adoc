@@ -24,6 +24,8 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.3 to 2.8.4
 ---------------------------
 
+- PLANNED: Keep track of any further API clean-up?
+
 - Introduced handling (possibly rewriting) for man page section "Overviews,
   conventions, and miscellaneous" (commonly number 7), to deliver support
   for `man nut` queries (NUT overview manual page also created).
