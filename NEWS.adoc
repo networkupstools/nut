@@ -13,10 +13,10 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 
-Release notes for NUT 2.8.4 - what's new since 2.8.3
-----------------------------------------------------
+PLANNED: Release notes for NUT 2.8.5 - what's new since 2.8.4
+-------------------------------------------------------------
 
-https://github.com/networkupstools/nut/milestone/9
+https://github.com/networkupstools/nut/milestone/12
 
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
@@ -38,6 +38,10 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
+
+
+Release notes for NUT 2.8.4 - what's new since 2.8.3
+----------------------------------------------------
 
  - Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+:
    * In `usbhid-ups` sources, introduced optional `HU_FLAG_PARAM_REQUIRED` for
