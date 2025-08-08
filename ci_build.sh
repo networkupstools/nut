@@ -1846,7 +1846,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
     if [ x"${WITH_CHANGELOG}" != x ] ; then
         CONFIG_OPTS+=("--enable-docs-changelog=${WITH_CHANGELOG}")
-        # else "auto" => may become "yes" for (pre-)release builds!
+    else
+        if [ x"${CANBUILD_DOCS_ALL}" != xyes ] ; then
+            # default "auto" => may become "yes" for (pre-)release builds!
+            CONFIG_OPTS+=("--enable-docs-changelog=no")
+        fi
     fi
 
     consider_cleanup_shortcut
