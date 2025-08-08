@@ -4009,8 +4009,12 @@ WITH_CHANGELOG_PDF=no
 
 dnl # Correlate "auto" with some measure of development iterations (quick) vs. release/tarball build (full). Can maintainer-mode be it?
 AS_IF([($NUT_SOURCE_GITREV_IS_RELEASE || $NUT_SOURCE_GITREV_IS_PRERELEASE) && test "${nut_enable_docs_changelog}" = auto],
-	[AC_MSG_NOTICE([Enabling WITH_CHANGELOG_*=yes because this is a (pre-)release build and original --enable-docs-changelog=${nut_enable_docs_changelog}])
-	 nut_enable_docs_changelog=yes
+	[
+	 dnl # CI systems struggle to build a release commit, for now do not require this bit:
+	 dnl # https://github.com/networkupstools/nut/issues/3053
+	 AC_MSG_NOTICE([This is a (pre-)release build and original --enable-docs-changelog=${nut_enable_docs_changelog} -- consider setting to "yes"])
+	 dnl # AC_MSG_NOTICE([Enabling WITH_CHANGELOG_*=yes because this is a (pre-)release build and original --enable-docs-changelog=${nut_enable_docs_changelog}])
+	 dnl # nut_enable_docs_changelog=yes
 	]
 )
 
