@@ -107,7 +107,7 @@ jobs:
       name: NUT CI Build
       run: |
         ./autogen.sh
-        ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
+        ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs --disable-docs-changelog ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
         make -s -j 8 || exit
 
     - if: matrix.language == 'cpp'
