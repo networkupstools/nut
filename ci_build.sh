@@ -1844,6 +1844,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
     fi
 
+    if [ x"${WITH_CHANGELOG}" != x ] ; then
+        CONFIG_OPTS+=("--enable-docs-changelog=${WITH_CHANGELOG}")
+        # else "auto" => may become "yes" for (pre-)release builds!
+    fi
+
     consider_cleanup_shortcut
 
     if [ -s Makefile ]; then
@@ -2637,13 +2642,21 @@ bindings)
     # from somehow interfering with the running daemons.
     if [ x"${INPLACE_RUNTIME-}" = xtrue ] || [ x"${BUILD_TYPE-}" = xinplace ] ; then
         CONFIG_OPTS+=("--enable-inplace-runtime")
+        if [ x"${WITH_CHANGELOG}" != x ] ; then
+            CONFIG_OPTS+=("--enable-docs-changelog=${WITH_CHANGELOG}")
+            # else "auto" => may become "yes" for (pre-)release builds!
+        fi
     else
         # Help developers debug:
         CONFIG_OPTS+=("--disable-silent-rules")
 
-        # In developer iterations, avoid burning CPU every
-        # time our git index changes
-        CONFIG_OPTS+=("--enable-docs-changelog=no")
+        if [ x"${WITH_CHANGELOG}" != x ] ; then
+            CONFIG_OPTS+=("--enable-docs-changelog=${WITH_CHANGELOG}")
+        else
+            # In developer iterations, avoid burning CPU every
+            # time our git index changes
+            CONFIG_OPTS+=("--enable-docs-changelog=no")
+        fi
     fi
 
     if [ -z "${WITH_UNMAPPED_DATAPOINTS-}" ] ; then
