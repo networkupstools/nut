@@ -2483,7 +2483,12 @@ dnl a second-class citizen (if both are set, the old option name wins).
 dnl Also note that the legacy default was "man=yes" due to requirements
 dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
-NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
+nut_with_docs_default="man=auto"
+AS_IF([($NUT_SOURCE_GITREV_IS_RELEASE || $NUT_SOURCE_GITREV_IS_PRERELEASE)],
+    [AC_MSG_NOTICE([This is a (pre-)release build, setting default --with-doc='auto' (not just '${nut_with_docs_default}')])
+     nut_with_docs_default="auto"])
+
+NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [${nut_with_docs_default}])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
 NUT_ARG_ENABLE([docs-man-for-progs-built-only], [build and install man pages (if enabled) only for built programs (yes, default) or all known pages (no)], [yes])
@@ -4004,7 +4009,9 @@ WITH_CHANGELOG_PDF=no
 
 dnl # Correlate "auto" with some measure of development iterations (quick) vs. release/tarball build (full). Can maintainer-mode be it?
 AS_IF([($NUT_SOURCE_GITREV_IS_RELEASE || $NUT_SOURCE_GITREV_IS_PRERELEASE) && test "${nut_enable_docs_changelog}" = auto],
-	[nut_enable_docs_changelog=yes]
+	[AC_MSG_NOTICE([Enabling WITH_CHANGELOG_* because this is a (pre-)release build and nut_enable_docs_changelog==${nut_enable_docs_changelog}])
+	 nut_enable_docs_changelog=yes
+	]
 )
 
 case "${nut_enable_docs_changelog}" in
