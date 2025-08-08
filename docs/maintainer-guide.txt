@@ -269,8 +269,13 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 
 * post-release update of the "in-development" codebase:
 ** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
-   <incremented version>.1 (ex: `2.8.0.1`); remove the `VERSION_FORCED`
-   and `VERSION_FORCED_SEMVER` files
+   <incremented version>.1 (ex: `2.8.0.1`) and commit this, e.g.:
++
+----
+:; git commit -sm 'tools/gitlog2version.sh: for development, set fallback NUT_VERSION_DEFAULT=2.8.0.1'
+----
+** remove the `VERSION_FORCED` and `VERSION_FORCED_SEMVER` files from your
+   workspace
 ** `git revert` the commit which cleaned up "in-development" bits above
 ** Possibly resolve relevant merge conflicts for the changed context,
    e.g. the changed "PLANNED" status of the now-issued release info
