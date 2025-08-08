@@ -212,6 +212,8 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 # if file names in your top_srcdir are removed:
 :; ln .relver/* .
 ----
+*** DOUBLE-CHECK that the `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh`
+    is an `X.Y.Z` triplet, without the fourth `.1` suffix, for the release!
 *** Note that since NUT v2.8.3 this script dictates the version propagated by
     the `configure` script, so direct changes of `AC_INIT` there are no longer
     needed
