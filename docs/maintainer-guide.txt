@@ -108,12 +108,13 @@ about security or other matters.
 
 * clean up "in-development" bits from files (which we would revert after
   release), e.g.:
-** TODO etc. referring planned future in the `NEWS.adoc` and `UPDATING.adoc`
-   files - except for the upcoming release
 ** DO NOT yet remove "PLANNED:" from the new release section title
-** comment away the top-most (auto-resolved) NUT version and build date
-   in `docs/docinfo.xml.in` -- DO NOT add (or at least commit) an entry
-   for the actual fixed release version and date just yet
+** revise (remove if not implemented) the TODO etc. entries referring to
+   planned future in the `NEWS.adoc` and `UPDATING.adoc` files -- except
+   for what was actually completed the upcoming release
+** comment away the top-most (auto-resolved, templated like `@PACKAGE_VERSION@`)
+   NUT version and build date in `docs/docinfo.xml.in` -- DO NOT add (or at
+   least commit) an entry for the actual fixed release version and date just yet
 ** NOTE: The `docs/docinfo.xml.sh` script can help update the list for
    existing git tags, if some were skipped before. This can be used to
    cheat a bit about adding the new entry (with a draft tag).

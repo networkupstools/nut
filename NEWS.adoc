@@ -13,31 +13,10 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 
-PLANNED: Release notes for NUT 2.8.4 - what's new since 2.8.3
--------------------------------------------------------------
+Release notes for NUT 2.8.4 - what's new since 2.8.3
+----------------------------------------------------
 
 https://github.com/networkupstools/nut/milestone/9
-
- - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
-   the driver binaries to be built once and data mappings to be loaded
-   and modernized on the fly (porting from 42ITy project)
-
- - (expected) Porting of reference packaging from 42ITy project
-
- - (expected) Porting of patches suggested by different distribution packages
-
- - (expected) C code clean-up/consistency (string format security, work with
-   Boolean values, string to number conversions, etc. in the same manner)
-
- - (expected) clean-up of libusb API variants support [#300 and follow-ups]
-
- - (expected) CI automation for coding style
-
- - (expected) CI automation for driver flags and variables to be certainly
-   documented, handled in augeas lenses, nutconf classes, etc.
-
- - (expected) CI automation for use of data points in drivers that conform
-   to patterns defined in link:docs/nut-names.txt[]
 
  - Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+:
    * In `usbhid-ups` sources, introduced optional `HU_FLAG_PARAM_REQUIRED` for
@@ -363,6 +342,9 @@ Still TODO:
 
  - Revised `appveyor.yml` to run CI builds faster (forfeit MSYS2 ecosystem
    updates and some other steps) and more likely fit in one-hour allocation.
+   Also have it install `mingw-w64-x86_64-python-pyqt6` so the `NUT-Monitor`
+   application can get packaged (would need a capable Python run-time though).
+   [#3046]
 
 
 Release notes for NUT 2.8.3 - what's new since 2.8.2

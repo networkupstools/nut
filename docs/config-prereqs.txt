@@ -1935,6 +1935,11 @@ export PATH
 :; pacman -S --needed \
     mingw-w64-x86_64-cppunit \
     mingw-w64-clang-x86_64-cppunit
+
+# More on Python (for NUT-Monitor UI):
+:; pacman -S --needed \
+    mingw-w64-x86_64-python-pyqt5
+# FIXME: Consider qt6 since 2025
 ----
 
 

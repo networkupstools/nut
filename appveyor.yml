@@ -6,7 +6,7 @@
 # https://www.appveyor.com/docs/build-configuration/
 # https://www.appveyor.com/docs/windows-images-software/
 
-version: 2.8.3.{build}-{branch}
+version: 2.8.4.{build}-{branch}
 
 # base image
 image: Visual Studio 2022
@@ -65,6 +65,7 @@ install:
         REM Prerequisites for NUT per https://github.com/networkupstools/nut/blob/master/docs/config-prereqs.txt :
         C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libgd mingw-w64-x86_64-cppunit"
         REM SKIP mingw-w64-x86_64-libmodbus-git : we custom-build one with USB support
+        REM SKIP for now NUT-Monitor prereqs (runtime Python would require somilar modules; need to fix localization builds like "fr.po"): gettext mingw-w64-x86_64-python-pyqt6
 
 # FIXME: Make these stats conditional for just troubleshooting sessions?
 #  It seems the first "du" call costs us about 1-2 minutes (different runs):
@@ -103,7 +104,9 @@ build_script:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh docs=no'
+        REM Note: currently we save job time and do not install asciidoc/a2x
+        REM  # --with-docs="man=auto html-single=auto html-chunked=no pdf=no"
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh --with-docs=no'
 
 
 after_build:
@@ -115,41 +118,41 @@ after_build:
         C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
 
 
-#test_script:
-#  - cmd: |
-#        REM Preserve the current working directory:
-#        set CHERE_INVOKING=yes
-#        REM Start a 64 bit Mingw environment:
-#        set MSYSTEM=MINGW64
-#        REM Start Mingw-based integration and unit checks:
-#        C:\msys64\usr\bin\bash -lc 'date -u; NUT_STATEPATH="C:\\Users\\appveyor\\AppData\\Local\\Temp\\nut-test"; mkdir -p "${NUT_STATEPATH}"; export NUT_STATEPATH; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s check || bash -lc "for F in tests/*.log tests/*.trs ; do echo \"===---=== $F :\"; cat \"$F\"; done; exit 1;" '
-#        REM Start a Mingw-based documentation spellcheck (note that "make check" above could cover some documents in path of artifact delivery, but maybe not all that we have):
-#        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s -j 8 spellcheck'
+test_script:
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        REM Start Mingw-based integration and unit checks:
+        C:\msys64\usr\bin\bash -lc 'date -u; NUT_STATEPATH="C:\\Users\\appveyor\\AppData\\Local\\Temp\\nut-test"; mkdir -p "${NUT_STATEPATH}"; export NUT_STATEPATH; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s check || bash -lc "for F in tests/*.log tests/*.trs ; do echo \"===---=== $F :\"; cat \"$F\"; done; exit 1;" '
+        REM Start a Mingw-based documentation spellcheck (note that "make check" above could cover some documents in path of artifact delivery, but maybe not all that we have):
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s -j 8 spellcheck'
 
 
-#after_test:
-#  - cmd: |
-#        REM Preserve the current working directory:
-#        set CHERE_INVOKING=yes
-#        REM Start a 64 bit Mingw environment:
-#        set MSYSTEM=MINGW64
-#        REM Oh the joys of shell scripting with strings passed through CMD:
-#        REM Note: currently Python installation path with MSYS is buggy [#1584]
-#        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; rm -rf ./.inst/NUT-for-Windows-x86_64-SNAPSHOT || true ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; ) ; date -u'
-#        cd .inst
-#        7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
-#  - cmd: |
-#        REM Preserve the current working directory:
-#        set CHERE_INVOKING=yes
-#        REM Start a 64 bit Mingw environment:
-#        set MSYSTEM=MINGW64
-#        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
-#        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -x || echo "SKIP: Could not query ccache compression stats"'
+after_test:
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        REM Oh the joys of shell scripting with strings passed through CMD:
+        REM Note: currently Python installation path with MSYS is buggy [#1584]
+        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s -j 8 install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; rm -rf ./.inst/NUT-for-Windows-x86_64-SNAPSHOT || true ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; ) ; date -u'
+        cd .inst
+        7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -x || echo "SKIP: Could not query ccache compression stats"'
 
 
 artifacts:
-#  - path: 'NUT-for-Windows*.7z'
-#    name: Bundle of binary files and FOSS dependencies of NUT for Windows
+  - path: 'NUT-for-Windows*.7z'
+    name: Bundle of binary files and FOSS dependencies of NUT for Windows
 
   - path: config.log
     name: config.log of recent build of NUT for Windows
