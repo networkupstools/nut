@@ -162,7 +162,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
       link:http://doc.freenas.org/9.3/freenas_services.html#ups[FreeNAS 9.3 docs on UPS integration]
       and link:https://www.ixsystems.com/documentation/freenas/11.3-U5/services.html#ups[FreeNAS 11.3-U5 docs on UPS integration]
 
-- Mac OS X:
+- macOS 11+ and Mac OS X:
 
     * link:https://github.com/fink/fink-distributions/blob/master/10.9-libcxx/stable/main/finkinfo/net/nut.info[Fink recipe]
       and link:http://pdb.finkproject.org/pdb/package.php/nut[Fink package overview]
