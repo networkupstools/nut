@@ -164,6 +164,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
 
 - macOS 11+ and Mac OS X:
 
+    * link:https://formulae.brew.sh/formula/nut[Homebrew formula]
     * link:https://github.com/fink/fink-distributions/blob/master/10.9-libcxx/stable/main/finkinfo/net/nut.info[Fink recipe]
       and link:http://pdb.finkproject.org/pdb/package.php/nut[Fink package overview]
     * link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts recipe]
