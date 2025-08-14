@@ -28,7 +28,7 @@
 #define IsBitSet(val, bit) ((val) & (1 << (bit)))
 
 #define DRIVER_NAME	"Liebert ESP-II serial UPS driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 #define UPS_SHUTDOWN_DELAY 12 /* it means UPS will be shutdown 120 sec */
 #define SHUTDOWN_CMD_LEN  8
@@ -400,19 +400,8 @@ void upsdrv_updateinfo(void)
 		intval = (unsigned char)reply[5];
 		intval <<= 8;
 		intval += (unsigned char)reply[6];
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(vartab[i].var, vartab[i].fmt, multi[vartab[i].multindex] * intval);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+
+		dstate_setinfo_dynamic(vartab[i].var, vartab[i].fmt, "%f", multi[vartab[i].multindex] * intval);
 	}
 
 	if (num_inphases==3){
@@ -444,19 +433,8 @@ void upsdrv_updateinfo(void)
 		intval = (unsigned char)reply[5];
 		intval <<= 8;
 		intval += (unsigned char)reply[6];
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(cmdin_p[i].var, cmdin_p[i].fmt, multi[cmdin_p[i].multindex] * intval);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+
+		dstate_setinfo_dynamic(cmdin_p[i].var, cmdin_p[i].fmt, "%f", multi[cmdin_p[i].multindex] * intval);
 	}
 
 	for (i = 0; cmdout_p[i].var; i++) {
@@ -468,19 +446,8 @@ void upsdrv_updateinfo(void)
 		intval = (unsigned char)reply[5];
 		intval <<= 8;
 		intval += (unsigned char)reply[6];
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(cmdout_p[i].var, cmdout_p[i].fmt, multi[cmdout_p[i].multindex] * intval);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+
+		dstate_setinfo_dynamic(cmdout_p[i].var, cmdout_p[i].fmt, "%f", multi[cmdout_p[i].multindex] * intval);
 	}
 
 	status_init();
@@ -571,18 +538,26 @@ void upsdrv_shutdown(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
 */
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+
 /*
 	if (!strcasecmp(varname, "ups.test.interval")) {
 
@@ -590,7 +565,8 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 */
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s] [%s]", varname, val);
+
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

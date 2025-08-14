@@ -37,7 +37,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.35"
+#define DRIVER_VERSION	"3.36"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -1609,7 +1609,8 @@ static int sdcmd_AT(const void *str)
 	ret = apc_write_long(temp);
 	/* Range-check: padto is 2 or 3 per above */
 	if (ret != (ssize_t)padto + 1) {
-		upslogx(LOG_ERR,
+		/* FIXME: ...INSTCMD_CONVERSION_FAILED ?*/
+		upslogx(LOG_INSTCMD_FAILED,
 			"issuing [%s] with %" PRIuSIZE " digits failed",
 			prtchr(APC_CMD_GRACEDOWN), padto);
 		return STAT_INSTCMD_FAILED;
@@ -1619,7 +1620,8 @@ static int sdcmd_AT(const void *str)
 	if (ret == STAT_INSTCMD_HANDLED || padto == 3)
 		return (int)ret;
 
-	upslogx(LOG_ERR,
+	/* FIXME: ...INSTCMD_CONVERSION_FAILED ?*/
+	upslogx(LOG_INSTCMD_FAILED,
 		"command [%s] with 2 digits doesn't work - try 3 digits",
 		prtchr(APC_CMD_GRACEDOWN));
 	/*
@@ -1867,13 +1869,13 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 		/* check for wraparound */
 		if (!strcmp(ptr, orig)) {
-			upslogx(LOG_ERR, "%s: variable %s wrapped", __func__, vt->name);
+			upslogx(LOG_SET_FAILED, "%s: variable %s wrapped", __func__, vt->name);
 
 			return STAT_SET_FAILED;
 		}
 	}
 
-	upslogx(LOG_ERR, "%s: gave up after 6 tries for %s", __func__, vt->name);
+	upslogx(LOG_SET_FAILED, "%s: gave up after 6 tries for %s", __func__, vt->name);
 
 	/* refresh data from the hardware */
 	poll_data(vt);
@@ -1889,7 +1891,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	/* sanitize length */
 	if (strlen(val) > APC_STRLEN) {
-		upslogx(LOG_ERR, "%s: value (%s) too long", __func__, val);
+		upslogx(LOG_SET_FAILED, "%s: value (%s) too long", __func__, val);
 		return STAT_SET_FAILED;
 	}
 
@@ -1927,12 +1929,12 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if (ret < 1) {
-		upslogx(LOG_ERR, "%s: %s", __func__, "short final read");
+		upslogx(LOG_SET_FAILED, "%s: %s", __func__, "short final read");
 		return STAT_SET_FAILED;
 	}
 
 	if (!strcmp(temp, "NO")) {
-		upslogx(LOG_ERR, "%s: %s", __func__, "got NO at final read");
+		upslogx(LOG_SET_FAILED, "%s: %s", __func__, "got NO at final read");
 		return STAT_SET_FAILED;
 	}
 
@@ -1948,13 +1950,15 @@ static int setvar(const char *varname, const char *val)
 {
 	apc_vartab_t	*vt;
 
+	upsdebug_SET_STARTING(varname, val);
+
 	vt = vt_lookup_name(varname);
 
 	if (!vt)
 		return STAT_SET_UNKNOWN;
 
 	if ((vt->flags & APC_RW) == 0) {
-		upslogx(LOG_WARNING, "%s: [%s] is not writable", __func__, varname);
+		upslogx(LOG_SET_UNKNOWN, "%s: [%s] is not writable", __func__, varname);
 		return STAT_SET_UNKNOWN;
 	}
 
@@ -1964,7 +1968,7 @@ static int setvar(const char *varname, const char *val)
 	if (vt->flags & APC_STRING)
 		return setvar_string(vt, val);
 
-	upslogx(LOG_WARNING, "%s: unknown type for [%s]", __func__, varname);
+	upslogx(LOG_SET_UNKNOWN, "%s: unknown type for [%s]", __func__, varname);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -2014,7 +2018,7 @@ static int do_cmd(const apc_cmdtab_t *ct)
 		return STAT_INSTCMD_FAILED;
 
 	if (strcmp(temp, "OK")) {
-		upslogx(LOG_WARNING, "%s: got [%s] after command [%s]",
+		upslogx(LOG_INSTCMD_FAILED, "%s: got [%s] after command [%s]",
 			__func__, temp, ct->name);
 
 		return STAT_INSTCMD_FAILED;
@@ -2051,6 +2055,8 @@ static int instcmd(const char *cmd, const char *ext)
 	int i;
 	apc_cmdtab_t *ct = NULL;
 
+	upsdebug_INSTCMD_STARTING(cmd, ext);
+
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
 		/* cmd must match */
 		if (strcasecmp(apc_cmdtab[i].name, cmd))
@@ -2069,13 +2075,12 @@ static int instcmd(const char *cmd, const char *ext)
 	}
 
 	if (!ct) {
-		upslogx(LOG_WARNING, "%s: unknown command [%s %s]", __func__, cmd,
-				ext ? ext : "\b");
-		return STAT_INSTCMD_INVALID;
+		upslog_INSTCMD_UNKNOWN(cmd, ext);
+		return STAT_INSTCMD_UNKNOWN;
 	}
 
 	if (!(ct->flags & APC_PRESENT)) {
-		upslogx(LOG_WARNING, "%s: command [%s %s] recognized, but"
+		upslogx(LOG_INSTCMD_INVALID, "%s: command [%s %s] recognized, but"
 		       " not supported by your UPS model", __func__, cmd,
 				ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
@@ -2087,22 +2092,34 @@ static int instcmd(const char *cmd, const char *ext)
 
 	/* we're good to go, handle special stuff first, then generic cmd */
 
-	if (!strcasecmp(cmd, "calibrate.start"))
+	if (!strcasecmp(cmd, "calibrate.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmd, ext);
 		return do_cal(1);
+	}
 
-	if (!strcasecmp(cmd, "calibrate.stop"))
+	if (!strcasecmp(cmd, "calibrate.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmd, ext);
 		return do_cal(0);
+	}
 
-	if (!strcasecmp(cmd, "load.on"))
+	if (!strcasecmp(cmd, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmd, ext);
 		return do_loadon();
+	}
 
-	if (!strcasecmp(cmd, "load.off"))
+	if (!strcasecmp(cmd, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, ext);
 		return sdcmd_Z(0);
+	}
 
-	if (!strcasecmp(cmd, "shutdown.stayoff"))
+	if (!strcasecmp(cmd, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, ext);
 		return sdcmd_K(0);
+	}
 
 	if (!strcasecmp(cmd, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, ext);
+
 		if (!ext || !*ext)
 			return sdcmd_S(0);
 
@@ -2114,6 +2131,7 @@ static int instcmd(const char *cmd, const char *ext)
 	}
 
 	/* nothing special here */
+	upslog_INSTCMD_POWERSTATE_CHECKED(cmd, ext);
 	return do_cmd(ct);
 }
 

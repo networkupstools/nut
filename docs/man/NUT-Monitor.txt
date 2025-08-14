@@ -4,7 +4,7 @@ NUT-Monitor(8)
 NAME
 ----
 
-NUT-Monitor, NUT-Monitor-py2gtk2, NUT-Monitor-py3qt5 - Python UI Client for NUT
+NUT-Monitor, NUT-Monitor-py2gtk2, NUT-Monitor-py3qt5, NUT-Monitor-py3qt6 - Python UI Client for NUT
 
 SYNOPSIS
 --------
@@ -12,6 +12,8 @@ SYNOPSIS
 *NUT-Monitor-py2gtk2*
 
 *NUT-Monitor-py3qt5*
+
+*NUT-Monitor-py3qt6*
 
 [PREFER_PY2=true] [PYTHON2=python2.7] [PYTHON3=python3.14w] *NUT-Monitor*
 
@@ -30,6 +32,9 @@ as part of NUT; also releases of the module are published as a PyPI package.
 
 * `NUT-Monitor-py3qt5` is an implementation that relies on a Python 3.x
   interpreter and QT5 UI library;
+
+* `NUT-Monitor-py3qt6` is an implementation that relies on a Python 3.x
+  interpreter and QT6 UI library;
 
 * `NUT-Monitor` is a shell script to pick at run-time the best implementation.
   In older NUT releases, this was the file name used by the Python 2.x variant
@@ -85,6 +90,8 @@ AUTHORS
 
 * Jim Klimov <jimklimov+nut@gmail.com> -- wrapper script to choose one of
   the implementations, occasional fixes, PyPI packaging for the module
+
+* Sebastian Kuttnig <sebastian.kuttnig@gmail.com> -- port to Python 3.x / QT6
 
 SEE ALSO
 --------

@@ -42,7 +42,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.47"
+#define DRIVER_VERSION	"0.48"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -486,14 +486,21 @@ void upsdrv_shutdown(void) {
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	/* FIXME: shutdown per above? */
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
 */
 
-	upslogx(LOG_NOTICE, "%s: unknown command [%s] [%s]", __func__, cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -502,6 +509,8 @@ static int setvar(const char *varname, const char *val) {
 
 	object_query_t *resp = NULL;
 	object_query_t *req  = NULL;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* Pragmatic do { ... } while (0) loop allowing break to cleanup */
 	do {
@@ -522,6 +531,7 @@ static int setvar(const char *varname, const char *val) {
 
 		/* Check if setting was done */
 		if (1 > object_query_size(resp)) {
+			upslog_SET_UNKNOWN(varname, val);
 			status = STAT_SET_UNKNOWN;
 
 			break;
@@ -538,6 +548,8 @@ static int setvar(const char *varname, const char *val) {
 	if (NULL != resp)
 		object_query_destroy(resp);
 
+	if (status == STAT_SET_FAILED)
+		upslog_SET_FAILED(varname, val);
 	return status;
 }
 

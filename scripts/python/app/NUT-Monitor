@@ -22,6 +22,7 @@ esac
 # Detect which variant of NUT-Monitor we can run on the local system:
 [ -s "$0"-py2gtk2 -a -x "$0"-py2gtk2 ] && PYTHON_PY2GTK2_SHEBANG="`head -1 "$0"-py2gtk2 | sed 's,^#!,,'`" || PYTHON_PY2GTK2_SHEBANG=""
 [ -s "$0"-py3qt5 -a  -x "$0"-py3qt5 ]  && PYTHON_PY3QT5_SHEBANG="`head -1 "$0"-py3qt5 | sed 's,^#!,,'`"   || PYTHON_PY3QT5_SHEBANG=""
+[ -s "$0"-py3qt6 -a  -x "$0"-py3qt6 ]  && PYTHON_PY3QT6_SHEBANG="`head -1 "$0"-py3qt6 | sed 's,^#!,,'`"   || PYTHON_PY3QT6_SHEBANG=""
 SCRIPTDIR="`dirname "$0"`" && SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`" || SCRIPTDIR="./"
 
 PYTHON_PY2GTK2=""
@@ -48,7 +49,19 @@ for P in "$PYTHON3" "$PYTHON_PY3QT5_SHEBANG" "python3" "python" ; do
     fi
 done
 
-for P in "$PYTHON_PY2GTK2" "$PYTHON_PY3QT5" ; do
+PYTHON_PY3QT6=""
+for P in "$PYTHON3" "$PYTHON_PY3QT6_SHEBANG" "python3" "python" ; do
+    if [ -n "$P" ] \
+    && (command -v $P) >/dev/null 2>/dev/null \
+    && $P -c "import re,glob,codecs,PyQt6.uic,configparser" >/dev/null 2>/dev/null \
+    ; then
+        PYTHON_PY3QT6="$P"
+        echo "PYTHON_PY3QT6 is usable as: $PYTHON_PY3QT6" >&2
+        break
+    fi
+done
+
+for P in "$PYTHON_PY2GTK2" "$PYTHON_PY3QT5" "$PYTHON_PY3QT6" ; do
     [ -n "$P" ] || continue
 
     # If running from source tree...
@@ -60,18 +73,22 @@ for P in "$PYTHON_PY2GTK2" "$PYTHON_PY3QT5" ; do
     fi
 done
 
-if [ -n "$PYTHON_PY2GTK2" ] && [ -n "$PYTHON_PY3QT5" ] ; then
+if [ -n "$PYTHON_PY2GTK2" ] && [ -n "$PYTHON_PY3QT5" ] && [ -n "$PYTHON_PY3QT6" ] ; then
     if $PREFER_PY2 ; then
         echo "Starting $0-py2gtk2 variant..." >&2
         exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
     else
-        echo "Starting $0-py3qt5 variant..." >&2
-        exec $PYTHON_PY3QT5 "$0"-py3qt5 "$@"
+        echo "Starting $0-py3qt6 variant..." >&2
+        exec $PYTHON_PY3QT6 "$0"-py3qt6 "$@"
     fi
 else
     if [ -n "$PYTHON_PY2GTK2" ] ; then
         echo "Starting $0-py2gtk2 variant..." >&2
         exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
+    fi
+    if [ -n "$PYTHON_PY3QT6" ] ; then
+        echo "Starting $0-py3qt6 variant..." >&2
+        exec $PYTHON_PY3QT6 "$0"-py3qt6 "$@"
     fi
     if [ -n "$PYTHON_PY3QT5" ] ; then
         echo "Starting $0-py3qt5 variant..." >&2

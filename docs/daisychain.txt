@@ -155,7 +155,7 @@ daisychain index. For example, if you have the following entry:
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0", ... },
 +
-And if the last "0" of the the 4th field represents the index of the device
+And if the last "0" of the 4th field represents the index of the device
 in the daisychain, then you would have to adapt it the following way:
 +
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE,

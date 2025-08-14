@@ -131,13 +131,19 @@ if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_srcdir}/VERSION_DEFAULT" ] ; 
 fi
 
 # Fallback default, to be updated only during release cycle
-[ -n "${NUT_VERSION_DEFAULT-}" ] || NUT_VERSION_DEFAULT='2.8.3'
+[ -n "${NUT_VERSION_DEFAULT-}" ] || NUT_VERSION_DEFAULT='2.8.4'
 
 # Default website paths, extended for historic sub-sites for a release
 [ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://www.networkupstools.org/"
 
 # Must be "true" or "false" exactly, interpreted as such below:
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ -e "${abs_top_srcdir}/.git" ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
+
+check_shallow_git() {
+    if git log --oneline --decorate=short | tail -1 | grep -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
+        echo "$0: $1" >&2
+    fi
+}
 
 getver_git() {
     # NOTE: The chosen trunk branch must be up to date (may be "origin/master"
@@ -161,6 +167,7 @@ getver_git() {
         done
         if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
             echo "$0: FAILED to discover a NUT_VERSION_GIT_TRUNK in this workspace" >&2
+            check_shallow_git "NOTE: Current checkout is shallow, the workspace may not include enough context to describe it"
             return 1
         fi
     fi
@@ -188,7 +195,11 @@ getver_git() {
     # Follow https://semver.org/#spec-item-10 about build metadata:
     # it is (a dot-separated list) separated by a plus sign from preceding
     DESC="`echo "${DESC}" | sed 's/\(-[0-9][0-9]*\)-\(g[0-9a-fA-F][0-9a-fA-F]*\)$/\1+\2/'`"
-    if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return 1 ; fi
+    if [ x"${DESC}" = x ] ; then
+        echo "$0: FAILED to 'git describe' this codebase" >&2
+        check_shallow_git "NOTE: Current checkout is shallow, may not include enough history to describe it"
+        return 1
+    fi
 
     # Does the current commit correspond to an `(alpha|beta|rc)NUM` git tag
     # (may be un-annotated)? Note that `git describe` picks the value to
@@ -197,7 +208,7 @@ getver_git() {
     # string over longer ones if available, or older RC over newer release
     # like "v2.8.2-rc8" preferred over "v2.8.3" if they happen to be tagging
     # the same commit):
-    DESC_PRERELEASE="`git describe --tags | grep -E '^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(|-(rc|alpha|beta)-*[0-9][0-9]*)$'`" \
+    DESC_PRERELEASE="`git describe --tags | grep -E '^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$'`" \
     || DESC_PRERELEASE=""
 
     # How much of the known trunk history is in current HEAD?
@@ -206,7 +217,12 @@ getver_git() {
     # at the tagged commit (it is the merge base for itself and any of
     # its descendants):
     BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`" || BASE=""
-    if [ x"${BASE}" = x ] ; then echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2 ; DESC=""; return  1; fi
+    if [ x"${BASE}" = x ] ; then
+        echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2
+        check_shallow_git "NOTE: Current checkout is shallow, may not include enough history to describe it or find intersections with other trees"
+        DESC=""
+        return 1
+    fi
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
     TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
@@ -283,7 +299,7 @@ getver_default() {
             # Assume triplet (possibly prefixed with `v`) + suffix
             # like `v2.8.3-rc6` or `2.8.2-beta-1`
             # FIXME: Check the assumption better!
-            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(|-(rc|alpha|beta)-*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
+            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
             && [ -n "${SUFFIX}" ] \
             && SUFFIX_PRERELEASE="`echo "${SUFFIX}" | sed 's/^-*//'`" \
             && NUT_VERSION_DEFAULT="`echo "${NUT_VERSION_DEFAULT}" | sed -e 's/'"${SUFFIX}"'$//'`"
@@ -424,14 +440,65 @@ report_output() {
 }
 
 DESC=""
+NUT_VERSION_TRIED_GIT=false
 if $NUT_VERSION_PREFER_GIT ; then
     if (command -v git && git rev-parse --show-toplevel) >/dev/null 2>/dev/null ; then
         getver_git || { echo "$0: Fall back to pre-set default version information" >&2 ; DESC=""; }
+        NUT_VERSION_TRIED_GIT=true
+    else
+        NUT_VERSION_PREFER_GIT=false
     fi
 fi
 
 if [ x"$DESC" = x ]; then
     getver_default
+    if $NUT_VERSION_TRIED_GIT ; then
+        if CURRENT_COMMIT="`git log -1 --format='%h'`" && [ -n "${CURRENT_COMMIT}" ] ; then
+            # Cases help rule out values populated via fallbacks from files;
+            # try to not add inconsistencies though (only add if nobody has it)
+            CAN_TACK=true
+            case "$VER5" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+            case "$VER50" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+            case "$DESC5" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+            case "$DESC50" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+
+            if ${CAN_TACK} ; then
+                echo "$0: Git failed originally, but current commit '${CURRENT_COMMIT}' is known (shallow checkout?); tack it to values that lack it" >&2
+                case "$VER5" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        VER5="${VER5}+g${CURRENT_COMMIT}" ;;
+                    *)  VER5="${VER5}-0+g${CURRENT_COMMIT}" ;;
+                esac
+                case "$VER50" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        VER50="${VER50}+g${CURRENT_COMMIT}" ;;
+                    *)  VER50="${VER50}-0+g${CURRENT_COMMIT}" ;;
+                esac
+                case "$DESC5" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        DESC5="${DESC5}+g${CURRENT_COMMIT}" ;;
+                    *)  DESC5="${DESC5}-0+g${CURRENT_COMMIT}" ;;
+                esac
+                case "$DESC50" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        DESC50="${DESC50}+g${CURRENT_COMMIT}" ;;
+                    *)  DESC50="${DESC50}-0+g${CURRENT_COMMIT}" ;;
+                esac
+            fi
+        fi
+    fi
 fi
 
 report_debug

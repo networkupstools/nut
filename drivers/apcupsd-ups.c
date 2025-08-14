@@ -163,22 +163,10 @@ static void process(char *item,char *data)
 		}
 		else
 		{
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
 			/* default_value acts as a format string in this case */
-			dstate_setinfo(nut_data[i].info_type,
+			dstate_setinfo_dynamic(nut_data[i].info_type,
 				nut_data[i].default_value,
-				atof(data)*nut_data[i].info_len);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+				"%f", atof(data)*nut_data[i].info_len);
 		}
 		break;
 	}

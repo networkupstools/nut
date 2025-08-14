@@ -43,7 +43,7 @@ char *s = N_("GUI to manage devices connected to a NUT server.\n"
              "please visit the project web-site:\n"
              "@NUT_WEBSITE_BASE@\n"
              );
-char *s = N_("<h1>NUT-Monitor 2.0.2</h1>\n"
+char *s = N_("<h1>NUT-Monitor 2.0.3</h1>\n"
              "<p>GUI to manage devices connected to a NUT server.<br/>\n"
              "Provided with NUT version @PACKAGE_VERSION@.</p>\n"
              "<p style=\" font-size:8pt;\">Copyright (C) 2010 David Goncalves<br/>\n"
