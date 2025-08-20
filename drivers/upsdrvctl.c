@@ -1076,7 +1076,7 @@ static void start_driver(const ups_t *ups)
 #ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
 #else	/* WIN32 */
-	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+	snprintf(dfn, sizeof(dfn), "%s\\%s.exe", driverpath, ups->driver);
 #endif	/* WIN32 */
 	ret = stat(dfn, &fs);
 
@@ -1300,7 +1300,7 @@ static void shutdown_driver(const ups_t *ups)
 #ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
 #else	/* WIN32 */
-	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+	snprintf(dfn, sizeof(dfn), "%s\\%s.exe", driverpath, ups->driver);
 #endif	/* WIN32 */
 
 	argv[arg++] = dfn;
