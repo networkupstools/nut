@@ -148,7 +148,7 @@ static DWORD run_drivers(void)
 	char command[NUT_PATH_MAX];
 	char *path;
 
-	path = getfullpath(PATH_BIN);
+	path = getfullpath(PATH_SBIN);
 	if (nut_debug_level < 1) {
 		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe start", path);
 	} else {
