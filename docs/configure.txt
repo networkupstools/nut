@@ -533,6 +533,16 @@ Install the PyNUT module files for general consumption into "site-packages"
 location of the currently chosen Python interpreter(s): yes, no, auto.
 or dedicated as the required dependency of NUT-Monitor application (app).
 
+	--with-pynut-python-dir
+	--with-pynut-python2-dir
+	--with-pynut-python3-dir
+
+Optional, to specify PyNUT(Client) module installation location (for the
+module-named dir to be created under it), if not bundling with NUT-Monitor
+UI app. By default the respective interpreter's 'site-packages' location
+will be used, so you may have to adjust search paths for any other values.
+
+
 [WARNING]
 =========
 The module files are installed into a particular Python version's location
