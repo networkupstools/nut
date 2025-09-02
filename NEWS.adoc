@@ -40,11 +40,11 @@ https://github.com/networkupstools/nut/milestone/12
    to patterns defined in link:docs/nut-names.txt[]
 
  - `configure` script options:
-   * Introduced `--with-pynut-python{,2,3}-dir` to specify PyNUT(Client)
+   * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)
      module installation location (for module-named dir to be created under
      it), if not bundling with NUT-Monitor UI app. By default the respective
-     interpreter's 'site-packages' location will be used, so you may have to
-     adjust search paths for any other values. [#3062]
+     interpreter's 'site-packages' or 'dist-packages' location will be used,
+     so you may have to adjust search paths for any other values. [#3062]
 
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3

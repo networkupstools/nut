@@ -2040,9 +2040,9 @@ AC_SUBST([NETLIBS_GETADDRS])
 
 dnl ----------------------------------------------------------------------
 dnl First remember if caller wants a custom Python package location?
-NUT_ARG_WITH([pynut-python-dir], [install the PyNUT module files under specified path for default Python interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
-NUT_ARG_WITH([pynut-python2-dir], [install the PyNUT module files under specified path for Python2 interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
-NUT_ARG_WITH([pynut-python3-dir], [install the PyNUT module files under specified path for Python3 interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
+NUT_ARG_WITH([python-modules-dir], [install the PyNUT module files under specified path for default Python interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
+NUT_ARG_WITH([python2-modules-dir], [install the PyNUT module files under specified path for Python2 interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
+NUT_ARG_WITH([python3-modules-dir], [install the PyNUT module files under specified path for Python3 interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
 dnl Check for Python binary program names per language version
 dnl to embed into scripts and Make rules
 NUT_CHECK_PYTHON_DEFAULT
