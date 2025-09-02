@@ -618,6 +618,11 @@ dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 
 if HAVE_WINDOWS
   dmf_test_LDADD  += $(top_builddir)/common/libnutwincompat.la
+
+  # The test program does not use networking code, but linking of
+  # common.c, wincompat.c etc. (at least on Windows) may require
+  # those DLLs. Just let them have it.
+  dmf_test_LDADD  += $(NETLIBS)
 endif HAVE_WINDOWS
 
 if WITH_LIBXML2
