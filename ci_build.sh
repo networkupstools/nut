@@ -1126,7 +1126,7 @@ configure_nut() {
     fi
 
     # Help copy-pasting build setups from CI logs to terminal:
-    local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
+    local CONFIG_OPTS_STR="`END=' \'; NUM=0; for F in "${CONFIG_OPTS[@]}" ; do NUM=$(($NUM + 1)); [ x"$NUM" = x"${#CONFIG_OPTS[@]}" ] && END=''; printf "'%s'%s\n" "$F" "$END" ; done`"
     while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
       echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
