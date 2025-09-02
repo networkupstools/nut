@@ -1482,7 +1482,9 @@ echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 ensure_CI_CCACHE_SYMLINKDIR_envvar
 echo "Build host settings:"
-set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT|INPLACE_RUNTIME)=' || true
+set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT|INPLACE_RUNTIME)=' | sed 's,\(.\)$,\1 \\,' || true
+# Padding for trailing backslashed line
+echo "PARMAKE_FLAGS='${PARMAKE_FLAGS}'"
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
