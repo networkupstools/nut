@@ -310,7 +310,7 @@ sub find_usbdevs
 	# To skip libtool wrappers or binary builds of drivers without
 	# extension as well as temporary make files that appear and
 	# dissipate (especially during parallel builds), ONLY walk
-	# the *.c and *.h files (and subdirs):
+	# the *.c and *.h files (and subdirs eventually, maybe):
 	return $File::Find::prune = 1 if !($_ =~ /\.[ch]$/);
 
 	my $nameFile=$_;
