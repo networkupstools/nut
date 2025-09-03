@@ -267,7 +267,7 @@ endif WITH_HTML_SINGLE
 #htmldoc_DATA += $(ASCIIDOC_HTML_CHUNKED)
 #endif WITH_HTML_CHUNKED
 if WITH_PDFS
-pdf_DATA = $(ASCIIDOC_PDFS)
+pdf_DATA = $(ASCIIDOC_PDF)
 endif WITH_PDFS
 
 # the "for" loops might better use $^ but it might be not portable
