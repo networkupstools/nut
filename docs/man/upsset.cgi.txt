@@ -75,7 +75,7 @@ which manages the hardware for you.  You must use credentials defined in
 linkman:upsd.users[5] file on that data server with appropriate permissions.
 
 upsset will only talk to linkman:upsd[8] servers that have been defined
-in your linkman:hosts.conf[8].  If it complains about "Access to that host
+in your linkman:hosts.conf[5].  If it complains about "Access to that host
 is not authorized", check your hosts.conf first.
 
 SECURITY

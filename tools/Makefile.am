@@ -164,8 +164,6 @@ dist-hook:
 		echo "----------------------------------------------------------------------"; \
 	fi
 
-	@$(distdir)/driver-list-format.sh;
-
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # Can be recreated by `make` or `configure`,

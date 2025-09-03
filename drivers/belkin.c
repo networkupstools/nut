@@ -29,7 +29,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.28"
+#define DRIVER_VERSION	"0.29"
 
 static ssize_t init_communication(void);
 static ssize_t get_belkin_reply(char *buf);
@@ -409,6 +409,10 @@ static void do_off(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "beeper.disable")) {
 		do_beeper_off();
 		return STAT_INSTCMD_HANDLED;
@@ -422,6 +426,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		ssize_t	res;
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		res = init_communication();
 		if (res < 0) {
 			printf("Detection failed.  Trying a shutdown command anyway.\n");
@@ -444,31 +449,36 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_off();
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,POWER_ON,"1;1");
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.quick")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,TEST,TEST_10SEC);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.deep")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,TEST,TEST_DEEP);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,TEST,TEST_CANCEL);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

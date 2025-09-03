@@ -105,9 +105,9 @@ ifdef::xhtml11_format[]
 # FIXME: Allow to define external man page URL structure and whether
 #  sections should change via configure script options:
 [linkmanext-inlinemacro]
-<ulink url="https://linux.die.net/man/{0}/{target}">{target}{0?({0})}</ulink>
+<ulink url="@ASCIIDOC_TEMPLATE_LINKMANEXT@">{target}{0?({0})}</ulink>
 [linkmanext2-inlinemacro]
-<ulink url="https://linux.die.net/man/{2}/{target}">{1={target}}{2?({2})}</ulink>
+<ulink url="@ASCIIDOC_TEMPLATE_LINKMANEXT2@">{1={target}}{2?({2})}</ulink>
 [linkdoc-inlinemacro]
 <ulink url="{target}.html{2?#{2}}">{1}</ulink>{3?suggestsrcdoc:{3}[]}
 [linksingledoc-inlinemacro]
@@ -128,9 +128,9 @@ ifdef::chunked_format[]
 # FIXME: Allow to define external man page URL structure and whether
 #  sections should change via configure script options:
 [linkmanext-inlinemacro]
-<ulink url="https://linux.die.net/man/{0}/{target}">{target}{0?({0})}</ulink>
+<ulink url="@ASCIIDOC_TEMPLATE_LINKMANEXT@">{target}{0?({0})}</ulink>
 [linkmanext2-inlinemacro]
-<ulink url="https://linux.die.net/man/{2}/{target}">{1={target}}{2?({2})}</ulink>
+<ulink url="@ASCIIDOC_TEMPLATE_LINKMANEXT2@">{1={target}}{2?({2})}</ulink>
 [linkdoc-inlinemacro]
 <ulink url="../{target}.chunked/{4=index}.html{2?#{2}}">{1}</ulink>{3?suggestsrcdoc:{3}[]}
 [linksingledoc-inlinemacro]
@@ -148,9 +148,9 @@ ifdef::pdf_format[]
 # FIXME: Allow to define external man page URL structure and whether
 #  sections should change via configure script options:
 [linkmanext-inlinemacro]
-<ulink url="https://linux.die.net/man/{0}/{target}">{target}{0?({0})}</ulink>
+<ulink url="@ASCIIDOC_TEMPLATE_LINKMANEXT@">{target}{0?({0})}</ulink>
 [linkmanext2-inlinemacro]
-<ulink url="https://linux.die.net/man/{2}/{target}">{1={target}}{2?({2})}</ulink>
+<ulink url="@ASCIIDOC_TEMPLATE_LINKMANEXT2@">{1={target}}{2?({2})}</ulink>
 [linkdoc-inlinemacro]
 <ulink url="{target}.pdf{2?#{2}}">{1}</ulink>{3?suggestsrcdoc:{3}[]}
 [linksingledoc-inlinemacro]

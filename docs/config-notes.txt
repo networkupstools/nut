@@ -12,7 +12,8 @@ and other accompanying documentation to see how it all works.
 [NOTE]
 ======
 NUT does not currently provide proper graphical configuration tools.
-However, there is now support for linkdoc:developer-guide[Augeas,augeas_user],
+However, there is now support for
+linkdoc:developer-guide[Augeas,augeas_user,scripts/augeas/README.adoc,augeas],
 which will enable the easier creation of configuration tools.
 
 The linkman:nutconf[8] tool should also help with programmatic manipulation

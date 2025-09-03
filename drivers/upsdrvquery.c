@@ -363,12 +363,21 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		ret = -1;
 #endif  /* WIN32 */
 
-	upsdebugx(ret > 0 ? 5 : 6,
-		"%s: received %" PRIiMAX " bytes from driver socket: %s",
-		__func__, (intmax_t)ret, (ret > 0 ? conn->buf : "<null>"));
-	if (ret > 0 && conn->buf[0] == '\0')
-		upsdebug_hex(5, "payload starts with zero byte: ",
-			conn->buf, ((size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret));
+	if (ret > 0) {
+		size_t len = (size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret;
+
+		upsdebugx(5, "%s: received %" PRIiMAX " bytes from driver socket: %.*s",
+			__func__, (intmax_t)ret, (int)len, conn->buf);
+
+		if (conn->buf[0] == '\0') {
+			upsdebug_hex(5, "payload starts with zero byte: ",
+				conn->buf, len);
+		}
+	} else {
+		upsdebugx(6, "%s: received %" PRIiMAX " bytes from driver socket: <null>",
+			__func__, (intmax_t)ret);
+	}
+
 	return ret;
 }
 
@@ -417,6 +426,9 @@ socket_error:
 
 ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	struct timeval	start, now;
+
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
 
 	/* Avoid noise */
 	if (upsdrvquery_write(conn, "NOBROADCAST\n") < 0)
@@ -480,7 +492,11 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	}
 
 	/* Check that we can have a civilized dialog --
-	 * nope, this one is for network protocol */
+	 * nope, this one is for network protocol
+	 *
+	 * FIXME: strcmp(conn->buf, "ON") -> buf is NOT null terminated!
+	 * The above FIXME is not the reason this block is/was commented out.
+	 */
 /*
 	if (upsdrvquery_write(conn, "GET TRACKING\n") < 0)
 		goto socket_error;
@@ -498,8 +514,28 @@ finish:
 	return 1;
 
 socket_error:
-	upsdrvquery_close(conn);
+	/* upsdrvquery_close(conn); */
 	return -1;
+}
+
+ssize_t upsdrvquery_restore_broadcast(udq_pipe_conn_t *conn)
+{
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	if (upsdrvquery_write(conn, "BROADCAST 1\n") < 0) {
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG) {
+			upslog_with_errno(LOG_ERR, "%s: could not restore broadcast, write to socket [%d] failed",
+				__func__, conn->sockfd);
+		}
+
+		return -1;
+	}
+
+	upsdebugx(5, "%s: restored broadcast for connection on socket [%d]",
+		__func__, conn->sockfd);
+
+	return 1;
 }
 
 /* UUID v4 basic implementation
@@ -538,6 +574,9 @@ ssize_t upsdrvquery_request(
 	size_t	qlen;
 	char	tracking_id[UUID4_LEN];
 	struct timeval	start, now;
+
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
 
 	if (snprintf(qbuf, sizeof(qbuf), "%s", query) < 0)
 		goto socket_error;
@@ -626,7 +665,7 @@ ssize_t upsdrvquery_request(
 	}
 
 socket_error:
-	upsdrvquery_close(conn);
+	/* upsdrvquery_close(conn); */
 	return -1;
 }
 
@@ -636,9 +675,49 @@ ssize_t upsdrvquery_oneshot(
 	char *buf, const size_t bufsz,
 	struct timeval *ptv
 ) {
+	udq_pipe_conn_t	*conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
+	ssize_t	ret;
+
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	ret = upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+
+	upsdrvquery_close(conn);
+	free(conn);
+
+	return ret;
+}
+
+ssize_t upsdrvquery_oneshot_sockfn(
+	const char *sockfn,
+	const char *query,
+	char *buf, const size_t bufsz,
+	struct timeval *ptv
+) {
+	udq_pipe_conn_t	*conn = upsdrvquery_connect(sockfn);
+	ssize_t	ret;
+
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	ret = upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+
+	upsdrvquery_close(conn);
+	free(conn);
+
+	return ret;
+}
+
+/* One-shot using an existing connection (caller must close + free connection) */
+ssize_t upsdrvquery_oneshot_conn(
+	udq_pipe_conn_t *conn,
+	const char *query,
+	char *buf, const size_t bufsz,
+	struct timeval *ptv
+) {
 	struct timeval	tv;
 	ssize_t	ret;
-	udq_pipe_conn_t	*conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
 
 	if (!conn || INVALID_FD(conn->sockfd))
 		return -1;
@@ -679,10 +758,11 @@ ssize_t upsdrvquery_oneshot(
 	}
 
 	if (buf) {
-		snprintf(buf, bufsz, "%s", conn->buf);
+		size_t len = strnlen(conn->buf, sizeof(conn->buf));
+		snprintf(buf, bufsz, "%.*s", (int)len, conn->buf);
 	}
+
 finish:
-	upsdrvquery_close(conn);
-	free(conn);
+	upsdrvquery_restore_broadcast(conn); /* best effort */
 	return ret;
 }

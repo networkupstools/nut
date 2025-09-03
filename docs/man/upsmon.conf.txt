@@ -361,6 +361,10 @@ Second, there is a point of diminishing returns if you set it too low.
 While upsd normally has all of the data available to it instantly, most
 drivers only refresh the UPS status once every 2 seconds.  Polling any
 more than that usually doesn't get you the information any faster.
++
+NOTE: This setting is different from a `pollfreq` supported by some of
+the NUT driver programs, such as linkman:usbhid-ups[8] (about how often
+the driver polls a particular device).
 
 *POLLFREQALERT* 'seconds'::
 
@@ -489,25 +493,44 @@ state as not volatile and make it treat the `ALARM` status as any other.
 
 *RUN_AS_USER* 'username'::
 
-upsmon normally runs the bulk of the monitoring duties under another user
-ID after dropping root privileges.  On most systems this means it runs
-as "nobody", since that's the default from compile-time.
+upsmon normally splits into two processes, keeping a small part which remains
+owned by `root` to initiate the system shutdown by calling `SHUTDOWNCMD`
+when/if the time comes, and runs the bulk of the monitoring duties under
+another user ID after dropping root privileges.  On most custom-built systems
+this means it runs as "nobody", since that's the default from compile-time;
+packages often deliver a "nut" or "ups" user to run NUT service daemons.
 +
-The catch is that "nobody" can't read your upsmon.conf, since by default
-it is installed so that only root can open it.  This means you won't be
-able to reload the configuration file, since it will be unavailable.
+The catch is that the system-default "nobody" can't read your upsmon.conf
+file, since by default it is installed so that only `root` can open it
+(because this file can contain sensitive data like remote NUT data server
+credentials). This means you won't be able to reload the configuration file,
+since it will be unavailable to the unprivileged part of the `upsmon` daemon.
 +
 The solution is to create a new user just for upsmon, then make it run
-as that user.  I suggest "nutmon", but you can use anything that isn't
-already taken on your system.  Just create a regular user with no special
-privileges and an impossible password.
+as that user.  It may be the same account as that used for the NUT drivers
+or data server, but does not have to be.  On systems with higher concerns
+about security and privilege separation we suggest "nutmon", but you can
+use anything that isn't already taken on your system.  Just create a regular
+user with no special privileges and an impossible password.
 +
 Then, tell upsmon to run as that user, and make `upsmon.conf` readable by it.
 Your reloads will work, and your config file will stay secure.
 +
 This file should not be writable by the upsmon user, as it would be
-possible to exploit a hole, change the SHUTDOWNCMD to something
-malicious, then wait for upsmon to be restarted.
+possible to exploit a hole, change the `SHUTDOWNCMD` to something
+malicious, then wait for upsmon to be restarted.  So typically you
+would also create a group for NUT daemons (which the user would be
+a member of) and allow that group read-only access to `root`-owned
+configuration files.
++
+That said, other variants may be possible -- e.g. run all of `upsmon` as
+a single process initially started and owned by `nut` and call a shutdown
+script prefixed by `sudo`, `pfexec` or other RBAC tools. This however adds
+more "moving parts" and fragility (e.g. the `sudoers` settings may live in
+LDAP, and that server could be unavailable at shutdown when the rack is half
+powered off, at just the time you need it here), and is not available on
+all platforms -- so such setups are something users explore on their own
+so far (we would welcome posts on NUT Wiki or links to blogs though).
 
 *SHUTDOWNCMD* 'command'::
 

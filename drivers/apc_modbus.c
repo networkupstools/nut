@@ -44,7 +44,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.16"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -88,6 +88,7 @@ static int is_usb = 0;
 static int is_open = 0;
 static double power_nominal;
 static double realpower_nominal;
+static int64_t last_send_time = 0;
 
 /* Function declarations */
 static int _apc_modbus_read_inventory(void);
@@ -425,16 +426,8 @@ static int _apc_modbus_double_to_nut(const apc_modbus_value_t *value, char *outp
 	if (value->format != NULL)
 		format = value->format;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-	res = snprintf(output, output_len, format, double_value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	res = snprintf_dynamic(output, output_len, format, "%f", double_value);
+
 	if (res < 0 || (size_t)res >= output_len) {
 		return 0;
 	}
@@ -468,16 +461,8 @@ static int _apc_modbus_power_to_nut(const apc_modbus_value_t *value, char *outpu
 	if (value->format != NULL)
 		format = value->format;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-	res = snprintf(output, output_len, format, double_value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	res = snprintf_dynamic(output, output_len, format, "%f", double_value);
+
 	if (res < 0 || (size_t)res >= output_len) {
 		return 0;
 	}
@@ -842,66 +827,66 @@ typedef struct {
 
 /* Values that only need to be updated once on startup */
 static apc_modbus_register_t apc_modbus_register_map_inventory[] = {
-	{ "ups.firmware",                   516,    8,  APC_VT_STRING,   0,         NULL,                                           "%s",   0,  NULL    },
-	{ "ups.model",                      532,    16, APC_VT_STRING,   0,         NULL,                                           "%s",   0,  NULL    }, /* also device.model, filled automatically */
-	{ "ups.serial",                     564,    8,  APC_VT_STRING,   0,         NULL,                                           "%s",   0,  NULL    }, /* also device.serial, filled automatically */
-	{ "ups.power.nominal",              588,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.0f", 0,  &power_nominal      },
-	{ "ups.realpower.nominal",          589,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.0f", 0,  &realpower_nominal  },
-	{ "ups.mfr.date",                   591,    1,  APC_VT_UINT,     0,         &_apc_modbus_date_conversion,                   NULL,   0,  NULL    },
-	{ "battery.date",                   595,    1,  APC_VT_UINT,     APC_VF_RW, &_apc_modbus_date_conversion,                   NULL,   0,  NULL    },
-	{ "ups.id",                         596,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",   0,  NULL    },
-	{ "outlet.group.0.name",            604,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",   0,  NULL    },
-	{ "outlet.group.1.name",            612,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",   0,  NULL    },
-	{ "outlet.group.2.name",            620,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",   0,  NULL    },
-	{ "outlet.group.3.name",            628,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",   0,  NULL    },
+	{ "ups.firmware",                   516,    8,  APC_VT_STRING,   0,         NULL,                                           "%s",       0,  NULL    },
+	{ "ups.model",                      532,    16, APC_VT_STRING,   0,         NULL,                                           "%s",       0,  NULL    }, /* also device.model, filled automatically */
+	{ "ups.serial",                     564,    8,  APC_VT_STRING,   0,         NULL,                                           "%s",       0,  NULL    }, /* also device.serial, filled automatically */
+	{ "ups.power.nominal",              588,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.0f",     0,  &power_nominal      },
+	{ "ups.realpower.nominal",          589,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.0f",     0,  &realpower_nominal  },
+	{ "ups.mfr.date",                   591,    1,  APC_VT_UINT,     0,         &_apc_modbus_date_conversion,                   NULL,       0,  NULL    },
+	{ "battery.date",                   595,    1,  APC_VT_UINT,     APC_VF_RW, &_apc_modbus_date_conversion,                   NULL,       0,  NULL    },
+	{ "ups.id",                         596,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
+	{ "outlet.group.0.name",            604,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
+	{ "outlet.group.1.name",            612,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
+	{ "outlet.group.2.name",            620,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
+	{ "outlet.group.3.name",            628,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
 	{ NULL, 0, 0, 0, 0, NULL, NULL, 0.0f, NULL }
 };
 
 static apc_modbus_register_t apc_modbus_register_map_status[] = {
-	{ "input.transfer.reason",          2,      1,  APC_VT_UINT,     0,         &_apc_modbus_status_change_cause_conversion,    NULL,   0,  NULL    },
-	{ "ups.test.result",          		23,     1,  APC_VT_UINT,     0,         &_apc_modbus_battery_test_status_conversion,    NULL,   0,  NULL    },
+	{ "input.transfer.reason",          2,      1,  APC_VT_UINT,     0,         &_apc_modbus_status_change_cause_conversion,    NULL,       0,  NULL    },
+	{ "ups.test.result",                23,     1,  APC_VT_UINT,     0,         &_apc_modbus_battery_test_status_conversion,    NULL,       0,  NULL    },
 	{ NULL, 0, 0, 0, 0, NULL, NULL, 0.0f, NULL }
 };
 
 static apc_modbus_register_t apc_modbus_register_map_dynamic[] = {
-	{ "battery.runtime",                128,    2,  APC_VT_UINT,     0,         NULL,                                           "%u",   0,  NULL    },
-	{ "battery.charge",                 130,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f", 9,  NULL    },
-	{ "battery.voltage",                131,    1,  APC_VT_INT,      0,         &_apc_modbus_double_conversion,                 "%.2f", 5,  NULL    },
-	{ "battery.date.maintenance",       133,    1,  APC_VT_UINT,     0,         &_apc_modbus_date_conversion,                   NULL,   0,  NULL    },
-	{ "battery.temperature",            135,    1,  APC_VT_INT,      0,         &_apc_modbus_double_conversion,                 "%.2f", 7,  NULL    },
-	{ "ups.load",                       136,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f", 8,  NULL    },
-	{ "ups.realpower",                  136,    1,  APC_VT_UINT,     0,         &_apc_modbus_power_conversion,                  "%.2f", 8,  &realpower_nominal },
-	{ "ups.power",                      138,    1,  APC_VT_UINT,     0,         &_apc_modbus_power_conversion,                  "%.2f", 8,  &power_nominal     },
-	{ "output.current",                 140,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f", 5,  NULL    },
-	{ "output.voltage",                 142,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f", 6,  NULL    },
-	{ "output.frequency",               144,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f", 7,  NULL    },
-	{ "experimental.output.energy",     145,    2,  APC_VT_UINT,     0,         NULL,                                           "%u",   0,  NULL    },
-	{ "input.voltage",                  151,    1,  APC_VT_UINT,     0,         &_apc_modbus_voltage_conversion,                "%.2f", 6,  NULL    },
-	{ "ups.efficiency",                 154,    1,  APC_VT_INT,      0,         &_apc_modbus_efficiency_conversion,             "%.1f", 7,  NULL    },
-	{ "ups.timer.shutdown",             155,    1,  APC_VT_INT,      0,         NULL,                                           "%d",   0,  NULL    },
-	{ "ups.timer.start",                156,    1,  APC_VT_INT,      0,         NULL,                                           "%d",   0,  NULL    },
-	{ "ups.timer.reboot",               157,    2,  APC_VT_INT,      0,         NULL,                                           "%d",   0,  NULL    },
+	{ "battery.runtime",                128,    2,  APC_VT_UINT,     0,         NULL,                                           "%" PRIu64, 0,  NULL    },
+	{ "battery.charge",                 130,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     9,  NULL    },
+	{ "battery.voltage",                131,    1,  APC_VT_INT,      0,         &_apc_modbus_double_conversion,                 "%.2f",     5,  NULL    },
+	{ "battery.date.maintenance",       133,    1,  APC_VT_UINT,     0,         &_apc_modbus_date_conversion,                   NULL,       0,  NULL    },
+	{ "battery.temperature",            135,    1,  APC_VT_INT,      0,         &_apc_modbus_double_conversion,                 "%.2f",     7,  NULL    },
+	{ "ups.load",                       136,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     8,  NULL    },
+	{ "ups.realpower",                  136,    1,  APC_VT_UINT,     0,         &_apc_modbus_power_conversion,                  "%.2f",     8,  &realpower_nominal  },
+	{ "ups.power",                      138,    1,  APC_VT_UINT,     0,         &_apc_modbus_power_conversion,                  "%.2f",     8,  &power_nominal      },
+	{ "output.current",                 140,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     5,  NULL    },
+	{ "output.voltage",                 142,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     6,  NULL    },
+	{ "output.frequency",               144,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     7,  NULL    },
+	{ "experimental.output.energy",     145,    2,  APC_VT_UINT,     0,         NULL,                                           "%" PRIu64, 0,  NULL    },
+	{ "input.voltage",                  151,    1,  APC_VT_UINT,     0,         &_apc_modbus_voltage_conversion,                "%.2f",     6,  NULL    },
+	{ "ups.efficiency",                 154,    1,  APC_VT_INT,      0,         &_apc_modbus_efficiency_conversion,             "%.1f",     7,  NULL    },
+	{ "ups.timer.shutdown",             155,    1,  APC_VT_INT,      0,         NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "ups.timer.start",                156,    1,  APC_VT_INT,      0,         NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "ups.timer.reboot",               157,    2,  APC_VT_INT,      0,         NULL,                                           "%" PRIi64, 0,  NULL    },
 	{ NULL, 0, 0, 0, 0, NULL, NULL, 0.0f, NULL }
 };
 
 static apc_modbus_register_t apc_modbus_register_map_static[] = {
-	{ "input.transfer.high",            1026,   1,  APC_VT_UINT,     APC_VF_RW, NULL,                                           "%u",   0,  NULL    },
-	{ "input.transfer.low",             1027,   1,  APC_VT_UINT,     APC_VF_RW, NULL,                                           "%u",   0,  NULL    },
-	{ "ups.delay.shutdown",             1029,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "ups.delay.start",                1030,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "ups.delay.reboot",               1031,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.0.delay.shutdown",  1029,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.0.delay.start",     1030,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.0.delay.reboot",    1031,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.1.delay.shutdown",  1034,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.1.delay.start",     1035,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.1.delay.reboot",    1036,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.2.delay.shutdown",  1039,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.2.delay.start",     1040,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.2.delay.reboot",    1041,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.3.delay.shutdown",  1044,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.3.delay.start",     1045,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
-	{ "outlet.group.3.delay.reboot",    1046,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%d",   0,  NULL    },
+	{ "input.transfer.high",            1026,   1,  APC_VT_UINT,     APC_VF_RW, NULL,                                           "%" PRIu64, 0,  NULL    },
+	{ "input.transfer.low",             1027,   1,  APC_VT_UINT,     APC_VF_RW, NULL,                                           "%" PRIu64, 0,  NULL    },
+	{ "ups.delay.shutdown",             1029,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "ups.delay.start",                1030,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "ups.delay.reboot",               1031,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.0.delay.shutdown",  1029,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.0.delay.start",     1030,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.0.delay.reboot",    1031,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.1.delay.shutdown",  1034,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.1.delay.start",     1035,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.1.delay.reboot",    1036,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.2.delay.shutdown",  1039,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.2.delay.start",     1040,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.2.delay.reboot",    1041,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.3.delay.shutdown",  1044,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.3.delay.start",     1045,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
+	{ "outlet.group.3.delay.reboot",    1046,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
 	{ NULL, 0, 0, 0, 0, NULL, NULL, 0.0f, NULL }
 };
 
@@ -974,20 +959,24 @@ static int _apc_modbus_reopen(void)
 	return 1;
 }
 
-static useconds_t _apc_modbus_get_time_us(void)
+static int64_t _apc_modbus_get_time_us(void)
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return ((useconds_t)tv.tv_sec * (useconds_t)1000000) + (useconds_t)tv.tv_usec;
+	return ((int64_t)tv.tv_sec * (int64_t)1000000) + (int64_t)tv.tv_usec;
+}
+
+static void _apc_modbus_interframe_delay_reset(void)
+{
+	last_send_time = _apc_modbus_get_time_us();
 }
 
 static void _apc_modbus_interframe_delay(void)
 {
 	/* 4.2.2 Modbus Message RTU Framing, interframe delay */
 
-	static useconds_t last_send_time = 0;
-	static const useconds_t inter_frame_delay = 35000;
-	useconds_t current_time, delta_time;
+	static const int64_t inter_frame_delay = 35000;
+	int64_t current_time, delta_time;
 
 	current_time = _apc_modbus_get_time_us();
 	delta_time = current_time - last_send_time;
@@ -1048,6 +1037,7 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 	_apc_modbus_interframe_delay();
 
 	if (modbus_read_registers(ctx, addr, nb, dest) > 0) {
+		_apc_modbus_interframe_delay_reset();
 		return 1;
 	} else {
 		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
@@ -1120,22 +1110,16 @@ static int _apc_modbus_update_value(apc_modbus_register_t *regs_info, const uint
 		}
 		dstate_setinfo(regs_info->nut_variable_name, "%s", nutvbuf);
 	} else {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
 		assert(regs_info->value_type <= apc_modbus_value_types_max);
 		switch (regs_info->value_type) {
 		case APC_VT_STRING:
-			dstate_setinfo(regs_info->nut_variable_name, regs_info->value_format, value.data.string_value);
+			dstate_setinfo_dynamic(regs_info->nut_variable_name, regs_info->value_format, "%s", value.data.string_value);
 			break;
 		case APC_VT_INT:
-			dstate_setinfo(regs_info->nut_variable_name, regs_info->value_format, value.data.int_value);
+			dstate_setinfo_dynamic(regs_info->nut_variable_name, regs_info->value_format, "%" PRIi64, value.data.int_value);
 			break;
 		case APC_VT_UINT:
-			dstate_setinfo(regs_info->nut_variable_name, regs_info->value_format, value.data.uint_value);
+			dstate_setinfo_dynamic(regs_info->nut_variable_name, regs_info->value_format, "%" PRIu64, value.data.uint_value);
 			break;
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
@@ -1163,9 +1147,6 @@ static int _apc_modbus_update_value(apc_modbus_register_t *regs_info, const uint
 # pragma GCC diagnostic pop
 #endif
 		}
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
 	}
 
 	dstate_flags = 0;
@@ -1249,6 +1230,8 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	apc_modbus_register_t *apc_map = NULL, *apc_value = NULL;
 	uint16_t reg_value[16];
 
+	upsdebug_SET_STARTING(nut_varname, str_value);
+
 	for (mi = 0; mi < SIZEOF_ARRAY(apc_modbus_register_maps) && apc_value == NULL; mi++) {
 		apc_map = apc_modbus_register_maps[mi];
 
@@ -1261,12 +1244,12 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	}
 
 	if (!apc_map || !apc_value) {
-		upslogx(LOG_WARNING, "%s: [%s] is unknown", __func__, nut_varname);
+		upslog_SET_UNKNOWN(nut_varname, str_value);
 		return STAT_SET_UNKNOWN;
 	}
 
 	if (!(apc_value->value_flags & APC_VF_RW)) {
-		upslogx(LOG_WARNING, "%s: [%s] is not writable", __func__, nut_varname);
+		upslogx(LOG_SET_INVALID, "%s: [%s] is not writable", __func__, nut_varname);
 		return STAT_SET_INVALID;
 	}
 
@@ -1274,7 +1257,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 
 	if (apc_value->value_converter && apc_value->value_converter->nut_to_apc) {
 		if (!apc_value->value_converter->nut_to_apc(str_value, reg_value, apc_value->modbus_len)) {
-			upslogx(LOG_WARNING, "%s: [%s] failed to convert value", __func__, nut_varname);
+			upslogx(LOG_SET_CONVERSION_FAILED, "%s: [%s] failed to convert value", __func__, nut_varname);
 			return STAT_SET_CONVERSION_FAILED;
 		}
 	} else {
@@ -1317,7 +1300,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 		}
 
 		if (!r) {
-			upslogx(LOG_WARNING, "%s: [%s] failed to convert value", __func__, nut_varname);
+			upslogx(LOG_SET_CONVERSION_FAILED, "%s: [%s] failed to convert value", __func__, nut_varname);
 			return STAT_SET_CONVERSION_FAILED;
 		}
 	}
@@ -1418,7 +1401,9 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	apc_modbus_command_t *apc_command = NULL;
 	uint16_t value[4]; /* Max 64-bit */
 
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(nut_cmdname, extra);
 
 	for (i = 0; apc_modbus_command_map[i].nut_command_name; i++) {
 		if (!strcasecmp(nut_cmdname, apc_modbus_command_map[i].nut_command_name)) {
@@ -1428,21 +1413,22 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	}
 
 	if (!apc_command) {
-		upslogx(LOG_WARNING, "%s: [%s] is unknown", __func__, nut_cmdname);
+		upslog_INSTCMD_UNKNOWN(nut_cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
 	assert(apc_command->modbus_len <= SIZEOF_ARRAY(value));
 
 	if (!_apc_modbus_from_uint64(apc_command->value, value, apc_command->modbus_len)) {
-		upslogx(LOG_WARNING, "%s: [%s] failed to convert value", __func__, nut_cmdname);
+		upslogx(LOG_INSTCMD_CONVERSION_FAILED, "%s: [%s] failed to convert value", __func__, nut_cmdname);
 		return STAT_INSTCMD_CONVERSION_FAILED;
 	}
 
 	addr = apc_command->modbus_addr;
 	nb = apc_command->modbus_len;
+	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 	if (modbus_write_registers(modbus_ctx, addr, nb, value) < 0) {
-		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
+		upslogx(LOG_INSTCMD_FAILED, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
 		_apc_modbus_handle_error(modbus_ctx);
 		return STAT_INSTCMD_FAILED;
 	}

@@ -33,8 +33,8 @@ Dummy Mode
 In this mode, *dummy-ups* looks like a standard NUT device driver to
 linkman:upsd[8] and allows one to change any value for testing purposes.
 
-It is both interactive, controllable through the linkman:upsrw[1] and
-linkman:upscmd[1] commands (or equivalent graphical tool), and batchable
+It is both interactive, controllable through the linkman:upsrw[8] and
+linkman:upscmd[8] commands (or equivalent graphical tool), and batchable
 through script files.
 
 It can be configured, launched and used as any other "real" NUT driver.
@@ -189,6 +189,31 @@ a bit between file-reading cycles (currently this delay is hardcoded to one
 second), independently of (and/or in addition to) any `TIMER` keywords and
 possibly the common `pollinterval` setting.
 
+Another, more recently introduced instruction is `ALARM`, which allows
+the simulation of UPS alarms in much the same way they would be raised
+by real driver implementations. Modern drivers decouple alarm states
+from the `ups.status` variable, and raising `ALARM` by setting it as a
+status token is discouraged in favor of using modern, common functions
+for raising alarms within the driver code.
+
+The `ALARM` instruction is intended to simulate this behavior as closely
+as possible. The value following an `ALARM` instruction is treated as
+the alarm message and is eventually published as the `ups.alarm`
+variable, with the `ALARM` token also set in `ups.status` by internal
+driver mechanisms, rather than by directly manipulating the variable.
+Multiple `ALARM` instructions will have their messages combined into
+the `ups.alarm` variable, just as would happen with real driver logic.
+
+Conversely, any `ALARM` instruction on its own will clear active alarm
+states. See below for an example of setting and resetting alarms:
+
+	ALARM [UPS too warm to charge]
+	ALARM [UPS circuit is overheating]
+	TIMER 5
+	ALARM
+	TIMER 5
+	ALARM [UPS too cold to charge]
+
 Repeater Mode
 ~~~~~~~~~~~~~
 
@@ -225,7 +250,7 @@ INTERACTION
 Once the driver is loaded in dummy mode, you can change any variables, except
 those of the `driver.*` and `server.*` collections.
 You can do this by either editing the definition file, or use the
-linkman:upsrw[1] and linkman:upscmd[1] commands.
+linkman:upsrw[8] and linkman:upscmd[8] commands.
 
 Note that in simulation mode, new variables can be added on the fly, but only
 by adding these to the definition file (and waiting for it to be re-read).
@@ -290,8 +315,8 @@ Arnaud Quette
 SEE ALSO
 --------
 
-linkman:upscmd[1],
-linkman:upsrw[1],
+linkman:upscmd[8],
+linkman:upsrw[8],
 linkman:ups.conf[5],
 linkman:nutupsdrv[8]
 

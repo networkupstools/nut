@@ -6,7 +6,7 @@
 # https://www.appveyor.com/docs/build-configuration/
 # https://www.appveyor.com/docs/windows-images-software/
 
-version: 2.8.3.{build}-{branch}
+version: 2.8.4.{build}-{branch}
 
 # base image
 image: Visual Studio 2022
@@ -35,25 +35,45 @@ environment:
 install:
   - cmd: |
         REM Do not give pacman cause for complaints:
-        C:\msys64\usr\bin\bash -lc "mkdir -p /var/cache/pacman/pkg; ls -la /"
-        REM FIXME: Since Jan 2025, normal update below fails with the message:
-        REM   installing mingw-w64-i686-gdb (16.1-1) breaks dependency
-        REM   'mingw-w64-i686-gdb=15.2' required by mingw-w64-i686-gdb-multiarch
-        REM Currently we sweep it away by removing the conflicting package:
-        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -R mingw-w64-i686-gdb-multiarch || true"
-  - cmd: |
-        REM Core update (in case any core packages are outdated):
-        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
-  - cmd: |
-        REM Normal update (same command again):
-        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
+        C:\msys64\usr\bin\bash -lc "date -u; mkdir -p /var/cache/pacman/pkg; ls -la /"
+
+#  - cmd: |
+#        REM FIXME: Since Jan 2025, normal update below fails with the message:
+#        REM   installing mingw-w64-i686-gdb (16.1-1) breaks dependency
+#        REM   'mingw-w64-i686-gdb=15.2' required by mingw-w64-i686-gdb-multiarch
+#        REM Currently we sweep it away by removing the conflicting package:
+#        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -R mingw-w64-i686-gdb-multiarch || true"
+
+# FIXME: Make this update or not of the ecosystem conditional?
+#  Store a copy of C:\msys64 elsewhere as a tarball?
+#  As of Aug 2025, the first update is quick (15sec, 18Mb DL, 91MB installed),
+#  the second is costlier (6.5min, 378MB DL, 2.5GB installed)
+#  - cmd: |
+#        REM Core update (in case any core packages are outdated):
+#        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
+#  - cmd: |
+#        REM Normal update (same command again):
+#        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"
+
+# As of Aug 2025, with updates commented away above still in place
+# so many packages skipped, this step did cost additional 58MB DL,
+# 392MB installed (new data), 1min of work.
+# Without the ecosystem update above, the overhead of this step remained
+# similar. It did however use a smaller population (via deps) and older
+# versions of packages.
   - cmd: |
         REM Prerequisites for NUT per https://github.com/networkupstools/nut/blob/master/docs/config-prereqs.txt :
-        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libgd mingw-w64-x86_64-cppunit"
+        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libxml2 mingw-w64-x86_64-libgd mingw-w64-x86_64-cppunit"
         REM SKIP mingw-w64-x86_64-libmodbus-git : we custom-build one with USB support
+        REM SKIP for now NUT-Monitor prereqs (runtime Python would require somilar modules; need to fix localization builds like "fr.po"): gettext mingw-w64-x86_64-python-pyqt6
+
+# FIXME: Make these stats conditional for just troubleshooting sessions?
+#  It seems the first "du" call costs us about 1-2 minutes (different runs):
+#  - cmd: |
+#        REM Assorted stats after package processing:
+#        C:\msys64\usr\bin\bash -lc "date -u; ls -la / ; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date -u"
+
   - cmd: |
-        REM Assorted stats after package processing:
-        C:\msys64\usr\bin\bash -lc "date -u; ls -la / ; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date -u"
         REM Preserve the current working directory:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
@@ -61,6 +81,10 @@ install:
         C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats" ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true '
 
 
+# NOTE: The script aims to configure for minimal build results, e.g.
+# no tools and docs, and to ensure parallel builds via MAKEFLAGS...
+# As of Aug 2025, in cases these artifacts (and ~/.ccache) were not cached
+# and the step did run, it cost us 22min (before disabling tools and docs).
 before_build:
   - cmd: |
       REM Ensure we have a net-snmp to build against
@@ -80,7 +104,9 @@ build_script:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh'
+        REM Note: currently we save job time and do not install asciidoc/a2x
+        REM  # --with-docs="man=auto html-single=auto html-chunked=no pdf=no"
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh --with-docs=no'
 
 
 after_build:
@@ -112,7 +138,7 @@ after_test:
         set MSYSTEM=MINGW64
         REM Oh the joys of shell scripting with strings passed through CMD:
         REM Note: currently Python installation path with MSYS is buggy [#1584]
-        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; rm -rf ./.inst/NUT-for-Windows-x86_64-SNAPSHOT || true ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; ) ; date -u'
+        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s -j 8 install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; rm -rf ./.inst/NUT-for-Windows-x86_64-SNAPSHOT || true ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; ) ; date -u'
         cd .inst
         7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
   - cmd: |
@@ -137,12 +163,12 @@ artifacts:
 # Example optional cache (depends on file change):
 # - C:\msys64 -> appveyor.yml
 cache:
+  - C:\msys64\home\appveyor\nut-win-deps
   - C:\msys64\home\appveyor\.ccache
   - C:\msys64\home\appveyor\ccache # likely missing, no problem - but the name is reported in ccache status
   - C:\Users\appveyor\AppData\Local\ccache # may be default in newer versions
   - C:\Users\appveyor\AppData\Local\.ccache # may be missing, but for completeness like above
   - C:\msys64\var\cache\pacman\pkg
-  - C:\msys64\home\appveyor\nut-win-deps
 
 # Below we tried to stash binaries of MSYS2 environment
 # so VM deployment is faster on subsequent builds

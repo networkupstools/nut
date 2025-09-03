@@ -108,12 +108,13 @@ about security or other matters.
 
 * clean up "in-development" bits from files (which we would revert after
   release), e.g.:
-** TODO etc. referring planned future in the `NEWS.adoc` and `UPDATING.adoc`
-   files - except for the upcoming release
 ** DO NOT yet remove "PLANNED:" from the new release section title
-** comment away the top-most (auto-resolved) NUT version and build date
-   in `docs/docinfo.xml.in` -- DO NOT add (or at least commit) an entry
-   for the actual fixed release version and date just yet
+** revise (remove if not implemented) the TODO etc. entries referring to
+   planned future in the `NEWS.adoc` and `UPDATING.adoc` files -- except
+   for what was actually completed the upcoming release
+** comment away the top-most (auto-resolved, templated like `@PACKAGE_VERSION@`)
+   NUT version and build date in `docs/docinfo.xml.in` -- DO NOT add (or at
+   least commit) an entry for the actual fixed release version and date just yet
 ** NOTE: The `docs/docinfo.xml.sh` script can help update the list for
    existing git tags, if some were skipped before. This can be used to
    cheat a bit about adding the new entry (with a draft tag).
@@ -211,6 +212,8 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 # if file names in your top_srcdir are removed:
 :; ln .relver/* .
 ----
+*** DOUBLE-CHECK that the `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh`
+    is an `X.Y.Z` triplet, without the fourth `.1` suffix, for the release!
 *** Note that since NUT v2.8.3 this script dictates the version propagated by
     the `configure` script, so direct changes of `AC_INIT` there are no longer
     needed
@@ -231,12 +234,15 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 :; git fetch --all && git rebase upstream/master -i --autosquash
 ----
 * run the last-minute build to be sure the release is sane (no typos in any
-  recently changed document files, etc.) with `./ci_build.sh` or full ritual:
+  recently changed document files, log-processing code behaves sanely when
+  current commit is *the* release tag, etc.) with `./ci_build.sh` or full
+  ritual:
 +
 ----
-:; rm -f Makefile configure
+:; rm -f Makefile configure VERSION_DEFAULT
 :; ./autogen.sh && \
    ./configure --with-all --with-dev --with-doc --enable-spellcheck \
+      --enable-docs-man-for-progs-built-only=no                     \
       --enable-warnings --enable-Werror --enable-maintainer-mode && \
    make -j 8 all && \
    make -j 8 spellcheck && \
@@ -254,22 +260,37 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 * don't forget to push not only the code, but also the tag:
 +
 ----
-:; git push upstream && git push --tags upstream
+:; git push upstream && git push upstream v2.8.0
 ----
+** avoid `git push --tags` so your experimental tags do not pollute common
+   NUT repository
 
 * `make dist-files` (especially if you did not `make distcheck` above,
   or had some changes since then) to store the source tarball, checksum
   and signature files
 
 * post-release update of the "in-development" codebase:
+** start a feature branch to return the master branch into development state
 ** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
-   <incremented version>.1 (ex: `2.8.0.1`); remove the `VERSION_FORCED`
-   and `VERSION_FORCED_SEMVER` files
-** `git revert` the commit which cleaned up "in-development" bits above
-** Possibly resolve relevant merge conflicts for the changed context,
+   <incremented version>.1 (ex: `2.8.0.1`) and commit this, e.g.:
++
+----
+:; git commit -sm 'tools/gitlog2version.sh: for development, set fallback NUT_VERSION_DEFAULT=2.8.0.1'
+----
+** remove the `VERSION_FORCED` and `VERSION_FORCED_SEMVER` files from your
+   workspace
+** `git revert --signoff` the commit which cleaned up "in-development" bits
+   above (the one with `...finalize text before NUT v2.8.0 release` comment)
+*** Possibly resolve relevant merge conflicts for the changed context,
    e.g. the changed "PLANNED" status of the now-issued release info
-
-* push commits and tag
+*** If there are merge conflicts, be sure to sign off the ultimate commit
+    when you fix those
+** Ensure that `NEWS.adoc` has a `PLANNED: Release notes for...` section
+   with a new URL to GitHub "milestone" for the next release, and unfinished
+   "expected" points pushed back from the previous release (if any)
+** Ensure that `UPDATING.adoc` has a `Changes from ... to ...` section for
+   the new couple of release numbers
+** `git commit` if there were any changes after that `git revert`
 
 * Update `nut-website`:
 ** rendering should auto-update by NUT CI farm based on source changes,
@@ -283,7 +304,8 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 ** in `source` submodule add a copy of tarball, checksum and hash files for
    download: `make dist{,-hash,-sig}` (or since NUT v2.8.3, `make dist-files`)
 *** for a `new-X.Y.Z.txt` file use the `NEWS.adoc` with a stripped title
-    (see existing files)
+    and prominent `link:` asciidoc markup (see existing files)
+** update `historic/index.txt` with an entry for the new release tag and date
 ** `git tag` the website release
 ** generate and publish a "historic" sub-site snapshot (currently manually,
    check comments in nut-website's `ci_build.sh` script and/or its README file)
@@ -301,7 +323,26 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
    instructions fit the reality (needed maintainer keys are published, etc.)
 
 * draft and publish a GitHub release based on the signed tag
-** attach the same copy of tarball, checksum and hash files as for nut-website
+** attach *the same copy of* the tarball, checksum and hash files as published
+   on nut-website (prepared by `make dist-files` above)
+** when https://ci.appveyor.com/project/nut-travis/nut is done building the
+   release commit (takes about an hour, more if the build queue is congested),
+   download and rename the 7z archive, e.g.:
++
+----
+:; mv NUT-for-Windows-x86_64-SNAPSHOT-2.8.3.3028-master.7z \
+      NUT-for-Windows-x86_64-RELEASE-2.8.3.7z
+----
++
+and attach it to the GitHub release artifacts, and to nut-website via
+   the https://github.com/networkupstools/nut-package-archive.git repository
+   (its `index.html` will get updated as part of subsequent nut-website build,
+   a templated reference from NUT Downloads page is already in place).
++
+FIXME: get our AppVeyor recipe to name the release archive as such, the scripts
+should already know everything needed for this.  Explore git-tag based builds?
++
+FIXME: eventually get real installer files made, publish them then.
 
 * Make sure that the PyNUT module for the tagged release got published to
   the main PyPI repository, as a build associated with the NUT release
@@ -310,6 +351,10 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
   this may cause a release to be skipped if the PyNUT sources did not change.
   The `scripts/python/module/Makefile.am` recipes automate the needed actions
   to happen from a prepared maintainer's operating environment.
+
+* (After CI builds complete the exact release commit's build)
+  Push the updated commits for development to master branch;
+  until then can cache it as a side branch and PR though, merge later.
 
 * announce on mailing list, IRC, etc.
 

@@ -32,7 +32,7 @@ Makefile.am in this directory.
 
 In the "NAME" section, you must follow the format above, including separating
 the driver name from its description by "-". This is to ensure that the
-apropos(8) database is properly rebuilt.
+linkmanext:apropos[8] database is properly rebuilt.
 //////////////////////////////////////////
 
 SUPPORTED HARDWARE

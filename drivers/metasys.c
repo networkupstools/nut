@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -933,7 +933,13 @@ static int instcmd(const char *cmdname, const char *extra)
 		return instcmd("beeper.enable", NULL);
 	}
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* Same stuff as upsdrv_shutdown() */
 		if (! autorestart) {
 			command[0]=UPS_SET_TIMES_ON_BATTERY;
@@ -960,6 +966,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* schedule a shutdown in 30 seconds with no restart (-1) */
 		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0x1e;					/* remaining  */
@@ -976,6 +984,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* set shutdown and restart time to -1 (no shutdown, no restart) */
 		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0xff;					/* remaining  */
@@ -992,6 +1002,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* force ups on battery power */
 		command[0]=UPS_SET_BATTERY_TEST;
 		command[1]=0x01;
@@ -1003,6 +1015,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* restore standard mode (mains power) */
 		command[0]=UPS_SET_BATTERY_TEST;
 		command[1]=0x02;
@@ -1014,6 +1028,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* launch battery test */
 		command[0]=UPS_SET_BATTERY_TEST;
 		command[1]=0x00;
@@ -1077,7 +1093,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

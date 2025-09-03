@@ -1,7 +1,8 @@
 /* common.h - prototypes for the common useful functions
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C)
+    2000  Russell Kroll <rkroll@exploits.org>
+    2020-2025 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -65,12 +66,25 @@
 #endif
 
 #ifndef WIN32
-#include <syslog.h>
+# include <syslog.h>
 #else	/* WIN32 */
-#include <winsock2.h>
-#include <windows.h>
-#include <ws2tcpip.h>
+# include <winsock2.h>
+# include <windows.h>
+# include <ws2tcpip.h>
 #endif	/* WIN32 */
+
+#ifdef NUT_WANT_INET_NTOP_XX
+/* We currently have a few consumers who should define this macro before
+ * including common.h, while we do not want to encumber preprocessing the
+ * majority of codebase with these headers and our (thread-unsafe) methods.
+ */
+# ifndef WIN32
+#  include <netdb.h>
+#  include <sys/socket.h>
+#  include <arpa/inet.h>
+#  include <netinet/in.h>
+# endif	/* WIN32 */
+#endif	/* NUT_WANT_INET_NTOP_XX */
 
 #include <unistd.h>	/* useconds_t */
 #ifndef HAVE_USECONDS_T
@@ -214,6 +228,16 @@ const char *describe_NUT_VERSION_once(void);
  * NOTE: the string in buffer starts with text and ends with one EOL char.
  */
 const char *suggest_doc_links(const char *progname, const char *progconf);
+
+/* For drivers that failed to start because they could not hold on to a
+ * device, on systems where the nut-driver-enumerator could produce units
+ * that conflict with a manually-launched driver program, suggest that
+ * this may be the case. Has some work on systems where NDE can be used
+ * (currently where SMF or SystemD were considered during build), no-op
+ * on others.
+ * We define this in one spot, to change conditions or wording easily.
+ */
+void suggest_NDE_conflict(void);
 
 /* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
  * hide the NUT tool name+version banners; show them by default */
@@ -402,6 +426,14 @@ const char * rootpidpath(void);
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);
 
+#ifdef NUT_WANT_INET_NTOP_XX
+/* NOT THREAD SAFE!
+ * Helpers to convert one IP address to string from different structure types
+ * Return pointer to internal buffer, or NULL and errno upon errors */
+const char *inet_ntopSS(struct sockaddr_storage *s);
+const char *inet_ntopAI(struct addrinfo *ai);
+#endif	/* NUT_WANT_INET_NTOP_XX */
+
 /* Provide integration for systemd inhibitor interface (where available,
  * dummy code otherwise) implementing the pseudo-code example from
  * https://systemd.io/INHIBITOR_LOCKS/
@@ -519,6 +551,54 @@ void *xmalloc(size_t size);
 void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
+
+int vsnprintfcat(char *dst, size_t size, const char *fmt, va_list ap);
+int snprintfcat(char *dst, size_t size, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 3, 4)));
+
+/* Define a missing va_copy using __va_copy, if available: */
+#ifndef HAVE_VA_COPY
+# ifdef HAVE___VA_COPY
+#  define va_copy(dest, src) __va_copy(dest, src)
+# endif
+#endif
+
+/* Mitigate the inherent insecurity of dynamically constructed formatting
+ * strings vs. a fixed vararg list with its amounts and types of variables
+ * printed by this or that method and pre-compiled in the program.
+ * Verbosity is passed to upsdebugx(); a negative value should keep it quiet
+ * (e.g. when code deliberately checks for suitable formatting constraints).
+ * Consumers like the *_dynamic() methods here and in dstate typically use
+ * "1" to make errors in code visible with any effort to troubleshoot them.
+ */
+/* Verbosity built into the methods which call the *_formatting_*() and
+ * pass this value as the verbosity variable argument. It is anticipated
+ * that some custom builds can define it to e.g. 0 to see discrepancies
+ * at run-time without enabling any debug verbosity: */
+#ifndef NUT_DYNAMICFORMATTING_DEBUG_LEVEL
+# define NUT_DYNAMICFORMATTING_DEBUG_LEVEL 1
+#endif
+/* Verbosity built into consumers that deliberately check the formatting
+ * strings for this or that outcome and do not want noise in the log: */
+#define NUT_DYNAMICFORMATTING_DEBUG_LEVEL_SILENT -1
+char *minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int verbosity);
+char *minimize_formatting_string_staticbuf(const char *fmt, int verbosity);
+int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference, int verbosity);
+
+int vsnprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list va);
+int snprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 4, 5)));
+
+int vsnprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list va);
+int snprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 4, 5)));
+
+/* Practical helper with a static buffer which we can use for setting
+ * values as a "%s" string e.g. in calls to dstate_setinfo(), etc.
+ * Sets buffer to empty string in case of errors.
+ */
+char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3)));
 
 /**** REGEX helper methods ****/
 

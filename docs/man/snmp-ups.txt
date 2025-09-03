@@ -1,4 +1,4 @@
-snmp-ups(8)
+SNMP-UPS(8)
 ===========
 
 NAME
@@ -185,6 +185,8 @@ have been torn down by the time the driver is invoked to send the shutdown
 command. The driver attempts to send +shutdown.return+, +shutdown.reboot+,
 and +load.off.delay+ commands to the UPS in sequence, stopping after the first
 supported command.
+
+include::networked_hostnames.txt[]
 
 INSTALLATION
 ------------

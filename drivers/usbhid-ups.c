@@ -29,12 +29,13 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.62"
+#define DRIVER_VERSION	"0.67"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
 #include "main.h"	/* Must be first, includes "config.h" */
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include "libhid.h"
 #include "usbhid-ups.h"
 #include "hidparser.h"
@@ -836,15 +837,15 @@ int instcmd(const char *cmdname, const char *extradata)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "instcmd(%s, %s)",
-		cmdname,
-		extradata ? extradata : "[NULL]");
+	upsdebug_INSTCMD_STARTING(cmdname, extradata);
 
 	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
+		/* Process alias/fallback names */
+
 		upsdebugx(3, "%s: cmdname '%s' not found; "
 			"checking for alternatives",
 			__func__, cmdname);
@@ -900,7 +901,9 @@ int instcmd(const char *cmdname, const char *extradata)
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
 
-		upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
+		/* FIXME: ..._UNKNOWN? */
+		upsdebugx(2, "instcmd: info element unavailable %s", cmdname);
+		upslog_INSTCMD_INVALID(cmdname, extradata);
 		return STAT_INSTCMD_INVALID;
 	}
 
@@ -911,33 +914,62 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Check if the item is an instant command */
 	if (!(hidups_item->hidflags & HU_TYPE_CMD)) {
-		upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
+		upsdebugx(2, "instcmd: %s is not an instant command", cmdname);
 		return STAT_INSTCMD_INVALID;
 	}
 
 	/* If extradata is empty, use the default value from the HID-to-NUT table */
 	val = extradata ? extradata : hidups_item->dfl;
-	if (!val) {
-		upsdebugx(2, "instcmd: %s requires an explicit parameter\n", cmdname);
+	if (!val && hidups_item->hidflags & HU_FLAG_PARAM_REQUIRED) {
+		upsdebugx(2, "instcmd: %s requires an explicit or default parameter", cmdname);
 		return STAT_INSTCMD_CONVERSION_FAILED;
 	}
 
 	/* Lookup the new value if needed */
 	if (hidups_item->hid2info != NULL) {
+		/* item->nuf() is expected to handle NULL if it must */
 		value = hu_find_valinfo(hidups_item->hid2info, val);
+		if (d_equal(value, -1) && errno == EINVAL) {
+			upsdebugx(2, "instcmd: %s does not support parameter %s",
+				cmdname, NUT_STRARG(val));
+			return STAT_INSTCMD_CONVERSION_FAILED;
+		}
 	} else {
-		value = atol(val);
+		if (!val) {
+			/* If we end up with atol(NULL) below, it should return
+			 * 0 on error anyway (on platforms where it would not
+			 * crash instead due to the NULL), so we make it portably
+			 * explicit here.
+			 */
+			/* FIXME: Look up data points (maybe via override.* or
+			 * default.* settings) for delay/etc. when handling
+			 * commands like shutdown.* or load.* ?
+			 */
+			upsdebugx(4, "instcmd: %s got no explicit nor default parameter, "
+				"but does not require one: falling back to 0", cmdname);
+			value = 0;
+		} else {
+			value = atol(val);
+		}
 	}
 
-	/* Actual variable setting */
+	/* Actual variable setting (as far as firmware is concerned) */
+	{	/* scoping + workaround for "error: the address of `argtmp` will always evaluate as `true`" */
+		char	argtmp[LARGEBUF], *s = NULL;
+		if (snprintf(argtmp, sizeof(argtmp), "%s (%f)",
+			NUT_STRARG(extradata), value) > 0)
+			s = argtmp;
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, s);
+	}
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
-		upsdebugx(3, "instcmd: SUCCEED\n");
+		upsdebugx(3, "instcmd: SUCCEED");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
+	/* upsdebugx(3, "instcmd: FAILED"); / * FIXME: return HANDLED but FAILED, not UNKNOWN! */
+	upslog_INSTCMD_FAILED(cmdname, extradata);
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -947,51 +979,79 @@ int setvar(const char *varname, const char *val)
 	hid_info_t	*hidups_item;
 	double		value;
 
-	upsdebugx(1, "setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	/* retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(varname);
 
 	if (hidups_item == NULL) {
-		upsdebugx(2, "setvar: info element unavailable %s\n", varname);
+		upsdebugx(2, "setvar: info element unavailable %s", varname);
+		upslog_SET_UNKNOWN(varname, val);
 		return STAT_SET_UNKNOWN;
 	}
 
 	/* Checking item writability and HID Path */
 	if (!(hidups_item->info_flags & ST_FLAG_RW)) {
-		upsdebugx(2, "setvar: not writable %s\n", varname);
+		upsdebugx(2, "setvar: not writable %s", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
 	/* handle server side variable */
 	if (hidups_item->hidflags & HU_FLAG_ABSENT) {
-		upsdebugx(2, "setvar: setting server side variable %s\n", varname);
+		upsdebugx(2, "setvar: setting server side variable %s", varname);
 		dstate_setinfo(hidups_item->info_type, "%s", val);
 		return STAT_SET_HANDLED;
 	}
 
 	/* HU_FLAG_ABSENT is the only case of HID Path == NULL */
 	if (hidups_item->hidpath == NULL) {
-		upsdebugx(2, "setvar: ID Path is NULL for %s\n", varname);
+		upsdebugx(2, "setvar: ID Path is NULL for %s", varname);
 		return STAT_SET_UNKNOWN;
+	}
+
+	/* FIXME: This code did not use "dfl"; should it start to?
+	 * If val is empty, use the default value from the HID-to-NUT table */
+	/* if (!val) val = hidups_item->dfl; */
+
+	if (!val && hidups_item->hidflags & HU_FLAG_PARAM_REQUIRED) {
+		upsdebugx(2, "setvar: %s requires an explicit or default parameter", varname);
+		return STAT_SET_CONVERSION_FAILED;
 	}
 
 	/* Lookup the new value if needed */
 	if (hidups_item->hid2info != NULL) {
+		/* item->nuf() is expected to handle NULL if it must */
 		value = hu_find_valinfo(hidups_item->hid2info, val);
+		if (d_equal(value, -1) && errno == EINVAL) {
+			upsdebugx(2, "setvar: %s does not support parameter %s",
+				varname, NUT_STRARG(val));
+			return STAT_SET_CONVERSION_FAILED;
+		}
 	} else {
-		value = atol(val);
+		if (!val) {
+			/* If we end up with atol(NULL) below, it should return
+			 * 0 on error anyway (on platforms where it would not
+			 * crash instead due to the NULL), so we make it portably
+			 * explicit here.
+			 */
+			upsdebugx(4, "setvar: %s got no explicit nor default parameter, "
+				"but does not require one: falling back to 0", varname);
+			value = 0;
+		} else {
+			value = atol(val);
+		}
 	}
 
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
-		upsdebugx(5, "setvar: SUCCEED\n");
+		upsdebugx(5, "setvar: SUCCEED");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_SET_HANDLED;
 	}
 
-	upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
+	/* upsdebugx(3, "setvar: FAILED"); / * FIXME: return HANDLED but FAILED, not UNKNOWN! */
+	upslog_SET_FAILED(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -1253,7 +1313,7 @@ void upsdrv_updateinfo(void)
 		ups_infoval_set(item, value);
 	}
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n",
+	upsdebugx(1, "took %.3f seconds handling interrupt reports...",
 		interval());
 #endif
 	/* clear status buffer before beginning */
@@ -1289,7 +1349,7 @@ void upsdrv_updateinfo(void)
 
 	dstate_dataok();
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling feature reports...\n",
+	upsdebugx(1, "took %.3f seconds handling feature reports...",
 		interval());
 #endif
 }
@@ -1519,20 +1579,35 @@ void upsdrv_initups(void)
 			lbrb_log_delay_sec = ipv;
 		}
 	} else {
-		/* Activate APC BXnnnMI/BXnnnnMI tweaks, for details see
+		/* Activate APC BXnnnMI/BXnnnnMI/BVKnnnM2/BVKnnnnM2/BKnnnM2[_-]CH tweaks, for details see
 		 * https://github.com/networkupstools/nut/issues/2347
+		 * https://github.com/networkupstools/nut/issues/2565
+		 * https://github.com/networkupstools/nut/issues/2944
+		 * https://github.com/networkupstools/nut/issues/3006
 		 */
 		size_t	productLen = hd->Product ? strlen(hd->Product) : 0;
 
 		/* FIXME: Consider also ups.mfr.date as 2023 or newer?
 		 * Eventually up to some year this gets fixed?
 		 */
-		if (hd->Vendor
-		&&  productLen > 6	/* BXnnnMI at least */
-		&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
-		&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
-		&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I')
-		) {
+		if (hd->Vendor && productLen > 0
+		&& (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+		&& ((
+			    productLen > 6	/* BXnnnMI at least */
+			&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
+			&&   hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I'
+			) || (
+			    productLen > 7	/* BVKnnnM2 at least */
+			&&  (strstr(hd->Product, " BVK") || strstr(hd->Product, "BVK") == hd->Product)
+			&&   hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == '2'
+			) || (
+			    productLen > 9	/* BKnnnM2-CH at least, e.h. "Back-UPS BK650M2_CH" */
+			&&  (strstr(hd->Product, " BK") || strstr(hd->Product, "BK") == hd->Product)
+			&&   hd->Product[productLen - 5] == 'M' && hd->Product[productLen - 4] == '2'
+			&&  (hd->Product[productLen - 3] == '-' || hd->Product[productLen - 3] == '_')
+			&&   hd->Product[productLen - 2] == 'C' && hd->Product[productLen - 1] == 'H'
+			)
+		)) {
 			int	got_lbrb_log_delay_without_calibrating = testvar("lbrb_log_delay_without_calibrating") ? 1 : 0,
 				got_onlinedischarge_calibration = testvar("onlinedischarge_calibration") ? 1 : 0,
 				got_onlinedischarge_log_throttle_sec = testvar("onlinedischarge_log_throttle_sec") ? 1 : 0;
@@ -1797,7 +1872,7 @@ static int callback(
 		return 0;
 	}
 
-	upslogx(2, "Using subdriver: %s", subdriver->name);
+	upslogx(LOG_INFO, "Using subdriver: %s", subdriver->name);
 
 	if (subdriver->fix_report_desc(arghd, pDesc)) {
 		upsdebugx(2, "Report Descriptor Fixed");
@@ -1915,6 +1990,36 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			if (item->hiddata == NULL)
 				continue;
 
+			/* Sanity-check that if we setvar() via mapping table
+			 * which refers us to a method, that such method entry
+			 * is not NULL (then we might get ERR READONLY later)
+			 */
+			if (ST_FLAG_RW && item->hid2info) {
+				if (
+					(item->hid2info->fun && !(item->hid2info->nuf) && (item->info_flags & ST_FLAG_RW))
+				||	(item->hid2info->nuf && !(item->hid2info->fun))
+				) {
+					/* Only one of these pointers is set - expecting
+					 * iteration for the other values until a sentinel
+					 * entry which then must exist; is it right there
+					 * in the next table line? */
+					if (item->hid2info[1].nut_value == NULL) {
+						/* The first line of that table is the
+						 * only meaningful one */
+						upsdebugx(1, "%s: WARNING: values for '%s' are handled with a mapping table "
+							"which only defines one dynamic method and can not let us %s "
+							"(or, technically it would map one value '%s'='%ld')."
+							"This may be a bug - please raise an issue with NUT maintainers "
+							"if this proves to be a practical problem with that data point.",
+							__func__, NUT_STRARG(item->info_type),
+							(item->hid2info->fun ? "write (setvar)" : "read"),
+							NUT_STRARG(item->hid2info->nut_value),
+							item->hid2info->hid_value
+						);
+					}
+				}
+			}
+
 			/* Special case for handling server side variables */
 			if (item->hidflags & HU_FLAG_ABSENT) {
 
@@ -1955,11 +2060,23 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		case HU_WALKMODE_FULL_UPDATE:
 			/* These don't need polling after initinfo() */
-			if (item->hidflags & (HU_FLAG_ABSENT | HU_TYPE_CMD | HU_FLAG_STATIC))
+			if (item->hidflags & (HU_FLAG_ABSENT | HU_TYPE_CMD))
 				continue;
 
-			/* These need to be polled after user changes (setvar / instcmd) */
-			if ( (item->hidflags & HU_FLAG_SEMI_STATIC) && (data_has_changed == FALSE) )
+			/* These don't need polling after initinfo() normally
+			 * However in "pollonly" mode we use these to detect "Data stale"
+			 * condition (e.g. cable disconnected) by failing the reads:
+			 */
+			if ((item->hidflags & HU_FLAG_STATIC) && use_interrupt_pipe)
+				continue;
+
+			/* These need to be polled after user changes (setvar / instcmd)
+			 * or to detect "Data stale" in "pollonly" mode
+			 */
+			if (   (item->hidflags & HU_FLAG_SEMI_STATIC)
+				&& (data_has_changed == FALSE)
+				&& use_interrupt_pipe
+			)
 				continue;
 
 			break;
@@ -2074,7 +2191,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		if (ups_infoval_set(item, value) != 1)
 			continue;
 
-		if (mode == HU_WALKMODE_INIT) {
+		if (mode == HU_WALKMODE_INIT || (!use_interrupt_pipe)) {
 			info_lkp_t	*info_lkp;
 
 			dstate_setflags(item->info_type, item->info_flags);
@@ -2090,8 +2207,11 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			}
 
 			/* Loop on all existing values */
-			for (info_lkp = item->hid2info; info_lkp != NULL
-				&& info_lkp->nut_value != NULL; info_lkp++) {
+			for (
+				info_lkp = item->hid2info;
+				info_lkp != NULL && info_lkp->nut_value != NULL;
+				info_lkp++
+			) {
 				/* Check if this value is supported */
 				if (hu_find_infoval(item->hid2info, info_lkp->hid_value) != NULL) {
 					dstate_addenum(item->info_type, "%s", info_lkp->nut_value);
@@ -2186,11 +2306,6 @@ static void ups_alarm_set(void)
 	}
 	if (ups_status & STATUS(BYPASSMAN)) {
 		alarm_set("Manual bypass mode!");
-	}
-	if (ups_status & STATUS(ECOMODE)) {
-		buzzmode_set("vendor:default:ECO");
-		/* disable alarm for ECO as we don't want to raise alarm about it */
-		/* alarm_set("ECO(HE) mode!"); */
 	}
 }
 
@@ -2523,61 +2638,87 @@ static void ups_status_set(void)
 }
 
 /* find info element definition in info array
- * by NUT varname.
+ * by NUT varname, or NULL if not found.
  */
 static hid_info_t *find_nut_info(const char *varname)
 {
 	hid_info_t *hidups_item;
 
-	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
+	if (!varname) {
+		upsdebugx(2, "%s: varname == NULL", __func__);
+		errno = EINVAL;
+		return NULL;
+	}
 
+	if (!*varname) {
+		upsdebugx(2, "%s: varname is an empty string", __func__);
+		errno = EINVAL;
+		return NULL;
+	}
+
+	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 		if (strcasecmp(hidups_item->info_type, varname))
 			continue;
 
-		if (hidups_item->hiddata != NULL)
+		if (hidups_item->hiddata != NULL) {
+			errno = 0;
 			return hidups_item;
+		}
 	}
 
-	upsdebugx(2, "find_nut_info: unknown info type: %s", varname);
+	upsdebugx(2, "%s: unknown info type: %s", __func__, varname);
+	errno = EINVAL;
 	return NULL;
 }
 
 /* find info element definition in info array
- * by HID data pointer.
+ * by HID data pointer, or NULL if not found.
  */
 static hid_info_t *find_hid_info(const HIDData_t *hiddata)
 {
 	hid_info_t *hidups_item;
 
-	if(!hiddata) {
+	if (!hiddata) {
 		upsdebugx(2, "%s: hiddata == NULL", __func__);
+		errno = EINVAL;
 		return NULL;
 	}
 
 	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
-
 		/* Skip server side vars */
 		if (hidups_item->hidflags & HU_FLAG_ABSENT)
 			continue;
 
-		if (hidups_item->hiddata == hiddata)
+		if (hidups_item->hiddata == hiddata) {
+			errno = 0;
 			return hidups_item;
+		}
 	}
 
+	errno = EINVAL;
 	return NULL;
 }
 
-/* find the HID Item value matching that NUT value */
-/* useful for set with value lookup... */
+/* Find the HID Item value matching that NUT value;
+ * useful for setvar() with a value lookup...
+ * This method (and hid2info->nuf(value)) can return
+ * a long value to be set, or "-1" AND errno==EINVAL
+ * to propagate an error.
+ */
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 {
 	info_lkp_t	*info_lkp;
+
+	errno = 0;
 
 	/* if a conversion function is defined, use 'value' as argument for it */
 	if (hid2info->nuf != NULL) {
 		double	hid_value;
 		hid_value = hid2info->nuf(value);
-		upsdebugx(5, "hu_find_valinfo: found %g (value: %s)", hid_value, value);
+		upsdebugx(5, "hu_find_valinfo: found %g (value: '%s'%s)",
+			hid_value, value,
+			(errno == EINVAL ? ", invalid input" : "")
+		);
 		return hid_value;
 	}
 
@@ -2593,13 +2734,21 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 	upsdebugx(3,
 		"hu_find_valinfo: no matching HID value for this INFO_* value (%s)",
 		value);
+	errno = EINVAL;
 	return -1;
 }
 
-/* find the NUT value matching that HID Item value */
+/* find the NUT value matching that HID Item value
+ * This method (and hid2info->fun(value)) can return
+ * a string value to be set, or NULL AND errno==EINVAL
+ * to propagate an error (in practice, a NULL suffices
+ * to not-set a dstate).
+ */
 static const char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 {
 	info_lkp_t	*info_lkp;
+
+	errno = 0;
 
 	/* if a conversion function is defined, use 'value' as argument for it */
 	if (hid2info->fun != NULL) {
@@ -2619,6 +2768,7 @@ static const char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 	upsdebugx(3,
 		"hu_find_infoval: no matching INFO_* value for this HID value (%g)",
 		value);
+	errno = EINVAL;
 	return NULL;
 }
 
@@ -2649,19 +2799,7 @@ static int ups_infoval_set(hid_info_t *item, double value)
 
 		dstate_setinfo(item->info_type, "%s", nutvalue);
 	} else {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(item->info_type, item->dfl, value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		dstate_setinfo_dynamic(item->info_type, item->dfl, "%f", value);
 	}
 
 	return 1;

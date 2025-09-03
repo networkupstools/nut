@@ -229,6 +229,11 @@ the `generic_modbus` driver to connect and read or write specific registers.
 Your application / modbus server could then drive NUT statuses (e.g. OL, OB,
 HB etc) by writing over those registers.
 
+KNOWN ISSUES
+------------
+
+include::networked_hostnames.txt[]
+
 AUTHOR
 ------
 
