@@ -63,9 +63,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+    # Using hints from https://askubuntu.com/questions/272248/processing-triggers-for-man-db
     - if: matrix.language == 'c-cpp' && matrix.os == 'ubuntu-latest'
       name: NUT CI Prerequisite packages (Ubuntu)
       run: |
+        echo "set man-db/auto-update false" | sudo debconf-communicate
+        sudo dpkg-reconfigure man-db
         sudo apt update
         case x"${{matrix.compiler}}" in x*clang*) sudo apt install clang ;; x*) sudo apt install gcc g++ ;; esac
         sudo apt install libltdl-dev libtool libtool-bin cppcheck ccache libgd-dev libcppunit-dev libsystemd-dev libssl-dev libnss3-dev augeas-tools libaugeas-dev augeas-lenses libusb-dev libusb-1.0-0-dev libmodbus-dev libsnmp-dev libpowerman0-dev libfreeipmi-dev libipmimonitoring-dev libavahi-common-dev libavahi-core-dev libavahi-client-dev libgpiod-dev libneon27-dev libi2c-dev i2c-tools lm-sensors
