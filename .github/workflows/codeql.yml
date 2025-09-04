@@ -19,6 +19,8 @@ on:
     branches: [ "master", "FTY", "fightwarn" ]
   schedule:
     - cron: '32 12 * * 0'
+  workflow_dispatch:
+    # Allow manually running the action, e.g. if disabled after some quietness in the source
 
 jobs:
   analyze:
