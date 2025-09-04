@@ -43,9 +43,11 @@ jobs:
           # TOTHINK: windows-latest, macos-latest?
         build-mode: [ 'none' ]
           # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
-          # Abusing "manual" here to try building with ccache,
-          # and "none" to custom-build without; the "autobuild"
-          # by codeql itself would probably ignore CC/CXX setting
+          # Abusing "none" here to try building with ccache (and
+          # have codeql not intercept that build but parse C/C++
+          # files on its own), and "manual" to custom-build without;
+          # the "autobuild" mode is handled by codeql itself but
+          # would probably ignore our CC/CXX setting
         compiler: [ 'CC=gcc CXX=g++', 'CC=clang CXX=clang++' ]
         NUT_SSL_VARIANTS: [ 'no', 'nss', 'openssl' ]
         NUT_USB_VARIANTS: [ 'no', 'libusb-1.0', 'libusb-0.1' ]
@@ -71,7 +73,30 @@ jobs:
         sudo dpkg-reconfigure man-db
         sudo apt update
         case x"${{matrix.compiler}}" in x*clang*) sudo apt install clang ;; x*) sudo apt install gcc g++ ;; esac
-        sudo apt install libltdl-dev libtool libtool-bin cppcheck ccache libgd-dev libcppunit-dev libsystemd-dev libssl-dev libnss3-dev augeas-tools libaugeas-dev augeas-lenses libusb-dev libusb-1.0-0-dev libmodbus-dev libsnmp-dev libpowerman0-dev libfreeipmi-dev libipmimonitoring-dev libavahi-common-dev libavahi-core-dev libavahi-client-dev libgpiod-dev libneon27-dev libi2c-dev i2c-tools lm-sensors
+        sudo apt install libltdl-dev libtool libtool-bin cppcheck ccache libgd-dev libcppunit-dev libsystemd-dev libssl-dev libnss3-dev augeas-tools libaugeas-dev augeas-lenses libusb-dev libusb-1.0-0-dev libmodbus-dev libsnmp-dev libpowerman0-dev libfreeipmi-dev libipmimonitoring-dev libavahi-common-dev libavahi-core-dev libavahi-client-dev libgpiod-dev libneon27-dev libi2c-dev i2c-tools lm-sensors ccache
+        date > .timestamp-init
+
+    - name: Prepare ccache
+      # Based on https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#example-using-the-cache-action example
+      id: cache-ccache
+      uses: actions/cache@v4
+      env:
+        cache-name: cache-ccache-${{ matrix.compiler }}-${{ matrix.NUT_SSL_VARIANTS }}-${{ matrix.NUT_SSL_VARIANTS }}
+      with:
+        path: |
+            ~/.ccache
+            ~/.cache/ccache
+            ~/.config/ccache/ccache.conf
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/.timestamp-init') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: CCache stats before build
+      run: |
+        ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+        rm -f .timestamp-init
 
     # Make build identification more useful (no fallbacks)
     #- name: Try to get more Git metadata
@@ -123,6 +148,16 @@ jobs:
     - if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
       name: NUT CI Build
       run: |
+        case x"${{matrix.build-mode}}" in
+        xnone)
+            PATH="/usr/lib/ccache:$PATH" ; export PATH
+            CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+            ccache --version || true
+            ;;
+        xmanual|*)
+            echo "NOTE: NOT USING CCACHE for the CI-tested code base" >&2
+            ;;
+        esac
         ( ${{matrix.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
         ./autogen.sh
         ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs --disable-docs-changelog ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
@@ -133,6 +168,8 @@ jobs:
       name: NUT CI Build to verify parallel build recipes in subdirs
       run: make -s -j check-parallel-builds || exit
 
+    - name: CCache stats after build
+      run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
