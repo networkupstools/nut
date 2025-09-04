@@ -118,6 +118,7 @@ jobs:
     - if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
       name: NUT CI Build
       run: |
+        ( ${{matrix.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
         ./autogen.sh
         ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs --disable-docs-changelog ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
         make -s -j 8 || exit
