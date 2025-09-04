@@ -105,6 +105,9 @@ jobs:
       name: Autobuild
       uses: github/codeql-action/autobuild@v3
 
+    # ℹ️ Command-line programs to run using the OS shell.
+    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+
     #- if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
     #  name: NUT CI Build (default-all-errors matrix)
     #  run: |
@@ -131,15 +134,6 @@ jobs:
       name: NUT CI Build to verify parallel build recipes in subdirs
       run: make -s -j check-parallel-builds || exit
 
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-
-    #   If the Autobuild fails above, remove it and uncomment the following three lines.
-    #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
-
-    # - run: |
-    #   echo "Run, Build Application using script"
-    #   ./location_of_script_within_repo/buildscript.sh
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
