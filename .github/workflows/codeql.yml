@@ -41,6 +41,11 @@ jobs:
           # and https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning#changing-the-languages-that-are-analyzed
         os: [ 'ubuntu-latest' ]
           # TOTHINK: windows-latest, macos-latest?
+        build-mode: [ 'none' ]
+          # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+          # Abusing "manual" here to try building with ccache,
+          # and "none" to custom-build without; the "autobuild"
+          # by codeql itself would probably ignore CC/CXX setting
         compiler: [ 'CC=gcc CXX=g++', 'CC=clang CXX=clang++' ]
         NUT_SSL_VARIANTS: [ 'no', 'nss', 'openssl' ]
         NUT_USB_VARIANTS: [ 'no', 'libusb-1.0', 'libusb-0.1' ]
@@ -50,6 +55,7 @@ jobs:
           - language: 'python'
             os: 'ubuntu-latest'
             compiler: 'PYTHON=python3'
+            build-mode: 'none'
             NUT_SSL_VARIANTS: 'no'
             NUT_USB_VARIANTS: 'no'
 
@@ -57,7 +63,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
     - if: matrix.language == 'c-cpp' && matrix.os == 'ubuntu-latest'
       name: NUT CI Prerequisite packages (Ubuntu)
       run: |
@@ -81,6 +86,7 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
@@ -91,15 +97,17 @@ jobs:
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
-    #- name: Autobuild
-    #  uses: github/codeql-action/autobuild@v3
+    # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+    - if: matrix.build-mode == 'autobuild'
+      name: Autobuild
+      uses: github/codeql-action/autobuild@v3
 
-    #- if: matrix.language == 'c-cpp'
+    #- if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
     #  name: NUT CI Build (default-all-errors matrix)
     #  run: |
     #    BUILD_TYPE=default-all-errors BUILD_SSL_ONCE=true DO_DISTCHECK=no CI_SKIP_CHECK=true CANBUILD_DOCS_ALL=no ${{ matrix.compiler }} NUT_SSL_VARIANTS=${{ matrix.NUT_SSL_VARIANTS }} NUT_USB_VARIANTS=${{ matrix.NUT_USB_VARIANTS }} ./ci_build.sh
 
-    #- if: matrix.language == 'c-cpp'
+    #- if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
     #  name: NUT CI Build (fightwarn-all)
     #  run: |
     #    BUILD_TYPE=fightwarn-all ./ci_build.sh
@@ -107,14 +115,15 @@ jobs:
     # TOTHINK: Can we prepare the working area once (apt, autogen => containers?)
     # and then spread it out for builds and analyses?
     # Can ccache be used across builds?
-    - if: matrix.language == 'c-cpp'
+    - if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
       name: NUT CI Build
       run: |
         ./autogen.sh
         ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs --disable-docs-changelog ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
         make -s -j 8 || exit
 
-    - if: matrix.language == 'c-cpp'
+    # NOTE: Assuming GNU make here, not limiting "-j NUM" runners
+    - if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
       name: NUT CI Build to verify parallel build recipes in subdirs
       run: make -s -j check-parallel-builds || exit
 
