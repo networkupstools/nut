@@ -35,10 +35,9 @@ jobs:
       fail-fast: false
       matrix:
         # https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs
-        language: [ 'c-cpp' ]
-          # CodeQL supports [ 'c-cpp'/'c'/'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
+        language: [ 'cpp' ]
+          # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
           # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
-          # and https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning#changing-the-languages-that-are-analyzed
         os: [ 'ubuntu-latest' ]
           # TOTHINK: windows-latest, macos-latest?
         build-mode: [ 'none' ]
@@ -65,8 +64,21 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the list here with "+" to use these queries and those in the config file.
+
+        # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        # queries: security-extended,security-and-quality
+        config-file: ./.github/codeql/codeql-config.yml
+
     # Using hints from https://askubuntu.com/questions/272248/processing-triggers-for-man-db
-    - if: matrix.language == 'c-cpp' && matrix.os == 'ubuntu-latest'
+    - if: matrix.language == 'cpp' && matrix.os == 'ubuntu-latest'
       name: NUT CI Prerequisite packages (Ubuntu)
       run: |
         echo "set man-db/auto-update false" | sudo debconf-communicate
@@ -132,12 +144,12 @@ jobs:
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
 
-    #- if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
+    #- if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
     #  name: NUT CI Build (default-all-errors matrix)
     #  run: |
     #    BUILD_TYPE=default-all-errors BUILD_SSL_ONCE=true DO_DISTCHECK=no CI_SKIP_CHECK=true CANBUILD_DOCS_ALL=no ${{ matrix.compiler }} NUT_SSL_VARIANTS=${{ matrix.NUT_SSL_VARIANTS }} NUT_USB_VARIANTS=${{ matrix.NUT_USB_VARIANTS }} ./ci_build.sh
 
-    #- if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
+    #- if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
     #  name: NUT CI Build (fightwarn-all)
     #  run: |
     #    BUILD_TYPE=fightwarn-all ./ci_build.sh
@@ -145,7 +157,7 @@ jobs:
     # TOTHINK: Can we prepare the working area once (apt, autogen => containers?)
     # and then spread it out for builds and analyses?
     # Can ccache be used across builds?
-    - if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
+    - if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
       name: NUT CI Build
       run: |
         case x"${{matrix.build-mode}}" in
@@ -164,7 +176,7 @@ jobs:
         make -s -j 8 || exit
 
     # NOTE: Assuming GNU make here, not limiting "-j NUM" runners
-    - if: matrix.build-mode != 'autobuild' && matrix.language == 'c-cpp'
+    - if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
       name: NUT CI Build to verify parallel build recipes in subdirs
       run: make -s -j check-parallel-builds || exit
 
