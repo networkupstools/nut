@@ -78,8 +78,26 @@ except Exception as ignored:
     # ModuleNotFoundError, path/parsing, et al
     # Try our chances with the default path:
     sys.path = sys_path_orig
-    ### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
-    import PyNUT
+
+    try:
+        # This path is for "default python interpreter", possibly customized
+        # and MIGHT be dist-packages or site-packages for a different python
+        # version. Keep it at lowest priority!
+        mod_path = "%s" % "@PYTHON_SITE_PACKAGES@"
+        if mod_path != "" and os.path.isdir(mod_path) and mod_path not in sys.path:
+            sys.path.append(mod_path)
+
+        mod_path = "%s" % "@PYTHON3_SITE_PACKAGES@"
+        if mod_path != "" and os.path.isdir(mod_path) and mod_path not in sys.path:
+            sys.path.insert(1, mod_path)
+
+        ### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
+        import PyNUT
+
+    except Exception as ignored:
+        sys.path = sys_path_orig
+        ### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
+        import PyNUT
 
 # We would seek locale files relative to script dir
 os.chdir(os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
