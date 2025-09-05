@@ -1569,21 +1569,53 @@ finish:
 
 #ifdef WIN32
 /* In WIN32 all non binaries files (namely configuration and PID files)
-   are retrieved relative to the path of the binary itself.
-   So this function fill "dest" with the full path to "relative_path"
-   depending on the .exe path */
+ * are retrieved relative to the path of the binary itself.
+ *
+ * So this function fills "buf" with the full path to "relative_path",
+ * depending on the currently running "*.exe" path.
+ *
+ * Note that the last (back/fwd)slash before the binary program name
+ * is removed, so any relative path in a directory should start with
+ * a slash of its own (like "/../lib", "/etc") as opposed to adding a
+ * suffix to the current binary's location (arch-specific?)
+ *
+ * A copy of "buf" is returned, so the caller should free the string
+ * it gets (if not NULL).
+ */
 char * getfullpath(char * relative_path)
 {
-	char buf[NUT_PATH_MAX + 1];
-	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
+	char	buf[NUT_PATH_MAX + 1];
+	char	*last_fwdslash, *last_backslash;
+
+	if (GetModuleFileName(NULL, buf, sizeof(buf)) == 0) {
 		return NULL;
 	}
 
 	/* remove trailing executable name and its preceeding slash */
-	char * last_slash = strrchr(buf, '\\');
-	*last_slash = '\0';
+	last_backslash = strrchr(buf, '\\');
+	last_fwdslash = strrchr(buf, '/');
 
-	if( relative_path ) {
+	if (last_backslash && last_fwdslash) {
+		if (last_backslash < last_fwdslash) {
+			*last_fwdslash = '\0';
+		} else {
+			*last_backslash = '\0';
+		}
+	} else {
+		/* FIXME: What if neither slash is found?
+		 *  What do we even have then (dir? prog?)
+		 *  Probably the real Windows API should not return an unusable
+		 *  path value here, but some portability emulators might?..
+		 */
+		if (!last_backslash && !last_fwdslash)
+			upslogx(LOG_ERR, "%s: got a bogus module name without slashes: %s",
+				__func__, NUT_STRARG(buf));
+
+		if (last_backslash)	*last_backslash = '\0';
+		if (last_fwdslash)	*last_fwdslash = '\0';
+	}
+
+	if (relative_path) {
 		strncat(buf, relative_path, sizeof(buf) - 1);
 	}
 
