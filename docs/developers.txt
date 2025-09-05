@@ -131,6 +131,21 @@ There are still older systems out there that don't do C++ style comments.
 // Not like this.
 --------------------------------------
 
+Complete method signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a method has intentionally no arguments, this should be explicit by
+specifying a `void` argument list in both declarations (header or top
+of a C source file for `static` methods) and implementations:
+
+-------------------------------------------------------------------------------
+/* Like this: */
+void good_stuff(void);
+
+/* NOT like this: */
+void bad_stuff();
+-------------------------------------------------------------------------------
+
 Variable declarations go on top
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

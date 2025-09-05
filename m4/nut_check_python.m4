@@ -129,17 +129,25 @@ AC_DEFUN([NUT_CHECK_PYTHON],
             AC_MSG_RESULT([${PYTHON_SYSPATH_REPORT}])
 
             export PYTHON
+            AS_IF([test x"${nut_enable_configure_debug}" = xyes], [AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_python_modules_dir='${nut_with_python_modules_dir}'])])
             AC_CACHE_CHECK([python site-packages location], [nut_cv_PYTHON_SITE_PACKAGES], [
-                dnl sysconfig introduced in python3.2
-                AS_IF([test x"`${PYTHON} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue],
-                    [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
-                    [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"])
+                AS_CASE(["${nut_with_python_modules_dir}"],
+                    [*:*|*/*], [ dnl # else not a path => auto below
+                            printf "Using caller-provided location... "
+                            nut_cv_PYTHON_SITE_PACKAGES="${nut_with_python_modules_dir}"],
+                        [printf "Using interpreter-provided location... "
+                         dnl sysconfig introduced in python3.2
+                         AS_IF([test x"`${PYTHON} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue],
+                            [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
+                            [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"])
+                        ]
+                    )
                 AS_CASE(["$nut_cv_PYTHON_SITE_PACKAGES"],
                     [*:*], [
                         dnl Note: on Windows MSYS2 this embeds "C:/msys64/mingw..." into the string [nut#1584]
                         nut_cv_PYTHON_SITE_PACKAGES="`cd "$nut_cv_PYTHON_SITE_PACKAGES" && pwd`"
                         ]
-                   )
+                    )
                ])
             ])
         AC_SUBST([PYTHON_SITE_PACKAGES], [${nut_cv_PYTHON_SITE_PACKAGES}])
@@ -257,8 +265,16 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
             AC_MSG_RESULT([${PYTHON2_SYSPATH_REPORT}])
 
             export PYTHON2
+            AS_IF([test x"${nut_enable_configure_debug}" = xyes], [AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_python2_modules_dir='${nut_with_python2_modules_dir}'])])
             AC_CACHE_CHECK([python2 site-packages location], [nut_cv_PYTHON2_SITE_PACKAGES], [
-                nut_cv_PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import site; print(site.getsitepackages().pop(0))'`"
+                AS_CASE(["${nut_with_python2_modules_dir}"],
+                    [*:*|*/*], [ dnl # else not a path => auto below
+                            printf "Using caller-provided location... "
+                            nut_cv_PYTHON2_SITE_PACKAGES="${nut_with_python2_modules_dir}"],
+                        [printf "Using interpreter-provided location... "
+                         nut_cv_PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import site; print(site.getsitepackages().pop(0))'`"
+                        ]
+                    )
                 AS_CASE(["$nut_cv_PYTHON2_SITE_PACKAGES"],
                     [*:*], [
                         dnl Note: on Windows MSYS2 this embeds "C:/msys64/mingw..." into the string [nut#1584]
@@ -382,11 +398,19 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
             AC_MSG_RESULT([${PYTHON3_SYSPATH_REPORT}])
 
             export PYTHON3
+            AS_IF([test x"${nut_enable_configure_debug}" = xyes], [AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_python3_modules_dir='${nut_with_python3_modules_dir}'])])
             AC_CACHE_CHECK([python3 site-packages location], [nut_cv_PYTHON3_SITE_PACKAGES], [
-                dnl sysconfig introduced in python3.2
-                AS_IF([test x"`${PYTHON3} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue],
-                    [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
-                    [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"])
+                AS_CASE(["${nut_with_python3_modules_dir}"],
+                    [*:*|*/*], [ dnl # else not a path => auto below
+                            printf "Using caller-provided location... "
+                            nut_cv_PYTHON3_SITE_PACKAGES="${nut_with_python3_modules_dir}"],
+                        [printf "Using interpreter-provided location... "
+                         dnl sysconfig introduced in python3.2
+                         AS_IF([test x"`${PYTHON3} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue],
+                            [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
+                            [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"])
+                        ]
+                    )
                 AS_CASE(["$nut_cv_PYTHON3_SITE_PACKAGES"],
                     [*:*], [
                         dnl Note: on Windows MSYS2 this embeds "C:/msys64/mingw..." into the string [nut#1584]
