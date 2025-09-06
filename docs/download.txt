@@ -141,8 +141,15 @@ for some platforms (currently serving only NUT for Windows).
 NUT is already available in the following operating systems (and
 link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging-recipes-and-repository-sections[likely more]):
 
-- link:https://repology.org/project/nut/versions[Repology report on NUT]
-  lists 745 entries about NUT, as of this writing
+- link:https://repology.org/project/network-ups-tools/versions[Repology report
+  on "network-ups-tools"] lists 239 entries about NUT, as of 2025-09-06
+
+    * Older listing at link:https://repology.org/project/nut/versions[Repology
+      report on "nut"] listed 745 entries about NUT, as of 2022-04-26 -- that
+      name was not tracked since 2024 probably due to ambiguity with some other
+      projects that used "nut" in their name;
+      see link:https://repology.org/project/nut/history[Repology history of
+      "nut"] for more details
 
 - Linux:
 
