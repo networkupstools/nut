@@ -95,14 +95,18 @@ Snapshots
 ^^^^^^^^^
 
 GitHub has several download links for repository snapshots (for particular tags
-or branches), but you will need a number of tools such as autoconf, automake
-and libtool to use these snapshots to generate the `configure` script and some
+or branches), but you will need a number of tools such as `autoconf`, `automake`
+and `libtool` to use these snapshots to generate the `configure` script and some
 other files.
 
 After you `configure` the source workspace, a `make dist-hash` recipe would
-create the snapshot tarballs which do not require the auto* tools, and their
+create the snapshot tarballs which do not require the `auto*` tools, and their
 checksum files, such as those available on the NUT website and attached to
 link:https://github.com/networkupstools/nut/releases[GitHub Releases page].
+
+Note that the ability to build NUT seamlessly from ZIP or `tar.gz` snapshots
+prepared by GitHub automatically (as `git archive` of a checked-out workspace)
+is not regularly checked or "supported" by the Network UPS Tools project. YMMV.
 
 /////////
 TODO: #1400 to replace this with a NUT CI farm service to publish the tarballs
