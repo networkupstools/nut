@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_megatec.h"
 
-#define MEGATEC_VERSION "Megatec 0.08"
+#define MEGATEC_VERSION "Megatec 0.09"
 
 /* qx2nut lookup table */
 static item_t	megatec_qx2nut[] = {
@@ -99,7 +99,7 @@ static item_t	megatec_qx2nut[] = {
 	{ "device.mfr",			0,	NULL,	"I\r",	"",	38,	'#',	"",	1,	7,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Shorter field than in other dialects */
 	{ "ups.serial",			0,	NULL,	"I\r",	"",	38,	'#',	"",	8,	15,	"%s",	0,	NULL,	NULL,	NULL },	/* Megatec IC adds "ups.serial" support function */
 	{ "device.model",		0,	NULL,	"I\r",	"",	38,	'#',	"",	17,	21,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Shorter field than in other dialects */
-	{ "battery.runtime",		0,	NULL,	"I\r",	"",	38,	'#',	"",	22,	26,	"%s",	0,	NULL,	NULL,	NULL },	/* Megatec IC adds "ups.runtime" support function */
+	{ "battery.runtime",		0,	NULL,	"I\r",	"",	38,	'#',	"",	22,	26,	"%s",	QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Megatec IC adds "ups.runtime" support function */
 	{ "ups.firmware",		0,	NULL,	"I\r",	"",	38,	'#',	"",	28,	0,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },	/* Note: Per example above, this should end at 36 not 37 as in other dialects; we say 0 to go to end of line, wherever that is in fact */
 
 	/* Instant commands */
