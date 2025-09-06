@@ -943,6 +943,10 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		     && echo "$$OUT" >&2 \
 		     && echo "----- ^^^" >&2 ; \
 		     exit $$RES; } ; \
+	 if grep -E '^[ *.-]*(NOTE|TIP|IMPORTANT|CAUTION|WARNING):[ \t]*[a-z]' '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' ; then \
+		echo "FAILED: Admonition block should contain a sentence, not starting with a lower-case letter" >&2 ; \
+		exit 2 ; \
+	 fi ; \
 	 touch "$@"
 
 # If NUT_MAKE_SKIP_FANOUT!=true we have a hack to spellcheck certain files more
