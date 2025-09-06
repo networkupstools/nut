@@ -127,7 +127,16 @@ link:https://www.networkupstools.org/source/[Browse source directory]
 Binary packages
 ---------------
 
-NOTE: The only official releases from this project are source code.
+[NOTE]
+======
+The only official releases from this project are source code "tarballs",
+prepared by `make dist-files` from the tagged release commits on main trunk of
+the development code base (for more details see NUT Maintainer Guide in source).
+
+Best-effort packages or archives of installation prototype workspaces, prepared
+by regular CI builds, are planned to ease evaluation of the latest development
+for some platforms (currently serving only NUT for Windows).
+======
 
 NUT is already available in the following operating systems (and
 link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging-recipes-and-repository-sections[likely more]):
