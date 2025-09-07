@@ -52,7 +52,7 @@
 # endif
 #endif	/* WIN32 */
 
-#define MGE_HID_VERSION		"MGE HID 1.55"
+#define MGE_HID_VERSION		"MGE HID 1.56"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -1843,6 +1843,10 @@ static models_name_t mge_model_names [] =
 	 * USB metadata; the trailing space after "1200 " was significant for matching it.
 	 */
 	{ "Ellipse PRO", "1200 ", EATON_5P, "Eaton 5S1200" },
+	/* US version, 5S1500LCD, per
+	 * https://github.com/networkupstools/nut/issues/2380#issuecomment-3263848849
+	 */
+	{ "Ellipse PRO", "1500 ", EATON_5P, "Eaton 5S1500" },
 
 	/* Eaton 9E entry-level series per discussions in
 	 * https://github.com/networkupstools/nut/issues/1925
