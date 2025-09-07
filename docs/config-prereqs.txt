@@ -1724,7 +1724,7 @@ Currently known dependencies for basic build include:
 :; brew install curl wget midnight-commander
 ----
 
-NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
+NOTE: For `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
 the location of packaged resources (`${HOMEBREW_PREFIX}/etc/xml/catalog`).
 On one test system, man page builds spewed warnings like
 `<unknown>:1: SyntaxWarning: invalid escape sequence '\S'`

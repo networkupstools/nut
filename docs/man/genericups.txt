@@ -73,7 +73,7 @@ The default behavior of the driver is to exit immediately.  If this
 doesn't reliably trigger a shutdown in your UPS hardware, use this
 setting to give it more time to react.
 
-NOTE: very large values for +sdtime+ may create warnings from upsdrvctl if
+NOTE: Very large values for +sdtime+ may create warnings from upsdrvctl if
 it gets tired of waiting for the driver to return.
 
 CUSTOM CONFIGURATIONS
