@@ -39,6 +39,9 @@ https://github.com/networkupstools/nut/milestone/12
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
+ - `usbhid-ups` driver updates:
+   * Improved support for Eaton 5S1500LCD (US version). [#2380]
+
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)
      module installation location (for module-named dir to be created under
