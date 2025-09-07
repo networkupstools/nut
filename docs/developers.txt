@@ -86,7 +86,7 @@ Escaping special characters and quoting multiple-word elements is all
 handled by the state machine.  Using the same code for all config files
 avoids code duplication.
 
-NOTE: this does not apply to drivers.  Driver authors should use the
+NOTE: This does not apply to drivers.  Driver authors should use the
 `upsdrv_makevartable()` scheme to pick up values from 'ups.conf' file.
 Drivers should not have their own config files.
 

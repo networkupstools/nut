@@ -1133,7 +1133,7 @@ find the header files, use this switch to add additional `-I` flags.
 If your copy of `libgd` isn't linking properly, use this to give the
 proper `-L` and `-l` flags to make it work.  See `LIBS=` in gd's `Makefile`.
 
-NOTE: the `--with-gd` switches are not necessary if you have gd 2.0.8
+NOTE: The `--with-gd` switches are not necessary if you have gd 2.0.8
 or higher installed properly.  The `gdlib-config` script or pkg-config
 manifest will be detected and used by default in that situation.
 

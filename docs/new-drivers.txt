@@ -348,17 +348,17 @@ must use to manage them.
 
 	alarm_commit() -- push the value into ups.alarm
 
-NOTE: the ALARM flag in ups.status is automatically set whenever you use
-alarm_set.  To remove that flag from ups.status, call alarm_init and
-alarm_commit without calling alarm_set in the middle.
+NOTE: The ALARM flag in `ups.status` is automatically set whenever you use
+`alarm_set()`.  To remove that flag from `ups.status`, call `alarm_init()`
+and `alarm_commit()` without calling `alarm_set()` in the middle.
 
 You should never try to set or unset the ALARM flag manually.
 
-If you use UPS alarms, the call to status_commit() should be after
-alarm_commit(), otherwise there will be a delay in setting the ALARM
-flag in ups.status.
+If you use UPS alarms, the call to `status_commit()` should be *after*
+`alarm_commit()`, otherwise there will be a delay in setting the ALARM
+flag in `ups.status`.
 
-There is no official list of alarm words as of this writing, so don't
+There is no official list of alarm keywords as of this writing, so don't
 use these functions until you check with the upsdev list.
 
 Also refer to the <<daisychain,NUT daisychain support notes>> chapter

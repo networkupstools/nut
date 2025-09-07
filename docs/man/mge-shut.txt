@@ -57,8 +57,9 @@ isn't. Some UPSes will restart no matter what, even if the power is
 (still) out at the moment this timer elapses. In that case, you could try
 if setting 'ondelay = -1' in *ups.conf* helps.
 +
-WARNING: ondelay parameter was set in ten seconds unit in the legacy mge-shut
-driver ( 3 for 30 seconds) . It is now set in seconds ( 30 for 30 seconds).
+WARNING: The `ondelay` parameter was set in ten-seconds unit in
+the legacy linkman:mge-shut[8] driver (e.g. '3' for 30 seconds).
+It is now set in seconds ('30' for 30 seconds).
 Make sure you use the correct unit in your configuration.
 
 *notification*='num'::

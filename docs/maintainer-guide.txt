@@ -299,7 +299,7 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 ** add an entry to `news.txt`
 ** update `nut` and `ddl` submodules in nut-website/ to refer to latest info
    as of current release (this should update the website's version as well).
-   NOTE: for `nut` submodule be sure to refer to the tagged commit, not to
+   NOTE: For `nut` submodule be sure to refer to the tagged commit, not to
    the subsequent "in-development" codebase.
 ** in `source` submodule add a copy of tarball, checksum and hash files for
    download: `make dist{,-hash,-sig}` (or since NUT v2.8.3, `make dist-files`)

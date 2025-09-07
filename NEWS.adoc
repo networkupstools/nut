@@ -46,6 +46,9 @@ https://github.com/networkupstools/nut/milestone/12
      interpreter's 'site-packages' or 'dist-packages' location will be used,
      so you may have to adjust search paths for any other values. [#3062]
 
+ - Updated `make spellcheck` to help avoid asciidoc admonition blocks with
+   visually invalid sentences (after rendering as a box in HTML or PDF). [#3077]
+
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3
 ----------------------------------------------------
@@ -932,7 +935,7 @@ to avoid magic numbers in code like `set_exit_flag(-2)`, and revised whether
 it is getting set at all in "killpower" vs. other cases, based on new
 `handling_upsdrv_shutdown` internal flag.
 +
-NOTE: during this overhaul, many older drivers got their first ever supported
+NOTE: During this overhaul, many older drivers got their first ever supported
 INSTCMD such as `shutdown.return`, `shutdown.stayoff` or `load.off`. Default
 logic that was previously the content of `upsdrv_shutdown()` methods was often
 relocated into new `shutdown.default` INSTCMD definitions. [#2670]
@@ -1455,7 +1458,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    * extended default ranges for max battery voltage when guessing [#1279]
 
  - sms_ser, a driver for SMS Brazil UPS Protocol 1Phase, was introduced.
-   NOTE: it may later become a subdriver under nutdrv_qx. [#2090]
+   NOTE: It may later become a subdriver under nutdrv_qx. [#2090]
 
  - usbhid-ups updates:
    * added support for `subdriver` configuration option, to select the

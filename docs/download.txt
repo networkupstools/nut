@@ -61,7 +61,7 @@ following script in the directory you just checked out:
 
 	:; ./autogen.sh
 
-NOTE: it is optionally recommended to have Python 2.x or 3.x, and Perl, to
+NOTE: It is optionally recommended to have Python 2.x or 3.x, and Perl, to
 generate some files included into the `configure` script, presence is checked
 by autotools when it is generated. Neutered files can be just "touched" to
 pass the `autogen.sh` if these interpreters are not available, and effectively

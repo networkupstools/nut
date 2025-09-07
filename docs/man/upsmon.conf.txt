@@ -425,7 +425,7 @@ supplies in such cases, and a zero makes the effect of detected "OFF" state
 immediate. Built-in default value is 30 (seconds), to put an "OFF" state into
 effect (decrease known-fed supplies count) if it persists for this many seconds.
 +
-NOTE: so far we support the device reporting an "OFF" state which usually
+NOTE: So far we support the device reporting an "OFF" state which usually
 means completely un-powering the load; a bug-tracker issue was logged to
 design similar support for just some manageable outlets or outlet groups.
 
@@ -645,7 +645,7 @@ troubleshooting a deployment, without impacting foreground or background
 running mode directly. Command-line option `-D` can only increase this
 verbosity level.
 +
-NOTE: if the running daemon receives a `reload` command, presence of the
+NOTE: If the running daemon receives a `reload` command, presence of the
 `DEBUG_MIN NUMBER` value in the configuration file can be used to tune
 debugging verbosity in the running service daemon (it is recommended to
 comment it away or set the minimum to explicit zero when done, to avoid

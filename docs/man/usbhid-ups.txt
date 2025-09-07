@@ -248,7 +248,7 @@ The driver automatically tries to reconnect to the UPS on unexpected error.
 This parameter (in seconds) allows it to wait before attempting the reconnection.
 The default value is 0.
 +
-NOTE: for instance, it was found that Eaton MGE Ellipse Max 1500 FR UPS firmware
+NOTE: For instance, it was found that Eaton MGE Ellipse Max 1500 FR UPS firmware
 stops responding every few hours, which causes usbhid-ups driver to detect an
 libusb insufficient memory error; in this case, when the usbhid-ups driver tries
 to reconnect too early, the activity sometimes led the UPS firmware to crash and
