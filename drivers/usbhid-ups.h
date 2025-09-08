@@ -139,6 +139,7 @@ extern info_lkp_t kelvin_celsius_conversion[];
 
 typedef enum {
 	ONLINE = 0,	/* on line */
+	OFFLINE,	/* explicitly known as offline */
 	DISCHRG,	/* discharging */
 	CHRG,		/* charging */
 	LOWBATT,	/* low battery */

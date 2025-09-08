@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.67"
+#define DRIVER_VERSION	"0.68"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -285,6 +285,7 @@ typedef struct {
 static status_lkp_t status_info[] = {
 	/* map internal status strings to bit masks */
 	{ "online", STATUS(ONLINE) },
+	{ "offline", STATUS(OFFLINE) },
 	{ "dischrg", STATUS(DISCHRG) },
 	{ "chrg", STATUS(CHRG) },
 	{ "lowbatt", STATUS(LOWBATT) },
@@ -340,7 +341,7 @@ static status_lkp_t status_info[] = {
 
 info_lkp_t online_info[] = {
 	{ 1, "online", NULL, NULL },
-	{ 0, "!online", NULL, NULL },
+	{ 0, "offline", NULL, NULL },	/* previously was "!online" but that proved ambiguous */
 	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t discharging_info[] = {
@@ -2388,9 +2389,35 @@ static void ups_status_set(void)
 		onlinedischarge_log_throttle_charge = -1;
 	}
 
-	if (!(ups_status & STATUS(ONLINE))) {
+	if ((ups_status & STATUS(OFFLINE))) {
 		status_set("OB");		/* on battery */
+		if ((ups_status & STATUS(ONLINE))) {
+			upsdebugx(1,
+				"%s: seems that UPS [%s] reports both online and on-battery "
+				"power states at the same time",
+				__func__, upsname);
+		}
+	}
+
+	if (!(ups_status & STATUS(ONLINE))) {
+		if ((ups_status & STATUS(OFFLINE))) {
+			status_set("OB");		/* on battery */
+		} else {
+			if ((ups_status & STATUS(DISCHRG))) {
+				upsdebugx(1,
+					"%s: seems that UPS [%s] does not report a power state, "
+					"but it is discharging - assuming it is on battery now",
+					__func__, upsname);
+
+				status_set("OB");
+			} else {
+				upsdebugx(1,
+					"%s: seems that UPS [%s] does not report a power state",
+					__func__, upsname);
+			}
+		}
 	} else if ((ups_status & STATUS(DISCHRG))) {
+		/* We are known to be online AND discharging... */
 		int	do_logmsg = 0, current_charge = 0;
 
 		/* if online but discharging */
@@ -2536,7 +2563,7 @@ static void ups_status_set(void)
 			__func__, upsname, msg_charge);
 		}
 	} else if ((ups_status & STATUS(ONLINE))) {
-		/* if simply online */
+		/* we get here if simply online, not discharging */
 		status_set("OL");
 	}
 

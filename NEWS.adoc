@@ -41,6 +41,9 @@ https://github.com/networkupstools/nut/milestone/12
 
  - `usbhid-ups` driver updates:
    * Improved support for Eaton 5S1500LCD (US version). [#2380]
+   * For `ups.status` processing, do not assume that `!online`==`offline`,
+     it may well be that the device just did not report anything (e.g. if
+     it does not really talk USB HID). [#3080]
 
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)
