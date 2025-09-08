@@ -1683,10 +1683,11 @@ void upsdrv_initups(void)
 		 *  points are served from actually the device, and not
 		 *  from user configs or driver fallbacks).
 		 */
-		size_t	d, unused = 0;
-		size_t	bufsize = LARGEBUF, prevlen = 0;
+		size_t	d, unused_count = 0, halfused_count = 0;
+		size_t	unused_bufsize = LARGEBUF, halfused_bufsize = LARGEBUF, unused_prevlen = 0, halfused_prevlen = 0;
 		int	ret;
-		char	*unused_names = xcalloc(bufsize, sizeof(char));
+		char	*unused_names = xcalloc(unused_bufsize, sizeof(char)),
+			*halfused_names = xcalloc(halfused_bufsize, sizeof(char));
 
 		upsdebugx(1, "%s: checking if the subdriver code (mappings) "
 			"consults all data points from the device report",
@@ -1699,10 +1700,39 @@ void upsdrv_initups(void)
 				char	*pName = HIDGetDataItem(pData, subdriver->utab);
 				const char	*pType = HIDDataType(pData);
 				int	retry = 0;
+				char	**pNames = &unused_names;
+				size_t	*pCount = &unused_count, *pPrevLen = &unused_prevlen, *pBufSize = &unused_bufsize;
 
 				if (!pName) {
 					upsdebugx(2, "%s: error getting a Report Path name, skipped", __func__);
 					continue;
+				} else {
+					/* check if this is a half-used name */
+					hid_info_t *hidups_item;
+
+					for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
+						/* Note: using a shortcut with mapping table and
+						 * its "hidpath" strings here, to avoid stringifying
+						 * all paths known from report descriptor - more so
+						 * in a nested loop. */
+						if (hidups_item->hidpath && hidups_item->hiddata
+						&& !strcasecmp(hidups_item->hidpath, pName)
+						&& hidups_item->hiddata->mapping_handled
+						) {
+							upsdebugx(5, "%s: Path '%s' is half-used: "
+								"Type '%s' was not touched via mapping, "
+								"but '%s' was used",
+								__func__, NUT_STRARG(pName),
+								NUT_STRARG(pType),
+								NUT_STRARG(HIDDataType(hidups_item->hiddata))
+								);
+							pNames = &halfused_names;
+							pCount = &halfused_count;
+							pPrevLen = &halfused_prevlen;
+							pBufSize = &halfused_bufsize;
+							break;
+						}
+					}
 				}
 
 				/* We may overflow the pre-allocated buffer,
@@ -1711,7 +1741,7 @@ void upsdrv_initups(void)
 				 */
 				do {
 					retry = 0;
-					if (!unused_names) {
+					if (!*pNames) {
 						break;
 					}
 
@@ -1719,23 +1749,23 @@ void upsdrv_initups(void)
 						"to buffer of %" PRIuSIZE "/%" PRIuSIZE " bytes",
 						__func__, NUT_STRARG(pName), NUT_STRARG(pType),
 						pName ? strlen(pName) : 0,
-						prevlen, bufsize);
+						*pPrevLen, *pBufSize);
 
-					ret = snprintf(unused_names + prevlen, bufsize - prevlen - 1, "%s%s (%s)",
-						unused ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
+					ret = snprintf(*pNames + *pPrevLen, *pBufSize - *pPrevLen - 1, "%s%s (%s)",
+						*pCount ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
 
 					upsdebugx(6, "%s: snprintf() returned %d", __func__, ret);
-					unused_names[bufsize - 1] = '\0';
+					(*pNames)[*pBufSize - 1] = '\0';
 
 					if (ret < 0) {
 						upsdebugx(1, "%s: error collecting names, might not report unused descriptor names", __func__);
-					} else if ((size_t)ret + prevlen >= bufsize) {
-						if (bufsize < SIZE_MAX - LARGEBUF) {
-							bufsize += LARGEBUF;
-							upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, bufsize);
-								unused_names = realloc(unused_names, bufsize);
+					} else if ((size_t)ret + *pPrevLen >= *pBufSize) {
+						if (*pBufSize < SIZE_MAX - LARGEBUF) {
+							*pBufSize = *pBufSize + LARGEBUF;
+							upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
+								*pNames = realloc(*pNames, *pBufSize);
 
-							if (!unused_names) {
+							if (!*pNames) {
 								upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
 							} else {
 								upsdebugx(5, "%s: buffer overflowed, but reallocated successfully - retrying", __func__);
@@ -1746,25 +1776,38 @@ void upsdrv_initups(void)
 							upsdebugx(1, "%s: buffer overflowed, might not report unused descriptor names", __func__);
 						}
 					} else {
-						prevlen += (size_t)ret;
+						*pPrevLen += (size_t)ret;
 					}
 				} while (retry);
 
-				unused++;
+				*pCount = *pCount + 1;
 			}
 		}
 
-		if (unused) {
+		if (unused_count) {
 			upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
 				"report descriptor from HID UPS, but %" PRIuSIZE " "
-				"of them were not used by the mapping defined in "
-				"the selected NUT subdriver %s: %s",
-				__func__, pDesc->nitems, unused,
+				"of them were completely not used by name via the "
+				"mapping defined in the selected NUT subdriver %s: %s",
+				__func__, pDesc->nitems, unused_count,
 				subdriver->name, NUT_STRARG(unused_names));
+		}
+
+		if (halfused_count) {
+			upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
+				"report descriptor from HID UPS, but %" PRIuSIZE " "
+				"of them have several Types named by same Path value, "
+				"where at least one of the names was used and other(s) "
+				"were not used by the mapping defined in "
+				"the selected NUT subdriver %s: %s",
+				__func__, pDesc->nitems, halfused_count,
+				subdriver->name, NUT_STRARG(halfused_names));
 		}
 
 		if (unused_names)
 			free(unused_names);
+		if (halfused_names)
+			free(halfused_names);
 	}
 
 	if (!ups_status)
