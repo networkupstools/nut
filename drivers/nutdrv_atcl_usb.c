@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.20"
+#define DRIVER_VERSION	"1.21"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -559,11 +559,12 @@ void upsdrv_initups(void)
 			"Unable to find ATCL FOR UPS\n\n"
 
 			"Things to try:\n"
-			" - Connect UPS device to USB bus\n"
+			" - Connect UPS device to USB bus.\n"
 			" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n"
-			"   See upsdrvctl(8) and ups.conf(5).\n\n"
+			"   See upsdrvctl(8) and ups.conf(5).\n"
+			" - Check with nutdrv_qx(8) or blazer_usb(8) driver instead.\n"
 
-			"Fatal error: unusable configuration");
+			"\nFatal error: unusable configuration");
 	}
 
 }
