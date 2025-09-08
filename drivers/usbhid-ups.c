@@ -1887,6 +1887,10 @@ static int callback(
 	if (subdriver->fix_report_desc(arghd, pDesc)) {
 		upsdebugx(2, "Report Descriptor Fixed");
 	}
+	upsdebugx(1, "%s: calling HIDDumpTree(); in case of problems with device data "
+		"please note that a wrong subdriver could have been chosen above; "
+		"consider testing others with an explicit driver option",
+		__func__);
 	HIDDumpTree(udev, arghd, subdriver->utab);
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
