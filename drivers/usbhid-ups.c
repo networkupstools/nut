@@ -1885,7 +1885,7 @@ static int callback(
 	}
 
 	if (!subdriver) {
-		upsdebugx(1, "Manufacturer not supported!");
+		upsdebugx(1, "Manufacturer or model not supported!");
 		return 0;
 	}
 
