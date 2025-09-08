@@ -1677,17 +1677,18 @@ void upsdrv_initups(void)
 		 * temporarily place them into "experimental.*" or "unmapped.*"
 		 * namespaces.
 		 *
-		 * FIXME? Check also that all defined mappings were used?
-		 *  TBH, this is unlikely in practice, so of little value
-		 *  (unless we are troubleshooting and under 5 or 10 data
-		 *  points are served from actually the device, and not
-		 *  from user configs or driver fallbacks).
+		 * Later also check that all defined mappings were used?
+		 * TBH, this is unlikely in practice, so of little value
+		 * (unless we are troubleshooting and under 5 or 10 data
+		 * points are served from actually the device, and not
+		 * from user configs or driver fallbacks).
 		 */
 		size_t	d, unused_count = 0, halfused_count = 0;
-		size_t	unused_bufsize = LARGEBUF, halfused_bufsize = LARGEBUF, unused_prevlen = 0, halfused_prevlen = 0;
+		size_t	unused_bufsize = LARGEBUF, halfused_bufsize = LARGEBUF, unused_prevlen = 0, halfused_prevlen = 0, used_mappings = 0, known_mappings = 0;
 		int	ret;
 		char	*unused_names = xcalloc(unused_bufsize, sizeof(char)),
 			*halfused_names = xcalloc(halfused_bufsize, sizeof(char));
+		hid_info_t *hidups_item;
 
 		upsdebugx(1, "%s: checking if the subdriver code (mappings) "
 			"consults all data points from the device report",
@@ -1708,8 +1709,6 @@ void upsdrv_initups(void)
 					continue;
 				} else {
 					/* check if this is a half-used name */
-					hid_info_t *hidups_item;
-
 					for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 						/* Note: using a shortcut with mapping table and
 						 * its "hidpath" strings here, to avoid stringifying
@@ -1808,6 +1807,24 @@ void upsdrv_initups(void)
 			free(unused_names);
 		if (halfused_names)
 			free(halfused_names);
+
+		/* Check that all defined mappings were used? */
+		for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
+			known_mappings++;
+
+			if (hidups_item && hidups_item->hiddata
+			&& hidups_item->hiddata->mapping_handled
+			) {
+				used_mappings++;
+			}
+		}
+
+		upsdebugx( (known_mappings < 10 || used_mappings < 10) ? 1 : 5,
+			"%s: %" PRIuSIZE " mapping entries are defined, and "
+			"%" PRIuSIZE " were actually used from USB HID report, "
+			"in the selected NUT subdriver %s",
+			__func__, known_mappings, used_mappings,
+			subdriver->name);
 	}
 
 	if (!ups_status)
