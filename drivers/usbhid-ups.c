@@ -1685,7 +1685,7 @@ void upsdrv_initups(void)
 		 */
 		size_t	d, unused_count = 0, halfused_count = 0;
 		size_t	unused_bufsize = LARGEBUF, halfused_bufsize = LARGEBUF, unused_prevlen = 0, halfused_prevlen = 0, used_mappings = 0, known_mappings = 0;
-		int	ret;
+		int	ret_printf;
 		char	*unused_names = xcalloc(unused_bufsize, sizeof(char)),
 			*halfused_names = xcalloc(halfused_bufsize, sizeof(char));
 		hid_info_t *hidups_item;
@@ -1750,15 +1750,15 @@ void upsdrv_initups(void)
 						pName ? strlen(pName) : 0,
 						*pPrevLen, *pBufSize);
 
-					ret = snprintf(*pNames + *pPrevLen, *pBufSize - *pPrevLen - 1, "%s%s (%s)",
+					ret_printf = snprintf(*pNames + *pPrevLen, *pBufSize - *pPrevLen - 1, "%s%s (%s)",
 						*pCount ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
 
-					upsdebugx(6, "%s: snprintf() returned %d", __func__, ret);
+					upsdebugx(6, "%s: snprintf() returned %d", __func__, ret_printf);
 					(*pNames)[*pBufSize - 1] = '\0';
 
-					if (ret < 0) {
+					if (ret_printf < 0) {
 						upsdebugx(1, "%s: error collecting names, might not report unused descriptor names", __func__);
-					} else if ((size_t)ret + *pPrevLen >= *pBufSize) {
+					} else if ((size_t)ret_printf + *pPrevLen >= *pBufSize) {
 						if (*pBufSize < SIZE_MAX - LARGEBUF) {
 							*pBufSize = *pBufSize + LARGEBUF;
 							upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
@@ -1775,7 +1775,7 @@ void upsdrv_initups(void)
 							upsdebugx(1, "%s: buffer overflowed, might not report unused descriptor names", __func__);
 						}
 					} else {
-						*pPrevLen += (size_t)ret;
+						*pPrevLen += (size_t)ret_printf;
 					}
 				} while (retry);
 
