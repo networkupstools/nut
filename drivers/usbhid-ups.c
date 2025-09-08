@@ -1665,9 +1665,13 @@ void upsdrv_initups(void)
 		lbrb_log_delay_without_calibrating = 1;
 	}
 
+	upsdebugx(1, "%s: Performing an initial UPS data walk with subdriver %s...",
+		__func__, subdriver->name);
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
 	}
+
+	upsdebugx(1, "%s: Optionally adjust some threshold values, if applicable and requested to...", __func__);
 
 	/* Set values below from user settings only if supported by UPS */
 	if (dstate_getinfo("battery.charge.low")) {
@@ -1712,6 +1716,8 @@ void upsdrv_initups(void)
 		}
 	}
 
+	upsdebugx(1, "%s: Optionally enable instant commands related to shutdown, if applicable...", __func__);
+
 	/* Enable instant commands below only if supported by UPS */
 	if (find_nut_info("load.off.delay")) {
 		/* Adds default with a delay value of '0' (= immediate) */
@@ -1728,6 +1734,8 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
+
+	upsdebugx(1, "%s: finished", __func__);
 }
 
 void upsdrv_cleanup(void)
