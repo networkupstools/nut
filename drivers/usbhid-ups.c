@@ -1760,10 +1760,11 @@ void possibly_supported(const char *mfr, HIDDevice_t *arghd)
 {
 	upsdebugx(0,
 "This %s device (%04x:%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
+"by usbhid-ups. Please make sure you have an up-to-date version of NUT.\n"
+"If this does not fix the problem, try running the driver with the\n"
+"'-x productid=%04x' option, or iterate with explicit '-x subdriver=...'\n"
+"option. Please report your results to the NUT user's mailing list\n"
+"at <nut-upsuser@lists.alioth.debian.org>.\n",
 	mfr, arghd->VendorID, arghd->ProductID, arghd->ProductID);
 
 	if (arghd->VendorID == 0x06da) {
