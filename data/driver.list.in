@@ -1332,6 +1332,7 @@
 
 "Salicru"	"ups"	"2"	"SPS ONE 700VA"	"USB"	"blazer_usb"
 "Salicru"	"ups"	"2"	"SPS ONE 900VA"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1623
+"Salicru"	"ups"	"2"	"SPS 500 ONE"	"USB"	"nutdrv_qx (USB ID 0665:5161)"	# https://github.com/networkupstools/nut/issues/3079
 "Salicru"	"ups"	"2"	"SPS ONE 2000VA"	"USB"	"nutdrv_qx"	# https://www.salicru.com/en/ups/sps-one.html https://github.com/networkupstools/nut/issues/554
 "Salicru"	"ups"	"3"	"SPS 650/850 HOME"	"usb"	"usbhid-ups (experimental)"
 "Salicru"	"ups"	"3"	"SLC TWIN PRO2"	"usb"	"usbhid-ups (experimental)"	# https://github.com/networkupstools/nut/issues/450
