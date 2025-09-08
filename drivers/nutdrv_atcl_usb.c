@@ -561,10 +561,12 @@ void upsdrv_initups(void)
 			"Things to try:\n"
 			" - Connect UPS device to USB bus.\n"
 			" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n"
-			"   See upsdrvctl(8) and ups.conf(5).\n"
-			" - Check with nutdrv_qx(8) or blazer_usb(8) driver instead.\n"
+			"   See upsdrvctl(%s) and ups.conf(%s).\n"
+			" - Check with nutdrv_qx(%s) or blazer_usb(%s) driver instead.\n"
 
-			"\nFatal error: unusable configuration");
+			"\nFatal error: unusable configuration",
+			MAN_SECTION_CMD_SYS, MAN_SECTION_CFG,
+			MAN_SECTION_CMD_SYS, MAN_SECTION_CMD_SYS);
 	}
 
 }
