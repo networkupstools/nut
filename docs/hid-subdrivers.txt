@@ -111,8 +111,8 @@ Thus, the above usage tree is internally represented as:
 --------------------------------------------------------------------------------
 
 To make matters worse, most manufacturers define their own additional
-usages, even in cases where standard usages could have been used. for
-example Belkin defines `00860040` = ConfigVoltage (which is incidentally
+usages, even in cases where standard usages could have been used. For
+example Belkin defines `00860040` = `ConfigVoltage` (which is incidentally
 a violation of the USB PDC specification, as `00860040` is reserved for
 future use).
 
@@ -122,8 +122,8 @@ Thus, subdrivers generally need to provide:
 - a mapping of HID variables to NUT variables.
 
 Moreover, subdrivers might have to provide additional functionality,
-such as custom implementations of specific instant commands (load.off,
-shutdown.restart), and conversions of manufacturer specific data
+such as custom implementations of specific instant commands (`load.off`,
+`shutdown.restart`), and conversions of manufacturer specific data
 formats.
 
 
