@@ -1606,6 +1606,11 @@
 "Various"	"ups"	"2"	"Various Innova T"	"(USB ID 06da:0201)"	"blazer_ser or blazer_usb"
 "Various"	"ups"	"2"	"Various Innova RT"	"(USB ID 06da:0005)"	"blazer_ser or blazer_usb"
 "Various"	"ups"	"2"	"Various Innova 3/1 T"	"(USB ID 06da:0004)"	"blazer_ser or blazer_usb"
+"Various"	"ups"	"2"	"(Various USB)"	"(USB ID 0665:5161)"	"nutdrv_qx"
+"Various"	"ups"	"2"	"(Various USB)"	"Cypress Semiconductor USB to Serial (interface chip)"	"nutdrv_qx"
+"Various"	"ups"	"2"	"(Various USB)"	"INNO TECH USB to Serial (interface chip)"	"nutdrv_qx"
+"Various"	"ups"	"2"	"(Various USB)"	"Fry's Electronics MEC0003 (interface chip USB ID 0001:0000; may be accompanied by UPSmart software and use MEGA(USB) access mode there)"	"nutdrv_qx"	# Usually "no-name" UPS vendors that did not bother to register a real USB VID:PID
+"Various"	"ups"	"2"	"(Various USB)"	"ATCL FOR UPS (may be USB ID 0001:0000)"	"nutdrv_atcl_usb"	# Very rare, really; did not work for all devices even if they reported "ATCL FOR UPS" vendor/model strings
 
 "Victron/IMV"	"ups"	"1"	"(various)"	""	"victronups"
 "Victron/IMV"	"ups"	"1"	"Lite"	"crack cable"	"genericups upstype=10"
