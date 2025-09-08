@@ -1669,6 +1669,102 @@ void upsdrv_initups(void)
 		__func__, subdriver->name);
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
+	} else if (nut_debug_level > 0 && pDesc) {
+		/* Check if the subdriver code (mappings) and the device report
+		 * sit together well. Note that for yet-unknown concepts, the
+		 * NUT driver developers can either raise a discussion on how
+		 * to best formalize that concept via docs/nut-names.txt, or
+		 * temporarily place them into "experimental.*" or "unmapped.*"
+		 * namespaces.
+		 *
+		 * FIXME? Check also that all defined mappings were used?
+		 *  TBH, this is unlikely in practice, so of little value
+		 *  (unless we are troubleshooting and under 5 or 10 data
+		 *  points are served from actually the device, and not
+		 *  from user configs or driver fallbacks).
+		 */
+		size_t	d, unused = 0;
+		size_t	bufsize = LARGEBUF, prevlen = 0;
+		int	ret;
+		char	*unused_names = xcalloc(bufsize, sizeof(char));
+
+		upsdebugx(1, "%s: checking if the subdriver code (mappings) "
+			"consults all data points from the device report",
+			__func__);
+
+		for (d = 0; d < pDesc->nitems; d++) {
+			HIDData_t	*pData = &pDesc->item[d];
+
+			if (pData && !(pData->mapping_handled)) {
+				char	*pName = HIDGetDataItem(pData, subdriver->utab);
+				const char	*pType = HIDDataType(pData);
+				int	retry = 0;
+
+				if (!pName) {
+					upsdebugx(2, "%s: error getting a Report Path name, skipped", __func__);
+					continue;
+				}
+
+				/* We may overflow the pre-allocated buffer,
+				 * so we loop here until snprintf() succeeds
+				 * or we are known to have failed completely.
+				 */
+				do {
+					retry = 0;
+					if (!unused_names) {
+						break;
+					}
+
+					upsdebugx(5, "%s: adding '%s (%s)' (%" PRIuSIZE " bytes) "
+						"to buffer of %" PRIuSIZE "/%" PRIuSIZE " bytes",
+						__func__, NUT_STRARG(pName), NUT_STRARG(pType),
+						pName ? strlen(pName) : 0,
+						prevlen, bufsize);
+
+					ret = snprintf(unused_names + prevlen, bufsize - prevlen - 1, "%s%s (%s)",
+						unused ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
+
+					upsdebugx(6, "%s: snprintf() returned %d", __func__, ret);
+					unused_names[bufsize - 1] = '\0';
+
+					if (ret < 0) {
+						upsdebugx(1, "%s: error collecting names, might not report unused descriptor names", __func__);
+					} else if ((size_t)ret + prevlen >= bufsize) {
+						if (bufsize < SIZE_MAX - LARGEBUF) {
+							bufsize += LARGEBUF;
+							upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, bufsize);
+								unused_names = realloc(unused_names, bufsize);
+
+							if (!unused_names) {
+								upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
+							} else {
+								upsdebugx(5, "%s: buffer overflowed, but reallocated successfully - retrying", __func__);
+								/* Retry this loop */
+								retry = 1;
+							}
+						} else {
+							upsdebugx(1, "%s: buffer overflowed, might not report unused descriptor names", __func__);
+						}
+					} else {
+						prevlen += (size_t)ret;
+					}
+				} while (retry);
+
+				unused++;
+			}
+		}
+
+		if (unused) {
+			upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
+				"report descriptor from HID UPS, but %" PRIuSIZE " "
+				"of them were not used by the mapping defined in "
+				"the selected NUT subdriver %s: %s",
+				__func__, pDesc->nitems, unused,
+				subdriver->name, NUT_STRARG(unused_names));
+		}
+
+		if (unused_names)
+			free(unused_names);
 	}
 
 	if (!ups_status)
@@ -2123,7 +2219,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			 */
 		default:
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
-		}
+		}	/* end of: switch(mode) */
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -2834,16 +2930,33 @@ static const char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 /* return -1 on failure, 0 for a status update and 1 in all other cases */
 static int ups_infoval_set(hid_info_t *item, double value)
 {
-	const char	*nutvalue;
+	const char	*nutvalue = NULL;
+	const char	*pType = (nut_debug_level > 0 && item->hiddata) ? HIDDataType(item->hiddata) : NULL;
 
 	/* need lookup'ed translation? */
-	if (item->hid2info != NULL){
-
+	if (item->hid2info != NULL) {
 		if ((nutvalue = hu_find_infoval(item->hid2info, value)) == NULL) {
-			upsdebugx(5, "Lookup [%g] failed for [%s]", value, item->info_type);
+			upsdebugx(5, "%s: Lookup [%g] failed for [%s]", __func__, value, item->info_type);
 			return -1;
 		}
+		/* clause continued below after this message... */
+	}
 
+	if (item->hiddata != NULL) {
+		if (!item->hiddata->mapping_handled) {
+			upsdebugx(5, "%s: setting report descriptor mapping for '%s' (%s) as handled",
+				__func__, NUT_STRARG(item->hidpath), NUT_STRARG(pType));
+			item->hiddata->mapping_handled = TRUE;
+		} else {
+			upsdebugx(5, "%s: report descriptor mapping for '%s' (%s) was already set as handled",
+				__func__, NUT_STRARG(item->hidpath), NUT_STRARG(pType));
+		}
+	} else {
+		upsdebugx(5, "%s: got no report descriptor mapping for '%s'",
+			__func__, NUT_STRARG(item->hidpath));
+	}
+
+	if (nutvalue != NULL) {
 		/* deal with boolean items */
 		if (!strncmp(item->info_type, "BOOL", 4)) {
 			process_boolean_info(nutvalue);

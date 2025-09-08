@@ -46,6 +46,9 @@ https://github.com/networkupstools/nut/milestone/12
      it does not really talk USB HID). [#3080]
    * Suggest iterative testing with explicit `subdrivers` if collected data
      looks wrong. [#2058, #3061 et al]
+   * Check if the subdriver code (mapping table) and the device report
+     descriptor sit together well -- namely, that we do not unwittingly
+     ignore any useful reports. [#3082]
 
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)
