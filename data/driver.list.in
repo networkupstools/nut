@@ -1635,7 +1635,7 @@
 "Voltronic Power"	"ups"	"2"	"Prosine 800"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Vesta LED 850VA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"nutdrv_qx"
-"Voltronic Power"	"ups"	"2"	"(various)"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"(various)"	"USB (especially ones with USB ID 0665:5161)"	"nutdrv_qx"
 
 "WinPower"	"ups"	"2"	"CPM-800"	""	"blazer_ser"
 
