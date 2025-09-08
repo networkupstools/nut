@@ -2168,7 +2168,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case LIBUSB_ERROR_PIPE:      /* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
-		   upsdebugx(1, "HIDGetDataValue unknown retcode '%i'", retcode);
+			upsdebugx(1, "HIDGetDataValue unknown retcode '%i'", retcode);
 			continue;
 		}
 
