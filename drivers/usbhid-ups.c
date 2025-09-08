@@ -2542,14 +2542,18 @@ static void ups_status_set(void)
 
 	isCalibrating = status_get("CAL");
 
-	if ((ups_status & STATUS(DISCHRG)) &&
-		!(ups_status & STATUS(DEPLETED))) {
+	if ((ups_status & STATUS(DISCHRG))
+	&& !(ups_status & STATUS(DEPLETED))
+	) {
 		status_set("DISCHRG");		/* discharging */
 	}
-	if ((ups_status & STATUS(CHRG)) &&
-		!(ups_status & STATUS(FULLYCHARGED))) {
+
+	if ((ups_status & STATUS(CHRG))
+	&& !(ups_status & STATUS(FULLYCHARGED))
+	) {
 		status_set("CHRG");		/* charging */
 	}
+
 	if (ups_status & (STATUS(LOWBATT) | STATUS(TIMELIMITEXP) | STATUS(SHUTDOWNIMM))) {
 		if (lbrb_log_delay_sec < 1
 		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
@@ -2575,9 +2579,11 @@ static void ups_status_set(void)
 	} else {
 		last_lb_start = 0;
 	}
+
 	if (ups_status & STATUS(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
+
 	if ((ups_status & STATUS(REPLACEBATT)) || (ups_status & STATUS(NOBATTERY))) {
 		if (lbrb_log_delay_sec < 1
 		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
@@ -2604,25 +2610,31 @@ static void ups_status_set(void)
 	} else {
 		last_rb_start = 0;
 	}
+
 	if (ups_status & STATUS(TRIM)) {
 		status_set("TRIM");		/* SmartTrim */
 	}
+
 	if (ups_status & STATUS(BOOST)) {
 		status_set("BOOST");		/* SmartBoost */
 	}
+
 	if (ups_status & (STATUS(BYPASSAUTO) | STATUS(BYPASSMAN))) {
 		status_set("BYPASS");		/* on bypass */
 	}
+
 	if (ups_status & STATUS(ECOMODE)) {
 		buzzmode_set("vendor:default:ECO");	/* on ECO(HE) Mode,
 						 * should not happen
 						 * via ups.status anymore */
 	}
+
 	if (ups_status & STATUS(ESSMODE)) {
 		buzzmode_set("vendor:default:ESS");	/* on ESS Mode,
 						 * should not happen
 						 * via ups.status anymore */
 	}
+
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
 	}
