@@ -219,6 +219,7 @@
 "Belkin"	"ups"	"2"	"Universal UPS F6C1100-UNV"	"USB (2007 models, vendor id: 0665)"	"blazer_usb"
 "Belkin"	"ups"	"3"	"Universal UPS F6C1200-UNV"	"USB (<= 2005 models, vendor id: 050d)"	"usbhid-ups"
 "Belkin"	"ups"	"2"	"Universal UPS F6C1200-UNV"	"USB (2007 models, vendor id: 0665)"	"blazer_usb"
+"Belkin"	"ups"	"2"	"Universal UPS F6C1200-UNV"	"USB (USB ID 0665:5161)"	"nutdrv_qx"
 "Belkin"	"ups"	"2"	"Universal UPS F6H350deUNV"	"serial port"	"blazer_ser"
 "Belkin"	"ups"	"2"	"Universal UPS F6H350ukUNV"	"serial port"	"blazer_ser"
 "Belkin"	"ups"	"2"	"Universal UPS F6H500ukUNV"	"serial port"	"blazer_ser"
