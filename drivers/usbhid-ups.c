@@ -1819,7 +1819,9 @@ void upsdrv_initups(void)
 			}
 		}
 
-		upsdebugx( (known_mappings < 10 || used_mappings < 10) ? 1 : 5,
+		/* We arbitrarily declare that having under 10 known or used
+		 * mappings is few enough to be loud about this */
+		upsdebugx( (known_mappings < 10 || used_mappings < 10) ? 0 : 5,
 			"%s: %" PRIuSIZE " mapping entries are defined, and "
 			"%" PRIuSIZE " were actually used from USB HID report, "
 			"in the selected NUT subdriver %s",
