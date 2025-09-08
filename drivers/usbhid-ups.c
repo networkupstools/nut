@@ -1671,6 +1671,13 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
 	}
 
+	if (!ups_status)
+		upslogx(LOG_WARNING, "%s: No flag bits for 'ups.status' were explicitly reported; "
+			"it is possible a wrong 'subdriver' option was requested or detected "
+			"(in case of problems with device data, consider testing with other "
+			"explicit driver option 'subdriver' values)",
+			__func__);
+
 	upsdebugx(1, "%s: Optionally adjust some threshold values, if applicable and requested to...", __func__);
 
 	/* Set values below from user settings only if supported by UPS */
