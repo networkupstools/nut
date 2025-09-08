@@ -1955,6 +1955,12 @@ static void process_boolean_info(const char *nutvalue)
 
 	upsdebugx(5, "process_boolean_info: %s", nutvalue);
 
+	/* Only neuter the other if we know the opposite to be true */
+	if (!strcmp(nutvalue, "online"))
+		process_boolean_info("!offline");
+	else if (!strcmp(nutvalue, "offline"))
+		process_boolean_info("!online");
+
 	if (*nutvalue == '!') {
 		nutvalue++;
 		clear = 1;
