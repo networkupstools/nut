@@ -32,7 +32,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.100"
+#define APC_HID_VERSION "APC HID 0.101"
 
 /* APC */
 #define APC_VENDORID 0x051d
@@ -98,6 +98,12 @@ static usb_device_id_t apc_usb_device_table[] = {
 	 * seems to have bumped the productid from 3 to 4
 	 * See https://github.com/networkupstools/nut/issues/1429 */
 	{ USB_DEVICE(APC_VENDORID, 0x0004), disable_interrupt_pipe },
+
+	/* To be introduced in/after 2025, details fuzzy so far
+	 * (e.g. if any tweaks would be needed, or which).
+	 * Placeholder for at least some out-of-the-box support per
+	 * https://github.com/networkupstools/nut/issues/3047 */
+	{ USB_DEVICE(APC_VENDORID, 0x0005), NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
