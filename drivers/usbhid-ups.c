@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.67"
+#define DRIVER_VERSION	"0.68"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -285,6 +285,7 @@ typedef struct {
 static status_lkp_t status_info[] = {
 	/* map internal status strings to bit masks */
 	{ "online", STATUS(ONLINE) },
+	{ "offline", STATUS(OFFLINE) },
 	{ "dischrg", STATUS(DISCHRG) },
 	{ "chrg", STATUS(CHRG) },
 	{ "lowbatt", STATUS(LOWBATT) },
@@ -340,7 +341,7 @@ static status_lkp_t status_info[] = {
 
 info_lkp_t online_info[] = {
 	{ 1, "online", NULL, NULL },
-	{ 0, "!online", NULL, NULL },
+	{ 0, "offline", NULL, NULL },	/* previously was "!online" but that proved ambiguous */
 	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t discharging_info[] = {
@@ -1664,9 +1665,178 @@ void upsdrv_initups(void)
 		lbrb_log_delay_without_calibrating = 1;
 	}
 
+	upsdebugx(1, "%s: Performing an initial UPS data walk with subdriver %s...",
+		__func__, subdriver->name);
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
+	} else if (nut_debug_level > 0 && pDesc) {
+		/* Check if the subdriver code (mappings) and the device report
+		 * sit together well. Note that for yet-unknown concepts, the
+		 * NUT driver developers can either raise a discussion on how
+		 * to best formalize that concept via docs/nut-names.txt, or
+		 * temporarily place them into "experimental.*" or "unmapped.*"
+		 * namespaces.
+		 *
+		 * Later also check that all defined mappings were used?
+		 * TBH, this is unlikely in practice, so of little value
+		 * (unless we are troubleshooting and under 5 or 10 data
+		 * points are served from actually the device, and not
+		 * from user configs or driver fallbacks).
+		 */
+		size_t	d, unused_count = 0, halfused_count = 0;
+		size_t	unused_bufsize = LARGEBUF, halfused_bufsize = LARGEBUF, unused_prevlen = 0, halfused_prevlen = 0, used_mappings = 0, known_mappings = 0;
+		int	ret_printf;
+		char	*unused_names = xcalloc(unused_bufsize, sizeof(char)),
+			*halfused_names = xcalloc(halfused_bufsize, sizeof(char));
+		hid_info_t *hidups_item;
+
+		upsdebugx(1, "%s: checking if the subdriver code (mappings) "
+			"consults all data points from the device report",
+			__func__);
+
+		for (d = 0; d < pDesc->nitems; d++) {
+			HIDData_t	*pData = &pDesc->item[d];
+
+			if (pData && !(pData->mapping_handled)) {
+				char	*pName = HIDGetDataItem(pData, subdriver->utab);
+				const char	*pType = HIDDataType(pData);
+				int	retry = 0;
+				char	**pNames = &unused_names;
+				size_t	*pCount = &unused_count, *pPrevLen = &unused_prevlen, *pBufSize = &unused_bufsize;
+
+				if (!pName) {
+					upsdebugx(2, "%s: error getting a Report Path name, skipped", __func__);
+					continue;
+				} else {
+					/* check if this is a half-used name */
+					for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
+						/* Note: using a shortcut with mapping table and
+						 * its "hidpath" strings here, to avoid stringifying
+						 * all paths known from report descriptor - more so
+						 * in a nested loop. */
+						if (hidups_item->hidpath && hidups_item->hiddata
+						&& !strcasecmp(hidups_item->hidpath, pName)
+						&& hidups_item->hiddata->mapping_handled
+						) {
+							upsdebugx(5, "%s: Path '%s' is half-used: "
+								"Type '%s' was not touched via mapping, "
+								"but '%s' was used",
+								__func__, NUT_STRARG(pName),
+								NUT_STRARG(pType),
+								NUT_STRARG(HIDDataType(hidups_item->hiddata))
+								);
+							pNames = &halfused_names;
+							pCount = &halfused_count;
+							pPrevLen = &halfused_prevlen;
+							pBufSize = &halfused_bufsize;
+							break;
+						}
+					}
+				}
+
+				/* We may overflow the pre-allocated buffer,
+				 * so we loop here until snprintf() succeeds
+				 * or we are known to have failed completely.
+				 */
+				do {
+					retry = 0;
+					if (!*pNames) {
+						break;
+					}
+
+					upsdebugx(5, "%s: adding '%s (%s)' (%" PRIuSIZE " bytes) "
+						"to buffer of %" PRIuSIZE "/%" PRIuSIZE " bytes",
+						__func__, NUT_STRARG(pName), NUT_STRARG(pType),
+						pName ? strlen(pName) : 0,
+						*pPrevLen, *pBufSize);
+
+					ret_printf = snprintf(*pNames + *pPrevLen, *pBufSize - *pPrevLen - 1, "%s%s (%s)",
+						*pCount ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
+
+					upsdebugx(6, "%s: snprintf() returned %d", __func__, ret_printf);
+					(*pNames)[*pBufSize - 1] = '\0';
+
+					if (ret_printf < 0) {
+						upsdebugx(1, "%s: error collecting names, might not report unused descriptor names", __func__);
+					} else if ((size_t)ret_printf + *pPrevLen >= *pBufSize) {
+						if (*pBufSize < SIZE_MAX - LARGEBUF) {
+							*pBufSize = *pBufSize + LARGEBUF;
+							upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
+								*pNames = realloc(*pNames, *pBufSize);
+
+							if (!*pNames) {
+								upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
+							} else {
+								upsdebugx(5, "%s: buffer overflowed, but reallocated successfully - retrying", __func__);
+								/* Retry this loop */
+								retry = 1;
+							}
+						} else {
+							upsdebugx(1, "%s: buffer overflowed, might not report unused descriptor names", __func__);
+						}
+					} else {
+						*pPrevLen += (size_t)ret_printf;
+					}
+				} while (retry);
+
+				*pCount = *pCount + 1;
+			}
+		}
+
+		if (unused_count) {
+			upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
+				"report descriptor from HID UPS, but %" PRIuSIZE " "
+				"of them were completely not used by name via the "
+				"mapping defined in the selected NUT subdriver %s: %s",
+				__func__, pDesc->nitems, unused_count,
+				subdriver->name, NUT_STRARG(unused_names));
+		}
+
+		if (halfused_count) {
+			upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
+				"report descriptor from HID UPS, but %" PRIuSIZE " "
+				"of them have several Types named by same Path value, "
+				"where at least one of the names was used and other(s) "
+				"were not used by the mapping defined in "
+				"the selected NUT subdriver %s: %s",
+				__func__, pDesc->nitems, halfused_count,
+				subdriver->name, NUT_STRARG(halfused_names));
+		}
+
+		if (unused_names)
+			free(unused_names);
+		if (halfused_names)
+			free(halfused_names);
+
+		/* Check that all defined mappings were used? */
+		for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
+			known_mappings++;
+
+			if (hidups_item && hidups_item->hiddata
+			&& hidups_item->hiddata->mapping_handled
+			) {
+				used_mappings++;
+			}
+		}
+
+		/* We arbitrarily declare that having under 10 known or used
+		 * mappings is few enough to be loud about this */
+		upsdebugx( (known_mappings < 10 || used_mappings < 10) ? 0 : 5,
+			"%s: %" PRIuSIZE " mapping entries are defined, and "
+			"%" PRIuSIZE " were actually used from USB HID report, "
+			"in the selected NUT subdriver %s",
+			__func__, known_mappings, used_mappings,
+			subdriver->name);
 	}
+
+	if (!ups_status)
+		upslogx(LOG_WARNING, "%s: No flag bits for 'ups.status' were explicitly reported; "
+			"it is possible a wrong 'subdriver' option was requested or detected "
+			"(in case of problems with device data, consider testing with other "
+			"explicit driver option 'subdriver' values)",
+			__func__);
+
+	upsdebugx(1, "%s: Optionally adjust some threshold values, if applicable and requested to...", __func__);
 
 	/* Set values below from user settings only if supported by UPS */
 	if (dstate_getinfo("battery.charge.low")) {
@@ -1711,6 +1881,8 @@ void upsdrv_initups(void)
 		}
 	}
 
+	upsdebugx(1, "%s: Optionally enable instant commands related to shutdown, if applicable...", __func__);
+
 	/* Enable instant commands below only if supported by UPS */
 	if (find_nut_info("load.off.delay")) {
 		/* Adds default with a delay value of '0' (= immediate) */
@@ -1727,6 +1899,8 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
+
+	upsdebugx(1, "%s: finished", __func__);
 }
 
 void upsdrv_cleanup(void)
@@ -1759,10 +1933,11 @@ void possibly_supported(const char *mfr, HIDDevice_t *arghd)
 {
 	upsdebugx(0,
 "This %s device (%04x:%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
+"by usbhid-ups. Please make sure you have an up-to-date version of NUT.\n"
+"If this does not fix the problem, try running the driver with the\n"
+"'-x productid=%04x' option, or iterate with explicit '-x subdriver=...'\n"
+"option. Please report your results to the NUT user's mailing list\n"
+"at <nut-upsuser@lists.alioth.debian.org>.\n",
 	mfr, arghd->VendorID, arghd->ProductID, arghd->ProductID);
 
 	if (arghd->VendorID == 0x06da) {
@@ -1779,6 +1954,12 @@ static void process_boolean_info(const char *nutvalue)
 	int clear = 0;
 
 	upsdebugx(5, "process_boolean_info: %s", nutvalue);
+
+	/* Only neuter the other if we know the opposite to be true */
+	if (!strcmp(nutvalue, "online"))
+		process_boolean_info("!offline");
+	else if (!strcmp(nutvalue, "offline"))
+		process_boolean_info("!online");
 
 	if (*nutvalue == '!') {
 		nutvalue++;
@@ -1868,7 +2049,7 @@ static int callback(
 	}
 
 	if (!subdriver) {
-		upsdebugx(1, "Manufacturer not supported!");
+		upsdebugx(1, "Manufacturer or model not supported!");
 		return 0;
 	}
 
@@ -1877,6 +2058,10 @@ static int callback(
 	if (subdriver->fix_report_desc(arghd, pDesc)) {
 		upsdebugx(2, "Report Descriptor Fixed");
 	}
+	upsdebugx(1, "%s: calling HIDDumpTree(); in case of problems with device data "
+		"please note that a wrong subdriver could have been chosen above; "
+		"consider testing others with an explicit driver option",
+		__func__);
 	HIDDumpTree(udev, arghd, subdriver->utab);
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
@@ -2102,7 +2287,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			 */
 		default:
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
-		}
+		}	/* end of: switch(mode) */
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -2168,7 +2353,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case LIBUSB_ERROR_PIPE:      /* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
-		   upsdebugx(1, "HIDGetDataValue unknown retcode '%i'", retcode);
+			upsdebugx(1, "HIDGetDataValue unknown retcode '%i'", retcode);
 			continue;
 		}
 
@@ -2388,9 +2573,35 @@ static void ups_status_set(void)
 		onlinedischarge_log_throttle_charge = -1;
 	}
 
-	if (!(ups_status & STATUS(ONLINE))) {
+	if ((ups_status & STATUS(OFFLINE))) {
 		status_set("OB");		/* on battery */
+		if ((ups_status & STATUS(ONLINE))) {
+			upsdebugx(1,
+				"%s: seems that UPS [%s] reports both online and on-battery "
+				"power states at the same time",
+				__func__, upsname);
+		}
+	}
+
+	if (!(ups_status & STATUS(ONLINE))) {
+		if ((ups_status & STATUS(OFFLINE))) {
+			status_set("OB");		/* on battery */
+		} else {
+			if ((ups_status & STATUS(DISCHRG))) {
+				upsdebugx(1,
+					"%s: seems that UPS [%s] does not report a power state, "
+					"but it is discharging - assuming it is on battery now",
+					__func__, upsname);
+
+				status_set("OB");
+			} else {
+				upsdebugx(1,
+					"%s: seems that UPS [%s] does not report a power state",
+					__func__, upsname);
+			}
+		}
 	} else if ((ups_status & STATUS(DISCHRG))) {
+		/* We are known to be online AND discharging... */
 		int	do_logmsg = 0, current_charge = 0;
 
 		/* if online but discharging */
@@ -2536,20 +2747,24 @@ static void ups_status_set(void)
 			__func__, upsname, msg_charge);
 		}
 	} else if ((ups_status & STATUS(ONLINE))) {
-		/* if simply online */
+		/* we get here if simply online, not discharging */
 		status_set("OL");
 	}
 
 	isCalibrating = status_get("CAL");
 
-	if ((ups_status & STATUS(DISCHRG)) &&
-		!(ups_status & STATUS(DEPLETED))) {
+	if ((ups_status & STATUS(DISCHRG))
+	&& !(ups_status & STATUS(DEPLETED))
+	) {
 		status_set("DISCHRG");		/* discharging */
 	}
-	if ((ups_status & STATUS(CHRG)) &&
-		!(ups_status & STATUS(FULLYCHARGED))) {
+
+	if ((ups_status & STATUS(CHRG))
+	&& !(ups_status & STATUS(FULLYCHARGED))
+	) {
 		status_set("CHRG");		/* charging */
 	}
+
 	if (ups_status & (STATUS(LOWBATT) | STATUS(TIMELIMITEXP) | STATUS(SHUTDOWNIMM))) {
 		if (lbrb_log_delay_sec < 1
 		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
@@ -2575,9 +2790,11 @@ static void ups_status_set(void)
 	} else {
 		last_lb_start = 0;
 	}
+
 	if (ups_status & STATUS(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
+
 	if ((ups_status & STATUS(REPLACEBATT)) || (ups_status & STATUS(NOBATTERY))) {
 		if (lbrb_log_delay_sec < 1
 		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
@@ -2604,25 +2821,31 @@ static void ups_status_set(void)
 	} else {
 		last_rb_start = 0;
 	}
+
 	if (ups_status & STATUS(TRIM)) {
 		status_set("TRIM");		/* SmartTrim */
 	}
+
 	if (ups_status & STATUS(BOOST)) {
 		status_set("BOOST");		/* SmartBoost */
 	}
+
 	if (ups_status & (STATUS(BYPASSAUTO) | STATUS(BYPASSMAN))) {
 		status_set("BYPASS");		/* on bypass */
 	}
+
 	if (ups_status & STATUS(ECOMODE)) {
 		buzzmode_set("vendor:default:ECO");	/* on ECO(HE) Mode,
 						 * should not happen
 						 * via ups.status anymore */
 	}
+
 	if (ups_status & STATUS(ESSMODE)) {
 		buzzmode_set("vendor:default:ESS");	/* on ESS Mode,
 						 * should not happen
 						 * via ups.status anymore */
 	}
+
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
 	}
@@ -2775,16 +2998,33 @@ static const char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 /* return -1 on failure, 0 for a status update and 1 in all other cases */
 static int ups_infoval_set(hid_info_t *item, double value)
 {
-	const char	*nutvalue;
+	const char	*nutvalue = NULL;
+	const char	*pType = (nut_debug_level > 0 && item->hiddata) ? HIDDataType(item->hiddata) : NULL;
 
 	/* need lookup'ed translation? */
-	if (item->hid2info != NULL){
-
+	if (item->hid2info != NULL) {
 		if ((nutvalue = hu_find_infoval(item->hid2info, value)) == NULL) {
-			upsdebugx(5, "Lookup [%g] failed for [%s]", value, item->info_type);
+			upsdebugx(5, "%s: Lookup [%g] failed for [%s]", __func__, value, item->info_type);
 			return -1;
 		}
+		/* clause continued below after this message... */
+	}
 
+	if (item->hiddata != NULL) {
+		if (!item->hiddata->mapping_handled) {
+			upsdebugx(5, "%s: setting report descriptor mapping for '%s' (%s) as handled",
+				__func__, NUT_STRARG(item->hidpath), NUT_STRARG(pType));
+			item->hiddata->mapping_handled = TRUE;
+		} else {
+			upsdebugx(5, "%s: report descriptor mapping for '%s' (%s) was already set as handled",
+				__func__, NUT_STRARG(item->hidpath), NUT_STRARG(pType));
+		}
+	} else {
+		upsdebugx(5, "%s: got no report descriptor mapping for '%s'",
+			__func__, NUT_STRARG(item->hidpath));
+	}
+
+	if (nutvalue != NULL) {
 		/* deal with boolean items */
 		if (!strncmp(item->info_type, "BOOL", 4)) {
 			process_boolean_info(nutvalue);
