@@ -140,7 +140,7 @@ upload publish:
 # it "knows what it's doing" and goes quietly about its work :)
 # Does not support "sdist" though. Oh well.
 .pypi-dist-pip-wheel: .pypi-tools-dist-wheel .pypi-src
-	@echo "  PYPI	Generate PyPI module distribution (using 'pip wheel')"
+	@echo "  PYPI	Generate PyPI module distribution (using 'pip wheel'; note no 'sdist' here)"
 	@rm -rf $(GENERATED_DIST) "$@"
 	@$(PYTHON) -m pip wheel --no-deps -w dist .
 	@touch "$@"
