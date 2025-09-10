@@ -55,7 +55,7 @@ jobs:
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
     - name: Install pypa/setuptools
       run: >-
-        ${{ steps.pythoncmd.outputs.PYTHON }} -m
+        ${{ steps.pythoncmd.outputs.PYTHON }} -m \
             pip install wheel build setuptools
     - name: Prepare source layout and Build a binary wheel
       run: >-
