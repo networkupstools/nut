@@ -138,7 +138,7 @@ upload publish:
 # Using "setup.py" directly causes warnings about its deprecation
 # While "pip" distribution generator also uses it internally,
 # it "knows what it's doing" and goes quietly about its work :)
-# Does not support "sdis" though. Oh well.
+# Does not support "sdist" though. Oh well.
 .pypi-dist-pip-wheel: .pypi-tools-dist-wheel .pypi-src
 	@echo "  PYPI	Generate PyPI module distribution (using 'pip wheel')"
 	@rm -rf $(GENERATED_DIST) "$@"
