@@ -56,7 +56,7 @@ jobs:
     - name: Install pypa/setuptools
       run: >-
         ${{ steps.pythoncmd.outputs.PYTHON }} -m
-        pip install wheel build
+            pip install wheel build setuptools
     - name: Prepare source layout and Build a binary wheel
       run: >-
         set -e ;
