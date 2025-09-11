@@ -184,6 +184,8 @@ static int nut_debug_level_args = 0;
 
 /* pre-declare internal methods */
 static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize);
+static void set_alarm(void);
+static void clear_alarm(void);
 
 static void setflag(int *val, int flag)
 {
@@ -993,28 +995,63 @@ static void doshutdown(void)
 				shutdowncmd);
 	}
 
+	upsdebugx(1, "%s: current exit_flag=%i", __func__, exit_flag);
 	if (shutdownexitdelay == 0) {
 		upsdebugx(1,
 			"Exiting upsmon immediately "
 			"after initiating shutdown, by default");
-	} else
-	if (shutdownexitdelay < 0) {
-		upslogx(LOG_WARNING,
-			"Configured to not exit upsmon "
-			"after initiating shutdown");
-		/* Technically, here we sleep until SIGTERM or poweroff */
-		do {
-			sleep(1);
-		} while (!exit_flag);
 	} else {
-		upslogx(LOG_WARNING,
-			"Configured to only exit upsmon %d sec "
-			"after initiating shutdown", shutdownexitdelay);
+		if (shutdownexitdelay < 0) {
+			upslogx(LOG_WARNING,
+				"Configured to not exit upsmon "
+				"after initiating shutdown");
+		} else {
+			upslogx(LOG_WARNING,
+				"Configured to only exit upsmon %d sec "
+				"after initiating shutdown", shutdownexitdelay);
+		}
+		if (exit_flag) {
+			/* TOTHINK: Are there cases when we want to
+			 * ignore it? Or is a SIGTERM, SIGBRK etc.
+			 * a good enough reason to do exit quickly? */
+			upslogx(LOG_WARNING,
+				"Note that 'exit_flag' was raised by a "
+				"signal, so this process will not in fact "
+				"wait that long");
+		}
+
+		/* Technically, here we sleep until SIGTERM or poweroff,
+		 * or in case of initially positive shutdownexitdelay --
+		 * when it counts down to zero.
+		 */
 		do {
+			utype_t	*ups;
+			char	temp[SMALLBUF];
+			long	maxlogins = 0, logins = 0;
+
+			/* Contact the data server(s) regularly so this
+			 * client is not assumed dead while looping */
+			for (ups = firstups; ups != NULL && !exit_flag; ups = ups->next) {
+				set_alarm();
+
+				if (get_var(ups, "numlogins", temp, sizeof(temp)) >= 0) {
+					logins = strtol(temp, (char **)NULL, 10);
+
+					if (logins > maxlogins)
+						maxlogins = logins;
+				}
+
+				clear_alarm();
+			}
+
+			if (shutdownexitdelay > 0)
+				shutdownexitdelay--;
 			sleep(1);
-			shutdownexitdelay--;
-		} while (!exit_flag && shutdownexitdelay);
+		} while (!exit_flag && shutdownexitdelay != 0);
 	}
+
+	upsdebugx(1, "%s: current exit_flag=%i", __func__, exit_flag);
+	upslogx(LOG_WARNING, "Exiting upsmon program after initiating shutdown");
 	exit(EXIT_SUCCESS);
 }
 
@@ -1573,8 +1610,14 @@ static void recalc(void)
 	upsdebugx(3, "Current power value: %u", val_ol);
 	upsdebugx(3, "Minimum power value: %u", minsupplies);
 
-	if (val_ol < minsupplies)
+	/* Note that a monitoring-only upsmon instance would have MINSUPPLIES 0
+	 * and so would never see a smaller amount of healthily online UPSes */
+	if (val_ol < minsupplies) {
+		upslogx(LOG_WARNING, "Too few UPS(es) are healthy (%u<%u), "
+			"initiating forced shutdown",
+			val_ol, minsupplies);
 		forceshutdown();
+	}
 }
 
 static void ups_low_batt(utype_t *ups)
@@ -2542,6 +2585,7 @@ static void sigpipe(int sig)
 /* SIGQUIT, SIGTERM handler */
 static void set_exit_flag(int sig)
 {
+	upslogx(LOG_INFO, "Signal %d: User requested EXIT", sig);
 	exit_flag = sig;
 }
 
@@ -2610,6 +2654,7 @@ static void set_reload_flag(int sig)
 {
 	NUT_UNUSED_VARIABLE(sig);
 
+	upslogx(LOG_INFO, "Signal %d: User requested RELOAD", sig);
 	reload_flag = 1;
 }
 
@@ -3181,7 +3226,8 @@ static void clear_pdflag(void)
 		unlink(powerdownflag);
 }
 
-/* exit with success only if it exists and is proper */
+/* exit with success only if the POWERDOWNFLAG file is configured,
+ * exists and has proper contents */
 static int check_pdflag(void)
 {
 	int	ret;
@@ -3314,10 +3360,13 @@ static void runparent(int fd)
 	sret = system(shutdowncmd);
 
 	if (sret != 0)
-		upslogx(LOG_ERR, "parent: Unable to call shutdown command: %s",
+		upslogx(LOG_ERR, "upsmon parent: Unable to call shutdown command: %s",
 			shutdowncmd);
 
 	close(fd);
+	upslogx(LOG_WARNING, "upsmon parent: Exiting after %s (%i) shutdown command: %s",
+		(sret == 0 ? "calling" : "trying to call"),
+		sret, shutdowncmd);
 	exit(EXIT_SUCCESS);
 }
 #endif	/* !WIN32 */
@@ -3792,6 +3841,9 @@ int main(int argc, char *argv[])
 #endif	/* not WIN32 */
 		}
 
+		upslogx(LOG_WARNING, "Exiting upsmon instance after sending "
+			"a signal to the running daemon %ssuccessfully",
+			(cmdret == 0 ? "" : "un"));
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
@@ -3910,8 +3962,10 @@ int main(int argc, char *argv[])
 		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 		/* check flags from signal handlers */
-		if (userfsd)
+		if (userfsd) {
+			upslogx(LOG_WARNING, "Got an FSD signal, initiating forced shutdown");
 			forceshutdown();
+		}
 
 		if (reload_flag) {
 			upsnotify(NOTIFY_STATE_RELOADING, NULL);
@@ -3967,8 +4021,10 @@ int main(int argc, char *argv[])
 			upsnotify(NOTIFY_STATE_READY, NULL);
 			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
-			if (exit_flag)
+			if (exit_flag) {
+				upslogx(LOG_WARNING, "%s: OS was last known to be preparing for sleep, and we have the exit_flag raised now", prog);
 				break;
+			}
 
 			if (reload_flag && sleep_inhibitor_status != 0) {
 				upslogx(LOG_WARNING, "%s: OS was last known to be preparing for sleep, and we were "
@@ -4115,7 +4171,7 @@ int main(int argc, char *argv[])
 			sleepval, difftimeval(end, start));
 
 		if (ret == WAIT_FAILED) {
-			upslogx(LOG_ERR, "Wait failed");
+			upslogx(LOG_ERR, "%s: Wait between main loop cycles failed", prog);
 			exit(EXIT_FAILURE);
 		}
 

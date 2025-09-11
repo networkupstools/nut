@@ -56,6 +56,10 @@ https://github.com/networkupstools/nut/milestone/12
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
      of all known local devices to stdout. [#3083]
 
+ - `upsmon` client updates:
+   * The `SHUTDOWNEXIT` option was not handled properly, and the requested
+     long delays did not happen in practice. [issues #2133 and #3084, PR #3086]
+
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)
      module installation location (for module-named dir to be created under
