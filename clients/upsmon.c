@@ -1010,6 +1010,15 @@ static void doshutdown(void)
 				"Configured to only exit upsmon %d sec "
 				"after initiating shutdown", shutdownexitdelay);
 		}
+		if (exit_flag) {
+			/* TOTHINK: Are there cases when we want to
+			 * ignore it? Or is a SIGTERM, SIGBRK etc.
+			 * a good enough reason to do exit quickly? */
+			upslogx(LOG_WARNING,
+				"Note that 'exit_flag' was raised by a "
+				"signal, so this process will not in fact "
+				"wait that long");
+		}
 
 		/* Technically, here we sleep until SIGTERM or poweroff,
 		 * or in case of initially positive shutdownexitdelay --
