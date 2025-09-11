@@ -184,6 +184,8 @@ static int nut_debug_level_args = 0;
 
 /* pre-declare internal methods */
 static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize);
+static void set_alarm(void);
+static void clear_alarm(void);
 
 static void setflag(int *val, int flag)
 {
@@ -998,23 +1000,45 @@ static void doshutdown(void)
 		upsdebugx(1,
 			"Exiting upsmon immediately "
 			"after initiating shutdown, by default");
-	} else
-	if (shutdownexitdelay < 0) {
-		upslogx(LOG_WARNING,
-			"Configured to not exit upsmon "
-			"after initiating shutdown");
-		/* Technically, here we sleep until SIGTERM or poweroff */
-		do {
-			sleep(1);
-		} while (!exit_flag);
 	} else {
-		upslogx(LOG_WARNING,
-			"Configured to only exit upsmon %d sec "
-			"after initiating shutdown", shutdownexitdelay);
+		if (shutdownexitdelay < 0) {
+			upslogx(LOG_WARNING,
+				"Configured to not exit upsmon "
+				"after initiating shutdown");
+		} else {
+			upslogx(LOG_WARNING,
+				"Configured to only exit upsmon %d sec "
+				"after initiating shutdown", shutdownexitdelay);
+		}
+
+		/* Technically, here we sleep until SIGTERM or poweroff,
+		 * or in case of initially positive shutdownexitdelay --
+		 * when it counts down to zero.
+		 */
 		do {
+			utype_t	*ups;
+			char	temp[SMALLBUF];
+			long	maxlogins = 0, logins = 0;
+
+			/* Contact the data server(s) regularly so this
+			 * client is not assumed dead while looping */
+			for (ups = firstups; ups != NULL && !exit_flag; ups = ups->next) {
+				set_alarm();
+
+				if (get_var(ups, "numlogins", temp, sizeof(temp)) >= 0) {
+					logins = strtol(temp, (char **)NULL, 10);
+
+					if (logins > maxlogins)
+						maxlogins = logins;
+				}
+
+				clear_alarm();
+			}
+
+			if (shutdownexitdelay > 0)
+				shutdownexitdelay--;
 			sleep(1);
-			shutdownexitdelay--;
-		} while (!exit_flag && shutdownexitdelay);
+		} while (!exit_flag && shutdownexitdelay != 0);
 	}
 
 	upsdebugx(1, "%s: current exit_flag=%i", __func__, exit_flag);
