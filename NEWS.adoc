@@ -77,6 +77,10 @@ https://github.com/networkupstools/nut/milestone/12
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
      of all known local devices to stdout. [#3083]
 
+ - `upsmon` client updates:
+   * The `SHUTDOWNEXIT` option was not handled properly, and the requested
+     long delays did not happen in practice. [issues #2133 and #3084, PR #3086]
+
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
      `NOTIFYTYPE` environment variables were neutered for the timer daemon,
