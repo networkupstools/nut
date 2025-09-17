@@ -2,7 +2,7 @@
 
    Copyright (C)
        2005 - 2015  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
-       2014 - 2023  Jim Klimov <jimklimov+nut@gmail.com>
+       2014 - 2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#endif
+#endif	/* !WIN32 */
 
 #include <sys/stat.h>
 #include <string.h>
@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.18"
+#define DRIVER_VERSION	"0.22"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -239,7 +239,7 @@ static int prepare_filepath(char *fn, size_t buflen)
 	if (device_path[0] == '/'
 #ifdef WIN32
 	||  device_path[1] == ':'	/* "C:\..." */
-#endif
+#endif	/* WIN32 */
 	) {
 		/* absolute path */
 		return snprintf(fn, buflen, "%s", device_path);
@@ -280,7 +280,7 @@ void upsdrv_updateinfo(void)
 			/* less stress on the sys */
 			if (ctx == NULL && next_update == -1) {
 				struct stat	fs;
-				char fn[SMALLBUF];
+				char fn[NUT_PATH_MAX + 1];
 
 				prepare_filepath(fn, sizeof(fn));
 
@@ -294,12 +294,12 @@ void upsdrv_updateinfo(void)
 				 * the data without complications.
 				 */
 				if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &fs)) && 0 != stat (fn, &fs))
-#else
+#else	/* WIN32 */
 				/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
 				 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 				 */
 				if (0 != stat (fn, &fs))
-#endif
+#endif	/* WIN32 */
 				{
 					upsdebugx(2, "%s: MODE_DUMMY_ONCE: Can't stat %s currently", __func__, fn);
 					/* retry ASAP until we get a file */
@@ -382,15 +382,24 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -400,7 +409,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * if (mode == MODE_META) => ?
 	 */
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -442,7 +451,7 @@ void upsdrv_initups(void)
 	}
 	else
 	{
-		char fn[SMALLBUF];
+		char fn[NUT_PATH_MAX + 1];
 		mode = MODE_NONE;
 
 		if (val) {
@@ -534,12 +543,13 @@ void upsdrv_initups(void)
 		 * complications.
 		 */
 		if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &datafile_stat)) && 0 != stat (fn, &datafile_stat))
-#else
+#else	/* WIN32 */
 		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+		 * NUT_WIN32_INCOMPLETE?
 		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 		 */
 		if (0 != stat (fn, &datafile_stat))
-#endif
+#endif	/* WIN32 */
 		{
 			upsdebugx(2, "%s: Can't stat %s (%s) currently", __func__, device_path, fn);
 		} else {
@@ -554,22 +564,26 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	if ( (mode == MODE_META) || (mode == MODE_REPEATER) )
-	{
-		if (ups)
-		{
-			upscli_disconnect(ups);
-		}
-
-		if (ctx)
-		{
-			pconf_finish(ctx);
-			free(ctx);
-		}
-
-		free(client_upsname);
-		free(hostname);
+	if (ups) {
+		upscli_disconnect(ups);
 		free(ups);
+		ups = NULL;
+	}
+
+	if (client_upsname) {
+		free(client_upsname);
+		client_upsname = NULL;
+	}
+
+	if (hostname) {
+		free(hostname);
+		hostname = NULL;
+	}
+
+	if (ctx) {
+		pconf_finish(ctx);
+		free(ctx);
+		ctx = NULL;
 	}
 }
 
@@ -577,7 +591,7 @@ static int setvar(const char *varname, const char *val)
 {
 	dummy_info_t *item;
 
-	upsdebugx(2, "entering setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	/* FIXME: the below is only valid if (mode == MODE_DUMMY)
 	 * if (mode == MODE_REPEATER) => forward
@@ -586,7 +600,11 @@ static int setvar(const char *varname, const char *val)
 	if (!strncmp(varname, "ups.status", 10))
 	{
 		status_init();
-		 /* FIXME: split and check values (support multiple values), à la usbhid-ups */
+		/* FIXME: split and check values (support multiple values),
+		 *  à la usbhid-ups.
+		 * UPDATE: Since NUT v2.8.3, status_set() does the splitting,
+		 *  but what about "checking values"?
+		 */
 		status_set(val);
 		status_commit();
 
@@ -743,7 +761,7 @@ static void upsconf_err(const char *errmsg)
  */
 static int parse_data_file(TYPE_FD arg_upsfd)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	size_t	value_args = 0, counter;
 	time_t	now;
@@ -770,6 +788,10 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		if (!pconf_file_begin(ctx, fn))
 			fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
 				fn, ctx->errmsg);
+
+		/* we need this for parsing alarm instructions later */
+		status_init(); /* in case no ups.status does it */
+		alarm_init(); /* reset alarms at start of parsing */
 	}
 
 	/* Reset the next call time, so that we can loop back on the file
@@ -790,7 +812,7 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		if (ctx->numargs < 1)
 			continue;
 
-		/* Process actions (only "TIMER" ATM) */
+		/* TIMER instruction */
 		if (!strncmp(ctx->arglist[0], "TIMER", 5))
 		{
 			/* TIMER <seconds> will wait "seconds" before
@@ -798,8 +820,35 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 			int delay = atoi (ctx->arglist[1]);
 			time(&next_update);
 			next_update += delay;
+			upsdebugx(3, "parse_data_file: TIMER instruction with value \"%i\"", delay);
 			upsdebugx(1, "suspending execution for %i seconds...", delay);
 			break;
+		}
+
+		/* ALARM instruction */
+		if (!strncmp(ctx->arglist[0], "ALARM", 5))
+		{
+			if (ctx->numargs > 1) {
+				for (counter = 1, value_args = ctx->numargs ;
+					counter < value_args ; counter++)
+				{
+					if (counter == 1) /* don't append the first space separator */
+						snprintf(var_value, sizeof(var_value), "%s", ctx->arglist[counter]);
+					else
+						snprintfcat(var_value, sizeof(var_value), " %s", ctx->arglist[counter]);
+				}
+				if (*var_value != '\0') {
+					alarm_set(var_value);
+					upsdebugx(3, "parse_data_file: ALARM instruction with value \"%s\"", var_value);
+
+					continue;
+				}
+			}
+
+			alarm_init();
+			upsdebugx(3, "parse_data_file: ALARM instruction with no value (reset alarms)");
+
+			continue;
 		}
 
 		/* Remove ":" suffix, after the variable name */
@@ -851,6 +900,9 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 			}
 		}
 	}
+
+	alarm_commit(); /* needs to happen first */
+	status_commit(); /* re-commit status for ALARM */
 
 	/* Cleanup parseconf if there is no pending action */
 	if (next_update == -1)

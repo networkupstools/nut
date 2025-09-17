@@ -1,0 +1,1004 @@
+#!/usr/bin/env bash
+# -*- mode: sh; sh-basic-offset: 2; indent-tabs-mode: nil; -*-
+# vim:set ft=sh et sw=2 ts=2:
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Copyright (C) 2025 Scott Shambarger
+#
+# Enphase Monitor for NUT dummy-ups v0.9.3
+# Author: Scott Shambarger <devel@shambarger.net>
+#
+# Enphase Monitor is designed to work with Network UPS Tools
+# <https://networkupstools.org/>, accessing Enphase IQ Gateway's
+# local API and supplying "Grid On/Off" and Battery State-Of-Charge
+# to the dummy-ups driver (v2.8+ recommended)
+#
+# Usage: enphase-monitor [ <options> ] -c <config> | <ups>
+#
+#   -c <config> - use named config-file (or set $CONFIG_FILE)
+#   <ups> - use config-file /etc/ups/enphase-<ups>.conf (or set $UPS)
+#
+# <options> may include:
+#   -d - increase debug to stderr (2+ exposes secrets!)
+#   -h - show help and exit
+#   -s - perform one network check and exit
+#   -v - verbose output
+#   -x - set 'nocomms' and exit"
+#
+# <config> must contain:
+#
+#   USERNAME=<enphase login>
+#   PASSWORD=<enphase password>
+#   SERIAL=<envoy serial#>
+#   PORT_FILE=<portfile from ups.conf, see below>
+#
+# and optionally (defaults shown):
+#
+#   DISABLE_METERS= # any value to disable power reporting
+#   ENVOY_HOST="envoy.local" # ip/hostname of IQ Gateway on local network
+#   STATE_DIR="$NUT_STATEPATH" # writable directory for portfile/tokens
+#                                (e.g. "/var/lib/ups")
+#   POLLFREQ=60 # seconds between API queries, min 5
+#   POLLFREQALERT=20 # seconds between API queries when on battery, min 5
+#   TOKEN_FILE="enphase-<ups>.token" # path defaults to STATE_DIR
+#   LOADKWH=768 # max load/1kWh capacity, used for ups.load calculation
+#                 0 disables calc (default based on IQ 5P rate 3.84kVA/5kWh)
+#   LOGIN_TIMEOUT=10 # timeout (secs) for login/token gen, min 5
+#   API_TIMEOUT=10 # timeout (secs) for local ENVOY_HOST api access, min 2
+#
+# Add section to /etc/ups/ups.conf for your <ups> name (replace <XXX>)
+#
+# [<ups>]
+#   driver = dummy-ups
+#   port = <STATE_DIR>/<portfile> # this should be an absolute path!
+#   mode = dummy-once # or name <portfile> with `.dev` extension
+#   desc = "Enphase IQ Gateway"
+#
+# <portfile> MUST EXIST before running the monitor (to ensure it's running
+# on the correct machine). The following entries are optional but
+# used if specified (defaults shown); other non-generated entries are retained.
+#
+#   battery.charge.low: 20
+#   battery.voltage.high: 86.4
+#   battery.voltage.nominal: 76.8
+#   battery.voltage.low: 68.5
+#   device.mfr: Enphase Energy
+#   device.model: IQ Gateway
+#
+# The monitor uses the enphase <login> + <serial#> to retrieve a long-term
+# token and saves it in STATE_DIR (token renewal is handled automatically)
+#
+# The monitor then queries the ENVOY_HOST (local IQ Gateway) API at POLLFREQ
+# intervals to retrieve the envoy state, and updates <portfile>.
+# Using values retrieved from the API and settings above, the monitor
+# calculates the values ups.load, battery.voltage and battery.runtime
+#
+# enphase-monitor needs to have write access to <portfile>, so usually
+# upsd hosting <ups> should be on local host, but shared filesystems may
+# allow upsd to be remote.
+#
+# NOTE: if connections to ENVOY_HOST fail, <portfile> is renamed
+# <portfile>-nocomms to trigger dummy-ups to show stale data.
+# Either filename may exist on startup.
+#
+# Environment (optional):
+#   CONFIG_FILE - override default <config>
+#   UPS - set a default <ups>
+#   NUT_SYSCONFIG - default <config> directory (NUT_CONFPATH, e.g. /etc/ups)
+#   NUT_LOCALSTATE - default for STATE_DIR (NUT_STATEPATH, e.g. /var/lib/ups)
+#
+# === INSTALL ===
+#
+# Install required support programs: bash, base64, jq, and curl
+#
+# Create an entry in /etc/ups/ups.conf (as above)
+#
+# Copy enphase-monitor to some <INSTALL-DIR> (e.g. /usr/local/libexec)
+#
+# Create a <config> file with required variables.  If only <ups>
+# used to start the monitor, is looks for `/etc/ups/enphase-<ups>.conf`
+# Ensure <config> can be read by monitor and is not world readable!
+#
+# Choose a NUT writable directory for STATE_DIR (default /var/lib/ups),
+# and create an empty <portfile> there:
+#
+#  $ touch <STATE_DIR>/<portfile>
+#  $ chown <nut-user>:<nut-group> <STATE_DIR>/<portfile>
+#
+# If using SELinux, ensure NUT's dummy-ups has access to the <portfile>
+# (even in /var/lib/ups!) by adding a label, e.g.
+#
+#   $ semanage fcontext -a -t nut_conf_t <STATE_DIR>/<portfile>
+#   $ restoreconf -F <STATE_DIR>/<portfile>
+#
+# Create a systemd template file (replace <XXX> items)
+#
+#  --- /etc/systemd/system/enphase-monitor@.service ---
+#  [Unit]
+#  Description=Enphase API monitor for NUT dummy-ups %I
+#  PartOf=nut-driver.target
+#  Before=nut-driver@%i.service
+#
+#  [Service]
+#  SyslogIdentifier=%N
+#  User=<NUT-USER>
+#  ExecStartPre=<INSTALL-PATH>/enphase-monitor -s %I
+#  ExecStart=<INSTALL-PATH>/enphase-monitor %I
+#  Type=exec
+#  Restart=always
+#  RestartSec=30
+#
+#  [Install]
+#  WantedBy=nut-driver@%i.service
+#  --- end of file ---
+#
+# Enable the instance for <ups>
+#
+#   $ systemctl daemon-reload
+#   $ systemctl enable nut-driver@<ups>
+#   $ systemctl enable enphase-monitor@<ups>
+#
+# Restart NUT :)
+#
+# === TEST MODE ===
+#
+# If using the distributed `test.conf`, copy `test-ref.dev` to `test.dev`
+# and then run:
+#
+#   $ ./enphase-monitor -c test.conf
+#
+# `test.conf` sets "UPS=test" and "STATE_DIR=." and PORT_FILE="test.dev"
+# (so token/portfiles are located in the current directory)
+# It also sets "DEBUG=1" to show debug output (optional), and POLLFREQ
+# to a few secs.
+#
+# "TEST" mode will loop (and randomly expire the token):
+#
+#   online -> nocomms -> online -> onbatt -> lowbatt <- <repeat>
+#
+# A "TEST" mode <config> should set:
+#
+#   TEST=1 # <- required for "TEST" mode
+#   TEST_SESS=<json> # use {"session_id":"some-value"}
+#   TEST_TOKEN=<web-token> # JWT token, should have valid expires!
+#   TEST_RELAY=<json> # ivp/ensemble/relay {"mains_oper_state":"@RELAY_STATE@"}
+#   TEST_LIVE=<json> # ivp/livedata/status, {"soc":"@BATT_SOC@"}
+#   TEST_REPORTS=<json> # ivp/meters/reports
+#   TEST_SECCTRL=<json> # ivp/ensemble/secctrl, {"soc_recovery_exit":10}
+#   TEST_INFO=<xml> # info.xml
+#
+# Output from real HTTP requests can be used (use "-d -d" to see output)
+# for each of those APIs.  Any empty TEST_XXXX value simulates a
+# failed API query.
+#
+# shellcheck disable=SC2076
+
+# install defaults
+
+# Script configuration file location, defaults to NUT configuration location:
+NUT_CONFPATH=${NUT_CONFPATH:-@CONFPATH@}
+NUT_SYSCONFIG=${NUT_SYSCONFIG:-$NUT_CONFPATH}
+
+# Location where we write the data file for dummy-ups to process and publish.
+# Should not be in a tmpfs, as we may inherit some manually added data points
+# that we want to retain across reboots. On systems with wear-prone storage
+# (flash/SSD), you can fiddle with a "manually-made" file that would be copied
+# into a tmpfs, and have the script pick up that tmpfs location with initially
+# inherited data points.
+# Does not have to be among NUT common directories (/var/lib/ups is another
+# reasonable option), but should be writeable to this script (see service
+# definition for run-time user involved) and readable for NUT driver run-time
+# user account.
+# The corresponding dummy-ups section in ups.conf should refer to file name
+# under this location in its "port" definition (path may be skipped if this
+# is NUT_CONFPATH).
+NUT_STATEPATH=${NUT_STATEPATH:-@STATEPATH@}
+NUT_LOCALSTATE=${NUT_LOCALSTATE:-$NUT_STATEPATH}
+
+# these can be changed
+ENPHASE_LOGIN="https://enlighten.enphaseenergy.com/login/login.json?"
+ENPHASE_TOKENS="https://entrez.enphaseenergy.com/tokens"
+
+msg() { printf '%s\n' "$*"; }
+warn() { msg >&2 "$*"; }
+debug() { # [ <level> ] <msg>
+  [[ $DEBUG ]] || return 0
+  local p=': '
+  [[ $1 =~ ^[1-9]$ ]] && {
+    (( $1 > DEBUG )) && return
+    p="$1:"
+    shift
+  }
+  warn "DEBUG$p $*"
+}
+verbose() {
+  if [[ $DEBUG ]]; then
+    warn "$*"
+  elif [[ $VERBOSE ]]; then
+    msg "$*"
+  fi
+}
+die() { warn "enphase-monitor $UPS: $*"; exit 1; }
+
+int100() { # <int> = <float, either radix> * 100
+  local _i _s=''
+  LC_NUMERIC=C printf -v _i "%.2f" "${2/,/.}"
+  _i=${_i/./}
+  [[ ${_i:0:1} == - ]] && { _s=-; _i=${_i#-}; }
+  _i=${_i#0}
+  printf -v "$1" "%s" "${_s}${_i#0}"
+}
+
+fmtfloat() { # <precision> <dest> <float, either radix>
+  LC_NUMERIC=C printf -v "$2" "%.${1}f" "${3/,/.}"
+}
+
+idiv2float() { # <precision> <dest> <inta> <intb> (dest = inta / intb)
+  local -i _x=${3-} _y=${4-}; local _i _j _s=''
+  (( _y == 0 )) && { LC_NUMERIC=C printf -v "$2" "%.${1}f" "0"; return; }
+  (( _x<0 || _y<0 )) && { ((_x<0 && _y<0)) || _s=-; }
+  _x=${_x/-/}; _y=${_y/-/}
+  (( _i = _x / _y, _j = (_x % _y) * (10 ** $1) / _y )) || :
+  printf -v _j "%0${1}d" "$_j"
+  LC_NUMERIC=C printf -v "$2" "%.${1}f" "$_s$_i.$_j"
+}
+
+get_perms() { # <file/dir>
+  stat -L "${STAT_ARGS[@]}" "$1"
+}
+
+check_dir_perms() { # <type> <dir>
+  local type=$1 dir=$2 perm
+  debug 2 "checking directory perms for $dir"
+  perm=$(get_perms "$dir") || die "Unable to stat $type directory '$dir'"
+  perm=${perm: -1}
+  (( ( perm >> 1 ) % 2 == 0 )) ||
+    die "World write permissions on $type directory $dir"
+  debug 2 "  perms $perm ok"
+}
+
+# check permissions (contains secrets)
+check_file_perms() { # <type> <file>
+  local type=$1 file=$2 perm dir
+  debug 2 "checking file perms for $file"
+  perm=$(get_perms "$file") || die "Unable to stat $type '$file'"
+  perm=${perm: -1}
+  (( ( perm >> 2 ) % 2 == 0 )) ||
+    die "World read permissions exist on $type $file"
+  debug 2 "  perms ok"
+  dir=${file%/*}
+  [[ $dir == "$file" ]] && dir=.
+  check_dir_perms "$type" "$dir"
+}
+
+TEST_CYCLE=init
+test_cycle() {
+  case $TEST_CYCLE in
+    init) TEST_CYCLE=online ;;
+    online) TEST_CYCLE=nocomms ;;
+    nocomms) TEST_CYCLE=online2 ;;
+    online2) TEST_CYCLE=onbatt ;;
+    onbatt) TEST_CYCLE=lowbatt ;;
+    *) TEST_CYCLE=online ;;
+  esac
+  debug "TEST_CYCLE now $TEST_CYCLE"
+}
+
+# echos output based on <url> and TEST_CYCLE
+gen_test_out() { # <args>
+  local out relay batt mode
+
+  case $TEST_CYCLE in
+    onbatt*)
+      relay=open
+      batt=90
+      ;;
+    lowbatt*)
+      relay=open
+      batt=${REF[batt_low]}
+      if [[ $batt ]]; then
+        int100 batt "$batt"
+        (( batt = (batt - 100) / 100 )) || :
+      else
+        batt=10
+      fi
+      ;;
+    *)
+      relay=closed
+      batt=100
+      ;;
+  esac
+
+  if [[ $* =~ "$ENPHASE_LOGIN" ]]; then
+    out=$TEST_SESS; mode=login
+  elif [[ $* =~ "$ENPHASE_TOKENS" ]]; then
+    out=$TEST_TOKEN; mode=tokens
+  else
+    # only apply nocomms to envoy queries
+    [[ $TEST_CYCLE == nocomms ]] && die "Testing nocomms"
+
+    if [[ $* =~ ensemble/relay$ ]]; then
+      out=${TEST_RELAY/@RELAY_STATE@/$relay}; mode=relay
+    elif [[ $* =~ livedata/status$ ]]; then
+      out=${TEST_LIVE/@BATT_SOC@/$batt}; mode=live
+    elif [[ $* =~ meters/reports$ ]]; then
+      out=$TEST_REPORTS; mode=reports
+    elif [[ $* =~ ensemble/secctrl$ ]]; then
+      out=$TEST_SECCTRL; mode=secctrl
+    elif [[ $* =~ info\.xml$ ]]; then
+      out=$TEST_INFO; mode=info
+    else
+      die "Unknown test url: $*"
+    fi
+  fi
+
+  [[ $out ]] || die "Testing $mode failure"
+  printf %s "$out"
+}
+
+debug_curl() { # <curl args>
+  [[ $DEBUG ]] || return 0
+  if (( DEBUG > 1 )); then
+    debug 2 "curl $*"
+  else
+    local p=$*
+    debug "curl to http${p##*http}"
+  fi
+}
+
+curl_get() { # <token> <curl args>
+  debug_curl -ksSf -X GET "$@"
+  if [[ $TEST ]]; then
+    gen_test_out "$*"
+  else
+    curl -ksSf -X GET "$@"
+  fi
+}
+
+envoy_get() { # <token> <path>
+  [[ $1 ]] || die "envoy_get() requires a token"
+  local token=$1 url=$2
+  [[ $url ]] || die "envoy_get() requires a URL"
+  curl_get --retry 1 -m "$API_TIMEOUT" -H "Authorization: Bearer $token" \
+           -H 'Accept: application/json' "https://$ENVOY_HOST/${url#/}"
+}
+
+curl_post() { # <curl args>
+  [[ $1 ]] || die "curl_post() requires a URL"
+  debug_curl -sSf -X POST "$@"
+  if [[ $TEST ]]; then
+    gen_test_out "$*"
+  else
+    curl -sSf -X POST "$@"
+  fi
+}
+
+json() { # <json> <query>
+  jq 2>/dev/null -r "$2" <<< "$1"
+}
+
+# echo <expires> if valid
+echo_token_expires() { # <token>
+  local token=$1 data payload expires now
+
+  debug 2 "parsing token for expires: $token"
+  data=${token%.*}
+  data=${data#*.}
+  [[ $data ]] || die "Failed to parse token"
+
+  payload=$(base64 2>/dev/null -d <<< "${data}==")
+  [[ $payload ]] || die "Failed to base64 decode token payload"
+  debug 2 "token payload: $payload"
+
+  expires=$(json "$payload" '.exp')
+  [[ $expires ]] || die "Token payload missing expires"
+
+  now=$(date +%s)
+  [[ $now ]] || die "Unable to get current time"
+
+  [[ $TEST ]] && {
+    # randomly expire token (force re-query) unless initial query
+    (( RANDOM % 5 == 0 )) && [[ -z ${web_token-} ]] && {
+      debug "randomly expiring token"
+      expires=$now
+    }
+  }
+
+  [[ $DEBUG ]] && {
+    local full
+    if [[ $(uname -s) == Darwin ]]; then
+      full=$(date 2>/dev/null -r "$expires")
+    else
+      full=$(date 2>/dev/null -d "@$expires")
+    fi
+    debug "token expires: $expires ($full)"
+  }
+
+  # token needs at least an hour of life...
+  (( expires < ( now + 3600 ) )) && {
+    if (( expires <= now )); then
+      verbose "Token expired"
+    else
+      verbose "Token lifetime less than 1 hour"
+    fi
+    return 1
+  }
+  debug 2 "token expires ok"
+
+  printf %s "$expires"
+}
+
+# echo <sid>
+echo_sid() {
+  local session sid
+
+  # login
+  session=$(curl_post \
+              -m "$LOGIN_TIMEOUT" \
+              -H "Accept: application/json" \
+              --data-urlencode "user%5Bemail%5D=$USERNAME" \
+              --data-urlencode "user%5Bpassword%5d=$PASSWORD" \
+              "$ENPHASE_LOGIN")
+  [[ $session ]] || die "Enphase login failed for user $USERNAME"
+  debug 2 "session created: $session"
+
+  sid=$(json "$session" ".session_id")
+  [[ $sid ]] || die "Unable to retrieve session_id for user $USERNAME"
+  debug "session_id found: $sid"
+
+  printf %s "$sid"
+}
+
+# echo token or return false
+echo_saved_token() {
+  local token=''
+
+  if [[ $TOKEN_CACHE ]]; then
+    token=$TOKEN_CACHE
+  else
+    [[ -r $TOKEN_FILE ]] || return
+
+    check_file_perms "token" "$TOKEN_FILE"
+
+    debug "loading token from $TOKEN_FILE"
+    read -d '' -r token < "$TOKEN_FILE" || :
+    [[ $token ]] || return
+  fi
+  [[ $(echo_token_expires "$token") ]] || return
+  printf %s "$token"
+}
+
+save_token() { # <token>
+  local val=$1 dir
+
+  dir=${TOKEN_FILE%/*}
+  [[ $dir ]] || dir=/
+  [[ -d $dir && -w $dir ]] || die "Token directory '$dir' not writable"
+  check_dir_perms "token" "$dir"
+
+  debug 2 "Saving token $val to $TOKEN_FILE"
+  rm -f "$TOKEN_FILE"
+  printf '' > "$TOKEN_FILE" ||
+    die "Unable to create token file '$TOKEN_FILE'"
+  chmod o-rwx "$TOKEN_FILE" ||
+    die "Unable to remove world permissions from token file $TOKEN_FILE"
+  printf %s "$val" > "$TOKEN_FILE"
+  debug "Saved new token to $TOKEN_FILE"
+  return 0
+}
+
+echo_token() {
+  local sid web_token
+
+  echo_saved_token && return
+  [[ -f $TOKEN_FILE ]] && rm -f "$TOKEN_FILE"
+
+  # if login failure, fail
+  sid=$(echo_sid) || return
+
+  # acquire long-term token
+  web_token=$(curl_post \
+                -m "$LOGIN_TIMEOUT" \
+                --json "{\"session_id\": \"$sid\", \"serial_num\": \"$SERIAL\", \"username\": \"$USERNAME\"}" \
+                "$ENPHASE_TOKENS")
+  # token query failure means serial# invalid, fail
+  [[ $web_token ]] ||
+    die "Failed to acquire web_token for user $USERNAME, serial# $SERIAL"
+  debug "web_token retrieved"
+
+  # if new token not valid, fail
+  [[ $(echo_token_expires "$web_token") ]] ||
+    die "New token invalid, verify serial# $SERIAL"
+
+  save_token "$web_token"
+
+  printf %s "$web_token"
+}
+
+# CONSTANTS
+
+# nut fields to DS key mapping
+declare -rA FM=([ups.status]=status [battery.charge]=batt_soc)
+# nut group to DS key mapping
+declare -rA FGM=([input]=input [output]=output [battery]=battery)
+# nut fields to REF key mapping
+declare -rA RM=([battery.charge.low]=batt_low [battery.capacity]=capacity
+                [battery.charge.restart]=batt_restart [battery.type]=batt_type
+                [battery.voltage.high]=batt_high [battery.voltage.low]=batt_min
+                [battery.voltage.nominal]=batt_nom [device.serial]=serial
+                [device.mfr]=mfr [device.model]=model [device.type]=dev_type
+                [ups.serial]=userial [ups.mfr]=umfr [ups.model]=umodel
+                [ups.firmware]=software [input.phases]=phases
+                [output.phases]=phases
+                [output.current.high.critical]=max_current)
+# used for power meter fields; METER_KEYS indexes used in update_portfile
+declare -r METER_KEYS=(realpower power voltage powerfactor frequency)
+# METER_FIELDS must map to METER_KEYS
+declare -r METER_FIELDS="currW, apprntPwr, rmsVoltage, pwrFactor, freqHz"
+
+# LiFePO4 SOC to voltage map (in 10% increments, >100% charging)
+declare -ra LFP=(250 290 310 320 325 330 335 340 345 350 360 365)
+
+# sets STATE, NDS
+query_envoy() {
+  local token data item live alive=()
+
+  token=$(echo_token) || exit
+  TOKEN_CACHE=$token
+  [[ $token ]] || return 0
+
+  STATE=nocomms
+
+  [[ $NOCOMMS ]] && return
+
+  # relay appears to be the only reliable way to see if grid is hot
+  # ("live" query doesn't show a change in main_relay_state)
+  data=$(envoy_get "$token" "ivp/ensemble/relay") && [[ $data ]] && {
+    item=$(json "$data" ".mains_oper_state")
+    debug "mains operational state: $item"
+    case $item in
+      '') warn "envoy relay API missing mains_oper_state" ;;
+      closed) STATE=online ;;
+      open) STATE=onbatt ;;
+      *) warn "envoy relay API unknown mains_oper_state '$item'" ;;
+    esac
+  }
+  [[ $STATE == nocomms ]] && return
+
+  # livedata if fast
+  data=$(envoy_get "$token" "ivp/livedata/status") && [[ $data ]] && {
+    live=$(json "$data" ".meters | { soc, phase_count, enc_agg_energy } | [.[]] | @csv")
+    # some values used in INIT
+    [[ $live ]] && IFS=, read -r -a alive <<< "$live"
+    [[ ${alive[0]} != null ]] && NDS[batt_soc]=${alive[0]}
+  }
+
+  [[ $INIT ]] || {
+    # just try this once...
+    INIT=1
+    REF[serial]=$SERIAL
+    REF[userial]=$SERIAL
+    data=$(envoy_get "$token" "info.xml") && [[ $data ]] && {
+      while read -r item; do
+        case $item in
+          "<software>"*"</software>")
+            item=${item#*<software>}
+            REF[software]=${item%</software>*}
+            ;;
+        esac
+      done <<< "$data"
+    }
+    # get batt_restart for runtime calc
+    data=$(envoy_get "$token" "ivp/ensemble/secctrl") && [[ $data ]] && {
+      item=$(json "$data" ".soc_recovery_exit")
+      [[ $item != null ]] && REF[batt_restart]=$item
+    }
+    REF[phases]=''
+    [[ ${#alive[*]} ]] && {
+      [[ ${alive[1]} == 3 ]] && REF[phases]=3
+      [[ ${alive[2]} != null ]] && REF[capacity]=${alive[2]}
+    }
+  }
+
+  # TODO with meters off, we could still get power from livedata
+  [[ $DISABLE_METERS ]] || {
+    # meters is slow, so can be disabled if values aren't wanted
+    data=$(envoy_get "$token" "ivp/meters/reports") && [[ $data ]] && {
+      local phase key=input vals
+      for meter in net total; do
+        vals=$(json "$data" ".[] | select(.reportType == \"${meter}-consumption\") | .cumulative, .lines[] | { $METER_FIELDS } | [.[]] | @csv")
+        [[ $vals ]] && {
+          for (( phase=0; phase <= ${REF[phases]:-0}; phase++ )); do
+            read -r item && NDS[$key.L$phase]=$item
+          done <<< "$vals"
+        }
+        key=output
+      done
+      NDS[battery]=$(json "$data" ".[] | select(.reportType == \"storage\") | .cumulative | { $METER_FIELDS } | [.[]] | @csv")
+    }
+  }
+
+  return 0
+}
+
+parse_portline() { # <line>
+  local k=${1%%:*} v=${1#*:}; v=${v## }
+  [[ ${FM[$k]} ]] && DS[${FM[$k]}]=$v
+  [[ ${RM[$k]} ]] && REF[${RM[$k]}]=$v
+}
+
+# uses STATE, sets NDS[status]
+check_status() {
+  case $STATE in
+    online*) NDS[status]=OL ;;
+    onbatt*) NDS[status]=OB ;;
+    nocomms*) NDS[status]='' ;;
+  esac
+  [[ ${NDS[batt_soc]} && ${REF[batt_low]} && ${NDS[status]} ]] && {
+    local soc low
+    int100 soc "${NDS[batt_soc]}"; int100 low "${REF[batt_low]}"
+    (( soc < low )) && NDS[status]+=" LB"
+  }
+}
+
+update_portfile() {
+  local change line key lines=()
+
+  # check for changes
+  check_status
+
+  debug "checking if portfile needs updating"
+  [[ $DEBUG ]] && debug 3 "$(declare -p NDS)"
+
+  [[ ${NDS[status]} != "${DS[status]}" ]] && {
+    if [[ ${DS[status]} && -z ${NDS[status]} ]]; then
+      verbose "Communication lost, hiding portfile"
+      [[ -f $PORT_FILE ]] && {
+        mv "$PORT_FILE" "${PORT_FILE}-nocomms" ||
+          die "Unable to disable port file $PORT_FILE"
+      }
+    elif [[ ${NDS[status]} && -z ${DS[status]} ]]; then
+      verbose "Communication restored, restoring portfile"
+      [[ -f ${PORT_FILE}-nocomms ]] && {
+        mv "${PORT_FILE}-nocomms" "$PORT_FILE" ||
+          die "Unable to enable port file $PORT_FILE"
+      }
+    fi
+    [[ ${NDS[status]} ]] && verbose "ups.status now ${NDS[status]}"
+    DS[status]=${NDS[status]}
+    change=1
+  }
+  # if port file disabled, we're done
+  [[ ${DS[status]} ]] || return 0
+
+  debug 2 "checking for changed values"
+  for key in "${!NDS[@]}"; do
+    [[ ${NDS[$key]} == "${DS[$key]}" ]] && continue
+    debug 2 "  new $key ${NDS[$key]}"
+    DS[$key]=${NDS[$key]}
+    change=1
+  done
+  [[ $change ]] || return 0
+
+  verbose "Updating $PORT_FILE"
+  [[ -w $PORT_FILE ]] || die "Port file '$PORT_FILE' missing/write-protected!"
+  local nk
+  while read -r line; do
+    nk=${line%%:*}
+    [[ ${FM[$nk]} ]] && continue
+    # keep any REF user may configure
+    case $nk in
+      battery.charge.low|*.mfr|*.model) : ;;
+      battery.voltage.high|battery.voltage.nominal|battery.voltage.low) : ;;
+      ups.load) continue ;; # calculated
+      *) [[ ${RM[$nk]} ]] && continue ;; # don't parse other REFs
+    esac
+    parse_portline "$line"
+    [[ ${RM[$nk]} ]] && continue
+    for key in "${!FGM[@]}"; do
+      case $nk in "$key"*) continue 2 ;; esac
+    done
+    lines+=("$line")
+  done < "$PORT_FILE"
+
+  [[ $DEBUG ]] && debug 3 "$(declare -p DS REF)"
+
+  for nk in "${!FM[@]}"; do
+    key=${FM[$nk]}; [[ ${DS[$key]} ]] && lines+=("$nk: ${DS[$key]}")
+  done
+  for nk in "${!RM[@]}"; do
+    key=${RM[$nk]}; [[ ${REF[$key]} ]] && lines+=("$nk: ${REF[$key]}")
+  done
+
+  local i v p phase pfx val outp soc vals=()
+  for nk in "${!FGM[@]}"; do
+    key=${FGM[$nk]}
+    case $key in
+      input|output)
+        for (( phase=0; phase <= ${REF[phases]:-0}; phase++ )); do
+          p='' v='' pfx=$nk
+          (( phase > 0 )) && pfx+=".L$phase"
+          IFS=, read -r -a vals <<< "${DS[$key.L${phase}]}"
+          # loop over meter keys
+          for (( i=0; i<${#METER_KEYS[*]}; i++ )); do
+            val=${vals[i]}
+            # treat nulls as 0
+            [[ $val == null ]] && val=0
+            if (( i == 3 )); then # pwrFactor
+              fmtfloat 2 val "$val"
+            else
+              fmtfloat 1 val "$val"
+            fi
+            [[ ${METER_KEYS[i]} ]] && {
+              if (( phase > 0 && i == 2 )); then
+                # phase voltage is special
+                lines+=("${pfx}-N.${METER_KEYS[i]}: $val")
+              else
+                lines+=("${pfx}.${METER_KEYS[i]}: $val")
+              fi
+            }
+            # enphase cumulative current is 2x, calc real
+            (( i == 0 )) && {
+              int100 p "$val"
+              # save for load calc
+              [[ $phase == 0 && $key == output ]] && outp=$p
+              }
+            (( i == 2 )) && int100 v "$val"
+          done
+          [[ $p && $v ]] && {
+            idiv2float 2 val "$p" "$v"
+            lines+=("${pfx}.current: $val")
+          }
+        done
+        ;;
+      battery)
+        IFS=, read -r -a vals <<< "${DS[$key]}"
+        int100 p "${vals[0]}"
+        int100 v "${vals[2]}"
+        idiv2float 2 val "$p" "$v"
+        lines+=("$nk.current: $val")
+        ;;
+    esac
+  done
+
+  # batt voltage based on SOC and voltage.high
+  [[ ${NDS[batt_soc]} && ${REF[batt_high]} ]] && {
+    # cell voltage not in the API, so calc from known LiFePO4 charts
+    int100 soc "${NDS[batt_soc]}"
+    # range limit
+    (( (soc>11000) ? (soc=11000) : ( (soc<0) ? (soc=0) : 0 ) )) || :
+    # calc LFP index
+    (( i = (soc > 10000) ? 10 : (soc / 1000) )) || :
+    # voltage = base + % to next base
+    val=${LFP[i]}
+    (( val += (LFP[i+1] - val) * (soc - (i * 1000)) / 1000 )) || :
+    # adjust based on high voltage == 100% SOC
+    int100 v "${REF[batt_high]}"; (( val = (val * v) / LFP[10] )) || :
+    idiv2float 1 val "$val" 100
+    lines+=("battery.voltage: $val")
+  }
+
+  # load calc if output.power and capacity available
+  [[ ${REF[capacity]} && $outp ]] && {
+    v=${REF[capacity]}
+    # runtime based on (100 - batt_restart) * (seconds at power)
+    [[ ${NDS[batt_soc]} ]] && {
+      int100 p "${REF[batt_restart]}"
+      int100 soc "${NDS[batt_soc]}"
+      if (( outp <= 0 )); then
+        val=172800
+      elif (( soc < p )); then
+        val=0
+      else
+        # runtime = (% capacity) / power (in secs)
+        (( val = ((soc - p) * v * 36) / outp )) || :
+        # 2 day max
+        (( val > 172800 ? (val = 172800) : 0 )) || :
+      fi
+      lines+=("battery.runtime: $val")
+    }
+    (( ${LOADKWH:-0} > 0 )) && {
+      (( v = LOADKWH * (v / 10), outp *= 100 ))
+      idiv2float 1 val "$outp" "$v"
+      lines+=("ups.load: $val")
+    }
+  }
+
+  [[ $DEBUG ]] && debug 3 "new file: ${lines[*]}"
+  local IFS=$'\n'
+  printf '%s\n' "${lines[*]}" > "$PORT_FILE" ||
+    die "Unable to update PORT_FILE $PORT_FILE"
+}
+
+# sets NDS
+read_portfile() {
+  local file=$PORT_FILE
+  [[ -r $file ]] || {
+    # check for disabled
+    file="${PORT_FILE}-nocomms"
+    [[ -r $file ]] || die "Port file '$PORT_FILE' unreadable"
+  }
+  debug "Reading portfile '$file'"
+  local line
+  while read -r line; do
+    parse_portline "$line"
+  done < "$file"
+  [[ $DEBUG ]] && debug 3 "$(declare -p DS REF)"
+  # if nocomms, set [status]
+  [[ -r $PORT_FILE ]] || DS[status]=''
+}
+
+main_loop() {
+  local -A DS NDS REF=([batt_low]="20" [batt_type]=LFP [batt_nom]="76.8"
+                       [batt_high]="86.4" [batt_min]="68.5" [dev_type]="ups"
+                       [batt_restart]=10
+                       [mfr]="Enphase Energy" [model]="IQ Gateway"
+                       [umfr]="Enphase Energy" [umodel]="IQ Gateway")
+  local STATE INIT
+  local -i delay
+
+  read_portfile
+  debug "initial status: ${DS[status]}"
+
+  while :; do
+    [[ $TEST ]] && test_cycle
+
+    query_envoy
+
+    debug "current state: $STATE"
+
+    update_portfile
+
+    [[ $NOCOMMS || $SINGLE ]] && break
+
+    # adaptive delay
+    delay=$POLLFREQ
+    case $STATE in
+      onbatt|nocomms) delay=$POLLFREQALERT ;;
+    esac
+    debug "delay: $delay"
+    sleep $delay
+  done
+}
+
+gen_token_file() {
+  if [[ $TOKEN_FILE ]]; then
+    [[ ${TOKEN_FILE#/} == "$TOKEN_FILE" ]] &&
+      TOKEN_FILE="$STATE_DIR/$TOKEN_FILE"
+  else
+    TOKEN_FILE="$STATE_DIR/enphase-${UPS}.token"
+  fi
+  debug "token file is '$TOKEN_FILE'"
+}
+
+read_config() {
+
+  [[ $CONFIG_FILE ]] || {
+    [[ $UPS ]] || usage
+    CONFIG_FILE=${CONFIG_FILE:-${DEF_CONFIG//"@UPS@"/$UPS}}
+  }
+
+  [[ -r $CONFIG_FILE ]] || die "Unable to read config '$CONFIG_FILE'"
+
+  check_file_perms config "$CONFIG_FILE"
+
+  # read config
+  verbose "Reading config file $CONFIG_FILE"
+  bash -n "$CONFIG_FILE" || die "Config $CONFIG_FILE cannot be parsed"
+  # shellcheck disable=SC1090
+  . "$CONFIG_FILE"
+
+  # validate config
+  local var fail val
+  (( POLLFREQ < 5 )) && POLLFREQ=5
+  (( POLLFREQALERT < 5 )) && POLLFREQALERT=5
+  (( LOGIN_TIMEOUT < 5 )) && LOGIN_TIMEOUT=5
+  (( API_TIMEOUT < 2 )) && API_TIMEOUT=2
+  debug "config values:"
+  for var in USERNAME PASSWORD SERIAL ENVOY_HOST STATE_DIR PORT_FILE \
+                      POLLFREQ POLLFREQALERT LOGIN_TIMEOUT API_TIMEOUT; do
+    val=${!var-}
+    [[ $val ]] || fail+="$var "
+    [[ $DEBUG ]] || continue
+    if [[ $var == PASSWORD ]]; then
+      (( DEBUG > 1 )) && { debug 2 "  $var=$val"; continue; }
+      val="<hidden>"
+    fi
+    debug "  $var=$val"
+  done
+  [[ $fail ]] && die "Config $CONFIG_FILE requires values for $fail"
+  [[ -d $STATE_DIR && -w $STATE_DIR ]] ||
+    die "STATE_DIR '$STATE_DIR' not writable!"
+  check_dir_perms "state" "$STATE_DIR"
+
+  gen_token_file
+}
+
+check_portfile() {
+  [[ ${PORT_FILE#/} == "$PORT_FILE" ]] &&
+    PORT_FILE="$STATE_DIR/$PORT_FILE"
+
+  debug "portfile is '$PORT_FILE'"
+
+  local dir=${PORT_FILE%/*}
+  [[ $dir ]] || dir=/
+  [[ -d $dir && -w $dir ]] || die "Port file directory '$dir' not writable"
+}
+
+check_requires() {
+  local exe fail
+  (( BASH_VERSINFO[0] < 4 )) && die "Bash v4+ required (for assoc arrays)"
+  for exe in head stat base64 curl jq date chmod uname; do
+    command >/dev/null -v "$exe" || fail+="$exe "
+  done
+  [[ $fail ]] && die "Unable to find required programs in PATH: $fail"
+}
+
+usage() {
+  local rc=2 out=warn
+
+  case ${1-} in
+    '') ;;
+    0) rc=0; out=msg ;;
+    *) warn "Unknown option: '$1'" ;;
+  esac
+
+  $out "Usage: ${0##*/} [ <options> ] -c <config> | <ups>"
+  $out "  -c <config> - use named config-file (or set \$CONFIG_FILE)"
+  $out "  <ups> - use config-file ${DEF_CONFIG//@UPS@/<ups>} (or set \$UPS)"
+  $out
+  $out "<options> may include:"
+  $out "  -d - increase debug to stderr (2+ exposes secrets!)"
+  $out "  -h - show help and exit"
+  $out "  -s - perform one network check and exit"
+  $out "  -v - verbose output"
+  $out "  -x - set 'nocomms' and exit"
+
+  exit $rc
+}
+
+main() {
+  # global state
+  local VERBOSE DEBUG TOKEN_CACHE STAT_ARGS=(-c %a) NOCOMMS SINGLE
+  local DEF_CONFIG="$NUT_SYSCONFIG/enphase-@UPS@.conf"
+  # config
+  local USERNAME PASSWORD SERIAL PORT_FILE TOKEN_FILE DISABLE_METERS
+  local ENVOY_HOST="envoy.local" STATE_DIR="$NUT_LOCALSTATE"
+  local -i POLLFREQ=60 POLLFREQALERT=20 LOADKWH=768
+  local -i LOGIN_TIMEOUT=10 API_TIMEOUT=10
+
+  check_requires
+
+  [[ $(uname -s) == Darwin ]] && STAT_ARGS=(-f %p)
+
+  while [[ $1 ]]; do
+    case $1 in
+      -c)
+        shift
+        [[ $1 ]] || usage
+        CONFIG_FILE=$1
+        ;;
+      -d) [[ $DEBUG ]] && { (( DEBUG++ )) || :; } || DEBUG=1 ;;
+      -h|--help) usage 0 ;;
+      -s) SINGLE=1 ;;
+      -v) VERBOSE=1 ;;
+      -x) NOCOMMS=1 ;;
+      -*) usage "$1" ;;
+      *) UPS=$1; break ;;
+    esac
+    shift
+  done
+
+  read_config
+
+  [[ $UPS ]] || {
+    warn "UPS must be set (env, <config> or as argument)"
+    usage
+  }
+
+  check_portfile
+
+  main_loop
+}
+
+main "$@"

@@ -6,6 +6,7 @@
  * Copyright (C)
  *	1998-2003	MGE UPS SYSTEMS, Luc Descotils
  *	2015		Eaton, Arnaud Quette (Update MAX_REPORT)
+ *	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +36,7 @@ extern "C" {
 #include <sys/types.h>
 
 #include "nut_stdint.h"
+#include "nut_bool.h"
 
 /*
  * Constants
@@ -308,10 +310,14 @@ typedef struct {
 
 	long		LogMin;				/* Logical Min			*/
 	long		LogMax;				/* Logical Max			*/
+	bool		assumed_LogMax;			/* Logical Max assumed (e.g. "-1" initially)?	*/
+
 	long		PhyMin;				/* Physical Min			*/
 	long		PhyMax;				/* Physical Max			*/
 	int8_t		have_PhyMin;			/* Physical Min defined?		*/
 	int8_t		have_PhyMax;			/* Physical Max defined?		*/
+
+	bool		mapping_handled;		/* Did the (sub)driver handling loop care about this report? If not, may be a point for improvement... */
 } HIDData_t;
 
 /*

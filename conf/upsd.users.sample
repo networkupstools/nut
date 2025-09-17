@@ -4,6 +4,9 @@
 # Users are defined here, are given passwords, and their privileges are
 # controlled here too.  Since this file will contain passwords, keep it
 # secure, with only enough permissions for upsd to read it.
+#
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
 
 # --------------------------------------------------------------------------
 

@@ -25,7 +25,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver (old)"
-#define DRIVER_VERSION	"2.33"
+#define DRIVER_VERSION	"2.35"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -118,6 +118,9 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 				case 'S': return "simulated power failure or UPS test";
 				default: return upsval;
 			}
+
+		default:
+			break;
 	}
 
 	upslogx(LOG_NOTICE, "Unable to handle conversion of %s", cmd_entry->name);
@@ -1060,6 +1063,9 @@ static void upsdrv_shutdown_advanced(long status)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	char	temp[32];
 	ssize_t	ret;
 	long	status;
@@ -1315,13 +1321,15 @@ static int setvar(const char *varname, const char *val)
 {
 	apc_vartab_t	*vt;
 
+	upsdebug_SET_STARTING(varname, val);
+
 	vt = vartab_lookup_name(varname);
 
 	if (!vt)
 		return STAT_SET_UNKNOWN;
 
 	if ((vt->flags & APC_RW) == 0) {
-		upslogx(LOG_WARNING, "setvar: [%s] is not writable", varname);
+		upslogx(LOG_SET_INVALID, "setvar: [%s] is not writable", varname);
 		return STAT_SET_INVALID;
 	}
 
@@ -1331,7 +1339,7 @@ static int setvar(const char *varname, const char *val)
 	if (vt->flags & APC_STRING)
 		return setvar_string(vt, val);
 
-	upslogx(LOG_WARNING, "setvar: Unknown type for [%s]", varname);
+	upslogx(LOG_SET_UNKNOWN, "setvar: Unknown type for [%s]", varname);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -1345,7 +1353,7 @@ static int do_cmd(apc_cmdtab_t *ct)
 	ret = ser_send_char(upsfd, ct->cmd);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "do_cmd: ser_send_char failed");
+		upslog_with_errno(LOG_INSTCMD_FAILED, "do_cmd: ser_send_char failed");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
 	}
 
@@ -1356,7 +1364,7 @@ static int do_cmd(apc_cmdtab_t *ct)
 		ret = ser_send_char(upsfd, ct->cmd);
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "do_cmd: ser_send_char failed");
+			upslog_with_errno(LOG_INSTCMD_FAILED, "do_cmd: ser_send_char failed");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failed */
 		}
 	}
@@ -1367,7 +1375,7 @@ static int do_cmd(apc_cmdtab_t *ct)
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
 
 	if (strcmp(buf, "OK") != 0) {
-		upslogx(LOG_WARNING, "Got [%s] after command [%s]",
+		upslogx(LOG_INSTCMD_FAILED, "Got [%s] after command [%s]",
 			buf, ct->name);
 
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
@@ -1404,6 +1412,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	int	i;
 	apc_cmdtab_t	*ct;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	ct = NULL;
 
 	for (i = 0; apc_cmdtab[i].name != NULL; i++)
@@ -1411,22 +1423,28 @@ static int instcmd(const char *cmdname, const char *extra)
 			ct = &apc_cmdtab[i];
 
 	if (!ct) {
-		upslogx(LOG_WARNING, "instcmd: unknown command [%s] [%s]",
-			cmdname, extra);
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
 	if ((ct->flags & APC_PRESENT) == 0) {
-		upslogx(LOG_WARNING, "instcmd: command [%s] [%s] is not supported",
-			cmdname, extra);
+		upslogx(LOG_INSTCMD_UNKNOWN,
+			"%s: command [%s] [%s] is not supported on this device",
+			__func__, NUT_STRARG(cmdname), NUT_STRARG(extra));
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
-	if (!strcasecmp(cmdname, "calibrate.start"))
+	if (!strcasecmp(cmdname, "calibrate.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		return do_cal(1);
+	}
 
-	if (!strcasecmp(cmdname, "calibrate.stop"))
+	if (!strcasecmp(cmdname, "calibrate.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		return do_cal(0);
+	}
+
+	upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
 
 	if (ct->flags & APC_NASTY)
 		return instcmd_chktime(ct);

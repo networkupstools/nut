@@ -25,10 +25,18 @@ import org.nut.dynamatrix.*;
     def dynacfgPipeline = [:]
 
     // NOTE: These can be further disabled or active in different combo specs
-    // below based on branch names
+    // below based on branch names. Also note that the values are somewhat
+    // "inversed" -- e.g. that "disabledSomething = false" means "enable it".
     dynacfgPipeline.disableSlowBuildAutotools = false
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
+
+    // NOTE: Disabled by default because with -std=c* the compiler and linker
+    // (at least on environments NUT CI farm has) do not "see" many things,
+    // and do not even define WIN32, and this is unrelated to NUT codebase.
+    // This toggle aims to only disable 'c' builds in the scenario; but the
+    //'gnu' ones should still happen if it is enabled overall.
+    dynacfgPipeline.disableStrictCIBuild_CrossWindows = true
 
     // At this time, GCC succeeds building C89/GNU89 mode for NUT
     // while CLANG complains about things we can't fix easily.
@@ -92,7 +100,7 @@ import org.nut.dynamatrix.*;
     // quietly for things that succeed, and summarizes errors in the end
     dynacfgPipeline['spellcheck_prepconf'] = false
     dynacfgPipeline['spellcheck_configure'] = false
-    dynacfgPipeline['spellcheck'] = '(BUILD_TYPE=default-spellcheck ./ci_build.sh)'
+    dynacfgPipeline['spellcheck'] = '(BUILD_TYPE=default-spellcheck-quick ./ci_build.sh)'
 
 /*
     // For older builds, with only autotools in the tree:
@@ -107,9 +115,10 @@ import org.nut.dynamatrix.*;
     // are used (just assigning it among build agent labels is not enough).
     dynacfgPipeline['shellcheck'] = [
         //'stageNameFunc': null,
+        requiredNodelabels: dynacfgPipeline.disableSlowBuildCIBuild_QEMU ? ["nut-builder"] : ["(nut-builder||qemu-nut-builder)"],
         //'dynamatrixAxesLabels': [~/^OS_.+/, 'MAKE'],
         'dynamatrixAxesLabels': ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
-        'single': '( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; \${MAKE} shellcheck )',
+        'single': '( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; \${MAKE} -j 4 shellcheck )',
         'multi': '(cd tests && SERVICE_FRAMEWORK="selftest" SHELL_PROGS="$SHELL_PROGS" ./nut-driver-enumerator-test.sh )',
         'multiLabel': 'SHELL_PROGS',
         'skipShells': [ 'zsh', 'tcsh', 'csh' ]
@@ -206,7 +215,7 @@ import org.nut.dynamatrix.*;
     if ( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) {
         // For our main branches we want all builds in full,
         // to keep reference for warnings-ng up to date, so do
-        // not limit ny appliesToChangedFilesRegex categories
+        // not limit any appliesToChangedFilesRegex categories
 
         // Be sure to not make noise in long-lived branches'
         // overview pages by enabling quick analysis publishing
@@ -247,7 +256,11 @@ import org.nut.dynamatrix.*;
 
     // Imported from jenkins-dynamatrix JSL vars/autotools.groovy:
     // a workaround for the cases of curiously missing MAKE envvar...
-    dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
+    // Note that NUT Makefile has a concept of "distcheck-ci" to
+    // cater for documentation files (pre-generated man pages) that
+    // must be present in the dist tarball, but may not be available
+    // or creatable on the build agent - in that case we fake them.
+    dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; if [ x"\${MAKE_OPTS-}" = x ]; then MAKE_OPTS="-j 4"; fi ; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck-ci DISTCHECK_FLAGS=\${CONFIG_OPTS:+\\"\$CONFIG_OPTS\\"} )"""
 
     // Note: shellcheck/spellcheck/... require autotools currently
     // or need to be redefined with respective BUILD_TYPE
@@ -278,7 +291,10 @@ set | sort -n """
         }
 
         withEnvOptional(dynacfgPipeline.defaultTools) {
-            unstashCleanSrc(dynacfgPipeline.stashnameSrc)
+            stage('Unstash sources') {
+                unstashCleanSrc(dynacfgPipeline.stashnameSrc)
+            }
+
             buildMatrixCellCI(dynacfgPipeline, dsbcClone, stageNameClone)
             //buildMatrixCellCI(dynacfgPipeline, dsbc, stageName)
         }
@@ -308,7 +324,10 @@ set | sort -n """
         }
 
         withEnvOptional(dynacfgPipeline.defaultTools) {
-            unstashCleanSrc(dynacfgPipeline.stashnameSrc)
+            stage('Unstash sources') {
+                unstashCleanSrc(dynacfgPipeline.stashnameSrc)
+            }
+
             def dynacfgPipeline_ciBuild = dynacfgPipeline.clone()
             dynacfgPipeline_ciBuild.buildSystem = 'ci_build.sh'
             dynacfgPipeline_ciBuild.buildPhases = [:]
@@ -355,7 +374,10 @@ set | sort -n """
                     'CSTDVARIANT': ['gnu']
                     ],
 
-                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'excludeCombos': 'merge' ],
+                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace', 'excludeCombos': 'merge' ],
+                dynamatrixAxesCommonEnv: [
+                    ['CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules']
+                    ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
                     dynacfgPipeline.axisCombos_STRICT_C
@@ -364,6 +386,7 @@ set | sort -n """
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [[~/OS_DISTRO=(macos|netbsd)/]]	// commented in detail below
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
@@ -375,7 +398,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          branchRegexTarget: ~/fightwarn/,
-         // NOTE: For fightwarn, we want some schenarios that would always build to test
+         // NOTE: For fightwarn, we want some scenarios that would always build to test
          //appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
@@ -397,24 +420,89 @@ set | sort -n """
                 mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace', 'excludeCombos': 'merge' ],
                 dynamatrixAxesCommonEnv: [
                     //['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall\\ -Wextra\\ -Werror', 'CXXFLAGS=-Wall\\ -Wextra\\ -Werror']
-                    ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall']
+                    ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall',
+                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules'
+                    ]
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
                     dynacfgPipeline.axisCombos_STRICT_C,
-                    [~/C.*FLAGS=.+Werror/]
+                    //[~/C.*FLAGS=.+Werror/]
                     ],
                 runAllowedFailure: true,
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [[~/OS_DISTRO=(macos|netbsd)/]]	// commented in detail below
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
         ] // one slowBuild filter configuration, autotools-Wall
 
-        ,[name: 'Various non-docs distchecked target builds with main and ~newest supported C/C++ revisions (must pass on all platforms)',
+        ,[name: 'Default autotools driven build with default configuration, bitness and warning levels on each NUT CI farm platform (but with fatal warnings as of gnu99/gnu++11, must pass where enabled)',
+         disabled: dynacfgPipeline.disableSlowBuildAutotools,
+         //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         //branchRegexTarget: dynacfgPipeline.branchStableRegex,
+         //branchRegexTarget: ~/fightwarn/,
+         //appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
+         'getParStages': { def dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                //commonLabelExpr: dynacfgBase.commonLabelExpr,
+                //defaultDynamatrixConfig: dynacfgBase.defaultDynamatrixConfig,
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    //'BITS': [32, 64],
+                    // 'CSTDVERSION': ['03', '2a'],
+                    //'CSTDVERSION_${KEY}': [ ['c': '03', 'cxx': '03'], ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '2a'], 'ansi' ],
+                    //'CSTDVERSION_${KEY}': [ ['c': '03', 'cxx': '03'], ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '2a'] ],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'] ],
+                    'CSTDVARIANT': ['gnu']
+                    ],
+                dynamatrixAxesCommonEnv: [
+                    // One set of several simultaneously exported envvars!
+                    // CONFIG_OPTS are picked up by our dynamatrix configuration
+                    // and substituted into shell "as is" for normal builds
+                    // (so splitting into many tokens), or quoted as a single
+                    // token DISTCHECK_FLAGS in its stage (split by make later).
+                    ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules'
+                    ]
+                    ],
+
+                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'excludeCombos': 'merge' ],
+                allowedFailure: [
+                    dynacfgPipeline.axisCombos_WINDOWS,
+                    dynacfgPipeline.axisCombos_STRICT_C
+                    ],
+                runAllowedFailure: true,
+                //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
+                //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
+                dynamatrixAxesLabels: [~/^OS_DISTRO/, 'COMPILER'],
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
+                    + [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/]]
+                    // Here we picked just OSes and compilers (gcc or clang),
+                    // so exclude systems which have e.g. gcc-4.2.1 which claims
+                    // type range comparison warnings despite pragma fencing.
+                    // gcc-4.8.x on CentOS 7 and Ubuntu 14.04 looks already okay.
+                    + [[~/OS_DISTRO=macos/]]
+                    // MacOS (at least agents prepared with HomeBrew packages)
+                    // requires a few pkg-config and CFLAGS pre-sets which are
+                    // done in ci_build.sh and defeat the purpose of this stage.
+                    // So it is easier and more honest to just skip it.
+                    + [[~/OS_DISTRO=netbsd/]]
+                    // NetBSD version on the build agent has issues with pkgsrc
+                    // (lacking -R for some libs) so autotools builds are tricky;
+                    // ci_build.sh imposes some fixes - so see notes for macos.
+                ], body)
+            }, // getParStages
+        //'bodyParStages': {}
+        ] // one slowBuild filter configuration, autotools-everywhere
+
+        ,[name: 'Various non-docs distchecked target builds with main and ~newest supported C/C++ revisions and fatal warnings (default level) (must pass on all platforms)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -442,7 +530,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -451,7 +539,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Valgrind+distchecked target builds with main and ~newest supported C/C++ revisions (must pass on all platforms)',
+        ,[name: 'Valgrind+distchecked target builds with main and ~newest supported C/C++ revisions and fatal warnings (default level) (must pass on all platforms)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -471,15 +559,15 @@ set | sort -n """
                     // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC'
-                     //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=hard'
                     ]
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -487,7 +575,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A cppcheck analysis build',
+        ,[name: 'A cppcheck analysis build with fatal warnings (default level)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          // NOTE: At the time of this posting, there are a handful of "high"
          // priority issues, and hundreds of lesser problems which may overlap
@@ -520,15 +608,15 @@ set | sort -n """
                     'BUILD_TYPE': ['default-tgt:cppcheck']
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC', 'DO_CLEAN_CHECK=no'
-                     //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ['LANG=C','LC_ALL=C','TZ=UTC', 'DO_CLEAN_CHECK=no', 'BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=hard'
                     ]
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -536,7 +624,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with all driver types on capable systems with distcheck for main supported C/C++ revision (must pass)',
+        ,[name: 'A build with all driver types on capable systems and fatal warnings (default level) with distcheck for main supported C/C++ revision (must pass)',
          // NOTE: Here we constrain distcheck builds (more CI stress load)
          // to run as few combos as possible; arguably this filter config
          // is more about recipes distributing those drivers than about
@@ -571,14 +659,14 @@ set | sort -n """
                     [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldrv/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with all driver types on capable systems without distcheck for other C/C++ revisions (must pass)',
+        ,[name: 'A build with all driver types on capable systems and fatal warnings (default level) without distcheck for other C/C++ revisions (must pass)',
          // NOTE: We reduce the build load here since the Makefile recipes
          // (for distcheck part) are deemed tested above with the supported
          // C/C++ standard revision
@@ -594,7 +682,7 @@ set | sort -n """
 
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVERSION_${KEY}': [ /*['c': '99', 'cxx': '98'],*/ ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
                     'BUILD_TYPE': ['default-alldrv:no-distcheck']
                     ],
@@ -609,7 +697,7 @@ set | sort -n """
                     [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldr(v|v:no-distcheck)/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -617,7 +705,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with all driver types on capable systems with distcheck and fatal warnings (allowed to fail)',
+        ,[name: 'A build with all driver types on capable systems with distcheck and fatal warnings (hard level), using default compiler with GNU C99+/C++98+ standards (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
@@ -646,7 +734,7 @@ set | sort -n """
                     [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldrv/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -655,7 +743,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Various build combos with Python versions for helper scripts',
+        ,[name: 'Various build combos with Python versions for helper scripts and fatal warnings (default level), using default compiler with GNU C99/C++98 standard',
          // This is a recipe (and target OS) test for ability to use helper
          // scripts with various Python interpreter versions.
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
@@ -678,14 +766,15 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
+                     'BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=medium'
                     ]
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -694,7 +783,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'An out-of-tree build with all docs types on capable systems, and a distcheck (must pass)',
+        ,[name: 'An out-of-tree build with all docs types on capable systems and with fatal warnings (default level), and a distcheck (must pass), using default compiler with GNU C99/C++98 standard',
          // TODO: This is a recipe (and target OS) test for ability to build
          // the docs without error; it should not iterate compilers (maybe
          // iterate docs tools though, if we were to support many backends?)
@@ -719,16 +808,21 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      // Build in a subdirectory to check that out-of-dir
-                     // builds are healthy too
+                     // builds are healthy too.
+                     // NOTE: It would be useful to also have a recipe to build
+                     // "completely out-of-tree", in a different filesystem (to
+                     // make sure we do not rely on hard-links, relative paths,
+                     // etc.)
                      'CI_BUILDDIR=obj',
-                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
+                     'BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=minimal'
                     ]
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -737,7 +831,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with manpage docs on all systems that did not build "all docs", and a distcheck (allowed to fail - e.g. no tools even for that)',
+        ,[name: 'A build with manpage docs on all systems that did not build "all docs" and with fatal warnings (default level), and a distcheck (allowed to fail - e.g. no tools even for that), using default compiler with GNU C99/C++98 standard',
          // TODO: This is a recipe (and target OS) test for ability to build
          // the docs without error; it should not iterate compilers; see above
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
@@ -760,7 +854,8 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
+                     'BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=minimal'
                     ]
                     ],
                 allowedFailure: [
@@ -768,7 +863,7 @@ set | sort -n """
                     [~/BUILD_TYPE=default-withdoc:man/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -777,7 +872,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C standard builds with non-fatal warnings, without distcheck and docs (must pass)',
+        ,[name: 'GNU C99+/C++11+ standard builds with fatal warnings (auto level), without distcheck and docs (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -798,14 +893,14 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      'BUILD_TYPE=default-all-errors',
-                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=auto'
                     ]
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -813,7 +908,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C89 standard builds with non-fatal warnings and GCC toolkits, without distcheck and docs (must pass)',
+        ,[name: 'Strict and GNU C89/C++98 standard builds with fatal warnings (auto level) and GCC toolkits, without distcheck and docs (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
@@ -830,19 +925,19 @@ set | sort -n """
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'] ],
-                    'CSTDVARIANT': ['gnu'],
+                    'CSTDVARIANT': ['c', 'gnu'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      'BUILD_TYPE=default-all-errors',
-                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=auto'
                     ]
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -851,7 +946,8 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C89 standard builds with non-fatal warnings and non-GCC toolkits, without distcheck and docs (must pass)',
+        ,[name: 'GNU C89/C++98 standard builds with non-fatal warnings (auto level) and non-GCC toolkits, without distcheck and docs (must pass)',
+        // NOTE: Extra toggle to enable; only for fightwarn builds
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
@@ -876,16 +972,17 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
-                    [dynacfgPipeline.axisCombos_COMPILER_GCC]
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC]	// checking non-GCC builds; e.g. clang fails to like our code so far
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C standard builds with non-fatal warnings, without distcheck and docs, one compiler with main supported C/C++ revision on slower QEMU builders (may fail due to those workers)',
+        ,[name: 'GNU C99/C++11 standard builds with non-fatal warnings (auto level), without distcheck and docs, one compiler with main supported C/C++ revision on slower QEMU builders (may fail due to those workers)',
+        // NOTE: Extra toggle to enable e.g. by use of "fightwarn-qemu" branch builds
          disabled: dynacfgPipeline.disableSlowBuildCIBuild_QEMU,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*|.*qemu.*)$/,
          //branchRegexTarget: ~/^(master|main|stable|.*qemu.*)$/,
@@ -915,7 +1012,7 @@ set | sort -n """
                     [~/OS_FAMILY=.+/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: [
                     [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
                     [~/CSTDVARIANT=c/],
@@ -927,7 +1024,8 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C standard builds with fatal warnings, without distcheck and docs (allowed to fail with non-GCC compilers)',
+        ,[name: 'GNU C99+/C++98+ standard builds with fatal warnings (hard level), without distcheck and docs (allowed to fail with non-GCC compilers)',
+        // NOTE: Extra toggle to enable; only for fightwarn builds
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
@@ -956,7 +1054,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -966,7 +1064,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C89 standard builds with fatal warnings with non-GCC compilers, without distcheck and docs (allowed to fail)',
+        ,[name: 'GNU C89/C++98 standard builds with fatal warnings (hard level) with non-GCC compilers, without distcheck and docs (allowed to fail)',
          // NOTE: This build scenario is quite noisy with regard to warnings
          // analysis and not too beneficial unless someone looking at the
          // logs is actively fixing the C89 compatibility. So off by default,
@@ -997,7 +1095,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C + [
                     [~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/]
                     ] +
@@ -1008,7 +1106,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C standard out-of-tree builds with fatal warnings with GCC, without distcheck and docs (must pass)',
+        ,[name: 'GNU C99+/C++98+ standard out-of-tree builds with fatal warnings (hard level) with GCC, without distcheck and docs (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -1040,7 +1138,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C + [
                     [~/COMPILER=(?!GCC)/]
                     ] +
@@ -1051,7 +1149,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Strict C standard builds on non-Windows platforms, without distcheck and docs (allowed to fail)',
+        ,[name: 'Strict C99+/C++98+ standard builds (hard warnings level) on non-Windows platforms, without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
@@ -1077,7 +1175,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
                     dynacfgPipeline.axisCombos_WINDOWS_CROSS,
@@ -1088,7 +1186,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Strict ANSI C (C89/C90) standard builds on non-Windows platforms and GCC toolkits, without distcheck and docs (allowed to fail)',
+        ,[name: 'Strict ANSI C (C89/C90) standard builds (hard warnings level) on non-Windows platforms and GCC toolkits, without distcheck and docs (allowed to fail)',
          //disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          //branchRegexTarget: ~/fightwarn.*89.*/,
@@ -1117,7 +1215,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
                     dynacfgPipeline.axisCombos_WINDOWS_CROSS,
@@ -1128,7 +1226,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Strict ANSI C (C89/C90) standard builds on non-Windows platforms and non-GCC toolkits, without distcheck and docs (allowed to fail)',
+        ,[name: 'Strict ANSI C (C89/C90) standard builds (hard warnings level) on non-Windows platforms and non-GCC toolkits, without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
@@ -1154,7 +1252,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
                     dynacfgPipeline.axisCombos_WINDOWS_CROSS,
@@ -1165,7 +1263,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Strict C and GNU standard builds on native-Windows platforms, without distcheck and docs (allowed to fail)',
+        ,[name: 'Strict C and GNU C99+/C++98+ standard builds (hard warnings level) on native-Windows platforms, without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
          branchRegexTarget: ~/fightwarn|Windows-.*/,
@@ -1193,7 +1291,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: [
                     dynacfgPipeline.axisCombos_ARCH32x64,
                     dynacfgPipeline.axisCombos_ARCH64x32,
@@ -1206,7 +1304,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Strict C and GNU standard builds on cross-Windows platforms (Linux+mingw), without distcheck and docs (allowed to fail)',
+        ,[name: (dynacfgPipeline.disableStrictCIBuild_CrossWindows ? '' : 'Strict C and ') + 'GNU C99/C++11 standard builds with fatal warnings (hard level) on cross-Windows platforms (Linux+mingw), without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
          //branchRegexTarget: ~/fightwarn|Windows-.*/,
@@ -1221,7 +1319,7 @@ set | sort -n """
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [64, 32],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'] ],
-                    'CSTDVARIANT': ['c', 'gnu'],
+                    'CSTDVARIANT': ['gnu'] + (dynacfgPipeline.disableStrictCIBuild_CrossWindows ? [] : ['c']),
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
@@ -1237,7 +1335,7 @@ set | sort -n """
                     //[~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: [
                     dynacfgPipeline.axisCombos_ARCH32x64,
                     dynacfgPipeline.axisCombos_ARCH64x32,

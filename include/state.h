@@ -32,6 +32,8 @@ extern "C" {
 
 #define ST_SOCK_BUF_LEN 512
 
+#include "timehead.h"
+
 #if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
 typedef struct timespec	st_tree_timespec_t;
 #else

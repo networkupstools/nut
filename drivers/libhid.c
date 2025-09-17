@@ -1,6 +1,6 @@
 /*!
  * @file libhid.c
- * @brief HID Library - User API (Generic HID Access using MGE HIDParser)
+ * @brief NUT HID Library - User API (Generic HID Access using MGE HIDParser)
  *
  * @author Copyright (C) 2003 - 2007
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
@@ -39,7 +39,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-/* #include <math.h> */
+/* #include "nut_float.h" */
 #include "libhid.h"
 #include "hidparser.h"
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
@@ -47,10 +47,10 @@
 
 /* Communication layers and drivers (USB and MGE SHUT) */
 #if (defined SHUT_MODE) && SHUT_MODE
-	#include "libshut.h"
+#	include "libshut.h"
 	communication_subdriver_t *comm_driver = &shut_subdriver;
 #else	/* !SHUT_MODE => USB */
-	#include "nut_libusb.h"
+#	include "nut_libusb.h"
 	communication_subdriver_t *comm_driver = &usb_subdriver;
 #endif	/* SHUT_MODE / USB */
 
@@ -239,7 +239,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	r = (size_t)ret;
 
 	if (rbuf->len[id] != r) {
-		/* e.g. if maxreportsize flag was set */
+		/* e.g. if max_report_size flag was set */
 		upsdebugx(2,
 			"%s: expected %" PRIuSIZE " bytes, but got %" PRIuSIZE " instead",
 			__func__, rbuf->len[id], r);
@@ -487,15 +487,22 @@ const char *HIDDataType(const HIDData_t *hiddata)
 HIDData_t *HIDGetItemData(const char *hidpath, usage_tables_t *utab)
 {
 	int	r;
-	HIDPath_t Path;
+	HIDPath_t	Path;
+	HIDData_t	*p;
 
 	r = string_to_path(hidpath, &Path, utab);
 	if (r <= 0) {
+		upsdebugx(4, "%s: string_to_path() failed to decipher '%s'", __func__, hidpath);
 		return NULL;
 	}
 
 	/* Get info on object (reportID, offset and size) */
-	return FindObject_with_Path(pDesc, &Path, interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
+	p = FindObject_with_Path(pDesc, &Path, interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
+
+	if (!p)
+		upsdebugx(4, "%s: FindObject_with_Path() failed to locate '%s'", __func__, hidpath);
+
+	return p;
 }
 
 char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)
@@ -1003,7 +1010,7 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 		/* indexed collection */
 		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)
 		{
-			snprintfcat(string, size, "[%i]", path->Node[i] & 0x0000ffff);
+			snprintfcat(string, size, "[%u]", path->Node[i] & 0x0000ffff);
 			continue;
 		}
 

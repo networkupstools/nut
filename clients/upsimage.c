@@ -48,6 +48,9 @@
 
 #define MAX_CGI_STRLEN 64
 
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
+
 static	char	*monhost = NULL, *cmd = NULL;
 
 static	uint16_t	port;
@@ -275,20 +278,10 @@ static void drawbar(
 	gdImageFilledRectangle(im, 25, bar_y, width - 25, scale_height,
 		bar_color);
 
-	/* stick the text version of the value at the bottom center */
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(text, sizeof(text), format, value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	/* stick the text version of the value at the bottom center
+	 * expected format is one of imgvar[] entries for "double value"
+	 */
+	snprintf_dynamic(text, sizeof(text), format, "%f", value);
 	gdImageString(im, gdFontMediumBold,
 		(width - (int)(strlen(text))*gdFontMediumBold->w)/2,
 		height - gdFontMediumBold->h,
@@ -321,6 +314,12 @@ static void noimage(const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) */
+	/* FIXME: Actually, almost only fixed strings, no formatting
+	 * needed here: one use-case of having a format, and another
+	 * with externally prepared snprintf(). */
 	vsnprintf(msg, sizeof(msg), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -623,6 +622,8 @@ int main(int argc, char **argv)
 
 	extractcgiargs();
 
+	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+
 	/* no 'host=' or 'display=' given */
 	if ((!monhost) || (!cmd))
 		noimage("No host or display");
@@ -639,7 +640,7 @@ int main(int argc, char **argv)
 #endif
 	}
 
-	if (upscli_connect(&ups, hostname, port, 0) < 0) {
+	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		noimage("Can't connect to server:\n%s\n",
 			upscli_strerror(&ups));
 #ifndef HAVE___ATTRIBUTE__NORETURN

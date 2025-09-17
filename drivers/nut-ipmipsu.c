@@ -27,7 +27,7 @@
 #include "nut-ipmi.h"
 
 #define DRIVER_NAME	"IPMI PSU driver"
-#define DRIVER_VERSION	"0.32"
+#define DRIVER_VERSION	"0.35"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -145,20 +145,42 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/*
+	 * WARNING:
+	 * This driver will probably never support this properly:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 /*
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/ * May be used in logging below, but not as a command argument * /
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 */
@@ -166,12 +188,14 @@ static int instcmd(const char *cmdname, const char *extra)
 /*
 static int setvar(const char *varname, const char *val)
 {
-	if (!strcasecmp(varname, "ups.test.interval")) {
+	upsdebug_SET_STARTING(varname, val);
+
+  	if (!strcasecmp(varname, "ups.test.interval")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 */
@@ -183,7 +207,8 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	/* FIXME: need more params.
+	/* FIXME: need more params. */
+/*
 	addvar(VAR_VALUE, "username", "Remote server username");
 	addvar(VAR_VALUE, "password", "Remote server password");
 	addvar(VAR_VALUE, "authtype",
@@ -192,7 +217,9 @@ void upsdrv_makevartable(void)
 		"Type of the device to match ('psu' for \"Power Supply\")");
 
 	addvar(VAR_VALUE, "serial", "Serial number to match a specific device");
-	addvar(VAR_VALUE, "fruid", "FRU identifier to match a specific device"); */
+	addvar(VAR_VALUE, "fruid", "FRU identifier to match a specific device");
+	addvar(VAR_VALUE, "sensorid", "Sensor identifier to match a specific device");
+*/
 }
 
 void upsdrv_initups(void)

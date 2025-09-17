@@ -41,6 +41,10 @@
 
 /* ST Microelectronics */
 #define STMICRO_VENDORID	0x0483
+/* Please note that USB vendor ID 0x0483 is from ST Microelectronics -
+ * with actual product IDs delegated to different OEMs.
+ * Devices handled in this driver are marketed under Ever brand.
+ */
 
 /* USB IDs device table */
 static usb_device_id_t ever_usb_device_table[] = {

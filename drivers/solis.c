@@ -48,7 +48,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.69"
+#define DRIVER_VERSION	"0.72"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -619,7 +619,8 @@ static void comm_receive(const unsigned char *bufptr, size_t size) {
 		for (i = 0 ; i < packet_size-2 ; ++i )
 			CheckSum += RecPack[i];
 		CheckSum = CheckSum % 256;
-		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x", __func__, CheckSum, RecPack[23]);
+		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x",
+			__func__, (unsigned int)CheckSum, RecPack[23]);
 
 		/* clean port: */
 		/* ser_flush_in(upsfd,"",0); */
@@ -799,8 +800,10 @@ static void get_base_info(void) {
 		Model = "Solis 3.0";
 		break;
 	case 16:
-	  Model = "Microsol Back-Ups BZ1200-BR";
-	  break;
+		Model = "Microsol Back-Ups BZ1200-BR";
+		break;
+	default:
+		break;
 	}
 
 	/* if( isprogram ) */
@@ -893,8 +896,15 @@ static void get_update_info(void) {
 }
 
 static int instcmd(const char *cmdname, const char *extra) {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		/* shutdown and restart */
+		/* FIXME: check with HW if this is not
+		 *  a "shutdown.reboot" instead (or also)? */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ser_send_char(upsfd, CMD_SHUTRET); /* 0xDE */
 		/* ser_send_char(upsfd, ENDCHAR); */
 		return STAT_INSTCMD_HANDLED;
@@ -902,12 +912,13 @@ static int instcmd(const char *cmdname, const char *extra) {
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		/* shutdown now (one way) */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ser_send_char(upsfd, CMD_SHUT); /* 0xDD */
 		/* ser_send_char(upsfd, ENDCHAR); */
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 
 }
@@ -958,12 +969,19 @@ void upsdrv_updateinfo(void) {
  *  - on line: send shutdown+return, UPS will cycle and return soon.
  */
 void upsdrv_shutdown(void) {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	if (!SourceFail) {     /* on line */
+		upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.return", (char *)NULL);
 		upslogx(LOG_NOTICE, "On line, sending shutdown+return command...\n");
 		ser_send_char(upsfd, CMD_SHUTRET );
+		/* Seems AKA: instcmd("shutdown.return", NULL); */
 	} else {
+		upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.stayoff", (char *)NULL);
 		upslogx(LOG_NOTICE, "On battery, sending normal shutdown command...\n");
 		ser_send_char(upsfd, CMD_SHUT);
+		/* Seems AKA: instcmd("shutdown.stayoff", NULL); */
 	}
 }
 

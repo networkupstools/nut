@@ -29,7 +29,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Best UPS driver"
-#define DRIVER_VERSION	"1.08"
+#define DRIVER_VERSION	"1.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -118,17 +118,23 @@ static void model_set(const char *abbr, const char *rating)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_pace(upsfd, UPSDELAY, "CT\r");
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_pace(upsfd, UPSDELAY, "T\r");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -208,6 +214,9 @@ static void ups_ident(void)
 
 		case 5:
 			highvolt = atof(ptr);
+			break;
+
+		default:
 			break;
 		}
 
@@ -316,6 +325,9 @@ static int ups_on_line(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	printf("The UPS will shut down in approximately one minute.\n");
 
 	if (ups_on_line())

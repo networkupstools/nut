@@ -38,7 +38,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Rhino UPS driver"
-#define DRIVER_VERSION	"0.53"
+#define DRIVER_VERSION	"0.56"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -464,6 +464,9 @@ CommReceive(const unsigned char *bufptr, ssize_t size)
 			break;
 		}
 
+		default:
+			break;
+
 	}
 
 	Waiting = 0;
@@ -653,9 +656,14 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	ssize_t ret = 0;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		/* shutdown now (one way) */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		/* send_command( CMD_SHUT ); */
 		sendshut();
 		return STAT_INSTCMD_HANDLED;
@@ -664,6 +672,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "load.on"))
 	{
 		/* liga Saida */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ret = send_command( 3 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 3 failed");
@@ -673,6 +682,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "load.off"))
 	{
 		/* desliga Saida */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ret = send_command( 4 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 4 failed");
@@ -682,6 +692,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "bypass.start"))
 	{
 		/* liga Bypass */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ret = send_command( 5 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 5 failed");
@@ -691,13 +702,14 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "bypass.stop"))
 	{
 		/* desliga Bypass */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ret = send_command( 6 );
 		if ( ret < 1 )
 			upslogx(LOG_ERR, "send_command 6 failed");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -746,13 +758,17 @@ void upsdrv_updateinfo(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* basic idea: find out line status and send appropriate command */
 	/* on line: send normal shutdown, ups will return by itself on utility */
 	/* on battery: send shutdown+return, ups will cycle and return soon */
 
 	if (!SourceFail)     /* on line */
 	{
-		/* FIXME: Both legs of the if-clause send CMD_SHUT, where is the "forcing"? */
+		/* FIXME: Both legs of the if-clause send CMD_SHUT,
+		 *  where is the "forcing"? */
 		printf("On line, forcing shutdown command...\n");
 		/* send_command( CMD_SHUT ); */
 		sendshut();

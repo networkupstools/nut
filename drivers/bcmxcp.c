@@ -110,15 +110,13 @@ TODO List:
 
 
 #include "main.h"
-#include <math.h>       /* For ldexp() */
-#include <float.h>      /*for FLT_MAX */
-
-#include "nut_stdint.h" /* for uint8_t, uint16_t, uint32_t, ... */
+#include "nut_float.h"	/* For ldexp(), FLT_MAX */
+#include "nut_stdint.h"	/* for uint8_t, uint16_t, uint32_t, ... */
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRIVER_NAME    "BCMXCP UPS driver"
-#define DRIVER_VERSION "0.33"
+#define DRIVER_NAME	"BCMXCP UPS driver"
+#define DRIVER_VERSION	"0.38"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -354,7 +352,7 @@ float get_float(const unsigned char *data)
 	}
 
 	/* Never happens */
-	upslogx(LOG_ERR, "s = %d, e = %d, f = %lu\n", s, e, f);
+	upslogx(LOG_ERR, "s = %d, e = %d, f = %ld", s, e, f);
 	return 0;
 }
 
@@ -858,7 +856,7 @@ void init_ups_meter_map(const unsigned char *map, unsigned char len)
 			bcmxcp_meter_map[iIndex].meter_block_index = iOffset;
 
 			/* Debug info */
-			upsdebugx(2, "%04d\t%04d\t%2x\t%s", iIndex, iOffset, bcmxcp_meter_map[iIndex].format,
+			upsdebugx(2, "%04u\t%04u\t%2x\t%s", iIndex, iOffset, bcmxcp_meter_map[iIndex].format,
 					(bcmxcp_meter_map[iIndex].nut_entity == NULL ? "None" :bcmxcp_meter_map[iIndex].nut_entity));
 
 			iOffset += 4;
@@ -897,19 +895,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 		fValue = get_float(entry);
 		/* Format is packed BCD */
 		snprintf(sFormat, 31, "%%%d.%df", ((format & 0xf0) >> 4), (format & 0x0f));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		snprintf(value, 127, sFormat, fValue);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		snprintf_dynamic(value, 127, sFormat, "%f", fValue);
 	}
 	else if (format == 0xe2) {
 		/* Seconds */
@@ -1160,6 +1146,8 @@ void init_ext_vars(void)
 						dstate_setaux("battery.packs", 1);
 						break;
 
+			default:
+						break;
 		}
 	}
 }
@@ -1247,8 +1235,8 @@ void init_limit(void)
 
 		if (value != 0) {
 			value /= 100;
-			dstate_setinfo("input.frequency.low", "%u", fnom - value);
-			dstate_setinfo("input.frequency.high", "%u", fnom + value);
+			dstate_setinfo("input.frequency.low",  "%d", fnom - value);
+			dstate_setinfo("input.frequency.high", "%d", fnom + value);
 		}
 	}
 
@@ -1271,7 +1259,7 @@ void init_limit(void)
 	if (bcmxcp_status.shutdowndelay > bcmxcp_status.lowbatt)
 		upslogx(LOG_WARNING,
 			"Shutdown delay longer than battery capacity when Low Battery "
-			"warning is given. (max %d seconds)", bcmxcp_status.lowbatt);
+			"warning is given. (max %u seconds)", bcmxcp_status.lowbatt);
 
 	/* Horn Status: */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
@@ -1668,6 +1656,7 @@ void upsdrv_updateinfo(void)
 	{
 		bcmxcp_status.alarm_on_battery = 0;
 		bcmxcp_status.alarm_low_battery = 0;
+		bcmxcp_status.alarm_replace_battery = 0;
 
 		/* Set alarms */
 		alarm_init();
@@ -1948,22 +1937,23 @@ float calculate_ups_load(const unsigned char *answer)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	upsdebugx(1, "upsdrv_shutdown...");
 
-	/* Try to shutdown with delay */
-	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+	/* First try to shutdown with delay;
+	 * if the above doesn't work, try shutdown.stayoff */
+	if (do_loop_shutdown_commands("shutdown.return,shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try shutdown.stayoff */
-	if (instcmd("shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 
@@ -1978,7 +1968,9 @@ static int instcmd(const char *cmdname, const char *extra)
 	int sec, outlet_num;
 	int sddelay = 0x03; /* outlet off in 3 seconds, by default */
 
-	upsdebugx(1, "entering instcmd(%s)(%s)", cmdname, extra);
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
@@ -1989,6 +1981,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff); /* "delay" sec delay for shutdown, */
 		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);     /* high byte sec. From ups.conf. */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		res = command_write_sequence(cbuf, 3, answer);
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
@@ -2002,6 +1995,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		res = command_read_sequence(PW_UPS_OFF, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Going down NOW");
@@ -2012,6 +2006,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		res = command_read_sequence(PW_UPS_ON, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Enabling");
@@ -2022,6 +2017,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		res = command_read_sequence(PW_GO_TO_BYPASS, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Bypass enabled");
@@ -2039,6 +2035,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[1] = 0x0A; /* 10 sec start delay for test.*/
 		cbuf[2] = 0x1E; /* 30 sec test duration.*/
 
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		res = command_write_sequence(cbuf, 3, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing battery now");
@@ -2056,6 +2053,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		cbuf[0] = PW_INIT_SYS_TEST;
 		cbuf[1] = PW_SYS_TEST_GENERAL;
+
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		res = command_write_sequence(cbuf, 2, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing system now");
@@ -2098,6 +2097,8 @@ static int instcmd(const char *cmdname, const char *extra)
 				cbuf[2] = 0x2;
 				break;                  /*mute beeper*/
 				}
+			default:
+				break;
 		}
 		cbuf[3] = 0x0;          /*padding*/
 
@@ -2131,6 +2132,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[2] = (unsigned char)(sddelay >> 8);     /* high byte of the 2 byte time argument */
 		cbuf[3] = (unsigned char)outlet_num; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		res = command_write_sequence(cbuf, 4, answer);
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
@@ -2148,8 +2150,14 @@ static int instcmd(const char *cmdname, const char *extra)
 		if (outlet_num < 1 || outlet_num > 9)
 			return STAT_INSTCMD_FAILED;
 
-
-		cbuf[0] = (cmdname[NUT_OUTLET_POSITION+8] == 'n') ? PW_UPS_ON : PW_UPS_OFF;        /* Cmd oN or not*/
+		/* Cmd oN or not? */
+		if (cmdname[NUT_OUTLET_POSITION+8] == 'n') {
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+			cbuf[0] = PW_UPS_ON;
+		} else {
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+			cbuf[0] = PW_UPS_OFF;
+		}
 		cbuf[1] = (unsigned char)outlet_num;                           /* Outlet number */
 
 		res = command_write_sequence(cbuf, 2, answer);
@@ -2161,14 +2169,14 @@ static int instcmd(const char *cmdname, const char *extra)
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int decode_instcmd_exec(const ssize_t res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
 {
 	if (res <= 0) {
-		upslogx(LOG_ERR, "[%s] Short read from UPS", cmdname);
+		upslogx(LOG_INSTCMD_FAILED, "[%s] Short read from UPS", cmdname);
 		dstate_datastale();
 		return STAT_INSTCMD_FAILED;
 	}
@@ -2187,23 +2195,23 @@ static int decode_instcmd_exec(const ssize_t res, const unsigned char exec_statu
 			return STAT_INSTCMD_HANDLED;
 			}
 		case BCMXCP_RETURN_BUSY: {
-			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
+			upslogx(LOG_INSTCMD_FAILED, "[%s] Busy or disabled by front panel", cmdname);
 			return STAT_INSTCMD_FAILED;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
-			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
+			upslogx(LOG_INSTCMD_FAILED, "[%s] Unrecognized command byte or corrupt checksum", cmdname);
 			return STAT_INSTCMD_FAILED;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
-			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+			upslogx(LOG_INSTCMD_INVALID, "[%s] Invalid parameter", cmdname);
 			return STAT_INSTCMD_INVALID;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
-			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
+			upslogx(LOG_INSTCMD_INVALID, "[%s] Parameter out of range", cmdname);
 			return STAT_INSTCMD_INVALID;
 			}
 		default: {
-			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
+			upslogx(LOG_INSTCMD_INVALID, "[%s] Not supported", cmdname);
 			return STAT_INSTCMD_INVALID;
 			}
 	}
@@ -2216,6 +2224,10 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
+	/* NOTE: The USB variant of this driver currently does not
+	 * involve nut_usb_addvars() method like others do. When
+	 * fixing, see also tools/nut-scanner/scan_usb.c "exceptions".
+	 */
 	addvar(VAR_VALUE, "shutdown_delay", "Specify shutdown delay (seconds)");
 	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }
@@ -2229,7 +2241,7 @@ int setvar (const char *varname, const char *val)
 	int sec, outlet_num, tmp;
 	int onOff_setting = PW_AUTO_OFF_DELAY;
 
-	upsdebugx(1, "entering setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	if (!strcasecmp(varname, "input.transfer.boost.high")) {
 
@@ -2516,7 +2528,7 @@ int setvar (const char *varname, const char *val)
 static int decode_setvar_exec(const ssize_t res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
 {
 	if (res <= 0) {
-		upslogx(LOG_ERR, "[%s] Short read from UPS", cmdname);
+		upslogx(LOG_SET_FAILED, "[%s] Short read from UPS", cmdname);
 		dstate_datastale();
 		return STAT_SET_FAILED;
 	}
@@ -2535,23 +2547,23 @@ static int decode_setvar_exec(const ssize_t res, const unsigned char exec_status
 			return STAT_SET_HANDLED;
 			}
 		case BCMXCP_RETURN_BUSY: {
-			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
+			upslogx(LOG_SET_FAILED, "[%s] Busy or disabled by front panel", cmdname);
 			return STAT_SET_FAILED;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
-			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
+			upslogx(LOG_SET_FAILED, "[%s] Unrecognized command byte or corrupt checksum", cmdname);
 			return STAT_SET_FAILED;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
-			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+			upslogx(LOG_SET_INVALID, "[%s] Invalid parameter", cmdname);
 			return STAT_SET_INVALID;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
-			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
+			upslogx(LOG_SET_INVALID, "[%s] Parameter out of range", cmdname);
 			return STAT_SET_INVALID;
 			}
 		default: {
-			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
+			upslogx(LOG_SET_INVALID, "[%s] Not supported", cmdname);
 			return STAT_SET_INVALID;
 			}
 	}

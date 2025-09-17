@@ -4,7 +4,7 @@ NUT-DRIVER-ENUMERATOR(8)
 NAME
 ----
 
-nut-driver-enumerator - tool to map NUT device entries to service instances
+nut-driver-enumerator - Tool to map NUT device entries to service instances
 
 SYNOPSIS
 --------
@@ -19,16 +19,24 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-*nut-driver-enumerator.sh* implements the set-up and querying of the
-mapping between NUT driver configuration sections for each individual
-monitored device, and the operating system service management framework
-service instances into which such drivers are wrapped for independent
-execution and management (on platforms where NUT currently supports
-this integration -- currently this covers Linux distributions with
-systemd and systems derived from Solaris 10 codebase, including
-proprietary Sun/Oracle Solaris and numerous open-source illumos
-distributions with SMF). It may be not installed in packaging for
-other operating systems.
+The *nut-driver-enumerator.sh* (also known as "NDE") script implements the
+set-up and querying of the mapping between NUT driver configuration sections
+for each individual monitored device, and the service instances of an
+operating system service management framework (on platforms where NUT already
+supports this integration -- currently this covers Linux distributions with
+systemd and systems derived from Solaris 10 codebase, including proprietary
+Sun/Oracle Solaris and numerous open-source illumos distributions with SMF),
+into which such drivers are wrapped for independent execution and management.
+It may be not installed in packaging for other operating systems.
+
+With each NUT driver represented as a separate service instance, dependencies
+can be defined (e.g. networked drivers must start after the network ability
+appears in the OS, but USB/Serial drivers should not wait for that), and they
+can fail or be brought into maintenance independently (unlike a monolithic
+service based on linkman:upsdrvctl[8] requiring everything configured to be
+started). For a few special drivers like linkman:dummy-ups[8], linkman:clone[8],
+linkman:clone-outlet[8], and linkman:failover[8] this may also involve a
+dependency between service instances of different NUT drivers themselves.
 
 This script provides a uniform interface for further NUT tools
 such as linkman:upsdrvsvcctl[8] to implement their logic as
@@ -41,6 +49,15 @@ One part of the platform complexity that *nut-driver-enumerator.sh*
 hides is the difference of rules for valid service instance names
 in various frameworks, as well as system tools and naming patterns
 involved.
+
+Depending on the platform, the script may also be wrapped by different service
+unit types to run automatically (e.g. upon system start-up, or regularly to
+pick up changes of linkman:ups.conf[5] soon after it is edited, or integrated
+with a file system monitor to be triggered when the configuration is changed).
+Some of these modes make sense for use-cases with a rarely (if ever) changing
+population of power devices, e.g. a home or small-office UPS monitored same
+way for years at a time; others can help automate a data-center monitoring
+system where device deployments (or discovery) can be much more dynamic.
 
 COMMANDS
 --------

@@ -22,6 +22,9 @@
 #include <sys/ioctl.h>
 #include "nut_stdint.h"
 
+#define DRIVER_NAME                         "PiJuice UPS driver"
+#define DRIVER_VERSION                      "0.15"
+
 /*
  * Linux I2C userland is a bit of a mess until distros refresh to
  * the i2c-tools 4.x release that profides i2c/smbus.h for userspace
@@ -43,6 +46,9 @@
 # endif
 #endif
 
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
+
 /*
  * i2c-tools pre-4.0 has a userspace header with a name that conflicts
  * with a kernel header, so it may be ignored/removed by distributions
@@ -53,7 +59,7 @@
  * situation.
  */
 #if WITH_LINUX_I2C
-#if !HAVE_DECL_I2C_SMBUS_ACCESS
+# if !HAVE_DECL_I2C_SMBUS_ACCESS
 static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
                                      int size, union i2c_smbus_data *data)
 {
@@ -70,9 +76,9 @@ static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
 		err = -errno;
 	return err;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_READ_BYTE_DATA
+# if !HAVE_DECL_I2C_SMBUS_READ_BYTE_DATA
 static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
@@ -84,9 +90,9 @@ static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 	else
 		return 0x0FF & data.byte;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_WRITE_BYTE_DATA
+# if !HAVE_DECL_I2C_SMBUS_WRITE_BYTE_DATA
 static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value)
 {
 	union i2c_smbus_data data;
@@ -99,9 +105,9 @@ static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value
 	else
 		return 0x0FF & data.byte;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_READ_WORD_DATA
+# if !HAVE_DECL_I2C_SMBUS_READ_WORD_DATA
 static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
@@ -113,9 +119,9 @@ static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 	else
 		return 0x0FFFF & data.word;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_WRITE_WORD_DATA
+# if !HAVE_DECL_I2C_SMBUS_WRITE_WORD_DATA
 static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 value)
 {
 	union i2c_smbus_data data;
@@ -128,9 +134,9 @@ static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 valu
 	else
 		return 0x0FFFF & data.word;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_READ_BLOCK_DATA
+# if !HAVE_DECL_I2C_SMBUS_READ_BLOCK_DATA
 static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 length, __u8 *values)
 {
 	union i2c_smbus_data data;
@@ -152,8 +158,8 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 
 	return values;
 }
-#endif
-#endif // if WITH_LINUX_I2C
+# endif
+#endif /* if WITH_LINUX_I2C */
 
 #define STATUS_CMD                          0x40
 #define CHARGE_LEVEL_CMD                    0x41
@@ -216,9 +222,6 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 #define LOW_BATTERY_THRESHOLD               25.0
 #define HIGH_BATTERY_THRESHOLD              75.0
 #define NOMINAL_BATTERY_VOLTAGE             4.18
-
-#define DRIVER_NAME                         "PiJuice UPS driver"
-#define DRIVER_VERSION                      "0.11"
 
 static uint8_t i2c_address    = 0x14;
 static uint8_t shutdown_delay = 30;
@@ -337,11 +340,8 @@ static void get_charge_level_hi_res(void)
 static void get_status(void)
 {
 	uint8_t	cmd = STATUS_CMD, data, batteryStatus, powerInput, powerInput5vIo;
-	char	status_buf[ST_MAX_VALUE_LEN];
 
 	upsdebugx( 3, __func__ );
-
-	memset( status_buf, 0, ST_MAX_VALUE_LEN );
 
 	I2C_READ_BYTE( upsfd, cmd, __func__ )
 
@@ -419,17 +419,17 @@ static void get_status(void)
 		if ( battery_charge_level <= LOW_BATTERY_THRESHOLD )
 		{
 			upsdebugx( 1, "Battery Charge Status: LOW" );
-			snprintfcat( status_buf, ST_MAX_VALUE_LEN, "LB " );
+			status_set("LB");
 		}
 		else if ( battery_charge_level > HIGH_BATTERY_THRESHOLD )
 		{
 			upsdebugx( 1, "Battery Charge Status: HIGH" );
-			snprintfcat( status_buf, ST_MAX_VALUE_LEN, "HB " );
+			status_set("HB");
 		}
 	}
 	else if ( batteryStatus == BATT_NOT_PRESENT )
 	{
-		snprintfcat( status_buf, ST_MAX_VALUE_LEN, "RB " );
+		status_set("RB");
 	}
 
 	if ( batteryStatus  <= BATT_NOT_PRESENT &&
@@ -448,10 +448,10 @@ static void get_status(void)
 			battery_power = 0;
 			upsdebugx( 1, "On USB power [%d:%d:%d]", usb_power, gpio_power, battery_power );
 
-			snprintfcat( status_buf, sizeof(status_buf), "OL" );
+			status_set("OL");
 			if ( batteryStatus == BATT_CHARGING_FROM_5V )
 			{
-				snprintfcat( status_buf, sizeof( status_buf ), " CHRG" );
+				status_set("CHRG");
 				upsdebugx( 1, "Battery Charger Status: charging" );
 				dstate_setinfo( "battery.charger.status", "%s", "charging" );
 			}
@@ -460,7 +460,6 @@ static void get_status(void)
 				upsdebugx( 1, "Battery Charger Status: resting" );
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
-			status_set( status_buf );
 		}
 		else if ( powerInput5vIo == POWER_NOT_PRESENT &&
 		      ( powerInput   != POWER_NOT_PRESENT &&
@@ -475,17 +474,15 @@ static void get_status(void)
 			battery_power = 0;
 			upsdebugx( 1, "On 5V_GPIO power [%d:%d:%d]", usb_power, gpio_power, battery_power );
 
-			snprintfcat( status_buf, sizeof(status_buf), "OL" );
+			status_set("OL");
 			if ( batteryStatus == BATT_CHARGING_FROM_IN )
 			{
-				snprintfcat( status_buf, sizeof(status_buf), " CHRG" );
-				status_set( status_buf );
+				status_set("CHRG");
 				upsdebugx( 1, "Battery Charger Status: charging" );
 				dstate_setinfo( "battery.charger.status", "%s", "charging" );
 			}
 			else if ( batteryStatus == BATT_NORMAL )
 			{
-				status_set( status_buf );
 				upsdebugx( 1, "Battery Charger Status: resting" );
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
@@ -502,17 +499,15 @@ static void get_status(void)
 			battery_power = 0;
 			upsdebugx( 1, "On USB and 5V_GPIO power [%d:%d:%d]", usb_power, gpio_power, battery_power );
 
-			snprintfcat( status_buf, sizeof( status_buf ), "OL" );
+			status_set("OL");
 			if ( batteryStatus == BATT_CHARGING_FROM_IN )
 			{
-				snprintfcat( status_buf, sizeof(status_buf), " CHRG");
-				status_set( status_buf );
+				status_set("CHRG");
 				upsdebugx( 1, "Battery Charger Status: charging" );
 				dstate_setinfo("battery.charger.status", "%s", "charging");
 			}
 			else if ( batteryStatus == BATT_NORMAL )
 			{
-				status_set( status_buf );
 				upsdebugx( 1, "Battery Charger Status: resting" );
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
@@ -528,8 +523,8 @@ static void get_status(void)
 			battery_power = 1;
 			upsdebugx( 1, "On Battery power [%d:%d:%d]", usb_power, gpio_power, battery_power );
 
-			snprintfcat( status_buf, sizeof(status_buf), "OB DISCHRG" );
-			status_set( status_buf );
+			status_set("OB");
+			status_set("DISCHRG");
 		}
 	}
 }
@@ -798,6 +793,15 @@ void upsdrv_initinfo(void)
 	get_i2c_address();
 	get_battery_profile();
 	get_battery_profile_ext();
+
+	/* commands ----------------------------------------------- */
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("shutdown.stayoff");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 void upsdrv_updateinfo(void)
@@ -817,9 +821,41 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	/* FIXME: Which one is this - "load.off",
+	 * "shutdown.stayoff" or "shutdown.return"? */
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
+		set_power_off();
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 void upsdrv_shutdown(void)
 {
-	set_power_off();
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	int	ret = do_loop_shutdown_commands("shutdown.stayoff", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

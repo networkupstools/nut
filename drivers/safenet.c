@@ -41,7 +41,7 @@
 #include "safenet.h"
 
 #define DRIVER_NAME	"Generic SafeNet UPS driver"
-#define DRIVER_VERSION	"1.80"
+#define DRIVER_VERSION	"1.83"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -176,10 +176,16 @@ static int instcmd(const char *cmdname, const char *extra)
 		return instcmd("beeper.enable", NULL);
 	}
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	/*
 	 * Start the UPS selftest
 	 */
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		if (safenet_command(COM_BATT_TEST)) {
 			return STAT_INSTCMD_FAILED;
 		} else {
@@ -191,6 +197,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * Stop the UPS selftest
 	 */
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		if (safenet_command(COM_STOP_TEST)) {
 			return STAT_INSTCMD_FAILED;
 		} else {
@@ -202,6 +210,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * Start simulated mains failure
 	 */
 	if (!strcasecmp (cmdname, "test.failure.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		if (safenet_command(COM_MAINS_TEST)) {
 			return STAT_INSTCMD_FAILED;
 		} else {
@@ -213,6 +223,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * Stop simulated mains failure
 	 */
 	if (!strcasecmp (cmdname, "test.failure.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		if (safenet_command(COM_STOP_TEST)) {
 			return STAT_INSTCMD_FAILED;
 		} else {
@@ -266,6 +278,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command[5] += ((offdelay % 100) / 10);
 		command[6] +=  (offdelay % 10);
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		safenet_command(command);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -285,11 +298,12 @@ static int instcmd(const char *cmdname, const char *extra)
 		command[9] += ((ondelay % 100) / 10);
 		command[10] += (ondelay % 10);
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		safenet_command(command);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -419,6 +433,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	retry = 3;
 
 	/*
@@ -435,7 +452,8 @@ void upsdrv_shutdown(void)
 		}
 
 		upslogx(LOG_ERR, "SafeNet protocol compatible UPS not found on %s", device_path);
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 

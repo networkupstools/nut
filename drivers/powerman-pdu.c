@@ -23,7 +23,7 @@
 #include <libpowerman.h>	/* pm_err_t and other beasts */
 
 #define DRIVER_NAME	"Powerman PDU client driver"
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -54,7 +54,9 @@ static int instcmd(const char *cmdname, const char *extra)
 	char *cmdindex = NULL;
 	char outletname[SMALLBUF];
 
-	upsdebugx(1, "entering instcmd (%s)", cmdname);
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* only consider the end of the command */
 	if ( (cmdsuffix = strrchr(cmdname, '.')) == NULL )
@@ -74,23 +76,26 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	/* Power on the outlet */
 	if (!strcasecmp(cmdsuffix, "on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		rv = pm_node_on(pm, outletname);
-		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
+		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_INSTCMD_INVALID;
 	}
 
 	/* Power off the outlet */
 	if (!strcasecmp(cmdsuffix, "off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		rv = pm_node_off(pm, outletname);
-		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
+		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_INSTCMD_INVALID;
 	}
 
 	/* Cycle the outlet */
 	if (!strcasecmp(cmdsuffix, "cycle")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		rv = pm_node_cycle(pm, outletname);
-		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
+		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_INSTCMD_INVALID;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -99,7 +104,7 @@ void upsdrv_updateinfo(void)
 	pm_err_t rv = PM_ESUCCESS;
 
 	if ( (rv = query_all(pm, WALKMODE_UPDATE)) != PM_ESUCCESS) {
-		upslogx(2, "Error: %s (%i)\n", pm_strerror(rv, ebuf, sizeof(ebuf)), errno);
+		upsdebugx(2, "Error: %s (%i)\n", pm_strerror(rv, ebuf, sizeof(ebuf)), errno);
 		/* FIXME: try to reconnect?
 		 *	dstate_datastale();
 		 */
@@ -122,7 +127,7 @@ void upsdrv_initinfo(void)
 
 	/* Now walk the data tree */
 	if ( (rv = query_all(pm, WALKMODE_INIT)) != PM_ESUCCESS) {
-		upslogx(2, "Error: %s\n", pm_strerror(rv, ebuf, sizeof(ebuf)));
+		upsdebugx(2, "Error: %s\n", pm_strerror(rv, ebuf, sizeof(ebuf)));
 		/* FIXME: try to reconnect?
 		 *	dstate_datastale();
 		 */
@@ -135,23 +140,42 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	/* FIXME: shutdown all outlets? */
-	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
+	/*
+	 * WARNING:
+	 * This driver will probably never support this properly:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
+	/* replace with a proper shutdown function */
+	/* FIXME: shutdown all outlets? */
 	/* OL: this must power cycle the load if possible */
 	/* OB: the load must remain off until the power returns */
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 /*
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+ 
 	if (!strcasecmp(varname, "outlet.n.delay.*")) {
 		...
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 */

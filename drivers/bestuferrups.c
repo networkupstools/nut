@@ -33,7 +33,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best Ferrups Series ME/RE/MD driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -77,6 +77,7 @@ static struct {
 
 
 /* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 /* Set up all the funky shared memory stuff used to communicate with upsd */
 void upsdrv_initinfo (void)
@@ -101,9 +102,15 @@ void upsdrv_initinfo (void)
 	fprintf(stderr, "Best Power %s detected\n",
 		dstate_getinfo("ups.model"));
 	fprintf(stderr, "Battery voltages %5.1f nominal, %5.1f full, %5.1f empty\n",
-	 fc.idealbvolts,
-	 fc.fullvolts,
-	 fc.emptyvolts);
+		fc.idealbvolts,
+		fc.fullvolts,
+		fc.emptyvolts);
+
+	/* commands ----------------------------------------------- */
+	dstate_addcmd("shutdown.return");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 
@@ -361,12 +368,38 @@ static void ups_sync(void)
 	}
 }
 
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
+		/* NB: hard-wired password */
+		ser_send(upsfd, "pw377\r");
+		/* power off in 1 second and restart when line power returns */
+		ser_send(upsfd, "off 1 a\r");
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-/* NB: hard-wired password */
-	ser_send(upsfd, "pw377\r");
-	ser_send(upsfd, "off 1 a\r");	/* power off in 1 second and restart when line power returns */
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* list flags and values that you want to receive via -x */

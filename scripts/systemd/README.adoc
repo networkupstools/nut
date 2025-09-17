@@ -11,6 +11,16 @@ These files are automatically installed, upon detection (at `configure` time)
 of a systemd enabled target system, or if corresponding configuration options
 were requested.
 
+If you need to tweak some of the services, prefer to use systemd "drop-in"
+configuration files rather than editing the installed unit files directly
+(lest your changes be lost upon upgrade), e.g.:
+----
+# cat /etc/systemd/system/nut-monitor.service.d/debug.conf
+[Service]
+Environment="NUT_DEBUG_PID=yes"
+----
+...followed up by `systemctl daemon-reload` and a restart of the unit itself.
+
 This also uses the `nut-driver-enumerator.sh` (service and implementation
 method) and `upsdrvsvcctl` (tool) to manage NUT drivers as service instances
 located in `../upsdrvsvcctl/` source subdirectory.

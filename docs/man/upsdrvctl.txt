@@ -4,14 +4,16 @@ UPSDRVCTL(8)
 NAME
 ----
 
-upsdrvctl - UPS driver controller
+upsdrvctl - Network UPS Tools driver controller
 
 SYNOPSIS
 --------
 
 *upsdrvctl* -h
 
-*upsdrvctl* ['OPTIONS'] {start | stop | shutdown} ['ups']
+*upsdrvctl* ['OPTIONS'] {start | stop | shutdown | status} ['ups']
+
+*upsdrvctl* ['OPTIONS'] {list | -l} ['ups']
 
 *upsdrvctl* ['OPTIONS'] -c COMMAND ['ups']
 
@@ -19,14 +21,30 @@ DESCRIPTION
 -----------
 
 *upsdrvctl* provides a uniform interface for controlling your UPS drivers.
-You should use upsdrvctl instead of direct calls to the drivers
+You should use `upsdrvctl` command instead of direct calls to the drivers
 whenever possible.
 
-When used properly, upsdrvctl lets you maintain identical startup
+When used properly, `upsdrvctl` lets you maintain identical startup
 scripts across multiple systems with different UPS configurations.
 
-Note: For operating systems with service management frameworks, such as
-Solaris SMF or Linux systemd, the *upsdrvsvcctl* may be a better choice.
+[WARNING]
+=========
+For operating systems with service management frameworks, such as
+Solaris/illumos SMF or Linux systemd, the linkman:upsdrvsvcctl[8]
+may be a better choice.
+
+In fact, service instances prepared by linkman:nut-driver-enumerator[8]
+based on contents of your linkman:ups.conf[5] file and automatically
+maintained by the respective framework can conflict with manual execution
+of drivers. In this case, `upsdrvctl` would emit a warning in NUT builds with
+that capability (can be silenced by exporting a `NUT_QUIET_INIT_NDE_WARNING`
+environment variable with any value).
+=========
+
+You may be required to stop service units (if used) and run driver programs
+directly rather than via `upsdrvctl` for troubleshooting, e.g. to facilitate
+debug log collection or test any custom builds of drivers without conflict
+with a normally running packaged instance.
 
 OPTIONS
 -------
@@ -35,35 +53,44 @@ OPTIONS
 Display the help text.
 
 *-r* 'directory'::
-If starting a driver, this value will direct it to *chroot*(2) into
+If starting a driver, this value will direct it to linkmanext:chroot[2] into
 'directory'.  This can be useful when securing systems.
-
-This may be set in the ups.conf with "chroot" in the global section.
++
+This may be set in the linkman:ups.conf[5] with the +chroot+ directive
+in the global section.
 
 *-t*::
 Enable testing mode.  This also enables debug mode.  Testing mode makes
 upsdrvctl display the actions it would execute without actually doing them.
 Use this to test out your configuration without actually doing anything
-to your UPS drivers.  This may be helpful when defining the 'sdorder'
-directive in your linkman:ups.conf[5].
+to your UPS drivers.
++
+This may be helpful when defining the +sdorder+ directive in your
+linkman:ups.conf[5] section for the device.
 
 *-u* 'username'::
-If starting a driver, this value will direct it to *setuid*(2) to
+If starting a driver, this value will direct it to linkmanext:setuid[2] to
 the user id associated with 'username'.
-
-If the driver is started as root without specifying this value, it will
++
+If the driver is started as 'root' without specifying this value, it will
 use the username that was compiled into the binary.  This defaults to
-"nobody", and is far from ideal.
-
-This may be set in ups.conf with "user" in the global section.
+'nobody' (if not otherwise configured), which is far from ideal.
++
+This may be set in linkman:ups.conf[5] with the +user+ directive in the
+global section.
 
 *-D*::
 Raise the debug level.  Use this multiple times for additional details.
++
 Note that this does not preclude the `upsdrvctl` tool from exiting after
 its job is done (however an explicit *-F* option does).
++
+Also note that this option alone modifies the debug verbosity of the tool,
+but not of the drivers it launches. See the additional *-d* option for that.
 
 *-d*::
 Pass the selected debug level from `upsdrvctl` to launched drivers.
++
 Note that by default for NUT daemons, enabled debugging means running
 in foreground mode; you can specify *-B* additionally to avoid that.
 
@@ -71,9 +98,11 @@ in foreground mode; you can specify *-B* additionally to avoid that.
 Driver will run in the foreground (not fork away from the `upsdrvctl`
 process), regardless of debugging settings. It would also keep the tool
 program itself foregrounded with driver daemons running as its children
-(in case of a single driver startup, it would not even fork). It would
-also not wait for drivers to complete initialization, so `upsdrvctl`
-will warn about such situations.
+(in case of a single driver startup, it would not even fork).
++
+It would also not wait for drivers to complete initialization, so
+`upsdrvctl` will warn about such situations.
++
 Specify twice (`-FF` or `-F -F`) to save the driver PID file even in
 this mode (not saved by default when staying in foreground).
 
@@ -81,12 +110,16 @@ this mode (not saved by default when staying in foreground).
 Drivers will run in the background, regardless of debugging settings,
 as set by *-D* and passed-through by *-d* options.
 
+*-l*::
+Alias for `list` command.
+
 COMMANDS
 --------
 
-upsdrvctl supports three commands - start, stop and shutdown.
+`upsdrvctl` supports three active commands -- `start`, `stop` and `shutdown`.
 It also supports passing requests to running drivers using
 `-c COMMAND` syntax, similar to that in some other daemons.
+A couple of helper commands are also available -- `list` and `status`.
 
 They all can take an optional argument which is a UPS name from
 linkman:ups.conf[5].  Without that argument, they operate on every
@@ -96,8 +129,14 @@ NOTE: `upsdrvctl` can not manage devices not listed in `ups.conf`
 (such as test drivers started with `-s TMP` option).
 
 *start*::
-Start the UPS driver(s). In case of failure, further attempts may be executed
-by using the 'maxretry' and 'retrydelay' options - see linkman:ups.conf[5].
+Start the UPS driver(s). In case of failure to start within 'maxstartdelay'
+time-frame, further attempts may be executed by using the 'maxretry' and
+'retrydelay' values. Conversely, the 'nowait' global option can be used,
+especially to speed up parallel start of many drivers.
++
+See linkman:ups.conf[5] about these options. Built-in defaults are:
+'maxstartdelay=75' (sec), 'maxretry=1' (meaning one attempt at starting),
+'retrydelay=5' (sec).
 
 *stop*::
 Stop the UPS driver(s).  This does not send commands to the UPS.
@@ -105,23 +144,88 @@ Stop the UPS driver(s).  This does not send commands to the UPS.
 *shutdown*::
 Command the UPS driver(s) to run their shutdown sequence.  This
 assumes that the driver is no longer running, and starts a fresh
-instance via "driver -k".  It is intended to be used as the last step
-in system shutdown, after the filesystems are no longer mounted rw.
-Drivers are stopped according to their sdorder value - see
+instance via `drivername -k`.  It is intended to be used as the last step
+in system shutdown, after the filesystems are no longer mounted 'rw'.
+Drivers are stopped according to their `sdorder` value -- see
 linkman:ups.conf[5].
 
-WARNING: this will probably power off your computers, so don't
+WARNING: This will probably power off your computers, so don't
 play around with this option.  Only use it when your systems are prepared
 to lose power.
 
-NOTE: refer to linkman:ups.conf[5] for using the *nowait* parameter.
+NOTE: Refer to linkman:ups.conf[5] for using the *nowait* parameter.
 It can be overridden by `NUT_IGNORE_NOWAIT` environment variable
 (e.g. used to work around certain issues with systemd otherwise).
+
+*list*::
+Without a further argument, report all currently known device configuration
+names to `stdout`, one per line. With an argument, also try to report that
+name, but exit with an error code if that name is not known.
+
+NOTE: The tool would exit with an error if `ups.conf` file is not found,
+readable, or does not define any device sections (whose names are reported
+here and managed in other commands).
+
+NOTE: The tool name and NUT version banner line is also printed to `stdout`
+before any other processing. This can be suppressed by `NUT_QUIET_INIT_BANNER`
+environment variable (exported by caller and empty or "true"):
+
+	:; NUT_QUIET_INIT_BANNER=true upsdrvctl list
+	dummy
+	UPS1
+	UPS2
+
+*status*::
+Similar to `list`, but reports more information -- also the driver name, the
+PID if it is running, and result of a signal probe to check it is responding.
+The `NUT_QUIET_INIT_BANNER` suppression can be helpful for scripted parsing.
+If there is anything to print (at least one device is known), the first line
+of status report would be the heading with column names:
+
+	:; NUT_QUIET_INIT_BANNER=true upsdrvctl status
+	UPSNAME              UPSDRV  RUNNING PF_PID  S_RESPONSIVE    S_PID   S_STATUS
+	dummy             dummy-ups  N/A     -3      NOT_RESPONSIVE  N/A
+	eco650           usbhid-ups  RUNNING 3559207 RESPONSIVE      3559207 "OL"
+	UPS2              dummy-ups  RUNNING 31455   RESPONSIVE      31455   "OL BOOST"
++
+Values are TAB-separated, but UPSNAME and UPSDRV may be padded by spaces
+on the right and on the left respectively. Any complex string values would
+be encased in double-quotes.
++
+Fields reported (`PF_*` = according to PID file, if any; `S_*` = via socket
+protocol):
++
+--
+        *UPSNAME*;;      driver section configuration name
+        *UPSDRV*;;       driver program name per `ups.conf`
+        *RUNNING*;;      `RUNNING` if `PF_PID` or `S_PID` is valid,
+                         `STOPPED` if at least one PID value was parsed but
+                         none was found running with a correct program name;
+                         `N/A` if no PID file/socket reply or failed to parse.
+                         First the PID file is consulted, but it may be absent
+                         either due to command-line parameters of daemons, or
+                         due to platform (WIN32). If no PID value was found and
+                         confirmed this way, we fall back to checking the PID
+                         reported via protocol (if available and different).
+        *PF_PID*;;       PID of driver according to PID file (if any), or some
+                         negative values upon errors (as defined in `common.c`)
+                         including an absent PID file, invalid contents, or
+                         unsupported platform for this mechanism (e.g. WIN32)
+        *S_RESPONSIVE*;; `RESPONSIVE` if `PING`/`PONG` during socket protocol
+                         session setup succeeded; `NOT_RESPONSIVE` otherwise
+        *S_PID*;;        PID of driver according to `GETPID` active query,
+                         or `N/A` if the query failed
+        *S_STATUS*;;     Quoted value of `ups.status` variable
+--
++
+This mode does not discover drivers that are not in `ups.conf` (e.g. started
+manually for experiments with many `-x` CLI options).
 
 *-c* 'command'::
 Send 'command' to the background process as a signal.  Valid commands
 are:
-
++
+--
         *dump*;;   tell the driver(s) to dump currently known state
                    information to their `stdout` (if attached anywhere)
         *reload*;; reread configuration files, ignoring modified settings
@@ -142,6 +246,10 @@ are:
                    which can not be applied "on the fly" (may fail for
                    critical changes like run-time user/group accounts)
 /////////
+        *exit*;;   tell the currently running driver instance to just exit
+                   (so an external caller like the new driver instance, or
+                   the systemd or SMF frameworks would start another copy)
+--
 
 If the `upsdrvctl` was launched to remain in memory and manage NUT driver
 processes, it can receive supported signals and pass them to those drivers.
@@ -166,7 +274,7 @@ or otherwise the built-in default *STATEPATH*.
 DIAGNOSTICS
 -----------
 
-upsdrvctl will return a nonzero exit code if it encounters an error
+`upsdrvctl` will return a nonzero exit code if it encounters an error
 while performing the desired operation.  This will also happen if a
 driver takes longer than the 'maxstartdelay' period to enter the
 background.
@@ -174,7 +282,8 @@ background.
 SEE ALSO
 --------
 
-linkman:upsdrvsvcctl[8], linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
+linkman:upsdrvsvcctl[8], linkman:nut-driver-enumerator[8],
+linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

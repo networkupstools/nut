@@ -26,6 +26,7 @@ Tested with the following hardware:
  - SMT1500 (Smart-UPS 1500, Firmware 9.6)
  - SMX750  (Smart-UPS X 750, Firmware 10.1)
  - SMX1500 (Smart-UPS X 1500, Firmware 15.0)
+ - SMX2200 (Smart-UPS X 2200, Firmware 15.0)
 
 Note that you will have to enable Modbus communication. In the front panel of
 the UPS, go to Advanced Menu mode, under Configuration and enable Modbus.
@@ -61,7 +62,7 @@ connections, tcp for TCP/IP connections and usb for USB connections.
 *port*='value'::
 Depending on the port type you can select a port here. For usb only auto is
 supported, for serial you can pass a device path like /dev/ttyS0 and for tcp you
-can pass a hostname with optional port like example.com:502.
+can pass an IP address or a hostname with optional port like example.com:502.
 
 *baudrate*='num'::
 Set the speed of the serial connection. The default baudrate is 9600.
@@ -82,6 +83,71 @@ Set the Modbus slave id. The default slave id is 1.
 *response_timeout_ms*='num'::
 Set the Modbus response timeout. The default timeout is set by libmodbus. It can
 be good to set a higher timeout on TCP connections with high latency.
+
+BUGS
+----
+
+RTU USB support
+~~~~~~~~~~~~~~~
+
+This driver relies on advanced features of `libmodbus` to talk Modbus protocol
+over USB specifically (Serial and TCP are part of common library codebase).
+At the time of this writing, the common library project is just expecting a
+merge of the pull request with this ability.
+
+For the time being, if your OS distribution does not ship the required feature
+set, you may have to build your own `libmodbus` and subsequently (re-)build NUT
+against this library, as detailed in the NUT GitHub Wiki at
+https://github.com/networkupstools/nut/wiki/APC-UPS-with-Modbus-protocol
+
+The short sequence may be like follows:
+------
+cd ~/
+git clone -b rtu_usb https://github.com/networkupstools/libmodbus
+cd libmodbus
+./autogen.sh
+./configure --with-libusb --prefix=/path/to/prefix
+make install
+------
+
+[NOTE]
+======
+* you may need to `make && sudo make install` if you want to place this library
+  files' variant into a system path (like `--prefix=/usr/local/ups` to match
+  NUT defaults -- this activity would need privilege elevation via `sudo`),
+  and not into your home directory or some `/tmp` location.
+* conversely, you may want to
+  `./configure --with-libusb --enable-static --disable-shared --prefix=/path/to/prefix`
+  and only build and install a static `libmodbus.a` (can well be installed into
+  `/tmp` or similarly short-lived location), so that the customized Modbus+USB
+  logic gets built directly into `apc_modbus` binary program and there would be
+  no potential run-time conflict with a dynamic library file available elsewhere
+  in the system.
+======
+
+------
+cd ~/
+git clone https://github.com/networkupstools/nut
+cd nut
+./autogen.sh
+./configure --with-drivers=apc_modbus --with-usb --with-modbus \
+   --with-modbus-includes=-I/path/to/prefix/include/modbus \
+   --with-modbus-libs="-L/path/to/prefix/lib -lmodbus"
+make
+------
+
+[NOTE]
+======
+* Other NUT `configure` options may be needed for proper behavior, such as
+`--prefix`, `--with-sysconfdir`, `--with-user` and `--with-group` to match
+your packaged or otherwise preceding NUT installation.
+======
+
+The `./configure --enable-inplace-runtime` may be a good start to inherit
+build configuration from an existing NUT deployment, as further detailed at
+https://github.com/networkupstools/nut/wiki/Building-NUT-for-in%E2%80%90place-upgrades-or-non%E2%80%90disruptive-tests
+
+include::networked_hostnames.txt[]
 
 AUTHORS
 -------

@@ -126,7 +126,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -472,7 +472,12 @@ static int instcmd(const char *cmdname, const char *extra)
 	int i;
 	char parm[20];
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		for (i = 0; i < ups.outlet_banks; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			do_command(SET, RELAY_OFF, parm, NULL);
@@ -480,6 +485,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		for (i = 0; i < ups.outlet_banks; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			do_command(SET, RELAY_ON, parm, NULL);
@@ -487,18 +493,21 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(1);
 		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(1);
 		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "60", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(1);
 		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
@@ -506,29 +515,35 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 #if 0 /* doesn't seem to work */
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(0);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 #endif
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_command(SET, TSU_SHUTDOWN_ACTION, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_command(SET, TEST, "3", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_command(SET, TEST, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
 
 	if (!strcasecmp(varname, "ups.id")) {
 		set_identification(val);
@@ -551,7 +566,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown var [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -651,12 +666,12 @@ void upsdrv_initinfo(void)
 	if (get_transfer_voltage_low() && max_low_transfer) {
 		dstate_setflags("input.transfer.low", ST_FLAG_RW);
 		for (i = min_low_transfer; i <= max_low_transfer; i++)
-			dstate_addenum("input.transfer.low", "%d", i);
+			dstate_addenum("input.transfer.low", "%u", i);
 	}
 	if (get_transfer_voltage_high() && max_low_transfer) {
 		dstate_setflags("input.transfer.high", ST_FLAG_RW);
 		for (i = min_high_transfer; i <= max_high_transfer; i++)
-			dstate_addenum("input.transfer.high", "%d", i);
+			dstate_addenum("input.transfer.high", "%u", i);
 	}
 	if (get_sensitivity()) {
 		dstate_setflags("input.sensitivity", ST_FLAG_RW);
@@ -836,7 +851,7 @@ void upsdrv_updateinfo(void)
 			}
 		}
 		if (contacts_set)
-			dstate_setinfo("ups.contacts", "%02X", flags);
+			dstate_setinfo("ups.contacts", "%02X", (unsigned int)flags);
 	}
 
 	/* if we are here, status is valid */
@@ -846,7 +861,10 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	char parm[20];
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	char	parm[20];
 
 	if (!init_comm())
 		printf("Status failed.  Assuming it's on battery and trying a shutdown anyway.\n");

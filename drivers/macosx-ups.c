@@ -29,7 +29,7 @@
 #include "IOKit/ps/IOPSKeys.h"
 
 #define DRIVER_NAME	"Mac OS X UPS meta-driver"
-#define DRIVER_VERSION	"1.40"
+#define DRIVER_VERSION	"1.43"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -264,6 +264,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
@@ -272,8 +275,11 @@ void upsdrv_shutdown(void)
 	/* NOTE: Mac OS X already has shutdown routines - this driver is more
 	   for monitoring and notification purposes. Still, there is a key that
 	   might be useful to set in SystemConfiguration land. */
+
+	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */
@@ -286,12 +292,17 @@ void upsdrv_shutdown(void)
 /*
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/ * May be used in logging below, but not as a command argument * /
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 */
@@ -314,12 +325,14 @@ static int instcmd(const char *cmdname, const char *extra)
 /*
 static int setvar(const char *varname, const char *val)
 {
-	if (!strcasecmp(varname, "ups.test.interval")) {
+	upsdebug_SET_STARTING(varname, val);
+
+ 	if (!strcasecmp(varname, "ups.test.interval")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 */

@@ -39,7 +39,7 @@ beeper enabled/disabled/muted status) can be read and written. These
 variables are usually grouped together and arranged in a hierarchical
 tree shape, similar to directories in a file system. This tree is
 called the "usage" tree. For example, here is part of the usage tree
-for a typical APC device. Variable components are separated by ".".
+for a typical APC device. Variable components are separated by `.`.
 Typical values for each variable are also shown for illustrative
 purposes.
 
@@ -111,8 +111,8 @@ Thus, the above usage tree is internally represented as:
 --------------------------------------------------------------------------------
 
 To make matters worse, most manufacturers define their own additional
-usages, even in cases where standard usages could have been used. for
-example Belkin defines `00860040` = ConfigVoltage (which is incidentally
+usages, even in cases where standard usages could have been used. For
+example Belkin defines `00860040` = `ConfigVoltage` (which is incidentally
 a violation of the USB PDC specification, as `00860040` is reserved for
 future use).
 
@@ -122,8 +122,8 @@ Thus, subdrivers generally need to provide:
 - a mapping of HID variables to NUT variables.
 
 Moreover, subdrivers might have to provide additional functionality,
-such as custom implementations of specific instant commands (load.off,
-shutdown.restart), and conversions of manufacturer specific data
+such as custom implementations of specific instant commands (`load.off`,
+`shutdown.restart`), and conversions of manufacturer specific data
 formats.
 
 
@@ -179,14 +179,14 @@ You should save this information to a file, e.g.:
 You can now create an initial "stub" subdriver for your device by using
 helper script `scripts/subdriver/gen-usbhid-subdriver.sh`.
 
-NOTE: this only creates a driver code "stub" which needs to be further
+NOTE: This only creates a driver code "stub" which needs to be further
 customized to be actually useful (see "Customization" below).
 
 Use the script as follows:
 
 	scripts/subdriver/gen-usbhid-subdriver.sh < /tmp/info
 
-where /tmp/info is the file where you previously saved the debugging
+where `/tmp/info` is the file where you previously saved the debugging
 information.
 
 This script prompts you for a name for the subdriver; use only letters
@@ -230,11 +230,26 @@ precision first).
 Using a GUI tool with partial-line difference matching and highlighting,
 such as Meld or WinMerge, is recommended for this endeavour.
 
+Alternatively, since NUT v2.8.5, the `usbhid-ups` driver initialization
+debug log should clarify which values were parsed from the device report
+descriptor, but were not looked at when walking the subdriver mapping table.
+Some of these items may be due to the device reporting same HID Path with
+different Type values (e.g. as an 'Input' and as a 'Feature') with the
+driver only using one of those; in other cases truly new mappings can be
+discovered.
+
 For new data points in `hid2nut` tables be sure to not invent new names,
 but use standard ones from `docs/nut-names.txt` file. Temporarily, the
-`experimental.*` namespace may be used.
+`experimental.*` or `unmapped.*` namespaces may be used.
 If you need to standardize a name for some concept not addressed yet,
 please do so via nut-upsdev mailing list discussion.
+
+NOTE: For new devices (or firmwares) please also anticipate that a wrong
+subdriver can get used by default, and a better one may already exist
+(perhaps because a vendor matched in the older NUT code by name introduced
+new device models with different dialects) -- in this case, please focus
+on `claim` methods to ensure that the new devices get handled by the better
+subdriver.
 
 
 Customization
@@ -380,7 +395,7 @@ typedef struct
 {
   uint8_t  reportId;                                 // Report ID = 0x01 (1)
                                                      // Collection: CA:UPS CP:OutletSystem CP:Outlet
-  int8_t   POW_UPSOutletSystemOutletSwitchable;      // Usage 0x0084006C: Switchable, Value =  to 
+  int8_t   POW_UPSOutletSystemOutletSwitchable;      // Usage 0x0084006C: Switchable, Value =  to
   int8_t   POW_UPSOutletSystemOutletDelayBeforeStartup; // Usage 0x00840056: Delay Before Startup, Value = -1 to 60
   int8_t   POW_UPSOutletSystemOutletDelayBeforeShutdown; // Usage 0x00840057: Delay Before Shutdown, Value = -1 to 60
   int8_t   POW_UPSOutletSystemOutletDelayBeforeReboot; // Usage 0x00840055: Delay Before Reboot, Value = -1 to 60

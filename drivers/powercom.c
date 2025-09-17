@@ -83,10 +83,10 @@
 #include "main.h"
 #include "serial.h"
 #include "powercom.h"
-#include "math.h"
+#include "nut_float.h"
 
 #define DRIVER_NAME	"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -297,7 +297,8 @@ static void shutdown_halt(void)
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 
-	set_exit_flag(-2);	/* EXIT_SUCCESS */
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_SUCCESS);
 }
 
 static void shutdown_ret(void)
@@ -309,33 +310,37 @@ static void shutdown_ret(void)
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (return) initiated.");
 
-	set_exit_flag(-2);	/* EXIT_SUCCESS */
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_SUCCESS);
 }
 
 /* registered instant commands */
 static int instcmd (const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.start")) {
-	    ser_send_char (upsfd, BATTERY_TEST);
-	    return STAT_INSTCMD_HANDLED;
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		ser_send_char (upsfd, BATTERY_TEST);
+		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		/* NOTE: In this context, "return" is UPS behavior after the
 		 * wall-power gets restored. The routine exits the driver anyway.
 		 */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		shutdown_ret();
-#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
-#endif
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		shutdown_halt();
-#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
-#endif
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -669,6 +674,7 @@ static float load_level(void)
 				case 1000:
 				case 1500:
 				case 2000: return raw_data[UPS_LOAD]*110.0/load1000i[voltage];
+				default: break;
 			}
 		}
 	} else if (!strcmp(types[type].name, "KIN")) {
@@ -841,9 +847,19 @@ void upsdrv_updateinfo(void)
 /* shutdown UPS */
 void upsdrv_shutdown(void)
 {
-	/* power down the attached load immediately */
-	printf("Forced UPS shutdown (and wait for power)...\n");
-	shutdown_ret();
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = -1;
+
+	if (!device_sdcommands) {
+		/* default: power down the attached load immediately */
+		printf("Forced UPS shutdown (and wait for power)...\n");
+	}
+
+	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* initialize UPS */
@@ -1029,7 +1045,7 @@ void upsdrv_initups(void)
 		}
 		if (!strcmp(modelname, "Unknown"))
 			modelname=buf;
-		upsdebugx(1,"Detected: %s , %dV",buf,linevoltage);
+		upsdebugx(1, "Detected: %s , %uV", buf, linevoltage);
 		if (testvar("nobt") || dstate_getinfo("driver.flag.nobt")) {
 			upslogx(LOG_NOTICE, "nobt flag set, skipping battery test as requested");
 		}

@@ -44,7 +44,7 @@
 #define MAX_SHUTDOWN_DELAY_LEN 5
 
 #define DRIVER_NAME	"MICRODOWELL UPS driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -213,7 +213,7 @@ static void SendCmdToSerial(unsigned char *Buff, size_t Len)
 
 static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned char *RetBuffer)
 {
-	#define TMP_BUFF_LEN	1024
+#	define TMP_BUFF_LEN	1024
 	unsigned char InpBuff[TMP_BUFF_LEN+1] ;
 	unsigned char TmpBuff[3] ;
 	int i, ErrCode ;
@@ -655,8 +655,9 @@ int instcmd(const char *cmdname, const char *extra)
 	unsigned char *p ;
 	/* int i ; */
 
-	upsdebugx(1, "instcmd(%s, %s)", cmdname, extra);
-
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (strcasecmp(cmdname, "load.on") == 0)
 		{
@@ -668,6 +669,9 @@ int instcmd(const char *cmdname, const char *extra)
 		OutBuff[5] = 0 ;
 		OutBuff[6] = 0 ;
 		OutBuff[7] = 0 ;
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 			{
 			p += 3 ;	/* 'p' points to received data */
@@ -692,6 +696,9 @@ int instcmd(const char *cmdname, const char *extra)
 		OutBuff[5] = 0 ;
 		OutBuff[6] = 0 ;
 		OutBuff[7] = 0 ;
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 			{
 			p += 3 ;	/* 'p' points to received data */
@@ -724,6 +731,8 @@ int instcmd(const char *cmdname, const char *extra)
 		OutBuff[5] = (ups.WakeUpDelay >> 16) & 0xFF ;	/* WUDELAY (MSB)	Wakeup value (seconds) */
 		OutBuff[6] = (ups.WakeUpDelay >> 8) & 0xFF ;		/* WUDELAY (...) */
 		OutBuff[7] = (ups.WakeUpDelay & 0xFF ) ;			/* WUDELAY (LSB) */
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 			{
@@ -758,20 +767,23 @@ int instcmd(const char *cmdname, const char *extra)
 		OutBuff[6] = 0 ;	/* WUDELAY (...) */
 		OutBuff[7] = 0 ;	/* WUDELAY (LSB) */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 			{
 			p += 3 ;	/* 'p' points to received data */
-			upslogx(LOG_INFO, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%u)", OutBuff[2], ups.ShutdownDelay, 0) ;
-			upsdebugx(3, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%u): %s", OutBuff[2], ups.ShutdownDelay, 0, PrintErr(ups.ErrCode));
+			upslogx(LOG_INFO, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%d)", OutBuff[2], ups.ShutdownDelay, 0) ;
+			upsdebugx(3, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%d): %s", OutBuff[2], ups.ShutdownDelay, 0, PrintErr(ups.ErrCode));
 			}
 		else
 			{
-			upsdebugx(1, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%u): %s", OutBuff[2], ups.ShutdownDelay, 0, PrintErr(ups.ErrCode));
-			upslogx(LOG_ERR, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%u)", OutBuff[2], ups.ShutdownDelay, 0) ;
+			upsdebugx(1, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%d): %s", OutBuff[2], ups.ShutdownDelay, 0, PrintErr(ups.ErrCode));
+			upslogx(LOG_ERR, "shutdown.stayoff - (TYPE=%02x, SD=%u, WU=%d)", OutBuff[2], ups.ShutdownDelay, 0) ;
 			}
 		return STAT_INSTCMD_HANDLED;
 		}
 
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -791,13 +803,16 @@ int setvar(const char *varname, const char *val)
 {
 	unsigned int delay;
 
+	upsdebug_SET_STARTING(varname, val);
+
 	if (sscanf(val, "%u", &delay) != 1)
-		{
+	{
+		/* FIXME: ..._CONVERSION_FAILED? log it? */
 		return STAT_SET_UNKNOWN;
-		}
+	}
 
 	if (strcasecmp(varname, "ups.delay.start") == 0)
-		{
+	{
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE) )
 # pragma GCC diagnostic push
 #endif
@@ -828,10 +843,10 @@ int setvar(const char *varname, const char *val)
 		dstate_setinfo("ups.delay.start", "%u", ups.WakeUpDelay);
 		dstate_dataok();
 		return STAT_SET_HANDLED;
-		}
+	}
 
 	if (strcasecmp(varname, "ups.delay.shutdown") == 0)
-		{
+	{
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE) )
 # pragma GCC diagnostic push
 #endif
@@ -862,8 +877,9 @@ int setvar(const char *varname, const char *val)
 		dstate_setinfo("ups.delay.shutdown", "%u", ups.ShutdownDelay);
 		dstate_dataok();
 		return STAT_SET_HANDLED;
-		}
+	}
 
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE_BESIDEFUNC) )
@@ -916,11 +932,11 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("battery.packs", "%d", ups.BatteryNumber) ;
 
 	/* Register the available variables. */
-	dstate_setinfo("ups.delay.start", "%d", ups.WakeUpDelay);
+	dstate_setinfo("ups.delay.start", "%u", ups.WakeUpDelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", MAX_START_DELAY_LEN);
 
-	dstate_setinfo("ups.delay.shutdown", "%d", ups.ShutdownDelay);
+	dstate_setinfo("ups.delay.shutdown", "%u", ups.ShutdownDelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", MAX_SHUTDOWN_DELAY_LEN);
 
@@ -944,10 +960,13 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	unsigned char OutBuff[20] ;
-	unsigned char InpBuff[260] ;
-	unsigned char *p ;
-	unsigned char BatteryFlag=0 ;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	unsigned char	OutBuff[20];
+	unsigned char	InpBuff[260];
+	unsigned char	*p;
+	unsigned char	BatteryFlag = 0;
 
 	OutBuff[0] = CMD_GET_STATUS ;   /* get UPS status */
 	if ((p = CmdSerial(OutBuff, LEN_GET_STATUS, InpBuff)) != NULL)

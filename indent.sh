@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Filter NUT C source file style to conform to recommendations of
 # https://www.networkupstools.org/docs/developer-guide.chunked/ar01s03.html#_coding_style

@@ -19,6 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -28,7 +29,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "common.h"
 #include "parseconf.h"
 #include "nut_stdint.h"
 
@@ -123,6 +123,9 @@ static void read_sock(int fd)
 			case -1:
 				printf("Parse error: [%s]\n", sock_ctx.errmsg);
 				break;
+
+			default:
+				break;
 		}
 	}
 }
@@ -141,6 +144,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "  or   %s apcsmart-ttyS1\n",
 			argv[0]);
 		fprintf(stderr, "  for socket files placed in the standard location\n");
+
+		fprintf(stderr, "\n%s", suggest_doc_links(prog, NULL));
+
 		exit(EXIT_SUCCESS);
 	}
 

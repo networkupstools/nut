@@ -255,7 +255,7 @@ in your CMDSCRIPT:
 
 	/sbin/upsmon -c fsd
 
-NOTE: the path to `upsmon` must be provided. The default for an installation
+NOTE: The path to `upsmon` must be provided. The default for an installation
 built from sources is `/usr/local/ups` (so `/usr/local/ups/sbin/upsmon`),
 while packaged installations will generally comply to
 link:http://refspecs.linuxfoundation.org/fhs.shtml[FHS -- Filesystem Hierarchy Standard]
