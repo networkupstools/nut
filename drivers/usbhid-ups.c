@@ -1827,6 +1827,10 @@ void upsdrv_initups(void)
 			"in the selected NUT subdriver %s",
 			__func__, known_mappings, used_mappings,
 			subdriver->name);
+
+		if (known_mappings < 10 || used_mappings < 10)
+			upsdebugx(0, "Please check %s/docs/developer-guide.chunked/new-drivers.html#hid-subdrivers "
+				"for suggestions how you can help improve the driver.", NUT_WEBSITE_BASE);
 	}
 
 	if (!ups_status)
