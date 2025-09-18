@@ -1,6 +1,11 @@
 Network protocol information
 ============================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/net-protocol.html
+//////////////////////////////////////////////////////////////////////////////
+
 Since May 2002, this protocol has an official port number from IANA,
 which is *3493*.  The old number (3305) was a relic of the original code's
 ancestry, and conflicted with other services.  Version 0.50.0 and up

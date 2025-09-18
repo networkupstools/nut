@@ -3,6 +3,12 @@ Configure options
 =================
 endif::website[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/user-manual.chunked/Configure_options.html
+// and subsequent pages (next-next-next...)
+//////////////////////////////////////////////////////////////////////////////
+
 As many other projects relying on GNU autotools for build recipe automation,
 NUT sources deliver a `configure` script which is used to set up numerous
 nuances relevant for your build of the project.  Most of the configuration

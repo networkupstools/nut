@@ -1,6 +1,11 @@
 Advanced usage and scheduling notes
 ===================================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/user-manual.chunked/Advanced_usage_scheduling_notes.html
+//////////////////////////////////////////////////////////////////////////////
+
 upsmon can call out to a helper script or program when the device changes
 state.  The example upsmon.conf has a full list of which state changes
 are available -- ONLINE, ONBATT, LOWBATT, and more.

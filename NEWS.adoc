@@ -70,6 +70,9 @@ https://github.com/networkupstools/nut/milestone/12
  - Updated `make spellcheck` to help avoid asciidoc admonition blocks with
    visually invalid sentences (after rendering as a box in HTML or PDF). [#3077]
 
+ - Updated `docs/*.txt`: add asciidoc comments with links to nut-website
+   rendered contents of most interesting pages. [#3095]
+
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3
 ----------------------------------------------------

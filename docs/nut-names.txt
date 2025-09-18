@@ -3,6 +3,12 @@ NUT variable names and instant commands
 =======================================
 endif::external_title[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/nut-names.html
+// and subsequent pages (next-next-next...)
+//////////////////////////////////////////////////////////////////////////////
+
 [NOTE]
 .RFC 9271 Recording Document
 ====
