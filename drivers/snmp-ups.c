@@ -1706,8 +1706,8 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	/* ups.status and {ups, Lx, outlet, outlet.group}.alarm have special
 	 * handling, not here! */
 	if ((strcasecmp(su_info_p->info_type, "ups.status"))
-		&& (strcasecmp(strrchr(su_info_p->info_type, '.'), ".alarm")))
-	{
+	&&  (strcasecmp(strrchr(su_info_p->info_type, '.'), ".alarm"))
+	) {
 		if (value != NULL)
 			dstate_setinfo(info_type, "%s", value);
 		else if (su_info_p->dfl != NULL)
@@ -1728,8 +1728,10 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 			upsdebugx(3, "%s: adding enumerated values", __func__);
 
 			/* Loop on all existing values */
-			for (info_lkp = su_info_p->oid2info; info_lkp != NULL
-				&& info_lkp->info_value != NULL; info_lkp++) {
+			for (info_lkp = su_info_p->oid2info;
+				info_lkp != NULL && info_lkp->info_value != NULL;
+				info_lkp++
+			) {
 					dstate_addenum(info_type, "%s", info_lkp->info_value);
 			}
 		}
@@ -1784,7 +1786,8 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 
 		/* Special handling for outlet & outlet groups alarms */
 		if ((su_info_p->flags & SU_OUTLET)
-			|| (su_info_p->flags & SU_OUTLET_GROUP)) {
+		||  (su_info_p->flags & SU_OUTLET_GROUP)
+		) {
 			/* Extract template number */
 			item_number = extract_template_number(su_info_p->flags, info_type);
 
@@ -3116,6 +3119,8 @@ bool_t snmp_ups_walk(int mode)
 	bool_t status = FALSE;
 
 	if (mode == SU_WALKMODE_UPDATE) {
+		/* Below we skip semi-static elements in update mode:
+		 * only parse when countdown reaches exactly 0 */
 		semistatic_countdown--;
 		if (semistatic_countdown < 0)
 			semistatic_countdown = semistaticfreq;
@@ -3241,8 +3246,8 @@ bool_t snmp_ups_walk(int mode)
 				continue;
 			}
 
-			/* Set default value if we cannot fetch it */
-			/* and set static flag on this element.
+			/* Set default value if we cannot fetch it
+			 * and set static flag on this element.
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
 			if (
 				    (su_info_p->flags & SU_FLAG_ABSENT)
