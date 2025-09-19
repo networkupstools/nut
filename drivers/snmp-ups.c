@@ -177,7 +177,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.37"
+#define DRIVER_VERSION	"1.38"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -2097,6 +2097,15 @@ bool_t load_mib2nut(const char *mib)
 		upsdebugx(1, "%s: using %s MIB for device [%s] (host %s)",
 			__func__, mibname,
 			upsname ? upsname : device_name, device_path);
+
+		/* FIXME: also "tripplite" on devices that do not identify as such */
+		if (mibIsAuto && strcasecmp(mibname, "ietf"))
+			upsdebugx(0, "Only the IETF standard mapping was found as fallback. "
+				"Please check %s/docs/developer-guide.chunked/new-drivers.html#snmp-subdrivers "
+				"for suggestions how you can help improve the driver to "
+				"support vendor-specific mappings for your device better.",
+				NUT_WEBSITE_BASE);
+
 		return TRUE;
 	}
 
