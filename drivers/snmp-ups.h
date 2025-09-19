@@ -342,7 +342,8 @@ typedef struct {
 /* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2 */
 #define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)	/* Only valid for daisychain master (device.1) */
 
-/* Free slot: (1UL << 25) */
+/* "flags" bit 25 */
+#define SU_FLAG_MAPPING_HANDLED	(1UL << 25)	/* raised internally if any (sub)driver handling loop care about this report; if not, may be a point for improvement... */
 
 #define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 
