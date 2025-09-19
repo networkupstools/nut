@@ -317,7 +317,7 @@ typedef struct {
 	int8_t		have_PhyMin;			/* Physical Min defined?		*/
 	int8_t		have_PhyMax;			/* Physical Max defined?		*/
 
-	bool		mapping_handled;		/* Did the (sub)driver handling loop care about this report? If not, may be a point for improvement... */
+	bool		mapping_handled;		/* Did any (sub)driver handling loop care about this report? If not, may be a point for improvement... */
 } HIDData_t;
 
 /*
