@@ -622,16 +622,16 @@ info_lkp_t divide_by_10_conversion[] = {
    done with result! */
 static const char *divide_by_100_conversion_fun(double value)
 {
-       static char buf[20];
+	static char buf[20];
 
-       snprintf(buf, sizeof(buf), "%0.1f", value * 0.01);
+	snprintf(buf, sizeof(buf), "%0.1f", value * 0.01);
 
-       return buf;
+	return buf;
 }
 
 /* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t divide_by_100_conversion[] = {
-       { 0, NULL, divide_by_100_conversion_fun, NULL }
+	{ 0, NULL, divide_by_100_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
