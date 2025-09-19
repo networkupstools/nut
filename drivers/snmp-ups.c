@@ -222,6 +222,149 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
 int extract_template_number(snmp_info_flags_t template_type, const char* varname);
 snmp_info_flags_t get_template_type(const char* varname);
 
+static void analyze_mapping_usage(void) {
+	/* Check if the subdriver code (mappings) and the device report
+	 * sit together well. Note that for yet-unknown concepts, the
+	 * NUT driver developers can either raise a discussion on how
+	 * to best formalize that concept via docs/nut-names.txt, or
+	 * temporarily place them into "experimental.*" or "unmapped.*"
+	 * namespaces.
+	 *
+	 * Later also check that all defined mappings were used?
+	 * TBH, this is unlikely in practice, so of little value
+	 * (unless we are troubleshooting and under 5 or 10 data
+	 * points are served from actually the device, and not
+	 * from user configs or driver fallbacks).
+	 *
+	 * See also: similar methods in usbhid-ups and nutdrv_qx.
+	 */
+	size_t	unused_count = 0, known_mappings = 0;
+	size_t	unused_bufsize = LARGEBUF, unused_prevlen = 0, used_mappings = 0;
+	int	ret_printf;
+	char	*unused_names = NULL;
+	snmp_info_t	*su_info_p;
+
+	/* FIXME? this activity is limited to when debugging is enabled, even
+	 *  if some of the messages below can be posted visibly at level 0.
+	 */
+	if (nut_debug_level < 1)
+		return;
+
+	upsdebugx(1, "%s: checking if the subdriver code (mappings) "
+		"consults all data points from the device report",
+		__func__);
+
+	if (!snmp_info) {
+		upsdebugx(1, "%s: SKIP: snmp_info==null", __func__);
+		return;
+	}
+
+	unused_names = xcalloc(unused_bufsize, sizeof(char));
+
+	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
+	{
+		if (!su_info_p)
+			continue;
+
+		known_mappings++;
+
+		if (su_info_p->flags & SU_FLAG_MAPPING_HANDLED) {
+			used_mappings++;
+		} else {
+			char	*pName = su_info_p->info_type;
+			const char	*pType = (SU_TYPE(su_info_p) == SU_TYPE_CMD ? "cmd" : "data");
+			int	retry = 0;
+
+			/* Keep aliases for code similarity with usbhid-ups and nutdrv_qx */
+			char	**pNames = &unused_names;
+			size_t	*pCount = &unused_count, *pPrevLen = &unused_prevlen, *pBufSize = &unused_bufsize;
+
+			if (!pName) {
+				upsdebugx(2, "%s: error getting a data point name, skipped", __func__);
+				continue;
+			}
+
+			/* We may overflow the pre-allocated buffer,
+			 * so we loop here until snprintf() succeeds
+			 * or we are known to have failed completely.
+			 */
+			do {
+				retry = 0;
+				if (!*pNames) {
+					break;
+				}
+
+				upsdebugx(5, "%s: adding '%s (%s)' (%" PRIuSIZE " bytes) "
+					"to buffer of %" PRIuSIZE "/%" PRIuSIZE " bytes",
+					__func__, NUT_STRARG(pName), NUT_STRARG(pType),
+					pName ? strlen(pName) : 0,
+					*pPrevLen, *pBufSize);
+
+				ret_printf = snprintf(*pNames + *pPrevLen, *pBufSize - *pPrevLen - 1, "%s%s (%s)",
+					*pCount ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
+
+				upsdebugx(6, "%s: snprintf() returned %d", __func__, ret_printf);
+				(*pNames)[*pBufSize - 1] = '\0';
+
+				if (ret_printf < 0) {
+					upsdebugx(1, "%s: error collecting names, might not report unused descriptor names", __func__);
+				} else if ((size_t)ret_printf + *pPrevLen >= *pBufSize) {
+					if (*pBufSize < SIZE_MAX - LARGEBUF) {
+						*pBufSize = *pBufSize + LARGEBUF;
+						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
+							*pNames = realloc(*pNames, *pBufSize);
+
+						if (!*pNames) {
+							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
+						} else {
+							upsdebugx(5, "%s: buffer overflowed, but reallocated successfully - retrying", __func__);
+							/* Retry this loop */
+							retry = 1;
+						}
+					} else {
+						upsdebugx(1, "%s: buffer overflowed, might not report unused descriptor names", __func__);
+					}
+				} else {
+					*pPrevLen += (size_t)ret_printf;
+				}
+			} while (retry);
+
+			*pCount = *pCount + 1;
+		}
+	}
+
+	if (unused_count) {
+		upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
+			"mapping table for the SNMP UPS, but %" PRIuSIZE " "
+			"of them were completely not used by name via the "
+			"mapping defined in the selected NUT subdriver %s: %s",
+			__func__, known_mappings, unused_count,
+			NUT_STRARG(mibname), NUT_STRARG(unused_names));
+	}
+
+	if (unused_names)
+		free(unused_names);
+
+	/* We arbitrarily declare that having under 10 known or used
+	 * mappings is few enough to be loud about this */
+	if (known_mappings < 10 || used_mappings < 10) {
+		upsdebugx(0,
+			"%s: %" PRIuSIZE " mapping entries are defined, and "
+			"%" PRIuSIZE " were actually used from SNMP walk, "
+			"in the selected NUT subdriver %s",
+			__func__, known_mappings, used_mappings,
+			NUT_STRARG(mibname));
+
+		upsdebugx(0, "Please check if there is a newer version of NUT available "
+			"(may be not packaged for your distribution yet), try a custom "
+			"build of development branch to test latest driver code per "
+			"%s/docs/user-manual.chunked/_installation_instructions.html#Installing_inplace, "
+			"and see %s/docs/developer-guide.chunked/new-drivers.html#snmp-subdrivers "
+			"for suggestions how you can help improve this driver.",
+			NUT_WEBSITE_BASE, NUT_WEBSITE_BASE);
+	}
+}
+
 /* ---------------------------------------------
  * driver functions implementations
  * --------------------------------------------- */
@@ -287,6 +430,7 @@ void upsdrv_initinfo(void)
 	if (snmp_ups_walk(SU_WALKMODE_INIT) == TRUE) {
 		dstate_dataok();
 		comm_status = COMM_OK;
+		analyze_mapping_usage();
 	}
 	else {
 		dstate_datastale();
@@ -313,7 +457,17 @@ void upsdrv_updateinfo(void)
 		if (snmp_ups_walk(SU_WALKMODE_UPDATE)) {
 			upsdebugx(1, "%s: pollfreq: Data OK", __func__);
 			dstate_dataok();
-			comm_status = COMM_OK;
+			if (comm_status != COMM_OK) {
+				/* We may have missed the initial connection,
+				 * or lost one subsequently during normal work.
+				 * Help at least with the former case with info
+				 * about efficiency of the current mapping table.
+				 * And who knows how the reconnection went, maybe
+				 * a new firmware got installed or modules added?
+				 */
+				analyze_mapping_usage();
+				comm_status = COMM_OK;
+			}
 		}
 		else {
 			upsdebugx(1, "%s: pollfreq: Data STALE", __func__);
@@ -1698,6 +1852,7 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 		snprintf(info_type, 128, "%s", su_info_p->info_type);
 	}
 
+	su_info_p->flags |= SU_FLAG_MAPPING_HANDLED;
 	upsdebugx(1, "%s: using info_type '%s'", __func__, info_type);
 
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)

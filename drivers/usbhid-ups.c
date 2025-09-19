@@ -673,6 +673,8 @@ static void analyze_mapping_usage(void) {
 	 * (unless we are troubleshooting and under 5 or 10 data
 	 * points are served from actually the device, and not
 	 * from user configs or driver fallbacks).
+	 *
+	 * See also: similar methods in snmp-ups and nutdrv_qx.
 	 */
 	size_t	d, unused_count = 0, halfused_count = 0;
 	size_t	unused_bufsize = LARGEBUF, halfused_bufsize = LARGEBUF, unused_prevlen = 0, halfused_prevlen = 0, used_mappings = 0, known_mappings = 0;
