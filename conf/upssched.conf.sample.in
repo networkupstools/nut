@@ -83,7 +83,9 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #
 #   Start a timer called <timername> that will trigger after <interval>
 #   seconds, calling your CMDSCRIPT with <timername> as the first
-#   argument.
+#   argument. Each invocation starts an independent timer, even if the
+#   <timername> was already registered and started (note this can mess
+#   up subsequent CANCEL-TIMER operations).
 #
 #   Example:
 #   1) Start a timer that will execute when communication with any UPS (*) has
@@ -95,6 +97,28 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #   on battery for 30 seconds
 #
 #   AT ONBATT * START-TIMER onbattwarn 30
+
+#   -----------------------------------------------------------------------
+#
+# - START-TIMER-SHARED <timername> <interval>
+#
+#   Start a timer called <timername> that will trigger after <interval>
+#   seconds, calling your CMDSCRIPT with <timername> as the first
+#   argument. Each invocation checks if the <timername> was already
+#   started, and if so -- appends the current event's `UPSNAME` and
+#   `NOTIFYTYPE` to the list of unique values it would report via
+#   environment variables (as a comma-separated string) when the
+#   timer does execute.
+#
+#   NOTE: Currently this updates the first seen instance with the
+#   <timername> (in case you managed to start many).
+#
+#   Example:
+#   1) Start or update a timer that will execute when communication
+#   with any UPS (*) has been gone for 10 seconds (since the first
+#   started and not yet elapsed timer named <upsgone>):
+#
+#   AT COMMBAD * START-TIMER upsgone 10
 
 #   -----------------------------------------------------------------------
 #

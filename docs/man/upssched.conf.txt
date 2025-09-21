@@ -69,7 +69,28 @@ and 'upsname' match the current activity.  Possible values for
 *START-TIMER* 'timername' 'interval';;
 Start a timer of 'interval' seconds.  When it triggers, it
 will pass the argument 'timername' as an argument to your
-CMDSCRIPT.
+CMDSCRIPT. Each invocation starts an independent timer, even
+if the 'timername' was already registered and started (note
+this can mess up subsequent CANCEL-TIMER operations).
++
+Example:
++
+Start a timer that will execute when any UPS (*) has been
+gone for 10 seconds
+
+	AT COMMBAD * START-TIMER upsgone 10
+
+*START-TIMER-SHARED* 'timername' 'interval';;
+Start a timer of 'interval' seconds.  When it triggers, it
+will pass the argument 'timername' as an argument to your
+CMDSCRIPT. Each invocation checks if the 'timername' was already
+started, and if so -- appends the current event's `UPSNAME` and
+`NOTIFYTYPE` to the list of unique values it would report via
+environment variables (as a comma-separated string) when the
+timer does execute.
++
+NOTE: Currently this updates the first seen instance with the
+'timername' (in case you managed to start many).
 +
 Example:
 +
@@ -82,6 +103,9 @@ gone for 10 seconds
 Cancel a running timer called 'timername', if possible.
 If the timer has passed then pass the optional argument
 'cmd' to CMDSCRIPT.
++
+NOTE: Currently this removes the first seen instance with the
+'timername' (in case you managed to start many).
 +
 Example:
 +

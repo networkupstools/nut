@@ -56,6 +56,18 @@ https://github.com/networkupstools/nut/milestone/12
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
      of all known local devices to stdout. [#3083]
 
+ - `upssched` tool updates:
+   * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
+     `NOTIFYTYPE` environment variables were neutered for the timer daemon,
+     since their values at the moment it first started were irrelevant when
+     actual timers fired. Lack of those values was however also against the
+     documented expectations. Now the values set when the `upssched` client
+     is called and ends up updating the timer daemon would be passed into
+     the timer. Also a `START-TIMER-SHARED` operation was added, to track a
+     single named timer for possibly many devices and/or event types -- in
+     this case they would be comma-separated in the environment variable
+     values. [issue #3092, PR #3097]
+
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)
      module installation location (for module-named dir to be created under
