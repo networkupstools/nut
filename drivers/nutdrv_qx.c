@@ -2016,10 +2016,10 @@ static void load_armac_endpoint_cache(void)
 				libusb_free_config_descriptor(config_descriptor);
 				return;
 			}
-		
+
 			for (i = 0; i < interface_descriptor->bNumEndpoints; i++) {
 				const struct libusb_endpoint_descriptor *endpoint = &interface_descriptor->endpoint[i];
-		
+
 				if (endpoint->bEndpointAddress & LIBUSB_ENDPOINT_IN) {
 					found_in = TRUE;
 					armac_endpoint_cache.in_endpoint_address = endpoint->bEndpointAddress;
