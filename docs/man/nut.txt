@@ -127,7 +127,7 @@ maintained by the community at large.  Some standard clients of note include:
 +
 NOTE: The `upsmon` client typically splits into two processes: an unprivileged
   one running with credentials of its `RUN_AS_USER` configured in the
-  linkman:upsmon.conf[5] file (or a built-in/packaged default like `nut`,
+  linkman:upsmon.conf[5] file (or a built-in/packaged default like `nut`, `ups`,
   `monuser` or `nobody`) which does most of the work (including notification
   scripts called via `NOTIFYCMD` setting), and the part which remains owned
   by `root` to initiate the system shutdown by calling `SHUTDOWNCMD` when/if
