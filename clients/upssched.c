@@ -19,7 +19,7 @@
 
 /* design notes for the curious:
  *
- * 1. we get called with a upsname and notifytype from upsmon
+ * 1. we get called with a ups_name and notify_type from upsmon
  * 2. the config file is searched for an AT condition that matches
  * 3. the conditions on any matching lines are parsed
  *
@@ -71,7 +71,7 @@ static conn_t	*connhead = NULL;
 static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
 
 /* ups name and notify type (string) as received from upsmon */
-static const	char	*upsname, *notify_type, *prog = NULL;
+static const	char	*ups_name, *notify_type, *prog = NULL;
 
 #ifdef WIN32
 static OVERLAPPED connect_overlapped;
@@ -1341,15 +1341,15 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 		fatalx(EXIT_FAILURE, "LOCKFN must be set before any ATs in the config file!");
 	}
 
-	/* check upsname: does this apply to us? */
+	/* check ups_name: does this apply to us? */
 	upsdebugx(2, "%s: is '%s' in AT command the '%s' we were launched to process?",
-		__func__, un, upsname);
-	if (strcmp(upsname, un) != 0) {
+		__func__, un, ups_name);
+	if (strcmp(ups_name, un) != 0) {
 		if (strcmp(un, "*") != 0) {
 			upsdebugx(1, "%s: SKIP: '%s' in AT command "
 				"did not match the '%s' UPSNAME "
 				"we were launched to process",
-				__func__, un, upsname);
+				__func__, un, ups_name);
 			return;		/* not for us, and not the wildcard */
 		} else {
 			upsdebugx(1, "%s: this AT command is for a wildcard: matched", __func__);
@@ -1357,7 +1357,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	} else {
 		upsdebugx(1, "%s: '%s' in AT command matched the '%s' "
 			"UPSNAME we were launched to process",
-			__func__, un, upsname);
+			__func__, un, ups_name);
 	}
 
 	/* see if the current notify type matches the one from the .conf */
@@ -1579,10 +1579,10 @@ int main(int argc, char **argv)
 	open_syslog(prog);
 	syslogbit_set();
 
-	upsname = getenv("UPSNAME");
+	ups_name = getenv("UPSNAME");
 	notify_type = getenv("NOTIFYTYPE");
 
-	if ((!upsname) || (!notify_type)) {
+	if ((!ups_name) || (!notify_type)) {
 		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");
 		printf("This program should only be run from upsmon.\n");
 		exit(EXIT_FAILURE);
