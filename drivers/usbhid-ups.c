@@ -833,8 +833,13 @@ static void analyze_mapping_usage(void) {
 		subdriver->name);
 
 	if (known_mappings < 10 || used_mappings < 10)
-		upsdebugx(0, "Please check %s/docs/developer-guide.chunked/new-drivers.html#hid-subdrivers "
-			"for suggestions how you can help improve this driver.", NUT_WEBSITE_BASE);
+		upsdebugx(0, "Please check if there is a newer version of NUT available "
+			"(may be not packaged for your distribution yet), try a custom "
+			"build of development branch to test latest driver code per "
+			"%s/docs/user-manual.chunked/_installation_instructions.html#Installing_inplace, "
+			"and see %s/docs/developer-guide.chunked/new-drivers.html#hid-subdrivers "
+			"for suggestions how you can help improve this driver.",
+			NUT_WEBSITE_BASE, NUT_WEBSITE_BASE);
 }
 
 static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
