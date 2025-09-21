@@ -39,6 +39,13 @@ https://github.com/networkupstools/nut/milestone/12
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
+ - `nutdrv_qx` driver updates:
+   * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
+     code (mapping table) and the data found from device walk sit together
+     well -- namely, that we successfully use reasonably many of the existing
+     mappings. Suggest how user can help improve the driver if too few data
+     points were seen. [PR #3095]
+
  - `snmp-ups` driver updates:
    * Define an internal `SU_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together
