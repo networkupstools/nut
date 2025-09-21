@@ -247,11 +247,15 @@ static void cancel_timer(const char *name, const char *cname)
 			if (nut_debug_level)
 				upslogx(LOG_INFO, "Cancelling timer: %s", name);
 			removetimer(tmp);
+			/* TOTHINK: Don't we want to continue and cancel
+			 *  possibly many timers with this name? */
 			return;
 		}
 	}
 
-	/* this is not necessarily an error */
+	/* this is not necessarily an error: per docs,
+	 * if the timer has passed then pass the optional argument cmd to CMDSCRIPT.
+	 */
 	if (cname && cname[0]) {
 		if (nut_debug_level)
 			upslogx(LOG_INFO, "Cancel %s, event: %s", name, cname);
@@ -639,12 +643,13 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 
 static int sock_arg(conn_t *conn)
 {
+	/* "Server-side" listener for the timer daemon */
 	if (conn->ctx.numargs < 1)
 		return 0;
 
 	/* CANCEL <name> [<cmd>] */
 	if (!strcmp(conn->ctx.arglist[0], "CANCEL")) {
-
+		/* "cmd" may be present and empty, this is handled in the method */
 		if (conn->ctx.numargs < 3)
 			cancel_timer(conn->ctx.arglist[1], NULL);
 		else
