@@ -411,7 +411,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 								break;
 						}
 
-						if (ps == NULL) {
+						if (ps == NULL || *ps == NULL) {
 							tmp->notifytypes = xrealloc(tmp->notifytypes, count + 2);
 							tmp->notifytypes[count] = xstrdup(notifytype);
 							tmp->notifytypes[count + 1] = NULL;
@@ -434,7 +434,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 								break;
 						}
 
-						if (ps == NULL) {
+						if (ps == NULL || *ps == NULL) {
 							tmp->upsnames = xrealloc(tmp->upsnames, count + 2);
 							tmp->upsnames[count] = xstrdup(upsname);
 							tmp->upsnames[count + 1] = NULL;
