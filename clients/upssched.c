@@ -1836,7 +1836,7 @@ int main(int argc, char **argv)
 
 	if ((!ups_name) || (!notify_type)) {
 		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");
-		printf("This program should only be run from upsmon.\n");
+		printf("This program should only be run from upsmon(%s).\n", MAN_SECTION_CMD_SYS);
 		exit(EXIT_FAILURE);
 	}
 
