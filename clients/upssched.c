@@ -669,6 +669,8 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	va_end(ap);
 
 	buflen = strlen(buf);
+	upsdebugx(5, "%s: sending %" PRIuSIZE " bytes: [%s]", __func__, buflen, buf);
+
 	if (buflen >= SSIZE_MAX) {
 		/* Can't compare buflen to ret */
 		upsdebugx(2, "send_to_one(): buffered message too large");
