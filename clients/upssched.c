@@ -153,20 +153,26 @@ static char* collect_string(char **string_arr, char *logtag, char *sep, size_t *
 	}
 
 	for (ptr = string_arr; ptr != NULL; ptr++) {
-		int	retry = 0;
+		int	retry;
 
 		s = *ptr;
+		upsdebugx(5, "%s: popped '%s'", __func__, NUT_STRARG(s));
 
-		if (*s == '\0')
-			continue;
+		if (s == NULL || *s == '\0')
+			break; /*continue?*/
 
+		upsdebugx(4, "%s: appending '%s' to buffer %" PRIuSIZE "/%" PRIuSIZE " full",
+			__func__, s, prevlen, bufsize);
 		do {
+			retry = 0;
 			ret_printf = snprintf(
 				buf + prevlen,
 				bufsize - prevlen - 1,
 				"%s%s",
 				count ? (sep ? sep : ",") : "",
 				s);
+			upsdebugx(4, "%s: got %d after adding into buffer %" PRIuSIZE "/%" PRIuSIZE " full",
+				__func__, ret_printf, prevlen, bufsize);
 			buf[bufsize - 1] = '\0';
 
 			if (ret_printf < 0) {
@@ -180,6 +186,7 @@ static char* collect_string(char **string_arr, char *logtag, char *sep, size_t *
 
 					if (!buf) {
 						upsdebugx(1, "%s: buffer overflowed and failed to re-allocate, will not report any %s values", __func__, logtag);
+						return NULL;
 					} else {
 						upsdebugx(5, "%s: buffer overflowed, but re-allocated successfully - retrying", __func__);
 						/* Retry this loop */
@@ -192,10 +199,13 @@ static char* collect_string(char **string_arr, char *logtag, char *sep, size_t *
 			} else {
 				prevlen += (size_t)ret_printf;
 			}
-		} while (!retry);
+		} while (retry);
 
 		count++;
 	}
+
+	upsdebugx(3, "%s: collected %" PRIuSIZE " items into %" PRIuSIZE " bytes: %s",
+		__func__, count, bufsize, buf);
 
 	if (pBufsize)
 		*pBufsize = bufsize;
@@ -203,6 +213,7 @@ static char* collect_string(char **string_arr, char *logtag, char *sep, size_t *
 	if (pCount)
 		*pCount = count;
 
+	upsdebugx(5, "%s: returning", __func__);
 	return buf;
 }
 
