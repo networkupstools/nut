@@ -67,6 +67,10 @@ https://github.com/networkupstools/nut/milestone/12
      single named timer for possibly many devices and/or event types -- in
      this case they would be comma-separated in the environment variable
      values. [issue #3092, PR #3097]
+   * The `CANCEL-TIMER` action no longer stops at first hit for the timer name,
+     but goes on (in case there are duplicates). A new `CANCEL-TIMER-MATCHED`
+     was added, which also cares to match `UPSNAME` and `NOTIFYTYPE` values
+     (if passed). [#3097]
    * Introduced support for `DEBUG_MIN` setting via `upssched.conf`. [#3097]
    * Introduced `upssched -l` mode to list currently tracked timers. [#3097]
 

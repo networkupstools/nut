@@ -153,6 +153,18 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 
 #   -----------------------------------------------------------------------
 #
+# - CANCEL-TIMER-MATCHED <timername> [cmd]
+#
+#   Similar to the above, but tries to only cancel the <timername> if it
+#   refers to the `UPSNAME` and `NOTIFYTYPE` values passed by caller.
+#
+#   1) If any UPS (*) reverts to utility power, then stop the timer before it
+#   triggers ONLY if that UPS is associated with the already scheduled timer:
+#
+#   AT ONLINE * CANCEL-TIMER-MATCHED onbattwarn
+
+#   -----------------------------------------------------------------------
+#
 # - EXECUTE <command>
 #
 #   Immediately pass <command> as an argument to CMDSCRIPT.

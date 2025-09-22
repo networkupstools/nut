@@ -494,9 +494,10 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 		thead = tmp;
 }
 
-static void cancel_timer(const char *name, const char *cname, const char *notifytype, const char *upsname)
+static void cancel_timer(const char *name, const char *cname, const char *notifytype, const char *upsname, int do_cancel_matched)
 {
 	ttype_t	*tmp;
+	size_t	removed = 0;
 
 	/* TOTHINK: Only cancel events associated with a particular UPS and/or type? */
 	NUT_UNUSED_VARIABLE(notifytype);
@@ -504,14 +505,65 @@ static void cancel_timer(const char *name, const char *cname, const char *notify
 
 	for (tmp = thead; tmp != NULL; tmp = tmp->next) {
 		if (!strcmp(tmp->name, name)) {		/* match */
+			if (!do_cancel_matched
+			||  (   (!notifytype || !(*notifytype))
+				 && (!upsname || !(*upsname)) )
+			) {
+				upsdebugx(2, "%s: cancelling of timer %s not constrained by caller's NOTIFYTYPE nor UPSNAME", __func__, name);
+			} else {
+				char	**ps = NULL;
+				int	matched = 0;
+
+				/* FIXME: Do not remove whole timer, just the respective strings?
+				 *  (Do drop the timer only if none remain) */
+				if (notifytype) {
+					matched = 0;
+					if (!(tmp->notifytypes)) {
+						upsdebugx(2, "%s: do not cancel timer %s due to lack of NOTIFYTYPE in it", __func__, name);
+						continue;
+					}
+					for (ps = tmp->notifytypes; ps != NULL && *ps != NULL ; ps++) {
+						if (!strcmp(*ps, notifytype)) {
+							matched = 1;
+							break;
+						}
+					}
+					if (!matched) {
+						upsdebugx(2, "%s: do not cancel timer %s due to mismatch vs. caller's NOTIFYTYPE", __func__, name);
+						continue;
+					}
+				}
+
+				if (upsname) {
+					matched = 0;
+					if (!(tmp->upsnames)) {
+						upsdebugx(2, "%s: do not cancel timer %s due to lack of UPSNAME in it", __func__, name);
+						continue;
+					}
+					for (ps = tmp->upsnames; ps != NULL && *ps != NULL ; ps++) {
+						if (!strcmp(*ps, upsname)) {
+							matched = 1;
+							break;
+						}
+					}
+					if (!matched) {
+						upsdebugx(2, "%s: do not cancel timer %s due to mismatch vs. caller's UPSNAME", __func__, name);
+						continue;
+					}
+				}
+			}
+
 			if (nut_debug_level)
 				upslogx(LOG_INFO, "Cancelling timer: %s", name);
 			removetimer(tmp);
-			/* TOTHINK: Don't we want to continue and cancel
-			 *  possibly many timers with this name? */
-			return;
+			removed++;
+
+			/* Go on, we want to continue and cancel possibly many
+			 * timers with this name (modulo constraints by envvars) */
 		}
 	}
+	if (removed > 0)
+		return;
 
 	/* this is not necessarily an error: per docs,
 	 * if the timer has passed then pass the optional argument cmd to CMDSCRIPT.
@@ -969,19 +1021,24 @@ static int sock_arg(conn_t *conn)
 	}
 
 	/* CANCEL <name> [<cmd>] [<NOTIFYTYPE> <UPSNAME] */
-	if (!strcmp(conn->ctx.arglist[0], "CANCEL")) {
-		/* "cmd" may be present and empty, this is handled in the method */
-		if (conn->ctx.numargs < 3)
-			cancel_timer(conn->ctx.arglist[1], NULL, NULL, NULL);
-		else
-		if (conn->ctx.numargs < 5)
-			cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2], NULL, NULL);
-		else
-			cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
-				conn->ctx.arglist[3], conn->ctx.arglist[4]);
+	{ /* scoping */
+		int	do_cancel = !strcmp(conn->ctx.arglist[0], "CANCEL"),
+			do_cancel_matched = !strcmp(conn->ctx.arglist[0], "CANCEL-MATCHED");
 
-		send_to_one(conn, "OK\n");
-		return 1;
+		if (do_cancel || do_cancel_matched) {
+			/* "cmd" may be present and empty, this is handled in the method */
+			if (conn->ctx.numargs < 3)
+				cancel_timer(conn->ctx.arglist[1], NULL, NULL, NULL, do_cancel_matched);
+			else
+			if (conn->ctx.numargs < 5)
+				cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2], NULL, NULL, do_cancel_matched);
+			else
+				cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
+					conn->ctx.arglist[3], conn->ctx.arglist[4], do_cancel_matched);
+
+			send_to_one(conn, "OK\n");
+			return 1;
+		}
 	}
 
 	if (conn->ctx.numargs < 5)

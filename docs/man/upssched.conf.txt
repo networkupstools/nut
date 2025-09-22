@@ -89,7 +89,7 @@ this can mess up subsequent CANCEL-TIMER operations).
 +
 Example:
 +
-Start a timer that will execute when any UPS (*) has been
+Start a timer that will execute when any UPS (+*+) has been
 gone for 10 seconds
 
 	AT COMMBAD * START-TIMER upsgone 10
@@ -108,7 +108,7 @@ NOTE: Currently this updates the first seen instance with the
 +
 Example:
 +
-Start a timer that will execute when any UPS (*) has been
+Start a timer that will execute when any UPS (+*+) has been
 gone for 10 seconds
 
 	AT COMMBAD * START-TIMER upsgone 10
@@ -118,7 +118,7 @@ Cancel a running timer called 'timername', if possible.
 If the timer has passed then pass the optional argument
 'cmd' to CMDSCRIPT.
 +
-NOTE: Currently this removes the first seen instance with the
+NOTE: This removes the all seen instances with the
 'timername' (in case you managed to start many).
 +
 Example:
@@ -128,12 +128,23 @@ stop the timer before it triggers
 
 	AT COMMOK myups@localhost CANCEL-TIMER upsgone
 
+*CANCEL-TIMER-MATCHED* 'timername' ['cmd'];;
+Similar to the above, but tries to only cancel the 'timername' if it
+refers to the `UPSNAME` and `NOTIFYTYPE` values passed by caller.
++
+Example:
++
+If any UPS (+*+) reverts to utility power, then stop the timer before it
+triggers ONLY if that UPS is associated with the already scheduled timer:
+
+	AT ONLINE * CANCEL-TIMER-MATCHED onbattwarn
+
 *EXECUTE* 'command';;
 Immediately pass 'command' as an argument to CMDSCRIPT.
 +
 Example:
 +
-If any UPS (*) reverts to utility power, then execute
+If any UPS (+*+) reverts to utility power, then execute
 `ups-back-on-line` via CMDSCRIPT.
 
 	AT ONLINE * EXECUTE ups-back-on-line
