@@ -387,11 +387,13 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 		/* See if there is an older entry to attach to,
 		 * otherwise fall through to creating a new one */
 		tmp = last = thead;
+		upsdebugx(3, "%s: searching for existing timer named '%s' to share", __func__, name);
 
 		while (tmp) {
 			if (tmp->name && !strcmp(tmp->name, name)) {
 				if (nut_debug_level)
-					upslogx(LOG_INFO, "Append data to shared timer: %s (%ld seconds)", name, ofs);
+					upslogx(LOG_INFO, "Append data to shared timer: %s (will elapse in %g seconds)",
+						name, difftime(tmp->etime, now));
 
 				/* FIXME? Consider only the first hit as the shared timer?
 				 *  Or check if there is already a copy with same name elsewhere?
@@ -401,7 +403,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 						char	**ps = NULL;
 						size_t	count = 0;	/* amount of non-NULL entries, if we get to the end */
 
-						for (ps = tmp->notifytypes; ps != NULL; ps++) {
+						for (ps = tmp->notifytypes; ps != NULL && *ps != NULL ; ps++) {
 							count++;
 							if (!strcmp(*ps, notifytype))
 								break;
@@ -424,7 +426,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 						char	**ps = NULL;
 						size_t	count = 0;	/* amount of non-NULL entries, if we get to the end */
 
-						for (ps = tmp->upsnames; ps != NULL; ps++) {
+						for (ps = tmp->upsnames; ps != NULL && *ps != NULL ; ps++) {
 							count++;
 							if (!strcmp(*ps, upsname))
 								break;
@@ -452,7 +454,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 	}
 
 	if (nut_debug_level)
-		upslogx(LOG_INFO, "New timer: %s (%ld seconds)", name, ofs);
+		upslogx(LOG_INFO, "New timer: %s (will elapse in %ld seconds)", name, ofs);
 
 	/* now add to the queue */
 	if (!shared_timer) {
