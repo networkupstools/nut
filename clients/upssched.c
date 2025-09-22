@@ -1,6 +1,14 @@
 /* upssched.c - upsmon's scheduling helper for offset timers
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2000       Russell Kroll <rkroll@exploits.org>
+	2005-2012  Arnaud Quette <arnaud.quette@free.fr>
+	2006       Charles Lepple <clepple+nut@gmail.com>
+	2006-2019  Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2006-2007  Peter Selinger <selinger@users.sourceforge.net>
+	2010-2012  Frederic BOHE <fredericbohe@eaton.com>
+	2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
+	2022       Dimitris Economou <dimitris.s.economou@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
