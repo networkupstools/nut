@@ -21,6 +21,20 @@ IMPORTANT NOTES
 CONFIGURATION DIRECTIVES
 ------------------------
 
+*DEBUG_MIN* 'number'::
+Optional. Specify minimal debugging level for `upssched` daemon or client,
+e.g. for troubleshooting a deployment without a need to edit consumer
+configuration.
++
+Note that command-line option `-D` can only increase this verbosity level.
++
+Also note that the configuration file is processed line by line, so you
+may want to set this option early on.
++
+Example:
+
+	DEBUG_MIN 6
+
 *CMDSCRIPT* 'scriptname'::
 Required.  This must be above any AT lines.  This script is used to
 invoke commands when your timers are triggered.  It receives a single

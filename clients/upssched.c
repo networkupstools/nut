@@ -79,6 +79,7 @@ typedef struct ttype_s {
 static ttype_t	*thead = NULL;
 static conn_t	*connhead = NULL;
 static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
+static int	nut_debug_level_args = 0, nut_debug_level_env = 0, nut_debug_level_conf = 0;
 
 /* ups name and notify type (string) as received from upsmon */
 static const	char	*ups_name, *notify_type, *prog = NULL;
@@ -1672,6 +1673,17 @@ static int conf_arg(size_t numargs, char **arg)
 		return 1;
 	}
 
+	/* DEBUG_MIN <num> */
+	if (!strcmp(arg[0], "DEBUG_MIN")) {
+		if (str_to_int(arg[1], &nut_debug_level_conf, 10)) {
+			if (nut_debug_level_conf > nut_debug_level) {
+				nut_debug_level = nut_debug_level_conf;
+				upsdebugx(1, "Applying debug_min=%d from upssched.conf", nut_debug_level);
+			}
+		}
+		return 1;
+	}
+
 	/* PIPEFN <pipename> */
 	if (!strcmp(arg[0], "PIPEFN")) {
 #ifndef WIN32
@@ -1802,7 +1814,7 @@ int main(int argc, char **argv)
 	while ((i = getopt(argc, argv, "+DVh")) != -1) {
 		switch (i) {
 			case 'D':
-				nut_debug_level++;
+				nut_debug_level_args++;
 				break;
 
 			case 'h':
@@ -1823,15 +1835,15 @@ int main(int argc, char **argv)
 		}
 	}
 
+	nut_debug_level = nut_debug_level_args;
 	{ /* scoping */
 		char *s = getenv("NUT_DEBUG_LEVEL");
-		int l;
-		if (s && str_to_int(s, &l, 10)) {
-			if (l > 0 && nut_debug_level < 1) {
+		if (s && str_to_int(s, &nut_debug_level_env, 10)) {
+			if (nut_debug_level_env > 0 && nut_debug_level_args < 1) {
 				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
-					"since none was requested by command-line options", l);
-				nut_debug_level = l;
-			}	/* else follow -D settings */
+					"since none was requested by command-line options", nut_debug_level_env);
+				nut_debug_level = nut_debug_level_env;
+			}	/* else follow -D and/or upssched.conf DEBUG_MIN settings */
 		}	/* else nothing to bother about */
 	}
 

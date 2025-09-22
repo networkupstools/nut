@@ -67,6 +67,7 @@ https://github.com/networkupstools/nut/milestone/12
      single named timer for possibly many devices and/or event types -- in
      this case they would be comma-separated in the environment variable
      values. [issue #3092, PR #3097]
+   * Introduced support for `DEBUG_MIN` setting via `upssched.conf`. [#3097]
 
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)

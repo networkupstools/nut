@@ -6,6 +6,8 @@
 # Network UPS Tools - upssched.conf sample file for NIT suite
 # Note: template values are substituted by nit.sh, not during configure/build
 
+#DEBUG_MIN 4
+
 CMDSCRIPT @TOP_BUILDDIR@/clients/upssched-cmd
 
 PIPEFN @NUT_STATEPATH@/upssched.pipe
