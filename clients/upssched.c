@@ -80,6 +80,7 @@ static ttype_t	*thead = NULL;
 static conn_t	*connhead = NULL;
 static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
 static int	nut_debug_level_args = 0, nut_debug_level_env = 0, nut_debug_level_conf = 0;
+static int	list_timers = 0;
 
 /* ups name and notify type (string) as received from upsmon */
 static const	char	*ups_name, *notify_type, *prog = NULL;
@@ -876,6 +877,59 @@ static int sock_arg(conn_t *conn)
 	if (conn->ctx.numargs < 1)
 		return 0;
 
+	/* LIST-TIMERS (no args expected now)
+	 * returns a list with tab-separated values for:
+	 * NAME TO_ABS TO_REL NOTIFYTYPES UPSNAMES
+	 */
+	if (!strcmp(conn->ctx.arglist[0], "LIST-TIMERS")) {
+		ttype_t	*item = thead;
+		char	*s = NULL;
+		time_t	now;
+
+		send_to_one(conn, "BEGIN LIST TIMERS\n");
+		time(&now);
+
+		while (item) {
+			if (item->name) {
+				send_to_one(conn, "%s\t%ld\t%ld\t",
+					item->name, (long)item->etime, (long)difftime(item->etime, now));
+
+				s = NULL;
+				if (item->notifytypes && *(item->notifytypes) && **(item->notifytypes)) {
+					s = collect_string(item->notifytypes, "NOTIFYTYPE", ",", NULL, NULL);
+				}
+
+				if (s && *s) {
+					send_to_one(conn, "%s\t", s);
+				} else {
+					send_to_one(conn, "\"\"\t");
+				}
+				if (s) {
+					free(s);
+				}
+
+				s = NULL;
+				if (item->upsnames && *(item->upsnames) && **(item->upsnames)) {
+					s = collect_string(item->upsnames, "UPSNAME", ",", NULL, NULL);
+				}
+
+				if (s && *s) {
+					send_to_one(conn, "%s\n", s);
+				} else {
+					send_to_one(conn, "\"\"\n");
+				}
+				if (s) {
+					free(s);
+				}
+			}
+			item = item->next;
+		}
+
+		send_to_one(conn, "END LIST TIMERS\n");
+		send_to_one(conn, "OK\n\0");
+		return 1;
+	}
+
 	/* CANCEL <name> [<cmd>] [<NOTIFYTYPE> <UPSNAME] */
 	if (!strcmp(conn->ctx.arglist[0], "CANCEL")) {
 		/* "cmd" may be present and empty, this is handled in the method */
@@ -1441,25 +1495,29 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 #endif	/* WIN32 */
 	TYPE_FD pipefd;
 
-	/* insanity */
-	if (!arg1)
+	/* sanity-check */
+	if (!arg1 && !list_timers)
 		return;
 
-	/* build the request */
+	/* build the request
+	 * note that in list-timers mode we may have no args to send, but
+	 * otherwise we must have at least the timer name to start or cancel
+	 */
 	snprintf(buf, sizeof(buf), "%s \"%s\"",
-		cmd, pconf_encode(arg1, enc, sizeof(enc)));
+		cmd, arg1 ? pconf_encode(arg1, enc, sizeof(enc)) : "");
 
 	snprintfcat(buf, sizeof(buf), " \"%s\"",
 		arg2 ? pconf_encode(arg2, enc, sizeof(enc)) : "");
 
 	/* use envvars set by caller (upsmon) when launching this client process
-	 * (C variables are known not-null courtesy of main() method).
+	 * (C variables are known not-null courtesy of main() method... except
+	 * when we are in the list-timers mode).
 	 */
 	snprintfcat(buf, sizeof(buf), " \"%s\"",
-		pconf_encode(notify_type, enc, sizeof(enc)));
+		notify_type ? pconf_encode(notify_type, enc, sizeof(enc)) : "");
 
 	snprintfcat(buf, sizeof(buf), " \"%s\"",
-		pconf_encode(ups_name, enc, sizeof(enc)));
+		ups_name? pconf_encode(ups_name, enc, sizeof(enc)) : "");
 
 	snprintf(enc, sizeof(enc), "%s\n", buf);
 
@@ -1471,21 +1529,29 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		fatalx(EXIT_FAILURE, "Unable to connect to daemon: buffered message too large");
 	}
 
-	/* see if the parent needs to be started (and maybe start it) */
-
 	for (i = 0; i < MAX_TRIES; i++) {
 
-		pipefd = check_parent(cmd, arg2);
+		if (list_timers) {
+			pipefd = try_connect();
 
-		if (pipefd == (TYPE_FD)PARENT_STARTED) {
-			/* loop back and try to connect now */
-			usleep(250000);
-			continue;
+			if (INVALID_FD(pipefd)) {
+				upsdebugx(1, "%s: failed to use PIPEFN='%s'", __func__, NUT_STRARG(pipefn));
+				fatalx(EXIT_FAILURE, "upssched timer is not running");
+			}
+		} else {
+			/* see if the parent needs to be started (and maybe start it) */
+			pipefd = check_parent(cmd, arg2);
+
+			if (pipefd == (TYPE_FD)PARENT_STARTED) {
+				/* loop back and try to connect now */
+				usleep(250000);
+				continue;
+			}
+
+			/* special case for CANCEL when no parent is running */
+			if (pipefd == (TYPE_FD)PARENT_UNNECESSARY)
+				return;
 		}
-
-		/* special case for CANCEL when no parent is running */
-		if (pipefd == (TYPE_FD)PARENT_UNNECESSARY)
-			return;
 
 		/* we're connected now */
 #ifndef WIN32
@@ -1493,9 +1559,15 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* if we can't send the whole thing, loop back and try again */
 		if ((ret < 1) || (ret != (ssize_t)enclen)) {
-			upslogx(LOG_ERR, "write failed, trying again");
-			close(pipefd);
-			continue;
+			if (list_timers) {
+				upslogx(LOG_ERR, "write failed, daemon must have ended");
+				close(pipefd);
+				break;
+			} else {
+				upslogx(LOG_ERR, "write failed, trying again");
+				close(pipefd);
+				continue;
+			}
 		}
 
 		/* select on child's pipe fd */
@@ -1508,6 +1580,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			FD_SET(pipefd, &fdread);
 
 			ret_s = select(pipefd + 1, &fdread, NULL, NULL, &tv);
+			upsdebugx(2, "%s: ret_s=%d", __func__, ret_s);
 			switch(ret_s) {
 				/* select error */
 				case -1:
@@ -1520,7 +1593,45 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 				/* available data to read */
 				default:
-					ret = read(pipefd, buf, sizeof(buf));
+					memset (buf, 0, sizeof (buf));
+					ret = read(pipefd, buf, sizeof(buf) - 1);
+					upsdebugx(2, "%s: ret=%" PRIiSIZE ": [%s]", __func__, ret, buf);
+
+					if (list_timers && ret > 0) {
+						/* Require to continue the reading loop */
+						ret_s = -2;
+
+						/* ASSUME we see whole starting and/or ending lines
+						 * of the response within one read() operation
+						 */
+						char	*end = strstr(buf, "END LIST TIMERS\n"),
+								*ok = strstr(buf, "OK\n");
+
+						if (end)
+							*end = '\0';
+						else {
+							end = strstr(buf, "\nEND");
+							if (end)
+								*(end+1) = '\0';
+						}
+
+						if (ok)
+							*ok = '\0';
+
+						if (!strncmp(buf, "BEGIN LIST TIMERS\n", 18)) {
+							printf("%s", buf + 18);
+						} else {
+							printf("%s", buf);
+						}
+
+						if (ok) {
+							ret = snprintf(buf, sizeof(buf), "%s", "OK\n\0");
+							ret_s = 1;
+						} else {
+							/* Let more of the response accumulate in the buffer */
+							usleep(250000);
+						}
+					}
 					break;
 			}
 		} while (ret_s <= 0);
@@ -1529,16 +1640,27 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* same idea: no OK = go try it all again */
 		if (ret < 2) {
-			upslogx(LOG_ERR, "read confirmation failed, trying again");
-			continue;
+			if (list_timers) {
+				upslogx(LOG_ERR, "read confirmation failed, daemon must have ended");
+				break;
+			} else {
+				upslogx(LOG_ERR, "read confirmation failed, trying again");
+				continue;
+			}
 		}
 
 #else /* WIN32 */
 		ret = WriteFile(pipefd, enc, enclen, &bytesWritten, NULL);
 		if (ret == 0 || bytesWritten != enclen) {
-			upslogx(LOG_ERR, "write failed, trying again");
-			CloseHandle(pipefd);
-			continue;
+			if (list_timers) {
+				upslogx(LOG_ERR, "write failed, daemon must have ended");
+				CloseHandle(pipefd);
+				break;
+			} else {
+				upslogx(LOG_ERR, "write failed, trying again");
+				CloseHandle(pipefd);
+				continue;
+			}
 		}
 
 		OVERLAPPED read_overlapped;
@@ -1550,18 +1672,56 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 				FALSE, /* auto-reset*/
 				FALSE, /* inital state = non signaled*/
 				NULL /* no name*/);
-		if(read_overlapped.hEvent == NULL ) {
+		if (read_overlapped.hEvent == NULL) {
 			fatal_with_errno(EXIT_FAILURE, "Can't create event");
 		}
 
-		ReadFile(pipefd,buf,sizeof(buf)-1,NULL,&(read_overlapped));
+		/* Accommodate reading of longer replies like the loop above;
+		 * async (overlapped) read so not tracking bytesRead here, per
+		 * https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-readfile
+		 */
+		while (ReadFile(pipefd, buf, sizeof(buf)-1, NULL, &(read_overlapped))) {
+			ret = WaitForSingleObject(read_overlapped.hEvent, 2000);
 
-		ret = WaitForSingleObject(read_overlapped.hEvent,2000);
+			if (ret == WAIT_TIMEOUT || ret == WAIT_FAILED) {
+				if (list_timers) {
+					upslogx(LOG_ERR, "read confirmation failed, daemon must have ended");
+					CloseHandle(pipefd);
+					break;
+				} else {
+					upslogx(LOG_ERR, "read confirmation failed, trying again");
+					CloseHandle(pipefd);
+					continue;
+				}
+			}
 
-		if (ret == WAIT_TIMEOUT || ret == WAIT_FAILED) {
-			upslogx(LOG_ERR, "read confirmation failed, trying again");
-			CloseHandle(pipefd);
-			continue;
+			if (buf[0] == '\0')
+				break;
+
+			if (list_timers) {
+				/* ASSUME we see whole starting and/or ending lines
+				 * of the response within one read() operation
+				 */
+				char	*end = strstr(buf, "END LIST TIMERS\n"),
+						*ok = strstr(buf, "OK\n");
+
+				if (end)
+					*end = '\0';
+
+				if (ok)
+					*ok = '\0';
+
+				if (!strncmp(buf, "BEGIN LIST TIMERS\n", 18)) {
+					printf("%s", buf + 18);
+				} else {
+					printf("%s", buf);
+				}
+
+				if (ok) {
+					snprintf(buf, sizeof(buf), "OK\n");
+					break;
+				}
+			}
 		}
 #endif /* WIN32 */
 
@@ -1570,8 +1730,14 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		upslogx(LOG_ERR, "read confirmation got [%s]", buf);
 
+		if (list_timers)
+			break;
+
 		/* try again ... */
 	}	/* loop until MAX_TRIES if no success above */
+
+	if (list_timers)
+		fatalx(EXIT_FAILURE, "Unable to connect to daemon or connection was broken during listing");
 
 	fatalx(EXIT_FAILURE, "Unable to connect to daemon and unable to start daemon");
 }
@@ -1704,6 +1870,9 @@ static int conf_arg(size_t numargs, char **arg)
 		return 1;
 	}
 
+	if (list_timers)
+		return 2;
+
 	if (numargs < 5)
 		return 0;
 
@@ -1754,6 +1923,11 @@ static void checkconf(void)
 		if (ctx.numargs < 1)
 			continue;
 
+		/* Note: for list_timers mode this only parses some config values
+		 * that are of interest for communications with the timer daemon
+		 * (e.g. PIPEFN), but for normal mode this also calls parse_at()
+		 * and does the actual work, as/when relevant, line by line.
+		 */
 		if (!conf_arg(ctx.numargs, ctx.arglist)) {
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
@@ -1770,9 +1944,19 @@ static void checkconf(void)
 		}
 	}
 
+	if (list_timers) {
+		if (!pipefn || !(*pipefn)) {
+			fatalx(EXIT_FAILURE, "upssched.conf: invalid configuration for timer listing: lacks PIPEFN");
+		}
+
+		upsdebugx(1, "%s: processing LIST-TIMERS", __func__);
+
+		/* Here the send() also handles the response for this use-case */
+		sendcmd("LIST-TIMERS", NULL, NULL);
+	}
 
 	/* FIXME: Per legacy behavior, we silently went on.
-	 * Maybe should abort on unusable configs?
+	 *  Maybe should abort on unusable configs?
 	 */
 	if (numerrors) {
 		upslogx(LOG_ERR, "Encountered %d config errors, those entries were ignored", numerrors);
@@ -1793,6 +1977,7 @@ static void help(const char *arg_progname)
 	printf("  -D		raise debugging level (NOTE: keeps reporting when daemonized)\n");
 	printf("  -V		display the version of this software\n");
 	printf("  -h		display this help\n");
+	printf("  -l		display currently pending timers (if any)\n");
 
 	nut_report_config_flags();
 
@@ -1804,14 +1989,14 @@ static void help(const char *arg_progname)
 
 int main(int argc, char **argv)
 {
-	int i;
+	int	i;
 
 	if (argc > 0)
 		prog = xbasename(argv[0]);
 	if (!prog)
 		prog = "upssched";
 
-	while ((i = getopt(argc, argv, "+DVh")) != -1) {
+	while ((i = getopt(argc, argv, "+DVhl")) != -1) {
 		switch (i) {
 			case 'D':
 				nut_debug_level_args++;
@@ -1822,6 +2007,10 @@ int main(int argc, char **argv)
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
+
+			case 'l':
+				list_timers = 1;
+				break;
 
 			case 'V':
 				/* just show the optional CONFIG_FLAGS banner */
@@ -1854,7 +2043,7 @@ int main(int argc, char **argv)
 	ups_name = getenv("UPSNAME");
 	notify_type = getenv("NOTIFYTYPE");
 
-	if ((!ups_name) || (!notify_type)) {
+	if ((!list_timers) && ((!ups_name) || (!notify_type))) {
 		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");
 		printf("This program should only be run from upsmon(%s).\n", MAN_SECTION_CMD_SYS);
 		exit(EXIT_FAILURE);
