@@ -107,7 +107,9 @@ static void exec_cmd(const char *cmd)
 
 	snprintf(buf, sizeof(buf), "%s %s", cmdscript, cmd);
 
+	upsdebugx(4, "%s: calling: %s", __func__, buf);
 	err = system(buf);
+	upsdebugx(3, "%s(%s): returned %d", __func__, buf, err);
 #ifndef WIN32
 	if (WIFEXITED(err)) {
 		if (WEXITSTATUS(err)) {
@@ -242,7 +244,10 @@ static void exec_cmd_timer(ttype_t *item)
 	if (notifytypes)
 		setenv("NOTIFYTYPE", notifytypes, 1);
 
+	if (nut_debug_level)
+		upslogx(LOG_INFO, "Executing command by timer: %s", item->name);
 	exec_cmd(item->name);
+	upsdebugx(3, "%s: returned from exec_cmd()", __func__);
 
 	/* Timer process should not retain random envvars */
 	if (upsnames) {
@@ -254,6 +259,8 @@ static void exec_cmd_timer(ttype_t *item)
 		unsetenv("NOTIFYTYPE");
 		free(notifytypes);
 	}
+
+	upsdebugx(3, "%s: done", __func__);
 }
 
 static void removetimer(ttype_t *tfind)
@@ -265,16 +272,15 @@ static void removetimer(ttype_t *tfind)
 
 	while (tmp) {
 		if (tmp == tfind) {	/* found it */
+			upsdebugx(5, "%s: found %s", __func__, NUT_STRARG(tmp->name));
 			if (last == NULL)	/* deleting first */
 				thead = tmp->next;
 			else
 				last->next = tmp->next;
 
-			free(tmp->name);
-
 			if (tmp->upsnames) {
 				char **ps;
-				for (ps = tmp->upsnames; ps != NULL; ps++) {
+				for (ps = tmp->upsnames; ps != NULL && *ps != NULL; ps++) {
 					free(*ps);
 				}
 				free(tmp->upsnames);
@@ -282,12 +288,14 @@ static void removetimer(ttype_t *tfind)
 
 			if (tmp->notifytypes) {
 				char **ps;
-				for (ps = tmp->notifytypes; ps != NULL; ps++) {
+				for (ps = tmp->notifytypes; ps != NULL && *ps != NULL; ps++) {
 					free(*ps);
 				}
 				free(tmp->notifytypes);
 			}
 
+			upsdebugx(3, "%s: forgetting %s", __func__, tmp->name);
+			free(tmp->name);
 			free(tmp);
 			return;
 		}
@@ -306,6 +314,8 @@ static void checktimers(void)
 	ttype_t	*tmp, *tmpnext;
 	time_t	now;
 	static	int	emptyctr = 0;
+
+	upsdebugx(3, "%s: starting", __func__);
 
 	/* if the queue is empty we might be ready to exit */
 	if (!thead) {
@@ -345,11 +355,15 @@ static void checktimers(void)
 			exec_cmd_timer(tmp);
 
 			/* delete from queue */
+			upsdebugx(5, "%s: removing timer for the event just handled", __func__);
 			removetimer(tmp);
+			upsdebugx(5, "%s: removed timer for the event just handled", __func__);
 		}
 
 		tmp = tmpnext;
 	}
+
+	upsdebugx(3, "%s: done", __func__);
 }
 
 static void start_timer(const char *name, const char *ofsstr, const char *notifytype, const char *upsname, int shared_timer)
@@ -618,6 +632,12 @@ static void conn_del(conn_t *target)
 {
 	conn_t	*tmp, *last = NULL;
 
+	if (!target)
+		return;
+
+#ifndef WIN32
+	upsdebugx(3, "%s: closing connection %d", __func__, target->fd);
+#endif
 	tmp = connhead;
 
 	while (tmp) {
@@ -1382,6 +1402,9 @@ static void start_daemon(TYPE_FD lockfd)
 		checktimers();
 	}
 #endif /* WIN32 */
+
+	if (nut_debug_level)
+		upslogx(LOG_INFO, "Timer daemon ending");
 }
 
 /* --- 'client' functions --- */
