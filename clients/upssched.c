@@ -245,7 +245,8 @@ static void exec_cmd_timer(ttype_t *item)
 		setenv("NOTIFYTYPE", notifytypes, 1);
 
 	if (nut_debug_level)
-		upslogx(LOG_INFO, "Executing command by timer: %s", item->name);
+		upslogx(LOG_INFO, "Executing command by timer: %s\t[%s]\t[%s]",
+			item->name, NUT_STRARG(notifytypes), NUT_STRARG(upsnames));
 	exec_cmd(item->name);
 	upsdebugx(3, "%s: returned from exec_cmd()", __func__);
 
@@ -392,8 +393,9 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 		while (tmp) {
 			if (tmp->name && !strcmp(tmp->name, name)) {
 				if (nut_debug_level)
-					upslogx(LOG_INFO, "Append data to shared timer: %s (will elapse in %g seconds)",
-						name, difftime(tmp->etime, now));
+					upslogx(LOG_INFO, "Append data to shared timer: %s\t[%s]\t[%s]\t(will elapse in %g seconds)",
+						name, NUT_STRARG(notifytype), NUT_STRARG(upsname),
+						difftime(tmp->etime, now));
 
 				/* FIXME? Consider only the first hit as the shared timer?
 				 *  Or check if there is already a copy with same name elsewhere?
@@ -454,7 +456,8 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 	}
 
 	if (nut_debug_level)
-		upslogx(LOG_INFO, "New timer: %s (will elapse in %ld seconds)", name, ofs);
+		upslogx(LOG_INFO, "New timer: %s\t[%s]\t[%s]\t(will elapse in %ld seconds)",
+			name, NUT_STRARG(notifytype), NUT_STRARG(upsname), ofs);
 
 	/* now add to the queue */
 	if (!shared_timer) {
@@ -1804,27 +1807,27 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	}
 
 	/* check ups_name: does this apply to us? */
-	upsdebugx(2, "%s: is '%s' in AT command the '%s' we were launched to process?",
+	upsdebugx(3, "%s: is '%s' in AT command the '%s' we were launched to process?",
 		__func__, un, ups_name);
 	if (strcmp(ups_name, un) != 0) {
 		if (strcmp(un, "*") != 0) {
-			upsdebugx(1, "%s: SKIP: '%s' in AT command "
+			upsdebugx(4, "%s: SKIP: '%s' in AT command "
 				"did not match the '%s' UPSNAME "
 				"we were launched to process",
 				__func__, un, ups_name);
 			return;		/* not for us, and not the wildcard */
 		} else {
-			upsdebugx(1, "%s: this AT command is for a wildcard: matched", __func__);
+			upsdebugx(2, "%s: this AT command is for a wildcard: matched", __func__);
 		}
 	} else {
-		upsdebugx(1, "%s: '%s' in AT command matched the '%s' "
+		upsdebugx(2, "%s: '%s' in AT command matched the '%s' "
 			"UPSNAME we were launched to process",
 			__func__, un, ups_name);
 	}
 
 	/* see if the current notify type matches the one from the .conf */
 	if (strcasecmp(notify_type, ntype) != 0) {
-		upsdebugx(1, "%s: SKIP: '%s' in AT command "
+		upsdebugx(4, "%s: SKIP: '%s' in AT command "
 			"did not match the '%s' NOTIFYTYPE "
 			"we were launched to process",
 			__func__, ntype, notify_type);
@@ -1834,25 +1837,33 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	/* if command is valid, send it to the daemon (which may start it) */
 
 	if (!strcmp(cmd, "START-TIMER")) {
-		upsdebugx(1, "%s: processing %s", __func__, cmd);
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
 		sendcmd("START", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "START-TIMER-SHARED")) {
-		upsdebugx(1, "%s: processing %s", __func__, cmd);
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
 		sendcmd("START-SHARED", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "CANCEL-TIMER")) {
-		upsdebugx(1, "%s: processing %s", __func__, cmd);
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
 		sendcmd("CANCEL", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "EXECUTE")) {
-		upsdebugx(1, "%s: processing %s", __func__, cmd);
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
 
 		if (ca1[0] == '\0') {
 			upslogx(LOG_ERR, "Empty EXECUTE command argument");
@@ -1866,7 +1877,9 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 		return;
 	}
 
-	upslogx(LOG_ERR, "Invalid command: %s", cmd);
+	upslogx(LOG_ERR, "Invalid command: %s\t[%s]\t[%s]\t[%s]\t[%s]", cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
 }
 
 static int conf_arg(size_t numargs, char **arg)
