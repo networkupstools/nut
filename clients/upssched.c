@@ -370,7 +370,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 {
 	time_t	now;
 	long	ofs;
-	ttype_t	*tmp, *last;
+	ttype_t	*tmp, *last = NULL;
 
 	/* get the time */
 	time(&now);
@@ -924,8 +924,8 @@ static int sock_arg(conn_t *conn)
 
 		while (item) {
 			if (item->name) {
-				send_to_one(conn, "%s\t%ld\t%ld\t",
-					item->name, (long)item->etime, (long)difftime(item->etime, now));
+				send_to_one(conn, "%s\t%ld\t%g\t",
+					item->name, (long)item->etime, difftime(item->etime, now));
 
 				s = NULL;
 				if (item->notifytypes && *(item->notifytypes) && **(item->notifytypes)) {
@@ -1403,8 +1403,11 @@ static void start_daemon(TYPE_FD lockfd)
 	}
 #endif /* WIN32 */
 
+	/* Should not get here */
+/*
 	if (nut_debug_level)
 		upslogx(LOG_INFO, "Timer daemon ending");
+*/
 }
 
 /* --- 'client' functions --- */
@@ -1634,14 +1637,14 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 					upsdebugx(2, "%s: ret=%" PRIiSIZE ": [%s]", __func__, ret, buf);
 
 					if (list_timers && ret > 0) {
-						/* Require to continue the reading loop */
-						ret_s = -2;
-
 						/* ASSUME we see whole starting and/or ending lines
 						 * of the response within one read() operation
 						 */
 						char	*end = strstr(buf, "END LIST TIMERS\n"),
 								*ok = strstr(buf, "OK\n");
+
+						/* Require to continue the reading loop */
+						ret_s = -2;
 
 						if (end)
 							*end = '\0';
