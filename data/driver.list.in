@@ -1522,6 +1522,7 @@
 "Tripp Lite"	"ups"	"2"	"SMART500RT1U"	"USB (older; product ID 0001, protocol 3005)"	"tripplite_usb"
 "Tripp Lite"	"ups"	"3"	"SMART500RT1U"	"USB (newer; protocol/product ID 3005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2853
 "Tripp Lite"	"ups"	"3"	"SMC15002URM"	"USB (protocol 3015)"	"usbhid-ups"	# https://www.tripplite.com/smartpro-120v-1-5kva-1kw-line-interactive-sine-wave-ups-2u-rack-tower-lcd-usb-db9-8-outlets~SMC15002URM
+"Tripp Lite"	"ups"	"2"	"SMX1200XLHG"	"USB (protocol 3017; USB ID: 09ae:0001)"	"tripplite_usb, may need upsid=65535"	# https://github.com/networkupstools/nut/issues/2258
 "Tripp Lite"	"ups"	"3"	"SMX1000LCD"	"USB (protocol 2005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3200
 "Tripp Lite"	"ups"	"3"	"SMX1000RT2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2798
 "Tripp Lite"	"ups"	"3"	"SMX1050SLT"	"USB (protocol 3012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3249

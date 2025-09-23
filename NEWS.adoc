@@ -54,6 +54,10 @@ https://github.com/networkupstools/nut/milestone/12
      points were seen, or if the `mibs=auto` detection only found the fallback
      IETF mapping. [PR #3095]
 
+ - `tripplite_usb` driver updates:
+   * Added support for Tripplite protocol 3017 (mostly ASCII). [issue #2258,
+     PR #3093]
+
  - `usbhid-ups` driver updates:
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
