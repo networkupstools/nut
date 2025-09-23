@@ -39,6 +39,21 @@ https://github.com/networkupstools/nut/milestone/12
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
+ - `nutdrv_qx` driver updates:
+   * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
+     code (mapping table) and the data found from device walk sit together
+     well -- namely, that we successfully use reasonably many of the existing
+     mappings. Suggest how user can help improve the driver if too few data
+     points were seen. [PR #3095]
+
+ - `snmp-ups` driver updates:
+   * Define an internal `SU_FLAG_MAPPING_HANDLED` to check if the subdriver
+     code (mapping table) and the data found from device walk sit together
+     well -- namely, that we successfully use reasonably many of the existing
+     mappings. Suggest how user can help improve the driver if too few data
+     points were seen, or if the `mibs=auto` detection only found the fallback
+     IETF mapping. [PR #3095]
+
  - `tripplite_usb` driver updates:
    * Added support for Tripplite protocol 3017 (mostly ASCII). [issue #2258,
      PR #3093]
@@ -54,7 +69,9 @@ https://github.com/networkupstools/nut/milestone/12
      looks wrong. [#2058, #3061 et al]
    * Check if the subdriver code (mapping table) and the device report
      descriptor sit together well -- namely, that we do not unwittingly
-     ignore any useful reports. [#3082]
+     ignore any useful reports, and that we successfully use reasonably many
+     of the existing mappings. Suggest how user can help improve the driver
+     if too few data points were seen. [#3082, #3095]
 
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
@@ -91,6 +108,9 @@ https://github.com/networkupstools/nut/milestone/12
 
  - Updated `make spellcheck` to help avoid asciidoc admonition blocks with
    visually invalid sentences (after rendering as a box in HTML or PDF). [#3077]
+
+ - Updated `docs/*.txt`: add asciidoc comments with links to nut-website
+   rendered contents of most interesting pages. [#3095]
 
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3

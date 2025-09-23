@@ -1,6 +1,11 @@
 Creating a new driver to support another device
 ===============================================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/new-drivers.html
+//////////////////////////////////////////////////////////////////////////////
+
 This chapter will present the process of creating a new driver to support
 another device.
 

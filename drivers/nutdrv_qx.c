@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.45"
+#define DRIVER_VERSION	"0.46"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -292,6 +292,148 @@ int qx_multiply_m2s(item_t *item, char *value, const size_t valuelen) {
 
 	snprintf(value, valuelen, "%.0f", s * 60.0);
 	return 0;
+}
+
+static void analyze_mapping_usage(void) {
+	/* Check if the subdriver code (mappings) and the device report
+	 * sit together well. Note that for yet-unknown concepts, the
+	 * NUT driver developers can either raise a discussion on how
+	 * to best formalize that concept via docs/nut-names.txt, or
+	 * temporarily place them into "experimental.*" or "unmapped.*"
+	 * namespaces.
+	 *
+	 * Later also check that all defined mappings were used?
+	 * TBH, this is unlikely in practice, so of little value
+	 * (unless we are troubleshooting and under 5 or 10 data
+	 * points are served from actually the device, and not
+	 * from user configs or driver fallbacks).
+	 *
+	 * See also: similar methods in usbhid-ups and snmp-ups.
+	 */
+	size_t	unused_count = 0, known_mappings = 0;
+	size_t	unused_bufsize = LARGEBUF, unused_prevlen = 0, used_mappings = 0;
+	int	ret_printf;
+	char	*unused_names = NULL;
+	item_t	*item;
+
+	/* FIXME? this activity is limited to when debugging is enabled, even
+	 *  if some of the messages below can be posted visibly at level 0.
+	 */
+	if (nut_debug_level < 1)
+		return;
+
+	upsdebugx(1, "%s: checking if the subdriver code (mappings) "
+		"consults all data points from the device report",
+		__func__);
+
+	if (!subdriver->qx2nut) {
+		upsdebugx(1, "%s: SKIP: subdriver->qx2nut==null", __func__);
+		return;
+	}
+
+	unused_names = xcalloc(unused_bufsize, sizeof(char));
+
+	for (item = subdriver->qx2nut; item->info_type != NULL; item++) {
+		if (!item)
+			continue;
+
+		known_mappings++;
+
+		if (item->qxflags & QX_FLAG_MAPPING_HANDLED) {
+			used_mappings++;
+		} else {
+			const char	*pName = item->info_type;
+			const char	*pType = (item->qxflags & QX_FLAG_CMD ? "cmd" : "data");
+			int	retry = 0;
+
+			/* Keep aliases for code similarity with usbhid-ups and nutdrv_qx */
+			char	**pNames = &unused_names;
+			size_t	*pCount = &unused_count, *pPrevLen = &unused_prevlen, *pBufSize = &unused_bufsize;
+
+			if (!pName) {
+				upsdebugx(2, "%s: error getting a data point name, skipped", __func__);
+				continue;
+			}
+
+			/* We may overflow the pre-allocated buffer,
+			 * so we loop here until snprintf() succeeds
+			 * or we are known to have failed completely.
+			 */
+			do {
+				retry = 0;
+				if (!*pNames) {
+					break;
+				}
+
+				upsdebugx(5, "%s: adding '%s (%s)' (%" PRIuSIZE " bytes) "
+					"to buffer of %" PRIuSIZE "/%" PRIuSIZE " bytes",
+					__func__, NUT_STRARG(pName), NUT_STRARG(pType),
+					pName ? strlen(pName) : 0,
+					*pPrevLen, *pBufSize);
+
+				ret_printf = snprintf(*pNames + *pPrevLen, *pBufSize - *pPrevLen - 1, "%s%s (%s)",
+					*pCount ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
+
+				upsdebugx(6, "%s: snprintf() returned %d", __func__, ret_printf);
+				(*pNames)[*pBufSize - 1] = '\0';
+
+				if (ret_printf < 0) {
+					upsdebugx(1, "%s: error collecting names, might not report unused descriptor names", __func__);
+				} else if ((size_t)ret_printf + *pPrevLen >= *pBufSize) {
+					if (*pBufSize < SIZE_MAX - LARGEBUF) {
+						*pBufSize = *pBufSize + LARGEBUF;
+						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
+							*pNames = realloc(*pNames, *pBufSize);
+
+						if (!*pNames) {
+							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
+						} else {
+							upsdebugx(5, "%s: buffer overflowed, but reallocated successfully - retrying", __func__);
+							/* Retry this loop */
+							retry = 1;
+						}
+					} else {
+						upsdebugx(1, "%s: buffer overflowed, might not report unused descriptor names", __func__);
+					}
+				} else {
+					*pPrevLen += (size_t)ret_printf;
+				}
+			} while (retry);
+
+			*pCount = *pCount + 1;
+		}
+	}
+
+	if (unused_count) {
+		upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
+			"mapping table for the SNMP UPS, but %" PRIuSIZE " "
+			"of them were completely not used by name via the "
+			"mapping defined in the selected NUT subdriver %s: %s",
+			__func__, known_mappings, unused_count,
+			NUT_STRARG(subdriver->name), NUT_STRARG(unused_names));
+	}
+
+	if (unused_names)
+		free(unused_names);
+
+	/* We arbitrarily declare that having under 10 known or used
+	 * mappings is few enough to be loud about this */
+	if (known_mappings < 10 || used_mappings < 10) {
+		upsdebugx(0,
+			"%s: %" PRIuSIZE " mapping entries are defined, and "
+			"%" PRIuSIZE " were actually used from SNMP walk, "
+			"in the selected NUT subdriver %s",
+			__func__, known_mappings, used_mappings,
+			NUT_STRARG(subdriver->name));
+
+		upsdebugx(0, "Please check if there is a newer version of NUT available "
+			"(may be not packaged for your distribution yet), try a custom "
+			"build of development branch to test latest driver code per "
+			"%s/docs/user-manual.chunked/_installation_instructions.html#Installing_inplace, "
+			"and see %s/docs/developer-guide.chunked/new-drivers.html#nutdrv_qx-subdrivers "
+			"for suggestions how you can help improve this driver.",
+			NUT_WEBSITE_BASE, NUT_WEBSITE_BASE);
+	}
 }
 
 /* Fill batt.volt.act and guesstimate the battery charge
@@ -2016,10 +2158,10 @@ static void load_armac_endpoint_cache(void)
 				libusb_free_config_descriptor(config_descriptor);
 				return;
 			}
-		
+
 			for (i = 0; i < interface_descriptor->bNumEndpoints; i++) {
 				const struct libusb_endpoint_descriptor *endpoint = &interface_descriptor->endpoint[i];
-		
+
 				if (endpoint->bEndpointAddress & LIBUSB_ENDPOINT_IN) {
 					found_in = TRUE;
 					armac_endpoint_cache.in_endpoint_address = endpoint->bEndpointAddress;
@@ -3262,6 +3404,8 @@ void	upsdrv_initinfo(void)
 	if (qx_ups_walk(QX_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialise data from the UPS");
 	}
+
+	analyze_mapping_usage();
 
 	/* Init battery guesstimation */
 	qx_initbattery();
@@ -4609,6 +4753,7 @@ int	ups_infoval_set(item_t *item)
 		return -1;
 	}
 
+	item->qxflags |= QX_FLAG_MAPPING_HANDLED;
 	dstate_setinfo(item->info_type, "%s", value);
 
 	/* Fill batt.{chrg,runt}.act for guesstimation */

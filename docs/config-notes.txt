@@ -1,6 +1,11 @@
 Configuration notes
 ===================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/user-manual.chunked/Configuration_notes.html
+//////////////////////////////////////////////////////////////////////////////
+
 This chapter describes most of the configuration and use aspects of NUT,
 including establishing communication with the device and configuring safe
 shutdowns when the UPS battery runs out of power.

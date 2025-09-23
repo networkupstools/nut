@@ -28,8 +28,7 @@ EXTRA_DIST = \
     valgrind/README.adoc \
     valgrind/.valgrind.supp.in \
     valgrind/valgrind.sh.in \
-    Windows/halt.c \
-    Windows/Makefile
+    Windows/halt.c
 
 SUBDIRS = augeas devd hotplug installer python systemd udev ufw Solaris Windows upsdrvsvcctl external_apis
 

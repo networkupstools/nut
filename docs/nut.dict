@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3547 utf-8
+personal_ws-1.1 en 3548 utf-8
 AAC
 AAS
 ABI
@@ -2261,6 +2261,7 @@ initctl
 initializer
 initializers
 initinfo
+initrd
 initscripts
 inittime
 initups
@@ -2489,8 +2490,8 @@ lz
 mA
 mDNS
 mS
-macaddr
 macOS
+macaddr
 macosx
 mailo
 mailx

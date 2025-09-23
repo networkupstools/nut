@@ -622,16 +622,16 @@ info_lkp_t divide_by_10_conversion[] = {
    done with result! */
 static const char *divide_by_100_conversion_fun(double value)
 {
-       static char buf[20];
+	static char buf[20];
 
-       snprintf(buf, sizeof(buf), "%0.1f", value * 0.01);
+	snprintf(buf, sizeof(buf), "%0.1f", value * 0.01);
 
-       return buf;
+	return buf;
 }
 
 /* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t divide_by_100_conversion[] = {
-       { 0, NULL, divide_by_100_conversion_fun, NULL }
+	{ 0, NULL, divide_by_100_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -659,6 +659,190 @@ static const char *kelvin_celsius_conversion_fun(double value)
 info_lkp_t kelvin_celsius_conversion[] = {
 	{ 0, NULL, kelvin_celsius_conversion_fun, NULL }
 };
+
+static void analyze_mapping_usage(void) {
+	/* Check if the subdriver code (mappings) and the device report
+	 * sit together well. Note that for yet-unknown concepts, the
+	 * NUT driver developers can either raise a discussion on how
+	 * to best formalize that concept via docs/nut-names.txt, or
+	 * temporarily place them into "experimental.*" or "unmapped.*"
+	 * namespaces.
+	 *
+	 * Later also check that all defined mappings were used?
+	 * TBH, this is unlikely in practice, so of little value
+	 * (unless we are troubleshooting and under 5 or 10 data
+	 * points are served from actually the device, and not
+	 * from user configs or driver fallbacks).
+	 *
+	 * See also: similar methods in snmp-ups and nutdrv_qx.
+	 */
+	size_t	d, unused_count = 0, halfused_count = 0;
+	size_t	unused_bufsize = LARGEBUF, halfused_bufsize = LARGEBUF, unused_prevlen = 0, halfused_prevlen = 0, used_mappings = 0, known_mappings = 0;
+	int	ret_printf;
+	char	*unused_names = NULL, *halfused_names = NULL;
+	hid_info_t	*hidups_item;
+
+	/* FIXME? this activity is limited to when debugging is enabled, even
+	 *  if some of the messages below can be posted visibly at level 0.
+	 */
+	if (nut_debug_level < 1)
+		return;
+
+	upsdebugx(1, "%s: checking if the subdriver code (mappings) "
+		"consults all data points from the device report",
+		__func__);
+
+	if (!pDesc) {
+		upsdebugx(1, "%s: SKIP: pDesc==null", __func__);
+		return;
+	}
+
+	unused_names = xcalloc(unused_bufsize, sizeof(char));
+	halfused_names = xcalloc(halfused_bufsize, sizeof(char));
+
+	for (d = 0; d < pDesc->nitems; d++) {
+		HIDData_t	*pData = &pDesc->item[d];
+
+		if (pData && !(pData->mapping_handled)) {
+			char	*pName = HIDGetDataItem(pData, subdriver->utab);
+			const char	*pType = HIDDataType(pData);
+			int	retry = 0;
+			char	**pNames = &unused_names;
+			size_t	*pCount = &unused_count, *pPrevLen = &unused_prevlen, *pBufSize = &unused_bufsize;
+
+			if (!pName) {
+				upsdebugx(2, "%s: error getting a Report Path name, skipped", __func__);
+				continue;
+			} else {
+				/* check if this is a half-used name */
+				for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
+					/* Note: using a shortcut with mapping table and
+					 * its "hidpath" strings here, to avoid stringifying
+					 * all paths known from report descriptor - more so
+					 * in a nested loop. */
+					if (hidups_item->hidpath && hidups_item->hiddata
+					&& !strcasecmp(hidups_item->hidpath, pName)
+					&& hidups_item->hiddata->mapping_handled
+					) {
+						upsdebugx(5, "%s: Path '%s' is half-used: "
+							"Type '%s' was not touched via mapping, "
+							"but '%s' was used",
+							__func__, NUT_STRARG(pName),
+							NUT_STRARG(pType),
+							NUT_STRARG(HIDDataType(hidups_item->hiddata))
+							);
+						pNames = &halfused_names;
+						pCount = &halfused_count;
+						pPrevLen = &halfused_prevlen;
+						pBufSize = &halfused_bufsize;
+						break;
+					}
+				}
+			}
+
+			/* We may overflow the pre-allocated buffer,
+			 * so we loop here until snprintf() succeeds
+			 * or we are known to have failed completely.
+			 */
+			do {
+				retry = 0;
+				if (!*pNames) {
+					break;
+				}
+
+				upsdebugx(5, "%s: adding '%s (%s)' (%" PRIuSIZE " bytes) "
+					"to buffer of %" PRIuSIZE "/%" PRIuSIZE " bytes",
+					__func__, NUT_STRARG(pName), NUT_STRARG(pType),
+					pName ? strlen(pName) : 0,
+					*pPrevLen, *pBufSize);
+
+				ret_printf = snprintf(*pNames + *pPrevLen, *pBufSize - *pPrevLen - 1, "%s%s (%s)",
+					*pCount ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
+
+				upsdebugx(6, "%s: snprintf() returned %d", __func__, ret_printf);
+				(*pNames)[*pBufSize - 1] = '\0';
+
+				if (ret_printf < 0) {
+					upsdebugx(1, "%s: error collecting names, might not report unused descriptor names", __func__);
+				} else if ((size_t)ret_printf + *pPrevLen >= *pBufSize) {
+					if (*pBufSize < SIZE_MAX - LARGEBUF) {
+						*pBufSize = *pBufSize + LARGEBUF;
+						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
+							*pNames = realloc(*pNames, *pBufSize);
+
+						if (!*pNames) {
+							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
+						} else {
+							upsdebugx(5, "%s: buffer overflowed, but reallocated successfully - retrying", __func__);
+							/* Retry this loop */
+							retry = 1;
+						}
+					} else {
+						upsdebugx(1, "%s: buffer overflowed, might not report unused descriptor names", __func__);
+					}
+				} else {
+					*pPrevLen += (size_t)ret_printf;
+				}
+			} while (retry);
+
+			*pCount = *pCount + 1;
+		}
+	}
+
+	if (unused_count) {
+		upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
+			"report descriptor from HID UPS, but %" PRIuSIZE " "
+			"of them were completely not used by name via the "
+			"mapping defined in the selected NUT subdriver %s: %s",
+			__func__, pDesc->nitems, unused_count,
+			subdriver->name, NUT_STRARG(unused_names));
+	}
+
+	if (halfused_count) {
+		upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
+			"report descriptor from HID UPS, but %" PRIuSIZE " "
+			"of them have several Types named by same Path value, "
+			"where at least one of the names was used and other(s) "
+			"were not used by the mapping defined in "
+			"the selected NUT subdriver %s: %s",
+			__func__, pDesc->nitems, halfused_count,
+			subdriver->name, NUT_STRARG(halfused_names));
+	}
+
+	if (unused_names)
+		free(unused_names);
+	if (halfused_names)
+		free(halfused_names);
+
+	/* Check that all defined mappings were used? */
+	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
+		known_mappings++;
+
+		if (hidups_item && hidups_item->hiddata
+		&& hidups_item->hiddata->mapping_handled
+		) {
+			used_mappings++;
+		}
+	}
+
+	/* We arbitrarily declare that having under 10 known or used
+	 * mappings is few enough to be loud about this */
+	upsdebugx( (known_mappings < 10 || used_mappings < 10) ? 0 : 5,
+		"%s: %" PRIuSIZE " mapping entries are defined, and "
+		"%" PRIuSIZE " were actually used from USB HID report, "
+		"in the selected NUT subdriver %s",
+		__func__, known_mappings, used_mappings,
+		subdriver->name);
+
+	if (known_mappings < 10 || used_mappings < 10)
+		upsdebugx(0, "Please check if there is a newer version of NUT available "
+			"(may be not packaged for your distribution yet), try a custom "
+			"build of development branch to test latest driver code per "
+			"%s/docs/user-manual.chunked/_installation_instructions.html#Installing_inplace, "
+			"and see %s/docs/developer-guide.chunked/new-drivers.html#hid-subdrivers "
+			"for suggestions how you can help improve this driver.",
+			NUT_WEBSITE_BASE, NUT_WEBSITE_BASE);
+}
 
 static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 	char	*subdrv = getval("subdriver");
@@ -1669,164 +1853,8 @@ void upsdrv_initups(void)
 		__func__, subdriver->name);
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
-	} else if (nut_debug_level > 0 && pDesc) {
-		/* Check if the subdriver code (mappings) and the device report
-		 * sit together well. Note that for yet-unknown concepts, the
-		 * NUT driver developers can either raise a discussion on how
-		 * to best formalize that concept via docs/nut-names.txt, or
-		 * temporarily place them into "experimental.*" or "unmapped.*"
-		 * namespaces.
-		 *
-		 * Later also check that all defined mappings were used?
-		 * TBH, this is unlikely in practice, so of little value
-		 * (unless we are troubleshooting and under 5 or 10 data
-		 * points are served from actually the device, and not
-		 * from user configs or driver fallbacks).
-		 */
-		size_t	d, unused_count = 0, halfused_count = 0;
-		size_t	unused_bufsize = LARGEBUF, halfused_bufsize = LARGEBUF, unused_prevlen = 0, halfused_prevlen = 0, used_mappings = 0, known_mappings = 0;
-		int	ret_printf;
-		char	*unused_names = xcalloc(unused_bufsize, sizeof(char)),
-			*halfused_names = xcalloc(halfused_bufsize, sizeof(char));
-		hid_info_t *hidups_item;
-
-		upsdebugx(1, "%s: checking if the subdriver code (mappings) "
-			"consults all data points from the device report",
-			__func__);
-
-		for (d = 0; d < pDesc->nitems; d++) {
-			HIDData_t	*pData = &pDesc->item[d];
-
-			if (pData && !(pData->mapping_handled)) {
-				char	*pName = HIDGetDataItem(pData, subdriver->utab);
-				const char	*pType = HIDDataType(pData);
-				int	retry = 0;
-				char	**pNames = &unused_names;
-				size_t	*pCount = &unused_count, *pPrevLen = &unused_prevlen, *pBufSize = &unused_bufsize;
-
-				if (!pName) {
-					upsdebugx(2, "%s: error getting a Report Path name, skipped", __func__);
-					continue;
-				} else {
-					/* check if this is a half-used name */
-					for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
-						/* Note: using a shortcut with mapping table and
-						 * its "hidpath" strings here, to avoid stringifying
-						 * all paths known from report descriptor - more so
-						 * in a nested loop. */
-						if (hidups_item->hidpath && hidups_item->hiddata
-						&& !strcasecmp(hidups_item->hidpath, pName)
-						&& hidups_item->hiddata->mapping_handled
-						) {
-							upsdebugx(5, "%s: Path '%s' is half-used: "
-								"Type '%s' was not touched via mapping, "
-								"but '%s' was used",
-								__func__, NUT_STRARG(pName),
-								NUT_STRARG(pType),
-								NUT_STRARG(HIDDataType(hidups_item->hiddata))
-								);
-							pNames = &halfused_names;
-							pCount = &halfused_count;
-							pPrevLen = &halfused_prevlen;
-							pBufSize = &halfused_bufsize;
-							break;
-						}
-					}
-				}
-
-				/* We may overflow the pre-allocated buffer,
-				 * so we loop here until snprintf() succeeds
-				 * or we are known to have failed completely.
-				 */
-				do {
-					retry = 0;
-					if (!*pNames) {
-						break;
-					}
-
-					upsdebugx(5, "%s: adding '%s (%s)' (%" PRIuSIZE " bytes) "
-						"to buffer of %" PRIuSIZE "/%" PRIuSIZE " bytes",
-						__func__, NUT_STRARG(pName), NUT_STRARG(pType),
-						pName ? strlen(pName) : 0,
-						*pPrevLen, *pBufSize);
-
-					ret_printf = snprintf(*pNames + *pPrevLen, *pBufSize - *pPrevLen - 1, "%s%s (%s)",
-						*pCount ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
-
-					upsdebugx(6, "%s: snprintf() returned %d", __func__, ret_printf);
-					(*pNames)[*pBufSize - 1] = '\0';
-
-					if (ret_printf < 0) {
-						upsdebugx(1, "%s: error collecting names, might not report unused descriptor names", __func__);
-					} else if ((size_t)ret_printf + *pPrevLen >= *pBufSize) {
-						if (*pBufSize < SIZE_MAX - LARGEBUF) {
-							*pBufSize = *pBufSize + LARGEBUF;
-							upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
-								*pNames = realloc(*pNames, *pBufSize);
-
-							if (!*pNames) {
-								upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
-							} else {
-								upsdebugx(5, "%s: buffer overflowed, but reallocated successfully - retrying", __func__);
-								/* Retry this loop */
-								retry = 1;
-							}
-						} else {
-							upsdebugx(1, "%s: buffer overflowed, might not report unused descriptor names", __func__);
-						}
-					} else {
-						*pPrevLen += (size_t)ret_printf;
-					}
-				} while (retry);
-
-				*pCount = *pCount + 1;
-			}
-		}
-
-		if (unused_count) {
-			upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
-				"report descriptor from HID UPS, but %" PRIuSIZE " "
-				"of them were completely not used by name via the "
-				"mapping defined in the selected NUT subdriver %s: %s",
-				__func__, pDesc->nitems, unused_count,
-				subdriver->name, NUT_STRARG(unused_names));
-		}
-
-		if (halfused_count) {
-			upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
-				"report descriptor from HID UPS, but %" PRIuSIZE " "
-				"of them have several Types named by same Path value, "
-				"where at least one of the names was used and other(s) "
-				"were not used by the mapping defined in "
-				"the selected NUT subdriver %s: %s",
-				__func__, pDesc->nitems, halfused_count,
-				subdriver->name, NUT_STRARG(halfused_names));
-		}
-
-		if (unused_names)
-			free(unused_names);
-		if (halfused_names)
-			free(halfused_names);
-
-		/* Check that all defined mappings were used? */
-		for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
-			known_mappings++;
-
-			if (hidups_item && hidups_item->hiddata
-			&& hidups_item->hiddata->mapping_handled
-			) {
-				used_mappings++;
-			}
-		}
-
-		/* We arbitrarily declare that having under 10 known or used
-		 * mappings is few enough to be loud about this */
-		upsdebugx( (known_mappings < 10 || used_mappings < 10) ? 0 : 5,
-			"%s: %" PRIuSIZE " mapping entries are defined, and "
-			"%" PRIuSIZE " were actually used from USB HID report, "
-			"in the selected NUT subdriver %s",
-			__func__, known_mappings, used_mappings,
-			subdriver->name);
+	} else {
+		analyze_mapping_usage();
 	}
 
 	if (!ups_status)

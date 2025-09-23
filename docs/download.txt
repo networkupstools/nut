@@ -3,6 +3,11 @@ Download information
 
 This section presents the different methods to download NUT.
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/download.html
+//////////////////////////////////////////////////////////////////////////////
+
 Source code
 -----------
 
