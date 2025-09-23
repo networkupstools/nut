@@ -14,6 +14,11 @@ SYNOPSIS
 NOTE: *upssched* should be run from linkman:upsmon[8] via the NOTIFYCMD.
 You should never run it directly during normal operations.
 
+*upssched* -l
+
+List currently tracked timer events, if any. Report as a TAB-separated
+table of: 'NAME', 'TIMEOUT_ABS', 'TIMEOUT_REL', 'NOTIFYTYPE', 'UPSNAME'.
+
 DESCRIPTION
 -----------
 
