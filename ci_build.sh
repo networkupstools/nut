@@ -417,6 +417,13 @@ optional_prepare_compiler_family() {
 optional_ensure_ccache() {
     # Prepare PATH, CC, CXX envvars to use ccache (if enabled, applicable and available)
     # See also optional_prepare_ccache()
+    if [ x"${CI_CCACHE_USE-}" = xno ]; then
+        HAVE_CCACHE=no
+        CI_CCACHE_SYMLINKDIR=""
+        echo "WARNING: Caller required to not use ccache even if available" >&2
+        return
+    fi
+
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
         if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
             echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
@@ -2578,7 +2585,7 @@ bindings)
 
     # NOTE: Alternative to optional_prepare_ccache()
     # FIXME: Can these be united and de-duplicated?
-    if [ -n "${CI_CCACHE_SYMLINKDIR}" ] && [ -d "${CI_CCACHE_SYMLINKDIR}" ] ; then
+    if [ x"${CI_CCACHE_USE-}" != xno ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ] && [ -d "${CI_CCACHE_SYMLINKDIR}" ] ; then
         PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
@@ -2779,6 +2786,7 @@ cross-windows-mingw*)
     echo "INFO: When using build-mingw-nut.sh consider 'export INSTALL_WIN_BUNDLE=true' to use mainstream DLL co-bundling recipe" >&2
 
     if [ "$HAVE_CCACHE" = yes ] \
+    && [ x"${CI_CCACHE_USE-}" != xno ] \
     && [ -n "${CI_CCACHE_SYMLINKDIR}" ] \
     && [ -d "${CI_CCACHE_SYMLINKDIR}" ] \
     ; then
