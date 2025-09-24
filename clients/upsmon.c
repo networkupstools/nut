@@ -949,6 +949,7 @@ static void doshutdown(void)
 		ssize_t	wret;
 
 		ch = 1;
+		upslogx(2, "%s: call parent pipe for shutdown (async)", __func__);
 		wret = write(pipefd[1], &ch, 1);
 
 		if (wret < 1)
@@ -990,6 +991,7 @@ static void doshutdown(void)
 		}
 #endif	/* WIN32 */
 
+		upslogx(2, "%s: directly shutdown command (sync)", __func__);
 		sret = system(shutdowncmd);
 
 		if (sret != 0)
@@ -997,6 +999,7 @@ static void doshutdown(void)
 				shutdowncmd);
 	}
 
+	/* code below runs in the child (or only) process */
 	upsdebugx(1, "%s: current exit_flag=%i", __func__, exit_flag);
 	if (shutdownexitdelay == 0) {
 		upsdebugx(1,
@@ -1030,6 +1033,13 @@ static void doshutdown(void)
 			utype_t	*ups;
 			char	temp[SMALLBUF];
 			long	maxlogins = 0, logins = 0;
+
+			upsdebugx(3, "%s: ping data server(s) for this client to remain not-timed-out", __func__);
+			
+#ifndef WIN32
+			/* reap children (e.g. notify) that have exited */
+			waitpid(-1, NULL, WNOHANG);
+#endif
 
 			/* Contact the data server(s) regularly so this
 			 * client is not assumed dead while looping */
@@ -1262,8 +1272,9 @@ static void sync_secondaries(void)
 		/* if no UPS has more than 1 login (that would be us),
 		 * then secondaries are all gone */
 		/* TO THINK: how about redundant setups with several primary-mode
-		 * clients managing an UPS, or possibly differend UPSes, with the
+		 * clients managing an UPS, or possibly different UPSes, with the
 		 * same upsd? */
+		upsdebugx(3, "%s: Max data server logins per UPS still active: %ld", __func__, maxlogins);
 		if (maxlogins <= 1)
 			return;
 
@@ -3352,6 +3363,7 @@ static void runparent(int fd)
 # pragma GCC diagnostic pop
 #endif
 
+	/* block indefinitely, until child decides to exit or shut down */
 	ret = read(fd, &ch, 1);
 
 	if (ret < 1) {
@@ -3372,6 +3384,40 @@ static void runparent(int fd)
 	if (sret != 0)
 		upslogx(LOG_ERR, "upsmon parent: Unable to call shutdown command: %s",
 			shutdowncmd);
+
+	if (shutdownexitdelay) {
+		/* make sure the child is still alive - inverse of check_parent() */
+		int	fdret;
+		fd_set	rfds;
+		struct	timeval	tv;
+
+		upsdebugx(1, "upsmon parent (exit_flag=%d): "
+			"waiting for child to close the pipe, "
+			"after %s (%i) shutdown command: %s",
+			exit_flag,
+			(sret == 0 ? "calling" : "trying to call"),
+			sret, shutdowncmd);
+
+		FD_ZERO(&rfds);
+		FD_SET(fd, &rfds);
+
+		do {
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
+
+			fdret = select(fd, &rfds, NULL, NULL, &tv);
+
+			upsdebugx(3, "upsmon parent: pipe to child select returned %d", fdret);
+			if (fdret != 0) {
+				/* timeout expired, FD not ready */
+				upsdebugx(1, "upsmon parent: pipe to child is closed");
+				break;
+			}
+
+			sleep(1);
+		} while(!exit_flag);
+		upsdebugx(1, "upsmon parent: exit_flag=%d", exit_flag);
+	}
 
 	close(fd);
 	upslogx(LOG_WARNING, "upsmon parent: Exiting after %s (%i) shutdown command: %s",
