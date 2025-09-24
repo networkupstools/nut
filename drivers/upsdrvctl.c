@@ -1476,14 +1476,6 @@ static void exit_cleanup(void)
 	upsdebugx(1, "Completed the job of upsdrvctl tool, clean-up finished, exiting now");
 }
 
-static void proctag_cleanup(void)
-{
-	if (getproctag())
-		upsdebugx(2, "an upsdrvctl sub-process (%s) is exiting now",
-			getproctag());
-	setproctag(NULL);
-}
-
 int main(int argc, char **argv)
 {
 	int	i, lastarg = 0;
@@ -1492,7 +1484,6 @@ int main(int argc, char **argv)
 	prog = argv[0];
 
 	setproctag("init");
-	atexit(proctag_cleanup);
 
 	/* Historically special banner*/
 	snprintf(progdesc, sizeof(progdesc), "%s - UPS driver controller", xbasename(prog));

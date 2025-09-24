@@ -2098,14 +2098,6 @@ static void help(const char *arg_progname)
 	exit(EXIT_SUCCESS);
 }
 
-static void proctag_cleanup(void)
-{
-	if (getproctag())
-		upsdebugx(2, "an upssched sub-process (%s) is exiting now",
-			getproctag());
-	setproctag(NULL);
-}
-
 int main(int argc, char **argv)
 {
 	int	i;
@@ -2116,7 +2108,6 @@ int main(int argc, char **argv)
 		prog = "upssched";
 
 	setproctag("init");
-	atexit(proctag_cleanup);
 
 	while ((i = getopt(argc, argv, "+DVhl")) != -1) {
 		switch (i) {

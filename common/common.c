@@ -3655,7 +3655,18 @@ void upslogx(int priority, const char *fmt, ...)
 }
 
 /* also keep a buffer with prefixed colon for debug printouts */
-static char	*proctag = NULL, *proctag_for_upsdebug = NULL;
+static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
+	proctag_cleanup_registered = 0;
+
+static void proctag_cleanup(void)
+{
+	if (proctag) {
+		char	*current_progname = getprocname(getpid());
+		upsdebugx(2, "a %s sub-process (%s) is exiting now",
+			NUT_STRARG(current_progname), getproctag());
+	}
+	setproctag(NULL);
+}
 
 const char *getproctag(void)
 {
@@ -3678,6 +3689,11 @@ void setproctag(const char *tag)
 	if (!tag) {
 		/* wipe */
 		return;
+	}
+
+	if (!proctag_cleanup_registered) {
+		atexit(proctag_cleanup);
+		proctag_cleanup_registered = 1;
 	}
 
 	proctag = xstrdup(tag);

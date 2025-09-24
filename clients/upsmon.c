@@ -2652,14 +2652,6 @@ static void upsmon_cleanup(void)
 #endif	/* WIN32 */
 }
 
-static void proctag_cleanup(void)
-{
-	if (getproctag())
-		upsdebugx(2, "an upsmon sub-process (%s) is exiting now",
-			getproctag());
-	setproctag(NULL);
-}
-
 static void user_fsd(int sig)
 {
 	upslogx(LOG_INFO, "Signal %d: User requested FSD", sig);
@@ -3631,7 +3623,6 @@ int main(int argc, char *argv[])
 #endif	/* WIN32 */
 
 	setproctag("init");
-	atexit(proctag_cleanup);
 	print_banner_once(prog, 0);
 
 	/* if no configuration file is specified on the command line, use default */
