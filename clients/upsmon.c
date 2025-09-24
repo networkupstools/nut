@@ -331,23 +331,24 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 	}
 
 	if (ret != 0) {	/* parent */
-		upsdebugx(6, "%s (parent): forked a child to notify via subprocesses", __func__);
+		upsdebugx(2, "%s (parent): forked a child to notify via subprocesses", __func__);
 		return;
 	}
 
 	/* child continues and does all the work */
 	setproctag("notify");
-	upsdebugx(6, "%s (child): forked to notify via subprocesses", __func__);
+	upsdebugx(2, "%s (%schild): forked to notify via subprocesses",
+		__func__, use_pipe ? "grand" : "");
 
 	if (flag_isset(flags, NOTIFY_WALL)) {
-		upsdebugx(6, "%s (child): NOTIFY_WALL", __func__);
+		upsdebugx(6, "%s (%schild): NOTIFY_WALL", __func__, use_pipe ? "grand" : "");
 		wall(notice);
 	}
 
 	if (flag_isset(flags, NOTIFY_EXEC)) {
 		if (notifycmd != NULL) {
-			upsdebugx(6, "%s (child): NOTIFY_EXEC: calling NOTIFYCMD as '%s \"%s\"'",
-				__func__, notifycmd, notice);
+			upsdebugx(6, "%s (%schild): NOTIFY_EXEC: calling NOTIFYCMD as '%s \"%s\"'",
+				__func__, use_pipe ? "grand" : "", notifycmd, notice);
 
 			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, notice);
 
@@ -361,11 +362,11 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 				upslog_with_errno(LOG_ERR, "%s", __func__);
 			}
 		} else {
-			upsdebugx(6, "%s (child): NOTIFY_EXEC: no NOTIFYCMD was configured", __func__);
+			upsdebugx(6, "%s (%schild): NOTIFY_EXEC: no NOTIFYCMD was configured", __func__, use_pipe ? "grand" : "");
 		}
 	}
 
-	upsdebugx(6, "%s (child): exiting after notifications", __func__);
+	upsdebugx(6, "%s (%schild): exiting after notifications", __func__, use_pipe ? "grand" : "");
 
 	exit(EXIT_SUCCESS);
 #else	/* WIN32 */
@@ -3399,6 +3400,7 @@ static void start_pipe(void)
 	if (ret != 0) {
 		close(pipefd[1]);
 		setproctag("priv-parent");
+		upsdebugx(1, "%s (parent): forked a child to run the main loop", __func__);
 		runparent(pipefd[0]);
 
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -3408,6 +3410,7 @@ static void start_pipe(void)
 
 	close(pipefd[0]);
 	setproctag("child");
+	upsdebugx(1, "%s (child): forked a child to run the main loop", __func__);
 
 	/* prevent pipe leaking to NOTIFYCMD */
 	set_close_on_exec(pipefd[1]);
