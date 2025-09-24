@@ -3654,6 +3654,41 @@ void upslogx(int priority, const char *fmt, ...)
 	va_end(va);
 }
 
+/* also keep a buffer with prefixed colon for debug printouts */
+static char	*proctag = NULL, *proctag_for_upsdebug = NULL;
+
+const char *getproctag(void)
+{
+	return (const char *)proctag;
+}
+
+void setproctag(const char *tag)
+{
+	size_t	proctag_for_upsdebug_buflen = 0;
+	if (proctag) {
+		free(proctag);
+		proctag = NULL;
+	}
+
+	if (proctag_for_upsdebug) {
+		free(proctag_for_upsdebug);
+		proctag_for_upsdebug = NULL;
+	}
+
+	if (!tag) {
+		/* wipe */
+		return;
+	}
+
+	proctag = xstrdup(tag);
+
+	proctag_for_upsdebug_buflen = strlen(tag) + 2;
+	proctag_for_upsdebug = xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
+	if (proctag_for_upsdebug) {
+		snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s", tag);
+	}
+}
+
 void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
@@ -3682,9 +3717,15 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 		if (NUT_DEBUG_PID) {
 			/* Note that we re-request PID every time as it can
 			 * change during the run-time (forking etc.) */
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
+				level, (intmax_t)getpid(),
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		} else {
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
+				level,
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		}
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
 			if (syslog_is_disabled()) {
@@ -3740,9 +3781,15 @@ void s_upsdebugx(int level, const char *fmt, ...)
 		if (NUT_DEBUG_PID) {
 			/* Note that we re-request PID every time as it can
 			 * change during the run-time (forking etc.) */
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
+				level, (intmax_t)getpid(),
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		} else {
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
+				level,
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		}
 
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {

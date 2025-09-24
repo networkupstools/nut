@@ -273,6 +273,13 @@ void open_syslog(const char *progname);
 /* close ttys and become a daemon */
 void background(void);
 
+/* allow tagging the (forked) process in logs to ease debugging */
+const char *getproctag(void);
+/* save a copy of tag, or call with NULL to clean and free the internal buffer;
+ * if using this feature in a particular NUT program at all - please do such
+ * clean-up in exit handling */
+void setproctag(const char *tag);
+
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name);
 
