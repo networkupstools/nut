@@ -1009,7 +1009,7 @@ static void doshutdown(void)
 				"after initiating shutdown");
 		} else {
 			upslogx(LOG_WARNING,
-				"Configured to only exit upsmon %d sec "
+				"Configured to only exit upsmon SHUTDOWNEXIT=%d sec "
 				"after initiating shutdown", shutdownexitdelay);
 		}
 		if (exit_flag) {
@@ -1298,6 +1298,9 @@ static void forceshutdown(void)
 	for (ups = firstups; ups != NULL; ups = ups->next)
 		if (flag_isset(ups->status, ST_PRIMARY)) {
 			isaprimary = 1;
+			upsdebugx(2, "%s: tell data server to setfsd(%s@%s)",
+				__func__, NUT_STRARG(ups->upsname),
+				NUT_STRARG(ups->hostname));
 			setfsd(ups);
 		}
 
@@ -1308,12 +1311,10 @@ static void forceshutdown(void)
 	}
 
 	/* we must be the primary now */
-	upsdebugx(1, "This system is a primary... waiting for secondaries to logout...");
-
-	/* wait up to HOSTSYNC seconds for secondaries to logout */
+	upsdebugx(1, "This system is a primary for some device(s); waiting (up to HOSTSYNC=%d seconds) for secondaries to logout...", hostsync);
 	sync_secondaries();
 
-	/* time expired or all the secondaries are gone, so shutdown */
+	upsdebugx(1, "HOSTSYNC timeout expired or all the secondaries are gone, so shutting down this primary system now...");
 	doshutdown();
 }
 
@@ -3409,7 +3410,7 @@ static void start_pipe(void)
 	}
 
 	close(pipefd[0]);
-	setproctag("child");
+	setproctag("main-loop");
 	upsdebugx(1, "%s (child): forked a child to run the main loop", __func__);
 
 	/* prevent pipe leaking to NOTIFYCMD */
