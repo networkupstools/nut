@@ -277,7 +277,12 @@ void background(void);
 const char *getproctag(void);
 /* save a copy of tag, or call with NULL to clean and free the internal buffer;
  * if using this feature in a particular NUT program at all - it automatically
- * registers with atexit() to do such clean-up in exit handling */
+ * registers with atexit() to do such clean-up in exit handling.
+ *
+ * WARNING: first call to this method also caches the getprocname(getpid())
+ * so if you want to see debug logs from that - only call this after setting
+ * the nut_debug_level (by parsing CLI arguments and/or NUT_DEBUG_LEVEL envvar).
+ */
 void setproctag(const char *tag);
 
 /* do this here to keep pwd/grp stuff out of the main files */
@@ -412,6 +417,8 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_cur
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored);
 #endif	/* WIN32 */
 
+/* return a pointer to character inside the file that starts a basename
+ * caller should strdup() a copy to retain beyond the lifetime of "file" */
 const char *xbasename(const char *file);
 
 /* enable writing upslog_with_errno() and upslogx() type messages to

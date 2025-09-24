@@ -876,6 +876,40 @@ void chroot_start(const char *path)
 #endif	/* !WIN32 */
 }
 
+/* In forking, assume process name does not change (PID might); cache it */
+static char	*myProcName = NULL;
+static const char	*myProcBaseName = NULL;
+static void procname_cleanup(void) {
+	if (myProcBaseName) {
+		/* points to inside of myProcName */
+		myProcBaseName = NULL;
+	}
+	if (myProcName) {
+		free(myProcName);
+		myProcName = NULL;
+	}
+}
+
+static const char * getmyprocname(void)
+{
+	if (myProcName)
+		return (const char *)myProcName;
+
+	myProcName = getprocname(getpid());	/* no xstrdup, we own and free this later */
+	if (myProcName) {
+		myProcBaseName = xbasename(myProcName);	/* substring inside myProcName */
+		atexit(procname_cleanup);
+	}
+
+	return (const char *)myProcName;
+}
+
+static const char * getmyprocbasename(void)
+{
+	getmyprocname();
+	return myProcBaseName;
+}
+
 char * getprocname(pid_t pid)
 {
 	/* Try to identify process (program) name for the given PID,
@@ -1552,7 +1586,13 @@ int checkprocname(pid_t pid, const char *progname)
 		goto finish;
 	}
 
-	procname = getprocname(pid);
+	if (pid == getpid()) {
+		/* use (or seed) the cached value if we can */
+		procname = xstrdup(getmyprocname());
+	}
+	if (!procname) {
+		procname = getprocname(pid);
+	}
 	if (!procname) {
 		ret = -1;
 		goto finish;
@@ -1636,7 +1676,8 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 {
 #ifndef WIN32
 	int	ret, cpn1 = -10, cpn2 = -10;
-	char	*current_progname = NULL, *procname = NULL;
+	char	*procname = NULL;	/* free this one after use */
+	const char	*current_progname = NULL;	/* do not free this one! */
 
 	/* TOTHINK: What about containers where a NUT daemon *is* the only process
 	 * and is the PID=1 of the container (recycle if dead)? */
@@ -1649,8 +1690,15 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 
 	ret = 0;
-	if (!checkprocname_ignored(__func__))
-		procname = getprocname(pid);
+	if (!checkprocname_ignored(__func__)) {
+		if (pid == getpid()) {
+			/* use (or seed) the cached value if we can */
+			procname = xstrdup(getmyprocname());
+		}
+		if (!procname) {
+			procname = getprocname(pid);
+		}
+	}
 
 	if (procname && progname) {
 		/* Check against some expected (often built-in) name */
@@ -1668,11 +1716,7 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	/* if (cpn1 == -3) => NUT_IGNORE_CHECKPROCNAME=true */
 	/* if (cpn1 == -1) => could not determine name of PID... retry just in case? */
 	if (procname && ret <= 0 && check_current_progname && cpn1 != -3) {
-		/* NOTE: This could be optimized a bit by pre-finding the procname
-		 * of "pid" and re-using it, but this is not a hot enough code path
-		 * to bother much.
-		 */
-		current_progname = getprocname(getpid());
+		current_progname = getmyprocname();
 		if (current_progname && (cpn2 = compareprocname(pid, procname, current_progname))) {
 			if (cpn2 > 0) {
 				/* Matched current process as asked, ok to proceed */
@@ -1756,11 +1800,6 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 			}
 		}
 
-		if (current_progname) {
-			free(current_progname);
-			current_progname = NULL;
-		}
-
 		if (procname) {
 			free(procname);
 			procname = NULL;
@@ -1768,11 +1807,6 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 
 		/* Logged or not, sanity-check was requested and failed */
 		return -1;
-	}
-
-	if (current_progname) {
-		free(current_progname);
-		current_progname = NULL;
 	}
 
 	if (procname) {
@@ -3661,9 +3695,8 @@ static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
 static void proctag_cleanup(void)
 {
 	if (proctag) {
-		char	*current_progname = getprocname(getpid());
 		upsdebugx(2, "a %s sub-process (%s) is exiting now",
-			NUT_STRARG(current_progname), getproctag());
+			NUT_STRARG(getmyprocbasename()), getproctag());
 	}
 	setproctag(NULL);
 }
@@ -3692,10 +3725,15 @@ void setproctag(const char *tag)
 	}
 
 	if (!proctag_cleanup_registered) {
+		/* We would use this anyway in exit handler (probably many times
+		 * for forked children), so better get it over with quickly */
+		getmyprocname();
+
 		atexit(proctag_cleanup);
 		proctag_cleanup_registered = 1;
 	}
 
+	/* let the caller's copy be freed */
 	proctag = xstrdup(tag);
 
 	proctag_for_upsdebug_buflen = strlen(tag) + 2;
