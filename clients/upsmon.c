@@ -3622,7 +3622,6 @@ int main(int argc, char *argv[])
 	}
 #endif	/* WIN32 */
 
-	setproctag("init");
 	print_banner_once(prog, 0);
 
 	/* if no configuration file is specified on the command line, use default */
@@ -3726,6 +3725,12 @@ int main(int argc, char *argv[])
 				nut_debug_level_args = l;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
+	}
+
+	if (cmd) {
+		setproctag("signaler");
+	} else {
+		setproctag("init");
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {

@@ -2107,8 +2107,6 @@ int main(int argc, char **argv)
 	if (!prog)
 		prog = "upssched";
 
-	setproctag("init");
-
 	while ((i = getopt(argc, argv, "+DVhl")) != -1) {
 		switch (i) {
 			case 'D':

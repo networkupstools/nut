@@ -1483,8 +1483,6 @@ int main(int argc, char **argv)
 
 	prog = argv[0];
 
-	setproctag("init");
-
 	/* Historically special banner*/
 	snprintf(progdesc, sizeof(progdesc), "%s - UPS driver controller", xbasename(prog));
 	print_banner_once(progdesc, 0);
@@ -1616,6 +1614,8 @@ int main(int argc, char **argv)
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
 	}
+
+	setproctag("init");
 
 	argc -= optind;
 	argv += optind;
