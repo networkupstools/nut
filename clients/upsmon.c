@@ -1287,6 +1287,11 @@ static void forceshutdown(void)
 	int	isaprimary = 0;
 
 	upsdebugx(1, "Shutting down any UPSes in PRIMARY mode...");
+	upsdebugx(2, "%s: For this system, timing options: "
+		"SHUTDOWNEXIT=%d HOSTSYNC=%d FINALDELAY=%u DEADTIME=%d; "
+		"flags: USERFSD=%d EXIT_FLAG=%d USE_PIPE=%d",
+		__func__, shutdownexitdelay, hostsync, finaldelay, deadtime,
+		userfsd, exit_flag, use_pipe);
 
 	/* set FSD on any "primary" UPS entries (forced shutdown in progress) */
 	for (ups = firstups; ups != NULL; ups = ups->next)
@@ -1296,8 +1301,10 @@ static void forceshutdown(void)
 		}
 
 	/* if we're not a primary on anything, we should shut down now */
-	if (!isaprimary)
+	if (!isaprimary) {
+		upsdebugx(1, "This system is not a primary for any device, shutting down now...");
 		doshutdown();
+	}
 
 	/* we must be the primary now */
 	upsdebugx(1, "This system is a primary... waiting for secondaries to logout...");
