@@ -104,6 +104,8 @@ https://github.com/networkupstools/nut/milestone/12
      (if passed). [#3097]
    * Introduced support for `DEBUG_MIN` setting via `upssched.conf`. [#3097]
    * Introduced `upssched -l` mode to list currently tracked timers. [#3097]
+   * Make use of `setproctag()` and `getproctag()` to report parent/child
+     process names. [#3084]
 
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)

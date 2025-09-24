@@ -1213,6 +1213,7 @@ static void start_daemon(TYPE_FD lockfd)
 	}
 
 	/* child */
+	setproctag("timer");
 
 	/* make fds 0-2 (typically) point somewhere defined */
 # ifdef HAVE_DUP2
@@ -2097,6 +2098,13 @@ static void help(const char *arg_progname)
 	exit(EXIT_SUCCESS);
 }
 
+static void proctag_cleanup(void)
+{
+	if (getproctag())
+		upsdebugx(2, "an upssched sub-process (%s) is exiting now",
+			getproctag());
+	setproctag(NULL);
+}
 
 int main(int argc, char **argv)
 {
@@ -2106,6 +2114,9 @@ int main(int argc, char **argv)
 		prog = xbasename(argv[0]);
 	if (!prog)
 		prog = "upssched";
+
+	setproctag("init");
+	atexit(proctag_cleanup);
 
 	while ((i = getopt(argc, argv, "+DVhl")) != -1) {
 		switch (i) {
@@ -2165,6 +2176,7 @@ int main(int argc, char **argv)
 	 * checkconf -> conf_arg -> parse_at -> sendcmd -> daemon if needed
 	 *  -> start_daemon -> conn_add(pipefd) or sock_read(conn)
 	 */
+	setproctag("cli");
 	checkconf();
 
 	upsdebugx(1, "Exiting upssched (CLI process)");
