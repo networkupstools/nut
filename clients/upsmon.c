@@ -336,6 +336,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 	}
 
 	/* child continues and does all the work */
+	setproctag("notify");
 	upsdebugx(6, "%s (child): forked to notify via subprocesses", __func__);
 
 	if (flag_isset(flags, NOTIFY_WALL)) {
@@ -2644,6 +2645,14 @@ static void upsmon_cleanup(void)
 #endif	/* WIN32 */
 }
 
+static void proctag_cleanup(void)
+{
+	if (getproctag())
+		upsdebugx(2, "an upsmon sub-process (%s) is exiting now",
+			getproctag());
+	setproctag(NULL);
+}
+
 static void user_fsd(int sig)
 {
 	upslogx(LOG_INFO, "Signal %d: User requested FSD", sig);
@@ -3390,6 +3399,7 @@ static void start_pipe(void)
 	/* start the privileged parent */
 	if (ret != 0) {
 		close(pipefd[1]);
+		setproctag("priv-parent");
 		runparent(pipefd[0]);
 
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -3398,6 +3408,7 @@ static void start_pipe(void)
 	}
 
 	close(pipefd[0]);
+	setproctag("child");
 
 	/* prevent pipe leaking to NOTIFYCMD */
 	set_close_on_exec(pipefd[1]);
@@ -3612,6 +3623,8 @@ int main(int argc, char *argv[])
 	}
 #endif	/* WIN32 */
 
+	setproctag("init");
+	atexit(proctag_cleanup);
 	print_banner_once(prog, 0);
 
 	/* if no configuration file is specified on the command line, use default */
@@ -3919,11 +3932,13 @@ int main(int argc, char *argv[])
 		/* === root parent and unprivileged child split here === */
 		start_pipe();
 
-		/* write the pid file now, as we will soon lose root */
+		/* we are upsmon-child from this point on
+		 * write the pid file now, as we will soon lose root */
 		writepid(prog);
 
 		become_user(new_uid);
 	} else {
+		setproctag("mono");
 #ifndef WIN32
 		/* Note: upsmon does not fork in WIN32 */
 		upslogx(LOG_INFO, "Warning: running as one big root process by request (upsmon -p)");
