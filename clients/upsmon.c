@@ -1269,11 +1269,13 @@ static void sync_secondaries(void)
 	char	temp[SMALLBUF];
 	time_t	start, now;
 	long	maxlogins, logins;
+	size_t	count = 0;
 
 	time(&start);
 
 	for (;;) {
 		maxlogins = 0;
+		count++;
 
 		for (ups = firstups; ups != NULL; ups = ups->next) {
 
@@ -1308,6 +1310,10 @@ static void sync_secondaries(void)
 		if (difftime(now, start) > hostsync) {
 			upslogx(LOG_INFO, "Host sync timer expired, forcing shutdown");
 			return;
+		}
+
+		if (maxlogins > 1 && count == 1) {
+			do_notify(NULL, NOTIFY_SHUTDOWN_HOSTSYNC, NULL);
 		}
 
 		usleep(250000);

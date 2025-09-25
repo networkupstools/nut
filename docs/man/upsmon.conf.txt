@@ -272,6 +272,8 @@ COMMBAD;; Communications lost to the UPS
 
 SHUTDOWN;; The system is being shutdown
 
+SHUTDOWN_HOSTSYNC;; This primary system began the shutdown, and is waiting for secondaries
+
 REPLBATT;; The UPS battery is bad and needs to be replaced
 
 NOCOMM;; A UPS is unavailable (can't be contacted for monitoring)

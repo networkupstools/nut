@@ -132,6 +132,8 @@ typedef struct {
 #define NOTIFY_BOOST	24	/* UPS is boosting incoming voltage     */
 #define NOTIFY_NOTBOOST	25	/* UPS is not anymore boosting incoming voltage */
 
+#define NOTIFY_SHUTDOWN_HOSTSYNC	26	/* Shutdown initiated; primary system is waiting for secondaries to log out or time out */
+
 /* Special handling below */
 #define NOTIFY_OTHER	28	/* UPS has at least one unclassified status token */
 #define NOTIFY_NOTOTHER	29	/* UPS has no unclassified status tokens anymore */
@@ -174,6 +176,7 @@ static struct {
 	{ NOTIFY_COMMOK,   "COMMOK",   NULL, "Communications with UPS %s established", NOTIFY_DEFAULT },
 	{ NOTIFY_COMMBAD,  "COMMBAD",  NULL, "Communications with UPS %s lost", NOTIFY_DEFAULT },
 	{ NOTIFY_SHUTDOWN, "SHUTDOWN", NULL, "Auto logout and shutdown proceeding", NOTIFY_DEFAULT },
+	{ NOTIFY_SHUTDOWN_HOSTSYNC, "SHUTDOWN_HOSTSYNC", NULL,  "Shutdown initiated; primary system is waiting for secondaries to log out or time out", NOTIFY_DEFAULT },
 	{ NOTIFY_REPLBATT, "REPLBATT", NULL, "UPS %s battery needs to be replaced", NOTIFY_DEFAULT },
 	{ NOTIFY_NOCOMM,   "NOCOMM",   NULL, "UPS %s is unavailable", NOTIFY_DEFAULT },
 	{ NOTIFY_NOPARENT, "NOPARENT", NULL, "upsmon parent process died - shutdown impossible", NOTIFY_DEFAULT },

@@ -573,10 +573,11 @@ become sufficiently charged.
    - call their `SHUTDOWNCMD`
    - disconnect from `upsd`
 
-5. The `upsmon` primary system waits up to `HOSTSYNC` seconds (typically `15`)
-   for the secondary systems to disconnect from `upsd`.  If any are still
-   connected after this time, `upsmon` primary stops waiting and proceeds
-   with the shutdown process.
+5. The `upsmon` primary system generates a `NOTIFY_SHUTDOWN_HOSTSYNC` event
+   and waits up to `HOSTSYNC` seconds (typically `15`) for the secondary
+   systems to disconnect from `upsd`.  If any are still connected after
+   this time, `upsmon` primary stops waiting and proceeds with the shutdown
+   process anyway.
 
 6. The `upsmon` primary:
 

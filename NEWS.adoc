@@ -90,6 +90,9 @@ https://github.com/networkupstools/nut/milestone/12
      long delays did not happen in practice. [issues #2133 and #3084, PR #3086]
    * Make use of `setproctag()` and `getproctag()` to report parent/child
      process names. [#3084]
+   * Introduced a `SHUTDOWN_HOSTSYNC` notification message, to report that
+     the primary `upsmon` initiated the shutdown and has some secondaries
+     to wait for first. [#3084]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
