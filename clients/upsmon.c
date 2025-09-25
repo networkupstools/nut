@@ -1007,6 +1007,8 @@ static void doshutdown(void)
 			"Exiting upsmon immediately "
 			"after initiating shutdown, by default");
 	} else {
+		time_t	start, now;
+
 		if (shutdownexitdelay < 0) {
 			upslogx(LOG_WARNING,
 				"Configured to not exit upsmon "
@@ -1015,6 +1017,7 @@ static void doshutdown(void)
 			upslogx(LOG_WARNING,
 				"Configured to only exit upsmon SHUTDOWNEXIT=%d sec "
 				"after initiating shutdown", shutdownexitdelay);
+			time(&start);
 		}
 		if (exit_flag) {
 			/* TOTHINK: Are there cases when we want to
@@ -1057,8 +1060,14 @@ static void doshutdown(void)
 				clear_alarm();
 			}
 
-			if (shutdownexitdelay > 0)
-				shutdownexitdelay--;
+			/* Countdown is not exactly a timer (pinging can take time) */
+			if (shutdownexitdelay > 0) {
+				time(&now);
+				if (difftime(now, start) > shutdownexitdelay) {
+					upsdebugx(3, "%s: SHUTDOWNEXIT timeout expired", __func__);
+					break;
+				}
+			}
 			sleep(1);
 		} while (!exit_flag && shutdownexitdelay != 0);
 	}
@@ -1282,7 +1291,7 @@ static void sync_secondaries(void)
 		/* after HOSTSYNC seconds, assume secondaries are stuck - and bail */
 		time(&now);
 
-		if ((now - start) > hostsync) {
+		if (difftime(now, start) > hostsync) {
 			upslogx(LOG_INFO, "Host sync timer expired, forcing shutdown");
 			return;
 		}
@@ -3390,6 +3399,7 @@ static void runparent(int fd)
 		/* make sure the child is still alive - inverse of check_parent() */
 		int	waitstatus = 0;
 		pid_t	waitret;
+		time_t	start, now;
 
 		upsdebugx(1, "upsmon parent (exit_flag=%d): "
 			"waiting for child %" PRIiMAX " to exit, "
@@ -3398,14 +3408,24 @@ static void runparent(int fd)
 			(sret == 0 ? "calling" : "trying to call"),
 			sret, shutdowncmd);
 
+		if (shutdownexitdelay > 0)
+			time(&start);
+
 		do {
 			waitret = waitpid(pid_pipechild, &waitstatus, WNOHANG);
 
 			upsdebugx(3, "upsmon parent: wait for child returned status=%d, pid=%" PRIiMAX, waitstatus, (intmax_t)waitret);
 			if (waitret != 0 && (WIFEXITED(waitstatus) || WIFSIGNALED(waitstatus))) {
-				/* timeout expired, FD not ready */
 				upsdebugx(1, "upsmon parent: child has exited");
 				break;
+			}
+
+			if (shutdownexitdelay > 0) {
+				time(&now);
+				if (difftime(now, start) > shutdownexitdelay) {
+					upsdebugx(1, "upsmon parent: SHUTDOWNEXIT timeout expired");
+					break;
+				}
 			}
 
 			sleep(1);
