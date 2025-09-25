@@ -533,10 +533,10 @@ NOCOMMWARNTIME 300
 # --------------------------------------------------------------------------
 # FINALDELAY - last sleep interval before shutting down the system
 #
-# On a primary, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
-# before executing your SHUTDOWNCMD.  If you need to do something in between
-# those events, increase this number.  Remember, at this point your UPS is
-# almost depleted, so don't make this too high.  If needed, on high-end UPS
+# In FSD handling, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
+# message before executing your SHUTDOWNCMD.  If you need to do something in
+# between those events, increase this number.  Remember, at this point your UPS
+# is almost depleted, so don't make this too high.  If needed, on high-end UPS
 # devices you can usually configure when the low-battery state is announced
 # based on estimated remaining run-time or on charge level of the batteries.
 #

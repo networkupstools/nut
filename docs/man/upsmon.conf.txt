@@ -68,13 +68,14 @@ values, and multiply by 3.
 
 *FINALDELAY* 'seconds'::
 
-When running in primary mode, upsmon waits this long after sending the
-NOTIFY_SHUTDOWN to warn the users.  After the timer elapses, it then
-runs your SHUTDOWNCMD.  By default this is set to 5 seconds.
+When handling a forced shutdown (FSD) due to a critical UPS state or
+explicit user signal, `upsmon` waits this long after sending the
+NOTIFY_SHUTDOWN message to warn the users.  After the timer elapses,
+it then runs your SHUTDOWNCMD.  By default this is set to 5 seconds.
 +
-If you need to let your users do something in between those events,
-increase this number.  Remember, at this point your UPS battery is
-almost depleted, so don't make this too big.
+If you need to let your users (or the NOTIFYCMD script) do something
+in between those events, increase this number.  Remember, at this point
+your UPS battery is almost depleted, so don't make this too big.
 +
 Alternatively, you can set this very low so you don't wait around when
 it's time to shut down.  Some UPSes don't give much warning for low
