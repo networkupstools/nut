@@ -945,6 +945,8 @@ static void doshutdown(void)
 
 	do_notify(NULL, NOTIFY_SHUTDOWN, NULL);
 
+	upsdebugx(1, "%s: waiting for FINALDELAY=%u (to let notification handling complete)...",
+		__func__, finaldelay);
 	sleep(finaldelay);
 
 	/* in the pipe model, we let the parent do this for us */
