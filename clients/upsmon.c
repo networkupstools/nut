@@ -915,9 +915,12 @@ static void set_pdflag(void)
 {
 	FILE	*pdf;
 
-	if (!powerdownflag)
+	if (!powerdownflag) {
+		upsdebugx(1, "%s: SKIP creation of a POWERDOWNFLAG file: not configured", __func__);
 		return;
+	}
 
+	upsdebugx(1, "%s: populate POWERDOWNFLAG file: %s", __func__, powerdownflag);
 	pdf = fopen(powerdownflag, "w");
 	if (!pdf) {
 		upslogx(LOG_ERR, "Failed to create power down flag!");
