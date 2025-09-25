@@ -978,6 +978,8 @@ static void doshutdown(void)
 
 		set_pdflag();
 
+		upsdebugx(2, "%s: directly call shutdown command (sync)", __func__);
+
 #ifdef WIN32
 		SC_HANDLE SCManager;
 		SC_HANDLE Service;
@@ -1004,7 +1006,8 @@ static void doshutdown(void)
 		}
 #endif	/* WIN32 */
 
-		upslogx(2, "%s: directly shutdown command (sync)", __func__);
+		upsdebugx(1, "%s: upsmon mono-process: Calling shutdown command: %s",
+			__func__, shutdowncmd);
 		sret = system(shutdowncmd);
 
 		if (sret != 0)
@@ -3405,6 +3408,8 @@ static void runparent(int fd)
 	/* have to do this here - child is unprivileged */
 	set_pdflag();
 
+	upsdebugx(1, "%s: upsmon parent: Calling shutdown command: %s",
+		__func__, shutdowncmd);
 	sret = system(shutdowncmd);
 
 	if (sret != 0)
