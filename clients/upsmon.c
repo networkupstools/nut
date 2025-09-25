@@ -126,7 +126,7 @@ static	int	alarmcritical = 1;
 	considered critical (e.g. when not communicating). Negative values will
 	prevent a UPS from ever becoming critical from overload. A value of zero
 	will have the UPS instantly be considered critical in such situations. */
-static int overdurationtime = -1;
+static	int	overdurationtime = -1;
 
 	/* userid for unprivileged process when using fork mode */
 static	char	*run_as_user = NULL;
@@ -147,12 +147,12 @@ static	int	use_pipe = 1;
 #else	/* WIN32 */
 	/* Do not fork in WIN32 */
 static	int	use_pipe = 0;
-static HANDLE   mutex = INVALID_HANDLE_VALUE;
+static	HANDLE	mutex = INVALID_HANDLE_VALUE;
 #endif	/* WIN32 */
 
 static	utype_t	*firstups = NULL;
 
-static int 	opt_af = AF_UNSPEC;
+static	int	opt_af = AF_UNSPEC;
 
 #ifndef WIN32
 	/* signal handling things */
@@ -167,8 +167,8 @@ static	sigset_t nut_upsmon_sigmask;
 /* If we successfully use Inhibit() to be notified about
  * the OS going to sleep, this is the messenger variable:
  */
-static TYPE_FD	sleep_inhibitor_fd = ERROR_FD;
-static int	sleep_inhibitor_status = -2;
+static	TYPE_FD	sleep_inhibitor_fd = ERROR_FD;
+static	int	sleep_inhibitor_status = -2;
 
 /* Users can pass a -D[...] option to enable debugging.
  * For the service tracing purposes, also the upsmon.conf
@@ -176,11 +176,11 @@ static int	sleep_inhibitor_status = -2;
  * to set the minimal debug level (CLI provided value less
  * than that would not have effect, can only have more).
  */
-static int nut_debug_level_global = -1;
+static	int	nut_debug_level_global = -1;
 /* Debug level specified via command line - we revert to
  * it when reloading if there was no DEBUG_MIN in ups.conf
  */
-static int nut_debug_level_args = 0;
+static	int	nut_debug_level_args = 0;
 
 /* pre-declare internal methods */
 static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize);
