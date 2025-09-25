@@ -4204,6 +4204,7 @@ int main(int argc, char *argv[])
 			pollups(ups);
 		}
 
+		/* the bulk of work: recalculate the online power value and see if things are still OK */
 		recalc();
 
 		/* make sure the parent hasn't died */
@@ -4213,7 +4214,14 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 		/* reap children that have exited */
 		waitpid(-1, NULL, WNOHANG);
+#endif
 
+		if (userfsd) {
+			upsdebugx(1, "main loop: learned of FSD recently, can not sleep now");
+			goto end_loop_cycle;
+		}
+
+#ifndef WIN32
 		gettimeofday(&start, NULL);
 		upsdebugx(4, "Beginning %u-sec delay between main loop cycles", sleepval);
 		if (isPreparingForSleepSupported()) {
