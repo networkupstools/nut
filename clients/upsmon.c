@@ -937,6 +937,9 @@ static void doshutdown(void)
 
 static void doshutdown(void)
 {
+	time_t	start;
+
+	upsdebugx(1, "%s: starting...", __func__);
 	upsnotify(NOTIFY_STATE_STOPPING, "Executing automatic power-fail shutdown");
 
 	/* this should probably go away at some point */
@@ -948,6 +951,10 @@ static void doshutdown(void)
 	upsdebugx(1, "%s: waiting for FINALDELAY=%u (to let notification handling complete)...",
 		__func__, finaldelay);
 	sleep(finaldelay);
+
+	/* If we would handle SHUTDOWNEXIT as a finite delay below,
+	 * that time should include the duration of SHUTDOWNCMD too */
+	time(&start);
 
 	/* in the pipe model, we let the parent do this for us */
 	if (use_pipe) {
@@ -1012,7 +1019,7 @@ static void doshutdown(void)
 			"Exiting upsmon immediately "
 			"after initiating shutdown, by default");
 	} else {
-		time_t	start, now;
+		time_t	now;
 
 		if (shutdownexitdelay < 0) {
 			upslogx(LOG_WARNING,
@@ -1037,7 +1044,6 @@ static void doshutdown(void)
 		 * or in case of initially positive shutdownexitdelay --
 		 * when it counts down to zero.
 		 */
-		time(&start);
 		do {
 			utype_t	*ups;
 			char	temp[SMALLBUF];
@@ -3365,6 +3371,7 @@ static void runparent(int fd)
 	ssize_t	ret;
 	int	sret;
 	char	ch;
+	time_t	start;
 
 	/* handling signals is the child's job */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
@@ -3391,6 +3398,10 @@ static void runparent(int fd)
 	if (ch != 1)
 		fatalx(EXIT_FAILURE, "upsmon parent: got bogus pipe command %c", ch);
 
+	/* If we would handle SHUTDOWNEXIT as a finite delay below,
+	 * that time should include the duration of SHUTDOWNCMD too */
+	time(&start);
+
 	/* have to do this here - child is unprivileged */
 	set_pdflag();
 
@@ -3404,7 +3415,7 @@ static void runparent(int fd)
 		/* make sure the child is still alive - inverse of check_parent() */
 		int	waitstatus = 0;
 		pid_t	waitret;
-		time_t	start, now;
+		time_t	now;
 
 		upsdebugx(1, "upsmon parent (exit_flag=%d): "
 			"waiting for child %" PRIiMAX " to exit, "
@@ -3413,7 +3424,6 @@ static void runparent(int fd)
 			(sret == 0 ? "calling" : "trying to call"),
 			sret, shutdowncmd);
 
-		time(&start);
 		do {
 			waitret = waitpid(pid_pipechild, &waitstatus, WNOHANG);
 
