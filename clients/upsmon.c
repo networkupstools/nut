@@ -3429,8 +3429,19 @@ static void runparent(int fd)
 
 			upsdebugx(3, "upsmon parent: wait for child returned status=%d, pid=%" PRIiMAX, waitstatus, (intmax_t)waitret);
 			if (waitret != 0 && (WIFEXITED(waitstatus) || WIFSIGNALED(waitstatus))) {
-				upsdebugx(1, "upsmon parent: child has exited");
-				break;
+				if ( (pid_pipechild > 0 && pid_pipechild == waitret)
+				||   (pid_pipechild <= 0)
+				) {
+					/* If we know specific child PID
+					 * to wait for, do so; otherwise
+					 * any child suffices (but may be
+					 * a "notify" sub-process etc.) */
+					/* TOTHINK: Try to write into the
+					 *  "pipefd" and check that this
+					 *  attempt errors out? */
+					upsdebugx(1, "upsmon parent: child has exited");
+					break;
+				}
 			}
 
 			if (shutdownexitdelay > 0) {
