@@ -2699,6 +2699,12 @@ static void user_fsd(int sig)
 {
 	upslogx(LOG_INFO, "Signal %d: User requested FSD", sig);
 	userfsd = 1;
+
+	/* Tell the sleep() in main-loop to end early; somehow
+	 * this does get honoured as an immediate interruption
+	 * (at least on Linux). Gets reset to 0 in the end of
+	 * main loop. */
+	exit_flag = -1;
 }
 
 static void set_reload_flag(int sig)
@@ -4259,7 +4265,8 @@ int main(int argc, char *argv[])
 			 * so we aborted it, we end soon after ifdef/endif,
 			 * and so not handling here specially */
 		} else {
-			/* sleep tight */
+			/* sleep tight (unless interrupted by a signal
+			 * and a non-zero exit_flag value) */
 			sleep(sleepval);
 		}
 		gettimeofday(&end, NULL);
@@ -4348,6 +4355,9 @@ int main(int argc, char *argv[])
 		}
 
 end_loop_cycle:
+		if (exit_flag < 0 && userfsd)
+			exit_flag = 0;
+
 		/* If anyone printed anything, be sure it is output
 		 * in a timely manner, not buffered indefinitely: */
 		fflush(stdout);
