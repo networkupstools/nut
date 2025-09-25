@@ -1017,7 +1017,6 @@ static void doshutdown(void)
 			upslogx(LOG_WARNING,
 				"Configured to only exit upsmon SHUTDOWNEXIT=%d sec "
 				"after initiating shutdown", shutdownexitdelay);
-			time(&start);
 		}
 		if (exit_flag) {
 			/* TOTHINK: Are there cases when we want to
@@ -1033,6 +1032,7 @@ static void doshutdown(void)
 		 * or in case of initially positive shutdownexitdelay --
 		 * when it counts down to zero.
 		 */
+		time(&start);
 		do {
 			utype_t	*ups;
 			char	temp[SMALLBUF];
@@ -3408,9 +3408,7 @@ static void runparent(int fd)
 			(sret == 0 ? "calling" : "trying to call"),
 			sret, shutdowncmd);
 
-		if (shutdownexitdelay > 0)
-			time(&start);
-
+		time(&start);
 		do {
 			waitret = waitpid(pid_pipechild, &waitstatus, WNOHANG);
 
