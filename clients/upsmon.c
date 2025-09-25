@@ -144,6 +144,7 @@ static	int	userfsd = 0, pipefd[2];
 	 * into two upsmon processes for some more security? */
 #ifndef WIN32
 static	int	use_pipe = 1;
+static	pid_t	pid_pipechild = -1;
 #else	/* WIN32 */
 	/* Do not fork in WIN32 */
 static	int	use_pipe = 0;
@@ -3387,30 +3388,23 @@ static void runparent(int fd)
 
 	if (shutdownexitdelay) {
 		/* make sure the child is still alive - inverse of check_parent() */
-		int	fdret;
-		fd_set	rfds;
-		struct	timeval	tv;
+		int	waitstatus = 0;
+		pid_t	waitret;
 
 		upsdebugx(1, "upsmon parent (exit_flag=%d): "
-			"waiting for child to close the pipe, "
+			"waiting for child %" PRIiMAX " to exit, "
 			"after %s (%i) shutdown command: %s",
-			exit_flag,
+			exit_flag, (intmax_t)pid_pipechild,
 			(sret == 0 ? "calling" : "trying to call"),
 			sret, shutdowncmd);
 
-		FD_ZERO(&rfds);
-		FD_SET(fd, &rfds);
-
 		do {
-			tv.tv_sec = 1;
-			tv.tv_usec = 0;
+			waitret = waitpid(pid_pipechild, &waitstatus, WNOHANG);
 
-			fdret = select(fd, &rfds, NULL, NULL, &tv);
-
-			upsdebugx(3, "upsmon parent: pipe to child select returned %d", fdret);
-			if (fdret != 0) {
+			upsdebugx(3, "upsmon parent: wait for child returned status=%d, pid=%" PRIiMAX, waitstatus, (intmax_t)waitret);
+			if (waitret != 0 && (WIFEXITED(waitstatus) || WIFSIGNALED(waitstatus))) {
 				/* timeout expired, FD not ready */
-				upsdebugx(1, "upsmon parent: pipe to child is closed");
+				upsdebugx(1, "upsmon parent: child has exited");
 				break;
 			}
 
@@ -3432,22 +3426,24 @@ static void start_pipe(void)
 {
 #ifndef WIN32
 	int	ret;
+	pid_t	pid;
 
 	ret = pipe(pipefd);
 
 	if (ret)
 		fatal_with_errno(EXIT_FAILURE, "pipe creation failed");
 
-	ret = fork();
+	pid = fork();
 
-	if (ret < 0)
+	if (pid < 0)
 		fatal_with_errno(EXIT_FAILURE, "fork failed");
 
 	/* start the privileged parent */
-	if (ret != 0) {
+	if (pid != 0) {
 		close(pipefd[1]);
 		setproctag("priv-parent");
-		upsdebugx(1, "%s (parent): forked a child to run the main loop", __func__);
+		pid_pipechild = pid;
+		upsdebugx(1, "%s (parent): forked a child (%" PRIiMAX ") to run the main loop", __func__, (intmax_t)pid);
 		runparent(pipefd[0]);
 
 #ifndef HAVE___ATTRIBUTE__NORETURN
