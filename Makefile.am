@@ -763,7 +763,7 @@ maintainer-asciidocs:
 	 find . -name '*.adoc' -or -name '*.txt' | ( \
 	  FILES=""; \
 	  while read F ; do \
-	    grep -E '^//+GH_MARKUP_1095_INCLUDE_(BEGIN|END)' "$$F" >/dev/null \
+	    $(EGREP) '^//+GH_MARKUP_1095_INCLUDE_(BEGIN|END)' "$$F" >/dev/null \
 	    || { echo "$@: SKIP: no GH_MARKUP_1095_INCLUDE_* tags: $$F"; continue ; } ; \
 	    rm -f "$${F}"*.tmp || exit ; \
 	    EXT="1.tmp"; \
@@ -834,7 +834,7 @@ dist-hook:
 ###
 check-scripts-syntax:
 	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
-	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | grep -E '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
+	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | $(EGREP) '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
 	 for F in `git ls-files || find . -type f` ; do \
 	    case "`file "$$F"`" in \
 	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
@@ -944,7 +944,7 @@ CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR = true
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
-	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`grep -E '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
+	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`$(EGREP) '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
 	        if test -s "$@" -a -d "$${NUT_GITDIR}" && test -z "`find "$${NUT_GITDIR}" -newer "$@" 2>/dev/null`" ; then \
 	            echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
 	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
@@ -1406,8 +1406,8 @@ install-win-bundle-thirdparty:
 	 relcgiexecdir="`echo './$(cgiexecdir)/' | sed 's,//*,/,g'`" ; \
 	 rellibexecdir="`echo './$(libexecdir)/' | sed 's,//*,/,g'`" ; \
 	 cd '$(DESTDIR)' || exit ; \
-	 find . -type f | grep -Ei '\.(exe|dll)$$' \
-	 | grep -vE "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir}|$${rellibexecdir})" \
+	 find . -type f | $(EGREP) -i '\.(exe|dll)$$' \
+	 | $(EGREP) -v "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir}|$${rellibexecdir})" \
 	 | ( RES=0 ; while IFS= read LINE ; do echo "$$LINE" ; RES=1; done; exit $$RES )
 
 else !HAVE_WINDOWS
@@ -1479,7 +1479,7 @@ check-parallel-builds:
 		$(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
 		echo "  $@	in $${D}" ; \
 		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
-		  echo "To investigate, try:  (MAKEFLAGS='$(MAKEFLAGS)' ; export MAKEFLAGS; $(MAKE) $(AM_MAKEFLAGS) $${PARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(AM_MAKEFLAGS) V=1 $${PARMAKES_OPT} 2>&1 ; echo $$?) | tee /tmp/make.log ; RES=$$? ; grep -E '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log ; exit $$RES )"; \
+		  echo "To investigate, try:  (MAKEFLAGS='$(MAKEFLAGS)' ; export MAKEFLAGS; $(MAKE) $(AM_MAKEFLAGS) $${PARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(AM_MAKEFLAGS) V=1 $${PARMAKES_OPT} 2>&1 ; echo $$?) | tee /tmp/make.log ; RES=$$? ; $(EGREP) '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log ; exit $$RES )"; \
 		  echo "If builds were interrupted before, you may also have to re-initialize the build area completely, e.g.:  git clean -fdX ; ./ci_build.sh && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $@" ; \
 		  exit $$RES; } ; \
 		DIRS="$${DIRS} $${D}" ; \

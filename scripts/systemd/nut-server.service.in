@@ -60,7 +60,7 @@ SyslogIdentifier=%N
 ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
 ExecStart=@SBINDIR@/upsd @SYSTEMD_DAEMON_ARGS_UPSD@
 ExecReload=@SBINDIR@/upsd -c reload -P $MAINPID
-ExecStartPost=-/bin/grep -E 'Units|Max open files' /proc/${MAINPID}/limits
+ExecStartPost=-@EGREP@ 'Units|Max open files' /proc/${MAINPID}/limits
 # No tracking for PIDFile path and service attribute here (it might not
 # even exist).
 # If "-FF" or background-daemon mode is used, so that PID file exists

@@ -178,7 +178,7 @@ if HAVE_MSGFMT
 #   https://github.com/sphinx-doc/sphinx/issues/3443
 # Note that OUTFILE may be in builddir (not necessarily same as srcdir)
 ACT_MSGFMT = { \
-	$(GREP) -v -E '^.?POT-Creation-Date: ' < "$${SRCFILE}" > "$${OUTFILE}.tmpsrc" && \
+	$(EGREP) -v '^.?POT-Creation-Date: ' < "$${SRCFILE}" > "$${OUTFILE}.tmpsrc" && \
 	$(MSGFMT) -o "$${OUTFILE}" "$${OUTFILE}.tmpsrc" && \
 	rm -f "$${OUTFILE}.tmpsrc" ; \
 }

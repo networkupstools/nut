@@ -33,10 +33,6 @@ all:
 	@echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make doc' to ensure complex document types"
 	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
-# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-#EGREP = egrep
-EGREP = grep -E
-
 # Possible man page section remapping in some distros:
 MAN_SECTION_API_BASE=@MAN_SECTION_API_BASE@
 MAN_SECTION_CFG_BASE=@MAN_SECTION_CFG_BASE@
@@ -308,12 +304,12 @@ ChangeLog.html-contentchecked:
 	@FAILED=""; \
 	 entry_filter() { sed -e 's/ *[\"<].*//' -e 's/\([][(){}|+?.*]\)/\\\1/g' ; } ; \
 	 if [ -s '$(top_builddir)/ChangeLog' ] && [ -s ChangeLog.html ] ; then \
-	    SECOND_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | entry_filter`" || SECOND_ENTRY="" ; \
-	    FIRST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | entry_filter`" || FIRST_ENTRY="" ; \
-	    LAST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | entry_filter`" || LAST_ENTRY="" ; \
+	    SECOND_ENTRY="`$(EGREP) '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | entry_filter`" || SECOND_ENTRY="" ; \
+	    FIRST_ENTRY="`$(EGREP) '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | entry_filter`" || FIRST_ENTRY="" ; \
+	    LAST_ENTRY="`$(EGREP) '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | entry_filter`" || LAST_ENTRY="" ; \
 	    if [ -n "$${FIRST_ENTRY}" ] ; then \
-	        O="`grep -cE "^$${FIRST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
-	        N="`grep -cE "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
+	        O="`$(EGREP) -c "^$${FIRST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`$(EGREP) -c "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
 	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
 	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
 	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
@@ -326,8 +322,8 @@ ChangeLog.html-contentchecked:
 	        fi ; \
 	    fi; \
 	    if [ -n "$${SECOND_ENTRY}" ] ; then \
-	        O="`grep -cE "^$${SECOND_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
-	        N="`grep -cE "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
+	        O="`$(EGREP) -c "^$${SECOND_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`$(EGREP) -c "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
 	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
 	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
 	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
@@ -340,8 +336,8 @@ ChangeLog.html-contentchecked:
 	        fi ; \
 	    fi; \
 	    if [ -n "$${LAST_ENTRY}" ] ; then \
-	        O="`grep -cE "^$${LAST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
-	        N="`grep -cE "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
+	        O="`$(EGREP) -c "^$${LAST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`$(EGREP) -c "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
 	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
 	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
 	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
@@ -943,7 +939,7 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		     && echo "$$OUT" >&2 \
 		     && echo "----- ^^^" >&2 ; \
 		     exit $$RES; } ; \
-	 if grep -E '^[ *.-]*(NOTE|TIP|IMPORTANT|CAUTION|WARNING):[ \t]*[a-z]' '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' ; then \
+	 if $(EGREP) '^[ *.-]*(NOTE|TIP|IMPORTANT|CAUTION|WARNING):[ \t]*[a-z]' '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' ; then \
 		echo "FAILED: Admonition block should contain a sentence, not starting with a lower-case letter" >&2 ; \
 		exit 2 ; \
 	 fi ; \
@@ -1118,7 +1114,7 @@ endif !HAVE_ASPELL
 $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 	@echo "Preparing $@"; \
 	 LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	 grep -v -E '^personal_ws' < $? \
+	 $(EGREP) -v '^personal_ws' < $? \
 	 | while read W ; do ( \
 		cd "$(abs_top_srcdir)" || exit ; \
 		git grep -q "$$W" -- ':!*.dict*' || git grep -qE "[0-9_,./\ -]$$W[0-9_,./\ -]" -- ':!*.dict*' ) \
@@ -1138,7 +1134,7 @@ $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 	 && mv -f "$@.tmp.$$$$" "$@" \
 	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
 	@echo "Reporting words from $? possibly not used in current inspected code base revision under $(abs_top_srcdir)" >&2 ; \
-	 grep -E '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
+	 $(EGREP) '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
 
 CLEANFILES += $(NUT_SPELL_DICT).usage-report.tmp
 MAINTAINERCLEANFILES += $(NUT_SPELL_DICT).usage-report

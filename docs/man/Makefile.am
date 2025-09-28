@@ -28,10 +28,6 @@
 #   * DIST_ALL_MAN_PAGES: all known MAN page file names, to help ensure dist archive
 #   * DIST_ALL_HTML_PAGES: all known HTML page file names, to help ensure nut-website
 
-# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-#EGREP = egrep
-EGREP = grep -E
-
 SRC_ALL_PAGES = index.txt
 
 # Populate these lists depending on DOC_INSTALL_SELECTED_MANS_PROGS_BUILT toggle
@@ -1604,7 +1600,7 @@ linkman-driver-names.txt: Makefile
 	@echo "  GENERATE-LINKMAN	$@"
 	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERS) ; do echo "$$F" ; done \
-	    | grep -vE '^nutupsdrv\.txt$$' \
+	    | $(EGREP) -v '^nutupsdrv\.txt$$' \
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[$(MAN_SECTION_CMD_SYS)],' ; \
 	 ) > "$(builddir)/$(@F).tmp.$$$$" || exit ; \
