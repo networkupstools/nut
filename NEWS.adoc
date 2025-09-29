@@ -39,6 +39,12 @@ https://github.com/networkupstools/nut/milestone/12
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
+ - common code:
+   * extended with plural `checkprocnames()` and `compareprocnames()` for
+     binaries that expect to have one of several names at the moment (e.g.
+     when renaming a program to "*-old" or promoting a "*-new" into the
+     stable name as a default implementation). [PR #3101]
+
  - `nutdrv_qx` driver updates:
    * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together

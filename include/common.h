@@ -309,14 +309,20 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
  *	0	Process name identified, does not seem to match
  *	1+	Process name identified, and seems to match with
  *		varying precision
- * Generally speaking, if (checkprocname(...)) then ok to proceed
+ * Generally speaking, if (checkprocname(...)) then ok to proceed.
+ * Singular for programs with a single expected executable name,
+ * plural for programs with expected aliases (e.g. "old"/new" migrations).
  */
 int checkprocname(pid_t pid, const char *progname);
-/* compareprocname() does the bulk of work for checkprocname()
- * and returns same values. The "pid" argument is used for logging.
- * Generally speaking, if (compareprocname(...)) then ok to proceed
+int checkprocnames(pid_t pid, const char **prognames);
+/* compareprocname*() methods do the bulk of work for checkprocname*()
+ * and return same values. The "pid" argument is used for logging.
+ * Generally speaking, if (compareprocname(...)) then ok to proceed.
+ * Singular for programs with a single expected executable name,
+ * plural for programs with expected aliases (e.g. "old"/new" migrations).
  */
 int compareprocname(pid_t pid, const char *procname, const char *progname);
+int compareprocnames(pid_t pid, const char *procname, const char **prognames);
 /* Helper for the above methods and some others. If it returns true (1),
  * work about PID-name comparison should be quickly skipped.
  */

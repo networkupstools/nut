@@ -1327,8 +1327,21 @@ int checkprocname_ignored(const char *caller)
 
 int compareprocname(pid_t pid, const char *procname, const char *progname)
 {
+	/* See comments for compareprocnames(), below */
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return compareprocnames(pid, procname, arr);
+}
+
+int compareprocnames(pid_t pid, const char *procname, const char **prognames)
+{
 	/* Given the binary path name of (presumably) a running process,
-	 * check if it matches the assumed name of the current program.
+	 * check if it matches the assumed name of the current program,
+	 * possibly one of several expected aliases (for "old"/"new" name
+	 * migrations, etc.)
 	 * The "pid" value is used in log reporting.
 	 * Returns:
 	 *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
@@ -1343,67 +1356,144 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	 */
 
 	int	ret = -127;
-	size_t	procbasenamelen = 0, progbasenamelen = 0;
+	size_t	procbasenamelen = 0, *progbasenamelen = NULL;
 	/* Track where the last dot is in the basename; 0 means none */
-	size_t	procbasenamedot = 0, progbasenamedot = 0;
-	char	procbasename[NUT_PATH_MAX + 1], progbasename[NUT_PATH_MAX + 1];
+	size_t	procbasenamedot = 0, *progbasenamedot = NULL;
+	char	procbasename[NUT_PATH_MAX + 1], **progbasenames = NULL;
+	/* Best-effort (size-wise) for logging in the end: */
+	char	all_prognames[LARGEBUF], all_progbasenames[LARGEBUF];
 #ifdef NUT_PLATFORM_LINUX
 	char	*s = NULL;
 #endif
+	const char	**pprogname = NULL;
+	size_t	total_prognames = 0, i = 0;
 
 	if (checkprocname_ignored(__func__)) {
 		ret = -3;
 		goto finish;
 	}
 
-	if (!procname || !progname) {
+	if (!procname || !prognames || !(*prognames)) {
 		ret = -1;
 		goto finish;
 	}
 
+	/* Prepare the (potentially) long string listing the names for logging.
+	 * Also count the prognames[] array length to allocate progbasenames[].
+	 */
+	memset(all_prognames, 0, sizeof(all_prognames));
+	for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+		upsdebugx(5, "%s: appending progname [%s] to [%s]",
+			__func__, NUT_STRARG(*pprogname), all_prognames);
+		snprintfcat(all_prognames, sizeof(all_prognames), "%s'%s'",
+			all_prognames[0] ? "/" : "",
+			*pprogname);
+		total_prognames++;
+	}
+	/* include the NULL sentinel */
+	total_prognames++;
+	upsdebugx(4, "%s: total_prognames=%" PRIuSIZE " (with NULL sentinel); got [%s]",
+		__func__, total_prognames, all_prognames);
+
 	/* First quickly try for an exact hit (possible dir names included) */
-	if (!strcmp(procname, progname)) {
-		ret = 1;
-		goto finish;
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (!strcmp(procname, prognames[i])) {
+			ret = 1;
+			goto finish;
+		}
 	}
 
-	/* Parse the basenames apart */
-	if (!parseprogbasename(progbasename, sizeof(progbasename), progname, &progbasenamelen, &progbasenamedot)
-	||  !parseprogbasename(procbasename, sizeof(procbasename), procname, &procbasenamelen, &procbasenamedot)
-	) {
+	/* Parse the basenames apart, or fail trying */
+	if (!parseprogbasename(procbasename, sizeof(procbasename), procname, &procbasenamelen, &procbasenamedot)) {
 		ret = -2;
 		goto finish;
 	}
 
-	/* First quickly try for an exact hit of base names */
-	if (progbasenamelen == procbasenamelen && progbasenamedot == procbasenamedot && !strcmp(procbasename, progbasename)) {
-		ret = 2;
+	progbasenames = xcalloc(total_prognames, sizeof(char*));
+	if (!progbasenames) {
+		ret = -2;
 		goto finish;
+	}
+	progbasenamelen = xcalloc(total_prognames, sizeof(size_t));
+	if (!progbasenamelen) {
+		ret = -2;
+		goto finish;
+	}
+	progbasenamedot = xcalloc(total_prognames, sizeof(size_t));
+	if (!progbasenamedot) {
+		ret = -2;
+		goto finish;
+	}
+	memset(all_progbasenames, 0, sizeof(all_progbasenames));
+
+	for (i = 0; i < total_prognames - 1; i++) {
+		progbasenames[i] = xcalloc(NUT_PATH_MAX + 1, sizeof(char));
+
+		if (!progbasenames[i]) {
+			ret = -2;
+			goto finish;
+		}
+
+		if (!parseprogbasename(
+			progbasenames[i], NUT_PATH_MAX + 1,
+			prognames[i],
+			&(progbasenamelen[i]), &(progbasenamedot[i]))
+		) {
+			ret = -2;
+			goto finish;
+		}
+
+		upsdebugx(5, "%s: appending progbasename [%s] to [%s]",
+			__func__, NUT_STRARG(progbasenames[i]), all_progbasenames);
+		snprintfcat(all_progbasenames, sizeof(all_progbasenames), "%s'%s'",
+			all_progbasenames[0] ? "/" : "",
+			progbasenames[i]);
+	}
+
+	/* First quickly try for an exact hit of base names */
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (progbasenamelen[i] == procbasenamelen
+		 && progbasenamedot[i] == procbasenamedot
+		 && !strcmp(procbasename, progbasenames[i])
+		) {
+			ret = 2;
+			goto finish;
+		}
 	}
 
 	/* Check for executable program filename extensions and/or case-insensitive
 	 * matching on some platforms */
 #ifdef WIN32
-	if (!strcasecmp(procname, progname)) {
-		ret = 3;
-		goto finish;
-	}
-
-	if (!strcasecmp(procbasename, progbasename)) {
-		ret = 4;
-		goto finish;
-	}
-
-	if (progbasenamedot == procbasenamedot || !progbasenamedot || !procbasenamedot) {
-		/* Same base name before ext, maybe different casing or absence of ext in one of them */
-		size_t	dot = progbasenamedot ? progbasenamedot : procbasenamedot;
-
-		if (!strncasecmp(progbasename, procbasename, dot - 1) &&
-		     (  (progbasenamedot && !strcasecmp(progbasename + progbasenamedot, ".exe"))
-		     || (procbasenamedot && !strcasecmp(procbasename + procbasenamedot, ".exe")) )
-		) {
-			ret = 5;
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (!strcasecmp(procname, prognames[i])) {
+			ret = 3;
 			goto finish;
+		}
+	}
+
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (!strcasecmp(procbasename, progbasenames[i])) {
+			ret = 4;
+			goto finish;
+		}
+	}
+
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (progbasenamedot[i] == procbasenamedot
+		 || !progbasenamedot[i]
+		 || !procbasenamedot
+		) {
+			/* Same base name before ext, maybe different casing or absence of ext in one of them */
+			size_t	dot = progbasenamedot[i] ? progbasenamedot[i] : procbasenamedot;
+
+			/* Optimize away procbasename comparisons beyond first */
+			if (!strncasecmp(progbasenames[i], procbasename, dot - 1) &&
+			     (  (progbasenamedot[i] && !strcasecmp(progbasenames[i] + progbasenamedot[i], ".exe"))
+			     || (i == 0 && procbasenamedot && !strcasecmp(procbasename + procbasenamedot, ".exe")) )
+			) {
+				ret = 5;
+				goto finish;
+			}
 		}
 	}
 #endif	/* WIN32 */
@@ -1423,9 +1513,12 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 
 		upsdebugx(2, "%s: re-evaluate the substring without a special tail: '%s'=>'%s'",
 			__func__, procname, pntmp);
-		restmp = compareprocname(pid, pntmp, progname);
-		if (restmp <= 0)
-			return restmp;
+
+		for (i = 0; i < total_prognames - 1; i++) {
+			restmp = compareprocname(pid, pntmp, prognames[i]);
+			if (restmp <= 0)
+				return restmp;
+		}
 
 		ret = 6;
 		goto finish;
@@ -1447,9 +1540,9 @@ finish:
 			upsdebugx(1,
 				"%s: original program file of running "
 				"PID %" PRIuMAX " named '%s' was removed "
-				"or replaced, but matches our '%s'",
+				"or replaced, but matches our %s",
 				__func__, (uintmax_t)pid,
-				procname, progname);
+				procname, all_prognames);
 			break;
 
 		case 5:
@@ -1457,52 +1550,52 @@ finish:
 				"%s: case-insensitive base name hit with "
 				"an executable program extension involved for "
 				"PID %" PRIuMAX " of '%s'=>'%s' and checked "
-				"'%s'=>'%s'",
+				"%s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case 4:
 			upsdebugx(1,
 				"%s: case-insensitive base name hit for PID %"
-				PRIuMAX " of '%s'=>'%s' and checked '%s'=>'%s'",
+				PRIuMAX " of '%s'=>'%s' and checked %s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case 3:
 			upsdebugx(1,
 				"%s: case-insensitive full name hit for PID %"
-				PRIuMAX " of '%s' and checked '%s'",
-				__func__, (uintmax_t)pid, procname, progname);
+				PRIuMAX " of '%s' and checked %s",
+				__func__, (uintmax_t)pid, procname, all_prognames);
 			break;
 
 		case 2:
 			upsdebugx(1,
 				"%s: case-sensitive base name hit for PID %"
-				PRIuMAX " of '%s'=>'%s' and checked '%s'=>'%s'",
+				PRIuMAX " of '%s'=>'%s' and checked %s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case 1:
 			upsdebugx(1,
 				"%s: exact case-sensitive full name hit for PID %"
-				PRIuMAX " of '%s' and checked '%s'",
-				__func__, (uintmax_t)pid, procname, progname);
+				PRIuMAX " of '%s' and checked %s",
+				__func__, (uintmax_t)pid, procname, all_prognames);
 			break;
 
 		case 0:
 			upsdebugx(1,
 				"%s: did not find any match of program names "
 				"for PID %" PRIuMAX " of '%s'=>'%s' and checked "
-				"'%s'=>'%s'",
+				"%s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case -1:
@@ -1528,13 +1621,44 @@ finish:
 			break;
 	}
 
+	if (progbasenames) {
+		/* In case of error, we might not have the complete
+		 * array's worth allocated here, so iterate until NULL
+		 * and not by counter.
+		 */
+		char **pprogbasename = NULL;
+		for (pprogbasename = progbasenames; *pprogbasename != NULL; pprogbasename++) {
+			free(*pprogbasename);
+		}
+		free(progbasenames);
+	}
+
+	if (progbasenamelen)
+		free(progbasenamelen);
+
+	if (progbasenamedot)
+		free(progbasenamedot);
+
 	return ret;
 }
 
 int checkprocname(pid_t pid, const char *progname)
 {
+	/* See comments for checkprocnames(), below */
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return checkprocnames(pid, arr);
+}
+
+int checkprocnames(pid_t pid, const char **prognames)
+{
 	/* If we can determine the binary path name of the specified "pid",
-	 * check if it matches the assumed name of the current program.
+	 * check if it matches the assumed name of the current program,
+	 * possibly one of several expected aliases (for "old"/"new" name
+	 * migrations, etc.)
 	 * Returns: same as compareprocname()
 	 * Generally speaking, if (checkprocname(...)) then ok to proceed
 	 */
@@ -1547,7 +1671,7 @@ int checkprocname(pid_t pid, const char *progname)
 		goto finish;
 	}
 
-	if (!progname) {
+	if (!prognames || !(*prognames)) {
 		ret = -1;
 		goto finish;
 	}
@@ -1558,7 +1682,7 @@ int checkprocname(pid_t pid, const char *progname)
 		goto finish;
 	}
 
-	ret = compareprocname(pid, procname, progname);
+	ret = compareprocnames(pid, procname, prognames);
 
 finish:
 	if (procname)

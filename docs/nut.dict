@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3548 utf-8
+personal_ws-1.1 en 3550 utf-8
 AAC
 AAS
 ABI
@@ -1767,6 +1767,7 @@ cgroupsv
 changelog
 chargetime
 charset
+checkprocnames
 checkruntime
 checksum
 checksums
@@ -1810,6 +1811,7 @@ command's
 commandlen
 committer
 comms
+compareprocnames
 compat
 compilerPath
 conf
