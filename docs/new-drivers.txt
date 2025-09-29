@@ -110,6 +110,10 @@ This information is currently used for the startup banner printing and tests.
 Essential functions
 -------------------
 
+For a full current list of functions expected in this context, please see the
+`drivers/main.h` file in NUT sources.  Some more methods may be required by
+driver structure, even if in the common case they have no-op implementations.
+
 upsdrv_initups
 ~~~~~~~~~~~~~~
 

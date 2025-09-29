@@ -22,7 +22,7 @@
 /* #define IGNCHARS	""	*/
 
 #define DRIVER_NAME	"Skeleton UPS driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -163,7 +163,13 @@ static int setvar(const char *varname, const char *val)
 }
 */
 
+/* print driver-specific usage info */
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

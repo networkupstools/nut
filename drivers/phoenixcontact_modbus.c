@@ -32,7 +32,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.10"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
@@ -802,6 +802,11 @@ void upsdrv_help(void)
 		"\ninput.voltage.low.critical\tThreshold [V] to switch to battery mode"
 		"\ninput.voltage.high.critical\tThreshold [V] to return to mains mode"
 		"\n");
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* list flags and values that you want to receive via -x */

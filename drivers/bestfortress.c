@@ -35,7 +35,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.13"
+#define DRIVER_VERSION  "0.14"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -570,6 +570,11 @@ static int instcmd (const char *cmdname, const char *extra)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

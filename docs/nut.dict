@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3552 utf-8
+personal_ws-1.1 en 3553 utf-8
 AAC
 AAS
 ABI
@@ -2867,6 +2867,7 @@ proc
 productid
 prog
 progname
+prognames
 progs
 proxied
 prtconf

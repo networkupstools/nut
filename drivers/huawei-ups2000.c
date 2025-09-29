@@ -55,7 +55,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -1826,6 +1826,12 @@ void upsdrv_shutdown(void)
 
 
 void upsdrv_help(void)
+{
+}
+
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

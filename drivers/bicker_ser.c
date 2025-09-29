@@ -108,7 +108,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Bicker serial protocol"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 #define BICKER_SOH	0x01
 #define BICKER_EOT	0x04
@@ -885,6 +885,11 @@ void upsdrv_shutdown(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

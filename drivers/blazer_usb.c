@@ -37,7 +37,7 @@
 #endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -579,6 +579,12 @@ void upsdrv_help(void)
 	}
 	printf("\n\n");
 #endif	/* TESTING */
+}
+
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 

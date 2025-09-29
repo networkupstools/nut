@@ -44,7 +44,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.17"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1591,6 +1591,11 @@ void upsdrv_shutdown(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

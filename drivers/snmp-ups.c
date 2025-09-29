@@ -543,6 +543,11 @@ void upsdrv_help(void)
 	upsdebugx(1, "entering %s", __func__);
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {

@@ -48,7 +48,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.16"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -1243,6 +1243,11 @@ static int setvar(const char *varname, const char *val)
 */
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

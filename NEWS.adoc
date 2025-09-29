@@ -40,11 +40,13 @@ https://github.com/networkupstools/nut/milestone/12
    to patterns defined in link:docs/nut-names.txt[]
 
  - common code:
-   * extended with plural `checkprocnames()` and `compareprocnames()`,
+   * Extended with plural `checkprocnames()` and `compareprocnames()`,
      as well as `sendsignalpidaliases()` and `sendsignalfnaliases()`, for
      binaries that expect to have one of several names at the moment (e.g.
      when renaming a program to "*-old" or promoting a "*-new" into the
-     stable name as a default implementation). [PR #3101]
+     stable name as a default implementation). Drivers united by `main.c`
+     framework introduced a `upsdrv_tweak_prognames()` hook method to let
+     them manipulate the array of `prognames[]` aliases. [PR #3101]
 
  - `nutdrv_qx` driver updates:
    * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver

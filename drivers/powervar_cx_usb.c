@@ -45,7 +45,7 @@
 #include "powervar_cx.h"	/* Common driver variables and functions */
 
 #define DRIVER_NAME	"Powervar-CUSSP UPS driver (USB)"
-#define DRIVER_VERSION	"1.00"
+#define DRIVER_VERSION	"1.01"
 
 /* USB comm stuff here */
 #define USB_RESPONSE_SIZE	8
@@ -451,6 +451,11 @@ void upsdrv_help(void)
 {
 	printf("\n---------\nNOTE:\n");
 	printf("This driver is for connecting to a Powervar UPS USB port.\n");
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_cleanup(void)

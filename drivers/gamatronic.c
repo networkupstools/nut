@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -383,6 +383,11 @@ int instcmd(const char *cmdname, const char *extra)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

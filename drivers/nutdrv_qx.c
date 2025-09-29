@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.46"
+#define DRIVER_VERSION	"0.47"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -3247,6 +3247,11 @@ void	upsdrv_help(void)
 	}
 	printf("\n");
 #endif	/* TESTING */
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* Adding flags/vars */

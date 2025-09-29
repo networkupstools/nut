@@ -57,7 +57,7 @@ typedef struct pollfd {
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.73"
+#define DRIVER_VERSION	"0.74"
 
 #define POLL_INTERVAL_MIN 10
 
@@ -361,6 +361,11 @@ void upsdrv_shutdown(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

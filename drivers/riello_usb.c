@@ -36,7 +36,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.16"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -862,9 +862,12 @@ static int start_ups_comm(void)
 
 void upsdrv_help(void)
 {
-
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
 
 void upsdrv_makevartable(void)
 {

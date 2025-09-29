@@ -51,7 +51,7 @@ int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.85"
+#define DRIVER_VERSION	"0.86"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -835,6 +835,11 @@ void upsdrv_help(void)
 {
 	printf("\n---------\nNOTE:\n");
 	printf("You must set the UPS interface card DIP switch to 9600 BPS\n");
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_cleanup(void)

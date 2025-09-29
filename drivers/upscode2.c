@@ -43,7 +43,7 @@
 #include "nut_float.h"
 
 #define DRIVER_NAME	"UPScode II UPS driver"
-#define DRIVER_VERSION	"0.94"
+#define DRIVER_VERSION	"0.95"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -460,6 +460,10 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
 
 void upsdrv_initups(void)
 {

@@ -31,7 +31,7 @@
 #endif	/* !WIN32 */
 
 #define DRIVER_NAME	"Clone outlet UPS driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -525,6 +525,12 @@ void upsdrv_shutdown(void)
 
 
 void upsdrv_help(void)
+{
+}
+
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

@@ -43,7 +43,7 @@
 #include <math.h>
 
 #define DRIVER_NAME	"NHS Nobreak Drivers"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 #define MANUFACTURER	"NHS Sistemas Eletronicos LTDA"
 
 #define DEFAULTBAUD	2400
@@ -2470,4 +2470,9 @@ void upsdrv_makevartable(void) {
 }
 
 void upsdrv_help(void) {
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }

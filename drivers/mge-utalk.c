@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.99"
+#define DRIVER_VERSION	"0.100"
 
 
 /* driver description structure */
@@ -531,6 +531,11 @@ void upsdrv_shutdown(void)
 /* --------------------------------------------------------------- */
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

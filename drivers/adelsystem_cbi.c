@@ -34,7 +34,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT ADELSYSTEM DC-UPS CB/CBI driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -494,6 +494,11 @@ void upsdrv_shutdown(void)
 
 /* print driver usage info */
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
