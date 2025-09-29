@@ -11,12 +11,22 @@
 #endif	/* WIN32 */
 
 /* public functions & variables from main.c, documented in detail there */
-extern const char	*progname, *upsname, *device_name;
+extern const char	*upsname, *device_name;
 extern char		*device_path, *device_sdcommands;
 extern int		broken_driver, experimental_driver,
 			do_lock_port, exit_flag, handling_upsdrv_shutdown;
 extern TYPE_FD		upsfd, extrafd;
 extern time_t		poll_interval;
+
+/* We allow for aliases to certain program names (e.g. when renaming a driver
+ * between "old" and "new" and default implementations, it should accept both
+ * or more names it can be called by).
+ * The [0] entry is used to set up stuff like pipe names, man page links, etc.
+ */
+#define	MAX_PROGNAMES	4
+extern const char	*prognames[MAX_PROGNAMES];
+extern char	prognames_should_free[MAX_PROGNAMES];
+#define	progname	(prognames[0])
 
 /* functions & variables required in each driver */
 void upsdrv_initups(void);	/* open connection to UPS, fail if not found */
