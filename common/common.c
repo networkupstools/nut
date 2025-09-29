@@ -1758,9 +1758,20 @@ void writepid(const char *name)
  */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname)
 {
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return sendsignalpidaliases(pid, sig, arr, check_current_progname);
+}
+
+int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_current_progname)
+{
 #ifndef WIN32
 	int	ret, cpn1 = -10, cpn2 = -10;
-	char	*current_progname = NULL, *procname = NULL;
+	char	*current_progname = NULL, *procname = NULL, all_prognames[LARGEBUF];
+	size_t	total_prognames = 0;
 
 	/* TOTHINK: What about containers where a NUT daemon *is* the only process
 	 * and is the PID=1 of the container (recycle if dead)? */
@@ -1776,19 +1787,31 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	if (!checkprocname_ignored(__func__))
 		procname = getprocname(pid);
 
-	if (procname && progname) {
-		/* Check against some expected (often built-in) name */
-		if (!(cpn1 = compareprocname(pid, procname, progname))) {
-			/* Did not match expected (often built-in) name */
-			ret = -1;
-		} else {
-			if (cpn1 > 0) {
-				/* Matched expected name, ok to proceed */
-				ret = 1;
+	memset(all_prognames, 0, sizeof(all_prognames));
+	if (procname && prognames && *(prognames)) {
+		/* Check against some expected (often built-in) name
+		 * Also build a list of those names (from parameter)
+		 */
+		const char	**pprogname;
+		for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+			snprintfcat(all_prognames, sizeof(all_prognames), "%s'%s'",
+				all_prognames[0] ? "/" : "", *pprogname);
+			if (!(cpn1 = compareprocname(pid, procname, *pprogname))) {
+				/* Did not match expected (often built-in) name */
+				ret = -1;
+			} else {
+				if (cpn1 > 0) {
+					/* Matched expected name, ok to proceed */
+					ret = 1;
+				}
+				/* ...else could not determine name of PID; think later */
 			}
-			/* ...else could not determine name of PID; think later */
+			total_prognames++;
 		}
+		/* NULL sentinel of the non-NULL prognames[] array */
+		total_prognames++;
 	}
+
 	/* if (cpn1 == -3) => NUT_IGNORE_CHECKPROCNAME=true */
 	/* if (cpn1 == -1) => could not determine name of PID... retry just in case? */
 	if (procname && ret <= 0 && check_current_progname && cpn1 != -3) {
@@ -1825,10 +1848,10 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 			"failed to match: "
 			"found procname='%s', "
 			"expected progname='%s' (res=%d%s), "
-			"current progname='%s' (res=%d%s)",
+			"current progname=%s (res=%d%s)",
 			__func__, (uintmax_t)pid,
 			NUT_STRARG(procname),
-			NUT_STRARG(progname), cpn1,
+			all_prognames[0] ? all_prognames : "(null)", cpn1,
 			(cpn1 == -10 ? ": did not check" : ""),
 			NUT_STRARG(current_progname), cpn2,
 			(cpn2 == -10 ? ": did not check" : ""));
@@ -1838,32 +1861,32 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 				case -1:
 					upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 						" which exists but is not of"
-						" expected program '%s'; not asked"
+						" expected program %s; not asked"
 						" to cross-check current PID's name",
-						(uintmax_t)pid, progname);
+						(uintmax_t)pid, all_prognames);
 					break;
 
 				/* Maybe we tried both data sources, maybe just current_progname */
 				case -2:
 				/*case -3:*/
-					if (progname && current_progname) {
+					if (all_prognames[0] && current_progname) {
 						/* Tried both, downgraded verdict further */
 						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 							" which exists but is not of expected"
-							" program '%s' nor current '%s'",
-							(uintmax_t)pid, progname, current_progname);
+							" program %s nor current '%s'",
+							(uintmax_t)pid, all_prognames, current_progname);
 					} else if (current_progname) {
-						/* Not asked for progname==NULL */
+						/* Not asked for prognames==NULL nor prognames[0]==NULL */
 						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 							" which exists but is not of"
 							" current program '%s'",
 							(uintmax_t)pid, current_progname);
-					} else if (progname) {
+					} else if (all_prognames[0]) {
 						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 							" which exists but is not of"
-							" expected program '%s'; could not"
+							" expected program %s; could not"
 							" cross-check current PID's name",
-							(uintmax_t)pid, progname);
+							(uintmax_t)pid, all_prognames);
 					} else {
 						/* Both NULL; one not asked, another not detected;
 						 * should not actually get here (wannabe `ret==-3`)
@@ -1929,7 +1952,7 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 #else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(pid);
 	NUT_UNUSED_VARIABLE(sig);
-	NUT_UNUSED_VARIABLE(progname);
+	NUT_UNUSED_VARIABLE(prognames);
 	NUT_UNUSED_VARIABLE(check_current_progname);
 	/* Windows builds use named pipes, not signals per se */
 	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
@@ -2023,12 +2046,22 @@ pid_t parsepidfile(const char *pidfn)
 #ifndef WIN32
 int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname)
 {
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return sendsignalfnaliases(pidfn, sig, arr, check_current_progname);
+}
+
+int sendsignalfnaliases(const char *pidfn, int sig, const char **prognames, int check_current_progname)
+{
 	int	ret = -1;
 	pid_t	pid = parsepidfile(pidfn);
 
 	if (pid >= 0) {
 		/* this method actively reports errors, if any */
-		ret = sendsignalpid(pid, sig, progname, check_current_progname);
+		ret = sendsignalpidaliases(pid, sig, prognames, check_current_progname);
 	}
 
 	return ret;
@@ -2037,9 +2070,18 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_cur
 #else	/* => WIN32 */
 
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored)
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return sendsignalfnaliases(pidfn, sig, arr, check_current_progname);
+}
+
+int sendsignalfnaliases(const char *pidfn, const char * sig, const char **prognames_ignored, int check_current_progname_ignored)
 {
 	BOOL	ret;
-	NUT_UNUSED_VARIABLE(progname_ignored);
+	NUT_UNUSED_VARIABLE(prognames_ignored);
 	NUT_UNUSED_VARIABLE(check_current_progname_ignored);
 
 	ret = send_to_named_pipe(pidfn, sig);

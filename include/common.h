@@ -382,6 +382,7 @@ pid_t get_max_pid_t(void);
 /* send sig to pid after some sanity checks, returns
  * -1 for error, or zero for a successfully sent signal */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
+int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_current_progname);
 
 /* open <pidfn> and get the pid
  * returns zero or more for successfully retrieved value,
@@ -406,9 +407,11 @@ pid_t parsepidfile(const char *pidfn);
  * named driver programs does not request it)
  */
 int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname);
+int sendsignalfnaliases(const char *pidfn, int sig, const char **prognames, int check_current_progname);
 #else	/* WIN32 */
 /* No progname here - communications via named pipe */
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored);
+int sendsignalfnaliases(const char *pidfn, const char * sig, const char **prognames_ignored, int check_current_progname_ignored);
 #endif	/* WIN32 */
 
 const char *xbasename(const char *file);
