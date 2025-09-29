@@ -546,6 +546,33 @@ void upsdrv_help(void)
 /* optionally tweak prognames[] entries */
 void upsdrv_tweak_prognames(void)
 {
+	upsdebugx(1, "entering %s", __func__);
+
+	/* If executed via an accepted alias, move it down in prognames[] stack */
+	if (!strcmp(prognames[0], "snmp-ups-old")) {
+		upsdebugx(3, "%s: marking program name '%s' as an alias for '%s'",
+			__func__, prognames[0], "snmp-ups");
+
+		if (prognames_should_free[1] && prognames[1])
+			free((char*)prognames[1]);
+		prognames[1] = prognames[0];
+		prognames_should_free[1] = prognames_should_free[0];
+
+		if (prognames_should_free[0])
+			free((char*)prognames[0]);
+		prognames[0] = xstrdup("snmp-ups");
+		prognames_should_free[0] = 1;
+	} else {
+		if (!strcmp(prognames[0], "snmp-ups")) {
+			upsdebugx(3, "%s: marking program name '%s' as an alias for '%s'",
+				__func__, "snmp-ups-old", prognames[0]);
+
+			if (prognames_should_free[1])
+				free((char*)prognames[1]);
+			prognames[1] = xstrdup("snmp-ups-old");
+			prognames_should_free[1] = 1;
+		}
+	}
 }
 
 /* list flags and values that you want to receive via -x */
