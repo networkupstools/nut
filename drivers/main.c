@@ -2201,6 +2201,8 @@ int main(int argc, char **argv)
 	}
 #endif	/* WIN32 */
 
+	upsdrv_tweak_prognames();
+
 	open_syslog(progname);
 
 	if (!banner_is_disabled()) {

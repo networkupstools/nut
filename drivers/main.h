@@ -29,6 +29,7 @@ extern char	prognames_should_free[MAX_PROGNAMES];
 #define	progname	(prognames[0])
 
 /* functions & variables required in each driver */
+void upsdrv_tweak_prognames(void);	/* optionally add aliases and/or set preferred name into [0] (for pipe name etc.); called just after populating prognames[0] and prognames_should_free[] entries */
 void upsdrv_initups(void);	/* open connection to UPS, fail if not found */
 void upsdrv_initinfo(void);	/* prep data, settings for UPS monitoring */
 void upsdrv_updateinfo(void);	/* update state data if possible */
