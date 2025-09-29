@@ -1309,6 +1309,11 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 	while( nb_iteration < max_iteration ) {
 		struct snmp_pdu	**new_ret_array;
 
+		/* Check if we are asked to stop (reactivity++) */
+		if (exit_flag != 0) {
+			fatalx(EXIT_FAILURE, "Aborting because exit_flag was set");
+		}
+
 		/* Going to a shorter OID means we are outside our sub-tree */
 		if( current_name_len < name_len ) {
 			break;
@@ -2204,6 +2209,11 @@ bool_t load_mib2nut(const char *mib)
 			__func__, mib);
 		/* Retry at most 3 times, to maximise chances */
 		for (i = 0; i < 3 ; i++) {
+			/* Check if we are asked to stop (reactivity++) */
+			if (exit_flag != 0) {
+				fatalx(EXIT_FAILURE, "Aborting because exit_flag was set");
+			}
+
 			upsdebugx(3, "%s: trying the new match_sysoid() method: attempt #%d",
 				__func__, (i+1));
 			if ((m2n = match_sysoid()) != NULL)
