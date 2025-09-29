@@ -1810,6 +1810,9 @@ int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_c
 		}
 		/* NULL sentinel of the non-NULL prognames[] array */
 		total_prognames++;
+
+		upsdebugx(4, "%s: collected %" PRIuSIZE " aliases (with NULL sentinel): %s",
+			__func__, total_prognames, all_prognames);
 	}
 
 	/* if (cpn1 == -3) => NUT_IGNORE_CHECKPROCNAME=true */
@@ -2070,12 +2073,13 @@ int sendsignalfnaliases(const char *pidfn, int sig, const char **prognames, int 
 #else	/* => WIN32 */
 
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored)
+{
 	const char	*arr[2];
 
-	arr[0] = progname;
+	arr[0] = progname_ignored;
 	arr[1] = NULL;
 
-	return sendsignalfnaliases(pidfn, sig, arr, check_current_progname);
+	return sendsignalfnaliases(pidfn, sig, arr, check_current_progname_ignored);
 }
 
 int sendsignalfnaliases(const char *pidfn, const char * sig, const char **prognames_ignored, int check_current_progname_ignored)

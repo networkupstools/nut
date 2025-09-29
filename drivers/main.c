@@ -2700,9 +2700,9 @@ int main(int argc, char **argv)
 			int cmdret = -1;
 			/* Send a signal to older copy of the driver, if any */
 			if (oldpid < 0) {
-				cmdret = sendsignalfn(pidfnbuf, cmd, progname, 1);
+				cmdret = sendsignalfnaliases(pidfnbuf, cmd, prognames, 1);
 			} else {
-				cmdret = sendsignalpid(oldpid, cmd, progname, 1);
+				cmdret = sendsignalpidaliases(oldpid, cmd, prognames, 1);
 			}
 
 			switch (cmdret) {
@@ -2797,9 +2797,9 @@ int main(int argc, char **argv)
 
 			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", pidfnbuf);
 
-			if ((sigret = sendsignalfn(pidfnbuf, SIGTERM, progname, 1) != 0)) {
+			if ((sigret = sendsignalfnaliases(pidfnbuf, SIGTERM, prognames, 1) != 0)) {
 				upsdebug_with_errno(1, "Can't send signal to PID, assume invalid PID file %s; "
-					"sendsignalfn() returned %d", pidfnbuf, sigret);
+					"sendsignalfnaliases() returned %d", pidfnbuf, sigret);
 				break;
 			}
 
@@ -2814,9 +2814,9 @@ int main(int argc, char **argv)
 			struct stat	st;
 			if (stat(pidfnbuf, &st) == 0) {
 				upslogx(LOG_WARNING, "Duplicate driver instance is still alive (PID file %s exists) after several termination attempts! Killing other driver!", pidfnbuf);
-				if (sendsignalfn(pidfnbuf, SIGKILL, progname, 1) == 0) {
+				if (sendsignalfnaliases(pidfnbuf, SIGKILL, prognames, 1) == 0) {
 					sleep(5);
-					if (sendsignalfn(pidfnbuf, 0, progname, 1) == 0) {
+					if (sendsignalfnaliases(pidfnbuf, 0, prognames, 1) == 0) {
 						upslogx(LOG_WARNING, "Duplicate driver instance is still alive (could signal the process)");
 						/* TODO: Should we writepid() below in this case?
 						 * Or if driver init fails, restore the old content
