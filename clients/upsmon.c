@@ -893,7 +893,7 @@ static void ups_on_line(utype_t *ups)
 {
 	try_restore_pollfreq(ups);
 
-	if (flag_isset(ups->status, ST_ONLINE)) { 	/* no change */
+	if (flag_isset(ups->status, ST_ONLINE)) {	/* no change */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
 		return;
 	}
@@ -915,6 +915,9 @@ static void set_pdflag(void)
 {
 	FILE	*pdf;
 
+	/* NOTE: This method typically runs as root in the privileged
+	 * sub-process, or if we do not use_pipe and run as a monolith.
+	 */
 	if (!powerdownflag) {
 		upsdebugx(1, "%s: SKIP creation of a POWERDOWNFLAG file: not configured", __func__);
 		return;
@@ -939,6 +942,11 @@ static void doshutdown(void)
 {
 	time_t	start;
 
+	/* NOTE: This method typically runs in the unprivileged child
+	 * sub-process, unless we do not use_pipe and run as a monolith.
+	 * It can block for a while or forever (depending on SHUTOWNEXIT
+	 * setting), otherwise it exits the (child part of) upsmon daemon.
+	 */
 	upsdebugx(1, "%s: starting...", __func__);
 	upsnotify(NOTIFY_STATE_STOPPING, "Executing automatic power-fail shutdown");
 
@@ -1271,6 +1279,9 @@ static void sync_secondaries(void)
 	long	maxlogins, logins;
 	size_t	count = 0;
 
+	/* NOTE: This method typically runs in the unprivileged child
+	 * sub-process, unless we do not use_pipe and run as a monolith.
+	 */
 	time(&start);
 
 	for (;;) {
@@ -1328,6 +1339,12 @@ static void forceshutdown(void)
 	utype_t	*ups;
 	int	isaprimary = 0;
 
+	/* NOTE: This method typically runs in the unprivileged child
+	 * sub-process, unless we do not use_pipe and run as a monolith.
+	 * It can block for a while or forever (depending on SHUTOWNEXIT
+	 * and HOSTSYNC settings), otherwise it exits the (child part of)
+	 * upsmon daemon by calling doshutdown().
+	 */
 	upsdebugx(1, "Shutting down any UPSes in PRIMARY mode...");
 	upsdebugx(2, "%s: For this system, timing options: "
 		"SHUTDOWNEXIT=%d HOSTSYNC=%d FINALDELAY=%u DEADTIME=%d; "
@@ -3387,6 +3404,10 @@ static void runparent(int fd)
 	int	sret;
 	char	ch;
 	time_t	start;
+
+	/* NOTE: This method runs as root in the privileged sub-process;
+	 * it is not executed if we do not use_pipe and run as a monolith.
+	 */
 
 	/* handling signals is the child's job */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
