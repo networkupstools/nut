@@ -162,12 +162,16 @@ EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc
 # The document is now part of qa-guide; the script might be a bit git-oriented,
 # but can be useful in builds from tarball, probably. Anyhow, having the doc
 # without the tool which it documents is odd.
-EXTRA_DIST += ci_build.sh ci_build.adoc
+EXTRA_DIST += ci_build.sh ci_build.adoc \
+	builds/nut-driver-enumerator-test/ci_build.sh
 
 # Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
 # but lack NUT magic logic to recreate the `configure` script if someone would
 # want to adapt it to their autotools or locally fix a tarball-based build.
 EXTRA_DIST += autogen.sh
+
+# Help also the tarball users contribute properly:
+EXTRA_DIST += .editorconfig
 
 if KEEP_NUT_REPORT
 nodist_data_DATA = config.nut_report_feature.log
