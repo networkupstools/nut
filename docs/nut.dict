@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3553 utf-8
+personal_ws-1.1 en 3555 utf-8
 AAC
 AAS
 ABI
@@ -2135,6 +2135,7 @@ getconf
 getent
 getenv
 getopt
+getproctag
 gettext
 gettextize
 getvar
@@ -3045,6 +3046,7 @@ setflags
 setgid
 setinfo
 setpci
+setproctag
 setq
 setuid
 setupCommands

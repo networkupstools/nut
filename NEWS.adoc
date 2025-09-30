@@ -40,6 +40,8 @@ https://github.com/networkupstools/nut/milestone/12
    to patterns defined in link:docs/nut-names.txt[]
 
  - common code:
+   * Introduced `setproctag()` and `getproctag()` (see examples in `upsmon`)
+     to help track the log messages from massively-forking NUT daemons. [#3084]
    * Extended with plural `checkprocnames()` and `compareprocnames()`,
      as well as `sendsignalpidaliases()` and `sendsignalfnaliases()`, for
      binaries that expect to have one of several names at the moment (e.g.
@@ -82,9 +84,22 @@ https://github.com/networkupstools/nut/milestone/12
      of the existing mappings. Suggest how user can help improve the driver
      if too few data points were seen. [#3082, #3095]
 
+ - `upsdrvctl` tool updates:
+   * Make use of `setproctag()` and `getproctag()` to report parent/child
+     process names. [#3084]
+
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
      of all known local devices to stdout. [#3083]
+
+ - `upsmon` client updates:
+   * The `SHUTDOWNEXIT` option was not handled properly, and the requested
+     long delays did not happen in practice. [issues #2133 and #3084, PR #3086]
+   * Make use of `setproctag()` and `getproctag()` to report parent/child
+     process names. [#3084]
+   * Introduced a `SHUTDOWN_HOSTSYNC` notification message, to report that
+     the primary `upsmon` initiated the shutdown and has some secondaries
+     to wait for first. [#3084]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
@@ -103,6 +118,8 @@ https://github.com/networkupstools/nut/milestone/12
      (if passed). [#3097]
    * Introduced support for `DEBUG_MIN` setting via `upssched.conf`. [#3097]
    * Introduced `upssched -l` mode to list currently tracked timers. [#3097]
+   * Make use of `setproctag()` and `getproctag()` to report parent/child
+     process names. [#3084]
 
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)

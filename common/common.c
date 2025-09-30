@@ -876,6 +876,40 @@ void chroot_start(const char *path)
 #endif	/* !WIN32 */
 }
 
+/* In forking, assume process name does not change (PID might); cache it */
+static char	*myProcName = NULL;
+static const char	*myProcBaseName = NULL;
+static void procname_cleanup(void) {
+	if (myProcBaseName) {
+		/* points to inside of myProcName */
+		myProcBaseName = NULL;
+	}
+	if (myProcName) {
+		free(myProcName);
+		myProcName = NULL;
+	}
+}
+
+static const char * getmyprocname(void)
+{
+	if (myProcName)
+		return (const char *)myProcName;
+
+	myProcName = getprocname(getpid());	/* no xstrdup, we own and free this later */
+	if (myProcName) {
+		myProcBaseName = xbasename(myProcName);	/* substring inside myProcName */
+		atexit(procname_cleanup);
+	}
+
+	return (const char *)myProcName;
+}
+
+static const char * getmyprocbasename(void)
+{
+	getmyprocname();
+	return myProcBaseName;
+}
+
 char * getprocname(pid_t pid)
 {
 	/* Try to identify process (program) name for the given PID,
@@ -1676,7 +1710,13 @@ int checkprocnames(pid_t pid, const char **prognames)
 		goto finish;
 	}
 
-	procname = getprocname(pid);
+	if (pid == getpid()) {
+		/* use (or seed) the cached value if we can */
+		procname = xstrdup(getmyprocname());
+	}
+	if (!procname) {
+		procname = getprocname(pid);
+	}
 	if (!procname) {
 		ret = -1;
 		goto finish;
@@ -1770,7 +1810,9 @@ int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_c
 {
 #ifndef WIN32
 	int	ret, cpn1 = -10, cpn2 = -10;
-	char	*current_progname = NULL, *procname = NULL, all_prognames[LARGEBUF];
+	char	*procname = NULL;	/* free this one after use */
+	const char	*current_progname = NULL;	/* do not free this one! */
+	char	all_prognames[LARGEBUF];  /* for nicer logging */
 	size_t	total_prognames = 0;
 
 	/* TOTHINK: What about containers where a NUT daemon *is* the only process
@@ -1784,8 +1826,15 @@ int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_c
 	}
 
 	ret = 0;
-	if (!checkprocname_ignored(__func__))
-		procname = getprocname(pid);
+	if (!checkprocname_ignored(__func__)) {
+		if (pid == getpid()) {
+			/* use (or seed) the cached value if we can */
+			procname = xstrdup(getmyprocname());
+		}
+		if (!procname) {
+			procname = getprocname(pid);
+		}
+	}
 
 	memset(all_prognames, 0, sizeof(all_prognames));
 	if (procname && prognames && *(prognames)) {
@@ -1818,11 +1867,7 @@ int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_c
 	/* if (cpn1 == -3) => NUT_IGNORE_CHECKPROCNAME=true */
 	/* if (cpn1 == -1) => could not determine name of PID... retry just in case? */
 	if (procname && ret <= 0 && check_current_progname && cpn1 != -3) {
-		/* NOTE: This could be optimized a bit by pre-finding the procname
-		 * of "pid" and re-using it, but this is not a hot enough code path
-		 * to bother much.
-		 */
-		current_progname = getprocname(getpid());
+		current_progname = getmyprocname();
 		if (current_progname && (cpn2 = compareprocname(pid, procname, current_progname))) {
 			if (cpn2 > 0) {
 				/* Matched current process as asked, ok to proceed */
@@ -1906,11 +1951,6 @@ int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_c
 			}
 		}
 
-		if (current_progname) {
-			free(current_progname);
-			current_progname = NULL;
-		}
-
 		if (procname) {
 			free(procname);
 			procname = NULL;
@@ -1918,11 +1958,6 @@ int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_c
 
 		/* Logged or not, sanity-check was requested and failed */
 		return -1;
-	}
-
-	if (current_progname) {
-		free(current_progname);
-		current_progname = NULL;
 	}
 
 	if (procname) {
@@ -3824,6 +3859,61 @@ void upslogx(int priority, const char *fmt, ...)
 	va_end(va);
 }
 
+/* also keep a buffer with prefixed colon for debug printouts */
+static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
+	proctag_cleanup_registered = 0;
+
+static void proctag_cleanup(void)
+{
+	if (proctag) {
+		upsdebugx(2, "a %s sub-process (%s) is exiting now",
+			NUT_STRARG(getmyprocbasename()), getproctag());
+	}
+	setproctag(NULL);
+}
+
+const char *getproctag(void)
+{
+	return (const char *)proctag;
+}
+
+void setproctag(const char *tag)
+{
+	size_t	proctag_for_upsdebug_buflen = 0;
+	if (proctag) {
+		free(proctag);
+		proctag = NULL;
+	}
+
+	if (proctag_for_upsdebug) {
+		free(proctag_for_upsdebug);
+		proctag_for_upsdebug = NULL;
+	}
+
+	if (!tag) {
+		/* wipe */
+		return;
+	}
+
+	if (!proctag_cleanup_registered) {
+		/* We would use this anyway in exit handler (probably many times
+		 * for forked children), so better get it over with quickly */
+		getmyprocname();
+
+		atexit(proctag_cleanup);
+		proctag_cleanup_registered = 1;
+	}
+
+	/* let the caller's copy be freed */
+	proctag = xstrdup(tag);
+
+	proctag_for_upsdebug_buflen = strlen(tag) + 2;
+	proctag_for_upsdebug = xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
+	if (proctag_for_upsdebug) {
+		snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s", tag);
+	}
+}
+
 void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
@@ -3852,9 +3942,15 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 		if (NUT_DEBUG_PID) {
 			/* Note that we re-request PID every time as it can
 			 * change during the run-time (forking etc.) */
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
+				level, (intmax_t)getpid(),
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		} else {
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
+				level,
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		}
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
 			if (syslog_is_disabled()) {
@@ -3910,9 +4006,15 @@ void s_upsdebugx(int level, const char *fmt, ...)
 		if (NUT_DEBUG_PID) {
 			/* Note that we re-request PID every time as it can
 			 * change during the run-time (forking etc.) */
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
+				level, (intmax_t)getpid(),
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		} else {
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
+				level,
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		}
 
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
