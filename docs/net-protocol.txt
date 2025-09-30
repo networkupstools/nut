@@ -100,6 +100,8 @@ still connected when starting the shutdown process.
 
 This replaces the old "REQ NUMLOGINS" command.
 
+See also `LIST CLIENT <upsname>` to get the actual list of connected clients.
+
 
 UPSDESC
 ~~~~~~~
@@ -419,6 +421,8 @@ Response:
 	CLIENT ups1 192.168.1.2
 	END LIST CLIENT ups1
 
+
+See also `GET NUMLOGINS <upsname>` to get just the count of connected clients.
 
 SET
 ---
