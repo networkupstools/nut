@@ -39,7 +39,7 @@
 #include "powervar_cx.h"	/* Common driver defines, variables, and functions */
 
 #define DRIVER_NAME	"Powervar-CUSSP UPS driver (Serial)"
-#define DRIVER_VERSION	"1.00"
+#define DRIVER_VERSION	"1.01"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -194,6 +194,12 @@ void upsdrv_help(void)
 {
 	printf("\n---------\nNOTE:\n");
 	printf("This driver is for connecting to a Powervar UPS serial port at 9600 BPS.\n");
+}
+
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 

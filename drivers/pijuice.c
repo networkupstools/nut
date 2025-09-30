@@ -23,7 +23,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME                         "PiJuice UPS driver"
-#define DRIVER_VERSION                      "0.15"
+#define DRIVER_VERSION                      "0.16"
 
 /*
  * Linux I2C userland is a bit of a mess until distros refresh to
@@ -862,6 +862,11 @@ void upsdrv_help(void)
 {
 	printf("\nThe default I2C address is 20 [0x14]\n");
 	printf("\n");
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_makevartable(void)

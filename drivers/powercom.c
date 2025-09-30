@@ -86,7 +86,7 @@
 #include "nut_float.h"
 
 #define DRIVER_NAME	"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.26"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1163,6 +1163,11 @@ void upsdrv_help(void)
 	printf("#   voltage = {2.0000,0.0000,2.0000,0.0000}\n");
 	printf("    nobt\n");
 	return;
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* initialize information */

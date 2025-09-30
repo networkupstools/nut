@@ -67,7 +67,7 @@
 #endif
 
 #define DRIVER_NAME	"ASEM"
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.16"
 
 /* Valid on ASEM PB1300 UPS */
 #define BQ2060_ADDRESS	0x0B
@@ -354,6 +354,11 @@ void upsdrv_help(void)
 	printf(" HIGH/low battery thresholds\n");
 	printf("  lb = " __XSTR__(LOW_BATTERY_THRESHOLD) " (battery is low under this level)\n");
 	printf("  hb = " __XSTR__(HIGH_BATTERY_THRESHOLD) " (battery is high above this level)\n");
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* list flags and values that you want to receive via -x */

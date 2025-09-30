@@ -117,7 +117,7 @@
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.98"
+#define DRIVER_VERSION	"0.99"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -616,6 +616,11 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

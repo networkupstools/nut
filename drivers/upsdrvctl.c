@@ -1232,7 +1232,7 @@ static void start_driver(const ups_t *ups)
 	}
 }
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
 static void help(const char *arg_progname)

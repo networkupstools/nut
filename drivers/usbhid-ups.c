@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.68"
+#define DRIVER_VERSION	"0.69"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -1280,6 +1280,11 @@ void upsdrv_help(void)
 		printf("\"%s\"", subdriver_list[i]->name);
 	}
 	printf("\n");
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_makevartable(void)

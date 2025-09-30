@@ -29,7 +29,7 @@
 #include "IOKit/ps/IOPSKeys.h"
 
 #define DRIVER_NAME	"Mac OS X UPS meta-driver"
-#define DRIVER_VERSION	"1.43"
+#define DRIVER_VERSION	"1.44"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -338,6 +338,11 @@ static int setvar(const char *varname, const char *val)
 */
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

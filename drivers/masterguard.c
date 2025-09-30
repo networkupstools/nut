@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.30"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -446,6 +446,17 @@ static ssize_t ups_ident( void )
  *
  ********************************************************************/
 void upsdrv_help( void )
+{
+
+}
+
+/********************************************************************
+ *
+ *
+ * optionally tweak prognames[] entries
+ *
+ ********************************************************************/
+void upsdrv_tweak_prognames(void)
 {
 
 }

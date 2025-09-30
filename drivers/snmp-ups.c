@@ -543,6 +543,38 @@ void upsdrv_help(void)
 	upsdebugx(1, "entering %s", __func__);
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+	upsdebugx(1, "entering %s", __func__);
+
+	/* If executed via an accepted alias, move it down in prognames[] stack */
+	if (!strcmp(prognames[0], "snmp-ups-old")) {
+		upsdebugx(3, "%s: marking program name '%s' as an alias for '%s'",
+			__func__, prognames[0], "snmp-ups");
+
+		if (prognames_should_free[1] && prognames[1])
+			free((char*)prognames[1]);
+		prognames[1] = prognames[0];
+		prognames_should_free[1] = prognames_should_free[0];
+
+		if (prognames_should_free[0])
+			free((char*)prognames[0]);
+		prognames[0] = xstrdup("snmp-ups");
+		prognames_should_free[0] = 1;
+	} else {
+		if (!strcmp(prognames[0], "snmp-ups")) {
+			upsdebugx(3, "%s: marking program name '%s' as an alias for '%s'",
+				__func__, "snmp-ups-old", prognames[0]);
+
+			if (prognames_should_free[1])
+				free((char*)prognames[1]);
+			prognames[1] = xstrdup("snmp-ups-old");
+			prognames_should_free[1] = 1;
+		}
+	}
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
@@ -1276,6 +1308,11 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 	while( nb_iteration < max_iteration ) {
 		struct snmp_pdu	**new_ret_array;
+
+		/* Check if we are asked to stop (reactivity++) */
+		if (exit_flag != 0) {
+			fatalx(EXIT_FAILURE, "Aborting because exit_flag was set");
+		}
 
 		/* Going to a shorter OID means we are outside our sub-tree */
 		if( current_name_len < name_len ) {
@@ -2172,6 +2209,11 @@ bool_t load_mib2nut(const char *mib)
 			__func__, mib);
 		/* Retry at most 3 times, to maximise chances */
 		for (i = 0; i < 3 ; i++) {
+			/* Check if we are asked to stop (reactivity++) */
+			if (exit_flag != 0) {
+				fatalx(EXIT_FAILURE, "Aborting because exit_flag was set");
+			}
+
 			upsdebugx(3, "%s: trying the new match_sysoid() method: attempt #%d",
 				__func__, (i+1));
 			if ((m2n = match_sysoid()) != NULL)

@@ -1361,8 +1361,21 @@ int checkprocname_ignored(const char *caller)
 
 int compareprocname(pid_t pid, const char *procname, const char *progname)
 {
+	/* See comments for compareprocnames(), below */
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return compareprocnames(pid, procname, arr);
+}
+
+int compareprocnames(pid_t pid, const char *procname, const char **prognames)
+{
 	/* Given the binary path name of (presumably) a running process,
-	 * check if it matches the assumed name of the current program.
+	 * check if it matches the assumed name of the current program,
+	 * possibly one of several expected aliases (for "old"/"new" name
+	 * migrations, etc.)
 	 * The "pid" value is used in log reporting.
 	 * Returns:
 	 *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
@@ -1377,67 +1390,144 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	 */
 
 	int	ret = -127;
-	size_t	procbasenamelen = 0, progbasenamelen = 0;
+	size_t	procbasenamelen = 0, *progbasenamelen = NULL;
 	/* Track where the last dot is in the basename; 0 means none */
-	size_t	procbasenamedot = 0, progbasenamedot = 0;
-	char	procbasename[NUT_PATH_MAX + 1], progbasename[NUT_PATH_MAX + 1];
+	size_t	procbasenamedot = 0, *progbasenamedot = NULL;
+	char	procbasename[NUT_PATH_MAX + 1], **progbasenames = NULL;
+	/* Best-effort (size-wise) for logging in the end: */
+	char	all_prognames[LARGEBUF], all_progbasenames[LARGEBUF];
 #ifdef NUT_PLATFORM_LINUX
 	char	*s = NULL;
 #endif
+	const char	**pprogname = NULL;
+	size_t	total_prognames = 0, i = 0;
 
 	if (checkprocname_ignored(__func__)) {
 		ret = -3;
 		goto finish;
 	}
 
-	if (!procname || !progname) {
+	if (!procname || !prognames || !(*prognames)) {
 		ret = -1;
 		goto finish;
 	}
 
+	/* Prepare the (potentially) long string listing the names for logging.
+	 * Also count the prognames[] array length to allocate progbasenames[].
+	 */
+	memset(all_prognames, 0, sizeof(all_prognames));
+	for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+		upsdebugx(5, "%s: appending progname [%s] to [%s]",
+			__func__, NUT_STRARG(*pprogname), all_prognames);
+		snprintfcat(all_prognames, sizeof(all_prognames), "%s'%s'",
+			all_prognames[0] ? "/" : "",
+			*pprogname);
+		total_prognames++;
+	}
+	/* include the NULL sentinel */
+	total_prognames++;
+	upsdebugx(4, "%s: total_prognames=%" PRIuSIZE " (with NULL sentinel); got [%s]",
+		__func__, total_prognames, all_prognames);
+
 	/* First quickly try for an exact hit (possible dir names included) */
-	if (!strcmp(procname, progname)) {
-		ret = 1;
-		goto finish;
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (!strcmp(procname, prognames[i])) {
+			ret = 1;
+			goto finish;
+		}
 	}
 
-	/* Parse the basenames apart */
-	if (!parseprogbasename(progbasename, sizeof(progbasename), progname, &progbasenamelen, &progbasenamedot)
-	||  !parseprogbasename(procbasename, sizeof(procbasename), procname, &procbasenamelen, &procbasenamedot)
-	) {
+	/* Parse the basenames apart, or fail trying */
+	if (!parseprogbasename(procbasename, sizeof(procbasename), procname, &procbasenamelen, &procbasenamedot)) {
 		ret = -2;
 		goto finish;
 	}
 
-	/* First quickly try for an exact hit of base names */
-	if (progbasenamelen == procbasenamelen && progbasenamedot == procbasenamedot && !strcmp(procbasename, progbasename)) {
-		ret = 2;
+	progbasenames = xcalloc(total_prognames, sizeof(char*));
+	if (!progbasenames) {
+		ret = -2;
 		goto finish;
+	}
+	progbasenamelen = xcalloc(total_prognames, sizeof(size_t));
+	if (!progbasenamelen) {
+		ret = -2;
+		goto finish;
+	}
+	progbasenamedot = xcalloc(total_prognames, sizeof(size_t));
+	if (!progbasenamedot) {
+		ret = -2;
+		goto finish;
+	}
+	memset(all_progbasenames, 0, sizeof(all_progbasenames));
+
+	for (i = 0; i < total_prognames - 1; i++) {
+		progbasenames[i] = xcalloc(NUT_PATH_MAX + 1, sizeof(char));
+
+		if (!progbasenames[i]) {
+			ret = -2;
+			goto finish;
+		}
+
+		if (!parseprogbasename(
+			progbasenames[i], NUT_PATH_MAX + 1,
+			prognames[i],
+			&(progbasenamelen[i]), &(progbasenamedot[i]))
+		) {
+			ret = -2;
+			goto finish;
+		}
+
+		upsdebugx(5, "%s: appending progbasename [%s] to [%s]",
+			__func__, NUT_STRARG(progbasenames[i]), all_progbasenames);
+		snprintfcat(all_progbasenames, sizeof(all_progbasenames), "%s'%s'",
+			all_progbasenames[0] ? "/" : "",
+			progbasenames[i]);
+	}
+
+	/* First quickly try for an exact hit of base names */
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (progbasenamelen[i] == procbasenamelen
+		 && progbasenamedot[i] == procbasenamedot
+		 && !strcmp(procbasename, progbasenames[i])
+		) {
+			ret = 2;
+			goto finish;
+		}
 	}
 
 	/* Check for executable program filename extensions and/or case-insensitive
 	 * matching on some platforms */
 #ifdef WIN32
-	if (!strcasecmp(procname, progname)) {
-		ret = 3;
-		goto finish;
-	}
-
-	if (!strcasecmp(procbasename, progbasename)) {
-		ret = 4;
-		goto finish;
-	}
-
-	if (progbasenamedot == procbasenamedot || !progbasenamedot || !procbasenamedot) {
-		/* Same base name before ext, maybe different casing or absence of ext in one of them */
-		size_t	dot = progbasenamedot ? progbasenamedot : procbasenamedot;
-
-		if (!strncasecmp(progbasename, procbasename, dot - 1) &&
-		     (  (progbasenamedot && !strcasecmp(progbasename + progbasenamedot, ".exe"))
-		     || (procbasenamedot && !strcasecmp(procbasename + procbasenamedot, ".exe")) )
-		) {
-			ret = 5;
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (!strcasecmp(procname, prognames[i])) {
+			ret = 3;
 			goto finish;
+		}
+	}
+
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (!strcasecmp(procbasename, progbasenames[i])) {
+			ret = 4;
+			goto finish;
+		}
+	}
+
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (progbasenamedot[i] == procbasenamedot
+		 || !progbasenamedot[i]
+		 || !procbasenamedot
+		) {
+			/* Same base name before ext, maybe different casing or absence of ext in one of them */
+			size_t	dot = progbasenamedot[i] ? progbasenamedot[i] : procbasenamedot;
+
+			/* Optimize away procbasename comparisons beyond first */
+			if (!strncasecmp(progbasenames[i], procbasename, dot - 1) &&
+			     (  (progbasenamedot[i] && !strcasecmp(progbasenames[i] + progbasenamedot[i], ".exe"))
+			     || (i == 0 && procbasenamedot && !strcasecmp(procbasename + procbasenamedot, ".exe")) )
+			) {
+				ret = 5;
+				goto finish;
+			}
 		}
 	}
 #endif	/* WIN32 */
@@ -1457,9 +1547,12 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 
 		upsdebugx(2, "%s: re-evaluate the substring without a special tail: '%s'=>'%s'",
 			__func__, procname, pntmp);
-		restmp = compareprocname(pid, pntmp, progname);
-		if (restmp <= 0)
-			return restmp;
+
+		for (i = 0; i < total_prognames - 1; i++) {
+			restmp = compareprocname(pid, pntmp, prognames[i]);
+			if (restmp <= 0)
+				return restmp;
+		}
 
 		ret = 6;
 		goto finish;
@@ -1481,9 +1574,9 @@ finish:
 			upsdebugx(1,
 				"%s: original program file of running "
 				"PID %" PRIuMAX " named '%s' was removed "
-				"or replaced, but matches our '%s'",
+				"or replaced, but matches our %s",
 				__func__, (uintmax_t)pid,
-				procname, progname);
+				procname, all_prognames);
 			break;
 
 		case 5:
@@ -1491,52 +1584,52 @@ finish:
 				"%s: case-insensitive base name hit with "
 				"an executable program extension involved for "
 				"PID %" PRIuMAX " of '%s'=>'%s' and checked "
-				"'%s'=>'%s'",
+				"%s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case 4:
 			upsdebugx(1,
 				"%s: case-insensitive base name hit for PID %"
-				PRIuMAX " of '%s'=>'%s' and checked '%s'=>'%s'",
+				PRIuMAX " of '%s'=>'%s' and checked %s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case 3:
 			upsdebugx(1,
 				"%s: case-insensitive full name hit for PID %"
-				PRIuMAX " of '%s' and checked '%s'",
-				__func__, (uintmax_t)pid, procname, progname);
+				PRIuMAX " of '%s' and checked %s",
+				__func__, (uintmax_t)pid, procname, all_prognames);
 			break;
 
 		case 2:
 			upsdebugx(1,
 				"%s: case-sensitive base name hit for PID %"
-				PRIuMAX " of '%s'=>'%s' and checked '%s'=>'%s'",
+				PRIuMAX " of '%s'=>'%s' and checked %s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case 1:
 			upsdebugx(1,
 				"%s: exact case-sensitive full name hit for PID %"
-				PRIuMAX " of '%s' and checked '%s'",
-				__func__, (uintmax_t)pid, procname, progname);
+				PRIuMAX " of '%s' and checked %s",
+				__func__, (uintmax_t)pid, procname, all_prognames);
 			break;
 
 		case 0:
 			upsdebugx(1,
 				"%s: did not find any match of program names "
 				"for PID %" PRIuMAX " of '%s'=>'%s' and checked "
-				"'%s'=>'%s'",
+				"%s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case -1:
@@ -1562,13 +1655,44 @@ finish:
 			break;
 	}
 
+	if (progbasenames) {
+		/* In case of error, we might not have the complete
+		 * array's worth allocated here, so iterate until NULL
+		 * and not by counter.
+		 */
+		char **pprogbasename = NULL;
+		for (pprogbasename = progbasenames; *pprogbasename != NULL; pprogbasename++) {
+			free(*pprogbasename);
+		}
+		free(progbasenames);
+	}
+
+	if (progbasenamelen)
+		free(progbasenamelen);
+
+	if (progbasenamedot)
+		free(progbasenamedot);
+
 	return ret;
 }
 
 int checkprocname(pid_t pid, const char *progname)
 {
+	/* See comments for checkprocnames(), below */
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return checkprocnames(pid, arr);
+}
+
+int checkprocnames(pid_t pid, const char **prognames)
+{
 	/* If we can determine the binary path name of the specified "pid",
-	 * check if it matches the assumed name of the current program.
+	 * check if it matches the assumed name of the current program,
+	 * possibly one of several expected aliases (for "old"/"new" name
+	 * migrations, etc.)
 	 * Returns: same as compareprocname()
 	 * Generally speaking, if (checkprocname(...)) then ok to proceed
 	 */
@@ -1581,7 +1705,7 @@ int checkprocname(pid_t pid, const char *progname)
 		goto finish;
 	}
 
-	if (!progname) {
+	if (!prognames || !(*prognames)) {
 		ret = -1;
 		goto finish;
 	}
@@ -1598,7 +1722,7 @@ int checkprocname(pid_t pid, const char *progname)
 		goto finish;
 	}
 
-	ret = compareprocname(pid, procname, progname);
+	ret = compareprocnames(pid, procname, prognames);
 
 finish:
 	if (procname)
@@ -1674,10 +1798,22 @@ void writepid(const char *name)
  */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname)
 {
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return sendsignalpidaliases(pid, sig, arr, check_current_progname);
+}
+
+int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_current_progname)
+{
 #ifndef WIN32
 	int	ret, cpn1 = -10, cpn2 = -10;
 	char	*procname = NULL;	/* free this one after use */
 	const char	*current_progname = NULL;	/* do not free this one! */
+	char	all_prognames[LARGEBUF];  /* for nicer logging */
+	size_t	total_prognames = 0;
 
 	/* TOTHINK: What about containers where a NUT daemon *is* the only process
 	 * and is the PID=1 of the container (recycle if dead)? */
@@ -1700,19 +1836,34 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 		}
 	}
 
-	if (procname && progname) {
-		/* Check against some expected (often built-in) name */
-		if (!(cpn1 = compareprocname(pid, procname, progname))) {
-			/* Did not match expected (often built-in) name */
-			ret = -1;
-		} else {
-			if (cpn1 > 0) {
-				/* Matched expected name, ok to proceed */
-				ret = 1;
+	memset(all_prognames, 0, sizeof(all_prognames));
+	if (procname && prognames && *(prognames)) {
+		/* Check against some expected (often built-in) name
+		 * Also build a list of those names (from parameter)
+		 */
+		const char	**pprogname;
+		for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+			snprintfcat(all_prognames, sizeof(all_prognames), "%s'%s'",
+				all_prognames[0] ? "/" : "", *pprogname);
+			if (!(cpn1 = compareprocname(pid, procname, *pprogname))) {
+				/* Did not match expected (often built-in) name */
+				ret = -1;
+			} else {
+				if (cpn1 > 0) {
+					/* Matched expected name, ok to proceed */
+					ret = 1;
+				}
+				/* ...else could not determine name of PID; think later */
 			}
-			/* ...else could not determine name of PID; think later */
+			total_prognames++;
 		}
+		/* NULL sentinel of the non-NULL prognames[] array */
+		total_prognames++;
+
+		upsdebugx(4, "%s: collected %" PRIuSIZE " aliases (with NULL sentinel): %s",
+			__func__, total_prognames, all_prognames);
 	}
+
 	/* if (cpn1 == -3) => NUT_IGNORE_CHECKPROCNAME=true */
 	/* if (cpn1 == -1) => could not determine name of PID... retry just in case? */
 	if (procname && ret <= 0 && check_current_progname && cpn1 != -3) {
@@ -1745,10 +1896,10 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 			"failed to match: "
 			"found procname='%s', "
 			"expected progname='%s' (res=%d%s), "
-			"current progname='%s' (res=%d%s)",
+			"current progname=%s (res=%d%s)",
 			__func__, (uintmax_t)pid,
 			NUT_STRARG(procname),
-			NUT_STRARG(progname), cpn1,
+			all_prognames[0] ? all_prognames : "(null)", cpn1,
 			(cpn1 == -10 ? ": did not check" : ""),
 			NUT_STRARG(current_progname), cpn2,
 			(cpn2 == -10 ? ": did not check" : ""));
@@ -1758,32 +1909,32 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 				case -1:
 					upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 						" which exists but is not of"
-						" expected program '%s'; not asked"
+						" expected program %s; not asked"
 						" to cross-check current PID's name",
-						(uintmax_t)pid, progname);
+						(uintmax_t)pid, all_prognames);
 					break;
 
 				/* Maybe we tried both data sources, maybe just current_progname */
 				case -2:
 				/*case -3:*/
-					if (progname && current_progname) {
+					if (all_prognames[0] && current_progname) {
 						/* Tried both, downgraded verdict further */
 						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 							" which exists but is not of expected"
-							" program '%s' nor current '%s'",
-							(uintmax_t)pid, progname, current_progname);
+							" program %s nor current '%s'",
+							(uintmax_t)pid, all_prognames, current_progname);
 					} else if (current_progname) {
-						/* Not asked for progname==NULL */
+						/* Not asked for prognames==NULL nor prognames[0]==NULL */
 						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 							" which exists but is not of"
 							" current program '%s'",
 							(uintmax_t)pid, current_progname);
-					} else if (progname) {
+					} else if (all_prognames[0]) {
 						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 							" which exists but is not of"
-							" expected program '%s'; could not"
+							" expected program %s; could not"
 							" cross-check current PID's name",
-							(uintmax_t)pid, progname);
+							(uintmax_t)pid, all_prognames);
 					} else {
 						/* Both NULL; one not asked, another not detected;
 						 * should not actually get here (wannabe `ret==-3`)
@@ -1839,7 +1990,7 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 #else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(pid);
 	NUT_UNUSED_VARIABLE(sig);
-	NUT_UNUSED_VARIABLE(progname);
+	NUT_UNUSED_VARIABLE(prognames);
 	NUT_UNUSED_VARIABLE(check_current_progname);
 	/* Windows builds use named pipes, not signals per se */
 	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
@@ -1933,12 +2084,22 @@ pid_t parsepidfile(const char *pidfn)
 #ifndef WIN32
 int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname)
 {
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return sendsignalfnaliases(pidfn, sig, arr, check_current_progname);
+}
+
+int sendsignalfnaliases(const char *pidfn, int sig, const char **prognames, int check_current_progname)
+{
 	int	ret = -1;
 	pid_t	pid = parsepidfile(pidfn);
 
 	if (pid >= 0) {
 		/* this method actively reports errors, if any */
-		ret = sendsignalpid(pid, sig, progname, check_current_progname);
+		ret = sendsignalpidaliases(pid, sig, prognames, check_current_progname);
 	}
 
 	return ret;
@@ -1948,8 +2109,18 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_cur
 
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored)
 {
+	const char	*arr[2];
+
+	arr[0] = progname_ignored;
+	arr[1] = NULL;
+
+	return sendsignalfnaliases(pidfn, sig, arr, check_current_progname_ignored);
+}
+
+int sendsignalfnaliases(const char *pidfn, const char * sig, const char **prognames_ignored, int check_current_progname_ignored)
+{
 	BOOL	ret;
-	NUT_UNUSED_VARIABLE(progname_ignored);
+	NUT_UNUSED_VARIABLE(prognames_ignored);
 	NUT_UNUSED_VARIABLE(check_current_progname_ignored);
 
 	ret = send_to_named_pipe(pidfn, sig);

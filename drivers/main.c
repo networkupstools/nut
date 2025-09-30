@@ -43,7 +43,15 @@ TYPE_FD	upsfd = ERROR_FD;
  * during their assignment when reading program parameters
  * from CLI or config file. */
 char		*device_path = NULL, *device_sdcommands = NULL;
-const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
+const char	*upsname = NULL, *device_name = NULL;
+
+/* We allow for aliases to certain program names (e.g. when renaming a driver
+ * between "old" and "new" and default implementations, it should accept both
+ * or more names it can be called by).
+ * The [0] entry is used to set up stuff like pipe names, man page links, etc.
+ */
+const char	*prognames[MAX_PROGNAMES];
+char	prognames_should_free[MAX_PROGNAMES];
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
 TYPE_FD	extrafd = ERROR_FD;
@@ -331,6 +339,7 @@ static
 void storeval(const char *var, char *val)
 {
 	vartab_t	*tmp, *last;
+	const char	**pprogname;
 
 	/* NOTE: (FIXME?) The override and default mechanisms here
 	 * effectively bypass both VAR_SENSITIVE protections and
@@ -402,33 +411,37 @@ void storeval(const char *var, char *val)
 	printf("Look in the man page or call this driver with -h for a list of\n");
 	printf("valid variable names and flags.\n");
 
-	if (!strcmp(progname, "nutdrv_qx")) {
-		/* First many entries are from nut_usb_addvars() implementations;
-		 * the latter two (about langid) are from nutdrv_qx.c
-		 */
-		if (!strcmp(var, "vendor")
-		||  !strcmp(var, "product")
-		||  !strcmp(var, "serial")
-		||  !strcmp(var, "vendorid")
-		||  !strcmp(var, "productid")
-		||  !strcmp(var, "bus")
-		||  !strcmp(var, "device")
-		||  !strcmp(var, "busport")
-		||  !strcmp(var, "usb_set_altinterface")
-		||  !strcmp(var, "usb_config_index")
-		||  !strcmp(var, "usb_hid_rep_index")
-		||  !strcmp(var, "usb_hid_desc_index")
-		||  !strcmp(var, "usb_hid_ep_in")
-		||  !strcmp(var, "usb_hid_ep_out")
-		||  !strcmp(var, "allow_duplicates")
-		||  !strcmp(var, "langid_fix")
-		||  !strcmp(var, "noscanlangid")
-		) {
-			printf("\nNOTE: for driver '%s', options like '%s' are only available\n"
-				"if it was built with USB support. If you are running a custom build of NUT,\n"
-				"please check results of the `configure` checks, and consider an explicit\n"
-				"`--with-usb` option. Also make sure that both libusb library and headers\n"
-				"are installed in your build environment.\n\n", progname, var);
+	/* FIXME: find a way to separate this logic from main.c */
+	for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+		if (!strcmp(*pprogname, "nutdrv_qx")) {
+			/* First many entries are from nut_usb_addvars() implementations;
+			 * the latter two (about langid) are from nutdrv_qx.c
+			 */
+			if (!strcmp(var, "vendor")
+			||  !strcmp(var, "product")
+			||  !strcmp(var, "serial")
+			||  !strcmp(var, "vendorid")
+			||  !strcmp(var, "productid")
+			||  !strcmp(var, "bus")
+			||  !strcmp(var, "device")
+			||  !strcmp(var, "busport")
+			||  !strcmp(var, "usb_set_altinterface")
+			||  !strcmp(var, "usb_config_index")
+			||  !strcmp(var, "usb_hid_rep_index")
+			||  !strcmp(var, "usb_hid_desc_index")
+			||  !strcmp(var, "usb_hid_ep_in")
+			||  !strcmp(var, "usb_hid_ep_out")
+			||  !strcmp(var, "allow_duplicates")
+			||  !strcmp(var, "langid_fix")
+			||  !strcmp(var, "noscanlangid")
+			) {
+				printf("\nNOTE: for driver '%s', options like '%s' are only available\n"
+					"if it was built with USB support. If you are running a custom build of NUT,\n"
+					"please check results of the `configure` checks, and consider an explicit\n"
+					"`--with-usb` option. Also make sure that both libusb library and headers\n"
+					"are installed in your build environment.\n\n", progname, var);
+				break;
+			}
 		}
 	}
 
@@ -1596,41 +1609,69 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	 * reload should not allow changes here, but would report
 	 */
 	if (!strcmp(var, "driver")) {
-		int do_handle;
+		int	do_handle = -2, good_hits = 0, bad_hits = 0;
+		const char	**pprogname;
+		char	all_prognames[LARGEBUF];
+		size_t	i;
 
 		upsdebugx(5, "%s: this is a 'driver' setting, may we proceed?", __func__);
-		do_handle = testval_reloadable(var, progname, val, 0);
+		for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+			do_handle = testval_reloadable(var, prognames[0], val, 0);
 
-		if (do_handle == -1) {
-			upsdebugx(5, "%s: 'driver' setting already applied with this value", __func__);
-			return;
-		}
-
-		/* Acceptable progname is only set once during start-up
-		 * val is from ups.conf
-		 */
-		if (!reload_flag || do_handle > 0) {
-			/* Accomodate for libtool wrapped developer iterations
-			 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
-			 */
-			size_t tmplen = strlen("lt-");
-			if (strncmp("lt-", progname, tmplen) == 0
-			&&  strcmp(val, progname + tmplen) == 0) {
-				/* debug level may be not initialized yet, and situation
-				 * should not happen in end-user builds, so ok to yell: */
-				upsdebugx(0, "Seems this driver binary %s is a libtool "
-					"wrapped build for driver %s", progname, val);
-				/* progname points to xbasename(argv[0]) in-place;
-				 * roll the pointer forward a bit, we know we can:
-				 */
-				progname = progname + tmplen;
+			if (do_handle == -1) {
+				upsdebugx(5, "%s: 'driver' setting already applied with this value", __func__);
+				return;
 			}
 		}
 
-		if (strcmp(val, progname) != 0) {
-			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver %s, but I'm %s!\n",
-				confupsname, val, progname);
+		memset(all_prognames, 0, sizeof(all_prognames));
+		/* Acceptable progname is only set once during start-up
+		 * val is from ups.conf
+		 */
+		i = 0;
+		for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+			if (!reload_flag || do_handle > 0) {
+				/* Accomodate for libtool wrapped developer iterations
+				 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
+				 */
+				size_t	tmplen = strlen("lt-");
+				if (strncmp("lt-", *pprogname, tmplen) == 0
+				&&  strcmp(val, *pprogname + tmplen) == 0) {
+					/* debug level may be not initialized yet, and situation
+					 * should not happen in end-user builds, so ok to yell: */
+					upsdebugx(0, "Seems this driver binary %s is a libtool "
+						"wrapped build for driver %s", *pprogname, val);
+					if (prognames_should_free[i]) {
+						char	*newpn = xstrdup(*pprogname + tmplen);
+						free((char*)*pprogname);
+						*pprogname = newpn;
+					} else {
+						/* *pprogname points to xbasename(argv[0]) in-place;
+						 * roll the pointer forward a bit, we know we can */
+						*pprogname = *pprogname + tmplen;
+					}
+				}
+			}
+
+			snprintfcat(all_prognames, sizeof(all_prognames), "%s'%s'",
+				all_prognames[0] ? "/" : "", *pprogname);
+
+			if (strcmp(val, *pprogname) != 0) {
+				bad_hits++;
+			} else {
+				good_hits++;
+			}
+
+			i++;
 		}
+
+		upsdebugx(3, "%s: collected %d bad hits and %d good hits for '%s' in %s",
+			__func__, bad_hits, good_hits, val, all_prognames);
+		if (!good_hits) {
+			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver '%s', but I'm %s!\n",
+				confupsname, val, all_prognames);
+		}
+
 		return;
 	}
 
@@ -1859,6 +1900,8 @@ static void exit_upsdrv_cleanup(void)
 
 static void exit_cleanup(void)
 {
+	size_t	i;
+
 	dstate_setinfo("driver.state", "cleanup.exit");
 
 	if (!dump_data && !help_only) {
@@ -1893,6 +1936,16 @@ static void exit_cleanup(void)
 		CloseHandle(mutex);
 	}
 #endif	/* WIN32 */
+
+	for (i = 0; i < MAX_PROGNAMES; i++) {
+		/* Some prognames[] may be allocated statically,
+		 * e.g. can be a pointer to part of argv[0];
+		 * others come from strdup() and friends.
+		 */
+		if (prognames_should_free[i] && *(prognames[i])) {
+			free((char*)(prognames[i]));
+		}
+	}
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
@@ -2125,23 +2178,30 @@ int main(int argc, char **argv)
 	/* pick up a default from configure --with-group */
 	group = xstrdup(RUN_AS_GROUP);	/* xstrdup: this gets freed at exit */
 
-	progname = xbasename(argv[0]);
+	memset(prognames, 0, sizeof(prognames));
+	memset(prognames_should_free, 0, sizeof(prognames_should_free));
+	prognames[0] = xbasename(argv[0]);
 
 #ifdef WIN32
-	drv_name = xbasename(argv[0]);
+	drv_name = prognames[0];
 	/* remove trailing .exe */
 	dot = strrchr(drv_name,'.');
 	if (dot != NULL) {
 		if (strcasecmp(dot, ".exe") == 0) {
-			progname = strdup(drv_name);
-			char * t = strrchr(progname,'.');
+			char	*fixed_progname = strdup(drv_name);
+			char	*t = strrchr(fixed_progname,'.');
 			*t = 0;
+			prognames[0] = fixed_progname;
+			prognames_should_free[0] = 1;
 		}
 	}
 	else {
-		progname = strdup(drv_name);
+		prognames[0] = strdup(drv_name);
+		prognames_should_free[0] = 1;
 	}
 #endif	/* WIN32 */
+
+	upsdrv_tweak_prognames();
 
 	open_syslog(progname);
 
@@ -2642,9 +2702,9 @@ int main(int argc, char **argv)
 			int cmdret = -1;
 			/* Send a signal to older copy of the driver, if any */
 			if (oldpid < 0) {
-				cmdret = sendsignalfn(pidfnbuf, cmd, progname, 1);
+				cmdret = sendsignalfnaliases(pidfnbuf, cmd, prognames, 1);
 			} else {
-				cmdret = sendsignalpid(oldpid, cmd, progname, 1);
+				cmdret = sendsignalpidaliases(oldpid, cmd, prognames, 1);
 			}
 
 			switch (cmdret) {
@@ -2739,9 +2799,9 @@ int main(int argc, char **argv)
 
 			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", pidfnbuf);
 
-			if ((sigret = sendsignalfn(pidfnbuf, SIGTERM, progname, 1) != 0)) {
+			if ((sigret = sendsignalfnaliases(pidfnbuf, SIGTERM, prognames, 1) != 0)) {
 				upsdebug_with_errno(1, "Can't send signal to PID, assume invalid PID file %s; "
-					"sendsignalfn() returned %d", pidfnbuf, sigret);
+					"sendsignalfnaliases() returned %d", pidfnbuf, sigret);
 				break;
 			}
 
@@ -2756,9 +2816,9 @@ int main(int argc, char **argv)
 			struct stat	st;
 			if (stat(pidfnbuf, &st) == 0) {
 				upslogx(LOG_WARNING, "Duplicate driver instance is still alive (PID file %s exists) after several termination attempts! Killing other driver!", pidfnbuf);
-				if (sendsignalfn(pidfnbuf, SIGKILL, progname, 1) == 0) {
+				if (sendsignalfnaliases(pidfnbuf, SIGKILL, prognames, 1) == 0) {
 					sleep(5);
-					if (sendsignalfn(pidfnbuf, 0, progname, 1) == 0) {
+					if (sendsignalfnaliases(pidfnbuf, 0, prognames, 1) == 0) {
 						upslogx(LOG_WARNING, "Duplicate driver instance is still alive (could signal the process)");
 						/* TODO: Should we writepid() below in this case?
 						 * Or if driver init fails, restore the old content

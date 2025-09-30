@@ -26,6 +26,16 @@ Changes from 2.8.4 to 2.8.5
 
 - PLANNED: Keep track of any further API clean-up?
 
+- In drivers using the common `main.c` and `main.h` framework, introduced
+  a `void upsdrv_tweak_prognames(void)` required method (may be no-op) to
+  optionally tweak `prognames[]` entries now that there is certain support
+  to accept program name aliases, not just one hard-coded string value.
+  Any third-party drivers may require rebuilding to extend with this method.
+  Any drivers that would undergo promotion with renaming can take advantage
+  of this new facility to keep working under both old and new file names.
+  [#3101]
+
+
 Changes from 2.8.3 to 2.8.4
 ---------------------------
 

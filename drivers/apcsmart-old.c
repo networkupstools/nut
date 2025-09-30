@@ -25,7 +25,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver (old)"
-#define DRIVER_VERSION	"2.35"
+#define DRIVER_VERSION	"2.36"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -1487,6 +1487,11 @@ void upsdrv_initups(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
