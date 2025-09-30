@@ -810,6 +810,25 @@ For example, `LIST VARS <ups> +DESC` would return the current value
 like now, but it would also append the description of that variable.
 
 
+Logout pending
+~~~~~~~~~~~~~~
+
+Add a way for logged-in clients such as linkman:upsmon[8] to tell the
+data server that they began their shutdown routine, so eventual loss
+of connection would be quickly interpreted as a `LOGOUT` (without any
+wait for further timeouts, as a usual disconnection may be treated).
+
+This is useful in context of
+link:https://github.com/networkupstools/nut/pull/3086[PR #3086]
+where clients can configure `SHUTDOWNEXIT` behavior to NOT end the
+program (and log out) as soon as they tell the OS to shut down, but
+rather stay in a heart-beat loop to tell the data server that they
+are still alive (for specified time or indefinitely, until the OS
+cuts power or networking maybe before it ends the client process),
+as a way to delay the primary client proceeding with its shutdown
+and cutting the UPS power until some important secondary clients are
+actually safely "parked".
+
 Get collection
 ~~~~~~~~~~~~~~
 
