@@ -15,8 +15,17 @@ This protocol runs over TCP.  UDP support was dropped in July 2003.  It
 had been deprecated for some time and was only capable of the simplest
 query commands as authentication is impossible over a UDP socket.
 
-A library, named libupsclient, that implement this protocol is provided
-in both static and shared version to help the client application development.
+A C library, named `libupsclient`, that implements this protocol, is provided
+in both static and shared version to help the client application development,
+and is extensively used by client programs delivered by the Network UPS Tools
+project.
+
+Other bindings maintained in the NUT code base or in its orbit, such as the
+C++ library `libnutclient`, a Python `PyNUTClient` module, a PERL `UPS::Nut`
+module, and a Java `jNut` client, are also available (but may lag behind in
+completeness of the protocol support).  Numerous third-party implementations
+for other languages also exist, with some related projects listed on the
+link:https://networkupstools.org/projects.html[NUT web site pages].
 
 
 Old command removal notice
