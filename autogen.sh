@@ -233,6 +233,7 @@ else
 	CONFIG_SHELL="`head -1 configure | sed 's,^#!,,'`"
 fi
 
+echo "autogen.sh: testing generated script syntax with $CONFIG_SHELL" >&2
 # NOTE: Unquoted CONFIG_SHELL, may be multi-token
 $CONFIG_SHELL -n configure 2>/dev/null >/dev/null \
 || {
