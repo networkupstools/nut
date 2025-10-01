@@ -101,11 +101,19 @@ do
 				mv -f "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}"
 			fi
 		else # Checking; also report the diff markup
-			OUTD="`diff -u "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}" 2>/dev/null`" ||
-			if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
-				true
+			if OUTD="`diff -u "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}" 2>/dev/null`" ; then
+				# Ok, no differences encountered
+				OUTD=""
 			else
-				OUTD="`diff "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}"`"
+				# Either different contents, or "diff -u" does not work
+				if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
+					true
+				else
+					if OUTD="`diff "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}"`" ; then
+						# Ok, no differences encountered
+						OUTD=""
+					fi
+				fi
 			fi
 
 			if test -n "${OUTD}" ; then
