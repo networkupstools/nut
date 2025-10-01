@@ -552,6 +552,7 @@ esac
     NCPUS="`cat /proc/cpuinfo | ${GREP} -wc processor`" || \
     { [ -x /usr/sbin/psrinfo ] && NCPUS="`/usr/sbin/psrinfo | wc -l`"; } \
     || NCPUS=1; } 2>/dev/null
+[ x"$NCPUS" = x ] || NCPUS="`echo "$NCPUS" | tr -d ' '`"
 [ x"$NCPUS" != x -a "$NCPUS" -ge 1 ] || NCPUS=1
 
 [ x"$NPARMAKES" = x ] && { NPARMAKES="`expr "$NCPUS" '*' 2`" || NPARMAKES=2; }
