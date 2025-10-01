@@ -993,7 +993,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                 # Net-SNMP "clashes" with system-provided tools (but no header/lib)
                 # so explicit args are needed
                 checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
-                if [ -d "$checkFSobj" -a ! -e "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
+                if [ -d "$checkFSobj" ] && ! ( [ -f "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] || [ -h "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ) ; then
                     echo "Homebrew: export pkg-config location for Net-SNMP"
                     SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
                     #echo "Homebrew: export flags for Net-SNMP"
@@ -1280,7 +1280,7 @@ check_gitignore() {
     [ -n "${BUILT_TARGETS-}" ] || BUILT_TARGETS="all? (usual default)"
 
     echo "=== Are GitIgnores good after '$MAKE $BUILT_TARGETS'? (should have no output below)"
-    if [ ! -e .git ]; then
+    if ! ( ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ) ; then
         echo "WARNING: Skipping the GitIgnores check after '$BUILT_TARGETS' because there is no `pwd`/.git anymore" >&2
         return 0
     fi
@@ -1364,12 +1364,12 @@ can_clean_check() {
 }
 
 optional_maintainer_clean_check() {
-    if [ ! -e .git ]; then
+    if ! ( ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ) ; then
         echo "Skipping maintainer-clean check because there is no .git" >&2
         return 0
     fi
 
-    if [ ! -e Makefile ]; then
+    if ! ( ( [ -e Makefile ] ) 2>/dev/null || [ -f Makefile ] || [ -h Makefile ] ); then
         echo "WARNING: Skipping maintainer-clean check because there is no Makefile (did we clean in a loop earlier?)" >&2
         return 0
     fi
@@ -1395,12 +1395,12 @@ optional_maintainer_clean_check() {
 }
 
 optional_dist_clean_check() {
-    if [ ! -e .git ]; then
+    if ! ( ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ) ; then
         echo "Skipping distclean check because there is no .git" >&2
         return 0
     fi
 
-    if [ ! -e Makefile ]; then
+    if ! ( ( [ -e Makefile ] ) 2>/dev/null || [ -f Makefile ] || [ -h Makefile ] ) ; then
         echo "WARNING: Skipping distclean check because there is no Makefile (did we clean in a loop earlier?)" >&2
         return 0
     fi
