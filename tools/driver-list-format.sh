@@ -74,8 +74,8 @@ do
 		# * if there is a trailing comment, make sure it is
 		#   also TAB-separated (from the presumed sixth field)
 		sed \
-			-e '/^#/!s/\"[[:blank:]]\+\"/\"\t\"/g' \
-			-e '/^#/!s/[[:blank:]]*$//' \
+			-e '/^#/!s/\"[ '"${TABCHAR}"']\+\"/\"\t\"/g' \
+			-e '/^#/!s/[ '"${TABCHAR}"']*$//' \
 			-e '/^#/!s/\" \+\#/\"\t\#/' \
 		< "${DRVLIST_PATH}/${drvfile}" \
 		> "${TMPBUILD_PATH}/${drvfile}.tabbed" \
