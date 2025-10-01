@@ -174,7 +174,7 @@ AC_DEFUN([UNITTEST_AX_REALPATH],
 [
     AC_MSG_NOTICE([======= starting UNITTEST for REALPATH macro])
     AC_MSG_NOTICE([=== Testing macro for realpath; .../q/x are directories, qwe is a file inside, and .../Q is a symlink to .../q])
-    TESTDIR="`mktemp -d`" && test -d "$TESTDIR" && test -w "$TESTDIR" || TESTDIR="/tmp"
+    TESTDIR="`${MKTEMP} -d`" && test -d "$TESTDIR" && test -w "$TESTDIR" || TESTDIR="/tmp"
     rm -rf "$TESTDIR"/q ; mkdir -p "$TESTDIR"/q/x ; echo qwe > "$TESTDIR"/q/x/qwe ; ln -fs q "$TESTDIR"/Q
     dnl Do not quote TESTDIR in macro calls below, shell quotes are added in implem
     AC_MSG_NOTICE([=======])

@@ -135,6 +135,21 @@ AC_MSG_RESULT([${CONFIG_FLAGS}])
 AC_DEFINE_UNQUOTED([CONFIG_FLAGS],["${CONFIG_FLAGS}"],[Flags passed to configure script])
 AC_SUBST(CONFIG_FLAGS)
 
+AC_CHECK_PROGS([MKTEMP], [mktemp], [])
+AS_IF([test x"${MKTEMP}" = x], [
+dnl # Have a simple (unsafe, unfeatured) fallback implementation:
+mktemp() {
+    if test x"$1" = x"-d" ; then
+        shift
+        mkdir -p "$1.$$" || return
+    else
+        cat /dev/null > "$1.$$" || return
+    fi
+    echo "$1.$$"
+}
+MKTEMP=mktemp
+])
+
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
@@ -1659,8 +1674,8 @@ if test "$as_ln_s" = "ln -s" ; then
     unset _abs_srcdir _abs_builddir
 
     dnl Explore GNU ln (or compatible) with relative symlink support
-    DIR1="$(mktemp -d "dir1.XXXXXXX")" && \
-    DIR2="$(mktemp -d "dir2.XXXXXXX")" && \
+    DIR1="$(${MKTEMP} -d "dir1.XXXXXXX")" && \
+    DIR2="$(${MKTEMP} -d "dir2.XXXXXXX")" && \
     touch "${DIR1}/a" && \
     $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
     ls -la "${DIR2}/b" | ${GREP} '\.\./' > /dev/null && \
@@ -3682,7 +3697,7 @@ if test -z "${abs_srcdir}" ; then
 		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" || AC_MSG_ERROR([Can not detect 'srcdir']) ;;
 	esac
 fi
-DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
+DOCTESTDIR="$(${MKTEMP} -d configure-test.docbuild.$$.XXXXXXX)" && \
 DOCTESTDIR="$(cd "$DOCTESTDIR" && pwd)"
 
 dnl NOTE: We perform some of these checks/infos also if docs=(man=)skip
@@ -5008,7 +5023,7 @@ dnl Relevant since 2023: https://github.com/systemd/systemd/pull/25916
 SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=no
 AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
 	AC_MSG_CHECKING([if your systemd version supports Type=notify])
-	myFILE="`mktemp systemd-analyze-XXXXXX.service`"
+	myFILE="`${MKTEMP} systemd-analyze-XXXXXX.service`"
 	cat > "$myFILE" << EOF
 @<:@Unit@:>@
 Description=temp
@@ -5030,7 +5045,7 @@ EOF
 SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=no
 AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
 	AC_MSG_CHECKING([if your systemd version supports Type=notify-reload])
-	myFILE="`mktemp systemd-analyze-XXXXXX.service`"
+	myFILE="`${MKTEMP} systemd-analyze-XXXXXX.service`"
 	cat > "$myFILE" << EOF
 @<:@Unit@:>@
 Description=temp
