@@ -23,6 +23,10 @@ usage() {
     echo " file                 -- read from file instead of stdin"
 }
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 DRIVER=""
 VENDORID=""
 PRODUCTID=""
@@ -41,7 +45,7 @@ while [ $# -gt 0 ]; do
     elif [ "$1" = "-k" ]; then
         KEEP=yes
         shift
-    elif echo "$1" | grep -qv '^-'; then
+    elif echo "$1" | ${GREP} -v '^-' >/dev/null ; then
 	FILE="$1"
 	shift
     elif [ "$1" = "--help" -o "$1" = "-h" ]; then
@@ -82,7 +86,7 @@ while [ -z "$DRIVER" ]; do
 Please enter a name for this driver. Use only letters and numbers. Use
 natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
     read -p "Name of subdriver: " DRIVER < /dev/tty
-    if echo $DRIVER | grep -E -q '[^a-zA-Z0-9]'; then
+    if echo $DRIVER | ${EGREP} '[^a-zA-Z0-9]' >/dev/null ; then
 	echo "Please use only letters and digits"
 	DRIVER=""
     fi
@@ -113,7 +117,7 @@ cat "$UTABLE" | tr '.' $'\n' | sort -u > "$USAGES"
 
 # make up dummy names for unknown usages
 count=0
-cat "$USAGES" | grep -E '[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' |\
+cat "$USAGES" | ${EGREP} '[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' |\
 while read U; do
     count=`expr $count + 1`
     echo "$U $UDRIVER$count"
