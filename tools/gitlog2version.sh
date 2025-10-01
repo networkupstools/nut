@@ -148,7 +148,7 @@ fi
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ x"${SRC_IS_GIT}" = xtrue ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
 
 check_shallow_git() {
-    if git log --oneline --decorate=short | tail -1 | grep -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
+    if git log --oneline --decorate=short | tail -1 | $GREP -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
         echo "$0: $1" >&2
     fi
 }
@@ -425,7 +425,7 @@ report_output() {
             fi
             rm -f "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp"
 
-            grep . "${abs_top_srcdir}/VERSION_FORCED" "${abs_top_srcdir}/VERSION_FORCED_SEMVER"
+            $GREP . "${abs_top_srcdir}/VERSION_FORCED" "${abs_top_srcdir}/VERSION_FORCED_SEMVER"
             ;;
         "UPDATE_FILE")
             if [ x"${abs_top_builddir}" != x"${abs_top_srcdir}" ] \
