@@ -1020,7 +1020,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
 
                 if [ -z "${XML_CATALOG_FILES-}" ] ; then
                     checkFSobj="${HOMEBREW_PREFIX}/etc/xml/catalog"
-                    if [ -e "$checkFSobj" ] ; then
+                    if ( [ -e "$checkFSobj" ] ) 2>/dev/null || [ -d "$checkFSobj" ] || [ -f "$checkFSobj" ] || [ -h "$checkFSobj" ] ; then
                         echo "Homebrew: export XML_CATALOG_FILES='$checkFSobj' for asciidoc et al"
                         XML_CATALOG_FILES="$checkFSobj"
                         export XML_CATALOG_FILES
@@ -1353,7 +1353,8 @@ can_clean_check() {
         # NOTE: Not handling here particular DO_MAINTAINER_CLEAN_CHECK or DO_DIST_CLEAN_CHECK
         return 1
     fi
-    if [ -s Makefile ] && [ -e .git ] ; then
+
+    if [ -s Makefile ] && ( ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ) ; then
         return 0
     fi
     return 1
