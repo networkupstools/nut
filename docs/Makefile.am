@@ -976,7 +976,7 @@ spellcheck:
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
-		(command -v dpkg) && ( dpkg -l | grep -i aspell ) || true ; \
+		(command -v dpkg) && ( dpkg -l | $(GREP) -i aspell ) || true ; \
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
@@ -1134,7 +1134,7 @@ $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 	 && mv -f "$@.tmp.$$$$" "$@" \
 	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
 	@echo "Reporting words from $? possibly not used in current inspected code base revision under $(abs_top_srcdir)" >&2 ; \
-	 $(EGREP) '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
+	 $(EGREP) '^--- ' < "$@" | $(GREP) '(0 ' || echo "SUCCESS: None found"
 
 CLEANFILES += $(NUT_SPELL_DICT).usage-report.tmp
 MAINTAINERCLEANFILES += $(NUT_SPELL_DICT).usage-report
@@ -1239,7 +1239,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	            *) IS_TEXT=true ;; \
 	        esac; \
 	        if $$IS_TEXT ; then \
-	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
+	            $(GREP) -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
 	        case "$$F" in \
 	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
