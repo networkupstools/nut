@@ -117,8 +117,25 @@ if [ -z "$PRODUCTID" ]; then
     read -p "Product ID: " PRODUCTID < /dev/tty
 fi
 
-LDRIVER=`echo $DRIVER | tr A-Z a-z`
-UDRIVER=`echo $DRIVER | tr a-z A-Z`
+# Platforms vary with tooling abilitites...
+TOLOWER="cat"
+for TR_VARIANT in "tr 'A-Z' 'a-z'" "tr '[:upper:]' '[:lower:]'" "tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'" ; do
+    if [ x"`echo C | $TR_VARIANT`" = xc ] ; then
+        TOLOWER="$TR_VARIANT"
+        break
+    fi
+done
+
+TOUPPER="cat"
+for TR_VARIANT in "tr 'a-z' 'A-Z'" "tr '[:lower:]' '[:upper:]'" "tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" ; do
+    if [ x"`echo c | $TR_VARIANT`" = xC ] ; then
+        TOUPPER="$TR_VARIANT"
+        break
+    fi
+done
+
+LDRIVER="`echo $DRIVER | $TOLOWER`"
+UDRIVER="`echo $DRIVER | $TOUPPER`"
 CFILE="$LDRIVER-hid.c"
 HFILE="$LDRIVER-hid.h"
 
@@ -263,7 +280,7 @@ static hid_info_t ${LDRIVER}_hid2nut[] = {
 EOF
 
 cat "$NEWUTABLE" | sort -u | while read U; do
-    UL=`echo $U | tr A-Z a-z`
+    UL="`echo $U | $TOLOWER`"
     cat >> "$CFILE" <<EOF
 	{ "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", 0, NULL },
 EOF

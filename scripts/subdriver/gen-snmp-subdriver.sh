@@ -113,6 +113,23 @@ DFL_STRWALKFILE="`mktemp "$TMPDIR/$NAME-STRWALK.XXXXXX"`"
 TMP_NUMWALKFILE="`mktemp "$TMPDIR/$NAME-TMP-NUMWALK.XXXXXX"`"
 TMP_STRWALKFILE="`mktemp "$TMPDIR/$NAME-TMP-STRWALK.XXXXXX"`"
 
+# Platforms vary with tooling abilitites...
+TOLOWER="cat"
+for TR_VARIANT in "tr 'A-Z' 'a-z'" "tr '[:upper:]' '[:lower:]'" "tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'" ; do
+    if [ x"`echo C | $TR_VARIANT`" = xc ] ; then
+        TOLOWER="$TR_VARIANT"
+        break
+    fi
+done
+
+TOUPPER="cat"
+for TR_VARIANT in "tr 'a-z' 'A-Z'" "tr '[:lower:]' '[:upper:]'" "tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" ; do
+    if [ x"`echo c | $TR_VARIANT`" = xC ] ; then
+        TOUPPER="$TR_VARIANT"
+        break
+    fi
+done
+
 get_snmp_data() {
 	# 1) get the sysOID (points the mfr specif MIB), apart if there's an override
 	if [ -z "$SYSOID" ]
@@ -149,8 +166,8 @@ get_snmp_data() {
 
 generate_C() {
 	# create file names, lowercase
-	LDRIVER="`echo "$DRIVER" | tr A-Z a-z`"
-	UDRIVER="`echo "$DRIVER" | tr a-z A-Z`"
+	LDRIVER="`echo "$DRIVER" | $TOLOWER`"
+	UDRIVER="`echo "$DRIVER" | $TOUPPER`"
 	# keep dashes in name for files
 	CFILE="$LDRIVER-mib.c"
 	HFILE="$LDRIVER-mib.h"

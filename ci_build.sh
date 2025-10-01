@@ -182,6 +182,14 @@ case "${CI_BUILDDIR-}" in
         ;;
 esac
 
+TOLOWER="cat"
+for TR_VARIANT in "tr 'A-Z' 'a-z'" "tr '[:upper:]' '[:lower:]'" "tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'" ; do
+    if [ x"`echo C | $TR_VARIANT`" = xc ] ; then
+        TOLOWER="$TR_VARIANT"
+        break
+    fi
+done
+
 # Just in case we get blanks from CI - consider them as not-set:
 if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
     if [ "$1" = spellcheck -o "$1" = spellcheck-interactive -o "$1" = spellcheck-quick -o "$1" = spellcheck-interactive-quick ] \
@@ -694,7 +702,7 @@ if [ -z "$CI_OS_NAME" ]; then
         [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
     done
 
-    case "`echo "$CI_OS_HINT" | tr 'A-Z' 'a-z'`" in
+    case "`echo "$CI_OS_HINT" | $TOLOWER`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
         *openbsd*)
@@ -858,7 +866,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
     # then, including a PKG_CONFIG_PATH), where a "-" value leaves it empty.
     SYS_PKG_CONFIG_PATH="" # Let the OS guess... usually
     BUILTIN_PKG_CONFIG_PATH="`pkg-config --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
-    case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
+    case "`echo "$CI_OS_NAME" | $TOLOWER`" in
         *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
             _ARCHES="${ARCH-}"
             _BITS="${BITS-}"
