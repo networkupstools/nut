@@ -267,7 +267,7 @@ getver_git() {
     # 5-digit version, note we strip leading "v" from the expected TAG value
     # Note the commit count will be non-trivial even if this is commit tagged
     # as a final release but it is not (yet?) on the BASE branch!
-    VER5="${TAG#v}.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${NUT_VERSION_GIT_TRUNK}..HEAD" | wc -l | tr -d ' '`"
+    VER5="`echo "${TAG}" | sed 's,^v,,'`.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${NUT_VERSION_GIT_TRUNK}..HEAD" | wc -l | tr -d ' '`"
     DESC5="${VER5}${SUFFIX}"
 
     # Strip up to two trailing zeroes for trunk snapshots and releases
