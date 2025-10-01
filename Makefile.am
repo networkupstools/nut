@@ -854,6 +854,7 @@ shellcheck-disclaimer:
 # can test the logic with numerous SHELL_PROGS in a CI setting, and because
 # check-scripts-syntax probably has checked the basic syntax above already.
 shellcheck-nde:
+	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
 	cd $(srcdir)/tests && SERVICE_FRAMEWORK="selftest" ./nut-driver-enumerator-test.sh
 
 shellcheck: shellcheck-disclaimer check-scripts-syntax
