@@ -87,6 +87,10 @@ export NUT_QUIET_INIT_NDE_WARNING
 ARG_FG="-F"
 if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 TABCHAR="`printf '\t'`"
 
 log_separator() {
@@ -123,7 +127,7 @@ report_NUT_PORT() {
 
     log_info "Trying to report users of NUT_PORT=${NUT_PORT}"
     # Note: on Solarish systems, `netstat -anp` does not report PID info
-    (netstat -an ; netstat -anp || sockstat -l) 2>/dev/null | grep -w "${NUT_PORT}" \
+    (netstat -an ; netstat -anp || sockstat -l) 2>/dev/null | ${GREP} -w "${NUT_PORT}" \
     || (lsof -i :"${NUT_PORT}") 2>/dev/null \
     || true
 
@@ -146,7 +150,7 @@ isBusy_NUT_PORT() {
         #   sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
         #   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
         NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
-        NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | grep -E ":${NUT_PORT_HEX}\$"`" \
+        NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | ${EGREP} ":${NUT_PORT_HEX}\$"`" \
         && [ -n "$NUT_PORT_HITS" ] \
         && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per /proc/net/tcp*" \
         && return 0
@@ -156,7 +160,7 @@ isBusy_NUT_PORT() {
         return 1
     fi
 
-    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(${TABCHAR}| |\$)" > /dev/null \
+    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | ${EGREP} "[:.]${NUT_PORT}(${TABCHAR}| |\$)" > /dev/null \
     && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat, sockstat or ss" \
     && return
 
@@ -494,7 +498,7 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 # the values when fallback is used. If this is a
 # problem on any platform (Win/Mac and spaces in
 # paths?) please investigate and fix accordingly.
-set | grep -E '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
+set | ${EGREP} '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
 | while IFS='=' read K V ; do
     case "$K" in
         LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*|TESTDIR_*)
@@ -535,7 +539,7 @@ EOF
     # both addresses in one command.
     for LH in 127.0.0.1 '::1' ; do
         if (
-           ( cat /etc/hosts || getent hosts ) | grep "$LH" \
+           ( cat /etc/hosts || getent hosts ) | ${GREP} "$LH" \
              || ping -c 1 "$LH"
         ) 2>/dev/null >/dev/null ; then
             echo "LISTEN $LH $NUT_PORT" >> "$NUT_CONFPATH/upsd.conf"
@@ -636,7 +640,7 @@ generatecfg_upsmon_trivial() {
 
         if [ -n "${NOTIFYTGT}" ]; then
             if [ -s "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" ] ; then
-                grep -E '# NOTIFYFLAG .*SYSLOG\+WALL$' \
+                ${EGREP} '# NOTIFYFLAG .*SYSLOG\+WALL$' \
                 < "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" \
                 | sed 's,^# \(NOTIFYFLAG[^A-Z_]*[A-Z_]*\)[^A-Z_]*SYSLOG.*$,\1\t'"${NOTIFYTGT}"',' \
                 >> "$NUT_CONFPATH/upsmon.conf" || exit
@@ -774,7 +778,7 @@ EOF
         for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
             sed -e 's,^ups.status: *$,ups.status: OL BOOST,' "$F" > "$F.bak"
             mv -f "$F.bak" "$F"
-            grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
+            ${EGREP} '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
     fi
 
@@ -939,12 +943,12 @@ testcase_upsd_allow_no_device() {
             :
         else
             # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
-            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
+            if echo "$CMDERR" | ${GREP} "Error: Server disconnected" >/dev/null ; then
                 log_warn "[testcase_upsd_allow_no_device] Retry once to rule out laggy systems"
                 sleep 3
                 runcmd upsc -l localhost:$NUT_PORT
             fi
-            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
+            if echo "$CMDERR" | ${GREP} "Error: Server disconnected" >/dev/null ; then
                 log_warn "[testcase_upsd_allow_no_device] Retry once more to rule out very laggy systems"
                 sleep 15
                 runcmd upsc -l localhost:$NUT_PORT
@@ -1062,7 +1066,7 @@ sandbox_start_drivers() {
     sleep 5
 
     if shouldDebug ; then
-        (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy|'"`basename "$0"`"')' | grep -vE '(ssh|startups|grep)' || true
+        (ps -ef || ps -xawwu) 2>/dev/null | ${EGREP} '(ups|nut|dummy|'"`basename "$0"`"')' | ${EGREP} -v '(ssh|startups|grep)' || true
     fi
 
     if isPidAlive "$PID_DUMMYUPS" \
@@ -1116,7 +1120,7 @@ UPS2"
         res_testcase_sandbox_start_upsd_alone=1
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
-    if echo "$CMDERR" | grep 'Error: Driver not connected' >/dev/null ; then
+    if echo "$CMDERR" | ${GREP} 'Error: Driver not connected' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
     else
         log_error "[testcase_sandbox_start_upsd_alone] got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
@@ -1258,7 +1262,7 @@ testcase_sandbox_upsc_query_bogus() {
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
-    if echo "$CMDERR" | grep 'Error: Variable not supported by UPS' >/dev/null ; then
+    if echo "$CMDERR" | ${GREP} 'Error: Variable not supported by UPS' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
         log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query"
     else
@@ -1312,9 +1316,9 @@ testcase_sandbox_upsc_query_timer() {
     kill -15 $PID_UPSLOG 2>/dev/null || true
     wait $PID_UPSLOG || true
 
-    if (grep " [OB] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " [OL] " "${NUT_STATEPATH}/upslog-dummy.log") \
-    || (grep " \[OB\] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " \[OL\] " "${NUT_STATEPATH}/upslog-dummy.log") \
-    || (echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OL") \
+    if (${GREP} " [OB] " "${NUT_STATEPATH}/upslog-dummy.log" && ${GREP} " [OL] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (${GREP} " \[OB\] " "${NUT_STATEPATH}/upslog-dummy.log" && ${GREP} " \[OL\] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | ${GREP} "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | ${GREP} "OL") \
     ; then
         log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
@@ -1565,14 +1569,14 @@ testcase_sandbox_nutscanner_list() {
     # the scanned buses (serial, snmp, usb, etc.)
     if (
         test -n "$CMDOUT" \
-        && echo "$CMDOUT" | grep -E '^\[nutdev-nut1\]$' \
-        && echo "$CMDOUT" | grep 'port = "dummy@' \
+        && echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut1\]$' \
+        && echo "$CMDOUT" | ${GREP} 'port = "dummy@' \
         || return
 
         if [ "${NUT_PORT}" = 3493 ] || [ x"$NUT_PORT" = x ]; then
             log_info "[testcase_sandbox_nutscanner_list] Note: not testing for suffixed port number" >&2
         else
-            echo "$CMDOUT" | grep -E 'dummy@.*'":${NUT_PORT}" \
+            echo "$CMDOUT" | ${EGREP} 'dummy@.*'":${NUT_PORT}" \
             || {
                 log_error "[testcase_sandbox_nutscanner_list] dummy@... not found" >&2
                 return 1
@@ -1582,10 +1586,10 @@ testcase_sandbox_nutscanner_list() {
         if [ x"${TOP_SRCDIR}" = x ]; then
             log_info "[testcase_sandbox_nutscanner_list] Note: only testing one dummy device" >&2
         else
-            echo "$CMDOUT" | grep -E '^\[nutdev-nut2\]$' \
-            && echo "$CMDOUT" | grep 'port = "UPS1@' \
-            && echo "$CMDOUT" | grep -E '^\[nutdev-nut3\]$' \
-            && echo "$CMDOUT" | grep 'port = "UPS2@' \
+            echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut2\]$' \
+            && echo "$CMDOUT" | ${GREP} 'port = "UPS1@' \
+            && echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut3\]$' \
+            && echo "$CMDOUT" | ${GREP} 'port = "UPS2@' \
             || {
                 log_error "[testcase_sandbox_nutscanner_list] something about UPS1/UPS2 not found" >&2
                 return 1
@@ -1597,7 +1601,7 @@ testcase_sandbox_nutscanner_list() {
         else
             PORTS_WANT=3
         fi
-        PORTS_SEEN="`echo "$CMDOUT" | grep -Ec 'port *='`"
+        PORTS_SEEN="`echo "$CMDOUT" | ${EGREP} -c 'port *='`"
 
         if [ "$PORTS_WANT" != "$PORTS_SEEN" ]; then
             log_error "[testcase_sandbox_nutscanner_list] Too many 'port=' lines: want $PORTS_WANT != seen $PORTS_SEEN" >&2
@@ -1607,7 +1611,7 @@ testcase_sandbox_nutscanner_list() {
         log_info "[testcase_sandbox_nutscanner_list] PASSED: nut-scanner found all expected devices"
         PASSED="`expr $PASSED + 1`"
     else
-        if ( echo "$CMDERR" | grep -E "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
+        if ( echo "$CMDERR" | ${EGREP} "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
             log_warn "[testcase_sandbox_nutscanner_list] SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
         else
             log_error "[testcase_sandbox_nutscanner_list] nut-scanner complained or did not return all expected data, check above"
@@ -1796,7 +1800,7 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running"
     log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
     printf "PID_NIT_SCRIPT='%s'\nexport PID_NIT_SCRIPT\n" "$$" >> "$NUT_CONFPATH/NIT.env"
-    set | grep -E '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
+    set | ${EGREP} '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
         V="`echo "$V" | tr -d "'"`"
         # Dummy comment to reset syntax highlighting due to ' quote above
         if [ -n "$V" ] ; then
