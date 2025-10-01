@@ -792,10 +792,10 @@ smf_registerInstance() {
                         ;;
                     *)  OTHERDEV="${DEPDRV}" ;;
                 esac
-                if [ x"${OTHERDEV}" = x ] || ! (echo "$OTHERLIST" | $EGREP "^${OTHERDEV}\t") >/dev/null ; then
-                    echo "WARNING: Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it" >&2
-                else
+                if [ x"${OTHERDEV}" != x ] && (echo "$OTHERLIST" | $EGREP "^${OTHERDEV}\t") >/dev/null ; then
                     DEPSVC="$DEPSVC ${SVCNAME_SMF}${SVCNAMESEP_SMF}`smf_validInstanceName ${OTHERDEV}`"
+                else
+                    echo "WARNING: Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it" >&2
                 fi
             done
             if [ x"`echo "$DEPSVC" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SMF" ; fi
@@ -1069,10 +1069,10 @@ systemd_registerInstance() {
                         ;;
                     *)  OTHERDEV="${DEPDRV}" ;;
                 esac
-                if [ x"${OTHERDEV}" = x ] || ! (echo "$OTHERLIST" | $EGREP "^${OTHERDEV}\t") >/dev/null ; then
-                    echo "WARNING: Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it" >&2
-                else
+                if [ x"${OTHERDEV}" != x ] && (echo "$OTHERLIST" | $EGREP "^${OTHERDEV}\t") >/dev/null ; then
                     DEPSVC="$DEPSVC ${SVCNAME_SYSTEMD}${SVCNAMESEP_SYSTEMD}`systemd_validInstanceName ${OTHERDEV}`"
+                else
+                    echo "WARNING: Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it" >&2
                 fi
             done
             if [ x"`echo "$DEPSVC" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SYSTEMD" ; fi

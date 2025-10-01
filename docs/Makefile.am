@@ -694,7 +694,7 @@ DOCBUILD_BEGIN = { \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
     && test -r "${builddir}/docbook-xsl.css" \
-    && ! test -w "${builddir}/docbook-xsl.css" \
+    && test ! -w "${builddir}/docbook-xsl.css" \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true; \
 }
@@ -1079,10 +1079,15 @@ spellcheck-interactive:
 			touch "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; \
 		fi ; \
 	 done
-	@if [ "$(SPELLCHECK_REPORT_MAYBE_UPDATED_DICT)" != no ] \
-	 || ( [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] \
-	      && ! diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ) \
-	 ; then \
+	@DO_REPORT=false ; \
+	 if [ "$(SPELLCHECK_REPORT_MAYBE_UPDATED_DICT)" != no ] ; then \
+		DO_REPORT=true ; \
+	 else if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] ; then \
+	      if diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ; then \
+		true ; else DO_REPORT=true ; \
+	      fi; fi; \
+	 fi; \
+	 if $${DO_REPORT}; then \
 		echo "------------------------------------------------------------------------"; \
 		echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
 		echo "Use e.g. 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
@@ -1244,7 +1249,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	        case "$$F" in \
 	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
 	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
-	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
+	        if $$MAN_SECTIONS_DEFAULT || test $$IS_TEXT = false ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \

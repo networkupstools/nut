@@ -141,7 +141,7 @@ AC_DEFUN([AX_REALPATH_LIB],
                     -Wl,-R*) D="`echo "$TOKEN" | sed 's,^-Wl\,-R,,'`" ;;
                     -Wl,-rpath,*) D="`echo "$TOKEN" | sed 's,^-Wl\,-rpath\,,,'`" ;;
                 esac
-                if test -z "$D" || ! test -d "$D" ; then continue ; fi
+                if test -z "$D" || test ! -d "$D" ; then continue ; fi
                 if test -s "$D/${myLIBNAME}" 2>/dev/null ; then
                     myLIBPATH="$D/${myLIBNAME}"
                     break

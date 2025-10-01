@@ -1611,11 +1611,11 @@ linkman-driver-names.txt: Makefile
 	    cat "$(srcdir)/$(@F)" "$(builddir)/$(@F).tmp.$$$$" || exit ; \
 	 fi ; \
 	 if test ! -s "$(builddir)/$(@F).tmp.$$$$" ; then echo "- No NUT drivers were built" > "$(builddir)/$(@F).tmp.$$$$" ; fi ; \
-	 if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; then \
-	    mv -f "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; \
-	 else \
+	 if test -s "$(builddir)/$(@F)" && diff "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; then \
 	    echo "  GENERATE-LINKMAN	$@ : SKIP (keep existing file)" ; \
 	    rm -f "$(builddir)/$(@F).tmp.$$$$" ; \
+	 else \
+	    mv -f "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; \
 	 fi
 
 linkman-drivertool-names.txt: Makefile
@@ -1632,11 +1632,11 @@ linkman-drivertool-names.txt: Makefile
 	    cat "$(srcdir)/$(@F)" "$(builddir)/$(@F).tmp.$$$$" || exit ; \
 	 fi ; \
 	 if test ! -s "$(builddir)/$(@F).tmp.$$$$" ; then echo "- No NUT driver tools were built" > "$(builddir)/$(@F).tmp.$$$$" ; fi ; \
-	 if test ! -s "$(builddir)/$(@F)" || ! diff "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; then \
-	    mv -f "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; \
-	 else \
+	 if test -s "$(builddir)/$(@F)" && diff "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; then \
 	    echo "  GENERATE-LINKMAN	$@ : SKIP (keep existing file)" ; \
 	    rm -f "$(builddir)/$(@F).tmp.$$$$" ; \
+	 else \
+	    mv -f "$(builddir)/$(@F).tmp.$$$$" "$(builddir)/$(@F)" ; \
 	 fi
 
 # Doing this dynamically as here, so we may later deliver some more dynamic
@@ -1818,7 +1818,7 @@ DOCBUILD_BEGIN = { \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
     && test -r "${builddir}/docbook-xsl.css" \
-    && ! test -w "${builddir}/docbook-xsl.css" \
+    && test ! -w "${builddir}/docbook-xsl.css" \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
     A2X_VERBOSE="$(ASCIIDOC_VERBOSE)"; if [ "$(V)" = 1 ]; then A2X_VERBOSE="--verbose"; fi; \
@@ -2145,7 +2145,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	        case "$$F" in \
 	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
 	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
-	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
+	        if $$MAN_SECTIONS_DEFAULT || test false = $$IS_TEXT ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \

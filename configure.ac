@@ -385,7 +385,7 @@ dnl Note these defaults may change further below depending on OS and
 dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
-AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && ! test -n "`${PROBE_OS_GROUP} "${RUN_AS_GROUP}"`"],
+AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && test -z "`${PROBE_OS_GROUP} "${RUN_AS_GROUP}"`"],
 	[RUN_AS_GROUP="nogroup"]
 )
 
@@ -5016,10 +5016,12 @@ Description=temp
 ExecStart=/bin/true
 Type=notify
 EOF
-	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" \
-	&& ! (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") \
-	; then
-		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=yes
+	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" ; then
+		if (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") ; then
+			true
+		else
+			SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=yes
+		fi
 	fi
 	rm -f "$myFILE"
 	AC_MSG_RESULT([${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY}])
@@ -5036,10 +5038,12 @@ Description=temp
 ExecStart=/bin/true
 Type=notify-reload
 EOF
-	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" \
-	&& ! (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") \
-	; then
-		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=yes
+	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" ; then
+		if (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") ; then
+			true
+		else
+			SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=yes
+		fi
 	fi
 	rm -f "$myFILE"
 	AC_MSG_RESULT([${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD}])
@@ -5420,13 +5424,13 @@ AC_ARG_WITH(udev-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
 		fi
-		if test "${nut_with_usb}" = yes && ! test -s scripts/udev/nut-usbups.rules.in ; then
+		if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory and USB driver support requested but a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
 		fi
 		;;
 	auto)
-		if test "${nut_with_usb}" = yes && ! test -s scripts/udev/nut-usbups.rules.in ; then
+		if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
 			AC_MSG_WARN([udev directory skipped because a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
 			udevdir=""
 		fi
@@ -5459,13 +5463,13 @@ AC_ARG_WITH(devd-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
 		fi
-		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usbups.rules.in -a -s scripts/devd/nut-usb.conf.in ; then
+		if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
 		fi
 		;;
 	auto)
-		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usbups.rules.in -a -s scripts/devd/nut-usb.conf.in ; then
+		if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
 			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
 			devddir=""
 		fi
@@ -5502,7 +5506,7 @@ AC_ARG_WITH(freebsd-quirks-dir,
 		if test -s /boot/loader.conf.local ; then
 			freebsdquirksdir="${datadir}"
 		fi
-		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usb.quirks ; then
+		if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.quirks ; then
 			AC_MSG_WARN([freebsd-quirks-dir directory skipped because a non-trivial scripts/devd/nut-usb.quirks was not provided by autogen.sh or dist archive])
 			freebsdquirksdir=""
 		fi
@@ -5533,7 +5537,7 @@ if test -n "${freebsdquirksdir}" ; then
 		AC_MSG_ERROR([freebsd-quirks-dir requested but not found (resolved as empty)])
 	fi
 
-	if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usb.quirks ; then
+	if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.quirks ; then
 		AC_MSG_ERROR([freebsd-quirks-dir directory and USB driver support requested, but a non-trivial scripts/devd/nut-usb.quirks was not provided by autogen.sh or dist archive])
 	fi
 fi
@@ -6827,7 +6831,7 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/devd/nut-usb.conf
 ], [
 	AC_MSG_CHECKING([whether to generate SCRIPTFILE])
-	AS_IF([test -s SCRIPTFILE.in && ! test -f SCRIPTFILE.in.AUTOGEN_WITHOUT],
+	AS_IF([test -s SCRIPTFILE.in && test ! -f SCRIPTFILE.in.AUTOGEN_WITHOUT],
 		[AC_MSG_RESULT(yes)
 		 AC_CONFIG_FILES(SCRIPTFILE)],
 		[AC_MSG_RESULT(no)]

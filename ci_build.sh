@@ -994,7 +994,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                 # Net-SNMP "clashes" with system-provided tools (but no header/lib)
                 # so explicit args are needed
                 checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
-                if [ -d "$checkFSobj" ] && ! ( [ -f "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] || [ -h "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ) ; then
+                if [ -d "$checkFSobj" ] && [ ! -f "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] && [ ! -h "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
                     echo "Homebrew: export pkg-config location for Net-SNMP"
                     SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
                     #echo "Homebrew: export flags for Net-SNMP"
