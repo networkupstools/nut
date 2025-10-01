@@ -258,7 +258,7 @@ ensure_CI_CCACHE_SYMLINKDIR_envvar() {
         for D in `propose_CI_CCACHE_SYMLINKDIR` ; do
             if [ -d "$D" ] ; then
                 if ( ls -la "$D" | ${GREP} ' -> .*ccache' >/dev/null) \
-                || ( test -n "`find "$D" -maxdepth 1 -type f -exec ${GREP} -li ccache '{}' \;`" ) \
+                || ( cd "$D" && test -n "`find . -type f | sed 's,^\./,,' | ${GREP} -v / | while read F ; do ${GREP} -li ccache $F ; done`" ) \
                 ; then
                     CI_CCACHE_SYMLINKDIR="$D" && break
                 else
