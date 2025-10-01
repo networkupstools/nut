@@ -866,7 +866,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
     # Caller can override by OVERRIDE_PKG_CONFIG_PATH (ignore other values
     # then, including a PKG_CONFIG_PATH), where a "-" value leaves it empty.
     SYS_PKG_CONFIG_PATH="" # Let the OS guess... usually
-    BUILTIN_PKG_CONFIG_PATH="`pkg-config --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
+    BUILTIN_PKG_CONFIG_PATH="`$PKG_CONFIG --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
     case "`echo "$CI_OS_NAME" | $TOLOWER`" in
         *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
             _ARCHES="${ARCH-}"
