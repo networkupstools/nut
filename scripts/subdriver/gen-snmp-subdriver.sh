@@ -456,8 +456,9 @@ natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
 done
 
 # remove blank and "End of MIB" lines
-${EGREP} "^[[:space:]]?$" | ${GREP} "End of MIB" | ${GREP} -v "${NUMWALKFILE}" > "${TMP_NUMWALKFILE}"
-${EGREP} "^[[:space:]]?$" | ${GREP} "End of MIB" | ${GREP} -v "${STRWALKFILE}" > "${TMP_STRWALKFILE}"
+TABCHAR="`printf '\t'`"
+${EGREP} "^[ ${TABCHAR}]?\$" | ${GREP} "End of MIB" | ${GREP} -v "${NUMWALKFILE}" > "${TMP_NUMWALKFILE}"
+${EGREP} "^[ ${TABCHAR}]?\$" | ${GREP} "End of MIB" | ${GREP} -v "${STRWALKFILE}" > "${TMP_STRWALKFILE}"
 NUMWALKFILE="${TMP_NUMWALKFILE}"
 STRWALKFILE="${TMP_STRWALKFILE}"
 
