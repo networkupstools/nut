@@ -139,7 +139,7 @@ AC_DEFUN([AX_REALPATH],
         RESOLVE_ERROR=0
 
         dnl Note: not all "test" implementations have "-e", so got fallbacks:
-        AS_IF([test -e "$1" || test -f "$1" || test -s "$1" || test -d "$1" || test -L "$1" || test -h "$1" || test -c "$1" || test -b "$1" || test -p "$1"],
+        AS_IF([(test -e "$1") >/dev/null || test -f "$1" || test -s "$1" || test -d "$1" || test -L "$1" || test -h "$1" || test -c "$1" || test -b "$1" || test -p "$1"],
             [], [
             AC_MSG_WARN([Path name '$1' not found (absent or access to ancestor directories denied)])
             dnl We can still try to resolve, e.g. to find
