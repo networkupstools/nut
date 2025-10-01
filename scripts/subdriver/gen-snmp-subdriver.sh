@@ -90,6 +90,19 @@ DEVICE_SYSOID=""
 SYSOID=""
 MODE=0
 
+if (command -v mktemp) >/dev/null ; then true ; else
+# Have a simple (unsafe, unfeatured) fallback implementation:
+mktemp() {
+    if [ x"$1" = x"-d" ] ; then
+        shift
+        mkdir -p "$1.$$" || return
+    else
+        cat /dev/null > "$1.$$" || return
+    fi
+    echo "$1.$$"
+}
+fi
+
 # constants
 NAME=gen-snmp-subdriver
 TMPDIR="${TEMPDIR:-/tmp}"
