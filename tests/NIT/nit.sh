@@ -323,6 +323,15 @@ PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 
+I_AM_ROOT=false
+if ( [ "`id -u`" = 0 ] ) 2>/dev/null ; then
+    I_AM_ROOT=true
+else
+    if id | sed -e 's,(.*$,,' -e 's,^.*uid=,,' | ${EGREP} '^0$' >/dev/null ; then
+        I_AM_ROOT=true
+    fi
+fi
+
 # Stash it for some later decisions
 TESTDIR_CALLER="${TESTDIR-}"
 [ -n "${TESTDIR-}" ] || TESTDIR="$BUILDDIR/tmp"
@@ -333,7 +342,7 @@ if [ `echo "${TESTDIR}" | wc -c` -gt 80 ]; then
     log_info "'${TESTDIR}' is too long to store AF_UNIX socket files, will mktemp"
     TESTDIR=""
 else
-    if [ "`id -u`" = 0 ]; then
+    if $I_AM_ROOT ; then
         case "${TESTDIR}" in
             "${HOME}"/*)
                 log_info "Test script was started by 'root' and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
@@ -359,7 +368,7 @@ if [ x"${TESTDIR}" = x ] ; then
     log_warn "Will now mktemp a TESTDIR under '${TMPDIR}'. It will be wiped when the NIT script exits."
     log_warn "If you want a pre-determined location, pre-export a usable TESTDIR value."
     TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
-    if [ "`id -u`" = 0 ]; then
+    if $I_AM_ROOT ; then
         # Cah be protected as 0700 by default
         chmod ugo+rx "${TESTDIR}"
     fi
@@ -386,7 +395,7 @@ fi
 mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
 
-if [ "`id -u`" = 0 ]; then
+if $I_AM_ROOT ; then
     log_info "Test script was started by 'root' - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
     chmod 777 "${TESTDIR}/run"
 fi
@@ -528,7 +537,7 @@ LISTEN localhost $NUT_PORT
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
 
-    if [ "`id -u`" = 0 ]; then
+    if $I_AM_ROOT ; then
         log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.conf' so unprivileged daemons (after de-elevation) may read it"
         chmod 644 "$NUT_CONFPATH/upsd.conf"
     else
@@ -596,7 +605,7 @@ generatecfg_upsdusers_trivial() {
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.users"
 
-    if [ "`id -u`" = 0 ]; then
+    if $I_AM_ROOT ; then
         log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.users' so unprivileged daemons (after de-elevation) may read it"
         chmod 644 "$NUT_CONFPATH/upsd.users"
     else
@@ -662,7 +671,7 @@ generatecfg_upsmon_trivial() {
     < "${TOP_SRCDIR-}/tests/NIT/upssched.conf.in" > "$NUT_CONFPATH/upssched.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upssched.conf"
 
-    if [ "`id -u`" = 0 ]; then
+    if $I_AM_ROOT ; then
         log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsmon.conf' and '$NUT_CONFPATH/upssched.conf' so unprivileged daemons (after de-elevation) may read them"
         chmod 644 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
     else
@@ -727,7 +736,7 @@ generatecfg_ups_trivial() {
         fi
     ) || die "Failed to populate temporary FS structure for the NIT: ups.conf"
 
-    if [ "`id -u`" = 0 ]; then
+    if $I_AM_ROOT ; then
         log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/ups.conf' so unprivileged daemons (after de-elevation) may read it"
         chmod 644 "$NUT_CONFPATH/ups.conf"
     else
