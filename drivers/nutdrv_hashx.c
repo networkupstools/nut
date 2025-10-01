@@ -28,7 +28,6 @@
 #include "serial.h"
 #include "str.h"
 #include "upshandler.h"
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
