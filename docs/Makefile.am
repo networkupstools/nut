@@ -997,7 +997,7 @@ spellcheck:
 		else true ; fi ; \
 		if [ x"$${SPELLCHECK_AUTO_TGT}" != x ] ; then \
 			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" $${SPELLCHECK_AUTO_TGT} ; \
-			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ] ; then printf '%s ' "$(SPELLCHECK_SRCDIR)/$${docsrc}" ; rm -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ; fi ; done`" ; \
+			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ] ; then printf '%s ' "$(SPELLCHECK_SRCDIR)/$${docsrc}" ; rm -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ; fi ; done`" ; \
 		fi ; \
 		if [ x"$${SPELLCHECK_NOEXT_DOCS}" != x ] ; then \
 			for docsrc in $${SPELLCHECK_NOEXT_DOCS} ; do \
@@ -1075,7 +1075,7 @@ spellcheck-interactive:
 	 fi ; \
 	 $(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict || exit ; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		if test -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; then \
+		if test -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; then \
 			touch "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; \
 		fi ; \
 	 done
@@ -1198,11 +1198,11 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	        esac; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
-	    if ! test -e "$@" ; then touch "$@" ; fi ; \
+	    if ! test -f "$@" ; then touch "$@" ; fi ; \
 	 else \
 	    COUNT=30 ; \
 	    touch "$@.$$$$" ; \
-	    while test -e "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
+	    while test -f "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
 	    touch "$@.working" ; \
 	    if test -n "`find "$@" -newer "$@.$$$$" 2>/dev/null`" ; then \
 	        rm -f "$@.$$$$" "$@.working" ; \
