@@ -16,6 +16,11 @@ SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 SCRIPT_PATH="${SCRIPTDIR}/`basename $0`"
 SCRIPT_ARGS=("$@")
 
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+# Hoping for a GNU-style grep with -A/-B support here (for aid printouts; failing is not fatal):
+[ -n "$GGREP" ] || { GREP="`command -v ggrep`" && [ x"${GREP}" != x ] || GGREP="${GREP}" ; }
+
 # Quick hijack for interactive development like this:
 #   BUILD_TYPE=fightwarn-clang ./ci_build.sh
 # or to quickly hit the first-found errors in a larger matrix
@@ -190,8 +195,6 @@ if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
     export MAKE
 fi
 
-[ -n "$GGREP" ] || GGREP=grep
-
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 V=1 -s"
 [ -n "$MAKE_FLAGS_CLEAN" ] || MAKE_FLAGS_CLEAN="${MAKE_FLAGS_QUIET}"
@@ -245,8 +248,8 @@ ensure_CI_CCACHE_SYMLINKDIR_envvar() {
     if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
         for D in `propose_CI_CCACHE_SYMLINKDIR` ; do
             if [ -d "$D" ] ; then
-                if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
-                || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
+                if ( ls -la "$D" | ${GREP} -e ' -> .*ccache' >/dev/null) \
+                || ( test -n "`find "$D" -maxdepth 1 -type f -exec ${GREP} -li ccache '{}' \;`" ) \
                 ; then
                     CI_CCACHE_SYMLINKDIR="$D" && break
                 else
@@ -273,7 +276,7 @@ optional_prepare_ccache() {
     # See also optional_ensure_ccache(), optional_prepare_compiler_family(),
     # ensure_CI_CCACHE_SYMLINKDIR_envvar()
     echo "PATH='$PATH' before possibly applying CCACHE into the mix"
-    ( echo "$PATH" | grep ccache ) >/dev/null && echo "WARNING: ccache is already in PATH"
+    ( echo "$PATH" | ${GREP} ccache ) >/dev/null && echo "WARNING: ccache is already in PATH"
     if [ -n "$CC" ]; then
         echo "CC='$CC' before possibly applying CCACHE into the mix"
         $CC --version $CFLAGS || \
@@ -309,25 +312,25 @@ optional_prepare_ccache() {
 }
 
 is_gnucc() {
-    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
+    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | ${GREP} 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
 }
 
 is_clang() {
-    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | ${GREP} 'clang version' > /dev/null ; then true ; else false ; fi
 }
 
 filter_version() {
     # Starting with number like "6.0.0" or "7.5.0-il-0" is fair game,
     # but a "gcc-4.4.4-il-4" (starting with "gcc") is not
-    sed -e 's,^.* \([0-9][0-9]*\.[0-9][^ ),]*\).*$,\1,' -e 's, .*$,,' | grep -E '^[0-9]' | head -1
+    sed -e 's,^.* \([0-9][0-9]*\.[0-9][^ ),]*\).*$,\1,' -e 's, .*$,,' | ${EGREP} '^[0-9]' | head -1
 }
 
 ver_gnucc() {
-    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i gcc | filter_version
+    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | ${GREP} -i gcc | filter_version
 }
 
 ver_clang() {
-    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i 'clang' | filter_version
+    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | ${GREP} -i 'clang' | filter_version
 }
 
 optional_prepare_compiler_family() {
@@ -448,7 +451,7 @@ optional_ensure_ccache() {
                 *ccache*) ;;
                 */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CC" || \
-                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CC"':.*|^'"$DIR_CC"'$|:'"$DIR_CC"':|:'"$DIR_CC"'$)' ; then
+                    if echo "$CCACHE_PATH" | ${EGREP} '(^'"$DIR_CC"':.*|^'"$DIR_CC"'$|:'"$DIR_CC"':|:'"$DIR_CC"'$)' ; then
                         CCACHE_PATH="$DIR_CC:$CCACHE_PATH"
                     fi
                     ;;
@@ -464,7 +467,7 @@ optional_ensure_ccache() {
                 *ccache*) ;;
                 */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CXX" || \
-                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CXX"':.*|^'"$DIR_CXX"'$|:'"$DIR_CXX"':|:'"$DIR_CXX"'$)' ; then
+                    if echo "$CCACHE_PATH" | ${EGREP} '(^'"$DIR_CXX"':.*|^'"$DIR_CXX"'$|:'"$DIR_CXX"':|:'"$DIR_CXX"'$)' ; then
                         CCACHE_PATH="$DIR_CXX:$CCACHE_PATH"
                     fi
                     ;;
@@ -480,7 +483,7 @@ optional_ensure_ccache() {
                 *ccache*) ;;
                 */*) DIR_CPP="`dirname "$CPP"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd "$DIR_CPP" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CPP" || \
-                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CPP"':.*|^'"$DIR_CPP"'$|:'"$DIR_CPP"':|:'"$DIR_CPP"'$)' ; then
+                    if echo "$CCACHE_PATH" | ${EGREP} '(^'"$DIR_CPP"':.*|^'"$DIR_CPP"'$|:'"$DIR_CPP"':|:'"$DIR_CPP"'$)' ; then
                         CCACHE_PATH="$DIR_CPP:$CCACHE_PATH"
                     fi
                     ;;
@@ -537,7 +540,7 @@ esac
 [ -n "$NCPUS" ] || { \
     NCPUS="`/usr/bin/getconf _NPROCESSORS_ONLN`" || \
     NCPUS="`/usr/bin/getconf NPROCESSORS_ONLN`" || \
-    NCPUS="`cat /proc/cpuinfo | grep -wc processor`" || \
+    NCPUS="`cat /proc/cpuinfo | ${GREP} -wc processor`" || \
     { [ -x /usr/sbin/psrinfo ] && NCPUS="`/usr/sbin/psrinfo | wc -l`"; } \
     || NCPUS=1; } 2>/dev/null
 [ x"$NCPUS" != x -a "$NCPUS" -ge 1 ] || NCPUS=1
@@ -561,7 +564,7 @@ esac
 # for actual builds with parallel phases. Specify a whitespace to neuter.
 if [ -z "$PARMAKE_FLAGS" ]; then
     PARMAKE_FLAGS="-j $NPARMAKES"
-    if LANG=C LC_ALL=C "$MAKE" --version 2>&1 | grep -E 'GNU Make|Free Software Foundation' > /dev/null ; then
+    if LANG=C LC_ALL=C "$MAKE" --version 2>&1 | ${EGREP} 'GNU Make|Free Software Foundation' > /dev/null ; then
         PARMAKE_FLAGS="$PARMAKE_FLAGS -l $PARMAKE_LA_LIMIT"
         echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs), or peak out at $PARMAKE_LA_LIMIT system load average" >&2
     else
@@ -680,7 +683,7 @@ if [ -z "$CI_OS_NAME" ]; then
     # classification styled after (compatible with) that in Travis CI
     for CI_OS_HINT in \
         "$OS_FAMILY-$OS_DISTRO" \
-        "`grep = /etc/os-release 2>/dev/null`" \
+        "`${GREP} = /etc/os-release 2>/dev/null`" \
         "`cat /etc/release 2>/dev/null`" \
         "`uname -o 2>/dev/null`" \
         "`uname -s -r -v 2>/dev/null`" \
@@ -1211,7 +1214,7 @@ build_to_only_catch_errors_check() {
 
     # Lots of tedious touch-files to make, better run it in parallel separately.
     # May report absence of "aspell" but would not fail in that case (just noise).
-    if grep "WITH_SPELLCHECK_TRUE=''" config.log >/dev/null 2>/dev/null ; then
+    if ${GREP} "WITH_SPELLCHECK_TRUE=''" config.log >/dev/null 2>/dev/null ; then
         echo "`date`: Starting a '$MAKE spellcheck-quick' first"
         $CI_TIME $MAKE $MAKE_FLAGS_QUIET spellcheck-quick \
         && echo "`date`: SUCCESS" \
@@ -1289,14 +1292,14 @@ check_gitignore() {
 
     if [ -n "${GITOUT-}" ] ; then
         echo "$GITOUT" \
-        | grep -E "${FILE_REGEX}"
+        | ${EGREP} "${FILE_REGEX}"
     else
         echo "Got no output and no errors querying git repo while in `pwd`: seems clean" >&2
     fi
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
-    if [ -n "`git status $GIT_ARGS -s ${FILE_GLOB} ${FILE_GLOB_EXCLUDE} | grep -E "^.. ${FILE_REGEX}"`" ] \
+    if [ -n "`git status $GIT_ARGS -s ${FILE_GLOB} ${FILE_GLOB_EXCLUDE} | ${EGREP} "^.. ${FILE_REGEX}"`" ] \
     && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
     ; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed! You can 'export CI_REQUIRE_GOOD_GITIGNORE=false' if appropriate." >&2
@@ -1490,7 +1493,7 @@ echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 ensure_CI_CCACHE_SYMLINKDIR_envvar
 echo "Build host settings:"
-set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT|INPLACE_RUNTIME)=' | sed 's,\(.\)$,\1 \\,' || true
+set | ${EGREP} '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT|INPLACE_RUNTIME)=' | sed 's,\(.\)$,\1 \\,' || true
 # Padding for trailing backslashed line
 echo "PARMAKE_FLAGS='${PARMAKE_FLAGS}'"
 uname -a
@@ -2526,9 +2529,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
     check_gitignore "all" || exit
 
     if test -s "${SCRIPTDIR}/install-sh" \
-    && grep -w MKDIRPROG "${SCRIPTDIR}/install-sh" >/dev/null \
+    && ${GREP} -w MKDIRPROG "${SCRIPTDIR}/install-sh" >/dev/null \
     ; then
-         if grep -v '#' "${SCRIPTDIR}/install-sh" | grep -E '\$mkdirprog.*-p' >/dev/null \
+         if ${GREP} -v '#' "${SCRIPTDIR}/install-sh" | ${EGREP} '\$mkdirprog.*-p' >/dev/null \
         ; then
             true
         else
