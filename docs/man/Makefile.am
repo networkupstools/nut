@@ -2140,7 +2140,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	            *) IS_TEXT=true ;; \
 	        esac; \
 	        if $$IS_TEXT ; then \
-	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
+	            $(GREP) -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
 	        case "$$F" in \
 	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
