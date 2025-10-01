@@ -683,9 +683,9 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     DATADIR="${PREFIX_DATADIR}"
     DEPLOYED_DATADIR=""
 
-    AS_IF([test -e "${PREFIX_DATAROOTDIR}/nut/cmdvartab" || test -e "${PREFIX_DATAROOTDIR}/nut/driver.list"],
+    AS_IF([test -f "${PREFIX_DATAROOTDIR}/nut/cmdvartab" || test -f "${PREFIX_DATAROOTDIR}/nut/driver.list"],
         [DEPLOYED_DATADIR="${PREFIX_DATAROOTDIR}/nut"],
-        [AS_IF([test -e "${PREFIX_DATAROOTDIR}/cmdvartab" || test -e "${PREFIX_DATAROOTDIR}/driver.list"],
+        [AS_IF([test -f "${PREFIX_DATAROOTDIR}/cmdvartab" || test -f "${PREFIX_DATAROOTDIR}/driver.list"],
             [DEPLOYED_DATADIR="${PREFIX_DATAROOTDIR}"],
             [dnl FIXME: Be careful on WIN32 and its "find" vs. that in MINGW?
              DEPLOYED_DATADIR="`find "${PREFIX_DATAROOTDIR}" -name cmdvartab | head -1 | sed 's,/@<:@^/@:>@*$,,'`" || DEPLOYED_DATADIR=""
@@ -735,8 +735,9 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             /usr/local/etc/nut /usr/local/etc/ups \
             /usr/local/nut/etc /usr/local/ups/etc \
         ; do
-            if test -e "$D/ups.conf" || test -e "$D/upsmon.conf" \
-            || ( test -e "$D/upsd.conf" && test -e "$D/upsd.users" ) \
+            if test -f "$D/ups.conf" || test -f "$D/upsmon.conf" \
+            || test -h "$D/ups.conf" || test -h "$D/upsmon.conf" \
+            || ( (test -f "$D/upsd.conf" || test -h "$D/upsd.conf") && (test -f "$D/upsd.users" || test -h "$D/upsd.users") ) \
             ; then
                 DEPLOYED_SYSCONFDIR="$D"
                 break
