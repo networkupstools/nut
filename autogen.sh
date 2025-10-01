@@ -24,6 +24,9 @@ else
 	DEBUG=false
 fi
 
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 NUT_VERSION_QUERY=UPDATE_FILE "`dirname $0`"/tools/gitlog2version.sh
 
 if [ -n "${PYTHON-}" ] ; then
@@ -108,8 +111,8 @@ if [ ! -f scripts/udev/nut-usbups.rules.in -o \
      ! -f scripts/devd/nut-usb.conf.in -o \
      ! -f scripts/devd/nut-usb.quirks -o \
      ! -f tools/nut-scanner/nutscan-usb.h ] \
-|| [ -n "`find drivers -newer scripts/hotplug/libhid.usermap | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
-|| [ -n "`find drivers -not -newer tools/nut-usbinfo.pl | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+|| [ -n "`find drivers -newer scripts/hotplug/libhid.usermap | ${EGREP} '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+|| [ -n "`find drivers -not -newer tools/nut-usbinfo.pl | ${EGREP} '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
 ; then
 	if perl -e 1; then
 		VERBOSE_FLAG_PERL=""
