@@ -145,7 +145,7 @@ https://github.com/networkupstools/nut/milestone/12
    generated/templated files, and use a similar detection in standalone
    scripts. Also revised the use of `grep -q` which is not ubiquitous,
    and of `test -e` which is not only absent in some older shells, but
-   can cause them to abort processing the script immediately. [#3099]
+   can cause them to abort processing the script immediately. [#3099, #1660]
 
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3
