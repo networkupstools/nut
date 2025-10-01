@@ -30,6 +30,13 @@ AC_INIT([nut],
 dnl See docs/maintainer-guide.txt about releases - updating the version
 dnl above is a small part of the consistent ritual!
 
+dnl Detect usable grep and egrep as soon as possible, to let called scripts
+dnl use them. Unfortunately, init must happen before macros that output text,
+dnl so the first call above misses out on the detected values.
+AC_PROG_EGREP
+export GREP
+export EGREP
+
 dnl PACKAGE_URL="https://www.networkupstools.org/" for development iterations
 dnl or "https://www.networkupstools.org/historic/v1.2.3/index.html" for release
 dnl snapshots further set in stone. Either way, there should be a slash and
@@ -970,7 +977,6 @@ dnl +-------------------------------------------------------------------
 AC_PROG_INSTALL
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
-AC_PROG_EGREP
 AC_PATH_PROG(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
 dnl Postpone call to LT_INIT/AC_CONFIG_FILES to allow disabling static lib
