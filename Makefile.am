@@ -943,7 +943,7 @@ endif !WITH_PDF_NONASCII_TITLES
 CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR = true
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
-	    if test -e .git ; then \
+	    if ( test -e .git ) 2>/dev/null || test -d .git || test -f .git || test -h .git ; then \
 	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`$(EGREP) '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
 	        if test -s "$@" -a -d "$${NUT_GITDIR}" && test -z "`find "$${NUT_GITDIR}" -newer "$@" 2>/dev/null`" ; then \
 	            echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
@@ -1426,7 +1426,7 @@ print-DISTCLEANFILES:
 
 # TODO: Recursive mode to consider patterns defined in sub-dir makefiles
 git-realclean-check:
-	@if test -e .git && (command -v git); then \
+	@if ( ( test -e .git ) 2>/dev/null || test -d .git || test -f .git || test -h .git ) && (command -v git); then \
 		git status --ignored || while read F ; do \
 			for P in $(MAINTAINERCLEANFILES) ; do \
 				case "$$F" in \
@@ -1475,7 +1475,7 @@ check-parallel-builds:
 	  cd '$(abs_top_builddir)' || exit ; \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make pre-clean before checking subdirs for sources" >&2; exit $$RES; } ; \
 	  for D in `cd '$(top_srcdir)' && find . -name '*.c' -o -name '*.cpp' | sed 's,/[^/]*\.cp*$$,,' | uniq` ; do \
-		[ -e "$(top_srcdir)/$$D/Makefile.am" ] && [ -s "$$D/Makefile" ] || continue ; \
+		( ( [ -e "$(top_srcdir)/$$D/Makefile.am" ] ) 2>/dev/null || [ -f "$(top_srcdir)/$$D/Makefile.am" ] || [ -h "$(top_srcdir)/$$D/Makefile.am" ] ) && [ -s "$$D/Makefile" ] || continue ; \
 		$(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
 		echo "  $@	in $${D}" ; \
 		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
