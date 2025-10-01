@@ -78,6 +78,11 @@ if [ x"${abs_top_builddir}" = x ]; then
     abs_top_builddir="${abs_top_srcdir}"
 fi
 
+SRC_IS_GIT=false
+if ( [ -e "${abs_top_srcdir}/.git" ] ) 2>/dev/null || [ -d "${abs_top_srcdir}/.git" ] || [ -f "${abs_top_srcdir}/.git" ] || [ -h "${abs_top_srcdir}/.git" ] ; then
+   SRC_IS_GIT=true
+fi
+
 ############################################################################
 # Numeric-only default version, for AC_INIT and similar consumers
 # in case we build without a Git workspace (from tarball, etc.)
@@ -122,12 +127,12 @@ fi
 
 if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_builddir}/VERSION_DEFAULT" ] ; then
     . "${abs_top_builddir}/VERSION_DEFAULT" || exit
-    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ -e "${abs_top_srcdir}/.git" ] || NUT_VERSION_PREFER_GIT=false ; }
+    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ x"${SRC_IS_GIT}" = xtrue ] || NUT_VERSION_PREFER_GIT=false ; }
 fi
 
 if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_srcdir}/VERSION_DEFAULT" ] ; then
     . "${abs_top_srcdir}/VERSION_DEFAULT" || exit
-    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ -e "${abs_top_srcdir}/.git" ] || NUT_VERSION_PREFER_GIT=false ; }
+    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ x"${SRC_IS_GIT}" = xtrue ] || NUT_VERSION_PREFER_GIT=false ; }
 fi
 
 # Fallback default, to be updated only during release cycle
@@ -137,7 +142,7 @@ fi
 [ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://www.networkupstools.org/"
 
 # Must be "true" or "false" exactly, interpreted as such below:
-[ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ -e "${abs_top_srcdir}/.git" ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
+[ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ x"${SRC_IS_GIT}" = xtrue ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
 
 check_shallow_git() {
     if git log --oneline --decorate=short | tail -1 | grep -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
