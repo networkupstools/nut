@@ -1083,7 +1083,7 @@ install-data-hook:
 	@case "@target_os@" in *mingw*) exit 0;; esac ; \
 	 if [ x"@host_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
 	 if [ x"@target_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
-	 if (command -v id) && [ x"`id -u`" = x0 ] && [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
+	 if (command -v id) && ( [ x"`id -u 2>/dev/null`" = x0 ] || [ x"`id | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" = x0 ] ) && [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
 		echo "================================================================================" >&2 ; \
 		echo "| NUT data files have been installed into the system, now consider running     |" >&2 ; \
 		echo "| '(sudo) make install-as-root' to apply permissions and service state changes |" >&2 ; \
@@ -1135,7 +1135,7 @@ install-as-root:
 	 case "@target_os@" in *mingw*) echo "$@: SKIP: not supported for this target_os='@target_os@'" >&2 ; exit 0;; esac ; \
 	 if [ x"@host_os@" != x"@build_os@" ]; then echo "$@: SKIP: build_os='@build_os@' is not host_os='@host_os@'" >&2 ; exit 0 ; fi ; \
 	 if [ x"@target_os@" != x"@build_os@" ]; then echo "$@: SKIP: build_os='@build_os@' is not target_os='@target_os@'" >&2 ; exit 0 ; fi ; \
-	 if (command -v id) && [ x"`id -u`" = x0 ] ; then \
+	 if (command -v id) && ( [ x"`id -u 2>/dev/null`" = x0 ] || [ x"`id | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" = x0 ] ) ; then \
 		echo "$@: we seem to be root, PROCEEDING" >&2 ; \
 	 else \
 		echo "$@: SKIP: we seem to NOT be root" >&2 ; \
@@ -1212,7 +1212,7 @@ install-as-root:
 	 else \
 		echo "$@: WARNING: Can not CHMOD created locations!" >&2 ; \
 	 fi ; \
-	 if (command -v chown) && test 0 -lt "`id -u '@RUN_AS_USER@'`" \
+	 if (command -v chown) && ( test 0 -lt "`id -u '@RUN_AS_USER@' 2>/dev/null`" || test 0 -lt "`id '@RUN_AS_USER@' | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" ] ) \
 	 && ( test 0 -lt "`getent group '@RUN_AS_GROUP@' | awk -F: '{print $$3}'`" || test 0 -lt "`id -g '@RUN_AS_GROUP@'`" ) \
 	 ; then \
 		echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)	$(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
