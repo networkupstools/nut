@@ -359,7 +359,7 @@ if [ x"${TESTDIR}" = x ] ; then
     fi
 else
     NUT_CONFPATH="${TESTDIR}/etc"
-    if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+    if [ -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
         log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running with same configs?"
         sleep 3
     fi
@@ -423,7 +423,7 @@ NUT_ALTPIDPATH="${TESTDIR}/run"
 NUT_CONFPATH="${TESTDIR}/etc"
 export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH
 
-if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+if [ -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
     log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running?"
     sleep 3
 fi
