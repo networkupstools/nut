@@ -54,6 +54,10 @@ fi
 
 RES=0
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 # Some sed/grep implementations tend to have a problem with "\t"
 # (treat it as escaped "t" character); substitutions are okay:
 TABCHAR="`printf '\t'`"
@@ -80,7 +84,7 @@ do
 			# verify that lines are either empty, all-comments,
 			# or have six quoted fields (and optional comment);
 			# the fields may be empty (just two double-quotes).
-			BADLINES="`grep -vE "${VALID_LINE}" < "${TMPBUILD_PATH}/${drvfile}.tabbed"`"
+			BADLINES="`$EGREP -v "${VALID_LINE}" < "${TMPBUILD_PATH}/${drvfile}.tabbed"`"
 			if [ x"${BADLINES}" != x ] ; then
 				echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: some lines are not exactly 6 fields (and optional comment)" >&2
 				echo "$BADLINES" | head -5
