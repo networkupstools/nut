@@ -3,14 +3,14 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.16
+# Version: 0.17
 #
 # See also: docs/snmp-subdrivers.txt
 #
 # Copyright (C)
 # 2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
 # 2015 - 2022 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-# 2011 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+# 2011 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,6 +75,10 @@ usage() {
 	echo " - 'snmp' package (on Debian) for the base commands (snmpget, snmpwalk, snmptranslate)"
 	echo " - 'snmp-mibs-downloader' package (on Debian) to get all standard MIBs"
 }
+
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
 
 # variables
 DRIVER=""
@@ -269,7 +273,7 @@ EOF
 		LINENB="`expr $LINENB + 1`"
 		FULL_STR_OID="$line"
 		STR_OID="`echo "$line" | cut -d'.' -f1`"
-		echo "$line" | grep STRING > /dev/null
+		echo "$line" | ${GREP} STRING > /dev/null
 		if [ $? -eq 0 ]; then
 			ST_FLAG_TYPE="ST_FLAG_STRING"
 			SU_INFOSIZE="SU_INFOSIZE"
@@ -316,7 +320,7 @@ while [ $# -gt 0 ]; do
 	elif [ $# -gt 1 -a "$1" = "-s" ]; then
 		SYSOID="$2"
 		shift 2
-	elif echo "$1" | grep -qv '^-'; then
+	elif echo "$1" | ${GREP} -v '^-' >/dev/null ; then
 		if [ $# -gt 1 ]; then
 			NUMWALKFILE="$1"
 			shift
@@ -355,7 +359,7 @@ if [ -z "$NUMWALKFILE" ]; then
 	while [ -z "$HOSTNAME" ]; do
 		printf "\n\tPlease enter the SNMP host IP address or name.\n"
 		read -p "SNMP host IP name or address: " HOSTNAME < /dev/tty
-		if echo "$HOSTNAME" | grep -E -q '[^a-zA-Z0-9.-]'; then
+		if echo "$HOSTNAME" | ${EGREP} '[^a-zA-Z0-9.-]' >/dev/null ; then
 			echo "Please use only letters, digits, dash and period character"
 			HOSTNAME=""
 		fi
@@ -382,7 +386,7 @@ else
 		fi
 		# Extract the sysOID
 		# Format is "1.3.6.1.2.1.1.2.0 = OID: 1.3.6.1.4.1.4555.1.1.1"
-		DEVICE_SYSOID="`grep 1.3.6.1.2.1.1.2.0 "$RAWWALKFILE" | cut -d' ' -f4`"
+		DEVICE_SYSOID="`${GREP} 1.3.6.1.2.1.1.2.0 "$RAWWALKFILE" | cut -d' ' -f4`"
 		if [ -n "$DEVICE_SYSOID" ]; then
 			echo "Found sysOID $DEVICE_SYSOID"
 		else
@@ -393,7 +397,7 @@ else
 		# Switch to the entry point, and extract the subtree
 		# Extract the numeric walk
 		echo -n "Extracting numeric SNMP walk..."
-		grep "$DEVICE_SYSOID" "$RAWWALKFILE" | grep -E -v "1.3.6.1.2.1.1.2.0" 2>/dev/null 1> "$NUMWALKFILE"
+		${GREP} "$DEVICE_SYSOID" "$RAWWALKFILE" | ${EGREP} -v "1.3.6.1.2.1.1.2.0" 2>/dev/null 1> "$NUMWALKFILE"
 		echo " done"
 
 		# Create the string walk from a translation of the numeric one
@@ -418,7 +422,7 @@ else
 Please enter the value of sysOID, as displayed by snmp-ups. For example '.1.3.6.1.4.1.2254.2.4'.
 You can get it using: snmpget -v1 -c XXX <host> $SYSOID_NUMBER"
 			read -p "Value of sysOID: " SYSOID < /dev/tty
-			if echo "$SYSOID" | grep -E -q '[^0-9.]'; then
+			if echo "$SYSOID" | ${EGREP} '[^0-9.]' >/dev/null ; then
 				echo "Please use only the numeric form, with dots and digits"
 				SYSOID=""
 			fi
@@ -445,15 +449,15 @@ while [ -z "$DRIVER" ]; do
 Please enter a name for this driver. Use only letters and numbers. Use
 natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
 	read -p "Name of subdriver: " DRIVER < /dev/tty
-	if echo "$DRIVER" | grep -E -q '[^a-zA-Z0-9]'; then
+	if echo "$DRIVER" | ${EGREP} '[^a-zA-Z0-9]' >/dev/null ; then
 		echo "Please use only letters and digits"
 		DRIVER=""
 	fi
 done
 
 # remove blank and "End of MIB" lines
-grep -E -e "^[[:space:]]?$" -e "End of MIB" -v "${NUMWALKFILE}" > "${TMP_NUMWALKFILE}"
-grep -E -e "^[[:space:]]?$" -e "End of MIB" -v "${STRWALKFILE}" > "${TMP_STRWALKFILE}"
+${EGREP} -e "^[[:space:]]?$" -e "End of MIB" -v "${NUMWALKFILE}" > "${TMP_NUMWALKFILE}"
+${EGREP} -e "^[[:space:]]?$" -e "End of MIB" -v "${STRWALKFILE}" > "${TMP_STRWALKFILE}"
 NUMWALKFILE="${TMP_NUMWALKFILE}"
 STRWALKFILE="${TMP_STRWALKFILE}"
 
