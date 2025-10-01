@@ -365,7 +365,7 @@ AS_IF([test x"${GETENT}" != x], [
 			dnl  script, we might be better off defining a shell
 			dnl  function and referring to it. Grep would catch
 			dnl  also user names that have a group as secondary!
-			PROBE_OS_GROUP="cat /etc/groups | grep -w "
+			PROBE_OS_GROUP="cat /etc/groups | ${GREP} -w "
 			], [
 			dnl This shows groups of a USER with specified name!
 			dnl But to probe for cases where string names are
@@ -571,7 +571,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         AS_IF([test -x "${DEPLOYED_TOOL}"], [], [continue])
 
         AC_MSG_CHECKING([for CONFIG_FLAGS from ${DEPLOYED_TOOL}])
-        CONFIG_FLAGS_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*configured with flags: *,,'`" \
+        CONFIG_FLAGS_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | ${GREP} 'configured with flags:' | head -1 | sed 's,^.*configured with flags: *,,'`" \
         && test x"${CONFIG_FLAGS_DEPLOYED}" != x \
         || CONFIG_FLAGS_DEPLOYED=""
 
@@ -579,7 +579,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         dnl that we've "reentered" the configuration script), so we tolerate a
         dnl better detailed string that is more than just a version, e.g.:
         dnl   2.8.2.1829-1829+g8f8a4f417 (development iteration after 2.8.2) built with gcc (Debian 10.2.1-6) 10.2.1 20210110
-        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed -e 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,' -e 's, and *$,,'`" \
+        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | ${GREP} 'configured with flags:' | head -1 | sed -e 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,' -e 's, and *$,,'`" \
         && test x"${NUT_VERSION_DEPLOYED}" != x \
         || NUT_VERSION_DEPLOYED=""
 
@@ -588,7 +588,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         dnl  * Probably no need to fuss for Windows builds, as they would
         dnl    anyway use the DLL near EXE after installation.
         AS_IF([test -x "${LDD}" 2>/dev/null], [
-            for TOKEN in `$LDD "${DEPLOYED_TOOL}" 2>&1 | grep libupsclient` ; do
+            for TOKEN in `$LDD "${DEPLOYED_TOOL}" 2>&1 | ${GREP} libupsclient` ; do
                 case "${TOKEN}" in
                     /*/libupsclient*) DEPLOYED_LIBDIR="`dirname "$TOKEN"`" ;;
                 esac
@@ -839,7 +839,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         AS_IF([test -d "${udevdir}/rules.d"],
             [for F in "${udevdir}/rules.d"/*-nut-*.rules ; do
                 if test -s "$F" ; then
-                    nut_inplace_group="`grep GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
+                    nut_inplace_group="`${GREP} GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
                     && test -n "`${PROBE_OS_GROUP} "${nut_inplace_group}"`" \
                     && AC_MSG_RESULT([Got from ${F}]) \
                     && break \
@@ -869,9 +869,9 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         dnl Beside currently active setting, check the built-in default sugestion
         AS_IF([test -s "${CONFPATH}/upsmon.conf"],
             [for nut_inplace_user in \
-                `grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`\
-                `grep -E '^ *##*RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`\
-                `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $3}'`\
+                `${EGREP} '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`\
+                `${EGREP} '^ *##*RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`\
+                `${EGREP} '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
                     test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
@@ -882,9 +882,9 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
 
         AS_IF([test -s "${CONFPATH}/upsmon.conf.sample" && test -z "${nut_inplace_user}"],
             [for nut_inplace_user in \
-                `grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $2}'`\
-                `grep -E '^ *##*RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $2}'`\
-                `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $3}'`\
+                `${EGREP} '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $2}'`\
+                `${EGREP} '^ *##*RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $2}'`\
+                `${EGREP} '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
                     test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
@@ -904,7 +904,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             "${LIBDIR}/pkgconfig/libnutclient.pc" \
         ; do
             AS_IF([test -z "${nut_inplace_user}" && test -s "$F"],
-                [nut_inplace_user="`grep -E '^ *nutuser=' "$F" | sed 's,^ *nutuser=,,'`" \
+                [nut_inplace_user="`${EGREP} '^ *nutuser=' "$F" | sed 's,^ *nutuser=,,'`" \
                 && test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                 && AC_MSG_RESULT([Got from $F]) \
                 || nut_inplace_user=""
@@ -1663,7 +1663,7 @@ if test "$as_ln_s" = "ln -s" ; then
     DIR2="$(mktemp -d "dir2.XXXXXXX")" && \
     touch "${DIR1}/a" && \
     $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
-    ls -la "${DIR2}/b" | grep '\.\./' > /dev/null && \
+    ls -la "${DIR2}/b" | ${GREP} '\.\./' > /dev/null && \
     LN_S_R="$as_ln_s -r"
 
     rm -rf "${DIR1}" "${DIR2}"
@@ -3909,11 +3909,11 @@ no)
 	;;
 *)  dnl # yes, all, skip...
 	if test -n "${DOC_CANNOTBUILD_LIST}"; then
-		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | grep -vE '^$'`"
+		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | ${EGREP} -v '^$'`"
 		for DOCTYPE in ${nut_doc_build_list} ; do
-			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}(=yes)?\$" >/dev/null 2>/dev/null ; then
+			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | ${EGREP} "^${DOCTYPE}(=yes)?\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
-			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | grep -E "^${DOCTYPE}=(skip|auto|dist-auto)\$" >/dev/null 2>/dev/null ; then
+			else if echo "${DOC_CANNOTBUILD_LIST_LINES}" | ${EGREP} "^${DOCTYPE}=(skip|auto|dist-auto)\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_NOTICE([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above), skipping])
 				fi
 			fi
@@ -3949,13 +3949,13 @@ fi
 
 WITH_MANS=no
 SKIP_MANS=no
-if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null || test "${DOC_INSTALL_DISTED_MANS}" = "yes" ; then
+if echo "${DOC_BUILD_LIST}" | ${GREP} -w "man" >/dev/null || test "${DOC_INSTALL_DISTED_MANS}" = "yes" ; then
 	WITH_MANS=yes
 fi
-if echo "${DOC_SKIPBUILD_LIST}" | grep -w "man" >/dev/null ; then
+if echo "${DOC_SKIPBUILD_LIST}" | ${GREP} -w "man" >/dev/null ; then
 	SKIP_MANS=yes
 fi
-if echo "${DOC_CANNOTBUILD_LIST}" | grep -w "man" >/dev/null ; then
+if echo "${DOC_CANNOTBUILD_LIST}" | ${GREP} -w "man" >/dev/null ; then
 	KNOWN_UNABLE_MANS=yes
 fi
 dnl Generally WITH_MANS=no is intentionally fatal for "make distcheck"
@@ -3978,10 +3978,10 @@ NUT_REPORT([can install pre-built documentation (release/dist tarball)], ["${hav
 
 WITH_HTML_SINGLE=no
 SKIP_HTML_SINGLE=no
-if echo "${DOC_BUILD_LIST}" | grep -w "html-single" >/dev/null ; then
+if echo "${DOC_BUILD_LIST}" | ${GREP} -w "html-single" >/dev/null ; then
 	WITH_HTML_SINGLE=yes
 fi
-if echo "${DOC_SKIPBUILD_LIST}" | grep -w "html-single" >/dev/null ; then
+if echo "${DOC_SKIPBUILD_LIST}" | ${GREP} -w "html-single" >/dev/null ; then
 	SKIP_HTML_SINGLE=yes
 fi
 AM_CONDITIONAL(WITH_HTML_SINGLE, test "${WITH_HTML_SINGLE}" = "yes")
@@ -3989,10 +3989,10 @@ AM_CONDITIONAL(SKIP_HTML_SINGLE, test "${SKIP_HTML_SINGLE}" = "yes")
 
 WITH_HTML_CHUNKED=no
 SKIP_HTML_CHUNKED=no
-if echo "${DOC_BUILD_LIST}" | grep -w "html-chunked" >/dev/null ; then
+if echo "${DOC_BUILD_LIST}" | ${GREP} -w "html-chunked" >/dev/null ; then
 	WITH_HTML_CHUNKED=yes
 fi
-if echo "${DOC_SKIPBUILD_LIST}" | grep -w "html-chunked" >/dev/null ; then
+if echo "${DOC_SKIPBUILD_LIST}" | ${GREP} -w "html-chunked" >/dev/null ; then
 	SKIP_HTML_CHUNKED=yes
 fi
 AM_CONDITIONAL(WITH_HTML_CHUNKED, test "${WITH_HTML_CHUNKED}" = "yes")
@@ -4000,10 +4000,10 @@ AM_CONDITIONAL(SKIP_HTML_CHUNKED, test "${SKIP_HTML_CHUNKED}" = "yes")
 
 WITH_PDFS=no
 SKIP_PDFS=no
-if echo "${DOC_BUILD_LIST}" | grep -w "pdf" >/dev/null ; then
+if echo "${DOC_BUILD_LIST}" | ${GREP} -w "pdf" >/dev/null ; then
 	WITH_PDFS=yes
 fi
-if echo "${DOC_SKIPBUILD_LIST}" | grep -w "pdf" >/dev/null ; then
+if echo "${DOC_SKIPBUILD_LIST}" | ${GREP} -w "pdf" >/dev/null ; then
 	SKIP_PDFS=yes
 fi
 AM_CONDITIONAL(WITH_PDFS, test "${WITH_PDFS}" = "yes")
@@ -5017,7 +5017,7 @@ ExecStart=/bin/true
 Type=notify
 EOF
 	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" \
-	&& ! (echo "$myOUT" | grep "Failed to parse service type, ignoring") \
+	&& ! (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") \
 	; then
 		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=yes
 	fi
@@ -5037,7 +5037,7 @@ ExecStart=/bin/true
 Type=notify-reload
 EOF
 	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" \
-	&& ! (echo "$myOUT" | grep "Failed to parse service type, ignoring") \
+	&& ! (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") \
 	; then
 		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=yes
 	fi
@@ -5720,7 +5720,7 @@ dnl ----------------------------------------------------------------------
 dnl Check if NUT recipe metadata should propagate an uncommon RPATH
 
 AC_MSG_CHECKING([whether NUT libdir='${LIBDIR}' is among common search paths])
-DEFAULT_SEARCH_DIRS="`LANG=C LC_ALL=C ${CC} --print-search-dirs 2>/dev/null | grep libraries: | sed 's,^@<:@^=@:>@*=,,'`" 2>/dev/null || DEFAULT_SEARCH_DIRS=""
+DEFAULT_SEARCH_DIRS="`LANG=C LC_ALL=C ${CC} --print-search-dirs 2>/dev/null | ${GREP} libraries: | sed 's,^@<:@^=@:>@*=,,'`" 2>/dev/null || DEFAULT_SEARCH_DIRS=""
 NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS=""
 NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT=""
 if test x"${DEFAULT_SEARCH_DIRS}" = x ; then
@@ -6655,7 +6655,7 @@ AS_CASE(["${nut_with_debuginfo_C}"],
             dnl in the end of each and every build command line (highest
             dnl priority). However, CPPFLAGS are before (making these
             dnl lines an implementation-dependent hack)...
-            dnl AS_IF([set | grep -E 'FORTIFY_SOURCE'], [], [CFLAGS="${CFLAGS} -O0"])
+            dnl AS_IF([set | ${EGREP} 'FORTIFY_SOURCE'], [], [CFLAGS="${CFLAGS} -O0"])
             CPPFLAGS="${CPPFLAGS} -O0"
             CFLAGS="${CFLAGS} -g3 -gdwarf-2"
             ],[nut_with_debuginfo_C="Unknown C compiler, not adding options"]
@@ -6846,8 +6846,8 @@ NUT_PRINT_FEATURE_REPORT
 
 dnl Stopping short of patching the unknown script, we can warn about the issue
 dnl (visibly as it impacts next activities of the caller):
-AS_IF([test -s "${ABS_TOP_SRCDIR}/install-sh" && grep -w MKDIRPROG "${ABS_TOP_SRCDIR}/install-sh" >/dev/null],
-	[AS_IF([grep -v '#' "${ABS_TOP_SRCDIR}/install-sh" | grep -E '\$mkdirprog.*-p' >/dev/null],
+AS_IF([test -s "${ABS_TOP_SRCDIR}/install-sh" && ${GREP} -w MKDIRPROG "${ABS_TOP_SRCDIR}/install-sh" >/dev/null],
+	[AS_IF([${GREP} -v '#' "${ABS_TOP_SRCDIR}/install-sh" | ${EGREP} '\$mkdirprog.*-p' >/dev/null],
 		[],
 		[AC_MSG_WARN([=====================================================])
 		 AC_MSG_WARN([Your system provided (or NUT tarball included) an])

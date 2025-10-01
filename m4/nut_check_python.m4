@@ -178,7 +178,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                                 mySHEBANG_SCRIPT="`${PYTHON_CONFIG} --config-dir 2>/dev/null`/python-config.py" \
                                 || mySHEBANG_SCRIPT="${PYTHON_CONFIG}"
                                 if test -f "${mySHEBANG_SCRIPT}" ; then
-                                    mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | grep -E '^#!'`" || mySHEBANG=""
+                                    mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | ${EGREP} '^#!'`" || mySHEBANG=""
                                     if test -n "${mySHEBANG}" ; then
                                         PYTHON2="`echo "${mySHEBANG}" | sed 's,^#! *,,'`" \
                                         && test -n "${PYTHON2}" || PYTHON2="${PYTHON}"
@@ -311,7 +311,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                                 mySHEBANG_SCRIPT="`${PYTHON_CONFIG} --config-dir 2>/dev/null`/python-config.py" \
                                 || mySHEBANG_SCRIPT="${PYTHON_CONFIG}"
                                 if test -f "${mySHEBANG_SCRIPT}" ; then
-                                    mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | grep -E '^#!'`" || mySHEBANG=""
+                                    mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | ${EGREP} '^#!'`" || mySHEBANG=""
                                     if test -n "${mySHEBANG}" ; then
                                         PYTHON3="`echo "${mySHEBANG}" | sed 's,^#! *,,'`" \
                                         && test -n "${PYTHON3}" || PYTHON3="${PYTHON}"
