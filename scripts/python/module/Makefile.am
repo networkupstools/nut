@@ -75,7 +75,7 @@ upload publish:
 	@for S in "$(srcdir)"/*.py.in ; do \
 		B="`basename "$${S}" .in`" ; \
 		if test x"$${B}" = xsetup.py ; then \
-			if ! test -s "$${B}" ; then \
+			if test ! -s "$${B}" ; then \
 				sed -e "s/[@]NUT_SOURCE_GITREV_NUMERIC[@]/$(NUT_SOURCE_GITREV_NUMERIC)/" < "$(srcdir)/$${B}.in" > "$${B}" || exit ; \
 			fi ; \
 			continue; \

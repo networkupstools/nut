@@ -54,7 +54,8 @@ case "$BUILD_TYPE" in
         else
             echo "SKIPPING BUILD_TYPE=fightwarn-clang: compiler not found" >&2
         fi
-        if ! $TRIED_BUILD ; then
+        if $TRIED_BUILD ; then true
+	else
             echo "FAILED to run: no default-named compilers were found" >&2
             exit 1
         fi
@@ -1280,7 +1281,9 @@ check_gitignore() {
     [ -n "${BUILT_TARGETS-}" ] || BUILT_TARGETS="all? (usual default)"
 
     echo "=== Are GitIgnores good after '$MAKE $BUILT_TARGETS'? (should have no output below)"
-    if ! ( ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ) ; then
+    if ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ; then
+        true
+    else
         echo "WARNING: Skipping the GitIgnores check after '$BUILT_TARGETS' because there is no `pwd`/.git anymore" >&2
         return 0
     fi
@@ -1340,7 +1343,11 @@ consider_cleanup_shortcut() {
     # When iterating configure.ac or m4 sources, we can end up with an
     # existing but useless script file - nuke it and restart from scratch!
     if [ -s "${CI_BUILDDIR}"/configure ] ; then
-        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+        # FIXME: Consider CONFIG_SHELL, maybe from script shebang,
+        #  here - like autogen.sh does
+        if sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+            true
+        else
             echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
             DO_REGENERATE=true
         fi
@@ -1364,12 +1371,16 @@ can_clean_check() {
 }
 
 optional_maintainer_clean_check() {
-    if ! ( ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ) ; then
+    if ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ; then
+        true
+    else
         echo "Skipping maintainer-clean check because there is no .git" >&2
         return 0
     fi
 
-    if ! ( ( [ -e Makefile ] ) 2>/dev/null || [ -f Makefile ] || [ -h Makefile ] ); then
+    if ( [ -e Makefile ] ) 2>/dev/null || [ -f Makefile ] || [ -h Makefile ] ; then
+        true
+    else
         echo "WARNING: Skipping maintainer-clean check because there is no Makefile (did we clean in a loop earlier?)" >&2
         return 0
     fi
@@ -1395,12 +1406,16 @@ optional_maintainer_clean_check() {
 }
 
 optional_dist_clean_check() {
-    if ! ( ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ) ; then
+    if ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ; then
+        true
+    else
         echo "Skipping distclean check because there is no .git" >&2
         return 0
     fi
 
-    if ! ( ( [ -e Makefile ] ) 2>/dev/null || [ -f Makefile ] || [ -h Makefile ] ) ; then
+    if ( [ -e Makefile ] ) 2>/dev/null || [ -f Makefile ] || [ -h Makefile ] ; then
+        true
+    else
         echo "WARNING: Skipping distclean check because there is no Makefile (did we clean in a loop earlier?)" >&2
         return 0
     fi
@@ -1459,7 +1474,9 @@ if [ -z "$BUILD_TYPE" ] ; then
                     echo "=========================================================================="
                     sleep 5
                     ;;
-                *)  if ! (command -v aspell) 2>/dev/null >/dev/null ; then
+                *)  if (command -v aspell) 2>/dev/null >/dev/null ; then
+                        true
+                    else
                         echo "=========================================================================="
                         echo "WARNING: Seems you do not have 'aspell' in PATH (but maybe NUT configure"
                         echo "script would find the spellchecking toolkit elsewhere)"

@@ -341,7 +341,9 @@ else
                 ;;
         esac
     else
-        if ! mkdir -p "${TESTDIR}" || ! [ -w "${TESTDIR}" ] ; then
+        if mkdir -p "${TESTDIR}" && [ -w "${TESTDIR}" ] ; then
+            true
+        else
             log_info "'${TESTDIR}' could not be created/used, will mktemp"
             TESTDIR=""
         fi

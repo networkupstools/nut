@@ -414,13 +414,17 @@ report_output() {
             # NOTE: For maintainers, changes SRCDIR not BUILDDIR; requires GIT
             # Do not "mv" here because maintainer files may be hard-linked from elsewhere
             echo "NUT_VERSION_FORCED='${DESC50}'" > "${abs_top_srcdir}/VERSION_FORCED.tmp" || exit
-            if ! cmp "${abs_top_srcdir}/VERSION_FORCED.tmp" "${abs_top_srcdir}/VERSION_FORCED" >/dev/null 2>/dev/null ; then
+            if cmp "${abs_top_srcdir}/VERSION_FORCED.tmp" "${abs_top_srcdir}/VERSION_FORCED" >/dev/null 2>/dev/null ; then
+                true
+            else
                 cat "${abs_top_srcdir}/VERSION_FORCED.tmp" > "${abs_top_srcdir}/VERSION_FORCED" || exit
             fi
             rm -f "${abs_top_srcdir}/VERSION_FORCED.tmp"
 
             echo "NUT_VERSION_FORCED_SEMVER='${SEMVER}'" > "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" || exit
-            if ! cmp "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" "${abs_top_srcdir}/VERSION_FORCED_SEMVER" >/dev/null 2>/dev/null ; then
+            if cmp "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" "${abs_top_srcdir}/VERSION_FORCED_SEMVER" >/dev/null 2>/dev/null ; then
+                true
+            else
                 cat "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" > "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
             fi
             rm -f "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp"

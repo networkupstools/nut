@@ -702,8 +702,8 @@ SET_PARMAKES_OPT = \
 	  case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
 		*"j"*) ;; \
 		*) \
-			if ! [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
-				MAXPARMAKES=8 ; \
+			if [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
+				true ; else MAXPARMAKES=8 ; \
 			fi ; \
 			PARMAKES_OPT="-j $${MAXPARMAKES}" ; \
 		;; \
@@ -966,12 +966,12 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
 	            echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
-	            if ! diff ./ChangeLog "$@" >/dev/null 2>/dev/null ; then \
+	            if diff ./ChangeLog "$@" >/dev/null 2>/dev/null ; then \
+	                echo "Using distributed ChangeLog file from sources (and builddir already has content identical to one in srcdir)" >&2 ; \
+	            else \
 	                echo "Using distributed ChangeLog file from sources (and builddir is not srcdir)" >&2 ; \
 	                rm -f "$@" || true ; \
 	                cp -pf ./ChangeLog "$@" || { cat ./ChangeLog > "$@" ; touch -r ./ChangeLog "$@" || true ; } ; \
-	            else \
-	                echo "Using distributed ChangeLog file from sources (and builddir already has content identical to one in srcdir)" >&2 ; \
 	            fi ; \
 	        else \
 	            if test -s "$@" ; then \
@@ -1274,7 +1274,9 @@ install-as-root:
 			|| if [ -s '@sysconfdir@/ups.conf' -a -s '@sysconfdir@/upsd.conf' -a -s '@sysconfdir@/upsd.users' -a -s '@sysconfdir@/upsmon.conf' ] ; then exit 1 ; \
 			else echo "$@: some configs are missing, assuming new NUT installation" >&2; fi; \
 		fi ; \
-		if ! $${applied_udev} && (command -v udevadm); then \
+		if $${applied_udev} && (command -v udevadm); then \
+			true ; \
+		else \
 			udevadm control --reload-rules && udevadm trigger && applied_udev=true || true ; \
 		fi ; \
 	 fi ; \

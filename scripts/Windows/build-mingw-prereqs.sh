@@ -72,7 +72,7 @@ prepareEnv() {
 			esac
 			export ARCH PATH PREFIX
 
-			if ! (command -v sudo) ; then sudo() ( "$@" ) ; fi
+			if (command -v sudo) ; then true ; else sudo() ( "$@" ) ; fi
 		else
 			if [ -z "${ARCH-}" ] ; then
 				# TODO: Select by args, envvars, directory presence...

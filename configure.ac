@@ -2411,7 +2411,7 @@ AC_ARG_WITH(all,
 		fi
 		if test -z "${with_macosx_ups}"; then
 			with_macosx_ups="${withval}"
-			if ! test -d /System/Library/Frameworks/IOKit.framework/ ; then
+			if test ! -d /System/Library/Frameworks/IOKit.framework/ ; then
 				test x"${withval}" = xno || with_macosx_ups="auto"
 			fi
 		fi
@@ -5337,13 +5337,13 @@ AC_ARG_WITH(augeas-lenses-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but not found in default location])
 		fi
-		if ! test -s scripts/augeas/nutupsconf.aug.in ; then
+		if test ! -s scripts/augeas/nutupsconf.aug.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
 		fi
 		;;
 	auto)
-		if ! test -s scripts/augeas/nutupsconf.aug.in ; then
+		if test ! -s scripts/augeas/nutupsconf.aug.in ; then
 			AC_MSG_WARN([augeas lenses directory skipped because a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
 			auglensdir=""
 		fi

@@ -603,12 +603,12 @@ docinfo-since-v2.8.3.xml: docinfo.xml
 	 IN_REVISION=false ; OLDEST_SEEN=false ; \
 	 while read LINE ; do \
 		case "$${LINE}" in \
-			*'<revision>'*) if ! $$OLDEST_SEEN ; then IN_REVISION=true ; fi ;; \
+			*'<revision>'*) if $$OLDEST_SEEN ; then true ; else IN_REVISION=true ; fi ;; \
 			*'<revnumber>'"$${OLDEST_REL}"'</revnumber>'*) if $$IN_REVISION ; then echo '<revision>'; OLDEST_SEEN=true ; fi ; echo "$$LINE" ;; \
-			*'<revnumber>'*'</revnumber>'*) if ! $$OLDEST_SEEN ; then if $$IN_REVISION ; then echo '<revision>'; fi ; echo "$$LINE" ; fi ;; \
+			*'<revnumber>'*'</revnumber>'*) if $$OLDEST_SEEN ; then true ; else if $$IN_REVISION ; then echo '<revision>'; fi ; echo "$$LINE" ; fi ;; \
 			*'</revision>'*) if $$IN_REVISION ; then echo "$$LINE" ; fi ; IN_REVISION=false ;; \
 			*'</revhistory>'*) echo "$$LINE" ;; \
-			*) if ! $$OLDEST_SEEN || $$IN_REVISION ; then echo "$$LINE" ; fi ;; \
+			*) if test x"$$OLDEST_SEEN" = xfalse || $$IN_REVISION ; then echo "$$LINE" ; fi ;; \
 		esac ; \
 	 done < "$?" > "$@".tmp \
 	 && mv -f "$@".tmp "$@"
@@ -1198,7 +1198,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	        esac; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
-	    if ! test -f "$@" ; then touch "$@" ; fi ; \
+	    if test ! -f "$@" ; then touch "$@" ; fi ; \
 	 else \
 	    COUNT=30 ; \
 	    touch "$@.$$$$" ; \
@@ -1228,7 +1228,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	        esac ; \
 	        D="`dirname "$$F"`" ; \
 	        (cd '$(abs_builddir)' && $(MKDIR_P) "$${linkroot}/$$D") || { rm -f "$@.working" ; exit 1 ; } ; \
-	        if ! test -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
+	        if test ! -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
 	            echo "  LN	'$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" ; \
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
