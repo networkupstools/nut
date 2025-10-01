@@ -79,7 +79,8 @@
 #   start-up lacking a driver, there should be some timer to re-enable
 #   failed not-disabled drivers (would be useful in any case though).
 
-# The EGREP command found during configuration
+# The GREP and EGREP commands found during configuration for the platform
+GREP="@GREP@"
 EGREP="@EGREP@"
 
 # Directory where NUT configs are located, e.g. /etc/nut or /etc/ups
@@ -1128,14 +1129,14 @@ systemd_getSavedMD5() {
     [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf"
     [ -s "${PROPFILE}" ] \
-    && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
+    && $GREP "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
     || { echo "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
 }
 systemd_findSavedDeviceName() {
     # Returns long service instance name which has DEVICE=="$1"
     # For empty "$1" returns a list of all recorded "SVC<TAB>DEVICE"
     if [ -z "$1" ]; then
-        grep -H "Environment='DEVICE=" \
+        $GREP -H "Environment='DEVICE=" \
             "${SYSTEMD_CONFPATH}"/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
         | sed 's|^'"${SYSTEMD_CONFPATH}"'/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*\([^\"']*\)[\"']*"'$|\1\t\2|'
     else
@@ -1152,7 +1153,7 @@ systemd_getSavedDeviceName() {
     PROP="DEVICE"
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf"
     [ -s "${PROPFILE}" ] \
-    && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," -e 's,^"\(.*\)"$,\1,' \
+    && $GREP "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," -e 's,^"\(.*\)"$,\1,' \
     || { echo "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
 }
 systemd_setSavedDeviceName() {
@@ -1689,7 +1690,7 @@ get_device_for_service() {
     FINAL_RES=0
     list_services_for_devices_once && [ "${#SVCS_DEVS_LIST}" != 0 ] || FINAL_RES=$?
     if [ "$FINAL_RES" = 0 ]; then
-        echo "$SVCS_DEVS_LIST" | grep "$SVC" | ( \
+        echo "$SVCS_DEVS_LIST" | $GREP "$SVC" | ( \
             while read _SVC _DEV ; do
                 _SVC="`$hook_validInstanceSuffixName "${_SVC}"`" || exit
                 [ "${_SVC}" = "${SVC}" ] && echo "${_DEV}" && exit 0
