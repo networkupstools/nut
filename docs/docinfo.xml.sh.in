@@ -98,7 +98,12 @@ sed -e '/<!-- AUTOINSERT LOCATION -->/a'"$NEWTAGS_SED" \
     | tr '|' '\n' \
     > "${DOCINFO_XML}.tmp"
 
-diff -bu "${DOCINFO_XML}" "${DOCINFO_XML}.tmp"
+OUTD="`diff -bu "${DOCINFO_XML}" "${DOCINFO_XML}.tmp" 2>/dev/null`"
+if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
+    echo "$OUTD"
+else
+    diff "${DOCINFO_XML}" "${DOCINFO_XML}.tmp"
+fi
 
 echo "Was the change acceptable? Press Y to modify the original '${DOCINFO_XML}' file [Y/N]" >&2
 read LINE

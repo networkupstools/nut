@@ -100,13 +100,21 @@ do
 				# Ensure new content is applied
 				mv -f "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}"
 			fi
-		else # Checking
-			diff -u "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}" \
-			|| { GITACT=""
-			     case "${drvfile}" in *.in) GITACT=" and commit the git change" ;; esac
-			     echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: re-run this script without args${GITACT}, please" >&2
-			     RES=1
-			   }
+		else # Checking; also report the diff markup
+			OUTD="`diff -u "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}" 2>/dev/null`" ||
+			if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
+				true
+			else
+				OUTD="`diff "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}"`"
+			fi
+
+			if test -n "${OUTD}" ; then
+				echo "$OUTD"
+				GITACT=""
+				case "${drvfile}" in *.in) GITACT=" and commit the git change" ;; esac
+				echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: re-run this script without args${GITACT}, please" >&2
+				RES=1
+			fi
 		fi \
 		|| RES=$?
 
