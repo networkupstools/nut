@@ -97,14 +97,24 @@ NUT_MONITOR_COMMON_TEMPLATE = \
 	app/locale/it/it.po \
 	app/locale/ru/ru.po
 
+# Platforms vary with tooling abilitites...
+DEF_TOUPPER = { TOUPPER="cat" ; \
+for TR_VARIANT in "tr 'a-z' 'A-Z'" "tr '[:lower:]' '[:upper:]'" "tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" ; do \
+    if [ x"`echo c | $${TR_VARIANT}`" = xC ] ; then \
+        TOUPPER="$${TR_VARIANT}" ; \
+        break ; \
+    fi ; \
+done ; \
+}
 
 # Craft locale subdirs with "xx_YY.UTF-8" patterned names,
 # and similarly alias the "*.po" files inside, as needed
 # by some platforms but not others to find these files.
 install-data-hook-app-locale-symlinks:
-	@cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
+	@cd "$(DESTDIR)$(nutmonitordir)/app/locale" || exit ; \
+	 $(DEF_TOUPPER) ; \
 	 for L in fr it ru ; do \
-	    UTF8_NAME="$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	    UTF8_NAME="$$L"_"`echo "$$L" | $${TOUPPER}`".UTF-8 || exit ; \
 	    UTF8_POFILE="$${L}/$${UTF8_NAME}.po" || exit ; \
 	    UTF8_SUBDIR="$${UTF8_NAME}" || exit ; \
 	    rm -f "$${UTF8_POFILE}" || true ; rm -f "$${UTF8_SUBDIR}" || true ; \
@@ -114,9 +124,10 @@ install-data-hook-app-locale-symlinks:
 
 uninstall-hook-app-locale-symlinks:
 	@RES=0 ; \
-	 cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
+	 cd "$(DESTDIR)$(nutmonitordir)/app/locale" || exit ; \
+	 $(DEF_TOUPPER) ; \
 	 for L in fr it ru ; do \
-	    UTF8_NAME="$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	    UTF8_NAME="$$L"_"`echo "$$L" | $${TOUPPER}`".UTF-8 || exit ; \
 	    UTF8_POFILE="$${L}/$${UTF8_NAME}.po" || exit ; \
 	    UTF8_SUBDIR="$${UTF8_NAME}" || exit ; \
 	    rm -f "$${UTF8_POFILE}" || RES=$$? ; \
