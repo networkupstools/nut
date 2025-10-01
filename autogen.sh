@@ -194,7 +194,7 @@ else
 fi
 
 [ "$AUTOTOOL_RES" = 0 ] && [ -s configure ] && [ -x configure ] \
-|| { cat << EOF
+|| { ( cat << EOF
 ----------------------------------------------------------------------
 FAILED: did not generate an executable configure script!
 
@@ -209,8 +209,9 @@ FAILED: did not generate an executable configure script!
 # "ifdef" block if your autotools still would not grok it.
 ----------------------------------------------------------------------
 EOF
+	) >&2
 	exit 1
-} >&2
+}
 
 # Some autoconf versions may leave "/bin/sh" regardless of CONFIG_SHELL
 # which originally was made for "recheck" operations
