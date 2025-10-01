@@ -83,6 +83,9 @@ if ( [ -e "${abs_top_srcdir}/.git" ] ) 2>/dev/null || [ -d "${abs_top_srcdir}/.g
    SRC_IS_GIT=true
 fi
 
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 ############################################################################
 # Numeric-only default version, for AC_INIT and similar consumers
 # in case we build without a Git workspace (from tarball, etc.)
@@ -159,7 +162,7 @@ getver_git() {
         # Currently we repeat the likely branch names in the
         # end, so that if they exist and are still newest -
         # those are the names to report.
-        for T in master `git branch -a 2>/dev/null | grep -E '^ *remotes/[^ ]*/master$'` origin/master upstream/master master ; do
+        for T in master `git branch -a 2>/dev/null | ${EGREP} '^ *remotes/[^ ]*/master$'` origin/master upstream/master master ; do
             git log -1 "$T" 2>/dev/null >/dev/null || continue
             if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
                 NUT_VERSION_GIT_TRUNK="$T"
@@ -194,7 +197,7 @@ getver_git() {
     # NOTE: match/exclude by shell glob expressions, not regex!
     DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null`" \
     && [ -n "${DESC}" ] \
-    || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*'`"
+    || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | ${EGREP} -v '(rc|-signed|alpha|beta|Windows|IPM)' | ${EGREP} 'v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*'`"
     # Old stripper (also for possible refspec parts like "tags/"):
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
     # Follow https://semver.org/#spec-item-10 about build metadata:
@@ -213,7 +216,7 @@ getver_git() {
     # string over longer ones if available, or older RC over newer release
     # like "v2.8.2-rc8" preferred over "v2.8.3" if they happen to be tagging
     # the same commit):
-    DESC_PRERELEASE="`git describe --tags | grep -E '^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$'`" \
+    DESC_PRERELEASE="`git describe --tags | ${EGREP} '^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$'`" \
     || DESC_PRERELEASE=""
 
     # How much of the known trunk history is in current HEAD?
@@ -304,7 +307,7 @@ getver_default() {
             # Assume triplet (possibly prefixed with `v`) + suffix
             # like `v2.8.3-rc6` or `2.8.2-beta-1`
             # FIXME: Check the assumption better!
-            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
+            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
             && [ -n "${SUFFIX}" ] \
             && SUFFIX_PRERELEASE="`echo "${SUFFIX}" | sed 's/^-*//'`" \
             && NUT_VERSION_DEFAULT="`echo "${NUT_VERSION_DEFAULT}" | sed -e 's/'"${SUFFIX}"'$//'`"
@@ -314,7 +317,7 @@ getver_default() {
 
             # We remove up to 5 dot-separated leading numbers, so
             # for the example above, `-2881+g45029249f` remains:
-            tmpSUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(.*\+(rc|alpha|beta)[+-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
+            tmpSUFFIX="`echo "${NUT_VERSION_DEFAULT}" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(.*\+(rc|alpha|beta)[+-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
             || tmpSUFFIX=""
             if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != "${NUT_VERSION_DEFAULT}" ] ; then
                 # Extract tagged NUT version from that suffix
