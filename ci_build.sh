@@ -19,7 +19,7 @@ SCRIPT_ARGS=("$@")
 [ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; export GREP ; }
 [ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; export EGREP ; }
 # Hoping for a GNU-style grep with -A/-B support here (for aid printouts; failing is not fatal):
-[ -n "$GGREP" ] || { GREP="`command -v ggrep`" && [ x"${GREP}" != x ] || GGREP="${GREP}" ; }
+[ -n "$GGREP" ] || { GGREP="`command -v ggrep`" && [ x"${GGREP}" != x ] || GGREP="${GREP}" ; }
 
 # Quick hijack for interactive development like this:
 #   BUILD_TYPE=fightwarn-clang ./ci_build.sh
