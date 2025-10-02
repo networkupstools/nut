@@ -2774,7 +2774,19 @@ bindings)
         # Help developers debug:
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
+
+        rm -f config.cache.tmp || true
+        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache ]; then
+            echo "=== Keeping old config.cache as asked by BUILD_TYPE default or caller request"
+            cp -f config.cache config.cache.tmp
+        fi
+
         ${MAKE} realclean -k || true
+
+        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache.tmp ]; then
+            mv -f config.cache.tmp config.cache || true
+        fi
+
         echo "=== Finished initial clean-up"
     fi
 
