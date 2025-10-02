@@ -1560,6 +1560,11 @@ fi
 # By default, we clean up the config.cache between jobs (before start,
 # after finish), but do want to use (and retain) it between loop runs
 # of BUILD_TYPE="default-all-errors*".
+# FIXME: Currently disabled for the loops; we want to only cache the
+#  common system findings but forget the details we vary (implementations
+#  of libusb, ssl...) because this knowledge about "lack" of some methods
+#  breaks those very re-runs. The approach can still be used for runs of
+#  same configurations from one iteration to another on CI systems though.
 # Note that autotools automatically removes such file name during the
 # "make distclean" and stronger goals, so on our side we can only
 # stash and restore the file around such operations.
@@ -1571,7 +1576,7 @@ fi
 
 if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xauto ]; then
     case "$BUILD_TYPE" in
-        default-all-errors*) DO_CLEAN_AUTOCONF_CACHE="no" ;;
+        #default-all-errors*) DO_CLEAN_AUTOCONF_CACHE="no" ;;
         *) DO_CLEAN_AUTOCONF_CACHE="yes" ;;
     esac
 fi
@@ -1579,7 +1584,7 @@ export DO_CLEAN_AUTOCONF_CACHE
 
 if [ x"${DO_USE_AUTOCONF_CACHE}" = xauto ]; then
     case "$BUILD_TYPE" in
-        default-all-errors*) DO_USE_AUTOCONF_CACHE="yes" ;;
+        #default-all-errors*) DO_USE_AUTOCONF_CACHE="yes" ;;
         *) DO_USE_AUTOCONF_CACHE="no" ;;
     esac
 fi
