@@ -1512,7 +1512,7 @@ if [ -z "$BUILD_TYPE" ] ; then
             fi
             ;;
 
-        *) echo "WARNING: Command-line argument '$1' wsa not recognized as a BUILD_TYPE alias" >&2 ;;
+        *) echo "WARNING: Command-line argument '$1' was not recognized as a BUILD_TYPE alias" >&2 ;;
     esac
 fi
 
