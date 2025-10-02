@@ -280,6 +280,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 		if (notifycmd != NULL) {
 			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, data->notice);
 
+			upsdebugx(6, "%s: Calling NOTIFYCMD: %s", __func__, exec);
 			if (data->upsname)
 				setenv("UPSNAME", data->upsname, 1);
 			else
