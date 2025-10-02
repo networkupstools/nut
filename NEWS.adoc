@@ -120,6 +120,9 @@ https://github.com/networkupstools/nut/milestone/12
    * Introduced `upssched -l` mode to list currently tracked timers. [#3097]
    * Make use of `setproctag()` and `getproctag()` to report parent/child
      process names. [#3084]
+   * Introduced optional passing of `NOTIFYMSG` text (normally originating
+     from `upsmon` which calls `upssched`) as an environment variable into
+     the ultimately executed `CMDSCRIPT` processes. [#3105]
 
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)

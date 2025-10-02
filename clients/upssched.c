@@ -28,6 +28,8 @@
 /* design notes for the curious:
  *
  * 1. we get called with a ups_name and notify_type from upsmon
+ *    (and notify_msg via first non-option argv[] element if
+ *    present and not trivial)
  * 2. the config file is searched for an AT condition that matches
  * 3. the conditions on any matching lines are parsed
  *
@@ -73,6 +75,7 @@ typedef struct ttype_s {
 	time_t	etime;
 	char	**upsnames;		/* List of unique UPSNAME values that commanded to start this timer name */
 	char	**notifytypes;	/* List of unique NOTIFYTYPE values that commanded to start this timer name */
+	char	**notifymsgs;	/* List of unique NOTIFYMSG values that commanded to start this timer name */
 	struct ttype_s	*next;
 } ttype_t;
 
@@ -83,7 +86,7 @@ static int	nut_debug_level_args = 0, nut_debug_level_env = 0, nut_debug_level_co
 static int	list_timers = 0;
 
 /* ups name and notify type (string) as received from upsmon */
-static const	char	*ups_name, *notify_type, *prog = NULL;
+static const	char	*ups_name = NULL, *notify_type = NULL, *notify_msg = NULL, *prog = NULL;
 
 #ifdef WIN32
 static OVERLAPPED connect_overlapped;
@@ -221,8 +224,8 @@ static char* collect_string(char **string_arr, char *logtag, char *sep, size_t *
 
 static void exec_cmd_timer(ttype_t *item)
 {
-	char	*upsnames = NULL, *notifytypes = NULL;
-	size_t	upsnames_count = 0, notifytypes_count = 0;
+	char	*upsnames = NULL, *notifytypes = NULL, *notifymsgs = NULL;
+	size_t	upsnames_count = 0, notifytypes_count = 0, notifymsgs_count = 0;
 
 	if (!item || !item->name || !(*(item->name))) {
 		upsdebugx(1, "%s: SKIP bad call with null arg or its command name", __func__);
@@ -238,15 +241,22 @@ static void exec_cmd_timer(ttype_t *item)
 		notifytypes = collect_string(item->notifytypes, "NOTIFYTYPE", ",", NULL, &notifytypes_count);
 	}
 
+	if (item->notifymsgs && *(item->notifymsgs) && **(item->notifymsgs)) {
+		notifymsgs = collect_string(item->notifymsgs, "NOTIFYMSG", ".\t", NULL, &notifymsgs_count);
+	}
+
 	if (upsnames)
 		setenv("UPSNAME", upsnames, 1);
 
 	if (notifytypes)
 		setenv("NOTIFYTYPE", notifytypes, 1);
 
+	if (notifymsgs)
+		setenv("NOTIFYMSG", notifymsgs, 1);
+
 	if (nut_debug_level)
-		upslogx(LOG_INFO, "Executing command by timer: %s\t[%s]\t[%s]",
-			item->name, NUT_STRARG(notifytypes), NUT_STRARG(upsnames));
+		upslogx(LOG_INFO, "Executing command by timer: %s\t[%s]\t[%s]\t[%s]",
+			item->name, NUT_STRARG(notifytypes), NUT_STRARG(upsnames), NUT_STRARG(notifymsgs));
 	exec_cmd(item->name);
 	upsdebugx(3, "%s: returned from exec_cmd()", __func__);
 
@@ -259,6 +269,11 @@ static void exec_cmd_timer(ttype_t *item)
 	if (notifytypes) {
 		unsetenv("NOTIFYTYPE");
 		free(notifytypes);
+	}
+
+	if (notifymsgs) {
+		unsetenv("NOTIFYMSG");
+		free(notifymsgs);
 	}
 
 	upsdebugx(3, "%s: done", __func__);
@@ -293,6 +308,14 @@ static void removetimer(ttype_t *tfind)
 					free(*ps);
 				}
 				free(tmp->notifytypes);
+			}
+
+			if (tmp->notifymsgs) {
+				char **ps;
+				for (ps = tmp->notifymsgs; ps != NULL && *ps != NULL; ps++) {
+					free(*ps);
+				}
+				free(tmp->notifymsgs);
 			}
 
 			upsdebugx(3, "%s: forgetting %s", __func__, tmp->name);
@@ -367,7 +390,7 @@ static void checktimers(void)
 	upsdebugx(3, "%s: done", __func__);
 }
 
-static void start_timer(const char *name, const char *ofsstr, const char *notifytype, const char *upsname, int shared_timer)
+static void start_timer(const char *name, const char *ofsstr, const char *notifytype, const char *upsname, const char *notifymsg, int shared_timer)
 {
 	time_t	now;
 	long	ofs;
@@ -393,8 +416,8 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 		while (tmp) {
 			if (tmp->name && !strcmp(tmp->name, name)) {
 				if (nut_debug_level)
-					upslogx(LOG_INFO, "Append data to shared timer: %s\t[%s]\t[%s]\t(will elapse in %g seconds)",
-						name, NUT_STRARG(notifytype), NUT_STRARG(upsname),
+					upslogx(LOG_INFO, "Append data to shared timer: %s\t[%s]\t[%s]\t[%s]\t(will elapse in %g seconds)",
+						name, NUT_STRARG(notifytype), NUT_STRARG(upsname), NUT_STRARG(notifymsg),
 						difftime(tmp->etime, now));
 
 				/* FIXME? Consider only the first hit as the shared timer?
@@ -420,6 +443,29 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 						tmp->notifytypes = xcalloc(2, sizeof(char*));
 						tmp->notifytypes[0] = xstrdup(notifytype);
 						tmp->notifytypes[1] = NULL;
+					}
+				}
+
+				if (notifymsg && *notifymsg) {
+					if (tmp->notifymsgs) {
+						char	**ps = NULL;
+						size_t	count = 0;	/* amount of non-NULL entries, if we get to the end */
+
+						for (ps = tmp->notifymsgs; ps != NULL && *ps != NULL ; ps++) {
+							count++;
+							if (!strcmp(*ps, notifymsg))
+								break;
+						}
+
+						if (ps == NULL || *ps == NULL) {
+							tmp->notifymsgs = xrealloc(tmp->notifymsgs, count + 2);
+							tmp->notifymsgs[count] = xstrdup(notifymsg);
+							tmp->notifymsgs[count + 1] = NULL;
+						}
+					} else {
+						tmp->notifymsgs = xcalloc(2, sizeof(char*));
+						tmp->notifymsgs[0] = xstrdup(notifymsg);
+						tmp->notifymsgs[1] = NULL;
 					}
 				}
 
@@ -456,8 +502,8 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 	}
 
 	if (nut_debug_level)
-		upslogx(LOG_INFO, "New timer: %s\t[%s]\t[%s]\t(will elapse in %ld seconds)",
-			name, NUT_STRARG(notifytype), NUT_STRARG(upsname), ofs);
+		upslogx(LOG_INFO, "New timer: %s\t[%s]\t[%s]\t[%s]\t(will elapse in %ld seconds)",
+			name, NUT_STRARG(notifytype), NUT_STRARG(upsname), NUT_STRARG(notifymsg), ofs);
 
 	/* now add to the queue */
 	if (!shared_timer) {
@@ -473,6 +519,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 	tmp->name = xstrdup(name);
 	tmp->etime = now + ofs;
 	tmp->notifytypes = NULL;
+	tmp->notifymsgs = NULL;
 	tmp->upsnames = NULL;
 	tmp->next = NULL;
 
@@ -480,6 +527,12 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 		tmp->notifytypes = xcalloc(2, sizeof(char*));
 		tmp->notifytypes[0] = xstrdup(notifytype);
 		tmp->notifytypes[1] = NULL;
+	}
+
+	if (notifymsg && *notifymsg) {
+		tmp->notifymsgs = xcalloc(2, sizeof(char*));
+		tmp->notifymsgs[0] = xstrdup(notifymsg);
+		tmp->notifymsgs[1] = NULL;
 	}
 
 	if (upsname && *upsname) {
@@ -494,7 +547,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 		thead = tmp;
 }
 
-static void cancel_timer(const char *name, const char *cname, const char *notifytype, const char *upsname, int do_cancel_matched)
+static void cancel_timer(const char *name, const char *cname, const char *notifytype, const char *upsname, const char *notifymsg, int do_cancel_matched)
 {
 	ttype_t	*tmp;
 	size_t	removed = 0;
@@ -505,6 +558,7 @@ static void cancel_timer(const char *name, const char *cname, const char *notify
 
 	for (tmp = thead; tmp != NULL; tmp = tmp->next) {
 		if (!strcmp(tmp->name, name)) {		/* match */
+			/* Note we do not match "notifymsg" as it likely differs */
 			if (!do_cancel_matched
 			||  (   (!notifytype || !(*notifytype))
 				 && (!upsname || !(*upsname)) )
@@ -553,8 +607,13 @@ static void cancel_timer(const char *name, const char *cname, const char *notify
 				}
 			}
 
-			if (nut_debug_level)
-				upslogx(LOG_INFO, "Cancelling timer: %s", name);
+			if (nut_debug_level) {
+				if (notifymsg && *notifymsg) {
+					upslogx(LOG_INFO, "Cancelling timer: %s: %s", name, notifymsg);
+				} else {
+					upslogx(LOG_INFO, "Cancelling timer: %s", name);
+				}
+			}
 			removetimer(tmp);
 			removed++;
 
@@ -969,7 +1028,7 @@ static int sock_arg(conn_t *conn)
 
 	/* LIST-TIMERS (no args expected now)
 	 * returns a list with tab-separated values for:
-	 * NAME TO_ABS TO_REL NOTIFYTYPES UPSNAMES
+	 * NAME TO_ABS TO_REL NOTIFYTYPES UPSNAMES NOTIFYMSGS_TABSEP
 	 */
 	if (!strcmp(conn->ctx.arglist[0], "LIST-TIMERS")) {
 		ttype_t	*item = thead;
@@ -1004,6 +1063,20 @@ static int sock_arg(conn_t *conn)
 				}
 
 				if (s && *s) {
+					send_to_one(conn, "%s\t", s);
+				} else {
+					send_to_one(conn, "\"\"\t");
+				}
+				if (s) {
+					free(s);
+				}
+
+				s = NULL;
+				if (item->notifymsgs && *(item->notifymsgs) && **(item->notifymsgs)) {
+					s = collect_string(item->notifymsgs, "NOTIFYMSG", ".\t", NULL, NULL);
+				}
+
+				if (s && *s) {
 					send_to_one(conn, "%s\n", s);
 				} else {
 					send_to_one(conn, "\"\"\n");
@@ -1020,7 +1093,7 @@ static int sock_arg(conn_t *conn)
 		return 1;
 	}
 
-	/* CANCEL <name> [<cmd>] [<NOTIFYTYPE> <UPSNAME] */
+	/* CANCEL <name> [<cmd>] [<NOTIFYTYPE> <UPSNAME> <NOTIFYMSG_FOR_LOGINFO>] */
 	{ /* scoping */
 		int	do_cancel = !strcmp(conn->ctx.arglist[0], "CANCEL"),
 			do_cancel_matched = !strcmp(conn->ctx.arglist[0], "CANCEL-MATCHED");
@@ -1028,34 +1101,39 @@ static int sock_arg(conn_t *conn)
 		if (do_cancel || do_cancel_matched) {
 			/* "cmd" may be present and empty, this is handled in the method */
 			if (conn->ctx.numargs < 3)
-				cancel_timer(conn->ctx.arglist[1], NULL, NULL, NULL, do_cancel_matched);
+				cancel_timer(conn->ctx.arglist[1], NULL,
+					NULL, NULL, NULL, do_cancel_matched);
 			else
-			if (conn->ctx.numargs < 5)
-				cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2], NULL, NULL, do_cancel_matched);
+			if (conn->ctx.numargs < 6)
+				cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
+					NULL, NULL, NULL, do_cancel_matched);
 			else
 				cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
-					conn->ctx.arglist[3], conn->ctx.arglist[4], do_cancel_matched);
+					conn->ctx.arglist[3], conn->ctx.arglist[4],
+					conn->ctx.arglist[5], do_cancel_matched);
 
 			send_to_one(conn, "OK\n");
 			return 1;
 		}
 	}
 
-	if (conn->ctx.numargs < 5)
+	if (conn->ctx.numargs < 6)
 		return 0;
 
-	/* START <name> <length> <NOTIFYTYPE> <UPSNAME> */
+	/* START <name> <length> <NOTIFYTYPE> <UPSNAME> <NOTIFYMSG> */
 	if (!strcmp(conn->ctx.arglist[0], "START")) {
 		start_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
-			conn->ctx.arglist[3], conn->ctx.arglist[4], 0);
+			conn->ctx.arglist[3], conn->ctx.arglist[4],
+			conn->ctx.arglist[5], 0);
 		send_to_one(conn, "OK\n");
 		return 1;
 	}
 
-	/* START-SHARED <name> <length> */
+	/* START-SHARED <name> <length> <NOTIFYTYPE> <UPSNAME> <NOTIFYMSG> */
 	if (!strcmp(conn->ctx.arglist[0], "START-SHARED")) {
 		start_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
-			conn->ctx.arglist[3], conn->ctx.arglist[4], 1);
+			conn->ctx.arglist[3], conn->ctx.arglist[4],
+			conn->ctx.arglist[5], 1);
 		send_to_one(conn, "OK\n");
 		return 1;
 	}
@@ -1293,6 +1371,7 @@ static void start_daemon(TYPE_FD lockfd)
 	 * CMDSCRIPT to run */
 	unsetenv("NOTIFYTYPE");
 	unsetenv("UPSNAME");
+	unsetenv("NOTIFYMSG");
 
 	/* now watch for activity */
 	upsdebugx(2, "Timer daemon waiting for connections on pipefd %d",
@@ -1404,6 +1483,7 @@ static void start_daemon(TYPE_FD lockfd)
 	 * CMDSCRIPT to run */
 	unsetenv("NOTIFYTYPE");
 	unsetenv("UPSNAME");
+	unsetenv("NOTIFYMSG");
 
 	/* now watch for activity */
 
@@ -1587,7 +1667,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 	int	i;
 	ssize_t	ret;
 	size_t	enclen, buflen;
-	char buf[SMALLBUF], enc[SMALLBUF + 8];
+	char buf[LARGEBUF], enc[LARGEBUF + 8];
 #ifndef WIN32
 	int	ret_s;
 	struct	timeval tv;
@@ -1620,6 +1700,9 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 	snprintfcat(buf, sizeof(buf), " \"%s\"",
 		ups_name? pconf_encode(ups_name, enc, sizeof(enc)) : "");
+
+	snprintfcat(buf, sizeof(buf), " \"%s\"",
+		notify_msg ? pconf_encode(notify_msg, enc, sizeof(enc)) : "");
 
 	snprintf(enc, sizeof(enc), "%s\n", buf);
 
@@ -1895,33 +1978,37 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	/* if command is valid, send it to the daemon (which may start it) */
 
 	if (!strcmp(cmd, "START-TIMER")) {
-		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
 			NUT_STRARG(ca1), NUT_STRARG(ca2),
-			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
 		sendcmd("START", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "START-TIMER-SHARED")) {
-		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
 			NUT_STRARG(ca1), NUT_STRARG(ca2),
-			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
 		sendcmd("START-SHARED", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "CANCEL-TIMER")) {
-		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
 			NUT_STRARG(ca1), NUT_STRARG(ca2),
-			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
 		sendcmd("CANCEL", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "EXECUTE")) {
-		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
 			NUT_STRARG(ca1), NUT_STRARG(ca2),
-			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
 
 		if (ca1[0] == '\0') {
 			upslogx(LOG_ERR, "Empty EXECUTE command argument");
@@ -1935,9 +2022,10 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 		return;
 	}
 
-	upslogx(LOG_ERR, "Invalid command: %s\t[%s]\t[%s]\t[%s]\t[%s]", cmd,
+	upslogx(LOG_ERR, "Invalid command: %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", cmd,
 			NUT_STRARG(ca1), NUT_STRARG(ca2),
-			NUT_STRARG(notify_type), NUT_STRARG(ups_name));
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
 }
 
 static int conf_arg(size_t numargs, char **arg)
@@ -2085,7 +2173,7 @@ static void help(const char *arg_progname)
 	printf("upssched: upsmon's scheduling helper for offset timers\n");
 	printf("Practical behavior is managed by UPSNAME and NOTIFYTYPE envvars\n");
 
-	printf("\nUsage: %s [OPTIONS]\n\n", arg_progname);
+	printf("\nUsage: %s [OPTIONS] [NOTIFYMSG]\n\n", arg_progname);
 	printf("  -D		raise debugging level (NOTE: keeps reporting when daemonized)\n");
 	printf("  -V		display the version of this software\n");
 	printf("  -h		display this help\n");
@@ -2100,7 +2188,7 @@ static void help(const char *arg_progname)
 
 int main(int argc, char **argv)
 {
-	int	i;
+	int	i, argn = 0;
 
 	if (argc > 0)
 		prog = xbasename(argv[0]);
@@ -2108,6 +2196,7 @@ int main(int argc, char **argv)
 		prog = "upssched";
 
 	while ((i = getopt(argc, argv, "+DVhl")) != -1) {
+		argn++;
 		switch (i) {
 			case 'D':
 				nut_debug_level_args++;
@@ -2153,12 +2242,21 @@ int main(int argc, char **argv)
 
 	ups_name = getenv("UPSNAME");
 	notify_type = getenv("NOTIFYTYPE");
+	upsdebugx(2, "Remaining argn=%d of argc=%d", argn, argc);
+	if (argc > argn + 1 && *argv[argn + 1])
+		notify_msg = argv[argn + 1];
 
 	if ((!list_timers) && ((!ups_name) || (!notify_type))) {
 		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");
 		printf("This program should only be run from upsmon(%s).\n", MAN_SECTION_CMD_SYS);
 		exit(EXIT_FAILURE);
 	}
+
+	upsdebugx(1, "Handling NOTIFYTYPE='%s' for UPSNAME='%s'", notify_type, ups_name);
+	if (notify_msg)
+		upsdebugx(1, "Got a NOTIFYMSG from command line: %s", notify_msg);
+	else
+		upsdebugx(1, "Did not get any NOTIFYMSG from command line");
 
 	/* see if this matches anything in the config file */
 	/* This is actually the processing loop:

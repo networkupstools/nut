@@ -98,10 +98,11 @@ gone for 10 seconds
 Start a timer of 'interval' seconds.  When it triggers, it
 will pass the argument 'timername' as an argument to your
 CMDSCRIPT. Each invocation checks if the 'timername' was already
-started, and if so -- appends the current event's `UPSNAME` and
-`NOTIFYTYPE` to the list of unique values it would report via
-environment variables (as a comma-separated string) when the
-timer does execute.
+started, and if so -- appends the current event's `UPSNAME`,
+`NOTIFYTYPE` and `NOTIFYMSG` to the list of unique values it
+would report via environment variables (as a comma-separated
+string for `UPSNAME` and `NOTIFYTYPE`, and tab-separated
+sentences for `NOTIFYMSG`) when the timer does execute.
 +
 NOTE: Currently this updates the first seen instance with the
 'timername' (in case you managed to start many).
@@ -131,6 +132,7 @@ stop the timer before it triggers
 *CANCEL-TIMER-MATCHED* 'timername' ['cmd'];;
 Similar to the above, but tries to only cancel the 'timername' if it
 refers to the `UPSNAME` and `NOTIFYTYPE` values passed by caller.
+The `NOTIFYMSG` is ignored in this context.
 +
 Example:
 +

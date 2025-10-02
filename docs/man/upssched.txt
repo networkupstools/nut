@@ -9,7 +9,7 @@ upssched - Timer helper for scheduling events from upsmon
 SYNOPSIS
 --------
 
-*upssched*
+*upssched* [OPTIONS] [NOTIFYMSG]
 
 NOTE: *upssched* should be run from linkman:upsmon[8] via the NOTIFYCMD.
 You should never run it directly during normal operations.
@@ -17,7 +17,8 @@ You should never run it directly during normal operations.
 *upssched* -l
 
 List currently tracked timer events, if any. Report as a TAB-separated
-table of: 'NAME', 'TIMEOUT_ABS', 'TIMEOUT_REL', 'NOTIFYTYPE', 'UPSNAME'.
+table of: 'NAME', 'TIMEOUT_ABS', 'TIMEOUT_REL', 'NOTIFYTYPE', 'UPSNAME',
+`NOTIFYMSG`.
 
 DESCRIPTION
 -----------
@@ -26,6 +27,15 @@ DESCRIPTION
 relative to events being monitored by linkman:upsmon[8].  The original
 purpose was to allow for a shutdown to occur after some fixed period
 on battery, but there are other uses that are possible.
+
+OPTIONS
+-------
+
+*NOTIFYMSG*::
+Optionally pass a text message (typically originates from linkman:upsmon[8]
+call to `upssched` as its `NOTIFYCMD`) as an environment variable named
+`NOTIFYMSG` to the `CMDSCRIPT` launched by `upssched` immediately or after
+a timer expires.
 
 INTEGRATION
 -----------
