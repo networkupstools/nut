@@ -133,6 +133,12 @@ do_build_mingw_nut() {
 	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
 	export LDFLAGS+=" -L${ARCH_PREFIX}/lib/"
 
+	# Can be set by e.g. ci_build.sh
+	USE_AUTOCONF_CACHE_FLAG=""
+	if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] ; then
+		USE_AUTOCONF_CACHE_FLAG="-C"
+	fi
+
 	KEEP_NUT_REPORT_FEATURE_FLAG=""
 	if [ x"${KEEP_NUT_REPORT_FEATURE-}" = xtrue ]; then
 		KEEP_NUT_REPORT_FEATURE_FLAG="--enable-keep_nut_report_feature"
@@ -143,6 +149,7 @@ do_build_mingw_nut() {
 	# FIXME: Implement support for --without-pkg-config in m4 and use it
 	RES_CFG=0
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
+	    $USE_AUTOCONF_CACHE_FLAG \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
 	    --with-all=auto \
