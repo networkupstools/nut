@@ -296,7 +296,7 @@ static void removetimer(ttype_t *tfind)
 
 			if (tmp->upsnames) {
 				char **ps;
-				for (ps = tmp->upsnames; ps != NULL && *ps != NULL; ps++) {
+				for (ps = tmp->upsnames; *ps != NULL; ps++) {
 					free(*ps);
 				}
 				free(tmp->upsnames);
@@ -304,7 +304,7 @@ static void removetimer(ttype_t *tfind)
 
 			if (tmp->notifytypes) {
 				char **ps;
-				for (ps = tmp->notifytypes; ps != NULL && *ps != NULL; ps++) {
+				for (ps = tmp->notifytypes; *ps != NULL; ps++) {
 					free(*ps);
 				}
 				free(tmp->notifytypes);
@@ -312,7 +312,7 @@ static void removetimer(ttype_t *tfind)
 
 			if (tmp->notifymsgs) {
 				char **ps;
-				for (ps = tmp->notifymsgs; ps != NULL && *ps != NULL; ps++) {
+				for (ps = tmp->notifymsgs; *ps != NULL; ps++) {
 					free(*ps);
 				}
 				free(tmp->notifymsgs);
@@ -428,7 +428,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 						char	**ps = NULL;
 						size_t	count = 0;	/* amount of non-NULL entries, if we get to the end */
 
-						for (ps = tmp->notifytypes; ps != NULL && *ps != NULL ; ps++) {
+						for (ps = tmp->notifytypes; *ps != NULL ; ps++) {
 							count++;
 							if (!strcmp(*ps, notifytype))
 								break;
@@ -451,7 +451,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 						char	**ps = NULL;
 						size_t	count = 0;	/* amount of non-NULL entries, if we get to the end */
 
-						for (ps = tmp->notifymsgs; ps != NULL && *ps != NULL ; ps++) {
+						for (ps = tmp->notifymsgs; *ps != NULL ; ps++) {
 							count++;
 							if (!strcmp(*ps, notifymsg))
 								break;
@@ -474,7 +474,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 						char	**ps = NULL;
 						size_t	count = 0;	/* amount of non-NULL entries, if we get to the end */
 
-						for (ps = tmp->upsnames; ps != NULL && *ps != NULL ; ps++) {
+						for (ps = tmp->upsnames; *ps != NULL ; ps++) {
 							count++;
 							if (!strcmp(*ps, upsname))
 								break;
@@ -576,7 +576,7 @@ static void cancel_timer(const char *name, const char *cname, const char *notify
 						upsdebugx(2, "%s: do not cancel timer %s due to lack of NOTIFYTYPE in it", __func__, name);
 						continue;
 					}
-					for (ps = tmp->notifytypes; ps != NULL && *ps != NULL ; ps++) {
+					for (ps = tmp->notifytypes; *ps != NULL ; ps++) {
 						if (!strcmp(*ps, notifytype)) {
 							matched = 1;
 							break;
@@ -594,7 +594,7 @@ static void cancel_timer(const char *name, const char *cname, const char *notify
 						upsdebugx(2, "%s: do not cancel timer %s due to lack of UPSNAME in it", __func__, name);
 						continue;
 					}
-					for (ps = tmp->upsnames; ps != NULL && *ps != NULL ; ps++) {
+					for (ps = tmp->upsnames; *ps != NULL ; ps++) {
 						if (!strcmp(*ps, upsname)) {
 							matched = 1;
 							break;
