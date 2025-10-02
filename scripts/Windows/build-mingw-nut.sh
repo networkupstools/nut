@@ -148,6 +148,11 @@ do_build_mingw_nut() {
 	export LDFLAGS+=" -L${ARCH_PREFIX}/lib/"
 
 	# envvar toggles below may be passed from NUT ci_build.sh or other callers:
+	USE_AUTOCONF_CACHE_FLAG=""
+	if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] ; then
+		USE_AUTOCONF_CACHE_FLAG="-C"
+	fi
+
 	KEEP_NUT_REPORT_FEATURE_FLAG=""
 	if [ x"${KEEP_NUT_REPORT_FEATURE-}" = xtrue ]; then
 		KEEP_NUT_REPORT_FEATURE_FLAG="--enable-keep_nut_report_feature"
@@ -180,6 +185,7 @@ do_build_mingw_nut() {
 	# and "/var/state/ups" is utterly unused (Windows named pipes instead).
 	RES_CFG=0
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
+	    $USE_AUTOCONF_CACHE_FLAG \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    $ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG \
 	    $WITH_SSL_FLAG \
