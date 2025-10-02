@@ -33,10 +33,6 @@ all:
 	@echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make doc' to ensure complex document types"
 	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
-# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-#EGREP = egrep
-EGREP = grep -E
-
 # Possible man page section remapping in some distros:
 MAN_SECTION_API_BASE=@MAN_SECTION_API_BASE@
 MAN_SECTION_CFG_BASE=@MAN_SECTION_CFG_BASE@
@@ -308,12 +304,12 @@ ChangeLog.html-contentchecked:
 	@FAILED=""; \
 	 entry_filter() { sed -e 's/ *[\"<].*//' -e 's/\([][(){}|+?.*]\)/\\\1/g' ; } ; \
 	 if [ -s '$(top_builddir)/ChangeLog' ] && [ -s ChangeLog.html ] ; then \
-	    SECOND_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | entry_filter`" || SECOND_ENTRY="" ; \
-	    FIRST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | entry_filter`" || FIRST_ENTRY="" ; \
-	    LAST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | entry_filter`" || LAST_ENTRY="" ; \
+	    SECOND_ENTRY="`$(EGREP) '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | entry_filter`" || SECOND_ENTRY="" ; \
+	    FIRST_ENTRY="`$(EGREP) '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | entry_filter`" || FIRST_ENTRY="" ; \
+	    LAST_ENTRY="`$(EGREP) '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | entry_filter`" || LAST_ENTRY="" ; \
 	    if [ -n "$${FIRST_ENTRY}" ] ; then \
-	        O="`grep -cE "^$${FIRST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
-	        N="`grep -cE "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
+	        O="`$(EGREP) -c "^$${FIRST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`$(EGREP) -c "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
 	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
 	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
 	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
@@ -326,8 +322,8 @@ ChangeLog.html-contentchecked:
 	        fi ; \
 	    fi; \
 	    if [ -n "$${SECOND_ENTRY}" ] ; then \
-	        O="`grep -cE "^$${SECOND_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
-	        N="`grep -cE "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
+	        O="`$(EGREP) -c "^$${SECOND_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`$(EGREP) -c "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
 	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
 	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
 	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
@@ -340,8 +336,8 @@ ChangeLog.html-contentchecked:
 	        fi ; \
 	    fi; \
 	    if [ -n "$${LAST_ENTRY}" ] ; then \
-	        O="`grep -cE "^$${LAST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
-	        N="`grep -cE "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
+	        O="`$(EGREP) -c "^$${LAST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`$(EGREP) -c "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
 	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
 	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
 	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
@@ -607,12 +603,12 @@ docinfo-since-v2.8.3.xml: docinfo.xml
 	 IN_REVISION=false ; OLDEST_SEEN=false ; \
 	 while read LINE ; do \
 		case "$${LINE}" in \
-			*'<revision>'*) if ! $$OLDEST_SEEN ; then IN_REVISION=true ; fi ;; \
+			*'<revision>'*) if $$OLDEST_SEEN ; then true ; else IN_REVISION=true ; fi ;; \
 			*'<revnumber>'"$${OLDEST_REL}"'</revnumber>'*) if $$IN_REVISION ; then echo '<revision>'; OLDEST_SEEN=true ; fi ; echo "$$LINE" ;; \
-			*'<revnumber>'*'</revnumber>'*) if ! $$OLDEST_SEEN ; then if $$IN_REVISION ; then echo '<revision>'; fi ; echo "$$LINE" ; fi ;; \
+			*'<revnumber>'*'</revnumber>'*) if $$OLDEST_SEEN ; then true ; else if $$IN_REVISION ; then echo '<revision>'; fi ; echo "$$LINE" ; fi ;; \
 			*'</revision>'*) if $$IN_REVISION ; then echo "$$LINE" ; fi ; IN_REVISION=false ;; \
 			*'</revhistory>'*) echo "$$LINE" ;; \
-			*) if ! $$OLDEST_SEEN || $$IN_REVISION ; then echo "$$LINE" ; fi ;; \
+			*) if test x"$$OLDEST_SEEN" = xfalse || $$IN_REVISION ; then echo "$$LINE" ; fi ;; \
 		esac ; \
 	 done < "$?" > "$@".tmp \
 	 && mv -f "$@".tmp "$@"
@@ -698,7 +694,7 @@ DOCBUILD_BEGIN = { \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
     && test -r "${builddir}/docbook-xsl.css" \
-    && ! test -w "${builddir}/docbook-xsl.css" \
+    && test ! -w "${builddir}/docbook-xsl.css" \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true; \
 }
@@ -943,7 +939,7 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		     && echo "$$OUT" >&2 \
 		     && echo "----- ^^^" >&2 ; \
 		     exit $$RES; } ; \
-	 if grep -E '^[ *.-]*(NOTE|TIP|IMPORTANT|CAUTION|WARNING):[ \t]*[a-z]' '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' ; then \
+	 if $(EGREP) '^[ *.-]*(NOTE|TIP|IMPORTANT|CAUTION|WARNING):[ \t]*[a-z]' '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' ; then \
 		echo "FAILED: Admonition block should contain a sentence, not starting with a lower-case letter" >&2 ; \
 		exit 2 ; \
 	 fi ; \
@@ -980,7 +976,7 @@ spellcheck:
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
-		(command -v dpkg) && ( dpkg -l | grep -i aspell ) || true ; \
+		(command -v dpkg) && ( dpkg -l | $(GREP) -i aspell ) || true ; \
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
@@ -1001,7 +997,7 @@ spellcheck:
 		else true ; fi ; \
 		if [ x"$${SPELLCHECK_AUTO_TGT}" != x ] ; then \
 			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" $${SPELLCHECK_AUTO_TGT} ; \
-			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ] ; then printf '%s ' "$(SPELLCHECK_SRCDIR)/$${docsrc}" ; rm -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ; fi ; done`" ; \
+			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ] ; then printf '%s ' "$(SPELLCHECK_SRCDIR)/$${docsrc}" ; rm -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ; fi ; done`" ; \
 		fi ; \
 		if [ x"$${SPELLCHECK_NOEXT_DOCS}" != x ] ; then \
 			for docsrc in $${SPELLCHECK_NOEXT_DOCS} ; do \
@@ -1079,14 +1075,19 @@ spellcheck-interactive:
 	 fi ; \
 	 $(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict || exit ; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		if test -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; then \
+		if test -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; then \
 			touch "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; \
 		fi ; \
 	 done
-	@if [ "$(SPELLCHECK_REPORT_MAYBE_UPDATED_DICT)" != no ] \
-	 || ( [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] \
-	      && ! diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ) \
-	 ; then \
+	@DO_REPORT=false ; \
+	 if [ "$(SPELLCHECK_REPORT_MAYBE_UPDATED_DICT)" != no ] ; then \
+		DO_REPORT=true ; \
+	 else if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] ; then \
+	      if diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ; then \
+		true ; else DO_REPORT=true ; \
+	      fi; fi; \
+	 fi; \
+	 if $${DO_REPORT}; then \
 		echo "------------------------------------------------------------------------"; \
 		echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
 		echo "Use e.g. 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
@@ -1118,7 +1119,7 @@ endif !HAVE_ASPELL
 $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 	@echo "Preparing $@"; \
 	 LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	 grep -v -E '^personal_ws' < $? \
+	 $(EGREP) -v '^personal_ws' < $? \
 	 | while read W ; do ( \
 		cd "$(abs_top_srcdir)" || exit ; \
 		git grep -q "$$W" -- ':!*.dict*' || git grep -qE "[0-9_,./\ -]$$W[0-9_,./\ -]" -- ':!*.dict*' ) \
@@ -1138,7 +1139,7 @@ $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 	 && mv -f "$@.tmp.$$$$" "$@" \
 	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
 	@echo "Reporting words from $? possibly not used in current inspected code base revision under $(abs_top_srcdir)" >&2 ; \
-	 grep -E '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
+	 $(EGREP) '^--- ' < "$@" | $(GREP) '(0 ' || echo "SUCCESS: None found"
 
 CLEANFILES += $(NUT_SPELL_DICT).usage-report.tmp
 MAINTAINERCLEANFILES += $(NUT_SPELL_DICT).usage-report
@@ -1202,11 +1203,11 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	        esac; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
-	    if ! test -e "$@" ; then touch "$@" ; fi ; \
+	    if test ! -f "$@" ; then touch "$@" ; fi ; \
 	 else \
 	    COUNT=30 ; \
 	    touch "$@.$$$$" ; \
-	    while test -e "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
+	    while test -f "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
 	    touch "$@.working" ; \
 	    if test -n "`find "$@" -newer "$@.$$$$" 2>/dev/null`" ; then \
 	        rm -f "$@.$$$$" "$@.working" ; \
@@ -1232,7 +1233,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	        esac ; \
 	        D="`dirname "$$F"`" ; \
 	        (cd '$(abs_builddir)' && $(MKDIR_P) "$${linkroot}/$$D") || { rm -f "$@.working" ; exit 1 ; } ; \
-	        if ! test -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
+	        if test ! -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
 	            echo "  LN	'$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" ; \
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
@@ -1243,12 +1244,12 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	            *) IS_TEXT=true ;; \
 	        esac; \
 	        if $$IS_TEXT ; then \
-	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
+	            $(GREP) -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
 	        case "$$F" in \
 	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
 	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
-	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
+	        if $$MAN_SECTIONS_DEFAULT || test $$IS_TEXT = false ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \
@@ -1273,7 +1274,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 fi ; \
-	 if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi
+	 if test "$$COUNT" -gt 0 -o ! -f "$@" ; then touch "$@" ; fi
 	@rm -f "$@.working"
 
 # Dirs to clean, etc.

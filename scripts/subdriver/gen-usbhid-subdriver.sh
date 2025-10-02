@@ -23,6 +23,10 @@ usage() {
     echo " file                 -- read from file instead of stdin"
 }
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 DRIVER=""
 VENDORID=""
 PRODUCTID=""
@@ -41,7 +45,7 @@ while [ $# -gt 0 ]; do
     elif [ "$1" = "-k" ]; then
         KEEP=yes
         shift
-    elif echo "$1" | grep -qv '^-'; then
+    elif echo "$1" | ${GREP} -v '^-' >/dev/null ; then
 	FILE="$1"
 	shift
     elif [ "$1" = "--help" -o "$1" = "-h" ]; then
@@ -61,14 +65,27 @@ if [ -z "$KEEP" ]; then
     trap cleanup EXIT
 fi
 
+if (command -v mktemp) >/dev/null ; then true ; else
+# Have a simple (unsafe, unfeatured) fallback implementation:
+mktemp() {
+    if [ x"$1" = x"-d" ] ; then
+        shift
+        mkdir -p "$1.$$" || return
+    else
+        cat /dev/null > "$1.$$" || return
+    fi
+    echo "$1.$$"
+}
+fi
+
 NAME=gen-usbhid-subdriver
 TMPDIR="${TEMPDIR:-/tmp}"
-DEBUG=`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`
-UTABLE=`mktemp "$TMPDIR/$NAME-UTABLE.XXXXXX"`
-USAGES=`mktemp "$TMPDIR/$NAME-USAGES.XXXXXX"`
-SUBST=`mktemp "$TMPDIR/$NAME-SUBST.XXXXXX"`
-SEDFILE=`mktemp "$TMPDIR/$NAME-SEDFILE.XXXXXX"`
-NEWUTABLE=`mktemp "$TMPDIR/$NAME-NEWUTABLE.XXXXXX"`
+DEBUG="`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`"
+UTABLE="`mktemp "$TMPDIR/$NAME-UTABLE.XXXXXX"`"
+USAGES="`mktemp "$TMPDIR/$NAME-USAGES.XXXXXX"`"
+SUBST="`mktemp "$TMPDIR/$NAME-SUBST.XXXXXX"`"
+SEDFILE="`mktemp "$TMPDIR/$NAME-SEDFILE.XXXXXX"`"
+NEWUTABLE="`mktemp "$TMPDIR/$NAME-NEWUTABLE.XXXXXX"`"
 
 # save standard input to a file
 if [ -z "$FILE" ]; then
@@ -82,7 +99,7 @@ while [ -z "$DRIVER" ]; do
 Please enter a name for this driver. Use only letters and numbers. Use
 natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
     read -p "Name of subdriver: " DRIVER < /dev/tty
-    if echo $DRIVER | grep -E -q '[^a-zA-Z0-9]'; then
+    if echo $DRIVER | ${EGREP} '[^a-zA-Z0-9]' >/dev/null ; then
 	echo "Please use only letters and digits"
 	DRIVER=""
     fi
@@ -100,8 +117,25 @@ if [ -z "$PRODUCTID" ]; then
     read -p "Product ID: " PRODUCTID < /dev/tty
 fi
 
-LDRIVER=`echo $DRIVER | tr A-Z a-z`
-UDRIVER=`echo $DRIVER | tr a-z A-Z`
+# Platforms vary with tooling abilitites...
+TOLOWER="cat"
+for TR_VARIANT in "tr 'A-Z' 'a-z'" "tr '[:upper:]' '[:lower:]'" "tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'" ; do
+    if [ x"`echo C | $TR_VARIANT`" = xc ] ; then
+        TOLOWER="$TR_VARIANT"
+        break
+    fi
+done
+
+TOUPPER="cat"
+for TR_VARIANT in "tr 'a-z' 'A-Z'" "tr '[:lower:]' '[:upper:]'" "tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" ; do
+    if [ x"`echo c | $TR_VARIANT`" = xC ] ; then
+        TOUPPER="$TR_VARIANT"
+        break
+    fi
+done
+
+LDRIVER="`echo $DRIVER | $TOLOWER`"
+UDRIVER="`echo $DRIVER | $TOUPPER`"
 CFILE="$LDRIVER-hid.c"
 HFILE="$LDRIVER-hid.h"
 
@@ -113,7 +147,7 @@ cat "$UTABLE" | tr '.' $'\n' | sort -u > "$USAGES"
 
 # make up dummy names for unknown usages
 count=0
-cat "$USAGES" | grep -E '[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' |\
+cat "$USAGES" | ${EGREP} '[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' |\
 while read U; do
     count=`expr $count + 1`
     echo "$U $UDRIVER$count"
@@ -246,7 +280,7 @@ static hid_info_t ${LDRIVER}_hid2nut[] = {
 EOF
 
 cat "$NEWUTABLE" | sort -u | while read U; do
-    UL=`echo $U | tr A-Z a-z`
+    UL="`echo $U | $TOLOWER`"
     cat >> "$CFILE" <<EOF
 	{ "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", 0, NULL },
 EOF

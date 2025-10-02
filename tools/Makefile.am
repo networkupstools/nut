@@ -103,7 +103,7 @@ $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c $(top_srcdir)/tools/nut-s
 $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
 	@test -s "$@" || echo "WARNING: GENERATED_USB_OS_FILES: '$@' is empty or missing; do not use this build to generate 'dist' tarballs" >&2
 	@$(MKDIR_P) "$(@D)"
-	@if ! test -s "$@" ; then \
+	@if test ! -s "$@" ; then \
 	    if test x"$(top_srcdir)" != x"$(top_builddir)" ; then \
 	        RELNAME="`echo "$@" | sed 's,^$(top_builddir)/*,,'`" ; \
 	        SRCNAME="$(top_srcdir)/$${RELNAME}" ; \

@@ -65,11 +65,13 @@ for P in "$PYTHON_PY2GTK2" "$PYTHON_PY3QT5" "$PYTHON_PY3QT6" ; do
     [ -n "$P" ] || continue
 
     # If running from source tree...
-    if ! $P -c "import PyNUT" >/dev/null 2>/dev/null \
-    &&   PYTHONPATH="${SCRIPTDIR}/../module" $P -c "import PyNUT" >/dev/null 2>/dev/null \
-    ; then
-        PYTHONPATH="${SCRIPTDIR}/../module"
-        export PYTHONPATH
+    if $P -c "import PyNUT" >/dev/null 2>/dev/null ; then
+        true
+    else
+        if PYTHONPATH="${SCRIPTDIR}/../module" $P -c "import PyNUT" >/dev/null 2>/dev/null ; then
+            PYTHONPATH="${SCRIPTDIR}/../module"
+            export PYTHONPATH
+        fi
     fi
 done
 

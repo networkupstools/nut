@@ -256,7 +256,7 @@ modbus_set_byte_timeout(ctx, to_sec, to_usec);])
 #include <modbus.h>
 ], [modbus_t *ctx = modbus_new_rtu(NULL, 0, 0, 0, 0);
 if (ctx) modbus_free(ctx);])], [AS_IF([test -x "conftest$ac_exeext"], [
-					AS_IF([test -n "`${LDD} "conftest$ac_exeext" | grep "libmodbus"`" 2>/dev/null],
+					AS_IF([test -n "`${LDD} "conftest$ac_exeext" | ${GREP} "libmodbus"`" 2>/dev/null],
 						[LIBMODBUS_LINKTYPE="dynamic"], [LIBMODBUS_LINKTYPE="static"])
 				])])
 			dnl If not GNU LDD, try other tools?

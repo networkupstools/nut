@@ -96,8 +96,8 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	else
 		echo "NOT ENABLING nut-driver-enumerator at this time : missing or empty @CONFPATH@/ups.conf" >&2
 	fi
-	if test -s "@CONFPATH@/ups.conf" && test -e "@CONFPATH@/upsd.conf" && test -e "@CONFPATH@/upsd.users" ; then
-		# Note on the mix of "-s" and "-e" in tests above:
+	if test -s "@CONFPATH@/ups.conf" && test -f "@CONFPATH@/upsd.conf" && test -f "@CONFPATH@/upsd.users" ; then
+		# Note on the mix of "-s" and "-f" in tests above:
 		# it is a valid use-case for an admin to have just touched an
 		# empty upsd.conf and so use default settings for the daemon
 		echo "Enable NUT upsd data server..."

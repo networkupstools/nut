@@ -138,6 +138,18 @@ https://github.com/networkupstools/nut/milestone/12
  - Updated `docs/*.txt`: add asciidoc comments with links to nut-website
    rendered contents of most interesting pages. [#3095]
 
+ - Revised CI and deliverable scripts, and Makefile recipes, to not use
+   the verbatim `grep -E` (loudly preferred by newer systems, but may be
+   absent on older ones) after all, nor use `egrep` (loudly disliked by
+   newer systems). Instead, use what `configure` script detected for the
+   generated files (or ones made from templates), and use a similar
+   detection in standalone scripts. Also revised the use of `grep -q`,
+   `id -u`, `diff -u`, etc. which are not ubiquitous, and of `test -e`
+   which is not only absent in some older shells, but can cause them to
+   abort processing the script immediately. Also the `if ! condition`
+   syntax is not supported everywhere (or the `!` operator generally).
+   [#3099, #1660]
+
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3
 ----------------------------------------------------

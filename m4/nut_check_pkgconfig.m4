@@ -11,7 +11,7 @@ AC_DEFUN([NUT_CHECK_PKGCONFIG],
 	dnl Note that PKG_CONFIG may be a filename, path,
 	dnl or either with args - so no quoting here
 	AC_MSG_CHECKING([whether usable PKG_CONFIG was already detected by autoconf])
-	AS_IF([test -n "${PKG_CONFIG-}" && test x"${PKG_CONFIG-}" != x"false" && $PKG_CONFIG --help 2>&1 | grep -E '(--cflags|--libs)' >/dev/null],
+	AS_IF([test -n "${PKG_CONFIG-}" && test x"${PKG_CONFIG-}" != x"false" && $PKG_CONFIG --help 2>&1 | ${EGREP} '(--cflags|--libs)' >/dev/null],
 		[AC_MSG_RESULT([yes: ${PKG_CONFIG}])
 		 have_PKG_CONFIG=yes
 		],
@@ -47,7 +47,7 @@ AC_DEFUN([NUT_CHECK_PKGCONFIG],
 			 PKG_CONFIG=false
 			 have_PKG_CONFIG=no
 			],
-			[AS_IF([$dummy_PKG_CONFIG --help 2>&1 | grep -E '(--cflags|--libs)' >/dev/null],
+			[AS_IF([$dummy_PKG_CONFIG --help 2>&1 | ${EGREP} '(--cflags|--libs)' >/dev/null],
 				[AC_MSG_RESULT([yes: ${dummy_PKG_CONFIG}])
 				 have_PKG_CONFIG=yes
 				 PKG_CONFIG="$dummy_PKG_CONFIG"

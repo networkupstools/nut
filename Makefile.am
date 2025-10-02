@@ -706,8 +706,8 @@ SET_PARMAKES_OPT = \
 	  case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
 		*"j"*) ;; \
 		*) \
-			if ! [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
-				MAXPARMAKES=8 ; \
+			if [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
+				true ; else MAXPARMAKES=8 ; \
 			fi ; \
 			PARMAKES_OPT="-j $${MAXPARMAKES}" ; \
 		;; \
@@ -767,7 +767,7 @@ maintainer-asciidocs:
 	 find . -name '*.adoc' -or -name '*.txt' | ( \
 	  FILES=""; \
 	  while read F ; do \
-	    grep -E '^//+GH_MARKUP_1095_INCLUDE_(BEGIN|END)' "$$F" >/dev/null \
+	    $(EGREP) '^//+GH_MARKUP_1095_INCLUDE_(BEGIN|END)' "$$F" >/dev/null \
 	    || { echo "$@: SKIP: no GH_MARKUP_1095_INCLUDE_* tags: $$F"; continue ; } ; \
 	    rm -f "$${F}"*.tmp || exit ; \
 	    EXT="1.tmp"; \
@@ -838,7 +838,7 @@ dist-hook:
 ###
 check-scripts-syntax:
 	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
-	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | grep -E '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
+	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | $(EGREP) '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
 	 for F in `git ls-files || find . -type f` ; do \
 	    case "`file "$$F"`" in \
 	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
@@ -858,6 +858,7 @@ shellcheck-disclaimer:
 # can test the logic with numerous SHELL_PROGS in a CI setting, and because
 # check-scripts-syntax probably has checked the basic syntax above already.
 shellcheck-nde:
+	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
 	cd $(srcdir)/tests && SERVICE_FRAMEWORK="selftest" ./nut-driver-enumerator-test.sh
 
 shellcheck: shellcheck-disclaimer check-scripts-syntax
@@ -947,8 +948,8 @@ endif !WITH_PDF_NONASCII_TITLES
 CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR = true
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
-	    if test -e .git ; then \
-	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`grep -E '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
+	    if ( test -e .git ) 2>/dev/null || test -d .git || test -f .git || test -h .git ; then \
+	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`$(EGREP) '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
 	        if test -s "$@" -a -d "$${NUT_GITDIR}" && test -z "`find "$${NUT_GITDIR}" -newer "$@" 2>/dev/null`" ; then \
 	            echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
 	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
@@ -970,12 +971,12 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
 	            echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
-	            if ! diff ./ChangeLog "$@" >/dev/null 2>/dev/null ; then \
+	            if diff ./ChangeLog "$@" >/dev/null 2>/dev/null ; then \
+	                echo "Using distributed ChangeLog file from sources (and builddir already has content identical to one in srcdir)" >&2 ; \
+	            else \
 	                echo "Using distributed ChangeLog file from sources (and builddir is not srcdir)" >&2 ; \
 	                rm -f "$@" || true ; \
 	                cp -pf ./ChangeLog "$@" || { cat ./ChangeLog > "$@" ; touch -r ./ChangeLog "$@" || true ; } ; \
-	            else \
-	                echo "Using distributed ChangeLog file from sources (and builddir already has content identical to one in srcdir)" >&2 ; \
 	            fi ; \
 	        else \
 	            if test -s "$@" ; then \
@@ -1086,7 +1087,7 @@ install-data-hook:
 	@case "@target_os@" in *mingw*) exit 0;; esac ; \
 	 if [ x"@host_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
 	 if [ x"@target_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
-	 if (command -v id) && [ x"`id -u`" = x0 ] && [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
+	 if (command -v id) && ( [ x"`id -u 2>/dev/null`" = x0 ] || [ x"`id | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" = x0 ] ) && [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
 		echo "================================================================================" >&2 ; \
 		echo "| NUT data files have been installed into the system, now consider running     |" >&2 ; \
 		echo "| '(sudo) make install-as-root' to apply permissions and service state changes |" >&2 ; \
@@ -1138,7 +1139,7 @@ install-as-root:
 	 case "@target_os@" in *mingw*) echo "$@: SKIP: not supported for this target_os='@target_os@'" >&2 ; exit 0;; esac ; \
 	 if [ x"@host_os@" != x"@build_os@" ]; then echo "$@: SKIP: build_os='@build_os@' is not host_os='@host_os@'" >&2 ; exit 0 ; fi ; \
 	 if [ x"@target_os@" != x"@build_os@" ]; then echo "$@: SKIP: build_os='@build_os@' is not target_os='@target_os@'" >&2 ; exit 0 ; fi ; \
-	 if (command -v id) && [ x"`id -u`" = x0 ] ; then \
+	 if (command -v id) && ( [ x"`id -u 2>/dev/null`" = x0 ] || [ x"`id | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" = x0 ] ) ; then \
 		echo "$@: we seem to be root, PROCEEDING" >&2 ; \
 	 else \
 		echo "$@: SKIP: we seem to NOT be root" >&2 ; \
@@ -1215,7 +1216,7 @@ install-as-root:
 	 else \
 		echo "$@: WARNING: Can not CHMOD created locations!" >&2 ; \
 	 fi ; \
-	 if (command -v chown) && test 0 -lt "`id -u '@RUN_AS_USER@'`" \
+	 if (command -v chown) && ( test 0 -lt "`id -u '@RUN_AS_USER@' 2>/dev/null`" || test 0 -lt "`id '@RUN_AS_USER@' | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" ] ) \
 	 && ( test 0 -lt "`getent group '@RUN_AS_GROUP@' | awk -F: '{print $$3}'`" || test 0 -lt "`id -g '@RUN_AS_GROUP@'`" ) \
 	 ; then \
 		echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)	$(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
@@ -1278,7 +1279,9 @@ install-as-root:
 			|| if [ -s '@sysconfdir@/ups.conf' -a -s '@sysconfdir@/upsd.conf' -a -s '@sysconfdir@/upsd.users' -a -s '@sysconfdir@/upsmon.conf' ] ; then exit 1 ; \
 			else echo "$@: some configs are missing, assuming new NUT installation" >&2; fi; \
 		fi ; \
-		if ! $${applied_udev} && (command -v udevadm); then \
+		if $${applied_udev} && (command -v udevadm); then \
+			true ; \
+		else \
 			udevadm control --reload-rules && udevadm trigger && applied_udev=true || true ; \
 		fi ; \
 	 fi ; \
@@ -1410,8 +1413,8 @@ install-win-bundle-thirdparty:
 	 relcgiexecdir="`echo './$(cgiexecdir)/' | sed 's,//*,/,g'`" ; \
 	 rellibexecdir="`echo './$(libexecdir)/' | sed 's,//*,/,g'`" ; \
 	 cd '$(DESTDIR)' || exit ; \
-	 find . -type f | grep -Ei '\.(exe|dll)$$' \
-	 | grep -vE "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir}|$${rellibexecdir})" \
+	 find . -type f | $(EGREP) -i '\.(exe|dll)$$' \
+	 | $(EGREP) -v "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir}|$${rellibexecdir})" \
 	 | ( RES=0 ; while IFS= read LINE ; do echo "$$LINE" ; RES=1; done; exit $$RES )
 
 else !HAVE_WINDOWS
@@ -1430,7 +1433,7 @@ print-DISTCLEANFILES:
 
 # TODO: Recursive mode to consider patterns defined in sub-dir makefiles
 git-realclean-check:
-	@if test -e .git && (command -v git); then \
+	@if ( ( test -e .git ) 2>/dev/null || test -d .git || test -f .git || test -h .git ) && (command -v git); then \
 		git status --ignored || while read F ; do \
 			for P in $(MAINTAINERCLEANFILES) ; do \
 				case "$$F" in \
@@ -1479,11 +1482,11 @@ check-parallel-builds:
 	  cd '$(abs_top_builddir)' || exit ; \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make pre-clean before checking subdirs for sources" >&2; exit $$RES; } ; \
 	  for D in `cd '$(top_srcdir)' && find . -name '*.c' -o -name '*.cpp' | sed 's,/[^/]*\.cp*$$,,' | uniq` ; do \
-		[ -e "$(top_srcdir)/$$D/Makefile.am" ] && [ -s "$$D/Makefile" ] || continue ; \
+		( ( [ -e "$(top_srcdir)/$$D/Makefile.am" ] ) 2>/dev/null || [ -f "$(top_srcdir)/$$D/Makefile.am" ] || [ -h "$(top_srcdir)/$$D/Makefile.am" ] ) && [ -s "$$D/Makefile" ] || continue ; \
 		$(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
 		echo "  $@	in $${D}" ; \
 		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
-		  echo "To investigate, try:  (MAKEFLAGS='$(MAKEFLAGS)' ; export MAKEFLAGS; $(MAKE) $(AM_MAKEFLAGS) $${PARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(AM_MAKEFLAGS) V=1 $${PARMAKES_OPT} 2>&1 ; echo $$?) | tee /tmp/make.log ; RES=$$? ; grep -E '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log ; exit $$RES )"; \
+		  echo "To investigate, try:  (MAKEFLAGS='$(MAKEFLAGS)' ; export MAKEFLAGS; $(MAKE) $(AM_MAKEFLAGS) $${PARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(AM_MAKEFLAGS) V=1 $${PARMAKES_OPT} 2>&1 ; echo $$?) | tee /tmp/make.log ; RES=$$? ; $(EGREP) '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log ; exit $$RES )"; \
 		  echo "If builds were interrupted before, you may also have to re-initialize the build area completely, e.g.:  git clean -fdX ; ./ci_build.sh && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $@" ; \
 		  exit $$RES; } ; \
 		DIRS="$${DIRS} $${D}" ; \

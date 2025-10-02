@@ -152,7 +152,7 @@ sbin_PROGRAMS = upsdrvctl
 
 # upsdrvctl: the all-singing all-dancing driver control program
 upsdrvctl_SOURCES = upsdrvctl.c
-upsdrvctl_LDADD = $(LDADD_COMMON) libdummy_upsdrvquery.la
+upsdrvctl_LDADD = libdummy_upsdrvquery.la $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c

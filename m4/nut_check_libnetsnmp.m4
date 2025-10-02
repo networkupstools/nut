@@ -51,7 +51,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		esac
 	])
 
-	if test x"$have_PKG_CONFIG" = xyes && ! "${prefer_NET_SNMP_CONFIG}" ; then
+	if test x"$have_PKG_CONFIG" = xyes -a x"${prefer_NET_SNMP_CONFIG}" = xfalse ; then
 		AC_MSG_CHECKING(for Net-SNMP version via pkg-config)
 		dnl TODO? Loop over possible/historic pkg names, like
 		dnl netsnmp, net-snmp, ucd-snmp, libsnmp, snmp...
@@ -79,7 +79,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		AC_MSG_RESULT(${SNMP_VERSION} found)
 	fi
 
-	if test x"$have_PKG_CONFIG" != xyes && ! "${prefer_NET_SNMP_CONFIG}" ; then
+	if test x"$have_PKG_CONFIG" != xyes -a x"${prefer_NET_SNMP_CONFIG}" = xfalse ; then
 		AC_MSG_WARN([did not find either net-snmp-config or pkg-config for net-snmp])
 	fi
 

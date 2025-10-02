@@ -41,7 +41,7 @@ if test -z "${nut_have_libsystemd_seen}"; then
 			dnl m4 script like this one, we have to escape the
 			dnl dollar-number references (in awk below) lest they
 			dnl get seen as m4 function positional parameters.
-			SYSTEMD_VERSION="`LANG=C LC_ALL=C ${SYSTEMCTL} --version | grep -E '^systemd@<:@ \t@:>@*@<:@0-9@:>@@<:@0-9@:>@*' | awk '{print ''$''2}'`" \
+			SYSTEMD_VERSION="`LANG=C LC_ALL=C ${SYSTEMCTL} --version | ${EGREP} '^systemd@<:@ \t@:>@*@<:@0-9@:>@@<:@0-9@:>@*' | awk '{print ''$''2}'`" \
 			&& test -n "${SYSTEMD_VERSION}" \
 			|| SYSTEMD_VERSION="none"
 			AC_MSG_RESULT(${SYSTEMD_VERSION} found)

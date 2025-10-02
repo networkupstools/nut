@@ -64,7 +64,7 @@ svcs -p "$DEVICE" ; upsc "$DEVICE" || { \
     COUNT=60
     while [ "$COUNT" -gt 0 ] ; do
         COUNT="`expr $COUNT - 1`"
-        if upsc "$DEVICE" 2>&1 | grep -Ei '^ups\.status:' >/dev/null ; then break ; fi
+        if upsc "$DEVICE" 2>&1 | egrep -i '^ups\.status:' >/dev/null ; then break ; fi
         sleep 1
     done
     svcs -p "$DEVICE" ; upsc "$DEVICE"
