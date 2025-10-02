@@ -1354,7 +1354,11 @@ consider_cleanup_shortcut() {
     if [ -s "${CI_BUILDDIR}"/configure ] ; then
         # FIXME: Consider CONFIG_SHELL, maybe from script shebang,
         #  here - like autogen.sh does
-        if sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+        USE_CONFIG_SHELL=sh
+        if [ -n "${CONFIG_SHELL-}" ]; then
+            USE_CONFIG_SHELL="${CONFIG_SHELL}"
+        fi
+        if ${USE_CONFIG_SHELL} -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
             true
         else
             echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
