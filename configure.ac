@@ -1918,7 +1918,9 @@ AS_IF([test x"${ac_cv_struct_pollfd}" = xyes],
     ]
     )
 
-NETLIBS_GETADDRS=""
+dnl May be cached or not
+NETLIBS_GETADDRS="${nut_cv_var_NETLIBS_GETADDRS}"
+
 dnl For `nut-scanner -m auto` modes, see also:
 dnl https://stackoverflow.com/a/41151132/4715872
 dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses (since ~Windows Vista)
@@ -1965,7 +1967,7 @@ printf("%ld ", GetAdaptersAddresses(AF_INET6, GAA_FLAG_SKIP_ANYCAST, NULL, buf, 
                     dnl e.g. add "-lws2_32" for mingw builds, maybe "-liphlpapi"
                     dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
                     SAVED_LIBS="$LIBS"
-                    LIBS="$LIBS $NETLIBS"
+                    LIBS="$LIBS $NETLIBS $NETLIBS_GETADDRS"
                     AX_RUN_OR_LINK_IFELSE(
                         [AC_LANG_PROGRAM(
                             [${myIPHLPAPI_TEST_HEADERS}],
@@ -2058,7 +2060,7 @@ printf("%ld ", GetAdaptersInfo(buf, &bufsz))
     )]
 )
 AC_SUBST([NETLIBS_GETADDRS])
-
+AC_CACHE_VAL([nut_cv_var_NETLIBS_GETADDRS], [nut_cv_var_NETLIBS_GETADDRS="${NETLIBS_GETADDRS}"])
 
 dnl ----------------------------------------------------------------------
 dnl First remember if caller wants a custom Python package location?
