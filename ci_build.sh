@@ -1151,6 +1151,16 @@ configure_nut() {
       echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
+      if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -s config.cache ]; then
+        echo "$0: using existing config.cache" >&2
+      else
+        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ]; then
+          echo "$0: NOT using config.cache because it did not exist" >&2
+        else if [ -s config.cache ]; then
+          echo "$0: NOT using existing config.cache because DO_USE_AUTOCONF_CACHE=$DO_USE_AUTOCONF_CACHE" >&2
+        fi; fi
+      fi
+
       $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
       && echo "$0: configure phase complete (0)" >&2 \
       && return 0 \
