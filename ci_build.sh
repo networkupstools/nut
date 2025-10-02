@@ -55,7 +55,7 @@ case "$BUILD_TYPE" in
             echo "SKIPPING BUILD_TYPE=fightwarn-clang: compiler not found" >&2
         fi
         if $TRIED_BUILD ; then true
-	else
+        else
             echo "FAILED to run: no default-named compilers were found" >&2
             exit 1
         fi
@@ -2754,16 +2754,16 @@ bindings)
     esac
 
     if [ "${_EXPORT_FLAGS}" = true ] ; then
-            [ -z "${CFLAGS}" ]   || export CFLAGS
-            [ -z "${CXXFLAGS}" ] || export CXXFLAGS
-            [ -z "${CPPFLAGS}" ] || export CPPFLAGS
-            [ -z "${LDFLAGS}" ]  || export LDFLAGS
+        [ -z "${CFLAGS}" ]   || export CFLAGS
+        [ -z "${CXXFLAGS}" ] || export CXXFLAGS
+        [ -z "${CPPFLAGS}" ] || export CPPFLAGS
+        [ -z "${LDFLAGS}" ]  || export LDFLAGS
     else
-            # NOTE: Passing via CONFIG_OPTS also fails
-            [ -z "${CFLAGS}" ]   || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CFLAGS='${CFLAGS}'" >&2
-            [ -z "${CXXFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CXXFLAGS='${CXXFLAGS}'" >&2
-            [ -z "${CPPFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CPPFLAGS='${CPPFLAGS}'" >&2
-            [ -z "${LDFLAGS}" ]  || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export LDFLAGS='${LDFLAGS}'" >&2
+        # NOTE: Passing via CONFIG_OPTS also fails
+        [ -z "${CFLAGS}" ]   || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CFLAGS='${CFLAGS}'" >&2
+        [ -z "${CXXFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CXXFLAGS='${CXXFLAGS}'" >&2
+        [ -z "${CPPFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CPPFLAGS='${CPPFLAGS}'" >&2
+        [ -z "${LDFLAGS}" ]  || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export LDFLAGS='${LDFLAGS}'" >&2
     fi
 
     PATH="`echo "${PATH}" | normalize_path`"
