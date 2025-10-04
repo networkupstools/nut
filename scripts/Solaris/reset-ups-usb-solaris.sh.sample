@@ -58,7 +58,7 @@ cfgadm -lv "${CFGADM_APID}"
 if $DO_SVC ; then svcadm enable "$DEVICE" ; fi
 svcadm clear "$DEVICE" 2>/dev/null
 
-dmesg | tail -n 20
+dmesg | tail -20
 date
 svcs -p "$DEVICE" ; upsc "$DEVICE" || { \
     COUNT=60

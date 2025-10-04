@@ -80,7 +80,7 @@ _nut_upscmd_completion()
 
     # Get the list of commands from the UPS named in the previous word:
     local cmds
-    cmds=$(upscmd -l $prev 2>/dev/null | tail -n +3 | sed 's/ - .*//' )
+    cmds=$(upscmd -l $prev 2>/dev/null | tail +3 | sed 's/ - .*//' )
     COMPREPLY=( $(compgen -W "$cmds" -- ${cur}) )
 
     return 0
