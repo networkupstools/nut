@@ -40,13 +40,16 @@ jobs:
           # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
         os: [ 'ubuntu-latest' ]
           # TOTHINK: windows-latest, macos-latest?
-        build-mode: [ 'none' ]
+        build-mode: [ 'manual' ]
           # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
-          # Abusing "none" here to try building with ccache (and
+          # Abusing "manual" here to try building with ccache (and
           # have codeql not intercept that build but parse C/C++
           # files on its own), and "manual" to custom-build without;
           # the "autobuild" mode is handled by codeql itself but
           # would probably ignore our CC/CXX setting
+          # NOTE: We do not add ccache to PATH when actually compiling NUT code
+          # (we only speed up "configure" stages), so compilation always happens
+          # and is parsed by current CodeQL detectors of the day as they evolve!
         compiler: [ 'CC=gcc CXX=g++', 'CC=clang CXX=clang++' ]
         NUT_SSL_VARIANTS: [ 'no', 'nss', 'openssl' ]
         NUT_USB_VARIANTS: [ 'no', 'libusb-1.0', 'libusb-0.1' ]
@@ -158,21 +161,29 @@ jobs:
     # and then spread it out for builds and analyses?
     # Can ccache be used across builds?
     - if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
-      name: NUT CI Build
+      name: NUT CI Build Configuration
       run: |
         case x"${{matrix.build-mode}}" in
-        xnone)
+        xmanual)
             PATH="/usr/lib/ccache:$PATH" ; export PATH
             CCACHE_COMPRESS=true; export CCACHE_COMPRESS
             ccache --version || true
             ;;
-        xmanual|*)
-            echo "NOTE: NOT USING CCACHE for the CI-tested code base" >&2
+        xnone|*)
+            echo "NOTE: NOT USING CCACHE for the CI-tested code base configuration" >&2
             ;;
         esac
         ( ${{matrix.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
-        ./autogen.sh
+        ./autogen.sh && \
         ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs --disable-docs-changelog ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
+
+    # NOTE: We do not add ccache to PATH here, so compilation always happens
+    # and is parsed by current CodeQL detectors of the day as they evolve:
+    - if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
+      name: NUT CI Build Compilation
+      run: |
+        echo "NOTE: NOT USING CCACHE for the CI-tested code base compilation" >&2
+        ( ${{matrix.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
         make -s -j 8 || exit
 
     # NOTE: Assuming GNU make here, not limiting "-j NUM" runners
