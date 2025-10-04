@@ -9,7 +9,7 @@ upssched - Timer helper for scheduling events from upsmon
 SYNOPSIS
 --------
 
-*upssched*
+*upssched* [OPTIONS] [NOTIFYMSG]
 
 NOTE: *upssched* should be run from linkman:upsmon[8] via the NOTIFYCMD.
 You should never run it directly during normal operations.
@@ -17,7 +17,8 @@ You should never run it directly during normal operations.
 *upssched* -l
 
 List currently tracked timer events, if any. Report as a TAB-separated
-table of: 'NAME', 'TIMEOUT_ABS', 'TIMEOUT_REL', 'NOTIFYTYPE', 'UPSNAME'.
+table of: 'NAME', 'TIMEOUT_ABS', 'TIMEOUT_REL', 'NOTIFYTYPE', 'UPSNAME',
+`NOTIFYMSG`.
 
 DESCRIPTION
 -----------
@@ -26,6 +27,36 @@ DESCRIPTION
 relative to events being monitored by linkman:upsmon[8].  The original
 purpose was to allow for a shutdown to occur after some fixed period
 on battery, but there are other uses that are possible.
+
+COMMON OPTIONS
+--------------
+
+*-h*::
+Show the command-line help message.
+
+*-V*::
+Show NUT version banner.  More details may be available if you also
+`export NUT_DEBUG_LEVEL=1` or greater verbosity level.
+
+*-D*::
+Raise the debugging level. Use this option multiple times for more details.
+
+OPTIONS
+-------
+
+By default `upssched` processes its configuration file and executes or queues
+calls to its `CMDSCRIPT`, or cancels some previously queued item(s), based on
+configuration and the `NOTIFYTYPE` it receives.  One exception to this is the
+queue listing mode `-l`.
+
+*-l*::
+List pending timers (if any) and exit.
+
+*NOTIFYMSG*::
+Optionally pass a text message (typically originates from linkman:upsmon[8]
+call to `upssched` as its `NOTIFYCMD`) as an environment variable named
+`NOTIFYMSG` to the `CMDSCRIPT` launched by `upssched` immediately or after
+a timer expires.
 
 INTEGRATION
 -----------
