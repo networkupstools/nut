@@ -18,6 +18,13 @@ IMPORTANT NOTES
 * Contents of this file should be pure ASCII (character codes
   not in range would be ignored with a warning message).
 
+* Command execution is synchronous (with the called tool process in case
+  of `EXECUTE` directive, or with the timer process). Consider using your
+  system shell abilities like `&` to send long-duration handling to the
+  background and let `upssched` timer daemon continue. This should not
+  impact `upsmon` daemon, which handles each notification in a separate
+  sub-process (and so not a problem for immediate `EXECUTE` events).
+
 CONFIGURATION DIRECTIVES
 ------------------------
 

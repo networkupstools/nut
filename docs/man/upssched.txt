@@ -81,6 +81,14 @@ If you also want to continue writing to the syslog, just add it in:
 
 For a full list of notify flags, see the linkman:upsmon[8] documentation.
 
+Please note that command execution is synchronous (with the called `upssched`
+tool process in case of `EXECUTE` directive, or with the timer process).
+Consider using your system shell abilities like `&` to send long-duration
+handling to the background and let `upssched` timer daemon continue.
+This should not impact `upsmon` daemon, which handles each notification
+in a separate sub-process (and so not a problem for immediate `EXECUTE`
+events).
+
 CONFIGURATION
 -------------
 
