@@ -10,7 +10,7 @@ EXTRA_DIST = \
     HP-UX/nut-upsmon \
     HP-UX/nut-upsmon.sh \
     logrotate/nutlogd \
-    misc/nut.bash_completion \
+    misc/nut.bash_completion.in \
     misc/osd-notify \
     perl/Nut.pm \
     RedHat/halt.patch \
@@ -55,5 +55,7 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) $(AM_MAKEFLAGS) -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 CLEANFILES = *-spellchecked RedHat/*-spellchecked usb_resetter/*-spellchecked
+
+DISTCLEANFILES = misc/nut.bash_completion
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

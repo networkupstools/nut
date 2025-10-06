@@ -6782,6 +6782,7 @@ AC_CONFIG_FILES([
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
  scripts/installer/Makefile
+ scripts/misc/nut.bash_completion
  scripts/python/Makefile
  scripts/python/module/Makefile
  scripts/python/module/PyNUT.py
