@@ -62,12 +62,12 @@ _nut_upscmd_completion()
     case "$prev" in
         -u|-p) # TODO: match against upsd.users, if readable.
             COMPREPLY=( ) ; return 0 ;;
-	-l) 
+        -l)
             upses="$(_nut_upses)"
             COMPREPLY=( $(compgen -W "$upses" -- ${cur}) ) ; return 0 ;;
-	upscmd)
-	    upses="$(_nut_upses)"
-	    COMPREPLY=( $(compgen -W "$options $upses" -- ${cur}) ) ; return 0 ;;
+        upscmd)
+            upses="$(_nut_upses)"
+            COMPREPLY=( $(compgen -W "$options $upses" -- ${cur}) ) ; return 0 ;;
     esac
 
     # If the user starts to type an option, then only offer options for that word:
@@ -100,9 +100,9 @@ _nut_upsd_completion()
     options="-c -D -f -h -r -u -V -4 -6"
 
     case "$prev" in
-	-c) # commands:
+        -c) # commands:
             COMPREPLY=( $(compgen -W "reload stop" -- ${cur}) ) ; return 0 ;;
-	-r) # chroot:
+        -r) # chroot:
             COMPREPLY=( $(compgen -A directory -- ${cur}) ) ; return 0 ;;
         -u) # system user, not in upsd.users
             COMPREPLY=( $(compgen -u -- ${cur}) ) ; return 0 ;;
@@ -128,13 +128,13 @@ _nut_upsdrvctl_completion()
     options="-h -r -t -u -D"
 
     case "$prev" in
-	-r) # chroot:
+        -r) # chroot:
             COMPREPLY=( $(compgen -A directory -- ${cur}) ) ; return 0 ;;
         -u) # system user, not in upsd.users
             COMPREPLY=( $(compgen -u -- ${cur}) ) ; return 0 ;;
-	start|stop|shutdown)
-    	     upses="$(_nut_local_upses)"
-	     COMPREPLY=( $(compgen -W "$upses" -- ${cur}) ) ; return 0 ;;
+        start|stop|shutdown)
+            upses="$(_nut_local_upses)"
+            COMPREPLY=( $(compgen -W "$upses" -- ${cur}) ) ; return 0 ;;
     esac
 
     # If the user starts to type an option, then only offer options for that word:
@@ -162,7 +162,7 @@ _nut_upsmon_completion()
     options="-c -D -h -K -u -4 -6"
 
     case "$prev" in
-	-c) # commands:
+        -c) # commands:
             COMPREPLY=( $(compgen -W "fsd reload stop" -- ${cur}) ) ; return 0 ;;
         -u) # system user, not in upsd.users
             COMPREPLY=( $(compgen -u -- ${cur}) ) ; return 0 ;;
@@ -192,7 +192,7 @@ _nut_upsrw_completion()
     case "$prev" in
         -u|-p) # TODO: match against upsd.users, if readable.
             COMPREPLY=( ) ; return 0 ;;
-	-l)
+        -l)
             COMPREPLY=( $(compgen -W "$upses" -- ${cur}) ) ; return 0 ;;
     esac
 
