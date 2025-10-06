@@ -242,7 +242,7 @@ AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
-        dnl Causes calls to ac_prog stuff, so dittoed below if "no"
+	dnl Causes calls to ac_prog stuff, so dittoed below if "no"
 	AC_USE_SYSTEM_EXTENSIONS
 ], [
 	AC_MSG_RESULT(no)
