@@ -1336,17 +1336,17 @@ consider_cleanup_shortcut() {
         DO_REGENERATE=true
     fi
 
-    if [ -s Makefile ]; then
-        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
-        ; then
-            # Avoid reconfiguring just for the sake of distclean
-            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
-            DO_REGENERATE=true
-        fi
+    if ( [ -s Makefile ] && (
+            [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        ||  [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        ||  [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] ) ) \
+    || ( [ -s configure ] && (
+            [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
+        ||  [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] ) ) \
+    ; then
+        # Avoid reconfiguring just for the sake of distclean
+        echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+        DO_REGENERATE=true
     fi
 
     # When iterating configure.ac or m4 sources, we can end up with an
