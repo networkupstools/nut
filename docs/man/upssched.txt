@@ -104,6 +104,24 @@ to shut down the slaves in a controlled manner.
 
 Be sure you cancel the timer if power returns (ONLINE).
 
+EARLY PREPARATION FOR A SHUTDOWN ON UPSMON PRIMARY INSTANCE
+-----------------------------------------------------------
+
+The linkman:upsmon[8] primary instance is responsible for telling the UPS(es)
+to power off at the end of emergency shutdown.  As such, if there are several
+clients, the primary instance raises an "FSD" (Forced Shut Down) flag on the
+data server for each UPS it manages, and waits for secondary instances to log
+off (or for a timeout to expire).  If there are activities that should happen
+on the primary upsmon's computer during shutdown which take a long time, you
+can use the `FSD` notification to begin those operations while the primary
+`upsmon` instance waits for the secondaries to complete their shutdowns.
+
+If you have several UPSes, you may want to combine several notifications with
+the `START-TIMER-SHARED` directive (with a short timeout), so you only react
+once.  Alternately, if the needed activity varies by the UPS (e.g. custom
+remote-device shutdown scripts), you may actually want to use `EXECUTE` rules
+right away (and dispatch further work in your `CMDSCRIPT`).
+
 DEBOUNCING EVENTS
 -----------------
 
