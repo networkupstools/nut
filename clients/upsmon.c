@@ -1133,8 +1133,20 @@ static void setfsd(utype_t *ups)
 		return;
 	}
 
-	if (!strncmp(buf, "OK", 2))
+	if (!strncmp(buf, "OK", 2)) {
+		upsdebugx(1, "%s: data server confirmed setting FSD for UPS [%s]", __func__, ups->sys);
+
+		/* Let NOTIFYCMD (if any) know, and have a chance to react */
+		if (ups->lastfsdnotify) {
+			/* e.g. upsd was still alive with a latched FSD
+			 * status when this upsmon instance started */
+			upsdebugx(2, "%s: not notifying about FSD for UPS [%s] because it was recently reported already", __func__, ups->sys);
+		} else {
+			time(&(ups->lastfsdnotify));
+			do_notify(ups, NOTIFY_FSD, NULL);
+		}
 		return;
+	}
 
 	/* protocol error: upsd said something other than "OK" */
 	upslogx(LOG_ERR, "FSD set on UPS %s failed: %s", ups->sys, buf);
@@ -1843,9 +1855,12 @@ static void ups_fsd(utype_t *ups)
 
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
-	/* must have changed from !FSD to FSD, so notify */
+	/* must have changed from !FSD to FSD, so notify; avoid duplicates though */
 
-	do_notify(ups, NOTIFY_FSD, NULL);
+	if (!(ups->lastfsdnotify)) {
+		time(&(ups->lastfsdnotify));
+		do_notify(ups, NOTIFY_FSD, NULL);
+	}
 	setflag(&ups->status, ST_FSD);
 }
 
@@ -2112,6 +2127,8 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	tmp->lastnoncrit = 0;
 	tmp->lastrbwarn = 0;
 	tmp->lastncwarn = 0;
+
+	tmp->lastfsdnotify = 0;
 
 	tmp->offsince = 0;
 	tmp->oblbsince = 0;
@@ -2868,8 +2885,10 @@ static void parse_status(utype_t *ups, char *status, char *buzzword, char *buzzw
 	/* clear these out early if they disappear */
 	if (!strstr(status, "LB"))
 		clearflag(&ups->status, ST_LOWBATT);
-	if (!strstr(status, "FSD"))
+	if (!strstr(status, "FSD")) {
 		clearflag(&ups->status, ST_FSD);
+		ups->lastfsdnotify = 0;
+	}
 
 	/* similar to above - clear these flags and send notifications */
 	if (!strstr(status, "CAL"))
