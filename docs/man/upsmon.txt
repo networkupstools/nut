@@ -544,6 +544,16 @@ crawling under a desk to find the plug.
 Note you can also use a dummy SHUTDOWNCMD setting to just report that the
 systems would shut down at this point, without actually disrupting their work.
 
+For inspiration, you can see the setup done by the NUT Integration Tests suite
+under the `tests/NIT` directory in NUT sources, including references to the
+shutdown and notification scripts which only log the activity (you may have
+to configure at least a trivial NUT build and run `make check-NIT-sandbox` to
+generate some of the configuration files -- or inspect the `nit.sh` script
+which pieces them together). Notably, see `scripts/misc/notifyme-debug` as
+not only a logger, but optionally a wrapper for `upssched` (in test runs),
+and `clients/upssched-cmd` as a sample implementation of an linkman:upssched[8]
+`CMDSCRIPT` which also focuses on logging.
+
 WARNING: After such "dummy" experiments you may have to restart the NUT data
 server `upsd` to clear its "FSD" flag for the devices and clients involved,
 and make sure no files named by `POWERDOWNFLAG` option (e.g. `/etc/killpower`)
