@@ -44,6 +44,7 @@
 %define NUTPKG_WITH_FREEIPMI	%( (yum search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; dnf search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; zypper search -s freeipmi-devel | grep -E '(lib)?freeipmi-devel' && exit ; urpmq --sources freeipmi-devel && exit ; pkcon search name freeipmi-devel | grep -E '(Available|Installed).*freeipmi-devel' && exit;) >&2 && echo 1 || echo 0)
 %define NUTPKG_WITH_POWERMAN	%( (yum search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; dnf search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; zypper search -s powerman-devel | grep -E '(lib)?powerman-devel' && exit ; urpmq --sources powerman-devel && exit ; pkcon search name powerman-devel | grep -E '(Available|Installed).*powerman-devel' && exit;) >&2 && echo 1 || echo 0)
 %define NUTPKG_WITH_AVAHI	%( (yum search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; dnf search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; zypper search -s avahi-devel | grep -E '(lib)?avahi-devel' && exit ; urpmq --sources avahi-devel && exit ; pkcon search name avahi-devel | grep -E '(Available|Installed).*avahi-devel' && exit;) >&2 && echo 1 || echo 0)
+%define NUTPKG_WITH_TCPWRAP	%( (yum search tcp_wrappers-devel | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; dnf search tcp_wrappers-devel | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; zypper search -s tcp_wrappers-devel | grep -E '(lib)?tcp_wrappers-devel' && exit ; urpmq --sources tcp_wrappers-devel && exit ; pkcon search name tcp_wrappers-devel | grep -E '(Available|Installed).*tcp_wrappers-devel' && exit;) >&2 && echo 1 || echo 0)
 
 Name:           nut
 # NOTE: OBS should rewrite this:
@@ -109,7 +110,10 @@ BuildRequires:  lua-devel
 BuildRequires:  (httpd-devel or apache2-devel)
 BuildRequires:  (libcppunit-devel or cppunit-devel)
 BuildRequires:  (dbus-1-glib-devel or dbus-glib-devel)
+
+%if 0${?NUTPKG_WITH_TCPWRAP}
 BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
+%endif
 
 # May be plain "neon" and "libusb" in RHEL7 or older?
 BuildRequires:  (libneon-devel or neon-devel)
