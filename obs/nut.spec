@@ -132,7 +132,8 @@ BuildRequires:  powerman-devel
 
 %if 0%{?suse_version}
 BuildRequires:  systemd-rpm-macros
-BuildRequires:  dblatex
+# Only needed for PDF generation, we do not package that now
+#BuildRequires:  dblatex
 %endif
 
 BuildRequires:  (libxslt-tools or libxslt)
