@@ -394,16 +394,16 @@ This design allows you to lose some of your power supplies in a redundant
 power environment without bringing down the entire system, while still
 working properly for smaller systems.
 
-UPS TYPES
----------
+UPS CONNECTION TYPES AND UPSMON ROLES
+-------------------------------------
 
 *upsmon* and linkman:upsd[8] don't always run on the same system.  When they
-do, any UPSes that are directly attached to the upsmon host should be
-monitored in "primary" mode.  This makes upsmon take charge of that equipment,
-and it will wait for the "secondary" systems to disconnect before shutting
-down the local system.  This allows the distant systems (monitoring over
-the network) to shut down cleanly before `upsdrvctl shutdown` runs locally
-and turns them all off.
+do, any UPSes that are directly attached to that upsmon host should be
+monitored in "primary" mode, which makes that upsmon instance take charge
+of that equipment, and it will wait for the "secondary" systems to disconnect
+before shutting down the local system.  This allows the distant systems (just
+monitoring over the network) to shut down cleanly before `upsdrvctl shutdown`
+runs locally on the primary system and turns them all off.
 
 When upsmon runs as a secondary, it is relying on the distant system to tell
 it about the state of the UPS.  When that UPS goes critical (on battery
