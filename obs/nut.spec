@@ -250,7 +250,7 @@ sh autogen.sh
 	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
 %endif
 
-(cd tools; python nut-snmpinfo.py)
+### via Make now ### (cd tools; python nut-snmpinfo.py)
 
 make %{?_smp_mflags}
 PORT=$(sed -n 's/#define PORT //p' config.log)
