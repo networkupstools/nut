@@ -39,12 +39,13 @@
 %define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
 
 Name:           nut
-Version:        2.7.4
-Release:        12
+# NOTE: OBS should rewrite this:
+Version:        2.8.4
+Release:        1
 Summary:        Network UPS Tools Core (Uninterruptible Power Supply Monitoring)
 License:        GPL-2.0+
 Group:          Hardware/UPS
-Url:            http://www.networkupstools.org/
+Url:            https://www.networkupstools.org/
 Source0:        %{name}-%{version}.tar.gz
 
 Requires:       %{_bindir}/fgrep
