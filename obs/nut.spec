@@ -88,10 +88,11 @@ BuildRequires:  net-snmp-devel
 BuildRequires:  pkg-config
 # Maybe older Pythons are also okay, but were not tested for ages
 BuildRequires:  (python >= 2.6 or python3 or python2)
+
+%if 0%{?NUTPKG_WITH_DMF}
 # LUA 5.1 or 5.2 is known ok for us, both are modern in current distros (201609xx)
 BuildRequires:  lua-devel
 
-%if 0%{?NUTPKG_WITH_DMF}
 # TODO: Make sure how this is named to use in CentOS/RHEL (may be not in core but EPEL repos)
 # The pycparser is required to rebuild DMF files, but those pre-built
 # copies in the git repo/tarball "should" be in sync with original
