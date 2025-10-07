@@ -37,7 +37,13 @@
 %define systemdsystemunitdir %(pkg-config --variable=systemdsystemunitdir systemd)
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
 %define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
+
 %define NUTPKG_WITH_DMF	0
+
+# Not all distros have it
+%define NUTPKG_WITH_FREEIPMI	%( (yum search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; dnf search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; zypper search -s freeipmi-devel | grep -E '(lib)?freeipmi-devel' && exit ; urpmq --sources freeipmi-devel && exit ; pkcon search name freeipmi-devel | grep -E '(Available|Installed).*freeipmi-devel' && exit;) >&2 && echo 1 || echo 0)
+%define NUTPKG_WITH_POWERMAN	%( (yum search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; dnf search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; zypper search -s powerman-devel | grep -E '(lib)?powerman-devel' && exit ; urpmq --sources powerman-devel && exit ; pkcon search name powerman-devel | grep -E '(Available|Installed).*powerman-devel' && exit;) >&2 && echo 1 || echo 0)
+%define NUTPKG_WITH_AVAHI	%( (yum search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; dnf search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; zypper search -s avahi-devel | grep -E '(lib)?avahi-devel' && exit ; urpmq --sources avahi-devel && exit ; pkcon search name avahi-devel | grep -E '(Available|Installed).*avahi-devel' && exit;) >&2 && echo 1 || echo 0)
 
 Name:           nut
 # NOTE: OBS should rewrite this:
@@ -60,10 +66,17 @@ Requires(post): udev
 %endif
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
-BuildRequires:  avahi-devel
 # To fix end-of-line encoding:
 BuildRequires:  dos2unix
-BuildRequires:  freeipmi-devel
+
+%if 0${?NUTPKG_WITH_AVAHI}
+BuildRequires:  avahi-devel
+%endif
+
+%if 0${?NUTPKG_WITH_FREEIPMI}
+BuildRequires:  (libfreeipmi-devel or freeipmi-devel)
+%endif
+
 BuildRequires:  gcc-c++
 BuildRequires:  gd-devel
 BuildRequires:  libtool
@@ -86,6 +99,10 @@ BuildRequires:  lua-devel
 #BuildRequires:  python-pycparser
 %endif
 
+%if 0${?NUTPKG_WITH_POWERMAN}
+BuildRequires:  powerman-devel
+%endif
+
 %if 0%{?suse_version}
 BuildRequires:  apache2-devel
 BuildRequires:  dbus-1-glib-devel
@@ -93,7 +110,6 @@ BuildRequires:  libcppunit-devel
 BuildRequires:  libneon-devel
 BuildRequires:  libopenssl-devel
 BuildRequires:  systemd-rpm-macros
-BuildRequires:  powerman-devel
 BuildRequires:  tcpd-devel
 # TODO: For doc build: move out of opensuse
 ###BuildRequires:  asciidoc
@@ -219,7 +235,7 @@ sh autogen.sh
 	--with-snmp\
 	--with-neon\
 	--with-dev\
-	--with-ipmi \
+	--with-ipmi=auto\
 	--with-powerman=auto\
 	--with-doc=man=dist-auto\
 	--with-htmlpath=%{HTMLPATH}\
