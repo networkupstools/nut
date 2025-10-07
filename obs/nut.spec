@@ -317,7 +317,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS COPYING ChangeLog MAINTAINERS NEWS README UPGRADING docs/*.txt docs/cables
+%doc AUTHORS COPYING LICENSE-DCO LICENSE-GPL2 LICENSE-GPL3 ChangeLog MAINTAINERS NEWS.adoc README.adoc UPGRADING.adoc docs/*.adoc docs/*.txt docs/cables
 /bin/*
 %{_sysconfdir}/bash_completion.d/*
 %{_sysconfdir}/logrotate.d/*
