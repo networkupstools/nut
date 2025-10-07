@@ -25,8 +25,8 @@
 %define STATEPATH	%{_localstatedir}/lib/ups
 %define CONFPATH	%{_sysconfdir}/ups
 ### Note: this is /etc/nut in Debian version
-%define USER		upsd
-%define GROUP		daemon
+%define NUT_USER		upsd
+%define NUT_GROUP		daemon
 %define LBRACE (
 %define RBRACE )
 %define QUOTE "
@@ -261,8 +261,8 @@ sh autogen.sh
 	--with-cgipath=%{CGIPATH}\
 	--with-statepath=%{STATEPATH}\
 	--with-drvpath=%{MODELPATH}\
-	--with-user=%{USER}\
-	--with-group=%{GROUP} \
+	--with-user=%{NUT_USER}\
+	--with-group=%{NUT_GROUP} \
 	--with-udev-dir=%{_sysconfdir}/udev \
 	--enable-option-checking=fatal\
 	--with-systemdsystemunitdir --with-systemdshutdowndir \
@@ -301,17 +301,17 @@ install -m0644 scripts/misc/nut.bash_completion %{buildroot}%{_sysconfdir}/bash_
 install -m0755 scripts/subdriver/gen-snmp-subdriver.sh %{buildroot}%{_sbindir}/
 
 %pre
-usr/sbin/useradd -r -g %{GROUP} -s /bin/false \
-  -c "UPS daemon" -d /sbin %{USER} 2>/dev/null || :
+usr/sbin/useradd -r -g %{NUT_GROUP} -s /bin/false \
+  -c "UPS daemon" -d /sbin %{NUT_USER} 2>/dev/null || :
 %if %{defined opensuse_version}
 %service_add_pre nut-driver@.service nut-server.service nut-monitor.service nut-driver.target nut.target
 %endif
 
 %post
 # Be sure that all files are owned by a dedicated user.
-bin/chown -R %{USER}:%{GROUP} %{STATEPATH}
+bin/chown -R %{NUT_USER}:%{NUT_GROUP} %{STATEPATH}
 # Be sure that all files are owned by a dedicated user.
-bin/chown %{USER}:root %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users
+bin/chown %{NUT_USER}:root %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users
 bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users
 # And finally trigger udev to set permissions according to newly installed rules files.
 /sbin/udevadm trigger --subsystem-match=usb --property-match=DEVTYPE=usb_device
@@ -361,9 +361,9 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %dir %{_sysconfdir}/udev/rules.d
 %config(noreplace) %{_sysconfdir}/udev/rules.d/*.rules
 %config(noreplace) %{CONFPATH}/hosts.conf
-%config(noreplace) %attr(600,%{USER},root) %{CONFPATH}/upsd.conf
-%config(noreplace) %attr(600,%{USER},root) %{CONFPATH}/upsd.users
-%config(noreplace) %attr(600,%{USER},root) %{CONFPATH}/upsmon.conf
+%config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsd.conf
+%config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsd.users
+%config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsmon.conf
 %dir %{CONFPATH}
 %config(noreplace) %{CONFPATH}/nut.conf
 %config(noreplace) %{CONFPATH}/ups.conf
@@ -374,7 +374,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %exclude %{MODELPATH}/snmp-ups
 %exclude %{MODELPATH}/netxml-ups
 %exclude %{_sbindir}/gen-snmp-subdriver.sh
-%attr(700,%{USER},%{GROUP}) %{STATEPATH}
+%attr(700,%{NUT_USER},%{NUT_GROUP}) %{STATEPATH}
 %{systemdsystemunitdir}/*
 %{systemdsystempresetdir}/*
 %{systemdtmpfilesdir}/*
