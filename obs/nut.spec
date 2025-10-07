@@ -101,7 +101,7 @@ BuildRequires:  asciidoc
 %if 0%{?centos_version}
 BuildRequires:  cppunit-devel
 BuildRequires:  dbus-glib-devel
-BuildRequires:  httpd-devel
+BuildRequires:  (httpd-devel or apache2-devel)
 BuildRequires:  neon-devel
 BuildRequires:  openssl-devel
 BuildRequires:  tcp_wrappers-devel
