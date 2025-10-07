@@ -67,7 +67,8 @@ BuildRequires:  gcc-c++
 BuildRequires:  gd-devel
 BuildRequires:  libtool
 BuildRequires:  libtool-ltdl-devel
-BuildRequires:  libusb-devel
+# libusb-0.1 or libusb-1.0:
+BuildRequires:  (libusb-devel or libusbx-devel)
 BuildRequires:  net-snmp-devel
 BuildRequires:  pkg-config
 # Maybe older Pythons are also okay, but were not tested for ages
