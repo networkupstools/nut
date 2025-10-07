@@ -314,7 +314,7 @@ bin/chown -R %{NUT_USER}:%{NUT_GROUP} %{STATEPATH}
 bin/chown %{NUT_USER}:root %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users
 bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users
 # And finally trigger udev to set permissions according to newly installed rules files.
-/sbin/udevadm trigger --subsystem-match=usb --property-match=DEVTYPE=usb_device
+if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --property-match=DEVTYPE=usb_device ; fi
 %if %{defined opensuse_version}
 %service_add_post nut-driver@.service nut-server.service nut-monitor.service nut-driver-enumerator.service nut-driver.target nut.target
 %endif
