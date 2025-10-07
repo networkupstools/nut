@@ -309,9 +309,12 @@ usr/sbin/useradd -r -g %{NUT_GROUP} -s /bin/false \
 
 %post
 # Be sure that all files are owned by a dedicated user.
-bin/chown -R %{NUT_USER}:%{NUT_GROUP} %{STATEPATH}
+# Some systems struggle with "chown USER:GROUP" so we separate them here:
+bin/chown -R %{NUT_USER} %{STATEPATH}
+bin/chgrp -R %{NUT_GROUP} %{STATEPATH}
 # Be sure that all files are owned by a dedicated user.
-bin/chown %{NUT_USER}:root %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users
+bin/chown %{NUT_USER} %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users
+bin/chgrp root %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users
 bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users
 # And finally trigger udev to set permissions according to newly installed rules files.
 if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --property-match=DEVTYPE=usb_device ; fi
