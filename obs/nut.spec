@@ -99,43 +99,37 @@ BuildRequires:  lua-devel
 #BuildRequires:  python-pycparser
 %endif
 
+# Variant names in different distros
+# For some may have to fiddle with
+#   %if 0%{?centos_version}
+#   %if 0%{?suse_version}
+#   %if 0%{?rhel_version}>=7
+# and whatnot
+
+BuildRequires:  (httpd-devel or apache2-devel)
+BuildRequires:  (libcppunit-devel or cppunit-devel)
+BuildRequires:  (dbus-1-glib-devel or dbus-glib-devel)
+BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
+
+# May be plain "neon" and "libusb" in RHEL7 or older?
+BuildRequires:  (libneon-devel or neon-devel)
+BuildRequires:  (libopenssl-devel or openssl-devel)
+
 %if 0${?NUTPKG_WITH_POWERMAN}
 BuildRequires:  powerman-devel
 %endif
 
 %if 0%{?suse_version}
-BuildRequires:  apache2-devel
-BuildRequires:  dbus-1-glib-devel
-BuildRequires:  libcppunit-devel
-BuildRequires:  libneon-devel
-BuildRequires:  libopenssl-devel
 BuildRequires:  systemd-rpm-macros
-BuildRequires:  tcpd-devel
-# TODO: For doc build: move out of opensuse
-###BuildRequires:  asciidoc
 BuildRequires:  dblatex
-BuildRequires:  libxslt-tools
 %endif
+
+BuildRequires:  (libxslt-tools or libxslt)
 BuildRequires:  asciidoc
 
-%if 0%{?centos_version}
-BuildRequires:  cppunit-devel
-BuildRequires:  dbus-glib-devel
-BuildRequires:  (httpd-devel or apache2-devel)
-BuildRequires:  neon-devel
-BuildRequires:  openssl-devel
-BuildRequires:  tcp_wrappers-devel
-BuildRequires:  libxslt
-%endif
-
 %if 0%{?rhel_version}>=7
-BuildRequires:  dbus-glib-devel
-BuildRequires:  httpd-devel
 BuildRequires:  libusb
 BuildRequires:  neon
-BuildRequires:  openssl-devel
-BuildRequires:  tcp_wrappers-devel
-BuildRequires:  libxslt
 %endif
 
 %if %{defined opensuse_version}
