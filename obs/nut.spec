@@ -103,10 +103,10 @@ BuildRequires:  lua-devel
 %endif
 
 # Variant names in different distros
-# For some may have to fiddle with
-#   %if 0%{?centos_version}
-#   %if 0%{?suse_version}
-#   %if 0%{?rhel_version}>=7
+# For some platforms we may have to fiddle with distro-named macros like
+#   % if 0 % {?centos_version}
+#   % if 0 % {?suse_version}
+#   % if 0 % {?rhel_version}>=7
 # and whatnot
 
 BuildRequires:  (httpd-devel or apache2-devel)
