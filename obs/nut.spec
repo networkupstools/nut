@@ -84,6 +84,7 @@ BuildRequires:  libtool
 BuildRequires:  libtool-ltdl-devel
 # libusb-0.1 or libusb-1.0:
 BuildRequires:  (libusb-devel or libusbx-devel)
+#!Prefer:       libusbx-devel
 BuildRequires:  net-snmp-devel
 BuildRequires:  pkg-config
 # Maybe older Pythons are also okay, but were not tested for ages
@@ -121,7 +122,9 @@ BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
 
 # May be plain "neon" and "libusb" in RHEL7 or older?
 BuildRequires:  (libneon-devel or neon-devel or neon)
+#!Prefer:       (libneon-devel or neon-devel)
 BuildRequires:  (libopenssl-devel or openssl-devel or openssl)
+#!Prefer:       (libopenssl-devel or openssl-devel)
 
 %if 0%{?NUTPKG_WITH_POWERMAN}
 BuildRequires:  powerman-devel
