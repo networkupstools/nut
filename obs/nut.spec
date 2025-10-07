@@ -202,13 +202,13 @@ interface for monitoring and administering UPS hardware.
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
 
-%package gui
+%package monitor
 Summary:        Network UPS Tools Web Server Support (GUI client)
 Group:          Hardware/UPS
 Requires:       %{name} = %{version}
 BuildRequires:  (python >= 2.6 or python3 or python2)
 
-%description gui
+%description monitor
 Graphical user interface client for the Network UPS Tools,
 written in Python.
 
@@ -429,7 +429,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %config(noreplace) %{CONFPATH}/upsstats-single.html
 %config(noreplace) %{CONFPATH}/upsstats.html
 
-%files gui
+%files monitor
 %defattr(-,root,root)
 # TODO: NUT-Monitor where available
 # TODO: Detect path from chosen interpreter or NUT build config files?
