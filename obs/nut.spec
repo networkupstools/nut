@@ -35,6 +35,8 @@
 %define USBHIDDRIVERS    %(zcat %{SOURCE0} | tr a-z A-Z | fgrep -a -A1 USBHID-UPS | sed -n 's/.*ATTR{IDVENDOR}==%{QUOTE}%{BACKSLASH}%{LBRACE}[^%{QUOTE}]*%{BACKSLASH}%{RBRACE}%{QUOTE}, ATTR{IDPRODUCT}==%{QUOTE}%{BACKSLASH}%{LBRACE}[^%{QUOTE}]*%{BACKSLASH}%{RBRACE}%{QUOTE}, MODE=.*/modalias%{LBRACE}usb:v%{BACKSLASH}1p%{BACKSLASH}2d*dc*dsc*dp*ic*isc*ip*%{RBRACE}/p' | tr '%{BACKSLASH}n' ' ')
 %define USBNONHIDDRIVERS %(zcat %{SOURCE0} | tr a-z A-Z | fgrep -a -A1 _USB       | sed -n 's/.*ATTR{IDVENDOR}==%{QUOTE}%{BACKSLASH}%{LBRACE}[^%{QUOTE}]*%{BACKSLASH}%{RBRACE}%{QUOTE}, ATTR{IDPRODUCT}==%{QUOTE}%{BACKSLASH}%{LBRACE}[^%{QUOTE}]*%{BACKSLASH}%{RBRACE}%{QUOTE}, MODE=.*/modalias%{LBRACE}usb:v%{BACKSLASH}1p%{BACKSLASH}2d*dc*dsc*dp*ic*isc*ip*%{RBRACE}/p' | tr '%{BACKSLASH}n' ' ')
 %define systemdsystemunitdir %(pkg-config --variable=systemdsystemunitdir systemd)
+%define systemdsystempresetdir %(pkg-config --variable=systemdsystempresetdir systemd || pkg-config --variable=systemdsystempresetdir libsystemd)
+%define systemdtmpfilesdir %(pkg-config --variable=systemdtmpfilesdir systemd || pkg-config --variable=systemdtmpfilesdir libsystemd)
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
 %define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
 
@@ -200,6 +202,22 @@ interface for monitoring and administering UPS hardware.
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
 
+%package gui
+Summary:        Network UPS Tools Web Server Support (GUI client)
+Group:          Hardware/UPS
+Requires:       %{name} = %{version}
+BuildRequires:  (python >= 2.6 or python3 or python2)
+
+%description gui
+Graphical user interface client for the Network UPS Tools,
+written in Python.
+
+Network UPS Tools is a collection of programs which provide a common
+interface for monitoring and administering UPS hardware.
+
+Detailed information about supported hardware can be found in
+%{_docdir}/nut.
+
 %package devel
 Summary:        Network UPS Tools (Uninterruptible Power Supply Monitoring)
 Group:          Development/Libraries/C and C++
@@ -333,6 +351,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %exclude %{_datadir}/nut/dmfsnmp.d
 %endif
 %{_mandir}/man5/*.*
+%{_mandir}/man7/*.*
 %{_mandir}/man8/*.*
 %exclude %{_mandir}/man8/netxml-ups*.*
 %exclude %{_mandir}/man8/snmp-ups*.*
@@ -357,6 +376,8 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %exclude %{_sbindir}/gen-snmp-subdriver.sh
 %attr(700,%{USER},%{GROUP}) %{STATEPATH}
 %{systemdsystemunitdir}/*
+%{systemdsystempresetdir}/*
+%{systemdtmpfilesdir}/*
 %{systemdshutdowndir}/nutshutdown
 %{_datadir}/augeas/lenses/dist/nuthostsconf.aug
 %{_datadir}/augeas/lenses/dist/nutnutconf.aug
@@ -405,11 +426,18 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %config(noreplace) %{CONFPATH}/upsstats-single.html
 %config(noreplace) %{CONFPATH}/upsstats.html
 
+%files gui
+%defattr(-,root,root)
+# TODO: NUT-Monitor where available
+# TODO: Detect path from chosen interpreter or NUT build config files?
+/usr/lib/python*/*-packages/*
+
 %files devel
 %defattr(-,root,root)
 %{_includedir}/*.h
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*.pc
 %{_mandir}/man3/*.*
+%{_libexecdir}/sockdebug
 
 %changelog
