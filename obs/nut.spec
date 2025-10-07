@@ -70,11 +70,11 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 # To fix end-of-line encoding:
 BuildRequires:  dos2unix
 
-%if 0${?NUTPKG_WITH_AVAHI}
+%if 0%{?NUTPKG_WITH_AVAHI}
 BuildRequires:  avahi-devel
 %endif
 
-%if 0${?NUTPKG_WITH_FREEIPMI}
+%if 0%{?NUTPKG_WITH_FREEIPMI}
 BuildRequires:  (libfreeipmi-devel or freeipmi-devel)
 %endif
 
@@ -108,10 +108,13 @@ BuildRequires:  lua-devel
 # and whatnot
 
 BuildRequires:  (httpd-devel or apache2-devel)
-BuildRequires:  (libcppunit-devel or cppunit-devel)
 BuildRequires:  (dbus-1-glib-devel or dbus-glib-devel)
 
-%if 0${?NUTPKG_WITH_TCPWRAP}
+%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
+BuildRequires:  (libcppunit-devel or cppunit-devel)
+%endif
+
+%if 0%{?NUTPKG_WITH_TCPWRAP}
 BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
 %endif
 
@@ -119,7 +122,7 @@ BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
 BuildRequires:  (libneon-devel or neon-devel)
 BuildRequires:  (libopenssl-devel or openssl-devel)
 
-%if 0${?NUTPKG_WITH_POWERMAN}
+%if 0%{?NUTPKG_WITH_POWERMAN}
 BuildRequires:  powerman-devel
 %endif
 
