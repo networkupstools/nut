@@ -120,8 +120,8 @@ BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
 %endif
 
 # May be plain "neon" and "libusb" in RHEL7 or older?
-BuildRequires:  (libneon-devel or neon-devel)
-BuildRequires:  (libopenssl-devel or openssl-devel)
+BuildRequires:  (libneon-devel or neon-devel or neon)
+BuildRequires:  (libopenssl-devel or openssl-devel or openssl)
 
 %if 0%{?NUTPKG_WITH_POWERMAN}
 BuildRequires:  powerman-devel
@@ -134,11 +134,6 @@ BuildRequires:  dblatex
 
 BuildRequires:  (libxslt-tools or libxslt)
 BuildRequires:  asciidoc
-
-%if 0%{?rhel_version}>=7
-BuildRequires:  libusb
-BuildRequires:  neon
-%endif
 
 %if %{defined opensuse_version}
 # Package provides driver for USB HID UPSes, but people can live with hal addon:
