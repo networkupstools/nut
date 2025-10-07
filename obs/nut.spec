@@ -37,6 +37,7 @@
 %define systemdsystemunitdir %(pkg-config --variable=systemdsystemunitdir systemd)
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
 %define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
+%define NUTPKG_WITH_DMF	0
 
 Name:           nut
 # NOTE: OBS should rewrite this:
@@ -75,12 +76,15 @@ BuildRequires:  pkg-config
 BuildRequires:  (python >= 2.6 or python3 or python2)
 # LUA 5.1 or 5.2 is known ok for us, both are modern in current distros (201609xx)
 BuildRequires:  lua-devel
+
+%if 0%{?NUTPKG_WITH_DMF}
 # TODO: Make sure how this is named to use in CentOS/RHEL (may be not in core but EPEL repos)
 # The pycparser is required to rebuild DMF files, but those pre-built
 # copies in the git repo/tarball "should" be in sync with original
 # C files, so we don't require regeneration for packaging. Also the
 # Jenkins NUT-master job should have verified this.
 #BuildRequires:  python-pycparser
+%endif
 
 %if 0%{?suse_version}
 BuildRequires:  apache2-devel
@@ -214,7 +218,6 @@ sh autogen.sh
 	--with-usb\
 	--with-snmp\
 	--with-neon\
-	--with-snmp_dmf_lua\
 	--with-dev\
 	--with-ipmi \
 	--with-powerman=auto\
@@ -229,7 +232,10 @@ sh autogen.sh
 	--enable-option-checking=fatal\
 	--with-systemdsystemunitdir --with-systemdshutdowndir \
 	--with-augeas-lenses-dir=/usr/share/augeas/lenses/dist \
+%if 0%{?NUTPKG_WITH_DMF}
+	--with-snmp_dmf_lua\
 	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
+%endif
 
 (cd tools; python nut-snmpinfo.py)
 
@@ -350,9 +356,11 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %defattr(-,root,root)
 %{MODELPATH}/snmp-ups
 %{MODELPATH}/netxml-ups
-%{_bindir}/nut-scanner-reindex-dmfsnmp
 %{_mandir}/man8/netxml-ups*.*
 %{_mandir}/man8/snmp-ups*.*
+%{_sbindir}/gen-snmp-subdriver.sh
+%if 0%{?NUTPKG_WITH_DMF}
+%{_bindir}/nut-scanner-reindex-dmfsnmp
 %dir %{_datadir}/nut/dmfnutscan
 %dir %{_datadir}/nut/dmfsnmp
 %{_datadir}/nut/dmfnutscan/*.dmf
@@ -363,7 +371,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %dir %{_datadir}/nut/dmfsnmp.d
 %{_datadir}/nut/dmfnutscan.d/*.dmf
 %{_datadir}/nut/dmfsnmp.d/*.dmf
-%{_sbindir}/gen-snmp-subdriver.sh
+%endif
 
 %files -n libupsclient1
 %defattr(-,root,root)
