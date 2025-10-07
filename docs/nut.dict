@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3555 utf-8
+personal_ws-1.1 en 3557 utf-8
 AAC
 AAS
 ABI
@@ -1961,6 +1961,7 @@ docinfo
 docs
 dod
 domxml
+doshutdown
 dotnet
 downloadable
 dpkg
@@ -3043,6 +3044,7 @@ servicebypass
 setFeature
 setaux
 setflags
+setfsd
 setgid
 setinfo
 setpci
