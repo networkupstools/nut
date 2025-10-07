@@ -423,7 +423,9 @@ should break somehow.  This defaults to 15 seconds.
 If your primary system is shutting down too quickly, set the FINALDELAY
 interval to something greater than the default 15 seconds.  Don't set
 this too high, or your UPS battery may run out of power before the
-primary upsmon process shuts down that system.
+primary upsmon process shuts down that system. If you do need more time,
+consider starting the shutdown after a short time on battery, for details
+see the Timed Shutdowns section.
 
 TIMED SHUTDOWNS
 ---------------
