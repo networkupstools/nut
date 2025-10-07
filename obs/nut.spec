@@ -3,6 +3,7 @@
 #
 # Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
 # Copyright (c) 2016-2018 Eaton EEIC.
+# Copyright (c) 2025 by Jim Klimov <jimklimov+nut@gmail.com>
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -68,7 +69,8 @@ BuildRequires:  libtool-ltdl-devel
 BuildRequires:  libusb-devel
 BuildRequires:  net-snmp-devel
 BuildRequires:  pkg-config
-BuildRequires:  python
+# Maybe older Pythons are also okay, but were not tested for ages
+BuildRequires:  (python >= 2.6 or python3 or python2)
 # LUA 5.1 or 5.2 is known ok for us, both are modern in current distros (201609xx)
 BuildRequires:  lua-devel
 # TODO: Make sure how this is named to use in CentOS/RHEL (may be not in core but EPEL repos)
