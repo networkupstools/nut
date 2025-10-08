@@ -52,7 +52,7 @@
 # endif
 #endif	/* WIN32 */
 
-#define MGE_HID_VERSION		"MGE HID 1.56"
+#define MGE_HID_VERSION		"MGE HID 1.57"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -1847,6 +1847,8 @@ static models_name_t mge_model_names [] =
 	 * https://github.com/networkupstools/nut/issues/2380#issuecomment-3263848849
 	 */
 	{ "Ellipse PRO", "1500 ", EATON_5P, "Eaton 5S1500" },
+	/* https://github.com/networkupstools/nut/issues/2380#issuecomment-3380826913 */
+	{ "Ellipse PRO", "1600 ", EATON_5P, "Eaton 5S1600" },
 
 	/* Eaton 9E entry-level series per discussions in
 	 * https://github.com/networkupstools/nut/issues/1925
