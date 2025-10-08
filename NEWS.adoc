@@ -164,6 +164,10 @@ several `FSD` notifications into one executed action. [PR #3097]
    syntax is not supported everywhere (or the `!` operator generally).
    [#3099, #1660]
 
+ - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
+   to match the driver program name. Follow-up from slightly botched renaming
+   in original contribution. [PR #545]
+
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3
 ----------------------------------------------------

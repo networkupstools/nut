@@ -35,6 +35,10 @@ Changes from 2.8.4 to 2.8.5
   of this new facility to keep working under both old and new file names.
   [#3101]
 
+- Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
+  to match the driver program name. Packaging recipes may have to be updated.
+  Follow-up from slightly botched renaming in original contribution. [PR #545]
+
 
 Changes from 2.8.3 to 2.8.4
 ---------------------------
