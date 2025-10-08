@@ -409,6 +409,25 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %dir %{_datadir}/augeas/lenses/dist
 %dir %{_datadir}/augeas/lenses/dist/tests
 %{_libexecdir}/nut-driver-enumerator.sh
+# Exclude whatever other packages bring, some rpmbuild versions seem to dump
+# everything into the base package and then complain about duplicates/conflicts:
+### libupsclient1
+%exclude %{_libdir}/*.so.*
+### nut-cgi
+%exclude %{CGIPATH}
+%exclude %{HTMLPATH}
+%exclude %{CONFPATH}/*.html
+### nut-monitor
+# TODO: Actually package NUT-Monitor app and scripts where available
+# TODO: Detect path from chosen interpreter or NUT build config files?
+%exclude /usr/lib/python*/*-packages/*
+### nut-devel
+%exclude %{_includedir}/*.h
+%exclude %{_libdir}/*.so
+%exclude %{_libdir}/pkgconfig/*.pc
+%exclude %{_mandir}/man3/*.*
+%exclude %{_libexecdir}/sockdebug
+
 
 %files drivers-net
 %defattr(-,root,root)
@@ -432,6 +451,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %endif
 
 %files -n libupsclient1
+# TODO: Separate or rename for other nut-libs (nut-scanner, nutconf C++)?
 %defattr(-,root,root)
 %{_libdir}/*.so.*
 
@@ -444,7 +464,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 
 %files monitor
 %defattr(-,root,root)
-# TODO: NUT-Monitor where available
+# TODO: Actually package NUT-Monitor app and scripts where available
 # TODO: Detect path from chosen interpreter or NUT build config files?
 /usr/lib/python*/*-packages/*
 
