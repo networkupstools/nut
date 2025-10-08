@@ -440,7 +440,8 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{_sbindir}/*
 %dir %{UDEVRULEPATH}
 %dir %{UDEVRULEPATH}/rules.d
-%config(noreplace) %{UDEVRULEPATH}/rules.d/*.rules
+### FIXME: if under /etc ### %config(noreplace) %{UDEVRULEPATH}/rules.d/*.rules
+%{UDEVRULEPATH}/rules.d/*.rules
 %config(noreplace) %{CONFPATH}/hosts.conf
 %config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsd.conf
 %config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsd.users
