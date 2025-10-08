@@ -98,11 +98,11 @@ configure: configure.ac
 ifeq (0,$(NUTPKG_WITH_DMF))
 # hide
 patch-recipe-dmf:
-	for F in debian.*.install ; do sed 's,^\([^#].*dmf.*\)$$,#\1,' -i "$$F" || exit ; done
+	for F in debian.*.install debian/*.install ; do [ -s "$$F" ] || continue ; sed 's,^\([^#].*dmf.*\)$$,#\1,' -i "$$F" || exit ; done
 else
 # expose
 patch-recipe-dmf:
-	for F in debian.*.install ; do sed 's,^#\(.*dmf.*\)$$,\1,' -i "$$F" || exit ; done
+	for F in debian.*.install debian/*.install ; do [ -s "$$F" ] || continue ; sed 's,^#\(.*dmf.*\)$$,\1,' -i "$$F" || exit ; done
 endif
 
 pre-build:: patch-recipe-dmf debian/compat configure
