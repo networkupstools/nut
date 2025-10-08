@@ -19,10 +19,10 @@ DEB_DH_AUTORECONF_ARGS = --as-needed
 DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
 
 # echoed fallbacks are for Ubuntu primarily
-systemdsystemunitdir := $(shell pkg-config --variable=systemdsystemunitdir systemd || echo /lib/systemd/system)
-systemdsystemdutildir := $(shell pkg-config --variable=systemdutildir systemd || echo /lib/systemd)
-systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir systemd || echo /lib/systemd/system-shutdown)
-systemdtmpfilesdir := $(shell pkg-config --variable=systemdtmpfilesdir systemd || echo /usr/lib/tmpfiles.d)
+systemdsystemunitdir := $(shell pkg-config --variable=systemdsystemunitdir libsystemd || pkg-config --variable=systemdsystemunitdir systemd || echo /lib/systemd/system)
+systemdsystemdutildir := $(shell pkg-config --variable=systemdutildir libsystemd || shell pkg-config --variable=systemdutildir systemd || echo /lib/systemd)
+systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir libsystemd || shell pkg-config --variable=systemdshutdowndir systemd || echo /lib/systemd/system-shutdown)
+systemdtmpfilesdir := $(shell pkg-config --variable=systemdtmpfilesdir libsystemd || shell pkg-config --variable=systemdtmpfilesdir systemd || echo /usr/lib/tmpfiles.d)
 
 # Does this NUT branch have DMF feature code?
 NUTPKG_WITH_DMF := $(test -d scripts/DMF && echo 1 || echo 0)
