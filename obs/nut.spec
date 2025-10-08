@@ -17,16 +17,25 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
+# NOTE: Evaluations in percent-round-parentheses below happen in the
+# build area already populated with packages according to "Required:"
+# lines. We can test for OS feature availability here if needed (e.g.
+# to decide if we deliver a sub-package with certain dependencies),
+# but can not decide that we can/must install something and then we
+# would have the needed OS capability.
+
 # Requires httpd(-devel?) or apache2(-devel?) to be present in this distro:
-%define apache_serverroot %(%{_sbindir}/apxs2 -q datadir 2>/dev/null || %{_sbindir}/apxs -q PREFIX)
-%if %{?apache_serverroot}
+%define apache_serverroot %(%{_sbindir}/apxs2 -q datadir || %{_sbindir}/apxs -q PREFIX || true)
+%if 0%{?apache_serverroot} == 0
+# Dump nut-cgi artifacts under our own locations, so end-users can
+# integrate them later.
+%define CGIPATH		%{_libexecdir}/ups/cgi-bin
+%define HTMLPATH	%{_datadir}/nut/htdocs
+%else
 # Rename web pages location to not conflict with apache2-example-pages
 # or user home page:
 %define CGIPATH		%{apache_serverroot}/cgi-bin/nut
 %define HTMLPATH	%{apache_serverroot}/htdocs/nut
-%else
-%define CGIPATH		%{_libexecdir}/ups/cgi-bin
-%define HTMLPATH	%{_datadir}/nut/htdocs
 %endif
 
 %define MODELPATH	%{_libexecdir}/ups/driver
@@ -54,6 +63,9 @@
 %define NUTPKG_WITH_DMF	%( test -d scripts/DMF && echo 1 || echo 0 )
 
 # Not all distros have it
+# FIXME: No use searching remote repos; can use rpm queries based on whatever
+# did get installed according to Requires lines below, to decide whether we
+# deliver certain sub-packages though.
 %define NUTPKG_WITH_FREEIPMI	%( (yum search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; dnf search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; zypper search -s freeipmi-devel | grep -E '(lib)?freeipmi-devel' && exit ; urpmq --sources freeipmi-devel && exit ; pkcon search name freeipmi-devel | grep -E '(Available|Installed).*freeipmi-devel' && exit;) >&2 && echo 1 || echo 0)
 %define NUTPKG_WITH_POWERMAN	%( (yum search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; dnf search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; zypper search -s powerman-devel | grep -E '(lib)?powerman-devel' && exit ; urpmq --sources powerman-devel && exit ; pkcon search name powerman-devel | grep -E '(Available|Installed).*powerman-devel' && exit;) >&2 && echo 1 || echo 0)
 %define NUTPKG_WITH_AVAHI	%( (yum search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; dnf search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; zypper search -s avahi-devel | grep -E '(lib)?avahi-devel' && exit ; urpmq --sources avahi-devel && exit ; pkcon search name avahi-devel | grep -E '(Available|Installed).*avahi-devel' && exit;) >&2 && echo 1 || echo 0)
