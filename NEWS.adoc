@@ -100,6 +100,17 @@ https://github.com/networkupstools/nut/milestone/12
    * Introduced a `SHUTDOWN_HOSTSYNC` notification message, to report that
      the primary `upsmon` initiated the shutdown and has some secondaries
      to wait for first. [#3084]
+   * Make sure an `FSD` notification is issued for each UPS when this primary
+     `upsmon` instance sets it (and does not return to usual data processing
+     loop to see and report it like secondaries do). This allows a `NOTIFYCMD`
+     such as `upssched` on the primary to handle the pending power outage
+     (e.g. begin stopping heavy services) even while `upsmon` waits for the
+     secondaries to complete their shutdowns and log out of the `upsd` data
+     server. [issue #3003, PR #3110]
++
+NOTE: If using `upssched` and monitoring multiple UPSes, consider setting up
+a `START-TIMER-SHARED` rule with a short (approx. 1 second) timeout to group
+several `FSD` notifications into one executed action. [PR #3097]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
@@ -120,6 +131,9 @@ https://github.com/networkupstools/nut/milestone/12
    * Introduced `upssched -l` mode to list currently tracked timers. [#3097]
    * Make use of `setproctag()` and `getproctag()` to report parent/child
      process names. [#3084]
+   * Introduced optional passing of `NOTIFYMSG` text (normally originating
+     from `upsmon` which calls `upssched`) as an environment variable into
+     the ultimately executed `CMDSCRIPT` processes. [#3105]
 
  - `configure` script options:
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)

@@ -394,16 +394,16 @@ This design allows you to lose some of your power supplies in a redundant
 power environment without bringing down the entire system, while still
 working properly for smaller systems.
 
-UPS TYPES
----------
+UPS CONNECTION TYPES AND UPSMON ROLES
+-------------------------------------
 
 *upsmon* and linkman:upsd[8] don't always run on the same system.  When they
-do, any UPSes that are directly attached to the upsmon host should be
-monitored in "primary" mode.  This makes upsmon take charge of that equipment,
-and it will wait for the "secondary" systems to disconnect before shutting
-down the local system.  This allows the distant systems (monitoring over
-the network) to shut down cleanly before `upsdrvctl shutdown` runs locally
-and turns them all off.
+do, any UPSes that are directly attached to that upsmon host should be
+monitored in "primary" mode, which makes that upsmon instance take charge
+of that equipment, and it will wait for the "secondary" systems to disconnect
+before shutting down the local system.  This allows the distant systems (just
+monitoring over the network) to shut down cleanly before `upsdrvctl shutdown`
+runs locally on the primary system and turns them all off.
 
 When upsmon runs as a secondary, it is relying on the distant system to tell
 it about the state of the UPS.  When that UPS goes critical (on battery
@@ -423,7 +423,11 @@ should break somehow.  This defaults to 15 seconds.
 If your primary system is shutting down too quickly, set the FINALDELAY
 interval to something greater than the default 15 seconds.  Don't set
 this too high, or your UPS battery may run out of power before the
-primary upsmon process shuts down that system.
+primary upsmon process shuts down that system. If you do need more time,
+consider starting the shutdown after a short time on battery, for details
+see the Timed Shutdowns section.
+
+For a more technical take, please see the Shutdown Activity Workflow section.
 
 TIMED SHUTDOWNS
 ---------------
@@ -500,6 +504,8 @@ by starting another copy of the program with `-c fsd` command line argument.
 This is useful when you want to initiate a shutdown before the critical
 stage through some external means, such as linkman:upssched[8].
 
+For a more technical take, please see the Shutdown Activity Workflow section.
+
 WARNING: Please note that by design, since we require power-cycling the
 load and don't want some systems to be powered off while others remain
 running if the "wall power" returns at the wrong moment as usual, the "FSD"
@@ -542,10 +548,65 @@ crawling under a desk to find the plug.
 Note you can also use a dummy SHUTDOWNCMD setting to just report that the
 systems would shut down at this point, without actually disrupting their work.
 
+For inspiration, you can see the setup done by the NUT Integration Tests suite
+under the `tests/NIT` directory in NUT sources, including references to the
+shutdown and notification scripts which only log the activity (you may have
+to configure at least a trivial NUT build and run `make check-NIT-sandbox` to
+generate some of the configuration files -- or inspect the `nit.sh` script
+which pieces them together). Notably, see `scripts/misc/notifyme-debug` as
+not only a logger, but optionally a wrapper for `upssched` (in test runs),
+and `clients/upssched-cmd` as a sample implementation of an linkman:upssched[8]
+`CMDSCRIPT` which also focuses on logging.
+
 WARNING: After such "dummy" experiments you may have to restart the NUT data
 server `upsd` to clear its "FSD" flag for the devices and clients involved,
 and make sure no files named by `POWERDOWNFLAG` option (e.g. `/etc/killpower`)
 remain on the `upsmon primary` systems under test.
+
+SHUTDOWN ACTIVITY WORKFLOW
+--------------------------
+
+Looking into `clients/upsmon.c` sources as the ultimate authority, you
+can find that the chain of events during a forced shutdown is. This can
+help make sense of the timing variables involved, and notifications sent
+(which you may want to handle, perhaps with linkman:upssched[8]):
+
+* The path to shutdown activity of a host starts when its locally running
+  `upsmon` client (in any role) decides the power situation is critical,
+  e.g. by having too few "healthy" power supplies in a real outage, and/or
+  by seeing `FSD` among `ups.status` tokens -- possibly still "latched" in
+  the `upsd` data server while you start a new `upsmon` instance, or when
+  you call `upsmon -c fsd` on that system to simulate the outage;
+* Such `upsmon` instance ends up in `forceshutdown()` method;
+* There it loops over all UPSes it `MONITOR`s as a `primary`, and calls the
+  `setfsd()` method for each (causing a local `FSD` notification, if one was
+  not sent earlier);
+* If there were no such UPSes -- we are a secondary, and go into `doshutdown()`
+  method immediately
+* Otherwise we are a primary, and only go into `doshutdown()` method after
+  first completing the `sync_secondaries()` method, which:
+  * runs an infinite loop until either there are no other persistent clients
+    logged on to the data server (`upsd`) for each UPS we are a primary for,
+    or until `HOSTSYNC` timeout elapses;
+  * it should issue a `SHUTDOWN_HOSTSYNC` notification if it is going to wait
+    at all (if there were other clients seen on first loop cycle).
+* Finally, in the `doshutdown()` method, it:
+  * issues a `SHUTDOWN` notification;
+  * waits for `FINALDELAY`;
+  * starts the timer for `SHUTDOWNEXIT` (which may be used to force `upsmon`
+    process to linger after calling `SHUTDOWNCMD` -- e.g. can be used by a
+    secondary to block the primary from cutting power too early for some use
+    cases, like safely parking some external machinery);
+  * calls the `SHUTDOWNCMD` (either directly in mono-process mode, or by
+    telling the `root`-privileged part to do so in the common case);
+  * optionally linger, if `SHUTDOWNEXIT` is so configured;
+  * ultimately exit the daemon (also causes the `root`-privileged part to exit,
+    by breaking the communications pipe between them).
+
+Note that if your `upsmon` does split into privileged and unprivileged parts,
+all notifications run in the unprivileged context (your handling scripts may
+have to `sudo` explicitly if/when/where you want to do something to the system).
+Only `SHUTDOWNCMD` is called in privileged context.
 
 DEAD UPSES
 ----------

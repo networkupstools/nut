@@ -118,10 +118,10 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #   Start a timer called <timername> that will trigger after <interval>
 #   seconds, calling your CMDSCRIPT with <timername> as the first
 #   argument. Each invocation checks if the <timername> was already
-#   started, and if so -- appends the current event's `UPSNAME` and
-#   `NOTIFYTYPE` to the list of unique values it would report via
-#   environment variables (as a comma-separated string) when the
-#   timer does execute.
+#   started, and if so -- appends the current event's `UPSNAME`,
+#   `NOTIFYTYPE` and `NOTIFYMSG` to the list of unique values it would
+#   report via environment variables (as a comma-separated string) when
+#   the timer does execute.
 #
 #   NOTE: Currently this updates the first seen instance with the
 #   <timername> (in case you managed to start many).
@@ -156,7 +156,8 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # - CANCEL-TIMER-MATCHED <timername> [cmd]
 #
 #   Similar to the above, but tries to only cancel the <timername> if it
-#   refers to the `UPSNAME` and `NOTIFYTYPE` values passed by caller.
+#   refers to the `UPSNAME` and `NOTIFYTYPE` values passed by caller (the
+#   `NOTIFYMSG` is ignored in this context).
 #
 #   1) If any UPS (*) reverts to utility power, then stop the timer before it
 #   triggers ONLY if that UPS is associated with the already scheduled timer:

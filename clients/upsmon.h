@@ -92,9 +92,11 @@ typedef struct {
 	int	pollfail_log_throttle_count;	/* How many pollfreq loops this UPS was in this state since last logged report? */
 
 	time_t	lastpoll;		/* time of last successful poll	*/
-	time_t  lastnoncrit;		/* time of last non-crit poll	*/
+	time_t	lastnoncrit;		/* time of last non-crit poll	*/
 	time_t	lastrbwarn;		/* time of last REPLBATT warning*/
 	time_t	lastncwarn;		/* time of last NOCOMM warning	*/
+
+	time_t	lastfsdnotify;		/* time of last FSD notification (when first discovering the state, or setting it - avoid duplicate notification); 0 initially or if that state clears	*/
 
 	time_t	offsince;		/* time of recent entry into OFF state	*/
 	time_t	oblbsince;		/* time of recent entry into OB LB state (normally this causes immediate shutdown alert, unless we are configured to delay it)	*/
