@@ -28,11 +28,12 @@ systemdtmpfilesdir := $(shell pkg-config --variable=systemdtmpfilesdir systemd |
 runbasedir := $(shell test -d /run && echo /run || echo /var/run)
 
 # FIXME: Find a smarter way to set those from main codebase recipes...
-# Something like `grep 'version-info' **/Makefile.am` ?
-SO_MAJOR_LIBUPSCLIENT=5
-SO_MAJOR_LIBNUTCLIENT=1
+# Something like `git grep 'version-info' '*.am'` ?
+SO_MAJOR_LIBUPSCLIENT=7
+SO_MAJOR_LIBNUTCLIENT=2
 SO_MAJOR_LIBNUTCLIENTSTUB=1
-SO_MAJOR_LIBNUTSCAN=1
+SO_MAJOR_LIBNUTSCAN=4
+SO_MAJOR_LIBNUTCONF=0
 
 # List any files which are not installed
 include /usr/share/cdbs/1/rules/utils.mk
@@ -51,7 +52,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 			     --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
 			     --with-snmp_dmf_lua=yes \
 			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no \
-			     --with-dev \
+			     --with-dev --with-dev-libnutconf \
 			     --disable-static \
 			     --with-statepath=$(runbasedir)/nut \
 			     --with-altpidpath=$(runbasedir)/nut \
@@ -142,6 +143,10 @@ common-install-arch::
 	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) && \
 	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutconf.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutconf.so.$(SO_MAJOR_LIBNUTCONF) && \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutconf.so.$(SO_MAJOR_LIBNUTCONF) \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutconf.so
 
 	# Install systemd files only on systems where it's supported
 	### Package files for nut-client:
