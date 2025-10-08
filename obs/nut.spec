@@ -349,7 +349,7 @@ install -m0755 scripts/subdriver/gen-snmp-subdriver.sh %{buildroot}%{_sbindir}/
 chmod +x %{buildroot}/usr/lib/python*/*-packages/*.py
 if [ x"%{systemdtmpfilesdir}" != x ]; then
     # Deliver these dirs by packaging:
-    sed 's,^(. %{STATEPATH}(/upssched)*( .*)*)$,#PACKAGED#\1,' -i %{buildroot}%{systemdtmpfilesdir}/nut-common-tmpfiles.conf
+    sed 's,^\(. %{STATEPATH}\(/upssched\)*\( .*\)*\)$,#PACKAGED#\1,' -i %{buildroot}%{systemdtmpfilesdir}/nut-common-tmpfiles.conf
 fi
 find %{buildroot} -type f -name '*.sh' -o -name '*.py' -o -name '*.pl' | \
 # Use deterministic script interpreters:
@@ -416,7 +416,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS COPYING LICENSE-DCO LICENSE-GPL2 LICENSE-GPL3 ChangeLog MAINTAINERS NEWS.adoc README.adoc UPGRADING.adoc docs/*.adoc docs/*.txt docs/cables
+%doc AUTHORS COPYING LICENSE-DCO LICENSE-GPL2 LICENSE-GPL3 ChangeLog MAINTAINERS NEWS.adoc README.adoc UPGRADING.adoc docs/*.adoc docs/*.txt docs/cables/*.txt
 /bin/*
 %{BASHCOMPLETIONPATH}/*
 %config(noreplace) %{_sysconfdir}/logrotate.d/*
