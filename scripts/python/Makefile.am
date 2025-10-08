@@ -254,17 +254,21 @@ endif
 
 
 if WITH_PYNUT_PY2
+if !PYTHON_SITE_PACKAGES_IS_PY2
 pynut_py2_sitedir = $(PYTHON2_SITE_PACKAGES)
 pynut_py2_site_DATA = $(PYNUT_GENERATED_NOEXEC)
 pynut_py2_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT) $(PYNUT_COMMON_CODE)
-endif
+endif !PYTHON_SITE_PACKAGES_IS_PY2
+endif WITH_PYNUT_PY2
 
 
 if WITH_PYNUT_PY3
+if !PYTHON_SITE_PACKAGES_IS_PY3
 pynut_py3_sitedir = $(PYTHON3_SITE_PACKAGES)
 pynut_py3_site_DATA = $(PYNUT_GENERATED_NOEXEC)
 pynut_py3_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT) $(PYNUT_COMMON_CODE)
-endif
+endif !PYTHON_SITE_PACKAGES_IS_PY3
+endif WITH_PYNUT_PY3
 
 #################################################################
 

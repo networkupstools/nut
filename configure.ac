@@ -3599,6 +3599,10 @@ AS_IF([test "${nut_with_nut_monitor}" != no -o "${nut_with_pynut}" != no], [
         dnl # Python site-packages installation path for specific Python3 interpreter
 ])
 
+dnl Avoid "make install" writing to same location twice
+AM_CONDITIONAL(PYTHON_SITE_PACKAGES_IS_PY2, test x"${PYTHON_SITE_PACKAGES}" = x"${PYTHON2_SITE_PACKAGES}")
+AM_CONDITIONAL(PYTHON_SITE_PACKAGES_IS_PY3, test x"${PYTHON_SITE_PACKAGES}" = x"${PYTHON3_SITE_PACKAGES}")
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --enable-cppcheck
 
