@@ -129,11 +129,14 @@ BuildRequires:  (dbus-1-glib-devel or dbus-glib-devel)
 BuildRequires:  (libcppunit-devel or cppunit-devel)
 %endif
 
+# Obsoleted/away in newer distros
 %if 0%{?NUTPKG_WITH_TCPWRAP}
 BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
 %endif
 
 # May be plain "neon" and "libusb" in RHEL7 or older?
+# OBS: This may need `osc meta prjconf` to `Prefer:` one
+# certain variant in case several hits happen on a builder:
 BuildRequires:  (libneon-devel or neon-devel or neon)
 #!Prefer:       (libneon-devel or neon-devel)
 BuildRequires:  (libopenssl-devel or openssl-devel or openssl)
