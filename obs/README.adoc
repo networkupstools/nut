@@ -2,14 +2,21 @@
 
 This directory holds reference NUT packaging recipes for RPM, DEB and
 other formats, and is primarily aimed at automation of builds with the
-link:https://openbuildservice.org/[Open Build Service (OBS)].  Note that
-beside the on-line service, the software is open-source and any project
-may install and run their own; back-end scripts may be added to support
-more operating systems (even not necessarily Linux).
+link:https://openbuildservice.org/[Open Build Service (OBS)].
+
+Note that beside the on-line service, the software is open-source and
+any project may install and run their own server instance. The `osc build`
+command can also be used on a workstation to iterate recipe nuances for
+different distributions. In theory, back-end scripts may be added to
+support more operating systems over time (even not necessarily Linux).
 
 NOTE: The layout of files and directories here is dictated by current
 expectations of the OBS software (if at some point it has to be a flat
 mess with no structure -- so be it).
+
+For some practical details see:
+
+* https://github.com/networkupstools/nut/issues/1209
 
 The recipe files themselves would likely cross-pollinate with popular
 distributions, to allow easier replacement of standard, supported and
