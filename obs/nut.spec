@@ -391,21 +391,21 @@ bin/chgrp root %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.us
 bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users || echo "WARNING: Could not secure config files in path '%{CONFPATH}'" >&2
 # And finally trigger udev to set permissions according to newly installed rules files.
 if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --property-match=DEVTYPE=usb_device ; fi
-%if "x%{systemdtmpfilesdir}" != "x"
+%if "x%{?systemdtmpfilesdir}" != "x"
 %tmpfiles_create nut-common-tmpfiles.conf
 %endif
-%if "x%{systemdsystemunitdir}" != "x"
+%if "x%{?systemdsystemunitdir}" != "x"
 %service_add_post %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
 
 %preun
-%if "x%{systemdsystemunitdir}" != "x"
+%if "x%{?systemdsystemunitdir}" != "x"
 %service_del_preun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
 :
 
 %postun
-%if "x%{systemdsystemunitdir}" != "x"
+%if "x%{?systemdsystemunitdir}" != "x"
 %service_del_postun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
 :
