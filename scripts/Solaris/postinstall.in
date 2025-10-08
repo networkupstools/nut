@@ -5,6 +5,17 @@
 NUT_DIR="@prefix@"
 prefix="@prefix@" # expanded as part of some autoconf macros below
 
+# Operations with upsdrvctl below should not warn about running
+# directly on an SMF-capable system (note it currently acts as
+# set/unset, e.g. there is no meaningful "false" value handling):
+NUT_QUIET_INIT_NDE_WARNING=true
+export NUT_QUIET_INIT_NDE_WARNING
+
+# Possibly tweak the defaults here (or in a calling session) to
+# troubleshoot package installation:
+[ -n "${NUT_DEBUG_LEVEL-}" ] || NUT_DEBUG_LEVEL=0
+export NUT_DEBUG_LEVEL
+
 # TODO/FIXME : Should "/var/run" be a configure variable?
 # Note that "/var/run" is transient tmpfs, so upgrade has to be done during same uptime.
 ACTIVE_ENUMERATOR_FMRI_FILE="/var/run/nut-driver-enumerator-fmri.prev"
@@ -72,7 +83,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	if test -s "@CONFPATH@/ups.conf" ; then
 		echo "Stopping NUT drivers, if any (in case of upgrade)..."
 		@SBINDIR@/upsdrvsvcctl stop
-		@SBINDIR@/upsdrvctl -DDDDD stop
+		@SBINDIR@/upsdrvctl stop
 		sleep 5
 		echo "(Re-)register NUT drivers (if any)..."
 		REPORT_RESTART_42=no AUTO_START=no "@NUT_LIBEXECDIR@/nut-driver-enumerator.sh" --reconfigure
@@ -114,9 +125,10 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	echo "Enable NUT umbrella service..."
 	/usr/sbin/svcadm enable -s nut
 else
-	echo "Put init script in /etc/init.d..."
+	echo "Put legacy init script in /etc/init.d..."
 	cp -pf "@NUT_DATADIR@/solaris-init/nut" /etc/init.d
 	chown root:bin /etc/init.d/nut
+	# Not 755, so only root may run it:
 	chmod 744 /etc/init.d/nut
 
 	ln -s ../init.d/nut /etc/rc3.d/S90nut > /dev/null 2>&1
@@ -124,7 +136,7 @@ else
 
 	# Start nut services
 
-	#echo "Starting nut services"
+	#echo "Starting legacy NUT services"
 	#$NUT_DIR/sbin/upsdrvctl start #> /dev/null 2>&1
 	#$NUT_DIR/sbin/upsd #> /dev/null 2>&1
 	#$NUT_DIR/sbin/upsmon #> /dev/null 2>&1

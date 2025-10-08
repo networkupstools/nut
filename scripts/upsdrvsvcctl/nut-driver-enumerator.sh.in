@@ -668,7 +668,7 @@ upsconf_getDriverMedia() {
 
 upsconf_getMedia() {
     _DRVMED="`upsconf_getDriverMedia "$1"`" || return
-    echo "${_DRVMED}" | tail -n +2
+    echo "${_DRVMED}" | @TAIL@ @TAIL_ARGS_FROM_NTH_LINE@ +2
     return 0
 }
 

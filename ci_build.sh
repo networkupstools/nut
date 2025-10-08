@@ -55,7 +55,7 @@ case "$BUILD_TYPE" in
             echo "SKIPPING BUILD_TYPE=fightwarn-clang: compiler not found" >&2
         fi
         if $TRIED_BUILD ; then true
-	else
+        else
             echo "FAILED to run: no default-named compilers were found" >&2
             exit 1
         fi
@@ -1336,17 +1336,17 @@ consider_cleanup_shortcut() {
         DO_REGENERATE=true
     fi
 
-    if [ -s Makefile ]; then
-        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
-        ; then
-            # Avoid reconfiguring just for the sake of distclean
-            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
-            DO_REGENERATE=true
-        fi
+    if ( [ -s Makefile ] && (
+            [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        ||  [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        ||  [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] ) ) \
+    || ( [ -s configure ] && (
+            [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
+        ||  [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] ) ) \
+    ; then
+        # Avoid reconfiguring just for the sake of distclean
+        echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+        DO_REGENERATE=true
     fi
 
     # When iterating configure.ac or m4 sources, we can end up with an
@@ -1354,7 +1354,11 @@ consider_cleanup_shortcut() {
     if [ -s "${CI_BUILDDIR}"/configure ] ; then
         # FIXME: Consider CONFIG_SHELL, maybe from script shebang,
         #  here - like autogen.sh does
-        if sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+        USE_CONFIG_SHELL=sh
+        if [ -n "${CONFIG_SHELL-}" ]; then
+            USE_CONFIG_SHELL="${CONFIG_SHELL}"
+        fi
+        if ${USE_CONFIG_SHELL} -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
             true
         else
             echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
@@ -1508,7 +1512,7 @@ if [ -z "$BUILD_TYPE" ] ; then
             fi
             ;;
 
-        *) echo "WARNING: Command-line argument '$1' wsa not recognized as a BUILD_TYPE alias" >&2 ;;
+        *) echo "WARNING: Command-line argument '$1' was not recognized as a BUILD_TYPE alias" >&2 ;;
     esac
 fi
 
@@ -2754,16 +2758,16 @@ bindings)
     esac
 
     if [ "${_EXPORT_FLAGS}" = true ] ; then
-            [ -z "${CFLAGS}" ]   || export CFLAGS
-            [ -z "${CXXFLAGS}" ] || export CXXFLAGS
-            [ -z "${CPPFLAGS}" ] || export CPPFLAGS
-            [ -z "${LDFLAGS}" ]  || export LDFLAGS
+        [ -z "${CFLAGS}" ]   || export CFLAGS
+        [ -z "${CXXFLAGS}" ] || export CXXFLAGS
+        [ -z "${CPPFLAGS}" ] || export CPPFLAGS
+        [ -z "${LDFLAGS}" ]  || export LDFLAGS
     else
-            # NOTE: Passing via CONFIG_OPTS also fails
-            [ -z "${CFLAGS}" ]   || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CFLAGS='${CFLAGS}'" >&2
-            [ -z "${CXXFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CXXFLAGS='${CXXFLAGS}'" >&2
-            [ -z "${CPPFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CPPFLAGS='${CPPFLAGS}'" >&2
-            [ -z "${LDFLAGS}" ]  || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export LDFLAGS='${LDFLAGS}'" >&2
+        # NOTE: Passing via CONFIG_OPTS also fails
+        [ -z "${CFLAGS}" ]   || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CFLAGS='${CFLAGS}'" >&2
+        [ -z "${CXXFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CXXFLAGS='${CXXFLAGS}'" >&2
+        [ -z "${CPPFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CPPFLAGS='${CPPFLAGS}'" >&2
+        [ -z "${LDFLAGS}" ]  || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export LDFLAGS='${LDFLAGS}'" >&2
     fi
 
     PATH="`echo "${PATH}" | normalize_path`"

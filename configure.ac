@@ -242,7 +242,7 @@ AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
-        dnl Causes calls to ac_prog stuff, so dittoed below if "no"
+	dnl Causes calls to ac_prog stuff, so dittoed below if "no"
 	AC_USE_SYSTEM_EXTENSIONS
 ], [
 	AC_MSG_RESULT(no)
@@ -314,6 +314,36 @@ AC_SUBST(NUT_AM_MAKE_CAN_EXPORT)
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
 NUT_CHECK_PKGCONFIG
 
+dnl Nowadays both `tail -n +3` and `tail +3` work almost everywhere
+dnl * CentOS7 tail can not do `tail +3` -- no such file
+dnl * Classic Solaris tooling (even in Solaris 11) can not do `tail -n` -- no such option
+AC_MSG_CHECKING([how to "tail" starting from Nth line])
+dnl Requires autoconf 2.62 or newer; for even older systems consider
+dnl an adapted implementation of the logic below. For more details see
+dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.68/html_node/Generic-Programs.html
+TAIL_ARGS_FROM_NTH_LINE=""
+ac_path_TAIL_found=""
+AC_PATH_PROGS_FEATURE_CHECK([TAIL], [tail gtail],
+	[_TAIL_OUT="`(echo "1"; echo "2"; echo "3"; echo "4"; echo "5"; echo "6"; echo "7") | $ac_path_TAIL +3`" || _TAIL_OUT=""
+	 AS_IF([(test x"${_TAIL_OUT}" != x && echo "${_TAIL_OUT}" | ${GREP} 3 && echo "${_TAIL_OUT}" | ${GREP} 7) >/dev/null],
+		[AS_IF([(echo "${_TAIL_OUT}" | ${GREP} 1 || echo "${_TAIL_OUT}" | ${GREP} 2) >/dev/null], [],
+			[ac_path_TAIL_found=:
+				 ac_cv_path_TAIL="${ac_path_TAIL}"])
+		])
+	 AS_IF([test x"${ac_path_TAIL_found}" != x:],
+		[_TAIL_OUT="`(echo "1"; echo "2"; echo "3"; echo "4"; echo "5"; echo "6"; echo "7") | $ac_path_TAIL -n +3`" || _TAIL_OUT=""
+		 AS_IF([(test x"${_TAIL_OUT}" != x && echo "${_TAIL_OUT}" | ${GREP} 3 && echo "${_TAIL_OUT}" | ${GREP} 7) >/dev/null],
+			[AS_IF([(echo "${_TAIL_OUT}" | ${GREP} 1 || echo "${_TAIL_OUT}" | ${GREP} 2) >/dev/null], [],
+				[ac_path_TAIL_found=:
+				 ac_cv_path_TAIL="${ac_path_TAIL}"
+				 TAIL_ARGS_FROM_NTH_LINE="-n"])
+			])
+		])
+	], [AC_MSG_ERROR([could not find tail that supports starting a listing from Nth line])]
+)
+AC_MSG_RESULT([$ac_cv_path_TAIL $TAIL_ARGS_FROM_NTH_LINE +NUM_FIRST_LINE])
+AC_SUBST([TAIL], [$ac_cv_path_TAIL])
+AC_SUBST([TAIL_ARGS_FROM_NTH_LINE], [$TAIL_ARGS_FROM_NTH_LINE])
 
 dnl Various version related processing
 dnl ----------------------------------
@@ -6752,6 +6782,7 @@ AC_CONFIG_FILES([
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
  scripts/installer/Makefile
+ scripts/misc/nut.bash_completion
  scripts/python/Makefile
  scripts/python/module/Makefile
  scripts/python/module/PyNUT.py
