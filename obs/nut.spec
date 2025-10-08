@@ -41,6 +41,17 @@
 %define MODELPATH	%{_libexecdir}/ups/driver
 %define STATEPATH	%{_localstatedir}/lib/ups
 %define CONFPATH	%{_sysconfdir}/ups
+
+### FIXME: Detect properly?
+# W: suse-filelist-forbidden-udev-userdirs /etc/udev/rules.d/62-nut-usbups.rules is not allowed in SUSE
+#    This directory is for user files, use /usr/lib/udev/rules.d
+%define UDEVRULEPATH	%(test -d /usr/lib/udev && echo /usr/lib/udev || echo "%{_sysconfdir}/udev")
+
+### FIXME: Detect properly?
+# W: suse-filelist-forbidden-bashcomp-userdirs /etc/bash_completion.d/nut.bash_completion is not allowed in SUSE
+#    This directory is for user files, use /usr/share/bash-completion/completions/
+%define BASHCOMPLETIONPATH	%(test -d /usr/share/bash-completion/completions && echo /usr/share/bash-completion/completions || echo "%{_sysconfdir}/bash_completion.d")
+
 ### Note: this is /etc/nut in Debian version
 %define NUT_USER		upsd
 %define NUT_GROUP		daemon
@@ -58,6 +69,10 @@
 %define systemdtmpfilesdir %(pkg-config --variable=systemdtmpfilesdir systemd || pkg-config --variable=systemdtmpfilesdir libsystemd)
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
 %define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
+
+%define NUT_SYSTEMD_UNITS_SERVICE_TARGET	%(cd scripts/systemd && ls -1 *.{service,target}{,.in} | sed 's,.in$,,' | sort | uniq)
+%define NUT_SYSTEMD_UNITS_OTHER	%(cd scripts/systemd && ls -1 *.{path,timer}{,.in} | sed 's,.in$,,' | sort | uniq)
+%define NUT_SYSTEMD_UNITS_PRESET	%(cd scripts/systemd && ls -1 *.preset{,.in} | sed 's,.in$,,' | sort | uniq)
 
 # Does this NUT branch have DMF feature code?
 %define NUTPKG_WITH_DMF	%( test -d scripts/DMF && echo 1 || echo 0 )
@@ -296,7 +311,7 @@ sh autogen.sh
 	--with-drvpath=%{MODELPATH}\
 	--with-user=%{NUT_USER}\
 	--with-group=%{NUT_GROUP} \
-	--with-udev-dir=%{_sysconfdir}/udev \
+	--with-udev-dir=%{UDEVRULEPATH} \
 	--enable-option-checking=fatal\
 	--with-systemdsystemunitdir --with-systemdshutdowndir \
 	--with-augeas-lenses-dir=/usr/share/augeas/lenses/dist \
@@ -315,26 +330,51 @@ fi
 
 %install
 make DESTDIR=%{buildroot} install %{?_smp_mflags}
-mkdir -p %{buildroot}%{STATEPATH}
+mkdir -p %{buildroot}%{STATEPATH}/upssched
 # SuSE rc
 mkdir -p %{buildroot}%{_sbindir}
 mkdir -p %{buildroot}%{_sysconfdir}/logrotate.d
-install -m 644 scripts/logrotate/nutlogd %{buildroot}%{_sysconfdir}/logrotate.d/
-mkdir -p %{buildroot}%{STATEPATH}
+# Avoid W: incoherent-logrotate-file /etc/logrotate.d/nutlogd
+install -m 644 scripts/logrotate/nutlogd %{buildroot}%{_sysconfdir}/logrotate.d/nut
 rename .sample "" %{buildroot}%{_sysconfdir}/ups/*.sample
 mkdir -p %{buildroot}/bin
 mv %{buildroot}%{_bindir}/upssched-cmd %{buildroot}/bin/upssched-cmd
 find %{buildroot} -type f -name "*.la" -delete -print
-mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d
-install -m0644 scripts/misc/nut.bash_completion %{buildroot}%{_sysconfdir}/bash_completion.d/
+mkdir -p %{buildroot}%{BASHCOMPLETIONPATH}
+install -m0644 scripts/misc/nut.bash_completion %{buildroot}%{BASHCOMPLETIONPATH}/
 install -m0755 scripts/subdriver/gen-snmp-subdriver.sh %{buildroot}%{_sbindir}/
+# TODO: Detect path from chosen interpreter or NUT build config files?
+# Avoid W: non-executable-script /usr/lib/python3.6/site-packages/PyNUT.py 644 /usr/bin/python...
+# Not really relevant for the module (not directly runnable, but has the shebang just in case)
+chmod +x %{buildroot}/usr/lib/python*/*-packages/*.py
+if [ x"%{systemdtmpfilesdir}" != x ]; then
+    # Deliver these dirs by packaging:
+    sed 's,^(. %{STATEPATH}(/upssched)*( .*)*)$,#PACKAGED#\1,' -i %{buildroot}%{systemdtmpfilesdir}/nut-common-tmpfiles.conf
+fi
+find %{buildroot} -type f -name '*.sh' -o -name '*.py' -o -name '*.pl' | \
+# Use deterministic script interpreters:
+while read F ; do
+    if head -1 "$F" | grep bin/env >/dev/null ; then
+        F_SHEBANG="`head -1 "$F"`"
+
+        F_SHELL_SHORT="`echo "$F_SHEBANG" | sed -e 's,^.*bin/env *,,'`" -e 's, .*$,,' \
+        && [ -n "$F_SHELL_SHORT" ] \
+        || { echo "WARNING: Failed to extract an interpreter from shebang '${F_SHEBANG}'" >&2 ; continue ; }
+
+        F_SHELL_PATH="`command -v "$F_SHELL_SHORT"`" \
+        && [ -n "$F_SHELL_PATH" ] && [ -x "$F_SHELL_PATH" ] \
+        || { echo "WARNING: Failed to find executable path to interpreter '${F_SHELL_SHORT}' from shebang '${F_SHEBANG}'" >&2 ; continue; }
+
+        sed '1 s,^.*$,#!'"${F_SHELL_PATH}," -i "$F"
+    fi
+done
 
 %pre
 usr/sbin/groupadd -r -g %{NUT_GROUP} 2>/dev/null || :
 usr/sbin/useradd -r -g %{NUT_GROUP} -s /bin/false \
   -c "UPS daemon" -d /sbin %{NUT_USER} 2>/dev/null || :
 %if %{defined opensuse_version}
-%service_add_pre nut-driver@.service nut-server.service nut-monitor.service nut-driver.target nut.target
+%service_add_pre %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
 
 %post
@@ -351,19 +391,24 @@ bin/chgrp root %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.us
 bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users || echo "WARNING: Could not secure config files in path '%{CONFPATH}'" >&2
 # And finally trigger udev to set permissions according to newly installed rules files.
 if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --property-match=DEVTYPE=usb_device ; fi
-%if %{defined opensuse_version}
-%service_add_post nut-driver@.service nut-server.service nut-monitor.service nut-driver-enumerator.service nut-driver.target nut.target
+%if "x%{systemdtmpfilesdir}" != "x"
+%tmpfiles_create nut-common-tmpfiles.conf
+%endif
+%if "x%{systemdsystemunitdir}" != "x"
+%service_add_post %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
 
 %preun
-%if %{defined opensuse_version}
-%service_del_preun nut-driver@.service nut-server.service nut-monitor.service nut-driver-enumerator.service nut-driver.target nut.target
+%if "x%{systemdsystemunitdir}" != "x"
+%service_del_preun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
+:
 
 %postun
-%if %{defined opensuse_version}
-%service_del_postun nut-driver@.service nut-server.service nut-monitor.service nut-driver-enumerator.service nut-driver.target nut.target
+%if "x%{systemdsystemunitdir}" != "x"
+%service_del_postun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
+:
 
 %post -n libupsclient1 -p /sbin/ldconfig
 
@@ -373,8 +418,8 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %defattr(-,root,root)
 %doc AUTHORS COPYING LICENSE-DCO LICENSE-GPL2 LICENSE-GPL3 ChangeLog MAINTAINERS NEWS.adoc README.adoc UPGRADING.adoc docs/*.adoc docs/*.txt docs/cables
 /bin/*
-%{_sysconfdir}/bash_completion.d/*
-%{_sysconfdir}/logrotate.d/*
+%{BASHCOMPLETIONPATH}/*
+%config(noreplace) %{_sysconfdir}/logrotate.d/*
 %{_bindir}/*
 %if 0%{?NUTPKG_WITH_DMF}
 %exclude %{_bindir}/nut-scanner-reindex-dmfsnmp
@@ -393,9 +438,9 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %exclude %{_mandir}/man8/snmp-ups*.*
 %dir %{_libexecdir}/ups
 %{_sbindir}/*
-%dir %{_sysconfdir}/udev
-%dir %{_sysconfdir}/udev/rules.d
-%config(noreplace) %{_sysconfdir}/udev/rules.d/*.rules
+%dir %{UDEVRULEPATH}
+%dir %{UDEVRULEPATH}/rules.d
+%config(noreplace) %{UDEVRULEPATH}/rules.d/*.rules
 %config(noreplace) %{CONFPATH}/hosts.conf
 %config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsd.conf
 %config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsd.users
@@ -410,7 +455,8 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %exclude %{MODELPATH}/snmp-ups
 %exclude %{MODELPATH}/netxml-ups
 %exclude %{_sbindir}/gen-snmp-subdriver.sh
-%attr(700,%{NUT_USER},%{NUT_GROUP}) %{STATEPATH}
+%attr(770,%{NUT_USER},%{NUT_GROUP}) %{STATEPATH}
+%attr(770,%{NUT_USER},%{NUT_GROUP}) %{STATEPATH}/upssched
 %{systemdsystemunitdir}/*
 %{systemdsystempresetdir}/*
 %{systemdtmpfilesdir}/*
