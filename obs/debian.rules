@@ -24,6 +24,9 @@ systemdsystemdutildir := $(shell pkg-config --variable=systemdutildir systemd ||
 systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir systemd || echo /lib/systemd/system-shutdown)
 systemdtmpfilesdir := $(shell pkg-config --variable=systemdtmpfilesdir systemd || echo /usr/lib/tmpfiles.d)
 
+# Does this NUT branch have DMF feature code?
+NUTPKG_WITH_DMF := $(test -d scripts/DMF && echo 1 || echo 0)
+
 # Newer systems have just /run (and yet newer systemd noisily suggests it)
 runbasedir := $(shell test -d /run && echo /run || echo /var/run)
 
@@ -50,8 +53,6 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 			     --with-ssl --with-openssl --with-libltdl=yes \
 			     --with-cgi=auto --with-powerman=auto \
 			     --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
-			     --with-snmp_dmf_lua=yes \
-			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no \
 			     --with-dev --with-dev-libnutconf \
 			     --disable-static \
 			     --with-statepath=$(runbasedir)/nut \
@@ -63,6 +64,12 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 			     --datadir=/usr/share/nut \
 			     --with-pkgconfig-dir=/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig \
 			     --with-user=nut --with-group=nut
+
+ifeq (1,$(NUTPKG_WITH_DMF))
+DEB_CONFIGURE_EXTRA_FLAGS += \
+			     --with-snmp_dmf_lua=yes \
+			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
+endif
 
 ifeq (linux,$(DEB_HOST_ARCH_OS))
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-udev-dir=/lib/udev
@@ -88,7 +95,17 @@ configure: configure.ac
 	sh autogen.sh
 	echo "PKG_CONFIG_PATH default:" ; pkg-config --variable pc_path pkg-config || true
 
-pre-build:: debian/compat configure
+ifeq (0,$(NUTPKG_WITH_DMF))
+# hide
+patch-recipe-dmf:
+	sed 's,^([^#].*dmf.*)$$,#\1,' -i debian.*.install
+else
+# expose
+patch-recipe-dmf:
+	sed 's,^#(.*dmf.*)$$,\1,' -i debian.*.install
+endif
+
+pre-build:: patch-recipe-dmf debian/compat configure
 
 # FIXME : The recipe below is a crime scene regarding hardcoded paths that
 # are more or less relevant for a particular OS distribution and version,
