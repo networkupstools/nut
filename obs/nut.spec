@@ -19,7 +19,7 @@
 
 # Requires httpd(-devel?) or apache2(-devel?) to be present in this distro:
 %define apache_serverroot %(%{_sbindir}/apxs2 -q datadir 2>/dev/null || %{_sbindir}/apxs -q PREFIX)
-%if 0%{?apache_serverroot:1}
+%if %{?apache_serverroot}
 # Rename web pages location to not conflict with apache2-example-pages
 # or user home page:
 %define CGIPATH		%{apache_serverroot}/cgi-bin/nut
