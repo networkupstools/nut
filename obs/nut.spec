@@ -81,6 +81,13 @@ Group:          Hardware/UPS
 Url:            https://www.networkupstools.org/
 Source0:        %{name}-%{version}.tar.gz
 
+Requires:       %{_bindir}/bash
+Requires:       %{_bindir}/sh
+Requires:       %{_sbindir}/sh
+Requires:       %{_bindir}/chown
+Requires:       %{_bindir}/chgrp
+Requires:       %{_bindir}/chmod
+Requires:       %{_bindir}/rm
 Requires:       %{_bindir}/fgrep
 Requires:       %{_bindir}/grep
 Requires:       %{_bindir}/pgrep
