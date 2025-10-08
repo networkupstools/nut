@@ -17,10 +17,18 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-
+# Requires httpd(-devel?) or apache2(-devel?) to be present in this distro:
 %define apache_serverroot %(%{_sbindir}/apxs2 -q datadir 2>/dev/null || %{_sbindir}/apxs -q PREFIX)
-%define CGIPATH		%{apache_serverroot}/cgi-bin
-%define HTMLPATH	%{apache_serverroot}/htdocs
+%if 0%{?apache_serverroot:1}
+# Rename web pages location to not conflict with apache2-example-pages
+# or user home page:
+%define CGIPATH		%{apache_serverroot}/cgi-bin/nut
+%define HTMLPATH	%{apache_serverroot}/htdocs/nut
+%else
+%define CGIPATH		%{_libexecdir}/ups/cgi-bin
+%define HTMLPATH	%{_datadir}/nut/htdocs
+%endif
+
 %define MODELPATH	%{_libexecdir}/ups/driver
 %define STATEPATH	%{_localstatedir}/lib/ups
 %define CONFPATH	%{_sysconfdir}/ups
@@ -291,10 +299,6 @@ mkdir -p %{buildroot}%{STATEPATH}
 rename .sample "" %{buildroot}%{_sysconfdir}/ups/*.sample
 mkdir -p %{buildroot}/bin
 mv %{buildroot}%{_bindir}/upssched-cmd %{buildroot}/bin/upssched-cmd
-# Rename web pages to not conflict with apache2-example-pages or user home page:
-mkdir -p %{buildroot}%{HTMLPATH}/nut %{buildroot}%{CGIPATH}/nut
-mv %{buildroot}%{HTMLPATH}/*.{html,png} %{buildroot}%{HTMLPATH}/nut/
-mv %{buildroot}%{CGIPATH}/*.cgi %{buildroot}%{CGIPATH}/nut
 find %{buildroot} -type f -name "*.la" -delete -print
 mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d
 install -m0644 scripts/misc/nut.bash_completion %{buildroot}%{_sysconfdir}/bash_completion.d/
@@ -424,8 +428,8 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 
 %files cgi
 %defattr(-,root,root)
-%{CGIPATH}/nut
-%{HTMLPATH}/nut
+%{CGIPATH}
+%{HTMLPATH}
 %config(noreplace) %{CONFPATH}/upsstats-single.html
 %config(noreplace) %{CONFPATH}/upsstats.html
 
