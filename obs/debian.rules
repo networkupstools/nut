@@ -187,7 +187,14 @@ common-install-indep::
 	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/nut-doc
 
 binary-install/nut-monitor::
-	dh_python2 -pnut-monitor || dh_python3 -pnut-monitor || dh_python -pnut-monitor
+	if (command -v dh_python2) ; then \
+		dh_python2 -pnut-monitor ; \
+	else if (command -v dh_python3) ; then \
+		dh_python3 -pnut-monitor ; \
+	else if (command -v dh_python) ; then \
+		dh_python -pnut-monitor ; \
+	else echo "$@: no implementation of dh_python was found!" >&2 ; exit 1 ; \
+	fi; fi; fi
 
 DEB_DH_INSTALLINIT_ARGS_nut-server := --init-script=nut-server --restart-after-upgrade
 DEB_DH_INSTALLINIT_ARGS_nut-client := --init-script=nut-client --restart-after-upgrade
