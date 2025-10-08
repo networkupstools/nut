@@ -25,7 +25,7 @@ systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir libsystem
 systemdtmpfilesdir := $(shell pkg-config --variable=systemdtmpfilesdir libsystemd || shell pkg-config --variable=systemdtmpfilesdir systemd || echo /usr/lib/tmpfiles.d)
 
 # Does this NUT branch have DMF feature code?
-NUTPKG_WITH_DMF := $(test -d scripts/DMF && echo 1 || echo 0)
+NUTPKG_WITH_DMF := $(shell test -d scripts/DMF && echo 1 || echo 0)
 
 # Newer systems have just /run (and yet newer systemd noisily suggests it)
 runbasedir := $(shell test -d /run && echo /run || echo /var/run)
