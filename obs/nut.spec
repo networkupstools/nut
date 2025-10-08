@@ -330,6 +330,7 @@ install -m0644 scripts/misc/nut.bash_completion %{buildroot}%{_sysconfdir}/bash_
 install -m0755 scripts/subdriver/gen-snmp-subdriver.sh %{buildroot}%{_sbindir}/
 
 %pre
+usr/sbin/groupadd -r -g %{NUT_GROUP} 2>/dev/null || :
 usr/sbin/useradd -r -g %{NUT_GROUP} -s /bin/false \
   -c "UPS daemon" -d /sbin %{NUT_USER} 2>/dev/null || :
 %if %{defined opensuse_version}
