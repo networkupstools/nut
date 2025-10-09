@@ -118,6 +118,7 @@ Requires:       %{_sbindir}/sh
 Requires:       %{_bindir}/chown
 Requires:       %{_bindir}/chgrp
 Requires:       %{_bindir}/chmod
+BuildRequires:  %{_sbindir}/chroot
 Requires:       %{_bindir}/rm
 Requires:       %{_bindir}/fgrep
 Requires:       %{_bindir}/grep
@@ -130,6 +131,7 @@ Requires(post): udev
 %endif
 Requires(post): group(%{NUT_GROUP})
 Requires(post): user(%{NUT_USER})
+Requires(postun):	%{_bindir}/sh
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
