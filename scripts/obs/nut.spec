@@ -451,21 +451,21 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %defattr(-,root,root)
 %doc AUTHORS COPYING LICENSE-DCO LICENSE-GPL2 LICENSE-GPL3 ChangeLog MAINTAINERS NEWS.adoc README.adoc UPGRADING.adoc docs/*.adoc docs/*.txt docs/cables/*.txt
 # List the (system) dirs we impact but do not own for the package
-%dir %{BASHCOMPLETIONPATH}
-%dir %{_sysconfdir}/logrotate.d
-%dir %{_bindir}
-%dir %{_sbindir}
-%dir %{_datadir}
-%dir %{_docdir}
-%dir %{DOCPATH}
+#% dir % {BASHCOMPLETIONPATH}
+#% dir % {_sysconfdir}/logrotate.d
+#% dir % {_bindir}
+#% dir % {_sbindir}
+#% dir % {_datadir}
+#% dir % {_docdir}
+#% dir % {DOCPATH}
 # NOTE: Currently this only delivers libupsclient-config.1
 #  and only if not building with pkg-config available:
 #% dir % {_mandir}/man1
-%dir %{_mandir}/man3
-%dir %{_mandir}/man5
-%dir %{_mandir}/man7
-%dir %{_mandir}/man8
-%dir %{_libexecdir}
+#% dir % {_mandir}/man3
+#% dir % {_mandir}/man5
+#% dir % {_mandir}/man7
+#% dir % {_mandir}/man8
+#% dir % {_libexecdir}
 %if "x%{?systemdsystemunitdir}" == "x"
 %else
 %dir %{systemdsystemunitdir}
@@ -556,21 +556,21 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 # Exclude whatever other packages bring, some rpmbuild versions seem to dump
 # everything into the base package and then complain about duplicates/conflicts:
 ### libupsclient1
-%exclude %{_libdir}/*.so.*
+#% exclude % {_libdir}/*.so.*
 ### nut-cgi
-%exclude %{CGIPATH}
-%exclude %{HTMLPATH}
-%exclude %{CONFPATH}/*.html
+#% exclude % {CGIPATH}
+#% exclude % {HTMLPATH}
+#% exclude % {CONFPATH}/*.html
 ### nut-monitor
 # TODO: Actually package NUT-Monitor app and scripts where available
 # TODO: Detect path from chosen interpreter or NUT build config files?
 %exclude /usr/lib/python*/*-packages/*
 ### nut-devel
-%exclude %{_includedir}/*.h
-%exclude %{_libdir}/*.so
-%exclude %{_libdir}/pkgconfig/*.pc
-%exclude %{_mandir}/man3/*.*
-%exclude %{LIBEXECPATH}/sockdebug
+#% exclude % {_includedir}/*.h
+#% exclude % {_libdir}/*.so
+#% exclude % {_libdir}/pkgconfig/*.pc
+#% exclude % {_mandir}/man3/*.*
+#% exclude % {LIBEXECPATH}/sockdebug
 
 
 %files drivers-net
