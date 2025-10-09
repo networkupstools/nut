@@ -102,6 +102,17 @@
 %define NUTPKG_WITH_AVAHI	%( (yum search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; dnf search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; zypper search -s avahi-devel | grep -E '(lib)?avahi-devel' && exit ; urpmq --sources avahi-devel && exit ; pkcon search name avahi-devel | grep -E '(Available|Installed).*avahi-devel' && exit;) >&2 && echo 1 || echo 0)
 %define NUTPKG_WITH_TCPWRAP	%( (yum search tcp_wrappers-devel | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; dnf search tcp_wrappers-devel | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; zypper search -s tcp_wrappers-devel | grep -E '(lib)?tcp_wrappers-devel' && exit ; urpmq --sources tcp_wrappers-devel && exit ; pkcon search name tcp_wrappers-devel | grep -E '(Available|Installed).*tcp_wrappers-devel' && exit;) >&2 && echo 1 || echo 0)
 
+# FIXME: Find a smarter way to set those from main codebase recipes...
+# Something like `git grep 'version-info' '*.am'` ?
+%define SO_MAJOR_LIBUPSCLIENT	7
+%define SO_MAJOR_LIBNUTCLIENT	2
+%define SO_MAJOR_LIBNUTCLIENTSTUB	1
+%define SO_MAJOR_LIBNUTSCAN	4
+%define SO_MAJOR_LIBNUTCONF	0
+
+# If not published, nutconf is built with a statically linked library variant
+%define NUTPKG_WITH_LIBNUTCONF	0
+
 Name:           nut
 # NOTE: OBS should rewrite this:
 Version:        2.8.4
@@ -243,18 +254,76 @@ interface for monitoring and administering UPS hardware.
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
 
-%package -n libupsclient1
+%package -n libupsclient%{SO_MAJOR_LIBUPSCLIENT}
 Summary:        Network UPS Tools Library (Uninterruptible Power Supply Monitoring)
 Group:          System/Libraries
 
-%description -n libupsclient1
-Shared library for the Network UPS Tools.
+%description -n libupsclient%{SO_MAJOR_LIBUPSCLIENT}
+Shared library for the Network UPS Tools, used by its and third-party C clients.
 
 Network UPS Tools is a collection of programs which provide a common
 interface for monitoring and administering UPS hardware.
 
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
+
+%package -n libnutclient%{SO_MAJOR_LIBNUTCLIENT}
+Summary:        Network UPS Tools Library (Uninterruptible Power Supply Monitoring)
+Group:          System/Libraries
+
+%description -n libnutclient%{SO_MAJOR_LIBNUTCLIENT}
+Shared library for the Network UPS Tools, used by its and third-party C++ clients.
+
+Network UPS Tools is a collection of programs which provide a common
+interface for monitoring and administering UPS hardware.
+
+Detailed information about supported hardware can be found in
+%{_docdir}/nut.
+
+%package -n libnutclientstub%{SO_MAJOR_LIBNUTCLIENTSTUB}
+Summary:        Network UPS Tools Library (Uninterruptible Power Supply Monitoring)
+Group:          System/Libraries
+
+%description -n libnutclientstub%{SO_MAJOR_LIBNUTCLIENTSTUB}
+Shared stub library for the Network UPS Tools with memory-backed configurations,
+primarily used by tests and mocks with its and third-party C++ clients.
+
+Network UPS Tools is a collection of programs which provide a common
+interface for monitoring and administering UPS hardware.
+
+Detailed information about supported hardware can be found in
+%{_docdir}/nut.
+
+%package -n libnutscan%{SO_MAJOR_LIBNUTSCAN}
+Summary:        Network UPS Tools Library (Uninterruptible Power Supply Monitoring)
+Group:          System/Libraries
+
+%description -n libnutscan%{SO_MAJOR_LIBNUTSCAN}
+Shared library for the Network UPS Tools, used by its nut-scanner and nutconf tools,
+and possibly third-party C clients, integrations or tools.
+
+Network UPS Tools is a collection of programs which provide a common
+interface for monitoring and administering UPS hardware.
+
+Detailed information about supported hardware can be found in
+%{_docdir}/nut.
+
+%if 0%{?NUTPKG_WITH_LIBNUTCONF} > 0
+# If not published, nutconf is built with a statically linked library variant
+%package -n libnutconf%{SO_MAJOR_LIBNUTCONF}
+Summary:        Network UPS Tools Library (Uninterruptible Power Supply Monitoring)
+Group:          System/Libraries
+
+%description -n libnutconf%{SO_MAJOR_LIBNUTCONF}
+Shared library for the Network UPS Tools, used by its nutconf tool,
+and possibly third-party C++ clients, integrations or tools.
+
+Network UPS Tools is a collection of programs which provide a common
+interface for monitoring and administering UPS hardware.
+
+Detailed information about supported hardware can be found in
+%{_docdir}/nut.
+%endif
 
 %package cgi
 Summary:        Network UPS Tools Web Server Support (UPS Status Pages)
@@ -344,6 +413,9 @@ sh autogen.sh
 	--enable-option-checking=fatal\
 	--with-systemdsystemunitdir --with-systemdshutdowndir \
 	--with-augeas-lenses-dir=/usr/share/augeas/lenses/dist \
+%if 0%{?NUTPKG_WITH_LIBNUTCONF} > 0
+	--with-dev-libnutconf\
+%endif
 %if 0%{?NUTPKG_WITH_DMF}
 	--with-snmp_dmf_lua\
 	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
@@ -443,9 +515,28 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %service_del_postun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
 
-%post -n libupsclient1 -p /sbin/ldconfig
+%post -n libupsclient%{SO_MAJOR_LIBUPSCLIENT} -p /sbin/ldconfig
 
-%postun -n libupsclient1 -p /sbin/ldconfig
+%postun -n libupsclient%{SO_MAJOR_LIBUPSCLIENT} -p /sbin/ldconfig
+
+%post -n libnutclient%{SO_MAJOR_LIBNUTCLIENT} -p /sbin/ldconfig
+
+%postun -n libnutclient%{SO_MAJOR_LIBNUTCLIENT} -p /sbin/ldconfig
+
+%post -n libnutclientstub%{SO_MAJOR_LIBNUTCLIENTSTUB} -p /sbin/ldconfig
+
+%postun -n libnutclientstub%{SO_MAJOR_LIBNUTCLIENTSTUB} -p /sbin/ldconfig
+
+%post -n libnutscan%{SO_MAJOR_LIBNUTSCAN} -p /sbin/ldconfig
+
+%postun -n libnutscan%{SO_MAJOR_LIBNUTSCAN} -p /sbin/ldconfig
+
+%if 0%{?NUTPKG_WITH_LIBNUTCONF} > 0
+%post -n libnutconf%{SO_MAJOR_LIBNUTCONF} -p /sbin/ldconfig
+
+%postun -n libnutconf%{SO_MAJOR_LIBNUTCONF} -p /sbin/ldconfig
+
+%endif
 
 %files
 %defattr(-,root,root)
@@ -555,7 +646,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{LIBEXECPATH}/nut-driver-enumerator.sh
 # Exclude whatever other packages bring, some rpmbuild versions seem to dump
 # everything into the base package and then complain about duplicates/conflicts:
-### libupsclient1
+### libupsclient7 etc
 #% exclude % {_libdir}/*.so.*
 ### nut-cgi
 #% exclude % {CGIPATH}
@@ -594,10 +685,27 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{_datadir}/nut/dmfsnmp.d/*.dmf
 %endif
 
-%files -n libupsclient1
-# TODO: Separate or rename for other nut-libs (nut-scanner, nutconf C++)?
+%files -n libupsclient%{SO_MAJOR_LIBUPSCLIENT}
 %defattr(-,root,root)
-%{_libdir}/*.so.*
+%{_libdir}/libupsclient.so.*
+
+%files -n libnutclient%{SO_MAJOR_LIBNUTCLIENT}
+%defattr(-,root,root)
+%{_libdir}/libnutclient.so.*
+
+%files -n libnutclientstub%{SO_MAJOR_LIBNUTCLIENTSTUB}
+%defattr(-,root,root)
+%{_libdir}/libnutclientstub.so.*
+
+%files -n libnutscan%{SO_MAJOR_LIBNUTSCAN}
+%defattr(-,root,root)
+%{_libdir}/libnutscan.so.*
+
+%if 0%{?NUTPKG_WITH_LIBNUTCONF} > 0
+%files -n libnutconf%{SO_MAJOR_LIBNUTCONF}
+%defattr(-,root,root)
+%{_libdir}/libnutconf.so.*
+%endif
 
 %files cgi
 %defattr(-,root,root)
