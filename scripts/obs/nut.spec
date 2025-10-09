@@ -657,21 +657,21 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 # Exclude whatever other packages bring, some rpmbuild versions seem to dump
 # everything into the base package and then complain about duplicates/conflicts:
 ### libupsclient7 etc
-#% exclude % {_libdir}/*.so.*
+%exclude %{_libdir}/*.so.*
 ### nut-cgi
-#% exclude % {CGIPATH}
-#% exclude % {HTMLPATH}
-#% exclude % {CONFPATH}/*.html
+%exclude %{CGIPATH}
+%exclude %{HTMLPATH}
+%exclude %{CONFPATH}/*.html
 ### nut-monitor
 # TODO: Actually package NUT-Monitor app and scripts where available
 # TODO: Detect path from chosen interpreter or NUT build config files?
 %exclude /usr/lib/python*/*-packages/*
 ### nut-devel
-#% exclude % {_includedir}/*.h
-#% exclude % {_libdir}/*.so
-#% exclude % {_libdir}/pkgconfig/*.pc
-#% exclude % {_mandir}/man3/*.*
-#% exclude % {LIBEXECPATH}/sockdebug
+%exclude %{_includedir}/*.h
+%exclude %{_libdir}/*.so
+%exclude %{_libdir}/pkgconfig/*.pc
+%exclude %{_mandir}/man3/*.*
+%exclude %{LIBEXECPATH}/sockdebug
 
 
 %files drivers-net
