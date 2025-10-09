@@ -24,6 +24,8 @@
 # but can not decide that we can/must install something and then we
 # would have the needed OS capability.
 
+%define LIBEXECPATH	%{_libexecdir}/ups
+
 # Requires httpd(-devel?) or apache2(-devel?) to be present in this distro:
 %define apache_serverroot %(%{_sbindir}/apxs2 -q datadir || %{_sbindir}/apxs -q PREFIX || true)
 %if "0%{?apache_serverroot}" == "0" || 0%(echo '%{apache_serverroot}' | grep -E '^%{_datadir}' >/dev/null && echo 1 || echo 0) > 0
@@ -31,7 +33,7 @@
 #   E: arch-dependent-file-in-usr-share (Badness: 590)
 # Dump nut-cgi artifacts under our own locations, so end-users can
 # integrate them later.
-%define CGIPATH		%{_libexecdir}/ups/cgi-bin
+%define CGIPATH		%{LIBEXECPATH}/cgi-bin
 %define HTMLPATH	%{_datadir}/nut/htdocs
 %else
 # Rename web pages location to not conflict with apache2-example-pages
@@ -40,7 +42,7 @@
 %define HTMLPATH	%{apache_serverroot}/htdocs/nut
 %endif
 
-%define MODELPATH	%{_libexecdir}/ups/driver
+%define MODELPATH	%{LIBEXECPATH}/driver
 %define STATEPATH	%{_localstatedir}/lib/ups
 %define CONFPATH	%{_sysconfdir}/ups
 
@@ -295,7 +297,7 @@ sh autogen.sh
 	--bindir=%{_bindir}\
 	--sbindir=%{_sbindir}\
 	--libdir=%{_libdir}\
-	--libexecdir=%{_libexecdir}/ups\
+	--libexecdir=%{LIBEXECPATH}\
 	--sysconfdir=%{CONFPATH}\
 	--datadir=%{_datadir}/nut\
 	--with-ssl --with-openssl\
@@ -464,7 +466,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{_mandir}/man8/*.*
 %exclude %{_mandir}/man8/netxml-ups*.*
 %exclude %{_mandir}/man8/snmp-ups*.*
-%dir %{_libexecdir}/ups
+%dir %{LIBEXECPATH}
 %{_sbindir}/*
 %dir %{UDEVRULEPATH}
 %dir %{UDEVRULEPATH}/rules.d
@@ -503,7 +505,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %dir %{_datadir}/augeas/lenses
 %dir %{_datadir}/augeas/lenses/dist
 %dir %{_datadir}/augeas/lenses/dist/tests
-%{_libexecdir}/ups/nut-driver-enumerator.sh
+%{LIBEXECPATH}/nut-driver-enumerator.sh
 # Exclude whatever other packages bring, some rpmbuild versions seem to dump
 # everything into the base package and then complain about duplicates/conflicts:
 ### libupsclient1
@@ -521,7 +523,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %exclude %{_libdir}/*.so
 %exclude %{_libdir}/pkgconfig/*.pc
 %exclude %{_mandir}/man3/*.*
-%exclude %{_libexecdir}/ups/sockdebug
+%exclude %{LIBEXECPATH}/sockdebug
 
 
 %files drivers-net
@@ -575,6 +577,6 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 # [  139s] nut-devel.x86_64: W: files-duplicate /usr/share/man/man3/nutclient_set_device_variable_value.3.gz /usr/share/man/man3/nutclient_get_device_rw_variables.3.gz:/usr/share/man/man3/nutclient_get_device_variable_description.3.gz:/usr/share/man/man3/nutclient_get_device_variable_values.3.gz:/usr/share/man/man3/nutclient_get_device_variables.3.gz:/usr/share/man/man3/nutclient_has_device_variable.3.gz:/usr/share/man/man3/nutclient_set_device_variable_values.3.gz
 # [  139s] nut-devel.x86_64: W: files-duplicate /usr/share/man/man3/nutclient_tcp_get_timeout.3.gz /usr/share/man/man3/nutclient_tcp_create_client.3.gz:/usr/share/man/man3/nutclient_tcp_disconnect.3.gz:/usr/share/man/man3/nutclient_tcp_is_connected.3.gz:/usr/share/man/man3/nutclient_tcp_reconnect.3.gz:/usr/share/man/man3/nutclient_tcp_set_timeout.3.gz
 %{_mandir}/man3/*.*
-%{_libexecdir}/ups/sockdebug
+%{LIBEXECPATH}/sockdebug
 
 %changelog
