@@ -41,12 +41,12 @@
 %define CGIPATH		%{apache_serverroot_cgi}/nut
 %endif
 
-%if "0%{?apache_serverroot_data}" == "0"
+%if "0%{?apache_serverroot_data}" == "0" || 0%(test x'%{apache_serverroot_data}' = x'^%{_datadir}' && echo 1 || echo 0) > 0
 %define HTMLPATH	%{_datadir}/nut/htdocs
 %else
 # Rename web pages location to not conflict with apache2-example-pages
 # or user home page:
-%define HTMLPATH	%{apache_serverroot_data}/htdocs/nut
+%define HTMLPATH	%{apache_serverroot_data}/nut
 %endif
 
 %define MODELPATH	%{LIBEXECPATH}/driver
