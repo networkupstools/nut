@@ -70,7 +70,7 @@
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
 %define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
 
-#%define NUT_SYSTEMD_UNITS_SERVICE_TARGET	%(cd scripts/systemd && ls -1 *.{service,target}{,.in} | sed 's,.in$,,' | sort | uniq)
+# % define NUT_SYSTEMD_UNITS_SERVICE_TARGET	% (cd scripts/systemd && ls -1 *.{service,target}{,.in} | sed 's,.in$,,' | sort | uniq)
 %define NUT_SYSTEMD_UNITS_SERVICE_TARGET	nut-driver-enumerator.service nut-driver.target nut-driver@.service nut-logger.service nut-monitor.service nut-server.service nut-sleep.service nut-udev-settle.service nut.target
 
 %define NUT_SYSTEMD_UNITS_OTHER	%(cd scripts/systemd && ls -1 *.{path,timer}{,.in} | sed 's,.in$,,' | sort | uniq)
@@ -442,7 +442,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{_sbindir}/*
 %dir %{UDEVRULEPATH}
 %dir %{UDEVRULEPATH}/rules.d
-### FIXME: if under /etc ### %config(noreplace) %{UDEVRULEPATH}/rules.d/*.rules
+### FIXME: if under /etc ### % config(noreplace) % {UDEVRULEPATH}/rules.d/*.rules
 %{UDEVRULEPATH}/rules.d/*.rules
 %config(noreplace) %{CONFPATH}/hosts.conf
 %config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsd.conf
