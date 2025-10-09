@@ -2890,7 +2890,7 @@ pkg-deb|pkg-dsc)
     cp -f obs/nut.dsc .
     sed -e 's,^\(Version:\).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
         -i nut.dsc
-    debuild -y
+    yes | debuild
     ;;
 
 *)
