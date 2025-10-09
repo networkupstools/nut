@@ -719,8 +719,10 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 
 %files cgi
 %defattr(-,root,root)
-%{CGIPATH}
-%{HTMLPATH}
+%dir %{CGIPATH}
+%dir %{HTMLPATH}
+%{CGIPATH}/*
+%{HTMLPATH}/*
 %config(noreplace) %{CONFPATH}/upsstats-single.html
 %config(noreplace) %{CONFPATH}/upsstats.html
 
