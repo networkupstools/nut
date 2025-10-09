@@ -129,8 +129,8 @@ Requires:       usbutils
 %if 0%{?suse_version}
 Requires(post): udev
 %endif
-Requires(post): group(%{NUT_GROUP})
-Requires(post): user(%{NUT_USER})
+#Requires(post): group(% {NUT_GROUP})
+#Requires(post): user(% {NUT_USER})
 Requires(postun):	%{_bindir}/sh
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
