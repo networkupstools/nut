@@ -1478,6 +1478,8 @@ if [ -z "$BUILD_TYPE" ] ; then
 
         win|windows|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
 
+        pkg*) BUILD_TYPE="$1" ; shift ;;
+
         spellcheck|spellcheck-interactive|spellcheck-quick|spellcheck-interactive-quick)
             # Note: this is a little hack to reduce typing
             # and scrolling in (docs) developer iterations.
@@ -2867,6 +2869,28 @@ cross-windows-mingw*)
     MAKEFLAGS="$PARMAKE_FLAGS" \
     KEEP_NUT_REPORT_FEATURE="true" \
     ./build-mingw-nut.sh $cmd
+    ;;
+
+pkg-rpm|pkg-spec)
+    rm -f nut.spec
+    cp -f obs/nut.spec .
+    sed -e 's,^(Version:).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
+        -i nut.spec
+    rpmbuild -ba
+    ;;
+
+pkg-deb|pkg-dsc)
+    rm -rf debian
+    mkdir -p debian
+    cd obs || exit
+    for F in debian.* nut*.install nut*.manpages ; do
+        ln -s "../obs/$"F "../debian/`echo "$F" | sed 's/debian.//'`"
+    done
+    rm -f nut.dsc
+    cp -f obs/nut.dsc .
+    sed -e 's,^(Version:).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
+        -i nut.dsc
+    debuild -y
     ;;
 
 *)
