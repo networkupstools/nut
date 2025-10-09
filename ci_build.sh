@@ -2872,6 +2872,11 @@ cross-windows-mingw*)
     ;;
 
 pkg-rpm|pkg-spec)
+    echo "WARNING: package build recipes manipulate directly your current workspace" >&2
+    echo "         and would remove any git-ignored files, might leave trash afterwards!" >&2
+    echo "         Press Ctrl+C to abort if this is a problem" >&2
+    sleep 5
+
     rm -f nut.spec || true
     git clean -fdX || true
     cp -f scripts/obs/nut.spec .
@@ -2882,6 +2887,11 @@ pkg-rpm|pkg-spec)
     ;;
 
 pkg-deb|pkg-dsc)
+    echo "WARNING: package build recipes manipulate directly your current workspace" >&2
+    echo "         and would remove any git-ignored files, might leave trash afterwards!" >&2
+    echo "         Press Ctrl+C to abort if this is a problem" >&2
+    sleep 5
+
     rm -rf debian config.*cdbs* nut.dsc || true
     git clean -fdX || true
     mkdir -p debian
