@@ -27,19 +27,26 @@
 %define LIBEXECPATH	%{_libexecdir}/ups
 
 # Requires httpd(-devel?) or apache2(-devel?) to be present in this distro:
-%define apache_serverroot %(%{_sbindir}/apxs2 -q datadir || %{_sbindir}/apxs -q PREFIX || true)
-%if "0%{?apache_serverroot}" == "0" || 0%(echo '%{apache_serverroot}' | grep -E '^%{_datadir}' >/dev/null && echo 1 || echo 0) > 0
+%define apache_serverroot_data %(%{_sbindir}/apxs2 -q datadir || %{_sbindir}/apxs -q PREFIX || true)
+# FIXME: is naming correct for both versions?
+%define apache_serverroot_cgi %(%{_sbindir}/apxs2 -q cgidir || %{_sbindir}/apxs -q cgidir || true)
+
+%if "0%{?apache_serverroot_cgi}" == "0" || 0%(echo '%{apache_serverroot_cgi}' | grep -E '^%{_datadir}' >/dev/null && echo 1 || echo 0) > 0
 # Spec-var is undefined or empty, or matches the pattern triggering
 #   E: arch-dependent-file-in-usr-share (Badness: 590)
 # Dump nut-cgi artifacts under our own locations, so end-users can
 # integrate them later.
 %define CGIPATH		%{LIBEXECPATH}/cgi-bin
+%else
+%define CGIPATH		%{apache_serverroot_cgi}/cgi-bin/nut
+%endif
+
+%if "0%{?apache_serverroot_data}" == "0"
 %define HTMLPATH	%{_datadir}/nut/htdocs
 %else
 # Rename web pages location to not conflict with apache2-example-pages
 # or user home page:
-%define CGIPATH		%{apache_serverroot}/cgi-bin/nut
-%define HTMLPATH	%{apache_serverroot}/htdocs/nut
+%define HTMLPATH	%{apache_serverroot_data}/htdocs/nut
 %endif
 
 %define MODELPATH	%{LIBEXECPATH}/driver
