@@ -8,9 +8,9 @@ include /usr/share/cdbs/1/rules/autoreconf.mk
 
 # CDBS has some issues detecting something other than dh_python2
 # which is absent on Debian 12+ and Ubuntu 25.04 for example.
-ifeq  (,$(shell command -v dh_python2))
-ifneq (,$(shell command -v dh_python3))
-ifneq (,$(shell command -v python3))
+ifeq  (,$(shell command -v dh_python2 || which dh_python2 || dh_python2 --help))
+ifneq (,$(shell command -v dh_python3 || which dh_python3 || dh_python3 --help))
+ifneq (,$(shell command -v python3 || which python3 || python3 --help))
 cdbs_curpythonsystems := python3
 endif
 endif
