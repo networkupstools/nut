@@ -151,6 +151,10 @@ Recommends:	logrotate
 # To fix end-of-line encoding:
 BuildRequires:  dos2unix
 
+# For man page aliases
+# https://en.opensuse.org/openSUSE:Packaging_Conventions_RPM_Macros#fdupes
+BuildRequires:  fdupes
+
 %if 0%{?NUTPKG_WITH_AVAHI}
 BuildRequires:  avahi-devel
 %endif
@@ -476,6 +480,11 @@ while read F ; do
         sed '1 s,^.*$,#!'"${F_SHELL_PATH}," -i "$F"
     fi
 done
+# create symlinks for man pages; skip man1 (not used with pkgconfig
+# capable builds), and man7 (one page there):
+%fdupes -s %{buildroot}/%{_mandir}/man3
+%fdupes -s %{buildroot}/%{_mandir}/man5
+%fdupes -s %{buildroot}/%{_mandir}/man8
 
 %pre
 usr/sbin/groupadd -r -g %{NUT_GROUP} 2>/dev/null || :
