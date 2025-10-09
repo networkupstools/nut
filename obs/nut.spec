@@ -293,7 +293,7 @@ sh autogen.sh
 	--bindir=%{_bindir}\
 	--sbindir=%{_sbindir}\
 	--libdir=%{_libdir}\
-	--libexecdir=%{_libexecdir}\
+	--libexecdir=%{_libexecdir}/ups\
 	--sysconfdir=%{CONFPATH}\
 	--datadir=%{_datadir}/nut\
 	--with-ssl --with-openssl\
@@ -477,7 +477,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %dir %{_datadir}/augeas/lenses
 %dir %{_datadir}/augeas/lenses/dist
 %dir %{_datadir}/augeas/lenses/dist/tests
-%{_libexecdir}/nut-driver-enumerator.sh
+%{_libexecdir}/ups/nut-driver-enumerator.sh
 # Exclude whatever other packages bring, some rpmbuild versions seem to dump
 # everything into the base package and then complain about duplicates/conflicts:
 ### libupsclient1
@@ -495,7 +495,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %exclude %{_libdir}/*.so
 %exclude %{_libdir}/pkgconfig/*.pc
 %exclude %{_mandir}/man3/*.*
-%exclude %{_libexecdir}/sockdebug
+%exclude %{_libexecdir}/ups/sockdebug
 
 
 %files drivers-net
@@ -543,6 +543,6 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*.pc
 %{_mandir}/man3/*.*
-%{_libexecdir}/sockdebug
+%{_libexecdir}/ups/sockdebug
 
 %changelog
