@@ -401,7 +401,8 @@ done
 usr/sbin/groupadd -r -g %{NUT_GROUP} 2>/dev/null || :
 usr/sbin/useradd -r -g %{NUT_GROUP} -s /bin/false \
   -c "UPS daemon" -d /sbin %{NUT_USER} 2>/dev/null || :
-%if %{defined opensuse_version}
+%if "x%{?systemdsystemunitdir}" == "x"
+%else
 %service_add_pre %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
 
@@ -430,17 +431,17 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 
 %preun
 %if "x%{?systemdsystemunitdir}" == "x"
+:
 %else
 %service_del_preun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
-:
 
 %postun
 %if "x%{?systemdsystemunitdir}" == "x"
+:
 %else
 %service_del_postun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
 %endif
-:
 
 %post -n libupsclient1 -p /sbin/ldconfig
 
