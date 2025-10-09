@@ -1,6 +1,6 @@
 # Network UPS Tools: obs (root)
 
-EXTRA_DIST = README.adoc
+EXTRA_DIST = README.adoc _service
 
 # Also EXTRA_DIST the recipe-related files (so OBS can use tarballs if they like)
 
