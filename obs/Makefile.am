@@ -6,7 +6,6 @@ EXTRA_DIST = README.adoc
 
 # Debian/Ubuntu recipes:
 EXTRA_DIST += \
-	control \
 	debian.Makefile.am \
 	debian.NEWS \
 	debian.changelog \
