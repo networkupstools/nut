@@ -26,7 +26,9 @@
 
 # Requires httpd(-devel?) or apache2(-devel?) to be present in this distro:
 %define apache_serverroot %(%{_sbindir}/apxs2 -q datadir || %{_sbindir}/apxs -q PREFIX || true)
-%if "0%{?apache_serverroot}" == "0"
+%if "0%{?apache_serverroot}" == "0" || 0%(echo '%{apache_serverroot}' | grep -E '^%{_datadir}' >/dev/null && echo 1 || echo 0) > 0
+# Spec-var is undefined or empty, or matches the pattern triggering
+#   E: arch-dependent-file-in-usr-share (Badness: 590)
 # Dump nut-cgi artifacts under our own locations, so end-users can
 # integrate them later.
 %define CGIPATH		%{_libexecdir}/ups/cgi-bin
