@@ -84,10 +84,11 @@
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
 %define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
 
-# % define NUT_SYSTEMD_UNITS_SERVICE_TARGET	% (cd scripts/systemd && ls -1 *.{service,target}{,.in} | sed 's,.in$,,' | sort | uniq)
-%define NUT_SYSTEMD_UNITS_SERVICE_TARGET	nut-driver-enumerator.service nut-driver.target nut-driver@.service nut-logger.service nut-monitor.service nut-server.service nut-sleep.service nut-udev-settle.service nut.target
+# % define NUT_SYSTEMD_UNITS_SERVICE_TARGET	% (cd scripts/systemd && ls -1 *.{service,target,path,timer}{,.in} | sed 's,.in$,,' | sort | uniq)
+%define NUT_SYSTEMD_UNITS_SERVICE_TARGET	nut-driver-enumerator.service nut-driver.target nut-driver@.service nut-logger.service nut-monitor.service nut-server.service nut-sleep.service nut-udev-settle.service nut.target nut-driver-enumerator.path
+# Most deployments do not want these by default:
+%define NUT_SYSTEMD_UNITS_UNCOMMON_NDE	nut-driver-enumerator-daemon-activator.path nut-driver-enumerator-daemon-activator.service nut-driver-enumerator-daemon.service
 
-%define NUT_SYSTEMD_UNITS_OTHER	%(cd scripts/systemd && ls -1 *.{path,timer}{,.in} | sed 's,.in$,,' | sort | uniq)
 %define NUT_SYSTEMD_UNITS_PRESET	%(cd scripts/systemd && ls -1 *.preset{,.in} | sed 's,.in$,,' | sort | uniq)
 
 # Does this NUT branch have DMF feature code?
@@ -495,7 +496,7 @@ usr/sbin/useradd -r -g %{NUT_GROUP} -s /bin/false \
   -c "UPS daemon" -d /sbin %{NUT_USER} 2>/dev/null || :
 %if "x%{?systemdsystemunitdir}" == "x"
 %else
-%service_add_pre %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
+%service_add_pre %{NUT_SYSTEMD_UNITS_SERVICE_TARGET} %{NUT_SYSTEMD_UNITS_UNCOMMON_NDE}
 %endif
 
 %post
@@ -518,21 +519,21 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %endif
 %if "x%{?systemdsystemunitdir}" == "x"
 %else
-%service_add_post %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
+%service_add_post %{NUT_SYSTEMD_UNITS_SERVICE_TARGET} %{NUT_SYSTEMD_UNITS_UNCOMMON_NDE}
 %endif
 
 %preun
 %if "x%{?systemdsystemunitdir}" == "x"
 :
 %else
-%service_del_preun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
+%service_del_preun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET} %{NUT_SYSTEMD_UNITS_UNCOMMON_NDE}
 %endif
 
 %postun
 %if "x%{?systemdsystemunitdir}" == "x"
 :
 %else
-%service_del_postun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET}
+%service_del_postun %{NUT_SYSTEMD_UNITS_SERVICE_TARGET} %{NUT_SYSTEMD_UNITS_UNCOMMON_NDE}
 %endif
 
 %post -n libupsclient%{SO_MAJOR_LIBUPSCLIENT} -p /sbin/ldconfig
