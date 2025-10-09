@@ -2880,7 +2880,7 @@ pkg-rpm|pkg-spec)
     ;;
 
 pkg-deb|pkg-dsc)
-    rm -rf debian
+    rm -rf debian config.*cdbs*
     mkdir -p debian
     (cd obs || exit
     for F in debian.* ; do
