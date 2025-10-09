@@ -73,7 +73,9 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 			     --with-pidpath=$(runbasedir)/nut \
 			     --datadir=/usr/share/nut \
 			     --with-pkgconfig-dir=/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig \
-			     --with-user=nut --with-group=nut
+			     --with-user=nut --with-group=nut\
+			     --enable-strip\
+			     --enable-keep_nut_report_feature --enable-check-NIT
 
 ifeq (1,$(NUTPKG_WITH_DMF))
 DEB_CONFIGURE_EXTRA_FLAGS += \
