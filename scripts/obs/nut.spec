@@ -154,6 +154,7 @@ BuildRequires:  libtool-ltdl-devel
 BuildRequires:  (libusb-devel or libusbx-devel)
 #!Prefer:       libusbx-devel
 BuildRequires:  net-snmp-devel
+BuildRequires:  libxml2-devel
 BuildRequires:  pkg-config
 # Maybe older Pythons are also okay, but were not tested for ages
 BuildRequires:  (python >= 2.6 or python3 or python2)
