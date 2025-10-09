@@ -366,8 +366,6 @@ mkdir -p %{buildroot}%{_sysconfdir}/logrotate.d
 # Avoid W: incoherent-logrotate-file /etc/logrotate.d/nutlogd
 install -m 644 scripts/logrotate/nutlogd %{buildroot}%{_sysconfdir}/logrotate.d/nut
 rename .sample "" %{buildroot}%{_sysconfdir}/ups/*.sample
-mkdir -p %{buildroot}/bin
-mv %{buildroot}%{_bindir}/upssched-cmd %{buildroot}/bin/upssched-cmd
 find %{buildroot} -type f -name "*.la" -delete -print
 mkdir -p %{buildroot}%{BASHCOMPLETIONPATH}
 install -m0644 scripts/misc/nut.bash_completion %{buildroot}%{BASHCOMPLETIONPATH}/
