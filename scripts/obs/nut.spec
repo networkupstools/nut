@@ -451,7 +451,6 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %defattr(-,root,root)
 %doc AUTHORS COPYING LICENSE-DCO LICENSE-GPL2 LICENSE-GPL3 ChangeLog MAINTAINERS NEWS.adoc README.adoc UPGRADING.adoc docs/*.adoc docs/*.txt docs/cables/*.txt
 # List the (system) dirs we impact but do not own for the package
-%dir /bin
 %dir %{BASHCOMPLETIONPATH}
 %dir %{_sysconfdir}/logrotate.d
 %dir %{_bindir}
@@ -472,7 +471,6 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %dir %{systemdtmpfilesdir}
 %dir %{systemdshutdowndir}
 # List the file patterns to install from proto area
-/bin/*
 %{BASHCOMPLETIONPATH}/*
 %config(noreplace) %{_sysconfdir}/logrotate.d/*
 %{_bindir}/*
