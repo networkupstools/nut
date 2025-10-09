@@ -367,7 +367,7 @@ while read F ; do
     if head -1 "$F" | grep bin/env >/dev/null ; then
         F_SHEBANG="`head -1 "$F"`"
 
-        F_SHELL_SHORT="`echo "$F_SHEBANG" | sed -e 's,^.*bin/env *,,'`" -e 's, .*$,,' \
+        F_SHELL_SHORT="`echo "$F_SHEBANG" | sed -e 's,^.*bin/env *,,' -e 's, .*$,,'`" \
         && [ -n "$F_SHELL_SHORT" ] \
         || { echo "WARNING: Failed to extract an interpreter from shebang '${F_SHEBANG}'" >&2 ; continue ; }
 
