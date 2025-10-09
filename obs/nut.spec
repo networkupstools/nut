@@ -45,6 +45,9 @@
 %define MODELPATH	%{LIBEXECPATH}/driver
 %define STATEPATH	%{_localstatedir}/lib/ups
 %define CONFPATH	%{_sysconfdir}/ups
+# RPM on OpenSUSE goes:
+#   DOCDIR=/home/abuild/rpmbuild/BUILD/nut-2.8.4.428-build/BUILDROOT/usr/share/doc/packages/nut
+%define DOCPATH		%{_docdir}/nut
 
 ### FIXME: Detect properly?
 # W: suse-filelist-forbidden-udev-userdirs /etc/udev/rules.d/62-nut-usbups.rules is not allowed in SUSE
@@ -300,6 +303,7 @@ sh autogen.sh
 	--libexecdir=%{LIBEXECPATH}\
 	--sysconfdir=%{CONFPATH}\
 	--datadir=%{_datadir}/nut\
+	--docdir=%{DOCPATH}\
 	--with-ssl --with-openssl\
 	--with-libltdl=yes\
 	--with-cgi=auto\
@@ -436,6 +440,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %dir %{_sbindir}
 %dir %{_datadir}
 %dir %{_docdir}
+%dir %{DOCPATH}
 # NOTE: Currently this only delivers libupsclient-config.1
 #  and only if not building with pkg-config available:
 #% dir % {_mandir}/man1
