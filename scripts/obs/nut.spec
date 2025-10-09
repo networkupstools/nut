@@ -348,6 +348,7 @@ Summary:        Network UPS Tools Web Server Support (GUI client)
 Group:          Hardware/UPS
 Requires:       %{name} = %{version}
 BuildRequires:  (python >= 2.6 or python3 or python2)
+BuildArch:      noarch
 
 %description monitor
 Graphical user interface client for the Network UPS Tools,
