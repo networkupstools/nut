@@ -467,10 +467,22 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %dir %{_mandir}/man7
 %dir %{_mandir}/man8
 %dir %{_libexecdir}
+%if "x%{?systemdsystemunitdir}" == "x"
+%else
 %dir %{systemdsystemunitdir}
+%endif
+%if "x%{?systemdsystempresetdir}" == "x"
+%else
 %dir %{systemdsystempresetdir}
+%endif
+%if "x%{?systemdtmpfilesdir}" == "x"
+%else
 %dir %{systemdtmpfilesdir}
+%endif
+%if "x%{?systemdshutdowndir}" == "x"
+%else
 %dir %{systemdshutdowndir}
+%endif
 # List the file patterns to install from proto area
 %{BASHCOMPLETIONPATH}/*
 %config(noreplace) %{_sysconfdir}/logrotate.d/*
@@ -512,10 +524,22 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %exclude %{_sbindir}/gen-snmp-subdriver.sh
 %attr(770,%{NUT_USER},%{NUT_GROUP}) %{STATEPATH}
 %attr(770,%{NUT_USER},%{NUT_GROUP}) %{STATEPATH}/upssched
+%if "x%{?systemdsystemunitdir}" == "x"
+%else
 %{systemdsystemunitdir}/*
+%endif
+%if "x%{?systemdsystempresetdir}" == "x"
+%else
 %{systemdsystempresetdir}/*
+%endif
+%if "x%{?systemdtmpfilesdir}" == "x"
+%else
 %{systemdtmpfilesdir}/*
+%endif
+%if "x%{?systemdshutdowndir}" == "x"
+%else
 %{systemdshutdowndir}/nutshutdown
+%endif
 %{_datadir}/augeas/lenses/dist/nuthostsconf.aug
 %{_datadir}/augeas/lenses/dist/nutnutconf.aug
 %{_datadir}/augeas/lenses/dist/nutupsconf.aug
