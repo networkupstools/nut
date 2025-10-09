@@ -561,6 +561,12 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{_includedir}/*.h
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*.pc
+# FIXME: Alias man page files... use symlinks or what?
+# [  139s] nut-devel.x86_64: W: files-duplicate /usr/share/man/man3/nutclient_execute_device_command.3.gz /usr/share/man/man3/nutclient_get_device_command_description.3.gz:/usr/share/man/man3/nutclient_get_device_commands.3.gz:/usr/share/man/man3/nutclient_has_device_command.3.gz
+# [  139s] nut-devel.x86_64: W: files-duplicate /usr/share/man/man3/nutclient_get_device_num_logins.3.gz /usr/share/man/man3/nutclient_authenticate.3.gz:/usr/share/man/man3/nutclient_device_forced_shutdown.3.gz:/usr/share/man/man3/nutclient_device_login.3.gz:/usr/share/man/man3/nutclient_device_master.3.gz:/usr/share/man/man3/nutclient_logout.3.gz
+# [  139s] nut-devel.x86_64: W: files-duplicate /usr/share/man/man3/nutclient_get_devices.3.gz /usr/share/man/man3/nutclient_get_device_description.3.gz:/usr/share/man/man3/nutclient_has_device.3.gz
+# [  139s] nut-devel.x86_64: W: files-duplicate /usr/share/man/man3/nutclient_set_device_variable_value.3.gz /usr/share/man/man3/nutclient_get_device_rw_variables.3.gz:/usr/share/man/man3/nutclient_get_device_variable_description.3.gz:/usr/share/man/man3/nutclient_get_device_variable_values.3.gz:/usr/share/man/man3/nutclient_get_device_variables.3.gz:/usr/share/man/man3/nutclient_has_device_variable.3.gz:/usr/share/man/man3/nutclient_set_device_variable_values.3.gz
+# [  139s] nut-devel.x86_64: W: files-duplicate /usr/share/man/man3/nutclient_tcp_get_timeout.3.gz /usr/share/man/man3/nutclient_tcp_create_client.3.gz:/usr/share/man/man3/nutclient_tcp_disconnect.3.gz:/usr/share/man/man3/nutclient_tcp_is_connected.3.gz:/usr/share/man/man3/nutclient_tcp_reconnect.3.gz:/usr/share/man/man3/nutclient_tcp_set_timeout.3.gz
 %{_mandir}/man3/*.*
 %{_libexecdir}/ups/sockdebug
 
