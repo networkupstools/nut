@@ -2882,13 +2882,13 @@ pkg-rpm|pkg-spec)
 pkg-deb|pkg-dsc)
     rm -rf debian
     mkdir -p debian
-    cd obs || exit
+    (cd obs || exit
     for F in debian.* ; do
-        ln -s "../obs/$"F "../debian/`echo "$F" | sed 's/debian.//'`"
-    done
+        ln -s "../obs/$F" "../debian/`echo "$F" | sed 's/debian.//'`" || exit
+    done) || exit
     rm -f nut.dsc
     cp -f obs/nut.dsc .
-    sed -e 's,^(Version:).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
+    sed -e 's,^\(Version:\).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
         -i nut.dsc
     debuild -y
     ;;
