@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3566 utf-8
+personal_ws-1.1 en 3575 utf-8
 AAC
 AAS
 ABI
@@ -148,6 +148,7 @@ Breiland
 Brownell
 Bs
 BuildBot
+BuildRequires
 Buildbot
 Bxx
 ByPass
@@ -2877,6 +2878,7 @@ prio
 priv
 privPassword
 privProtocol
+prjconf
 problemMatcher
 probu
 proc

@@ -1,5 +1,7 @@
 = Packaging recipes for OBS
 
+== Overview
+
 This directory holds reference NUT packaging recipes for RPM, DEB and
 other formats, and is primarily aimed at automation of builds with the
 link:https://openbuildservice.org/[Open Build Service (OBS)].
@@ -14,9 +16,35 @@ NOTE: The layout of files and directories here is dictated by current
 expectations of the OBS software (if at some point it has to be a flat
 mess with no structure -- so be it).
 
-For some practical details see:
+== Practical setup
+
+The copy of `_service` file represents the directly maintained OBS recipe
+in an OBS packaging project, and is the only file needed there (triggering
+service runs updates the temporary tarball from git).
+
+Beside that, `osc meta prjconf --edit` can be used to specify unambiguous
+preferences for certain packages, when a distro actually offers a choice
+via conditional `BuildRequires` statements, e.g.:
+
+----
+Prefer: libusbx-devel
+Prefer: libusb-1.0-dev
+Prefer: neon-devel
+----
+
+A parent project must be used to define OBS Repositories we build for, which
+should usually include a layer with `openSUSE:Tools` to have the OBS helper
+scripts needed for package and tarball transformations in the build area,
+for example: https://build.opensuse.org/projects/home:jimklimov/meta
+
+The list of known distros and repositories massaged with these tools can be
+seen at https://build.opensuse.org/repositories/openSUSE:Tools
+
+For some historical and/or practical details see:
 
 * https://github.com/networkupstools/nut/issues/1209
+
+== Other notes
 
 The recipe files themselves would likely cross-pollinate with popular
 distributions, to allow easier replacement of standard, supported and
@@ -28,3 +56,7 @@ which adds version number components to expose the "age" of each such
 iteration as a number of commits merged into the common development trunk
 since a preceding release, and a number of commits unique to a feature
 branch.
+
+Maybe some way of pre-making a dist tarball (with `VERSION_DEFAULT`, man
+pages pre-built, etc.) and using that would be better, to be explored
+(ideally if we can do this within OBS).
