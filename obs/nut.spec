@@ -436,7 +436,9 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %dir %{_sbindir}
 %dir %{_datadir}
 %dir %{_docdir}
-%dir %{_mandir}/man1
+# NOTE: Currently this only delivers libupsclient-config.1
+#  and only if not building with pkg-config available:
+#% dir % {_mandir}/man1
 %dir %{_mandir}/man3
 %dir %{_mandir}/man5
 %dir %{_mandir}/man7
