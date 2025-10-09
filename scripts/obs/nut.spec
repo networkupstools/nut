@@ -128,6 +128,9 @@ Requires:       usbutils
 %if 0%{?suse_version}
 Requires(post): udev
 %endif
+Requires(post): group(%{NUT_GROUP})
+Requires(post): user(%{NUT_USER})
+
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 # To fix end-of-line encoding:
