@@ -453,7 +453,7 @@ install -m0755 scripts/subdriver/gen-snmp-subdriver.sh %{buildroot}%{_sbindir}/
 # TODO: Detect path from chosen interpreter or NUT build config files?
 # Avoid W: non-executable-script /usr/lib/python3.6/site-packages/PyNUT.py 644 /usr/bin/python...
 # Not really relevant for the module (not directly runnable, but has the shebang just in case)
-chmod +x %{buildroot}/usr/lib/python*/*-packages/*.py
+chmod +x %{buildroot}/usr/lib*/python*/*-packages/*.py
 if [ x"%{systemdtmpfilesdir}" != x ]; then
     # Deliver these dirs by packaging:
     sed 's,^\(. %{STATEPATH}\(/upssched\)*\( .*\)*\)$,#PACKAGED#\1,' -i %{buildroot}%{systemdtmpfilesdir}/nut-common-tmpfiles.conf
@@ -665,7 +665,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 ### nut-monitor
 # TODO: Actually package NUT-Monitor app and scripts where available
 # TODO: Detect path from chosen interpreter or NUT build config files?
-%exclude /usr/lib/python*/*-packages/*
+%exclude /usr/lib*/python*/*-packages/*
 ### nut-devel
 %exclude %{_includedir}/*.h
 %exclude %{_libdir}/*.so
@@ -730,7 +730,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %defattr(-,root,root)
 # TODO: Actually package NUT-Monitor app and scripts where available
 # TODO: Detect path from chosen interpreter or NUT build config files?
-/usr/lib/python*/*-packages/*
+/usr/lib*/python*/*-packages/*
 
 %files devel
 %defattr(-,root,root)
