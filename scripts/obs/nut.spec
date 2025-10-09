@@ -432,6 +432,9 @@ if test "$PORT" = 3493 ; then
     PORT=nut
 fi
 
+%check
+make %{?_smp_mflags} check
+
 %install
 make DESTDIR=%{buildroot} install %{?_smp_mflags}
 mkdir -p %{buildroot}%{STATEPATH}/upssched
