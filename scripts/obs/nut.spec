@@ -294,6 +294,12 @@ Detailed information about supported hardware can be found in
 # Note: NOT configure macro, due to override of --sysconfdir and --datadir
 # values just for the recipe part but not for whole specfile
 %build
+# May be pre-populated if building from tarball, or derived from git
+# Otherwise let the SPEC version reflect in NUT self-identification
+if [ ! -s VERSION_DEFAULT ] && [ ! -e .git ] && [ -n '%{version}' ] ; then
+	echo NUT_VERSION_DEFAULT='%{version}' > VERSION_DEFAULT
+fi
+
 sh autogen.sh
 ./configure --disable-static --with-pic \
 	--prefix=%{_prefix}\
