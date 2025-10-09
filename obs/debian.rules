@@ -6,6 +6,16 @@ include /usr/share/cdbs/1/class/python-module.mk
 
 include /usr/share/cdbs/1/rules/autoreconf.mk
 
+# CDBS has some issues detecting something other than dh_python2
+# which is absent on Debian 12+ and Ubuntu 25.04 for example.
+ifeq  (,$(shell command -v dh_python2))
+ifneq (,$(shell command -v dh_python3))
+ifneq (,$(shell command -v python3))
+cdbs_curpythonsystems := python3
+endif
+endif
+endif
+
 export DH_OPTIONS
 
 # This is the debhelper compatibility version to use.
