@@ -146,6 +146,8 @@ Requires(postun):	%{_bindir}/sh
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
+Recommends:	logrotate
+
 # To fix end-of-line encoding:
 BuildRequires:  dos2unix
 
@@ -437,6 +439,8 @@ mkdir -p %{buildroot}%{_sbindir}
 mkdir -p %{buildroot}%{_sysconfdir}/logrotate.d
 # Avoid W: incoherent-logrotate-file /etc/logrotate.d/nutlogd
 install -m 644 scripts/logrotate/nutlogd %{buildroot}%{_sysconfdir}/logrotate.d/nut
+# As (currently) hard-coded in that file above
+mkdir -p %{buildroot}/var/log
 rename .sample "" %{buildroot}%{_sysconfdir}/ups/*.sample
 find %{buildroot} -type f -name "*.la" -delete -print
 mkdir -p %{buildroot}%{BASHCOMPLETIONPATH}
@@ -557,6 +561,8 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 #% dir % {_mandir}/man7
 #% dir % {_mandir}/man8
 #% dir % {_libexecdir}
+# FIXME: Detect from logrotate properties (or our scriptlet file)?
+%dir /var/log
 %if "x%{?systemdsystemunitdir}" == "x"
 %else
 %dir %{systemdsystemunitdir}
