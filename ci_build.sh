@@ -2872,26 +2872,29 @@ cross-windows-mingw*)
     ;;
 
 pkg-rpm|pkg-spec)
-    rm -f nut.spec
+    rm -f nut.spec || true
+    git clean -fdX || true
     cp -f obs/nut.spec .
     sed -e 's,^(Version:).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
         -i nut.spec
-    rpmbuild -ba
+    rpmbuild -ba \
+    && find . -name '*rpm'
     ;;
 
 pkg-deb|pkg-dsc)
-    rm -rf debian config.*cdbs*
+    rm -rf debian config.*cdbs* nut.dsc || true
+    git clean -fdX || true
     mkdir -p debian
     (cd obs || exit
     for F in debian.* ; do
         ln -s "../obs/$F" "../debian/`echo "$F" | sed 's/debian.//'`" || exit
     done) || exit
-    rm -f nut.dsc
     cp -f obs/nut.dsc .
     sed -e 's,^\(Version:\).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
         -i nut.dsc
     dpkg-checkbuilddeps || sudo mk-build-debs -i
-    yes | debuild
+    yes | debuild \
+    && find . -name '*deb'
     ;;
 
 *)
