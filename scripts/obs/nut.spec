@@ -38,7 +38,7 @@
 # integrate them later.
 %define CGIPATH		%{LIBEXECPATH}/cgi-bin
 %else
-%define CGIPATH		%{apache_serverroot_cgi}/cgi-bin/nut
+%define CGIPATH		%{apache_serverroot_cgi}/nut
 %endif
 
 %if "0%{?apache_serverroot_data}" == "0"
