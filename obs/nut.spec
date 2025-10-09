@@ -353,8 +353,8 @@ if [ x"%{systemdtmpfilesdir}" != x ]; then
     # Deliver these dirs by packaging:
     sed 's,^\(. %{STATEPATH}\(/upssched\)*\( .*\)*\)$,#PACKAGED#\1,' -i %{buildroot}%{systemdtmpfilesdir}/nut-common-tmpfiles.conf
 fi
-find %{buildroot} -type f -name '*.sh' -o -name '*.py' -o -name '*.pl' | \
 # Use deterministic script interpreters:
+find %{buildroot} -type f -name '*.sh' -o -name '*.py' -o -name '*.pl' | \
 while read F ; do
     if head -1 "$F" | grep bin/env >/dev/null ; then
         F_SHEBANG="`head -1 "$F"`"
@@ -367,6 +367,7 @@ while read F ; do
         && [ -n "$F_SHELL_PATH" ] && [ -x "$F_SHELL_PATH" ] \
         || { echo "WARNING: Failed to find executable path to interpreter '${F_SHELL_SHORT}' from shebang '${F_SHEBANG}'" >&2 ; continue; }
 
+        echo "REWRITING shebang from '$F_SHEBANG' to '#!${F_SHELL_PATH}' in '$F'" >&2
         sed '1 s,^.*$,#!'"${F_SHELL_PATH}," -i "$F"
     fi
 done
