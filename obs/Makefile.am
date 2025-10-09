@@ -29,6 +29,7 @@ EXTRA_DIST += \
 	debian.libupsclient-dev.install \
 	debian.libupsclient-dev.manpages \
 	debian.libupsclient4.install \
+	debian.nut.changes \
 	debian.nut-cgi.README.Debian \
 	debian.nut-cgi.docs \
 	debian.nut-cgi.install \
@@ -55,6 +56,10 @@ EXTRA_DIST += \
 	debian.nut-doc.install \
 	debian.nut-ipmi.install \
 	debian.nut-ipmi.manpages \
+	debian.nut-linux-i2c.install \
+	debian.nut-linux-i2c.manpages \
+	debian.nut-modbus.install \
+	debian.nut-modbus.manpages \
 	debian.nut-monitor.install \
 	debian.nut-monitor.menu \
 	debian.nut-monitor.xpm \
@@ -80,11 +85,6 @@ EXTRA_DIST += \
 	debian.rules \
 	debian.series \
 	debian.watch \
-	nut-linux-i2c.install \
-	nut-linux-i2c.manpages \
-	nut-modbus.install \
-	nut-modbus.manpages \
-	nut.changes \
 	nut.dsc
 
 # RedHAT/Fedora/CentOS/... recipes:

@@ -2883,7 +2883,7 @@ pkg-deb|pkg-dsc)
     rm -rf debian
     mkdir -p debian
     cd obs || exit
-    for F in debian.* nut*.install nut*.manpages ; do
+    for F in debian.* ; do
         ln -s "../obs/$"F "../debian/`echo "$F" | sed 's/debian.//'`"
     done
     rm -f nut.dsc
