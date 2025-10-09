@@ -6789,7 +6789,6 @@ AC_CONFIG_FILES([
  lib/libnutclientstub.pc
  lib/libnutscan.pc
  lib/Makefile
- obs/Makefile
  scripts/Aix/nut-aix.spec
  scripts/RedHat/ups
  scripts/augeas/Makefile
@@ -6809,6 +6808,7 @@ AC_CONFIG_FILES([
  scripts/HP-UX/nut.psf
  scripts/installer/Makefile
  scripts/misc/nut.bash_completion
+ scripts/obs/Makefile
  scripts/python/Makefile
  scripts/python/module/Makefile
  scripts/python/module/PyNUT.py

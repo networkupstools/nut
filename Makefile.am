@@ -41,7 +41,7 @@ ACLOCAL_AMFLAGS = -I m4
 # depend on stuff in "common" or tools being built first! Also "data" depends
 # (during "dist" time) on scripts in "tools".
 SUBDIRS = include common clients conf drivers tools data \
-  lib obs scripts server tests docs/man docs
+  lib scripts server tests docs/man docs
 
 # Note: not generated from SUBDIRS, because not all are recursive:
 SUBDIRS_ALL_RECURSIVE = \
@@ -55,7 +55,6 @@ SUBDIRS_ALL_RECURSIVE = \
 	all/tools/nutconf \
 	all-recursive/tools \
 	all/lib \
-	all/obs \
 	all-recursive/scripts \
 	all/server \
 	all/tests/NIT \
@@ -276,7 +275,6 @@ all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/common a
 
 all/conf \
 all/lib \
-all/obs \
 .ChangeLog.adoc-parsed.latest/docs \
 ChangeLog.adoc-parsed/docs \
 all-recursive/data:
@@ -645,7 +643,6 @@ SPELLCHECK_DIRS_MOST = \
 	spellcheck/conf \
 	spellcheck/data \
 	spellcheck/data/htmlcgi \
-	spellcheck/obs \
 	spellcheck/scripts \
 	spellcheck/scripts/Solaris \
 	spellcheck/scripts/Windows \
@@ -653,6 +650,7 @@ SPELLCHECK_DIRS_MOST = \
 	spellcheck/scripts/external_apis \
 	spellcheck/scripts/hotplug \
 	spellcheck/scripts/installer \
+	spellcheck/scripts/obs \
 	spellcheck/scripts/python \
 	spellcheck/scripts/systemd \
 	spellcheck/scripts/udev \
