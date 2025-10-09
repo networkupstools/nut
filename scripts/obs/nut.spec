@@ -80,7 +80,7 @@
 # Collect systemd related paths so we can package files there:
 %define systemdsystemunitdir %(pkg-config --variable=systemdsystemunitdir systemd)
 %define systemdsystempresetdir %(pkg-config --variable=systemdsystempresetdir systemd || pkg-config --variable=systemdsystempresetdir libsystemd)
-%define systemdtmpfilesdir %(pkg-config --variable=systemdtmpfilesdir systemd || pkg-config --variable=systemdtmpfilesdir libsystemd)
+%define systemdtmpfilesdir %(pkg-config --variable=tmpfilesdir systemd || pkg-config --variable=tmpfilesdir libsystemd)
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
 %define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
 
