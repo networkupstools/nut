@@ -352,6 +352,7 @@ Detailed information about supported hardware can be found in
 Summary:        Network UPS Tools Web Server Support (GUI client)
 Group:          Hardware/UPS
 Requires:       %{name} = %{version}
+Requires:       python-base
 BuildRequires:  (python >= 2.6 or python3 or python2)
 BuildArch:      noarch
 
