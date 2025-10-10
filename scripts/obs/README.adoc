@@ -22,15 +22,19 @@ The copy of `_service` file represents the directly maintained OBS recipe
 in an OBS packaging project, and is the only file needed there (triggering
 service runs updates the temporary tarball from git).
 
-Beside that, `osc meta prjconf --edit` can be used to specify unambiguous
-preferences for certain packages, when a distro actually offers a choice
-via conditional `BuildRequires` statements, e.g.:
+Beside that, a `_config` file in the OBS project repository or live settings
+in `osc meta prjconf --edit` can be used to specify unambiguous preferences
+for certain packages, when a distro actually offers a choice via conditional
+`BuildRequires` statements (and other options), e.g.:
 
 ----
 Prefer: libusbx-devel
 Prefer: libusb-1.0-dev
 Prefer: neon-devel
 ----
+
+* For more details on this, see
+  https://openbuildservice.org/help/manuals/obs-user-guide/cha-obs-prjconfig
 
 A parent project must be used to define OBS Repositories we build for, which
 should usually include a layer with `openSUSE:Tools` to have the OBS helper
