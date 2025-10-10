@@ -807,13 +807,16 @@ smf_registerInstance() {
         [ -n "$DEPREQ" ] || DEPREQ="optional_all"
         echo "Adding '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'..."
 
+        # NOTE: it seems (at least as of Solaris 11) that the fmri: definition
+        #  below (especially when there are many dependency FMRI's) must be a
+        #  multi-token list with parentheses, not a single quoted string.
         DEPPG="nut-driver-enumerator-generated"
         RESTARTON="refresh"
         /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$DEPPG" dependency && \
         /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/grouping = astring: "$DEPREQ" && \
         /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/restart_on = astring: "$RESTARTON" && \
         /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/type = astring: service && \
-        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "($DEPSVC)" && \
+        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "(" $DEPSVC ")" && \
         echo "OK" || echo "FAILED to define the dependency" >&2
     fi
 
