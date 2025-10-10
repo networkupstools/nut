@@ -39,6 +39,10 @@ Changes from 2.8.4 to 2.8.5
   to match the driver program name. Packaging recipes may have to be updated.
   Follow-up from slightly botched renaming in original contribution. [PR #545]
 
+- The `configure` script should now try harder to report specifically
+  the "purelib" location as `PYTHON*_SITE_PACKAGES`. Packaging recipes
+  may have to be updated. [#1209]
+
 
 Changes from 2.8.3 to 2.8.4
 ---------------------------
