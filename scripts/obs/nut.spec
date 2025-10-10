@@ -744,6 +744,9 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %defattr(-,root,root)
 # TODO: Actually package NUT-Monitor app and scripts where available
 # TODO: Detect path from chosen interpreter or NUT build config files?
+#  Maybe specify python version and location using RPM macros, see e.g.
+#    https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/installing_and_using_dynamic_programming_languages/assembly_packaging-python-3-rpms_installing-and-using-dynamic-programming-languages
+# Note we MAY be dual-packaging for several python versions and locations.
 /usr/lib*/python*/*-packages/*
 
 %files devel
