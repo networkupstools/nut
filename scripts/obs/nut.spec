@@ -580,7 +580,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 #% dir % {_mandir}/man8
 #% dir % {_libexecdir}
 # FIXME: Detect from logrotate properties (or our scriptlet file)?
-%dir /var/log
+#% dir /var/log
 %if "x%{?systemdsystemunitdir}" == "x"
 %else
 %dir %{systemdsystemunitdir}
