@@ -164,6 +164,12 @@ several `FSD` notifications into one executed action. [PR #3097]
    syntax is not supported everywhere (or the `!` operator generally).
    [#3099, #1660]
 
+ - The NUT Integration Testing suite (NIT) script, if started as `root`,
+   can now consult its run-time situation vs. `BUILTIN_RUN_AS_USER` and
+   `BUILTIN_RUN_AS_GROUP` environment variables, and if those accounts
+   do not exist (e.g. running in a packaging build root), a different
+   value like "nobody" or "nogroup" would be defaulted for tests. [#1209]
+
  - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
    to match the driver program name. Follow-up from slightly botched renaming
    in original contribution. [PR #545]
