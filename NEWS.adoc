@@ -72,7 +72,7 @@ https://github.com/networkupstools/nut/milestone/12
  - `usbhid-ups` driver updates:
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
-   * Improved support for Eaton 5S1500LCD (US version). [#2380]
+   * Improved support for Eaton 5S1500LCD and 5S1600LCD (US version). [#2380]
    * For `ups.status` processing, do not assume that `!online`==`offline`,
      it may well be that the device just did not report anything (e.g. if
      it does not really talk USB HID). [#3080]
