@@ -388,11 +388,25 @@ STATEPATH="/var/state/ups"
 
 dnl Historically this refers to *system location* for PID files,
 dnl and more specifically that for `upsmon` (running as `root`).
+dnl
+dnl Note that by default we directly use the path that commonly
+dnl exists on a system (see the likes of `man filesystem` or
+dnl `man hier` for the "public" structure of the directory hierarchy
+dnl accepted in an OS distribution), while usage of sub-directories
+dnl like `/var/run/nut/...` can be explicitly configured on systems
+dnl where our packaging, init-scripts, tmpfiles manifests etc. can
+dnl ensure that these locations would exist and be properly owned.
+dnl
 dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below
 dnl for the unprivileged daemons (`upsd`, drivers).
 PIDPATH="/var/run"
-dnl Honour new LFS recommendations if applied on the build system:
-AS_IF([test -d "/run"], [PIDPATH="/run"])
+dnl Honour new FHS-3.0 recommendations if applied on the build
+dnl system (but do still prefer '/var/run' if usable); see also
+dnl https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard :
+AS_IF([test ! -d "${PIDPATH}" -o -h "${PIDPATH}" && test -d "/run" -a ! -h "/run"], [
+	AC_MSG_NOTICE([This system seems to prefer '/run' over '${PIDPATH}': adjusting default PIDPATH])
+	PIDPATH="/run"
+])
 
 AC_CHECK_PROGS([GETENT], [getent], [])
 AC_CHECK_PROGS([ID], [id], [])

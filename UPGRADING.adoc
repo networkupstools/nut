@@ -33,6 +33,12 @@ Changes from 2.8.4 to 2.8.5
   We are open to any feedback whether this removal impacts NUT rebuilds on
   any systems. [#1209]
 
+- Default `PIDPATH` is now more strictly `/var/run`, unless building on a
+  system conforming to FHS-3.0 standard where that location is absent or
+  is a symlink, while `/run` exists and is a true directory. Package recipes
+  usually override `--with-pidpath` anyway to provide a dedicated location
+  for NUT `root`-owned daemon PID files. [#3099]
+
 - In drivers using the common `main.c` and `main.h` framework, introduced
   a `void upsdrv_tweak_prognames(void)` required method (may be no-op) to
   optionally tweak `prognames[]` entries now that there is certain support

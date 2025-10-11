@@ -156,6 +156,10 @@ several `FSD` notifications into one executed action. [PR #3097]
    and is added to work area (if missing) during `autogen.sh` rituals anyway.
    It is still distributed as part of `make dist` tarball. [#1209]
 
+ - Default `PIDPATH` is now more strictly `/var/run`, unless building on a
+   system conforming to FHS-3.0 standard where that location is absent or
+   is a symlink, while `/run` exists and is a true directory. [#3099]
+
  - Revised CI and deliverable scripts, and Makefile recipes, to not use
    the verbatim `grep -E` (loudly preferred by newer systems, but may be
    absent on older ones) after all, nor use `egrep` (loudly disliked by
