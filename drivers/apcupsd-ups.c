@@ -70,7 +70,7 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-static uint16_t port=3551;
+static uint16_t port = 3551;	/* apcupsd default port */
 static struct sockaddr_in host;
 
 static void process(char *item,char *data)
@@ -396,7 +396,7 @@ void upsdrv_initups(void)
 			port = (uint16_t)i;
 		}
 	}
-	else device_path="localhost";
+	else device_path="localhost";	/* default port e.g. 3551 was set above */
 
 	if(!(h=gethostbyname(device_path)))port=0;
 	else memcpy(&host.sin_addr,h->h_addr,4);
