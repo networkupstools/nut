@@ -239,9 +239,9 @@ The message can also be seen from linkman:upsmon[8] being unable to populate
 the `POWERDOWNFLAG` if the location it points to (`/etc/killpower` by default)
 does not exist or is read-only, or from a late shutdown integration script like
 the `nutshutdown` hook if that location was un-mounted by the time it runs.
-It is recommended to store that file on a volatile file system (under `/run`
-on most modern distributions; typically the `pidpath` is located there too),
-which remains until reboot and disappears during reboot.
+It is recommended to store that file on a volatile file system (under `/var/run`
+or `/run` on most modern distributions; typically the `pidpath` is located there
+too), which remains until reboot and disappears during reboot.
 
 User/Group Accounts
 ^^^^^^^^^^^^^^^^^^^

@@ -391,7 +391,8 @@ may be called for this effect, if NUT configuration files remain readable
 at that point (file systems mostly unmounted or changed to read-only).
 +
 Historically it was often `/etc/killpower` but nowadays you may want it
-in a temporary filesystem (e.g. under `/run` or `/run/nut` location).
+in a temporary filesystem (e.g. under `(/var)/run` or even a dedicated
+`(/var)/run/nut` location).
 +
 Note that double backslashes must be used for Windows paths, e.g.
 `C:\\Temp\\killpower` (modern Windows may also accept forward slashes

@@ -584,7 +584,9 @@ become sufficiently charged.
    - generates a `NOTIFY_SHUTDOWN` event
    - waits `FINALDELAY` seconds -- typically `5`
    - creates the `POWERDOWNFLAG` file in its local filesystem -- usually
-     `/etc/killpower`, or `/run/nut/killpower` in a temporary file system
+     configured (explicitly!) to be `/etc/killpower`, or preferably be
+     `/var/run/nut/killpower` or `/run/nut/killpower` in a temporary file
+     system that disappears after reboot
    - calls the `SHUTDOWNCMD`
    - disconnect from `upsd` and exit (subject to `SHUTDOWNEXIT` setting)
 
