@@ -384,15 +384,18 @@ void upsdrv_initups(void)
 	atexit((void(*)(void))WSACleanup);
 #endif	/* WIN32 */
 
-	if(device_path&&*device_path)
+	/* NOTE: in case of errors below we set "port" to 0,
+	 * and bail out with fatalx() in upsdrv_initinfo() */
+	if (device_path && *device_path)
 	{
 		/* Look for last colon, since bare IPv6 addresses contain colons too */
 		if((p=strrchr(device_path,':')))
 		{
-			int i;
-			*p++=0;
-			i=atoi(p);
-			if(i<1||i>65535)i=0;
+			int	i;
+			*p++ = '\0';	/* cut off just the host name in device_path */
+			i = atoi(p);
+			if (i<1 || i>65535)
+				i = 0;
 			port = (uint16_t)i;
 		}
 	}
