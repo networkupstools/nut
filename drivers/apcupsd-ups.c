@@ -57,7 +57,7 @@ typedef struct pollfd {
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.74"
+#define DRIVER_VERSION	"0.75"
 
 #define POLL_INTERVAL_MIN 10
 
@@ -386,8 +386,8 @@ void upsdrv_initups(void)
 
 	if(device_path&&*device_path)
 	{
-		/* TODO: fix parsing since bare IPv6 addresses contain colons */
-		if((p=strchr(device_path,':')))
+		/* Look for last colon, since bare IPv6 addresses contain colons too */
+		if((p=strrchr(device_path,':')))
 		{
 			int i;
 			*p++=0;
