@@ -57,7 +57,7 @@ https://github.com/networkupstools/nut/milestone/12
      them manipulate the array of `prognames[]` aliases. [PR #3101]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
-   `masterguard`, `mge-utalk`, `oneac` driver updates:
+   `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus` driver updates:
    * Moved code to align with NUT driver architecture, so `upsdrv_initups()`
      would focus on preparing communications, and `upsdrv_initinfo()` would
      actually talk to the device and set initial critical data values. [#1962]
