@@ -424,8 +424,9 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.failure.start");
 	dstate_addcmd("load.off");
 	dstate_addcmd("load.on");
-	if( optimodel != OPTIMODEL_ZINTO )
-	dstate_addcmd("shutdown.stop");
+	if (optimodel != OPTIMODEL_ZINTO) {
+		dstate_addcmd("shutdown.stop");
+	}
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 	upsh.instcmd = instcmd;
