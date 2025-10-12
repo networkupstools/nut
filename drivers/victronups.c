@@ -32,7 +32,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"GE/IMV/Victron UPS driver"
-#define DRIVER_VERSION	"0.26"
+#define DRIVER_VERSION	"0.27"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -227,6 +227,20 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
+	char	temp[LENGTH_TEMP];
+
+	/* inicializace a synchronizace UPS */
+	ser_send_char(upsfd, ENDCHAR);
+	usleep (UPS_LONG_DELAY);
+	ser_send(upsfd, "?%c", ENDCHAR);
+	usleep (UPS_LONG_DELAY);
+	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, 3, 0);
+	ser_send(upsfd, "?%c", ENDCHAR);
+	usleep (UPS_LONG_DELAY);
+	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, 3, 0);
+	ser_send(upsfd, "?%c", ENDCHAR);
+	usleep (UPS_DELAY);
+	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, 3, 0);
 
 	if (model_name)
 		dstate_setinfo("ups.model", "%s", model_name);
@@ -283,9 +297,6 @@ void upsdrv_updateinfo(void)
 
 		start_is_datastale = 0;
 	}
-
-
-
 
 	/* ups.status */
 	if (get_data("vAa?",temp)) return;
@@ -365,8 +376,6 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("ups.model", "%s", temp+3);
 		upsdebugx(1, "ups.model >%s<>%s<\n",temp,temp+3);
 	}
-
-
 
 	/* ups.mfr */
 	if (get_data("vDm?",temp)) return;
@@ -535,12 +544,10 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	char temp[ LENGTH_TEMP ], *usd = NULL;  /* = NULL je dulezite jen pro prekladac */
-
+	char	*usd = NULL;  /* = NULL je dulezite jen pro prekladac */
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B1200);
-
 
 	if ((usd = getval("usd")))
 	{
@@ -553,21 +560,6 @@ void upsdrv_initups(void)
 		/* kdyz modelname nebylo zadano je vraceno NULL*/
 		upsdebugx(1, "(-x) UPS Name %s",model_name);
 	}
-
-	/* inicializace a synchronizace UPS */
-
-	ser_send_char(upsfd, ENDCHAR);
-	usleep (UPS_LONG_DELAY);
-	ser_send(upsfd, "?%c", ENDCHAR);
-	usleep (UPS_LONG_DELAY);
-	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, 3, 0);
-	ser_send(upsfd, "?%c", ENDCHAR);
-	usleep (UPS_LONG_DELAY);
-	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, 3, 0);
-	ser_send(upsfd, "?%c", ENDCHAR);
-	usleep (UPS_DELAY);
-	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, 3, 0);
-
 
 	/* the upsh handlers can't be done here, as they get initialized
 	 * shortly after upsdrv_initups returns to main.
