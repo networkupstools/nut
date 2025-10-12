@@ -56,6 +56,11 @@ https://github.com/networkupstools/nut/milestone/12
      framework introduced a `upsdrv_tweak_prognames()` hook method to let
      them manipulate the array of `prognames[]` aliases. [PR #3101]
 
+ - `asem` driver updates:
+   * Moved code to align with NUT driver architecture, so `upsdrv_initups()`
+     would focus on preparing communications, and `upsdrv_initinfo()` would
+     actually talk to the device and set initial critical data values. [#1962]
+
  - `nutdrv_qx` driver updates:
    * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together
