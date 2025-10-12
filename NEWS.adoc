@@ -58,7 +58,7 @@ https://github.com/networkupstools/nut/milestone/12
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
-   `powercom` driver updates:
+   `powercom`, `powervar_cx_ser` driver updates:
    * Moved code to align with NUT driver architecture, so `upsdrv_initups()`
      would focus on preparing communications, and `upsdrv_initinfo()` would
      actually talk to the device and set initial critical data values. [#1962]

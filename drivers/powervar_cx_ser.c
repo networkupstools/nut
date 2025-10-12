@@ -39,7 +39,7 @@
 #include "powervar_cx.h"	/* Common driver defines, variables, and functions */
 
 #define DRIVER_NAME	"Powervar-CUSSP UPS driver (Serial)"
-#define DRIVER_VERSION	"1.01"
+#define DRIVER_VERSION	"1.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -157,16 +157,16 @@ void upsdrv_initups(void)
 			upsdebugx (4, "Serial baud not set!! (%" PRIu32 ").", ulBaud);
 		}
 	}
-
-	/*get the UPS in the right frame of mind */
-	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
-	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
-	sleep (1);
 }
 
 /* This function is called on driver startup to initialize variables/commands */
 void upsdrv_initinfo(void)
 {
+	/* Get the UPS in the right frame of mind */
+	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
+	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
+	sleep (1);
+
 	/* Get serial port ready */
 	ser_flush_in(upsfd, "", 0);
 
