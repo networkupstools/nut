@@ -9,7 +9,7 @@
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  * Copyright (C) 2016   Eaton
  * Copyright (C) 2022-2024 "amikot"
- * Copyright (C) 2022-2024 Jim Klimov <jimklimov+nut@gmail.com>
+ * Copyright (C) 2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.17"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -517,6 +517,63 @@ static int get_ups_status(void)
 	return 0;
 }
 
+static int parse_ups_status(int doQuery) {
+	if (doQuery) {
+		int	stat = get_ups_status();
+
+		upsdebugx(1, "get_ups_status() %d",stat );
+
+		if (stat < 0) {
+			return -1;
+		}
+	}
+
+	status_init();
+
+	/* AC Fail */
+	if (riello_test_bit(&DevData.StatusCode[0], 1))
+		status_set("OB");
+	else
+		status_set("OL");
+
+	/* LowBatt */
+	if ((riello_test_bit(&DevData.StatusCode[0], 1)) &&
+		(riello_test_bit(&DevData.StatusCode[0], 0)))
+		status_set("LB");
+
+	/* Standby */
+	if (!riello_test_bit(&DevData.StatusCode[0], 3))
+		status_set("OFF");
+
+	/* On Bypass */
+	if (riello_test_bit(&DevData.StatusCode[1], 3))
+		status_set("BYPASS");
+
+	/* Overload */
+	if (riello_test_bit(&DevData.StatusCode[4], 2))
+		status_set("OVER");
+
+	/* Buck */
+	if (riello_test_bit(&DevData.StatusCode[1], 0))
+		status_set("TRIM");
+
+	/* Boost */
+	if (riello_test_bit(&DevData.StatusCode[1], 1))
+		status_set("BOOST");
+
+	/* Replace battery */
+	if (riello_test_bit(&DevData.StatusCode[2], 0))
+		status_set("RB");
+
+	/* Charging battery */
+	if (riello_test_bit(&DevData.StatusCode[2], 2))
+		status_set("CHRG");
+
+	status_commit();
+
+	return 0;
+}
+
 static int get_ups_extended(void)
 {
 	uint8_t length;
@@ -593,8 +650,25 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	NUT_UNUSED_VARIABLE(extra);
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
-	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
+	if (!strncasecmp(cmdname, "load.", 5) || !strncasecmp(cmdname, "shutdown.", 9)) {
+		if (DevData.StatusCode[0] == 0 && handling_upsdrv_shutdown > 0) {
+			/* With a quick init, we may have skipped the
+			 * long device data walk. At least query current
+			 * state to check that we can contact it. */
+			if (parse_ups_status(1) < 0)
+				upsdebugx(1, "%s: failed to query and parse ups.status", __func__);
+		}
 
+		upslogx(LOG_INFO, "Processing command '%s' while ups.status is '%s'",
+			cmdname, NUT_STRARG(dstate_getinfo("ups.status")));
+	}
+
+#ifdef RIELLO_SHUTDOWN_DEPENDS_ON_POWERSTATE
+	/* NOTE: Historically, this code allowed either "load.*" commands
+	 *  when we are "OL" or "shutdown.return" when we are "OB", but
+	 *  we found no requirement for that in the protocol docs. */
+	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
+#endif
 		if (!strcasecmp(cmdname, "load.off")) {
 			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
@@ -714,8 +788,10 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 			upsdebugx (3, "Command load.on.delay Ok: read byte: %d", recv);
 			return STAT_INSTCMD_HANDLED;
 		}
+#ifdef RIELLO_SHUTDOWN_DEPENDS_ON_POWERSTATE
 	}
 	else {
+#endif
 		if (!strcasecmp(cmdname, "shutdown.return")) {
 			int ipv;
 
@@ -748,9 +824,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 			upsdebugx (3, "Command shutdown.return Ok: read byte: %d", recv);
 			return STAT_INSTCMD_HANDLED;
 		}
+#ifdef RIELLO_SHUTDOWN_DEPENDS_ON_POWERSTATE
 	}
+#endif
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		/* Abort a pending shutdown request */
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 
 		length = riello_prepare_cd(bufOut, gpser_error_control);
@@ -1343,48 +1422,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("ups.load", "%u", (unsigned int)(DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
 	}
 
-	status_init();
-
-	/* AC Fail */
-	if (riello_test_bit(&DevData.StatusCode[0], 1))
-		status_set("OB");
-	else
-		status_set("OL");
-
-	/* LowBatt */
-	if ((riello_test_bit(&DevData.StatusCode[0], 1)) &&
-		(riello_test_bit(&DevData.StatusCode[0], 0)))
-		status_set("LB");
-
-	/* Standby */
-	if (!riello_test_bit(&DevData.StatusCode[0], 3))
-		status_set("OFF");
-
-	/* On Bypass */
-	if (riello_test_bit(&DevData.StatusCode[1], 3))
-		status_set("BYPASS");
-
-	/* Overload */
-	if (riello_test_bit(&DevData.StatusCode[4], 2))
-		status_set("OVER");
-
-	/* Buck */
-	if (riello_test_bit(&DevData.StatusCode[1], 0))
-		status_set("TRIM");
-
-	/* Boost */
-	if (riello_test_bit(&DevData.StatusCode[1], 1))
-		status_set("BOOST");
-
-	/* Replace battery */
-	if (riello_test_bit(&DevData.StatusCode[2], 0))
-		status_set("RB");
-
-	/* Charging battery */
-	if (riello_test_bit(&DevData.StatusCode[2], 2))
-		status_set("CHRG");
-
-	status_commit();
+	parse_ups_status(0);
 
 	dstate_dataok();
 

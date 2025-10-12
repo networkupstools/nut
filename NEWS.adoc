@@ -57,6 +57,15 @@ https://github.com/networkupstools/nut/milestone/12
      mappings. Suggest how user can help improve the driver if too few data
      points were seen. [PR #3095]
 
+ - `riello_ser` and `riello_usb` driver updates:
+   * Since the beginning, these drivers fenced availability of *either*
+     `load.*` *or* `shutdown.return` instant commands based on current
+     power situation (which was also unknown when the `drivername -k` mode
+     was used to shut down the system). There seems to be little reason for
+     such separation, so it is now avoided and the current device status
+     is queried when starting to handle the UPS poweroff, as a means to
+     verify communication ability. [#1962]
+
  - `snmp-ups` driver updates:
    * Define an internal `SU_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together
