@@ -63,6 +63,13 @@ https://github.com/networkupstools/nut/milestone/12
      mappings. Suggest how user can help improve the driver if too few data
      points were seen. [PR #3095]
 
+ - `powerp-bin` and `powerp-txt` driver updates:
+   * Their `upsdrv_initinfo()` methods did not explicitly reference the
+     `INSTCMD` and `SETVAR` handler methods (it is unknown whether this
+     actually broke anything, or the needed values were deduced from
+     subdriver definition then). For consistency, these pointers are now
+     assigned. [#1962]
+
  - `snmp-ups` driver updates:
    * Define an internal `SU_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together
