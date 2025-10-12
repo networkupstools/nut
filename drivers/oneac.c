@@ -51,7 +51,7 @@ int setvar(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.86"
+#define DRIVER_VERSION	"0.87"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -200,11 +200,6 @@ void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B9600);
-
-	/*get the UPS in the right frame of mind*/
-	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
-	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
-	sleep (1);
 }
 
 void upsdrv_initinfo(void)
@@ -214,6 +209,11 @@ void upsdrv_initinfo(void)
 	int timevalue;
 	ssize_t RetValue;
 	char buffer[256], buffer2[32];
+
+	/* Get the UPS in the right frame of mind */
+	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
+	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
+	sleep (1);
 
 	/* All families should reply to this request so we can confirm that it is
 	 *  an ONEAC UPS
