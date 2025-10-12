@@ -39,12 +39,6 @@ https://github.com/networkupstools/nut/milestone/12
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
- - Fix fallout of development in recent NUT v2.8.x releases:
-   * Refactoring of drivers to use `shutdown.*` commands consistently (in NUT
-     v2.8.3 and v2.8.4) may have skipped executions of `INSTCMD` initialization
-     when the driver is quickly started to power down or cycle an UPS during
-     systems shutdown. [#1962]
-
  - common code:
    * Introduced `setproctag()` and `getproctag()` (see examples in `upsmon`)
      to help track the log messages from massively-forking NUT daemons. [#3084]
