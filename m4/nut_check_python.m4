@@ -136,8 +136,12 @@ AC_DEFUN([NUT_CHECK_PYTHON],
                             printf "Using caller-provided location... "
                             nut_cv_PYTHON_SITE_PACKAGES="${nut_with_python_modules_dir}"],
                         [printf "Using interpreter-provided location... "
-                         dnl sysconfig introduced in python3.2
-                         AS_IF([test x"`${PYTHON} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue],
+                         dnl sysconfig introduced in python3.2 and 2.7 according to
+                         dnl https://docs.python.org/3/library/sysconfig.html
+                         dnl https://docs.python.org/2.7/library/sysconfig.html
+                         dnl Note that the list at getsitepackages() MAY start
+                         dnl with a "platlib" location (including compiled code):
+                         AS_IF([test x"`${PYTHON} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue || test x"`${PYTHON} -c 'import sys; print (sys.version_info >= (2, 7) and sys.version_info < (3, 0))'`"],
                             [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
                             [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"])
                         ]
@@ -272,7 +276,12 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                             printf "Using caller-provided location... "
                             nut_cv_PYTHON2_SITE_PACKAGES="${nut_with_python2_modules_dir}"],
                         [printf "Using interpreter-provided location... "
-                         nut_cv_PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import site; print(site.getsitepackages().pop(0))'`"
+                         dnl sysconfig introduced in python2.7 according to
+                         dnl Note that the list at getsitepackages() MAY start
+                         dnl with a "platlib" location (including compiled code):
+                         AS_IF([test x"`${PYTHON2} -c 'import sys; print (sys.version_info >= (2, 7) and sys.version_info < (3, 0))'`"],
+                            [nut_cv_PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
+                            [nut_cv_PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import site; print(site.getsitepackages().pop(0))'`"])
                         ]
                     )
                 AS_CASE(["$nut_cv_PYTHON2_SITE_PACKAGES"],
@@ -406,6 +415,8 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                             nut_cv_PYTHON3_SITE_PACKAGES="${nut_with_python3_modules_dir}"],
                         [printf "Using interpreter-provided location... "
                          dnl sysconfig introduced in python3.2
+                         dnl Note that the list at getsitepackages() MAY start
+                         dnl with a "platlib" location (including compiled code):
                          AS_IF([test x"`${PYTHON3} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue],
                             [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
                             [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"])

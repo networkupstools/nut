@@ -1,26 +1,26 @@
-NUTDRV_SIEMENS_SITOP(8)
+NUTDRV_SIEMENS-SITOP(8)
 =======================
 
 NAME
 ----
 
-nutdrv_siemens_sitop - Driver for the Siemens SITOP UPS500 series UPS
+nutdrv_siemens-sitop - Driver for the Siemens SITOP UPS500 series UPS
 
 SYNOPSIS
 --------
 
-*nutdrv_siemens_sitop* -h
+*nutdrv_siemens-sitop* -h
 
-*nutdrv_siemens_sitop* -a 'UPS_NAME' ['OPTIONS']
+*nutdrv_siemens-sitop* -a 'UPS_NAME' ['OPTIONS']
 
 NOTE: This man page only documents the hardware-specific features of the
-*nutdrv_siemens_sitop* driver.  For information about the core driver, see
+*nutdrv_siemens-sitop* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
 
-*nutdrv_siemens_sitop* supports Siemens UPS models from the SITOP UPS500
+*nutdrv_siemens-sitop* supports Siemens UPS models from the SITOP UPS500
 series.
 Some models have a serial port, others have a USB port.
 The models with USB port actually contain a serial-over-USB chip,

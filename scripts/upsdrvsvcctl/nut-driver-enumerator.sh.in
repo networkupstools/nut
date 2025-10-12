@@ -807,13 +807,16 @@ smf_registerInstance() {
         [ -n "$DEPREQ" ] || DEPREQ="optional_all"
         echo "Adding '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'..."
 
+        # NOTE: it seems (at least as of Solaris 11) that the fmri: definition
+        #  below (especially when there are many dependency FMRI's) must be a
+        #  multi-token list with parentheses, not a single quoted string.
         DEPPG="nut-driver-enumerator-generated"
         RESTARTON="refresh"
         /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$DEPPG" dependency && \
         /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/grouping = astring: "$DEPREQ" && \
         /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/restart_on = astring: "$RESTARTON" && \
         /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/type = astring: service && \
-        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "($DEPSVC)" && \
+        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "(" $DEPSVC ")" && \
         echo "OK" || echo "FAILED to define the dependency" >&2
     fi
 
@@ -903,6 +906,7 @@ smf_setSavedUniq() {
         *) __TYPE="${__TYPE}:" ;;
     esac
     __VAL="$5"
+    echo "Stashing service property '${__PG}/${__PROP}' of '${__TARGET_FMRI}'..."
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" delprop "${__PG}" 2>/dev/null || true
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" addpg "${__PG}" application && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/${__PROP}" = "${__TYPE}" "${__VAL}"
@@ -954,6 +958,7 @@ smf_setDocLink() {
 #tm_man_nwamd8/title                                      astring  nwamd
 
     __PG="tm_doc_${__DRV}_Page"
+    echo "Stashing service property group '${__PG}' of '${__TARGET_FMRI}' for online docs..."
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" delprop "${__PG}" 2>/dev/null || true
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" addpg "${__PG}" template && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/name" = "astring:" "\"${__DRV} online\"" && \
@@ -961,6 +966,7 @@ smf_setDocLink() {
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property group '${__PG}' for online docs">&2 ; return 1 ; }
 
     __PG="tm_man_${__DRV}@MAN_SECTION_CMD_SYS@"
+    echo "Stashing service property group '${__PG}' for '${__TARGET_FMRI}' for local docs..."
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" delprop "${__PG}" 2>/dev/null || true
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" addpg "${__PG}" template && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/manpath" = "astring:" "@NUT_MANDIR@" && \
@@ -969,7 +975,7 @@ smf_setDocLink() {
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property group '${__PG}' for local docs">&2 ; return 1 ; }
 
     unset __DRV __PG __TARGET_FMRI
-    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the device doc links">&2 ; return 1 ; }
+    [ $? = 0 ] || { echo "FAILED to stash the device doc links">&2 ; return 1 ; }
 }
 smf_restart_upsd() {
     echo "Reloading or restarting NUT data server to make sure it knows new configuration..."
@@ -1159,6 +1165,7 @@ systemd_getSavedDeviceName() {
 systemd_setSavedDeviceName() {
     # Save device (config section) name $2 into service instance $1
     [ -n "$1" ] || return # No-op for global section
+    echo "Saving device (config section) name $2 into service instance $...1"
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
     cat > "${PROPFILE}" << EOF
@@ -1171,6 +1178,7 @@ systemd_setDocLink() {
     # Save documentation links for driver of device (config section) named $2
     # into service instance $1
     [ -n "$1" ] || return # No-op for global section
+    echo "Saving documentation links for driver of device (config section) named $2 into service instance $1..."
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-doclink.conf"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
     __DRV="`upsconf_getDriver "$2"`"
@@ -1186,6 +1194,7 @@ systemd_setSavedMD5() {
     # Save checksum value $2 into service instance $1
     PROP="SECTION_CHECKSUM"
     [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
+    echo "Saving checksum value $2 into service instance $1..."
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
     cat > "${PROPFILE}" << EOF

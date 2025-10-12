@@ -1078,8 +1078,14 @@ Directories used by NUT at run-time
 	--with-pidpath=PATH
 
 Changes the directory where NUT pid files are stored for processes running
-as `root`.  By default this is `/var/run`.  Certain programs like `upsmon`
-will leave files here.
+as `root`.  By default this is `/var/run` (or `/run` on systems that follow
+FHS-3.0 standard strictly and do not offer a legacy symlink).  A build of
+NUT is encouraged to configure the use of a dedicated sub-directory, like
+`/var/run/ups` or `/var/run/nut`, as long as its existence and proper
+ownership and permissions can be ensured by the time NUT daemons start.
+Certain programs like `upsmon` will leave files here.
+
+The `NUT_PIDPATH` environment variable overrides this at run time.
 
 	--with-altpidpath=PATH
 
@@ -1097,6 +1103,12 @@ commands. Default is `/var/state/ups`.
 
 This is also the default location for non-`root` daemons to write a PID file,
 if a separate location is not specified by `--with-altpidpath` option.
+
+Sample configuration examples for `upssched.conf` (and default systemd-tmpfiles
+configuration generated with a NUT build) suggest using a sub-directory like
+`${STATEPATH}/upssched` for the tool's lock file and client-daemon communication
+pipe.  This allows to potentially run that tool and daemon under a dedicated
+user account, without overlapping with permissions needed by other NUT programs.
 
 The `NUT_STATEPATH` environment variable overrides this at run time.
 

@@ -173,6 +173,9 @@ EXTRA_DIST += autogen.sh
 # Help also the tarball users contribute properly:
 EXTRA_DIST += .editorconfig
 
+# automake xompilation wrapper
+EXTRA_DIST += compile
+
 if KEEP_NUT_REPORT
 nodist_data_DATA = config.nut_report_feature.log
 endif KEEP_NUT_REPORT

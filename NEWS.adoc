@@ -72,7 +72,7 @@ https://github.com/networkupstools/nut/milestone/12
  - `usbhid-ups` driver updates:
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
-   * Improved support for Eaton 5S1500LCD (US version). [#2380]
+   * Improved support for Eaton 5S1500LCD and 5S1600LCD (US version). [#2380]
    * For `ups.status` processing, do not assume that `!online`==`offline`,
      it may well be that the device just did not report anything (e.g. if
      it does not really talk USB HID). [#3080]
@@ -152,6 +152,14 @@ several `FSD` notifications into one executed action. [PR #3097]
  - Updated `docs/*.txt`: add asciidoc comments with links to nut-website
    rendered contents of most interesting pages. [#3095]
 
+ - Dropped the `compile` script from Git sources. It originates from automake
+   and is added to work area (if missing) during `autogen.sh` rituals anyway.
+   It is still distributed as part of `make dist` tarball. [#1209]
+
+ - Default `PIDPATH` is now more strictly `/var/run`, unless building on a
+   system conforming to FHS-3.0 standard where that location is absent or
+   is a symlink, while `/run` exists and is a true directory. [#3099]
+
  - Revised CI and deliverable scripts, and Makefile recipes, to not use
    the verbatim `grep -E` (loudly preferred by newer systems, but may be
    absent on older ones) after all, nor use `egrep` (loudly disliked by
@@ -163,6 +171,19 @@ several `FSD` notifications into one executed action. [PR #3097]
    abort processing the script immediately. Also the `if ! condition`
    syntax is not supported everywhere (or the `!` operator generally).
    [#3099, #1660]
+
+ - The NUT Integration Testing suite (NIT) script, if started as `root`,
+   can now consult its run-time situation vs. `BUILTIN_RUN_AS_USER` and
+   `BUILTIN_RUN_AS_GROUP` environment variables, and if those accounts
+   do not exist (e.g. running in a packaging build root), a different
+   value like "nobody" or "nogroup" would be defaulted for tests. [#1209]
+
+ - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
+   to match the driver program name. Follow-up from slightly botched renaming
+   in original contribution. [PR #545]
+
+ - The `configure` script should now try harder to report specifically
+   the "purelib" location as `PYTHON*_SITE_PACKAGES`. [#1209]
 
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3

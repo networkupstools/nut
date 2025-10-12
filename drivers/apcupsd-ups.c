@@ -57,7 +57,7 @@ typedef struct pollfd {
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.74"
+#define DRIVER_VERSION	"0.75"
 
 #define POLL_INTERVAL_MIN 10
 
@@ -70,7 +70,7 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-static uint16_t port=3551;
+static uint16_t port = 3551;	/* apcupsd default port */
 static struct sockaddr_in host;
 
 static void process(char *item,char *data)
@@ -384,19 +384,22 @@ void upsdrv_initups(void)
 	atexit((void(*)(void))WSACleanup);
 #endif	/* WIN32 */
 
-	if(device_path&&*device_path)
+	/* NOTE: in case of errors below we set "port" to 0,
+	 * and bail out with fatalx() in upsdrv_initinfo() */
+	if (device_path && *device_path)
 	{
-		/* TODO: fix parsing since bare IPv6 addresses contain colons */
-		if((p=strchr(device_path,':')))
+		/* Look for last colon, since bare IPv6 addresses contain colons too */
+		if((p=strrchr(device_path,':')))
 		{
-			int i;
-			*p++=0;
-			i=atoi(p);
-			if(i<1||i>65535)i=0;
+			int	i;
+			*p++ = '\0';	/* cut off just the host name in device_path */
+			i = atoi(p);
+			if (i<1 || i>65535)
+				i = 0;
 			port = (uint16_t)i;
 		}
 	}
-	else device_path="localhost";
+	else device_path="localhost";	/* default port e.g. 3551 was set above */
 
 	if(!(h=gethostbyname(device_path)))port=0;
 	else memcpy(&host.sin_addr,h->h_addr,4);

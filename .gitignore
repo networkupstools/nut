@@ -21,6 +21,7 @@ Makefile.in
 /autom4te.cache/
 /ChangeLog
 /ChangeLog.adoc
+/compile
 /config.guess
 /config.log
 /config.log.inplace-outer

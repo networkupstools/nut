@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3557 utf-8
+personal_ws-1.1 en 3558 utf-8
 AAC
 AAS
 ABI
@@ -105,6 +105,7 @@ BTEST
 BTS
 BTV
 BUFRD
+BUILTIN
 BUZ
 BVKnnnnM
 BVKxxxM
@@ -2881,6 +2882,7 @@ pts
 ptv
 pty
 pulizzi
+purelib
 pv
 pw
 pwd

@@ -26,6 +26,19 @@ Changes from 2.8.4 to 2.8.5
 
 - PLANNED: Keep track of any further API clean-up?
 
+- Dropped the `compile` script from Git sources. It originates from automake
+  and is added to work area (if missing) during `autogen.sh` rituals anyway
+  (as `make` says, `'automake --add-missing' can install 'compile'` when you
+  run without it). It is still distributed as part of `make dist` tarball.
+  We are open to any feedback whether this removal impacts NUT rebuilds on
+  any systems. [#1209]
+
+- Default `PIDPATH` is now more strictly `/var/run`, unless building on a
+  system conforming to FHS-3.0 standard where that location is absent or
+  is a symlink, while `/run` exists and is a true directory. Package recipes
+  usually override `--with-pidpath` anyway to provide a dedicated location
+  for NUT `root`-owned daemon PID files. [#3099]
+
 - In drivers using the common `main.c` and `main.h` framework, introduced
   a `void upsdrv_tweak_prognames(void)` required method (may be no-op) to
   optionally tweak `prognames[]` entries now that there is certain support
@@ -34,6 +47,14 @@ Changes from 2.8.4 to 2.8.5
   Any drivers that would undergo promotion with renaming can take advantage
   of this new facility to keep working under both old and new file names.
   [#3101]
+
+- Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
+  to match the driver program name. Packaging recipes may have to be updated.
+  Follow-up from slightly botched renaming in original contribution. [PR #545]
+
+- The `configure` script should now try harder to report specifically
+  the "purelib" location as `PYTHON*_SITE_PACKAGES`. Packaging recipes
+  may have to be updated. [#1209]
 
 
 Changes from 2.8.3 to 2.8.4

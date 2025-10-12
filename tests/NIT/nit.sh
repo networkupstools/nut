@@ -35,6 +35,16 @@
 # properly work in whatever different OSes have (bash, dash,
 # ksh, busybox sh...)
 #
+# Special considerations for starting the tests as "root":
+# * See I_AM_ROOT evaluation and conditional uses in code below for the
+#   most authoritative reference.
+# * More liberal permissions to TESTDIR, STATEPATH and configuration files
+#   than when a non-root user started the test suite right away and could
+#   only constrain access to allow itself.
+# * BUILTIN_RUN_AS_USER and BUILTIN_RUN_AS_GROUP envvars would be consulted
+#   and if those accounts do not exist (e.g. in a packaging build root), a
+#   different value like "nobody" or "nogroup" would be defaulted for test.
+#
 # Copyright
 #	2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
@@ -323,12 +333,153 @@ PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 
+# Platforms vary in abilities to report this...
+I_AM_NAME=""
+get_my_user_name() {
+    if [ x"${I_AM_NAME}" != x ]; then
+        # Use cache
+        echo "${I_AM_NAME}"
+        return
+    fi
+
+    _ME="`whoami 2>/dev/null`" && [ x"${_ME}" != x ] \
+    || { _ME="`ps -ef 2>/dev/null | grep -v grep | grep $$`" && [ x"${_ME}" != x ] ; } \
+    || { _ME="`ps -xawwu 2>/dev/null | grep -v grep | grep $$`" && [ x"${_ME}" != x ] ; } \
+    || _ME=""
+
+    if [ x"${_ME}" != x ] ; then
+        echo "${_ME}"
+        return
+    fi
+
+    # TOTHINK: Fallback to get "my current user": touch a file and see who owns it?
+
+    # Non-numeric (empty) stdout; non-successful exit code
+    return 1
+}
+
+get_user_id() {
+    if _ID="`id -u ${1-} 2>/dev/null`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if _ID="`id ${1-} 2>/dev/null | sed -e 's,^.*uid=,,' -e 's,(.*$,,'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent passwd "$1" 2>/dev/null | awk -F: '{print $3}'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+
+    # Fallback
+    if [ x"${1-}" = x ] 2>/dev/null ; then
+        if _ME="`get_my_user_name`" 2>/dev/null && [ x"${_ME}" != x ] ; then
+            _RES=0
+            get_user_id "${_ME}" || _RES=$?
+            return ${_RES}
+        fi
+    fi
+
+    # Non-numeric (empty) stdout; non-successful exit code
+    return 1
+}
+
+get_group_id() {
+    if _ID="`id -g ${1-} 2>/dev/null`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if _ID="`id ${1-} 2>/dev/null | sed -e 's,^.*gid=,,' -e 's,(.*$,,'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent group "$1" 2>/dev/null | awk -F: '{print $3}'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+
+    # TOTHINK: Fallback to get "my current group": touch a file and see who owns it?
+
+    # Non-numeric (empty) stdout; non-successful exit code
+    return 1
+}
+
+I_AM_NAME="`get_my_user_name`"
+I_AM_NAME_REPORT="'${I_AM_NAME}'"
 I_AM_ROOT=false
-if ( [ "`id -u`" = 0 ] ) 2>/dev/null ; then
+if [ "`get_user_id`" = 0 ] ; then
+    if [ x"${I_AM_NAME}" = x ]; then
+        log_warn "Seems we have started as UID 0, but could not detect user name: assuming 'root'"
+    else if [ x"${I_AM_NAME}" != xroot ]; then
+        log_warn "Seems we have started as UID 0, but detected user name was not 'root': '${I_AM_NAME}'"
+        I_AM_NAME_REPORT="'${I_AM_NAME}' (root?)"
+    fi; fi
     I_AM_ROOT=true
-else
-    if id | sed -e 's,(.*$,,' -e 's,^.*uid=,,' | ${EGREP} '^0$' >/dev/null ; then
-        I_AM_ROOT=true
+fi
+
+# We have a certain problem when the requested user account does not exist:
+# our `common::get_user_pwent()` aborts with `fatalx()` during such a check for
+# validity of built-in or CLI-requested account (sometimes before even looking
+# at any config files), and fails like "OS user upsd not found". Note we do not
+# currently have similar troubles for groups (and interactions with customizing
+# them seem limited to `chgrp()` of driver-upsd local socket).
+# While this should not happen in real life, it can on test or packaging
+# systems that did not provision the accounts (claimed by a NUT build) for
+# the build/test run-time environment. In this case, tweak it into something
+# we know exists (current non-root user explicitly, or a commonly available
+# name if we are running as root).
+TWEAK_RUN_AS_USER=""
+TWEAK_RUN_AS_GROUP=""
+ARG_USER=""
+if [ x"${BUILTIN_RUN_AS_USER}" != x ] ; then
+    if [ "`get_user_id "${BUILTIN_RUN_AS_USER}"`" -ge 0 ] 2>/dev/null; then
+        # Do not bother to re-evaluate more IDs to rule out aliases - many names on same ID?
+        if $I_AM_ROOT || [ x"${I_AM_NAME}" = x"${BUILTIN_RUN_AS_USER}" ] ; then
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems present on this system to run test daemons as"
+        else
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems present on this system (but we would run test daemons as current unprivileged user)"
+        fi
+    else
+        # The string allegedly built into NUT binaries is unknown to the
+        # account identification databases of this runtime environment...
+        if $I_AM_ROOT ; then
+            for U in nobody daemon bin ; do
+                if [ "`get_user_id "${U}"`" -ge 0 ] ; then
+                    TWEAK_RUN_AS_USER="${U}"
+                    break
+                fi
+            done
+        else
+            TWEAK_RUN_AS_USER="${I_AM_NAME}"
+        fi
+
+        if [ x"${TWEAK_RUN_AS_USER}" = x ] ; then
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems absent on this system, and did not find a common alternative to run test daemons as; NIT suite can fail below!"
+        else
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems absent on this system, will run test daemons as '${TWEAK_RUN_AS_USER}'"
+            # Needed e.g. for upsd, its config has no RUN_AS_USER setting
+            ARG_USER="-u ${TWEAK_RUN_AS_USER}"
+        fi
+    fi
+fi
+
+if [ x"${BUILTIN_RUN_AS_GROUP}" != x ] ; then
+    # Note: GID setting is not much used in NUT code at the moment:
+    # * In `drivers/main.c` we can set FS access for the pipe to data server
+    # * Otherwise in `common.c::become_user()` we try to assume the default
+    #   GID of that user account we were asked to switch into.
+    if [ "`get_group_id "${BUILTIN_RUN_AS_GROUP}"`" -ge 0 ] 2>/dev/null ; then
+        # Do not bother to re-evaluate more IDs to rule out aliases - many names on same ID?
+        # TOTHINK: Would need I_AM_GROUP first?..
+        if $I_AM_ROOT ; then
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems present on this system to run test daemons as"
+        else
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems present on this system (but we would run test daemons as current unprivileged user and untweaked group)"
+        fi
+    else
+        # The string allegedly built into NUT binaries is unknown to the
+        # account identification databases of this runtime environment...
+        for G in nobody nogroup daemon bin ; do
+            if [ "`get_group_id "${G}"`" -ge 0 ] ; then
+                TWEAK_RUN_AS_GROUP="${G}"
+                break
+            fi
+        done
+
+        if [ x"${TWEAK_RUN_AS_GROUP}" = x ] ; then
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems absent on this system, and did not find a common alternative to run test daemons as; NIT suite can fail below!"
+        else
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems absent on this system, will run test daemons as '${TWEAK_RUN_AS_GROUP}'"
+        fi
     fi
 fi
 
@@ -345,7 +496,7 @@ else
     if $I_AM_ROOT ; then
         case "${TESTDIR}" in
             "${HOME}"/*)
-                log_info "Test script was started by 'root' and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
+                log_info "Test script was started by ${I_AM_NAME_REPORT} and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
                 TESTDIR=""
                 ;;
         esac
@@ -396,7 +547,7 @@ mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
 
 if $I_AM_ROOT ; then
-    log_info "Test script was started by 'root' - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
+    log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
     chmod 777 "${TESTDIR}/run"
 fi
 
@@ -538,7 +689,8 @@ EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
 
     if $I_AM_ROOT ; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.conf' so unprivileged daemons (after de-elevation) may read it"
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/upsd.conf' so unprivileged daemons (after de-elevation) may read it"
+        # NOTE: No RUN_AS_USER in upsd.conf currently; tweaking via CLI args if needed
         chmod 644 "$NUT_CONFPATH/upsd.conf"
     else
         chmod 640 "$NUT_CONFPATH/upsd.conf"
@@ -606,7 +758,7 @@ EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.users"
 
     if $I_AM_ROOT ; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.users' so unprivileged daemons (after de-elevation) may read it"
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/upsd.users' so unprivileged daemons (after de-elevation) may read it"
         chmod 644 "$NUT_CONFPATH/upsd.users"
     else
         chmod 640 "$NUT_CONFPATH/upsd.users"
@@ -672,10 +824,14 @@ generatecfg_upsmon_trivial() {
     || die "Failed to populate temporary FS structure for the NIT: upssched.conf"
 
     if $I_AM_ROOT ; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsmon.conf' and '$NUT_CONFPATH/upssched.conf' so unprivileged daemons (after de-elevation) may read them"
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/upsmon.conf' and '$NUT_CONFPATH/upssched.conf' so unprivileged daemons (after de-elevation) may read them"
         chmod 644 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
     else
         chmod 640 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
+    fi
+
+    if [ x"${TWEAK_RUN_AS_USER}" != x ] ; then
+        echo "RUN_AS_USER ${TWEAK_RUN_AS_USER}" >> "$NUT_CONFPATH/upsmon.conf"
     fi
 
     if [ $# -gt 0 ] ; then
@@ -737,10 +893,17 @@ generatecfg_ups_trivial() {
     ) || die "Failed to populate temporary FS structure for the NIT: ups.conf"
 
     if $I_AM_ROOT ; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/ups.conf' so unprivileged daemons (after de-elevation) may read it"
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/ups.conf' so unprivileged daemons (after de-elevation) may read it"
         chmod 644 "$NUT_CONFPATH/ups.conf"
     else
         chmod 640 "$NUT_CONFPATH/ups.conf"
+    fi
+
+    if [ x"${TWEAK_RUN_AS_USER}" != x ] ; then
+        echo "user ${TWEAK_RUN_AS_USER}" >> "$NUT_CONFPATH/ups.conf"
+    fi
+    if [ x"${TWEAK_RUN_AS_GROUP}" != x ] ; then
+        echo "group ${TWEAK_RUN_AS_GROUP}" >> "$NUT_CONFPATH/ups.conf"
     fi
 }
 
@@ -812,7 +975,7 @@ testcase_upsd_no_configs_at_all() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG}
+    upsd ${ARG_FG} ${ARG_USER}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
@@ -831,7 +994,7 @@ testcase_upsd_no_configs_driver_file() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG}
+    upsd ${ARG_FG} ${ARG_USER}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
@@ -851,7 +1014,7 @@ testcase_upsd_no_configs_in_driver_file() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG}
+    upsd ${ARG_FG} ${ARG_USER}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
@@ -873,7 +1036,7 @@ upsd_start_loop() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} &
+    upsd ${ARG_FG} ${ARG_USER} &
     PID_UPSD="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSD as PID $PID_UPSD"
@@ -907,7 +1070,7 @@ upsd_start_loop() {
         if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
             NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
         fi
-        upsd ${ARG_FG} &
+        upsd ${ARG_FG} ${ARG_USER} &
         PID_UPSD="$!"
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
         log_warn "[${TESTCASE}] Tried to start UPSD again, now as PID $PID_UPSD"
@@ -1058,17 +1221,17 @@ sandbox_start_drivers() {
     if [ -n "${NUT_DEBUG_LEVEL_DRIVERS-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_DRIVERS}"
     fi
-    #upsdrvctl ${ARG_FG} start dummy &
-    dummy-ups -a dummy ${ARG_FG} &
+    #upsdrvctl ${ARG_FG} ${ARG_USER} start dummy &
+    dummy-ups -a dummy ${ARG_USER} ${ARG_FG} &
     PID_DUMMYUPS="$!"
     log_debug "Tried to start dummy-ups driver for 'dummy' as PID $PID_DUMMYUPS"
 
     if [ x"${TOP_SRCDIR}" != x ]; then
-        dummy-ups -a UPS1 ${ARG_FG} &
+        dummy-ups -a UPS1 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS1="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS1' as PID $PID_DUMMYUPS1"
 
-        dummy-ups -a UPS2 ${ARG_FG} &
+        dummy-ups -a UPS2 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS2="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
     fi
@@ -1160,7 +1323,7 @@ testcase_sandbox_start_upsd_after_drivers() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} &
+    upsd ${ARG_FG} ${ARG_USER} &
     PID_UPSD="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
@@ -1653,7 +1816,7 @@ upsmon_start_loop() {
         # but the sample script honours NUT_DEBUG_LEVEL_UPSSCHED if set
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSMON}"
     fi
-    upsmon ${ARG_FG} &
+    upsmon ${ARG_FG} ${ARG_USER} &
     PID_UPSMON="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSMON as PID $PID_UPSMON"

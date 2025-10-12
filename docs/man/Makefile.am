@@ -911,7 +911,7 @@ SRC_SERIAL_PAGES = \
 	microdowell.txt	\
 	microsol-apc.txt	\
 	nutdrv_hashx.txt	\
-	nutdrv_siemens_sitop.txt	\
+	nutdrv_siemens-sitop.txt	\
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
@@ -962,7 +962,7 @@ INST_MAN_SERIAL_PAGES = \
 	microdowell.$(MAN_SECTION_CMD_SYS)	\
 	microsol-apc.$(MAN_SECTION_CMD_SYS)	\
 	nutdrv_hashx.$(MAN_SECTION_CMD_SYS)	\
-	nutdrv_siemens_sitop.$(MAN_SECTION_CMD_SYS)	\
+	nutdrv_siemens-sitop.$(MAN_SECTION_CMD_SYS)	\
 	optiups.$(MAN_SECTION_CMD_SYS)	\
 	powercom.$(MAN_SECTION_CMD_SYS) 	\
 	powerpanel.$(MAN_SECTION_CMD_SYS)	\
@@ -1031,7 +1031,7 @@ INST_HTML_SERIAL_MANS = \
 	microdowell.html	\
 	microsol-apc.html	\
 	nutdrv_hashx.html	\
-	nutdrv_siemens_sitop.html	\
+	nutdrv_siemens-sitop.html	\
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
