@@ -832,8 +832,70 @@ static int start_ups_comm(void)
 	}
 
 	upsdebugx (3, "Get identif Ok: received byte %u", buf_ptr_length);
-	return 0;
 
+	return 0;
+}
+
+void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
+/* list flags and values that you want to receive via -x */
+void upsdrv_makevartable(void)
+{
+	/* allow '-x xyzzy' */
+	/* addvar(VAR_FLAG, "xyzzy", "Enable xyzzy mode"); */
+
+	/* allow '-x foo=<some value>' */
+	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
+
+	addvar(VAR_FLAG, "localcalculation", "Calculate battery charge and runtime locally");
+}
+
+void upsdrv_initups(void)
+{
+	upsdebugx(2, "entering upsdrv_initups()");
+
+	upsfd = ser_open(device_path);
+
+	riello_comm_setup(device_path);
+
+	/* probe ups type */
+
+	/* to get variables and flags from the command line, use this:
+	 *
+	 * first populate with upsdrv_buildvartable above, then...
+	 *
+	 *	  				set flag foo : /bin/driver -x foo
+	 * set variable 'cable' to '1234' : /bin/driver -x cable=1234
+	 *
+	 * to test flag foo in your code:
+	 *
+	 * 	if (testvar("foo"))
+	 * 		do_something();
+	 *
+	 * to show the value of cable:
+	 *
+	 *	if ((cable = getval("cable")))
+	 *		printf("cable is set to %s\n", cable);
+	 *	else
+	 *		printf("cable is not set!\n");
+	 *
+	 * don't use NULL pointers - test the return result first!
+	 */
+
+	/* the upsh handlers can't be done here, as they get initialized
+	 * shortly after upsdrv_initups returns to main.
+	 */
+
+	/* don't try to detect the UPS here */
+
+	/* initialise communication */
 }
 
 void upsdrv_initinfo(void)
@@ -1040,6 +1102,50 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = riello_instcmd;
 }
 
+void upsdrv_shutdown(void)
+{
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
+	int	retry;
+
+	/* maybe try to detect the UPS here, but try a shutdown even if
+		it doesn't respond at first if possible */
+
+	/* replace with a proper shutdown function */
+
+
+	/* you may have to check the line status since the commands
+		for toggling power are frequently different for OL vs. OB */
+
+	/* OL: this must power cycle the load if possible */
+
+	/* OB: the load must remain off until the power returns */
+	upsdebugx(2, "upsdrv Shutdown execute");
+
+	for (retry = 1; retry <= MAXTRIES; retry++) {
+		/* By default, abort a previously requested shutdown
+		 * (if any) and schedule a new one from this moment. */
+		if (riello_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
+			continue;
+		}
+
+		if (riello_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
+			continue;
+		}
+
+		upslogx(LOG_ERR, "Shutting down");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
+		return;
+	}
+
+	upslogx(LOG_ERR, "Shutdown failed!");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
+}
+
 void upsdrv_updateinfo(void)
 {
 	uint8_t getextendedOK;
@@ -1222,51 +1328,6 @@ void upsdrv_updateinfo(void)
 	 */
 }
 
-void upsdrv_shutdown(void)
-{
-	/* Only implement "shutdown.default"; do not invoke
-	 * general handling of other `sdcommands` here */
-
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-	int	retry;
-
-	/* maybe try to detect the UPS here, but try a shutdown even if
-		it doesn't respond at first if possible */
-
-	/* replace with a proper shutdown function */
-
-
-	/* you may have to check the line status since the commands
-		for toggling power are frequently different for OL vs. OB */
-
-	/* OL: this must power cycle the load if possible */
-
-	/* OB: the load must remain off until the power returns */
-	upsdebugx(2, "upsdrv Shutdown execute");
-
-	for (retry = 1; retry <= MAXTRIES; retry++) {
-		/* By default, abort a previously requested shutdown
-		 * (if any) and schedule a new one from this moment. */
-		if (riello_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
-			continue;
-		}
-
-		if (riello_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
-			continue;
-		}
-
-		upslogx(LOG_ERR, "Shutting down");
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(EF_EXIT_SUCCESS);
-		return;
-	}
-
-	upslogx(LOG_ERR, "Shutdown failed!");
-	if (handling_upsdrv_shutdown > 0)
-		set_exit_flag(EF_EXIT_FAILURE);
-}
-
-
 /*
 static int setvar(const char *varname, const char *val)
 {
@@ -1281,68 +1342,6 @@ static int setvar(const char *varname, const char *val)
 	return STAT_SET_UNKNOWN;
 }
 */
-
-void upsdrv_help(void)
-{
-}
-
-/* optionally tweak prognames[] entries */
-void upsdrv_tweak_prognames(void)
-{
-}
-
-/* list flags and values that you want to receive via -x */
-void upsdrv_makevartable(void)
-{
-	/* allow '-x xyzzy' */
-	/* addvar(VAR_FLAG, "xyzzy", "Enable xyzzy mode"); */
-
-	/* allow '-x foo=<some value>' */
-	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
-
-	addvar(VAR_FLAG, "localcalculation", "Calculate battery charge and runtime locally");
-}
-
-void upsdrv_initups(void)
-{
-	upsdebugx(2, "entering upsdrv_initups()");
-
-	upsfd = ser_open(device_path);
-
-	riello_comm_setup(device_path);
-
-	/* probe ups type */
-
-	/* to get variables and flags from the command line, use this:
-	 *
-	 * first populate with upsdrv_buildvartable above, then...
-	 *
-	 *	  				set flag foo : /bin/driver -x foo
-	 * set variable 'cable' to '1234' : /bin/driver -x cable=1234
-	 *
-	 * to test flag foo in your code:
-	 *
-	 * 	if (testvar("foo"))
-	 * 		do_something();
-	 *
-	 * to show the value of cable:
-	 *
-	 *	if ((cable = getval("cable")))
-	 *		printf("cable is set to %s\n", cable);
-	 *	else
-	 *		printf("cable is not set!\n");
-	 *
-	 * don't use NULL pointers - test the return result first!
-	 */
-
-	/* the upsh handlers can't be done here, as they get initialized
-	 * shortly after upsdrv_initups returns to main.
-	 */
-
-	/* don't try to detect the UPS here */
-
-	/* initialise communication */
-}
 
 void upsdrv_cleanup(void)
 {
