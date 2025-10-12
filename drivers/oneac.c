@@ -47,7 +47,7 @@
 #include "nut_stdint.h"
 
 /* Prototypes to allow setting pointer before function is defined */
-int setcmd(const char* varname, const char* setvalue);
+int setvar(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
@@ -252,7 +252,7 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("shutdown.stop");
 	dstate_addcmd("shutdown.reboot");
 
-	upsh.setvar = setcmd;
+	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
 
 	/* set some stuff that shouldn't change after initialization */
@@ -967,7 +967,7 @@ int instcmd(const char *cmdname, const char *extra)
 }
 
 
-int setcmd(const char* varname, const char* setvalue)
+int setvar(const char* varname, const char* setvalue)
 {
 	upsdebug_SET_STARTING(varname, setvalue);
 
