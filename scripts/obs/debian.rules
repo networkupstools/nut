@@ -2,12 +2,15 @@
 
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
-include /usr/share/cdbs/1/class/python-module.mk
+-include /usr/share/cdbs/1/class/python-module.mk
 
-include /usr/share/cdbs/1/rules/autoreconf.mk
+-include /usr/share/cdbs/1/rules/autoreconf.mk
 
 # CDBS has some issues detecting something other than dh_python2
 # which is absent on Debian 12+ and Ubuntu 25.04 for example.
+# This hack is broken for Debian Next in Oct 2025, as CDBS sheds
+# a lot of older scripts and the helpers seem to get implemented
+# somehow differently.
 ifeq  (,$(shell command -v dh_python2 || which dh_python2 || dh_python2 --help))
 ifneq (,$(shell command -v dh_python3 || which dh_python3 || dh_python3 --help))
 ifneq (,$(shell command -v python3 || which python3 || python3 --help))
@@ -49,7 +52,7 @@ SO_MAJOR_LIBNUTSCAN=4
 SO_MAJOR_LIBNUTCONF=0
 
 # List any files which are not installed
-include /usr/share/cdbs/1/rules/utils.mk
+-include /usr/share/cdbs/1/rules/utils.mk
 common-binary-post-install-arch:: list-missing
 
 DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,defs -Wl,-O1 -Wl,--as-needed
