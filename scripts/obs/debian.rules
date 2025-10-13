@@ -11,9 +11,9 @@ include /usr/share/cdbs/1/class/autotools.mk
 # This hack is broken for Debian Next in Oct 2025, as CDBS sheds
 # a lot of older scripts and the helpers seem to get implemented
 # somehow differently.
-ifeq  (,$(shell command -v dh_python2 || which dh_python2 || dh_python2 --help))
-ifneq (,$(shell command -v dh_python3 || which dh_python3 || dh_python3 --help))
-ifneq (,$(shell command -v python3 || which python3 || python3 --help))
+ifeq  (,$(shell command -v dh_python2 || which dh_python2 || dh_python2 --help 2>/dev/null))
+ifneq (,$(shell command -v dh_python3 || which dh_python3 || dh_python3 --help 2>/dev/null))
+ifneq (,$(shell command -v python3 || which python3 || python3 --help 2>/dev/null))
 cdbs_curpythonsystems := python3
 endif
 endif
