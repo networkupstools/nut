@@ -51,9 +51,11 @@ SO_MAJOR_LIBNUTCLIENTSTUB=1
 SO_MAJOR_LIBNUTSCAN=4
 SO_MAJOR_LIBNUTCONF=0
 
+ifneq (,$(shell ls -1 /usr/share/cdbs/1/rules/utils.mk 2>/dev/null))
 # List any files which are not installed
--include /usr/share/cdbs/1/rules/utils.mk
+include /usr/share/cdbs/1/rules/utils.mk
 common-binary-post-install-arch:: list-missing
+endif
 
 DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,defs -Wl,-O1 -Wl,--as-needed
 include /usr/share/dpkg/buildflags.mk
