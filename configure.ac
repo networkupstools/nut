@@ -6940,7 +6940,9 @@ AS_IF([test x"${NUT_VERSION_DEPLOYED-}" = x"<reenter>"], [
 	AC_MSG_NOTICE([==========================================================])
 ])
 
+theMAKE="${MAKE-}"
+AS_IF([test x"${theMAKE}" = x], [theMAKE="make"])
 AC_MSG_NOTICE([==========================================================])
-AC_MSG_NOTICE([Configuration complete: Run '$MAKE' to build ${NUT_SOURCE_VERSION_REPORT} now.])
-AC_MSG_NOTICE([You may use parallelism if supported by your hardware and 'make' implementation, e.g. '$MAKE -j 8'])
+AC_MSG_NOTICE([Configuration complete: Run '$theMAKE' to build ${NUT_SOURCE_VERSION_REPORT} now.])
+AC_MSG_NOTICE([You may use parallelism if supported by your hardware and 'make' implementation, e.g. '$theMAKE -j 8'])
 AC_MSG_NOTICE([==========================================================])
