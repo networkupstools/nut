@@ -57,6 +57,10 @@ https://github.com/networkupstools/nut/milestone/12
      would focus on preparing communications, and `upsdrv_initinfo()` would
      actually talk to the device and set initial critical data values. [#1962]
 
+ - `apcupsd-ups` driver updates:
+   * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
+     Extended to be IPv6-capable along the way. [#1209]
+
  - `nutdrv_qx` driver updates:
    * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together

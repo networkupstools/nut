@@ -788,17 +788,27 @@ initiate a shutdown.  There is always at least a stub process
 remaining with `root` powers.  The network code runs in another
 (separate) process as the new user.
 
-The `<groupname>` is used for the permissions of some files,
-particularly the hotplugging rules for USB. The idea is that the
-device files for any UPS devices should be readable and writable by
-members of that group.
-
 The default value for both the username and groupname is `nobody`
 (or `nogroup` on systems that have it when `configure` script runs).
 This was done since it's slightly better than staying around as
 `root`.  Running things as `nobody` is not a good idea, since it's a
 hack for NFS access.  You should create at least one separate user
 for this software.
+
+When such NUT daemons `setuid()` to some user account (whether built-in,
+or specified in configuration files, or passed on command line), they
+also typically assume that account's primary group via `setgid()`.
+With default installation or packaging approaches, the dedicated user
+account "coincidentally" has the group specified here as its primary.
+
+The specified `<groupname>` is used for the permissions of some files,
+particularly the hotplugging rules for USB. The idea is that the
+device files for any UPS devices should be readable and writable by
+members of that group. It also allows to run the drivers and the data
+server as different user accounts, which have some group in common
+(it should be the primary group for the user linkman:upsd[8] runs as,
+and such deployment would be using explicit user/group account settings
+beyond the one built-in value configurable here).
 
 If you use one of the `--with-user` and `--with-group` options, then
 you have to use the other one too.

@@ -698,9 +698,13 @@ spellcheck spellcheck-interactive:
 		SUBDIR_MAKE_VERBOSE=0 ; \
 	  fi ; \
 	  export SUBDIR_MAKE_VERBOSE ; \
-	  $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_TGT='$@' SUBDIR_MAKE_VERBOSE="$${SUBDIR_MAKE_VERBOSE}" -k -s $(SPELLCHECK_DIRS) && exit ; \
+	  ( $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_TGT='$@' SUBDIR_MAKE_VERBOSE="$${SUBDIR_MAKE_VERBOSE}" -k -s $(SPELLCHECK_DIRS) && exit ; \
 	  echo "WARNING: FAILED fanned-out attempt in $@, retrying with NUT_MAKE_SKIP_FANOUT" >&2 ; \
-	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SPELLCHECK_TGT='$@' -k -s $(SPELLCHECK_DIRS)
+	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SPELLCHECK_TGT='$@' -k -s $(SPELLCHECK_DIRS) ) || exit ; \
+	  if [ x"$@" = xspellcheck-interactive ] ; then \
+		echo "SUCCESS: $@: follow up with spellcheck-quick to revise and update timestamps"; \
+		$(MAKE) $(AM_MAKEFLAGS) spellcheck-quick ; \
+	  fi
 
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
