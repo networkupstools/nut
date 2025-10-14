@@ -33,11 +33,11 @@
     <param name="archive">*.tar</param>
     <param name="files">*/scripts/obs/debian.*</param>
   </service>
-<!--
   <service name="extract_file" mode="buildtime">
     <param name="archive">*.tar</param>
     <param name="files">*/scripts/obs/nut*.changes</param>
   </service>
+<!--
   <service name="extract_file" mode="buildtime">
     <param name="archive">*.tar</param>
     <param name="files">*/scripts/obs/nut*.install</param>

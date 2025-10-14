@@ -2877,9 +2877,9 @@ pkg-rpm|pkg-spec)
     echo "         Press Ctrl+C to abort if this is a problem" >&2
     sleep 5
 
-    rm -f nut.spec || true
+    rm -f nut.spec nut.changes || true
     git clean -fdX || true
-    cp -f scripts/obs/nut.spec .
+    cp -f scripts/obs/nut.spec scripts/obs/nut.changes .
     sed -e 's,^(Version:).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
         -i nut.spec
     rpmbuild -ba \
