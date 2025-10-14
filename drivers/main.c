@@ -2479,10 +2479,13 @@ int main(int argc, char **argv)
 		ssize_t	cmdret = -1;
 		struct timeval	tv;
 
+		upslogx(LOG_INFO, "Checking if an already running driver instance can handle the shutdown command for us");
+
 		/* Post the query and wait for reply */
 		/* FIXME: coordinate with pollfreq? */
 		tv.tv_sec = 15;
 		tv.tv_usec = 0;
+		upsdebugx(1, "Make sure the other driver instance is allowed to kill power");
 		cmdret = upsdrvquery_oneshot(progname, upsname,
 			"SET driver.flag.allow_killpower 1\n",
 			NULL, 0, &tv);
@@ -2491,6 +2494,7 @@ int main(int argc, char **argv)
 			/* FIXME: somehow mark drivers expected to loop infinitely? */
 			tv.tv_sec = -1;
 			tv.tv_usec = -1;
+			upsdebugx(1, "Send the actual command to the other driver instance");
 			cmdret = upsdrvquery_oneshot(progname, upsname,
 				"INSTCMD driver.killpower\n",
 				NULL, 0, &tv);
@@ -2498,7 +2502,7 @@ int main(int argc, char **argv)
 			if (cmdret < 0) {
 				upsdebug_with_errno(1, "Socket dialog with the other driver instance");
 			} else {
-				upslogx(LOG_INFO, "Request to killpower via running driver returned code %" PRIiSIZE, cmdret);
+				upslogx(LOG_INFO, "Request to killpower via running driver instance returned code %" PRIiSIZE, cmdret);
 				if (cmdret == 0)
 					/* Note: many drivers would abort with
 					 * "shutdown not supported" at this

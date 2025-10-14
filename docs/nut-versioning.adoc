@@ -1,5 +1,5 @@
-NUT versioning
-==============
+NUT Semantic Versioning
+=======================
 
 //////////////////////////////////////////////////////////////////////////////
 // You can find a rendered variant of this document on the web at

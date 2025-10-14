@@ -23,7 +23,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME                         "PiJuice UPS driver"
-#define DRIVER_VERSION                      "0.16"
+#define DRIVER_VERSION                      "0.17"
 
 /*
  * Linux I2C userland is a bit of a mess until distros refresh to
@@ -775,6 +775,13 @@ static void get_i2c_address(void)
 
 void upsdrv_initinfo(void)
 {
+	/* probe ups type */
+	get_firmware_version();
+
+	/* get variables and flags from the command line */
+
+	if (getval("i2c_address"))
+		i2c_address = atoi(getval("i2c_address"));
 
 	dstate_setinfo( "ups.mfr", "%s", "PiJuice" );
 	dstate_setinfo( "ups.type", "%s", "HAT" );
@@ -877,14 +884,6 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	upsfd = open_i2c_bus( device_path, i2c_address );
-
-	/* probe ups type */
-	get_firmware_version();
-
-	/* get variables and flags from the command line */
-
-	if (getval("i2c_address"))
-		i2c_address = atoi(getval("i2c_address"));
 }
 
 void upsdrv_cleanup(void)

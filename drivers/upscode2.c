@@ -1124,7 +1124,7 @@ static int upsc_commandlist(void)
 				upsdebugx(1, "instcmd: %s %s", cp->cmd, cp->upsc);
 				dstate_addcmd(cp->cmd);
 				cp->enabled = 1;
-	            break;
+				break;
 			}
 		}
 

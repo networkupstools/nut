@@ -434,7 +434,7 @@ void upsdrv_initups(void)
 	/* upsfd = ser_open(device_path); */
 	/* ser_set_speed(upsfd, device_path, B1200); */
 
-	/* probe ups type */
+	/* probe ups type later, in upsdrv_initinfo() */
 
 	/* to get variables and flags from the command line, use this:
 	 *
@@ -459,7 +459,8 @@ void upsdrv_initups(void)
 	 */
 
 	/* the upsh handlers can't be done here, as they get initialized
-	 * shortly after upsdrv_initups returns to main.
+	 * shortly after upsdrv_initups() returns to main, and goes back
+	 * to upsdrv_initinfo().
 	 */
 }
 

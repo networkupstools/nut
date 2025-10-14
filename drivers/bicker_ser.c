@@ -108,7 +108,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Bicker serial protocol"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 #define BICKER_SOH	0x01
 #define BICKER_EOT	0x04
@@ -731,6 +731,35 @@ static int bicker_setvar(const char *varname, const char *val)
 void upsdrv_initinfo(void)
 {
 	char string[BICKER_MAXDATA + 1];
+	BickerParameter parameter;
+	const BickerMapping *mapping;
+	unsigned i;
+
+	if (bicker_read_string(0x01, 0x63, string) >= 0) {
+		dstate_setinfo("ups.firmware", "%s", string);
+	}
+
+	if (bicker_read_string(0x01, 0x64, string) >= 0) {
+		dstate_setinfo("battery.type", "%s", string);
+	}
+
+	/* Not implemented on all UPSes */
+	if (bicker_read_string(0x01, 0x65, string) >= 0) {
+		dstate_setinfo("ups.firmware.aux", "%s", string);
+	}
+
+	/* Initialize mapped parameters */
+	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
+		mapping = &bicker_mappings[i];
+		if (bicker_get(mapping->bicker_id, &parameter) >= 0) {
+			bicker_new(&parameter, mapping);
+		}
+	}
+
+	/* Ensure "battery.charge.low" variable is defined */
+	if (dstate_getinfo("battery.charge.low") == NULL) {
+		dstate_setinfo("battery.charge.low", "%d", 20);
+	}
 
 	dstate_setinfo("device.type", "ups");
 
@@ -899,40 +928,9 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	char string[BICKER_MAXDATA + 1];
-	BickerParameter parameter;
-	const BickerMapping *mapping;
-	unsigned i;
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B38400);
 	ser_set_dtr(upsfd, 1);
-
-	if (bicker_read_string(0x01, 0x63, string) >= 0) {
-		dstate_setinfo("ups.firmware", "%s", string);
-	}
-
-	if (bicker_read_string(0x01, 0x64, string) >= 0) {
-		dstate_setinfo("battery.type", "%s", string);
-	}
-
-	/* Not implemented on all UPSes */
-	if (bicker_read_string(0x01, 0x65, string) >= 0) {
-		dstate_setinfo("ups.firmware.aux", "%s", string);
-	}
-
-	/* Initialize mapped parameters */
-	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
-		mapping = &bicker_mappings[i];
-		if (bicker_get(mapping->bicker_id, &parameter) >= 0) {
-			bicker_new(&parameter, mapping);
-		}
-	}
-
-	/* Ensure "battery.charge.low" variable is defined */
-	if (dstate_getinfo("battery.charge.low") == NULL) {
-		dstate_setinfo("battery.charge.low", "%d", 20);
-	}
 }
 
 void upsdrv_cleanup(void)
