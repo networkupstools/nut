@@ -153,12 +153,15 @@ MKTEMP=mktemp
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
-AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
-    [echo "Network UPS Tools version ${PACKAGE_VERSION}"],
+
+NUT_SOURCE_VERSION_REPORT="Network UPS Tools version ${PACKAGE_VERSION}"
+AS_IF([test x"${NUT_SOURCE_GITREV}" != x],
     [AS_IF([test x"${NUT_SOURCE_GITREV}" = x"${PACKAGE_VERSION}"],
-        [echo "Network UPS Tools version ${PACKAGE_VERSION} ${NUT_SOURCE_GITREV_DEVREL}"],
-        [echo "Network UPS Tools version ${PACKAGE_VERSION} (${NUT_SOURCE_GITREV}) ${NUT_SOURCE_GITREV_DEVREL}"])
+        [NUT_SOURCE_VERSION_REPORT="Network UPS Tools version ${PACKAGE_VERSION} ${NUT_SOURCE_GITREV_DEVREL}"],
+        [NUT_SOURCE_VERSION_REPORT="Network UPS Tools version ${PACKAGE_VERSION} (${NUT_SOURCE_GITREV}) ${NUT_SOURCE_GITREV_DEVREL}"])
     ])
+echo "${NUT_SOURCE_VERSION_REPORT}"
+
 AC_CANONICAL_TARGET
 NUT_CHECK_OS
 
@@ -6936,3 +6939,10 @@ AS_IF([test x"${NUT_VERSION_DEPLOYED-}" = x"<reenter>"], [
 	AC_MSG_NOTICE([Check INSTALL.nut.adoc for practical details and example.])
 	AC_MSG_NOTICE([==========================================================])
 ])
+
+theMAKE="${MAKE-}"
+AS_IF([test x"${theMAKE}" = x], [theMAKE="make"])
+AC_MSG_NOTICE([==========================================================])
+AC_MSG_NOTICE([Configuration complete: Run '$theMAKE' to build ${NUT_SOURCE_VERSION_REPORT} now.])
+AC_MSG_NOTICE([You may use parallelism if supported by your hardware and 'make' implementation, e.g. '$theMAKE -j 8'])
+AC_MSG_NOTICE([==========================================================])

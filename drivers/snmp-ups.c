@@ -1004,6 +1004,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 	/* Initialize session */
 	snmp_sess_init(&g_snmp_sess);
 
+	/* peername may include the port, transport, etc. and will be parsed by the SNMP library */
 	g_snmp_sess.peername = xstrdup(hostname);
 
 	/* Net-SNMP timeout and retries */

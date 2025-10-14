@@ -1219,7 +1219,7 @@ you can limit the depth of the clone:
 
 OPTIONALLY you can then fetch known git tags, so semantic versions look
 better (based off a recent release, see
-linkdoc:developer-guide[NUT Versioning,versioning,docs/nut-versioning.adoc]
+linkdoc:developer-guide[NUT Semantic Versioning,versioning,docs/nut-versioning.adoc]
 for more details):
 
 	:; cd nut
