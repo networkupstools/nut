@@ -2882,7 +2882,7 @@ pkg-rpm|pkg-spec)
     cp -f scripts/obs/nut.spec scripts/obs/nut.changes .
     sed -e 's,^(Version:).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
         -i nut.spec
-    rpmbuild -ba \
+    rpmbuild -ba nut.spec \
     && find . -name '*rpm'
     ;;
 
