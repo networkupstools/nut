@@ -159,6 +159,10 @@ several `FSD` notifications into one executed action. [PR #3097]
      it), if not bundling with NUT-Monitor UI app. By default the respective
      interpreter's 'site-packages' or 'dist-packages' location will be used,
      so you may have to adjust search paths for any other values. [#3062]
+   * The script would now warn the caller if several different Python program
+     paths or module locations were discovered (at least one automatically),
+     in case this was not something the callers wanted -- just so they know.
+     [#1792]
 
  - Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
    include the source distribution (was posted for NUT v2.8.1 and v2.8.2

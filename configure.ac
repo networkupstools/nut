@@ -6940,6 +6940,27 @@ AS_IF([test x"${NUT_VERSION_DEPLOYED-}" = x"<reenter>"], [
 	AC_MSG_NOTICE([==========================================================])
 ])
 
+dnl Okay, PYTHON3!=PYTHON2 is a bit of overkill, but better cover all bases, right?
+dnl FIXME: Check if corresponding pynut or nut-monitor app default/2/3 were explicitly
+dnl requested, and so auto-detection of corresponding multiple locations is intentional?
+AS_IF([    (test x"${PYTHON}" != x -a x"${PYTHON2}" != x -a x"${PYTHON2}" != x"${PYTHON}"   && test x"${nut_with_python}" = xyes -o x"${nut_with_python}" = xauto -o x"${nut_with_python2}" = xyes -o x"${nut_with_python2}" = xauto) \
+	|| (test x"${PYTHON}" != x -a x"${PYTHON3}" != x -a x"${PYTHON3}" != x"${PYTHON}"   && test x"${nut_with_python}" = xyes -o x"${nut_with_python}" = xauto -o x"${nut_with_python3}" = xyes -o x"${nut_with_python3}" = xauto) \
+	|| (test x"${PYTHON2}" != x -a x"${PYTHON3}" != x -a x"${PYTHON3}" != x"${PYTHON2}" && test x"${nut_with_python3}" = xyes -o x"${nut_with_python3}" = xauto -o x"${nut_with_python2}" = xyes -o x"${nut_with_python2}" = xauto) \
+	|| (test x"${PYTHON_SITE_PACKAGES}" != x -a x"${PYTHON2_SITE_PACKAGES}" != x -a x"${PYTHON2_SITE_PACKAGES}" != x"${PYTHON_SITE_PACKAGES}"   && test x"${nut_with_python_modules_dir}" = xyes -o x"${nut_with_python_modules_dir}" = xauto -o x"${nut_with_python2_modules_dir}" = xyes -o x"${nut_with_python2_modules_dir}" = xauto) \
+	|| (test x"${PYTHON_SITE_PACKAGES}" != x -a x"${PYTHON3_SITE_PACKAGES}" != x -a x"${PYTHON3_SITE_PACKAGES}" != x"${PYTHON_SITE_PACKAGES}"   && test x"${nut_with_python_modules_dir}" = xyes -o x"${nut_with_python_modules_dir}" = xauto -o x"${nut_with_python3_modules_dir}" = xyes -o x"${nut_with_python3_modules_dir}" = xauto) \
+	|| (test x"${PYTHON2_SITE_PACKAGES}" != x -a x"${PYTHON3_SITE_PACKAGES}" != x -a x"${PYTHON3_SITE_PACKAGES}" != x"${PYTHON2_SITE_PACKAGES}" && test x"${nut_with_python3_modules_dir}" = xyes -o x"${nut_with_python3_modules_dir}" = xauto -o x"${nut_with_python2_modules_dir}" = xyes -o x"${nut_with_python2_modules_dir}" = xauto) \
+], [
+	AC_MSG_NOTICE([==========================================================])
+	AC_MSG_NOTICE([You have auto-detected Python interpreter availability and])
+	AC_MSG_NOTICE([ended up with more than one interpreter path or directory])
+	AC_MSG_NOTICE([for site-packages. This is not a problem for NUT-Monitor GUI])
+	AC_MSG_NOTICE([client, nor for installation of PyNUTClient module to be])
+	AC_MSG_NOTICE([available in all of those Python ecosystems, but if you did])
+	AC_MSG_NOTICE([not mean for that to happen, please revise the build settings])
+	AC_MSG_NOTICE([and use --without-python* options as reflects your situation.])
+	AC_MSG_NOTICE([==========================================================])
+])
+
 theMAKE="${MAKE-}"
 AS_IF([test x"${theMAKE}" = x], [theMAKE="make"])
 AC_MSG_NOTICE([==========================================================])
