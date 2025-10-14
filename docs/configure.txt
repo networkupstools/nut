@@ -488,20 +488,30 @@ etc.
 
 One exception is generation of NUT-Monitor GUI application, being separated
 for `NUT-Monitor-py2gtk2`, `NUT-Monitor-py3qt5`, `NUT-Monitor-py3qt6` due
-to further backend platform technical differences -- these build products 
+to further backend platform technical differences -- these build products
 specifically use `PYTHON2` and `PYTHON3` substitutions. They may also be
-co-installed on the same system. A dispatcher shell script `NUT-Monitor`
-is used to launch the preferred (newest) or only existing implementation.
+co-installed on the same system. A dispatcher shell script `NUT-Monitor` is
+used to launch the preferred (newest) or the only existing implementation.
 
 Please note that by default NUT tries to make use of everything in your
-build environment, so if both Python generation are detected -- the binding
+build environment, so if both Python generations are detected -- the binding
 module will be delivered into both, and two versions of NUT-Monitor GUI
 application will be installed.  If you want to avoid that behaviour on a
 build system with both interpreters present, you can explicitly specify
 to build e.g. `--without-python2 --with-python=/usr/bin/python-3.9`.
 
+IMPORTANT: It should be stressed that specifying an explicit `--with-python`
+value does not implicitly mean `--without-python2` nor `--without-python3`,
+and those would be discovered and configured for, if possible.
+Conversely, an explicit e.g. `--with-python2` setting does not automatically
+mean `--without-python` nor `--without-python3`.
+Since this may come across surprising to some people, the `configure` script
+would warn in the end if several Python versions were auto-detected one way
+or another.
+
 The settings below may be of particular interest to non-distribution
-packaging efforts with their own dedicated directory trees:
+packaging efforts with their own dedicated directory trees (like pkgsrc),
+or where all packages have dedicated sub-trees (like NixOS):
 
 	--with-python=SHEBANG_PATH
 
@@ -510,8 +520,10 @@ code (except version-dependent scripts, see above).
 
 The `SHEBANG_PATH` should be a full program pathname, optionally with
 one argument, e.g. `/usr/bin/python-3.9` or `/usr/bin/env python2`.
+Note that packaging distributions generally aim for predictable setups,
+and disapprove of `/usr/bin/env` in shebangs for packaged scripts.
 
-Defaults (in order):
+Defaults for `--with-python` if it was not specified (in order):
 * `python`, `python3` or `python2` program if present in `PATH` by such name,
 * or the newest of `PYTHON3` or `PYTHON2` values (specified or detected below).
 
