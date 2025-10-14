@@ -853,7 +853,7 @@ void PvarCommon_Initinfo (void)
 	dstate_setflags("ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW);
 	dstate_setaux("ups.delay.start", GET_STARTDELAY_RESP_SIZE);
 
-	upsh.setvar = setcmd;
+	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
 }
 
@@ -1315,9 +1315,9 @@ int instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-int setcmd(const char* varname, const char* setvalue)
+int setvar(const char* varname, const char* setvalue)
 {
-	upsdebugx(2, "In setcmd for %s with %s...", varname, setvalue);
+	upsdebugx(2, "In setvar for %s with %s...", varname, setvalue);
 
 	if (!strcasecmp(varname, "ups.delay.shutdown"))
 	{
@@ -1380,7 +1380,7 @@ int setcmd(const char* varname, const char* setvalue)
 		return STAT_SET_UNKNOWN;
 	}
 
-	upslogx(LOG_NOTICE, "setcmd: unknown command [%s]", varname);
+	upslogx(LOG_NOTICE, "setvar: unknown command [%s]", varname);
 
 	return STAT_SET_UNKNOWN;
 }

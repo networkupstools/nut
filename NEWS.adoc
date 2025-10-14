@@ -50,6 +50,13 @@ https://github.com/networkupstools/nut/milestone/12
      framework introduced a `upsdrv_tweak_prognames()` hook method to let
      them manipulate the array of `prognames[]` aliases. [PR #3101]
 
+ - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
+   `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
+   `powercom`, `powervar_cx_ser`, `usbhid-ups`, `victronups` driver updates:
+   * Moved code to align with NUT driver architecture, so `upsdrv_initups()`
+     would focus on preparing communications, and `upsdrv_initinfo()` would
+     actually talk to the device and set initial critical data values. [#1962]
+
  - `apcupsd-ups` driver updates:
    * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
      Extended to be IPv6-capable along the way. [#1209]
@@ -60,6 +67,13 @@ https://github.com/networkupstools/nut/milestone/12
      well -- namely, that we successfully use reasonably many of the existing
      mappings. Suggest how user can help improve the driver if too few data
      points were seen. [PR #3095]
+
+ - `powerp-bin` and `powerp-txt` driver updates:
+   * Their `upsdrv_initinfo()` methods did not explicitly reference the
+     `INSTCMD` and `SETVAR` handler methods (it is unknown whether this
+     actually broke anything, or the needed values were deduced from
+     subdriver definition then). For consistency, these pointers are now
+     assigned. [#1962]
 
  - `snmp-ups` driver updates:
    * Define an internal `SU_FLAG_MAPPING_HANDLED` to check if the subdriver

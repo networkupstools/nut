@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.100"
+#define DRIVER_VERSION	"0.101"
 
 
 /* driver description structure */
@@ -166,7 +166,6 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	char buf[BUFFLEN];
 #ifndef WIN32
 	int RTS = TIOCM_RTS;
 #endif	/* !WIN32 */
@@ -179,6 +178,11 @@ void upsdrv_initups(void)
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
 
+	/* TOTHINK: This looks like comms with the device and may belong in
+	 * upsdrv_initinfo(). But in upsdrv_cleanup() we have disable_ups_comm()
+	 * at least, which gets registered and might get called before initinfo.
+	 */
+
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
 #else	/* WIN32 */
@@ -190,6 +194,28 @@ void upsdrv_initups(void)
 	}
 #endif	/* WIN32 */
 	enable_ups_comm();
+}
+
+/* --------------------------------------------------------------- */
+
+void upsdrv_initinfo(void)
+{
+	char buf[BUFFLEN];
+	const char *model = NULL;
+	char *firmware = NULL;
+	char *p;
+	char *v = NULL;  /* for parsing Si output, get Version ID */
+	int  table;
+	int  tries;
+	int  status_ok = 0;
+	ssize_t  bytes_rcvd;
+	int  si_data1 = 0;
+	int  si_data2 = 0;
+	mge_info_item_t *item;
+	models_name_t *model_info;
+	mge_model_info_t *legacy_model;
+	char infostr[32];
+	ssize_t  chars_rcvd;
 
 	/* Try to set "Low Battery Level" (if supported and given) */
 	if (getval ("lowbatt"))
@@ -226,28 +252,6 @@ void upsdrv_initups(void)
 		else
 			upsdebugx(1, "initups: OffDelay unavailable");
 	}
-}
-
-/* --------------------------------------------------------------- */
-
-void upsdrv_initinfo(void)
-{
-	char buf[BUFFLEN];
-	const char *model = NULL;
-	char *firmware = NULL;
-	char *p;
-	char *v = NULL;  /* for parsing Si output, get Version ID */
-	int  table;
-	int  tries;
-	int  status_ok = 0;
-	ssize_t  bytes_rcvd;
-	int  si_data1 = 0;
-	int  si_data2 = 0;
-	mge_info_item_t *item;
-	models_name_t *model_info;
-	mge_model_info_t *legacy_model;
-	char infostr[32];
-	ssize_t  chars_rcvd;
 
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");

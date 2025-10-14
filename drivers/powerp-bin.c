@@ -36,7 +36,7 @@
 
 #include <math.h>
 
-#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.64"
+#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.65"
 
 typedef struct {
 	unsigned char	start;
@@ -415,6 +415,10 @@ static void powpan_initinfo(void)
 
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("shutdown.reboot");
+
+	/* install handlers */
+	upsh.instcmd = powpan_instcmd;
+	upsh.setvar = powpan_setvar;
 }
 
 static ssize_t powpan_status(status_t *status)

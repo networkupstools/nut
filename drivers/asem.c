@@ -67,7 +67,7 @@
 #endif
 
 #define DRIVER_NAME	"ASEM"
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.17"
 
 /* Valid on ASEM PB1300 UPS */
 #define BQ2060_ADDRESS	0x0B
@@ -101,9 +101,12 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_initinfo(void)
 {
-	__s32 i2c_status;
-	__u8 buffer[10];
-	unsigned short year, month, day;
+	__s32	i2c_status;
+	__u8	buffer[10], DeviceName_buffer[10];
+	char	*DeviceName, *option;
+	unsigned short	year, month, day;
+	unsigned int	i;
+	unsigned long	x;
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
 # pragma GCC diagnostic push
@@ -117,6 +120,52 @@ void upsdrv_initinfo(void)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
 # pragma GCC diagnostic pop
 #endif
+
+	/* Get ManufacturerName */
+	memset(DeviceName_buffer, 0, 10);
+	i2c_status = i2c_smbus_read_block_data(upsfd, 0x20, DeviceName_buffer);
+	if (i2c_status == -1) {
+		fatal_with_errno(EXIT_FAILURE, "Could not read DeviceName block data");
+	}
+	i = 0;
+	while ( (DeviceName = valid_devicename_data[i++]) ) {
+		if (0 == memcmp(DeviceName, DeviceName_buffer, i2c_status))
+			break;
+	}
+	if (!DeviceName) {
+		fatal_with_errno(EXIT_FAILURE, "Device '%s' unknown", (char *) DeviceName_buffer);
+	}
+	upsdebugx(1, "Found device '%s' on port '%s'", (char *) DeviceName, device_path);
+	dstate_setinfo("ups.mfr", "%s", (char *) DeviceName);
+
+	option = getval("lb");
+	if (option) {
+		x = strtoul(option, NULL, 0);
+		if ((x == 0) && (errno != 0)) {
+			upslogx(LOG_WARNING, "Invalid value specified for low battery threshold: '%s'", option);
+		} else {
+			lb_threshold = x;
+		}
+	}
+	option = getval("hb");
+	if (option) {
+		x = strtoul(option, NULL, 0);
+		if ((x == 0) && (errno != 0)) {
+			upslogx(LOG_WARNING, "Invalid value specified for high battery threshold: '%s'", option);
+		} else if ((x < 1) || (x > 100)) {
+			upslogx(LOG_WARNING, "Invalid value specified for high battery threshold: '%s' (must be 1 < hb <= 100)", option);
+		} else {
+			hb_threshold = x;
+		}
+	}
+	/* Invalid values specified */
+	if (lb_threshold > hb_threshold) {
+		upslogx(LOG_WARNING, "lb > hb specified in options. Returning to defaults.");
+		lb_threshold = LOW_BATTERY_THRESHOLD;
+		hb_threshold = HIGH_BATTERY_THRESHOLD;
+	}
+
+	upslogx(LOG_NOTICE, "High battery threshold is %lu, low battery threshold is %lu", lb_threshold, hb_threshold);
 
 	/* Set capacity mode in mA(h) */
 	i2c_status = i2c_smbus_read_word_data(upsfd, 0x03);
@@ -370,76 +419,10 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	__s32 i2c_status;
-	__u8 DeviceName_buffer[10];
-	unsigned int i;
-	unsigned long x;
-	char *DeviceName;
-	char *option;
-
 	upsfd = open(device_path, O_RDWR);
 	if (upsfd < 0) {
 		fatal_with_errno(EXIT_FAILURE, "Could not open device port '%s'", device_path);
 	}
-
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
-# pragma GCC diagnostic ignored "-Wextra-semi-stmt"
-#endif
-	/* Current definition of this macro ends with a brace;
-	 * we keep the useless trailing ";" for readability */
-	ACCESS_DEVICE(upsfd, BQ2060_ADDRESS);
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
-# pragma GCC diagnostic pop
-#endif
-
-	/* Get ManufacturerName */
-	memset(DeviceName_buffer, 0, 10);
-	i2c_status = i2c_smbus_read_block_data(upsfd, 0x20, DeviceName_buffer);
-	if (i2c_status == -1) {
-		fatal_with_errno(EXIT_FAILURE, "Could not read DeviceName block data");
-	}
-	i = 0;
-	while ( (DeviceName = valid_devicename_data[i++]) ) {
-		if (0 == memcmp(DeviceName, DeviceName_buffer, i2c_status))
-			break;
-	}
-	if (!DeviceName) {
-		fatal_with_errno(EXIT_FAILURE, "Device '%s' unknown", (char *) DeviceName_buffer);
-	}
-	upsdebugx(1, "Found device '%s' on port '%s'", (char *) DeviceName, device_path);
-	dstate_setinfo("ups.mfr", "%s", (char *) DeviceName);
-
-	option = getval("lb");
-	if (option) {
-		x = strtoul(option, NULL, 0);
-		if ((x == 0) && (errno != 0)) {
-			upslogx(LOG_WARNING, "Invalid value specified for low battery threshold: '%s'", option);
-		} else {
-			lb_threshold = x;
-		}
-	}
-	option = getval("hb");
-	if (option) {
-		x = strtoul(option, NULL, 0);
-		if ((x == 0) && (errno != 0)) {
-			upslogx(LOG_WARNING, "Invalid value specified for high battery threshold: '%s'", option);
-		} else if ((x < 1) || (x > 100)) {
-			upslogx(LOG_WARNING, "Invalid value specified for high battery threshold: '%s' (must be 1 < hb <= 100)", option);
-		} else {
-			hb_threshold = x;
-		}
-	}
-	/* Invalid values specified */
-	if (lb_threshold > hb_threshold) {
-		upslogx(LOG_WARNING, "lb > hb specified in options. Returning to defaults.");
-		lb_threshold = LOW_BATTERY_THRESHOLD;
-		hb_threshold = HIGH_BATTERY_THRESHOLD;
-	}
-
-	upslogx(LOG_NOTICE, "High battery threshold is %lu, low battery threshold is %lu", lb_threshold, hb_threshold);
 }
 
 void upsdrv_cleanup(void)

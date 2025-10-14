@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.69"
+#define DRIVER_VERSION	"0.70"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -1552,6 +1552,85 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.version.data", "%s", subdriver->name);
 
+	upsdebugx(1, "%s: Performing an initial UPS data walk with subdriver %s...",
+		__func__, subdriver->name);
+	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
+		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
+	} else {
+		analyze_mapping_usage();
+	}
+
+	if (!ups_status)
+		upslogx(LOG_WARNING, "%s: No flag bits for 'ups.status' were explicitly reported; "
+			"it is possible a wrong 'subdriver' option was requested or detected "
+			"(in case of problems with device data, consider testing with other "
+			"explicit driver option 'subdriver' values)",
+			__func__);
+
+	upsdebugx(1, "%s: Optionally adjust some threshold values, if applicable and requested to...", __func__);
+
+	/* Set values below from user settings only if supported by UPS */
+	if (dstate_getinfo("battery.charge.low")) {
+		/* Retrieve user defined battery settings */
+		val = getval(HU_VAR_LOWBATT);
+		if (val) {
+			dstate_setinfo("battery.charge.low", "%ld", strtol(val, NULL, 10));
+		}
+	}
+
+	if (dstate_getinfo("ups.delay.start")) {
+		/* Retrieve user defined delay settings */
+		val = getval(HU_VAR_ONDELAY);
+		if (val) {
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l < 60 || l % 60)
+			) {
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (ondelay=120 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.start", "%ld", l);
+		}
+	}
+
+	if (dstate_getinfo("ups.delay.shutdown")) {
+		/* Retrieve user defined delay settings */
+		val = getval(HU_VAR_OFFDELAY);
+		if (val) {
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l > 0 && (l < 60 || l % 60))
+			) {
+				/* Note: zero and negative values may
+				 * have special meanings for the firmware */
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (offdelay=60 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.shutdown", "%ld", l);
+		}
+	}
+
+	upsdebugx(1, "%s: Optionally enable instant commands related to shutdown, if applicable...", __func__);
+
+	/* Enable instant commands below only if supported by UPS */
+	if (find_nut_info("load.off.delay")) {
+		/* Adds default with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.off");
+	}
+
+	if (find_nut_info("load.on.delay")) {
+		/* Adds default with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.on");
+	}
+
+	if (find_nut_info("load.off.delay") && find_nut_info("load.on.delay")) {
+		/* Add composite instcmds (require setting multiple HID values) */
+		dstate_addcmd("shutdown.return");
+		dstate_addcmd("shutdown.stayoff");
+	}
+
 	/* init polling frequency for full updates */
 	val = getval(HU_VAR_POLLFREQ);
 	if (val) {
@@ -1852,85 +1931,6 @@ void upsdrv_initups(void)
 
 	if (testvar("lbrb_log_delay_without_calibrating")) {
 		lbrb_log_delay_without_calibrating = 1;
-	}
-
-	upsdebugx(1, "%s: Performing an initial UPS data walk with subdriver %s...",
-		__func__, subdriver->name);
-	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
-		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
-	} else {
-		analyze_mapping_usage();
-	}
-
-	if (!ups_status)
-		upslogx(LOG_WARNING, "%s: No flag bits for 'ups.status' were explicitly reported; "
-			"it is possible a wrong 'subdriver' option was requested or detected "
-			"(in case of problems with device data, consider testing with other "
-			"explicit driver option 'subdriver' values)",
-			__func__);
-
-	upsdebugx(1, "%s: Optionally adjust some threshold values, if applicable and requested to...", __func__);
-
-	/* Set values below from user settings only if supported by UPS */
-	if (dstate_getinfo("battery.charge.low")) {
-		/* Retrieve user defined battery settings */
-		val = getval(HU_VAR_LOWBATT);
-		if (val) {
-			dstate_setinfo("battery.charge.low", "%ld", strtol(val, NULL, 10));
-		}
-	}
-
-	if (dstate_getinfo("ups.delay.start")) {
-		/* Retrieve user defined delay settings */
-		val = getval(HU_VAR_ONDELAY);
-		if (val) {
-			long	l = strtol(val, NULL, 10);
-#if !((defined SHUT_MODE) && SHUT_MODE)
-			if (subdriver == &cps_subdriver
-			 && (l < 60 || l % 60)
-			) {
-				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (ondelay=120 is the suggested minimum; see more in the man page)");
-			}
-#endif
-			dstate_setinfo("ups.delay.start", "%ld", l);
-		}
-	}
-
-	if (dstate_getinfo("ups.delay.shutdown")) {
-		/* Retrieve user defined delay settings */
-		val = getval(HU_VAR_OFFDELAY);
-		if (val) {
-			long	l = strtol(val, NULL, 10);
-#if !((defined SHUT_MODE) && SHUT_MODE)
-			if (subdriver == &cps_subdriver
-			 && (l > 0 && (l < 60 || l % 60))
-			) {
-				/* Note: zero and negative values may
-				 * have special meanings for the firmware */
-				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (offdelay=60 is the suggested minimum; see more in the man page)");
-			}
-#endif
-			dstate_setinfo("ups.delay.shutdown", "%ld", l);
-		}
-	}
-
-	upsdebugx(1, "%s: Optionally enable instant commands related to shutdown, if applicable...", __func__);
-
-	/* Enable instant commands below only if supported by UPS */
-	if (find_nut_info("load.off.delay")) {
-		/* Adds default with a delay value of '0' (= immediate) */
-		dstate_addcmd("load.off");
-	}
-
-	if (find_nut_info("load.on.delay")) {
-		/* Adds default with a delay value of '0' (= immediate) */
-		dstate_addcmd("load.on");
-	}
-
-	if (find_nut_info("load.off.delay") && find_nut_info("load.on.delay")) {
-		/* Add composite instcmds (require setting multiple HID values) */
-		dstate_addcmd("shutdown.return");
-		dstate_addcmd("shutdown.stayoff");
 	}
 
 	upsdebugx(1, "%s: finished", __func__);
