@@ -17,16 +17,6 @@ AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT],
     AC_REQUIRE([NUT_CHECK_PYTHON_INTERIM_RESULTS])
     AC_REQUIRE([NUT_CHECK_PYTHON_DEFAULT_BEST])
 
-    dnl Only now propagate what we found
-    AC_SUBST([PYTHON], [${PYTHON}])
-    AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
-
-    AC_SUBST([PYTHON2], [${PYTHON2}])
-    AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
-
-    AC_SUBST([PYTHON3], [${PYTHON3}])
-    AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
-
     AC_REQUIRE([NUT_CHECK_PYTHON_SITE_PACKAGES])
     AC_REQUIRE([NUT_CHECK_PYTHON2_SITE_PACKAGES])
     AC_REQUIRE([NUT_CHECK_PYTHON3_SITE_PACKAGES])
@@ -109,6 +99,26 @@ AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT_BEST],
     unset BEST_AUTO
     unset NON_AUTO
     unset FOUND_PYTHONS
+    dnl Only now propagate what we found
+
+    AC_SUBST([PYTHON], [${PYTHON}])
+    AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
+
+    AC_SUBST([PYTHON2], [${PYTHON2}])
+    AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
+
+    AC_SUBST([PYTHON3], [${PYTHON3}])
+    AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
+
+    AC_MSG_CHECKING([which python can be called for internal use, e.g. shebang substitutions and tool calls])
+	PYTHON_DEFAULT=""
+    AS_IF([test x"$PYTHON2" != x], [PYTHON_DEFAULT="${PYTHON2}"])
+    AS_IF([test x"$PYTHON3" != x], [PYTHON_DEFAULT="${PYTHON3}"])
+    AS_IF([test x"$PYTHON"  != x], [PYTHON_DEFAULT="${PYTHON}"])
+	AC_MSG_RESULT([${PYTHON_DEFAULT}])
+
+    AC_SUBST([PYTHON_DEFAULT], [${PYTHON_DEFAULT}])
+    AM_CONDITIONAL([HAVE_PYTHON_DEFAULT], [test -n "${PYTHON_DEFAULT}" && test "${PYTHON_DEFAULT}" != "no"])
 ])
 
 dnl Note: this checks for default/un-versioned python version

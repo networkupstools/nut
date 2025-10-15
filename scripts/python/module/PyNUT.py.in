@@ -1,4 +1,4 @@
-#!@PYTHON@
+#!@PYTHON_DEFAULT@
 # -*- coding: utf-8 -*-
 
 #   Copyright (C) 2008 David Goncalves <david@lestat.st>
