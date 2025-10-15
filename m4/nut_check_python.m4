@@ -11,6 +11,29 @@ AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT],
     AC_REQUIRE([NUT_CHECK_PYTHON2])
     AC_REQUIRE([NUT_CHECK_PYTHON3])
 
+    dnl It seems AC REQUIRE calls have priority over other code lines in a method,
+    dnl and get executed first - so using extra methods (also for clearer code base).
+
+    AC_REQUIRE([NUT_CHECK_PYTHON_INTERIM_RESULTS])
+    AC_REQUIRE([NUT_CHECK_PYTHON_DEFAULT_BEST])
+
+    dnl Only now propagate what we found
+    AC_SUBST([PYTHON], [${PYTHON}])
+    AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
+
+    AC_SUBST([PYTHON2], [${PYTHON2}])
+    AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
+
+    AC_SUBST([PYTHON3], [${PYTHON3}])
+    AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
+
+    AC_REQUIRE([NUT_CHECK_PYTHON_SITE_PACKAGES])
+    AC_REQUIRE([NUT_CHECK_PYTHON2_SITE_PACKAGES])
+    AC_REQUIRE([NUT_CHECK_PYTHON3_SITE_PACKAGES])
+])
+
+AC_DEFUN([NUT_CHECK_PYTHON_INTERIM_RESULTS],
+[
     AS_IF([test x"$PYTHON2" = xno], [PYTHON2=""])
     AS_IF([test x"$PYTHON3" = xno], [PYTHON3=""])
     AS_IF([test x"$PYTHON" = xno],  [PYTHON=""])
@@ -37,45 +60,55 @@ AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT],
     AS_IF([test -z "${PYTHON}" && test x"${nut_with_python}" = xyes], [
         AC_MSG_ERROR([A python interpreter was required but not found or validated])
         ])
+])
 
-    dnl Pick the top-most hit (smallest prio number)
-    BEST_AUTO="`( echo "${nut_with_python}|${PYTHON}"; echo "${nut_with_python2}|${PYTHON2}"; echo "${nut_with_python3}|${PYTHON3}" ) | ${EGREP} "^auto-prio=" | ${EGREP} -v '\|$' | sort -n | head -1`"
-    BEST_AUTO_PRIO="`echo "${BEST_AUTO}" | sed 's,|.*$,,'`"
-    BEST_AUTO_PYTHON="`echo "${BEST_AUTO}" | sed 's,^.*|,,'`"
-    AS_IF([test x"${BEST_AUTO_PYTHON}" != x], [
-        AC_MSG_NOTICE([Got an auto-priority preferred hit: ${BEST_AUTO_PRIO} => ${BEST_AUTO_PYTHON}"])
-        AS_CASE([x"${nut_with_python3}"],
-            [x"${BEST_AUTO_PRIO}"], [AC_MSG_NOTICE([Forgetting PYTHON2='${PYTHON2}' and PYTHON='${PYTHON}' (if any were detected as auto-prio too)])
-                AS_CASE([x"${nut_with_python2}"], [xauto-prio=*], [PYTHON2="no"])
-                AS_CASE([x"${nut_with_python}"], [xauto-prio=*], [PYTHON="no"])
-            ],[AS_CASE([x"${nut_with_python2}"],
-                [x"${BEST_AUTO_PRIO}"], [AC_MSG_NOTICE([Forgetting PYTHON3='${PYTHON3}' and PYTHON='${PYTHON}' (if any were detected as auto-prio too)])
-                    AS_CASE([x"${nut_with_python3}"], [xauto-prio=*], [PYTHON3="no"])
-                    AS_CASE([x"${nut_with_python}"], [xauto-prio=*], [PYTHON="no"])
-                ],[AS_CASE([x"${nut_with_python}"],
-                    [x"${BEST_AUTO_PRIO}"], [AC_MSG_NOTICE([Forgetting PYTHON3='${PYTHON3}' and PYTHON2='${PYTHON2}' (if any were detected as auto-prio too)])
-                        AS_CASE([x"${nut_with_python2}"], [xauto-prio=*], [PYTHON2="no"])
-                        AS_CASE([x"${nut_with_python3}"], [xauto-prio=*], [PYTHON3="no"])
+AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT_BEST],
+[
+    dnl Pick the top-most hit (smallest prio number, to be considered if no explicit variants were requested)
+    FOUND_PYTHONS="`( echo "${nut_with_python}|${PYTHON}"; echo "${nut_with_python2}|${PYTHON2}"; echo "${nut_with_python3}|${PYTHON3}" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`"
+    AS_IF([test x"${FOUND_PYTHONS}" = x], [
+        AC_MSG_NOTICE([No Python interpreter versions were found or requested])
+    ], [
+        NON_AUTO="`echo "${FOUND_PYTHONS}" | ${EGREP} -v "^auto-prio="`"
+        BEST_AUTO="`echo "${FOUND_PYTHONS}" | ${EGREP} "^auto-prio=" | sort -n | head -1`"
+        AS_IF([test x"${NON_AUTO}" = x], [
+            dnl All findings were auto-prio, else silently keep what we have
+            dnl from "auto", "yes" or explicit settings
+            BEST_AUTO_PRIO="`echo "${BEST_AUTO}" | sed 's,|.*$,,'`"
+            BEST_AUTO_PYTHON="`echo "${BEST_AUTO}" | sed 's,^.*|,,'`"
+            AS_IF([test x"${BEST_AUTO_PYTHON}" != x], [
+                AC_MSG_NOTICE([Got an auto-priority preferred hit: ${BEST_AUTO_PRIO} => ${BEST_AUTO_PYTHON}"])
+                AS_CASE([x"${nut_with_python3}"],
+                    [x"${BEST_AUTO_PRIO}"], [AC_MSG_NOTICE([Forgetting PYTHON2='${PYTHON2}' and PYTHON='${PYTHON}' (if any were detected as auto-prio too)])
+                        AS_CASE([x"${nut_with_python2}"], [xauto-prio=*], [PYTHON2=""])
+                        AS_CASE([x"${nut_with_python}"], [xauto-prio=*], [PYTHON=""])
+                    ],[AS_CASE([x"${nut_with_python2}"],
+                        [x"${BEST_AUTO_PRIO}"], [AC_MSG_NOTICE([Forgetting PYTHON3='${PYTHON3}' and PYTHON='${PYTHON}' (if any were detected as auto-prio too)])
+                            AS_CASE([x"${nut_with_python3}"], [xauto-prio=*], [PYTHON3=""])
+                            AS_CASE([x"${nut_with_python}"], [xauto-prio=*], [PYTHON=""])
+                        ],[AS_CASE([x"${nut_with_python}"],
+                            [x"${BEST_AUTO_PRIO}"], [AC_MSG_NOTICE([Forgetting PYTHON3='${PYTHON3}' and PYTHON2='${PYTHON2}' (if any were detected as auto-prio too)])
+                                AS_CASE([x"${nut_with_python2}"], [xauto-prio=*], [PYTHON2=""])
+                                AS_CASE([x"${nut_with_python3}"], [xauto-prio=*], [PYTHON3=""])
+                        ])
+                    ])
                 ])
+            ])
+		],[
+            AS_IF([test x"${BEST_AUTO}" != x], [
+                AC_MSG_NOTICE([Got some auto-priority preferred hits and explicitly preferred ones too; forgetting auto-prio ones"])
+                AS_CASE([x"${nut_with_python3}"], [xauto-prio=*], [PYTHON3=""])
+                AS_CASE([x"${nut_with_python2}"], [xauto-prio=*], [PYTHON2=""])
+                AS_CASE([x"${nut_with_python}"],  [xauto-prio=*], [PYTHON=""])
             ])
         ])
     ])
+
     unset BEST_AUTO_PYTHON
+    unset BEST_AUTO_PRIO
     unset BEST_AUTO
-
-    dnl Only now propagate what we found
-    AC_SUBST([PYTHON], [${PYTHON}])
-    AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
-
-    AC_SUBST([PYTHON2], [${PYTHON2}])
-    AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
-
-    AC_SUBST([PYTHON3], [${PYTHON3}])
-    AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
-
-    AC_REQUIRE([NUT_CHECK_PYTHON_SITE_PACKAGES])
-    AC_REQUIRE([NUT_CHECK_PYTHON2_SITE_PACKAGES])
-    AC_REQUIRE([NUT_CHECK_PYTHON3_SITE_PACKAGES])
+    unset NON_AUTO
+    unset FOUND_PYTHONS
 ])
 
 dnl Note: this checks for default/un-versioned python version
