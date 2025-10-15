@@ -304,7 +304,7 @@ those choices remain in place to minimize the surprise for people who rebuild
 NUT regularly.  A few cases worth mentioning include the use of `--sysconfdir`
 as `/etc/nut` directly (rather than keeping `/etc` and having another option
 to append `/nut`), and multiple `--with-python*` settings for its different
-major version ecosystems which are all auto-detected independently (so you
+major version ecosystems which can be all auto-detected independently (so you
 may need certain `--without-python2` etc. options if you want to disable some
 module installation paths that your system is eager to support).
 

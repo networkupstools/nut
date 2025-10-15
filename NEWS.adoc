@@ -163,6 +163,11 @@ several `FSD` notifications into one executed action. [PR #3097]
      paths or module locations were discovered (at least one automatically),
      in case this was not something the callers wanted -- just so they know.
      [#1792]
+   * New supported values were introduced for `--with-python{,2,3}=auto-prio=NUM`:
+     this allows to auto-prioritize some *one* available Python interpreter.
+     Default settings were changed from plain `auto` (allowing for multiple
+     `python*` interpreters and `site-package` locations to be used), to
+     prefer a `python3` if available, else `python2`, else `python`. [#1792]
 
  - Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
    include the source distribution (was posted for NUT v2.8.1 and v2.8.2

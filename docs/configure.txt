@@ -500,11 +500,19 @@ application will be installed.  If you want to avoid that behaviour on a
 build system with both interpreters present, you can explicitly specify
 to build e.g. `--without-python2 --with-python=/usr/bin/python-3.9`.
 
-IMPORTANT: It should be stressed that specifying an explicit `--with-python`
-value does not implicitly mean `--without-python2` nor `--without-python3`,
-and those would be discovered and configured for, if possible.
-Conversely, an explicit e.g. `--with-python2` setting does not automatically
-mean `--without-python` nor `--without-python3`.
+Default values are currently prioritized for auto-detection to result in
+some one Python interpreter version to be chosen even if several were
+discovered (in order: '3', '2', or not numbered), using `auto-prio=NUM`
+syntax. If some of these options specify a particular interpreter, none
+of the `auto-prio` hits are considered.
+
+NOTE: Previous default (from NUT v2.8.0 to v2.8.4) was `auto` to allow all up
+to three hits to be considered as script shebang and as `make install` targets.
+When using `auto` values, specifying an explicit `--with-python` value does
+not implicitly mean `--without-python2` nor `--without-python3`, and those
+would be discovered and configured for, if possible. Conversely, an explicit
+e.g. `--with-python2` setting does not automatically mean `--without-python`
+nor `--without-python3`.
 Since this may come across surprising to some people, the `configure` script
 would warn in the end if several Python versions were auto-detected one way
 or another.
