@@ -62,6 +62,20 @@ AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT],
     ])
     unset BEST_AUTO_PYTHON
     unset BEST_AUTO
+
+    dnl Only now propagate what we found
+    AC_SUBST([PYTHON], [${PYTHON}])
+    AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
+
+    AC_SUBST([PYTHON2], [${PYTHON2}])
+    AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
+
+    AC_SUBST([PYTHON3], [${PYTHON3}])
+    AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
+
+    AC_REQUIRE([NUT_CHECK_PYTHON_SITE_PACKAGES])
+    AC_REQUIRE([NUT_CHECK_PYTHON2_SITE_PACKAGES])
+    AC_REQUIRE([NUT_CHECK_PYTHON3_SITE_PACKAGES])
 ])
 
 dnl Note: this checks for default/un-versioned python version
@@ -142,9 +156,12 @@ AC_DEFUN([NUT_CHECK_PYTHON],
 
         AC_MSG_CHECKING([python interpeter to call])
         AC_MSG_RESULT([${PYTHON}${PYTHON_VERSION_INFO_REPORT}])
-        AC_SUBST([PYTHON], [${PYTHON}])
-        AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
-        AS_IF([test -n "${PYTHON}" && test "${PYTHON}" != "no"], [
+    ])
+])
+
+AC_DEFUN([NUT_CHECK_PYTHON_SITE_PACKAGES],
+[
+    AS_IF([test -n "${PYTHON}" && test "${PYTHON}" != "no"], [
             AC_MSG_CHECKING([python build sys.version])
             dnl Can have extra lines about compiler used, etc.
             PYTHON_VERSION_REPORT="`${PYTHON} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
@@ -181,10 +198,11 @@ AC_DEFUN([NUT_CHECK_PYTHON],
                         ]
                     )
                ])
-            ])
-        AC_SUBST([PYTHON_SITE_PACKAGES], [${nut_cv_PYTHON_SITE_PACKAGES}])
-        AM_CONDITIONAL([HAVE_PYTHON_SITE_PACKAGES], [test x"${PYTHON_SITE_PACKAGES}" != "x"])
+    ],[
+        nut_cv_PYTHON_SITE_PACKAGES=""
     ])
+    AC_SUBST([PYTHON_SITE_PACKAGES], [${nut_cv_PYTHON_SITE_PACKAGES}])
+    AM_CONDITIONAL([HAVE_PYTHON_SITE_PACKAGES], [test x"${PYTHON_SITE_PACKAGES}" != "x"])
 ])
 
 AC_DEFUN([NUT_CHECK_PYTHON2],
@@ -282,9 +300,12 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
 
         AC_MSG_CHECKING([python2 interpeter to call])
         AC_MSG_RESULT([${PYTHON2}${PYTHON2_VERSION_INFO_REPORT}])
-        AC_SUBST([PYTHON2], [${PYTHON2}])
-        AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
-        AS_IF([test -n "${PYTHON2}" && test "${PYTHON2}" != "no"], [
+    ])
+])
+
+AC_DEFUN([NUT_CHECK_PYTHON2_SITE_PACKAGES],
+[
+    AS_IF([test -n "${PYTHON2}" && test "${PYTHON2}" != "no"], [
             AC_MSG_CHECKING([python2 build sys.version])
             dnl Can have extra lines about compiler used, etc.
             PYTHON2_VERSION_REPORT="`${PYTHON2} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
@@ -319,10 +340,11 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                         ]
                     )
                 ])
-            ])
-        AC_SUBST([PYTHON2_SITE_PACKAGES], [${nut_cv_PYTHON2_SITE_PACKAGES}])
-        AM_CONDITIONAL([HAVE_PYTHON2_SITE_PACKAGES], [test x"${PYTHON2_SITE_PACKAGES}" != "x"])
+    ],[
+        nut_cv_PYTHON2_SITE_PACKAGES=""
     ])
+    AC_SUBST([PYTHON2_SITE_PACKAGES], [${nut_cv_PYTHON2_SITE_PACKAGES}])
+    AM_CONDITIONAL([HAVE_PYTHON2_SITE_PACKAGES], [test x"${PYTHON2_SITE_PACKAGES}" != "x"])
 ])
 
 AC_DEFUN([NUT_CHECK_PYTHON3],
@@ -420,9 +442,12 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
 
         AC_MSG_CHECKING([python3 interpeter to call])
         AC_MSG_RESULT([${PYTHON3}${PYTHON3_VERSION_INFO_REPORT}])
-        AC_SUBST([PYTHON3], [${PYTHON3}])
-        AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
-        AS_IF([test -n "${PYTHON3}" && test "${PYTHON3}" != "no"], [
+    ])
+])
+
+AC_DEFUN([NUT_CHECK_PYTHON3_SITE_PACKAGES],
+[
+    AS_IF([test -n "${PYTHON3}" && test "${PYTHON3}" != "no"], [
             AC_MSG_CHECKING([python3 build sys.version])
             dnl Can have extra lines about compiler used, etc.
             PYTHON3_VERSION_REPORT="`${PYTHON3} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
@@ -457,8 +482,9 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                         ]
                     )
                 ])
-            ])
-        AC_SUBST([PYTHON3_SITE_PACKAGES], [${nut_cv_PYTHON3_SITE_PACKAGES}])
-        AM_CONDITIONAL([HAVE_PYTHON3_SITE_PACKAGES], [test x"${PYTHON3_SITE_PACKAGES}" != "x"])
+    ],[
+        nut_cv_PYTHON3_SITE_PACKAGES=""
     ])
+    AC_SUBST([PYTHON3_SITE_PACKAGES], [${nut_cv_PYTHON3_SITE_PACKAGES}])
+    AM_CONDITIONAL([HAVE_PYTHON3_SITE_PACKAGES], [test x"${PYTHON3_SITE_PACKAGES}" != "x"])
 ])
