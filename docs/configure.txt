@@ -517,6 +517,10 @@ Since this may come across surprising to some people, the `configure` script
 would warn in the end if several Python versions were auto-detected one way
 or another.
 
+A value of `yes` (default if e.g `--with-python` is specified without an
+argument) means to search for an implementation, and fail if one was not
+located.
+
 The settings below may be of particular interest to non-distribution
 packaging efforts with their own dedicated directory trees (like pkgsrc),
 or where all packages have dedicated sub-trees (like NixOS):
@@ -556,7 +560,7 @@ availability), and optional `desktop-file-install` integration).
 	--with-pynut
 
 Install the PyNUT module files for general consumption into "site-packages"
-location of the currently chosen Python interpreter(s): yes, no, auto.
+location of the currently chosen Python interpreter(s): `yes`, `no`, `auto`.
 or dedicated as the required dependency of NUT-Monitor application (app).
 
 	--with-python-modules-dir=(auto|PATH)
