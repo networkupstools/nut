@@ -6746,7 +6746,7 @@ AS_IF([test x"${CCACHE_NAMESPACE}" = x], [
 	unset T
 ])
 AC_ARG_WITH(CCACHE_NAMESPACE,
-	AS_HELP_STRING([--with-CCACHE_NAMESPACE=namespace], [which ccache namespace to use for built binaries; typically nut:${autotools_target})]),
+	AS_HELP_STRING([--with-CCACHE_NAMESPACE=namespace], [which ccache namespace to use for built binaries (typically nut:${autotools_target})]),
 [
 	case "${withval}" in
 	no)
