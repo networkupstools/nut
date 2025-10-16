@@ -13,6 +13,16 @@ dnl In fact, the generated configure script includes the help wall of text
 dnl much earlier than it includes lines that manipulate conftemp (unless it
 dnl gets somehow escaped to happen earlier), due to m4 diverts in autoconf code.
 
+dnl Default expanded once to substitute current variables,
+dnl or remove backslashing of verbatim dollars, etc.
+AC_DEFUN([NUT_ARG_EXPAND],
+[[]m4_esyscmd_s(
+    [nut_conftemp_]m4_translit($1, [-], [_])="$2" ;
+    eval [nut_conftemp_]m4_translit($1, [-], [_])=\"\${[nut_conftemp_]m4_translit($1, [-], [_])}\" ;
+    echo "${[nut_conftemp_]m4_translit($1, [-], [_])}" ;
+    dnl # RUNS 3 TIMES # echo "$1 | $2 | [nut_conftemp_]m4_translit($1, [-], [_])=${[nut_conftemp_]m4_translit($1, [-], [_])}" >> arg.log ;
+)[]])
+
 dnl Working With External Software (might name a variant or other contextual arg)
 dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.66/html_node/External-Software.html#External-Software
 dnl including concepts of the OS as external software (account names, paths...)
@@ -27,24 +37,15 @@ AC_DEFUN([NUT_ARG_WITH_CUSTOM_DEFAULT_HELP],
 AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP],
 [
     dnl Note: only 3 args expected
-    dnl Default expanded once to substitute current variables,
-    dnl or remove backslashing of verbatim dollars, etc.
-    conftemp="$3"
-    eval conftemp=\"${conftemp}\"
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [${conftemp}])
-    unset conftemp
+    dnl NUT_ARG_EXPAND($1, $3)
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], NUT_ARG_EXPAND($1, $3))
 ])
 
 AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 [
     dnl Variant for paths (likely using backslash-dollar in $3)
     dnl Note: only 3 args expected
-    dnl Default expanded once to substitute current variables,
-    dnl or remove backslashing of verbatim dollars, etc.
-    conftemp="$3"
-    eval conftemp=\"${conftemp}\"
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], ['${conftemp}'])
-    unset conftemp
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], NUT_ARG_EXPAND($1, '$3'))
 ])
 
 AC_DEFUN([NUT_ARG_WITH],
@@ -67,18 +68,12 @@ AC_DEFUN([NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP],
 
 AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP],
 [
-    conftemp="$3"
-    eval conftemp=\"${conftemp}\"
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [${conftemp}])
-    unset conftemp
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], NUT_ARG_EXPAND($1, $3))
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 [
-    conftemp="$3"
-    eval conftemp=\"${conftemp}\"
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], ['${conftemp}'])
-    unset conftemp
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], NUT_ARG_EXPAND($1, '$3'))
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE],
