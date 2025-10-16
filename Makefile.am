@@ -1226,14 +1226,14 @@ install-as-root:
 	 if (command -v chown) && ( test 0 -lt "`id -u '$(RUN_AS_USER)' 2>/dev/null`" || test 0 -lt "`id '$(RUN_AS_USER)' | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" ] ) \
 	 && ( test 0 -lt "`getent group '$(RUN_AS_GROUP)' | awk -F: '{print $$3}'`" || test 0 -lt "`id -g '$(RUN_AS_GROUP)'`" ) \
 	 ; then \
-		echo "  CHOWN($(RUN_AS_USER@:@RUN_AS_GROUP@)	$(DESTDIR)/@STATEPATH)/upssched" >&2 ; \
-		chown "$(RUN_AS_USER@:@RUN_AS_GROUP)" "$(DESTDIR)/$(STATEPATH)/upssched" \
+		echo "  CHOWN($(RUN_AS_USER):$(RUN_AS_GROUP))	$(DESTDIR)/$(STATEPATH)/upssched" >&2 ; \
+		chown "$(RUN_AS_USER):$(RUN_AS_GROUP)" "$(DESTDIR)/$(STATEPATH)/upssched" \
 		|| exit ; \
 		for D in "$(STATEPATH)" "$(PIDPATH)" "$(ALTPIDPATH)" "$(ALTSTATEPATH)" ; do \
 			case x"$$D" in \
 			x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
-			*)	echo "  CHOWN($(RUN_AS_USER@:@RUN_AS_GROUP))	$(DESTDIR)/$$D" >&2 ; \
-				chown "$(RUN_AS_USER@:@RUN_AS_GROUP)" "$(DESTDIR)/$$D" \
+			*)	echo "  CHOWN($(RUN_AS_USER):$(RUN_AS_GROUP))	$(DESTDIR)/$$D" >&2 ; \
+				chown "$(RUN_AS_USER):$(RUN_AS_GROUP)" "$(DESTDIR)/$$D" \
 				|| exit ;; \
 			esac ; \
 		done ; \
