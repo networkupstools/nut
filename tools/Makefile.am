@@ -22,7 +22,7 @@
 # make, to handle developer workflow (editing the *.c sources this uses).
 SUBDIRS = . nut-scanner nutconf
 
-PYTHON = @PYTHON@
+PYTHON_DEFAULT = @PYTHON_DEFAULT@
 
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh nut-dumpdiff.sh \
   gitlog2changelog.py.in gitlog2version.sh nut-snmpinfo.py.in driver-list-format.sh
@@ -73,13 +73,13 @@ nut-scanner-deps-snmpinfo: $(GENERATED_SNMP_FILES)
 nut-scanner-deps-usb: $(GENERATED_USB_FILES)
 
 # The distributed nut-snmpinfo.py.in template is assumed to only differ from
-# a generated nut-snmpinfo.py by the @PYTHON@ shebang.
+# a generated nut-snmpinfo.py by the @PYTHON_DEFAULT@ shebang.
 $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c $(top_srcdir)/tools/nut-snmpinfo.py.in
-	@if [ -n "$(PYTHON)" ] && [ x"no" != x"$(PYTHON)" ] && $(PYTHON) -c 1; then \
-		echo "Regenerating the SNMP helper files in SRC dir with '$(PYTHON)'."; \
+	@if [ -n "$(PYTHON_DEFAULT)" ] && [ x"no" != x"$(PYTHON_DEFAULT)" ] && $(PYTHON_DEFAULT) -c 1; then \
+		echo "Regenerating the SNMP helper files in SRC dir with '$(PYTHON_DEFAULT)'."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \
-		cd $(builddir) && $(PYTHON) $(top_srcdir)/tools/nut-snmpinfo.py.in; \
+		cd $(builddir) && $(PYTHON_DEFAULT) $(top_srcdir)/tools/nut-snmpinfo.py.in; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
@@ -136,13 +136,13 @@ $(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb
 # so it may write the files in "dist" case (read-only sources), but the script
 # is called from the distdir where its copy is present.
 # The distributed nut-snmpinfo.py.in template is assumed to only differ from
-# a generated nut-snmpinfo.py by the @PYTHON@ shebang.
+# a generated nut-snmpinfo.py by the @PYTHON_DEFAULT@ shebang.
 dist-hook:
-	@if [ -n "$(PYTHON)" ] && [ x"no" != x"$(PYTHON)" ] && $(PYTHON) -c 1; then \
-		echo "Regenerating the SNMP helper files in DIST dir with '$(PYTHON)'."; \
+	@if [ -n "$(PYTHON_DEFAULT)" ] && [ x"no" != x"$(PYTHON_DEFAULT)" ] && $(PYTHON_DEFAULT) -c 1; then \
+		echo "Regenerating the SNMP helper files in DIST dir with '$(PYTHON_DEFAULT)'."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \
-		$(PYTHON) $(distdir)/nut-snmpinfo.py.in; \
+		$(PYTHON_DEFAULT) $(distdir)/nut-snmpinfo.py.in; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \

@@ -4,10 +4,26 @@ dnl to embed into scripts and Make rules
 AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT],
 [
     dnl Check for all present variants and pick the default PYTHON
+    dnl Note that the --with... values may involve "auto-prio=NUM"
+    dnl which then sets only one of the values (lowest prio number
+    dnl wins) and discards the others even if detected.
     AC_REQUIRE([NUT_CHECK_PYTHON])
     AC_REQUIRE([NUT_CHECK_PYTHON2])
     AC_REQUIRE([NUT_CHECK_PYTHON3])
 
+    dnl It seems AC REQUIRE calls have priority over other code lines in a method,
+    dnl and get executed first - so using extra methods (also for clearer code base).
+
+    AC_REQUIRE([NUT_CHECK_PYTHON_INTERIM_RESULTS])
+    AC_REQUIRE([NUT_CHECK_PYTHON_DEFAULT_BEST])
+
+    AC_REQUIRE([NUT_CHECK_PYTHON_SITE_PACKAGES])
+    AC_REQUIRE([NUT_CHECK_PYTHON2_SITE_PACKAGES])
+    AC_REQUIRE([NUT_CHECK_PYTHON3_SITE_PACKAGES])
+])
+
+AC_DEFUN([NUT_CHECK_PYTHON_INTERIM_RESULTS],
+[
     AS_IF([test x"$PYTHON2" = xno], [PYTHON2=""])
     AS_IF([test x"$PYTHON3" = xno], [PYTHON3=""])
     AS_IF([test x"$PYTHON" = xno],  [PYTHON=""])
@@ -36,13 +52,82 @@ AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT],
         ])
 ])
 
+AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT_BEST],
+[
+    dnl Pick the top-most hit (smallest prio number, to be considered if no explicit variants were requested)
+    FOUND_PYTHONS="`( echo "${nut_with_python}|${PYTHON}"; echo "${nut_with_python2}|${PYTHON2}"; echo "${nut_with_python3}|${PYTHON3}" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`"
+    AS_IF([test x"${FOUND_PYTHONS}" = x], [
+        AC_MSG_NOTICE([No Python interpreter versions were found or requested])
+    ], [
+        NON_AUTO="`echo "${FOUND_PYTHONS}" | ${EGREP} -v "^auto-prio="`"
+        BEST_AUTO="`echo "${FOUND_PYTHONS}" | ${EGREP} "^auto-prio=" | sort -n | head -1`"
+        AS_IF([test x"${NON_AUTO}" = x], [
+            dnl All findings were auto-prio, else silently keep what we have
+            dnl from "auto", "yes" or explicit settings
+            BEST_AUTO_PRIO="`echo "${BEST_AUTO}" | sed 's,|.*$,,'`"
+            BEST_AUTO_PYTHON="`echo "${BEST_AUTO}" | sed 's,^.*|,,'`"
+            AS_IF([test x"${BEST_AUTO_PYTHON}" != x], [
+                AC_MSG_NOTICE([Got an auto-priority preferred hit: ${BEST_AUTO_PRIO} => ${BEST_AUTO_PYTHON}"])
+                AS_CASE([x"${nut_with_python3}"],
+                    [x"${BEST_AUTO_PRIO}"], [AC_MSG_NOTICE([Forgetting PYTHON2='${PYTHON2}' and PYTHON='${PYTHON}' (if any were detected as auto-prio too)])
+                        AS_CASE([x"${nut_with_python2}"], [xauto-prio=*], [PYTHON2=""])
+                        AS_CASE([x"${nut_with_python}"], [xauto-prio=*], [PYTHON=""])
+                    ],[AS_CASE([x"${nut_with_python2}"],
+                        [x"${BEST_AUTO_PRIO}"], [AC_MSG_NOTICE([Forgetting PYTHON3='${PYTHON3}' and PYTHON='${PYTHON}' (if any were detected as auto-prio too)])
+                            AS_CASE([x"${nut_with_python3}"], [xauto-prio=*], [PYTHON3=""])
+                            AS_CASE([x"${nut_with_python}"], [xauto-prio=*], [PYTHON=""])
+                        ],[AS_CASE([x"${nut_with_python}"],
+                            [x"${BEST_AUTO_PRIO}"], [AC_MSG_NOTICE([Forgetting PYTHON3='${PYTHON3}' and PYTHON2='${PYTHON2}' (if any were detected as auto-prio too)])
+                                AS_CASE([x"${nut_with_python2}"], [xauto-prio=*], [PYTHON2=""])
+                                AS_CASE([x"${nut_with_python3}"], [xauto-prio=*], [PYTHON3=""])
+                        ])
+                    ])
+                ])
+            ])
+		],[
+            AS_IF([test x"${BEST_AUTO}" != x], [
+                AC_MSG_NOTICE([Got some auto-priority preferred hits and explicitly preferred ones too; forgetting auto-prio ones"])
+                AS_CASE([x"${nut_with_python3}"], [xauto-prio=*], [PYTHON3=""])
+                AS_CASE([x"${nut_with_python2}"], [xauto-prio=*], [PYTHON2=""])
+                AS_CASE([x"${nut_with_python}"],  [xauto-prio=*], [PYTHON=""])
+            ])
+        ])
+    ])
+
+    unset BEST_AUTO_PYTHON
+    unset BEST_AUTO_PRIO
+    unset BEST_AUTO
+    unset NON_AUTO
+    unset FOUND_PYTHONS
+    dnl Only now propagate what we found
+
+    AC_SUBST([PYTHON], [${PYTHON}])
+    AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
+
+    AC_SUBST([PYTHON2], [${PYTHON2}])
+    AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
+
+    AC_SUBST([PYTHON3], [${PYTHON3}])
+    AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
+
+    AC_MSG_CHECKING([which python can be called for internal use, e.g. shebang substitutions and tool calls])
+	PYTHON_DEFAULT=""
+    AS_IF([test x"$PYTHON2" != x], [PYTHON_DEFAULT="${PYTHON2}"])
+    AS_IF([test x"$PYTHON3" != x], [PYTHON_DEFAULT="${PYTHON3}"])
+    AS_IF([test x"$PYTHON"  != x], [PYTHON_DEFAULT="${PYTHON}"])
+	AC_MSG_RESULT([${PYTHON_DEFAULT}])
+
+    AC_SUBST([PYTHON_DEFAULT], [${PYTHON_DEFAULT}])
+    AM_CONDITIONAL([HAVE_PYTHON_DEFAULT], [test -n "${PYTHON_DEFAULT}" && test "${PYTHON_DEFAULT}" != "no"])
+])
+
 dnl Note: this checks for default/un-versioned python version
 dnl as the --with-python=SHEBANG_PATH setting into the PYTHON
 dnl variable; it may be further tweaked by NUT_CHECK_PYTHON_DEFAULT
 AC_DEFUN([NUT_CHECK_PYTHON],
 [
     AS_IF([test -z "${nut_with_python}"], [
-        NUT_ARG_WITH([python], [Use a particular program name of the python interpeter], [auto])
+        NUT_ARG_WITH([python], [Use a particular program name of the python interpeter], [auto-prio=3])
 
         PYTHON=""
         PYTHON_SITE_PACKAGES=""
@@ -50,7 +135,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         PYTHON_VERSION_INFO_REPORT=""
         PYTHON_SYSPATH_REPORT=""
         AS_CASE([${nut_with_python}],
-            [auto|yes|""], [AC_CHECK_PROGS([PYTHON], [python python3 python2], [_python_runtime])],
+            [auto|auto-prio=*|yes|""], [AC_CHECK_PROGS([PYTHON], [python python3 python2], [_python_runtime])],
             [no], [PYTHON="no"],
             [PYTHON="${nut_with_python}"]
         )
@@ -108,15 +193,18 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         dnl Unfulfilled "yes" is re-tested in NUT_CHECK_PYTHON_DEFAULT
         AS_IF([test -z "${PYTHON}" || test "${PYTHON}" = "no"], [
             AS_CASE([${nut_with_python}],
-                [auto|yes|no|""], [],
+                [auto|auto-prio=*|yes|no|""], [],
                 [AC_MSG_ERROR([A python interpreter was required but not found or validated: ${nut_with_python}])])
             ])
 
         AC_MSG_CHECKING([python interpeter to call])
         AC_MSG_RESULT([${PYTHON}${PYTHON_VERSION_INFO_REPORT}])
-        AC_SUBST([PYTHON], [${PYTHON}])
-        AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
-        AS_IF([test -n "${PYTHON}" && test "${PYTHON}" != "no"], [
+    ])
+])
+
+AC_DEFUN([NUT_CHECK_PYTHON_SITE_PACKAGES],
+[
+    AS_IF([test -n "${PYTHON}" && test "${PYTHON}" != "no"], [
             AC_MSG_CHECKING([python build sys.version])
             dnl Can have extra lines about compiler used, etc.
             PYTHON_VERSION_REPORT="`${PYTHON} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
@@ -153,16 +241,17 @@ AC_DEFUN([NUT_CHECK_PYTHON],
                         ]
                     )
                ])
-            ])
-        AC_SUBST([PYTHON_SITE_PACKAGES], [${nut_cv_PYTHON_SITE_PACKAGES}])
-        AM_CONDITIONAL([HAVE_PYTHON_SITE_PACKAGES], [test x"${PYTHON_SITE_PACKAGES}" != "x"])
+    ],[
+        nut_cv_PYTHON_SITE_PACKAGES=""
     ])
+    AC_SUBST([PYTHON_SITE_PACKAGES], [${nut_cv_PYTHON_SITE_PACKAGES}])
+    AM_CONDITIONAL([HAVE_PYTHON_SITE_PACKAGES], [test x"${PYTHON_SITE_PACKAGES}" != "x"])
 ])
 
 AC_DEFUN([NUT_CHECK_PYTHON2],
 [
     AS_IF([test -z "${nut_with_python2}"], [
-        NUT_ARG_WITH([python2], [Use a particular program name of the python2 interpeter for code that needs that version and is not compatible with python3], [auto])
+        NUT_ARG_WITH([python2], [Use a particular program name of the python2 interpeter for code that needs that version and is not compatible with python3], [auto-prio=2])
 
         PYTHON2=""
         PYTHON2_SITE_PACKAGES=""
@@ -170,7 +259,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         PYTHON2_VERSION_INFO_REPORT=""
         PYTHON2_SYSPATH_REPORT=""
         AS_CASE([${nut_with_python2}],
-            [auto|yes|""], [
+            [auto|auto-prio=*|yes|""], [
                 dnl Cross check --with-python results:
                 AS_CASE(["${PYTHON_VERSION_INFO_REPORT}"],
                     [*major=2,*], [
@@ -248,15 +337,18 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         dnl Unfulfilled "yes" is re-tested in NUT_CHECK_PYTHON_DEFAULT
         AS_IF([test -z "${PYTHON2}" || test "${PYTHON2}" = "no"], [
             AS_CASE([${nut_with_python2}],
-                [auto|yes|no|""], [],
+                [auto|auto-prio=*|yes|no|""], [],
                 [AC_MSG_ERROR([A python2 interpreter was required but not found or validated: ${nut_with_python2}])])
             ])
 
         AC_MSG_CHECKING([python2 interpeter to call])
         AC_MSG_RESULT([${PYTHON2}${PYTHON2_VERSION_INFO_REPORT}])
-        AC_SUBST([PYTHON2], [${PYTHON2}])
-        AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
-        AS_IF([test -n "${PYTHON2}" && test "${PYTHON2}" != "no"], [
+    ])
+])
+
+AC_DEFUN([NUT_CHECK_PYTHON2_SITE_PACKAGES],
+[
+    AS_IF([test -n "${PYTHON2}" && test "${PYTHON2}" != "no"], [
             AC_MSG_CHECKING([python2 build sys.version])
             dnl Can have extra lines about compiler used, etc.
             PYTHON2_VERSION_REPORT="`${PYTHON2} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
@@ -291,16 +383,17 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                         ]
                     )
                 ])
-            ])
-        AC_SUBST([PYTHON2_SITE_PACKAGES], [${nut_cv_PYTHON2_SITE_PACKAGES}])
-        AM_CONDITIONAL([HAVE_PYTHON2_SITE_PACKAGES], [test x"${PYTHON2_SITE_PACKAGES}" != "x"])
+    ],[
+        nut_cv_PYTHON2_SITE_PACKAGES=""
     ])
+    AC_SUBST([PYTHON2_SITE_PACKAGES], [${nut_cv_PYTHON2_SITE_PACKAGES}])
+    AM_CONDITIONAL([HAVE_PYTHON2_SITE_PACKAGES], [test x"${PYTHON2_SITE_PACKAGES}" != "x"])
 ])
 
 AC_DEFUN([NUT_CHECK_PYTHON3],
 [
     AS_IF([test -z "${nut_with_python3}"], [
-        NUT_ARG_WITH([python3], [Use a particular program name of the python3 interpeter for code that needs that version and is not compatible with python2], [auto])
+        NUT_ARG_WITH([python3], [Use a particular program name of the python3 interpeter for code that needs that version and is not compatible with python2], [auto-prio=1])
 
         PYTHON3=""
         PYTHON3_SITE_PACKAGES=""
@@ -308,7 +401,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         PYTHON3_VERSION_INFO_REPORT=""
         PYTHON3_SYSPATH_REPORT=""
         AS_CASE([${nut_with_python3}],
-            [auto|yes|""], [
+            [auto|auto-prio=*|yes|""], [
                 dnl Cross check --with-python results:
                 AS_CASE(["${PYTHON_VERSION_INFO_REPORT}"],
                     [*major=3,*], [
@@ -386,15 +479,18 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         dnl Unfulfilled "yes" is re-tested in NUT_CHECK_PYTHON_DEFAULT
         AS_IF([test -z "${PYTHON3}" || test "${PYTHON3}" = "no"], [
             AS_CASE([${nut_with_python3}],
-                [auto|yes|no|""], [],
+                [auto|auto-prio=*|yes|no|""], [],
                 [AC_MSG_ERROR([A python3 interpreter was required but not found or validated: ${nut_with_python3}])])
             ])
 
         AC_MSG_CHECKING([python3 interpeter to call])
         AC_MSG_RESULT([${PYTHON3}${PYTHON3_VERSION_INFO_REPORT}])
-        AC_SUBST([PYTHON3], [${PYTHON3}])
-        AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
-        AS_IF([test -n "${PYTHON3}" && test "${PYTHON3}" != "no"], [
+    ])
+])
+
+AC_DEFUN([NUT_CHECK_PYTHON3_SITE_PACKAGES],
+[
+    AS_IF([test -n "${PYTHON3}" && test "${PYTHON3}" != "no"], [
             AC_MSG_CHECKING([python3 build sys.version])
             dnl Can have extra lines about compiler used, etc.
             PYTHON3_VERSION_REPORT="`${PYTHON3} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
@@ -429,8 +525,9 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                         ]
                     )
                 ])
-            ])
-        AC_SUBST([PYTHON3_SITE_PACKAGES], [${nut_cv_PYTHON3_SITE_PACKAGES}])
-        AM_CONDITIONAL([HAVE_PYTHON3_SITE_PACKAGES], [test x"${PYTHON3_SITE_PACKAGES}" != "x"])
+    ],[
+        nut_cv_PYTHON3_SITE_PACKAGES=""
     ])
+    AC_SUBST([PYTHON3_SITE_PACKAGES], [${nut_cv_PYTHON3_SITE_PACKAGES}])
+    AM_CONDITIONAL([HAVE_PYTHON3_SITE_PACKAGES], [test x"${PYTHON3_SITE_PACKAGES}" != "x"])
 ])

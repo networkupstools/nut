@@ -70,6 +70,15 @@ Changes from 2.8.4 to 2.8.5
   the "purelib" location as `PYTHON*_SITE_PACKAGES`. Packaging recipes
   may have to be updated. [#1209]
 
+- New supported values were introduced for `--with-python{,2,3}=auto-prio=NUM`:
+  this allows to auto-prioritize some *one* available Python interpreter.
+  Default settings were changed from plain `auto` (allowing for multiple
+  `python*` interpreters and `site-package` locations to be used), to
+  prefer a `python3` if available, else `python2`, else `python`, and
+  forget about others even if discovered. Packaging recipes may have to be
+  updated, either to explicitly package the binding for several versions,
+  or to not-deliver files no longer installed into the prototype area. [#1792]
+
 
 Changes from 2.8.3 to 2.8.4
 ---------------------------

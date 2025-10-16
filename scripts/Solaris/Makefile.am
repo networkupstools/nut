@@ -3,7 +3,7 @@
 EXTRA_DIST = makelocal.sh precheck.py.in preproto.pl.in README.adoc
 PROTOTYPE_DIR = $(DESTDIR)@prefix@
 SOLARIS_CHECK_TARGETS =
-PYTHON = @PYTHON@
+PYTHON_DEFAULT = @PYTHON_DEFAULT@
 
 SOLARIS_SMF_MANIFESTS = \
 	nut.xml \
@@ -90,8 +90,8 @@ package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SV
 	cp $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA) $(PROTOTYPE_DIR) || exit ; \
 	( cd $(PROTOTYPE_DIR) && chmod +x $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) ) || exit ; \
 	( cd $(PROTOTYPE_DIR) && perl preproto.pl ) || exit ; \
-	if test -n '$(PYTHON)' ; then \
-		( cd $(PROTOTYPE_DIR) && $(PYTHON) precheck.py ) || exit ; \
+	if test -n '$(PYTHON_DEFAULT)' ; then \
+		( cd $(PROTOTYPE_DIR) && $(PYTHON_DEFAULT) precheck.py ) || exit ; \
 	fi ; \
 	( cd $(PROTOTYPE_DIR) && rm -f prototype1 ) || exit ; \
 	( cd $(PROTOTYPE_DIR) && ./makelocal.sh ) || exit ; \

@@ -1,4 +1,4 @@
-#!@PYTHON@
+#!@PYTHON_DEFAULT@
 
 import sys
 
