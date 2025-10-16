@@ -139,7 +139,7 @@ make
 [NOTE]
 ======
 * Other NUT `configure` options may be needed for proper behavior, such as
-`--prefix`, `--with-sysconfdir`, `--with-user` and `--with-group` to match
+`--prefix`, `--with-confdir`, `--with-user` and `--with-group` to match
 your packaged or otherwise preceding NUT installation.
 ======
 

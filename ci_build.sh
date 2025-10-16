@@ -1584,7 +1584,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
     CONFIG_OPTS+=("--enable-keep_nut_report_feature")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
-    CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
+    #CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
+    CONFIG_OPTS+=("--with-confdir=${BUILD_PREFIX}/etc/nut")
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")

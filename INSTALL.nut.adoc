@@ -301,12 +301,13 @@ options.
 NOTE: Due to various historic or architectural reasons, some of the option
 usages may be surprising (compared to other autotools-driven projects), but
 those choices remain in place to minimize the surprise for people who rebuild
-NUT regularly.  A few cases worth mentioning include the use of `--sysconfdir`
-as `/etc/nut` directly (rather than keeping `/etc` and having another option
-to append `/nut`), and multiple `--with-python*` settings for its different
-major version ecosystems which can be all auto-detected independently (so you
-may need certain `--without-python2` etc. options if you want to disable some
-module installation paths that your system is eager to support).
+NUT regularly.  A few cases worth mentioning include the long-term use of
+`--sysconfdir` as `/etc/nut` directly (rather than keeping `/etc` and having
+another option to append `/nut` -- which can be done since NUT v2.8.5), and
+multiple `--with-python*` settings for its different major version ecosystems
+which can be all auto-detected independently (so you may need certain
+`--without-python2` etc. options if you want to disable some module
+installation paths that your system is eager to support).
 
 If you alter paths with additional switches, be sure to use those
 new paths while reading the rest of the steps.
