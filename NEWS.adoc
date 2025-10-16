@@ -154,6 +154,19 @@ several `FSD` notifications into one executed action. [PR #3097]
      the ultimately executed `CMDSCRIPT` processes. [#3105]
 
  - `configure` script options:
+   * For ages, most recipes for building NUT had customized the `sysconfdir` to
+     be `/etc/nut`, which is not exactly the *system* configuration directory.
+     This is finally deprecated, with new `--with-confdir` configuration option
+     taking over the role of a full path to configuration files (by default
+     `${sysconfdir}${confdir_suffix}`), and new `--with-confdir-suffix` allowing
+     to specify just `/nut` or `/ups` that would be tacked onto the default
+     `${sysconfdir}` to resolve the `${confdir}`. Default behavior should be
+     same as with previous builds: if `sysconfdir` is customized (or `prefix`
+     is kept at built-in default), the `confdir_suffix` will default to empty;
+     otherwise it assumes the value of `/${PACKAGE_NAME}` to become `/nut` in
+     most cases. A `--with-confdir-examples` option was also introduced, to
+     help distributions that place `*.conf.sample` files into docs or other
+     locations. [#3131]
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)
      module installation location (for module-named dir to be created under
      it), if not bundling with NUT-Monitor UI app. By default the respective

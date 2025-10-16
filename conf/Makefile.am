@@ -13,8 +13,10 @@ else
  CGI_INSTALL = 
 endif
 
-dist_sysconf_DATA = $(SECFILES) $(PUBFILES) $(CGI_INSTALL)
-nodist_sysconf_DATA = upssched.conf.sample upsmon.conf.sample
+conf_examplesdir = @CONFPATH_EXAMPLES@
+
+dist_conf_examples_DATA = $(SECFILES) $(PUBFILES) $(CGI_INSTALL)
+nodist_conf_examples_DATA = upssched.conf.sample upsmon.conf.sample
 
 SPELLCHECK_SRC = $(dist_sysconf_DATA) \
  upssched.conf.sample.in upsmon.conf.sample.in

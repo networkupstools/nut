@@ -1211,13 +1211,13 @@ install-as-root:
 				|| exit ;; \
 		esac ; \
 		for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
-			echo "  CHMOD(0644)	CGI: $(DESTDIR)/$(CONFPATH)/$$F" >&2 ; \
-			chmod 0644 "$(DESTDIR)/$(CONFPATH)/$$F" \
+			echo "  CHMOD(0644)	CGI: $(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" >&2 ; \
+			chmod 0644 "$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" \
 			|| { if $(WITH_CGI) ; then exit 1 ; else true ; fi ; } ; \
 		done ; \
 		for F in nut.conf.sample ups.conf.sample upsd.conf.sample upsd.users.sample upsmon.conf.sample upssched.conf.sample ; do \
-			echo "  CHMOD(0640)	$(DESTDIR)/$(CONFPATH)/$$F" >&2 ; \
-			chmod 0640 "$(DESTDIR)/$(CONFPATH)/$$F" \
+			echo "  CHMOD(0640)	$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" >&2 ; \
+			chmod 0640 "$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" \
 			|| exit ; \
 		done ; \
 	 else \
@@ -1244,13 +1244,13 @@ install-as-root:
 				|| exit ;; \
 		esac ; \
 		for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
-			echo "  CHOWN(root:$(RUN_AS_GROUP))	CGI: $(DESTDIR)/$(CONFPATH)/$$F" >&2 ; \
-			chown "root:$(RUN_AS_GROUP)" "$(DESTDIR)/$(CONFPATH)/$$F" \
+			echo "  CHOWN(root:$(RUN_AS_GROUP))	CGI: $(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" >&2 ; \
+			chown "root:$(RUN_AS_GROUP)" "$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" \
 			|| { if $(WITH_CGI) ; then exit 1 ; else true ; fi ; } ; \
 		done ; \
 		for F in nut.conf.sample ups.conf.sample upsd.conf.sample upsd.users.sample upsmon.conf.sample upssched.conf.sample ; do \
-			echo "  CHOWN(root:$(RUN_AS_GROUP))	$(DESTDIR)/$(CONFPATH)/$$F" >&2 ; \
-			chown "root:$(RUN_AS_GROUP)" "$(DESTDIR)/$(CONFPATH)/$$F" \
+			echo "  CHOWN(root:$(RUN_AS_GROUP))	$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" >&2 ; \
+			chown "root:$(RUN_AS_GROUP)" "$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" \
 			|| exit ; \
 		done ; \
 	 else \
