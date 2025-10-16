@@ -95,7 +95,8 @@ Tries to detect and pre-set `configure` defaults for run-time settings
 (which you can still override if needed, but no longer *must* specify
 explicitly to be on same page as the existing setup), most notably:
 
-* `--sysconfdir`
+* `--sysconfdir` and perhaps `--with-confdir-suffix`,
+  or `--with-confdir` altogether
 * `--with-user`
 * `--with-group`
 
@@ -870,11 +871,45 @@ default, it is the same as `<prefix>`.
 
 	--sysconfdir=PATH
 
+Base system location for configuration files. By default this path is
+`<prefix>/etc`.
+
+From time immemorial until NUT v2.8.5, this was the option to change
+in order to define a dedicated directory for NUT configuration files.
+Setting this to `/etc/nut` or `/etc/ups` might be useful in older builds.
+Now the `--with-confdir*` options are preferable.
+
+	--with-confdir-suffix=DIRNAME
+
+Provides a partial location where NUT's configuration files are stored,
+relative to `<sysconfdir>`. By default this path is empty if either
+`<sysconfdir>` was modified (assuming legacy build configuration was
+re-used for current NUT), or if `<prefix>` was NOT modified (then the
+value of `/usr/local/ups/etc` makes sense to directly hold NUT configuration
+files).  Otherwise it defaults to `<PACKAGE_NAME>` which is `nut` (unless
+some distribution hacks the `configure` script to their liking).
+
+Surrounding slashes would be removed and a trailing one added, to normalize
+the paths and avoid double-slashes etc.
+
+See also `--enable-inplace-runtime`.
+
+	--with-confdir=PATH
+
 Changes the location where NUT's configuration files are stored.
-By default this path is `<prefix>/etc`.  Setting this to `/etc/nut` or
-`/etc/ups` might be useful. See also `--enable-inplace-runtime`.
+By default this path is `<sysconfdir>/<confdir_suffix>` which on
+most systems resolves to `/etc/nut`.
+
+See also `--enable-inplace-runtime`.
 
 The `NUT_CONFPATH` environment variable overrides this at run time.
+
+	--with-confdir-examples=PATH
+
+Changes the location where NUT's configuration file examples are stored.
+By default this path is `<confdir>`, but some distributions prefer to
+store examples under `<docdir>` or somewhere else, requiring `<sysconfdir>`
+to be used only by actual live system configuration.
 
 	--sbindir=PATH
 	--bindir=PATH

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3562 utf-8
+personal_ws-1.1 en 3564 utf-8
 AAC
 AAS
 ABI
@@ -263,6 +263,7 @@ DEXP
 DF
 DHEA
 DIGYS
+DIRNAME
 DISCHRG
 DLDIR
 DLLs
@@ -1816,6 +1817,7 @@ compareprocnames
 compat
 compilerPath
 conf
+confdir
 config
 configparser
 configs

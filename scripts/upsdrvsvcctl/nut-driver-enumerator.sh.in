@@ -86,7 +86,7 @@ EGREP="@EGREP@"
 # Directory where NUT configs are located, e.g. /etc/nut or /etc/ups
 # Set at package configuration, compiled into daemons and drivers
 prefix="@prefix@"
-[ -n "${NUT_CONFPATH-}" ] || NUT_CONFPATH="@sysconfdir@"
+[ -n "${NUT_CONFPATH-}" ] || NUT_CONFPATH="@CONFPATH@"
 # Technically this should be a distribution-dependent value configured
 # during package build. But everyone has it the same from systemd defaults:
 [ -n "${SYSTEMD_CONFPATH-}" ] || SYSTEMD_CONFPATH="/etc/systemd/system"

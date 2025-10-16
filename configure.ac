@@ -300,6 +300,11 @@ dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
+dnl TOTHINK: Add a default --with-nutdir-suffix='nut'/'ups'/etc. for different paths we make?
+NUT_ARG_WITH([confdir-suffix], [Relative path to NUT configuration files under sysconfdir], [auto])
+NUT_ARG_WITH([confdir], [Complete path to NUT configuration files], [\${sysconfdir}\${confdir_suffix}])
+NUT_ARG_WITH([confdir-examples], [Complete path to NUT configuration file examples (some like it under datadir)], [\${confdir}])
+
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
 AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
 dnl # using printf formatting for some funniner shells out there
@@ -373,6 +378,47 @@ AC_DEFINE_UNQUOTED(NUT_NETVERSION, "${NUT_NETVERSION}", [NUT network protocol ve
 dnl Fix this early so we can expand with eval later
 test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
+
+AS_CASE([x"${nut_with_confdir}"],
+	[yes], [AC_MSG_ERROR([--with-confdir should specify a path name or expansible expression])],
+	[/*|?:\*|?:/*|*/*|*'\'*], [
+		AC_MSG_NOTICE([A non-trivial --with-confdir path was specified (${nut_with_confdir}); any --with-confdir-suffix (${nut_with_confdir_suffix}) or --sysconfdir (${sysconfdir}) values are disregarded])
+	], [
+		RESULT_COMMENT=""
+		AC_MSG_CHECKING([confdir-suffix to use after sysconfdir (${sysconfdir})])
+		AS_CASE([x"${nut_with_confdir_suffix}"],
+			[xyes], [AC_MSG_ERROR([--with-confdir-suffix should specify a relative path name under sysconfdir='${sysconfdir}'])],
+			[x'$'*], [RESULT_COMMENT="expandable expression"],
+			[xauto|x], [
+				dnl Use an empty suffix if either no prefix was specified
+				dnl (so resolving into /usr/local/ups/etc makes sense),
+				dnl or if a sysconfdir was specified (legacy build configs).
+				dnl Otherwise de facto append "/nut" to "${sysconfdir}".
+				AS_CASE([${CONFIG_FLAGS}],
+					[*--sysconfdir=*], [nut_with_confdir_suffix=""; RESULT_COMMENT='sysconfdir was customized...'],
+					[*--prefix=*], [nut_with_confdir_suffix='/${PACKAGE_NAME}'; RESULT_COMMENT='prefix was customized...'],
+						[nut_with_confdir_suffix=""; RESULT_COMMENT='prefix was not customized...'])
+			], [
+				RESULT_COMMENT="normalized caller-provided suffix..."
+				nut_with_confdir_suffix="`echo "/${nut_with_confdir_suffix}" | sed -e 's,^/*,/,' -e 's,/*$,,'`"
+			]
+		)
+		AC_MSG_RESULT([${RESULT_COMMENT} '${nut_with_confdir_suffix}'])
+	]
+)
+
+dnl For expansions later:
+confdir='${nut_with_confdir}'
+confdir_suffix='${nut_with_confdir_suffix}'
+confdir_examples='${nut_with_confdir_examples}'
+
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) prefix='${prefix}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) sysconfdir='${sysconfdir}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_confdir_suffix='${nut_with_confdir_suffix}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_confdir='${nut_with_confdir}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_confdir_examples='${nut_with_confdir_examples}'])
+])
 
 dnl Note: for practical and platform-independent use, see AX_REALPATH macro
 AC_CHECK_PROGS([REALPATH], [realpath], [])
@@ -773,15 +819,43 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             ])
     ])
 
+    HAVE_DEPLOYED_CONFPATH=false
     AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
         [*--sysconfdir=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--sysconfdir="*) sysconfdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                    "--sysconfdir="*) sysconfdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ; HAVE_DEPLOYED_CONFPATH=true ;;
                 esac
             done
-        ],
-        [
+        ])
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--with-confdir=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--with-confdir="*) nut_with_confdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ; HAVE_DEPLOYED_CONFPATH=true ;;
+                esac
+            done
+        ])
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--with-confdir-suffix=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--with-confdir-suffix="*) nut_with_confdir_suffix="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ; HAVE_DEPLOYED_CONFPATH=true ;;
+                esac
+            done
+        ])
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--with-confdir-examples=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--with-confdir-examples="*) nut_with_confdir_examples="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                esac
+            done
+        ],[
+            nut_with_confdir_examples='${confdir}'
+        ])
+
+    AS_IF([test x"${HAVE_DEPLOYED_CONFPATH}" = xfalse], [
         dnl If there was no custom --sysconfdir=/etc/myNUT passed,
         dnl try to default it to something from existing deployment.
         dnl NOTE: Single-quotes are correct for autotools default,
@@ -793,6 +867,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         dnl Evaluated here for the message; CONFPATH will be re-evaluated
         dnl below, after we decide on the sysconfdir value we really like.
         PREFIX_SYSCONFDIR="${conftemp}"
+
+        dnl Default definition
+        nut_with_confdir_suffix=""
+        nut_with_confdir='${sysconfdir}${confdir_suffix}'
 
         AC_MSG_CHECKING([for in-place replacement default sysconfdir, better than '${PREFIX_SYSCONFDIR}' ('${sysconfdir}')])
         DEPLOYED_SYSCONFDIR=""
@@ -831,10 +909,21 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     ])
 
     dnl Prepare paths that may be used in user/group searches below:
-    conftemp="${sysconfdir}"
+    conftemp="${nut_with_confdir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
     eval conftemp=\"${conftemp}\"
     eval conftemp=\"${conftemp}\"
     CONFPATH="${conftemp}"
+
+    conftemp="${nut_with_confdir_examples}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    CONFPATH_EXAMPLES="${conftemp}"
 
     AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
         [*--libdir=*], [
@@ -5728,15 +5817,35 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-dnl expand ${sysconfdir} and write it out - note that most packages
-dnl override it to be /etc/nut, /etc/ups or similar, while the
-dnl autotools default would be $prefix/etc
-conftemp="${sysconfdir}"
+dnl For ages we expanded ${sysconfdir} and wrote it out - note that most
+dnl packages overrode it to be /etc/nut, /etc/ups or similar, while the
+dnl pure autotools default would be $prefix/etc (and a separate setting
+dnl or hard-coded value added on top of that).
+dnl Since NUT v2.8.5 we encourage using either a dedicated customization
+dnl --with-confdir-suffix (value like '/nut' or empty depends on situation),
+dnl or a complete --with-confdir='${sysconfdir}${nut_with_confdir_suffix}'
+dnl (for common use-cases matched with legacy usage, there should be no
+dnl change: would use sysconfdir (if set) with empty nut_with_confdir_suffix.
+conftemp="${nut_with_confdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 CONFPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([Config file path],
     CONFPATH, "${conftemp}", [Default path for configuration files])
+
+dnl Some distros prefer these not in system CONFPATH but in docs or similar
+conftemp="${nut_with_confdir_examples}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+CONFPATH_EXAMPLES="${conftemp}"
+NUT_REPORT_SETTING_PATH([Config file examples path],
+    CONFPATH_EXAMPLES, "${conftemp}", [Default path for example configuration files])
 
 dnl same for datadir
 conftemp="${datadir}"
@@ -6108,6 +6217,7 @@ AC_SUBST(STATEPATH)
 AC_SUBST(ALTPIDPATH)
 dnl #Not in main codebase yet# AC_SUBST(ALTSTATEPATH)
 AC_SUBST(CONFPATH)
+AC_SUBST(CONFPATH_EXAMPLES)
 AC_SUBST(POWERDOWNFLAG)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
@@ -6937,6 +7047,16 @@ AS_IF([test x"${NUT_VERSION_DEPLOYED-}" = x"<reenter>"], [
 	AC_MSG_NOTICE([install into a temporary DESTDIR and verify the fliesystem])
 	AC_MSG_NOTICE([layout of the new build against what you already have.])
 	AC_MSG_NOTICE([Check INSTALL.nut.adoc for practical details and example.])
+	AC_MSG_NOTICE([==========================================================])
+])
+
+AS_CASE([${CONFIG_FLAGS}],
+	[*--sysconfdir=*], [
+	AC_MSG_NOTICE([==========================================================])
+	AC_MSG_NOTICE([This build configuration modifies the --sysconfdir setting.])
+	AC_MSG_NOTICE([While this was the way for decades, it was the wrong way.])
+	AC_MSG_NOTICE([Consider updating your build recipes to use --with-confdir*])
+	AC_MSG_NOTICE([options nowadays.])
 	AC_MSG_NOTICE([==========================================================])
 ])
 
