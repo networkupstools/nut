@@ -4,9 +4,10 @@ dnl     2006       Peter Selinger <selinger@users.sourceforge.net>
 dnl     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 dnl Common arguments:
 dnl     $1 option name (part after `--with-`)
-dnl     $2 help text (descriptive part)
-dnl     $3 default value
-dnl     $4 how to represent default in help text (for *_CUSTOM_DEFAULT_HELP)
+dnl     $2 help bit in option name (except legacy short funcs)
+dnl     $2 or $3 help text (descriptive part)
+dnl     $3 or $4 default value
+dnl     $4 or $5 how to represent default in help text (for *_CUSTOM_DEFAULT_HELP)
 dnl Note that for some reason use of dollar-number gets expanded below,
 dnl but any other variable (e.g. $conftemp straight in help string) is not.
 dnl In fact, the generated configure script includes the help wall of text
@@ -26,26 +27,34 @@ AC_DEFUN([NUT_ARG_EXPAND],
 dnl Working With External Software (might name a variant or other contextual arg)
 dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.66/html_node/External-Software.html#External-Software
 dnl including concepts of the OS as external software (account names, paths...)
+
+dnl     $1 option name (part after `--with-`)
+dnl     $2 optional "=VALUE" for help tag (after $1)
+dnl     $3 help text (descriptive part)
+dnl     $4 default value
+dnl     $5 how to represent default in help text (for *_CUSTOM_DEFAULT_HELP)
 AC_DEFUN([NUT_ARG_WITH_CUSTOM_DEFAULT_HELP],
 [   AC_ARG_WITH($1,
-        AS_HELP_STRING([--with-$1], [$2 ($4)]),
+        m4_ifval([$2],
+            [AS_HELP_STRING([--with-$1=$2], [$3 ($5)])],
+            [AS_HELP_STRING([--with-$1], [$3 ($5)])]),
         [[nut_with_]m4_translit($1, [-], [_])="${withval}"],
-        [[nut_with_]m4_translit($1, [-], [_])="$3"]
+        [[nut_with_]m4_translit($1, [-], [_])="$4"]
     )
 ])
 
 AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP],
 [
-    dnl Note: only 3 args expected
+    dnl Note: only 4 args expected
     dnl NUT_ARG_EXPAND($1, $3)
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], NUT_ARG_EXPAND($1, $3))
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND($1, $4))
 ])
 
 AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 [
-    dnl Variant for paths (likely using backslash-dollar in $3)
-    dnl Note: only 3 args expected
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], NUT_ARG_EXPAND($1, '$3'))
+    dnl Variant for paths (likely using backslash-dollar in $4)
+    dnl Note: only 4 args expected
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND($1, '$4'))
 ])
 
 AC_DEFUN([NUT_ARG_WITH],
@@ -53,30 +62,32 @@ AC_DEFUN([NUT_ARG_WITH],
     dnl Note: only 3 args expected
     dnl Legacy behavior (for static values): default value
     dnl and its help representation are the same (verbatim!)
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$3])
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [], [$2], [$3], [$3])
 ])
 
 dnl Enable a package feature/ability (might name a variant, or yes/no)
 dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.66/html_node/Package-Options.html
 AC_DEFUN([NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP],
 [   AC_ARG_ENABLE($1,
-        AS_HELP_STRING([--enable-$1], [$2 ($4)]),
+        m4_ifval([$2],
+            [AS_HELP_STRING([--enable-$1=$2], [$3 ($5)])],
+            [AS_HELP_STRING([--enable-$1], [$3 ($5)])]),
         [[nut_enable_]m4_translit($1, [-], [_])="${enableval}"],
-        [[nut_enable_]m4_translit($1, [-], [_])="$3"]
+        [[nut_enable_]m4_translit($1, [-], [_])="$4"]
     )
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP],
 [
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], NUT_ARG_EXPAND($1, $3))
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND($1, $4))
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 [
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], NUT_ARG_EXPAND($1, '$3'))
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND($1, '$4'))
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE],
 [
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$3])
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [], [$2], [$3], [$3])
 ])

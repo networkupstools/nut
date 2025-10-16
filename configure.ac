@@ -302,8 +302,8 @@ AM_MAINTAINER_MODE
 
 dnl TOTHINK: Add a default --with-nutdir-suffix='nut'/'ups'/etc. for different paths we make?
 NUT_ARG_WITH([confdir-suffix], [Relative path to NUT configuration files under sysconfdir], [auto])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir], [Complete path to NUT configuration files], [\${sysconfdir}\${confdir_suffix}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir-examples], [Complete path to NUT configuration file examples (some like it under datadir)], [\${confdir}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir], [PATH], [Complete path to NUT configuration files], [\${sysconfdir}\${confdir_suffix}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir-examples], [PATH], [Complete path to NUT configuration file examples (some like it under datadir)], [\${confdir}])
 
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
 AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
@@ -2650,8 +2650,8 @@ AS_IF([($NUT_SOURCE_GITREV_IS_RELEASE || $NUT_SOURCE_GITREV_IS_PRERELEASE)],
     [AC_MSG_NOTICE([This is a (pre-)release build, setting default --with-doc='auto' (not just '${nut_with_docs_default}')])
      nut_with_docs_default="auto"])
 
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs], [build and install documentation (alias to --with-doc)], [${nut_with_docs_default}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs], [], [build and install documentation (alias to --with-doc)], [${nut_with_docs_default}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP([doc],  [], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
 NUT_ARG_ENABLE([docs-man-for-progs-built-only], [build and install man pages (if enabled) only for built programs (yes, default) or all known pages (no)], [yes])
 NUT_ARG_ENABLE([docs-changelog], [(re-)generate ChangeLog* files - and do so whenever git info changes? (default: auto; yes, no, "adoc,html,pdf"...)], [auto])
@@ -2688,13 +2688,13 @@ AC_MSG_NOTICE([Platform ${target_os} default man page section for user commands:
 AC_MSG_NOTICE([Platform ${target_os} default man page section for overviews, conventions, and miscellaneous: '${DEFAULT_MAN_SECTION_MISC}'])
 
 dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-api], [man page section for library APIs], [${DEFAULT_MAN_SECTION_API}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-cfg], [man page section for configuration files], [${DEFAULT_MAN_SECTION_CFG}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-cmd-sys], [man page section for system management commands], [${DEFAULT_MAN_SECTION_CMD_SYS}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-cmd-usr], [man page section for user commands], [${DEFAULT_MAN_SECTION_CMD_USR}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-misc], [man page section for overviews, conventions, and miscellaneous], [${DEFAULT_MAN_SECTION_MISC}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-api], [], [man page section for library APIs], [${DEFAULT_MAN_SECTION_API}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-cfg], [], [man page section for configuration files], [${DEFAULT_MAN_SECTION_CFG}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-cmd-sys], [], [man page section for system management commands], [${DEFAULT_MAN_SECTION_CMD_SYS}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-cmd-usr], [], [man page section for user commands], [${DEFAULT_MAN_SECTION_CMD_USR}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-misc], [], [man page section for overviews, conventions, and miscellaneous], [${DEFAULT_MAN_SECTION_MISC}])
 
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-dir-as-base], [are platform man directories named by base number (yes) or full section name (no)], [${DEFAULT_MAN_DIR_AS_BASE}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-dir-as-base], [], [are platform man directories named by base number (yes) or full section name (no)], [${DEFAULT_MAN_DIR_AS_BASE}])
 
 NUT_ARG_WITH([docs-man-linkmanext-template], [asciidoc template for "linkmanext" tags (distro-dependent)], [auto])
 NUT_ARG_WITH([docs-man-linkmanext2-template], [asciidoc template for "linkmanext2" tags (distro-dependent)], [auto])
