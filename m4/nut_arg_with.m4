@@ -13,9 +13,14 @@ dnl but any other variable (e.g. $conftemp straight in help string) is not.
 dnl In fact, the generated configure script includes the help wall of text
 dnl much earlier than it includes lines that manipulate conftemp (unless it
 dnl gets somehow escaped to happen earlier), due to m4 diverts in autoconf code.
+dnl So we can use the "EXPAND" methods to convert static text, but not to display
+dnl any values determined and changed during `configure` shell script run-time.
+dnl See research in https://github.com/networkupstools/nut/issues/3049 for more.
 
 dnl Default expanded once to substitute current variables,
 dnl or remove backslashing of verbatim dollars, etc.
+dnl NOTE: Not sure if the fuss with uniquely named conftemp is worth it,
+dnl or is even remembered between calls. There seems to be 3 calls per name.
 AC_DEFUN([NUT_ARG_EXPAND],
 [[]m4_esyscmd_s(
     [nut_conftemp_]m4_translit($1, [-], [_])="$2" ;
