@@ -301,9 +301,9 @@ dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
 dnl TOTHINK: Add a default --with-nutdir-suffix='nut'/'ups'/etc. for different paths we make?
-NUT_ARG_WITH([confdir-suffix], [Relative path to NUT configuration files under sysconfdir], [auto])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir], [PATH], [Complete path to NUT configuration files], [\${sysconfdir}\${confdir_suffix}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir-examples], [PATH], [Complete path to NUT configuration file examples (some like it under datadir)], [\${confdir}])
+NUT_ARG_WITH([confdir-suffix], [SHORT_DIRNAME], [Relative path to NUT configuration files under '${sysconfdir}', typically 'nut'], [auto])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir], [DIRPATH], [Complete path to NUT configuration files], [\${sysconfdir}\${confdir_suffix}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir-examples], [DIRPATH], [Complete path to NUT configuration file examples (some like it under datadir)], [\${confdir}])
 
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
 AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
