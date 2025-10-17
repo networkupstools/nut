@@ -68,10 +68,13 @@ AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 
 AC_DEFUN([NUT_ARG_WITH],
 [
-    dnl Note: only 3 args expected
+    dnl Note: historicaly only 3 args were expected
+    dnl Now a second arg may be injected for optional "=VALUE" for help tag (after $1)
     dnl Legacy behavior (for static values): default value
     dnl and its help representation are the same (verbatim!)
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [], [$2], [$3], [$3])
+    m4_ifval([$4],
+        [NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], [$4])],
+        [NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [], [$2], [$3], [$3])])
 ])
 
 dnl Enable a package feature/ability (might name a variant, or yes/no)
@@ -102,5 +105,7 @@ AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 
 AC_DEFUN([NUT_ARG_ENABLE],
 [
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [], [$2], [$3], [$3])
+    m4_ifval([$4],
+        [NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], [$4])],
+        [NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [], [$2], [$3], [$3])])
 ])
