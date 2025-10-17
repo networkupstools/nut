@@ -433,7 +433,9 @@ dnl and docs/macros.txt
 dnl +------------------------------------------------------------------+
 dnl | default values for things later on (can be overridden)           |
 
-STATEPATH="/var/state/ups"
+dnl Define m4var and shellvar from that:
+m4_define([m4nut_DEFAULT_STATEPATH], [/var/state/ups])
+STATEPATH="m4nut_DEFAULT_STATEPATH"
 
 dnl Historically this refers to *system location* for PID files,
 dnl and more specifically that for `upsmon` (running as `root`).
@@ -448,7 +450,8 @@ dnl ensure that these locations would exist and be properly owned.
 dnl
 dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below
 dnl for the unprivileged daemons (`upsd`, drivers).
-PIDPATH="/var/run"
+m4_define([m4nut_DEFAULT_PIDPATH], [/var/run])
+PIDPATH="m4nut_DEFAULT_PIDPATH"
 dnl Honour new FHS-3.0 recommendations if applied on the build
 dnl system (but do still prefer '/var/run' if usable); see also
 dnl https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard :
@@ -4526,22 +4529,19 @@ PREFIX="${prefix}"
 NUT_REPORT_SETTING_PATH([Default installation prefix path],
     PREFIX, "${prefix}", [Default installation prefix path])
 
+dnl Note: long ago in NUT history drivers and upsd exchanges state files
+dnl Now socket files live there for similar but more efficient effect.
 AC_MSG_CHECKING(if requested state path)
-AC_ARG_WITH(statepath,
-	AS_HELP_STRING([--with-statepath=PATH], [path for ups state files (${STATEPATH}, typically /var/state/ups)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-statepath - see docs/configure.txt)
-		;;
-	*)
-		STATEPATH="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH([statepath], [DIRPATH], [Path for UPS driver state (socket) files], [m4nut_DEFAULT_STATEPATH])
+
+AS_CASE([${nut_with_statepath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-statepath - see docs/configure.txt)],
+	["${STATEPATH}"|m4nut_DEFAULT_STATEPATH], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+STATEPATH="${nut_with_statepath}"
 NUT_REPORT_SETTING_PATH([State file path],
-    STATEPATH, "${STATEPATH}", [Path for UPS driver state files])
+    STATEPATH, "${STATEPATH}", [Path for UPS driver state (socket) files])
 
 dnl ---------------------------------------------------------------------
 dnl The 'alt pid path' is used by the drivers (via main.c) and upsd, since
@@ -4551,39 +4551,33 @@ dnl able to write there.
 dnl
 
 AC_MSG_CHECKING(if requested alt pid path)
-AC_ARG_WITH(altpidpath,
-	AS_HELP_STRING([--with-altpidpath=PATH], [path for NUT driver/upsd .pid files not running as root (<statepath>)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-altpidpath - see docs/configure.txt)
-		;;
-	*)
-		ALTPIDPATH="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [
-	ALTPIDPATH="${STATEPATH}"
-	AC_MSG_RESULT([default])
-])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([altpidpath], [DIRPATH], [path for NUT driver/upsd .pid files not running as root], [\${STATEPATH}])
+
+AS_CASE([${nut_with_altpidpath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-altpidpath - see docs/configure.txt)],
+	[${STATEPATH}|\${STATEPATH}], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+conftemp="${nut_with_altpidpath}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+ALTPIDPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([Unprivileged PID file path],
     ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of processes not running as root, such as drivers and upsd (usually STATEPATH)])
 
+dnl ---------------------------------------------------------------------
+dnl Recommended: a sub-directory of (/var)/run as long as we can create
+dnl and chown+chmod it before starting NUT daemons.
+
 AC_MSG_CHECKING(if requested pidpath)
-AC_ARG_WITH(pidpath,
-	AS_HELP_STRING([--with-pidpath=PATH], [Path for root-owned .pid files (${PIDPATH}, typically /var/run)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)
-		;;
-	*)
-		PIDPATH="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([pidpath], [DIRPATH], [Path for root-owned .pid files], [auto], [platform-dependent, usually m4nut_DEFAULT_PIDPATH])
+
+AS_CASE([${nut_with_pidpath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)],
+	[auto], [AC_MSG_RESULT([default])],	dnl Keep what we chose above in the script (/var/run or /run)
+		[AC_MSG_RESULT([specified])
+		 PIDPATH="${nut_with_pidpath}"]
+)
 NUT_REPORT_SETTING_PATH([Privileged PID file path],
     PIDPATH, "${PIDPATH}", [Path for pid files of processes running as root, such as upsmon])
 
