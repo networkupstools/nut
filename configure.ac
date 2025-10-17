@@ -4591,20 +4591,20 @@ dnl Ideally the filesystems with `upsmon` program and libraries it needs
 dnl also remain mounted, so `upsmon -K` may be queried late in shutdown -
 dnl and we can avoid hardcoding such paths into those shutdown hooks.
 dnl Note that upsmon removes this file early in any daemonized start-up.
+dnl Keep in mind that upsmon requires the value to be actually defined
+dnl in its own config file, if we want to use late end-game UPS poweroff.
+dnl Otherwise that code path is skipped.
 AC_MSG_CHECKING(if requested default upsmon POWERDOWNFLAG path)
-AC_ARG_WITH(powerdownflag,
-	AS_HELP_STRING([--with-powerdownflag=PATH], [default path for upsmon POWERDOWNFLAG file (${POWERDOWNFLAG}, typically /etc/killpower)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-powerdownflag - see docs/configure.txt)
-		;;
-	*)
-		POWERDOWNFLAG="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([powerdownflag], [FILEPATH], [Default path for upsmon POWERDOWNFLAG file, often '/etc/killpower' but recommended to be under some tmpfs],
+	[auto], [platform-dependent: /etc/killpower on POSIX systems, C:\killpower on Windows])
+
+AS_CASE([${nut_with_powerdownflag}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-powerdownflag - see docs/configure.txt)],
+	[auto], [AC_MSG_RESULT([default])],
+		[POWERDOWNFLAG="${nut_with_powerdownflag}"
+		 AC_MSG_RESULT([specified])]
+)
+
 dnl # This should be internal detail for "upsmon -K" implementation,
 dnl # so not necessarily reported (reduce noise):
 dnl NUT_REPORT_SETTING_PATH([Default upsmon POWERDOWNFLAG path],
