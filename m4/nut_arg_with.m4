@@ -41,8 +41,12 @@ dnl     $5 how to represent default in help text (for *_CUSTOM_DEFAULT_HELP)
 AC_DEFUN([NUT_ARG_WITH_CUSTOM_DEFAULT_HELP],
 [   AC_ARG_WITH($1,
         m4_ifval([$2],
-            [AS_HELP_STRING([--with-$1=$2], [$3 ($5)])],
-            [AS_HELP_STRING([--with-$1], [$3 ($5)])]),
+            [m4_ifval([$5],
+                [AS_HELP_STRING([--with-$1=$2], [$3 ($5)])],
+                [AS_HELP_STRING([--with-$1=$2], [$3 ($4)])])],
+            [m4_ifval([$5],
+                [AS_HELP_STRING([--with-$1], [$3 ($5)])],
+                [AS_HELP_STRING([--with-$1], [$3 ($4)])])]),
         [[nut_with_]m4_translit($1, [-], [_])="${withval}"],
         [[nut_with_]m4_translit($1, [-], [_])="$4"]
     )
@@ -75,8 +79,12 @@ dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.66/html_node/Package
 AC_DEFUN([NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP],
 [   AC_ARG_ENABLE($1,
         m4_ifval([$2],
-            [AS_HELP_STRING([--enable-$1=$2], [$3 ($5)])],
-            [AS_HELP_STRING([--enable-$1], [$3 ($5)])]),
+            [m4_ifval([$5],
+                [AS_HELP_STRING([--enable-$1=$2], [$3 ($5)])],
+                [AS_HELP_STRING([--enable-$1=$2], [$3 ($4)])])],
+            [m4_ifval([$5],
+                [AS_HELP_STRING([--enable-$1], [$3 ($5)])],
+                [AS_HELP_STRING([--enable-$1], [$3 ($4)])])]),
         [[nut_enable_]m4_translit($1, [-], [_])="${enableval}"],
         [[nut_enable_]m4_translit($1, [-], [_])="$4"]
     )
