@@ -507,9 +507,11 @@ AS_CASE([${target_os}],
 	[POWERDOWNFLAG="/etc/killpower"] dnl POSIX systems default
 )
 
+
 cgiexecdir='${exec_prefix}/cgi-bin'
-driverexecdir='${exec_prefix}/bin'
-dnl Note: htmldir per se is originally for nut-cgi resources
+m4_define([m4nut_DEFAULT_DRVPATH], [\${exec_prefix}/bin])
+dnl Note: htmldir per se is originally for nut-cgi resources,
+dnl so htmldocdir and htmlmandir are separate
 htmldir='${prefix}/html'
 htmldocdir='${docdir}/html-doc'
 htmlmandir='${docdir}/html-man'
@@ -4612,19 +4614,17 @@ dnl    POWERDOWNFLAG, "${POWERDOWNFLAG}", [Default path for upsmon POWERDOWNFLAG
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(if requested driver path)
-AC_ARG_WITH(drvpath,
-	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (legacy default: EPREFIX/bin; recommended: a subdir of libexecdir)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-drvpath - see docs/configure.txt)
-		;;
-	*)
-		driverexecdir="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([drvpath], [DIRPATH], [Where to install UPS driver programs, often EPREFIX/bin, but recommended to be a subdir of '${libexecdir}'], [m4nut_DEFAULT_DRVPATH])
+
+AS_CASE([${nut_with_drvpath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-drvpath - see docs/configure.txt)],
+	[m4nut_DEFAULT_DRVPATH], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+dnl Raw value for Makefile automated install rules
+driverexecdir="${nut_with_drvpath}"
+
+dnl Resolved value
 conftemp="${driverexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
