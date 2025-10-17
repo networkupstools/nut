@@ -42,11 +42,11 @@ AC_DEFUN([NUT_ARG_WITH_CUSTOM_DEFAULT_HELP],
 [   AC_ARG_WITH($1,
         m4_ifval([$2],
             [m4_ifval([$5],
-                [AS_HELP_STRING([--with-$1=$2], [$3 ($5)])],
-                [AS_HELP_STRING([--with-$1=$2], [$3 ($4)])])],
+                [AS_HELP_STRING([--with-$1=$2], [$3 (default: $5)])],
+                [AS_HELP_STRING([--with-$1=$2], [$3 (default: $4)])])],
             [m4_ifval([$5],
-                [AS_HELP_STRING([--with-$1], [$3 ($5)])],
-                [AS_HELP_STRING([--with-$1], [$3 ($4)])])]),
+                [AS_HELP_STRING([--with-$1], [$3 (default: $5)])],
+                [AS_HELP_STRING([--with-$1], [$3 (default: $4)])])]),
         [[nut_with_]m4_translit($1, [-], [_])="${withval}"],
         [[nut_with_]m4_translit($1, [-], [_])="$4"]
     )
@@ -63,7 +63,8 @@ AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 [
     dnl Variant for paths (likely using backslash-dollar in $4)
     dnl Note: only 4 args expected
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND(with_$1, '$4'))
+    dnl Note: "resolved from" must be not bracketed
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], resolved from NUT_ARG_EXPAND(with_$1, '$4'))
 ])
 
 AC_DEFUN([NUT_ARG_WITH],
@@ -83,11 +84,11 @@ AC_DEFUN([NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP],
 [   AC_ARG_ENABLE($1,
         m4_ifval([$2],
             [m4_ifval([$5],
-                [AS_HELP_STRING([--enable-$1=$2], [$3 ($5)])],
-                [AS_HELP_STRING([--enable-$1=$2], [$3 ($4)])])],
+                [AS_HELP_STRING([--enable-$1=$2], [$3 (default: $5)])],
+                [AS_HELP_STRING([--enable-$1=$2], [$3 (default: $4)])])],
             [m4_ifval([$5],
-                [AS_HELP_STRING([--enable-$1], [$3 ($5)])],
-                [AS_HELP_STRING([--enable-$1], [$3 ($4)])])]),
+                [AS_HELP_STRING([--enable-$1], [$3 (default: $5)])],
+                [AS_HELP_STRING([--enable-$1], [$3 (default: $4)])])]),
         [[nut_enable_]m4_translit($1, [-], [_])="${enableval}"],
         [[nut_enable_]m4_translit($1, [-], [_])="$4"]
     )
@@ -100,7 +101,7 @@ AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP],
 
 AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 [
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND(enable_$1, '$4'))
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], resolved from NUT_ARG_EXPAND(enable_$1, '$4'))
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE],
