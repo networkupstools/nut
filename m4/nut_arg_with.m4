@@ -52,14 +52,14 @@ AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP],
 [
     dnl Note: only 4 args expected
     dnl NUT_ARG_EXPAND($1, $3)
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND($1, $4))
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND(with_$1, $4))
 ])
 
 AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 [
     dnl Variant for paths (likely using backslash-dollar in $4)
     dnl Note: only 4 args expected
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND($1, '$4'))
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND(with_$1, '$4'))
 ])
 
 AC_DEFUN([NUT_ARG_WITH],
@@ -84,12 +84,12 @@ AC_DEFUN([NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP],
 
 AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP],
 [
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND($1, $4))
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND(enable_$1, $4))
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 [
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND($1, '$4'))
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND(enable_$1, '$4'))
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE],
