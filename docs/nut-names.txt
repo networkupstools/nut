@@ -1030,6 +1030,7 @@ Instant commands
 | test.failure.stop        | Stop simulating a power failure
 | test.battery.start       | Start a battery test
 | test.battery.start.quick | Start a "quick" battery test
+| test.battery.start.low   | Start a battery test until battery low
 | test.battery.start.deep  | Start a "deep" battery test
 | test.battery.stop        | Stop the battery test
 | test.system.start        | Start a system test
