@@ -67,6 +67,14 @@ https://github.com/networkupstools/nut/milestone/12
      well -- namely, that we successfully use reasonably many of the existing
      mappings. Suggest how user can help improve the driver if too few data
      points were seen. [PR #3095]
+   * `nutdrv_qx_masterguard` sub-driver adds a way to call battery test until
+     the battery charge is low, using a new `test.battery.start.low` instant
+     command name (registered in `docs/nut-names.txt`). The difference between
+     the "battery test until battery low" and "deep battery test" is that the
+     latter is actually a battery calibration test and needs some preconditions
+     to be met, i.e. the load must be between 30% and 100% and the starting
+     battery capacity is greater than 99%. The "Battery test until battery low"
+     can be started anytime. Tested on Masterguard A1000 and A2000 units. [#3135]
 
  - `powerp-bin` and `powerp-txt` driver updates:
    * Their `upsdrv_initinfo()` methods did not explicitly reference the
