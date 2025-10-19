@@ -511,11 +511,11 @@ AS_CASE([${target_os}],
 )
 
 
-m4_define([m4nut_DEFAULT_CGIPATH], [\${exec_prefix}/cgi-bin])
+m4_define([m4nut_DEFAULT_CGIEXECPATH], [\${exec_prefix}/cgi-bin])
 m4_define([m4nut_DEFAULT_DRVPATH], [\${exec_prefix}/bin])
-dnl Note: htmldir per se is originally for nut-cgi resources,
+dnl Note: htmlcgidir per se is originally for nut-cgi resources,
 dnl so htmldocdir and htmlmandir are separate
-htmldir='${prefix}/html'
+htmlcgidir='${prefix}/html'
 htmldocdir='${docdir}/html-doc'
 htmlmandir='${docdir}/html-man'
 pkgconfigdir='${libdir}/pkgconfig'
@@ -4641,11 +4641,11 @@ NUT_REPORT_SETTING_PATH([Driver program path],
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(if requested CGI program path)
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([cgipath], [DIRPATH], [Where to install CGI programs, distros may want it in a location dictated by web server software], [m4nut_DEFAULT_CGIPATH])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([cgipath], [DIRPATH], [Where to install CGI programs, distros may want it in a location dictated by web server software], [m4nut_DEFAULT_CGIEXECPATH])
 
 AS_CASE([${nut_with_cgipath}],
 	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-cgipath - see docs/configure.txt)],
-	[m4nut_DEFAULT_CGIPATH], [AC_MSG_RESULT([default])],
+	[m4nut_DEFAULT_CGIEXECPATH], [AC_MSG_RESULT([default])],
 		[AC_MSG_RESULT([specified])]
 )
 dnl Raw value for Makefile automated install rules
@@ -4655,11 +4655,12 @@ dnl Resolved value
 conftemp="${cgiexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-CGIPATH="${conftemp}"
+CGIEXECPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([CGI program path],
-    CGIPATH, "${conftemp}", [Default path for CGI programs])
+    CGIEXECPATH, "${conftemp}", [Default path for CGI programs])
 
 dnl ---------------------------------------------------------------------
+dnl FIXME: Make it an alias for a new --with-htmlcgipath
 AC_MSG_CHECKING(if requested CGI HTML resource path)
 AC_ARG_WITH(htmlpath,
 	AS_HELP_STRING([--with-htmlpath=PATH], [where to install CGI HTML resource files (PREFIX/html)]),
@@ -4669,17 +4670,17 @@ AC_ARG_WITH(htmlpath,
 		AC_MSG_ERROR(invalid option --with(out)-htmlpath - see docs/configure.txt)
 		;;
 	*)
-		htmldir="${withval}"
+		htmlcgidir="${withval}"
 		AC_MSG_RESULT([specified])
 		;;
 	esac
 ], [AC_MSG_RESULT([default])])
-conftemp="${htmldir}"
+conftemp="${htmlcgidir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-HTMLPATH="${conftemp}"
+CGIDATAPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([HTML file path],
-    HTMLPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
+    CGIDATAPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
 
 dnl ---------------------------------------------------------------------
 dnl Other NUT build/install customization options
@@ -6249,11 +6250,13 @@ AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(SUN_LIBUSB)
 AC_SUBST(WORDS_BIGENDIAN)
+AC_SUBST(CGIEXECPATH)
 AC_SUBST(cgiexecdir)
 AC_SUBST(devddir)
 AC_SUBST(driverexecdir)
 AC_SUBST(freebsdquirksdir)
-AC_SUBST(htmldir)
+AC_SUBST(CGIDATAPATH)
+AC_SUBST(htmlcgidir)
 AC_SUBST(htmldocdir)
 AC_SUBST(htmlmandir)
 AC_SUBST(pkgconfigdir)
@@ -6899,8 +6902,8 @@ AC_CONFIG_FILES([
  conf/Makefile
  conf/upsmon.conf.sample
  conf/upssched.conf.sample
- data/html/header.html
- data/html/Makefile
+ data/htmlcgi/header.html
+ data/htmlcgi/Makefile
  data/Makefile
  data/driver.list
  docs/asciidoc.conf
