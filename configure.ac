@@ -508,7 +508,7 @@ AS_CASE([${target_os}],
 )
 
 
-cgiexecdir='${exec_prefix}/cgi-bin'
+m4_define([m4nut_DEFAULT_CGIPATH], [\${exec_prefix}/cgi-bin])
 m4_define([m4nut_DEFAULT_DRVPATH], [\${exec_prefix}/bin])
 dnl Note: htmldir per se is originally for nut-cgi resources,
 dnl so htmldocdir and htmlmandir are separate
@@ -4632,20 +4632,19 @@ DRVPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([Driver program path],
     DRVPATH, "${conftemp}", [Default path for UPS drivers])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(if requested cgi path)
-AC_ARG_WITH(cgipath,
-	AS_HELP_STRING([--with-cgipath=PATH], [where to install CGI programs (EPREFIX/cgi-bin)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-cgipath - see docs/configure.txt)
-		;;
-	*)
-		cgiexecdir="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([cgipath], [DIRPATH], [Where to install CGI programs, distros may want it in a location dictated by web server software], [m4nut_DEFAULT_CGIPATH])
+
+AS_CASE([${nut_with_cgipath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-cgipath - see docs/configure.txt)],
+	[m4nut_DEFAULT_CGIPATH], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+dnl Raw value for Makefile automated install rules
+cgiexecdir="${nut_with_cgipath}"
+
+dnl Resolved value
 conftemp="${cgiexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
