@@ -305,6 +305,7 @@ NUT_ARG_WITH([confdir-suffix], [SHORT_DIRNAME], [Relative path to NUT configurat
 NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir], [DIRPATH], [Complete path to NUT configuration files], [\${sysconfdir}\${confdir_suffix}])
 NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir-examples], [DIRPATH], [Complete path to NUT configuration file examples (some like it under datadir)], [\${confdir}])
 
+dnl ---------------------------------------------------------------------
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
 AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
 dnl # using printf formatting for some funniner shells out there
@@ -322,6 +323,7 @@ AC_SUBST(NUT_AM_MAKE_CAN_EXPORT)
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
 NUT_CHECK_PKGCONFIG
 
+dnl ---------------------------------------------------------------------
 dnl Nowadays both `tail -n +3` and `tail +3` work almost everywhere
 dnl * CentOS7 tail can not do `tail +3` -- no such file
 dnl * Classic Solaris tooling (even in Solaris 11) can not do `tail -n` -- no such option
@@ -375,6 +377,7 @@ NUT_NETVERSION="1.3"
 AC_DEFINE_UNQUOTED(NUT_NETVERSION, "${NUT_NETVERSION}", [NUT network protocol version])
 
 
+dnl ---------------------------------------------------------------------
 dnl Fix this early so we can expand with eval later
 test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
@@ -583,6 +586,7 @@ case "${target_os}" in
         ;;
 esac
 
+dnl ---------------------------------------------------------------------
 dnl Note: this deals with run-time settings so that the newly built
 dnl programs can be "just executed" to use same configuration files
 dnl and filesystem object permissions as an older deployment of NUT
@@ -1125,6 +1129,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     ])
 ])
 
+dnl ---------------------------------------------------------------------
 dnl Define directory where LIBOBJS replacement functions are
 AC_CONFIG_LIBOBJ_DIR([common])
 
@@ -4526,11 +4531,13 @@ AS_IF([test "x$nut_cv_header_windows_h" = xyes],
 
 
 dnl ----------------------------------------------------------------------
+dnl Bits and pieces of NUT build artefacts' installation locations
 
 PREFIX="${prefix}"
 NUT_REPORT_SETTING_PATH([Default installation prefix path],
     PREFIX, "${prefix}", [Default installation prefix path])
 
+dnl ---------------------------------------------------------------------
 dnl Note: long ago in NUT history drivers and upsd exchanges state files
 dnl Now socket files live there for similar but more efficient effect.
 AC_MSG_CHECKING(if requested state path)
@@ -4633,7 +4640,7 @@ NUT_REPORT_SETTING_PATH([Driver program path],
     DRVPATH, "${conftemp}", [Default path for UPS drivers])
 
 dnl ---------------------------------------------------------------------
-AC_MSG_CHECKING(if requested cgi path)
+AC_MSG_CHECKING(if requested CGI program path)
 NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([cgipath], [DIRPATH], [Where to install CGI programs, distros may want it in a location dictated by web server software], [m4nut_DEFAULT_CGIPATH])
 
 AS_CASE([${nut_with_cgipath}],
@@ -4652,9 +4659,10 @@ CGIPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([CGI program path],
     CGIPATH, "${conftemp}", [Default path for CGI programs])
 
-AC_MSG_CHECKING(if requested html path)
+dnl ---------------------------------------------------------------------
+AC_MSG_CHECKING(if requested CGI HTML resource path)
 AC_ARG_WITH(htmlpath,
-	AS_HELP_STRING([--with-htmlpath=PATH], [where to install HTML files (PREFIX/html)]),
+	AS_HELP_STRING([--with-htmlpath=PATH], [where to install CGI HTML resource files (PREFIX/html)]),
 [
 	case "${withval}" in
 	yes|no)
@@ -4673,6 +4681,8 @@ HTMLPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([HTML file path],
     HTMLPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
 
+dnl ---------------------------------------------------------------------
+dnl Other NUT build/install customization options
 AC_MSG_CHECKING(network port number)
 AC_ARG_WITH(port,
 	AS_HELP_STRING([--with-port=PORT], [port for network communications (3493)]),
@@ -4691,6 +4701,7 @@ AC_ARG_WITH(port,
 AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
 AC_MSG_RESULT(${PORT})
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(facility for syslog)
 AC_ARG_WITH(logfacility,
 	AS_HELP_STRING([--with-logfacility=FACILITY], [facility for log messages (LOG_DAEMON)]),
@@ -4709,6 +4720,7 @@ AC_ARG_WITH(logfacility,
 AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
 AC_MSG_RESULT(${LOGFACILITY})
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(which driver man pages to install)
 DRIVER_MAN_LIST_PAGES=""
 if test "${WITH_MANS}" = "yes"; then
@@ -4731,6 +4743,7 @@ else
 	AC_MSG_RESULT([none (manpages disabled)])
 fi
 
+dnl ---------------------------------------------------------------------
 dnl By default as we iterate (and git commit) the codebase during development,
 dnl prerequisites for that header file change and cause much of the C code
 dnl to be rebuilt and re-linked. For developers fixing one small part of the
@@ -4758,6 +4771,7 @@ AC_ARG_ENABLE(force-nut-version-header,
 ])
 
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(whether to strip debug symbols)
 AC_ARG_ENABLE(strip,
 	AS_HELP_STRING([--enable-strip], [Strip debugging symbols from binaries (no)]),
@@ -4775,6 +4789,7 @@ AC_ARG_ENABLE(strip,
 	AC_MSG_RESULT(no)
 ])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(whether to install pkg-config *.pc files)
 AC_ARG_WITH(pkgconfig-dir,
 	AS_HELP_STRING([--with-pkgconfig-dir=PATH], [where to install pkg-config *.pc files (EPREFIX/lib/pkgconfig)]),
@@ -4809,6 +4824,7 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
+dnl ---------------------------------------------------------------------
 dnl Only check the option here (and show in help near pkg-config)
 dnl See LDFLAGS_NUT_RPATH determination further below
 NUT_ARG_ENABLE([ldflags-nut-rpath],
@@ -4819,6 +4835,7 @@ NUT_ARG_ENABLE([ldflags-nut-rpath-cxx],
     [Suggest linker flags for NUT C++ library consumers to set RPATH for uncommon location],
     [auto])
 
+dnl ---------------------------------------------------------------------
 dnl Options for Solaris/illumos `make install` and `make package`
 AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
 solarispkg_svr4="auto"
@@ -4953,6 +4970,7 @@ AC_MSG_RESULT([${solarisinit}])
 AM_CONDITIONAL(WITH_SOLARIS_INIT, test x"$solarisinit" = x"yes")
 
 
+dnl ---------------------------------------------------------------------
 dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or
 dnl risk auto-detection like seen below.
@@ -5262,7 +5280,7 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${nut_have_libsystemd_inhibit
 AC_DEFINE_UNQUOTED(WITH_LIBSYSTEMD_INHIBITOR, [${nut_with_libsystemd_inhibitor}], [Define as 1 if we can use systemd inhibitor interface here])
 AM_CONDITIONAL([WITH_LIBSYSTEMD_INHIBITOR], [test x"${nut_with_libsystemd_inhibitor}" = x1])
 
-dnl
+dnl ---------------------------------------------------------------------
 dnl Tests for CppUnit availability and usability (will be built if we can,
 dnl and if valgrind is enabled for this configuration - reported below).
 dnl Using CppUnit implies C++ support!
@@ -5325,6 +5343,7 @@ AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
 unset CPLUSPLUS_DECL
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(for have_cppunit)
 have_cppunit="no"
 dnl CPPUNIT_NUT_CXXFLAGS are set below if suitable, but can be
@@ -5429,6 +5448,7 @@ NUT_REPORT_FEATURE([build C++ tests with CPPUNIT], [${have_cppunit}], [],
 					[HAVE_CPPUNIT], [Define to enable CPPUNIT tests])
 
 dnl ----------------------------------------------------------------------
+dnl Practical C++ code:
 
 AC_MSG_CHECKING(whether we can and want to build nutconf configuration-management tool)
 
@@ -5478,6 +5498,7 @@ dnl automake rules to build the library (privately or publicly, that depends):
 AM_CONDITIONAL(WITH_LIBNUTCONF, [test x"${nut_with_dev_libnutconf}" = x"yes" -o x"${nut_with_nutconf}" = x"yes"])
 
 dnl ----------------------------------------------------------------------
+dnl Other third-party integrations
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
@@ -5700,6 +5721,7 @@ AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
 dnl processor type
 AC_DEFINE_UNQUOTED(CPU_TYPE, ["$target_cpu"], [Define processor type])
 
+dnl ---------------------------------------------------------------------
 dnl Can use valgrind for memory-leak testing, if present
 dnl FIXME: Set to "auto" after ensuring that we pass on all NUT CI farm platforms
 with_valgrind="no"
@@ -6253,6 +6275,7 @@ dnl that explicitly specify a CFLAGS="-std=..." (for GCC/CLANG toolkits),
 dnl nothing should get added to CFLAGS/CXXFLAGS by this method:
 NUT_COMPILER_FAMILY_FLAGS_DEFAULT_STANDARD
 
+dnl ---------------------------------------------------------------------
 dnl Filter through known variants first, so automatic choices can be made.
 dnl Note that clang identifies as gcc-compatible so should be probed first.
 dnl TODO: Flip this default to "hard" when we clear existing codebase.
@@ -6454,6 +6477,7 @@ Forcing "-Wno-format" into warnings options.
     ])
 ])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING([whether to make warnings fatal])
 AS_CASE(["${nut_enable_Werror}"],
     [yes|auto], [
@@ -6467,6 +6491,7 @@ AS_CASE(["${nut_enable_Werror}"],
 )
 AC_MSG_RESULT([${nut_enable_Werror}])
 
+dnl ---------------------------------------------------------------------
 dnl Some compilers (e.g. older clang-3.4) have issues with built-in methods
 dnl that are implemented as macros in system headers -- but only for some
 dnl sources like snmp-ups.c, nutscan-serial.c, scan_eaton_serial.c, serial.c,
@@ -6585,6 +6610,7 @@ sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
 dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
 
+dnl ---------------------------------------------------------------------
 dnl Due to possibly repetitive content, generate unique settings
 dnl relative to the top_builddir (distcheck and all):
 AC_MSG_CHECKING([for top build dir for this configure run])
@@ -6631,6 +6657,7 @@ dnl Use these at best for tests (e.g. nutconf), not production code:
 AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
 AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING([whether to install External API integration script: Enphase Monitor])
 nut_with_extapi_enphase="no"
 AC_ARG_ENABLE([extapi-enphase],
@@ -6664,6 +6691,7 @@ fi
 AC_MSG_RESULT([${nut_enable_extapi_enphase}])
 AM_CONDITIONAL(ENABLE_EXTAPI_ENPHASE, test x"$nut_enable_extapi_enphase" = x"yes")
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 dnl TOTHINK: Some distributions make the directories below owned
 dnl by "root:${RUN_AS_GROUP}" with 77x permissions. Is it safer?..
@@ -6786,6 +6814,7 @@ AC_SUBST(NUT_AM_EXPORT_CCACHE_PATH)
 PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 
+dnl ---------------------------------------------------------------------
 dnl Some binaries, like CPPUNIT tests, have similar flags already added
 dnl We might wipe their specific options below if consistently applying
 dnl debug-friendly options to everything
@@ -6994,6 +7023,7 @@ m4_foreach_w([SCRIPTFILE], [
  AC_CONFIG_FILES(SCRIPTFILE, chmod +x "SCRIPTFILE")
 ])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_NOTICE([Generating templated script files whose templates might have been generated (or not) by autogen.sh calling our helper scripts])
 m4_foreach_w([SCRIPTFILE], [
  scripts/augeas/nutupsconf.aug
@@ -7008,6 +7038,7 @@ m4_foreach_w([SCRIPTFILE], [
 	)
 ])
 
+dnl ---------------------------------------------------------------------
 dnl Define this before AC_OUTPUT(), so not inside the report routine below:
 AM_CONDITIONAL(KEEP_NUT_REPORT, test x"${nut_enable_keep_nut_report_feature-}" = xyes)
 
