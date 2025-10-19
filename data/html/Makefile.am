@@ -1,11 +1,14 @@
 # Network UPS Tools: data/html
 
+EXTRA_DIST = README.adoc
+
 # install these only if configured --with-cgi
 if WITH_CGI
  dist_html_DATA = index.html bottom.html nut-banner.png
  nodist_html_DATA = header.html
+else
+ EXTRA_DIST += index.html bottom.html nut-banner.png header.html.in
 endif
-EXTRA_DIST = README.adoc
 
 SPELLCHECK_SRC = README.adoc
 
