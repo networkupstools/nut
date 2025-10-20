@@ -2674,17 +2674,27 @@ dnl numbers. The one we treat as default seems to be most wide-spread, in
 dnl Linux and FreeBSD. For others, there are other defaults (see `man man`
 dnl on your platform to port defaults here), and builders can override with
 dnl options further below.
-DEFAULT_MAN_SECTION_API="3"
-DEFAULT_MAN_SECTION_CFG="5"
-DEFAULT_MAN_SECTION_CMD_SYS="8"
-DEFAULT_MAN_SECTION_CMD_USR="1"
-DEFAULT_MAN_SECTION_MISC="7"
+m4_define([m4nut_DEFAULT_MAN_SECTION_API], [3])
+m4_define([m4nut_DEFAULT_MAN_SECTION_CFG], [5])
+m4_define([m4nut_DEFAULT_MAN_SECTION_CMD_SYS], [8])
+m4_define([m4nut_DEFAULT_MAN_SECTION_CMD_USR], [1])
+m4_define([m4nut_DEFAULT_MAN_SECTION_MISC], [7])
 
 dnl Should we use "man1" or "man1m"?
-DEFAULT_MAN_DIR_AS_BASE="yes"
+m4_define([m4nut_DEFAULT_MAN_DIR_AS_BASE], [yes])
+
+dnl Initiate shell variables to customize below:
+DEFAULT_MAN_SECTION_API='m4nut_DEFAULT_MAN_SECTION_API'
+DEFAULT_MAN_SECTION_CFG='m4nut_DEFAULT_MAN_SECTION_CFG'
+DEFAULT_MAN_SECTION_CMD_SYS='m4nut_DEFAULT_MAN_SECTION_CMD_SYS'
+DEFAULT_MAN_SECTION_CMD_USR='m4nut_DEFAULT_MAN_SECTION_CMD_USR'
+DEFAULT_MAN_SECTION_MISC='m4nut_DEFAULT_MAN_SECTION_MISC'
+DEFAULT_MAN_DIR_AS_BASE='m4nut_DEFAULT_MAN_DIR_AS_BASE'
 
 case "${target_os}" in
     solaris*|sunos*|SunOS*|illumos*)
+        dnl Note: this regards target OS standard layout
+        dnl but may not fit certain packaging projects
         DEFAULT_MAN_SECTION_CMD_SYS="1m"
         DEFAULT_MAN_DIR_AS_BASE="no"
         ;;
@@ -2697,14 +2707,16 @@ AC_MSG_NOTICE([Platform ${target_os} default man page section for system managem
 AC_MSG_NOTICE([Platform ${target_os} default man page section for user commands: '${DEFAULT_MAN_SECTION_CMD_USR}'])
 AC_MSG_NOTICE([Platform ${target_os} default man page section for overviews, conventions, and miscellaneous: '${DEFAULT_MAN_SECTION_MISC}'])
 
-dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-api], [], [man page section for library APIs], [${DEFAULT_MAN_SECTION_API}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-cfg], [], [man page section for configuration files], [${DEFAULT_MAN_SECTION_CFG}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-cmd-sys], [], [man page section for system management commands], [${DEFAULT_MAN_SECTION_CMD_SYS}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-cmd-usr], [], [man page section for user commands], [${DEFAULT_MAN_SECTION_CMD_USR}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-section-misc], [], [man page section for overviews, conventions, and miscellaneous], [${DEFAULT_MAN_SECTION_MISC}])
+dnl NOTE: Sections may be strings, not pure numbers, on some platforms.
+dnl NOTE: Weird formatting (m4nut... outside brackets) helps avoid spurious
+dnl end of line in help text before the value (left alone on a short line).
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-api], [], [man page section for library APIs], [${DEFAULT_MAN_SECTION_API}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_API)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-cfg], [], [man page section for configuration files], [${DEFAULT_MAN_SECTION_CFG}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_CFG)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-cmd-sys], [], [man page section for system management commands], [${DEFAULT_MAN_SECTION_CMD_SYS}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_CMD_SYS)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-cmd-usr], [], [man page section for user commands], [${DEFAULT_MAN_SECTION_CMD_USR}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_CMD_USR)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-misc], [], [man page section for overviews, conventions, and miscellaneous], [${DEFAULT_MAN_SECTION_MISC}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_MISC)
 
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs-man-dir-as-base], [], [are platform man directories named by base number (yes) or full section name (no)], [${DEFAULT_MAN_DIR_AS_BASE}])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-dir-as-base], [], [are platform man directories named by base number (yes) or full section name (no)], [${DEFAULT_MAN_DIR_AS_BASE}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_DIR_AS_BASE)
 
 NUT_ARG_WITH([docs-man-linkmanext-template], [asciidoc template for "linkmanext" tags (distro-dependent)], [auto])
 NUT_ARG_WITH([docs-man-linkmanext2-template], [asciidoc template for "linkmanext2" tags (distro-dependent)], [auto])
