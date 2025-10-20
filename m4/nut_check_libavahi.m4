@@ -36,44 +36,26 @@ if test -z "${nut_have_avahi_seen}"; then
 	)
 
 	AC_MSG_CHECKING(for avahi cflags)
-	AC_ARG_WITH(avahi-includes,
-		AS_HELP_STRING([@<:@--with-avahi-includes=CFLAGS@:>@], [include flags for the avahi library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-avahi-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags avahi-core avahi-client 2>/dev/null`" \
-			 || depCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"],
-			[depCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"]
-		)]
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([avahi], [auto])
+	AS_CASE([${nut_with_avahi_includes}],
+		[auto],	[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags avahi-core avahi-client 2>/dev/null`" \
+				 || depCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"],
+				[depCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"]
+			)],
+				[depCFLAGS="${nut_with_avahi_includes}"]
 	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for avahi ldflags)
-	AC_ARG_WITH(avahi-libs,
-		AS_HELP_STRING([@<:@--with-avahi-libs=LIBS@:>@], [linker flags for the avahi library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-avahi-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depLIBS="`$PKG_CONFIG --silence-errors --libs avahi-core avahi-client 2>/dev/null`" \
-			 || depLIBS="-lavahi-core -lavahi-client"],
-			[depLIBS="-lavahi-core -lavahi-client"]
-		)]
+	NUT_ARG_WITH_LIBOPTS_LIBS([avahi], [auto])
+	AS_CASE([${nut_with_avahi_libs}],
+		[auto],	[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[depLIBS="`$PKG_CONFIG --silence-errors --libs avahi-core avahi-client 2>/dev/null`" \
+				 || depLIBS="-lavahi-core -lavahi-client"],
+				[depLIBS="-lavahi-core -lavahi-client"]
+			)],
+				[depLIBS="${nut_with_avahi_libs}"]
 	)
 	AC_MSG_RESULT([${depLIBS}])
 
