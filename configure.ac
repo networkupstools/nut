@@ -5481,27 +5481,20 @@ fi
 
 dnl ----------------------------------------------------------------------
 
+dnl Note: initial hotplugdir value, empty or not, was determined far above
 AC_MSG_CHECKING(whether to install hotplug rules)
-AC_ARG_WITH(hotplug-dir,
-	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (${hotplugdir}); typically /etc/hotplug]),
-[
-	case "${withval}" in
-	yes)
-		if test -z "${hotplugdir}"; then
+NUT_ARG_WITH([hotplug-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install hotplug rules, typically /etc/hotplug], [auto])
+
+AS_CASE([${nut_with_hotplug_dir}],
+	[yes],
+		[if test -z "${hotplugdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([hotplug directory requested but not found])
-		fi
-		;;
-	auto)
-		;;
-	no)
-		hotplugdir=""
-		;;
-	*)
-		hotplugdir="${withval}"
-		;;
-	esac
-], [])
+		 fi],
+	[auto],	[],
+	[no],	[hotplugdir=""],
+		[hotplugdir="${nut_with_hotplug_dir}"]
+)
 if test -n "${hotplugdir}"; then
 	AC_MSG_RESULT(using ${hotplugdir})
 	NUT_REPORT_PATH_INTEGRATIONS([Hotplug rules directory], [${hotplugdir}])
@@ -5510,35 +5503,30 @@ else
 fi
 AM_CONDITIONAL(WITH_HOTPLUG, test -n "${hotplugdir}")
 
+dnl Note: initial udevdir value, empty or not, was determined far above
 AC_MSG_CHECKING(whether to install udev rules)
-AC_ARG_WITH(udev-dir,
-	AS_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (${udevdir}; typically /lib/udev or /etc/udev)]),
-[
-	case "${withval}" in
-	yes) dnl Typically /lib/udev or /etc/udev
-		if test -z "${udevdir}"; then
+NUT_ARG_WITH([udev-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install udev rules, typically /lib/udev or /etc/udev], [auto])
+
+AS_CASE([${nut_with_udev_dir}],
+	[yes],	dnl Typically /lib/udev or /etc/udev
+		[if test -z "${udevdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
-		fi
-		if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
+		 fi
+		 if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory and USB driver support requested but a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
-		fi
-		;;
-	auto)
-		if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
+		 fi
+		],
+	[auto],
+		[if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
 			AC_MSG_WARN([udev directory skipped because a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
 			udevdir=""
-		fi
-		;;
-	no)
-		udevdir=""
-		;;
-	*)
-		udevdir="${withval}"
-		;;
-	esac
-], [])
+		 fi
+		],
+	[no],	[udevdir=""],
+		[udevdir="${nut_with_udev_dir}"]
+)
 if test -n "${udevdir}"; then
 	AC_MSG_RESULT(using ${udevdir})
 	NUT_REPORT_PATH_INTEGRATIONS([Udev rules directory], [${udevdir}])
@@ -5547,37 +5535,32 @@ else
 fi
 AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
-dnl FreeBSD devd support:
 
+dnl FreeBSD devd support
+dnl Note: initial udevdir value, empty or not, was determined far above
 AC_MSG_CHECKING(whether to install FreeBSD devd.conf file)
-AC_ARG_WITH(devd-dir,
-	AS_HELP_STRING([--with-devd-dir=PATH], [where to install devd.conf file (${devddir}; typically /usr/local/etc/devd or /etc/devd)]),
-[
-	case "${withval}" in
-	yes) dnl Typically /usr/local/etc/devd or /etc/devd
-		if test -z "${devddir}"; then
+NUT_ARG_WITH([devd-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install devd.conf file, typically /usr/local/etc/devd or /etc/devd], [auto])
+
+AS_CASE([${nut_with_devd_dir}],
+	[yes],	dnl Typically /usr/local/etc/devd or /etc/devd
+		[if test -z "${devddir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
-		fi
-		if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
+		 fi
+		 if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
-		fi
-		;;
-	auto)
-		if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
+		 fi
+		],
+	[auto],
+		[if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
 			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
 			devddir=""
-		fi
-		;;
-	no)
-		devddir=""
-		;;
-	*)
-		devddir="${withval}"
-		;;
-	esac
-], [])
+		 fi
+		],
+	[no],	[devddir=""],
+		[devddir="${nut_with_devd_dir}"]
+)
 if test -n "${devddir}"; then
 	AC_MSG_RESULT(using ${devddir})
 	NUT_REPORT_PATH_INTEGRATIONS([FreeBSD devd rules directory], [${devddir}])
@@ -5586,35 +5569,27 @@ else
 fi
 AM_CONDITIONAL(WITH_DEVD, test -n "${devddir}")
 
-dnl FreeBSD quirks support:
 
+dnl FreeBSD quirks support:
 freebsdquirksdir=""
 AC_MSG_CHECKING(whether to install FreeBSD site-local USB quirks file)
-AC_ARG_WITH(freebsd-quirks-dir,
-	AS_HELP_STRING([--with-freebsd-quirks-dir=PATH], [where to install nut-usb.quirks file (${datadir}; typically /usr/local/share/nut)]),
-[
-	case "${withval}" in
-	yes) dnl Typically /usr/local/share/nut
-		freebsdquirksdir="${datadir}"
-		;;
-	auto)
-		dnl Are we building for FreeBSD with such customizations?
-		if test -s /boot/loader.conf.local ; then
+NUT_ARG_WITH([freebsd-quirks-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install nut-usb.quirks file, typically ${datadir}], [auto])
+
+AS_CASE([${nut_with_freebsd_quirks_dir}],
+	[yes],	dnl Typically /usr/local/share/nut
+		[freebsdquirksdir="${datadir}"],
+	[auto],	dnl Are we building for FreeBSD with such customizations?
+		[if test -s /boot/loader.conf.local ; then
 			freebsdquirksdir="${datadir}"
-		fi
-		if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.quirks ; then
+		 fi
+		 if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.quirks ; then
 			AC_MSG_WARN([freebsd-quirks-dir directory skipped because a non-trivial scripts/devd/nut-usb.quirks was not provided by autogen.sh or dist archive])
 			freebsdquirksdir=""
-		fi
-		;;
-	no)
-		freebsdquirksdir=""
-		;;
-	*)
-		freebsdquirksdir="${withval}"
-		;;
-	esac
-], [])
+		 fi
+		],
+	[no],	[freebsdquirksdir=""],
+		[freebsdquirksdir="${nut_with_freebsd_quirks_dir}"]
+)
 if test -n "${freebsdquirksdir}"; then
 	AC_MSG_RESULT(using ${freebsdquirksdir})
 	NUT_REPORT_PATH_INTEGRATIONS([FreeBSD site-local USB quirks directory (add into /boot/loader.conf.local)], [${freebsdquirksdir}])
