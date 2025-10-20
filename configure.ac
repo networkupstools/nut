@@ -5623,38 +5623,29 @@ AM_CONDITIONAL(WITH_FREEBSD_QUIRKS_DIR, test -n "${freebsdquirksdir}")
 
 dnl ---------------------------------------------------------------------
 dnl Can use valgrind for memory-leak testing, if present
-dnl FIXME: Set to "auto" after ensuring that we pass on all NUT CI farm platforms
-with_valgrind="no"
 AC_PATH_PROGS([VALGRIND], [valgrind], [none])
 dnl Caller can provide a specific valgrind implementation to use:
-AC_ARG_WITH(valgrind,
-	AS_HELP_STRING([--with-valgrind=(yes|no|auto|PATH)], [whether to use valgrind for memory-leak testing (no)]),
-[
-	dnl ### echo "Caller said: '${withval}'... Discovered tool: '${VALGRIND}'... "
-	case "${withval}" in
-	yes)
-		if test "x$VALGRIND" = "xnone"; then
+dnl FIXME: Set default to "auto" after ensuring that we pass on all NUT CI farm platforms
+NUT_ARG_WITH([valgrind], [(yes|no|auto|/path/to/valgrind)], [whether to use valgrind for memory-leak testing], [no])
+
+dnl ### echo "Caller said: '${nut_with_valgrind}'... Initially discovered tool: '${VALGRIND}'... "
+AS_CASE([${nut_with_valgrind}],
+	[yes],	[if test "x$VALGRIND" = "xnone"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([valgrind requested but not found])
-		fi
-		with_valgrind="yes"
-		;;
-	auto)
-		with_valgrind="auto"
-		;;
-	no)
-		with_valgrind="no"
-		;;
-	*)
-		AC_PATH_PROGS([VALGRIND], ["${withval}"], [none])
-		if test "x$VALGRIND" = "xnone"; then
+		 fi
+		 with_valgrind="yes"
+		],
+	[auto],	[with_valgrind="auto"],
+	[no],	[with_valgrind="no"],
+		[AC_PATH_PROGS([VALGRIND], ["${nut_with_valgrind}"], [none])
+		 if test "x$VALGRIND" = "xnone"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([valgrind requested but not found])
-		fi
-		with_valgrind="yes"
-		;;
-	esac
-], [])
+		 fi
+		 with_valgrind="yes"
+		]
+)
 
 dnl Even if the tool is installed, it may be not usable on build platform.
 dnl QEMU may further complicate things, providing CPUs that formally match
