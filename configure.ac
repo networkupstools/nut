@@ -6547,21 +6547,13 @@ AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build direc
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING([whether to install External API integration script: Enphase Monitor])
 nut_with_extapi_enphase="no"
-AC_ARG_ENABLE([extapi-enphase],
-	AS_HELP_STRING([--enable-extapi-enphase=(yes|auto|no)], [Enable installation of integration script for External API: Enphase Monitor (default: no)]),
-[
-	case "${enableval}" in
-	yes|"")
-		nut_enable_extapi_enphase="auto"
-		;;
-	auto|no)
-		nut_enable_extapi_enphase="${enableval}"
-		;;
-	*)
-		AC_MSG_ERROR([Unexpected argument for --enable-extapi-enphase=${enableval}])
-		;;
-	esac
-], [])
+NUT_ARG_ENABLE([extapi-enphase], [(yes|no|auto)], [Enable installation of integration script for External API: Enphase Monitor], [no])
+
+AS_CASE([${nut_enable_extapi_enphase}],
+	[yes|""], [nut_enable_extapi_enphase="auto"],
+	[auto|no], [],
+		[AC_MSG_ERROR([Unexpected argument for --enable-extapi-enphase=${nut_enable_extapi_enphase}])]
+)
 
 if test x"$nut_enable_extapi_enphase" != xno ; then
 	dnl Depends on usability of further programs and bash version
