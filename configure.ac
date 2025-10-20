@@ -4693,22 +4693,13 @@ AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(facility for syslog)
-AC_ARG_WITH(logfacility,
-	AS_HELP_STRING([--with-logfacility=FACILITY], [facility for log messages (LOG_DAEMON)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-logfacility - see docs/configure.txt)
-		;;
-	*)
-		LOGFACILITY="${withval}"
-		;;
-	esac
-], [
-	LOGFACILITY="LOG_DAEMON"
-])
-AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
+NUT_ARG_WITH([logfacility], [FACILITY], [syslog facility for log messages], [LOG_DAEMON])
+AS_CASE([${nut_with_logfacility}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-logfacility - see docs/configure.txt)],
+		[LOGFACILITY="${nut_with_logfacility}"]
+)
 AC_MSG_RESULT(${LOGFACILITY})
+AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(which driver man pages to install)
