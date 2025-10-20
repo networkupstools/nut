@@ -5436,34 +5436,26 @@ dnl ----------------------------------------------------------------------
 dnl Other third-party integrations
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
-AC_ARG_WITH(augeas-lenses-dir,
-	AS_HELP_STRING([--with-augeas-lenses-dir=PATH], [where to install Augeas configuration-management lenses (/usr/share/augeas/lenses{/dist,/})]),
-[
-	case "${withval}" in
-	yes)
-		if test -z "${auglensdir}"; then
+NUT_ARG_WITH([augeas-lenses-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install Augeas configuration-management lenses, typically /usr/share/augeas/lenses{/dist,/}], [auto])
+
+AS_CASE([${nut_with_augeas_lenses_dir}],
+	[yes],	[if test -z "${auglensdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but not found in default location])
-		fi
-		if test ! -s scripts/augeas/nutupsconf.aug.in ; then
+		 fi
+		 if test ! -s scripts/augeas/nutupsconf.aug.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
-		fi
-		;;
-	auto)
-		if test ! -s scripts/augeas/nutupsconf.aug.in ; then
+		 fi
+		],
+	[auto],	[if test ! -s scripts/augeas/nutupsconf.aug.in ; then
 			AC_MSG_WARN([augeas lenses directory skipped because a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
 			auglensdir=""
-		fi
-		;;
-	no)
-		auglensdir=""
-		;;
-	*)
-		auglensdir="${withval}"
-		;;
-	esac
-], [])
+		 fi
+		],
+	[no],	[auglensdir=""],
+		[auglensdir="${nut_with_augeas_lenses_dir}"]
+)
 if test -n "${auglensdir}"; then
 	AC_MSG_RESULT(using ${auglensdir})
 	NUT_REPORT_PATH_INTEGRATIONS([Augeas lenses directory], [${auglensdir}])
