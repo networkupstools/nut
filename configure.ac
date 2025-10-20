@@ -5994,46 +5994,40 @@ dnl Check the user and group to run as last, so we can use the paths configured
 dnl above as data sources for default values if building an in-place replacement
 
 AC_MSG_CHECKING(if requested user to run as)
-AC_ARG_WITH(user,
-	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)
-		;;
-	*)
-		RUN_AS_USER="${withval}"
-		nut_user_given=yes
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [
-	nut_user_given=no
-	AC_MSG_RESULT([default])
-])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([user], [USERNAME], [(Unprivileged) user for programs normally started as root, typically 'nut' or 'ups'], [${RUN_AS_USER}], [platform-dependent, usually 'nobody'])
+
+AS_CASE([${nut_with_user}],
+	[yes|no], [AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)],
+	["${RUN_AS_USER}"], [
+		 nut_user_given=no
+		 AC_MSG_RESULT([default])
+		],
+		[RUN_AS_USER="${nut_with_user}"
+		 nut_user_given=yes
+		 AC_MSG_RESULT([specified])
+		]
+)
 NUT_REPORT_SETTING([User to run as],
     RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
 
-AC_MSG_CHECKING(if requested group membership of user to run as)
-AC_ARG_WITH(group,
-	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)
-		;;
-	*)
-		RUN_AS_GROUP="${withval}"
-		nut_group_given=yes
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [
-	nut_group_given=no
-	AC_MSG_RESULT([default])
-])
-NUT_REPORT_SETTING([Group of user to run as],
-    RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership of user to switch to if started as root])
+dnl Note: Technically daemons "run as" the primary GID of the user they de-levate into;
+dnl but in simpler setups (stipulated by common packaging) this one is the "run as" GID too
+AC_MSG_CHECKING(if requested group membership of user to own state files)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([group], [GROUPNAME], [(Unprivileged) group membership for state files of drivers normally started as root, typically 'nut' or 'ups'], [${RUN_AS_GROUP}], [platform-dependent, usually 'nobody' or 'nogroup'])
+
+AS_CASE([${nut_with_group}],
+	[yes|no], [AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)],
+	["${RUN_AS_GROUP}"], [
+		 nut_group_given=no
+		 AC_MSG_RESULT([default])
+		],
+		[RUN_AS_GROUP="${nut_with_group}"
+		 nut_group_given=yes
+		 AC_MSG_RESULT([specified])
+		]
+)
+NUT_REPORT_SETTING([Group of user to own state files],
+    RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership for state files of drivers normally started as root])
 
 dnl check that --with-user is given if --with-group is given.
 if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
