@@ -518,7 +518,7 @@ dnl Note: CGIDATAPATH (nee htmlcgidir) is for nut-cgi resources,
 dnl so htmldocdir and htmlmandir are separate
 htmldocdir='${docdir}/html-doc'
 htmlmandir='${docdir}/html-man'
-pkgconfigdir='${libdir}/pkgconfig'
+m4_define([m4nut_DEFAULT_PKGCONFIGDIR], [\${libdir}/pkgconfig])
 
 dnl Detection of augeas lens dirs is a bit troublesome, since
 dnl they (if present) reside in location not controlled by NUT.
@@ -4762,20 +4762,13 @@ AS_CASE([${nut_enable_strip}],
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(whether to install pkg-config *.pc files)
-AC_ARG_WITH(pkgconfig-dir,
-	AS_HELP_STRING([--with-pkgconfig-dir=PATH], [where to install pkg-config *.pc files (EPREFIX/lib/pkgconfig)]),
-[
-	case "${withval}" in
-	yes|auto)
-		;;
-	no)
-		pkgconfigdir=""
-		;;
-	*)
-		pkgconfigdir="${withval}"
-		;;
-	esac
-], [])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([pkgconfig-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install pkg-config *.pc files, typically EPREFIX/lib/pkgconfig], [m4nut_DEFAULT_PKGCONFIGDIR])
+
+AS_CASE([${nut_with_pkgconfig_dir}],
+	[yes|auto|""], [pkgconfigdir='m4nut_DEFAULT_PKGCONFIGDIR'],
+	[no], [pkgconfigdir=""],
+		[pkgconfigdir="${nut_with_pkgconfig_dir}"]
+)
 
 dnl Note: currently pkgconfigdir='${libdir}/pkgconfig' literally
 dnl goes into lib/Makefile.am substitution for pkgconfig_DATA.
