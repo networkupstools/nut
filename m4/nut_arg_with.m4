@@ -78,6 +78,35 @@ AC_DEFUN([NUT_ARG_WITH],
         [NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [], [$2], [$3], [$3])])
 ])
 
+dnl Special common case for *-includes and *-libs optional parameters
+dnl (bracketed in help text to confer optionality)
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS],
+[
+    AC_ARG_WITH($1,
+        [AS_HELP_STRING([@<:@--with-$1=$2@:>@], [$3 (default: $4)])],
+        [AS_CASE([${withval}],
+            [yes|no], [AC_MSG_ERROR([invalid option --with(out)-$1 - see docs/configure.txt])],
+                [[nut_with_]m4_translit($1, [-], [_])="${withval}"]
+        )],
+        [[nut_with_]m4_translit($1, [-], [_])="$4"]
+    )
+])
+
+dnl Just the (normal-cased) third-party project name is required
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS_INCLUDES],
+[
+    m4_ifval([$2],
+        [NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS], [include flags for the $1 library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS], [include flags for the $1 library], [auto])])
+])
+
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LIBS],
+[
+    m4_ifval([$2],
+        [NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS], [linker flags for the $1 library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS], [linker flags for the $1 library], [auto])])
+])
+
 dnl Enable a package feature/ability (might name a variant, or yes/no)
 dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.66/html_node/Package-Options.html
 AC_DEFUN([NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP],
