@@ -4747,21 +4747,18 @@ AS_CASE([${nut_enable_force_nut_version_header}],
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(whether to strip debug symbols)
-AC_ARG_ENABLE(strip,
-	AS_HELP_STRING([--enable-strip], [Strip debugging symbols from binaries (no)]),
-[
-	case "${enableval}" in
-	no)
-		AC_MSG_RESULT(no)
-		;;
-	*)
-		AC_MSG_RESULT(yes)
-		CFLAGS="${CFLAGS} -s"
-		;;
-	esac
-], [
-	AC_MSG_RESULT(no)
-])
+NUT_ARG_ENABLE([strip], [Strip debugging symbols from binaries? Some packaging policies require this...], [no])
+
+AS_CASE([${nut_enable_strip}],
+	[no], [AC_MSG_RESULT(no)],
+		[AS_IF([test "${CLANGCC}" = "yes" || test "${GCC}" = "yes"],
+			[AC_MSG_RESULT(yes)
+			 CFLAGS="${CFLAGS} -s"],
+			[AS_IF([test "${nut_enable_strip}" = yes],
+				[AC_MSG_ERROR([Do not know how to request debug symbol stripping with currently chosen compiler])]
+			)]
+		)]
+)
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(whether to install pkg-config *.pc files)
