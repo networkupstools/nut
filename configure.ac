@@ -208,6 +208,12 @@ If this happens, please retry with GNU C/C++ language mode options instead.
 		])]
 )
 
+dnl AIX system
+AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
+
+dnl processor type
+AC_DEFINE_UNQUOTED(CPU_TYPE, ["$target_cpu"], [Define processor type])
+
 dnl +-------------------------------------------------------------------
 dnl Help avoid "polluting" CFLAGS etc. with auto-settings like "-g -O2"
 dnl at least if we intend to tune --with-debuginfo anyway (where we check
@@ -5614,14 +5620,6 @@ if test -n "${freebsdquirksdir}" ; then
 fi
 
 AM_CONDITIONAL(WITH_FREEBSD_QUIRKS_DIR, test -n "${freebsdquirksdir}")
-
-dnl
-
-dnl AIX system
-AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
-
-dnl processor type
-AC_DEFINE_UNQUOTED(CPU_TYPE, ["$target_cpu"], [Define processor type])
 
 dnl ---------------------------------------------------------------------
 dnl Can use valgrind for memory-leak testing, if present
