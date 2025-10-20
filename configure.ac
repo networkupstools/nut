@@ -3763,24 +3763,10 @@ AM_CONDITIONAL(WITH_CPPCHECK, test "${WITH_CPPCHECK}" = "yes")
 dnl ----------------------------------------------------------------------
 dnl checks related to --enable-check-NIT
 
+dnl FIXME? Add "auto" to align with development builds?
 AC_MSG_CHECKING(whether to run NIT among default make check target)
-nut_enable_check_NIT="no"
-AC_ARG_ENABLE([check-NIT],
-	AS_HELP_STRING([--enable-check-NIT], [Run check-NIT among default checks (no)]),
-[
-	case "${enableval}" in
-	no)
-		AC_MSG_RESULT(no)
-		;;
-	*)
-		AC_MSG_RESULT(yes)
-		nut_enable_check_NIT="yes"
-		;;
-	esac
-], [
-	AC_MSG_RESULT(no)
-])
-
+NUT_ARG_ENABLE([check-NIT], [Run check-NIT among default checks], [no])
+AC_MSG_RESULT([${nut_enable_check_NIT}])
 AM_CONDITIONAL(WITH_CHECK_NIT, test "${nut_enable_check_NIT}" = "yes")
 
 dnl ----------------------------------------------------------------------
