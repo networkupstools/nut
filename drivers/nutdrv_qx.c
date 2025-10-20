@@ -73,6 +73,7 @@
 #include "nutdrv_qx_hunnox.h"
 #include "nutdrv_qx_innovart31.h"
 #include "nutdrv_qx_innovart33.h"
+#include "nutdrv_qx_innovatae.h"
 #include "nutdrv_qx_mecer.h"
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
@@ -106,6 +107,7 @@ static subdriver_t	*subdriver_list[] = {
 	&ablerex_subdriver,
 	&innovart31_subdriver,
 	&innovart33_subdriver,
+	&innovatae_subdriver,
 	&q2_subdriver,
 	&q6_subdriver,
 	&gtec_subdriver,
