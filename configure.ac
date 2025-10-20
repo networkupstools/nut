@@ -4734,22 +4734,15 @@ dnl iterating *quickly* and rebuiding just what "really" changed!
 dnl Still, this speed-up is not default to avoid surprises for core team.
 AC_MSG_CHECKING(whether to force nut_version.h generation for every make run)
 dnl Value is "FORCE" or empty, substituted into Makefile.am rule:
-FORCE_NUT_VERSION="FORCE"
-AC_ARG_ENABLE(force-nut-version-header,
-	AS_HELP_STRING([--enable-force-nut-version-header], [Force nut_version.h generation for every make run (yes)]),
-[
-	case "${enableval}" in
-	no)
+NUT_ARG_ENABLE([force-nut-version-header], [Force nut_version.h generation for every make run?], [yes])
+AS_CASE([${nut_enable_force_nut_version_header}],
+	[no], [
 		AC_MSG_RESULT(no)
-                FORCE_NUT_VERSION=""
-		;;
-	*)
+		FORCE_NUT_VERSION=""
+	], [
 		AC_MSG_RESULT(yes)
-		;;
-	esac
-], [
-	AC_MSG_RESULT(no)
-])
+		FORCE_NUT_VERSION="FORCE"
+	])
 
 
 dnl ---------------------------------------------------------------------
