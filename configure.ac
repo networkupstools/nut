@@ -6645,20 +6645,13 @@ AS_IF([test x"${CCACHE_NAMESPACE}" = x], [
 	done
 	unset T
 ])
-AC_ARG_WITH(CCACHE_NAMESPACE,
-	AS_HELP_STRING([--with-CCACHE_NAMESPACE=namespace], [which ccache namespace to use for built binaries (typically nut:${autotools_target})]),
-[
-	case "${withval}" in
-	no)
-		CCACHE_NAMESPACE=""
-		;;
-	yes)	# Use user envvar or calculation above
-		;;
-	*)
-		CCACHE_NAMESPACE="${withval}"
-		;;
-	esac
-], [])
+NUT_ARG_WITH([CCACHE_NAMESPACE], [yes|no|auto|NAMESPACE], [Whether/which ccache namespace to use for built binaries, typically 'nut:${autotools_target}'], [auto])
+AS_CASE([${nut_with_CCACHE_NAMESPACE}],
+	[no],	[CCACHE_NAMESPACE=""],
+	[yes],	[AS_IF([text x"${CCACHE_NAMESPACE}" = x], [AC_MSG_ERROR([--with-CCACHE_NAMESPACE can not be fulfilled on this system])])],	dnl Else use user envvar or calculation above
+	[auto],	[],	dnl Use user envvar or calculation above
+		[CCACHE_NAMESPACE="${nut_with_CCACHE_NAMESPACE}"]
+)
 NUT_REPORT_TARGET(CCACHE_NAMESPACE, "${CCACHE_NAMESPACE}", [ccache namespace tag (if ccache is used and new enough)])
 AS_IF([test x"$CCACHE_NAMESPACE" != x -a x"$NUT_AM_MAKE_CAN_EXPORT" != x], [
 	AC_MSG_WARN([CCACHE_NAMESPACE setting may have no effect: this make implementation seems to not support "export VAR=VAL" syntax])
