@@ -512,10 +512,10 @@ AS_CASE([${target_os}],
 
 
 m4_define([m4nut_DEFAULT_CGIEXECPATH], [\${exec_prefix}/cgi-bin])
+m4_define([m4nut_DEFAULT_CGIDATAPATH], [\${prefix}/html])
 m4_define([m4nut_DEFAULT_DRVPATH], [\${exec_prefix}/bin])
-dnl Note: htmlcgidir per se is originally for nut-cgi resources,
+dnl Note: CGIDATAPATH (nee htmlcgidir) is for nut-cgi resources,
 dnl so htmldocdir and htmlmandir are separate
-htmlcgidir='${prefix}/html'
 htmldocdir='${docdir}/html-doc'
 htmlmandir='${docdir}/html-man'
 pkgconfigdir='${libdir}/pkgconfig'
@@ -4662,19 +4662,17 @@ NUT_REPORT_SETTING_PATH([CGI program path],
 dnl ---------------------------------------------------------------------
 dnl FIXME: Make it an alias for a new --with-htmlcgipath
 AC_MSG_CHECKING(if requested CGI HTML resource path)
-AC_ARG_WITH(htmlpath,
-	AS_HELP_STRING([--with-htmlpath=PATH], [where to install CGI HTML resource files (PREFIX/html)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-htmlpath - see docs/configure.txt)
-		;;
-	*)
-		htmlcgidir="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([htmlpath], [DIRPATH], [Where to install CGI HTML resource files, distros may want it in a location dictated by web server software], [m4nut_DEFAULT_CGIDATAPATH])
+
+AS_CASE([${nut_with_htmlpath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-htmlpath - see docs/configure.txt)],
+	[m4nut_DEFAULT_CGIDATAPATH], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+dnl Raw value for Makefile automated install rules
+htmlcgidir="${nut_with_htmlpath}"
+
+dnl Resolved value
 conftemp="${htmlcgidir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
