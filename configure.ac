@@ -2655,19 +2655,20 @@ dnl a second-class citizen (if both are set, the old option name wins).
 dnl Also note that the legacy default was "man=yes" due to requirements
 dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
-nut_with_docs_default="man=auto"
+m4_define([m4nut_DEFAULT_WITH_DOCS], [man=auto])
+nut_with_docs_default="m4nut_DEFAULT_WITH_DOCS"
 AS_IF([($NUT_SOURCE_GITREV_IS_RELEASE || $NUT_SOURCE_GITREV_IS_PRERELEASE)],
     [AC_MSG_NOTICE([This is a (pre-)release build, setting default --with-doc='auto' (not just '${nut_with_docs_default}')])
      nut_with_docs_default="auto"])
 
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([docs], [], [build and install documentation (alias to --with-doc)], [${nut_with_docs_default}])
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP([doc],  [], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs], [(auto|yes|no|man|man=auto|...)], [build and install documentation (alias to legacy --with-doc)], [${nut_with_docs_default}], [varies for development vs. (pre-)release builds, typically ]m4nut_DEFAULT_WITH_DOCS)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([doc],  [], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}], [same as ${nut_with_docs}])
 
 NUT_ARG_ENABLE([docs-man-for-progs-built-only], [build and install man pages (if enabled) only for built programs (yes, default) or all known pages (no)], [yes])
-NUT_ARG_ENABLE([docs-changelog], [(re-)generate ChangeLog* files - and do so whenever git info changes? (default: auto; yes, no, "adoc,html,pdf"...)], [auto])
+NUT_ARG_ENABLE([docs-changelog], [(auto|yes|no|"adoc,html,pdf"...)], [(re-)generate ChangeLog* files - and do so whenever git info changes?], [auto])
 
-NUT_ARG_WITH([docs-changelog-start], [Starting point when generating ChangeLog* files (default: auto; otherwise Git commit ID)], [auto])
-NUT_ARG_WITH([docs-changelog-end], [Ending point when generating ChangeLog* files (default: HEAD; otherwise Git commit ID)], [HEAD])
+NUT_ARG_WITH([docs-changelog-start], [(auto|GitTreeish)], [Starting point (Git commit ID) when generating ChangeLog* files], [auto])
+NUT_ARG_WITH([docs-changelog-end], [GitTreeish], [Ending point (Git commit ID) when generating ChangeLog* files], [HEAD])
 
 dnl Different OS distributions have different layouts of man page section
 dnl numbers. The one we treat as default seems to be most wide-spread, in
