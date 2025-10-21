@@ -46,33 +46,19 @@ if test -z "${nut_have_libpowerman_seen}"; then
 	)
 
 	AC_MSG_CHECKING([for libpowerman cflags])
-	AC_ARG_WITH(powerman-includes,
-		AS_HELP_STRING([@<:@--with-powerman-includes=CFLAGS@:>@], [include flags for the libpowerman library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR([invalid option --with(out)-powerman-includes - see docs/configure.txt])
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([powerman], [auto], [libpowerman])
+	AS_CASE([${nut_with_powerman_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_powerman_includes}"]
+	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for libpowerman libs)
-	AC_ARG_WITH(powerman-libs,
-		AS_HELP_STRING([@<:@--with-powerman-libs=LIBS@:>@], [linker flags for the libpowerman library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-powerman-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_LIBS([powerman], [auto], [libpowerman])
+	AS_CASE([${nut_with_powerman_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLIBS="${nut_with_powerman_libs}"]
+	)
 	AC_MSG_RESULT([${depLIBS}])
 
 	dnl check if libpowerman is usable
