@@ -80,7 +80,17 @@ AC_DEFUN([NUT_ARG_WITH],
 
 dnl Special common case for *-includes and *-libs optional parameters
 dnl (bracketed in help text to confer optionality)
+dnl Options same as NUT_ARG_WITH (4-arg version)
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS],
+[
+    AC_ARG_WITH($1,
+        [AS_HELP_STRING([@<:@--with-$1=$2@:>@], [$3 (default: $4)])],
+        [[nut_with_]m4_translit($1, [-], [_])="${withval}"],
+        [[nut_with_]m4_translit($1, [-], [_])="$4"]
+    )
+])
+
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS_INVALID_YESNO],
 [
     AC_ARG_WITH($1,
         [AS_HELP_STRING([@<:@--with-$1=$2@:>@], [$3 (default: $4)])],
@@ -93,18 +103,64 @@ AC_DEFUN([NUT_ARG_WITH_LIBOPTS],
 ])
 
 dnl Just the (normal-cased) third-party project name is required
+dnl   $1 project name
+dnl   $2 default value (optional)
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_INCLUDES],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS], [include flags for the $1 library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS], [include flags for the $1 library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS|auto], [include flags for the $1 library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS|auto], [include flags for the $1 library], [auto])])
 ])
 
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LIBS],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS], [linker flags for the $1 library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS], [linker flags for the $1 library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the $1 library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the $1 library], [auto])])
+])
+
+dnl Help detect legacy <projectname>-config scripts, assigns "none" if disabled or not found
+dnl   $1 project name
+dnl   $2 m4 var to assign
+dnl   $3 program name(s) to try
+dnl   $4 default value
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM],
+[
+    dnl By default seek in PATH
+    NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-config], [/path/to/m4_translit($1, 'A-Z', 'a-z')-config|auto|none], [path to program that reports $1 configuration], [$4])
+    AS_CASE([[${[nut_with_]]m4_translit($1, [-], [_])[[_config]}]],
+        [yes|auto|""], [AC_PATH_PROGS([$2], [$3], [none])],
+        [no|none], [$2="none"],
+            [$2=["${[nut_with_]]m4_translit($1, [-], [_])[[_config]}"]]
+    )
+])
+
+dnl Part of stack, use or guess optional parameter $2 (m4 var name); pass others as is
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2],
+[
+    m4_ifval([$2],
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM([$1], [$2], [$3], [$4])],
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM([$1], m4_translit(m4_translit($1, 'a-z', 'A-Z'), [-], [_])[_CONFIG], [$3], [$4])])
+])
+
+dnl Part of stack, use or guess optional parameter $3 (prog names); pass others as is
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3],
+[
+    m4_ifval([$3],
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2([$1], [$2], [$3], [$4])],
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2([$1], [$2], [m4_translit($1, 'A-Z', 'a-z')-config], [$4])])
+])
+
+dnl Just the (normal-cased) third-party project name is required
+dnl   $1 project name
+dnl   $2 m4 var to assign (optional)
+dnl   $3 program name(s) to try (optional)
+dnl   $4 default value (optional)
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT],
+[
+    m4_ifval([$4],
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3([$1], [$2], [$3], [$4])],
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3([$1], [$2], [$3], [auto])])
 ])
 
 dnl Enable a package feature/ability (might name a variant, or yes/no)
