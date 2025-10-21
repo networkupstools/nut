@@ -135,10 +135,10 @@ AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM],
 [
     dnl By default seek in PATH
     NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-config], [/path/to/m4_translit($1, 'A-Z', 'a-z')-config|auto|none], [path to program that reports ]m4_default($5, $1)[ configuration], [$4])
-    AS_CASE([[${[nut_with_]]m4_translit($1, [-], [_])[[_config]}]],
+    AS_CASE([[${nut_with_]m4_translit($1, [-], [_])[_config}]],
         [yes|auto|""], [AC_PATH_PROGS([$2], [$3], [none])],
         [no|none], [$2="none"],
-            [$2=["${[nut_with_]]m4_translit($1, [-], [_])[[_config]}"]]
+            [$2=["${nut_with_]m4_translit($1, [-], [_])[_config}"]]
     )
 ])
 
