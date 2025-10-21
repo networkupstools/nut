@@ -26,20 +26,12 @@ AC_DEFUN([NUT_CHECK_PKGCONFIG],
 		have_PKG_CONFIG=yes
 		AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
 
-		AC_ARG_WITH(pkg-config,
-			AS_HELP_STRING([--with-pkg-config=/path/to/pkg-config],
-				[path to program that reports development package configuration]),
-		[
-			case "${withval}" in
-			"") ;;
-			yes|no)
-				AC_MSG_ERROR(invalid option --with(out)-pkg-config - see docs/configure.txt)
-				;;
-			*)
-				dummy_PKG_CONFIG="${withval}"
-				;;
-			esac
-		])
+		NUT_ARG_WITH([pkg-config], [auto|/path/to/pkg-config], [Path to program that reports development package configuration], [auto])
+		AS_CASE([${nut_with_pkg_config}],
+			[""|auto],	[],	dnl Keep what we had found above
+			[yes|no],	[AC_MSG_ERROR(invalid option --with(out)-pkg-config - see docs/configure.txt)],
+					[dummy_PKG_CONFIG="${nut_with_pkg_config}"]
+		)
 
 		AC_MSG_CHECKING([whether usable PKG_CONFIG is present in PATH or was set by caller])
 		AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
