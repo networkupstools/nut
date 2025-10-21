@@ -20,36 +20,23 @@ if test -z "${nut_have_libltdl_seen}"; then
 	myCFLAGS=""
 
 	AC_MSG_CHECKING(for libltdl cflags)
-	AC_ARG_WITH(libltdl-includes,
-		AS_HELP_STRING([@<:@--with-libltdl-includes=CFLAGS@:>@], [include flags for the libltdl library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-libltdl-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [dnl Best-Effort Fallback (LDFLAGS might make more sense for -L...,
-		dnl but other m4's have it so) to use if probe below fails:
-		myCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"
-	])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([libltdl], [auto])
+	AS_CASE([${nut_with_libltdl_includes}],
+		[auto], [
+			 dnl Best-Effort Fallback (LDFLAGS might make more sense for -L...,
+			 dnl but other m4 files have it so) to use if probe below fails:
+			 myCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"
+			],
+			[depCFLAGS="${nut_with_libltdl_includes}"]
+	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for libltdl ldflags)
-	AC_ARG_WITH(libltdl-libs,
-		AS_HELP_STRING([@<:@--with-libltdl-libs=LIBS@:>@], [linker flags for the libltdl library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-libltdl-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])dnl No fallback here - we probe suitable libs below
+	NUT_ARG_WITH_LIBOPTS_LIBS([libltdl], [auto])
+	AS_CASE([${nut_with_libltdl_libs}],
+		[auto], [],	dnl No fallback here - we probe suitable libs below
+			[depLIBS="${nut_with_libltdl_libs}"]
+	)
 	AC_MSG_RESULT([${depLIBS}])
 
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
