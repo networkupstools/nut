@@ -456,7 +456,7 @@ static int masterguard_add_slaveaddr(item_t *item, char *command, const size_t c
 	}
 	upsdebugx(4, "add slaveaddr %s to command %s", masterguard_my_slaveaddr, command);
 	memcpy(command + l - 3, masterguard_my_slaveaddr, 2);
-	return 0;
+	return l;
 }
 
 
