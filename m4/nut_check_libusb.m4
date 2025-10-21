@@ -51,24 +51,8 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	dnl Note: it seems the script was only shipped for libusb-0.1
 	dnl So we don't separate into LIBUSB_0_1_CONFIG and LIBUSB_1_0_CONFIG
-	AC_PATH_PROGS([LIBUSB_CONFIG], [libusb-config], [none])
-
-	AC_ARG_WITH(libusb-config,
-		AS_HELP_STRING([@<:@--with-libusb-config=/path/to/libusb-config@:>@],
-			[path to program that reports LibUSB configuration]), dnl ...for LibUSB-0.1
-		[
-			AS_CASE(["${withval}"],
-				[""], [], dnl empty arg
-				[yes|no], [
-					dnl MAYBE bump preference of script over pkg-config?
-					AC_MSG_ERROR([invalid option --with(out)-libusb-config - see docs/configure.txt])
-				],
-				[dnl default
-				LIBUSB_CONFIG="${withval}"
-				]
-			)
-		]
-	)
+	dnl MAYBE bump preference of a found script over pkg-config?
+	NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT([libusb], [], [], [], [LibUSB(-0.1)])
 
 	AS_IF([test x"${LIBUSB_CONFIG}" != xnone],
 		[AC_MSG_CHECKING([via ${LIBUSB_CONFIG}])
@@ -184,33 +168,19 @@ if test -z "${nut_have_libusb_seen}"; then
 	dnl check optional user-provided values for cflags/ldflags
 	dnl and publish what we end up using
 	AC_MSG_CHECKING(for libusb cflags)
-	AC_ARG_WITH(usb-includes,
-		AS_HELP_STRING([@<:@--with-usb-includes=CFLAGS@:>@], [include flags for the libusb library]),
-	[
-		AS_CASE(["${withval}"],
-			[yes|no], [
-				AC_MSG_ERROR(invalid option --with(out)-usb-includes - see docs/configure.txt)
-			],
-			[dnl default
-				depCFLAGS="${withval}"
-			]
-		)
-	], [])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([usb], [auto], [libusb])
+	AS_CASE([${nut_with_usb_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_usb_includes}"]
+	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for libusb ldflags)
-	AC_ARG_WITH(usb-libs,
-		AS_HELP_STRING([@<:@--with-usb-libs=LIBS@:>@], [linker flags for the libusb library]),
-	[
-		AS_CASE(["${withval}"],
-			[yes|no], [
-				AC_MSG_ERROR(invalid option --with(out)-usb-libs - see docs/configure.txt)
-			],
-			[dnl default
-				depLIBS="${withval}"
-			]
-		)
-	], [])
+	NUT_ARG_WITH_LIBOPTS_LIBS([usb], [auto], [libusb])
+	AS_CASE([${nut_with_usb_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLIBS="${nut_with_usb_libs}"]
+	)
 	AC_MSG_RESULT([${depLIBS}])
 
 	dnl TODO: Consult chosen nut_usb_lib value and/or nut_with_usb argument
