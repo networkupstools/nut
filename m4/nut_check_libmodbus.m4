@@ -40,33 +40,19 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	)
 
 	AC_MSG_CHECKING(for libmodbus cflags)
-	AC_ARG_WITH(modbus-includes,
-		AS_HELP_STRING([@<:@--with-modbus-includes=CFLAGS@:>@], [include flags for the libmodbus library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-modbus-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([modbus], [auto], [libmodbus])
+	AS_CASE([${nut_with_modbus_includes}],
+		[auto],	[],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_modbus_includes}"]
+	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for libmodbus ldflags)
-	AC_ARG_WITH(modbus-libs,
-		AS_HELP_STRING([@<:@--with-modbus-libs=LIBS@:>@], [linker flags for the libmodbus library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-modbus-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_LIBS([modbus], [auto], [libmodbus])
+	AS_CASE([${nut_with_modbus_libs}],
+		[auto],	[],	dnl Keep what we had found above
+			[depLIBS="${nut_with_modbus_libs}"]
+	)
 	AC_MSG_RESULT([${depLIBS}])
 
 	dnl check if libmodbus is usable
