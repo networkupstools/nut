@@ -5553,14 +5553,14 @@ AS_CASE([${nut_with_devd_dir}],
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
 		 fi
-		 if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
+		 if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.conf.in ; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
+			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usb.conf.in was not provided by autogen.sh or dist archive])
 		 fi
 		],
 	[auto],
-		[if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
-			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
+		[if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.conf.in ; then
+			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usb.conf.in was not provided by autogen.sh or dist archive])
 			devddir=""
 		 fi
 		],
