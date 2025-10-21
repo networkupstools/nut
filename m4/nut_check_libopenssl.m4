@@ -47,33 +47,19 @@ if test -z "${nut_have_libopenssl_seen}"; then
 
 	dnl allow overriding OpenSSL settings if the user knows best
 	AC_MSG_CHECKING(for OpenSSL cflags)
-	AC_ARG_WITH(openssl-includes,
-		AS_HELP_STRING([@<:@--with-openssl-includes=CFLAGS@:>@], [include flags for the OpenSSL library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-openssl-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([openssl], [auto])
+	AS_CASE([${nut_with_openssl_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_openssl_includes}"]
+	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for OpenSSL ldflags)
-	AC_ARG_WITH(openssl-libs,
-		AS_HELP_STRING([@<:@--with-openssl-libs=LIBS@:>@], [linker flags for the OpenSSL library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-openssl-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_LIBS([openssl], [auto])
+	AS_CASE([${nut_with_openssl_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLIBS="${nut_with_openssl_libs}"]
+	)
 	AC_MSG_RESULT([${depLIBS}])
 
 	dnl check if openssl is usable
