@@ -4565,7 +4565,7 @@ dnl able to write there.
 dnl
 
 AC_MSG_CHECKING(if requested alt pid path)
-NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([altpidpath], [DIRPATH], [path for NUT driver/upsd .pid files not running as root], [\${STATEPATH}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([altpidpath], [DIRPATH], [Path for .pid files of NUT driver/upsd not running as root], [\${STATEPATH}])
 
 AS_CASE([${nut_with_altpidpath}],
 	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-altpidpath - see docs/configure.txt)],
@@ -4584,7 +4584,7 @@ dnl Recommended: a sub-directory of (/var)/run as long as we can create
 dnl and chown+chmod it before starting NUT daemons.
 
 AC_MSG_CHECKING(if requested pidpath)
-NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([pidpath], [DIRPATH], [Path for root-owned .pid files], [auto], [platform-dependent, usually m4nut_DEFAULT_PIDPATH])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([pidpath], [DIRPATH], [Path for root-owned NUT process .pid files], [auto], [platform-dependent, usually m4nut_DEFAULT_PIDPATH])
 
 AS_CASE([${nut_with_pidpath}],
 	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)],
