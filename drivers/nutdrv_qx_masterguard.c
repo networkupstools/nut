@@ -859,7 +859,7 @@ static item_t masterguard_qx2nut[] = {
 	{ "test.battery.start",		0,	NULL,	NULL,		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	masterguard_test_battery },
 	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
 	{ "test.battery.start.low",	0,	NULL,	"TL\r",		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
-	{ "test.battery.start.deep",	0,	NULL,	"TUD\r",	"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
+	{ "test.battery.start.deep",	0,	NULL,	"TUD,XX\r",	"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	masterguard_add_slaveaddr,	NULL,	NULL },
 	{ "test.battery.stop",		0,	NULL,	"CT\r",		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
 	/* test.system.start */
 	/* calibrate.start */
