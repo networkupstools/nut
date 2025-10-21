@@ -5544,8 +5544,8 @@ AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
 dnl FreeBSD devd support
 dnl Note: initial udevdir value, empty or not, was determined far above
-AC_MSG_CHECKING(whether to install FreeBSD devd.conf file)
-NUT_ARG_WITH([devd-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install devd.conf file, typically /usr/local/etc/devd or /etc/devd], [auto])
+AC_MSG_CHECKING(whether to install FreeBSD devd nut-usb.conf file)
+NUT_ARG_WITH([devd-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install devd snippet nut-usb.conf file, typically /usr/local/etc/devd or /etc/devd], [auto])
 
 AS_CASE([${nut_with_devd_dir}],
 	[yes],	dnl Typically /usr/local/etc/devd or /etc/devd
