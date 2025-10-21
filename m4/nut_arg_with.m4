@@ -112,11 +112,27 @@ AC_DEFUN([NUT_ARG_WITH_LIBOPTS_INCLUDES],
         [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS|auto], [include flags for the $1 library], [auto])])
 ])
 
+dnl Technically LIBS and LDFLAGS are about the same for
+dnl most of our m4 code and legacy help messaging... so far.
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LIBS],
 [
     m4_ifval([$2],
         [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the $1 library], [$2])],
         [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the $1 library], [auto])])
+])
+
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LIBS_AS_LDFLAGS],
+[
+    m4_ifval([$2],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LDFLAGS|auto], [linker flags for the $1 library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LDFLAGS|auto], [linker flags for the $1 library], [auto])])
+])
+
+AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LDFLAGS],
+[
+    m4_ifval([$2],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-ldflags], [LDFLAGS|auto], [linker flags for the $1 library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-ldflags], [LDFLAGS|auto], [linker flags for the $1 library], [auto])])
 ])
 
 dnl Help detect legacy <projectname>-config scripts, assigns "none" if disabled or not found
