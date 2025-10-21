@@ -46,33 +46,19 @@ if test -z "${nut_have_libnss_seen}"; then
 
 	dnl allow overriding NSS settings if the user knows best
 	AC_MSG_CHECKING(for Mozilla NSS cflags)
-	AC_ARG_WITH(nss-includes,
-		AS_HELP_STRING([@<:@--with-nss-includes=CFLAGS@:>@], [include flags for the Mozilla NSS library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-nss-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([nss], [auto], [Mozilla NSS])
+	AS_CASE([${nut_with_nss_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_nss_includes}"]
+	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for Mozilla NSS ldflags)
-	AC_ARG_WITH(nss-libs,
-		AS_HELP_STRING([@<:@--with-nss-libs=LIBS@:>@], [linker flags for the Mozilla NSS library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-nss-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_LIBS([nss], [auto], [Mozilla NSS])
+	AS_CASE([${nut_with_nss_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLIBS="${nut_with_nss_libs}"]
+	)
 	AC_MSG_RESULT([${depLIBS}])
 
 	dnl check if NSS is usable: we need both the runtime and headers
