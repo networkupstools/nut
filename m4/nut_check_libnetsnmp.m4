@@ -34,22 +34,19 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	)
 
 	prefer_NET_SNMP_CONFIG=false
-	AC_ARG_WITH(net-snmp-config,
-		AS_HELP_STRING([@<:@--with-net-snmp-config=/path/to/net-snmp-config@:>@],
-			[path to program that reports Net-SNMP configuration]),
-	[
-		case "${withval}" in
-		""|yes) prefer_NET_SNMP_CONFIG=true ;;
-		no)
+	NUT_ARG_WITH_LIBOPTS([net-snmp-config], [/path/to/net-snmp-config],
+			[Path to program that reports Net-SNMP configuration], [auto])
+
+	AS_CASE([${nut_with_net_snmp_config}],
+		[""|yes|auto],	[prefer_NET_SNMP_CONFIG=true],
+		[no], [
 			dnl AC_MSG_ERROR(invalid option --with(out)-net-snmp-config - see docs/configure.txt)
 			prefer_NET_SNMP_CONFIG=false
-			;;
-		*)
-			NET_SNMP_CONFIG="${withval}"
-			prefer_NET_SNMP_CONFIG=true
-			;;
-		esac
-	])
+			],
+			[NET_SNMP_CONFIG="${nut_with_net_snmp_config}"
+			 prefer_NET_SNMP_CONFIG=true
+			]
+	)
 
 	if test x"$have_PKG_CONFIG" = xyes -a x"${prefer_NET_SNMP_CONFIG}" = xfalse ; then
 		AC_MSG_CHECKING(for Net-SNMP version via pkg-config)
@@ -85,53 +82,38 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 
 	depCFLAGS_SOURCE=""
 	AC_MSG_CHECKING(for Net-SNMP cflags)
-	AC_ARG_WITH(snmp-includes,
-		AS_HELP_STRING([@<:@--with-snmp-includes=CFLAGS@:>@], [include flags for the Net-SNMP library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-snmp-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS_SOURCE="confarg"
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
-		[depCFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"
-		 depCFLAGS_SOURCE="netsnmp-config"],
-		[AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags netsnmp 2>/dev/null`"
-			 depCFLAGS_SOURCE="pkg-config"],
-			[depCFLAGS_SOURCE="default"]
-			)]
-		)]
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([snmp], [auto], [Net-SNMP])
+	AS_CASE([${nut_with_snmp_includes}],
+		[auto], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
+				[depCFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"
+				 depCFLAGS_SOURCE="netsnmp-config"],
+				[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+					[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags netsnmp 2>/dev/null`"
+					 depCFLAGS_SOURCE="pkg-config"],
+					[depCFLAGS_SOURCE="default"]
+				)]
+			)],
+			[depCFLAGS_SOURCE="confarg"
+			 depCFLAGS="${nut_with_snmp_includes}"]
 	)
 	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	depLIBS_SOURCE=""
 	AC_MSG_CHECKING(for Net-SNMP libs)
-	AC_ARG_WITH(snmp-libs,
-		AS_HELP_STRING([@<:@--with-snmp-libs=LIBS@:>@], [linker flags for the Net-SNMP library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-snmp-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS_SOURCE="confarg"
-			depLIBS="${withval}"
-			;;
-		esac
-	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
-		[depLIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"
-		 depLIBS_SOURCE="netsnmp-config"],
-		[AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depLIBS="`$PKG_CONFIG --silence-errors --libs netsnmp 2>/dev/null`"
-			 depLIBS_SOURCE="pkg-config"],
-			[depLIBS="-lnetsnmp"
-			 depLIBS_SOURCE="default"])]
-		)]
+	NUT_ARG_WITH_LIBOPTS_LIBS([snmp], [auto], [Net-SNMP])
+	AS_CASE([${nut_with_snmp_libs}],
+		[auto], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
+				[depLIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"
+				 depLIBS_SOURCE="netsnmp-config"],
+				[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+					[depLIBS="`$PKG_CONFIG --silence-errors --libs netsnmp 2>/dev/null`"
+					 depLIBS_SOURCE="pkg-config"],
+					[depLIBS="-lnetsnmp"
+					 depLIBS_SOURCE="default"]
+				 )]
+			)],
+			[depLIBS_SOURCE="confarg"
+			 depLIBS="${nut_with_snmp_libs}"]
 	)
 	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 

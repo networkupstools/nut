@@ -54,47 +54,31 @@ if test -z "${nut_have_libsystemd_seen}"; then
 	])
 
 	AC_MSG_CHECKING(for libsystemd cflags)
-	AC_ARG_WITH(libsystemd-includes,
-		AS_HELP_STRING([@<:@--with-libsystemd-includes=CFLAGS@:>@], [include flags for the systemd library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-libsystemd-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [
-		dnl Not specifying a default include path here,
-		dnl headers are referenced by relative directory
-		dnl and these should be in OS location usually.
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libsystemd 2>/dev/null`" \
-			 || depCFLAGS=""],
-			[depCFLAGS=""]
-		)]
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([libsystemd], [auto], [systemd])
+	AS_CASE([${nut_with_libsystemd_includes}],
+		[auto], [
+			dnl Not specifying a default include path here,
+			dnl headers are referenced by relative directory
+			dnl and these should be in OS location usually.
+			AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libsystemd 2>/dev/null`" \
+				 || depCFLAGS=""],
+				[depCFLAGS=""]
+			)],
+			[depCFLAGS="${nut_with_libsystemd_includes}"]
 	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for libsystemd ldflags)
-	AC_ARG_WITH(libsystemd-libs,
-		AS_HELP_STRING([@<:@--with-libsystemd-libs=LIBS@:>@], [linker flags for the systemd library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-libsystemd-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depLIBS="`$PKG_CONFIG --silence-errors --libs libsystemd 2>/dev/null`" \
-			 || depLIBS="-lsystemd"],
-			[depLIBS="-lsystemd"]
-		)]
+	NUT_ARG_WITH_LIBOPTS_LIBS([libsystemd], [auto], [systemd])
+	AS_CASE([${nut_with_libsystemd_libs}],
+		[auto], [
+			AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[depLIBS="`$PKG_CONFIG --silence-errors --libs libsystemd 2>/dev/null`" \
+				 || depLIBS="-lsystemd"],
+				[depLIBS="-lsystemd"]
+			)],
+			[depLIBS="${nut_with_libsystemd_libs}"]
 	)
 	AC_MSG_RESULT([${depLIBS}])
 
