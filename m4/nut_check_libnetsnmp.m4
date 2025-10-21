@@ -38,7 +38,8 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			[Path to program that reports Net-SNMP configuration], [auto])
 
 	AS_CASE([${nut_with_net_snmp_config}],
-		[""|yes|auto],	[prefer_NET_SNMP_CONFIG=true],
+		[""|yes],	[prefer_NET_SNMP_CONFIG=true],
+		[auto],	[prefer_NET_SNMP_CONFIG=auto],
 		[no], [
 			dnl AC_MSG_ERROR(invalid option --with(out)-net-snmp-config - see docs/configure.txt)
 			prefer_NET_SNMP_CONFIG=false
@@ -48,13 +49,16 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			]
 	)
 
-	if test x"$have_PKG_CONFIG" = xyes -a x"${prefer_NET_SNMP_CONFIG}" = xfalse ; then
+	if test x"$have_PKG_CONFIG" = xyes -a x"${prefer_NET_SNMP_CONFIG}" != xtrue ; then
 		AC_MSG_CHECKING(for Net-SNMP version via pkg-config)
 		dnl TODO? Loop over possible/historic pkg names, like
 		dnl netsnmp, net-snmp, ucd-snmp, libsnmp, snmp...
 		SNMP_VERSION="`$PKG_CONFIG --silence-errors --modversion netsnmp 2>/dev/null`"
 		if test "$?" = "0" -a -n "${SNMP_VERSION}" ; then
 			AC_MSG_RESULT(${SNMP_VERSION} found)
+			if test x"${prefer_NET_SNMP_CONFIG}" = xauto; then
+				prefer_NET_SNMP_CONFIG=false
+			fi
 		else
 			AC_MSG_RESULT(none found)
 			prefer_NET_SNMP_CONFIG=true
