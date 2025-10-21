@@ -102,14 +102,19 @@ AC_DEFUN([NUT_ARG_WITH_LIBOPTS_INVALID_YESNO],
     )
 ])
 
+dnl NOTE: The defaulting substituter may be not defined/renamed in some autoconf versions
+dnl m4_ifndef([m4_default], [m4_define([m4_default], [m4_ifval([[$1]], [[$1]], [[$2]])])])
+
 dnl Just the (normal-cased) third-party project name is required
 dnl   $1 project name
 dnl   $2 default value (optional)
+dnl   $3 project name spelling for help message (very optional)
+
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_INCLUDES],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS|auto], [include flags for the $1 library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS|auto], [include flags for the $1 library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS|auto], [include flags for the ]m4_default($3, $1)[ library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS|auto], [include flags for the ]m4_default($3, $1)[ library], [auto])])
 ])
 
 dnl Technically LIBS and LDFLAGS are about the same for
@@ -117,22 +122,22 @@ dnl most of our m4 code and legacy help messaging... so far.
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LIBS],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the $1 library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the $1 library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the ]m4_default($3, $1)[ library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the ]m4_default($3, $1)[ library], [auto])])
 ])
 
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LIBS_AS_LDFLAGS],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LDFLAGS|auto], [linker flags for the $1 library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LDFLAGS|auto], [linker flags for the $1 library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LDFLAGS|auto], [linker flags for the ]m4_default($3, $1)[ library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LDFLAGS|auto], [linker flags for the ]m4_default($3, $1)[ library], [auto])])
 ])
 
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LDFLAGS],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-ldflags], [LDFLAGS|auto], [linker flags for the $1 library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-ldflags], [LDFLAGS|auto], [linker flags for the $1 library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-ldflags], [LDFLAGS|auto], [linker flags for the ]m4_default($3, $1)[ library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-ldflags], [LDFLAGS|auto], [linker flags for the ]m4_default($3, $1)[ library], [auto])])
 ])
 
 dnl Help detect legacy <projectname>-config scripts, assigns "none" if disabled or not found
@@ -140,10 +145,11 @@ dnl   $1 project name
 dnl   $2 m4 var to assign
 dnl   $3 program name(s) to try
 dnl   $4 default value
+dnl   $5 project name spelling for help message (very optional)
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM],
 [
     dnl By default seek in PATH
-    NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-config], [/path/to/m4_translit($1, 'A-Z', 'a-z')-config|auto|none], [path to program that reports $1 configuration], [$4])
+    NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-config], [/path/to/m4_translit($1, 'A-Z', 'a-z')-config|auto|none], [path to program that reports ]m4_default($5, $1)[ configuration], [$4])
     AS_CASE([[${[nut_with_]]m4_translit($1, [-], [_])[[_config]}]],
         [yes|auto|""], [AC_PATH_PROGS([$2], [$3], [none])],
         [no|none], [$2="none"],
@@ -155,16 +161,16 @@ dnl Part of stack, use or guess optional parameter $2 (m4 var name); pass others
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM([$1], [$2], [$3], [$4])],
-        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM([$1], m4_translit(m4_translit($1, 'a-z', 'A-Z'), [-], [_])[_CONFIG], [$3], [$4])])
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM([$1], [$2], [$3], [$4], [$5])],
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM([$1], m4_translit(m4_translit($1, 'a-z', 'A-Z'), [-], [_])[_CONFIG], [$3], [$4], [$5])])
 ])
 
 dnl Part of stack, use or guess optional parameter $3 (prog names); pass others as is
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3],
 [
     m4_ifval([$3],
-        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2([$1], [$2], [$3], [$4])],
-        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2([$1], [$2], [m4_translit($1, 'A-Z', 'a-z')-config], [$4])])
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2([$1], [$2], [$3], [$4], [$5])],
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2([$1], [$2], [m4_translit($1, 'A-Z', 'a-z')-config], [$4], [$5])])
 ])
 
 dnl Just the (normal-cased) third-party project name is required
@@ -172,11 +178,12 @@ dnl   $1 project name
 dnl   $2 m4 var to assign (optional)
 dnl   $3 program name(s) to try (optional)
 dnl   $4 default value (optional)
+dnl   $5 project name spelling for help message (very optional)
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT],
 [
     m4_ifval([$4],
-        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3([$1], [$2], [$3], [$4])],
-        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3([$1], [$2], [$3], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3([$1], [$2], [$3], [$4], [$5])],
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3([$1], [$2], [$3], [auto], [$5])])
 ])
 
 dnl Enable a package feature/ability (might name a variant, or yes/no)
