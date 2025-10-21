@@ -45,33 +45,19 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 
 	dnl allow overriding FreeIPMI settings if the user knows best
 	AC_MSG_CHECKING(for FreeIPMI cflags)
-	AC_ARG_WITH(freeipmi-includes,
-		AS_HELP_STRING([@<:@--with-freeipmi-includes=CFLAGS@:>@], [include flags for the FreeIPMI library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-freeipmi-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([FreeIPMI], [auto])
+	AS_CASE([${nut_with_freeipmi_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_freeipmi_includes}"]
+	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for FreeIPMI ldflags)
-	AC_ARG_WITH(freeipmi-libs,
-		AS_HELP_STRING([@<:@--with-freeipmi-libs=LIBS@:>@], [linker flags for the FreeIPMI library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-freeipmi-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_LIBS([FreeIPMI], [auto])
+	AS_CASE([${nut_with_freeipmi_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLIBS="${nut_with_freeipmi_libs}"]
+	)
 	AC_MSG_RESULT([${depLIBS}])
 
 	dnl check if freeipmi is usable with our current flags
