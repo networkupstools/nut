@@ -75,13 +75,17 @@ static item_t	innovatae_qx2nut[] = {
 
 	/*
 	 * > [I\r]
-	 * < [#222222222222222222222222222R1.00.48\r]
-	 *    0123456789012345678901234567890123456
+	 * < [#222222222222222222222222222R1.00.48  \r]
+	 *    012345678901234567890123456789012345678
 	 *    0         1         2         3
 	 */
 
 	/* Firmware version */
-	{ "ups.firmware",	0,	NULL,	"I\r",	"",	37,	'#',	"",	28,	35,	"%s",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
+	/* According to the Megatec Qx protocol implementation (nutdrv_qx_megatec.c) firmware version can be reported
+	 * via I command (positions 28-35) and answer length may vary between 38 and 39.
+	 * Referenced source suggests to use lesser number
+	 */
+	{ "ups.firmware",	0,	NULL,	"I\r",	"",	38,	'#',	"",	28,	35,	"%s",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 
 	/* Instant commands */
 	{ "beeper.toggle",		0,	NULL,	"Q\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
