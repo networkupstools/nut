@@ -39,44 +39,28 @@ if test -z "${nut_have_gpio_seen}"; then
 	)
 
 	AC_MSG_CHECKING(for libgpiod cflags)
-	AC_ARG_WITH(gpio-includes,
-		AS_HELP_STRING([@<:@--with-gpio-includes=CFLAGS@:>@], [include flags for the gpiod library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-gpio-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libgpiod 2>/dev/null`" \
-			 || depCFLAGS="-I/usr/include -I/usr/local/include"],
-			[depCFLAGS="-I/usr/include -I/usr/local/include"]
-		)]
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([gpio], [auto], [gpiod])
+	AS_CASE([${nut_with_gpio_includes}],
+		[auto], [
+			AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libgpiod 2>/dev/null`" \
+				 || depCFLAGS="-I/usr/include -I/usr/local/include"],
+				[depCFLAGS="-I/usr/include -I/usr/local/include"]
+			)],
+			[depCFLAGS="${nut_with_gpio_includes}"]
 	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for libgpiod ldflags)
-	AC_ARG_WITH(gpio-libs,
-		AS_HELP_STRING([@<:@--with-gpio-libs=LIBS@:>@], [linker flags for the gpiod library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-gpio-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depLIBS="`$PKG_CONFIG --silence-errors --libs libgpiod 2>/dev/null`" \
-			 || depLIBS="-lgpiod"],
-			[depLIBS="-lgpiod"]
-		)]
+	NUT_ARG_WITH_LIBOPTS_LIBS([gpio], [auto], [gpiod])
+	AS_CASE([${nut_with_gpio_libs}],
+		[auto], [
+			AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[depLIBS="`$PKG_CONFIG --silence-errors --libs libgpiod 2>/dev/null`" \
+				 || depLIBS="-lgpiod"],
+				[depLIBS="-lgpiod"]
+			)],
+			[depLIBS="${nut_with_gpio_libs}"]
 	)
 	AC_MSG_RESULT([${depLIBS}])
 
