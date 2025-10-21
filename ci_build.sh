@@ -869,9 +869,12 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
     BUILTIN_PKG_CONFIG_PATH="`$PKG_CONFIG --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
     case "`echo "$CI_OS_NAME" | $TOLOWER`" in
         *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
-            _ARCHES="${ARCH-}"
+            _ARCHES="${ARCH_TGT-}${ARCH-}${ARCH32-}${ARCH64-}"
             _BITS="${BITS-}"
             _ISA1=""
+
+            [ -n "${_BITS}" ] || \
+            _BITS="${ARCH_BITS-}"
 
             [ -n "${_BITS}" ] || \
             case "${CC}${CXX}${CFLAGS}${CXXFLAGS}${LDFLAGS}" in
