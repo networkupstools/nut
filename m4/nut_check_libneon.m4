@@ -34,44 +34,26 @@ if test -z "${nut_have_neon_seen}"; then
 	)
 
 	AC_MSG_CHECKING(for libneon cflags)
-	AC_ARG_WITH(neon-includes,
-		AS_HELP_STRING([@<:@--with-neon-includes=CFLAGS@:>@], [include flags for the neon library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-neon-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags neon 2>/dev/null`" \
-			 || depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon"],
-			[depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon"]
-		)]
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([neon], [auto])
+	AS_CASE([${nut_with_neon_includes}],
+		[auto],	[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags neon 2>/dev/null`" \
+				 || depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon"],
+				[depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon"]
+			)],
+				[depCFLAGS="${nut_with_neon_includes}"]
 	)
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for libneon ldflags)
-	AC_ARG_WITH(neon-libs,
-		AS_HELP_STRING([@<:@--with-neon-libs=LIBS@:>@], [linker flags for the neon library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-neon-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depLIBS="`$PKG_CONFIG --silence-errors --libs neon 2>/dev/null`" \
-			 || depLIBS="-lneon"],
-			[depLIBS="-lneon"]
-		)]
+	NUT_ARG_WITH_LIBOPTS_LIBS([neon], [auto])
+	AS_CASE([${nut_with_neon_libs}],
+		[auto],	[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[depLIBS="`$PKG_CONFIG --silence-errors --libs neon 2>/dev/null`" \
+				 || depLIBS="-lneon"],
+				[depLIBS="-lneon"]
+			)],
+				[depLIBS="${nut_with_neon_libs}"]
 	)
 	AC_MSG_RESULT([${depLIBS}])
 
