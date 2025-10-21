@@ -47,22 +47,8 @@ if test -z "${nut_have_libgd_seen}"; then
 		 depLDFLAGS="-L/usr/X11R6/lib"
 		 depLIBS="-lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
 
-		 dnl By default seek in PATH
-		 AC_PATH_PROGS([GDLIB_CONFIG], [gdlib-config], [none])
-		 AC_ARG_WITH(gdlib-config,
-			AS_HELP_STRING([@<:@--with-gdlib-config=/path/to/gdlib-config@:>@],
-				[path to program that reports GDLIB configuration]),
-		 [
-			case "${withval}" in
-			"") ;;
-			yes|no)
-				AC_MSG_ERROR(invalid option --with(out)-gdlib-config - see docs/configure.txt)
-				;;
-			*)
-				GDLIB_CONFIG="${withval}"
-				;;
-			esac
-		 ])
+		 dnl Define --with-gdlib-config option
+		 NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT([GDLIB])
 
 		 AS_IF([test x"$GDLIB_CONFIG" != xnone],
 			[AC_MSG_CHECKING(for gd version via ${GDLIB_CONFIG})
@@ -91,35 +77,23 @@ if test -z "${nut_have_libgd_seen}"; then
 	)
 
 	dnl Now allow overriding gd settings if the user knows best
+	dnl (note not "GDLIB" as referenced above for config script)
 	AC_MSG_CHECKING(for gd include flags)
-	AC_ARG_WITH(gd-includes,
-		AS_HELP_STRING([@<:@--with-gd-includes=CFLAGS@:>@], [include flags for the gd library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-gd-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([gd], [auto])
+	AS_CASE([${nut_with_gd_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_gd_includes}"]
+	)
 	AC_MSG_RESULT([${depCFLAGS}])
 
+	dnl Technically, here we seek LDFLAGS not LIBS...
 	AC_MSG_CHECKING(for gd library flags)
-	AC_ARG_WITH(gd-libs,
-		AS_HELP_STRING([@<:@--with-gd-libs=LDFLAGS@:>@], [linker flags for the gd library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-gd-libs - see docs/configure.txt)
-			;;
-		*)
-			depLDFLAGS="${withval}"
-			depLIBS=""
-			;;
-		esac
-	], [])
+	NUT_ARG_WITH_LIBOPTS_LIBS_AS_LDFLAGS([gd], [auto])
+	AS_CASE([${nut_with_gd_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLDFLAGS="${nut_with_gd_libs}"
+			 depLIBS=""]
+	)
 	AC_MSG_RESULT([${depLDFLAGS} ${depLIBS}])
 
 	dnl check if gd is usable
