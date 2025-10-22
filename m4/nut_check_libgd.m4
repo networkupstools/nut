@@ -16,8 +16,11 @@ if test -z "${nut_have_libgd_seen}"; then
 	LDFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLDFLAGS=""
+	depLDFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 		AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) LIBGD (before): CFLAGS_ORIG="${CFLAGS_ORIG}" CXXFLAGS_ORIG="${CXXFLAGS_ORIG}" CPPFLAGS_ORIG="${CPPFLAGS_ORIG}" LDFLAGS_ORIG="${LDFLAGS_ORIG}" LIBS_ORIG="${LIBS_ORIG}"])
@@ -39,6 +42,9 @@ if test -z "${nut_have_libgd_seen}"; then
 	AS_IF([test x"$GD_VERSION" != xnone],
 		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags gdlib 2>/dev/null`"
 		 depLIBS="`$PKG_CONFIG --silence-errors --libs gdlib 2>/dev/null`"
+		 depCFLAGS_SOURCE="pkg-config"
+		 depLDFLAGS_SOURCE="pkg-config(N/A)"
+		 depLIBS_SOURCE="pkg-config"
 		],
 		[dnl Initial defaults. These are only used if gdlib-config is
 		 dnl unusable and the user fails to pass better values in --with
@@ -46,6 +52,9 @@ if test -z "${nut_have_libgd_seen}"; then
 		 depCFLAGS=""
 		 depLDFLAGS="-L/usr/X11R6/lib"
 		 depLIBS="-lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
+		 depCFLAGS_SOURCE="default"
+		 depLDFLAGS_SOURCE="default"
+		 depLIBS_SOURCE="default"
 
 		 dnl Define --with-gdlib-config option
 		 NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT([GDLIB])
@@ -71,6 +80,9 @@ if test -z "${nut_have_libgd_seen}"; then
 			depCFLAGS="`${GDLIB_CONFIG} --includes 2>/dev/null`"
 			depLDFLAGS="`${GDLIB_CONFIG} --ldflags 2>/dev/null`"
 			depLIBS="`${GDLIB_CONFIG} --libs 2>/dev/null`"
+			depCFLAGS_SOURCE="${GDLIB_CONFIG} program"
+			depLDFLAGS_SOURCE="${GDLIB_CONFIG} program"
+			depLIBS_SOURCE="${GDLIB_CONFIG} program"
 			;;
 		 esac
 		]
@@ -82,9 +94,10 @@ if test -z "${nut_have_libgd_seen}"; then
 	NUT_ARG_WITH_LIBOPTS_INCLUDES([gd], [auto])
 	AS_CASE([${nut_with_gd_includes}],
 		[auto], [],	dnl Keep what we had found above
-			[depCFLAGS="${nut_with_gd_includes}"]
+			[depCFLAGS="${nut_with_gd_includes}"
+			 depCFLAGS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depCFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	dnl Technically, here we seek LDFLAGS not LIBS...
 	AC_MSG_CHECKING(for gd library flags)
@@ -92,9 +105,11 @@ if test -z "${nut_have_libgd_seen}"; then
 	AS_CASE([${nut_with_gd_libs}],
 		[auto], [],	dnl Keep what we had found above
 			[depLDFLAGS="${nut_with_gd_libs}"
-			 depLIBS=""]
+			 depLIBS=""
+			 depLDFLAGS_SOURCE="confarg"
+			 depLIBS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depLDFLAGS} ${depLIBS}])
+	AC_MSG_RESULT([${depLDFLAGS} ${depLIBS} (source: ${depLDFLAGS_SOURCE}/${depLIBS_SOURCE})])
 
 	dnl check if gd is usable
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
@@ -168,6 +183,9 @@ gdImageDestroy(im);
 	unset depCFLAGS
 	unset depLDFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLDFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl put back the original versions
 	CFLAGS="${CFLAGS_ORIG}"
