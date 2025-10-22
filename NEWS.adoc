@@ -189,7 +189,9 @@ several `FSD` notifications into one executed action. [PR #3097]
      fixed a missed compiler family dependency when handling `--enable-strip`,
      a few logical mismatches of Solaris/illumos packaging options, and default
      report vs. setting of `--enable-force-nut-version-header`. Rephrased and
-     updated many help messages. [#3140]
+     updated many help messages. The `configure` script logs should now clarify
+     where CFLAGS/LIBS/LDFLAGS values come from ('pkg-config', 'default', user
+     provided 'confargs' etc.) [#3140]
 
  - Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
    include the source distribution (was posted for NUT v2.8.1 and v2.8.2
