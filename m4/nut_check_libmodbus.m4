@@ -15,7 +15,9 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	CFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING(for libmodbus version via pkg-config)
@@ -33,9 +35,13 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	AS_IF([test x"$LIBMODBUS_VERSION" != xnone],
 		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libmodbus 2>/dev/null`"
 		 depLIBS="`$PKG_CONFIG --silence-errors --libs libmodbus 2>/dev/null`"
+		 depCFLAGS_SOURCE="pkg-config"
+		 depLIBS_SOURCE="pkg-config"
 		],
 		[depCFLAGS="-I/usr/include/modbus"
 		 depLIBS="-lmodbus"
+		 depCFLAGS_SOURCE="default"
+		 depLIBS_SOURCE="default"
 		]
 	)
 
@@ -43,17 +49,19 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	NUT_ARG_WITH_LIBOPTS_INCLUDES([modbus], [auto], [libmodbus])
 	AS_CASE([${nut_with_modbus_includes}],
 		[auto],	[],	dnl Keep what we had found above
-			[depCFLAGS="${nut_with_modbus_includes}"]
+			[depCFLAGS="${nut_with_modbus_includes}"
+			 depCFLAGS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depCFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for libmodbus ldflags)
 	NUT_ARG_WITH_LIBOPTS_LIBS([modbus], [auto], [libmodbus])
 	AS_CASE([${nut_with_modbus_libs}],
 		[auto],	[],	dnl Keep what we had found above
-			[depLIBS="${nut_with_modbus_libs}"]
+			[depLIBS="${nut_with_modbus_libs}"
+			 depLIBS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depLIBS}])
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if libmodbus is usable
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
@@ -254,6 +262,8 @@ if (ctx) modbus_free(ctx);])], [AS_IF([test -x "conftest$ac_exeext"], [
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
