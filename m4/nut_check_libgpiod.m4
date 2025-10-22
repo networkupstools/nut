@@ -15,7 +15,9 @@ if test -z "${nut_have_gpio_seen}"; then
 	CFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	# Store implementation (if any) to be reported by configure.ac:
 	nut_gpio_lib=""
@@ -43,26 +45,34 @@ if test -z "${nut_have_gpio_seen}"; then
 	AS_CASE([${nut_with_gpio_includes}],
 		[auto], [
 			AS_IF([test x"$have_PKG_CONFIG" = xyes],
-				[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libgpiod 2>/dev/null`" \
-				 || depCFLAGS="-I/usr/include -I/usr/local/include"],
-				[depCFLAGS="-I/usr/include -I/usr/local/include"]
+				[   { depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libgpiod 2>/dev/null`" \
+				      && depCFLAGS_SOURCE="pkg-config" ; } \
+				 || { depCFLAGS="-I/usr/include -I/usr/local/include" \
+				      && depCFLAGS_SOURCE="default" ; }],
+				[depCFLAGS="-I/usr/include -I/usr/local/include"
+				 depCFLAGS_SOURCE="default"]
 			)],
-			[depCFLAGS="${nut_with_gpio_includes}"]
+			[depCFLAGS="${nut_with_gpio_includes}"
+			 depCFLAGS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depCFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for libgpiod ldflags)
 	NUT_ARG_WITH_LIBOPTS_LIBS([gpio], [auto], [gpiod])
 	AS_CASE([${nut_with_gpio_libs}],
 		[auto], [
 			AS_IF([test x"$have_PKG_CONFIG" = xyes],
-				[depLIBS="`$PKG_CONFIG --silence-errors --libs libgpiod 2>/dev/null`" \
-				 || depLIBS="-lgpiod"],
-				[depLIBS="-lgpiod"]
+				[   { depLIBS="`$PKG_CONFIG --silence-errors --libs libgpiod 2>/dev/null`" \
+				      && depLIBS_SOURCE="pkg-config" ; } \
+				 || { depLIBS="-lgpiod" \
+				      && depLIBS_SOURCE="default" ; }],
+				[depLIBS="-lgpiod"
+				 depLIBS_SOURCE="default"]
 			)],
-			[depLIBS="${nut_with_gpio_libs}"]
+			[depLIBS="${nut_with_gpio_libs}"
+			 depLIBS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depLIBS}])
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if gpiod is usable
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
