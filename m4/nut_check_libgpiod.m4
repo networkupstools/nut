@@ -118,8 +118,10 @@ if test -z "${nut_have_gpio_seen}"; then
 		AC_DEFINE_UNQUOTED(WITH_LIBGPIO_VERSION_STR, ["0x00000000"], [Define libgpio C API version generation as string])
 	fi
 
-	unset CFLAGS
-	unset LIBS
+	unset depCFLAGS
+	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
