@@ -18,6 +18,8 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	LIBS=""
 	depCFLAGS=""
 	depLIBS=""
+	depCFLAGS_SOURCE=""
+	depLIBS_SOURCE=""
 
 	dnl We prefer to get info from pkg-config (for suitable arch/bitness as
 	dnl specified in args for that mechanism), unless (legacy) a particular
@@ -84,13 +86,12 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		AC_MSG_WARN([did not find either net-snmp-config or pkg-config for net-snmp])
 	fi
 
-	depCFLAGS_SOURCE=""
 	AC_MSG_CHECKING(for Net-SNMP cflags)
 	NUT_ARG_WITH_LIBOPTS_INCLUDES([snmp], [auto], [Net-SNMP])
 	AS_CASE([${nut_with_snmp_includes}],
 		[auto], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
 				[depCFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"
-				 depCFLAGS_SOURCE="netsnmp-config"],
+				 depCFLAGS_SOURCE="${NET_SNMP_CONFIG} program"],
 				[AS_IF([test x"$have_PKG_CONFIG" = xyes],
 					[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags netsnmp 2>/dev/null`"
 					 depCFLAGS_SOURCE="pkg-config"],
@@ -102,13 +103,13 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	)
 	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
-	depLIBS_SOURCE=""
+	dnl Note: below we check for specifically `if depLIBS_SOURCE == "pkg-config"`
 	AC_MSG_CHECKING(for Net-SNMP libs)
 	NUT_ARG_WITH_LIBOPTS_LIBS([snmp], [auto], [Net-SNMP])
 	AS_CASE([${nut_with_snmp_libs}],
 		[auto], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
 				[depLIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"
-				 depLIBS_SOURCE="netsnmp-config"],
+				 depLIBS_SOURCE="${NET_SNMP_CONFIG} program"],
 				[AS_IF([test x"$have_PKG_CONFIG" = xyes],
 					[depLIBS="`$PKG_CONFIG --silence-errors --libs netsnmp 2>/dev/null`"
 					 depLIBS_SOURCE="pkg-config"],
@@ -375,6 +376,8 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
