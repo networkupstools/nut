@@ -16,7 +16,9 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	CFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl pkg-config support requires Freeipmi 1.0.5, released on Thu Jun 30 2011
@@ -37,9 +39,13 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	AS_IF([test x"$FREEIPMI_VERSION" != xnone],
 		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libfreeipmi libipmimonitoring 2>/dev/null`"
 		 depLIBS="`$PKG_CONFIG --silence-errors --libs libfreeipmi libipmimonitoring 2>/dev/null`"
+		 depCFLAGS_SOURCE="pkg-config"
+		 depLIBS_SOURCE="pkg-config"
 		],
 		[depCFLAGS=""
 		 depLIBS="-lfreeipmi -lipmimonitoring"
+		 depCFLAGS_SOURCE="default"
+		 depLIBS_SOURCE="default"
 		]
 	)
 
@@ -48,17 +54,19 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	NUT_ARG_WITH_LIBOPTS_INCLUDES([FreeIPMI], [auto])
 	AS_CASE([${nut_with_freeipmi_includes}],
 		[auto], [],	dnl Keep what we had found above
-			[depCFLAGS="${nut_with_freeipmi_includes}"]
+			[depCFLAGS="${nut_with_freeipmi_includes}"
+			 depCFLAGS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depCFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for FreeIPMI ldflags)
 	NUT_ARG_WITH_LIBOPTS_LIBS([FreeIPMI], [auto])
 	AS_CASE([${nut_with_freeipmi_libs}],
 		[auto], [],	dnl Keep what we had found above
-			[depLIBS="${nut_with_freeipmi_libs}"]
+			[depLIBS="${nut_with_freeipmi_libs}"
+			 depLIBS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depLIBS}])
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if freeipmi is usable with our current flags
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
@@ -122,6 +130,8 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
