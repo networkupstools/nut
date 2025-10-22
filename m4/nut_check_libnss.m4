@@ -17,8 +17,11 @@ if test -z "${nut_have_libnss_seen}"; then
 	LIBS=""
 	REQUIRES=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 	depREQUIRES=""
+	depREQUIRES_SOURCE=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING(for Mozilla NSS version via pkg-config)
@@ -37,10 +40,16 @@ if test -z "${nut_have_libnss_seen}"; then
 		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags nss 2>/dev/null`"
 		 depLIBS="`$PKG_CONFIG --silence-errors --libs nss 2>/dev/null`"
 		 depREQUIRES="nss"
+		 depCFLAGS_SOURCE="pkg-config"
+		 depLIBS_SOURCE="pkg-config"
+		 depREQUIRES_SOURCE="default(pkg-config)"
 		],
 		[depCFLAGS=""
 		 depLIBS="-lnss3 -lnssutil3 -lsmime3 -lssl3 -lplds4 -lplc4 -lnspr4"
 		 depREQUIRES="nss"
+		 depCFLAGS_SOURCE="default"
+		 depLIBS_SOURCE="default"
+		 depREQUIRES_SOURCE="default"
 		]
 	)
 
@@ -49,17 +58,19 @@ if test -z "${nut_have_libnss_seen}"; then
 	NUT_ARG_WITH_LIBOPTS_INCLUDES([nss], [auto], [Mozilla NSS])
 	AS_CASE([${nut_with_nss_includes}],
 		[auto], [],	dnl Keep what we had found above
-			[depCFLAGS="${nut_with_nss_includes}"]
+			[depCFLAGS="${nut_with_nss_includes}"
+			 depCFLAGS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depCFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for Mozilla NSS ldflags)
 	NUT_ARG_WITH_LIBOPTS_LIBS([nss], [auto], [Mozilla NSS])
 	AS_CASE([${nut_with_nss_libs}],
 		[auto], [],	dnl Keep what we had found above
-			[depLIBS="${nut_with_nss_libs}"]
+			[depLIBS="${nut_with_nss_libs}"
+			 depLIBS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depLIBS}])
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if NSS is usable: we need both the runtime and headers
 	dnl NOTE that caller may have to specify PKG_CONFIG_PATH including
@@ -126,6 +137,9 @@ dnl		fi
 	unset depCFLAGS
 	unset depLIBS
 	unset depREQUIRES
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
+	unset depREQUIRES_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
