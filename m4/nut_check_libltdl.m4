@@ -12,10 +12,12 @@ if test -z "${nut_have_libltdl_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
-	LIBS=""
 	CFLAGS=""
-	depLIBS=""
+	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
+	depLIBS=""
+	depLIBS_SOURCE=""
 	dnl For fallback below:
 	myCFLAGS=""
 
@@ -26,18 +28,21 @@ if test -z "${nut_have_libltdl_seen}"; then
 			 dnl Best-Effort Fallback (LDFLAGS might make more sense for -L...,
 			 dnl but other m4 files have it so) to use if probe below fails:
 			 myCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"
+			 depCFLAGS_SOURCE="default"
 			],
-			[depCFLAGS="${nut_with_libltdl_includes}"]
+			[depCFLAGS="${nut_with_libltdl_includes}"
+			 depCFLAGS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depCFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for libltdl ldflags)
 	NUT_ARG_WITH_LIBOPTS_LIBS([libltdl], [auto])
 	AS_CASE([${nut_with_libltdl_libs}],
-		[auto], [],	dnl No fallback here - we probe suitable libs below
-			[depLIBS="${nut_with_libltdl_libs}"]
+		[auto], [depLIBS_SOURCE="default (probe later)"],	dnl No fallback here - we probe suitable libs below
+			[depLIBS="${nut_with_libltdl_libs}"
+			 depLIBS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depLIBS}])
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
 	LIBS="${LIBS_ORIG} ${depLIBS}"
@@ -76,9 +81,12 @@ if test -z "${nut_have_libltdl_seen}"; then
 		LIBLTDL_CFLAGS="${depCFLAGS}"
 		LIBLTDL_LIBS="${depLIBS}"
 	])
+
 	unset myCFLAGS
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
