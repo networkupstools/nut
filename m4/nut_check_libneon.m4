@@ -15,7 +15,9 @@ if test -z "${nut_have_neon_seen}"; then
 	CFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl See which version of the neon library (if any) is installed
@@ -37,25 +39,33 @@ if test -z "${nut_have_neon_seen}"; then
 	NUT_ARG_WITH_LIBOPTS_INCLUDES([neon], [auto])
 	AS_CASE([${nut_with_neon_includes}],
 		[auto],	[AS_IF([test x"$have_PKG_CONFIG" = xyes],
-				[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags neon 2>/dev/null`" \
-				 || depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon"],
-				[depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon"]
+				[   { depCFLAGS="`$PKG_CONFIG --silence-errors --cflags neon 2>/dev/null`" \
+				      && depCFLAGS_SOURCE="pkg-config" ; } \
+				 || { depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon" \
+				      && depCFLAGS_SOURCE="default" ; }],
+				[depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon"
+				 depCFLAGS_SOURCE="default"]
 			)],
-				[depCFLAGS="${nut_with_neon_includes}"]
+				[depCFLAGS="${nut_with_neon_includes}"
+				 depCFLAGS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${CFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for libneon ldflags)
 	NUT_ARG_WITH_LIBOPTS_LIBS([neon], [auto])
 	AS_CASE([${nut_with_neon_libs}],
 		[auto],	[AS_IF([test x"$have_PKG_CONFIG" = xyes],
-				[depLIBS="`$PKG_CONFIG --silence-errors --libs neon 2>/dev/null`" \
-				 || depLIBS="-lneon"],
-				[depLIBS="-lneon"]
+				[   { depLIBS="`$PKG_CONFIG --silence-errors --libs neon 2>/dev/null`" \
+				      && depLIBS_SOURCE="pkg-config" ; } \
+				 || { depLIBS="-lneon" \
+				      && depLIBS_SOURCE="default" ; }],
+				[depLIBS="-lneon"
+				 depLIBS_SOURCE="default"]
 			)],
-				[depLIBS="${nut_with_neon_libs}"]
+				[depLIBS="${nut_with_neon_libs}"
+				 depLIBS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depLIBS}])
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if neon is usable
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
@@ -88,6 +98,8 @@ if test -z "${nut_have_neon_seen}"; then
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
