@@ -75,6 +75,10 @@ https://github.com/networkupstools/nut/milestone/12
      to be met, i.e. the load must be between 30% and 100% and the starting
      battery capacity is greater than 99%. The "Battery test until battery low"
      can be started anytime. Tested on Masterguard A1000 and A2000 units. [#3135]
+   * `nutdrv_qx_masterguard` sub-driver fix `masterguard_add_slaveaddr` to
+     return the correct command length, resolving a bug for all commands using
+     the `,XX` slave address placeholder. This also enables support for the
+     `test.battery.start.deep` (`TUD`) command. [#3141]
 
  - `powerp-bin` and `powerp-txt` driver updates:
    * Their `upsdrv_initinfo()` methods did not explicitly reference the
