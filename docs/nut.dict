@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3564 utf-8
+personal_ws-1.1 en 3566 utf-8
 AAC
 AAS
 ABI
@@ -1319,6 +1319,7 @@ TSR
 TST
 TT
 TTT
+TUD
 TXF
 TXG
 TXV
@@ -3087,6 +3088,7 @@ ske
 skel
 sl
 slackpkg
+slaveaddr
 slaveid
 slavesync
 slibtool
