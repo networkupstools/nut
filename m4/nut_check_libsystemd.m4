@@ -15,7 +15,9 @@ if test -z "${nut_have_libsystemd_seen}"; then
 	CFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	SYSTEMD_VERSION="none"
 
@@ -61,26 +63,34 @@ if test -z "${nut_have_libsystemd_seen}"; then
 			dnl headers are referenced by relative directory
 			dnl and these should be in OS location usually.
 			AS_IF([test x"$have_PKG_CONFIG" = xyes],
-				[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libsystemd 2>/dev/null`" \
-				 || depCFLAGS=""],
-				[depCFLAGS=""]
+				[   { depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libsystemd 2>/dev/null`" \
+				      && depCFLAGS_SOURCE="pkg-config" ; } \
+				 || { depCFLAGS="" \
+				      && depCFLAGS_SOURCE="default" ; }],
+				[depCFLAGS=""
+				 depCFLAGS_SOURCE="default"]
 			)],
-			[depCFLAGS="${nut_with_libsystemd_includes}"]
+			[depCFLAGS="${nut_with_libsystemd_includes}"
+			 depCFLAGS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depCFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for libsystemd ldflags)
 	NUT_ARG_WITH_LIBOPTS_LIBS([libsystemd], [auto], [systemd])
 	AS_CASE([${nut_with_libsystemd_libs}],
 		[auto], [
 			AS_IF([test x"$have_PKG_CONFIG" = xyes],
-				[depLIBS="`$PKG_CONFIG --silence-errors --libs libsystemd 2>/dev/null`" \
-				 || depLIBS="-lsystemd"],
-				[depLIBS="-lsystemd"]
+				[   { depLIBS="`$PKG_CONFIG --silence-errors --libs libsystemd 2>/dev/null`" \
+				      && depLIBS_SOURCE="pkg-config" ; } \
+				 || { depLIBS="-lsystemd" \
+				      && depLIBS_SOURCE="default" ; }],
+				[depLIBS="-lsystemd"
+				 depLIBS_SOURCE="default"]
 			)],
-			[depLIBS="${nut_with_libsystemd_libs}"]
+			[depLIBS="${nut_with_libsystemd_libs}"
+			 depLIBS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depLIBS}])
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if libsystemd is usable
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
@@ -117,6 +127,8 @@ if test -z "${nut_have_libsystemd_seen}"; then
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
