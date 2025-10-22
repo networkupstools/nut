@@ -93,6 +93,9 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 		LIBIPMI_LIBS="${depLIBS}"
 
 		dnl Help ltdl if we can (nut-scanner etc.)
+		dnl Note we can have e.g. `-lfreeipmi -lipmimonitoring` with
+		dnl one including the other, so should try to prefer the
+		dnl "outer" linked library (libipmimonitoring here). (FIXME!)
 		for TOKEN in $depLIBS ; do
 			AS_CASE(["${TOKEN}"],
 				[-l*ipmi*], [
