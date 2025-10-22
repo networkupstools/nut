@@ -23,10 +23,10 @@ dnl NOTE: Not sure if the fuss with uniquely named conftemp is worth it,
 dnl or is even remembered between calls. There seems to be 3 calls per name.
 AC_DEFUN([NUT_ARG_EXPAND],
 [[]m4_esyscmd_s(
-    [nut_conftemp_]m4_translit($1, [-], [_])="$2" ;
-    eval [nut_conftemp_]m4_translit($1, [-], [_])=\"\${[nut_conftemp_]m4_translit($1, [-], [_])}\" ;
-    echo "${[nut_conftemp_]m4_translit($1, [-], [_])}" ;
-    dnl # RUNS 3 TIMES # echo "$1 | $2 | [nut_conftemp_]m4_translit($1, [-], [_])=${[nut_conftemp_]m4_translit($1, [-], [_])}" >> arg.log ;
+    [nut_conftemp_]m4_translit([$1], [-], [_])="$2" ;
+    eval [nut_conftemp_]m4_translit([$1], [-], [_])=\"\${[nut_conftemp_]m4_translit([$1], [-], [_])}\" ;
+    echo "${[nut_conftemp_]m4_translit([$1], [-], [_])}" ;
+    dnl # RUNS 3 TIMES # echo "$1 | $2 | [nut_conftemp_]m4_translit([$1], [-], [_])=${[nut_conftemp_]m4_translit([$1], [-], [_])}" >> arg.log ;
 )[]])
 
 dnl Working With External Software (might name a variant or other contextual arg)
@@ -39,7 +39,7 @@ dnl     $3 help text (descriptive part)
 dnl     $4 default value
 dnl     $5 how to represent default in help text (for *_CUSTOM_DEFAULT_HELP)
 AC_DEFUN([NUT_ARG_WITH_CUSTOM_DEFAULT_HELP],
-[   AC_ARG_WITH($1,
+[   AC_ARG_WITH([$1],
         m4_ifval([$2],
             [m4_ifval([$5],
                 [AS_HELP_STRING([--with-$1=$2], [$3 (default: $5)])],
@@ -47,16 +47,16 @@ AC_DEFUN([NUT_ARG_WITH_CUSTOM_DEFAULT_HELP],
             [m4_ifval([$5],
                 [AS_HELP_STRING([--with-$1], [$3 (default: $5)])],
                 [AS_HELP_STRING([--with-$1], [$3 (default: $4)])])]),
-        [[nut_with_]m4_translit($1, [-], [_])="${withval}"],
-        [[nut_with_]m4_translit($1, [-], [_])="$4"]
+        [[nut_with_]m4_translit([$1], [-], [_])="${withval}"],
+        [[nut_with_]m4_translit([$1], [-], [_])="$4"]
     )
 ])
 
 AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP],
 [
     dnl Note: only 4 args expected
-    dnl NUT_ARG_EXPAND($1, $3)
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND(with_$1, $4))
+    dnl NUT_ARG_EXPAND([$1], $3)
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND([with_$1], [$4]))
 ])
 
 AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
@@ -64,7 +64,7 @@ AC_DEFUN([NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
     dnl Variant for paths (likely using backslash-dollar in $4)
     dnl Note: only 4 args expected
     dnl Note: "resolved from" must be not bracketed
-    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], resolved from NUT_ARG_EXPAND(with_$1, '$4'))
+    NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], resolved from NUT_ARG_EXPAND([with_$1], '[$4]'))
 ])
 
 AC_DEFUN([NUT_ARG_WITH],
@@ -83,22 +83,22 @@ dnl (bracketed in help text to confer optionality)
 dnl Options same as NUT_ARG_WITH (4-arg version)
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS],
 [
-    AC_ARG_WITH($1,
+    AC_ARG_WITH([$1],
         [AS_HELP_STRING([@<:@--with-$1=$2@:>@], [$3 (default: $4)])],
-        [[nut_with_]m4_translit($1, [-], [_])="${withval}"],
-        [[nut_with_]m4_translit($1, [-], [_])="$4"]
+        [[nut_with_]m4_translit([$1], [-], [_])="${withval}"],
+        [[nut_with_]m4_translit([$1], [-], [_])="$4"]
     )
 ])
 
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_INVALID_YESNO],
 [
-    AC_ARG_WITH($1,
+    AC_ARG_WITH([$1],
         [AS_HELP_STRING([@<:@--with-$1=$2@:>@], [$3 (default: $4)])],
         [AS_CASE([${withval}],
             [yes|no], [AC_MSG_ERROR([invalid option --with(out)-$1 - see docs/configure.txt])],
-                [[nut_with_]m4_translit($1, [-], [_])="${withval}"]
+                [[nut_with_]m4_translit([$1], [-], [_])="${withval}"]
         )],
-        [[nut_with_]m4_translit($1, [-], [_])="$4"]
+        [[nut_with_]m4_translit([$1], [-], [_])="$4"]
     )
 ])
 
@@ -113,8 +113,8 @@ dnl   $3 project name spelling for help message (very optional)
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_INCLUDES],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS|auto], [include flags for the ]m4_default($3, $1)[ library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-includes], [CFLAGS|auto], [include flags for the ]m4_default($3, $1)[ library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([]m4_translit([$1], 'A-Z', 'a-z')[-includes], [CFLAGS|auto], [include flags for the ]m4_default([$3], [$1])[ library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([]m4_translit([$1], 'A-Z', 'a-z')[-includes], [CFLAGS|auto], [include flags for the ]m4_default([$3], [$1])[ library], [auto])])
 ])
 
 dnl Technically LIBS and LDFLAGS are about the same for
@@ -122,22 +122,22 @@ dnl most of our m4 code and legacy help messaging... so far.
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LIBS],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the ]m4_default($3, $1)[ library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LIBS|auto], [linker flags for the ]m4_default($3, $1)[ library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([]m4_translit([$1], 'A-Z', 'a-z')[-libs], [LIBS|auto], [linker flags for the ]m4_default([$3], [$1])[ library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([]m4_translit([$1], 'A-Z', 'a-z')[-libs], [LIBS|auto], [linker flags for the ]m4_default([$3], [$1])[ library], [auto])])
 ])
 
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LIBS_AS_LDFLAGS],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LDFLAGS|auto], [linker flags for the ]m4_default($3, $1)[ library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-libs], [LDFLAGS|auto], [linker flags for the ]m4_default($3, $1)[ library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([]m4_translit([$1], 'A-Z', 'a-z')[-libs], [LDFLAGS|auto], [linker flags for the ]m4_default([$3], [$1])[ library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([]m4_translit([$1], 'A-Z', 'a-z')[-libs], [LDFLAGS|auto], [linker flags for the ]m4_default([$3], [$1])[ library], [auto])])
 ])
 
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_LDFLAGS],
 [
     m4_ifval([$2],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-ldflags], [LDFLAGS|auto], [linker flags for the ]m4_default($3, $1)[ library], [$2])],
-        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([m4_translit($1, 'A-Z', 'a-z')-ldflags], [LDFLAGS|auto], [linker flags for the ]m4_default($3, $1)[ library], [auto])])
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([]m4_translit([$1], 'A-Z', 'a-z')[-ldflags], [LDFLAGS|auto], [linker flags for the ]m4_default([$3], [$1])[ library], [$2])],
+        [NUT_ARG_WITH_LIBOPTS_INVALID_YESNO([]m4_translit([$1], 'A-Z', 'a-z')[-ldflags], [LDFLAGS|auto], [linker flags for the ]m4_default([$3], [$1])[ library], [auto])])
 ])
 
 dnl Help detect legacy <projectname>-config scripts, assigns "none" if disabled or not found
@@ -149,11 +149,11 @@ dnl   $5 project name spelling for help message (very optional)
 AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM],
 [
     dnl By default seek in PATH
-    NUT_ARG_WITH_LIBOPTS([m4_translit($1, 'A-Z', 'a-z')-config], [/path/to/m4_translit($1, 'A-Z', 'a-z')-config|auto|none], [path to program that reports ]m4_default($5, $1)[ configuration], [$4])
-    AS_CASE([[${nut_with_]m4_translit($1, [-], [_])[_config}]],
+    NUT_ARG_WITH_LIBOPTS([]m4_translit([$1], 'A-Z', 'a-z')[-config], [/path/to/m4_translit([$1], 'A-Z', 'a-z')-config|auto|none], [path to program that reports ]m4_default([$5], [$1])[ configuration], [$4])
+    AS_CASE([[${nut_with_]m4_translit([$1], [-], [_])[_config}]],
         [yes|auto|""], [AC_PATH_PROGS([$2], [$3], [none])],
         [no|none], [$2="none"],
-            [$2=["${nut_with_]m4_translit($1, [-], [_])[_config}"]]
+            [$2=["${nut_with_]m4_translit([$1], [-], [_])[_config}"]]
     )
 ])
 
@@ -162,7 +162,7 @@ AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2],
 [
     m4_ifval([$2],
         [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM([$1], [$2], [$3], [$4], [$5])],
-        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM([$1], m4_translit(m4_translit($1, 'a-z', 'A-Z'), [-], [_])[_CONFIG], [$3], [$4], [$5])])
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM([$1], m4_translit(m4_translit([$1], 'a-z', 'A-Z'), [-], [_])[_CONFIG], [$3], [$4], [$5])])
 ])
 
 dnl Part of stack, use or guess optional parameter $3 (prog names); pass others as is
@@ -170,7 +170,7 @@ AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3],
 [
     m4_ifval([$3],
         [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2([$1], [$2], [$3], [$4], [$5])],
-        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2([$1], [$2], [m4_translit($1, 'A-Z', 'a-z')-config], [$4], [$5])])
+        [NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2([$1], [$2], []m4_translit([$1], 'A-Z', 'a-z')[-config], [$4], [$5])])
 ])
 
 dnl Just the (normal-cased) third-party project name is required
@@ -189,7 +189,7 @@ AC_DEFUN([NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT],
 dnl Enable a package feature/ability (might name a variant, or yes/no)
 dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.66/html_node/Package-Options.html
 AC_DEFUN([NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP],
-[   AC_ARG_ENABLE($1,
+[   AC_ARG_ENABLE([$1],
         m4_ifval([$2],
             [m4_ifval([$5],
                 [AS_HELP_STRING([--enable-$1=$2], [$3 (default: $5)])],
@@ -197,19 +197,19 @@ AC_DEFUN([NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP],
             [m4_ifval([$5],
                 [AS_HELP_STRING([--enable-$1], [$3 (default: $5)])],
                 [AS_HELP_STRING([--enable-$1], [$3 (default: $4)])])]),
-        [[nut_enable_]m4_translit($1, [-], [_])="${enableval}"],
-        [[nut_enable_]m4_translit($1, [-], [_])="$4"]
+        [[nut_enable_]m4_translit([$1], [-], [_])="${enableval}"],
+        [[nut_enable_]m4_translit([$1], [-], [_])="$4"]
     )
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP],
 [
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND(enable_$1, $4))
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], NUT_ARG_EXPAND([[enable_]$1], [$4]))
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP_SINGLEQUOTE],
 [
-    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], resolved from NUT_ARG_EXPAND(enable_$1, '$4'))
+    NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP([$1], [$2], [$3], [$4], resolved from NUT_ARG_EXPAND([[enable_]$1], '[$4]'))
 ])
 
 AC_DEFUN([NUT_ARG_ENABLE],
