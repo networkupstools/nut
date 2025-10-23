@@ -49,7 +49,7 @@
 #if defined NUT_MODBUS_HAS_USB
 
 /* APC */
-#define APC_VENDORID 0x051D
+#define APC_VENDORID	0x051d
 
 /* USB IDs device table */
 static usb_device_id_t apc_modbus_usb_device_table[] = {

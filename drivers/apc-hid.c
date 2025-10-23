@@ -35,7 +35,7 @@
 #define APC_HID_VERSION "APC HID 0.101"
 
 /* APC */
-#define APC_VENDORID 0x051d
+#define APC_VENDORID	0x051d
 
 /* Tweaks */
 static char * tweak_max_report[] = {
