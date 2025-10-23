@@ -67,6 +67,14 @@ https://github.com/networkupstools/nut/milestone/12
      well -- namely, that we successfully use reasonably many of the existing
      mappings. Suggest how user can help improve the driver if too few data
      points were seen. [PR #3095]
+   * New `nutdrv_qx_innovatae` adds support for Ippon INNOVA TAE series which
+     are similar to Q1 except in reporting of nominal `voltage`, `current`,
+     `frequency` data (that along with `battery_voltage_reports_one_pack` and
+     `override.battery.packs=12` settings yields reasonable `battery.voltage.*`
+     data points). Currently there seems to be no good way of auto-detection
+     to separate the two dialects, so explicit driver options may be required
+     if a specific `protocol` should be used with a NUT deployment.
+     [issue #3137, PR #3139]
    * `nutdrv_qx_masterguard` sub-driver adds a way to call battery test until
      the battery charge is low, using a new `test.battery.start.low` instant
      command name (registered in `docs/nut-names.txt`). The difference between
