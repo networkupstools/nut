@@ -2518,29 +2518,62 @@ typedef struct {
 	void		*(*fun)(USBDevice_t *);	/* Handler for specific processing */
 } qx_usb_device_id_t;
 
+/* Unregistered vendor 0x0001 (commonly identified as Fry's Electronics) */
+#define NONAME0001_VENDORID	0x0001
+
+/* Unregistered vendor 0xFFFF */
+#define NONAMEFFFF_VENDORID	0xffff
+
+/* ST Microelectronics */
+#define STMICRO_VENDORID	0x0483
+
+/* Sysgration Ltd. */
+#define SYSGRATION_VENDORID	0x05b8
+
+/* Cypress Semiconductor */
+#define CYPRESS_VENDORID	0x0665
+
+/* Phoenixtec Power Co., Ltd */
+#define PHOENIXTEC_VENDORID	0x06da
+
+/* Lakeview Research */
+#define LAKEVIEW_VENDORID	0x0925
+
+/* Unitek UPS Systems */
+#define UNITEK_VENDORID	0x0f03
+
+/* GE */
+#define GE_VENDORID	0x14f0
+
+/* QinHeng Electronics */
+#define QINHENG_VENDORID	0x1a86
+
+/* Legrand */
+#define LEGRAND_VENDORID	0x1cb0
+
 /* USB VendorID/ProductID/iManufacturer/iProduct match - note: rightmost comment is used for naming rules by tools/nut-usbinfo.pl */
 static qx_usb_device_id_t	qx_usb_id[] = {
-	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&ablerex_subdriver_fun },	/* Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135) */
-	{ USB_DEVICE(0x1cb0, 0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
-	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
-	{ USB_DEVICE(0x06da, 0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
-	{ USB_DEVICE(0x06da, 0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
-	{ USB_DEVICE(0x06da, 0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */
-	{ USB_DEVICE(0x06da, 0x0004),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
-	{ USB_DEVICE(0x06da, 0x0005),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova RT */
-	{ USB_DEVICE(0x06da, 0x0201),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova T */
-	{ USB_DEVICE(0x06da, 0x0601),	NULL,		NULL,			&phoenix_subdriver },	/* Online Zinto A */
-	{ USB_DEVICE(0x0f03, 0x0001),	NULL,		NULL,			&cypress_subdriver },	/* Unitek Alpha 1200Sx */
-	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
-	{ USB_DEVICE(0x1a86, 0x7523),	NULL,		NULL,			NULL },	/* Ippon Innova TAE series, using QinHeng Electronics CH340 serial converter; no specific "USB subdriver" handler defined at the moment */
-	{ USB_DEVICE(0x0483, 0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs */
-	{ USB_DEVICE(0x0001, 0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
-	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
-	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
-	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
-	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&snr_subdriver },	/* SNR-UPS-LID-XXXX UPSes */
-	{ USB_DEVICE(0x0925, 0x1234),	NULL,		NULL,			&armac_subdriver },	/* Armac UPS and maybe other richcomm-like or using old PowerManagerII software */
+	{ USB_DEVICE(SYSGRATION_VENDORID,	0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
+	{ USB_DEVICE(NONAMEFFFF_VENDORID,	0x0000),	NULL,		NULL,			&ablerex_subdriver_fun },	/* Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135) */
+	{ USB_DEVICE(LEGRAND_VENDORID,	0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
+	{ USB_DEVICE(CYPRESS_VENDORID,	0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0004),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0005),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova RT */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0201),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova T */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0601),	NULL,		NULL,			&phoenix_subdriver },	/* Online Zinto A */
+	{ USB_DEVICE(UNITEK_VENDORID,	0x0001),	NULL,		NULL,			&cypress_subdriver },	/* Unitek Alpha 1200Sx */
+	{ USB_DEVICE(GE_VENDORID,	0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
+	{ USB_DEVICE(QINHENG_VENDORID,	0x7523),	NULL,		NULL,			NULL },	/* Ippon Innova TAE series, using QinHeng Electronics CH340 serial converter; no specific "USB subdriver" handler defined at the moment */
+	{ USB_DEVICE(STMICRO_VENDORID,	0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs */
+	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
+	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
+	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
+	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
+	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	NULL,		"MEC0003",		&snr_subdriver },	/* SNR-UPS-LID-XXXX UPSes */
+	{ USB_DEVICE(LAKEVIEW_VENDORID,	0x1234),	NULL,		NULL,			&armac_subdriver },	/* Armac UPS and maybe other richcomm-like or using old PowerManagerII software */
 	/* End of list */
 	{ -1,	-1,	NULL,	NULL,	NULL }
 };
