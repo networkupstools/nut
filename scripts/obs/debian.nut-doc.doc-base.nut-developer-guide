@@ -1,0 +1,13 @@
+Document: nut-developer-guide
+Title: Network UPS Tools Developer Guide
+Author: Russell Kroll, Arnaud Quette, Charles Lepple and Peter Selinger
+Abstract: This document intend to describe how NUT is designed,
+ and the way to develop new device drivers and client applications.
+Section: Programming
+
+Format: PDF
+Files: /usr/share/doc/nut-doc/pdf/developer-guide.pdf
+
+Format: HTML
+Index: /usr/share/doc/nut-doc/html/developer-guide/index.html
+Files: /usr/share/doc/nut-doc/html/developer-guide/*.html

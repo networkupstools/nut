@@ -1,0 +1,59 @@
+<services>
+  <service name="obs_scm">
+    <param name="url">https://github.com/jimklimov/nut.git</param>
+    <param name="scm">git</param>
+    <param name="revision">FTY-obs</param>
+    <!-- version format: <upstream>+git<date>.<short_hash> -->
+    <!-- param name="versionformat">%{version}git%{timestamp}.%{shortrev}</param -->
+    <!-- See https://github.com/openSUSE/obs-service-tar_scm/blob/master/tar_scm.service.in -->
+    <param name="versionformat">@PARENT_TAG@.@TAG_OFFSET@</param>
+    <param name="versionrewrite-pattern">v(.*)</param>
+    <param name="exclude">.git</param>
+    <param name="filename">nut</param>
+    <!-- Extract the base recipe files -->
+    <param name="extract">scripts/obs/nut.dsc</param>
+    <param name="extract">scripts/obs/nut.spec</param>
+    <param name="extract">scripts/obs/pkgsrc.*</param>
+<!--
+    <param name="extract">scripts/obs/debian.*</param>
+    <param name="extract">scripts/obs/control</param>
+-->
+    <param name="changesgenerate">enable</param>
+<!--
+    <param name="changesauthor">Open Build System</param>
+-->
+  </service>
+
+  <service name="tar" mode="buildtime"/>
+
+
+<!-- Extract recipe files only needed during build -->
+  <!-- Debian recipe pieces -->
+  <service name="extract_file" mode="buildtime">
+    <param name="archive">*.tar</param>
+    <param name="files">*/scripts/obs/debian.*</param>
+  </service>
+  <service name="extract_file" mode="buildtime">
+    <param name="archive">*.tar</param>
+    <param name="files">*/scripts/obs/nut*.changes</param>
+  </service>
+<!--
+  <service name="extract_file" mode="buildtime">
+    <param name="archive">*.tar</param>
+    <param name="files">*/scripts/obs/nut*.install</param>
+  </service>
+  <service name="extract_file" mode="buildtime">
+    <param name="archive">*.tar</param>
+    <param name="files">*/scripts/obs/nut*.manpages</param>
+  </service>
+-->
+
+  <service name="set_version" mode="buildtime">
+    <param name="basename">nut</param>
+  </service>
+
+  <service name="recompress" mode="buildtime">
+    <param name="file">*.tar</param>
+    <param name="compression">gz</param>
+  </service>
+</services>

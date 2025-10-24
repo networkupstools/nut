@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3566 utf-8
+personal_ws-1.1 en 3576 utf-8
 AAC
 AAS
 ABI
@@ -148,6 +148,7 @@ Breiland
 Brownell
 Bs
 BuildBot
+BuildRequires
 Buildbot
 Bxx
 ByPass
@@ -1412,6 +1413,7 @@ Uncomment
 Unices
 Unitek
 Upsonic
+Upstreamed
 Ut
 V'ger
 VALIGN
@@ -2764,6 +2766,7 @@ optimizations
 optiups
 oq
 os
+osc
 ostream
 other's
 otheruser
@@ -2876,6 +2879,7 @@ prio
 priv
 privPassword
 privProtocol
+prjconf
 problemMatcher
 probu
 proc

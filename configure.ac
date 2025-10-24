@@ -6808,6 +6808,7 @@ AC_CONFIG_FILES([
  scripts/HP-UX/nut.psf
  scripts/installer/Makefile
  scripts/misc/nut.bash_completion
+ scripts/obs/Makefile
  scripts/python/Makefile
  scripts/python/module/Makefile
  scripts/python/module/PyNUT.py

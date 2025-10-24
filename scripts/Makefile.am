@@ -30,9 +30,9 @@ EXTRA_DIST = \
     valgrind/valgrind.sh.in \
     Windows/halt.c
 
-SUBDIRS = augeas devd hotplug installer python systemd udev ufw Solaris Windows upsdrvsvcctl external_apis
+SUBDIRS = augeas devd hotplug installer obs python systemd udev ufw Solaris Windows upsdrvsvcctl external_apis
 
-SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc
+SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc obs/README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative

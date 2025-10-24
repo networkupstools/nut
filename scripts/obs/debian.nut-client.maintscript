@@ -1,0 +1,1 @@
+rm_conffile /etc/bash_completion.d/nut 2.7.1-1~

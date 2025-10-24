@@ -650,6 +650,7 @@ SPELLCHECK_DIRS_MOST = \
 	spellcheck/scripts/external_apis \
 	spellcheck/scripts/hotplug \
 	spellcheck/scripts/installer \
+	spellcheck/scripts/obs \
 	spellcheck/scripts/python \
 	spellcheck/scripts/systemd \
 	spellcheck/scripts/udev \

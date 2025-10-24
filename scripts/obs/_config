@@ -1,0 +1,16 @@
+# OBS prjconf for NUT builds
+# See https://openbuildservice.org/help/manuals/obs-user-guide/cha-obs-prjconfig
+
+# Unambiguous preference if "Requires: (A or B)" offered both hits:
+Prefer: libusbx-devel
+Prefer: libusb-1.0-dev
+Prefer: neon-devel
+
+%if "x%{_repository}" == "xRaspbian_11"
+%else
+# Use ccache or sccache (let OBS pick its preference) for faster (re-)builds:
+BuildFlags: useccache:nut
+%endif
+
+# Embed GIT URL into package metadata:
+BuildFlags: setvcs

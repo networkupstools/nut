@@ -1,0 +1,24 @@
+#!/bin/bash
+# taken from libgphoto2
+
+GROUP=nut
+
+# for previous udev versions
+if [ "$ACTION" = "add" ] && [ -f "$DEVICE" ]
+then
+    # check if $GROUP really exists
+    if getent group $GROUP > /dev/null; then
+	chmod 660 "$DEVICE"
+	chown root:$GROUP "$DEVICE"
+    fi
+fi
+
+# for recent udev versions
+if [ "$ACTION" = "add" ] && [ -r "$DEVNAME" ]
+then
+    # check if $GROUP really exists
+    if getent group $GROUP > /dev/null; then
+	chmod 660 "$DEVNAME"
+	chown root:$GROUP "$DEVNAME"
+    fi
+fi

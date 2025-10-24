@@ -1,0 +1,38 @@
+#!/bin/sh -e
+
+# the DEBHELPER token is purposely not used
+# because we don't want the daemon to be
+# stopped during an upgrade
+
+case "$1" in
+
+  remove)
+    # SystemD-specific actions
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl stop nut-client.service
+        /bin/systemctl disable nut-client.service
+    fi
+    ;;
+
+  upgrade)
+    # do nothing
+    ;;
+
+  failed-upgrade)
+    # do nothing
+    ;;
+
+  deconfigure)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+
+esac
+
+#DEBHELPER#
+
+exit 0
