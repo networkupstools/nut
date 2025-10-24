@@ -1513,11 +1513,19 @@ isTestablePython() {
         return 1
     fi
     PY_SHEBANG="`head -1 "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"`"
-    if [ x"${PY_SHEBANG}" = x"#!no" ] ; then
-        return 1
+    PY_RES=3
+    case x"${PY_SHEBANG}" in
+        x"#!"/*|x"#!"?":\\"*|x"#!"?":/"*) PY_RES=0 ;; # Seems like a full path
+        x"#!no")   PY_RES=1 ;; # Explicitly skipped
+        x"#!@")    PY_RES=2 ;; # Unresolved
+        *)         PY_RES=3 ;; # Unexpected twist
+    esac
+    if [ x"${PY_RES}" = x0 ] ; then
+        log_debug "=======\nDetected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
+    else
+        log_error "[isTestablePython] Detected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
     fi
-    log_debug "=======\nDetected python shebang: '${PY_SHEBANG}'"
-    return 0
+    return $PY_RES
 }
 
 testcase_sandbox_python_without_credentials() {
