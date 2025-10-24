@@ -270,6 +270,13 @@ several `FSD` notifications into one executed action. [PR #3097]
  - The `configure` script should now try harder to report specifically
    the "purelib" location as `PYTHON*_SITE_PACKAGES`. [#1209]
 
+ - Upstreamed reference packaging recipes (DEB, RPM) from the 42ITy project
+   which can be used with OBS (Open Build Service by SUSE), both to support
+   end-user testing of NUT development, and to have a yet another NUT CI farm
+   player with a distinct opinion on code quality. Many of the changes listed
+   above happened thanks to this effort, and due to concerns raised by OBS
+   build agents with various Linux distributions. [#1209, #1316, #3144]
+
  - Revised use of NUT macros for USB Vendor IDs listed in different drivers,
    so the names would be better exposed in generated `udev.rules` and similar
    files. [PR #3139]
