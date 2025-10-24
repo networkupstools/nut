@@ -167,7 +167,7 @@ jobs:
           name: "ci_build"
           command: |-
             HOMEBREW_PREFIX="`brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`" \
-            CANBUILD_NIT_TESTS=yes \
+            CANBUILD_NIT_TESTS=yes DEBUG_NIT=true \
             CFLAGS="$CC_STDVER" \
             CXXFLAGS="$CXX_STDVER" \
             PYTHON=python3.13 \
