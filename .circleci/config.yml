@@ -73,7 +73,10 @@ jobs:
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
-      - checkout
+      - checkout:
+          # https://circleci.com/changelog/default-method-used-to-checkout-code-from-your-repository-is-changing-on-nov/
+          # NUT SEMVER and ChangeLog work, maybe more, rely on git history
+          method: full
 
 #      - run:
 #          name: "check shell"
