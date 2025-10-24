@@ -3715,10 +3715,12 @@ AS_CASE([${target_os}],
 		AS_IF([test -n "${PYTHON}"  -a x"${PYTHON}"  != xno], [ PYTHON=" /usr/bin/env ${PYTHON}"])
 		AS_IF([test -n "${PYTHON2}" -a x"${PYTHON2}" != xno], [PYTHON2=" /usr/bin/env ${PYTHON2}"])
 		AS_IF([test -n "${PYTHON3}" -a x"${PYTHON3}" != xno], [PYTHON3=" /usr/bin/env ${PYTHON3}"])
+		AS_IF([test -n "${PYTHON_DEFAULT}"  -a x"${PYTHON_DEFAULT}"  != xno], [PYTHON_DEFAULT=" /usr/bin/env ${PYTHON_DEFAULT}"])
 		]
 )
 
 AS_IF([test "${nut_with_nut_monitor}" != no -o "${nut_with_pynut}" != no], [
+    dnl We do not expose PYTHON_DEFAULT visibly at this time
     NUT_REPORT([use default  Python  interpreter],   [${PYTHON}])
     NUT_REPORT([use specific Python2 interpreter],   [${PYTHON2}])
     NUT_REPORT([use specific Python3 interpreter],   [${PYTHON3}])
