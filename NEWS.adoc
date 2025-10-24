@@ -232,6 +232,11 @@ several `FSD` notifications into one executed action. [PR #3097]
  - Updated `docs/*.txt`: add asciidoc comments with links to nut-website
    rendered contents of most interesting pages. [#3095]
 
+ - Source directory `data/html` was renamed to `data/htmlcgi` in order to
+   better reflect its contents and purpose, compared to documentation-oriented
+   `html*` directories (and recipe variable names). This may impact some
+   packaging recipes which do not rely on `make install` alone. [#3049]
+
  - Dropped the `compile` script from Git sources. It originates from automake
    and is added to work area (if missing) during `autogen.sh` rituals anyway.
    It is still distributed as part of `make dist` tarball. [#1209]
