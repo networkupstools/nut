@@ -189,6 +189,15 @@ several `FSD` notifications into one executed action. [PR #3097]
      it), if not bundling with NUT-Monitor UI app. By default the respective
      interpreter's 'site-packages' or 'dist-packages' location will be used,
      so you may have to adjust search paths for any other values. [#3062]
+   * The script would now warn the caller if several different Python program
+     paths or module locations were discovered (at least one automatically),
+     in case this was not something the callers wanted -- just so they know.
+     [#1792]
+   * New supported values were introduced for `--with-python{,2,3}=auto-prio=NUM`:
+     this allows to auto-prioritize some *one* available Python interpreter.
+     Default settings were changed from plain `auto` (allowing for multiple
+     `python*` interpreters and `site-package` locations to be used), to
+     prefer a `python3` if available, else `python2`, else `python`. [#1792]
    * Streamlined handling of `--with-*` and `--enable-*` options using NUT 'm4'
      macros; fixed reporting help for options whose defaults are evaluated.
      [issue #3049, PR #3140]
