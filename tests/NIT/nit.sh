@@ -1526,6 +1526,13 @@ isTestablePython() {
         return 0
     fi
 
+    if [ x"${PYTHON_DEFAULT}" != x ] ; then
+        PYTHON="${PYTHON_DEFAULT}"
+        PY_SHEBANG="#!${PYTHON_DEFAULT}"
+        PY_RES=0
+        return 0
+    fi
+
     PY_SHEBANG="`head -1 "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"`"
     PY_RES=3
     case x"${PY_SHEBANG}" in
