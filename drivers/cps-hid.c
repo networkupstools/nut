@@ -35,7 +35,7 @@
 #define CPS_HID_VERSION      "CyberPower HID 0.84"
 
 /* Cyber Power Systems */
-#define CPS_VENDORID 0x0764
+#define CPS_VENDORID	0x0764
 
 /* ST Microelectronics */
 #define STMICRO_VENDORID	0x0483

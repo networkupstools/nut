@@ -534,7 +534,9 @@ void USBFreeExactMatcher(USBDeviceMatcher_t *matcher);
 void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher);
 
 /* dummy USB function and macro, inspired from the Linux kernel
- * this allows USB information extraction */
+ * this allows USB information extraction; used by tools/nut-usbinfo.pl
+ * to generate some sources (nut-scanner) and deliverables (udev.rules)
+ * among other things */
 #define USB_DEVICE(vendorID, productID)	vendorID, productID
 
 typedef struct {

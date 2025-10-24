@@ -54,9 +54,12 @@ upsdrv_info_t upsdrv_info = {
 #define USB_ERR_LIMIT	10	/* start limiting after 10 in a row */
 #define USB_ERR_RATE	10	/* then only print every 10th error */
 
+/* Lakeview Research */
+#define LAKEVIEW_VENDORID	0x0925
+
 static usb_device_id_t richcomm_usb_id[] = {
 	/* Sweex 1000VA */
-	{ USB_DEVICE(0x0925, 0x1234),  NULL },
+	{ USB_DEVICE(LAKEVIEW_VENDORID, 0x1234),  NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
