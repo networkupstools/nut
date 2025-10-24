@@ -1,6 +1,6 @@
 # Network UPS Tools: obs (root)
 
-EXTRA_DIST = README.adoc _service
+EXTRA_DIST = README.adoc _service _config
 
 # Also EXTRA_DIST the recipe-related files (so OBS can use tarballs if they like)
 
@@ -28,7 +28,7 @@ EXTRA_DIST += \
 	debian.libupsclient-dev.install \
 	debian.libupsclient-dev.manpages \
 	debian.libupsclient4.install \
-	debian.nut.changes \
+	nut.changes \
 	debian.nut-cgi.README.Debian \
 	debian.nut-cgi.docs \
 	debian.nut-cgi.install \
