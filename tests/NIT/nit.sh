@@ -14,7 +14,7 @@
 # WARNING: Current working directory when starting the script should be
 # the location where it may create temporary data (e.g. the BUILDDIR).
 # Caller can export envvars to impact the script behavior, e.g.:
-#	DEBUG=true	to print debug messages, running processes, etc.
+#	DEBUG_NIT=true	to print debug messages, running processes, etc.
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
 #	NUT_DEBUG_MIN=3	to set (minimum) debug level for drivers, upsd...
 #	NUT_DEBUG_LEVEL_UPSSCHED=3	to set debug level for particular
@@ -109,7 +109,7 @@ log_separator() {
 }
 
 shouldDebug() {
-    [ -n "$DEBUG" ] || [ -n "$DEBUG_SLEEP" ]
+    [ -n "$DEBUG" ] || [ -n "$DEBUG_NIT" ] || [ -n "$DEBUG_SLEEP" ]
 }
 
 log_debug() {
