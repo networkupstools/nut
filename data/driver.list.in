@@ -634,6 +634,7 @@
 "Ippon"	"ups"	"2"	"Ampere 1000/1500/2000/3000 bl"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
 "Ippon"	"ups"	"2"	"Innova RT 3/1 10K/10K compact/20K"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/2712
 "Ippon"	"ups"	"2"	"Innova RTB 1000/1500/2000/3000"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
+"Ippon"	"ups"	"2"	"Innova TAE 1000"	"USB"	"nutdrv_qx (battery_voltage_reports_one_pack override.battery.packs=12)"	# https://github.com/networkupstools/nut/issues/3137
 "Ippon"	"ups"	"2"	"Innova TBE 1000/2000/3000"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
 "Ippon"	"ups"	"2"	"Innova TB 1000/2000/3000"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
 "Ippon"	"ups"	"2"	"Back Power Pro II 500/600/800"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702

@@ -53,9 +53,12 @@ upsdrv_info_t upsdrv_info = {
 
 #define USB_VENDOR_STRING "ATCL FOR UPS"
 
+/* Unregistered vendor 0x0001 (commonly identified as Fry's Electronics) */
+#define NONAME0001_VENDORID	0x0001
+
 static usb_device_id_t atcl_usb_id[] = {
 	/* ATCL FOR UPS */
-	{ USB_DEVICE(0x0001, 0x0000),  NULL },
+	{ USB_DEVICE(NONAME0001_VENDORID, 0x0000),  NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }

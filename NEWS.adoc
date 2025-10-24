@@ -67,6 +67,23 @@ https://github.com/networkupstools/nut/milestone/12
      well -- namely, that we successfully use reasonably many of the existing
      mappings. Suggest how user can help improve the driver if too few data
      points were seen. [PR #3095]
+   * New `nutdrv_qx_innovatae` adds support for Ippon INNOVA TAE series which
+     are similar to Q1 except in reporting of nominal `voltage`, `current`,
+     `frequency` data (that along with `battery_voltage_reports_one_pack` and
+     `override.battery.packs=12` settings yields reasonable `battery.voltage.*`
+     data points). [issue #3137, PR #3139]
+   * `nutdrv_qx_masterguard` sub-driver adds a way to call battery test until
+     the battery charge is low, using a new `test.battery.start.low` instant
+     command name (registered in `docs/nut-names.txt`). The difference between
+     the "battery test until battery low" and "deep battery test" is that the
+     latter is actually a battery calibration test and needs some preconditions
+     to be met, i.e. the load must be between 30% and 100% and the starting
+     battery capacity is greater than 99%. The "Battery test until battery low"
+     can be started anytime. Tested on Masterguard A1000 and A2000 units. [#3135]
+   * `nutdrv_qx_masterguard` sub-driver fix `masterguard_add_slaveaddr` to
+     return the correct command length, resolving a bug for all commands using
+     the `,XX` slave address placeholder. This also enables support for the
+     `test.battery.start.deep` (`TUD`) command. [#3141]
 
  - `powerp-bin` and `powerp-txt` driver updates:
    * Their `upsdrv_initinfo()` methods did not explicitly reference the
@@ -181,6 +198,20 @@ several `FSD` notifications into one executed action. [PR #3097]
      Default settings were changed from plain `auto` (allowing for multiple
      `python*` interpreters and `site-package` locations to be used), to
      prefer a `python3` if available, else `python2`, else `python`. [#1792]
+   * Streamlined handling of `--with-*` and `--enable-*` options using NUT 'm4'
+     macros; fixed reporting help for options whose defaults are evaluated.
+     [issue #3049, PR #3140]
+   * Automatic `--with-devd` could not detect the need to install a FreeBSD
+     devd configuration snippet file, because it expected a source that should
+     not have been there (probably a copy-paste typo in NUT v2.8.0). Also
+     fixed a missed compiler family dependency when handling `--enable-strip`,
+     a few logical mismatches of Solaris/illumos packaging options, and default
+     report vs. setting of `--enable-force-nut-version-header`. Rephrased and
+     updated many help messages. The `configure` script logs should now clarify
+     where CFLAGS/LIBS/LDFLAGS values come from ('pkg-config', 'default', user
+     provided 'confargs' etc.) [#3140]
+   * Added configure script options for 'libregex' tuning, just so it is on par
+     with our other optional dependencies. [#3140]
 
  - Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
    include the source distribution (was posted for NUT v2.8.1 and v2.8.2
@@ -224,6 +255,10 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - The `configure` script should now try harder to report specifically
    the "purelib" location as `PYTHON*_SITE_PACKAGES`. [#1209]
+
+ - Revised use of NUT macros for USB Vendor IDs listed in different drivers,
+   so the names would be better exposed in generated `udev.rules` and similar
+   files. [PR #3139]
 
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3

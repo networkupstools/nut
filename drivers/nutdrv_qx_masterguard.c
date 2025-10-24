@@ -26,7 +26,7 @@
 #include <stddef.h>
 #include "nut_stdint.h"
 
-#define MASTERGUARD_VERSION "Masterguard 0.03"
+#define MASTERGUARD_VERSION "Masterguard 0.04"
 
 /* series (for un-SKIP) */
 static char masterguard_my_series = '?';
@@ -456,7 +456,7 @@ static int masterguard_add_slaveaddr(item_t *item, char *command, const size_t c
 	}
 	upsdebugx(4, "add slaveaddr %s to command %s", masterguard_my_slaveaddr, command);
 	memcpy(command + l - 3, masterguard_my_slaveaddr, 2);
-	return 0;
+	return l;
 }
 
 
@@ -858,7 +858,8 @@ static item_t masterguard_qx2nut[] = {
 	/* test.failure.stop */
 	{ "test.battery.start",		0,	NULL,	NULL,		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	masterguard_test_battery },
 	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
-	{ "test.battery.start.deep",	0,	NULL,	"TUD\r",	"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
+	{ "test.battery.start.low",	0,	NULL,	"TL\r",		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
+	{ "test.battery.start.deep",	0,	NULL,	"TUD,XX\r",	"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	masterguard_add_slaveaddr,	NULL,	NULL },
 	{ "test.battery.stop",		0,	NULL,	"CT\r",		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
 	/* test.system.start */
 	/* calibrate.start */

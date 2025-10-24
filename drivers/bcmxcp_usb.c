@@ -26,13 +26,13 @@ upsdrv_info_t comm_upsdrv_info = {
 #define MAX_TRY_OPENUSB 32
 
 /* Powerware */
-#define POWERWARE 0x0592
+#define POWERWARE_VENDORID	0x0592
 
 /* Phoenixtec Power Co., Ltd */
-#define PHOENIXTEC 0x06da
+#define PHOENIXTEC_VENDORID	0x06da
 
 /* Hewlett Packard */
-#define HP_VENDORID 0x03f0
+#define HP_VENDORID	0x03f0
 
 static USBDevice_t curDevice;
 
@@ -81,10 +81,10 @@ static void *phoenixtec_ups(USBDevice_t *device) {
 /* USB IDs device table */
 static usb_device_id_t pw_usb_device_table[] = {
 	/* various models */
-	{ USB_DEVICE(POWERWARE, 0x0002), &powerware_ups },
+	{ USB_DEVICE(POWERWARE_VENDORID, 0x0002), &powerware_ups },
 
 	/* various models */
-	{ USB_DEVICE(PHOENIXTEC, 0x0002), &phoenixtec_ups },
+	{ USB_DEVICE(PHOENIXTEC_VENDORID, 0x0002), &phoenixtec_ups },
 
 	/* T500 */
 	{ USB_DEVICE(HP_VENDORID, 0x1f01), &phoenixtec_ups },
