@@ -1,6 +1,6 @@
 # Network UPS Tools: data
 
-SUBDIRS = html
+SUBDIRS = htmlcgi
 
 dist_data_DATA = cmdvartab
 nodist_data_DATA = driver.list

@@ -15,7 +15,9 @@ if test -z "${nut_have_avahi_seen}"; then
 	CFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl See which version of the avahi library (if any) is installed
@@ -36,46 +38,36 @@ if test -z "${nut_have_avahi_seen}"; then
 	)
 
 	AC_MSG_CHECKING(for avahi cflags)
-	AC_ARG_WITH(avahi-includes,
-		AS_HELP_STRING([@<:@--with-avahi-includes=CFLAGS@:>@], [include flags for the avahi library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-avahi-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags avahi-core avahi-client 2>/dev/null`" \
-			 || depCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"],
-			[depCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"]
-		)]
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([avahi], [auto])
+	AS_CASE([${nut_with_avahi_includes}],
+		[auto],	[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[   { depCFLAGS="`$PKG_CONFIG --silence-errors --cflags avahi-core avahi-client 2>/dev/null`" \
+				      && depCFLAGS_SOURCE="pkg-config" ; } \
+				 || { depCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib" \
+				      && depCFLAGS_SOURCE="default" ; }],
+				[depCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"
+				 depCFLAGS_SOURCE="default"]
+			)],
+				[depCFLAGS="${nut_with_avahi_includes}"
+				 depCFLAGS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depCFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for avahi ldflags)
-	AC_ARG_WITH(avahi-libs,
-		AS_HELP_STRING([@<:@--with-avahi-libs=LIBS@:>@], [linker flags for the avahi library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-avahi-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depLIBS="`$PKG_CONFIG --silence-errors --libs avahi-core avahi-client 2>/dev/null`" \
-			 || depLIBS="-lavahi-core -lavahi-client"],
-			[depLIBS="-lavahi-core -lavahi-client"]
-		)]
+	NUT_ARG_WITH_LIBOPTS_LIBS([avahi], [auto])
+	AS_CASE([${nut_with_avahi_libs}],
+		[auto],	[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+				[   { depLIBS="`$PKG_CONFIG --silence-errors --libs avahi-core avahi-client 2>/dev/null`" \
+				      && depLIBS_SOURCE="pkg-config" ; } \
+				 || { depLIBS="-lavahi-core -lavahi-client" \
+				      && depLIBS_SOURCE="default" ; }],
+				[depLIBS="-lavahi-core -lavahi-client"
+				 depLIBS_SOURCE="default"]
+			)],
+				[depLIBS="${nut_with_avahi_libs}"
+				 depLIBS_SOURCE="confarg"]
 	)
-	AC_MSG_RESULT([${depLIBS}])
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if avahi-core is usable
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
@@ -111,6 +103,8 @@ if test -z "${nut_have_avahi_seen}"; then
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

@@ -642,7 +642,7 @@ SPELLCHECK_DIRS_MOST = \
 	spellcheck/docs/man \
 	spellcheck/conf \
 	spellcheck/data \
-	spellcheck/data/html \
+	spellcheck/data/htmlcgi \
 	spellcheck/scripts \
 	spellcheck/scripts/Solaris \
 	spellcheck/scripts/Windows \

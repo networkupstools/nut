@@ -180,6 +180,20 @@ several `FSD` notifications into one executed action. [PR #3097]
      it), if not bundling with NUT-Monitor UI app. By default the respective
      interpreter's 'site-packages' or 'dist-packages' location will be used,
      so you may have to adjust search paths for any other values. [#3062]
+   * Streamlined handling of `--with-*` and `--enable-*` options using NUT 'm4'
+     macros; fixed reporting help for options whose defaults are evaluated.
+     [issue #3049, PR #3140]
+   * Automatic `--with-devd` could not detect the need to install a FreeBSD
+     devd configuration snippet file, because it expected a source that should
+     not have been there (probably a copy-paste typo in NUT v2.8.0). Also
+     fixed a missed compiler family dependency when handling `--enable-strip`,
+     a few logical mismatches of Solaris/illumos packaging options, and default
+     report vs. setting of `--enable-force-nut-version-header`. Rephrased and
+     updated many help messages. The `configure` script logs should now clarify
+     where CFLAGS/LIBS/LDFLAGS values come from ('pkg-config', 'default', user
+     provided 'confargs' etc.) [#3140]
+   * Added configure script options for 'libregex' tuning, just so it is on par
+     with our other optional dependencies. [#3140]
 
  - Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
    include the source distribution (was posted for NUT v2.8.1 and v2.8.2

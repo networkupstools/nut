@@ -276,8 +276,8 @@ CGI client interface
 
 Build and install the optional CGI programs, HTML files, and sample
 CGI configuration files. This is not enabled by default, as they
-are only useful on web servers. See link:data/html/README[] for additional
-information on how to set up CGI programs.
+are only useful on web servers. See link:data/htmlcgi/README[] for
+additional information on how to set up CGI programs.
 
 NUT Scanner tool
 ~~~~~~~~~~~~~~~~

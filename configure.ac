@@ -208,6 +208,12 @@ If this happens, please retry with GNU C/C++ language mode options instead.
 		])]
 )
 
+dnl AIX system
+AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
+
+dnl processor type
+AC_DEFINE_UNQUOTED(CPU_TYPE, ["$target_cpu"], [Define processor type])
+
 dnl +-------------------------------------------------------------------
 dnl Help avoid "polluting" CFLAGS etc. with auto-settings like "-g -O2"
 dnl at least if we intend to tune --with-debuginfo anyway (where we check
@@ -301,10 +307,11 @@ dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
 dnl TOTHINK: Add a default --with-nutdir-suffix='nut'/'ups'/etc. for different paths we make?
-NUT_ARG_WITH([confdir-suffix], [Relative path to NUT configuration files under sysconfdir], [auto])
-NUT_ARG_WITH([confdir], [Complete path to NUT configuration files], [\${sysconfdir}\${confdir_suffix}])
-NUT_ARG_WITH([confdir-examples], [Complete path to NUT configuration file examples (some like it under datadir)], [\${confdir}])
+NUT_ARG_WITH([confdir-suffix], [SHORT_DIRNAME], [Relative path to NUT configuration files under '${sysconfdir}', typically 'nut'], [auto])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir], [DIRPATH], [Complete path to NUT configuration files], [\${sysconfdir}\${confdir_suffix}])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir-examples], [DIRPATH], [Complete path to NUT configuration file examples (some like it under datadir)], [\${confdir}])
 
+dnl ---------------------------------------------------------------------
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
 AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
 dnl # using printf formatting for some funniner shells out there
@@ -322,6 +329,7 @@ AC_SUBST(NUT_AM_MAKE_CAN_EXPORT)
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
 NUT_CHECK_PKGCONFIG
 
+dnl ---------------------------------------------------------------------
 dnl Nowadays both `tail -n +3` and `tail +3` work almost everywhere
 dnl * CentOS7 tail can not do `tail +3` -- no such file
 dnl * Classic Solaris tooling (even in Solaris 11) can not do `tail -n` -- no such option
@@ -375,6 +383,7 @@ NUT_NETVERSION="1.3"
 AC_DEFINE_UNQUOTED(NUT_NETVERSION, "${NUT_NETVERSION}", [NUT network protocol version])
 
 
+dnl ---------------------------------------------------------------------
 dnl Fix this early so we can expand with eval later
 test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
@@ -433,7 +442,9 @@ dnl and docs/macros.txt
 dnl +------------------------------------------------------------------+
 dnl | default values for things later on (can be overridden)           |
 
-STATEPATH="/var/state/ups"
+dnl Define m4var and shellvar from that:
+m4_define([m4nut_DEFAULT_STATEPATH], [/var/state/ups])
+STATEPATH="m4nut_DEFAULT_STATEPATH"
 
 dnl Historically this refers to *system location* for PID files,
 dnl and more specifically that for `upsmon` (running as `root`).
@@ -448,7 +459,8 @@ dnl ensure that these locations would exist and be properly owned.
 dnl
 dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below
 dnl for the unprivileged daemons (`upsd`, drivers).
-PIDPATH="/var/run"
+m4_define([m4nut_DEFAULT_PIDPATH], [/var/run])
+PIDPATH="m4nut_DEFAULT_PIDPATH"
 dnl Honour new FHS-3.0 recommendations if applied on the build
 dnl system (but do still prefer '/var/run' if usable); see also
 dnl https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard :
@@ -504,13 +516,15 @@ AS_CASE([${target_os}],
 	[POWERDOWNFLAG="/etc/killpower"] dnl POSIX systems default
 )
 
-cgiexecdir='${exec_prefix}/cgi-bin'
-driverexecdir='${exec_prefix}/bin'
-dnl Note: htmldir per se is originally for nut-cgi resources
-htmldir='${prefix}/html'
+
+m4_define([m4nut_DEFAULT_CGIEXECPATH], [\${exec_prefix}/cgi-bin])
+m4_define([m4nut_DEFAULT_CGIDATAPATH], [\${prefix}/html])
+m4_define([m4nut_DEFAULT_DRVPATH], [\${exec_prefix}/bin])
+dnl Note: CGIDATAPATH (nee htmlcgidir) is for nut-cgi resources,
+dnl so htmldocdir and htmlmandir are separate
 htmldocdir='${docdir}/html-doc'
 htmlmandir='${docdir}/html-man'
-pkgconfigdir='${libdir}/pkgconfig'
+m4_define([m4nut_DEFAULT_PKGCONFIGDIR], [\${libdir}/pkgconfig])
 
 dnl Detection of augeas lens dirs is a bit troublesome, since
 dnl they (if present) reside in location not controlled by NUT.
@@ -578,6 +592,7 @@ case "${target_os}" in
         ;;
 esac
 
+dnl ---------------------------------------------------------------------
 dnl Note: this deals with run-time settings so that the newly built
 dnl programs can be "just executed" to use same configuration files
 dnl and filesystem object permissions as an older deployment of NUT
@@ -1120,6 +1135,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     ])
 ])
 
+dnl ---------------------------------------------------------------------
 dnl Define directory where LIBOBJS replacement functions are
 AC_CONFIG_LIBOBJ_DIR([common])
 
@@ -2645,36 +2661,47 @@ dnl a second-class citizen (if both are set, the old option name wins).
 dnl Also note that the legacy default was "man=yes" due to requirements
 dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
-nut_with_docs_default="man=auto"
+m4_define([m4nut_DEFAULT_WITH_DOCS], [man=auto])
+nut_with_docs_default="m4nut_DEFAULT_WITH_DOCS"
 AS_IF([($NUT_SOURCE_GITREV_IS_RELEASE || $NUT_SOURCE_GITREV_IS_PRERELEASE)],
     [AC_MSG_NOTICE([This is a (pre-)release build, setting default --with-doc='auto' (not just '${nut_with_docs_default}')])
      nut_with_docs_default="auto"])
 
-NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [${nut_with_docs_default}])
-NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs], [(auto|yes|no|man|man=auto|...)], [build and install documentation (alias to legacy --with-doc)], [${nut_with_docs_default}], [varies for development vs. (pre-)release builds, typically ]m4nut_DEFAULT_WITH_DOCS)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([doc],  [], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}], [same as ${nut_with_docs}])
 
 NUT_ARG_ENABLE([docs-man-for-progs-built-only], [build and install man pages (if enabled) only for built programs (yes, default) or all known pages (no)], [yes])
-NUT_ARG_ENABLE([docs-changelog], [(re-)generate ChangeLog* files - and do so whenever git info changes? (default: auto; yes, no, "adoc,html,pdf"...)], [auto])
+NUT_ARG_ENABLE([docs-changelog], [(auto|yes|no|"adoc,html,pdf"...)], [(re-)generate ChangeLog* files - and do so whenever git info changes?], [auto])
 
-NUT_ARG_WITH([docs-changelog-start], [Starting point when generating ChangeLog* files (default: auto; otherwise Git commit ID)], [auto])
-NUT_ARG_WITH([docs-changelog-end], [Ending point when generating ChangeLog* files (default: HEAD; otherwise Git commit ID)], [HEAD])
+NUT_ARG_WITH([docs-changelog-start], [(auto|GitTreeish)], [Starting point (Git commit ID) when generating ChangeLog* files], [auto])
+NUT_ARG_WITH([docs-changelog-end], [GitTreeish], [Ending point (Git commit ID) when generating ChangeLog* files], [HEAD])
 
 dnl Different OS distributions have different layouts of man page section
 dnl numbers. The one we treat as default seems to be most wide-spread, in
 dnl Linux and FreeBSD. For others, there are other defaults (see `man man`
 dnl on your platform to port defaults here), and builders can override with
 dnl options further below.
-DEFAULT_MAN_SECTION_API="3"
-DEFAULT_MAN_SECTION_CFG="5"
-DEFAULT_MAN_SECTION_CMD_SYS="8"
-DEFAULT_MAN_SECTION_CMD_USR="1"
-DEFAULT_MAN_SECTION_MISC="7"
+m4_define([m4nut_DEFAULT_MAN_SECTION_API], [3])
+m4_define([m4nut_DEFAULT_MAN_SECTION_CFG], [5])
+m4_define([m4nut_DEFAULT_MAN_SECTION_CMD_SYS], [8])
+m4_define([m4nut_DEFAULT_MAN_SECTION_CMD_USR], [1])
+m4_define([m4nut_DEFAULT_MAN_SECTION_MISC], [7])
 
 dnl Should we use "man1" or "man1m"?
-DEFAULT_MAN_DIR_AS_BASE="yes"
+m4_define([m4nut_DEFAULT_MAN_DIR_AS_BASE], [yes])
+
+dnl Initiate shell variables to customize below:
+DEFAULT_MAN_SECTION_API='m4nut_DEFAULT_MAN_SECTION_API'
+DEFAULT_MAN_SECTION_CFG='m4nut_DEFAULT_MAN_SECTION_CFG'
+DEFAULT_MAN_SECTION_CMD_SYS='m4nut_DEFAULT_MAN_SECTION_CMD_SYS'
+DEFAULT_MAN_SECTION_CMD_USR='m4nut_DEFAULT_MAN_SECTION_CMD_USR'
+DEFAULT_MAN_SECTION_MISC='m4nut_DEFAULT_MAN_SECTION_MISC'
+DEFAULT_MAN_DIR_AS_BASE='m4nut_DEFAULT_MAN_DIR_AS_BASE'
 
 case "${target_os}" in
     solaris*|sunos*|SunOS*|illumos*)
+        dnl Note: this regards target OS standard layout
+        dnl but may not fit certain packaging projects
         DEFAULT_MAN_SECTION_CMD_SYS="1m"
         DEFAULT_MAN_DIR_AS_BASE="no"
         ;;
@@ -2687,14 +2714,16 @@ AC_MSG_NOTICE([Platform ${target_os} default man page section for system managem
 AC_MSG_NOTICE([Platform ${target_os} default man page section for user commands: '${DEFAULT_MAN_SECTION_CMD_USR}'])
 AC_MSG_NOTICE([Platform ${target_os} default man page section for overviews, conventions, and miscellaneous: '${DEFAULT_MAN_SECTION_MISC}'])
 
-dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
-NUT_ARG_WITH([docs-man-section-api], [man page section for library APIs], [${DEFAULT_MAN_SECTION_API}])
-NUT_ARG_WITH([docs-man-section-cfg], [man page section for configuration files], [${DEFAULT_MAN_SECTION_CFG}])
-NUT_ARG_WITH([docs-man-section-cmd-sys], [man page section for system management commands], [${DEFAULT_MAN_SECTION_CMD_SYS}])
-NUT_ARG_WITH([docs-man-section-cmd-usr], [man page section for user commands], [${DEFAULT_MAN_SECTION_CMD_USR}])
-NUT_ARG_WITH([docs-man-section-misc], [man page section for overviews, conventions, and miscellaneous], [${DEFAULT_MAN_SECTION_MISC}])
+dnl NOTE: Sections may be strings, not pure numbers, on some platforms.
+dnl NOTE: Weird formatting (m4nut... outside brackets) helps avoid spurious
+dnl end of line in help text before the value (left alone on a short line).
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-api], [], [man page section for library APIs], [${DEFAULT_MAN_SECTION_API}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_API)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-cfg], [], [man page section for configuration files], [${DEFAULT_MAN_SECTION_CFG}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_CFG)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-cmd-sys], [], [man page section for system management commands], [${DEFAULT_MAN_SECTION_CMD_SYS}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_CMD_SYS)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-cmd-usr], [], [man page section for user commands], [${DEFAULT_MAN_SECTION_CMD_USR}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_CMD_USR)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-section-misc], [], [man page section for overviews, conventions, and miscellaneous], [${DEFAULT_MAN_SECTION_MISC}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_SECTION_MISC)
 
-NUT_ARG_WITH([docs-man-dir-as-base], [are platform man directories named by base number (yes) or full section name (no)], [${DEFAULT_MAN_DIR_AS_BASE}])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([docs-man-dir-as-base], [], [are platform man directories named by base number (yes) or full section name (no)], [${DEFAULT_MAN_DIR_AS_BASE}], [platform-dependent, usually ]m4nut_DEFAULT_MAN_DIR_AS_BASE)
 
 NUT_ARG_WITH([docs-man-linkmanext-template], [asciidoc template for "linkmanext" tags (distro-dependent)], [auto])
 NUT_ARG_WITH([docs-man-linkmanext2-template], [asciidoc template for "linkmanext2" tags (distro-dependent)], [auto])
@@ -3740,24 +3769,10 @@ AM_CONDITIONAL(WITH_CPPCHECK, test "${WITH_CPPCHECK}" = "yes")
 dnl ----------------------------------------------------------------------
 dnl checks related to --enable-check-NIT
 
+dnl FIXME? Add "auto" to align with development builds?
 AC_MSG_CHECKING(whether to run NIT among default make check target)
-nut_enable_check_NIT="no"
-AC_ARG_ENABLE([check-NIT],
-	AS_HELP_STRING([--enable-check-NIT], [Run check-NIT among default checks (no)]),
-[
-	case "${enableval}" in
-	no)
-		AC_MSG_RESULT(no)
-		;;
-	*)
-		AC_MSG_RESULT(yes)
-		nut_enable_check_NIT="yes"
-		;;
-	esac
-], [
-	AC_MSG_RESULT(no)
-])
-
+NUT_ARG_ENABLE([check-NIT], [Run check-NIT among default checks], [no])
+AC_MSG_RESULT([${nut_enable_check_NIT}])
 AM_CONDITIONAL(WITH_CHECK_NIT, test "${nut_enable_check_NIT}" = "yes")
 
 dnl ----------------------------------------------------------------------
@@ -4521,27 +4536,26 @@ AS_IF([test "x$nut_cv_header_windows_h" = xyes],
 
 
 dnl ----------------------------------------------------------------------
+dnl Bits and pieces of NUT build artefacts' installation locations
 
 PREFIX="${prefix}"
 NUT_REPORT_SETTING_PATH([Default installation prefix path],
     PREFIX, "${prefix}", [Default installation prefix path])
 
+dnl ---------------------------------------------------------------------
+dnl Note: long ago in NUT history drivers and upsd exchanges state files
+dnl Now socket files live there for similar but more efficient effect.
 AC_MSG_CHECKING(if requested state path)
-AC_ARG_WITH(statepath,
-	AS_HELP_STRING([--with-statepath=PATH], [path for ups state files (${STATEPATH}, typically /var/state/ups)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-statepath - see docs/configure.txt)
-		;;
-	*)
-		STATEPATH="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH([statepath], [DIRPATH], [Path for UPS driver state (socket) files], [m4nut_DEFAULT_STATEPATH])
+
+AS_CASE([${nut_with_statepath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-statepath - see docs/configure.txt)],
+	["${STATEPATH}"|m4nut_DEFAULT_STATEPATH], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+STATEPATH="${nut_with_statepath}"
 NUT_REPORT_SETTING_PATH([State file path],
-    STATEPATH, "${STATEPATH}", [Path for UPS driver state files])
+    STATEPATH, "${STATEPATH}", [Path for UPS driver state (socket) files])
 
 dnl ---------------------------------------------------------------------
 dnl The 'alt pid path' is used by the drivers (via main.c) and upsd, since
@@ -4551,39 +4565,33 @@ dnl able to write there.
 dnl
 
 AC_MSG_CHECKING(if requested alt pid path)
-AC_ARG_WITH(altpidpath,
-	AS_HELP_STRING([--with-altpidpath=PATH], [path for NUT driver/upsd .pid files not running as root (<statepath>)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-altpidpath - see docs/configure.txt)
-		;;
-	*)
-		ALTPIDPATH="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [
-	ALTPIDPATH="${STATEPATH}"
-	AC_MSG_RESULT([default])
-])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([altpidpath], [DIRPATH], [Path for .pid files of NUT driver/upsd not running as root], [\${STATEPATH}])
+
+AS_CASE([${nut_with_altpidpath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-altpidpath - see docs/configure.txt)],
+	[${STATEPATH}|\${STATEPATH}], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+conftemp="${nut_with_altpidpath}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+ALTPIDPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([Unprivileged PID file path],
     ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of processes not running as root, such as drivers and upsd (usually STATEPATH)])
 
+dnl ---------------------------------------------------------------------
+dnl Recommended: a sub-directory of (/var)/run as long as we can create
+dnl and chown+chmod it before starting NUT daemons.
+
 AC_MSG_CHECKING(if requested pidpath)
-AC_ARG_WITH(pidpath,
-	AS_HELP_STRING([--with-pidpath=PATH], [Path for root-owned .pid files (${PIDPATH}, typically /var/run)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)
-		;;
-	*)
-		PIDPATH="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([pidpath], [DIRPATH], [Path for root-owned NUT process .pid files], [auto], [platform-dependent, usually m4nut_DEFAULT_PIDPATH])
+
+AS_CASE([${nut_with_pidpath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)],
+	[auto], [AC_MSG_RESULT([default])],	dnl Keep what we chose above in the script (/var/run or /run)
+		[AC_MSG_RESULT([specified])
+		 PIDPATH="${nut_with_pidpath}"]
+)
 NUT_REPORT_SETTING_PATH([Privileged PID file path],
     PIDPATH, "${PIDPATH}", [Path for pid files of processes running as root, such as upsmon])
 
@@ -4597,20 +4605,20 @@ dnl Ideally the filesystems with `upsmon` program and libraries it needs
 dnl also remain mounted, so `upsmon -K` may be queried late in shutdown -
 dnl and we can avoid hardcoding such paths into those shutdown hooks.
 dnl Note that upsmon removes this file early in any daemonized start-up.
+dnl Keep in mind that upsmon requires the value to be actually defined
+dnl in its own config file, if we want to use late end-game UPS poweroff.
+dnl Otherwise that code path is skipped.
 AC_MSG_CHECKING(if requested default upsmon POWERDOWNFLAG path)
-AC_ARG_WITH(powerdownflag,
-	AS_HELP_STRING([--with-powerdownflag=PATH], [default path for upsmon POWERDOWNFLAG file (${POWERDOWNFLAG}, typically /etc/killpower)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-powerdownflag - see docs/configure.txt)
-		;;
-	*)
-		POWERDOWNFLAG="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([powerdownflag], [FILEPATH], [Default path for upsmon POWERDOWNFLAG file, often '/etc/killpower' but recommended to be under some tmpfs],
+	[auto], [platform-dependent: /etc/killpower on POSIX systems, C:\killpower on Windows])
+
+AS_CASE([${nut_with_powerdownflag}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-powerdownflag - see docs/configure.txt)],
+	[auto], [AC_MSG_RESULT([default])],
+		[POWERDOWNFLAG="${nut_with_powerdownflag}"
+		 AC_MSG_RESULT([specified])]
+)
+
 dnl # This should be internal detail for "upsmon -K" implementation,
 dnl # so not necessarily reported (reduce noise):
 dnl NUT_REPORT_SETTING_PATH([Default upsmon POWERDOWNFLAG path],
@@ -4618,19 +4626,17 @@ dnl    POWERDOWNFLAG, "${POWERDOWNFLAG}", [Default path for upsmon POWERDOWNFLAG
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(if requested driver path)
-AC_ARG_WITH(drvpath,
-	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (legacy default: EPREFIX/bin; recommended: a subdir of libexecdir)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-drvpath - see docs/configure.txt)
-		;;
-	*)
-		driverexecdir="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([drvpath], [DIRPATH], [Where to install UPS driver programs, often EPREFIX/bin, but recommended to be a subdir of '${libexecdir}'], [m4nut_DEFAULT_DRVPATH])
+
+AS_CASE([${nut_with_drvpath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-drvpath - see docs/configure.txt)],
+	[m4nut_DEFAULT_DRVPATH], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+dnl Raw value for Makefile automated install rules
+driverexecdir="${nut_with_drvpath}"
+
+dnl Resolved value
 conftemp="${driverexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
@@ -4638,84 +4644,70 @@ DRVPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([Driver program path],
     DRVPATH, "${conftemp}", [Default path for UPS drivers])
 
-AC_MSG_CHECKING(if requested cgi path)
-AC_ARG_WITH(cgipath,
-	AS_HELP_STRING([--with-cgipath=PATH], [where to install CGI programs (EPREFIX/cgi-bin)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-cgipath - see docs/configure.txt)
-		;;
-	*)
-		cgiexecdir="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
+dnl ---------------------------------------------------------------------
+AC_MSG_CHECKING(if requested CGI program path)
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([cgipath], [DIRPATH], [Where to install CGI programs, distros may want it in a location dictated by web server software], [m4nut_DEFAULT_CGIEXECPATH])
+
+AS_CASE([${nut_with_cgipath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-cgipath - see docs/configure.txt)],
+	[m4nut_DEFAULT_CGIEXECPATH], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+dnl Raw value for Makefile automated install rules
+cgiexecdir="${nut_with_cgipath}"
+
+dnl Resolved value
 conftemp="${cgiexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-CGIPATH="${conftemp}"
+CGIEXECPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([CGI program path],
-    CGIPATH, "${conftemp}", [Default path for CGI programs])
+    CGIEXECPATH, "${conftemp}", [Default path for CGI programs])
 
-AC_MSG_CHECKING(if requested html path)
-AC_ARG_WITH(htmlpath,
-	AS_HELP_STRING([--with-htmlpath=PATH], [where to install HTML files (PREFIX/html)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-htmlpath - see docs/configure.txt)
-		;;
-	*)
-		htmldir="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
-conftemp="${htmldir}"
+dnl ---------------------------------------------------------------------
+dnl FIXME: Make it an alias for a new --with-htmlcgipath
+AC_MSG_CHECKING(if requested CGI HTML resource path)
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([htmlpath], [DIRPATH], [Where to install CGI HTML resource files, distros may want it in a location dictated by web server software], [m4nut_DEFAULT_CGIDATAPATH])
+
+AS_CASE([${nut_with_htmlpath}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-htmlpath - see docs/configure.txt)],
+	[m4nut_DEFAULT_CGIDATAPATH], [AC_MSG_RESULT([default])],
+		[AC_MSG_RESULT([specified])]
+)
+dnl Raw value for Makefile automated install rules
+htmlcgidir="${nut_with_htmlpath}"
+
+dnl Resolved value
+conftemp="${htmlcgidir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-HTMLPATH="${conftemp}"
+CGIDATAPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([HTML file path],
-    HTMLPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
+    CGIDATAPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
 
+dnl ---------------------------------------------------------------------
+dnl Other NUT build/install customization options
 AC_MSG_CHECKING(network port number)
-AC_ARG_WITH(port,
-	AS_HELP_STRING([--with-port=PORT], [port for network communications (3493)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-port - see docs/configure.txt)
-		;;
-	*)
-		PORT="${withval}"
-		;;
-	esac
-], [
-	PORT="3493"
-])
-AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
+NUT_ARG_WITH([port], [PORTNUM], [port for network communications], [3493])
+
+AS_IF([(test 0 -lt "${nut_with_port}" && test 65536 -gt "${nut_with_port}") 2>/dev/null],
+	[PORT="${nut_with_port}"],
+	[AC_MSG_ERROR(invalid option --with(out)-port - see docs/configure.txt)]
+)
 AC_MSG_RESULT(${PORT})
+AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(facility for syslog)
-AC_ARG_WITH(logfacility,
-	AS_HELP_STRING([--with-logfacility=FACILITY], [facility for log messages (LOG_DAEMON)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-logfacility - see docs/configure.txt)
-		;;
-	*)
-		LOGFACILITY="${withval}"
-		;;
-	esac
-], [
-	LOGFACILITY="LOG_DAEMON"
-])
-AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
+NUT_ARG_WITH([logfacility], [FACILITY], [syslog facility for log messages], [LOG_DAEMON])
+AS_CASE([${nut_with_logfacility}],
+	[yes|no|""], [AC_MSG_ERROR(invalid option --with(out)-logfacility - see docs/configure.txt)],
+		[LOGFACILITY="${nut_with_logfacility}"]
+)
 AC_MSG_RESULT(${LOGFACILITY})
+AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(which driver man pages to install)
 DRIVER_MAN_LIST_PAGES=""
 if test "${WITH_MANS}" = "yes"; then
@@ -4738,6 +4730,7 @@ else
 	AC_MSG_RESULT([none (manpages disabled)])
 fi
 
+dnl ---------------------------------------------------------------------
 dnl By default as we iterate (and git commit) the codebase during development,
 dnl prerequisites for that header file change and cause much of the C code
 dnl to be rebuilt and re-linked. For developers fixing one small part of the
@@ -4747,56 +4740,41 @@ dnl iterating *quickly* and rebuiding just what "really" changed!
 dnl Still, this speed-up is not default to avoid surprises for core team.
 AC_MSG_CHECKING(whether to force nut_version.h generation for every make run)
 dnl Value is "FORCE" or empty, substituted into Makefile.am rule:
-FORCE_NUT_VERSION="FORCE"
-AC_ARG_ENABLE(force-nut-version-header,
-	AS_HELP_STRING([--enable-force-nut-version-header], [Force nut_version.h generation for every make run (yes)]),
-[
-	case "${enableval}" in
-	no)
+NUT_ARG_ENABLE([force-nut-version-header], [Force nut_version.h generation for every make run?], [yes])
+AS_CASE([${nut_enable_force_nut_version_header}],
+	[no], [
 		AC_MSG_RESULT(no)
-                FORCE_NUT_VERSION=""
-		;;
-	*)
+		FORCE_NUT_VERSION=""
+	], [
 		AC_MSG_RESULT(yes)
-		;;
-	esac
-], [
-	AC_MSG_RESULT(no)
-])
+		FORCE_NUT_VERSION="FORCE"
+	])
 
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(whether to strip debug symbols)
-AC_ARG_ENABLE(strip,
-	AS_HELP_STRING([--enable-strip], [Strip debugging symbols from binaries (no)]),
-[
-	case "${enableval}" in
-	no)
-		AC_MSG_RESULT(no)
-		;;
-	*)
-		AC_MSG_RESULT(yes)
-		CFLAGS="${CFLAGS} -s"
-		;;
-	esac
-], [
-	AC_MSG_RESULT(no)
-])
+NUT_ARG_ENABLE([strip], [Strip debugging symbols from binaries? Some packaging policies require this...], [no])
 
+AS_CASE([${nut_enable_strip}],
+	[no], [AC_MSG_RESULT(no)],
+		[AS_IF([test "${CLANGCC}" = "yes" || test "${GCC}" = "yes"],
+			[AC_MSG_RESULT(yes)
+			 CFLAGS="${CFLAGS} -s"],
+			[AS_IF([test "${nut_enable_strip}" = yes],
+				[AC_MSG_ERROR([Do not know how to request debug symbol stripping with currently chosen compiler])]
+			)]
+		)]
+)
+
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(whether to install pkg-config *.pc files)
-AC_ARG_WITH(pkgconfig-dir,
-	AS_HELP_STRING([--with-pkgconfig-dir=PATH], [where to install pkg-config *.pc files (EPREFIX/lib/pkgconfig)]),
-[
-	case "${withval}" in
-	yes|auto)
-		;;
-	no)
-		pkgconfigdir=""
-		;;
-	*)
-		pkgconfigdir="${withval}"
-		;;
-	esac
-], [])
+NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([pkgconfig-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install pkg-config *.pc files, typically EPREFIX/lib/pkgconfig], [m4nut_DEFAULT_PKGCONFIGDIR])
+
+AS_CASE([${nut_with_pkgconfig_dir}],
+	[yes|auto|""], [pkgconfigdir='m4nut_DEFAULT_PKGCONFIGDIR'],
+	[no], [pkgconfigdir=""],
+		[pkgconfigdir="${nut_with_pkgconfig_dir}"]
+)
 
 dnl Note: currently pkgconfigdir='${libdir}/pkgconfig' literally
 dnl goes into lib/Makefile.am substitution for pkgconfig_DATA.
@@ -4816,6 +4794,7 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
+dnl ---------------------------------------------------------------------
 dnl Only check the option here (and show in help near pkg-config)
 dnl See LDFLAGS_NUT_RPATH determination further below
 NUT_ARG_ENABLE([ldflags-nut-rpath],
@@ -4826,148 +4805,126 @@ NUT_ARG_ENABLE([ldflags-nut-rpath-cxx],
     [Suggest linker flags for NUT C++ library consumers to set RPATH for uncommon location],
     [auto])
 
+dnl ---------------------------------------------------------------------
 dnl Options for Solaris/illumos `make install` and `make package`
 AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
-solarispkg_svr4="auto"
-AC_ARG_WITH([solaris-pkg-svr4],
-	AS_HELP_STRING([--with-solaris-pkg-svr4=(yes|auto|no)], [Enable construction of Solaris SVR4 packages (auto)]),
-[
-	case "${withval}" in
-	auto|"")
-		solarispkg_svr4="auto"
-		;;
-	yes|no)
-		solarispkg_svr4="${withval}"
-		;;
-	*)
-		AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-svr4=${withval}])
-		;;
-	esac
-], [])
+NUT_ARG_WITH([solaris-pkg-svr4], [(yes|no|auto)], [Enable construction of Solaris SVR4 packages], [auto])
 
-if test x"$solarispkg_svr4" = xauto ; then
-	if test -x /usr/bin/pkgtrans && test -x /usr/bin/pkgmk && test -x /usr/bin/pkgproto ; then
-		solarispkg_svr4="yes"
-	else
-		solarispkg_svr4="no"
-	fi
-fi
+AS_CASE([${nut_with_solaris_pkg_svr4}],
+	[auto|""], [solarispkg_svr4="auto"],
+	[yes|no], [solarispkg_svr4="${nut_with_solaris_pkg_svr4}"],
+		[AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-svr4=${nut_with_solaris_pkg_svr4}])]
+)
+
+AS_CASE([${solarispkg_svr4}],
+	[no], [],
+		[AS_IF([test -x /usr/bin/pkgtrans && test -x /usr/bin/pkgmk && test -x /usr/bin/pkgproto],
+			[AS_CASE([${solarispkg_svr4}],
+				[auto], [solarispkg_svr4="yes"]
+			 )],
+			[AS_CASE([${solarispkg_svr4}],
+				[auto], [solarispkg_svr4="no"],
+				[yes], [AC_MSG_ERROR([Can not fulfill --with-solaris-pkg-svr4 in the current build environment])]
+			 )]
+		)]
+)
 AC_MSG_RESULT([${solarispkg_svr4}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_SVR4, test x"$solarispkg_svr4" = x"yes")
 
+dnl WARNING: this is not currently implemented!
+dnl Consider porting OpenIndiana (or eventually OmniOS) build recipes; see e.g.
+dnl https://github.com/OpenIndiana/oi-userland/tree/oi/hipster/components/sysutils/nut
 AC_MSG_CHECKING(whether to make Solaris IPS packages)
-solarispkg_ips="auto"
-AC_ARG_WITH([solaris-pkg-ips],
-	AS_HELP_STRING([--with-solaris-pkg-ips=(yes|auto|no)], [Enable construction of Solaris IPS packages (auto)]),
-[
-	case "${withval}" in
-	auto|"")
-		solarispkg_ips="auto"
-		;;
-	yes|no)
-		solarispkg_ips="${withval}"
-		;;
-	*)
-		AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-ips=${withval}])
-		;;
-	esac
-], [])
+NUT_ARG_WITH([solaris-pkg-ips], [(yes|no|auto)], [Enable construction of Solaris IPS packages (PLACEHOLDER!)], [auto])
 
-if test x"$solarispkg_ips" = xauto ; then
-	if test -x /usr/bin/pkg && test -x /usr/bin/pkgmogrify && test -x /usr/bin/pkgdepend ; then
-		solarispkg_ips="yes"
-	else
-		solarispkg_ips="no"
-	fi
-fi
+AS_CASE([${nut_with_solaris_pkg_ips}],
+	[auto|""], [solarispkg_ips="auto"],
+	[yes|no], [solarispkg_ips="${nut_with_solaris_pkg_ips}"],
+		[AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-ips=${nut_with_solaris_pkg_ips}])]
+)
+
+AS_CASE([${solarispkg_ips}],
+	[no], [],
+		[AS_IF([test -x /usr/bin/pkg && test -x /usr/bin/pkgmogrify && test -x /usr/bin/pkgdepend],
+			[AS_CASE([${solarispkg_ips}],
+				[auto], [solarispkg_ips="yes"]
+			 )],
+			[AS_CASE([${solarispkg_ips}],
+				[auto], [solarispkg_ips="no"],
+				[yes], [AC_MSG_ERROR([Can not fulfill --with-solaris-pkg-ips in the current build environment])]
+			 )]
+		)]
+)
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
 
 dnl NOTE: Be sure to customize e.g.  --datadir=/usr/share/nut to install
 dnl these scripts not into default location as e.g. /usr/share/solaris-smf
+solarissmf=""
+solarisinit=""
 AC_MSG_CHECKING(whether to install Solaris SMF files)
-solarissmf="auto"
-AC_ARG_WITH([solaris-smf],
-	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
-[
-	case "${withval}" in
-	auto|"")
-		solarissmf="auto"
-		;;
-	yes|no)
-		solarissmf="${withval}"
-		;;
-	*)
-		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
-		;;
-	esac
-], [])
+NUT_ARG_WITH([solaris-smf], [(yes|no|auto)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework], [auto])
 
-if test x"$solarissmf" = xauto ; then
-	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
-		solarissmf="yes"
-	else
-		case "${solarispkg_ips}${solarispkg_svr4}" in
-			*yes*) solarisinit="yes" ;; dnl Want to install so we can generally package
-			*) solarissmf="no" ;; dnl Target not solarish
-		esac
-	fi
-fi
+AS_CASE([${nut_with_solaris_smf}],
+	[auto|""], [solarissmf="auto"],
+	[yes|no], [solarissmf="${nut_with_solaris_smf}"],
+		[AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${nut_with_solaris_smf}])]
+)
+
+AS_CASE([${solarissmf}],
+	[no], [],
+		[AS_IF([test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs],
+			[solarissmf="yes"],	dnl yes/auto and got the tools => yes
+			[AS_CASE([${solarispkg_ips}${solarispkg_svr4}],
+				[*yes*], [AS_IF([test "${solarissmf}" = yes], [AC_MSG_ERROR([Can not fulfill --with-solaris-smf in the current build environment])])
+					 solarisinit="yes"],	dnl Older distro requested/detected, so we would want to install INIT SCRIPTS at least, so we can generally package NUT
+					[solarissmf="no"]	dnl Target not solarish
+			)]
+		)]
+)
 AC_MSG_RESULT([${solarissmf}])
 NUT_REPORT_FEATURE([consider basic SMF support], [${solarissmf}], [],
 					[WITH_SOLARIS_SMF], [Define to consider basic SMF support (provide units and configuration files)])
 
 
 AC_MSG_CHECKING(whether to install Solaris SVR4 (legacy) init-script files)
-solarisinit="auto"
-AC_ARG_WITH([solaris-init],
-	AS_HELP_STRING([--with-solaris-init=(yes|auto|no)], [Enable installation of NUT legacy init-scripts for Solaris/illumos (auto)]),
-[
-	case "${withval}" in
-	auto|"")
-		solarisinit="auto"
-		;;
-	yes|no)
-		solarisinit="${withval}"
-		;;
-	*)
-		AC_MSG_ERROR([Unexpected argument for --with-solaris-init=${withval}])
-		;;
-	esac
-], [])
+NUT_ARG_WITH([solaris-init], [(yes|no|auto)], [Enable installation of NUT legacy init-scripts for Solaris/illumos], [auto])
 
-if test x"$solarisinit" = xauto ; then
-	dnl Depends on usability of SMF or making for packaging
-	case "${solarispkg_ips}${solarispkg_svr4}" in
-		*yes*) solarisinit="yes" ;; dnl Want to install so we can generally package
-		*)
-			case ${target_os} in
-				solaris*|sunos*|SunOS*|illumos*)
-					if test "$solarissmf" = x"yes" ; then
-						dnl no need on modern OSes
-						solarisinit="no"
-					else
-						solarisinit="yes"
-					fi
-					;;
-				*) solarisinit="no" ;; dnl Some other OS
-			esac
-			;;
-	esac
-fi
+AS_CASE([${nut_with_solaris_init}],
+	[auto|""], [AS_IF([test x"${solarisinit}" = x], [solarisinit="auto"])],
+	[yes|no], [solarisinit="${nut_with_solaris_init}"],
+		[AC_MSG_ERROR([Unexpected argument for --with-solaris-init=${nut_with_solaris_init}])]
+)
+
+AS_IF([test x"$solarisinit" = xauto],
+	[dnl Depends on usability of SMF or making for packaging
+	 AS_CASE([${solarispkg_ips}${solarispkg_svr4}],
+		[*yes*], [solarisinit="yes"],	dnl Want to install so we can generally package, even if IPS/SMF is present on build host
+			[AS_CASE([${target_os}],
+				[solaris*|sunos*|SunOS*|illumos*],
+					[AS_IF([test x"${solarissmf}" = x"yes"],
+						[dnl No need on modern OSes, can use SMF instead
+						 solarisinit="no"],
+						[solarisinit="yes"]
+					)],
+					[solarisinit="no"]	dnl Some other OS
+			)]
+	)]
+)
 AC_MSG_RESULT([${solarisinit}])
 AM_CONDITIONAL(WITH_SOLARIS_INIT, test x"$solarisinit" = x"yes")
 
 
+dnl ---------------------------------------------------------------------
 dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or
 dnl risk auto-detection like seen below.
+dnl FIXME: Add a toggle like "--with(out)-systemd" to disable these probes too
 AC_MSG_CHECKING(whether to install systemd unit files)
-AC_ARG_WITH([systemdsystemunitdir],
-	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
-	[systemdsystemunitdir="${withval}"],
-	[systemdsystemunitdir="auto"])
+NUT_ARG_WITH([systemdsystemunitdir], [(DIRPATH|yes|no|auto)], [Directory for systemd service files], [auto])
+systemdsystemunitdir="${nut_with_systemdsystemunitdir}"
+
 case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
@@ -5013,10 +4970,8 @@ AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
 
 dnl Similarly for presets (list of svcs enabled/disabled by default)
 AC_MSG_CHECKING(whether to install systemd preset files)
-AC_ARG_WITH([systemdsystempresetdir],
-	[AS_HELP_STRING([--with-systemdsystempresetdir=DIR], [Directory for systemd preset files (auto)])],
-	[systemdsystempresetdir="${withval}"],
-	[systemdsystempresetdir="auto"])
+NUT_ARG_WITH([systemdsystempresetdir], [(DIRPATH|yes|no|auto)], [Directory for systemd preset files], [auto])
+systemdsystempresetdir="${nut_with_systemdsystempresetdir}"
 
 dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
@@ -5055,10 +5010,9 @@ AM_CONDITIONAL([WITH_SYSTEMD_PRESET], [test x"${systemdsystempresetdir}" != "x"]
 
 dnl Similarly for shutdown integration hooks
 AC_MSG_CHECKING(whether to install systemd shutdown files)
-AC_ARG_WITH([systemdshutdowndir],
-	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
-	[systemdshutdowndir="${withval}"],
-	[systemdshutdowndir="auto"])
+NUT_ARG_WITH([systemdshutdowndir], [(DIRPATH|yes|no|auto)], [Directory for systemd shutdown scripts], [auto])
+systemdshutdowndir="${nut_with_systemdshutdowndir}"
+
 dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
@@ -5097,10 +5051,9 @@ AM_CONDITIONAL([WITH_SYSTEMD_SHUTDOWN], [test x"${systemdshutdowndir}" != "x"])
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
 dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
 AC_MSG_CHECKING([whether to install systemd tmpfiles files])
-AC_ARG_WITH([systemdtmpfilesdir],
-	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
-	[systemdtmpfilesdir="${withval}"],
-	[systemdtmpfilesdir="auto"])
+NUT_ARG_WITH([systemdtmpfilesdir], [(DIRPATH|yes|no|auto)], [Directory for systemd tmpfiles scripts], [auto])
+systemdtmpfilesdir="${nut_with_systemdtmpfilesdir}"
+
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
@@ -5269,7 +5222,7 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${nut_have_libsystemd_inhibit
 AC_DEFINE_UNQUOTED(WITH_LIBSYSTEMD_INHIBITOR, [${nut_with_libsystemd_inhibitor}], [Define as 1 if we can use systemd inhibitor interface here])
 AM_CONDITIONAL([WITH_LIBSYSTEMD_INHIBITOR], [test x"${nut_with_libsystemd_inhibitor}" = x1])
 
-dnl
+dnl ---------------------------------------------------------------------
 dnl Tests for CppUnit availability and usability (will be built if we can,
 dnl and if valgrind is enabled for this configuration - reported below).
 dnl Using CppUnit implies C++ support!
@@ -5332,6 +5285,7 @@ AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
 unset CPLUSPLUS_DECL
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(for have_cppunit)
 have_cppunit="no"
 dnl CPPUNIT_NUT_CXXFLAGS are set below if suitable, but can be
@@ -5419,23 +5373,23 @@ return res ? 0 : 1;
 
 dnl # By default keep the originally detected have_cppunit value
 AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
-AC_ARG_ENABLE(cppunit,
-	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings (yes, no, force, auto)])],
-	[AS_CASE(["${enableval}"],
-		["force"], [AS_IF([test x"${have_cppunit}" = xyes], [], [
-			AC_MSG_WARN([--enable-cppunit=yes can not be satisfied, but developer asked for it])
-			have_cppunit=yes
-			])],
-		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--enable-cppunit=yes can not be satisfied])])],
-		["no"], [have_cppunit=no]
+NUT_ARG_ENABLE([cppunit], [(yes|no|force|auto)], [Enable CPPUNIT tests for C++ bindings], [auto])
+AS_CASE(["${nut_enable_cppunit}"],
+	["force"], [AS_IF([test x"${have_cppunit}" = xyes], [], [
+		AC_MSG_WARN([--enable-cppunit=yes can not be satisfied, but developer asked for it])
+		have_cppunit=yes
+		])],
+	["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--enable-cppunit=yes can not be satisfied])])],
+	["no"], [have_cppunit=no]
 		dnl # "auto" and other values keep what was detected (or not)
-	)])
+)
 AC_MSG_RESULT(${have_cppunit})
 
 NUT_REPORT_FEATURE([build C++ tests with CPPUNIT], [${have_cppunit}], [],
 					[HAVE_CPPUNIT], [Define to enable CPPUNIT tests])
 
 dnl ----------------------------------------------------------------------
+dnl Practical C++ code:
 
 AC_MSG_CHECKING(whether we can and want to build nutconf configuration-management tool)
 
@@ -5485,36 +5439,29 @@ dnl automake rules to build the library (privately or publicly, that depends):
 AM_CONDITIONAL(WITH_LIBNUTCONF, [test x"${nut_with_dev_libnutconf}" = x"yes" -o x"${nut_with_nutconf}" = x"yes"])
 
 dnl ----------------------------------------------------------------------
+dnl Other third-party integrations
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
-AC_ARG_WITH(augeas-lenses-dir,
-	AS_HELP_STRING([--with-augeas-lenses-dir=PATH], [where to install Augeas configuration-management lenses (/usr/share/augeas/lenses{/dist,/})]),
-[
-	case "${withval}" in
-	yes)
-		if test -z "${auglensdir}"; then
+NUT_ARG_WITH([augeas-lenses-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install Augeas configuration-management lenses, typically /usr/share/augeas/lenses{/dist,/}], [auto])
+
+AS_CASE([${nut_with_augeas_lenses_dir}],
+	[yes],	[if test -z "${auglensdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but not found in default location])
-		fi
-		if test ! -s scripts/augeas/nutupsconf.aug.in ; then
+		 fi
+		 if test ! -s scripts/augeas/nutupsconf.aug.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
-		fi
-		;;
-	auto)
-		if test ! -s scripts/augeas/nutupsconf.aug.in ; then
+		 fi
+		],
+	[auto],	[if test ! -s scripts/augeas/nutupsconf.aug.in ; then
 			AC_MSG_WARN([augeas lenses directory skipped because a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
 			auglensdir=""
-		fi
-		;;
-	no)
-		auglensdir=""
-		;;
-	*)
-		auglensdir="${withval}"
-		;;
-	esac
-], [])
+		 fi
+		],
+	[no],	[auglensdir=""],
+		[auglensdir="${nut_with_augeas_lenses_dir}"]
+)
 if test -n "${auglensdir}"; then
 	AC_MSG_RESULT(using ${auglensdir})
 	NUT_REPORT_PATH_INTEGRATIONS([Augeas lenses directory], [${auglensdir}])
@@ -5540,27 +5487,20 @@ fi
 
 dnl ----------------------------------------------------------------------
 
+dnl Note: initial hotplugdir value, empty or not, was determined far above
 AC_MSG_CHECKING(whether to install hotplug rules)
-AC_ARG_WITH(hotplug-dir,
-	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (${hotplugdir}); typically /etc/hotplug]),
-[
-	case "${withval}" in
-	yes)
-		if test -z "${hotplugdir}"; then
+NUT_ARG_WITH([hotplug-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install hotplug rules, typically /etc/hotplug], [auto])
+
+AS_CASE([${nut_with_hotplug_dir}],
+	[yes],
+		[if test -z "${hotplugdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([hotplug directory requested but not found])
-		fi
-		;;
-	auto)
-		;;
-	no)
-		hotplugdir=""
-		;;
-	*)
-		hotplugdir="${withval}"
-		;;
-	esac
-], [])
+		 fi],
+	[auto],	[],
+	[no],	[hotplugdir=""],
+		[hotplugdir="${nut_with_hotplug_dir}"]
+)
 if test -n "${hotplugdir}"; then
 	AC_MSG_RESULT(using ${hotplugdir})
 	NUT_REPORT_PATH_INTEGRATIONS([Hotplug rules directory], [${hotplugdir}])
@@ -5569,35 +5509,30 @@ else
 fi
 AM_CONDITIONAL(WITH_HOTPLUG, test -n "${hotplugdir}")
 
+dnl Note: initial udevdir value, empty or not, was determined far above
 AC_MSG_CHECKING(whether to install udev rules)
-AC_ARG_WITH(udev-dir,
-	AS_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (${udevdir}; typically /lib/udev or /etc/udev)]),
-[
-	case "${withval}" in
-	yes) dnl Typically /lib/udev or /etc/udev
-		if test -z "${udevdir}"; then
+NUT_ARG_WITH([udev-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install udev rules, typically /lib/udev or /etc/udev], [auto])
+
+AS_CASE([${nut_with_udev_dir}],
+	[yes],	dnl Typically /lib/udev or /etc/udev
+		[if test -z "${udevdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
-		fi
-		if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
+		 fi
+		 if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory and USB driver support requested but a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
-		fi
-		;;
-	auto)
-		if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
+		 fi
+		],
+	[auto],
+		[if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
 			AC_MSG_WARN([udev directory skipped because a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
 			udevdir=""
-		fi
-		;;
-	no)
-		udevdir=""
-		;;
-	*)
-		udevdir="${withval}"
-		;;
-	esac
-], [])
+		 fi
+		],
+	[no],	[udevdir=""],
+		[udevdir="${nut_with_udev_dir}"]
+)
 if test -n "${udevdir}"; then
 	AC_MSG_RESULT(using ${udevdir})
 	NUT_REPORT_PATH_INTEGRATIONS([Udev rules directory], [${udevdir}])
@@ -5606,37 +5541,32 @@ else
 fi
 AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
-dnl FreeBSD devd support:
 
-AC_MSG_CHECKING(whether to install FreeBSD devd.conf file)
-AC_ARG_WITH(devd-dir,
-	AS_HELP_STRING([--with-devd-dir=PATH], [where to install devd.conf file (${devddir}; typically /usr/local/etc/devd or /etc/devd)]),
-[
-	case "${withval}" in
-	yes) dnl Typically /usr/local/etc/devd or /etc/devd
-		if test -z "${devddir}"; then
+dnl FreeBSD devd support
+dnl Note: initial udevdir value, empty or not, was determined far above
+AC_MSG_CHECKING(whether to install FreeBSD devd nut-usb.conf file)
+NUT_ARG_WITH([devd-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install devd snippet nut-usb.conf file, typically /usr/local/etc/devd or /etc/devd], [auto])
+
+AS_CASE([${nut_with_devd_dir}],
+	[yes],	dnl Typically /usr/local/etc/devd or /etc/devd
+		[if test -z "${devddir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
-		fi
-		if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
+		 fi
+		 if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.conf.in ; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
-		fi
-		;;
-	auto)
-		if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usbups.rules.in -o ! -s scripts/devd/nut-usb.conf.in ; then
-			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
+			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usb.conf.in was not provided by autogen.sh or dist archive])
+		 fi
+		],
+	[auto],
+		[if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.conf.in ; then
+			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usb.conf.in was not provided by autogen.sh or dist archive])
 			devddir=""
-		fi
-		;;
-	no)
-		devddir=""
-		;;
-	*)
-		devddir="${withval}"
-		;;
-	esac
-], [])
+		 fi
+		],
+	[no],	[devddir=""],
+		[devddir="${nut_with_devd_dir}"]
+)
 if test -n "${devddir}"; then
 	AC_MSG_RESULT(using ${devddir})
 	NUT_REPORT_PATH_INTEGRATIONS([FreeBSD devd rules directory], [${devddir}])
@@ -5645,35 +5575,27 @@ else
 fi
 AM_CONDITIONAL(WITH_DEVD, test -n "${devddir}")
 
-dnl FreeBSD quirks support:
 
+dnl FreeBSD quirks support:
 freebsdquirksdir=""
 AC_MSG_CHECKING(whether to install FreeBSD site-local USB quirks file)
-AC_ARG_WITH(freebsd-quirks-dir,
-	AS_HELP_STRING([--with-freebsd-quirks-dir=PATH], [where to install nut-usb.quirks file (${datadir}; typically /usr/local/share/nut)]),
-[
-	case "${withval}" in
-	yes) dnl Typically /usr/local/share/nut
-		freebsdquirksdir="${datadir}"
-		;;
-	auto)
-		dnl Are we building for FreeBSD with such customizations?
-		if test -s /boot/loader.conf.local ; then
+NUT_ARG_WITH([freebsd-quirks-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install nut-usb.quirks file, typically ${datadir}], [auto])
+
+AS_CASE([${nut_with_freebsd_quirks_dir}],
+	[yes],	dnl Typically /usr/local/share/nut
+		[freebsdquirksdir="${datadir}"],
+	[auto],	dnl Are we building for FreeBSD with such customizations?
+		[if test -s /boot/loader.conf.local ; then
 			freebsdquirksdir="${datadir}"
-		fi
-		if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.quirks ; then
+		 fi
+		 if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.quirks ; then
 			AC_MSG_WARN([freebsd-quirks-dir directory skipped because a non-trivial scripts/devd/nut-usb.quirks was not provided by autogen.sh or dist archive])
 			freebsdquirksdir=""
-		fi
-		;;
-	no)
-		freebsdquirksdir=""
-		;;
-	*)
-		freebsdquirksdir="${withval}"
-		;;
-	esac
-], [])
+		 fi
+		],
+	[no],	[freebsdquirksdir=""],
+		[freebsdquirksdir="${nut_with_freebsd_quirks_dir}"]
+)
 if test -n "${freebsdquirksdir}"; then
 	AC_MSG_RESULT(using ${freebsdquirksdir})
 	NUT_REPORT_PATH_INTEGRATIONS([FreeBSD site-local USB quirks directory (add into /boot/loader.conf.local)], [${freebsdquirksdir}])
@@ -5699,47 +5621,31 @@ fi
 
 AM_CONDITIONAL(WITH_FREEBSD_QUIRKS_DIR, test -n "${freebsdquirksdir}")
 
-dnl
-
-dnl AIX system
-AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
-
-dnl processor type
-AC_DEFINE_UNQUOTED(CPU_TYPE, ["$target_cpu"], [Define processor type])
-
+dnl ---------------------------------------------------------------------
 dnl Can use valgrind for memory-leak testing, if present
-dnl FIXME: Set to "auto" after ensuring that we pass on all NUT CI farm platforms
-with_valgrind="no"
 AC_PATH_PROGS([VALGRIND], [valgrind], [none])
 dnl Caller can provide a specific valgrind implementation to use:
-AC_ARG_WITH(valgrind,
-	AS_HELP_STRING([--with-valgrind=(yes|no|auto|PATH)], [whether to use valgrind for memory-leak testing (no)]),
-[
-	dnl ### echo "Caller said: '${withval}'... Discovered tool: '${VALGRIND}'... "
-	case "${withval}" in
-	yes)
-		if test "x$VALGRIND" = "xnone"; then
+dnl FIXME: Set default to "auto" after ensuring that we pass on all NUT CI farm platforms
+NUT_ARG_WITH([valgrind], [(yes|no|auto|/path/to/valgrind)], [whether to use valgrind for memory-leak testing], [no])
+
+dnl ### echo "Caller said: '${nut_with_valgrind}'... Initially discovered tool: '${VALGRIND}'... "
+AS_CASE([${nut_with_valgrind}],
+	[yes],	[if test "x$VALGRIND" = "xnone"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([valgrind requested but not found])
-		fi
-		with_valgrind="yes"
-		;;
-	auto)
-		with_valgrind="auto"
-		;;
-	no)
-		with_valgrind="no"
-		;;
-	*)
-		AC_PATH_PROGS([VALGRIND], ["${withval}"], [none])
-		if test "x$VALGRIND" = "xnone"; then
+		 fi
+		 with_valgrind="yes"
+		],
+	[auto],	[with_valgrind="auto"],
+	[no],	[with_valgrind="no"],
+		[AC_PATH_PROGS([VALGRIND], ["${nut_with_valgrind}"], [none])
+		 if test "x$VALGRIND" = "xnone"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([valgrind requested but not found])
-		fi
-		with_valgrind="yes"
-		;;
-	esac
-], [])
+		 fi
+		 with_valgrind="yes"
+		]
+)
 
 dnl Even if the tool is installed, it may be not usable on build platform.
 dnl QEMU may further complicate things, providing CPUs that formally match
@@ -6088,46 +5994,40 @@ dnl Check the user and group to run as last, so we can use the paths configured
 dnl above as data sources for default values if building an in-place replacement
 
 AC_MSG_CHECKING(if requested user to run as)
-AC_ARG_WITH(user,
-	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)
-		;;
-	*)
-		RUN_AS_USER="${withval}"
-		nut_user_given=yes
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [
-	nut_user_given=no
-	AC_MSG_RESULT([default])
-])
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([user], [USERNAME], [(Unprivileged) user for programs normally started as root, typically 'nut' or 'ups'], [${RUN_AS_USER}], [platform-dependent, usually 'nobody'])
+
+AS_CASE([${nut_with_user}],
+	[yes|no], [AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)],
+	["${RUN_AS_USER}"], [
+		 nut_user_given=no
+		 AC_MSG_RESULT([default])
+		],
+		[RUN_AS_USER="${nut_with_user}"
+		 nut_user_given=yes
+		 AC_MSG_RESULT([specified])
+		]
+)
 NUT_REPORT_SETTING([User to run as],
     RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
 
-AC_MSG_CHECKING(if requested group membership of user to run as)
-AC_ARG_WITH(group,
-	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)
-		;;
-	*)
-		RUN_AS_GROUP="${withval}"
-		nut_group_given=yes
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [
-	nut_group_given=no
-	AC_MSG_RESULT([default])
-])
-NUT_REPORT_SETTING([Group of user to run as],
-    RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership of user to switch to if started as root])
+dnl Note: Technically daemons "run as" the primary GID of the user they de-levate into;
+dnl but in simpler setups (stipulated by common packaging) this one is the "run as" GID too
+AC_MSG_CHECKING(if requested group membership of user to own state files)
+NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([group], [GROUPNAME], [(Unprivileged) group membership for state files of drivers normally started as root, typically 'nut' or 'ups'], [${RUN_AS_GROUP}], [platform-dependent, usually 'nobody' or 'nogroup'])
+
+AS_CASE([${nut_with_group}],
+	[yes|no], [AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)],
+	["${RUN_AS_GROUP}"], [
+		 nut_group_given=no
+		 AC_MSG_RESULT([default])
+		],
+		[RUN_AS_GROUP="${nut_with_group}"
+		 nut_group_given=yes
+		 AC_MSG_RESULT([specified])
+		]
+)
+NUT_REPORT_SETTING([Group of user to own state files],
+    RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership for state files of drivers normally started as root])
 
 dnl check that --with-user is given if --with-group is given.
 if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
@@ -6234,11 +6134,13 @@ AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(SUN_LIBUSB)
 AC_SUBST(WORDS_BIGENDIAN)
+AC_SUBST(CGIEXECPATH)
 AC_SUBST(cgiexecdir)
 AC_SUBST(devddir)
 AC_SUBST(driverexecdir)
 AC_SUBST(freebsdquirksdir)
-AC_SUBST(htmldir)
+AC_SUBST(CGIDATAPATH)
+AC_SUBST(htmlcgidir)
 AC_SUBST(htmldocdir)
 AC_SUBST(htmlmandir)
 AC_SUBST(pkgconfigdir)
@@ -6260,6 +6162,7 @@ dnl that explicitly specify a CFLAGS="-std=..." (for GCC/CLANG toolkits),
 dnl nothing should get added to CFLAGS/CXXFLAGS by this method:
 NUT_COMPILER_FAMILY_FLAGS_DEFAULT_STANDARD
 
+dnl ---------------------------------------------------------------------
 dnl Filter through known variants first, so automatic choices can be made.
 dnl Note that clang identifies as gcc-compatible so should be probed first.
 dnl TODO: Flip this default to "hard" when we clear existing codebase.
@@ -6461,6 +6364,7 @@ Forcing "-Wno-format" into warnings options.
     ])
 ])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING([whether to make warnings fatal])
 AS_CASE(["${nut_enable_Werror}"],
     [yes|auto], [
@@ -6474,6 +6378,7 @@ AS_CASE(["${nut_enable_Werror}"],
 )
 AC_MSG_RESULT([${nut_enable_Werror}])
 
+dnl ---------------------------------------------------------------------
 dnl Some compilers (e.g. older clang-3.4) have issues with built-in methods
 dnl that are implemented as macros in system headers -- but only for some
 dnl sources like snmp-ups.c, nutscan-serial.c, scan_eaton_serial.c, serial.c,
@@ -6592,6 +6497,7 @@ sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
 dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
 
+dnl ---------------------------------------------------------------------
 dnl Due to possibly repetitive content, generate unique settings
 dnl relative to the top_builddir (distcheck and all):
 AC_MSG_CHECKING([for top build dir for this configure run])
@@ -6638,23 +6544,16 @@ dnl Use these at best for tests (e.g. nutconf), not production code:
 AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
 AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING([whether to install External API integration script: Enphase Monitor])
 nut_with_extapi_enphase="no"
-AC_ARG_ENABLE([extapi-enphase],
-	AS_HELP_STRING([--enable-extapi-enphase=(yes|auto|no)], [Enable installation of integration script for External API: Enphase Monitor (default: no)]),
-[
-	case "${enableval}" in
-	yes|"")
-		nut_enable_extapi_enphase="auto"
-		;;
-	auto|no)
-		nut_enable_extapi_enphase="${enableval}"
-		;;
-	*)
-		AC_MSG_ERROR([Unexpected argument for --enable-extapi-enphase=${enableval}])
-		;;
-	esac
-], [])
+NUT_ARG_ENABLE([extapi-enphase], [(yes|no|auto)], [Enable installation of integration script for External API: Enphase Monitor], [no])
+
+AS_CASE([${nut_enable_extapi_enphase}],
+	[yes|""], [nut_enable_extapi_enphase="auto"],
+	[auto|no], [],
+		[AC_MSG_ERROR([Unexpected argument for --enable-extapi-enphase=${nut_enable_extapi_enphase}])]
+)
 
 if test x"$nut_enable_extapi_enphase" != xno ; then
 	dnl Depends on usability of further programs and bash version
@@ -6671,6 +6570,7 @@ fi
 AC_MSG_RESULT([${nut_enable_extapi_enphase}])
 AM_CONDITIONAL(ENABLE_EXTAPI_ENPHASE, test x"$nut_enable_extapi_enphase" = x"yes")
 
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 dnl TOTHINK: Some distributions make the directories below owned
 dnl by "root:${RUN_AS_GROUP}" with 77x permissions. Is it safer?..
@@ -6745,20 +6645,13 @@ AS_IF([test x"${CCACHE_NAMESPACE}" = x], [
 	done
 	unset T
 ])
-AC_ARG_WITH(CCACHE_NAMESPACE,
-	AS_HELP_STRING([--with-CCACHE_NAMESPACE=namespace], [which ccache namespace to use for built binaries (typically nut:${autotools_target})]),
-[
-	case "${withval}" in
-	no)
-		CCACHE_NAMESPACE=""
-		;;
-	yes)	# Use user envvar or calculation above
-		;;
-	*)
-		CCACHE_NAMESPACE="${withval}"
-		;;
-	esac
-], [])
+NUT_ARG_WITH([CCACHE_NAMESPACE], [yes|no|auto|NAMESPACE], [Whether/which ccache namespace to use for built binaries, typically 'nut:${autotools_target}'], [auto])
+AS_CASE([${nut_with_CCACHE_NAMESPACE}],
+	[no],	[CCACHE_NAMESPACE=""],
+	[yes],	[AS_IF([text x"${CCACHE_NAMESPACE}" = x], [AC_MSG_ERROR([--with-CCACHE_NAMESPACE can not be fulfilled on this system])])],	dnl Else use user envvar or calculation above
+	[auto],	[],	dnl Use user envvar or calculation above
+		[CCACHE_NAMESPACE="${nut_with_CCACHE_NAMESPACE}"]
+)
 NUT_REPORT_TARGET(CCACHE_NAMESPACE, "${CCACHE_NAMESPACE}", [ccache namespace tag (if ccache is used and new enough)])
 AS_IF([test x"$CCACHE_NAMESPACE" != x -a x"$NUT_AM_MAKE_CAN_EXPORT" != x], [
 	AC_MSG_WARN([CCACHE_NAMESPACE setting may have no effect: this make implementation seems to not support "export VAR=VAL" syntax])
@@ -6793,6 +6686,7 @@ AC_SUBST(NUT_AM_EXPORT_CCACHE_PATH)
 PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 
+dnl ---------------------------------------------------------------------
 dnl Some binaries, like CPPUNIT tests, have similar flags already added
 dnl We might wipe their specific options below if consistently applying
 dnl debug-friendly options to everything
@@ -6877,8 +6771,8 @@ AC_CONFIG_FILES([
  conf/Makefile
  conf/upsmon.conf.sample
  conf/upssched.conf.sample
- data/html/header.html
- data/html/Makefile
+ data/htmlcgi/header.html
+ data/htmlcgi/Makefile
  data/Makefile
  data/driver.list
  docs/asciidoc.conf
@@ -7001,6 +6895,7 @@ m4_foreach_w([SCRIPTFILE], [
  AC_CONFIG_FILES(SCRIPTFILE, chmod +x "SCRIPTFILE")
 ])
 
+dnl ---------------------------------------------------------------------
 AC_MSG_NOTICE([Generating templated script files whose templates might have been generated (or not) by autogen.sh calling our helper scripts])
 m4_foreach_w([SCRIPTFILE], [
  scripts/augeas/nutupsconf.aug
@@ -7015,6 +6910,7 @@ m4_foreach_w([SCRIPTFILE], [
 	)
 ])
 
+dnl ---------------------------------------------------------------------
 dnl Define this before AC_OUTPUT(), so not inside the report routine below:
 AM_CONDITIONAL(KEEP_NUT_REPORT, test x"${nut_enable_keep_nut_report_feature-}" = xyes)
 
