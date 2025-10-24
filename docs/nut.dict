@@ -1319,6 +1319,7 @@ TSR
 TST
 TT
 TTT
+TUD
 TXF
 TXG
 TXV
@@ -3089,6 +3090,7 @@ ske
 skel
 sl
 slackpkg
+slaveaddr
 slaveid
 slavesync
 slibtool
