@@ -1505,13 +1505,27 @@ testcase_sandbox_upsc_query_timer() {
     #rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
 }
 
+PY_SHEBANG=""
+PY_RES=127
 isTestablePython() {
     # We optionally make python module (if interpreter is found):
+    case x"${PY_SHEBANG}" in
+        x"") ;; # Fall through to detection
+        *) return $PY_RES ;; # Probably resolved (if not a comment)?
+    esac
+
     if [ x"${TOP_BUILDDIR}" = x ] \
     || [ ! -x "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py" ] \
     ; then
         return 1
     fi
+
+    if [ x"${PYTHON}" != x ] ; then
+        PY_SHEBANG="#!${PYTHON}"
+        PY_RES=0
+        return 0
+    fi
+
     PY_SHEBANG="`head -1 "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"`"
     PY_RES=3
     case x"${PY_SHEBANG}" in
@@ -1522,6 +1536,7 @@ isTestablePython() {
     esac
     if [ x"${PY_RES}" = x0 ] ; then
         log_debug "=======\nDetected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
+        PYTHON="`echo "${PY_SHEBANG}" | sed 's,^#!,,'`"
     else
         log_error "[isTestablePython] Detected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
     fi
@@ -1529,12 +1544,13 @@ isTestablePython() {
 }
 
 testcase_sandbox_python_without_credentials() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || return 0
+
     log_separator
     log_info "[testcase_sandbox_python_without_credentials] Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
     if ( unset NUT_USER || true
          unset NUT_PASS || true
-        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1546,7 +1562,7 @@ testcase_sandbox_python_without_credentials() {
 }
 
 testcase_sandbox_python_with_credentials() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || return 0
 
     # That script says it expects data/evolution500.seq (as the UPS1 dummy)
     # but the dummy data does not currently let issue the commands and
@@ -1557,7 +1573,7 @@ testcase_sandbox_python_with_credentials() {
         NUT_USER='admin'
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
-        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1569,7 +1585,7 @@ testcase_sandbox_python_with_credentials() {
 }
 
 testcase_sandbox_python_with_upsmon_credentials() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || return 0
 
     log_separator
     log_info "[testcase_sandbox_python_with_upsmon_credentials] Call Python module test suite: PyNUT (NUT Python bindings) with upsmon role login credentials"
@@ -1577,7 +1593,7 @@ testcase_sandbox_python_with_upsmon_credentials() {
         NUT_USER='dummy-admin'
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
-        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1589,7 +1605,8 @@ testcase_sandbox_python_with_upsmon_credentials() {
 }
 
 testcases_sandbox_python() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || return 0
+
     testcase_sandbox_python_without_credentials
     testcase_sandbox_python_with_credentials
     testcase_sandbox_python_with_upsmon_credentials
