@@ -1,0 +1,23 @@
+# See https://openbuildservice.org/help/manuals/obs-user-guide/cha-obs-scm-ci-workflow-integration#sec.obs.obs_scm_ci_workflow_integration.setup.token_authentication.how_to_authenticate_scm_with_obs
+
+main_workflow:
+  steps:
+    - branch_package:
+        source_project: home:jimklimov
+        source_package: nut
+        target_project: networkupstools
+  filters:
+    event: pull_request
+
+rebuild_master:
+  steps:
+    - trigger_services:
+        project: networkupstools
+        package: nut
+  filters:
+    event:
+      - push
+      - tag_push
+    branches:
+      only:
+        - master

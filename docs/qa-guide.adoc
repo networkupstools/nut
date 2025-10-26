@@ -520,6 +520,21 @@ gcc and clang, C standards, and requiring to pass builds at least in a
 mode without warnings (and checking the other cases where any warnings
 are made fatal).
 
+Open Build Service (OBS)
+~~~~~~~~~~~~~~~~~~~~~~~~
+[[NUT_CI_OBS]]
+
+The SuSE-backed software suite and on-line instance of the Open Build
+Service (OBS) allows building packages for a wide range of Linux (and
+potentially non-Linux) operating system distributions.
+
+This can be seen as an additional CI test for multi-platform portability,
+but mainly allows NUT users to get recent development builds as "proper"
+packages.
+
+* https://build.opensuse.org/
+* https://openbuildservice.org/
+
 Continuous Integration (NUT CI farm) build agent preparation
 ------------------------------------------------------------
 [[NUTCI_farm_agents]]

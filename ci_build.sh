@@ -1478,6 +1478,8 @@ if [ -z "$BUILD_TYPE" ] ; then
 
         win|windows|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
 
+        pkg*) BUILD_TYPE="$1" ; shift ;;
+
         spellcheck|spellcheck-interactive|spellcheck-quick|spellcheck-interactive-quick)
             # Note: this is a little hack to reduce typing
             # and scrolling in (docs) developer iterations.
@@ -2867,6 +2869,42 @@ cross-windows-mingw*)
     MAKEFLAGS="$PARMAKE_FLAGS" \
     KEEP_NUT_REPORT_FEATURE="true" \
     ./build-mingw-nut.sh $cmd
+    ;;
+
+pkg-rpm|pkg-spec)
+    echo "WARNING: package build recipes manipulate directly your current workspace" >&2
+    echo "         and would remove any git-ignored files, might leave trash afterwards!" >&2
+    echo "         Press Ctrl+C to abort if this is a problem" >&2
+    sleep 5
+
+    rm -f nut.spec nut.changes || true
+    git clean -fdX || true
+    cp -f scripts/obs/nut.spec scripts/obs/nut.changes .
+    sed -e 's,^(Version:).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
+        -i nut.spec
+    rpmbuild -ba nut.spec \
+    && find . -name '*rpm'
+    ;;
+
+pkg-deb|pkg-dsc)
+    echo "WARNING: package build recipes manipulate directly your current workspace" >&2
+    echo "         and would remove any git-ignored files, might leave trash afterwards!" >&2
+    echo "         Press Ctrl+C to abort if this is a problem" >&2
+    sleep 5
+
+    rm -rf debian config.*cdbs* nut.dsc || true
+    git clean -fdX || true
+    mkdir -p debian
+    (cd scripts/obs || exit
+    for F in debian.* ; do
+        ln -s "../scripts/obs/$F" "../../debian/`echo "$F" | sed 's/debian.//'`" || exit
+    done) || exit
+    cp -f scripts/obs/nut.dsc .
+    sed -e 's,^\(Version:\).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
+        -i nut.dsc
+    dpkg-checkbuilddeps || sudo mk-build-debs -i
+    yes | debuild \
+    && find . -name '*deb'
     ;;
 
 *)
