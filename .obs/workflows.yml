@@ -1,0 +1,6 @@
+workflow:
+  steps:
+    - branch_package:
+        source_project: home:jimklimov
+        source_package: nut
+        target_project: networkupstools
