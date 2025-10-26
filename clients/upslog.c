@@ -199,23 +199,25 @@ static void help(const char *prog)
 
 	printf("  -f <format>	- Log format.  See below for details.\n");
 	printf("		- Use -f \"<format>\" so your shell doesn't break it up.\n");
-	printf("  -N            - Prefix \"%%UPSHOST%%%%t\" before the format (default/custom)");
-	printf("		- Useful when logging many systems into same target.\n");
+	printf("  -N		- Prefix \"%%UPSHOST%%%%t\" before the format (default/custom):\n");
+	printf("		  useful when logging many systems into same target.\n");
 	printf("  -i <interval>	- Time between updates, in seconds\n");
 	printf("  -d <count>	- Exit after specified amount of updates\n");
 	printf("  -l <logfile>	- Log file name, or - for stdout (foreground by default)\n");
 	printf("  -D		- raise debugging level (and stay foreground by default)\n");
 	printf("  -F		- stay foregrounded even if logging into a file\n");
 	printf("  -B		- stay backgrounded even if logging to stdout or debugging\n");
-	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
-	printf("                - NOTE: PID file is written regardless of fore/back-grounding\n");
+	printf("  -p <pidbase>	- Base name for PID file (defaults to \"%s\")\n", prog);
+	printf("             	- NOTE: PID file is written regardless of fore/back-grounding\n");
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
 	printf("        	- Example: -s myups@server\n");
+	printf("        	- Specify '*' as upsname to query all devices on the host\n");
 	printf("  -m <tuple>	- Monitor UPS <ups,logfile>\n");
 	printf("		- Example: -m myups@server,/var/log/myups.log\n");
 	printf("		- NOTE: You can use '-' as logfile for stdout\n");
 	printf("		  and it would not imply foregrounding\n");
 	printf("		- Unlike one '-s ups -l file' spec, you can specify many tuples\n");
+	printf("		- Example: -m '*,-' to view updates of all known local devices\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
@@ -688,9 +690,9 @@ int main(int argc, char **argv)
 	if (monhost || logfn) {
 		/* Both data points must be defined, no defaults */
 		if (!monhost)
-			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> when using -l <file>, or use -m <ups,logfile>");
+			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> when using -l <file>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 		if (!logfn)
-			fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file> when using -s <system>, or use -m <ups,logfile>");
+			fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file> when using -s <system>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
 		/* May be or not be NULL here: */
 		monhost_ups_prev = monhost_ups_current;
@@ -737,7 +739,7 @@ int main(int argc, char **argv)
 
 	/* shouldn't happen */
 	if (!monhost_len)
-		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>");
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
 	/* Split the system specs in a common fashion for tuples and legacy args */
 	for (monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
@@ -869,7 +871,7 @@ int main(int argc, char **argv)
 	/* might happen if we only queried remote hosts and found nothing,
 	 * just in case we missed something above */
 	if (!monhost_len || !monhost_ups_anchor)
-		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>");
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
 	/* Report the logged systems, open the log files as needed */
 	for (monhost_ups_current = monhost_ups_anchor;

@@ -16,6 +16,14 @@ $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libupsclient.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+# Builds from root dir arrange stuff decently. Make sure parallel builds
+# started from scratch right in this dir get dependencies in proper order
+# (sub-makes are independent as far as trying to write into same files):
+$(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
+# Internally (clients/Makefile.am) libupsclient.la requires libcommonclient.la
+# and that in turn libparseconf.la:
+$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libparseconf.la
+
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
@@ -144,7 +152,7 @@ sbin_PROGRAMS = upsdrvctl
 
 # upsdrvctl: the all-singing all-dancing driver control program
 upsdrvctl_SOURCES = upsdrvctl.c
-upsdrvctl_LDADD = $(LDADD_COMMON) libdummy_upsdrvquery.la
+upsdrvctl_LDADD = libdummy_upsdrvquery.la $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
@@ -401,13 +409,17 @@ nutdrv_qx_CFLAGS += -DQX_USB
 nutdrv_qx_SOURCES += $(LIBUSB_IMPL) usb-common.c
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif WITH_USB
-NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
+NUTDRV_QX_SUBDRIVERS =	\
+ nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
  nutdrv_qx_innovart31.c	\
  nutdrv_qx_innovart33.c	\
+ nutdrv_qx_innovatae.c	\
  nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
- nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c nutdrv_qx_voltronic.c	\
- nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c nutdrv_qx_zinto.c	\
+ nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c	\
+ nutdrv_qx_voltronic.c common_voltronic-crc.c	\
+ nutdrv_qx_voltronic-axpert.c nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c	\
+ nutdrv_qx_zinto.c	\
  nutdrv_qx_hunnox.c nutdrv_qx_ablerex.c nutdrv_qx_gtec.c
 nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 
@@ -429,9 +441,12 @@ dist_noinst_HEADERS = \
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
- nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_innovart33.h nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
+ nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_innovart33.h nutdrv_qx_innovatae.h	\
+ nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
- nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
+ nutdrv_qx.h common_voltronic-crc.h nutdrv_qx_voltronic.h	\
+ nutdrv_qx_voltronic-axpert.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h \
+ nutdrv_qx_zinto.h \
  upsdrvquery.h \
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h apc-epdu-mib.h ecoflow-hid.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
@@ -459,11 +474,11 @@ libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
 EXTRA_LTLIBRARIES += libdummy_mockdrv.la
 libdummy_mockdrv_la_SOURCES = main.c dstate.c
 libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
-libdummy_mockdrv_la_LDFLAGS = \
-	-static \
+libdummy_mockdrv_la_LIBADD = \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la \
 	$(top_builddir)/common/libparseconf.la
+libdummy_mockdrv_la_LDFLAGS = -static
 
 # Also define a library with serial-port UPS routines needed for nut-scanner
 noinst_LTLIBRARIES = libserial-nutscan.la

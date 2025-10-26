@@ -21,10 +21,72 @@ be beneficial to add `--enable-option-checking=fatal` to the `./configure`
 command line, in order to quickly pick up any other removed option flags.
 ======
 
-Changes from 2.8.3 to 2.8.4
+Changes from 2.8.4 to 2.8.5
 ---------------------------
 
 - PLANNED: Keep track of any further API clean-up?
+
+- For ages, most recipes for building NUT had customized the `sysconfdir` to
+  be `/etc/nut`, which is not exactly the *system* configuration directory.
+  This is finally deprecated, with new `--with-confdir` configuration option
+  taking over the role of a full path to configuration files (by default
+  `${sysconfdir}${confdir_suffix}`), and new `--with-confdir-suffix` allowing
+  to specify just `/nut` or `/ups` that would be tacked onto the default
+  `${sysconfdir}` to resolve the `${confdir}`. Default behavior should be
+  same as with previous builds: if `sysconfdir` is customized (or `prefix`
+  is kept at built-in default), the `confdir_suffix` will default to empty;
+  otherwise it assumes the value of `/${PACKAGE_NAME}` to become `/nut` in
+  most cases. A `--with-confdir-examples` option was also introduced, to
+  help distributions that place `*.conf.sample` files into docs or other
+  locations. [#3131]
+
+- Source directory `data/html` was renamed to `data/htmlcgi` in order to better
+  reflect its contents and purpose, compared to documentation-oriented `html*`
+  directories (and recipe variable names). This may impact some packaging
+  recipes which do not rely on `make install` alone. [#3049]
+
+- Dropped the `compile` script from Git sources. It originates from automake
+  and is added to work area (if missing) during `autogen.sh` rituals anyway
+  (as `make` says, `'automake --add-missing' can install 'compile'` when you
+  run without it). It is still distributed as part of `make dist` tarball.
+  We are open to any feedback whether this removal impacts NUT rebuilds on
+  any systems. [#1209]
+
+- Default `PIDPATH` is now more strictly `/var/run`, unless building on a
+  system conforming to FHS-3.0 standard where that location is absent or
+  is a symlink, while `/run` exists and is a true directory. Package recipes
+  usually override `--with-pidpath` anyway to provide a dedicated location
+  for NUT `root`-owned daemon PID files. [#3099]
+
+- In drivers using the common `main.c` and `main.h` framework, introduced
+  a `void upsdrv_tweak_prognames(void)` required method (may be no-op) to
+  optionally tweak `prognames[]` entries now that there is certain support
+  to accept program name aliases, not just one hard-coded string value.
+  Any third-party drivers may require rebuilding to extend with this method.
+  Any drivers that would undergo promotion with renaming can take advantage
+  of this new facility to keep working under both old and new file names.
+  [#3101]
+
+- Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
+  to match the driver program name. Packaging recipes may have to be updated.
+  Follow-up from slightly botched renaming in original contribution. [PR #545]
+
+- The `configure` script should now try harder to report specifically
+  the "purelib" location as `PYTHON*_SITE_PACKAGES`. Packaging recipes
+  may have to be updated. [#1209]
+
+- New supported values were introduced for `--with-python{,2,3}=auto-prio=NUM`:
+  this allows to auto-prioritize some *one* available Python interpreter.
+  Default settings were changed from plain `auto` (allowing for multiple
+  `python*` interpreters and `site-package` locations to be used), to
+  prefer a `python3` if available, else `python2`, else `python`, and
+  forget about others even if discovered. Packaging recipes may have to be
+  updated, either to explicitly package the binding for several versions,
+  or to not-deliver files no longer installed into the prototype area. [#1792]
+
+
+Changes from 2.8.3 to 2.8.4
+---------------------------
 
 - Introduced handling (possibly rewriting) for man page section "Overviews,
   conventions, and miscellaneous" (commonly number 7), to deliver support

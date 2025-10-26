@@ -236,7 +236,7 @@ cancel_shutdown() {
 		1)
 			PIDS="`head -1 "$SHUTDOWN_PIDFILE"`" && [ -n "$PIDS" ] || return 1
 			get_ldate
-			logmsg $(printf "${MessageCancelingPIDS_s}\n" "$PIDS")
+			logmsg "`printf "${MessageCancelingPIDS_s}\n" "$PIDS"`"
 			kill -9 $PIDS
 			rm -f "$SHUTDOWN_PIDFILE" "$SHUTDOWN_PIDFILE_IRREVERSIBLE"
 			return 0 ;;
@@ -319,7 +319,7 @@ if [ "$SHUTDOWN_TIMER" -gt -1 ] 2>/dev/null; then
 	else
 		SHUTDOWN_TIMER_SEC="`expr $SHUTDOWN_TIMER \* 60`" \
 			|| SHUTDOWN_TIMER_SEC="120"
-		logmsg $(printf "${MessageShutdownIsDelayed_s}\n" "${SHUTDOWN_TIMER_SEC}")
+		logmsg "`printf "${MessageShutdownIsDelayed_s}\n" "${SHUTDOWN_TIMER_SEC}"`"
 		echo "+ ${SHUTDOWN_TIMER_SEC}" >> "$SHUTDOWN_PIDFILE"
 		trap 'get_ldate; logmsg "$MessageTimerAbortedTrap">&2 ; exit 0' 1 2 3 15
 		/usr/bin/sleep ${SHUTDOWN_TIMER_SEC}
@@ -351,13 +351,13 @@ if [ -n "${SHUTDOWNSCRIPT_CUSTOM-}" ] && \
 	export CONSOLE_NOTIF CMD_WALL SYSLOG_NOTIF CMD_SYSLOG
 	export SDFLAG_COMMONOPTIONS SDFLAG_UNGRACEFUL
 	get_ldate
-	logmsg $(printf "$MessageCustomShutdownStarting_s" "$SHUTDOWNSCRIPT_CUSTOM")
+	logmsg "`printf "$MessageCustomShutdownStarting_s" "$SHUTDOWNSCRIPT_CUSTOM"`"
 	rm -f "$SHUTDOWN_PIDFILE.custom"
 	touch "$SHUTDOWN_PIDFILE.custom"
 	chmod 600 "$SHUTDOWN_PIDFILE.custom"
 	"$SHUTDOWNSCRIPT_CUSTOM" 3>"$SHUTDOWN_PIDFILE.custom"
 	get_ldate
-	logmsg $(printf "$MessageCustomShutdownCompleted_s" "$SHUTDOWNSCRIPT_CUSTOM")
+	logmsg "`printf "$MessageCustomShutdownCompleted_s" "$SHUTDOWNSCRIPT_CUSTOM"`"
 	# Some variables for this script could be modified in the custom one
 	[ -s "$SHUTDOWN_PIDFILE.custom" ] && . "$SHUTDOWN_PIDFILE.custom"
 	rm -f "$SHUTDOWN_PIDFILE.custom"
@@ -374,12 +374,12 @@ if [ -s "$POWERDOWNFLAG" ] || "$NUT_UPSMON" -K ; then
 fi
 get_ldate
 if [ x"$POWERDOWNFLAG_UPSMON" = xyes ] ; then
-	logmsg $(printf "$MessageKillpowerFileExists_s" "$POWERDOWNFLAG")
+	logmsg "`printf "$MessageKillpowerFileExists_s" "$POWERDOWNFLAG"`"
 else
-	logmsg $(printf "$MessageKillpowerFileAbsent_s" "$POWERDOWNFLAG")
+	logmsg "`printf "$MessageKillpowerFileAbsent_s" "$POWERDOWNFLAG"`"
 fi
 if [ -n "$POWERDOWNFLAG_USER" ] ; then
-	logmsg $(printf "$MessageKillpowerArgumentExists_s" "$POWERDOWNFLAG_USER")
+	logmsg "`printf "$MessageKillpowerArgumentExists_s" "$POWERDOWNFLAG_USER"`"
 else
 	logmsg "$MessageKillpowerArgumentAbsent"
 fi
@@ -389,10 +389,10 @@ if [ x"$POWERDOWNFLAG_UPSMON" = xyes -o "$POWERDOWNFLAG_USER" = "enforce" ] && \
 ; then
 	# We will cut our (dev-assumed) power, so should poweroff to be safe...
 	if [ -z "${SDFLAG_POWERSTATE-}" ] ; then
-		CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg $(printf "$MessageUPSpowercycleCommandingPoweroff_s" "$DELAY")
+		CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg "`printf "$MessageUPSpowercycleCommandingPoweroff_s" "$DELAY"`"
 		SDFLAG_POWERSTATE="$SDFLAG_POWEROFF"
 	else
-		CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg $(printf "$MessageUPSpowercycleCommanding_s" "$DELAY")
+		CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg "`printf "$MessageUPSpowercycleCommanding_s" "$DELAY"`"
 	fi
 	POWERDOWNFLAG_USER=enforce "$NUT_UPS_SHUTDOWN"
 else
@@ -418,6 +418,6 @@ fi
 	SDFLAG_POWERSTATE="$SDFLAG_POWERSTATE_DEFAULT"
 
 get_ldate
-CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg $(printf "$MessageRunningCmd_s" "$CMD_SHUTDOWN $SDFLAG_POWERSTATE $SDFLAG_COMMONOPTIONS")
+CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg "`printf "$MessageRunningCmd_s" "$CMD_SHUTDOWN $SDFLAG_POWERSTATE $SDFLAG_COMMONOPTIONS"`"
 # Launch the operating system shutdown command
 $CMD_SHUTDOWN $SDFLAG_POWERSTATE $SDFLAG_COMMONOPTIONS

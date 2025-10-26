@@ -1,6 +1,11 @@
 Creating a new driver to support another device
 ===============================================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/new-drivers.html
+//////////////////////////////////////////////////////////////////////////////
+
 This chapter will present the process of creating a new driver to support
 another device.
 
@@ -104,6 +109,10 @@ This information is currently used for the startup banner printing and tests.
 
 Essential functions
 -------------------
+
+For a full current list of functions expected in this context, please see the
+`drivers/main.h` file in NUT sources.  Some more methods may be required by
+driver structure, even if in the common case they have no-op implementations.
 
 upsdrv_initups
 ~~~~~~~~~~~~~~
@@ -348,17 +357,17 @@ must use to manage them.
 
 	alarm_commit() -- push the value into ups.alarm
 
-NOTE: the ALARM flag in ups.status is automatically set whenever you use
-alarm_set.  To remove that flag from ups.status, call alarm_init and
-alarm_commit without calling alarm_set in the middle.
+NOTE: The ALARM flag in `ups.status` is automatically set whenever you use
+`alarm_set()`.  To remove that flag from `ups.status`, call `alarm_init()`
+and `alarm_commit()` without calling `alarm_set()` in the middle.
 
 You should never try to set or unset the ALARM flag manually.
 
-If you use UPS alarms, the call to status_commit() should be after
-alarm_commit(), otherwise there will be a delay in setting the ALARM
-flag in ups.status.
+If you use UPS alarms, the call to `status_commit()` should be *after*
+`alarm_commit()`, otherwise there will be a delay in setting the ALARM
+flag in `ups.status`.
 
-There is no official list of alarm words as of this writing, so don't
+There is no official list of alarm keywords as of this writing, so don't
 use these functions until you check with the upsdev list.
 
 Also refer to the <<daisychain,NUT daisychain support notes>> chapter

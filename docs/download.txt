@@ -3,6 +3,11 @@ Download information
 
 This section presents the different methods to download NUT.
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/download.html
+//////////////////////////////////////////////////////////////////////////////
+
 Source code
 -----------
 
@@ -61,7 +66,7 @@ following script in the directory you just checked out:
 
 	:; ./autogen.sh
 
-NOTE: it is optionally recommended to have Python 2.x or 3.x, and Perl, to
+NOTE: It is optionally recommended to have Python 2.x or 3.x, and Perl, to
 generate some files included into the `configure` script, presence is checked
 by autotools when it is generated. Neutered files can be just "touched" to
 pass the `autogen.sh` if these interpreters are not available, and effectively
@@ -95,14 +100,18 @@ Snapshots
 ^^^^^^^^^
 
 GitHub has several download links for repository snapshots (for particular tags
-or branches), but you will need a number of tools such as autoconf, automake
-and libtool to use these snapshots to generate the `configure` script and some
+or branches), but you will need a number of tools such as `autoconf`, `automake`
+and `libtool` to use these snapshots to generate the `configure` script and some
 other files.
 
 After you `configure` the source workspace, a `make dist-hash` recipe would
-create the snapshot tarballs which do not require the auto* tools, and their
+create the snapshot tarballs which do not require the `auto*` tools, and their
 checksum files, such as those available on the NUT website and attached to
 link:https://github.com/networkupstools/nut/releases[GitHub Releases page].
+
+Note that the ability to build NUT seamlessly from ZIP or `tar.gz` snapshots
+prepared by GitHub automatically (as `git archive` of a checked-out workspace)
+is not regularly checked or "supported" by the Network UPS Tools project. YMMV.
 
 /////////
 TODO: #1400 to replace this with a NUT CI farm service to publish the tarballs
@@ -123,13 +132,29 @@ link:https://www.networkupstools.org/source/[Browse source directory]
 Binary packages
 ---------------
 
-NOTE: The only official releases from this project are source code.
+[NOTE]
+======
+The only official releases from this project are source code "tarballs",
+prepared by `make dist-files` from the tagged release commits on main trunk of
+the development code base (for more details see NUT Maintainer Guide in source).
+
+Best-effort packages or archives of installation prototype workspaces, prepared
+by regular CI builds, are planned to ease evaluation of the latest development
+for some platforms (currently serving only NUT for Windows).
+======
 
 NUT is already available in the following operating systems (and
 link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging-recipes-and-repository-sections[likely more]):
 
-- link:https://repology.org/project/nut/versions[Repology report on NUT]
-  lists 745 entries about NUT, as of this writing
+- link:https://repology.org/project/network-ups-tools/versions[Repology report
+  on "network-ups-tools"] lists 239 entries about NUT, as of 2025-09-06
+
+    * Older listing at link:https://repology.org/project/nut/versions[Repology
+      report on "nut"] listed 745 entries about NUT, as of 2022-04-26 -- that
+      name was not tracked since 2024 probably due to ambiguity with some other
+      projects that used "nut" in their name;
+      see link:https://repology.org/project/nut/history[Repology history of
+      "nut"] for more details
 
 - Linux:
 
@@ -162,8 +187,9 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
       link:http://doc.freenas.org/9.3/freenas_services.html#ups[FreeNAS 9.3 docs on UPS integration]
       and link:https://www.ixsystems.com/documentation/freenas/11.3-U5/services.html#ups[FreeNAS 11.3-U5 docs on UPS integration]
 
-- Mac OS X:
+- macOS 11+ and Mac OS X:
 
+    * link:https://formulae.brew.sh/formula/nut[Homebrew formula]
     * link:https://github.com/fink/fink-distributions/blob/master/10.9-libcxx/stable/main/finkinfo/net/nut.info[Fink recipe]
       and link:http://pdb.finkproject.org/pdb/package.php/nut[Fink package overview]
     * link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts recipe]
@@ -183,6 +209,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
 +
 The latest release's automated build archive is available here:
       link:https://www.networkupstools.org/package/windows/NUT-for-Windows-x86_64-RELEASE-{revision}.7z[NUT-for-Windows-x86_64-RELEASE-{revision}.7z]
+
     * link:https://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-6.msi[(OBSOLETE) Windows MSI installer 2.6.5-6]
 
 

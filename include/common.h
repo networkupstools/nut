@@ -229,6 +229,16 @@ const char *describe_NUT_VERSION_once(void);
  */
 const char *suggest_doc_links(const char *progname, const char *progconf);
 
+/* For drivers that failed to start because they could not hold on to a
+ * device, on systems where the nut-driver-enumerator could produce units
+ * that conflict with a manually-launched driver program, suggest that
+ * this may be the case. Has some work on systems where NDE can be used
+ * (currently where SMF or SystemD were considered during build), no-op
+ * on others.
+ * We define this in one spot, to change conditions or wording easily.
+ */
+void suggest_NDE_conflict(void);
+
 /* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
  * hide the NUT tool name+version banners; show them by default */
 int banner_is_disabled(void);
@@ -262,6 +272,18 @@ void open_syslog(const char *progname);
 
 /* close ttys and become a daemon */
 void background(void);
+
+/* allow tagging the (forked) process in logs to ease debugging */
+const char *getproctag(void);
+/* save a copy of tag, or call with NULL to clean and free the internal buffer;
+ * if using this feature in a particular NUT program at all - it automatically
+ * registers with atexit() to do such clean-up in exit handling.
+ *
+ * WARNING: first call to this method also caches the getprocname(getpid())
+ * so if you want to see debug logs from that - only call this after setting
+ * the nut_debug_level (by parsing CLI arguments and/or NUT_DEBUG_LEVEL envvar).
+ */
+void setproctag(const char *tag);
 
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name);
@@ -299,14 +321,20 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
  *	0	Process name identified, does not seem to match
  *	1+	Process name identified, and seems to match with
  *		varying precision
- * Generally speaking, if (checkprocname(...)) then ok to proceed
+ * Generally speaking, if (checkprocname(...)) then ok to proceed.
+ * Singular for programs with a single expected executable name,
+ * plural for programs with expected aliases (e.g. "old"/new" migrations).
  */
 int checkprocname(pid_t pid, const char *progname);
-/* compareprocname() does the bulk of work for checkprocname()
- * and returns same values. The "pid" argument is used for logging.
- * Generally speaking, if (compareprocname(...)) then ok to proceed
+int checkprocnames(pid_t pid, const char **prognames);
+/* compareprocname*() methods do the bulk of work for checkprocname*()
+ * and return same values. The "pid" argument is used for logging.
+ * Generally speaking, if (compareprocname(...)) then ok to proceed.
+ * Singular for programs with a single expected executable name,
+ * plural for programs with expected aliases (e.g. "old"/new" migrations).
  */
 int compareprocname(pid_t pid, const char *procname, const char *progname);
+int compareprocnames(pid_t pid, const char *procname, const char **prognames);
 /* Helper for the above methods and some others. If it returns true (1),
  * work about PID-name comparison should be quickly skipped.
  */
@@ -366,6 +394,7 @@ pid_t get_max_pid_t(void);
 /* send sig to pid after some sanity checks, returns
  * -1 for error, or zero for a successfully sent signal */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
+int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_current_progname);
 
 /* open <pidfn> and get the pid
  * returns zero or more for successfully retrieved value,
@@ -390,11 +419,15 @@ pid_t parsepidfile(const char *pidfn);
  * named driver programs does not request it)
  */
 int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname);
+int sendsignalfnaliases(const char *pidfn, int sig, const char **prognames, int check_current_progname);
 #else	/* WIN32 */
 /* No progname here - communications via named pipe */
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored);
+int sendsignalfnaliases(const char *pidfn, const char * sig, const char **prognames_ignored, int check_current_progname_ignored);
 #endif	/* WIN32 */
 
+/* return a pointer to character inside the file that starts a basename
+ * caller should strdup() a copy to retain beyond the lifetime of "file" */
 const char *xbasename(const char *file);
 
 /* enable writing upslog_with_errno() and upslogx() type messages to

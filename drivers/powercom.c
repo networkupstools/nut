@@ -86,7 +86,7 @@
 #include "nut_float.h"
 
 #define DRIVER_NAME	"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.27"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -866,9 +866,7 @@ void upsdrv_shutdown(void)
 void upsdrv_initups(void)
 {
 	int tmp;
-	unsigned int model = 0;
 	unsigned int i;
-	static char buf[20];
 
 	/* check manufacturer name from arguments */
 	if (testvar("manufacturer"))
@@ -1007,6 +1005,85 @@ void upsdrv_initups(void)
 
 	/* setup flow control */
 	types[type].flowControl.setup_flow_control();
+}
+
+/* display help */
+void upsdrv_help(void)
+{
+	/*               1         2         3         4         5         6         7         8 */
+	/*      12345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX */
+	printf("\n");
+	printf("Specify UPS information in the ups.conf file.\n");
+	printf(" type:          Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT',\n");
+	printf("                 'BNT-other', 'OPTI' (default: 'Trust')\n");
+	printf("                'BNT-other' is a special type intended for BNT 100-120V models,\n");
+	printf("                 but can be used to override ALL models.\n");
+	printf("You can additional specify these variables:\n");
+	printf(" manufacturer:  Manufacturer name (default: 'PowerCom')\n");
+	printf(" modelname:     Model name (default: 'Unknown' or autodetected)\n");
+	printf(" serialnumber:  Serial number (default: Unknown)\n");
+	printf(" shutdownArguments: 3 delay arguments for the shutdown operation:\n");
+	printf("                 {{Minutes,Seconds},UseMinutes?}\n");
+	printf("                where Minutes and Seconds are integer, UseMinutes? is either\n");
+	printf("                 'y' or 'n'.\n");
+	printf("You can specify these variables if not automagically detected for types\n");
+	printf("                'IMP','KIN','BNT'\n");
+	printf(" linevoltage:   Line voltage: 110-120 or 220-240 (default: 230)\n");
+	printf(" numOfBytesFromUPS: Number of bytes in a UPS frame: 16 is common, 11 for 'Trust'\n");
+	printf(" methodOfFlowControl: Flow control method for UPS:\n");
+	printf("                'dtr0rts1', 'dtr1' or 'no_flow_control'\n");
+	printf(" validationSequence: 3 pairs of validation values: {{I,V},{I,V},{I,V}}\n");
+	printf("                where I is the index into BytesFromUPS (see numOfBytesFromUPS)\n");
+	printf("                  and V is the value for the ByteIndex to match.\n");
+	printf(" frequency:     Input & Output Frequency conversion values: {A, B}\n");
+	printf("                 used in function: 1/(A*x+B)\n");
+	printf("                If the raw value x IS the frequency, then A=1/(x^2), B=0\n");
+	printf(" loadPercentage: Load conversion values for Battery and Line load: {BA,BB,LA,LB}\n");
+	printf("                 used in function: A*x+B\n");
+	printf("                If the raw value x IS the Load Percent, then A=1, B=0\n");
+	printf(" batteryPercentage: Battery conversion values for Battery and Line power:\n");
+	printf("                 {A,B,C,D,E}\n");
+	printf("                 used in functions: (Battery) A*x+B*y+C, (Line) D*x+E\n");
+	printf("                If the raw value x IS the Battery Percent, then\n");
+	printf("                 A=1, B=0, C=0, D=1, E=0\n");
+	printf(" voltage:       Voltage conversion values for 240 and 120 voltage:\n");
+	printf("                 {240A,240B,120A,120B}\n");
+	printf("                 used in function: A*x+B\n");
+	printf("                If the raw value x IS HALF the Voltage, then A=2, B=0\n");
+	printf(" nobt:          Flag to skip battery check on init/startup.\n\n");
+
+	printf("Example for BNT1500AP in ups.conf:\n");
+	printf("[BNT1500AP]\n");
+	printf("    driver = powercom\n");
+	printf("    port = /dev/ttyS0\n");
+	printf("    desc = \"PowerCom BNT 1500 AP\"\n");
+	printf("    manufacturer = PowerCom\n");
+	printf("    modelname = BNT1500AP\n");
+	printf("    serialnumber = 13245678900\n");
+	printf("    type = BNT-other\n");
+	printf("#   linevoltage = 120\n");
+	printf("#   numOfBytesFromUPS = 16\n");
+	printf("#   methodOfFlowControl = no_flow_control\n");
+	printf("#   validationSequence = {{8,0},{8,0},{8,0}}\n");
+	printf("#   shutdownArguments = {{1,30},y}\n");
+	printf("#   frequency = {0.00027778,0.0000}\n");
+	printf("#   loadPercentage = {1.0000,0.0,1.0000,0.0}\n");
+	printf("#   batteryPercentage = {1.0000,0.0000,0.0000,1.0000,0.0000}\n");
+	printf("#   voltage = {2.0000,0.0000,2.0000,0.0000}\n");
+	printf("    nobt\n");
+	return;
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
+/* initialize information */
+void upsdrv_initinfo(void)
+{
+	unsigned int	model = 0;
+	static char	buf[20];
 
 	/* Setup Model and LineVoltage */
 	if (!strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN") || !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
@@ -1096,78 +1173,6 @@ void upsdrv_initups(void)
 		        types[type].voltage[2], types[type].voltage[3]);
 	}
 
-}
-
-/* display help */
-void upsdrv_help(void)
-{
-	/*               1         2         3         4         5         6         7         8 */
-	/*      12345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX */
-	printf("\n");
-	printf("Specify UPS information in the ups.conf file.\n");
-	printf(" type:          Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT',\n");
-	printf("                 'BNT-other', 'OPTI' (default: 'Trust')\n");
-	printf("                'BNT-other' is a special type intended for BNT 100-120V models,\n");
-	printf("                 but can be used to override ALL models.\n");
-	printf("You can additional specify these variables:\n");
-	printf(" manufacturer:  Manufacturer name (default: 'PowerCom')\n");
-	printf(" modelname:     Model name (default: 'Unknown' or autodetected)\n");
-	printf(" serialnumber:  Serial number (default: Unknown)\n");
-	printf(" shutdownArguments: 3 delay arguments for the shutdown operation:\n");
-	printf("                 {{Minutes,Seconds},UseMinutes?}\n");
-	printf("                where Minutes and Seconds are integer, UseMinutes? is either\n");
-	printf("                 'y' or 'n'.\n");
-	printf("You can specify these variables if not automagically detected for types\n");
-	printf("                'IMP','KIN','BNT'\n");
-	printf(" linevoltage:   Line voltage: 110-120 or 220-240 (default: 230)\n");
-	printf(" numOfBytesFromUPS: Number of bytes in a UPS frame: 16 is common, 11 for 'Trust'\n");
-	printf(" methodOfFlowControl: Flow control method for UPS:\n");
-	printf("                'dtr0rts1', 'dtr1' or 'no_flow_control'\n");
-	printf(" validationSequence: 3 pairs of validation values: {{I,V},{I,V},{I,V}}\n");
-	printf("                where I is the index into BytesFromUPS (see numOfBytesFromUPS)\n");
-	printf("                  and V is the value for the ByteIndex to match.\n");
-	printf(" frequency:     Input & Output Frequency conversion values: {A, B}\n");
-	printf("                 used in function: 1/(A*x+B)\n");
-	printf("                If the raw value x IS the frequency, then A=1/(x^2), B=0\n");
-	printf(" loadPercentage: Load conversion values for Battery and Line load: {BA,BB,LA,LB}\n");
-	printf("                 used in function: A*x+B\n");
-	printf("                If the raw value x IS the Load Percent, then A=1, B=0\n");
-	printf(" batteryPercentage: Battery conversion values for Battery and Line power:\n");
-	printf("                 {A,B,C,D,E}\n");
-	printf("                 used in functions: (Battery) A*x+B*y+C, (Line) D*x+E\n");
-	printf("                If the raw value x IS the Battery Percent, then\n");
-	printf("                 A=1, B=0, C=0, D=1, E=0\n");
-	printf(" voltage:       Voltage conversion values for 240 and 120 voltage:\n");
-	printf("                 {240A,240B,120A,120B}\n");
-	printf("                 used in function: A*x+B\n");
-	printf("                If the raw value x IS HALF the Voltage, then A=2, B=0\n");
-	printf(" nobt:          Flag to skip battery check on init/startup.\n\n");
-
-	printf("Example for BNT1500AP in ups.conf:\n");
-	printf("[BNT1500AP]\n");
-	printf("    driver = powercom\n");
-	printf("    port = /dev/ttyS0\n");
-	printf("    desc = \"PowerCom BNT 1500 AP\"\n");
-	printf("    manufacturer = PowerCom\n");
-	printf("    modelname = BNT1500AP\n");
-	printf("    serialnumber = 13245678900\n");
-	printf("    type = BNT-other\n");
-	printf("#   linevoltage = 120\n");
-	printf("#   numOfBytesFromUPS = 16\n");
-	printf("#   methodOfFlowControl = no_flow_control\n");
-	printf("#   validationSequence = {{8,0},{8,0},{8,0}}\n");
-	printf("#   shutdownArguments = {{1,30},y}\n");
-	printf("#   frequency = {0.00027778,0.0000}\n");
-	printf("#   loadPercentage = {1.0000,0.0,1.0000,0.0}\n");
-	printf("#   batteryPercentage = {1.0000,0.0000,0.0000,1.0000,0.0000}\n");
-	printf("#   voltage = {2.0000,0.0000,2.0000,0.0000}\n");
-	printf("    nobt\n");
-	return;
-}
-
-/* initialize information */
-void upsdrv_initinfo(void)
-{
 	/* write constant data for this model */
 	dstate_setinfo ("ups.mfr", "%s", manufacturer);
 	dstate_setinfo ("ups.model", "%s", modelname);

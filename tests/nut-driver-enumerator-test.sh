@@ -30,6 +30,10 @@ LC_ALL=C
 TZ=UTC
 export LANG LC_ALL TZ
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; export GREP ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; export EGREP ; }
+
 ### Note: These are relative to where the selftest script lives,
 ### not the NUT top_srcdir etc. They can be exported by a Makefile.
 [ -n "${BUILDDIR-}" ] || BUILDDIR="`dirname $0`"
@@ -104,7 +108,13 @@ run_testcase() {
         ( rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" \
             && echo "$EXPECT_TEXT" > "/tmp/.nde.text.expected.$$" \
             && echo "$OUT" > "/tmp/.nde.text.actual.$$" \
-            && diff -u "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" ) 2>/dev/null || true
+            && { OUTD="`diff -u "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" 2>/dev/null`"
+                if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
+                    echo "$OUTD"
+                else
+                    diff "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$"
+                fi
+            } ; ) 2>/dev/null || true
         rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$"
         FAIL_COUNT="`expr $FAIL_COUNT + 1`"
         RES="`expr $RES + 2`"

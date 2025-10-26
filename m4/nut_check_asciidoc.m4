@@ -71,7 +71,7 @@ if test -z "${nut_have_asciidoc_seen}"; then
 			dnl Some releases also report what flags they were compiled with as
 			dnl part of the version info, so the last-line match finds nothing.
 			dnl Also some builds return version data to stderr.
-			XMLLINT_VERSION="`${XMLLINT} --version 2>&1 | grep version`"
+			XMLLINT_VERSION="`${XMLLINT} --version 2>&1 | ${GREP} version`"
 			XMLLINT_VERSION="${XMLLINT_VERSION##* }"
 		fi
 		AC_MSG_RESULT(${XMLLINT_VERSION} found)

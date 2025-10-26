@@ -1,0 +1,15 @@
+Document: nut-packager-guide
+Title: NUT Packager and Integrators Guide
+Author: Arnaud Quette
+Abstract: Packaging is a final aim for software.
+ It eases and completes the software integration into an OS,
+ and allows users to have an easy software installation and support out of the box.
+ This document describes best practice for packaging NUT.
+Section: Debian
+
+Format: PDF
+Files: /usr/share/doc/nut-doc/pdf/packager-guide.pdf
+
+Format: HTML
+Index: /usr/share/doc/nut-doc/html/packager-guide/index.html
+Files: /usr/share/doc/nut-doc/html/packager-guide/*.html

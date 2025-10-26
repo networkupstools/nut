@@ -36,7 +36,7 @@
 
 #include <ctype.h>
 
-#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.64"
+#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.65"
 
 typedef struct {
 	float          i_volt;
@@ -378,6 +378,10 @@ static void powpan_initinfo(void)
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("shutdown.reboot");
+
+	/* install handlers */
+	upsh.instcmd = powpan_instcmd;
+	upsh.setvar = powpan_setvar;
 }
 
 static ssize_t powpan_status(status_t *status)

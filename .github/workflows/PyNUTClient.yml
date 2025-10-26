@@ -13,6 +13,8 @@ on:
      - '*'
     branches:
      - 'master'
+  workflow_dispatch:
+    # Allow manually running the action, e.g. if disabled after some quietness in the source
 
 permissions:
   id-token: write
@@ -35,7 +37,7 @@ jobs:
       id: pythoncmd
       run: >-
         set -x ;
-        echo "PYTHON=$(command -v python)" >> $GITHUB_OUTPUT
+        echo "PYTHON_DEFAULT=$(command -v python)" >> $GITHUB_OUTPUT
     - name: Extract tag name
       id: tag
       # Note: this is all a single shell line in the end,
@@ -47,20 +49,20 @@ jobs:
             {  TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*')" \
             || TAG_NAME="$(git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*')" ; } \
             && test -n "${TAG_NAME}" \
-            || TAG_NAME="2.8.3-`TZ=UTC date +%s`" ;
+            || TAG_NAME="2.8.4-`TZ=UTC date +%s`" ;
         fi >&2 ;
         TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,' -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g')" ;
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
     - name: Install pypa/setuptools
       run: >-
-        ${{ steps.pythoncmd.outputs.PYTHON }} -m
-        pip install wheel build
+        ${{ steps.pythoncmd.outputs.PYTHON_DEFAULT }} -m \
+            pip install wheel build setuptools
     - name: Prepare source layout and Build a binary wheel
       run: >-
         set -e ;
         cd scripts/python/module ;
         cp -f Makefile.am Makefile ;
-        make -f Makefile.am clean-local dist NUT_SOURCE_GITREV_NUMERIC="${{ steps.tag.outputs.TAG_NAME }}" PYTHON="${{ steps.pythoncmd.outputs.PYTHON }}" top_srcdir="../../.." srcdir="." builddir="." ;
+        make -f Makefile.am clean-local dist NUT_SOURCE_GITREV_NUMERIC="${{ steps.tag.outputs.TAG_NAME }}" PYTHON_DEFAULT="${{ steps.pythoncmd.outputs.PYTHON_DEFAULT }}" top_srcdir="../../.." srcdir="." builddir="." ;
         find . -ls
     - name: Publish master distribution 📦 to Test PyPI
       # https://github.com/pypa/gh-action-pypi-publish

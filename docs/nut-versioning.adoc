@@ -1,5 +1,10 @@
-NUT versioning
-==============
+NUT Semantic Versioning
+=======================
+
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/versioning.html
+//////////////////////////////////////////////////////////////////////////////
 
 Historic note
 -------------
@@ -103,6 +108,18 @@ workspace, or built-in fallback defaults.
 Occasionally there may be tagged pre-releases, which follow the standard
 semver markup, like `v2.8.0-rc3` (in git), however they would be converted
 to NUT SEMVER here (as a number of commits since previous release) by default.
+
+A special case, which can mostly be seen in CI builds, concerns shallow git
+checkouts -- when the currently built commit history is "grafted" (perhaps
+down to there being only one commit in the whole git index), and we do not
+know of any intersections with git tags or development trunk.  In this case,
+the script may not only fall back to a built-in version following a legacy
+`X.Y.Z.1` pattern for non-release builds (like `2.8.3.1`), but would also
+append a `-0-g{HASH}` suffix to the long values (`VER5`, `VER50`, `DECS5`,
+`DESC50`) yielding e.g. `2.8.3.1.0-0+gb3f21f9` for a build from a shallow
+git checkout of commit `b3f21f9` of a code base which otherwise fell back
+to `2.8.3.1` hard-coded in its copy of the script (bumped by a maintainer
+as part of the release process).
 
 Using gitlog2version.sh
 -----------------------

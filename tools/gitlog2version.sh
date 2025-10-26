@@ -78,6 +78,14 @@ if [ x"${abs_top_builddir}" = x ]; then
     abs_top_builddir="${abs_top_srcdir}"
 fi
 
+SRC_IS_GIT=false
+if ( [ -e "${abs_top_srcdir}/.git" ] ) 2>/dev/null || [ -d "${abs_top_srcdir}/.git" ] || [ -f "${abs_top_srcdir}/.git" ] || [ -h "${abs_top_srcdir}/.git" ] ; then
+   SRC_IS_GIT=true
+fi
+
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 ############################################################################
 # Numeric-only default version, for AC_INIT and similar consumers
 # in case we build without a Git workspace (from tarball, etc.)
@@ -122,22 +130,28 @@ fi
 
 if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_builddir}/VERSION_DEFAULT" ] ; then
     . "${abs_top_builddir}/VERSION_DEFAULT" || exit
-    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ -e "${abs_top_srcdir}/.git" ] || NUT_VERSION_PREFER_GIT=false ; }
+    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ x"${SRC_IS_GIT}" = xtrue ] || NUT_VERSION_PREFER_GIT=false ; }
 fi
 
 if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_srcdir}/VERSION_DEFAULT" ] ; then
     . "${abs_top_srcdir}/VERSION_DEFAULT" || exit
-    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ -e "${abs_top_srcdir}/.git" ] || NUT_VERSION_PREFER_GIT=false ; }
+    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ x"${SRC_IS_GIT}" = xtrue ] || NUT_VERSION_PREFER_GIT=false ; }
 fi
 
 # Fallback default, to be updated only during release cycle
-[ -n "${NUT_VERSION_DEFAULT-}" ] || NUT_VERSION_DEFAULT='2.8.3.1'
+[ -n "${NUT_VERSION_DEFAULT-}" ] || NUT_VERSION_DEFAULT='2.8.4.1'
 
 # Default website paths, extended for historic sub-sites for a release
 [ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://www.networkupstools.org/"
 
 # Must be "true" or "false" exactly, interpreted as such below:
-[ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ -e "${abs_top_srcdir}/.git" ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
+[ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ x"${SRC_IS_GIT}" = xtrue ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
+
+check_shallow_git() {
+    if git log --oneline --decorate=short | tail -1 | $GREP -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
+        echo "$0: $1" >&2
+    fi
+}
 
 getver_git() {
     # NOTE: The chosen trunk branch must be up to date (may be "origin/master"
@@ -148,7 +162,7 @@ getver_git() {
         # Currently we repeat the likely branch names in the
         # end, so that if they exist and are still newest -
         # those are the names to report.
-        for T in master `git branch -a 2>/dev/null | grep -E '^ *remotes/[^ ]*/master$'` origin/master upstream/master master ; do
+        for T in master `git branch -a 2>/dev/null | ${EGREP} '^ *remotes/[^ ]*/master$'` origin/master upstream/master master ; do
             git log -1 "$T" 2>/dev/null >/dev/null || continue
             if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
                 NUT_VERSION_GIT_TRUNK="$T"
@@ -161,6 +175,7 @@ getver_git() {
         done
         if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
             echo "$0: FAILED to discover a NUT_VERSION_GIT_TRUNK in this workspace" >&2
+            check_shallow_git "NOTE: Current checkout is shallow, the workspace may not include enough context to describe it"
             return 1
         fi
     fi
@@ -182,13 +197,17 @@ getver_git() {
     # NOTE: match/exclude by shell glob expressions, not regex!
     DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null`" \
     && [ -n "${DESC}" ] \
-    || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*'`"
+    || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | ${EGREP} -v '(rc|-signed|alpha|beta|Windows|IPM)' | ${EGREP} 'v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*'`"
     # Old stripper (also for possible refspec parts like "tags/"):
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
     # Follow https://semver.org/#spec-item-10 about build metadata:
     # it is (a dot-separated list) separated by a plus sign from preceding
     DESC="`echo "${DESC}" | sed 's/\(-[0-9][0-9]*\)-\(g[0-9a-fA-F][0-9a-fA-F]*\)$/\1+\2/'`"
-    if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return 1 ; fi
+    if [ x"${DESC}" = x ] ; then
+        echo "$0: FAILED to 'git describe' this codebase" >&2
+        check_shallow_git "NOTE: Current checkout is shallow, may not include enough history to describe it"
+        return 1
+    fi
 
     # Does the current commit correspond to an `(alpha|beta|rc)NUM` git tag
     # (may be un-annotated)? Note that `git describe` picks the value to
@@ -197,7 +216,7 @@ getver_git() {
     # string over longer ones if available, or older RC over newer release
     # like "v2.8.2-rc8" preferred over "v2.8.3" if they happen to be tagging
     # the same commit):
-    DESC_PRERELEASE="`git describe --tags | grep -E '^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$'`" \
+    DESC_PRERELEASE="`git describe --tags | ${EGREP} '^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$'`" \
     || DESC_PRERELEASE=""
 
     # How much of the known trunk history is in current HEAD?
@@ -206,7 +225,12 @@ getver_git() {
     # at the tagged commit (it is the merge base for itself and any of
     # its descendants):
     BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`" || BASE=""
-    if [ x"${BASE}" = x ] ; then echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2 ; DESC=""; return  1; fi
+    if [ x"${BASE}" = x ] ; then
+        echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2
+        check_shallow_git "NOTE: Current checkout is shallow, may not include enough history to describe it or find intersections with other trees"
+        DESC=""
+        return 1
+    fi
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
     TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
@@ -243,7 +267,7 @@ getver_git() {
     # 5-digit version, note we strip leading "v" from the expected TAG value
     # Note the commit count will be non-trivial even if this is commit tagged
     # as a final release but it is not (yet?) on the BASE branch!
-    VER5="${TAG#v}.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${NUT_VERSION_GIT_TRUNK}..HEAD" | wc -l | tr -d ' '`"
+    VER5="`echo "${TAG}" | sed 's,^v,,'`.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${NUT_VERSION_GIT_TRUNK}..HEAD" | wc -l | tr -d ' '`"
     DESC5="${VER5}${SUFFIX}"
 
     # Strip up to two trailing zeroes for trunk snapshots and releases
@@ -283,7 +307,7 @@ getver_default() {
             # Assume triplet (possibly prefixed with `v`) + suffix
             # like `v2.8.3-rc6` or `2.8.2-beta-1`
             # FIXME: Check the assumption better!
-            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
+            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
             && [ -n "${SUFFIX}" ] \
             && SUFFIX_PRERELEASE="`echo "${SUFFIX}" | sed 's/^-*//'`" \
             && NUT_VERSION_DEFAULT="`echo "${NUT_VERSION_DEFAULT}" | sed -e 's/'"${SUFFIX}"'$//'`"
@@ -293,7 +317,7 @@ getver_default() {
 
             # We remove up to 5 dot-separated leading numbers, so
             # for the example above, `-2881+g45029249f` remains:
-            tmpSUFFIX="`echo "${NUT_VERSION_DEFAULT}" | grep -E '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(.*\+(rc|alpha|beta)[+-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
+            tmpSUFFIX="`echo "${NUT_VERSION_DEFAULT}" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(.*\+(rc|alpha|beta)[+-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
             || tmpSUFFIX=""
             if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != "${NUT_VERSION_DEFAULT}" ] ; then
                 # Extract tagged NUT version from that suffix
@@ -390,18 +414,22 @@ report_output() {
             # NOTE: For maintainers, changes SRCDIR not BUILDDIR; requires GIT
             # Do not "mv" here because maintainer files may be hard-linked from elsewhere
             echo "NUT_VERSION_FORCED='${DESC50}'" > "${abs_top_srcdir}/VERSION_FORCED.tmp" || exit
-            if ! cmp "${abs_top_srcdir}/VERSION_FORCED.tmp" "${abs_top_srcdir}/VERSION_FORCED" >/dev/null 2>/dev/null ; then
+            if cmp "${abs_top_srcdir}/VERSION_FORCED.tmp" "${abs_top_srcdir}/VERSION_FORCED" >/dev/null 2>/dev/null ; then
+                true
+            else
                 cat "${abs_top_srcdir}/VERSION_FORCED.tmp" > "${abs_top_srcdir}/VERSION_FORCED" || exit
             fi
             rm -f "${abs_top_srcdir}/VERSION_FORCED.tmp"
 
             echo "NUT_VERSION_FORCED_SEMVER='${SEMVER}'" > "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" || exit
-            if ! cmp "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" "${abs_top_srcdir}/VERSION_FORCED_SEMVER" >/dev/null 2>/dev/null ; then
+            if cmp "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" "${abs_top_srcdir}/VERSION_FORCED_SEMVER" >/dev/null 2>/dev/null ; then
+                true
+            else
                 cat "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp" > "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
             fi
             rm -f "${abs_top_srcdir}/VERSION_FORCED_SEMVER.tmp"
 
-            grep . "${abs_top_srcdir}/VERSION_FORCED" "${abs_top_srcdir}/VERSION_FORCED_SEMVER"
+            $GREP . "${abs_top_srcdir}/VERSION_FORCED" "${abs_top_srcdir}/VERSION_FORCED_SEMVER"
             ;;
         "UPDATE_FILE")
             if [ x"${abs_top_builddir}" != x"${abs_top_srcdir}" ] \
@@ -424,14 +452,65 @@ report_output() {
 }
 
 DESC=""
+NUT_VERSION_TRIED_GIT=false
 if $NUT_VERSION_PREFER_GIT ; then
     if (command -v git && git rev-parse --show-toplevel) >/dev/null 2>/dev/null ; then
         getver_git || { echo "$0: Fall back to pre-set default version information" >&2 ; DESC=""; }
+        NUT_VERSION_TRIED_GIT=true
+    else
+        NUT_VERSION_PREFER_GIT=false
     fi
 fi
 
 if [ x"$DESC" = x ]; then
     getver_default
+    if $NUT_VERSION_TRIED_GIT ; then
+        if CURRENT_COMMIT="`git log -1 --format='%h'`" && [ -n "${CURRENT_COMMIT}" ] ; then
+            # Cases help rule out values populated via fallbacks from files;
+            # try to not add inconsistencies though (only add if nobody has it)
+            CAN_TACK=true
+            case "$VER5" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+            case "$VER50" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+            case "$DESC5" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+            case "$DESC50" in
+                *"+g"*) CAN_TACK=false ;;
+            esac
+
+            if ${CAN_TACK} ; then
+                echo "$0: Git failed originally, but current commit '${CURRENT_COMMIT}' is known (shallow checkout?); tack it to values that lack it" >&2
+                case "$VER5" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        VER5="${VER5}+g${CURRENT_COMMIT}" ;;
+                    *)  VER5="${VER5}-0+g${CURRENT_COMMIT}" ;;
+                esac
+                case "$VER50" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        VER50="${VER50}+g${CURRENT_COMMIT}" ;;
+                    *)  VER50="${VER50}-0+g${CURRENT_COMMIT}" ;;
+                esac
+                case "$DESC5" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        DESC5="${DESC5}+g${CURRENT_COMMIT}" ;;
+                    *)  DESC5="${DESC5}-0+g${CURRENT_COMMIT}" ;;
+                esac
+                case "$DESC50" in
+                    *"+g"*) ;;
+                    *-{0,1,2,3,4,5,6,7,8,9}*)
+                        DESC50="${DESC50}+g${CURRENT_COMMIT}" ;;
+                    *)  DESC50="${DESC50}-0+g${CURRENT_COMMIT}" ;;
+                esac
+            fi
+        fi
+    fi
 fi
 
 report_debug

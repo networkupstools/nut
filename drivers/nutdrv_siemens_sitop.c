@@ -56,7 +56,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Siemens SITOP UPS500 series driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 #define RX_BUFFER_SIZE 100
 
@@ -266,6 +266,11 @@ void upsdrv_shutdown(void) {
 
 
 void upsdrv_help(void) {
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* list flags and values that you want to receive via -x */

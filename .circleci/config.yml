@@ -18,7 +18,7 @@ jobs:
       XCODE_VER:
         type: string
         # https://circleci.com/docs/using-macos/#supported-xcode-versions-silicon
-        default: "13.4.1"
+        default: "16.4"
       CC:
         type: string
         default: "" # e.g. "clang"
@@ -73,7 +73,10 @@ jobs:
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
-      - checkout
+      - checkout:
+          # https://circleci.com/changelog/default-method-used-to-checkout-code-from-your-repository-is-changing-on-nov/
+          # NUT SEMVER and ChangeLog work, maybe more, rely on git history
+          method: full
 
 #      - run:
 #          name: "check shell"
@@ -158,21 +161,33 @@ jobs:
       # uses of sem_init() and sem_destroy() in nut-scanner.c)
       # NOTE: CANBUILD_NIT_TESTS=yes to check if single-executor environments
       # do not have a problem with it.
-      # NOTE: python3.11 is available but broken on some of the workers
-      # (no homebrew dirs in search path)
+      # NOTE: python3.11 was available but broken on some of the xcode-13.4.1
+      # workers (no homebrew dirs in search path)
       - run:
           name: "ci_build"
           command: |-
             HOMEBREW_PREFIX="`brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`" \
-            CANBUILD_NIT_TESTS=yes \
+            CANBUILD_NIT_TESTS=yes DEBUG_NIT=true \
             CFLAGS="$CC_STDVER" \
             CXXFLAGS="$CXX_STDVER" \
-            PYTHON=python3.11 \
+            PYTHON=python3.13 \
             ./ci_build.sh
 
       - run:
-          name: "ccache stats after build"
+          name: "ccache stats after build and checks"
           command: ccache -s || true
+
+    #  - run:
+    #      name: "ccache stats after initial build"
+    #      command: ccache -s || true
+
+    #  - run:
+    #      name: "verify parallel build recipes in subdirs"
+    #      command: make -s -j check-parallel-builds || exit
+
+    #  - run:
+    #      name: "ccache stats after a few rebuilds"
+    #      command: ccache -s || true
 
       # NOTE: Detailed key name allows every scenario to only track its
       # own ccache objects, which makes sense for different compilers
@@ -205,15 +220,15 @@ workflows:
 ### This scenario is a subset of fightwarn-all below (modulo C standard),
 ### so disabled to not waste time from free CircleCI allowance limit:
 #      - osx-xcode:
-#          name: "gnu17-clang-xcode13_4_1-default-all-errors"
-#          XCODE_VER: "13.4.1"
+#          name: "gnu17-clang-xcode16_4-default-all-errors"
+#          XCODE_VER: "16.4"
 #          CC: "clang"
 #          CXX: "clang++"
 #          CC_STDVER: "-std=gnu17"
 #          CXX_STDVER: "-std=gnu++17"
 
 #      - osx-xcode:
-#          name: "gnu11-gcc-xcode13_4_1-out-of-tree"
+#          name: "gnu11-gcc-xcode16_4-out-of-tree"
 #          CC: "gcc"
 #          CXX: "g++"
 #          CC_STDVER: "-std=gnu11"
@@ -222,7 +237,7 @@ workflows:
 #          CI_BUILDDIR: "obj"
 
 #      - osx-xcode:
-#          name: "c99-cxx11-gcc-xcode13_4_1-default-distcheck"
+#          name: "c99-cxx11-gcc-xcode16_4-default-distcheck"
 #          CC: "gcc"
 #          CXX: "g++"
 #          CC_STDVER: "-std=c99"
@@ -231,7 +246,7 @@ workflows:
 #          BUILD_TYPE: "default"
 
       - osx-xcode:
-          name: "gnu11-clang-xcode13_4_1-out-of-tree"
+          name: "gnu11-clang-xcode16_4-out-of-tree"
           CC: "clang"
           CXX: "clang++"
           CPP: "clang -E"
@@ -241,7 +256,7 @@ workflows:
           CI_BUILDDIR: "obj"
 
       - osx-xcode:
-          name: "c99-cxx11-clang-xcode13_4_1-default-distcheck"
+          name: "c99-cxx11-clang-xcode16_4-default-distcheck"
           CC: "clang"
           CXX: "clang++"
           CPP: "clang -E"
@@ -251,7 +266,7 @@ workflows:
           BUILD_TYPE: "default"
 
       - osx-xcode:
-          name: "stdDefault-xcode13_4_1-fightwarn-all"
+          name: "stdDefault-xcode16_4-fightwarn-all"
           # Run "default-all-errors" with both compiler families,
           # using their default C/C++ standard for current release:
           BUILD_TYPE: "fightwarn-all"
@@ -259,8 +274,8 @@ workflows:
 ### This does not work due to missing dependencies built for MacOS in homebrew:
 ### TODO? Evaluate other packagers (MacPorts, fink...)?
 #      - osx-xcode:
-#          name: "c17-clang-xcode13_4_1-alldrv"
-#          XCODE_VER: "13.4.1"
+#          name: "c17-clang-xcode16_4-alldrv"
+#          XCODE_VER: "16.4"
 #          CC: "clang"
 #          CXX: "clang++"
 #          CC_STDVER: "-std=c17"

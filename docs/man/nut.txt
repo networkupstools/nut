@@ -127,7 +127,7 @@ maintained by the community at large.  Some standard clients of note include:
 +
 NOTE: The `upsmon` client typically splits into two processes: an unprivileged
   one running with credentials of its `RUN_AS_USER` configured in the
-  linkman:upsmon.conf[5] file (or a built-in/packaged default like `nut`,
+  linkman:upsmon.conf[5] file (or a built-in/packaged default like `nut`, `ups`,
   `monuser` or `nobody`) which does most of the work (including notification
   scripts called via `NOTIFYCMD` setting), and the part which remains owned
   by `root` to initiate the system shutdown by calling `SHUTDOWNCMD` when/if
@@ -137,9 +137,11 @@ NUT deployments which desire higher-fidelity control (e.g. different systems
   shutting down after different time spent on battery) often couple the
   linkman:upsmon[8] with linkman:upssched[8] as their `NOTIFYCMD` handler.
 +
-The "primary" system is usually also responsible for commanding the managed
-  UPS to shut itself down and power up when the "wall power" returns (or to
-  reset the load if it is already back), subject to UPS hardware capabilities.
+The 'upsmon primary' system waits for 'secondary' systems to disconnect as
+  part of their shut down, and is usually also responsible for commanding the
+  managed UPS to shut itself down and power up when the "wall power" returns
+  (or to reset the load if it is already back), subject to UPS hardware
+  capabilities.
   Most client integrations also stall the ultimate reboot/power-off of their
   machine, if its shut down was triggered by `upsmon`, and reboot after a
   long delay (if the machine is still alive).
@@ -160,6 +162,37 @@ assortment of power devices), using either simple clients like `upsc` or
 `upslog`, or libraries and bindings provided by the project itself (e.g.
 C, C++, Python, Java in a nearby repository) or by third-party efforts
 (e.g. Perl, Go, C#, REST API).
+
+NUT Drivers during shutdown
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Arguably another layer in this three-layer stack is a separate role for the
+NUT Driver programs on the 'linkman:upsmon[8] primary' system as mentioned
+above: actually telling the UPS to turn off or power-cycle as part of your
+computer's emergency shut down.
+
+While the long-running services for the NUT drivers, data server and clients
+are stopped as part of common OS shutdown, there may be an "endgame"
+integration such as high-numbered SysV init scripts (e.g. `/etc/rc0.d/K99nut`)
+or the systemd 'shutdown hook' facility, or even something built into the
+`initrd` or similar RAM disk image that originally launched the end-user
+visible OS and regains control when the OS says it is done.
+Please note that not all operating systems offer ways of such integration,
+and may resort to other solutions (perhaps calling such logic from the 'stop'
+method of `upsmon` init script or service definition).
+
+Either way, this integration has the effect of detecting that the currently
+processed shutdown is due to an `upsmon` 'FSD' activity (e.g. that the flag
+file specified by `POWERDOWNFLAG` configuration option in linkman:upsmon.conf[5]
+exists and is valid), and launches the NUT driver program(s) again to connect
+to the UPS(es) that this system is a 'primary' manager of (and has possibly
+out-of-band connections to), just to send them the requested command and exit.
+
+For an example of such end-game integration please see the `nutshutdown`
+script if available in your packaged distribution, or its sources at
+https://github.com/networkupstools/nut/blob/master/scripts/systemd/nutshutdown.in
+which also implements a solution to avoid the "power race condition"
+(for operating systems that do not limit the duration of shutdown activity).
 
 
 NUT Run-time Nuances
@@ -206,9 +239,9 @@ The message can also be seen from linkman:upsmon[8] being unable to populate
 the `POWERDOWNFLAG` if the location it points to (`/etc/killpower` by default)
 does not exist or is read-only, or from a late shutdown integration script like
 the `nutshutdown` hook if that location was un-mounted by the time it runs.
-It is recommended to store that file on a volatile file system (under `/run`
-on most modern distributions; typically the `pidpath` is located there too),
-which remains until reboot and disappears during reboot.
+It is recommended to store that file on a volatile file system (under `/var/run`
+or `/run` on most modern distributions; typically the `pidpath` is located there
+too), which remains until reboot and disappears during reboot.
 
 User/Group Accounts
 ^^^^^^^^^^^^^^^^^^^

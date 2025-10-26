@@ -163,11 +163,11 @@ COMMANDS OF UPSDRVCTL NOT (CURRENTLY) APPLICABLE TO UPSDRVSVCCTL
 Command the UPS driver(s) to run their shutdown sequence.  Drivers are
 stopped according to their `sdorder` value -- see linkman:ups.conf[5].
 
-WARNING: this will probably power off your computers, so don't
+WARNING: This will probably power off your computers, so don't
 play around with this option.  Only use it when your systems are prepared
 to lose power.
 
-NOTE: refer to linkman:ups.conf[5] for using the *nowait* parameter.
+NOTE: Refer to linkman:ups.conf[5] for using the *nowait* parameter.
 It can be overridden by `NUT_IGNORE_NOWAIT` environment variable
 (e.g. used to work around certain issues with systemd otherwise).
 

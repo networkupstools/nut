@@ -15,7 +15,9 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	CFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING(for libmodbus version via pkg-config)
@@ -33,41 +35,33 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	AS_IF([test x"$LIBMODBUS_VERSION" != xnone],
 		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libmodbus 2>/dev/null`"
 		 depLIBS="`$PKG_CONFIG --silence-errors --libs libmodbus 2>/dev/null`"
+		 depCFLAGS_SOURCE="pkg-config"
+		 depLIBS_SOURCE="pkg-config"
 		],
 		[depCFLAGS="-I/usr/include/modbus"
 		 depLIBS="-lmodbus"
+		 depCFLAGS_SOURCE="default"
+		 depLIBS_SOURCE="default"
 		]
 	)
 
 	AC_MSG_CHECKING(for libmodbus cflags)
-	AC_ARG_WITH(modbus-includes,
-		AS_HELP_STRING([@<:@--with-modbus-includes=CFLAGS@:>@], [include flags for the libmodbus library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-modbus-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [])
-	AC_MSG_RESULT([${depCFLAGS}])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([modbus], [auto], [libmodbus])
+	AS_CASE([${nut_with_modbus_includes}],
+		[auto],	[],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_modbus_includes}"
+			 depCFLAGS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for libmodbus ldflags)
-	AC_ARG_WITH(modbus-libs,
-		AS_HELP_STRING([@<:@--with-modbus-libs=LIBS@:>@], [linker flags for the libmodbus library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-modbus-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])
-	AC_MSG_RESULT([${depLIBS}])
+	NUT_ARG_WITH_LIBOPTS_LIBS([modbus], [auto], [libmodbus])
+	AS_CASE([${nut_with_modbus_libs}],
+		[auto],	[],	dnl Keep what we had found above
+			[depLIBS="${nut_with_modbus_libs}"
+			 depLIBS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if libmodbus is usable
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
@@ -256,7 +250,7 @@ modbus_set_byte_timeout(ctx, to_sec, to_usec);])
 #include <modbus.h>
 ], [modbus_t *ctx = modbus_new_rtu(NULL, 0, 0, 0, 0);
 if (ctx) modbus_free(ctx);])], [AS_IF([test -x "conftest$ac_exeext"], [
-					AS_IF([test -n "`${LDD} "conftest$ac_exeext" | grep "libmodbus"`" 2>/dev/null],
+					AS_IF([test -n "`${LDD} "conftest$ac_exeext" | ${GREP} "libmodbus"`" 2>/dev/null],
 						[LIBMODBUS_LINKTYPE="dynamic"], [LIBMODBUS_LINKTYPE="static"])
 				])])
 			dnl If not GNU LDD, try other tools?
@@ -268,6 +262,8 @@ if (ctx) modbus_free(ctx);])], [AS_IF([test -x "conftest$ac_exeext"], [
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

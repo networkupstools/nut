@@ -104,8 +104,8 @@ enphase-monitor needs to have write access to <portfile>, so usually
 upsd hosting <ups> should be on local host, but shared filesystems may
 allow upsd to be remote.
 
-NOTE: if connections to ENVOY_HOST fail, <portfile> is renamed
-<portfile>-nocomms to trigger dummy-ups to show stale data.
+NOTE: If connections to 'ENVOY_HOST' fail, `<portfile>` is renamed into
+`<portfile>-nocomms` to trigger `dummy-ups` to show stale data.
 Either filename may exist on startup.
 
 Environment (optional):

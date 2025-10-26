@@ -23,7 +23,9 @@ if test -z "${nut_have_libusb_seen}"; then
 	CFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	dnl Magic-format string to hold chosen libusb version and its config-source
 	nut_usb_lib=""
@@ -51,24 +53,8 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	dnl Note: it seems the script was only shipped for libusb-0.1
 	dnl So we don't separate into LIBUSB_0_1_CONFIG and LIBUSB_1_0_CONFIG
-	AC_PATH_PROGS([LIBUSB_CONFIG], [libusb-config], [none])
-
-	AC_ARG_WITH(libusb-config,
-		AS_HELP_STRING([@<:@--with-libusb-config=/path/to/libusb-config@:>@],
-			[path to program that reports LibUSB configuration]), dnl ...for LibUSB-0.1
-		[
-			AS_CASE(["${withval}"],
-				[""], [], dnl empty arg
-				[yes|no], [
-					dnl MAYBE bump preference of script over pkg-config?
-					AC_MSG_ERROR([invalid option --with(out)-libusb-config - see docs/configure.txt])
-				],
-				[dnl default
-				LIBUSB_CONFIG="${withval}"
-				]
-			)
-		]
-	)
+	dnl MAYBE bump preference of a found script over pkg-config?
+	NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT([libusb], [], [], [], [LibUSB(-0.1)])
 
 	AS_IF([test x"${LIBUSB_CONFIG}" != xnone],
 		[AC_MSG_CHECKING([via ${LIBUSB_CONFIG}])
@@ -121,7 +107,7 @@ if test -z "${nut_have_libusb_seen}"; then
 	)
 
 	dnl Pick up the default or caller-provided choice here from
-	dnl NUT_ARG_WITH(usb, ...) in the main configure.ac script
+	dnl NUT-ARG-WITH(usb, ...) in the main configure.ac script
 	AC_MSG_CHECKING([for libusb preferred version])
 	AS_CASE(["${nut_with_usb}"],
 		[auto], [], dnl Use preference picked above
@@ -164,54 +150,50 @@ if test -z "${nut_have_libusb_seen}"; then
 		["(libusb-1.0)"], [
 			depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
 			depLIBS="`$PKG_CONFIG --silence-errors --libs libusb-1.0 2>/dev/null`"
+			depCFLAGS_SOURCE="pkg-config(libusb-1.0)"
+			depLIBS_SOURCE="pkg-config(libusb-1.0)"
 			],
 		["(libusb-0.1)"], [
 			depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb 2>/dev/null`"
 			depLIBS="`$PKG_CONFIG --silence-errors --libs libusb 2>/dev/null`"
+			depCFLAGS_SOURCE="pkg-config(libusb-0.1)"
+			depLIBS_SOURCE="pkg-config(libusb-0.1)"
 			],
 		["(libusb-0.1-config)"], [
 			depCFLAGS="`$LIBUSB_CONFIG --cflags 2>/dev/null`"
 			depLIBS="`$LIBUSB_CONFIG --libs 2>/dev/null`"
+			depCFLAGS_SOURCE="${LIBUSB_CONFIG} program (libusb-0.1)"
+			depLIBS_SOURCE="${LIBUSB_CONFIG} program (libusb-0.1)"
 			],
 		[dnl default, for other versions or "none"
 			AC_MSG_WARN([Defaulting libusb configuration])
 			LIBUSB_VERSION="none"
 			depCFLAGS=""
 			depLIBS="-lusb"
+			depCFLAGS_SOURCE="default"
+			depLIBS_SOURCE="default"
 		]
 	)
 
 	dnl check optional user-provided values for cflags/ldflags
 	dnl and publish what we end up using
 	AC_MSG_CHECKING(for libusb cflags)
-	AC_ARG_WITH(usb-includes,
-		AS_HELP_STRING([@<:@--with-usb-includes=CFLAGS@:>@], [include flags for the libusb library]),
-	[
-		AS_CASE(["${withval}"],
-			[yes|no], [
-				AC_MSG_ERROR(invalid option --with(out)-usb-includes - see docs/configure.txt)
-			],
-			[dnl default
-				depCFLAGS="${withval}"
-			]
-		)
-	], [])
-	AC_MSG_RESULT([${depCFLAGS}])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([usb], [auto], [libusb])
+	AS_CASE([${nut_with_usb_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_usb_includes}"
+			 depCFLAGS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for libusb ldflags)
-	AC_ARG_WITH(usb-libs,
-		AS_HELP_STRING([@<:@--with-usb-libs=LIBS@:>@], [linker flags for the libusb library]),
-	[
-		AS_CASE(["${withval}"],
-			[yes|no], [
-				AC_MSG_ERROR(invalid option --with(out)-usb-libs - see docs/configure.txt)
-			],
-			[dnl default
-				depLIBS="${withval}"
-			]
-		)
-	], [])
-	AC_MSG_RESULT([${depLIBS}])
+	NUT_ARG_WITH_LIBOPTS_LIBS([usb], [auto], [libusb])
+	AS_CASE([${nut_with_usb_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLIBS="${nut_with_usb_libs}"
+			 depLIBS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl TODO: Consult chosen nut_usb_lib value and/or nut_with_usb argument
 	dnl (with "auto" we may use a 0.1 if present and working while a 1.0 is
@@ -446,6 +428,8 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

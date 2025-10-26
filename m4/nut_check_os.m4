@@ -118,7 +118,7 @@ AC_DEFUN([NUT_CHECK_OS],
 	    fi
 	fi
 	if test -z "$dist_cv_build_flavor" -a ":${dist_cv_build_issue_file:-no}" != :no ; then
-	    dist_cv_build_flavor=$(os_get_name "$(cat $dist_cv_build_issue_file | grep 'Linux\|Fedora\|Ubuntu' | head -1)")
+	    dist_cv_build_flavor=$(os_get_name "$(cat $dist_cv_build_issue_file | ${GREP} 'Linux\|Fedora\|Ubuntu' | head -1)")
 	fi
 	# do debian after lsb and issue for Ubuntu
 	if test -z "$dist_cv_build_flavor" -a ":${dist_cv_build_rel_file:-no}" != :no ; then
@@ -128,7 +128,7 @@ AC_DEFUN([NUT_CHECK_OS],
 	fi
 	# FIXME
 	if test -z "$dist_cv_build_flavor" ; then
-	    dist_cv_build_flavor=$(os_get_name "$(${CC-cc} $CFLAGS -v 2>&1 | grep 'gcc version')")
+	    dist_cv_build_flavor=$(os_get_name "$(${CC-cc} $CFLAGS -v 2>&1 | ${GREP} 'gcc version')")
 	fi
 
 	# save the result

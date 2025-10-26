@@ -314,3 +314,20 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 
 	return buf;
 }
+
+/* Define this in one spot, to change conditions or wording easily */
+void suggest_NDE_conflict(void) {
+#if (defined(WITH_SOLARIS_SMF) && WITH_SOLARIS_SMF) || (defined(HAVE_SYSTEMD) && HAVE_SYSTEMD)
+	upsdebugx(0, "Please check if you are not trying to both "
+		"start a NUT driver program manually (directly "
+		"or via upsdrvctl), and as a service at the same "
+		"time. Please see 'man nut-driver-enumerator' or "
+		"%s/docs/man/nut-driver-enumerator.html for details",
+		NUT_WEBSITE_BASE);
+	/* FIXME: Wiki names are inherently volatile;
+	 * maybe keep a more persistent copy in the
+	 * NUT-website with some knowledge-base ID? */
+	upsdebugx(1, "Also try NUT GitHub Wiki, seek a page named like "
+		"https://github.com/networkupstools/nut/wiki/nut%%E2%%80%%90driver%%E2%%80%%90enumerator-(NDE)");
+#endif	/* WITH_SOLARIS_SMF || HAVE_SYSTEMD */
+}

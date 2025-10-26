@@ -72,7 +72,7 @@ prepareEnv() {
 			esac
 			export ARCH PATH PREFIX
 
-			if ! (command -v sudo) ; then sudo() ( "$@" ) ; fi
+			if (command -v sudo) ; then true ; else sudo() ( "$@" ) ; fi
 		else
 			if [ -z "${ARCH-}" ] ; then
 				# TODO: Select by args, envvars, directory presence...
@@ -182,23 +182,32 @@ provide_netsnmp() (
 	tar xzf "$DLDIR/${DEP_ARCHIVE}" || exit
 	cd "./${DEP_DIRNAME}" || exit
 
-	yes "" | ./configure --prefix="${PREFIX}" --with-default-snmp-version=3 \
+	# NOTE: --disable-daemon may be from a different version,
+	# just in case present here to simplify variant builds.
+	date -u || true
+	yes "" | time ./configure --prefix="${PREFIX}" --with-default-snmp-version=3 \
 		--disable-agent --disable-daemon --with-sys-contact="" --with-sys-location="" \
 		--with-logfile=none --with-persistent-directory="${PREFIX}/var/net-snmp" \
 		--disable-embedded-perl --without-perl-modules --disable-perl-cc-checks \
+		--disable-applications --disable-manuals --disable-mibs --disable-scripts \
 		--enable-shared || { cat config.log ; exit 1; }
 
-	$MAKE LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long" || exit
+	date -u || true
+	time $MAKE LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long" || exit
 
 	# Beside leaving a pre-install location for future runs,
 	# this may build some more artifacts:
+	date -u || true
 	rm -rf "`pwd`/.inst" || echo ""
-	$MAKE DESTDIR="`pwd`/.inst" install || exit
+	time $MAKE DESTDIR="`pwd`/.inst" install || exit
 
 	# Summarize what we have got
+	date -u || true
 	find ./ -type f -name "*.dll" -o -name "*.dll.a";
 
-	$SUDO $MAKE install
+	date -u || true
+	time $SUDO $MAKE install
+	date -u || true
 	echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
 )
 
@@ -304,21 +313,29 @@ provide_libmodbus_git() (
 	mkdir -p "./${DEP_DIRNAME}" || exit
 	cd "./${DEP_DIRNAME}" || exit
 
-	"${DLDIR}/${DEP_DIRNAME}/configure" --prefix="${PREFIX}" --with-libusb --enable-static --disable-shared --enable-Werror \
+	date -u || true
+	time "${DLDIR}/${DEP_DIRNAME}/configure" --prefix="${PREFIX}" --with-libusb --enable-static --disable-shared --enable-Werror \
 		|| { cat config.log ; exit 1 ; }
 
-	$MAKE || exit
-	$MAKE check || echo "WARNING: make check is flaky or failed outright" >&2
+	date -u || true
+	time $MAKE || exit
+
+	date -u || true
+	time $MAKE check || echo "WARNING: make check is flaky or failed outright" >&2
 
 	# Beside leaving a pre-install location for future runs,
 	# this may build some more artifacts:
+	date -u || true
 	rm -rf "`pwd`/.inst" || echo ""
-	$MAKE DESTDIR="`pwd`/.inst" install || exit
+	time $MAKE DESTDIR="`pwd`/.inst" install || exit
 
 	# Summarize what we have got
+	date -u || true
 	find ./ -type f -name "*.dll" -o -name "*.a"
 
-	$SUDO $MAKE install
+	date -u || true
+	time $SUDO $MAKE install
+	date -u || true
 	echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
 )
 

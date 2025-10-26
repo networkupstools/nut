@@ -1,6 +1,11 @@
 Setting up the multi-arch Linux LXC container farm for NUT CI
 -------------------------------------------------------------
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/qa-guide.chunked/_continuous_integration_nut_ci_farm_build_agent_preparation.html
+//////////////////////////////////////////////////////////////////////////////
+
 Due to some historical reasons including earlier personal experience,
 the Linux container setup implemented as described below was done with
 persistent LXC containers wrapped by LIBVIRT for management. There was
@@ -840,8 +845,9 @@ Running one agent at a time
 Another aspect of farm management is that emulation is a slow and intensive
 operation, so we can not run all agents and execute builds at the same time.
 
-The current solution relies on
-https://github.com/jimklimov/conflict-aware-ondemand-retention-strategy-plugin
+The current solution relies on the
+https://github.com/jenkinsci/conflict-aware-ondemand-strategy-plugin[Conflict-Aware
+On Demand Retention Strategy plugin]
 to allow co-located build agents to "conflict" with each other -- when one
 picks up a job from the queue, it blocks neighbors from starting; when it
 is done, another may start.

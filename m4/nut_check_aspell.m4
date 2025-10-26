@@ -133,8 +133,8 @@ if test -z "${nut_have_aspell_seen}"; then
 				])
 			]
 		)
-		out1="`echo test | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS} | grep test`"; res1=$?
-		out2="`echo qwer | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS} | grep qwer`"; res2=$?
+		out1="`echo test | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS} | ${GREP} test`"; res1=$?
+		out2="`echo qwer | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS} | ${GREP} qwer`"; res2=$?
 		AS_IF([test x"$out1" = x -a x"$out2" != x], [
 			AC_MSG_RESULT(yes)
 			nut_have_aspell="yes"

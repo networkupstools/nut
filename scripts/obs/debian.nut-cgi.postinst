@@ -1,0 +1,39 @@
+#!/bin/sh -e
+
+# Note: nut-common should be installed first and it delivers
+# the user accounts and the sysconfdir (/etc/nut)
+
+case "$1" in
+
+  configure)
+
+    # Ensure nut-cgi configuration files are readable by others
+    for file in upsset.conf hosts.conf upsstats.html upsstats-single.html ; do
+        if [ -f /etc/nut/$file ] ; then
+                chmod 644 /etc/nut/$file
+        fi
+    done
+    ;;
+
+  abort-upgrade)
+    # do nothing
+    ;;
+
+  abort-remove)
+    # do nothing
+    ;;
+
+  abort-deconfigure)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+
+esac
+
+#DEBHELPER#
+
+exit 0

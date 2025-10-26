@@ -48,7 +48,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.72"
+#define DRIVER_VERSION	"0.73"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1003,6 +1003,11 @@ void upsdrv_help(void) {
 	printf(" where houron is power-on hour and houroff is shutdown and power-off hour\n");
 	printf(" Uses daysweek and houron to programming and save UPS power on/off\n");
 	printf(" These are valid only if prgshut = 2 or 3\n");
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_makevartable(void) {

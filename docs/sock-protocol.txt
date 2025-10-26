@@ -1,6 +1,11 @@
 Driver/server socket protocol
 =============================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/sock-protocol.html
+//////////////////////////////////////////////////////////////////////////////
+
 Here's a brief explanation of the text-based protocol which is used
 between the drivers and server.
 

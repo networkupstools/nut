@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3529 utf-8
+personal_ws-1.1 en 3576 utf-8
 AAC
 AAS
 ABI
@@ -80,6 +80,7 @@ Autobook
 Autoconfigure
 Avocent
 Axel
+Axpert
 Axxium
 BATGNn
 BATNn
@@ -104,6 +105,7 @@ BTEST
 BTS
 BTV
 BUFRD
+BUILTIN
 BUZ
 BVKnnnnM
 BVKxxxM
@@ -146,6 +148,7 @@ Breiland
 Brownell
 Bs
 BuildBot
+BuildRequires
 Buildbot
 Bxx
 ByPass
@@ -261,6 +264,7 @@ DEXP
 DF
 DHEA
 DIGYS
+DIRNAME
 DISCHRG
 DLDIR
 DLLs
@@ -503,6 +507,7 @@ HWMON
 Hajduch
 Hanno
 Harnhammar
+Hasangarayev
 Havard
 Heavner
 Hessenflow
@@ -833,6 +838,7 @@ Neus
 Niels
 Niklas
 Niro
+NixOS
 Nobreak
 Nobreaks
 Nom
@@ -1291,6 +1297,7 @@ SystemIO
 Systeme
 Syu
 Szady
+TAE
 TBD
 TBR
 TCIFLUSH
@@ -1315,6 +1322,7 @@ TSR
 TST
 TT
 TTT
+TUD
 TXF
 TXG
 TXV
@@ -1400,10 +1408,12 @@ UUUU
 UX
 Ubuntu
 Ulf
+Ulfat
 Uncomment
 Unices
 Unitek
 Upsonic
+Upstreamed
 Ut
 V'ger
 VALIGN
@@ -1640,6 +1650,7 @@ avahi
 avr
 awd
 awk
+axpert
 b'some
 b'string
 bAlternateSetting
@@ -1760,8 +1771,10 @@ cgi
 cgipath
 cgroup
 cgroupsv
+changelog
 chargetime
 charset
+checkprocnames
 checkruntime
 checksum
 checksums
@@ -1805,9 +1818,12 @@ command's
 commandlen
 committer
 comms
+compareprocnames
 compat
 compilerPath
 conf
+confargs
+confdir
 config
 configparser
 configs
@@ -1881,6 +1897,7 @@ datarootdir
 dataset
 datasets
 datasheet
+datasize
 datastale
 dblatex
 dcd
@@ -1953,6 +1970,7 @@ docinfo
 docs
 dod
 domxml
+doshutdown
 dotnet
 downloadable
 dpkg
@@ -2123,10 +2141,13 @@ getDevicesVariableValues
 getTrackingResult
 getValue
 getVariable
+getaddrinfo
 getconf
 getent
 getenv
+gethostbyname
 getopt
+getproctag
 gettext
 gettextize
 getvar
@@ -2196,6 +2217,7 @@ href
 htaccess
 htm
 html
+htmlcgi
 htmlpath
 http
 httpd
@@ -2255,6 +2277,7 @@ initctl
 initializer
 initializers
 initinfo
+initrd
 initscripts
 inittime
 initups
@@ -2262,6 +2285,7 @@ inline
 inlined
 innotech
 innovart
+innovatae
 inode
 inplace
 installable
@@ -2483,6 +2507,7 @@ lz
 mA
 mDNS
 mS
+macOS
 macaddr
 macosx
 mailo
@@ -2501,6 +2526,7 @@ matcher
 maxconnfails
 maxd
 maxlength
+maxproc
 maxreport
 maxretry
 maxstartdelay
@@ -2544,6 +2570,8 @@ mips
 mirrorlist
 mis
 misconfigured
+mk
+mkdb
 mkdir
 mkstr
 mmZ
@@ -2597,6 +2625,7 @@ nSHUTDOWNCMD
 nabcd
 nameserver
 namespace
+namespaces
 nano
 nanosleep
 nashkaminski
@@ -2675,6 +2704,7 @@ nss
 ntopAI
 ntopSS
 ntopW
+nuf
 nuget
 num
 numOfBytesFromUPS
@@ -2722,6 +2752,7 @@ onwards
 ooce
 openSUSE
 opencollective
+openfiles
 openipmi
 openjdk
 openlog
@@ -2735,6 +2766,7 @@ optimizations
 optiups
 oq
 os
+osc
 ostream
 other's
 otheruser
@@ -2818,6 +2850,7 @@ powermand
 powermust
 powernet
 poweroff
+powerp
 powerpal
 powerpanel
 powershell
@@ -2842,15 +2875,18 @@ prereqs
 pretentiousVariableNamingSchemes
 prgshut
 printf
+prio
 priv
 privPassword
 privProtocol
+prjconf
 problemMatcher
 probu
 proc
 productid
 prog
 progname
+prognames
 progs
 proxied
 prtconf
@@ -2862,6 +2898,8 @@ pts
 ptv
 pty
 pulizzi
+purelib
+pv
 pw
 pwd
 pwmib
@@ -3011,7 +3049,9 @@ sendline
 sendmail
 sendsignal
 sendsignalfn
+sendsignalfnaliases
 sendsignalpid
+sendsignalpidaliases
 senoidal
 sequentialized
 ser
@@ -3022,9 +3062,11 @@ servicebypass
 setFeature
 setaux
 setflags
+setfsd
 setgid
 setinfo
 setpci
+setproctag
 setq
 setuid
 setupCommands
@@ -3056,6 +3098,7 @@ ske
 skel
 sl
 slackpkg
+slaveaddr
 slaveid
 slavesync
 slibtool
@@ -3076,6 +3119,7 @@ sockdebug
 socketname
 sockfn
 socomec
+soh
 solari
 solaris
 solcmn
@@ -3107,6 +3151,7 @@ sshd
 ssize
 ssl
 sstate
+stacksize
 stan
 startIP
 startdelay
@@ -3291,6 +3336,8 @@ uid
 uint
 ukUNV
 ul
+ulimit
+ulink
 un
 uname
 uncomment

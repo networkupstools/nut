@@ -15,7 +15,7 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CC compiler family is GCC],
     [nut_cv_GCC],
     [AS_IF([test -n "$CC" && test -n "$CC_VERSION_FULL"],
-        [AS_IF([echo "${CC_VERSION_FULL}" | grep 'Free Software Foundation' > /dev/null],
+        [AS_IF([echo "${CC_VERSION_FULL}" | ${GREP} 'Free Software Foundation' > /dev/null],
             [nut_cv_GCC=yes],[nut_cv_GCC=no])],
         [AC_MSG_ERROR([CC is not set])]
     )])
@@ -23,7 +23,7 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CXX compiler family is GCC],
     [nut_cv_GXX],
     [AS_IF([test -n "$CXX" && test -n "$CXX_VERSION_FULL"],
-        [AS_IF([echo "${CXX_VERSION_FULL}" | grep 'Free Software Foundation' > /dev/null],
+        [AS_IF([echo "${CXX_VERSION_FULL}" | ${GREP} 'Free Software Foundation' > /dev/null],
             [nut_cv_GXX=yes],[nut_cv_GXX=no])],
         [AC_MSG_ERROR([CXX is not set])]
     )])
@@ -31,28 +31,28 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CPP preprocessor family is GCC],
     [nut_cv_GPP],
     [AS_IF([test -n "$CPP" && test -n "$CPP_VERSION_FULL"],
-        [AS_IF([echo "${CPP_VERSION_FULL}" | grep 'Free Software Foundation' > /dev/null],
+        [AS_IF([echo "${CPP_VERSION_FULL}" | ${GREP} 'Free Software Foundation' > /dev/null],
             [nut_cv_GPP=yes],[nut_cv_GPP=no])],
         [AC_MSG_ERROR([CPP is not set])]
     )])
 
   AS_IF([test "x$GCC" = "x" && test "$nut_cv_GCC" = yes],   [GCC=yes
-    CC_VERSION="`echo "${CC_VERSION_FULL}" | grep -i gcc | head -1`" \
+    CC_VERSION="`echo "${CC_VERSION_FULL}" | ${GREP} -i gcc | head -1`" \
     && test -n "${CC_VERSION}" || CC_VERSION=""
     ])
   AS_IF([test "x$GXX" = "x" && test "$nut_cv_GXX" = yes],   [GXX=yes
-    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | grep -i -E 'g++|gcc' | head -1`" \
+    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | ${EGREP} -i 'g++|gcc' | head -1`" \
     && test -n "${CXX_VERSION}" || CXX_VERSION=""
     ])
   AS_IF([test "x$GPP" = "x" && test "$nut_cv_GPP" = yes],   [GPP=yes
-    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | grep -i -E 'cpp|gcc' | head -1`" \
+    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | ${EGREP} -i 'cpp|gcc' | head -1`" \
     && test -n "${CPP_VERSION}" || CPP_VERSION=""
     ])
 
   AC_CACHE_CHECK([if CC compiler family is clang],
     [nut_cv_CLANGCC],
     [AS_IF([test -n "$CC" && test -n "$CC_VERSION_FULL"],
-        [AS_IF([echo "${CC_VERSION_FULL}" | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+        [AS_IF([echo "${CC_VERSION_FULL}" | ${EGREP} '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGCC=yes],[nut_cv_CLANGCC=no])],
         [AC_MSG_ERROR([CC is not set])]
     )])
@@ -60,7 +60,7 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CXX compiler family is clang],
     [nut_cv_CLANGXX],
     [AS_IF([test -n "$CXX" && test -n "$CXX_VERSION_FULL"],
-        [AS_IF([echo "${CXX_VERSION_FULL}" | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+        [AS_IF([echo "${CXX_VERSION_FULL}" | ${EGREP} '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGXX=yes],[nut_cv_CLANGXX=no])],
         [AC_MSG_ERROR([CXX is not set])]
     )])
@@ -68,21 +68,21 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CPP preprocessor family is clang],
     [nut_cv_CLANGPP],
     [AS_IF([test -n "$CPP" && test -n "$CPP_VERSION_FULL"],
-        [AS_IF([echo "${CPP_VERSION_FULL}" | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+        [AS_IF([echo "${CPP_VERSION_FULL}" | ${EGREP} '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGPP=yes],[nut_cv_CLANGPP=no])],
         [AC_MSG_ERROR([CPP is not set])]
     )])
 
   AS_IF([test "x$CLANGCC" = "x" && test "$nut_cv_CLANGCC" = yes],   [CLANGCC=yes
-    CC_VERSION="`echo "${CC_VERSION_FULL}" | grep -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    CC_VERSION="`echo "${CC_VERSION_FULL}" | ${GREP} -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
     && test -n "${CC_VERSION}" || CC_VERSION=""
     ])
   AS_IF([test "x$CLANGXX" = "x" && test "$nut_cv_CLANGXX" = yes],   [CLANGXX=yes
-    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | grep -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | ${GREP} -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
     && test -n "${CXX_VERSION}" || CXX_VERSION=""
     ])
   AS_IF([test "x$CLANGPP" = "x" && test "$nut_cv_CLANGPP" = yes],   [CLANGPP=yes
-    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | grep -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | ${GREP} -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
     && test -n "${CPP_VERSION}" || CPP_VERSION=""
     ])
 

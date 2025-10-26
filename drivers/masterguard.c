@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.31"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -452,11 +452,58 @@ void upsdrv_help( void )
 
 /********************************************************************
  *
+ *
+ * optionally tweak prognames[] entries
+ *
+ ********************************************************************/
+void upsdrv_tweak_prognames(void)
+{
+
+}
+
+/********************************************************************
+ *
  * Function to initialize the fields of the ups driver.
  *
  ********************************************************************/
 void upsdrv_initinfo(void)
 {
+	int     count = 0;
+	int     fail  = 0;
+	int     good  = 0;
+
+	name[0] = '\0';
+	firmware[0] = '\0';
+
+	/* probe ups type */
+	do
+	{
+		count++;
+
+		if( ups_ident( ) != 1 )
+			fail++;
+		/* at least two good identifications */
+		if( (count - fail) == 2 )
+		{
+			good = 1;
+			break;
+		}
+	} while( (count<MAXTRIES) | (good) );
+
+	if( ! good )
+	{
+		fatalx(EXIT_FAILURE,  "No MASTERGUARD UPS found" );
+	}
+
+	upslogx(LOG_INFO, "MASTERGUARD UPS found\n" );
+
+	/* Cancel Shutdown */
+	if( testvar("CS") )
+	{
+		ser_send_pace(upsfd, UPS_PACE, "%s", "C\x0D" );
+		fatalx(EXIT_FAILURE, "Shutdown cancelled");
+	}
+
 	dstate_setinfo("ups.mfr", "MASTERGUARD");
 	dstate_setinfo("ups.model", "unknown");
 
@@ -601,10 +648,6 @@ void upsdrv_makevartable(void)
  ********************************************************************/
 void upsdrv_initups(void)
 {
-	int     count = 0;
-	int     fail  = 0;
-	int     good  = 0;
-
 	upsdebugx(0,
 		"Please note that this driver is deprecated and will not receive\n"
 		"new development. If it works for managing your devices - fine,\n"
@@ -617,38 +660,6 @@ void upsdrv_initups(void)
 	/* setup serial port */
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
-
-	name[0] = '\0';
-	firmware[0] = '\0';
-
-	/* probe ups type */
-	do
-	{
-		count++;
-
-		if( ups_ident( ) != 1 )
-			fail++;
-		/* at least two good identifications */
-		if( (count - fail) == 2 )
-		{
-			good = 1;
-			break;
-		}
-	} while( (count<MAXTRIES) | (good) );
-
-	if( ! good )
-	{
-		fatalx(EXIT_FAILURE,  "No MASTERGUARD UPS found" );
-	}
-
-	upslogx(LOG_INFO, "MASTERGUARD UPS found\n" );
-
-	/* Cancel Shutdown */
-	if( testvar("CS") )
-	{
-		ser_send_pace(upsfd, UPS_PACE, "%s", "C\x0D" );
-		fatalx(EXIT_FAILURE, "Shutdown cancelled");
-	}
 }
 
 void upsdrv_cleanup(void)

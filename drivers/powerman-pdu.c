@@ -23,7 +23,7 @@
 #include <libpowerman.h>	/* pm_err_t and other beasts */
 
 #define DRIVER_NAME	"Powerman PDU client driver"
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.17"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -181,6 +181,11 @@ static int setvar(const char *varname, const char *val)
 */
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

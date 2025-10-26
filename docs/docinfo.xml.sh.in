@@ -14,14 +14,20 @@ SCRIPTDIR="`dirname "$0"`" \
 && [ -n "${SCRIPTDIR}" ] && [ -d "${SCRIPTDIR}" ] \
 || exit
 
+EGREP="@EGREP@"
+
 [ -n "${DOCINFO_XML-}" ] || DOCINFO_XML="${SCRIPTDIR}/docinfo.xml.in"
 
 # NUT v2.6.0 is the oldest release with asciidoc rendered into PDF
-[ -n "${DOCINFO_OLDEST_TAG-}" ] || DOCINFO_OLDEST_TAG="v2.6.0"
+[ -n "${DOCINFO_OLDEST_TAG-}" ] || \
+case "@GITLOG_START_POINT@" in
+    v*) DOCINFO_OLDEST_TAG="@GITLOG_START_POINT@" ;;
+    *) DOCINFO_OLDEST_TAG="v2.6.0" ;;
+esac
 
 generate_tags() {
     # Find commits whose history includes DOCINFO_OLDEST_TAG
-    for RELTAG in `git tag -l 'v*' --contains "${DOCINFO_OLDEST_TAG}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -e 's,-.*$,,' | sort -nr | uniq` ; do
+    for RELTAG in `git tag -l 'v*' --contains "${DOCINFO_OLDEST_TAG}" | $EGREP '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -e 's,-.*$,,' | sort -nr | uniq` ; do
         NUT_RELEASE="`echo "$RELTAG" | sed -e 's,^v,,'`"
         grep "<revnumber>${NUT_RELEASE}</revnumber>" "${DOCINFO_XML}" >/dev/null 2>&1 && continue
 
@@ -92,7 +98,12 @@ sed -e '/<!-- AUTOINSERT LOCATION -->/a'"$NEWTAGS_SED" \
     | tr '|' '\n' \
     > "${DOCINFO_XML}.tmp"
 
-diff -bu "${DOCINFO_XML}" "${DOCINFO_XML}.tmp"
+OUTD="`diff -bu "${DOCINFO_XML}" "${DOCINFO_XML}.tmp" 2>/dev/null`"
+if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
+    echo "$OUTD"
+else
+    diff "${DOCINFO_XML}" "${DOCINFO_XML}.tmp"
+fi
 
 echo "Was the change acceptable? Press Y to modify the original '${DOCINFO_XML}' file [Y/N]" >&2
 read LINE

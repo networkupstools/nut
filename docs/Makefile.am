@@ -33,10 +33,6 @@ all:
 	@echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make doc' to ensure complex document types"
 	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
-# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-#EGREP = egrep
-EGREP = grep -E
-
 # Possible man page section remapping in some distros:
 MAN_SECTION_API_BASE=@MAN_SECTION_API_BASE@
 MAN_SECTION_CFG_BASE=@MAN_SECTION_CFG_BASE@
@@ -150,7 +146,6 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
 EXTRA_DIST += sms-brazil-protocol.txt
 
 ASCIIDOC_HTML_SINGLE = \
-	$(top_builddir)/docs/ChangeLog.html \
 	user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
@@ -160,8 +155,11 @@ ASCIIDOC_HTML_SINGLE = \
 	cables.html \
 	FAQ.html
 
+if WITH_CHANGELOG_HTML_SINGLE
+ASCIIDOC_HTML_SINGLE += $(top_builddir)/docs/ChangeLog.html
+endif
+
 ASCIIDOC_HTML_CHUNKED = \
-	$(top_builddir)/docs/ChangeLog.chunked \
 	user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
@@ -171,8 +169,11 @@ ASCIIDOC_HTML_CHUNKED = \
 	cables.chunked \
 	FAQ.chunked
 
+if WITH_CHANGELOG_HTML_CHUNKED
+ASCIIDOC_HTML_CHUNKED += $(top_builddir)/docs/ChangeLog.chunked
+endif
+
 ASCIIDOC_PDF = \
-	$(top_builddir)/docs/ChangeLog.pdf \
 	user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
@@ -181,6 +182,20 @@ ASCIIDOC_PDF = \
 	solaris-usb.pdf \
 	cables.pdf \
 	FAQ.pdf
+
+if WITH_CHANGELOG_PDF
+ASCIIDOC_PDF += $(top_builddir)/docs/ChangeLog.pdf
+endif
+
+DOC_BUILD_CHANGELOG_TEXT =
+if WITH_CHANGELOG_TEXT
+DOC_BUILD_CHANGELOG_TEXT += $(top_builddir)/ChangeLog
+endif
+
+DOC_BUILD_CHANGELOG_ADOC =
+if WITH_CHANGELOG_ADOC
+DOC_BUILD_CHANGELOG_ADOC += $(top_builddir)/ChangeLog.adoc $(top_builddir)/ChangeLog.adoc-parsed $(top_builddir)/ChangeLog.adoc-parsed.latest
+endif
 
 # Note: "man" subdir is handled separately via all-local and check-local
 # for a few goals, and among SUBDIRs directly from the top-level Makefile
@@ -203,17 +218,19 @@ check-local: $(CHECK_LOCAL_TARGETS)
 
 # Make sure sources are there for out-of-tree builds:
 all-local all-am-local \
+$(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) \
 @DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(abs_top_builddir)/docs/.prep-src-docs
 
 all-local:
 	+@cd $(builddir)/man && $(MAKE) $(AM_MAKEFLAGS) all-optional
 
 # This list is defined by configure script choices and options:
-doc: $(abs_top_builddir)/docs/.prep-src-docs @DOC_BUILD_LIST@
+doc: $(abs_top_builddir)/docs/.prep-src-docs $(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
-# script choices at their risk (e.g. missing tools are possible):
-docs: pdf html-single html-chunked man-man html-man
+# script choices at their risk (e.g. missing tools are possible) and
+# try to build all documentation file types:
+docs: $(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) pdf html-single html-chunked man-man html-man
 
 all-docs: docs
 
@@ -246,7 +263,7 @@ endif WITH_HTML_SINGLE
 #htmldoc_DATA += $(ASCIIDOC_HTML_CHUNKED)
 #endif WITH_HTML_CHUNKED
 if WITH_PDFS
-pdf_DATA = $(ASCIIDOC_PDFS)
+pdf_DATA = $(ASCIIDOC_PDF)
 endif WITH_PDFS
 
 # the "for" loops might better use $^ but it might be not portable
@@ -287,12 +304,12 @@ ChangeLog.html-contentchecked:
 	@FAILED=""; \
 	 entry_filter() { sed -e 's/ *[\"<].*//' -e 's/\([][(){}|+?.*]\)/\\\1/g' ; } ; \
 	 if [ -s '$(top_builddir)/ChangeLog' ] && [ -s ChangeLog.html ] ; then \
-	    SECOND_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | entry_filter`" || SECOND_ENTRY="" ; \
-	    FIRST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | entry_filter`" || FIRST_ENTRY="" ; \
-	    LAST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | entry_filter`" || LAST_ENTRY="" ; \
+	    SECOND_ENTRY="`$(EGREP) '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | entry_filter`" || SECOND_ENTRY="" ; \
+	    FIRST_ENTRY="`$(EGREP) '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | entry_filter`" || FIRST_ENTRY="" ; \
+	    LAST_ENTRY="`$(EGREP) '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | entry_filter`" || LAST_ENTRY="" ; \
 	    if [ -n "$${FIRST_ENTRY}" ] ; then \
-	        O="`grep -cE "^$${FIRST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
-	        N="`grep -cE "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
+	        O="`$(EGREP) -c "^$${FIRST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`$(EGREP) -c "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
 	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
 	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
 	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
@@ -305,8 +322,8 @@ ChangeLog.html-contentchecked:
 	        fi ; \
 	    fi; \
 	    if [ -n "$${SECOND_ENTRY}" ] ; then \
-	        O="`grep -cE "^$${SECOND_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
-	        N="`grep -cE "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
+	        O="`$(EGREP) -c "^$${SECOND_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`$(EGREP) -c "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
 	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
 	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
 	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
@@ -319,8 +336,8 @@ ChangeLog.html-contentchecked:
 	        fi ; \
 	    fi; \
 	    if [ -n "$${LAST_ENTRY}" ] ; then \
-	        O="`grep -cE "^$${LAST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
-	        N="`grep -cE "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
+	        O="`$(EGREP) -c "^$${LAST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`$(EGREP) -c "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
 	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
 	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
 	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
@@ -394,7 +411,7 @@ man:
 	+@if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOC-NOT-MAN	SKIP: $@ called in docs/Makefile" ; exit 0 ; fi ; \
 	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked* *-contentchecked* .check-* docbook-xsl.css docinfo.xml.in.tmp docinfo-since-v*.xml* *-docinfo.xml*
+CLEANFILES = *.xml *.html *.pdf *-spellchecked* *-contentchecked* .check-* docbook-xsl.css docinfo.xml.in.tmp docinfo-since-v*.xml* *-docinfo.xml* docinfo.xml.sh
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/ChangeLog.adoc
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 # These two "must be" there per autotools standards, so a "make clean"
@@ -413,7 +430,11 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 # the asciidoc markup (use double-hash to avoid conversion).
 # The $< is okay here, it is used in a suffix rule below
 .adoc.adoc-parsed:
-	@if [ -s '$@' ] && [ x"`find '$@' -newer '$<'`" != x ] ; then \
+	+@if [ ! -s '$<' ] ; then \
+		echo "  DOC-ASCIIDOC-GITHUB-LINKS	STRANGE: input $< does not exist or is empty" >&2 ; \
+		$(MAKE) $(AM_MAKEFLAGS) '$<' ; \
+	 fi
+	@if [ -s '$@' ] && [ -s '$<' ] && [ x"`find '$@' -newer '$<'`" != x ] ; then \
 		echo "  DOC-ASCIIDOC-GITHUB-LINKS	SKIP: $@ already exists and is newer than $<" ; \
 		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
 			ls -lad $@ $< || true ; \
@@ -437,7 +458,9 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 		-e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
 		-e 's,\(https*://[^ \+]*\)[\]*[+],\1%2B,g' \
 	 ; } > "$@.tmp.$$$$" \
-	 && mv -f "$@.tmp.$$$$" "$@"
+	 && test -s "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@" \
+	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
 	@if [ x'$@' = x'$(top_builddir)/ChangeLog.adoc-parsed' ] ; then \
 		touch -r '$@' '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' || touch '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' ; \
 	 fi
@@ -477,9 +500,17 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 10
 # already running and bail out early if the file exists. Otherwise we bite
 # the bullet and spend a few seconds, and then re-check if another thread
 # did exist and finished first.
+# Weird ways about "INPUT": in some cases the "$?" came in empty, in others
+# it has several files listed, e.g. full paths to "ChangeLog .prep-src-docs".
+# The "$<" may only be used for suffix rules (and nothing forbids it from
+# reporting the two changed files noted above, either). The approach below
+# allows us to get a most-reasonably populated path to the original (from
+# tarball or freshly generated) plain-text ChangeLog file across a lot
+# of "make" implementations.
+# FIXME: Fallback URL should refer not to "master" but current commit/tag?
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
-	@INPUT="$?"; \
-	 test -n "$${INPUT}" || INPUT="$$(top_builddir)/ChangeLog" ; \
+	@INPUT="`for F in $? ; do case "$$F" in */ChangeLog) [ -s "$$F" ] && echo "$$F"; exit 0 ;; esac; done`"; \
+	 test -n "$${INPUT}" || INPUT="$(top_builddir)/ChangeLog" ; \
 	 test -n "$${INPUT}" && test -n "$@" && test -s "$${INPUT}" \
 	 || { \
 	     MSG="FAILED to resolve input or output filename with this make implementation, or input was not generated!"; \
@@ -509,10 +540,14 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	        -e 's,^\([ '"$${TABCHAR}"'][^+]*\)\([^+/\]\)[+],\1\2\\\+,g' \
 	        -e 's,^\([ '"$${TABCHAR}"'].*\)\([~|^]\),\1\\\2,g' \
 	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
-	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
+	        -e 's,^\([ '"$${TABCHAR}"'][ '"$${TABCHAR}"']*\)\([0-9]\),\1{empty}\2,g' \
 	   < "$${INPUT}" >> "$@.tmp.$$$$" \
-	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
-	    else mv -f "$@.tmp.$$$$" "$@" ; fi
+	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then \
+	        echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
+	    else \
+	        test -s "$@.tmp.$$$$" && mv -f "$@.tmp.$$$$" "$@" \
+	        || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; } ; \
+	    fi
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \
@@ -568,12 +603,12 @@ docinfo-since-v2.8.3.xml: docinfo.xml
 	 IN_REVISION=false ; OLDEST_SEEN=false ; \
 	 while read LINE ; do \
 		case "$${LINE}" in \
-			*'<revision>'*) if ! $$OLDEST_SEEN ; then IN_REVISION=true ; fi ;; \
+			*'<revision>'*) if $$OLDEST_SEEN ; then true ; else IN_REVISION=true ; fi ;; \
 			*'<revnumber>'"$${OLDEST_REL}"'</revnumber>'*) if $$IN_REVISION ; then echo '<revision>'; OLDEST_SEEN=true ; fi ; echo "$$LINE" ;; \
-			*'<revnumber>'*'</revnumber>'*) if ! $$OLDEST_SEEN ; then if $$IN_REVISION ; then echo '<revision>'; fi ; echo "$$LINE" ; fi ;; \
+			*'<revnumber>'*'</revnumber>'*) if $$OLDEST_SEEN ; then true ; else if $$IN_REVISION ; then echo '<revision>'; fi ; echo "$$LINE" ; fi ;; \
 			*'</revision>'*) if $$IN_REVISION ; then echo "$$LINE" ; fi ; IN_REVISION=false ;; \
 			*'</revhistory>'*) echo "$$LINE" ;; \
-			*) if ! $$OLDEST_SEEN || $$IN_REVISION ; then echo "$$LINE" ; fi ;; \
+			*) if test x"$$OLDEST_SEEN" = xfalse || $$IN_REVISION ; then echo "$$LINE" ; fi ;; \
 		esac ; \
 	 done < "$?" > "$@".tmp \
 	 && mv -f "$@".tmp "$@"
@@ -659,7 +694,7 @@ DOCBUILD_BEGIN = { \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
     && test -r "${builddir}/docbook-xsl.css" \
-    && ! test -w "${builddir}/docbook-xsl.css" \
+    && test ! -w "${builddir}/docbook-xsl.css" \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true; \
 }
@@ -904,6 +939,10 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		     && echo "$$OUT" >&2 \
 		     && echo "----- ^^^" >&2 ; \
 		     exit $$RES; } ; \
+	 if $(EGREP) '^[ *.-]*(NOTE|TIP|IMPORTANT|CAUTION|WARNING):[ \t]*[a-z]' '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' ; then \
+		echo "FAILED: Admonition block should contain a sentence, not starting with a lower-case letter" >&2 ; \
+		exit 2 ; \
+	 fi ; \
 	 touch "$@"
 
 # If NUT_MAKE_SKIP_FANOUT!=true we have a hack to spellcheck certain files more
@@ -937,7 +976,7 @@ spellcheck:
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
-		(command -v dpkg) && ( dpkg -l | grep -i aspell ) || true ; \
+		(command -v dpkg) && ( dpkg -l | $(GREP) -i aspell ) || true ; \
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
@@ -958,7 +997,7 @@ spellcheck:
 		else true ; fi ; \
 		if [ x"$${SPELLCHECK_AUTO_TGT}" != x ] ; then \
 			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" $${SPELLCHECK_AUTO_TGT} ; \
-			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ] ; then printf '%s ' "$(SPELLCHECK_SRCDIR)/$${docsrc}" ; rm -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ; fi ; done`" ; \
+			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ] ; then printf '%s ' "$(SPELLCHECK_SRCDIR)/$${docsrc}" ; rm -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed" ; fi ; done`" ; \
 		fi ; \
 		if [ x"$${SPELLCHECK_NOEXT_DOCS}" != x ] ; then \
 			for docsrc in $${SPELLCHECK_NOEXT_DOCS} ; do \
@@ -1036,14 +1075,19 @@ spellcheck-interactive:
 	 fi ; \
 	 $(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict || exit ; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		if test -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; then \
+		if test -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; then \
 			touch "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; \
 		fi ; \
 	 done
-	@if [ "$(SPELLCHECK_REPORT_MAYBE_UPDATED_DICT)" != no ] \
-	 || ( [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] \
-	      && ! diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ) \
-	 ; then \
+	@DO_REPORT=false ; \
+	 if [ "$(SPELLCHECK_REPORT_MAYBE_UPDATED_DICT)" != no ] ; then \
+		DO_REPORT=true ; \
+	 else if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] ; then \
+	      if diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ; then \
+		true ; else DO_REPORT=true ; \
+	      fi; fi; \
+	 fi; \
+	 if $${DO_REPORT}; then \
 		echo "------------------------------------------------------------------------"; \
 		echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
 		echo "Use e.g. 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
@@ -1075,7 +1119,7 @@ endif !HAVE_ASPELL
 $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 	@echo "Preparing $@"; \
 	 LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	 grep -v -E '^personal_ws' < $? \
+	 $(EGREP) -v '^personal_ws' < $? \
 	 | while read W ; do ( \
 		cd "$(abs_top_srcdir)" || exit ; \
 		git grep -q "$$W" -- ':!*.dict*' || git grep -qE "[0-9_,./\ -]$$W[0-9_,./\ -]" -- ':!*.dict*' ) \
@@ -1091,10 +1135,11 @@ $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 			fi; \
 		); \
 	 done > "$@.tmp.$$$$" \
-	 && test -f "$@.tmp.$$$$" \
-	 && mv -f "$@.tmp.$$$$" "$@"
+	 && test -s "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@" \
+	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
 	@echo "Reporting words from $? possibly not used in current inspected code base revision under $(abs_top_srcdir)" >&2 ; \
-	 grep -E '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
+	 $(EGREP) '^--- ' < "$@" | $(GREP) '(0 ' || echo "SUCCESS: None found"
 
 CLEANFILES += $(NUT_SPELL_DICT).usage-report.tmp
 MAINTAINERCLEANFILES += $(NUT_SPELL_DICT).usage-report
@@ -1102,6 +1147,7 @@ MAINTAINERCLEANFILES += $(NUT_SPELL_DICT).usage-report
 # When building out-of-tree, be sure to have all asciidoc resources
 # under the same dir structure (tool limitation)
 PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
+ASCIIDOC_LINKMANEXT_SECTION_REWRITE = @ASCIIDOC_LINKMANEXT_SECTION_REWRITE@
 
 # NOTE: Some "make" implementations prefix a relative or absent path to
 # the filenames in PREP_SRC, others (e.g. Sun make) prepend the absolute
@@ -1144,16 +1190,24 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
 	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
-	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
+	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' | \
+	            if [ x"$(ASCIIDOC_LINKMANEXT_SECTION_REWRITE)" = xyes ] ; then \
+	                sed \
+	                -e 's,\(linkmanext2?:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
+	            else cat ; fi; \
 	        fi < "$${F}" > "$${F}-prepped" || exit ;; \
 	        esac; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
-	    if ! test -e "$@" ; then touch "$@" ; fi ; \
+	    if test ! -f "$@" ; then touch "$@" ; fi ; \
 	 else \
 	    COUNT=30 ; \
 	    touch "$@.$$$$" ; \
-	    while test -e "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
+	    while test -f "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
 	    touch "$@.working" ; \
 	    if test -n "`find "$@" -newer "$@.$$$$" 2>/dev/null`" ; then \
 	        rm -f "$@.$$$$" "$@.working" ; \
@@ -1179,7 +1233,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	        esac ; \
 	        D="`dirname "$$F"`" ; \
 	        (cd '$(abs_builddir)' && $(MKDIR_P) "$${linkroot}/$$D") || { rm -f "$@.working" ; exit 1 ; } ; \
-	        if ! test -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
+	        if test ! -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
 	            echo "  LN	'$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" ; \
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
@@ -1190,12 +1244,12 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	            *) IS_TEXT=true ;; \
 	        esac; \
 	        if $$IS_TEXT ; then \
-	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
+	            $(GREP) -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
 	        case "$$F" in \
 	        *.xml|*.xsl|*.css|*.jpg|*.png|*.pdn|*.svg) ;; \
 	        *.txt|*.adoc|*.in|*.sample|*.conf|*) \
-	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
+	        if $$MAN_SECTIONS_DEFAULT || test $$IS_TEXT = false ; then \
 	            sed \
 	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 $(NUT_WEBSITE_BASE)/,' ; \
 	        else \
@@ -1205,14 +1259,22 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC) Makefile
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
 	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
-	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
+	                -e 's,\(linkman:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' | \
+	            if [ x"$(ASCIIDOC_LINKMANEXT_SECTION_REWRITE)" = xyes ] ; then \
+	                sed \
+	                -e 's,\(linkmanext2?:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e 's,\(linkmanext2?:[^ []*\[\)7\],\1$(MAN_SECTION_MISC)],g' ; \
+	            else cat ; fi; \
 	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
 	        || { rm -f "$@.working" ; exit 1 ; } ;; \
 	        esac ; \
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 fi ; \
-	 if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi
+	 if test "$$COUNT" -gt 0 -o ! -f "$@" ; then touch "$@" ; fi
 	@rm -f "$@.working"
 
 # Dirs to clean, etc.

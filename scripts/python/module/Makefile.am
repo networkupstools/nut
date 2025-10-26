@@ -23,7 +23,7 @@ tox: dist .pypi-tools-tox
 EXTRA_DIST = tox.ini MANIFEST.in
 
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
-PYTHON = @PYTHON@
+PYTHON_DEFAULT = @PYTHON_DEFAULT@
 
 GENERATED_DIST = dist build *.egg-info
 GENERATED_SRC  = PyNUTClient README.txt LICENSE-GPL3
@@ -75,7 +75,7 @@ upload publish:
 	@for S in "$(srcdir)"/*.py.in ; do \
 		B="`basename "$${S}" .in`" ; \
 		if test x"$${B}" = xsetup.py ; then \
-			if ! test -s "$${B}" ; then \
+			if test ! -s "$${B}" ; then \
 				sed -e "s/[@]NUT_SOURCE_GITREV_NUMERIC[@]/$(NUT_SOURCE_GITREV_NUMERIC)/" < "$(srcdir)/$${B}.in" > "$${B}" || exit ; \
 			fi ; \
 			continue; \
@@ -84,7 +84,7 @@ upload publish:
 			cp -pf "$${B}" PyNUTClient/ || exit ; \
 			continue; \
 		fi ; \
-		sed -e "s,[@]PYTHON[@],@PYTHON@," < "$(srcdir)/$${B}.in" > "PyNUTClient/$${B}" || exit ; \
+		sed -e "s,[@]PYTHON_DEFAULT[@],@PYTHON_DEFAULT@," < "$(srcdir)/$${B}.in" > "PyNUTClient/$${B}" || exit ; \
 		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "PyNUTClient/$${B}"; fi ; \
 	 done ; \
 	 cp -pf "$(srcdir)/README.adoc" README.txt || exit ; \
@@ -93,30 +93,30 @@ upload publish:
 	@touch "$@"
 
 .pypi-tools-python:
-	@echo "  PYPI	Checking that PYTHON variable is defined and usable: $(PYTHON)"
-	@test -n "$(PYTHON)" && command -v $(PYTHON)
+	@echo "  PYPI	Checking that PYTHON_DEFAULT variable is defined and usable: $(PYTHON_DEFAULT)"
+	@test -n "$(PYTHON_DEFAULT)" && command -v $(PYTHON_DEFAULT)
 	@touch "$@"
 
 .pypi-tools-dist-wheel: .pypi-tools-python
 	@echo "  PYPI	Prepare PyPI tools to generate a distribution (wheel)"
-	@$(PYTHON) -m pip install wheel
+	@$(PYTHON_DEFAULT) -m pip install wheel
 	@touch "$@"
 
 .pypi-tools-dist-build: .pypi-tools-python
 	@echo "  PYPI	Prepare PyPI tools to generate a distribution (build)"
-	@$(PYTHON) -m pip install build
+	@$(PYTHON_DEFAULT) -m pip install build
 	@touch "$@"
 
 .pypi-tools-tox: .pypi-tools-python
 	@echo "  PYPI	Prepare Python multi-environment testing tools (tox)"
-	@$(PYTHON) -m pip install tox
+	@$(PYTHON_DEFAULT) -m pip install tox
 	@touch "$@"
 
 # Install via OS packaging or pip?
 # https://twine.readthedocs.io/en/stable/
 .pypi-tools-upload: .pypi-tools-python
 	@echo "  PYPI	Prepare PyPI tools and resources to upload a distribution (twine)"
-	@$(PYTHON) -m pip install twine
+	@$(PYTHON_DEFAULT) -m pip install twine
 	@command -v twine
 	@test -s $(HOME)/.pypirc
 	@touch "$@"
@@ -132,23 +132,23 @@ upload publish:
 .pypi-dist-pip-build: .pypi-tools-dist-build .pypi-src
 	@echo "  PYPI	Generate PyPI module distribution (using 'build' module)"
 	@rm -rf $(GENERATED_DIST) "$@"
-	@$(PYTHON) -m build --skip-dependency-check --no-isolation
+	@$(PYTHON_DEFAULT) -m build --skip-dependency-check --no-isolation
 	@touch "$@"
 
 # Using "setup.py" directly causes warnings about its deprecation
 # While "pip" distribution generator also uses it internally,
 # it "knows what it's doing" and goes quietly about its work :)
-# Does not support "sdis" though. Oh well.
+# Does not support "sdist" though. Oh well.
 .pypi-dist-pip-wheel: .pypi-tools-dist-wheel .pypi-src
-	@echo "  PYPI	Generate PyPI module distribution (using 'pip wheel')"
+	@echo "  PYPI	Generate PyPI module distribution (using 'pip wheel'; note no 'sdist' here)"
 	@rm -rf $(GENERATED_DIST) "$@"
-	@$(PYTHON) -m pip wheel --no-deps -w dist .
+	@$(PYTHON_DEFAULT) -m pip wheel --no-deps -w dist .
 	@touch "$@"
 
 .pypi-dist-obsolete: .pypi-tools-dist-wheel .pypi-src
 	@echo "  PYPI	Generate PyPI module distribution (using setup.py directly)"
 	@rm -rf $(GENERATED_DIST) "$@"
-	@$(PYTHON) setup.py sdist bdist_wheel
+	@$(PYTHON_DEFAULT) setup.py sdist bdist_wheel
 	@touch "$@"
 
 # These need $HOME/.pypirc prepared with credentials (API tokens) from

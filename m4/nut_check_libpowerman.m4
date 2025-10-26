@@ -15,7 +15,9 @@ if test -z "${nut_have_libpowerman_seen}"; then
 	CFLAGS=""
 	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING([for LLNC libpowerman version via pkg-config])
@@ -39,41 +41,33 @@ if test -z "${nut_have_libpowerman_seen}"; then
 	AS_IF([test x"$POWERMAN_VERSION" != xnone],
 		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libpowerman 2>/dev/null`"
 		 depLIBS="`$PKG_CONFIG --silence-errors --libs libpowerman 2>/dev/null`"
+		 depCFLAGS_SOURCE="pkg-config"
+		 depLIBS_SOURCE="pkg-config"
 		],
 		[depCFLAGS=""
 		 depLIBS=""
+		 depCFLAGS_SOURCE="default"
+		 depLIBS_SOURCE="default"
 		]
 	)
 
 	AC_MSG_CHECKING([for libpowerman cflags])
-	AC_ARG_WITH(powerman-includes,
-		AS_HELP_STRING([@<:@--with-powerman-includes=CFLAGS@:>@], [include flags for the libpowerman library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR([invalid option --with(out)-powerman-includes - see docs/configure.txt])
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [])
-	AC_MSG_RESULT([${depCFLAGS}])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([powerman], [auto], [libpowerman])
+	AS_CASE([${nut_with_powerman_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_powerman_includes}"
+			 depCFLAGS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for libpowerman libs)
-	AC_ARG_WITH(powerman-libs,
-		AS_HELP_STRING([@<:@--with-powerman-libs=LIBS@:>@], [linker flags for the libpowerman library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-powerman-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])
-	AC_MSG_RESULT([${depLIBS}])
+	NUT_ARG_WITH_LIBOPTS_LIBS([powerman], [auto], [libpowerman])
+	AS_CASE([${nut_with_powerman_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLIBS="${nut_with_powerman_libs}"
+			 depLIBS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if libpowerman is usable
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
@@ -100,6 +94,8 @@ if test -z "${nut_have_libpowerman_seen}"; then
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

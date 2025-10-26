@@ -54,6 +54,10 @@ fi
 
 RES=0
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 # Some sed/grep implementations tend to have a problem with "\t"
 # (treat it as escaped "t" character); substitutions are okay:
 TABCHAR="`printf '\t'`"
@@ -70,8 +74,8 @@ do
 		# * if there is a trailing comment, make sure it is
 		#   also TAB-separated (from the presumed sixth field)
 		sed \
-			-e '/^#/!s/\"[[:blank:]]\+\"/\"\t\"/g' \
-			-e '/^#/!s/[[:blank:]]*$//' \
+			-e '/^#/!s/\"[ '"${TABCHAR}"']\+\"/\"\t\"/g' \
+			-e '/^#/!s/[ '"${TABCHAR}"']*$//' \
 			-e '/^#/!s/\" \+\#/\"\t\#/' \
 		< "${DRVLIST_PATH}/${drvfile}" \
 		> "${TMPBUILD_PATH}/${drvfile}.tabbed" \
@@ -80,7 +84,7 @@ do
 			# verify that lines are either empty, all-comments,
 			# or have six quoted fields (and optional comment);
 			# the fields may be empty (just two double-quotes).
-			BADLINES="`grep -vE "${VALID_LINE}" < "${TMPBUILD_PATH}/${drvfile}.tabbed"`"
+			BADLINES="`$EGREP -v "${VALID_LINE}" < "${TMPBUILD_PATH}/${drvfile}.tabbed"`"
 			if [ x"${BADLINES}" != x ] ; then
 				echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: some lines are not exactly 6 fields (and optional comment)" >&2
 				echo "$BADLINES" | head -5
@@ -96,13 +100,29 @@ do
 				# Ensure new content is applied
 				mv -f "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}"
 			fi
-		else # Checking
-			diff -u "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}" \
-			|| { GITACT=""
-			     case "${drvfile}" in *.in) GITACT=" and commit the git change" ;; esac
-			     echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: re-run this script without args${GITACT}, please" >&2
-			     RES=1
-			   }
+		else # Checking; also report the diff markup
+			if OUTD="`diff -u "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}" 2>/dev/null`" ; then
+				# Ok, no differences encountered
+				OUTD=""
+			else
+				# Either different contents, or "diff -u" does not work
+				if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
+					true
+				else
+					if OUTD="`diff "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}"`" ; then
+						# Ok, no differences encountered
+						OUTD=""
+					fi
+				fi
+			fi
+
+			if test -n "${OUTD}" ; then
+				echo "$OUTD"
+				GITACT=""
+				case "${drvfile}" in *.in) GITACT=" and commit the git change" ;; esac
+				echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: re-run this script without args${GITACT}, please" >&2
+				RES=1
+			fi
 		fi \
 		|| RES=$?
 
