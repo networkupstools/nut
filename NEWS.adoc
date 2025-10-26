@@ -49,6 +49,10 @@ https://github.com/networkupstools/nut/milestone/12
      stable name as a default implementation). Drivers united by `main.c`
      framework introduced a `upsdrv_tweak_prognames()` hook method to let
      them manipulate the array of `prognames[]` aliases. [PR #3101]
+   * `libusb0` and `libusb1` integrations now try both "Resource Descriptor
+     Length" values they could identify on some devices: sometimes the first
+     (or otherwise preferred) option may be not the correct one, so try the
+     other too. [issue #3136]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
