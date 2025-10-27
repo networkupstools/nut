@@ -957,9 +957,27 @@ static void doshutdown(void)
 
 	do_notify(NULL, NOTIFY_SHUTDOWN, NULL);
 
-	upsdebugx(1, "%s: waiting for FINALDELAY=%u (to let notification handling complete)...",
-		__func__, finaldelay);
-	sleep(finaldelay);
+	if (finaldelay > 0) {
+		time_t	now;
+
+		upsdebugx(1, "%s: waiting for FINALDELAY=%u (to let notification handling complete)...",
+			__func__, finaldelay);
+		/* FIXME: Track and check if the current system (or NUT build)
+		 *  supports notifications and service watchdog in particular;
+		 *  if not - use a chaper simple sleep(finaldelay) right away.
+		 */
+		time(&start);
+		time(&now);
+
+		while (difftime(now, start) < finaldelay) {
+			sleep(1);
+			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+			time(&now);
+		}
+	} else {
+		upsdebugx(1, "%s: FINALDELAY=%u (not waiting to let notification handling complete)...",
+			__func__, finaldelay);
+	}
 
 	/* If we would handle SHUTDOWNEXIT as a finite delay below,
 	 * that time should include the duration of SHUTDOWNCMD too */
@@ -1061,8 +1079,10 @@ static void doshutdown(void)
 			char	temp[SMALLBUF];
 			long	maxlogins = 0, logins = 0;
 
+			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
 			upsdebugx(3, "%s: ping data server(s) for this client to remain not-timed-out", __func__);
-			
+
 #ifndef WIN32
 			/* reap children (e.g. notify) that have exited */
 			waitpid(-1, NULL, WNOHANG);
@@ -1301,6 +1321,8 @@ static void sync_secondaries(void)
 		maxlogins = 0;
 		count++;
 
+		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
 		for (ups = firstups; ups != NULL; ups = ups->next) {
 
 			/* only check login count on devices we are the primary for */
@@ -1318,6 +1340,8 @@ static void sync_secondaries(void)
 
 			clear_alarm();
 		}
+
+		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 		/* if no UPS has more than 1 login (that would be us),
 		 * then secondaries are all gone */

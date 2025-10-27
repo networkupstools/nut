@@ -151,6 +151,8 @@ https://github.com/networkupstools/nut/milestone/12
      (e.g. begin stopping heavy services) even while `upsmon` waits for the
      secondaries to complete their shutdowns and log out of the `upsd` data
      server. [issue #3003, PR #3110]
+   * Tickle service watchdog timer (if any) so the `nut-monitor.service` or
+     equivalent unit is not killed off due to quietness during shutdown. [#3003]
 +
 NOTE: If using `upssched` and monitoring multiple UPSes, consider setting up
 a `START-TIMER-SHARED` rule with a short (approx. 1 second) timeout to group
