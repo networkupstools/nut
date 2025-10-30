@@ -725,7 +725,6 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				upsdebugx(2, "HID descriptor too long %" PRIi32 " (max %d)",
 					rdlen, (int)sizeof(rdbuf));
 				continue;
-				/*goto next_device;*/
 			}
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
@@ -748,7 +747,6 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 					" (max %" PRIuMAX ")",
 					rdlen, (uintmax_t)UINT16_MAX);
 				continue;
-				/*goto next_device;*/
 			}
 
 			/* libusb0: USB_ENDPOINT_IN + 1 */
@@ -763,7 +761,6 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			{
 				upsdebug_with_errno(2, "Unable to get Report descriptor");
 				continue;
-				/*goto next_device;*/
 			}
 
 			if (res < rdlen)
@@ -801,7 +798,6 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			if (res < 1) {
 				upsdebugx(2, "Caller doesn't like this device");
 				continue;
-				/*goto next_device;*/
 			}
 
 			/* We found it... or at least something that did not complain */

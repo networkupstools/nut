@@ -664,7 +664,6 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 						" (max %" PRIuSIZE ")",
 						rdlen, sizeof(rdbuf));
 					continue;
-					/*goto next_device;*/
 				}
 
 				/* Note: rdlen is safe to cast to unsigned below,
@@ -681,7 +680,6 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				{
 					upsdebug_with_errno(2, "Unable to get Report descriptor");
 					continue;
-					/*goto next_device;*/
 				}
 
 				if (res < rdlen)
@@ -710,7 +708,6 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				if (res < 1) {
 					upsdebugx(2, "Caller doesn't like this device (or rdlen is wrong)");
 					continue;
-					/*goto next_device;*/
 				}
 
 				/* We found it... or at least something that did not complain */
