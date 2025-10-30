@@ -105,6 +105,7 @@
 #include "attribute.h"
 #include "proto.h"
 #include "str.h"
+#include "nut_stdint.h"
 
 #if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
 # include <regex.h>
@@ -493,12 +494,26 @@ typedef enum eupsnotify_state {
 	NOTIFY_STATE_RELOADING,
 	NOTIFY_STATE_STOPPING,
 	NOTIFY_STATE_STATUS,	/* Send a text message per "fmt" below */
-	NOTIFY_STATE_WATCHDOG	/* Ping the framework that we are still alive */
+	NOTIFY_STATE_WATCHDOG,	/* Ping the framework that we are still alive */
+	NOTIFY_STATE_EXTEND_TIMEOUT	/* Ping the framework that we are still alive when starting/stopping */
 } upsnotify_state_t;
 const char *str_upsnotify_state(upsnotify_state_t state);
 /* Note: here fmt may be null, then the STATUS message would not be sent/added */
 int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
+
+/* Exposed to code consumers (NUT daemons) for NOTIFY_STATE_EXTEND_TIMEOUT
+ * By default upsnotify_extend_timeout_usec == 0 so the
+ * upsnotify() method would fall back to current WATCHDOG_USEC
+ * if available, or to upsnotify_extend_timeout_usec_default.
+ * NOTE: It seems that internally in systemd, UINT64_MAX or
+ *  ((uint64_t)-1) means "infinity". Internally systemd uses
+ *  uint64_t as their usec_t (at least currently) but this
+ *  does not seem to be a public API/contract.
+ * Whatever value gets applied, it should exceed the relevant
+ * loop cycle duration at that point in daemon life time.
+ */
+extern uint64_t upsnotify_extend_timeout_usec_default, upsnotify_extend_timeout_usec;
 
 /* upslog*() messages are sent to syslog always;
  * their life after that is out of NUT's control */

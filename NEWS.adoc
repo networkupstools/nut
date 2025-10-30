@@ -49,6 +49,10 @@ https://github.com/networkupstools/nut/milestone/12
      stable name as a default implementation). Drivers united by `main.c`
      framework introduced a `upsdrv_tweak_prognames()` hook method to let
      them manipulate the array of `prognames[]` aliases. [PR #3101]
+   * Introduced `NOTIFY_STATE_EXTEND_TIMEOUT` option and relevant variables
+     for `upsnotify()` method, so we can tell systemd to not kill the service
+     unit if its shutdown takes long (see also the `SHUTDOWNEXIT` option in
+     the `upsmon` client). [issue #3003]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
