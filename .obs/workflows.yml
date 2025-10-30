@@ -1,23 +1,32 @@
-# See https://openbuildservice.org/help/manuals/obs-user-guide/cha-obs-scm-ci-workflow-integration#sec.obs.obs_scm_ci_workflow_integration.setup.token_authentication.how_to_authenticate_scm_with_obs
+# See https://openbuildservice.org/help/manuals/obs-user-guide/cha-obs-scm-ci-workflow-integration
 
-main_workflow:
+main_PR_workflow:
   steps:
     - branch_package:
-        source_project: home:jimklimov
-        source_package: nut
-        target_project: networkupstools
+        source_project: home:networkupstools:nut-stable
+        source_package: "%{SCM_REPOSITORY_NAME}"
+        target_project: home:networkupstools:nut-pull-requests
   filters:
     event: pull_request
 
 rebuild_master:
   steps:
     - trigger_services:
-        project: networkupstools
-        package: nut
+        project: home:networkupstools:nut-stable
+        package: "%{SCM_REPOSITORY_NAME}"
   filters:
     event:
       - push
-      - tag_push
     branches:
       only:
         - master
+
+release_tag:
+  steps:
+    - branch_package:
+        source_project: home:networkupstools:nut-stable
+        source_package: "%{SCM_REPOSITORY_NAME}"
+        target_project: home:networkupstools:nut-releases
+  filters:
+    event:
+      - tag_push
