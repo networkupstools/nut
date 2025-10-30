@@ -24,7 +24,7 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.55"
+#define CYBERPOWER_MIB_VERSION		"0.56"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 /* CPS-MIB::ups */
