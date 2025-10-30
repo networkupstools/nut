@@ -134,6 +134,8 @@ static snmp_info_t cyberpower_mib[] = {
 		SU_FLAG_OK | SU_STATUS_RB, &cyberpower_battrepl_status[0]),
 	snmp_info_default("ups.load", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.4.2.3.0", "",
 		0, NULL),
+	snmp_info_default("ups.realpower", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.4.2.5.0", "",
+        0, NULL),
 
 	snmp_info_default("ups.temperature", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.10.2.0", "", SU_FLAG_OK, NULL),
 
