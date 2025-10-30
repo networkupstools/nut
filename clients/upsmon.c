@@ -949,7 +949,10 @@ static void doshutdown(void)
 	 * setting), otherwise it exits the (child part of) upsmon daemon.
 	 */
 	upsdebugx(1, "%s: starting...", __func__);
+
 	upsnotify(NOTIFY_STATE_STOPPING, "Executing automatic power-fail shutdown");
+	upsnotify_extend_timeout_usec = ((uint64_t)-1); /* infinity */
+	upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, NULL);
 
 	/* this should probably go away at some point */
 	upslogx(LOG_CRIT, "Executing automatic power-fail shutdown");
@@ -962,6 +965,7 @@ static void doshutdown(void)
 
 		upsdebugx(1, "%s: waiting for FINALDELAY=%u (to let notification handling complete)...",
 			__func__, finaldelay);
+
 		/* FIXME: Track and check if the current system (or NUT build)
 		 *  supports notifications and service watchdog in particular;
 		 *  if not - use a chaper simple sleep(finaldelay) right away.
@@ -1006,6 +1010,7 @@ static void doshutdown(void)
 		set_pdflag();
 
 		upsdebugx(2, "%s: directly call shutdown command (sync)", __func__);
+		upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, "Mono-process: calling shutdown command (directly)");
 
 #ifdef WIN32
 		SC_HANDLE SCManager;
@@ -1055,10 +1060,14 @@ static void doshutdown(void)
 			upslogx(LOG_WARNING,
 				"Configured to not exit upsmon "
 				"after initiating shutdown");
+			upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, "Child/Mono-process: "
+				"Configured to not exit upsmon after initiating shutdown");
 		} else {
 			upslogx(LOG_WARNING,
 				"Configured to only exit upsmon SHUTDOWNEXIT=%d sec "
 				"after initiating shutdown", shutdownexitdelay);
+			upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, "Child/Mono-process: "
+				"Configured to only exit upsmon some time after initiating shutdown");
 		}
 		if (exit_flag) {
 			/* TOTHINK: Are there cases when we want to
@@ -3482,6 +3491,10 @@ static void runparent(int fd)
 	 * that time should include the duration of SHUTDOWNCMD too */
 	time(&start);
 
+	upsnotify(NOTIFY_STATE_STOPPING, "Parent: calling shutdown command");
+	upsnotify_extend_timeout_usec = ((uint64_t)-1); /* infinity */
+	upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, NULL);
+
 	/* have to do this here - child is unprivileged */
 	set_pdflag();
 
@@ -3505,6 +3518,7 @@ static void runparent(int fd)
 			exit_flag, (intmax_t)pid_pipechild,
 			(sret == 0 ? "calling" : "trying to call"),
 			sret, shutdowncmd);
+		upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, "Parent: waiting for child to exit");
 
 		do {
 			waitret = waitpid(pid_pipechild, &waitstatus, WNOHANG);
