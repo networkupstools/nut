@@ -2744,6 +2744,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 		switch (state) {
 			case NOTIFY_STATE_READY:
+				/* In systemd: since forever? (unspec) */
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen,
 					"%sREADY=1%s",
 					msglen ? "\n" : "",
@@ -2751,6 +2752,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_READY_WITH_PID:
+				/* In systemd: since forever? (unspec) */
 				if (1) { /* scoping */
 					char pidbuf[SMALLBUF];
 					if (snprintf(pidbuf, sizeof(pidbuf), "%lu", (unsigned long) getpid())) {
@@ -2785,6 +2787,13 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_RELOADING:
+				/* Tells the service manager that the service
+				 * is beginning to reload its configuration...
+				 * Note that a service that sends this notification
+				 * must also send a "READY=1" notification when
+				 * it completed reloading its configuration.
+				 * In systemd: since v217
+				 */
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s%s",
 					msglen ? "\n" : "",
 					"RELOADING=1",
@@ -2792,13 +2801,22 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_STOPPING:
+				/* Tells the service manager that the service
+				 * is beginning its shutdown. This is useful
+				 * to allow the service manager to track the
+				 * service's internal state, and present it
+				 * to the user.
+				 * In systemd: since v217
+				 */
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
 					msglen ? "\n" : "",
 					"STOPPING=1");
 				break;
 
 			case NOTIFY_STATE_STATUS:
-				/* Only send a text message per "fmt" */
+				/* Only send a text message per "fmt"
+				 * In systemd: since v233
+				 */
 				if (!msglen) {
 					upsdebugx(6, "%s: failed to notify about status: none provided", __func__);
 					ret = -1;
@@ -2808,7 +2826,13 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_WATCHDOG:
-				/* Ping the framework that we are still alive */
+				/* Ping the framework that we are still alive
+				 * In systemd: since v209 (and if enabled by unit file)
+				 *  per https://www.freedesktop.org/software/systemd/man/latest/sd_watchdog_enabled.html
+				 * NOTE: per https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html
+				 *  since v233 a service can also request a different
+				 *  value of WATCHDOG_USEC=... during run-time.
+				 */
 				if (1) {	/* scoping */
 					int	postit = 0;
 
@@ -2839,7 +2863,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #    if ! DEBUG_SYSTEMD_WATCHDOG
 						if (!upsnotify_reported_watchdog_systemd)
 #    endif
-							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, s);
+							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, NUT_STRARG(s));
 						if (s && *s) {
 							long l = strtol(s, (char **)NULL, 10);
 							if (l > 0) {
