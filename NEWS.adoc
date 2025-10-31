@@ -117,6 +117,12 @@ https://github.com/networkupstools/nut/milestone/12
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
    * Improved support for Eaton 5S1500LCD and 5S1600LCD (US version). [#2380]
+   * The driver used to report `CHRG` status if the device was not "fully
+     charged", however the latter status was only queried and reported by
+     some (not all) subdrivers and probably not by all devices out in the
+     field. Now we fall back to check that if the "fully charged" status
+     is not defined at all, consider the `battery.charge` value (100 or not).
+     [issue #3146]
    * For `ups.status` processing, do not assume that `!online`==`offline`,
      it may well be that the device just did not report anything (e.g. if
      it does not really talk USB HID). [#3080]
