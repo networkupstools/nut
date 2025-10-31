@@ -800,7 +800,7 @@ The driver is supposed to support both "new" A series (A700/1000/2000/3000 and t
 
 
 VOLTRONIC-AXPERT UNITS
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 This protocol supports Voltronic Power Axpert inverters, based on P30 protocol
 (used e.g. in photovoltaic equipment, often paired with an UPS charged by the
