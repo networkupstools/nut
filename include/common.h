@@ -509,10 +509,14 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
  * NOTE: It seems that internally in systemd, UINT64_MAX or
  *  ((uint64_t)-1) means "infinity". Internally systemd uses
  *  uint64_t as their usec_t (at least currently) but this
- *  does not seem to be a public API/contract.
+ *  does not seem to be a public API/contract. De-facto the
+ *  value did not have any effect; however INT64_MAX did work
+ *  (presumably as almost 300K years, did not check that long).
+ *  More at https://github.com/systemd/systemd/issues/39535
  * Whatever value gets applied, it should exceed the relevant
  * loop cycle duration at that point in daemon life time.
  */
+#define UPSNOTIFY_EXTEND_TIMEOUT_USEC_INFINITY	((uint64_t)INT64_MAX)
 extern uint64_t upsnotify_extend_timeout_usec_default, upsnotify_extend_timeout_usec;
 
 /* upslog*() messages are sent to syslog always;

@@ -951,7 +951,7 @@ static void doshutdown(void)
 	upsdebugx(1, "%s: starting...", __func__);
 
 	upsnotify(NOTIFY_STATE_STOPPING, "Executing automatic power-fail shutdown");
-	upsnotify_extend_timeout_usec = ((uint64_t)-1); /* infinity */
+	upsnotify_extend_timeout_usec = UPSNOTIFY_EXTEND_TIMEOUT_USEC_INFINITY;
 	upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, NULL);
 
 	/* this should probably go away at some point */
@@ -3492,7 +3492,7 @@ static void runparent(int fd)
 	time(&start);
 
 	upsnotify(NOTIFY_STATE_STOPPING, "Parent: calling shutdown command");
-	upsnotify_extend_timeout_usec = ((uint64_t)-1); /* infinity */
+	upsnotify_extend_timeout_usec = UPSNOTIFY_EXTEND_TIMEOUT_USEC_INFINITY;
 	upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, NULL);
 
 	/* have to do this here - child is unprivileged */
