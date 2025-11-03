@@ -143,6 +143,10 @@ static char	*pidfn = NULL;
 static int	help_only = 0,
 		cli_args_accepted = 0,
 		dump_data = 0; /* Store the update_count requested */
+
+/* Globally track if we are charging or losing power, and how fast */
+double	previous_battery_charge_value = -1.0;
+st_tree_timespec_t	previous_battery_charge_timestamp;
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 /* pre-declare some private methods used */
@@ -3150,8 +3154,10 @@ sockname_ownership_finished:
 		upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
 	}
 
+	memset(&previous_battery_charge_timestamp, 0, sizeof(previous_battery_charge_timestamp));
 	while (!exit_flag) {
 		struct timeval	timeout;
+		const st_tree_t	*dstate_entry = NULL;
 
 		if (!dump_data) {
 			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
@@ -3159,6 +3165,21 @@ sockname_ownership_finished:
 
 		gettimeofday(&timeout, NULL);
 		timeout.tv_sec += poll_interval;
+
+		/* Drivers can now choose to track changes of current battery
+		 * charge vs. its previous value to e.g. report "CHRG" status.
+		 * TODO: Eventually provide a common `runtimecal` fallback to all?
+		 */
+		if ((dstate_entry = dstate_tree_find("battery.charge")) && dstate_entry->val) {
+			double	d = -1.0;
+
+			if (str_to_double(dstate_entry->val, &d, 10) && d >= 0.0) {
+				if (previous_battery_charge_value != d) {
+					previous_battery_charge_value = d;
+					previous_battery_charge_timestamp = dstate_entry->lastset;
+				}
+			}
+		}
 
 		dstate_setinfo("driver.state", "updateinfo");
 		upsdrv_updateinfo();

@@ -18,6 +18,13 @@ extern int		broken_driver, experimental_driver,
 extern TYPE_FD		upsfd, extrafd;
 extern time_t		poll_interval;
 
+/* Drivers can now choose to track changes of current battery
+ * charge vs. its previous value to e.g. report "CHRG" status.
+ * TODO: Eventually provide a common `runtimecal` fallback to all?
+ */
+extern double	previous_battery_charge_value;
+extern st_tree_timespec_t	previous_battery_charge_timestamp;
+
 /* We allow for aliases to certain program names (e.g. when renaming a driver
  * between "old" and "new" and default implementations, it should accept both
  * or more names it can be called by).

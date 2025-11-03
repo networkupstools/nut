@@ -89,6 +89,7 @@ void dstate_addflags(const char *var, const int addflags);
 void dstate_delflags(const char *var, const int delflags);
 void dstate_setaux(const char *var, long aux);
 const char *dstate_getinfo(const char *var);
+const st_tree_t *dstate_tree_find(const char *var);	/* Return the whole entry, or NULL */
 void dstate_addcmd(const char *cmdname);
 int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff);
 int dstate_delinfo(const char *var);

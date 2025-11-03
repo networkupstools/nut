@@ -49,6 +49,10 @@ https://github.com/networkupstools/nut/milestone/12
      stable name as a default implementation). Drivers united by `main.c`
      framework introduced a `upsdrv_tweak_prognames()` hook method to let
      them manipulate the array of `prognames[]` aliases. [PR #3101]
+   * Introduced global variables for last changed timestamp and value of
+     `battery.charge`, so all drivers can now choose to track its changes
+     over time to e.g. report "CHRG" status; this is a step in direction
+     of eventually providing a common `runtimecal` fallback to all. [#3146]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,

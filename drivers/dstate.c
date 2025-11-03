@@ -1653,6 +1653,14 @@ const char *dstate_getinfo(const char *var)
 	return state_getinfo(dtree_root, var);
 }
 
+const st_tree_t *dstate_tree_find(const char *var)
+{
+	if (!var)
+		return NULL;
+
+	return state_tree_find(dtree_root, var);
+}
+
 void dstate_addcmd(const char *cmdname)
 {
 	int	ret;
