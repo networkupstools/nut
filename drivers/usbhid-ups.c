@@ -2804,12 +2804,12 @@ static void ups_status_set(void)
 			/* Device reports this status, else below... */
 			status_set("CHRG");		/* charging */
 		} else if (!(ups_status & STATUS(FULLYCHARGED)) && !(ups_status & STATUS(NOTFULLYCHARGED))) {
-			/* Device does not report this status */
+			/* Device does not report this status at all */
 			const char	*s;
 			if ((s = dstate_getinfo("battery.charge"))) {
 				/* NOTE: exact "0" may mean a conversion error: */
 				int	current_charge = atoi(s);
-				if (current_charge < 100)
+				if (current_charge > 0 && current_charge < 100)
 					status_set("CHRG");		/* charging */
 			}
 		}
