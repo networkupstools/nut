@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3576 utf-8
+personal_ws-1.1 en 3577 utf-8
 AAC
 AAS
 ABI
@@ -1944,6 +1944,7 @@ devscan
 dfl
 dhcp
 dialout
+difftime
 diffutils
 dir
 disassembly

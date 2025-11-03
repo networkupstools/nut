@@ -49,6 +49,8 @@ https://github.com/networkupstools/nut/milestone/12
      stable name as a default implementation). Drivers united by `main.c`
      framework introduced a `upsdrv_tweak_prognames()` hook method to let
      them manipulate the array of `prognames[]` aliases. [PR #3101]
+   * For state tree methods, introduced `difftime_st_tree_timespec()` to
+     abstract platform-dependent definitions of `st_tree_timespec_t`. [PR #3156]
    * Introduced global variables for last changed timestamp and value of
      `battery.charge`, so all drivers can now choose to track its changes
      over time to e.g. report "CHRG" status; this is a step in direction
