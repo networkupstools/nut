@@ -24,6 +24,7 @@
 #include "common.h"
 #include "main.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include "dstate.h"
 #include "attribute.h"
 #include "upsdrvquery.h"
@@ -143,10 +144,6 @@ static char	*pidfn = NULL;
 static int	help_only = 0,
 		cli_args_accepted = 0,
 		dump_data = 0; /* Store the update_count requested */
-
-/* Globally track if we are charging or losing power, and how fast */
-double	previous_battery_charge_value = -1.0;
-st_tree_timespec_t	previous_battery_charge_timestamp;
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 /* pre-declare some private methods used */
@@ -3174,7 +3171,7 @@ sockname_ownership_finished:
 			double	d = -1.0;
 
 			if (str_to_double(dstate_entry->val, &d, 10) && d >= 0.0) {
-				if (previous_battery_charge_value != d) {
+				if (!d_equal(previous_battery_charge_value, d)) {
 					previous_battery_charge_value = d;
 					previous_battery_charge_timestamp = dstate_entry->lastset;
 				}

@@ -52,9 +52,11 @@ https://github.com/networkupstools/nut/milestone/12
    * For state tree methods, introduced `difftime_st_tree_timespec()` to
      abstract platform-dependent definitions of `st_tree_timespec_t`. [PR #3156]
    * Introduced global variables for last changed timestamp and value of
-     `battery.charge`, so all drivers can now choose to track its changes
-     over time to e.g. report "CHRG" status; this is a step in direction
-     of eventually providing a common `runtimecal` fallback to all. [#3146]
+     `battery.charge`, integrated with `status_commit()`, so all drivers
+     should now report a `CHRG` or `DISCHRG` status, and verify whether
+     reality agrees with a status reported by device/protocol (if any).
+     This is also a step in direction of eventually providing a common
+     `runtimecal` style fallback to all drivers. [issue #3146, PR #3156]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,

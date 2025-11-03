@@ -71,6 +71,10 @@ typedef struct conn_s {
 	 * Defaults to nonblocking, for backward compatibility */
 	extern	int	do_synchronous;
 
+	/* Globally track if we are charging or losing power, and how fast */
+	extern double	previous_battery_charge_value;
+	extern st_tree_timespec_t	previous_battery_charge_timestamp;
+
 char * dstate_init(const char *prog, const char *devname);
 int dstate_poll_fds(struct timeval timeout, TYPE_FD extrafd);
 int vdstate_setinfo(const char *var, const char *fmt, va_list ap);

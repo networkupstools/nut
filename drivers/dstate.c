@@ -43,6 +43,7 @@
 #include "parseconf.h"
 #include "attribute.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 
 	static TYPE_FD	sockfd = ERROR_FD;
 #ifndef WIN32
@@ -60,6 +61,10 @@
 	static cmdlist_t	*cmdhead = NULL;
 
 	struct ups_handler	upsh;
+
+	/* Globally track if we are charging or losing power, and how fast */
+	double			previous_battery_charge_value = -1.0;
+	st_tree_timespec_t	previous_battery_charge_timestamp;
 
 #ifndef WIN32
 /* this may be a frequent stumbling point for new users, so be verbose here */
@@ -1853,10 +1858,13 @@ void status_set(const char *buf)
 /* write the status_buf into the externally visible dstate storage */
 void status_commit(void)
 {
+	/* FIXME: Further unify two accesses to, and parses of, "battery.charge" */
+	const st_tree_t	*dstate_battery_charge_entry = dstate_tree_find("battery.charge");
+
 	while (ignorelb) {
 		const char	*val, *low;
 
-		val = dstate_getinfo("battery.charge");
+		val = dstate_battery_charge_entry ? dstate_battery_charge_entry->val : NULL;
 		low = dstate_getinfo("battery.charge.low");
 
 		if (val && low && (strtol(val, NULL, 10) < strtol(low, NULL, 10))) {
@@ -1876,6 +1884,52 @@ void status_commit(void)
 
 		/* LB condition not detected */
 		break;
+	}
+
+	if (dstate_battery_charge_entry && dstate_battery_charge_entry->val) {
+		double	current_battery_charge_value = -1.0;
+
+		if (previous_battery_charge_value >= 0.0
+		 && str_to_double(dstate_battery_charge_entry->val, &current_battery_charge_value, 10)
+		 && current_battery_charge_value >= 0
+		 && current_battery_charge_value < 100.0
+		 && (!(d_equal(previous_battery_charge_value, current_battery_charge_value)))
+		) {
+			/* We are not at 100%... is the battery filling up,
+			 * or is the load greater than wall power/genset? */
+			int	reports_DISCHRG = status_get("DISCHRG"), reports_CHRG = status_get("CHRG");
+
+			if (!reports_DISCHRG && !reports_CHRG) {
+				upsdebugx(5, "%s: driver did not report a (DIS)CHRG state, but we know "
+					"that battery.charge changed to %g from %g reported %g seconds ago",
+					__func__, current_battery_charge_value,
+					previous_battery_charge_value,
+					difftime_st_tree_timespec(dstate_battery_charge_entry->lastset, previous_battery_charge_timestamp)
+				);
+
+				if (current_battery_charge_value > previous_battery_charge_value) {
+					status_set("CHRG");
+				} else {
+					status_set("DISCHRG");
+				}
+			} else {
+				int	misleading_DISCHRG = (current_battery_charge_value > previous_battery_charge_value && reports_DISCHRG);
+				int	misleading_CHRG =    (current_battery_charge_value < previous_battery_charge_value && reports_CHRG);
+
+				if (misleading_DISCHRG || misleading_CHRG) {
+					upslogx(LOG_WARNING, "Device reports that it is %scharging, "
+						"but the current battery charge %g is %s than %g "
+						"reported %g seconds ago",
+						misleading_DISCHRG ? "dis" : "",
+						current_battery_charge_value,
+						misleading_DISCHRG ? "greater" : "less",
+						previous_battery_charge_value,
+						difftime_st_tree_timespec(dstate_battery_charge_entry->lastset, previous_battery_charge_timestamp)
+					);
+					status_set(misleading_DISCHRG ? "CHRG" : "DISCHRG");
+				}
+			}
+		}
 	}
 
 	if (alarm_active || alarm_legacy_status) {
