@@ -52,7 +52,11 @@ https://github.com/networkupstools/nut/milestone/12
    * Introduced `NOTIFY_STATE_EXTEND_TIMEOUT` option and relevant variables
      for `upsnotify()` method, so we can tell systemd to not kill the service
      unit if its shutdown takes long (see also the `SHUTDOWNEXIT` option in
-     the `upsmon` client). [issue #3003]
+     the `upsmon` client). [issue #3003, PR #3151]
+   * Daemons running with systemd integration tended to report "logged the
+     systemd watchdog situation once, will not spam more about it" even if
+     those "logged" messages were at an invisible verbosity level. [issue #3157,
+     PR #3151]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,

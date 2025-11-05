@@ -3113,17 +3113,19 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
 # if ! DEBUG_SYSTEMD_WATCHDOG
 	if (state == NOTIFY_STATE_WATCHDOG && !upsnotify_reported_watchdog_systemd) {
-		upsdebugx(upsnotify_report_verbosity,
-			"%s: logged the systemd watchdog situation once, "
-			"will not spam more about it", __func__);
+		if (nut_debug_level >= 6)	/* level of upsdebugx() above telling watchdog details */
+			upsdebugx(upsnotify_report_verbosity,
+				"%s: logged the systemd watchdog situation once, "
+				"will not spam more about it", __func__);
 		upsnotify_reported_watchdog_systemd = 1;
 		upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 	}
 
 	if (state == NOTIFY_STATE_EXTEND_TIMEOUT && !upsnotify_reported_extend_timeout_systemd) {
-		upsdebugx(upsnotify_report_verbosity,
-			"%s: logged the systemd extend timeout situation once, "
-			"will not spam more about it", __func__);
+		if (nut_debug_level >= 6)	/* level of upsdebugx() above telling extend-timeout details */
+			upsdebugx(upsnotify_report_verbosity,
+				"%s: logged the systemd extend timeout situation once, "
+				"will not spam more about it", __func__);
 		upsnotify_reported_extend_timeout_systemd = 1;
 		upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 	}
