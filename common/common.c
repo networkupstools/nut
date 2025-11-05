@@ -439,8 +439,6 @@ void Uninhibit(TYPE_FD *fd_ptr)
 /* upsnotify() debug-logs its reports; a watchdog ping is something we
  * try to send often so report it just once (whether enabled or not) */
 static int upsnotify_reported_watchdog_systemd = 0;
-/* Similarly for watchdog-like pings when stopping/starting */
-static int upsnotify_reported_extend_timeout_systemd = 0;
 /* Similarly for only reporting once if the notification subsystem is disabled */
 static int upsnotify_reported_disabled_systemd = 0;
 # ifndef DEBUG_SYSTEMD_WATCHDOG
@@ -3118,15 +3116,6 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				"%s: logged the systemd watchdog situation once, "
 				"will not spam more about it", __func__);
 		upsnotify_reported_watchdog_systemd = 1;
-		upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
-	}
-
-	if (state == NOTIFY_STATE_EXTEND_TIMEOUT && !upsnotify_reported_extend_timeout_systemd) {
-		if (nut_debug_level >= 6)	/* level of upsdebugx() above telling extend-timeout details */
-			upsdebugx(upsnotify_report_verbosity,
-				"%s: logged the systemd extend timeout situation once, "
-				"will not spam more about it", __func__);
-		upsnotify_reported_extend_timeout_systemd = 1;
 		upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 	}
 # endif
