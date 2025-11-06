@@ -206,13 +206,13 @@ jobs:
         compression-level: 0
         overwrite: true
 
-    # Abusing https://github.com/marketplace/actions/publish-test-report
-    # to post a GHA check result with an URL
-    - name: "GHA-01: Make dist and docs tarballs - download URL"
-      uses: turing85/publish-report@v2
-      if: ${{ always() }}
+    # https://github.com/thollander/actions-comment-pull-request
+    # FIXME: Something that adds/updates Github Checks would be better
+    #  as it would be seen in the list attached to a status icon of any
+    #  build (e.g. history of master branch)
+    - name: "GHA-01: Make dist and docs tarballs - report download URL"
+      uses: thollander/actions-comment-pull-request@v3
+      if: startsWith(github.ref, 'refs/pull/')
       with:
-        comment-header: Dist and Docs for NUT build of ${{ env.GITHUB_HEAD_REF }}
-        comment-message-success: Dist and Docs [tarballs-${{ env.GITHUB_HEAD_REF }}](${{ steps.upload_artifact.outputs.artifact-url }}) are available
-        comment-message-failure: Dist and Docs tarballs were not archived for this build
-        report-fail-on-error: true
+        comment-tag: latest-tarball
+        message: Dist and Docs [tarballs-${{ steps.subst-github-ref.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.workflow_sha }}
