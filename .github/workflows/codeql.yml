@@ -96,7 +96,7 @@ jobs:
       id: cache-ccache
       uses: actions/cache@v4
       env:
-        cache-name: cache-ccache-${{ matrix.compiler }}-${{ matrix.NUT_SSL_VARIANTS }}-${{ matrix.NUT_SSL_VARIANTS }}
+        cache-name: cache-ccache-${{ matrix.compiler }}-${{ matrix.NUT_SSL_VARIANTS }}-${{ matrix.NUT_USB_VARIANTS }}
       with:
         path: |
             ~/.ccache
