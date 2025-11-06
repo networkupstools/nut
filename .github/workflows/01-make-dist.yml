@@ -44,6 +44,7 @@ jobs:
        _input-text: "${{ github.ref_name }}"
        " ": _
        "/": _
+    - run: echo "${{ steps.subst-github-ref-name.outputs.result }}"
 
     # Using hints from https://askubuntu.com/questions/272248/processing-triggers-for-man-db
     # and our own docs/config-prereqs.txt
