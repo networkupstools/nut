@@ -949,7 +949,10 @@ static void doshutdown(void)
 	 * setting), otherwise it exits the (child part of) upsmon daemon.
 	 */
 	upsdebugx(1, "%s: starting...", __func__);
+
 	upsnotify(NOTIFY_STATE_STOPPING, "Executing automatic power-fail shutdown");
+	upsnotify_extend_timeout_usec = UPSNOTIFY_EXTEND_TIMEOUT_USEC_INFINITY;
+	upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, NULL);
 
 	/* this should probably go away at some point */
 	upslogx(LOG_CRIT, "Executing automatic power-fail shutdown");
@@ -957,9 +960,28 @@ static void doshutdown(void)
 
 	do_notify(NULL, NOTIFY_SHUTDOWN, NULL);
 
-	upsdebugx(1, "%s: waiting for FINALDELAY=%u (to let notification handling complete)...",
-		__func__, finaldelay);
-	sleep(finaldelay);
+	if (finaldelay > 0) {
+		time_t	now;
+
+		upsdebugx(1, "%s: waiting for FINALDELAY=%u (to let notification handling complete)...",
+			__func__, finaldelay);
+
+		/* FIXME: Track and check if the current system (or NUT build)
+		 *  supports notifications and service watchdog in particular;
+		 *  if not - use a chaper simple sleep(finaldelay) right away.
+		 */
+		time(&start);
+		time(&now);
+
+		while (difftime(now, start) < finaldelay) {
+			sleep(1);
+			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+			time(&now);
+		}
+	} else {
+		upsdebugx(1, "%s: FINALDELAY=%u (not waiting to let notification handling complete)...",
+			__func__, finaldelay);
+	}
 
 	/* If we would handle SHUTDOWNEXIT as a finite delay below,
 	 * that time should include the duration of SHUTDOWNCMD too */
@@ -988,6 +1010,7 @@ static void doshutdown(void)
 		set_pdflag();
 
 		upsdebugx(2, "%s: directly call shutdown command (sync)", __func__);
+		upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, "Mono-process: calling shutdown command (directly)");
 
 #ifdef WIN32
 		SC_HANDLE SCManager;
@@ -1037,10 +1060,14 @@ static void doshutdown(void)
 			upslogx(LOG_WARNING,
 				"Configured to not exit upsmon "
 				"after initiating shutdown");
+			upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, "Child/Mono-process: "
+				"Configured to not exit upsmon after initiating shutdown");
 		} else {
 			upslogx(LOG_WARNING,
 				"Configured to only exit upsmon SHUTDOWNEXIT=%d sec "
 				"after initiating shutdown", shutdownexitdelay);
+			upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, "Child/Mono-process: "
+				"Configured to only exit upsmon some time after initiating shutdown");
 		}
 		if (exit_flag) {
 			/* TOTHINK: Are there cases when we want to
@@ -1061,8 +1088,10 @@ static void doshutdown(void)
 			char	temp[SMALLBUF];
 			long	maxlogins = 0, logins = 0;
 
+			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
 			upsdebugx(3, "%s: ping data server(s) for this client to remain not-timed-out", __func__);
-			
+
 #ifndef WIN32
 			/* reap children (e.g. notify) that have exited */
 			waitpid(-1, NULL, WNOHANG);
@@ -1301,6 +1330,8 @@ static void sync_secondaries(void)
 		maxlogins = 0;
 		count++;
 
+		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
 		for (ups = firstups; ups != NULL; ups = ups->next) {
 
 			/* only check login count on devices we are the primary for */
@@ -1318,6 +1349,8 @@ static void sync_secondaries(void)
 
 			clear_alarm();
 		}
+
+		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 		/* if no UPS has more than 1 login (that would be us),
 		 * then secondaries are all gone */
@@ -3458,6 +3491,10 @@ static void runparent(int fd)
 	 * that time should include the duration of SHUTDOWNCMD too */
 	time(&start);
 
+	upsnotify(NOTIFY_STATE_STOPPING, "Parent: calling shutdown command");
+	upsnotify_extend_timeout_usec = UPSNOTIFY_EXTEND_TIMEOUT_USEC_INFINITY;
+	upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, NULL);
+
 	/* have to do this here - child is unprivileged */
 	set_pdflag();
 
@@ -3481,6 +3518,7 @@ static void runparent(int fd)
 			exit_flag, (intmax_t)pid_pipechild,
 			(sret == 0 ? "calling" : "trying to call"),
 			sret, shutdowncmd);
+		upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, "Parent: waiting for child to exit");
 
 		do {
 			waitret = waitpid(pid_pipechild, &waitstatus, WNOHANG);

@@ -57,6 +57,14 @@ https://github.com/networkupstools/nut/milestone/12
      reality agrees with a status reported by device/protocol (if any).
      This is also a step in direction of eventually providing a common
      `runtimecal` style fallback to all drivers. [issue #3146, PR #3156]
+   * Introduced `NOTIFY_STATE_EXTEND_TIMEOUT` option and relevant variables
+     for `upsnotify()` method, so we can tell systemd to not kill the service
+     unit if its shutdown takes long (see also the `SHUTDOWNEXIT` option in
+     the `upsmon` client). [issue #3003, PR #3151]
+   * Daemons running with systemd integration tended to report "logged the
+     systemd watchdog situation once, will not spam more about it" even if
+     those "logged" messages were at an invisible verbosity level. [issue #3157,
+     PR #3151]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
@@ -165,6 +173,8 @@ https://github.com/networkupstools/nut/milestone/12
      (e.g. begin stopping heavy services) even while `upsmon` waits for the
      secondaries to complete their shutdowns and log out of the `upsd` data
      server. [issue #3003, PR #3110]
+   * Tickle service watchdog timer (if any) so the `nut-monitor.service` or
+     equivalent unit is not killed off due to quietness during shutdown. [#3003]
 +
 NOTE: If using `upssched` and monitoring multiple UPSes, consider setting up
 a `START-TIMER-SHARED` rule with a short (approx. 1 second) timeout to group
