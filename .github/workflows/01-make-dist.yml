@@ -222,4 +222,4 @@ jobs:
       if: startsWith(github.ref, 'refs/pull/')
       with:
         comment-tag: latest-tarball
-        message: Dist and Docs [tarballs-${{ steps.subst-github-ref.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.workflow_sha }}
+        message: Dist and Docs [tarballs-${{ steps.subst-github-ref.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
