@@ -8,12 +8,12 @@ name: "GHA-01: Make dist and docs tarballs"
 
 on:
   push:
-    branches: [ "master", "FTY", "fightwarn" ]
+    branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
     tags:
       - v*
   pull_request_target:
     # The branches below must be a subset of the branches above
-    branches: [ "master", "FTY", "fightwarn" ]
+    branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
   schedule:
     - cron: '15 12 * * 0'
   workflow_dispatch:
