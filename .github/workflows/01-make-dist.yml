@@ -104,6 +104,10 @@ jobs:
         git branch -a || true
         for R in `git remote` ; do git fetch $R master ; done || true
         git fetch --tags
+        pwd ; ls -la
+        git log -2 || true
+        git tag || true
+        git describe || true
 
     - name: Debug gitlog2version processing
       run: bash -x ./tools/gitlog2version.sh || true
