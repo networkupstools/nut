@@ -527,6 +527,12 @@ Still TODO:
    * Added APC BVKxxxM2 and BKxxxM2-CH to list of devices where
      `lbrb_log_delay_sec=N` may be necessary to address spurious LOWBATT
      and REPLACEBATT events. [PR #2942, PR #3007, issue #2347, issue #3006]
+   * The `powercom-hid` subdriver did not handle delayed shutdown commands
+     properly, at least as of RAPTOR RPT-1500AP LCD models. The RPT series
+     seem to have same USB protocol like Smart KING Pro series, and that
+     only supports a specific set of possible delays for Shutdown commands
+     (certain fractions or counts of whole minutes) -- which should now be
+     handled if `powercom_sdcmd_discrete_delay` flag is set. [issue #3000]
 
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
