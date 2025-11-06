@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.70"
+#define DRIVER_VERSION	"0.71"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -305,6 +305,7 @@ static status_lkp_t status_info[] = {
 	{ "depleted", STATUS(DEPLETED) },
 	{ "timelimitexp", STATUS(TIMELIMITEXP) },
 	{ "fullycharged", STATUS(FULLYCHARGED) },
+	{ "notfullycharged", STATUS(NOTFULLYCHARGED) },
 	{ "awaitingpower", STATUS(AWAITINGPOWER) },
 	{ "fanfail", STATUS(FANFAIL) },
 	{ "nobattery", STATUS(NOBATTERY) },
@@ -464,9 +465,9 @@ info_lkp_t chargerfail_info[] = {
 	{ 0, "!chargerfail", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
-info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite */
+info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite, and some other HIDs */
 	{ 1, "fullycharged", NULL, NULL },
-	{ 0, "!fullycharged", NULL, NULL },
+	{ 0, "notfullycharged", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t depleted_info[] = {
@@ -1994,6 +1995,12 @@ static void process_boolean_info(const char *nutvalue)
 	else if (!strcmp(nutvalue, "offline"))
 		process_boolean_info("!online");
 
+	/* Similarly for (NOT)FULLYCHARGED status that not all devices report */
+	if (!strcmp(nutvalue, "fullycharged"))
+		process_boolean_info("!notfullycharged");
+	else if (!strcmp(nutvalue, "notfullycharged"))
+		process_boolean_info("!fullycharged");
+
 	if (*nutvalue == '!') {
 		nutvalue++;
 		clear = 1;
@@ -2774,10 +2781,10 @@ static void ups_status_set(void)
 			}
 
 			upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. %s"
-			"Is it calibrating (perhaps you want to set 'onlinedischarge_calibration' option)? "
-			"Note that some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when "
-			"in fact offline/on-battery (perhaps you want to set 'onlinedischarge_onbattery' option).",
-			__func__, upsname, msg_charge);
+				"Is it calibrating (perhaps you want to set 'onlinedischarge_calibration' option)? "
+				"Note that some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when "
+				"in fact offline/on-battery (perhaps you want to set 'onlinedischarge_onbattery' option).",
+				__func__, upsname, msg_charge);
 		}
 	} else if ((ups_status & STATUS(ONLINE))) {
 		/* we get here if simply online, not discharging */
@@ -2792,10 +2799,20 @@ static void ups_status_set(void)
 		status_set("DISCHRG");		/* discharging */
 	}
 
-	if ((ups_status & STATUS(CHRG))
-	&& !(ups_status & STATUS(FULLYCHARGED))
-	) {
-		status_set("CHRG");		/* charging */
+	if (ups_status & STATUS(CHRG)) {
+		if (ups_status & STATUS(NOTFULLYCHARGED)) {
+			/* Device reports this status, else below... */
+			status_set("CHRG");		/* charging */
+		} else if (!(ups_status & STATUS(FULLYCHARGED)) && !(ups_status & STATUS(NOTFULLYCHARGED))) {
+			/* Device does not report this status at all */
+			const char	*s;
+			if ((s = dstate_getinfo("battery.charge"))) {
+				/* NOTE: exact "0" may mean a conversion error: */
+				int	current_charge = atoi(s);
+				if (current_charge > 0 && current_charge < 100)
+					status_set("CHRG");		/* charging */
+			}
+		}
 	}
 
 	if (ups_status & (STATUS(LOWBATT) | STATUS(TIMELIMITEXP) | STATUS(SHUTDOWNIMM))) {
