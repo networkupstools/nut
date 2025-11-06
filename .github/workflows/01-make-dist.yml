@@ -195,7 +195,7 @@ jobs:
     - if: env.GITHUB_REF_TYPE != 'tag' && steps.subst-github-ref-name.outputs.result != 'master'
       name: Delete Old Artifacts for this feature branch/PR
       uses: actions/github-script@v6
-      id: artifact
+      id: delete_old_artifact_for_pr
       with:
         script: |
           const res = await github.rest.actions.listArtifactsForRepo({
@@ -215,6 +215,7 @@ jobs:
 
     - name: Upload tarball and its checksum artifacts
       uses: actions/upload-artifact@v4
+      id: upload_artifact
       with:
         name: tarballs-${{ steps.subst-github-ref-name.outputs.result }}
         path: |
