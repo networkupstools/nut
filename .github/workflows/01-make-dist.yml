@@ -123,8 +123,10 @@ jobs:
     # checkout directory, at least not explicitly (recipe may generate
     # some files like man pages to fulfill the "dist" requirements;
     # for now this may generate some libs to figure out their IDs).
-    # We may `make docs` to provide them as a separate tarball just
+    # We do `make docs` to provide them as a separate tarball just
     # in case, later.
+    # DO NOT `make dist-files` here as it includes `dist-sig` and
+    # needs a GPG keychain with maintainers' secrets deployed locally.
     - name: NUT CI Build to create "dist" tarball and related files
       env:
         compiler: 'CC=gcc CXX=g++'
@@ -133,7 +135,7 @@ jobs:
         CCACHE_COMPRESS=true; export CCACHE_COMPRESS
         ccache --version || true
         ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
-        make -s -j 8 dist-files
+        make -s -j 8 dist dist-hash
 
     - name: NUT CI Build to verify "dist" tarball build
       env:
