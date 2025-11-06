@@ -194,3 +194,14 @@ jobs:
           nut-*.tar*
         compression-level: 0
         overwrite: true
+
+    # Abusing https://github.com/marketplace/actions/publish-test-report
+    # to post a GHA check result with an URL
+    - name: "GHA-01: Make dist and docs tarballs - download URL"
+      uses: turing85/publish-report@v2
+      if: ${{ always() }}
+      with:
+        comment-header: Dist and Docs for NUT build of ${{ env.GITHUB_HEAD_REF }}
+        comment-message-success: Dist and Docs [tarballs-${{ env.GITHUB_HEAD_REF }}](${{ steps.upload_artifact.outputs.artifact-url }}) are available
+        comment-message-failure: Dist and Docs tarballs were not archived for this build
+        report-fail-on-error: true
