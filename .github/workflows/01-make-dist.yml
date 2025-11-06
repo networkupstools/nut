@@ -126,7 +126,7 @@ jobs:
         git tag || true
         echo "=== Try to ensure 'git describe' works:"
         git describe || { git fetch --all && for R in `git remote` ; do for T in `git tag` ; do git fetch $R $T ; done ; done; }
-        git describe || { TEST_REF="`git rev-parse --abbrev-ref HEAD`" && [ -n "${TEST_REF}" ] && git checkout master && git pull --all && git checkout "${TEST_REF}" ; }
+        git describe || { TEST_REF="`git symbolic-ref --short HEAD 2>/dev/null || cat .git/HEAD`" && [ -n "${TEST_REF}" ] && git checkout master && git pull --all && git checkout "${TEST_REF}" ; }
         git describe || true
 
     - name: Debug gitlog2version processing
