@@ -207,7 +207,7 @@ jobs:
           })
 
           res.data.artifacts
-            .filter(({ name }) => name === 'tarballs-${{ steps.subst-github-ref-name.outputs.result }}')
+            .filter(({ name }) => name === 'NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}')
             .forEach(({ id }) => {
               github.rest.actions.deleteArtifact({
                 owner: context.repo.owner,
@@ -220,7 +220,7 @@ jobs:
       uses: actions/upload-artifact@v4
       id: upload_artifact
       with:
-        name: tarballs-${{ steps.subst-github-ref-name.outputs.result }}
+        name: NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}
         path: |
           nut-*.tar*
         compression-level: 0
@@ -233,6 +233,7 @@ jobs:
     - name: "GHA-01: Make dist and docs tarballs - report download URL"
       uses: thollander/actions-comment-pull-request@v3
       if: startsWith(github.ref, 'refs/pull/')
+      continue-on-error: true
       with:
         comment-tag: latest-tarball
-        message: Dist and Docs [tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
+        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
