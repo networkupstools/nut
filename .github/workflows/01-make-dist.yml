@@ -183,7 +183,7 @@ jobs:
     # We may want another script block (after this cleanup of obsolete data)
     # to iterate clearing the way build by build until there's X MB available
     # (at least 12MB as of Nov 2025).
-    - if: env.GITHUB_REF_TYPE != 'tag' && steps.subst-github-ref.outputs.result != 'master'
+    - if: env.GITHUB_REF_TYPE != 'tag' && steps.subst-github-ref-name.outputs.result != 'master'
       name: Delete Old Artifacts for this feature branch/PR
       uses: actions/github-script@v6
       id: artifact
@@ -195,7 +195,7 @@ jobs:
           })
 
           res.data.artifacts
-            .filter(({ name }) => name === 'tarballs-${{ steps.subst-github-ref.outputs.result }}')
+            .filter(({ name }) => name === 'tarballs-${{ steps.subst-github-ref-name.outputs.result }}')
             .forEach(({ id }) => {
               github.rest.actions.deleteArtifact({
                 owner: context.repo.owner,
@@ -207,7 +207,7 @@ jobs:
     - name: Upload tarball and its checksum artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: tarballs-${{ steps.subst-github-ref.outputs.result }}
+        name: tarballs-${{ steps.subst-github-ref-name.outputs.result }}
         path: |
           nut-*.tar*
         compression-level: 0
@@ -222,4 +222,4 @@ jobs:
       if: startsWith(github.ref, 'refs/pull/')
       with:
         comment-tag: latest-tarball
-        message: Dist and Docs [tarballs-${{ steps.subst-github-ref.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
+        message: Dist and Docs [tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
