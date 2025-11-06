@@ -11,13 +11,16 @@ on:
     branches: [ "master", "FTY", "fightwarn" ]
     tags:
       - v*
-  pull_request:
+  pull_request_target:
     # The branches below must be a subset of the branches above
     branches: [ "master", "FTY", "fightwarn" ]
   schedule:
     - cron: '15 12 * * 0'
   workflow_dispatch:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
+
+permissions:
+  pull-requests: write
 
 jobs:
   make-dist-tarballs:
