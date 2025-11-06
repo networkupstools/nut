@@ -110,7 +110,7 @@ jobs:
         ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
         rm -f .timestamp-init
 
-    # Make build identification more useful (no fallbacks)
+    # Make build identification more useful (so we use no fallbacks in script)
     - name: Try to get more Git metadata
       run: |
         git remote -v || true
@@ -118,9 +118,15 @@ jobs:
         for R in `git remote` ; do git fetch $R master ; done || true
         git fetch --tags
         pwd ; ls -la
+        echo "=== Known commits in history:"
+        git log --oneline | wc -l
+        echo "=== Recent commits in history:"
         git log -2 || true
+        echo "=== Known tags:"
         git tag || true
-        git describe || git fetch --all
+        echo "=== Try to ensure 'git describe' works:"
+        git describe || { git fetch --all && for R in `git remote` ; do for T in `git tag` ; do git fetch $R $T ; done ; done; }
+        git describe || { TEST_REF="`git rev-parse --abbrev-ref HEAD`" && [ -n "${TEST_REF}" ] && git checkout master && git pull --all && git checkout "${TEST_REF}" ; }
         git describe || true
 
     - name: Debug gitlog2version processing
