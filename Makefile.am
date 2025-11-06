@@ -823,10 +823,13 @@ EXTRA_DIST += VERSION_DEFAULT
 
 # Best-effort delivery for (overly?) customized distros, e.g. via
 #   echo NUT_VERSION_FORCED_SEMVER=1.1.1 > VERSION_FORCED_SEMVER
+# ONLY populated into dist tarball if present in the build area!
+# (Note we do tarball the VERSION_DEFAULT generated just above)
 dist-hook:
 	for D in "$(abs_top_srcdir)" "$(abs_top_builddir)" ; do \
 	    for F in VERSION_FORCED VERSION_FORCED_SEMVER ; do \
 	        if [ -s "$$D/$$F" ] ; then \
+	            echo "  DIST	$$D/$$F => $(top_distdir)/$$F"; \
 	            cat "$$D/$$F" > "$(top_distdir)/$$F" || true ; \
 	        fi ; \
 	    done ; \
