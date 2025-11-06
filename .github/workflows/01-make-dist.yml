@@ -1,0 +1,187 @@
+# Adapted from NUT codeql.yml with inspiration taken from
+# https://javahelps.com/manage-github-artifact-storage-quota
+# regarding uploads of artifacts and clearing the way for them.
+# See also:
+#   https://github.com/actions/upload-artifact
+#   https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+name: "GHA-01: Make dist and docs tarballs"
+
+on:
+  push:
+    branches: [ "master", "FTY", "fightwarn" ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "master", "FTY", "fightwarn" ]
+  schedule:
+    - cron: '15 12 * * 0'
+  workflow_dispatch:
+    # Allow manually running the action, e.g. if disabled after some quietness in the source
+
+jobs:
+  make-dist-tarballs:
+    name: Make Dist and Docs Tarballs
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Using hints from https://askubuntu.com/questions/272248/processing-triggers-for-man-db
+    # and our own docs/config-prereqs.txt
+    # NOTE: Currently installing the MAX prerequisite footprint,
+    # which for building just the docs may be a bit of an overkill.
+    - name: NUT CI Prerequisite packages (Ubuntu, GCC)
+      run: |
+        echo "set man-db/auto-update false" | sudo debconf-communicate
+        sudo dpkg-reconfigure man-db
+        sudo apt update
+        sudo apt install \
+            gcc g++ clang \
+            ccache time \
+            git perl curl \
+            make autoconf automake libltdl-dev libtool binutils \
+            valgrind \
+            cppcheck \
+            pkg-config \
+            libtool-bin \
+            python3 gettext python3-pyqt6 pyqt6-dev-tools \
+            aspell aspell-en \
+            asciidoc source-highlight python3-pygments dblatex \
+            libgd-dev \
+            systemd-dev \
+            libsystemd-dev \
+            libcppunit-dev \
+            libssl-dev libnss3-dev \
+            augeas-tools libaugeas-dev augeas-lenses \
+            libusb-dev libusb-1.0-0-dev \
+            libi2c-dev \
+            libmodbus-dev \
+            libsnmp-dev \
+            libpowerman0-dev \
+            libfreeipmi-dev libipmimonitoring-dev \
+            libavahi-common-dev libavahi-core-dev libavahi-client-dev \
+            libgpiod-dev \
+            bash dash ksh busybox \
+            libneon27-gnutls-dev \
+            build-essential git-core libi2c-dev i2c-tools lm-sensors \
+        || exit
+        date > .timestamp-init
+
+    - name: Prepare ccache
+      # Based on https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#example-using-the-cache-action example
+      id: cache-ccache
+      uses: actions/cache@v4
+      env:
+        compiler: 'CC=gcc CXX=g++'
+        cache-name: cache-ccache-${{ env.compiler }}
+      with:
+        path: |
+            ~/.ccache
+            ~/.cache/ccache
+            ~/.config/ccache/ccache.conf
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/.timestamp-init') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: CCache stats before build
+      run: |
+        ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+        rm -f .timestamp-init
+
+    # Make build identification more useful (no fallbacks)
+    - name: Try to get more Git metadata
+      run: |
+        git remote -v || true
+        git branch -a || true
+        for R in `git remote` ; do git fetch $R master ; done || true
+        git fetch --tags
+
+    - name: Debug gitlog2version processing
+      run: bash -x ./tools/gitlog2version.sh || true
+
+    - name: NUT CI Build Configuration
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        ./autogen.sh && \
+        ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all --with-dev --with-docs --enable-docs-changelog ${{env.compiler}}
+
+    # NOTE: In this scenario we do not build actually NUT in the main
+    # checkout directory, at least not explicitly (recipe may generate
+    # some files like man pages to fulfill the "dist" requirements;
+    # for now this may generate some libs to figure out their IDs).
+    # We may `make docs` to provide them as a separate tarball just
+    # in case, later.
+    - name: NUT CI Build to create "dist" tarball and related files
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        make -s -j 8 dist-files
+
+    - name: NUT CI Build to verify "dist" tarball build
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        make -s -j 8 distcheck
+
+    - name: CCache stats after distcheck
+      run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+
+    - name: NUT CI Build to package complex docs (not part of dist tarball)
+      run: |
+        make -s -j 8 dist-docs
+
+    # Inspired by https://javahelps.com/manage-github-artifact-storage-quota
+    # Note that the code below wipes everything matched by the filter!
+    # We may want another script block (after this cleanup of obsolete data)
+    # to iterate clearing the way build by build until there's X MB available.
+    - if: env.GITHUB_REF_TYPE != 'tag' && env.GITHUB_HEAD_REF != 'master'
+      name: Delete Old Artifacts for this feature branch/PR
+      uses: actions/github-script@v6
+      id: artifact
+      with:
+        script: |
+          const res = await github.rest.actions.listArtifactsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          })
+
+          res.data.artifacts
+            .filter(({ name }) => name === 'tarballs-{{ env.GITHUB_HEAD_REF }}')
+            .forEach(({ id }) => {
+              github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: id,
+              })
+            })
+
+    - name: Upload tarball and its checksum artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tarballs-{{ env.GITHUB_HEAD_REF }}
+        path: |
+          nut-*.tar*
+        compression-level: 0
+        overwrite: true

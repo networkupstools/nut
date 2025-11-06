@@ -260,6 +260,11 @@ several `FSD` notifications into one executed action. [PR #3097]
    types (man, html-single, html-chunked, pdf) that we may have enabled for the
    current build configuration and available tooling. [#1400]
 
+ - Added a GitHub Actions CI job to generate, upload and recycle `make dist`
+   and `make dist-docs` tarballs so they are easier to obtain for people and
+   other CI systems (which might not want to follow a Git repository). [#1400,
+   #2829]
+
  - Source directory `data/html` was renamed to `data/htmlcgi` in order to
    better reflect its contents and purpose, compared to documentation-oriented
    `html*` directories (and recipe variable names). This may impact some
