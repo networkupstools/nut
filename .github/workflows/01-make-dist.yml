@@ -239,4 +239,4 @@ jobs:
       with:
         comment-tag: latest-tarball
         message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
