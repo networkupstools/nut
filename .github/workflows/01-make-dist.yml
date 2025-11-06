@@ -19,8 +19,6 @@ on:
   workflow_dispatch:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
 
-permissions:
-  pull-requests: write
 
 jobs:
   make-dist-tarballs:
@@ -31,7 +29,10 @@ jobs:
     permissions:
       actions: read
       contents: read
+      #contents: write
+      #repository-projects: write
       security-events: write
+      pull-requests: write
 
     strategy:
       fail-fast: false
