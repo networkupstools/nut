@@ -451,6 +451,15 @@ static int upsnotify_reported_disabled_systemd = 0;
 static int upsnotify_reported_disabled_notech = 0;
 static int upsnotify_report_verbosity = -1;
 
+/* Exposed to code consumers (NUT daemons) for NOTIFY_STATE_EXTEND_TIMEOUT */
+uint64_t	upsnotify_extend_timeout_usec_default = 600 * 1000000,
+	/* By default upsnotify_extend_timeout_usec == 0 so the
+	 * upsnotify() method would fall back to current WATCHDOG_USEC
+	 * if available, or to upsnotify_extend_timeout_usec_default.
+	 * Whatever value gets applied, it should exceed the relevant
+	 * loop cycle duration at that point in daemon life time. */
+	upsnotify_extend_timeout_usec = 0;
+
 #include <stdio.h>
 
 /* Know which bitness we were built for,
@@ -2533,6 +2542,11 @@ const char *str_upsnotify_state(upsnotify_state_t state) {
 		case NOTIFY_STATE_WATCHDOG:
 			/* Ping the framework that we are still alive */
 			return "NOTIFY_STATE_WATCHDOG";
+		case NOTIFY_STATE_EXTEND_TIMEOUT:
+			/* Ping the framework that we are still alive
+			 * when starting/stopping
+			 */
+			return "NOTIFY_STATE_EXTEND_TIMEOUT";
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -2744,6 +2758,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 		switch (state) {
 			case NOTIFY_STATE_READY:
+				/* In systemd: since forever? (unspec) */
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen,
 					"%sREADY=1%s",
 					msglen ? "\n" : "",
@@ -2751,6 +2766,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_READY_WITH_PID:
+				/* In systemd: since forever? (unspec) */
 				if (1) { /* scoping */
 					char pidbuf[SMALLBUF];
 					if (snprintf(pidbuf, sizeof(pidbuf), "%lu", (unsigned long) getpid())) {
@@ -2785,6 +2801,13 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_RELOADING:
+				/* Tells the service manager that the service
+				 * is beginning to reload its configuration...
+				 * Note that a service that sends this notification
+				 * must also send a "READY=1" notification when
+				 * it completed reloading its configuration.
+				 * In systemd: since v217
+				 */
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s%s",
 					msglen ? "\n" : "",
 					"RELOADING=1",
@@ -2792,13 +2815,22 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_STOPPING:
+				/* Tells the service manager that the service
+				 * is beginning its shutdown. This is useful
+				 * to allow the service manager to track the
+				 * service's internal state, and present it
+				 * to the user.
+				 * In systemd: since v217
+				 */
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
 					msglen ? "\n" : "",
 					"STOPPING=1");
 				break;
 
 			case NOTIFY_STATE_STATUS:
-				/* Only send a text message per "fmt" */
+				/* Only send a text message per "fmt"
+				 * In systemd: since v233
+				 */
 				if (!msglen) {
 					upsdebugx(6, "%s: failed to notify about status: none provided", __func__);
 					ret = -1;
@@ -2808,7 +2840,13 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_WATCHDOG:
-				/* Ping the framework that we are still alive */
+				/* Ping the framework that we are still alive
+				 * In systemd: since v209 (and if enabled by unit file)
+				 *  per https://www.freedesktop.org/software/systemd/man/latest/sd_watchdog_enabled.html
+				 * NOTE: per https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html
+				 *  since v233 a service can also request a different
+				 *  value of WATCHDOG_USEC=... during run-time.
+				 */
 				if (1) {	/* scoping */
 					int	postit = 0;
 
@@ -2839,7 +2877,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #    if ! DEBUG_SYSTEMD_WATCHDOG
 						if (!upsnotify_reported_watchdog_systemd)
 #    endif
-							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, s);
+							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, NUT_STRARG(s));
 						if (s && *s) {
 							long l = strtol(s, (char **)NULL, 10);
 							if (l > 0) {
@@ -2890,6 +2928,61 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				}
 				break;
 
+			case NOTIFY_STATE_EXTEND_TIMEOUT:
+				/* Ping the framework that we are still alive
+				 * after we have reported that we are stopping
+				 * (or starting but not yet ready) so its timeout
+				 * for stuck services does not kill us. Value
+				 * can be pre-set by the caller, or inherited
+				 * from WATCHDOG_USEC if available.
+				 *
+				 * Tells the service manager to extend the startup,
+				 * runtime or shutdown service timeout corresponding
+				 * the current state. The value specified is a time
+				 * in microseconds during which the service must
+				 * send a new message. A service timeout will occur
+				 * if the message isn't received, but only if the
+				 * runtime of the current state is beyond the
+				 * original maximum times of TimeoutStartSec=,
+				 * RuntimeMaxSec=, and TimeoutStopSec=.
+				 * See systemd.service(5) for effects on the
+				 * service timeouts.
+				 *
+				 * In systemd: since v236
+				 */
+				if (1) {	/* scoping */
+					uint64_t	to_usec = upsnotify_extend_timeout_usec;
+
+					if (to_usec < 1) {
+						char *s = getenv("WATCHDOG_USEC");
+
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd)
+#    endif
+							upsdebugx(6, "%s: WATCHDOG_USEC=%s (for EXTEND_TIMEOUT_USEC)", __func__, NUT_STRARG(s));
+						if (s && *s) {
+							long l = strtol(s, (char **)NULL, 10);
+							if (l > 0) {
+								to_usec = l;
+							}
+						}
+					}
+
+					if (to_usec < 1) {
+						to_usec = upsnotify_extend_timeout_usec_default;
+					}
+
+					if (to_usec > 0) {
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%sEXTEND_TIMEOUT_USEC=%" PRIu64,
+							msglen ? "\n" : "",
+							to_usec);
+					} else {
+						upsdebugx(6, "%s: requested to NOTIFY_STATE_EXTEND_TIMEOUT but did not provide any value", __func__);
+						ret = -126;
+					}
+				}
+				break;
+
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -2927,7 +3020,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 		if ((ret < 0) || (ret >= (int) sizeof(buf))) {
 			/* Refusal to send the watchdog ping is not an error to report */
-			if ( !(ret == -126 && (state == NOTIFY_STATE_WATCHDOG)) ) {
+			if ( !(ret == -126 && (state == NOTIFY_STATE_WATCHDOG || state == NOTIFY_STATE_EXTEND_TIMEOUT)) ) {
 				if (syslog_is_disabled()) {
 					fprintf(stderr,
 						"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
@@ -3018,9 +3111,10 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
 # if ! DEBUG_SYSTEMD_WATCHDOG
 	if (state == NOTIFY_STATE_WATCHDOG && !upsnotify_reported_watchdog_systemd) {
-		upsdebugx(upsnotify_report_verbosity,
-			"%s: logged the systemd watchdog situation once, "
-			"will not spam more about it", __func__);
+		if (nut_debug_level >= 6)	/* level of upsdebugx() above telling watchdog details */
+			upsdebugx(upsnotify_report_verbosity,
+				"%s: logged the systemd watchdog situation once, "
+				"will not spam more about it", __func__);
 		upsnotify_reported_watchdog_systemd = 1;
 		upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 	}

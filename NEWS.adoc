@@ -53,6 +53,22 @@ https://github.com/networkupstools/nut/milestone/12
      Length" values they could identify on some devices: sometimes the first
      (or otherwise preferred) option may be not the correct one, so try the
      other too. [issue #3136]
+   * For state tree methods, introduced `difftime_st_tree_timespec()` to
+     abstract platform-dependent definitions of `st_tree_timespec_t`. [PR #3156]
+   * Introduced global variables for last changed timestamp and value of
+     `battery.charge`, integrated with `status_commit()`, so all drivers
+     should now report a `CHRG` or `DISCHRG` status, and verify whether
+     reality agrees with a status reported by device/protocol (if any).
+     This is also a step in direction of eventually providing a common
+     `runtimecal` style fallback to all drivers. [issue #3146, PR #3156]
+   * Introduced `NOTIFY_STATE_EXTEND_TIMEOUT` option and relevant variables
+     for `upsnotify()` method, so we can tell systemd to not kill the service
+     unit if its shutdown takes long (see also the `SHUTDOWNEXIT` option in
+     the `upsmon` client). [issue #3003, PR #3151]
+   * Daemons running with systemd integration tended to report "logged the
+     systemd watchdog situation once, will not spam more about it" even if
+     those "logged" messages were at an invisible verbosity level. [issue #3157,
+     PR #3151]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
@@ -121,6 +137,12 @@ https://github.com/networkupstools/nut/milestone/12
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
    * Improved support for Eaton 5S1500LCD and 5S1600LCD (US version). [#2380]
+   * The driver used to report `CHRG` status if the device was not "fully
+     charged", however the latter status was only queried and reported by
+     some (not all) subdrivers and probably not by all devices out in the
+     field. Now we fall back to check that if the "fully charged" status
+     is not defined at all, consider the `battery.charge` value (100 or not).
+     [issue #3146]
    * For `ups.status` processing, do not assume that `!online`==`offline`,
      it may well be that the device just did not report anything (e.g. if
      it does not really talk USB HID). [#3080]
@@ -155,6 +177,8 @@ https://github.com/networkupstools/nut/milestone/12
      (e.g. begin stopping heavy services) even while `upsmon` waits for the
      secondaries to complete their shutdowns and log out of the `upsd` data
      server. [issue #3003, PR #3110]
+   * Tickle service watchdog timer (if any) so the `nut-monitor.service` or
+     equivalent unit is not killed off due to quietness during shutdown. [#3003]
 +
 NOTE: If using `upssched` and monitoring multiple UPSes, consider setting up
 a `START-TIMER-SHARED` rule with a short (approx. 1 second) timeout to group

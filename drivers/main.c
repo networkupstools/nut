@@ -24,6 +24,7 @@
 #include "common.h"
 #include "main.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include "dstate.h"
 #include "attribute.h"
 #include "upsdrvquery.h"
@@ -3150,8 +3151,10 @@ sockname_ownership_finished:
 		upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
 	}
 
+	memset(&previous_battery_charge_timestamp, 0, sizeof(previous_battery_charge_timestamp));
 	while (!exit_flag) {
 		struct timeval	timeout;
+		const st_tree_t	*dstate_entry = NULL;
 
 		if (!dump_data) {
 			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
@@ -3159,6 +3162,21 @@ sockname_ownership_finished:
 
 		gettimeofday(&timeout, NULL);
 		timeout.tv_sec += poll_interval;
+
+		/* Drivers can now choose to track changes of current battery
+		 * charge vs. its previous value to e.g. report "CHRG" status.
+		 * TODO: Eventually provide a common `runtimecal` fallback to all?
+		 */
+		if ((dstate_entry = dstate_tree_find("battery.charge")) && dstate_entry->val) {
+			double	d = -1.0;
+
+			if (str_to_double(dstate_entry->val, &d, 10) && d >= 0.0) {
+				if (!d_equal(previous_battery_charge_value, d)) {
+					previous_battery_charge_value = d;
+					previous_battery_charge_timestamp = dstate_entry->lastset;
+				}
+			}
+		}
 
 		dstate_setinfo("driver.state", "updateinfo");
 		upsdrv_updateinfo();
