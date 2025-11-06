@@ -1,4 +1,4 @@
-name: Publish PyNUT client bindings for NUT 🐍 distributions 📦 to PyPI
+name: "GHA-08: Publish PyNUT client bindings for NUT 🐍 distributions 📦 to PyPI"
 # based on https://medium.com/@VersuS_/automate-pypi-releases-with-github-actions-4c5a9cfe947d
 # and https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 
