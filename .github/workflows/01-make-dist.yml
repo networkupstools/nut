@@ -20,6 +20,8 @@ on:
 jobs:
   make-dist-tarballs:
     name: Make Dist and Docs Tarballs
+     # FIXME: Prepare/maintain a container image with pre-installed
+     #  NUT build/tooling prereqs (save about 3 minutes per run!)
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -161,7 +163,8 @@ jobs:
     # Inspired by https://javahelps.com/manage-github-artifact-storage-quota
     # Note that the code below wipes everything matched by the filter!
     # We may want another script block (after this cleanup of obsolete data)
-    # to iterate clearing the way build by build until there's X MB available.
+    # to iterate clearing the way build by build until there's X MB available
+    # (at least 12MB as of Nov 2025).
     - if: env.GITHUB_REF_TYPE != 'tag' && env.GITHUB_HEAD_REF != 'master'
       name: Delete Old Artifacts for this feature branch/PR
       uses: actions/github-script@v6
@@ -174,7 +177,7 @@ jobs:
           })
 
           res.data.artifacts
-            .filter(({ name }) => name === 'tarballs-{{ env.GITHUB_HEAD_REF }}')
+            .filter(({ name }) => name === 'tarballs-${{ env.GITHUB_HEAD_REF }}')
             .forEach(({ id }) => {
               github.rest.actions.deleteArtifact({
                 owner: context.repo.owner,
@@ -186,7 +189,7 @@ jobs:
     - name: Upload tarball and its checksum artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: tarballs-{{ env.GITHUB_HEAD_REF }}
+        name: tarballs-${{ env.GITHUB_HEAD_REF }}
         path: |
           nut-*.tar*
         compression-level: 0
