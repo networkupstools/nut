@@ -199,6 +199,7 @@ jobs:
       name: Delete Old Artifacts for this feature branch/PR
       uses: actions/github-script@v6
       id: delete_old_artifact_for_pr
+      continue-on-error: true
       with:
         script: |
           const res = await github.rest.actions.listArtifactsForRepo({
