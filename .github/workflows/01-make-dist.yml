@@ -109,6 +109,7 @@ jobs:
         pwd ; ls -la
         git log -2 || true
         git tag || true
+        git describe || git fetch --all
         git describe || true
 
     - name: Debug gitlog2version processing
