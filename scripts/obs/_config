@@ -7,7 +7,7 @@ Prefer: libusb-1.0-dev
 Prefer: neon-devel
 Prefer: util-linux
 
-%if "x%{_repository}" == "xRaspbian_11"
+%if "x%{_repository}" == "xRaspbian_11" || "x%{_repository}" == "xRHEL_7"
 %else
 # Use ccache or sccache (let OBS pick its preference) for faster (re-)builds:
 BuildFlags: useccache:nut
