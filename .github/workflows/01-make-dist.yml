@@ -23,7 +23,6 @@ on:
 # for each run, so a MAKE_DIST_TOKEN was made with equivalent list
 # of "fine-grained" rules.
 permissions:
-  repo: write
   contents: read
   issues: write
   pull-requests: write
@@ -35,7 +34,6 @@ jobs:
      #  NUT build/tooling prereqs (save about 3 minutes per run!)
     runs-on: ubuntu-latest
     permissions:
-      repo: write
       #actions: read
       actions: write
       #contents: read
