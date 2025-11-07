@@ -5,6 +5,7 @@
 Prefer: libusbx-devel
 Prefer: libusb-1.0-dev
 Prefer: neon-devel
+Prefer: util-linux
 
 %if "x%{_repository}" == "xRaspbian_11"
 %else
