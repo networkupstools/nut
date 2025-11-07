@@ -51,6 +51,7 @@
 
 %define MODELPATH	%{LIBEXECPATH}/driver
 %define STATEPATH	%{_localstatedir}/lib/ups
+### Note: this is /etc/nut in Debian version
 %define CONFPATH	%{_sysconfdir}/ups
 # RPM on OpenSUSE goes:
 #   DOCDIR=/home/abuild/rpmbuild/BUILD/nut-2.8.4.428-build/BUILDROOT/usr/share/doc/packages/nut
@@ -66,7 +67,6 @@
 #    This directory is for user files, use /usr/share/bash-completion/completions/
 %define BASHCOMPLETIONPATH	%(test -d /usr/share/bash-completion/completions && echo /usr/share/bash-completion/completions || echo "%{_sysconfdir}/bash_completion.d")
 
-### Note: this is /etc/nut in Debian version
 %define NUT_USER		upsd
 %define NUT_GROUP		daemon
 %define LBRACE (
@@ -94,14 +94,16 @@
 # Does this NUT branch have DMF feature code?
 %define NUTPKG_WITH_DMF	%( test -d scripts/DMF && echo 1 || echo 0 )
 
-# Not all distros have it
-# FIXME: No use searching remote repos; can use rpm queries based on whatever
-# did get installed according to Requires lines below, to decide whether we
-# deliver certain sub-packages though.
-%define NUTPKG_WITH_FREEIPMI	%( (yum search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; dnf search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; zypper search -s freeipmi-devel | grep -E '(lib)?freeipmi-devel' && exit ; urpmq --sources freeipmi-devel && exit ; pkcon search name freeipmi-devel | grep -E '(Available|Installed).*freeipmi-devel' && exit;) >&2 && echo 1 || echo 0)
-%define NUTPKG_WITH_POWERMAN	%( (yum search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; dnf search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; zypper search -s powerman-devel | grep -E '(lib)?powerman-devel' && exit ; urpmq --sources powerman-devel && exit ; pkcon search name powerman-devel | grep -E '(Available|Installed).*powerman-devel' && exit;) >&2 && echo 1 || echo 0)
-%define NUTPKG_WITH_AVAHI	%( (yum search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; dnf search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; zypper search -s avahi-devel | grep -E '(lib)?avahi-devel' && exit ; urpmq --sources avahi-devel && exit ; pkcon search name avahi-devel | grep -E '(Available|Installed).*avahi-devel' && exit;) >&2 && echo 1 || echo 0)
-%define NUTPKG_WITH_TCPWRAP	%( (yum search tcp_wrappers-devel | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; dnf search tcp_wrappers-devel | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; zypper search -s tcp_wrappers-devel | grep -E '(lib)?tcp_wrappers-devel' && exit ; urpmq --sources tcp_wrappers-devel && exit ; pkcon search name tcp_wrappers-devel | grep -E '(Available|Installed).*tcp_wrappers-devel' && exit;) >&2 && echo 1 || echo 0)
+# Not all distros have these packages (or their equivalents/aliases)
+# NONE: No use searching remote repos for what might be or not be available
+# there; we have to use rpm queries based on whatever did get installed
+# according to Requires lines below (in turn according to our declaration
+# of what is shipped by this or that distro/release), to decide whether we
+# deliver certain sub-packages.
+%define NUTPKG_WITH_FREEIPMI	%( (rpm -qa | grep -E '^(lib)?freeipmi-devel\.' && exit ; urpmq --sources freeipmi-devel && exit ; pkcon search name freeipmi-devel | grep -E 'Installed.*freeipmi-devel' && exit;) >&2 && echo 1 || echo 0)
+%define NUTPKG_WITH_POWERMAN	%( (rpm -qa | grep -E '^(lib)?powerman-devel\.' && exit ; urpmq --sources powerman-devel && exit ; pkcon search name powerman-devel | grep -E 'Installed.*powerman-devel' && exit;) >&2 && echo 1 || echo 0)
+%define NUTPKG_WITH_AVAHI	%( (rpm -qa | grep -E '^(lib)?avahi-devel\.' && exit    ; urpmq --sources avahi-devel && exit    ; pkcon search name avahi-devel    | grep -E 'Installed.*avahi-devel' && exit;) >&2 && echo 1 || echo 0)
+%define NUTPKG_WITH_TCPWRAP	%( (rpm -qa | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; urpmq --sources tcp_wrappers-devel && exit ; pkcon search name tcp_wrappers-devel | grep -E 'Installed.*tcp_wrappers-devel' && exit;) >&2 && echo 1 || echo 0)
 
 # FIXME: Find a smarter way to set those from main codebase recipes...
 # Something like `git grep 'version-info' '*.am'` ?
@@ -156,13 +158,13 @@ BuildRequires:  dos2unix
 # https://en.opensuse.org/openSUSE:Packaging_Conventions_RPM_Macros#fdupes
 BuildRequires:  fdupes
 
-%if 0%{?NUTPKG_WITH_AVAHI}
+#%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
 BuildRequires:  avahi-devel
-%endif
+#%endif
 
-%if 0%{?NUTPKG_WITH_FREEIPMI}
+#%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
 BuildRequires:  (libfreeipmi-devel or freeipmi-devel)
-%endif
+#%endif
 
 BuildRequires:  gcc-c++
 BuildRequires:  gd-devel
@@ -204,9 +206,10 @@ BuildRequires:  (libcppunit-devel or cppunit-devel)
 %endif
 
 # Obsoleted/away in newer distros
-%if 0%{?NUTPKG_WITH_TCPWRAP}
+#%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
+#%if 0%{?NUTPKG_WITH_TCPWRAP}
 BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
-%endif
+#%endif
 
 # May be plain "neon" and "libusb" in RHEL7 or older?
 # OBS: This may need `osc meta prjconf` to `Prefer:` one
@@ -216,9 +219,10 @@ BuildRequires:  (libneon-devel or neon-devel or neon)
 BuildRequires:  (libopenssl-devel or openssl-devel or openssl)
 #!Prefer:       (libopenssl-devel or openssl-devel)
 
-%if 0%{?NUTPKG_WITH_POWERMAN}
+#%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
+#%if 0%{?NUTPKG_WITH_POWERMAN}
 BuildRequires:  powerman-devel
-%endif
+#%endif
 
 %if 0%{?suse_version}
 BuildRequires:  systemd-rpm-macros
