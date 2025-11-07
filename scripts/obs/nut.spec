@@ -140,9 +140,8 @@ Requires:       %{_bindir}/pkill
 Requires:       %{_bindir}/readlink
 Requires:       usbutils
 #%if 0 % {?suse_version}
-%if ! 0%{?rhel_version}
 Requires(post): udev
-%endif
+#%endif
 #Requires(post): group(% {NUT_GROUP})
 #Requires(post): user(% {NUT_USER})
 Requires(postun):	%{_bindir}/sh
