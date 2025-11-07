@@ -19,6 +19,9 @@ on:
   workflow_dispatch:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
 
+# NOTE: These seem to not work for standard GITHUB_TOKEN generated
+# for each run, so a MAKE_DIST_TOKEN was made with equivalent list
+# of "fine-grained" rules.
 permissions:
   repo: write
   contents: read
@@ -55,7 +58,7 @@ jobs:
       with:
         comment-tag: latest-tarball
         message: Dist and Docs will be linked here after the "make dist" job completes.
-        #github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.MAKE_DIST_TOKEN }}
 
     - name: "GHA-01: Make dist and docs tarballs - report download URL - s1"
       uses: marocchino/sticky-pull-request-comment@v2
@@ -65,7 +68,8 @@ jobs:
         header: latest-tarball-sticky
         only_create: true
         message: Dist and Docs will be linked here after the "make dist" job completes.
-        #github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.MAKE_DIST_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
 
     - name: Checkout repository
       uses: actions/checkout@v5
@@ -249,6 +253,7 @@ jobs:
                 artifact_id: id,
               })
             })
+        github-token: ${{ secrets.MAKE_DIST_TOKEN }}
 
     - name: Upload tarball and its checksum artifacts
       uses: actions/upload-artifact@v4
@@ -271,7 +276,7 @@ jobs:
       with:
         comment-tag: latest-tarball
         message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
-        #github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.MAKE_DIST_TOKEN }}
 
     # https://github.com/marocchino/sticky-pull-request-comment
     - name: "GHA-01: Make dist and docs tarballs - report download URL - s2"
@@ -282,3 +287,5 @@ jobs:
         header: latest-tarball-sticky
         only_create: true
         message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
+        github-token: ${{ secrets.MAKE_DIST_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
