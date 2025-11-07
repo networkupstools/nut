@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.50"
+#define USB_DRIVER_VERSION	"0.51"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -185,7 +185,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #endif
 	/* libusb-1.0 usb_ctrl_charbufsize is uint16_t and we
 	 * want the rdlen vars signed - so taking a wider type */
-	int32_t rdlen1, rdlen2; /* report descriptor length, method 1+2 */
+	int32_t rdlen1, rdlen2, rdlens[2]; /* report descriptor length, method 1+2, then an array to iterate them (if both) in chosen order */
 	USBDeviceMatcher_t *m;
 	libusb_device **devlist;
 	ssize_t	devcount = 0;
@@ -203,13 +203,14 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	const unsigned char *p;
 	char string[256];
 	int i;
+	size_t j;
 	int count_open_EACCESS = 0;
 	int count_open_errors = 0;
 	int count_open_attempts = 0;
 
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
-	int32_t		rdlen;
+	int32_t		rdlen = -1;
 
 	static int	usb_hid_number_opts_parsed = 0;
 	if (!usb_hid_number_opts_parsed) {
@@ -653,7 +654,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		if (rdlen1 < -1) {
 			upsdebugx(2, "Warning: HID descriptor, method 1 failed");
 		}
-		upsdebugx(3, "HID descriptor length (method 1) %d", rdlen1);
+		upsdebugx(3, "HID descriptor length (method 1) %" PRIi32, rdlen1);
 
 		/* SECOND METHOD: find HID descriptor among "extra" bytes of
 		   interface descriptor, i.e., bytes tucked onto the end of
@@ -683,7 +684,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		if (rdlen2 < -1) {
 			upsdebugx(2, "Warning: HID descriptor, method 2 failed");
 		}
-		upsdebugx(3, "HID descriptor length (method 2) %d", rdlen2);
+		upsdebugx(3, "HID descriptor length (method 2) %" PRIi32, rdlen2);
 
 		/* when available, always choose the second value, as it
 			seems to be more reliable (it is the one reported e.g. by
@@ -691,28 +692,40 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			the maximum of the two values instead. */
 		if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
 			upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
-			rdlen = rdlen1;
+			rdlens[0] = rdlen1;
+			rdlens[1] = rdlen2;
 		}
 		else {
-			rdlen = rdlen2 >= 0 ? rdlen2 : rdlen1;
+			rdlens[0] = rdlen2 >= 0 ? rdlen2 : rdlen1;
+			rdlens[1] = rdlen2 >= 0 ? rdlen1 : rdlen2;
 		}
 
-		if (rdlen < 0) {
+		if (rdlen1 < 0 && rdlen2 < 0) {
 			upsdebugx(2, "Unable to retrieve any HID descriptor");
 			goto next_device;
 		}
 		if (rdlen1 >= 0 && rdlen2 >= 0 && rdlen1 != rdlen2) {
 			upsdebugx(2, "Warning: two different HID descriptors retrieved "
-				"(Reportlen = %d vs. %d)", rdlen1, rdlen2);
+				"(Reportlen = %" PRIi32 " vs. %" PRIi32 ")",
+				rdlen1, rdlen2);
+		} else {
+			if (rdlen1 == rdlen2) {
+				rdlens[1] = -1;
+			}
 		}
 
-		upsdebugx(2, "HID descriptor length %d", rdlen);
+		for (j = 0; j < sizeof(rdlens); j++) {
+			rdlen = rdlens[j];
+			if (rdlen < 0)
+				continue;
 
-		if (rdlen > (int)sizeof(rdbuf)) {
-			upsdebugx(2, "HID descriptor too long %d (max %d)",
-				rdlen, (int)sizeof(rdbuf));
-			goto next_device;
-		}
+			upsdebugx(2, "Trying HID descriptor length %" PRIi32, rdlen);
+
+			if (rdlen > (int)sizeof(rdbuf)) {
+				upsdebugx(2, "HID descriptor too long %" PRIi32 " (max %d)",
+					rdlen, (int)sizeof(rdbuf));
+				continue;
+			}
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic push
@@ -726,67 +739,78 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
 #endif
-		if ((uintmax_t)rdlen > UINT16_MAX) {
+			if ((uintmax_t)rdlen > UINT16_MAX) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-			upsdebugx(2, "HID descriptor too long %d (max %" PRIuMAX ")",
-				rdlen, (uintmax_t)UINT16_MAX);
-			goto next_device;
-		}
+				upsdebugx(2, "HID descriptor too long %" PRIi32
+					" (max %" PRIuMAX ")",
+					rdlen, (uintmax_t)UINT16_MAX);
+				continue;
+			}
 
-		/* libusb0: USB_ENDPOINT_IN + 1 */
-		res = libusb_control_transfer(udev,
-			LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
-			LIBUSB_REQUEST_GET_DESCRIPTOR,
-			(LIBUSB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
-			usb_subdriver.hid_rep_index,
-			rdbuf, (uint16_t)rdlen, USB_TIMEOUT);
+			/* libusb0: USB_ENDPOINT_IN + 1 */
+			res = libusb_control_transfer(udev,
+				LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
+				LIBUSB_REQUEST_GET_DESCRIPTOR,
+				(LIBUSB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
+				usb_subdriver.hid_rep_index,
+				rdbuf, (uint16_t)rdlen, USB_TIMEOUT);
 
-		if (res < 0)
-		{
-			upsdebug_with_errno(2, "Unable to get Report descriptor");
-			goto next_device;
-		}
+			if (res < 0)
+			{
+				upsdebug_with_errno(2, "Unable to get Report descriptor");
+				continue;
+			}
 
-		if (res < rdlen)
-		{
+			if (res < rdlen)
+			{
 #ifndef WIN32
-			upsdebugx(2, "Warning: report descriptor too short "
-				"(expected %d, got %d)", rdlen, res);
+				upsdebugx(2, "Warning: report descriptor too short "
+					"(expected %" PRIi32 ", got %d)", rdlen, res);
 #else	/* WIN32 */
-			/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
-			upsdebugx(0, "Warning: report descriptor too short "
-				"(expected %d, got %d)", rdlen, res);
-			upsdebugx(0, "Please check your Windows Device Manager: "
-				"perhaps the UPS was recognized by default OS\n"
-				"driver such as HID UPS Battery (hidbatt.sys, "
-				"hidusb.sys or similar). It could have been\n"
-				"\"restored\" by Windows Update. You can try "
-				"https://zadig.akeo.ie/ to handle it with\n"
-				"either WinUSB, libusb0.sys or libusbK.sys.");
+				/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
+				upsdebugx(0, "Warning: report descriptor too short "
+					"(expected %" PRIi32 ", got %d)", rdlen, res);
+				upsdebugx(0, "Please check your Windows Device Manager: "
+					"perhaps the UPS was recognized by default OS\n"
+					"driver such as HID UPS Battery (hidbatt.sys, "
+					"hidusb.sys or similar). It could have been\n"
+					"\"restored\" by Windows Update. You can try "
+					"https://zadig.akeo.ie/ to handle it with\n"
+					"either WinUSB, libusb0.sys or libusbK.sys.");
 #endif	/* WIN32 */
-			rdlen = res; /* correct rdlen if necessary */
+				rdlen = res; /* correct rdlen if necessary */
+			}
+
+			if (rdlen < USB_CTRL_CHARBUFSIZE_MIN
+			||  (uintmax_t)rdlen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX
+			) {
+				upsdebugx(2,
+					"Report descriptor length is out of range on this device: "
+					"should be %" PRIdMAX " < %" PRIi32 " < %" PRIuMAX,
+						(intmax_t)USB_CTRL_CHARBUFSIZE_MIN, rdlen,
+						(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+				goto next_device;
+			}
+
+			res = callback(udev, curDevice, rdbuf, (usb_ctrl_charbufsize)rdlen);
+			if (res < 1) {
+				upsdebugx(2, "Caller doesn't like this device");
+				continue;
+			}
+
+			/* We found it... or at least something that did not complain */
+			break;
 		}
 
-		if (rdlen < USB_CTRL_CHARBUFSIZE_MIN
-		||  (uintmax_t)rdlen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX
-		) {
-			upsdebugx(2,
-				"Report descriptor length is out of range on this device: "
-				"should be %" PRIdMAX " < %d < %" PRIuMAX,
-					(intmax_t)USB_CTRL_CHARBUFSIZE_MIN, rdlen,
-					(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+		if (j >= sizeof(rdlens)) {
+			/* Ended the loop without success */
 			goto next_device;
 		}
 
-		res = callback(udev, curDevice, rdbuf, (usb_ctrl_charbufsize)rdlen);
-		if (res < 1) {
-			upsdebugx(2, "Caller doesn't like this device");
-			goto next_device;
-		}
-
-		upsdebugx(2, "Report descriptor retrieved (Reportlen = %d)", rdlen);
+		upsdebugx(2, "Report descriptor retrieved (Reportlen = %" PRIi32 ")",
+			rdlen);
 		upsdebugx(2, "Found HID device");
 
 		upsdebugx(3, "Using default, detected or customized USB HID numbers: "
