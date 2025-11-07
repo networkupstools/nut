@@ -215,6 +215,16 @@ jobs:
         ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
         make -s -j 8 distcheck
 
+    - name: NUT CI Build to verify "dist" tarball build self-reproducibility
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        make -s -j 8 distcheck-completeness
+
     - name: CCache stats after distcheck
       run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
 
@@ -270,7 +280,7 @@ jobs:
       continue-on-error: true
       with:
         comment-tag: latest-tarball
-        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
+        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
         #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
 
     # https://github.com/marocchino/sticky-pull-request-comment
@@ -280,7 +290,6 @@ jobs:
       continue-on-error: true
       with:
         header: latest-tarball-sticky
-        only_create: true
-        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
+        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
         #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
         #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
