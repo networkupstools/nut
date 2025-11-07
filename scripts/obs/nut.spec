@@ -97,6 +97,9 @@
 # according to Requires lines below (in turn according to our declaration
 # of what is shipped by this or that distro/release), to decide whether we
 # deliver certain sub-packages - and set NUTPKG_WITH_<DEPNAME> at that time.
+# For version-specific checks note that some are directly digited, others
+# are off by two or four digits (e.g. 0810 = a "8.10" release), see
+# https://en.opensuse.org/openSUSE:Build_Service_cross_distribution_howto
 
 # Does this NUT branch have DMF feature code?
 %define NUTPKG_WITH_DMF	%( test -d scripts/DMF && echo 1 || echo 0 )
@@ -136,9 +139,9 @@ Requires:       %{_bindir}/pgrep
 Requires:       %{_bindir}/pkill
 Requires:       %{_bindir}/readlink
 Requires:       usbutils
-%if 0%{?suse_version}
+#%if 0 % {?suse_version}
 Requires(post): udev
-%endif
+#%endif
 #Requires(post): group(% {NUT_GROUP})
 #Requires(post): user(% {NUT_USER})
 Requires(postun):	%{_bindir}/sh
@@ -156,14 +159,15 @@ BuildRequires:  dos2unix
 BuildRequires:  fdupes
 %endif
 
-%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
+%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
+# Not sure why claimed absent in RHEL7 (even with Fedora/EPEL repo layer added)
 %define NUTPKG_WITH_AVAHI	1
 BuildRequires:  avahi-devel
 %else
 %define NUTPKG_WITH_AVAHI	0
 %endif
 
-%if ( 0%{?rhel_version}>=8 || ! 0%{?rhel_version} ) || ( 0%{?suse_version}>12 || ! 0%{?suse_version} )
+%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )  &&  ( 0%{?sle_version}>=150000 || ! 0%{?sle_version} )  &&  ( 0%{?suse_version}>=1300 || ! 0%{?suse_version} )
 %define NUTPKG_WITH_FREEIPMI	1
 BuildRequires:  (libfreeipmi-devel or freeipmi-devel)
 %else
@@ -200,23 +204,27 @@ BuildRequires:  lua-devel
 # For some platforms we may have to fiddle with distro-named macros like
 #   % if 0 % {?centos_version}
 #   % if 0 % {?suse_version}
-#   % if 0 % {?rhel_version}>=7
+#   % if 0 % {?rhel_version}>=700
 # and whatnot
 
-%if ( (0%{?rhel_version}>0 && 0%{?rhel_version}<=7) || ! 0%{?rhel_version} )
+%if ( (0%{?rhel_version}>0 && 0%{?rhel_version}<800) || ! 0%{?rhel_version} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}!=800) || ! 0%{?centos_version} )
 # Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
+# and that it is resolvable in CentOS 7, 9, 10 but not 8...
 # We only need this to learn paths from apxs tool, so no NUTPKG_WITH_* toggle
 BuildRequires:  (httpd-devel or apache2-devel)
 %endif
 
 BuildRequires:  (dbus-1-glib-devel or dbus-glib-devel)
 
-%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
+%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
 BuildRequires:  (libcppunit-devel or cppunit-devel)
 %endif
 
 # Obsoleted/away in newer distros
-%if ( (0%{?rhel_version}>0 && 0%{?rhel_version}<=7) || ! 0%{?rhel_version} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}<=7) || ! 0%{?centos_version} )  &&  ( (0%{?fedora_version}>0 && 0%{?fedora_version}<=27) || ! 0%{?fedora_version} )
+%if ( (0%{?rhel_version}>0 && 0%{?rhel_version}<800) || ! 0%{?rhel_version} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}<800) || ! 0%{?centos_version} )  &&  ( (0%{?fedora_version}>0 && 0%{?fedora_version}<=27) || ! 0%{?fedora_version} )
+# Note that per https://en.opensuse.org/openSUSE:Build_Service_cross_distribution_howto
+# there was "fedora_version" until some time before 36, when the macro became "fedora";
+# similarly for "rhel_version <= 700" vs. "rhel == 8"...
 %define NUTPKG_WITH_TCPWRAP	1
 BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
 %else
@@ -231,7 +239,7 @@ BuildRequires:  (libneon-devel or neon-devel or neon)
 BuildRequires:  (libopenssl-devel or openssl-devel or openssl)
 #!Prefer:       (libopenssl-devel or openssl-devel)
 
-%if ( ! 0%{?rhel_version} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}<=9) || ! 0%{?centos_version} )  &&  ( (0%{?fedora_version}>0 && 0%{?fedora_version}<99) || ! 0%{?fedora_version} )
+%if ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}<1000) || ! 0%{?centos_version} )  &&  ( (0%{?fedora_version}>0 && 0%{?fedora_version}<4200) || ! 0%{?fedora_version} )  &&  ( (0%{?fedora}>0 && 0%{?fedora}<42) || ! 0%{?fedora} )
 # Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
 # NOTE: fedora_version=99 seems to be rawhide; currently it says this package
 # is not known (so likely a post-42 release would be more specific later),
@@ -242,16 +250,19 @@ BuildRequires:  powerman-devel
 %define NUTPKG_WITH_POWERMAN	0
 %endif
 
-%if 0%{?suse_version}
+%if ( 0%{?suse_version}>0 || ! %{?suse_version} )  &&  (0%{?centos_version}>=800) || ! 0%{?centos_version} )  &&  ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )
+# Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
+# But it also complains about epel-rpm-macros when this is added though.
 BuildRequires:  systemd-rpm-macros
+%endif
+
 # Only needed for PDF generation, we do not package that now
 #BuildRequires:  dblatex
-%endif
 
 BuildRequires:  (libxslt-tools or libxslt)
 BuildRequires:  asciidoc
 
-%if %{defined opensuse_version}
+%if 0%{?opensuse_version}
 # Package provides driver for USB HID UPSes, but people can live with hal addon:
 Enhances:       %{USBHIDDRIVERS}
 # Package provides the only avalailable driver for other USB UPSes:
