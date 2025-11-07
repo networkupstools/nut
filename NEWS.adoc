@@ -307,6 +307,9 @@ several `FSD` notifications into one executed action. [PR #3097]
  - The `configure` script should now try harder to report specifically
    the "purelib" location as `PYTHON*_SITE_PACKAGES`. [#1209]
 
+ - Introduce `make distcheck-completeness` goal to verify that our distribution
+   archives can exactly reproduce themselves. [#2829]
+
  - Upstreamed reference packaging recipes (DEB, RPM) from the 42ITy project
    which can be used with OBS (Open Build Service by SUSE), both to support
    end-user testing of NUT development, and to have a yet another NUT CI farm
