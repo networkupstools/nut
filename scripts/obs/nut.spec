@@ -91,19 +91,15 @@
 
 %define NUT_SYSTEMD_UNITS_PRESET	%(cd scripts/systemd && ls -1 *.preset{,.in} | sed 's,.in$,,' | sort | uniq)
 
-# Does this NUT branch have DMF feature code?
-%define NUTPKG_WITH_DMF	%( test -d scripts/DMF && echo 1 || echo 0 )
-
-# Not all distros have these packages (or their equivalents/aliases)
-# NONE: No use searching remote repos for what might be or not be available
+# Not all distros have certain packages (or their equivalents/aliases),
+# NOTE: No use searching remote repos for what might be or not be available
 # there; we have to use rpm queries based on whatever did get installed
 # according to Requires lines below (in turn according to our declaration
 # of what is shipped by this or that distro/release), to decide whether we
-# deliver certain sub-packages.
-%define NUTPKG_WITH_FREEIPMI	%( (rpm -qa | grep -E '^(lib)?freeipmi-devel\.' && exit ; urpmq --sources freeipmi-devel && exit ; pkcon search name freeipmi-devel | grep -E 'Installed.*freeipmi-devel' && exit;) >&2 && echo 1 || echo 0)
-%define NUTPKG_WITH_POWERMAN	%( (rpm -qa | grep -E '^(lib)?powerman-devel\.' && exit ; urpmq --sources powerman-devel && exit ; pkcon search name powerman-devel | grep -E 'Installed.*powerman-devel' && exit;) >&2 && echo 1 || echo 0)
-%define NUTPKG_WITH_AVAHI	%( (rpm -qa | grep -E '^(lib)?avahi-devel\.' && exit    ; urpmq --sources avahi-devel && exit    ; pkcon search name avahi-devel    | grep -E 'Installed.*avahi-devel' && exit;) >&2 && echo 1 || echo 0)
-%define NUTPKG_WITH_TCPWRAP	%( (rpm -qa | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; urpmq --sources tcp_wrappers-devel && exit ; pkcon search name tcp_wrappers-devel | grep -E 'Installed.*tcp_wrappers-devel' && exit;) >&2 && echo 1 || echo 0)
+# deliver certain sub-packages - and set NUTPKG_WITH_<DEPNAME> at that time.
+
+# Does this NUT branch have DMF feature code?
+%define NUTPKG_WITH_DMF	%( test -d scripts/DMF && echo 1 || echo 0 )
 
 # FIXME: Find a smarter way to set those from main codebase recipes...
 # Something like `git grep 'version-info' '*.am'` ?
@@ -154,17 +150,25 @@ Recommends:	logrotate
 # To fix end-of-line encoding:
 BuildRequires:  dos2unix
 
+%if ! 0%{?rhel_version}
 # For man page aliases
 # https://en.opensuse.org/openSUSE:Packaging_Conventions_RPM_Macros#fdupes
 BuildRequires:  fdupes
+%endif
 
-#%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
+%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
+%define NUTPKG_WITH_AVAHI	1
 BuildRequires:  avahi-devel
-#%endif
+%else
+%define NUTPKG_WITH_AVAHI	0
+%endif
 
-#%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
+%if ( 0%{?rhel_version}>=8 || ! 0%{?rhel_version} ) || ( 0%{?suse_version}>12 || ! 0%{?suse_version} )
+%define NUTPKG_WITH_FREEIPMI	1
 BuildRequires:  (libfreeipmi-devel or freeipmi-devel)
-#%endif
+%else
+%define NUTPKG_WITH_FREEIPMI	0
+%endif
 
 BuildRequires:  gcc-c++
 BuildRequires:  gd-devel
@@ -180,6 +184,7 @@ BuildRequires:  pkg-config
 BuildRequires:  (python >= 2.6 or python3 or python2)
 
 %if 0%{?NUTPKG_WITH_DMF}
+# Toggle decided above based on variant of NUT source codebase
 # LUA 5.1 or 5.2 is known ok for us, both are modern in current distros (201609xx)
 BuildRequires:  lua-devel
 
@@ -198,7 +203,12 @@ BuildRequires:  lua-devel
 #   % if 0 % {?rhel_version}>=7
 # and whatnot
 
+%if ( (0%{?rhel_version}>0 && 0%{?rhel_version}<=7) || ! 0%{?rhel_version} )
+# Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
+# We only need this to learn paths from apxs tool, so no NUTPKG_WITH_* toggle
 BuildRequires:  (httpd-devel or apache2-devel)
+%endif
+
 BuildRequires:  (dbus-1-glib-devel or dbus-glib-devel)
 
 %if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
@@ -206,10 +216,12 @@ BuildRequires:  (libcppunit-devel or cppunit-devel)
 %endif
 
 # Obsoleted/away in newer distros
-#%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
-#%if 0%{?NUTPKG_WITH_TCPWRAP}
+%if ( (0%{?rhel_version}>0 && 0%{?rhel_version}<=7) || ! 0%{?rhel_version} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}<=7) || ! 0%{?centos_version} )  &&  ( (0%{?fedora_version}>0 && 0%{?fedora_version}<=27) || ! 0%{?fedora_version} )
+%define NUTPKG_WITH_TCPWRAP	1
 BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
-#%endif
+%else
+%define NUTPKG_WITH_TCPWRAP	0
+%endif
 
 # May be plain "neon" and "libusb" in RHEL7 or older?
 # OBS: This may need `osc meta prjconf` to `Prefer:` one
@@ -219,10 +231,16 @@ BuildRequires:  (libneon-devel or neon-devel or neon)
 BuildRequires:  (libopenssl-devel or openssl-devel or openssl)
 #!Prefer:       (libopenssl-devel or openssl-devel)
 
-#%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
-#%if 0%{?NUTPKG_WITH_POWERMAN}
+%if ( ! 0%{?rhel_version} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}<=9) || ! 0%{?centos_version} )  &&  ( (0%{?fedora_version}>0 && 0%{?fedora_version}<99) || ! 0%{?fedora_version} )
+# Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
+# NOTE: fedora_version=99 seems to be rawhide; currently it says this package
+# is not known (so likely a post-42 release would be more specific later),
+# CentOS10 also does not like the name.
+%define NUTPKG_WITH_POWERMAN	1
 BuildRequires:  powerman-devel
-#%endif
+%else
+%define NUTPKG_WITH_POWERMAN	0
+%endif
 
 %if 0%{?suse_version}
 BuildRequires:  systemd-rpm-macros
