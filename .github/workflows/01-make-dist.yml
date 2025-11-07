@@ -4,7 +4,7 @@
 # See also:
 #   https://github.com/actions/upload-artifact
 #   https://docs.github.com/en/actions/reference/workflows-and-actions/variables
-name: "GHA-01: Make dist and docs tarballs"
+name: "GHA-01: Make dist and docs tarballs, see workflow page for links"
 
 on:
   push:
