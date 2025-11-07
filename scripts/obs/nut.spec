@@ -174,10 +174,25 @@ BuildRequires:  (libfreeipmi-devel or freeipmi-devel)
 %define NUTPKG_WITH_FREEIPMI	0
 %endif
 
-BuildRequires:  gcc-c++
+%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
+# Not in RHEL7
+%define NUTPKG_WITH_LIBGD	1
 BuildRequires:  gd-devel
+%else
+%define NUTPKG_WITH_LIBGD	0
+%endif
+
+BuildRequires:  gcc-c++
 BuildRequires:  libtool
+
+%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
+# Not in RHEL7
+%define NUTPKG_WITH_LTDL	1
 BuildRequires:  libtool-ltdl-devel
+%else
+%define NUTPKG_WITH_LTDL	0
+%endif
+
 # libusb-0.1 or libusb-1.0:
 BuildRequires:  (libusb-devel or libusbx-devel)
 #!Prefer:       libusbx-devel
@@ -334,6 +349,7 @@ interface for monitoring and administering UPS hardware.
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
 
+%if 0%{?NUTPKG_WITH_LTDL}
 %package -n libnutscan%{SO_MAJOR_LIBNUTSCAN}
 Summary:        Network UPS Tools Library (Uninterruptible Power Supply Monitoring)
 Group:          System/Libraries
@@ -364,7 +380,9 @@ interface for monitoring and administering UPS hardware.
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
 %endif
+%endif
 
+%if 0%{?NUTPKG_WITH_LIBGD}
 %package cgi
 Summary:        Network UPS Tools Web Server Support (UPS Status Pages)
 Group:          Hardware/UPS
@@ -380,6 +398,7 @@ interface for monitoring and administering UPS hardware.
 
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
+%endif
 
 %package monitor
 Summary:        Network UPS Tools Web Server Support (GUI client)
@@ -582,6 +601,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 
 %postun -n libnutclientstub%{SO_MAJOR_LIBNUTCLIENTSTUB} -p /sbin/ldconfig
 
+%if 0%{?NUTPKG_WITH_LTDL} > 0
 %post -n libnutscan%{SO_MAJOR_LIBNUTSCAN} -p /sbin/ldconfig
 
 %postun -n libnutscan%{SO_MAJOR_LIBNUTSCAN} -p /sbin/ldconfig
@@ -590,7 +610,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %post -n libnutconf%{SO_MAJOR_LIBNUTCONF} -p /sbin/ldconfig
 
 %postun -n libnutconf%{SO_MAJOR_LIBNUTCONF} -p /sbin/ldconfig
-
+%endif
 %endif
 
 %files
@@ -754,6 +774,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %defattr(-,root,root)
 %{_libdir}/libnutclientstub.so.*
 
+%if 0%{?NUTPKG_WITH_LTDL}
 %files -n libnutscan%{SO_MAJOR_LIBNUTSCAN}
 %defattr(-,root,root)
 %{_libdir}/libnutscan.so.*
@@ -763,7 +784,9 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %defattr(-,root,root)
 %{_libdir}/libnutconf.so.*
 %endif
+%endif
 
+%if 0%{?NUTPKG_WITH_LIBGD}
 %files cgi
 %defattr(-,root,root)
 %dir %{CGIPATH}
@@ -772,6 +795,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{HTMLPATH}/*
 %config(noreplace) %{CONFPATH}/upsstats-single.html
 %config(noreplace) %{CONFPATH}/upsstats.html
+%endif
 
 %files monitor
 %defattr(-,root,root)
