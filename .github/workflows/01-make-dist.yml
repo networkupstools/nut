@@ -72,12 +72,15 @@ jobs:
         fetch-tags: true
 
     # https://github.com/marketplace/actions/substitute-string
+    # Note it warns about "unexpected input(s)" with replacement tokens below,
+    # as they are by design not predefined, as far as actions API is concened.
+    # They still work for substitutions though.
     - uses: bluwy/substitute-string-action@v3
       id: subst-github-ref-name
       with:
-       _input-text: "${{ github.ref_name }}"
-       " ": _
-       "/": _
+        _input-text: "${{ github.ref_name }}"
+        " ": _
+        "/": _
     - run: echo "${{ steps.subst-github-ref-name.outputs.result }}"
 
     # Make build identification more useful (so we use no fallbacks in script)
