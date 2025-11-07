@@ -159,7 +159,7 @@ BuildRequires:  dos2unix
 BuildRequires:  fdupes
 %endif
 
-%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
+%if ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )
 # Not sure why claimed absent in RHEL7 (even with Fedora/EPEL repo layer added)
 %define NUTPKG_WITH_AVAHI	1
 BuildRequires:  avahi-devel
@@ -167,7 +167,8 @@ BuildRequires:  avahi-devel
 %define NUTPKG_WITH_AVAHI	0
 %endif
 
-%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )  &&  ( 0%{?sle_version}>=150000 || ! 0%{?sle_version} )  &&  ( 0%{?suse_version}>=1300 || ! 0%{?suse_version} )
+%if ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )  &&  ( 0%{?sle_version}>=150000 || ! 0%{?sle_version} )  &&  ( 0%{?suse_version}>=1300 || ! 0%{?suse_version} )
+# Not sure why claimed absent in RHEL (even with Fedora/EPEL repo layer added)
 %define NUTPKG_WITH_FREEIPMI	1
 BuildRequires:  (libfreeipmi-devel or freeipmi-devel)
 %else
@@ -231,7 +232,8 @@ BuildRequires:  (httpd-devel or apache2-devel)
 
 BuildRequires:  (dbus-1-glib-devel or dbus-glib-devel)
 
-%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
+%if ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )
+# Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
 BuildRequires:  (libcppunit-devel or cppunit-devel)
 %endif
 
@@ -265,17 +267,19 @@ BuildRequires:  powerman-devel
 %define NUTPKG_WITH_POWERMAN	0
 %endif
 
-%if ( 0%{?suse_version}>0 || ! %{?suse_version} )  &&  (0%{?centos_version}>=800) || ! 0%{?centos_version} )  &&  ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )
+%if ( 0%{?suse_version}>0 || ! 0%{?suse_version} )  &&  (0%{?centos_version}>=800 || ! 0%{?centos_version} )  &&  ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )
 # Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
 # But it also complains about epel-rpm-macros when this is added though.
 BuildRequires:  systemd-rpm-macros
 %endif
 
+%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
 # Only needed for PDF generation, we do not package that now
 #BuildRequires:  dblatex
 
 BuildRequires:  (libxslt-tools or libxslt)
 BuildRequires:  asciidoc
+%endif
 
 %if 0%{?opensuse_version}
 # Package provides driver for USB HID UPSes, but people can live with hal addon:
