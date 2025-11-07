@@ -19,6 +19,9 @@ on:
   workflow_dispatch:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
 
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   make-dist-tarballs:
@@ -27,10 +30,11 @@ jobs:
      #  NUT build/tooling prereqs (save about 3 minutes per run!)
     runs-on: ubuntu-latest
     permissions:
-      actions: read
-      contents: read
-      #contents: write
-      #repository-projects: write
+      #actions: read
+      actions: write
+      #contents: read
+      contents: write
+      repository-projects: write
       security-events: write
       pull-requests: write
 
@@ -38,6 +42,27 @@ jobs:
       fail-fast: false
 
     steps:
+    # Post early so this would be about the top comment in the PR trail
+    # (easy to see, contents replaced later)
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - t1"
+      uses: thollander/actions-comment-pull-request@v3
+      # if: startsWith(github.ref, 'refs/pull/')
+      continue-on-error: true
+      with:
+        comment-tag: latest-tarball
+        message: Dist and Docs will be linked here after the "make dist" job completes.
+        #github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - s1"
+      uses: marocchino/sticky-pull-request-comment@v2
+      # if: startsWith(github.ref, 'refs/pull/')
+      continue-on-error: true
+      with:
+        header: latest-tarball-sticky
+        only_create: true
+        message: Dist and Docs will be linked here after the "make dist" job completes.
+        #github-token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Checkout repository
       uses: actions/checkout@v5
       with:
@@ -232,11 +257,21 @@ jobs:
     # FIXME: Something that adds/updates Github Checks would be better
     #  as it would be seen in the list attached to a status icon of any
     #  build (e.g. history of master branch)
-    - name: "GHA-01: Make dist and docs tarballs - report download URL"
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - t2"
       uses: thollander/actions-comment-pull-request@v3
-      if: startsWith(github.ref, 'refs/pull/')
+      # if: startsWith(github.ref, 'refs/pull/')
       continue-on-error: true
       with:
         comment-tag: latest-tarball
         message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        #github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    # https://github.com/marocchino/sticky-pull-request-comment
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - s2"
+      uses: marocchino/sticky-pull-request-comment@v2
+      # if: startsWith(github.ref, 'refs/pull/')
+      continue-on-error: true
+      with:
+        header: latest-tarball-sticky
+        only_create: true
+        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
