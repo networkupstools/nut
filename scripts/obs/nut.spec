@@ -51,6 +51,7 @@
 
 %define MODELPATH	%{LIBEXECPATH}/driver
 %define STATEPATH	%{_localstatedir}/lib/ups
+### Note: this is /etc/nut in Debian version
 %define CONFPATH	%{_sysconfdir}/ups
 # RPM on OpenSUSE goes:
 #   DOCDIR=/home/abuild/rpmbuild/BUILD/nut-2.8.4.428-build/BUILDROOT/usr/share/doc/packages/nut
@@ -66,7 +67,6 @@
 #    This directory is for user files, use /usr/share/bash-completion/completions/
 %define BASHCOMPLETIONPATH	%(test -d /usr/share/bash-completion/completions && echo /usr/share/bash-completion/completions || echo "%{_sysconfdir}/bash_completion.d")
 
-### Note: this is /etc/nut in Debian version
 %define NUT_USER		upsd
 %define NUT_GROUP		daemon
 %define LBRACE (
@@ -91,17 +91,18 @@
 
 %define NUT_SYSTEMD_UNITS_PRESET	%(cd scripts/systemd && ls -1 *.preset{,.in} | sed 's,.in$,,' | sort | uniq)
 
+# Not all distros have certain packages (or their equivalents/aliases),
+# NOTE: No use searching remote repos for what might be or not be available
+# there; we have to use rpm queries based on whatever did get installed
+# according to Requires lines below (in turn according to our declaration
+# of what is shipped by this or that distro/release), to decide whether we
+# deliver certain sub-packages - and set NUTPKG_WITH_<DEPNAME> at that time.
+# For version-specific checks note that some are directly digited, others
+# are off by two or four digits (e.g. 0810 = a "8.10" release), see
+# https://en.opensuse.org/openSUSE:Build_Service_cross_distribution_howto
+
 # Does this NUT branch have DMF feature code?
 %define NUTPKG_WITH_DMF	%( test -d scripts/DMF && echo 1 || echo 0 )
-
-# Not all distros have it
-# FIXME: No use searching remote repos; can use rpm queries based on whatever
-# did get installed according to Requires lines below, to decide whether we
-# deliver certain sub-packages though.
-%define NUTPKG_WITH_FREEIPMI	%( (yum search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; dnf search freeipmi-devel | grep -E '^(lib)?freeipmi-devel\.' && exit ; zypper search -s freeipmi-devel | grep -E '(lib)?freeipmi-devel' && exit ; urpmq --sources freeipmi-devel && exit ; pkcon search name freeipmi-devel | grep -E '(Available|Installed).*freeipmi-devel' && exit;) >&2 && echo 1 || echo 0)
-%define NUTPKG_WITH_POWERMAN	%( (yum search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; dnf search powerman-devel | grep -E '^(lib)?powerman-devel\.' && exit ; zypper search -s powerman-devel | grep -E '(lib)?powerman-devel' && exit ; urpmq --sources powerman-devel && exit ; pkcon search name powerman-devel | grep -E '(Available|Installed).*powerman-devel' && exit;) >&2 && echo 1 || echo 0)
-%define NUTPKG_WITH_AVAHI	%( (yum search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; dnf search avahi-devel | grep -E '^(lib)?avahi-devel\.' && exit ; zypper search -s avahi-devel | grep -E '(lib)?avahi-devel' && exit ; urpmq --sources avahi-devel && exit ; pkcon search name avahi-devel | grep -E '(Available|Installed).*avahi-devel' && exit;) >&2 && echo 1 || echo 0)
-%define NUTPKG_WITH_TCPWRAP	%( (yum search tcp_wrappers-devel | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; dnf search tcp_wrappers-devel | grep -E '^(lib)?tcp_wrappers-devel\.' && exit ; zypper search -s tcp_wrappers-devel | grep -E '(lib)?tcp_wrappers-devel' && exit ; urpmq --sources tcp_wrappers-devel && exit ; pkcon search name tcp_wrappers-devel | grep -E '(Available|Installed).*tcp_wrappers-devel' && exit;) >&2 && echo 1 || echo 0)
 
 # FIXME: Find a smarter way to set those from main codebase recipes...
 # Something like `git grep 'version-info' '*.am'` ?
@@ -138,9 +139,9 @@ Requires:       %{_bindir}/pgrep
 Requires:       %{_bindir}/pkill
 Requires:       %{_bindir}/readlink
 Requires:       usbutils
-%if 0%{?suse_version}
+#%if 0 % {?suse_version}
 Requires(post): udev
-%endif
+#%endif
 #Requires(post): group(% {NUT_GROUP})
 #Requires(post): user(% {NUT_USER})
 Requires(postun):	%{_bindir}/sh
@@ -152,22 +153,47 @@ Recommends:	logrotate
 # To fix end-of-line encoding:
 BuildRequires:  dos2unix
 
+%if ! 0%{?rhel_version}
 # For man page aliases
 # https://en.opensuse.org/openSUSE:Packaging_Conventions_RPM_Macros#fdupes
 BuildRequires:  fdupes
-
-%if 0%{?NUTPKG_WITH_AVAHI}
-BuildRequires:  avahi-devel
 %endif
 
-%if 0%{?NUTPKG_WITH_FREEIPMI}
+%if ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )
+# Not sure why claimed absent in RHEL7 (even with Fedora/EPEL repo layer added)
+%define NUTPKG_WITH_AVAHI	1
+BuildRequires:  avahi-devel
+%else
+%define NUTPKG_WITH_AVAHI	0
+%endif
+
+%if ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )  &&  ( 0%{?sle_version}>=150000 || ! 0%{?sle_version} )  &&  ( 0%{?suse_version}>=1300 || ! 0%{?suse_version} )
+# Not sure why claimed absent in RHEL (even with Fedora/EPEL repo layer added)
+%define NUTPKG_WITH_FREEIPMI	1
 BuildRequires:  (libfreeipmi-devel or freeipmi-devel)
+%else
+%define NUTPKG_WITH_FREEIPMI	0
+%endif
+
+%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
+# Not in RHEL7
+%define NUTPKG_WITH_LIBGD	1
+BuildRequires:  gd-devel
+%else
+%define NUTPKG_WITH_LIBGD	0
 %endif
 
 BuildRequires:  gcc-c++
-BuildRequires:  gd-devel
 BuildRequires:  libtool
+
+%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
+# Not in RHEL7
+%define NUTPKG_WITH_LTDL	1
 BuildRequires:  libtool-ltdl-devel
+%else
+%define NUTPKG_WITH_LTDL	0
+%endif
+
 # libusb-0.1 or libusb-1.0:
 BuildRequires:  (libusb-devel or libusbx-devel)
 #!Prefer:       libusbx-devel
@@ -178,6 +204,7 @@ BuildRequires:  pkg-config
 BuildRequires:  (python >= 2.6 or python3 or python2)
 
 %if 0%{?NUTPKG_WITH_DMF}
+# Toggle decided above based on variant of NUT source codebase
 # LUA 5.1 or 5.2 is known ok for us, both are modern in current distros (201609xx)
 BuildRequires:  lua-devel
 
@@ -193,19 +220,32 @@ BuildRequires:  lua-devel
 # For some platforms we may have to fiddle with distro-named macros like
 #   % if 0 % {?centos_version}
 #   % if 0 % {?suse_version}
-#   % if 0 % {?rhel_version}>=7
+#   % if 0 % {?rhel_version}>=700
 # and whatnot
 
+%if ( (0%{?rhel_version}>0 && 0%{?rhel_version}<800) || ! 0%{?rhel_version} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}!=800) || ! 0%{?centos_version} )
+# Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
+# and that it is resolvable in CentOS 7, 9, 10 but not 8...
+# We only need this to learn paths from apxs tool, so no NUTPKG_WITH_* toggle
 BuildRequires:  (httpd-devel or apache2-devel)
+%endif
+
 BuildRequires:  (dbus-1-glib-devel or dbus-glib-devel)
 
-%if 0%{?rhel_version}>=8 || ! 0%{?rhel_version}
+%if ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )
+# Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
 BuildRequires:  (libcppunit-devel or cppunit-devel)
 %endif
 
 # Obsoleted/away in newer distros
-%if 0%{?NUTPKG_WITH_TCPWRAP}
+%if ( (0%{?rhel_version}>0 && 0%{?rhel_version}<800) || ! 0%{?rhel_version} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}<800) || ! 0%{?centos_version} )  &&  ( (0%{?fedora_version}>0 && 0%{?fedora_version}<=27) || ! 0%{?fedora_version} )
+# Note that per https://en.opensuse.org/openSUSE:Build_Service_cross_distribution_howto
+# there was "fedora_version" until some time before 36, when the macro became "fedora";
+# similarly for "rhel_version <= 700" vs. "rhel == 8"...
+%define NUTPKG_WITH_TCPWRAP	1
 BuildRequires:  (tcpd-devel or tcp_wrappers-devel)
+%else
+%define NUTPKG_WITH_TCPWRAP	0
 %endif
 
 # May be plain "neon" and "libusb" in RHEL7 or older?
@@ -216,20 +256,32 @@ BuildRequires:  (libneon-devel or neon-devel or neon)
 BuildRequires:  (libopenssl-devel or openssl-devel or openssl)
 #!Prefer:       (libopenssl-devel or openssl-devel)
 
-%if 0%{?NUTPKG_WITH_POWERMAN}
+%if ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )  &&  ( (0%{?centos_version}>0 && 0%{?centos_version}<1000) || ! 0%{?centos_version} )  &&  ( (0%{?fedora_version}>0 && 0%{?fedora_version}<4200) || ! 0%{?fedora_version} )  &&  ( (0%{?fedora}>0 && 0%{?fedora}<42) || ! 0%{?fedora} )
+# Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
+# NOTE: fedora_version=99 seems to be rawhide; currently it says this package
+# is not known (so likely a post-42 release would be more specific later),
+# CentOS10 also does not like the name.
+%define NUTPKG_WITH_POWERMAN	1
 BuildRequires:  powerman-devel
+%else
+%define NUTPKG_WITH_POWERMAN	0
 %endif
 
-%if 0%{?suse_version}
+%if ( 0%{?suse_version}>0 || ! 0%{?suse_version} )  &&  (0%{?centos_version}>=800 || ! 0%{?centos_version} )  &&  ( ! 0%{?rhel_version} )  &&  ( ! 0%{?rhel} )
+# Strange that this is not present in RHEL (even with Fedora EPEL repos attached)
+# But it also complains about epel-rpm-macros when this is added though.
 BuildRequires:  systemd-rpm-macros
+%endif
+
+%if ( 0%{?rhel_version}>=800 || ! 0%{?rhel_version} )  &&  ( 0%{?rhel}>=8 || ! 0%{?rhel} )
 # Only needed for PDF generation, we do not package that now
 #BuildRequires:  dblatex
-%endif
 
 BuildRequires:  (libxslt-tools or libxslt)
 BuildRequires:  asciidoc
+%endif
 
-%if %{defined opensuse_version}
+%if 0%{?opensuse_version}
 # Package provides driver for USB HID UPSes, but people can live with hal addon:
 Enhances:       %{USBHIDDRIVERS}
 # Package provides the only avalailable driver for other USB UPSes:
@@ -301,6 +353,7 @@ interface for monitoring and administering UPS hardware.
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
 
+%if 0%{?NUTPKG_WITH_LTDL}
 %package -n libnutscan%{SO_MAJOR_LIBNUTSCAN}
 Summary:        Network UPS Tools Library (Uninterruptible Power Supply Monitoring)
 Group:          System/Libraries
@@ -331,7 +384,9 @@ interface for monitoring and administering UPS hardware.
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
 %endif
+%endif
 
+%if 0%{?NUTPKG_WITH_LIBGD}
 %package cgi
 Summary:        Network UPS Tools Web Server Support (UPS Status Pages)
 Group:          Hardware/UPS
@@ -347,6 +402,7 @@ interface for monitoring and administering UPS hardware.
 
 Detailed information about supported hardware can be found in
 %{_docdir}/nut.
+%endif
 
 %package monitor
 Summary:        Network UPS Tools Web Server Support (GUI client)
@@ -549,6 +605,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 
 %postun -n libnutclientstub%{SO_MAJOR_LIBNUTCLIENTSTUB} -p /sbin/ldconfig
 
+%if 0%{?NUTPKG_WITH_LTDL} > 0
 %post -n libnutscan%{SO_MAJOR_LIBNUTSCAN} -p /sbin/ldconfig
 
 %postun -n libnutscan%{SO_MAJOR_LIBNUTSCAN} -p /sbin/ldconfig
@@ -557,7 +614,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %post -n libnutconf%{SO_MAJOR_LIBNUTCONF} -p /sbin/ldconfig
 
 %postun -n libnutconf%{SO_MAJOR_LIBNUTCONF} -p /sbin/ldconfig
-
+%endif
 %endif
 
 %files
@@ -721,6 +778,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %defattr(-,root,root)
 %{_libdir}/libnutclientstub.so.*
 
+%if 0%{?NUTPKG_WITH_LTDL}
 %files -n libnutscan%{SO_MAJOR_LIBNUTSCAN}
 %defattr(-,root,root)
 %{_libdir}/libnutscan.so.*
@@ -730,7 +788,9 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %defattr(-,root,root)
 %{_libdir}/libnutconf.so.*
 %endif
+%endif
 
+%if 0%{?NUTPKG_WITH_LIBGD}
 %files cgi
 %defattr(-,root,root)
 %dir %{CGIPATH}
@@ -739,6 +799,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{HTMLPATH}/*
 %config(noreplace) %{CONFPATH}/upsstats-single.html
 %config(noreplace) %{CONFPATH}/upsstats.html
+%endif
 
 %files monitor
 %defattr(-,root,root)

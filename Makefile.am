@@ -823,10 +823,13 @@ EXTRA_DIST += VERSION_DEFAULT
 
 # Best-effort delivery for (overly?) customized distros, e.g. via
 #   echo NUT_VERSION_FORCED_SEMVER=1.1.1 > VERSION_FORCED_SEMVER
+# ONLY populated into dist tarball if present in the build area!
+# (Note we do tarball the VERSION_DEFAULT generated just above)
 dist-hook:
 	for D in "$(abs_top_srcdir)" "$(abs_top_builddir)" ; do \
 	    for F in VERSION_FORCED VERSION_FORCED_SEMVER ; do \
 	        if [ -s "$$D/$$F" ] ; then \
+	            echo "  DIST	$$D/$$F => $(top_distdir)/$$F"; \
 	            cat "$$D/$$F" > "$(top_distdir)/$$F" || true ; \
 	        fi ; \
 	    done ; \
@@ -1019,6 +1022,9 @@ nut-@PACKAGE_VERSION@.tar.gz: dist
 nut-@PACKAGE_VERSION@.tar.gz.sig: dist-sig
 nut-@PACKAGE_VERSION@.tar.gz.md5 nut-@PACKAGE_VERSION@.tar.gz.sha256: dist-hash
 
+# Bonus feature, results depend on configure script options and available tools
+nut-@PACKAGE_VERSION@-docs.tar.gz: dist-docs
+
 dist-sig: nut-@PACKAGE_VERSION@.tar.gz
 	rm -f nut-@PACKAGE_VERSION@.tar.gz.sig
 	gpg --detach-sign nut-@PACKAGE_VERSION@.tar.gz
@@ -1026,6 +1032,51 @@ dist-sig: nut-@PACKAGE_VERSION@.tar.gz
 dist-hash: nut-@PACKAGE_VERSION@.tar.gz
 	md5sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.md5
 	sha256sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.sha256
+
+# Helper to have all built docs (config-dependent) neatly aligned
+# NOT part of standard tarball, though
+EXTRA_DIST_DOCS = VERSION_* *.adoc-parsed
+
+if WITH_CHANGELOG_TEXT
+EXTRA_DIST_DOCS += ChangeLog
+endif WITH_CHANGELOG_TEXT
+
+if WITH_CHANGELOG_ADOC
+EXTRA_DIST_DOCS += ChangeLog.adoc
+endif WITH_CHANGELOG_ADOC
+
+if KEEP_NUT_REPORT
+EXTRA_DIST_DOCS += config.nut_report_feature.log
+endif KEEP_NUT_REPORT
+
+if WITH_HTML_SINGLE
+EXTRA_DIST_DOCS += docs/man/*.html docs/*.html
+endif WITH_HTML_SINGLE
+
+if WITH_HTML_CHUNKED
+EXTRA_DIST_DOCS += docs/*.chunked
+endif WITH_HTML_CHUNKED
+
+if WITH_PDFS
+EXTRA_DIST_DOCS += docs/*.pdf
+endif WITH_PDFS
+
+if WITH_MANS
+if !KNOWN_UNABLE_MANS
+EXTRA_DIST_DOCS += \
+	docs/man/*.@MAN_SECTION_API_BASE@ \
+	docs/man/*.@MAN_SECTION_CFG_BASE@ \
+	docs/man/*.@MAN_SECTION_CMD_SYS_BASE@ \
+	docs/man/*.@MAN_SECTION_CMD_USR_BASE@ \
+	docs/man/*.@MAN_SECTION_MISC_BASE@
+endif !KNOWN_UNABLE_MANS
+endif WITH_MANS
+
+# Modeled after automake generated mesh of rules for "distdir" handling with "am__tar"
+dist-docs: all-docs
+	$${TAR-tar} cf - $(EXTRA_DIST_DOCS) | eval GZIP= gzip $(GZIP_ENV) -c > $(distdir)-docs.tar.gz
+	ls -la $(distdir)-docs.tar.gz
+	$${TAR-tar} tzvf $(distdir)-docs.tar.gz || true
 
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).

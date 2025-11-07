@@ -9,7 +9,7 @@
 # the `language` matrix defined below to confirm you have the correct set of
 # supported CodeQL languages.
 #
-name: "CodeQL"
+name: "GHA-05: CodeQL"
 
 on:
   push:
@@ -96,7 +96,7 @@ jobs:
       id: cache-ccache
       uses: actions/cache@v4
       env:
-        cache-name: cache-ccache-${{ matrix.compiler }}-${{ matrix.NUT_SSL_VARIANTS }}-${{ matrix.NUT_SSL_VARIANTS }}
+        cache-name: cache-ccache-${{ matrix.compiler }}-${{ matrix.NUT_SSL_VARIANTS }}-${{ matrix.NUT_USB_VARIANTS }}
       with:
         path: |
             ~/.ccache

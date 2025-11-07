@@ -1,0 +1,286 @@
+# Adapted from NUT codeql.yml with inspiration taken from
+# https://javahelps.com/manage-github-artifact-storage-quota
+# regarding uploads of artifacts and clearing the way for them.
+# See also:
+#   https://github.com/actions/upload-artifact
+#   https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+name: "GHA-01: Make dist and docs tarballs, see workflow page for links"
+
+on:
+  push:
+    branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
+    tags:
+      - v*
+  pull_request_target:
+    # The branches below must be a subset of the branches above
+    branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
+  schedule:
+    - cron: '15 12 * * 0'
+  workflow_dispatch:
+    # Allow manually running the action, e.g. if disabled after some quietness in the source
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  make-dist-tarballs:
+    name: Make Dist and Docs Tarballs
+     # FIXME: Prepare/maintain a container image with pre-installed
+     #  NUT build/tooling prereqs (save about 3 minutes per run!)
+    runs-on: ubuntu-latest
+    permissions:
+      #actions: read
+      actions: write
+      #contents: read
+      contents: write
+      repository-projects: write
+      security-events: write
+      pull-requests: write
+      issues: write
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    # Post early so this would be about the top comment in the PR trail
+    # (easy to see, contents replaced later)
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - t1"
+      uses: thollander/actions-comment-pull-request@v3
+      # if: startsWith(github.ref, 'refs/pull/')
+      continue-on-error: true
+      with:
+        comment-tag: latest-tarball
+        message: Dist and Docs will be linked here after the "make dist" job completes.
+        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
+
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - s1"
+      uses: marocchino/sticky-pull-request-comment@v2
+      # if: startsWith(github.ref, 'refs/pull/')
+      continue-on-error: true
+      with:
+        header: latest-tarball-sticky
+        only_create: true
+        message: Dist and Docs will be linked here after the "make dist" job completes.
+        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
+        #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
+
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+
+    # https://github.com/marketplace/actions/substitute-string
+    # Note it warns about "unexpected input(s)" with replacement tokens below,
+    # as they are by design not predefined, as far as actions API is concened.
+    # They still work for substitutions though.
+    - uses: bluwy/substitute-string-action@v3
+      id: subst-github-ref-name
+      with:
+        _input-text: "${{ github.ref_name }}"
+        " ": _
+        "/": _
+    - run: echo "${{ steps.subst-github-ref-name.outputs.result }}"
+
+    # Make build identification more useful (so we use no fallbacks in script)
+    - name: Try to get more Git metadata
+      run: |
+        git describe || {
+          git remote -v || true
+          git branch -a || true
+          for R in `git remote` ; do git fetch $R master ; done || true
+          git fetch --tags
+          pwd ; ls -la
+          echo "=== Known commits in history:"
+          git log --oneline | wc -l
+          echo "=== Recent commits in history:"
+          git log -2 || true
+          echo "=== Known tags:"
+          git tag || true
+          echo "=== Try to ensure 'git describe' works:"
+          git describe || {
+            git fetch --all && for R in `git remote` ; do for T in `git tag` ; do git fetch $R $T ; done ; done
+            git describe || {
+              TEST_REF="`git symbolic-ref --short HEAD 2>/dev/null || cat .git/HEAD`" && [ -n "${TEST_REF}" ] && git checkout master && git pull --all && git checkout "${TEST_REF}"
+              git describe || true
+            }
+          }
+        }
+
+    # Using hints from https://askubuntu.com/questions/272248/processing-triggers-for-man-db
+    # and our own docs/config-prereqs.txt
+    # NOTE: Currently installing the MAX prerequisite footprint,
+    # which for building just the docs may be a bit of an overkill.
+    - name: NUT CI Prerequisite packages (Ubuntu, GCC)
+      run: |
+        echo "set man-db/auto-update false" | sudo debconf-communicate
+        sudo dpkg-reconfigure man-db
+        sudo apt update
+        sudo apt install \
+            gcc g++ clang \
+            ccache time \
+            git perl curl \
+            make autoconf automake libltdl-dev libtool binutils \
+            valgrind \
+            cppcheck \
+            pkg-config \
+            libtool-bin \
+            python3 gettext python3-pyqt6 pyqt6-dev-tools \
+            aspell aspell-en \
+            asciidoc source-highlight python3-pygments dblatex \
+            libgd-dev \
+            systemd-dev \
+            libsystemd-dev \
+            libcppunit-dev \
+            libssl-dev libnss3-dev \
+            augeas-tools libaugeas-dev augeas-lenses \
+            libusb-dev libusb-1.0-0-dev \
+            libi2c-dev \
+            libmodbus-dev \
+            libsnmp-dev \
+            libpowerman0-dev \
+            libfreeipmi-dev libipmimonitoring-dev \
+            libavahi-common-dev libavahi-core-dev libavahi-client-dev \
+            libgpiod-dev \
+            bash dash ksh busybox \
+            libneon27-gnutls-dev \
+            build-essential git-core libi2c-dev i2c-tools lm-sensors \
+        || exit
+        date > .timestamp-init
+
+    - name: Prepare ccache
+      # Based on https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#example-using-the-cache-action example
+      id: cache-ccache
+      uses: actions/cache@v4
+      env:
+        compiler: 'CC=gcc CXX=g++'
+        cache-name: cache-ccache-${{ env.compiler }}
+      with:
+        path: |
+            ~/.ccache
+            ~/.cache/ccache
+            ~/.config/ccache/ccache.conf
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/.timestamp-init') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: CCache stats before build
+      run: |
+        ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+        rm -f .timestamp-init
+
+    - name: Debug gitlog2version processing
+      run: bash -x ./tools/gitlog2version.sh || true
+
+    - name: NUT CI Build Configuration
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        ./autogen.sh && \
+        ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all --with-dev --with-docs --enable-docs-changelog ${{env.compiler}}
+
+    # NOTE: In this scenario we do not build actually NUT in the main
+    # checkout directory, at least not explicitly (recipe may generate
+    # some files like man pages to fulfill the "dist" requirements;
+    # for now this may generate some libs to figure out their IDs).
+    # We do `make docs` to provide them as a separate tarball just
+    # in case, later.
+    # DO NOT `make dist-files` here as it includes `dist-sig` and
+    # needs a GPG keychain with maintainers' secrets deployed locally.
+    - name: NUT CI Build to create "dist" tarball and related files
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        make -s -j 8 dist dist-hash
+
+    - name: NUT CI Build to verify "dist" tarball build
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        make -s -j 8 distcheck
+
+    - name: CCache stats after distcheck
+      run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+
+    - name: NUT CI Build to package complex docs (not part of dist tarball)
+      run: |
+        make -s -j 8 dist-docs
+
+    # Inspired by https://javahelps.com/manage-github-artifact-storage-quota
+    # Note that the code below wipes everything matched by the filter!
+    # We may want another script block (after this cleanup of obsolete data)
+    # to iterate clearing the way build by build until there's X MB available
+    # (at least 12MB as of Nov 2025).
+    - if: env.GITHUB_REF_TYPE != 'tag' && steps.subst-github-ref-name.outputs.result != 'master'
+      name: Delete Old Artifacts for this feature branch/PR
+      uses: actions/github-script@v6
+      id: delete_old_artifact_for_pr
+      continue-on-error: true
+      with:
+        script: |
+          const res = await github.rest.actions.listArtifactsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          })
+
+          res.data.artifacts
+            .filter(({ name }) => name === 'NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}')
+            .forEach(({ id }) => {
+              github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: id,
+              })
+            })
+        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
+
+    - name: Upload tarball and its checksum artifacts
+      uses: actions/upload-artifact@v4
+      id: upload_artifact
+      with:
+        name: NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}
+        path: |
+          nut-*.tar*
+        compression-level: 0
+        overwrite: true
+
+    # https://github.com/thollander/actions-comment-pull-request
+    # FIXME: Something that adds/updates Github Checks would be better
+    #  as it would be seen in the list attached to a status icon of any
+    #  build (e.g. history of master branch)
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - t2"
+      uses: thollander/actions-comment-pull-request@v3
+      # if: startsWith(github.ref, 'refs/pull/')
+      continue-on-error: true
+      with:
+        comment-tag: latest-tarball
+        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
+        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
+
+    # https://github.com/marocchino/sticky-pull-request-comment
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - s2"
+      uses: marocchino/sticky-pull-request-comment@v2
+      # if: startsWith(github.ref, 'refs/pull/')
+      continue-on-error: true
+      with:
+        header: latest-tarball-sticky
+        only_create: true
+        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip}](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
+        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
+        #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}

@@ -272,6 +272,8 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 * `make dist-files` (especially if you did not `make distcheck` above,
   or had some changes since then) to store the source tarball, checksum
   and signature files
+** Bonus feature: `make dist-docs` (if on a system configured to build all
+   documentation types)
 
 * post-release update of the "in-development" codebase:
 ** start a feature branch to return the master branch into development state
