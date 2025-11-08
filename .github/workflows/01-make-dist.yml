@@ -301,5 +301,6 @@ jobs:
     # https://github.com/marketplace/actions/commit-comment
     - name: "GHA-01: Make dist and docs tarballs - report download URL - commit comment"
       uses: peter-evans/commit-comment@v4
+      continue-on-error: true
       with:
         body: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
