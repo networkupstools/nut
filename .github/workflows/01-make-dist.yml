@@ -29,6 +29,8 @@ jobs:
     name: Make Dist and Docs Tarballs
      # FIXME: Prepare/maintain a container image with pre-installed
      #  NUT build/tooling prereqs (save about 3 minutes per run!)
+     #  Maybe https://aschmelyun.com/blog/using-docker-run-inside-of-github-actions/
+     #  => https://github.com/addnab/docker-run-action can help
     runs-on: ubuntu-latest
     #permissions:
     #  #actions: read
