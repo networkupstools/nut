@@ -4,6 +4,7 @@
 # See also:
 #   https://github.com/actions/upload-artifact
 #   https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+#   https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
 name: "GHA-01: Make dist and docs tarballs, see workflow page for links"
 
 on:
@@ -13,6 +14,11 @@ on:
       - v*
   pull_request_target:
     # The branches below must be a subset of the branches above
+    # Note that for PRs this runs the copy of workflow in the
+    # target branch (and only then gets some of the permissions
+    # listed below), and identification/naming of PR source vs.
+    # a pushed branch (e.g. master updated by a PR merge) is
+    # tricky.
     branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
   schedule:
     - cron: '15 12 * * 0'
@@ -76,8 +82,6 @@ jobs:
         fetch-tags: true
 
     # https://github.com/marketplace/actions/substitute-string
-    # https://docs.github.com/en/actions/reference/workflows-and-actions/variables
-    # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
     # See also examples in https://github.com/dhimmel/dump-actions-context/
     # Note it warns about "unexpected input(s)" with replacement tokens below,
     # as they are by design not predefined, as far as actions API is concened.
@@ -88,7 +92,9 @@ jobs:
         _input-text: "${{ github.event.pull_request.number > 0 && format('PR-{0}', github.event.pull_request.number) || github.head_ref || github.ref_name }}"
         " ": _
         "/": _
-    - run: |
+
+    - name: Debug PR/branch identification
+      run: |
         echo "steps.subst-github-ref-name.outputs.result='${{ steps.subst-github-ref-name.outputs.result }}'" || true
         echo "github.event.pull_request.number='${{ github.event.pull_request.number }}'" || true
         echo "format('PR-{0}', github.event.pull_request.number)='${{ format('PR-{0}', github.event.pull_request.number) }}'" || true
