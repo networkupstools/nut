@@ -8,6 +8,24 @@ This section presents the different methods to download NUT.
 // https://networkupstools.org/download.html
 //////////////////////////////////////////////////////////////////////////////
 
+Building from source code
+-------------------------
+
+You will need a number of tools such as `autoconf`, `automake` and `libtool`
+to use these checkouts or snapshots to generate the `configure` script and
+some other files.  A more complete list for different platforms can be seen in
+link:https://networkupstools.org/docs/qa-guide.chunked/_prerequisites_for_building_nut_on_different_oses.html[Prerequisites
+for building NUT on different OSes] chapter in the
+link:https://networkupstools.org/docs/qa-guide.chunked/[NUT QA Guide],
+and reading about
+link:https://networkupstools.org/docs/user-manual.chunked/Configure_options.html[`configure`
+script options] can also help.
+
+After you `configure` the source workspace, a `make dist-hash` recipe would
+create the snapshot tarballs which do not require the `auto*` tools, and their
+checksum files, such as those available on the NUT website and attached to
+link:https://github.com/networkupstools/nut/releases[GitHub Releases page].
+
 Source code
 -----------
 
@@ -116,19 +134,11 @@ sources of operating system distributions, as listed below.
 Snapshots
 ^^^^^^^^^
 
-GitHub has several download links for repository snapshots (for particular tags
-or branches), but you will need a number of tools such as `autoconf`, `automake`
-and `libtool` to use these snapshots to generate the `configure` script and some
-other files.
-
-After you `configure` the source workspace, a `make dist-hash` recipe would
-create the snapshot tarballs which do not require the `auto*` tools, and their
-checksum files, such as those available on the NUT website and attached to
-link:https://github.com/networkupstools/nut/releases[GitHub Releases page].
-
-Note that the ability to build NUT seamlessly from ZIP or `tar.gz` snapshots
-prepared by GitHub automatically (as `git archive` of a checked-out workspace)
-is not regularly checked or "supported" by the Network UPS Tools project. YMMV.
+GitHub has several download links for repository snapshots (for particular
+tags or branches), but note that the ability to build NUT seamlessly from
+ZIP or `tar.gz` snapshots prepared by GitHub automatically (as a `git archive`
+of a checked-out workspace) is not regularly checked nor "supported" by the
+Network UPS Tools project. YMMV.
 
 /////////
 TODO: #1400 to replace this with a NUT CI farm service to publish the tarballs
