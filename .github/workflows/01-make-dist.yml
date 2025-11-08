@@ -30,15 +30,15 @@ jobs:
      # FIXME: Prepare/maintain a container image with pre-installed
      #  NUT build/tooling prereqs (save about 3 minutes per run!)
     runs-on: ubuntu-latest
-    permissions:
-      #actions: read
-      actions: write
-      #contents: read
-      contents: write
-      repository-projects: write
-      security-events: write
-      pull-requests: write
-      issues: write
+    #permissions:
+    #  #actions: read
+    #  actions: write
+    #  #contents: read
+    #  contents: write
+    #  repository-projects: write
+    #  security-events: write
+    #  pull-requests: write
+    #  issues: write
 
     strategy:
       fail-fast: false
