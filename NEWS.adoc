@@ -81,6 +81,13 @@ https://github.com/networkupstools/nut/milestone/12
    * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
      Extended to be IPv6-capable along the way. [#1209]
 
+ - `nhs_ser` driver updates:
+   * Driver source code includes a table to map baud rates (defined by the OS
+     as C macros) to numbers and strings more useful to the driver program.
+     It was discovered that not all operating systems define all the baud rates
+     referenced by this table, so now several higher speeds would be compiled
+     conditionally. [issue #3163]
+
  - `nutdrv_qx` driver updates:
    * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together
