@@ -54,17 +54,7 @@ jobs:
     steps:
     # Post early so this would be about the top comment in the PR trail
     # (easy to see, contents replaced later)
-
-    #- name: "GHA-01: Make dist and docs tarballs - report download URL - t1"
-    #  uses: thollander/actions-comment-pull-request@v3
-    #  # if: startsWith(github.ref, 'refs/pull/')
-    #  continue-on-error: true
-    #  with:
-    #    comment-tag: latest-tarball
-    #    message: Sticky note -- Dist and Docs tarballs will be linked here after the "make dist" job completes.
-    #    #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
-
-    - name: "GHA-01: Make dist and docs tarballs - report download URL - s1"
+    - name: "GHA-01: Make dist and docs tarballs - report download URL (placeholder) as a first-ever PR comment"
       uses: marocchino/sticky-pull-request-comment@v2
       if: startsWith(github.ref, 'refs/pull/') || github.event.pull_request.number > 0
       continue-on-error: true
@@ -72,8 +62,6 @@ jobs:
         header: latest-tarball-sticky
         only_create: true
         message: Sticky note -- Dist and Docs tarballs will be linked here after the "make dist" job completes.
-        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
-        #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
 
     - name: Checkout repository
       uses: actions/checkout@v5
@@ -288,22 +276,11 @@ jobs:
         compression-level: 0
         overwrite: true
 
-    # https://github.com/thollander/actions-comment-pull-request
     # FIXME: Something that adds/updates Github Checks would be better
     #  as it would be seen in the list attached to a status icon of any
     #  build (e.g. history of master branch)
-
-    #- name: "GHA-01: Make dist and docs tarballs - report download URL - t2"
-    #  uses: thollander/actions-comment-pull-request@v3
-    #  # if: startsWith(github.ref, 'refs/pull/')
-    #  continue-on-error: true
-    #  with:
-    #    comment-tag: latest-tarball
-    #    message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
-    #    #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
-
     # https://github.com/marocchino/sticky-pull-request-comment
-    - name: "GHA-01: Make dist and docs tarballs - report download URL - s2"
+    - name: "GHA-01: Make dist and docs tarballs - report download URL as a PR comment"
       uses: marocchino/sticky-pull-request-comment@v2
       if: startsWith(github.ref, 'refs/pull/') || github.event.pull_request.number > 0
       continue-on-error: true
@@ -314,7 +291,7 @@ jobs:
         #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
 
     # https://github.com/marketplace/actions/commit-comment
-    - name: "GHA-01: Make dist and docs tarballs - report download URL - commit comment"
+    - name: "GHA-01: Make dist and docs tarballs - report download URL as a commit comment"
       uses: peter-evans/commit-comment@v4
       continue-on-error: true
       with:
