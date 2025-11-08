@@ -38,15 +38,6 @@ jobs:
      #  Maybe https://aschmelyun.com/blog/using-docker-run-inside-of-github-actions/
      #  => https://github.com/addnab/docker-run-action can help
     runs-on: ubuntu-latest
-    #permissions:
-    #  #actions: read
-    #  actions: write
-    #  #contents: read
-    #  contents: write
-    #  repository-projects: write
-    #  security-events: write
-    #  pull-requests: write
-    #  issues: write
 
     strategy:
       fail-fast: false
