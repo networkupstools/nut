@@ -30,15 +30,15 @@ jobs:
      # FIXME: Prepare/maintain a container image with pre-installed
      #  NUT build/tooling prereqs (save about 3 minutes per run!)
     runs-on: ubuntu-latest
-    permissions:
-      #actions: read
-      actions: write
-      #contents: read
-      contents: write
-      repository-projects: write
-      security-events: write
-      pull-requests: write
-      issues: write
+    #permissions:
+    #  #actions: read
+    #  actions: write
+    #  #contents: read
+    #  contents: write
+    #  repository-projects: write
+    #  security-events: write
+    #  pull-requests: write
+    #  issues: write
 
     strategy:
       fail-fast: false
@@ -46,23 +46,24 @@ jobs:
     steps:
     # Post early so this would be about the top comment in the PR trail
     # (easy to see, contents replaced later)
-    - name: "GHA-01: Make dist and docs tarballs - report download URL - t1"
-      uses: thollander/actions-comment-pull-request@v3
-      # if: startsWith(github.ref, 'refs/pull/')
-      continue-on-error: true
-      with:
-        comment-tag: latest-tarball
-        message: Dist and Docs will be linked here after the "make dist" job completes.
-        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
+
+    #- name: "GHA-01: Make dist and docs tarballs - report download URL - t1"
+    #  uses: thollander/actions-comment-pull-request@v3
+    #  # if: startsWith(github.ref, 'refs/pull/')
+    #  continue-on-error: true
+    #  with:
+    #    comment-tag: latest-tarball
+    #    message: Sticky note -- Dist and Docs tarballs will be linked here after the "make dist" job completes.
+    #    #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
 
     - name: "GHA-01: Make dist and docs tarballs - report download URL - s1"
       uses: marocchino/sticky-pull-request-comment@v2
-      # if: startsWith(github.ref, 'refs/pull/')
+      if: startsWith(github.ref, 'refs/pull/')
       continue-on-error: true
       with:
         header: latest-tarball-sticky
         only_create: true
-        message: Dist and Docs will be linked here after the "make dist" job completes.
+        message: Sticky note -- Dist and Docs tarballs will be linked here after the "make dist" job completes.
         #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
         #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
 
@@ -73,13 +74,15 @@ jobs:
         fetch-tags: true
 
     # https://github.com/marketplace/actions/substitute-string
+    # https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+    # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
     # Note it warns about "unexpected input(s)" with replacement tokens below,
     # as they are by design not predefined, as far as actions API is concened.
     # They still work for substitutions though.
     - uses: bluwy/substitute-string-action@v3
       id: subst-github-ref-name
       with:
-        _input-text: "${{ github.ref_name }}"
+        _input-text: "${{ github.head_ref || github.ref_name }}"
         " ": _
         "/": _
     - run: echo "${{ steps.subst-github-ref-name.outputs.result }}"
@@ -274,22 +277,30 @@ jobs:
     # FIXME: Something that adds/updates Github Checks would be better
     #  as it would be seen in the list attached to a status icon of any
     #  build (e.g. history of master branch)
-    - name: "GHA-01: Make dist and docs tarballs - report download URL - t2"
-      uses: thollander/actions-comment-pull-request@v3
-      # if: startsWith(github.ref, 'refs/pull/')
-      continue-on-error: true
-      with:
-        comment-tag: latest-tarball
-        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
-        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
+
+    #- name: "GHA-01: Make dist and docs tarballs - report download URL - t2"
+    #  uses: thollander/actions-comment-pull-request@v3
+    #  # if: startsWith(github.ref, 'refs/pull/')
+    #  continue-on-error: true
+    #  with:
+    #    comment-tag: latest-tarball
+    #    message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
+    #    #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
 
     # https://github.com/marocchino/sticky-pull-request-comment
     - name: "GHA-01: Make dist and docs tarballs - report download URL - s2"
       uses: marocchino/sticky-pull-request-comment@v2
-      # if: startsWith(github.ref, 'refs/pull/')
+      if: startsWith(github.ref, 'refs/pull/')
       continue-on-error: true
       with:
         header: latest-tarball-sticky
-        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.sha }}
+        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
         #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
         #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
+
+    # https://github.com/marketplace/actions/commit-comment
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - commit comment"
+      uses: peter-evans/commit-comment@v4
+      continue-on-error: true
+      with:
+        body: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}

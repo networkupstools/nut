@@ -535,6 +535,27 @@ packages.
 * https://build.opensuse.org/
 * https://openbuildservice.org/
 
+It is anticipated that corresponding RPM and DEB recipes will evolve to
+match code base evolution as well as distribution-provided packages, so
+that these builds can be installed as temporary replacements of what the
+distro offers (if new features/fixes are required by the user), and that
+more and more platforms will get supported (not every one of them provides
+all prerequisites at all, or under the same spelling of package names).
+
+It is also anticipated that beside NUT itself, further related components
+would be built in those OBS projects, e.g. the NUT-hosted fork of `libmodbus`
+with support of USB RTU until that gets merged into upstream, or clients
+like WMNut.
+
+Resulting packages for several Linux platforms can be seen at:
+
+* https://build.opensuse.org/project/show/home:networkupstools:nut-releases/nut
+  for tagged releases
+* https://build.opensuse.org/package/show/home:networkupstools:nut-stable/nut
+  for iterations of the `master` branch
+* Sibling OBS projects should automatically spawn and disappear nearby
+  for pull requests
+
 Continuous Integration (NUT CI farm) build agent preparation
 ------------------------------------------------------------
 [[NUTCI_farm_agents]]
