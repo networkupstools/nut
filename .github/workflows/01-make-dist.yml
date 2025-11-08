@@ -297,3 +297,9 @@ jobs:
         message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
         #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
         #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
+
+    # https://github.com/marketplace/actions/commit-comment
+    - name: "GHA-01: Make dist and docs tarballs - report download URL - commit comment"
+      uses: peter-evans/commit-comment@v4
+      with:
+        body: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
