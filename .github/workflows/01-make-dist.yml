@@ -58,7 +58,7 @@ jobs:
 
     - name: "GHA-01: Make dist and docs tarballs - report download URL - s1"
       uses: marocchino/sticky-pull-request-comment@v2
-      if: startsWith(github.ref, 'refs/pull/')
+      if: startsWith(github.ref, 'refs/pull/') || github.event.pull_request.number > 0
       continue-on-error: true
       with:
         header: latest-tarball-sticky
@@ -297,7 +297,7 @@ jobs:
     # https://github.com/marocchino/sticky-pull-request-comment
     - name: "GHA-01: Make dist and docs tarballs - report download URL - s2"
       uses: marocchino/sticky-pull-request-comment@v2
-      if: startsWith(github.ref, 'refs/pull/')
+      if: startsWith(github.ref, 'refs/pull/') || github.event.pull_request.number > 0
       continue-on-error: true
       with:
         header: latest-tarball-sticky
