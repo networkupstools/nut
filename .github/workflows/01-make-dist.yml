@@ -4,6 +4,7 @@
 # See also:
 #   https://github.com/actions/upload-artifact
 #   https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+#   https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
 name: "GHA-01: Make dist and docs tarballs, see workflow page for links"
 
 on:
@@ -13,6 +14,11 @@ on:
       - v*
   pull_request_target:
     # The branches below must be a subset of the branches above
+    # Note that for PRs this runs the copy of workflow in the
+    # target branch (and only then gets some of the permissions
+    # listed below), and identification/naming of PR source vs.
+    # a pushed branch (e.g. master updated by a PR merge) is
+    # tricky.
     branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
   schedule:
     - cron: '15 12 * * 0'
@@ -20,7 +26,7 @@ on:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
 
 permissions:
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
 
@@ -29,16 +35,9 @@ jobs:
     name: Make Dist and Docs Tarballs
      # FIXME: Prepare/maintain a container image with pre-installed
      #  NUT build/tooling prereqs (save about 3 minutes per run!)
+     #  Maybe https://aschmelyun.com/blog/using-docker-run-inside-of-github-actions/
+     #  => https://github.com/addnab/docker-run-action can help
     runs-on: ubuntu-latest
-    #permissions:
-    #  #actions: read
-    #  actions: write
-    #  #contents: read
-    #  contents: write
-    #  repository-projects: write
-    #  security-events: write
-    #  pull-requests: write
-    #  issues: write
 
     strategy:
       fail-fast: false
@@ -46,26 +45,14 @@ jobs:
     steps:
     # Post early so this would be about the top comment in the PR trail
     # (easy to see, contents replaced later)
-
-    #- name: "GHA-01: Make dist and docs tarballs - report download URL - t1"
-    #  uses: thollander/actions-comment-pull-request@v3
-    #  # if: startsWith(github.ref, 'refs/pull/')
-    #  continue-on-error: true
-    #  with:
-    #    comment-tag: latest-tarball
-    #    message: Sticky note -- Dist and Docs tarballs will be linked here after the "make dist" job completes.
-    #    #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
-
-    - name: "GHA-01: Make dist and docs tarballs - report download URL - s1"
+    - name: "GHA-01: Make dist and docs tarballs - report download URL (placeholder) as a first-ever PR comment"
       uses: marocchino/sticky-pull-request-comment@v2
-      if: startsWith(github.ref, 'refs/pull/')
+      if: startsWith(github.ref, 'refs/pull/') || github.event.pull_request.number > 0
       continue-on-error: true
       with:
         header: latest-tarball-sticky
         only_create: true
         message: Sticky note -- Dist and Docs tarballs will be linked here after the "make dist" job completes.
-        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
-        #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
 
     - name: Checkout repository
       uses: actions/checkout@v5
@@ -74,18 +61,25 @@ jobs:
         fetch-tags: true
 
     # https://github.com/marketplace/actions/substitute-string
-    # https://docs.github.com/en/actions/reference/workflows-and-actions/variables
-    # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
+    # See also examples in https://github.com/dhimmel/dump-actions-context/
     # Note it warns about "unexpected input(s)" with replacement tokens below,
     # as they are by design not predefined, as far as actions API is concened.
     # They still work for substitutions though.
     - uses: bluwy/substitute-string-action@v3
       id: subst-github-ref-name
       with:
-        _input-text: "${{ github.head_ref || github.ref_name }}"
+        _input-text: "${{ github.event.pull_request.number > 0 && format('PR-{0}', github.event.pull_request.number) || github.head_ref || github.ref_name }}"
         " ": _
         "/": _
-    - run: echo "${{ steps.subst-github-ref-name.outputs.result }}"
+
+    - name: Debug PR/branch identification
+      run: |
+        echo "steps.subst-github-ref-name.outputs.result='${{ steps.subst-github-ref-name.outputs.result }}'" || true
+        echo "github.event.pull_request.number='${{ github.event.pull_request.number }}'" || true
+        echo "format('PR-{0}', github.event.pull_request.number)='${{ format('PR-{0}', github.event.pull_request.number) }}'" || true
+        echo "github.head_ref='${{ github.head_ref }}'" || true
+        echo "github.ref='${{ github.ref }}'" || true
+        echo "github.ref_name='${{ github.ref_name }}'" || true
 
     # Make build identification more useful (so we use no fallbacks in script)
     - name: Try to get more Git metadata
@@ -261,7 +255,6 @@ jobs:
                 artifact_id: id,
               })
             })
-        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
 
     - name: Upload tarball and its checksum artifacts
       uses: actions/upload-artifact@v4
@@ -273,33 +266,20 @@ jobs:
         compression-level: 0
         overwrite: true
 
-    # https://github.com/thollander/actions-comment-pull-request
     # FIXME: Something that adds/updates Github Checks would be better
     #  as it would be seen in the list attached to a status icon of any
     #  build (e.g. history of master branch)
-
-    #- name: "GHA-01: Make dist and docs tarballs - report download URL - t2"
-    #  uses: thollander/actions-comment-pull-request@v3
-    #  # if: startsWith(github.ref, 'refs/pull/')
-    #  continue-on-error: true
-    #  with:
-    #    comment-tag: latest-tarball
-    #    message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
-    #    #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
-
     # https://github.com/marocchino/sticky-pull-request-comment
-    - name: "GHA-01: Make dist and docs tarballs - report download URL - s2"
+    - name: "GHA-01: Make dist and docs tarballs - report download URL as a PR comment"
       uses: marocchino/sticky-pull-request-comment@v2
-      if: startsWith(github.ref, 'refs/pull/')
+      if: startsWith(github.ref, 'refs/pull/') || github.event.pull_request.number > 0
       continue-on-error: true
       with:
         header: latest-tarball-sticky
         message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
-        #github-token: ${{ secrets.MAKE_DIST_TOKEN }}
-        #GITHUB_TOKEN: ${{ secrets.MAKE_DIST_TOKEN }}
 
     # https://github.com/marketplace/actions/commit-comment
-    - name: "GHA-01: Make dist and docs tarballs - report download URL - commit comment"
+    - name: "GHA-01: Make dist and docs tarballs - report download URL as a commit comment"
       uses: peter-evans/commit-comment@v4
       continue-on-error: true
       with:
