@@ -48,6 +48,42 @@ When monitoring a single UPS, the file displayed is
 The format of these files, including the possible commands, is
 documented in linkman:upsstats.html[5].
 
+JSON OUTPUT
+-----------
+
+In addition to processing HTML templates, *upsstats.cgi* can be
+invoked as a JSON API by adding the *json* parameter to the
+query string (e.g., *?json* or *&json*).
+
+When this parameter is present, the CGI script bypasses all HTML
+template parsing and instead returns a JSON object.
+
+The structure of the JSON output depends on whether the *host*
+parameter is also provided:
+
+* *Multi-host (Default):*
+    If no *host* parameter is specified, the script returns a
+    single JSON object containing an *"upses"* key. This key
+    holds an array, with each element in the array being a JSON
+    object representing a monitored UPS.
+
+* *Single-host Mode:*
+    If a *host* parameter is provided (e.g.,
+    *?host=myups@localhost&json*), the script returns a single
+    JSON object for that UPS (it will not be wrapped in an
+    "upses" array).
+
+In both modes, each UPS object includes:
+
+* *host*: The UPS identifier (e.g., "myups@localhost")
+* *desc*: The host description from ``hosts.conf``
+* *status_raw*: The raw status string (e.g., "OL")
+* *status_parsed*: An array of human-readable status strings
+  (e.g., ["Online"])
+* *vars*: An object containing the full tree of all available
+  variables for that UPS (e.g., "battery.charge": "100",
+  "ups.model": "...")
+
 FILES
 -----
 

@@ -193,6 +193,9 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
 
+ - `upsstats` has now JSON output mode via ?json (or &json)
+    parameter. [issue #2524 and #2525, PR #3171]
+
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
      `NOTIFYTYPE` environment variables were neutered for the timer daemon,
