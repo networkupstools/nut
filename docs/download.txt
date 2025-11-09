@@ -144,7 +144,7 @@ an archive with rendered documentation files (PDF, HTML, man pages).
 
 Links to these "Dist and Docs" archives can be seen on GitHub in merge commit
 comments, and are posted as a rolling comment in pull requests. Keep in mind
-that artefacts like these are stored for up to 90 days, and can be rotated
+that artifacts like these are stored for up to 90 days, and can be rotated
 away earlier.
 
 NOTE: GitHub has several download links for repository snapshots (made for
