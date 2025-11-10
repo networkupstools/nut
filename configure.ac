@@ -6950,6 +6950,12 @@ AS_IF([test -s "${ABS_TOP_SRCDIR}/install-sh" && ${GREP} -w MKDIRPROG "${ABS_TOP
 	])
 ])
 
+AS_IF([test x"${RUN_AS_USER}" = xnobody || test x"${RUN_AS_GROUP}" = xnobody || test x"${RUN_AS_GROUP}" = xnogroup], [
+	AC_MSG_NOTICE([==========================================================])
+	AC_MSG_NOTICE([You have configured a build for default user '${RUN_AS_USER}' or])
+	AC_MSG_NOTICE([group '${RUN_AS_GROUP}' account names. This may be not safe.])
+])
+
 AS_IF([test x"${NUT_VERSION_DEPLOYED-}" = x"<reenter>"], [
 	AC_MSG_NOTICE([==========================================================])
 	AC_MSG_NOTICE([You have configured a build for "in-place" replacement])

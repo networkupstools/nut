@@ -266,7 +266,8 @@ several `FSD` notifications into one executed action. [PR #3097]
  - The `configure` script would now probe (if it can) the operating systems for
    more user and group account names, such as `upsmon`, `nutmon`, `ups`, `nut`
    (last hit wins, separately for user and groups accounts) settling on one of
-   those if detected instead of `nobody` (and optionally `nogroup`). [#3173]
+   those if detected instead of `nobody` (and optionally `nogroup`). It would
+   also warn if `nobody` or `nogroup` end up being used for a build. [#3173]
 
  - Updated `make spellcheck` to help avoid asciidoc admonition blocks with
    visually invalid sentences (after rendering as a box in HTML or PDF). [#3077]
