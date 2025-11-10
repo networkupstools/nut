@@ -509,6 +509,13 @@ AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && test -z "`${PROBE_OS_GROUP} "${R
 	[RUN_AS_GROUP="nogroup"]
 )
 
+dnl Last hit wins, user and groups accounts separately
+for TOKEN in upsmon nutmon ups nut; do
+	AS_IF([test -n "`${PROBE_OS_USER} ${TOKEN}`"], [RUN_AS_USER="${TOKEN}"])
+	AS_IF([test -n "`${PROBE_OS_GROUP} ${TOKEN}`"], [RUN_AS_GROUP="${TOKEN}"])
+done
+unset TOKEN
+
 dnl NOTE: NUT legacy default, keep as is for least surprise
 dnl Distributions are however welcome to specify the option to use tmpfs
 AS_CASE([${target_os}],
