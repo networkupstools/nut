@@ -21,7 +21,7 @@ DESCRIPTION
 *upsstats.cgi*
 uses template files to build web pages containing status information
 from UPS hardware.  It can repeat sections of those template files to
-monitor several UPSes simultaneously, or focus on a single UPS.
+monitor several devices simultaneously, or focus on a single UPS.
 
 These templates can also include references to linkman:upsimage.cgi[8]
 for graphical displays of battery charge levels, voltage readings, and
@@ -63,7 +63,7 @@ parameter is also provided:
 
 * *Multi-host (Default):*
     If no *host* parameter is specified, the script returns a
-    single JSON object containing an *"upses"* key. This key
+    single JSON object containing an *"devices"* key. This key
     holds an array, with each element in the array being a JSON
     object representing a monitored UPS.
 
@@ -71,7 +71,7 @@ parameter is also provided:
     If a *host* parameter is provided (e.g.,
     *?host=myups@localhost&json*), the script returns a single
     JSON object for that UPS (it will not be wrapped in an
-    "upses" array).
+    "devices" array).
 
 In both modes, each UPS object includes:
 
