@@ -71,6 +71,15 @@ Changes from 2.8.4 to 2.8.5
   to match the driver program name. Packaging recipes may have to be updated.
   Follow-up from slightly botched renaming in original contribution. [PR #545]
 
+- The `configure` script would now probe (if it can) the operating systems for
+  more user and group account names, such as `upsmon`, `nutmon`, `ups`, `nut`
+  (last hit wins, separately for user and groups accounts) settling on one of
+  those if detected instead of `nobody` (and optionally `nogroup`). It would
+  also warn if `nobody` or `nogroup` end up being used for a build. This is
+  not likely to affect package builds (which usually define the accounts to
+  use), but may (hopefully positively) affect rebuilds of NUT on systems where
+  an older version is already deployed. [#3173]
+
 - The `configure` script should now try harder to report specifically
   the "purelib" location as `PYTHON*_SITE_PACKAGES`. Packaging recipes
   may have to be updated. [#1209]
