@@ -1086,7 +1086,7 @@ static void json_escape(const char *in) {
 			default:
 				if (*in >= 0 && (unsigned char)*in < 32) {
 					/* Print control characters as unicode */
-					printf("\\u%04x", (int)*in);
+					printf("\\u%04x", (unsigned int)*in);
 				} else {
 					putchar(*in);
 				}
