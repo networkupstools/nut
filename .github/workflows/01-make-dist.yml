@@ -26,6 +26,7 @@ on:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
 
 permissions:
+  checks: write
   contents: write
   issues: write
   pull-requests: write
@@ -43,17 +44,6 @@ jobs:
       fail-fast: false
 
     steps:
-    # Post early so this would be about the top comment in the PR trail
-    # (easy to see, contents replaced later)
-    - name: "GHA-01: Make dist and docs tarballs - report download URL (placeholder) as a first-ever PR comment"
-      uses: marocchino/sticky-pull-request-comment@v2
-      if: startsWith(github.ref, 'refs/pull/') || github.event.pull_request.number > 0
-      continue-on-error: true
-      with:
-        header: latest-tarball-sticky
-        only_create: true
-        message: Sticky note -- Dist and Docs tarballs will be linked here after the "make dist" job completes.
-
     - name: Checkout repository
       uses: actions/checkout@v5
       with:
@@ -266,21 +256,41 @@ jobs:
         compression-level: 0
         overwrite: true
 
-    # FIXME: Something that adds/updates Github Checks would be better
-    #  as it would be seen in the list attached to a status icon of any
-    #  build (e.g. history of master branch)
-    # https://github.com/marocchino/sticky-pull-request-comment
-    - name: "GHA-01: Make dist and docs tarballs - report download URL as a PR comment"
-      uses: marocchino/sticky-pull-request-comment@v2
-      if: startsWith(github.ref, 'refs/pull/') || github.event.pull_request.number > 0
+    # NOTE: Despite the docs examples, due to GH API changes in Mar 2025
+    # this action can no longer update an existing check, only create a
+    # new one. Also calls authenticated with "github-actions" GH App may
+    # not set "details_url" freely...
+    # https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28
+    - name: "GHA-01: Create new GH Check report - shell/cURL"
+      if: always()
       continue-on-error: true
-      with:
-        header: latest-tarball-sticky
-        message: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
+      env:
+        artifact_name: "NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip"
+        artifact_url: ${{ steps.upload_artifact.outputs.artifact-url }}
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ env.GITHUB_TOKEN }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/${{ github.repository }}/check-runs \
+          -d '{"head_sha": "${{ env.ref }}", "name": "URL for ${{ env.artifact_name }}", "details_url": "${{ env.artifact_url }}", "status": "completed", "conclusion": "${{ job.status }}", "output": {"title": "${{ env.artifact_url }}", "summary": "Dist and Docs [${{ env.artifact_name }}](${{ env.artifact_url }}) are available for commit ${{ env.ref }}"} }'
 
-    # https://github.com/marketplace/actions/commit-comment
-    - name: "GHA-01: Make dist and docs tarballs - report download URL as a commit comment"
-      uses: peter-evans/commit-comment@v4
-      continue-on-error: true
-      with:
-        body: Dist and Docs [NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip](${{ steps.upload_artifact.outputs.artifact-url }}) are available for commit ${{ github.event.pull_request.head.sha || github.sha }}
+    ### This tends to use same "name" text on both sides of Checks list entry:
+    #- name: "GHA-01: Add link as GH Check report"
+    #  uses: LouisBrunner/checks-action@v2.0.0
+    #  if: always()
+    #  continue-on-error: true
+    #  env:
+    #    artifact_name: "NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip"
+    #    artifact_url: ${{ steps.upload_artifact.outputs.artifact-url }}
+    #    ref: ${{ github.event.pull_request.head.sha || github.sha }}
+    #  with:
+    #    token: ${{ secrets.GITHUB_TOKEN }}
+    #    name: "[${{ env.artifact_name }}](${{ env.artifact_url }})"
+    #    status: "completed"
+    #    conclusion: ${{ job.status }}
+    #    details_url: ${{ env.artifact_url }}
+    #    output: '{ "text_description": "Dist and Docs [${{ env.artifact_name }}](${{ env.artifact_url }}) are available for commit ${{ env.ref }}", "summary": "${{ job.status }}" }'
