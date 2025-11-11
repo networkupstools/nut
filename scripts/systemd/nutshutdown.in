@@ -61,6 +61,8 @@ fi
     $POWEROFF_QUIET || echo "$0: WARNING: could not locate '@SBINDIR@/upsdrvctl' - will not command any UPS devices to shut down" >&2
 }
 
+# This depends on POWERDOWNFLAG being configured in upsmon.conf
+# and can happen on both NUT servers and pure client machines:
 if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
     if [ -x "@SBINDIR@/upsdrvctl" ] ; then
         $POWEROFF_QUIET || {

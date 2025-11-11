@@ -911,7 +911,9 @@ static void ups_on_line(utype_t *ups)
 	clearflag(&ups->status, ST_ONBATT);
 }
 
-/* create the flag file if necessary */
+/* create the flag file if necessary (and if POWERDOWNFLAG is configured in
+ * upsmon.conf); this can happen on both NUT servers and pure client machines
+ */
 static void set_pdflag(void)
 {
 	FILE	*pdf;
