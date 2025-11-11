@@ -21,6 +21,7 @@ AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommonversion.la \
+$(top_builddir)/common/libcommonstrjson.la \
 $(top_builddir)/common/libparseconf.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
