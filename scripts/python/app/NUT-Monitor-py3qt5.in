@@ -884,6 +884,7 @@ class gui_updater :
 
     __parent_class = None
     __stop_thread  = False
+    was_online = True
 
     def __init__( self, parent_class ) :
         threading.Thread.__init__( self )
@@ -897,7 +898,6 @@ class gui_updater :
     def __update( self ) :
 
         ups    = self.__parent_class._interface__current_ups
-        was_online = True
 
         # Define a dict containing different UPS status
         status_mapper = { b"LB"     : "<font color=\"#BB0000\"><b>%s</b></font>" % _("Low batteries"),
@@ -926,16 +926,16 @@ class gui_updater :
 
                 if ( vars.get(b"ups.status").find(b"OL") != -1 ) :
                     text_right += "<font color=\"#009000\"><b>%s</b></font>" % _("Online")
-                    if not was_online :
+                    if not self.was_online :
                         self.__parent_class.change_status_icon( "on_line", blink=False )
-                        was_online = True
+                        self.was_online = True
 
                 if ( vars.get(b"ups.status").find(b"OB") != -1 ) :
                     text_right += "<font color=\"#900000\"><b>%s</b></font>" % _("On batteries")
-                    if was_online :
+                    if self.was_online :
                         self.__parent_class.change_status_icon( "on_battery", blink=True )
                         self.__parent_class.gui_status_notification( _("Device is running on batteries"), "on_battery.png" )
-                        was_online = False
+                        self.was_online = False
 
                 # Check for additionnal information
                 for k,v in status_mapper.items() :
