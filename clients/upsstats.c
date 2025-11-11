@@ -1084,7 +1084,7 @@ static void json_escape(const char *in) {
 			case '\r': printf("\\r"); break;
 			case '\t': printf("\\t"); break;
 			default:
-				if (*in >= 0 && (unsigned char)*in < 32) {
+				if ((unsigned char)*in < 32) {
 					/* Print control characters as unicode */
 					printf("\\u%04x", (unsigned int)*in);
 				} else {
