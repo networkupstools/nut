@@ -15,6 +15,7 @@ AM_LDFLAGS = -no-undefined
 EXTRA_DIST =
 CLEANFILES =
 
+noinst_HEADERS = strjson.h
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 lib_LTLIBRARIES =
 
@@ -75,6 +76,10 @@ noinst_LTLIBRARIES += libcommonstr.la
 libcommonstr_la_SOURCES = str.c
 libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 libcommonstr_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
+
+# Common methods for JSON outputs from NUT programs
+noinst_LTLIBRARIES += libcommonstrjson.la
+libcommonstrjson_la_SOURCES = strjson.c
 
 # This one includes only version-related data and methods and should be
 # linked along with one of the other libcommon*.la for logging methods:

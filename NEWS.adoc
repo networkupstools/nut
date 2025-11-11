@@ -198,6 +198,8 @@ NOTE: If using `upssched` and monitoring multiple UPSes, consider setting up
 a `START-TIMER-SHARED` rule with a short (approx. 1 second) timeout to group
 several `FSD` notifications into one executed action. [PR #3097]
 
+ - `upsc` has now optional JSON output [issue #3172, PR #XXXX]
+
  - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
 
  - `upsstats` has now JSON output mode via `?json` (or `&json`) CGI query

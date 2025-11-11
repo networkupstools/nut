@@ -23,6 +23,7 @@
 #include "timehead.h"
 #include "upsclient.h"
 #include "status.h"
+#include "strjson.h"
 #include "cgilib.h"
 #include "parseconf.h"
 #include "upsstats.h"
@@ -1060,42 +1061,8 @@ static void display_single(void)
 }
 
 /* ------------------------------------------------------------- */
-/* ---NEW FUNCTIONS FOR JSON API ------------------------------- */
+/* ---NEW FUNCTION FOR JSON API -------------------------------- */
 /* ------------------------------------------------------------- */
-
-/**
- * @brief Helper function to print a string as a JSON-safe string
- * @param in The raw C-string to escape
- */
-static void json_escape(const char *in) {
-	if (!in) {
-		printf("null");
-		return;
-	}
-
-	printf("\"");
-	while (*in) {
-		switch (*in) {
-			case '\"': printf("\\\""); break;
-			case '\\': printf("\\\\"); break;
-			case '\b': printf("\\b"); break;
-			case '\f': printf("\\f"); break;
-			case '\n': printf("\\n"); break;
-			case '\r': printf("\\r"); break;
-			case '\t': printf("\\t"); break;
-			default:
-				if ((unsigned char)*in < 32) {
-					/* Print control characters as unicode */
-					printf("\\u%04x", (unsigned int)*in);
-				} else {
-					putchar(*in);
-				}
-				break;
-		}
-		in++;
-	}
-	printf("\"");
-}
 
 /**
  * @brief Main JSON output function.
@@ -1150,28 +1117,28 @@ static void display_json(void)
 		if (!is_first_ups) printf(",\n");
 
 		if (upscli_fd(&ups) == -1) {
-			printf("  {\"host\": ");
-			json_escape(currups->sys);
-			printf(", \"desc\": ");
-			json_escape(currups->desc);
-			printf(", \"error\": \"Connection failed: %s\"}", upscli_strerror(&ups));
+			printf("  {\"host\": \"");
+			json_print_esc(currups->sys);
+			printf("\", \"desc\": \"");
+			json_print_esc(currups->desc);
+			printf("\", \"error\": \"Connection failed: %s\"}", upscli_strerror(&ups));
 			is_first_ups = 0;
 			continue;
 		}
 
 		printf("  {\n"); /* Start UPS object */
-		printf("    \"host\": ");
-		json_escape(currups->sys);
-		printf(",\n");
-		printf("    \"desc\": ");
-		json_escape(currups->desc);
-		printf(",\n");
+		printf("    \"host\": \"");
+		json_print_esc(currups->sys);
+		printf("\",\n");
+		printf("    \"desc\": \"");
+		json_print_esc(currups->desc);
+		printf("\",\n");
 
 		/* Add pre-processed status, as the old template did */
 		if (get_var("ups.status", status_buf, sizeof(status_buf), 0)) {
-			printf("    \"status_raw\": ");
-			json_escape(status_buf);
-			printf(",\n");
+			printf("    \"status_raw\": \"");
+			json_print_esc(status_buf);
+			printf("\",\n");
 			printf("    \"status_parsed\": [");
 
 			is_first_status = 1;
@@ -1183,7 +1150,9 @@ static void display_json(void)
 				for (i = 0; stattab[i].name != NULL; i++) {
 					if (stattab[i].name && ptr && !strcasecmp(stattab[i].name, ptr)) {
 						if (!is_first_status) printf(", ");
-						json_escape(stattab[i].desc);
+						printf("\"");
+						json_print_esc(stattab[i].desc);
+						printf("\"");
 						is_first_status = 0;
 					}
 				}
@@ -1207,10 +1176,11 @@ static void display_json(void)
 
 				if (!is_first_var) printf(",\n");
 
-				printf("      ");
-				json_escape(answer[2]); /* var name */
-				printf(": ");
-				json_escape(answer[3]); /* var value */
+				printf("      \"");
+				json_print_esc(answer[2]); /* var name */
+				printf("\": \"");
+				json_print_esc(answer[3]); /* var value */
+				printf("\"");
 
 				is_first_var = 0;
 			}
@@ -1231,7 +1201,7 @@ static void display_json(void)
 
 
 /* ------------------------------------------------------------- */
-/* --- END: NEW JSON FUNCTIONS --------------------------------- */
+/* --- END: NEW JSON FUNCTION ---------------------------------- */
 /* ------------------------------------------------------------- */
 
 

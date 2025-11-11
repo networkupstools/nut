@@ -42,6 +42,7 @@ endif WITH_SSL
 LDADD_CLIENT = \
 	$(top_builddir)/common/libcommonclient.la \
 	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libcommonstrjson.la \
 	libupsclient.la \
 	$(NETLIBS)
 if WITH_SSL
@@ -55,7 +56,7 @@ LDADD = $(LDADD_CLIENT)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/common
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL

@@ -30,21 +30,26 @@
 
 #include "nut_stdint.h"
 #include "upsclient.h"
+#include "strjson.h"
 
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char		*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
+static int	output_json = 0;
 
 static void usage(const char *prog)
 {
 	print_banner_once(prog, 2);
 	printf("NUT read-only client program to display UPS variables.\n");
 
-	printf("\nusage: %s -l | -L [<hostname>[:port]]\n", prog);
-	printf("       %s <ups> [<variable>]\n", prog);
-	printf("       %s -c <ups>\n", prog);
+	printf("\nusage: %s [-j] -l | -L [<hostname>[:port]]\n", prog);
+	printf("       %s [-j] <ups> [<variable>]\n", prog);
+	printf("       %s [-j] -c <ups>\n", prog);
+
+	printf("\nOption:\n");
+	printf("  -j         - display output in JSON format\n");
 
 	printf("\nFirst form (lists UPSes):\n");
 	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
@@ -105,12 +110,19 @@ static void printvar(const char *var)
 		fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least %" PRIuSIZE ")", numa, numq);
 	}
 
-	printf("%s\n", answer[3]);
+	if (output_json) {
+		printf("\"");
+		json_print_esc(answer[3]);
+		printf("\"\n");
+	} else {
+		printf("%s\n", answer[3]);
+	}
 }
 
 static void list_vars(void)
 {
 	int		ret;
+	int		first = 1;
 	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
@@ -118,6 +130,10 @@ static void list_vars(void)
 	query[0] = "VAR";
 	query[1] = upsname;
 	numq = 2;
+
+	if (output_json) {
+		printf("{\n");
+	}
 
 	ret = upscli_list_start(ups, numq, query);
 
@@ -138,19 +154,44 @@ static void list_vars(void)
 			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
-		printf("%s: %s\n", answer[2], answer[3]);
+		if (output_json) {
+			if (!first) {
+				printf(",\n");
+			}
+			printf("  \"");
+			json_print_esc(answer[2]);
+			printf("\": \"");
+			json_print_esc(answer[3]);
+			printf("\"");
+			first = 0;
+		} else {
+			printf("%s: %s\n", answer[2], answer[3]);
+		}
+	}
+
+	if (output_json) {
+		printf("\n}\n");
 	}
 }
 
 static void list_upses(int verbose)
 {
 	int		ret;
+	int		first = 1;
 	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 
 	query[0] = "UPS";
 	numq = 1;
+
+	if (output_json) {
+		if (verbose) {
+			printf("{\n");
+		} else {
+			printf("[\n");
+		}
+	}
 
 	ret = upscli_list_start(ups, numq, query);
 
@@ -170,10 +211,35 @@ static void list_upses(int verbose)
 			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
-		if(verbose) {
+		if (output_json) {
+			if (!first) {
+				printf(",\n");
+			}
+			printf("  ");
+			if (verbose) {
+				printf("\"");
+				json_print_esc(answer[1]);
+				printf("\": \"");
+				json_print_esc(answer[2]);
+				printf("\"");
+			} else {
+				printf("\"");
+				json_print_esc(answer[1]);
+				printf("\"");
+			}
+			first = 0;
+		} else if(verbose) {
 			printf("%s: %s\n", answer[1], answer[2]);
 		} else {
 			printf("%s\n", answer[1]);
+		}
+	}
+
+	if (output_json) {
+		if (verbose) {
+			printf("\n}\n");
+		} else {
+			printf("\n]\n");
 		}
 	}
 }
@@ -181,6 +247,7 @@ static void list_upses(int verbose)
 static void list_clients(const char *devname)
 {
 	int		ret;
+	int		first = 1;
 	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
@@ -188,6 +255,10 @@ static void list_clients(const char *devname)
 	query[0] = "CLIENT";
 	query[1] = devname;
 	numq = 2;
+
+	if (output_json) {
+		printf("[\n");
+	}
 
 	ret = upscli_list_start(ups, numq, query);
 
@@ -207,7 +278,21 @@ static void list_clients(const char *devname)
 			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
-		printf("%s\n", answer[2]);
+		if (output_json) {
+			if (!first) {
+				printf(",\n");
+			}
+			printf("  \"");
+			json_print_esc(answer[2]);
+			printf("\"");
+			first = 0;
+		} else {
+			printf("%s\n", answer[2]);
+		}
+	}
+
+	if (output_json) {
+		printf("\n]\n");
 	}
 }
 
@@ -242,7 +327,7 @@ int main(int argc, char **argv)
 	}
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
-	while ((i = getopt(argc, argv, "+hlLcVW:")) != -1) {
+	while ((i = getopt(argc, argv, "+hlLcVW:j")) != -1) {
 
 		switch (i)
 		{
@@ -256,6 +341,10 @@ int main(int argc, char **argv)
 
 		case 'c':
 			clientlist = 1;
+			break;
+
+		case 'j':
+			output_json = 1;
 			break;
 
 		case 'V':
