@@ -81,6 +81,13 @@ https://github.com/networkupstools/nut/milestone/12
    * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
      Extended to be IPv6-capable along the way. [#1209]
 
+ - `nhs_ser` driver updates:
+   * Driver source code includes a table to map baud rates (defined by the OS
+     as C macros) to numbers and strings more useful to the driver program.
+     It was discovered that not all operating systems define all the baud rates
+     referenced by this table, so now several higher speeds would be compiled
+     conditionally. [issue #3163]
+
  - `nutdrv_qx` driver updates:
    * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together
@@ -184,6 +191,8 @@ NOTE: If using `upssched` and monitoring multiple UPSes, consider setting up
 a `START-TIMER-SHARED` rule with a short (approx. 1 second) timeout to group
 several `FSD` notifications into one executed action. [PR #3097]
 
+ - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
+
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
      `NOTIFYTYPE` environment variables were neutered for the timer daemon,
@@ -266,8 +275,11 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - Added a GitHub Actions CI job to generate, upload and recycle `make dist`
    and `make dist-docs` tarballs so they are easier to obtain for people and
-   other CI systems (which might not want to follow a Git repository). [#1400,
-   #2829]
+   other CI systems (which might not want to follow a Git repository). Links
+   to these artifacts can be seen in workflow page (or its logs), sticky note
+   on top of PR comments, and added as commit comments (seen after the diff of
+   the commit, see e.g. merge commits for the `master` branch). Note that the
+   GitHub Action storage keeps artefacts for at most 90 days. [#1400, #2829]
 
  - Source directory `data/html` was renamed to `data/htmlcgi` in order to
    better reflect its contents and purpose, compared to documentation-oriented
