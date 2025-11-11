@@ -4538,7 +4538,7 @@ AS_IF([test "x$nut_cv_header_windows_h" = xyes],
 
 
 dnl ----------------------------------------------------------------------
-dnl Bits and pieces of NUT build artefacts' installation locations
+dnl Bits and pieces of NUT build artifacts' installation locations
 
 PREFIX="${prefix}"
 NUT_REPORT_SETTING_PATH([Default installation prefix path],

@@ -279,7 +279,7 @@ several `FSD` notifications into one executed action. [PR #3097]
    to these artifacts can be seen in workflow page (or its logs), sticky note
    on top of PR comments, and added as commit comments (seen after the diff of
    the commit, see e.g. merge commits for the `master` branch). Note that the
-   GitHub Action storage keeps artefacts for at most 90 days. [#1400, #2829]
+   GitHub Action storage keeps artifacts for at most 90 days. [#1400, #2829]
 
  - Source directory `data/html` was renamed to `data/htmlcgi` in order to
    better reflect its contents and purpose, compared to documentation-oriented
