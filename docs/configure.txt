@@ -820,6 +820,12 @@ This was done since it's slightly better than staying around as
 hack for NFS access.  You should create at least one separate user
 for this software.
 
+Starting from NUT v2.8.5, further default user and group account names
+are probed in the operating system (which might exist if a different
+version of NUT was already installed before the build), currently trying
+`upsmon`, `nutmon`, `ups` or `nut` (last hit wins, separately for groups
+and users).
+
 When such NUT daemons `setuid()` to some user account (whether built-in,
 or specified in configuration files, or passed on command line), they
 also typically assume that account's primary group via `setgid()`.

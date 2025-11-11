@@ -509,6 +509,13 @@ AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && test -z "`${PROBE_OS_GROUP} "${R
 	[RUN_AS_GROUP="nogroup"]
 )
 
+dnl Last hit wins, user and groups accounts separately
+for TOKEN in upsmon nutmon ups nut; do
+	AS_IF([test -n "`${PROBE_OS_USER} ${TOKEN}`"], [RUN_AS_USER="${TOKEN}"])
+	AS_IF([test -n "`${PROBE_OS_GROUP} ${TOKEN}`"], [RUN_AS_GROUP="${TOKEN}"])
+done
+unset TOKEN
+
 dnl NOTE: NUT legacy default, keep as is for least surprise
 dnl Distributions are however welcome to specify the option to use tmpfs
 AS_CASE([${target_os}],
@@ -6941,6 +6948,12 @@ AS_IF([test -s "${ABS_TOP_SRCDIR}/install-sh" && ${GREP} -w MKDIRPROG "${ABS_TOP
 		 AC_MSG_WARN([This should not impact parallel builds.])
 		 AC_MSG_WARN([=====================================================])
 	])
+])
+
+AS_IF([test x"${RUN_AS_USER}" = xnobody || test x"${RUN_AS_GROUP}" = xnobody || test x"${RUN_AS_GROUP}" = xnogroup], [
+	AC_MSG_NOTICE([==========================================================])
+	AC_MSG_NOTICE([You have configured a build for default user '${RUN_AS_USER}' or])
+	AC_MSG_NOTICE([group '${RUN_AS_GROUP}' account names. This may be not safe.])
 ])
 
 AS_IF([test x"${NUT_VERSION_DEPLOYED-}" = x"<reenter>"], [
