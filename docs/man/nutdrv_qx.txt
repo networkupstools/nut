@@ -525,6 +525,9 @@ Perform a battery test for the duration of 'value' seconds (truncated to 60 seco
 MASTERGUARD PROTOCOL
 ~~~~~~~~~~~~~~~~~~~~
 
+*clear.fault.record*::
+Clear fault/error record
+
 *beeper.enable*::
 Enable the UPS beeper.
 
