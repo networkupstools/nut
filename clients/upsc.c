@@ -39,6 +39,25 @@ static char		*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int	output_json = 0;
 
+static void fatalx_error_json_simple(int msg_is_simple, const char *msg)
+	__attribute__((noreturn));
+
+static void fatalx_error_json_simple(int msg_is_simple, const char *msg) {
+	/* To be used in simpler cases, where the possible JSON
+	 * message is not embedded into other lists/objects */
+	if (output_json) {
+		if (msg_is_simple) {
+			/* Caller knows there is nothing to escape here, pass through */
+			printf("{\"error\": \"%s\"}\n", msg);
+		} else {
+			printf("{\"error\": \"");
+			json_print_esc(msg);
+			printf("\"}\n");
+		}
+	}
+	fatalx(EXIT_FAILURE, "Error: %s", msg);
+}
+
 static void usage(const char *prog)
 {
 	print_banner_once(prog, 2);
@@ -85,7 +104,7 @@ static void printvar(const char *var)
 
 	/* old-style variable name? */
 	if (!strchr(var, '.')) {
-		fatalx(EXIT_FAILURE, "Error: old-style variable names are not supported");
+		fatalx_error_json_simple(1, "old-style variable names are not supported");
 	}
 
 	query[0] = "VAR";
@@ -97,17 +116,24 @@ static void printvar(const char *var)
 	ret = upscli_get(ups, numq, query, &numa, &answer);
 
 	if (ret < 0) {
+		const char	*msg = NULL;
+		int	msg_is_simple = 1;
 
 		/* new var and old upsd?  try to explain the situation */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: variable unknown (old upsd detected)");
+			msg = "variable unknown (old upsd detected)";
+		} else {
+			msg = upscli_strerror(ups);
+			msg_is_simple = 0;
 		}
 
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		fatalx_error_json_simple(msg_is_simple, msg);
 	}
 
 	if (numa < numq) {
-		fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least %" PRIuSIZE ")", numa, numq);
+		char	msg[LARGEBUF];
+		snprintf(msg, sizeof(msg), "insufficient data (got %" PRIuSIZE " args, need at least %" PRIuSIZE ")", numa, numq);
+		fatalx_error_json_simple(1, msg);
 	}
 
 	if (output_json) {
@@ -138,20 +164,39 @@ static void list_vars(void)
 	ret = upscli_list_start(ups, numq, query);
 
 	if (ret < 0) {
+		const char	*msg = NULL;
+		int	msg_is_simple = 1;
 
 		/* check for an old upsd */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+			msg = "upsd is too old to support this query";
+		} else {
+			msg = upscli_strerror(ups);
+			msg_is_simple = 0;
 		}
 
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		if (output_json) {
+			if (msg_is_simple) {
+				printf("  \"error\": \"%s\"\n}\n", msg);
+			} else {
+				printf("  \"error\": \"");
+				json_print_esc(msg);
+				printf("\"\n}\n");
+			}
+		}
+		fatalx(EXIT_FAILURE, "Error: %s", msg);
 	}
 
 	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
 
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
+			char	msg[LARGEBUF];
+			snprintf(msg, sizeof(msg), "insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
+			if (output_json) {
+				printf("  \"error\": \"%s\"\n}\n", msg);
+			}
+			fatalx(EXIT_FAILURE, "Error: %s", msg);
 		}
 
 		if (output_json) {
@@ -185,6 +230,23 @@ static void list_upses(int verbose)
 	query[0] = "UPS";
 	numq = 1;
 
+	ret = upscli_list_start(ups, numq, query);
+
+	if (ret < 0) {
+		const char	*msg = NULL;
+		int	msg_is_simple = 1;
+
+		/* check for an old upsd */
+		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
+			msg = "upsd is too old to support this query";
+		} else {
+			msg = upscli_strerror(ups);
+			msg_is_simple = 0;
+		}
+
+		fatalx_error_json_simple(msg_is_simple, msg);
+	}
+
 	if (output_json) {
 		if (verbose) {
 			printf("{\n");
@@ -193,22 +255,19 @@ static void list_upses(int verbose)
 		}
 	}
 
-	ret = upscli_list_start(ups, numq, query);
-
-	if (ret < 0) {
-		/* check for an old upsd */
-		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
-		}
-
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
-	}
-
 	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
 
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+			char	msg[LARGEBUF];
+			snprintf(msg, sizeof(msg), "insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+			if (output_json) {
+				printf("  %s", verbose ? "" : "{");
+				printf("\"error\": \"%s\"\n}\n", msg);
+				if (!verbose)
+					printf("]\n");
+			}
+			fatalx(EXIT_FAILURE, "Error: %s", msg);
 		}
 
 		if (output_json) {
@@ -256,26 +315,37 @@ static void list_clients(const char *devname)
 	query[1] = devname;
 	numq = 2;
 
-	if (output_json) {
-		printf("[\n");
-	}
-
 	ret = upscli_list_start(ups, numq, query);
 
 	if (ret < 0) {
+		const char	*msg = NULL;
+		int	msg_is_simple = 1;
+
 		/* check for an old upsd */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+			msg = "upsd is too old to support this query";
+		} else {
+			msg = upscli_strerror(ups);
+			msg_is_simple = 0;
 		}
 
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		fatalx_error_json_simple(msg_is_simple, msg);
+	}
+
+	if (output_json) {
+		printf("[\n");
 	}
 
 	while ((ret=upscli_list_next(ups, numq, query, &numa, &answer)) == 1) {
 
 		/* CLIENT <upsname> <address> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+			char	msg[LARGEBUF];
+			snprintf(msg, sizeof(msg), "insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+			if (output_json) {
+				printf("  {\"error\": \"%s\"\n}\n]\n", msg);
+			}
+			fatalx(EXIT_FAILURE, "Error: %s", msg);
 		}
 
 		if (output_json) {
@@ -366,8 +436,9 @@ int main(int argc, char **argv)
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
-		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
-			net_connect_timeout);
+		char	msg[LARGEBUF];
+		snprintf(msg, sizeof(msg), "invalid network timeout: %s", net_connect_timeout);
+		fatalx_error_json_simple(0, msg);
 	}
 
 	argc -= optind;
@@ -378,11 +449,11 @@ int main(int argc, char **argv)
 
 	if (varlist) {
 		if (upscli_splitaddr(argv[0] ? argv[0] : "localhost", &hostname, &port) != 0) {
-			fatalx(EXIT_FAILURE, "Error: invalid hostname.\nRequired format: [hostname[:port]]");
+			fatalx_error_json_simple(0, "invalid hostname.\nRequired format: [hostname[:port]]");
 		}
 	} else {
 		if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
-			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
+			fatalx_error_json_simple(0, "invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
 		}
 	}
 	upsdebugx(1, "upsname='%s' hostname='%s' port='%" PRIu16 "'",
@@ -391,7 +462,7 @@ int main(int argc, char **argv)
 	ups = xmalloc(sizeof(*ups));
 
 	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		fatalx_error_json_simple(0, upscli_strerror(ups));
 	}
 
 	if (varlist) {
