@@ -5,7 +5,8 @@
 #   https://github.com/actions/upload-artifact
 #   https://docs.github.com/en/actions/reference/workflows-and-actions/variables
 #   https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
-name: "GHA-01: Make dist and docs tarballs, see workflow page for links"
+#name: "GHA-01: Make dist and docs tarballs, see workflow page for links"
+name: "GHA-01: Tarballs"
 
 on:
   push:
@@ -33,7 +34,7 @@ permissions:
 
 jobs:
   make-dist-tarballs:
-    name: Make Dist and Docs Tarballs
+    name: "Make Dist and Docs Tarballs, see workflow page for links"
      # FIXME: Prepare/maintain a container image with pre-installed
      #  NUT build/tooling prereqs (save about 3 minutes per run!)
      #  Maybe https://aschmelyun.com/blog/using-docker-run-inside-of-github-actions/
