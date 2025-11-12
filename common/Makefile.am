@@ -15,7 +15,6 @@ AM_LDFLAGS = -no-undefined
 EXTRA_DIST =
 CLEANFILES =
 
-noinst_HEADERS = strjson.h
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 lib_LTLIBRARIES =
 
