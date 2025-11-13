@@ -1769,9 +1769,14 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 	}
 
 	/* Check that "long" port fits in an "uint16_t" so is in IP range
-	 * (under 65536) */
+	 * (under 65536).
+	 * FIXME: If it is a non-numeric string, try to resolve via
+	 *  "services" naming database, with a C equivalent of:
+	 *  :;  getent services ssh
+	 *      ssh                   22/tcp
+	 */
 	if ((*(++s) == '\0') || ((l = strtol(s, NULL, 10)) < 1 ) || (l > 65535)) {
-		fprintf(stderr, "upscli_splitaddr: no port specified after ':' separator\n");
+		fprintf(stderr, "upscli_splitaddr: no port number specified after ':' separator\n");
 		return -1;
 	}
 	*port = (uint16_t)l;

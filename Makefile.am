@@ -208,7 +208,7 @@ SUBDIR_TGT_RULE = ( \
 all-libs-local/include:
 	+@$(SUBDIR_TGT_RULE)
 
-### Delivers: libcommon.la libcommonclient.la libcommonstr.la
+### Delivers: libcommon.la libcommonclient.la libcommonstr.la libcommonstrjson.la
 ###           (consume only one of these at a time!)
 ### Delivers: libcommonversion.la (only version methods)
 ### Delivers: libparseconf.la libnutconf.la libnutwincompat.la
@@ -329,6 +329,7 @@ all/common: all/include all-libs-local/common
 ### Requires-ext: common/libcommon.la common/libcommonclient.la
 ### Requires-ext: common/libparseconf.la
 ### Requires-ext: common/libcommonversion.la
+### Requires-ext: common/libcommonstrjson.la
 ### Requires-int: libupsclient.la
 all/clients: all/common all-libs-local/clients
 	+@$(SUBDIR_TGT_RULE)
