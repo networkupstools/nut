@@ -1676,7 +1676,7 @@ int main(int argc, char **argv)
 #ifndef WIN32
 	driverpath = xstrdup(DRVPATH);	/* set default */
 #else	/* WIN32 */
-	driverpath = getfullpath(NULL); /* Relative path in WIN32 */
+	driverpath = getfullpath(PATH_BIN); /* Relative path in WIN32 */
 #endif	/* WIN32 */
 
 	atexit(exit_cleanup);
