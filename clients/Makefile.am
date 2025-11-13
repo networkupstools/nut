@@ -21,6 +21,7 @@ AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommonversion.la \
+$(top_builddir)/common/libcommonstrjson.la \
 $(top_builddir)/common/libparseconf.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -91,6 +92,7 @@ if WITH_CGI
 endif WITH_CGI
 
 upsc_SOURCES = upsc.c upsclient.h
+upsc_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
 upscmd_SOURCES = upscmd.c upsclient.h
 upsrw_SOURCES = upsrw.c upsclient.h
 upslog_SOURCES = upslog.c upsclient.h upslog.h
@@ -114,6 +116,7 @@ upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
 upsset_cgi_SOURCES = upsset.c upsclient.h cgilib.c cgilib.h
 upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
+upsstats_cgi_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
 
 # not LDADD... why?
 libupsclient_la_SOURCES = upsclient.c upsclient.h

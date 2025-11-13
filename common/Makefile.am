@@ -76,6 +76,10 @@ libcommonstr_la_SOURCES = str.c
 libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 libcommonstr_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
 
+# Common methods for JSON outputs from NUT programs
+noinst_LTLIBRARIES += libcommonstrjson.la
+libcommonstrjson_la_SOURCES = strjson.c
+
 # This one includes only version-related data and methods and should be
 # linked along with one of the other libcommon*.la for logging methods:
 noinst_LTLIBRARIES += libcommonversion.la
