@@ -202,8 +202,11 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
 
- - `upsstats` has now JSON output mode via `?json` (or `&json`) CGI query
-    parameter. [issue #2524, PR #3171]
+ - `upsstats` tool updates:
+   * Now has JSON output mode via `?json` (or `&json`) CGI query
+     parameter. [issue #2524, PR #3171]
+   * Handle `device.model` in addition to `ups.model` in upsstats HTML
+     templates. [#3180]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
