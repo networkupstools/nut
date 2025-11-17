@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3577 utf-8
+personal_ws-1.1 en 3582 utf-8
 AAC
 AAS
 ABI
@@ -1546,6 +1546,7 @@ additionalSOLibSearchPath
 addons
 addr
 addrange
+addvar
 addvars
 adelsystem
 adkorte
@@ -1707,6 +1708,7 @@ bmake
 bn
 bool
 boolean
+booleans
 bootable
 bootenv
 bootfs
@@ -2151,6 +2153,7 @@ getopt
 getproctag
 gettext
 gettextize
+getval
 getvar
 gh
 gif
@@ -2953,6 +2956,7 @@ regtype
 relatime
 releasekeyring
 relicensing
+reloadable
 relogtime
 remoteip
 renderer
@@ -3263,6 +3267,7 @@ termios
 testime
 testtime
 testuser
+testvar
 textproc
 tgcware
 tgt
