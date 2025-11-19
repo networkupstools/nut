@@ -30,6 +30,9 @@
  and were originally available under curl license. Which is not unlike the MIT
  license, see https://daniel.haxx.se/blog/2022/06/17/curl-is-reuse-compliant/
 
+ Rendered HTML documentation (and relevant NUT source configuration files)
+ include a copy of AnchorJS project artifacts, available under the MIT license.
+
  To the best of our knowledge, conditions of the 2/3-clause BSD, MIT, curl and
  CC BY-SA licenses allow redistribution and reuse of the codebase in projects
  made available under GPL license terms, as long as attribution is provided.
