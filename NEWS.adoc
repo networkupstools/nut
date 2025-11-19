@@ -297,6 +297,10 @@ several `FSD` notifications into one executed action. [PR #3097]
    types (man, html-single, html-chunked, pdf) that we may have enabled for the
    current build configuration and available tooling. [#1400]
 
+ - Further developer workflow speedup with `make spellcheck-interactive-quick`
+   which should now not re-check source texts that were okay with the previous
+   dictionary contents, in case some new terms have to be added. [PRs #3186, #2871]
+
  - Added a GitHub Actions CI job to generate, upload and recycle `make dist`
    and `make dist-docs` tarballs so they are easier to obtain for people and
    other CI systems (which might not want to follow a Git repository). Links
