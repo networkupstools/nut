@@ -1080,6 +1080,8 @@ to last as part of NUT standard protocol in the long run.
 [options="header"]
 |========================================================================
 | Name                              | Driver/Devices        | Description
+| clear.fault.record                | nutdrv_qx_masterguard => Masterguard
+    | Clear fault/error record
 | experimental.test.beeper.start    | nutdrv_hashx => Atlantis Land
     | Start testing the UPS beeper
 | experimental.test.beeper.stop     | nutdrv_hashx => Atlantis Land

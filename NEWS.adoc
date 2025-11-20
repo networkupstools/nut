@@ -111,6 +111,11 @@ https://github.com/networkupstools/nut/milestone/12
      return the correct command length, resolving a bug for all commands using
      the `,XX` slave address placeholder. This also enables support for the
      `test.battery.start.deep` (`TUD`) command. [#3141]
+   * `nutdrv_qx_masterguard` sub-driver adds a `clear.fault.record` instant
+     command to clear the fault record. Also adds two experimental variables:
+     `battery.ageing.factor` (Battery ageing factor in promille) and
+     `battery.calibration.factor` (Battery calibration factor in percent).
+     Tested on A1000 and A2000 units. [#3181]
 
  - `powerp-bin` and `powerp-txt` driver updates:
    * Their `upsdrv_initinfo()` methods did not explicitly reference the
