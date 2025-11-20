@@ -733,7 +733,7 @@ spellcheck-interactive-quick:
 	  if [ x"$(SUBDIR_MAKE_VERBOSE)" = xdefault ] ; then \
 		SUBDIR_MAKE_VERBOSE=1 ; export SUBDIR_MAKE_VERBOSE ; \
 	  fi ; \
-	  $(MAKE) $(AM_MAKEFLAGS) -k -s spellcheck-interactive
+	  $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_QUICK=true -k -s spellcheck-interactive
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
 # found by `configure` script (and so avoided by conventional recipes)

@@ -921,10 +921,14 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 	 if [ x"$(SPELLCHECK_INTERACTIVE)" = xtrue ] ; then \
 		echo "  ASPELL	Spell checking (interactively) on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
 		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' || exit ; \
-		if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] && diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ; then \
+		if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] \
+		&& ( [ x"$(SPELLCHECK_QUICK)" = xtrue ] || diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ) \
+		; then \
 			touch -r $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive $(abs_srcdir)/$(NUT_SPELL_DICT) ; \
 		else \
-		if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] && diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting >/dev/null ; then \
+		if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] \
+		&& ( [ x"$(SPELLCHECK_QUICK)" = xtrue ] || diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting >/dev/null ) \
+		; then \
 			touch -r $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting $(abs_srcdir)/$(NUT_SPELL_DICT) ; \
 		fi ; fi ; \
 	 else \
@@ -1061,6 +1065,7 @@ DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting $(NUT_SPELL_DICT).bak-pre-in
 # if it did change, or if caller's SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes.
 SPELLCHECK_REPORT_MAYBE_UPDATED_DICT = no
 spellcheck-interactive:
+	@rm -f $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive || true
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive
 	+@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
@@ -1078,7 +1083,10 @@ spellcheck-interactive:
 		if test -f "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; then \
 			touch "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; \
 		fi ; \
-	 done
+	 done ; \
+	 if [ x"$(SPELLCHECK_QUICK)" = xtrue ] ; then \
+		touch -r $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive $(abs_srcdir)/$(NUT_SPELL_DICT) ; \
+	 fi
 	@DO_REPORT=false ; \
 	 if [ "$(SPELLCHECK_REPORT_MAYBE_UPDATED_DICT)" != no ] ; then \
 		DO_REPORT=true ; \
