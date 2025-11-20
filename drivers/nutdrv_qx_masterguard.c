@@ -26,7 +26,7 @@
 #include <stddef.h>
 #include "nut_stdint.h"
 
-#define MASTERGUARD_VERSION "Masterguard 0.04"
+#define MASTERGUARD_VERSION "Masterguard 0.05"
 
 /* series (for un-SKIP) */
 static char masterguard_my_series = '?';
