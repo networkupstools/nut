@@ -151,7 +151,6 @@ SVCNAME_SMF="svc:/system/power/nut-driver"
     NUT_DRIVER_ENUMERATOR_CONF="${NUT_CONFPATH}/nut-driver-enumerator.conf"
 
 [ -s "${NUT_DRIVER_ENUMERATOR_CONF}" ] && \
-    echo "Sourcing config file: ${NUT_DRIVER_ENUMERATOR_CONF}" && \
     . "${NUT_DRIVER_ENUMERATOR_CONF}"
 
 [ -z "${UPSCONF-}" ] && \
