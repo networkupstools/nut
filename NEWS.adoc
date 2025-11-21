@@ -144,6 +144,8 @@ https://github.com/networkupstools/nut/milestone/12
  - `tripplite_usb` driver updates:
    * Added support for Tripplite protocol 3017 (mostly ASCII). [issue #2258,
      PR #3093]
+   * Fixed default `unit_id`, apparently broken by changes in NUT v2.8.1.
+     [issue #3191, PR #3192]
 
  - `usbhid-ups` driver updates:
    * Declared support for APC with USB ID `051d:0005` (details may evolve
