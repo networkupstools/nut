@@ -315,7 +315,7 @@ static long battery_voltage_nominal = 12,
 	/* input_voltage_maximum = -1,
 	   input_voltage_minimum = -1, */
 	   switchable_load_banks = 0,
-	   unit_id = -1; /*!< range: 1-65535, most likely */
+	   unit_id = DEFAULT_UPSID; /*!< range: 1-65535, most likely */
 
 /*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
