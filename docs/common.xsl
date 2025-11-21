@@ -129,6 +129,20 @@ book    nop
 		<xsl:value-of select="$anchorjsXML" disable-output-escaping="yes"/>
 </script>
 
+	<!-- Match color of headers, that is included into final pages
+	     from the asciidoc distro, seek there for a file with e.g.
+	     "Shared CSS for AsciiDoc xhtml11 and html5 backends" -->
+	<style type="text/css">
+		a.anchorjs-link {
+			color: inherit;
+			text-decoration: inherit;
+		}
+		a.anchorjs-link:visited {
+			color: inherit;
+			text-decoration: inherit;
+		}
+	</style>
+
 </xsl:template>
 
 <!-- NUT version/date -->
