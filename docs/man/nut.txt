@@ -32,13 +32,14 @@ release v2.8.3, it remains not 100% complete) so it is possible to run the
 whole server and client stack as native Windows programs.
 
 Most operating systems deliver NUT as packages built from a certain release,
-which for the project is just a better-tested snapshot of on-going development.
+which for the project is just a better-tested snapshot of on-going development
+with an opinionated choice of build and run-time system configuration options.
 Some OS distribution maintainers pick fixes from later releases to update
 their software packages while nominally remaining on the same base line
 version that the distribution's major release originally went with. This
 allows to balance delivering stable programs with well-known qualities
 and minimal downsides for a long stretch of time, but misses out on new
-capabilities, features (and yes, new bugs) which the on-going development
+capabilities, features (and yes, new bugs), which the on-going development
 regularly adds to the current code base du-jour.
 
 As such, NUT community support for releases (or any other non-current code)
@@ -247,12 +248,20 @@ User/Group Accounts
 ^^^^^^^^^^^^^^^^^^^
 
 Generally NUT daemon programs avoid running as a highly-privileged `root`
-account (on POSIX platforms), and drop privileges to run as the configured
+account (on POSIX platforms), although they anticipate being started as such
+(most system services are) and drop privileges to run as the configured
 user and group accounts such as `nut:nut`.
 
 * One notable exception is the linkman:upsmon[8] daemon which splits into
   a `root`-owned process which may trigger the OS shutdown routine, and an
   unprivileged process which does everything else.
+* Default user and group accounts are built-in, selected as options for the
+  `configure` script when it prepares the build of NUT.  Those settings can
+  be overridden by configuration file or command-line options of respective
+  NUT daemons, whether to run as a different unprivileged user account (it
+  may be possible to constrain each NUT service to run in their dedicated
+  accounts), or to remain capable of everything as `root` (rarely, drivers
+  are configured this way temporarily to troubleshoot local device access).
 
 File system permissions
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -268,7 +277,7 @@ for volatile implementations).
 Note that there are several run-time locations for data and socket files of
 NUT's privileged and unprivileged programs, and for configuration files.
 Access to these directories and individual files should be secured according
-to NUT documentation; NUT daemons will warn about lax permissions in their
+to NUT documentation. NUT daemons will warn about lax permissions in their
 syslog or console messages. Generally, `root:nut` and `0640` permissions
 are correct for most of the files (so the run-time NUT programs may only
 read them but can not rewrite them, not even if there happens to be an
@@ -343,8 +352,8 @@ linkman:hosts.conf[5] and linkman:upsset.conf[5] for configuration,
 and `upsstats-single.html` and `upsstats.html` for HTML UI templates.
 
 Other clients, whether delivered by NUT project (linkman:NUT-Monitor[8]
-GUI) or co-located (link:https://github.com/networkupstools/wmnut[WMNut])
-or third-party (see https://networkupstools.org/projects.html) would
+GUI), or co-located (link:https://github.com/networkupstools/wmnut[WMNut]),
+or third-party (see https://networkupstools.org/projects.html), would
 probably support saving their settings or "favorites".  Do not forget
 to secure access to those files and their copies as well.
 
