@@ -238,6 +238,10 @@ several `FSD` notifications into one executed action. [PR #3097]
      from `upsmon` which calls `upssched`) as an environment variable into
      the ultimately executed `CMDSCRIPT` processes. [#3105]
 
+ - The `nut-driver-enumerator.sh` script (NDE) updates:
+   * Revised info/error/warning/debug message emission so they go to `stderr`
+     and have a consistent look. Revised some typos along the way. [issue #3194]
+
  - `configure` script options:
    * For ages, most recipes for building NUT had customized the `sysconfdir` to
      be `/etc/nut`, which is not exactly the *system* configuration directory.
