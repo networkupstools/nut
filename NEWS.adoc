@@ -116,6 +116,8 @@ https://github.com/networkupstools/nut/milestone/12
      `battery.ageing.factor` (Battery ageing factor in promille) and
      `battery.calibration.factor` (Battery calibration factor in percent).
      Tested on A1000 and A2000 units. [#3181]
+   * Hides QX_FLAG_NONUT variables from syslog unless the debug level
+     is raised. [issue #3190, PR #XXXX]
 
  - `powerp-bin` and `powerp-txt` driver updates:
    * Their `upsdrv_initinfo()` methods did not explicitly reference the
