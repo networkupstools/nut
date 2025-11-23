@@ -68,24 +68,30 @@ fi
 
 FAIL_COUNT=0
 GOOD_COUNT=0
-callNDE() {
+callSHELL() {
+    # Calls shell as-is, pass the script name (or stdin) to execute some logic
     case "$DEBUG" in
-        yes)   time $USE_SHELL $NDE "$@" ;;
-        trace) time $USE_SHELL -x $NDE "$@" ;;
-        *)     $USE_SHELL $NDE "$@" 2>/dev/null ;;
+        yes)   time $USE_SHELL "$@" ;;
+        trace) time $USE_SHELL -x "$@" ;;
+        *)     $USE_SHELL "$@" 2>/dev/null ;;
     esac
 }
 
-run_testcase() {
-    # First 3 args are required as defined below; the rest are
+callNDE() {
+    callSHELL $NDE "$@"
+}
+
+run_testcase_generic() {
+    # First 4 args are required as defined below; the rest are
     # CLI arg(s) to nut-driver-enumerator.sh
-    CASE_DESCR="$1"
-    EXPECT_CODE="$2"
-    EXPECT_TEXT="$3"
-    shift 3
+    CASE_CMD="$1"
+    CASE_DESCR="$2"
+    EXPECT_CODE="$3"
+    EXPECT_TEXT="$4"
+    shift 4
 
     printf "Testing : SHELL='%s'\tCASE='%s'\t" "$USE_SHELL" "$CASE_DESCR"
-    OUT="`callNDE "$@"`" ; RESCODE=$?
+    OUT="`$CASE_CMD "$@"`" ; RESCODE=$?
     printf "Got : RESCODE='%s'\t" "$RESCODE"
 
     RES=0
@@ -121,6 +127,11 @@ run_testcase() {
     fi
     if [ "$RES" != 0 ] || [ -n "$DEBUG" ] ; then echo "" ; fi
     return $RES
+}
+
+run_testcase() {
+    # Main call for NDE test suites:
+    run_testcase_generic callNDE "$@"
 }
 
 ##################################################################
@@ -298,6 +309,47 @@ globalflag" \
         --show-config-value '' nosuchflag
 }
 
+# This one is not about NDE as such, but piggy-backs on our ability to test
+# multiple shells at once, with a test relevant for how we write scripts
+# (with backticks to remain compatible with older Bourne-like shells).
+# In particular, we have a problem with KSH on Solaris, treating double
+# quotes inside backticked text which is wrapped in more double quotes
+# (so some command execution would be a single token) as an end of a
+# double-quoted token and so abortion of a command mid-way; other shells
+# were not seen to work this way:
+testcase_backticks_cmd_natural() {
+    callSHELL << 'EOF'
+    nut_with_python=yes; nut_with_python2=no; nut_with_python3=auto-prio=3; PYTHON=python; PYTHON2=auto-py; PYTHON3=python3
+    RES=0
+    FOUND_PYTHONS="`( echo "${nut_with_python}|${PYTHON}"; echo "${nut_with_python2}|${PYTHON2}"; echo "${nut_with_python3}|${PYTHON3}" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`" || RES=$?
+    echo "${FOUND_PYTHONS}"
+    exit $RES
+EOF
+}
+
+testcase_backticks_cmd_escaped() {
+    callSHELL << 'EOF'
+    nut_with_python=yes; nut_with_python2=no; nut_with_python3=auto-prio=3; PYTHON=python; PYTHON2=auto-py; PYTHON3=python3
+    RES=0
+    # Escape the quotes, following examples at
+    # https://stackoverflow.com/a/33301370/4715872
+    FOUND_PYTHONS="`( echo \"${nut_with_python}|${PYTHON}\"; echo \"${nut_with_python2}|${PYTHON2}\"; echo \"${nut_with_python3}|${PYTHON3}\" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`" || RES=$?
+    echo "${FOUND_PYTHONS}"
+    exit $RES
+EOF
+}
+
+testcase_backticks() {
+    run_testcase_generic testcase_backticks_cmd_natural \
+        "Backticks wrapped in doublequotes, with doublequoted text inside" 0 \
+"yes|python
+auto-prio=3|python3"
+
+    run_testcase_generic testcase_backticks_cmd_escaped \
+        "Backticks wrapped in doublequotes, with escaped-doublequoted text inside" 0 \
+"yes|python
+auto-prio=3|python3"
+}
 
 # Combine the cases above into a stack
 testsuite() {
@@ -308,6 +360,8 @@ testsuite() {
     testcase_globalSection
     # This one can take a while, put it last
     testcase_upslist_debug
+    # Something very different
+    testcase_backticks
 }
 
 # If no args...
