@@ -62,7 +62,7 @@ PyNUTClient: .pypi-src
 # Tagged releases should only have three blocks of digits separated by dots
 upload publish:
 	+@echo "  PYPI	Checking upload type for module version '$(NUT_SOURCE_GITREV_NUMERIC)'" ; \
-	 case x"`echo "$(NUT_SOURCE_GITREV_NUMERIC)" | tr -d '[0-9]'`" in \
+	 case x"`echo '$(NUT_SOURCE_GITREV_NUMERIC)' | tr -d '[0-9]'`" in \
 		x..) echo "  PYPI	...release"; $(MAKE) $(AM_MAKEFLAGS) upload-pypi ;; \
 		x*)  echo "  PYPI	...testing"; $(MAKE) $(AM_MAKEFLAGS) upload-testpypi ;; \
 	 esac
@@ -70,10 +70,10 @@ upload publish:
 # README.txt is also a part of module standard expectations
 .pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in README.adoc Makefile $(top_srcdir)/LICENSE-GPL3
 	@echo "  PYPI	Generate PyPI module source"
-	@rm -rf $(GENERATED_SRC) "$@"
+	@rm -rf $(GENERATED_SRC) '$@'
 	@mkdir -p PyNUTClient
-	@for S in "$(srcdir)"/*.py.in ; do \
-		B="`basename "$${S}" .in`" ; \
+	@for S in '$(srcdir)'/*.py.in ; do \
+		B="`basename \"$${S}\" .in`" ; \
 		if test x"$${B}" = xsetup.py ; then \
 			if test ! -s "$${B}" ; then \
 				sed -e "s/[@]NUT_SOURCE_GITREV_NUMERIC[@]/$(NUT_SOURCE_GITREV_NUMERIC)/" < "$(srcdir)/$${B}.in" > "$${B}" || exit ; \
@@ -90,27 +90,27 @@ upload publish:
 	 cp -pf "$(srcdir)/README.adoc" README.txt || exit ; \
 	 cp -pf "$(top_srcdir)/LICENSE-GPL3" . || exit ; \
 	 echo "from . import PyNUT" > PyNUTClient/__init__.py || exit
-	@touch "$@"
+	@touch '$@'
 
 .pypi-tools-python:
 	@echo "  PYPI	Checking that PYTHON_DEFAULT variable is defined and usable: $(PYTHON_DEFAULT)"
 	@test -n "$(PYTHON_DEFAULT)" && command -v $(PYTHON_DEFAULT)
-	@touch "$@"
+	@touch '$@'
 
 .pypi-tools-dist-wheel: .pypi-tools-python
 	@echo "  PYPI	Prepare PyPI tools to generate a distribution (wheel)"
 	@$(PYTHON_DEFAULT) -m pip install wheel
-	@touch "$@"
+	@touch '$@'
 
 .pypi-tools-dist-build: .pypi-tools-python
 	@echo "  PYPI	Prepare PyPI tools to generate a distribution (build)"
 	@$(PYTHON_DEFAULT) -m pip install build
-	@touch "$@"
+	@touch '$@'
 
 .pypi-tools-tox: .pypi-tools-python
 	@echo "  PYPI	Prepare Python multi-environment testing tools (tox)"
 	@$(PYTHON_DEFAULT) -m pip install tox
-	@touch "$@"
+	@touch '$@'
 
 # Install via OS packaging or pip?
 # https://twine.readthedocs.io/en/stable/
@@ -119,21 +119,21 @@ upload publish:
 	@$(PYTHON_DEFAULT) -m pip install twine
 	@command -v twine
 	@test -s $(HOME)/.pypirc
-	@touch "$@"
+	@touch '$@'
 
 # Using pypa/setuptools
 .pypi-dist: .pypi-src
 	+@$(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-build || \
 	 $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-obsolete || \
 	 $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-wheel
-	@touch "$@"
+	@touch '$@'
 
 # The most modern approach as of 2023
 .pypi-dist-pip-build: .pypi-tools-dist-build .pypi-src
 	@echo "  PYPI	Generate PyPI module distribution (using 'build' module)"
-	@rm -rf $(GENERATED_DIST) "$@"
+	@rm -rf $(GENERATED_DIST) '$@'
 	@$(PYTHON_DEFAULT) -m build --skip-dependency-check --no-isolation
-	@touch "$@"
+	@touch '$@'
 
 # Using "setup.py" directly causes warnings about its deprecation
 # While "pip" distribution generator also uses it internally,
@@ -141,15 +141,15 @@ upload publish:
 # Does not support "sdist" though. Oh well.
 .pypi-dist-pip-wheel: .pypi-tools-dist-wheel .pypi-src
 	@echo "  PYPI	Generate PyPI module distribution (using 'pip wheel'; note no 'sdist' here)"
-	@rm -rf $(GENERATED_DIST) "$@"
+	@rm -rf $(GENERATED_DIST) '$@'
 	@$(PYTHON_DEFAULT) -m pip wheel --no-deps -w dist .
-	@touch "$@"
+	@touch '$@'
 
 .pypi-dist-obsolete: .pypi-tools-dist-wheel .pypi-src
 	@echo "  PYPI	Generate PyPI module distribution (using setup.py directly)"
-	@rm -rf $(GENERATED_DIST) "$@"
+	@rm -rf $(GENERATED_DIST) '$@'
 	@$(PYTHON_DEFAULT) setup.py sdist bdist_wheel
-	@touch "$@"
+	@touch '$@'
 
 # These need $HOME/.pypirc prepared with credentials (API tokens) from
 # https://pypi.org/manage/account/ and https://test.pypi.org/manage/account/

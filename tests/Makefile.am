@@ -64,13 +64,13 @@ check_SCRIPTS += nutlogtest-nofail.sh
 CLEANFILES += nutlogtest-nofail.sh nutlogtest$(EXEEXT) nutlogtest
 
 nutlogtest-nofail.sh: nutlogtest$(EXEEXT)
-	@echo '#!/bin/sh' > $@
-	@echo 'echo "WARNING: Your C library requires workarounds to print NULL values!" >&2' >> $@
-	@echo 'echo "If nutlogtest below, or generally some NUT program, crashes with" >&2' >> $@
-	@echo 'echo "a segmentation fault (especially during verbose debug) - that may be why" >&2' >> $@
-	@echo 'SCRIPT_DIR="`dirname "$$0"`"' >> $@
-	@echo '"$${SCRIPT_DIR}/nutlogtest" "$$@" || echo "nutlogtest FAILED but it was expected"' >> $@
-	@chmod +x $@
+	@echo '#!/bin/sh' > '$@'
+	@echo 'echo "WARNING: Your C library requires workarounds to print NULL values!" >&2' >> '$@'
+	@echo 'echo "If nutlogtest below, or generally some NUT program, crashes with" >&2' >> '$@'
+	@echo 'echo "a segmentation fault (especially during verbose debug) - that may be why" >&2' >> '$@'
+	@echo 'SCRIPT_DIR="`dirname \"$$0\"`"' >> '$@'
+	@echo '"$${SCRIPT_DIR}/nutlogtest" "$$@" || echo "nutlogtest FAILED but it was expected"' >> '$@'
+	@chmod +x '$@'
 
 # NOTE: Keep the line above empty!
 else !REQUIRE_NUT_STRARG
@@ -91,7 +91,7 @@ LINKED_SOURCE_FILES = hidparser.c
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 hidparser.c: $(top_srcdir)/drivers/hidparser.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/hidparser.c" "$@"
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/hidparser.c" '$@'
 
 if WITH_USB
 TESTS += getvaluetest getexponenttest-belkin-hid
@@ -124,10 +124,10 @@ TESTS += gpiotest
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 generic_gpio_libgpiod.c: $(top_srcdir)/drivers/generic_gpio_libgpiod.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_libgpiod.c" "$@"
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/generic_gpio_libgpiod.c" '$@'
 
 generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_common.c" "$@"
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/generic_gpio_common.c" '$@'
 
 gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
 nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c

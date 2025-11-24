@@ -130,7 +130,7 @@ LIST_FILES = ( \
 	TOTAL=0; \
 	for P in $${FILENAMES} ; do \
 		TOTAL="`expr $$TOTAL + 1`" ; \
-		F="`basename "$$P"`" ; \
+		F="`basename \"$$P\"`" ; \
 		if [ -s "$(abs_builddir)/$$F" ] ; then \
 				echo "BUILDDIR: $(builddir)/$$F" ; \
 		else \
@@ -161,7 +161,7 @@ FAKE_FILES = ( \
 	TOTAL=0; \
 	for P in $${FILENAMES} ; do \
 		TOTAL="`expr $$TOTAL + 1`" ; \
-		F="`basename "$$P"`" ; \
+		F="`basename \"$$P\"`" ; \
 		if [ ! -s "$(abs_builddir)/$$F" ] && [ ! -s "$(abs_srcdir)/$$F" ] ; then \
 			echo "PLACEHOLDER" > "$(abs_builddir)/$$F" ; \
 			MISSING="`expr $$MISSING + 1`" ; \
@@ -177,9 +177,9 @@ FAKE_FILES_RM = ( \
 	TOTAL=0; \
 	for P in $${FILENAMES} ; do \
 		TOTAL="`expr $$TOTAL + 1`" ; \
-		F="`basename "$$P"`" ; \
+		F="`basename \"$$P\"`" ; \
 		if [ -s "$(abs_builddir)/$$F" ] \
-		&& [ x"PLACEHOLDER" = x"`cat "$(abs_builddir)/$$F"`" ] ; then \
+		&& [ x"PLACEHOLDER" = x"`cat \"$(abs_builddir)/$$F\"`" ] ; then \
 			rm -f "$(abs_builddir)/$$F" ; \
 			MISSING="`expr $$MISSING + 1`" ; \
 		fi ; \
@@ -441,13 +441,13 @@ INST_HTML_CLIENT_MANS_FICTION = \
 	NUT-Monitor-py3qt6.html
 
 NUT-Monitor-py2gtk2.html: NUT-Monitor.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 NUT-Monitor-py3qt5.html: NUT-Monitor.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 NUT-Monitor-py3qt6.html: NUT-Monitor.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 else !WITH_NUT_MONITOR
 
@@ -843,28 +843,28 @@ HTML_DEV_MANS_FICTION = \
 	nutscan_add_commented_option_to_device.html
 
 upscli_readline_timeout.html: upscli_readline.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_sendline_timeout.html: upscli_sendline.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_tryconnect.html: upscli_connect.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 nutscan_scan_ip_range_snmp.html: nutscan_scan_snmp.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 nutscan_scan_ip_range_xml_http.html: nutscan_scan_xml_http_range.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 nutscan_scan_ip_range_nut.html: nutscan_scan_nut.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 nutscan_scan_ip_range_ipmi.html: nutscan_scan_ipmi.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 nutscan_add_commented_option_to_device.html: nutscan_add_option_to_device.html
-	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 # Drivers related manpages
 
@@ -1594,7 +1594,7 @@ CLEANFILES = linkman-*.txt.tmp*
 
 # Note we can have a pre-built file from the tarball, sort of useful when
 # e.g. no man page building tools are locally available (we might not be
-# able to render a new instance though). At least do not let "$@" confuse
+# able to render a new instance though). At least do not let '$@' confuse
 # us into overwriting its instance in srcdir (if differs from builddir).
 linkman-driver-names.txt: Makefile
 	@echo "  GENERATE-LINKMAN	$@"
@@ -1809,7 +1809,7 @@ CLEANFILES += *.xml *.html *.pdf
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
-        test -d "$@" && rm -rf "$@" || true ; \
+        test -d '$@' && rm -rf '$@' || true ; \
         _CWD="`pwd`" && (cd '$(abs_builddir)' && $(MKDIR_P) "$${_CWD}/$${A2X_OUTDIR}") || exit ; \
         for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
             if [ -s "./$$F" ] ; then ln -f -s "../../$$F" "./$${A2X_OUTDIR}/" ; else \
@@ -1830,7 +1830,7 @@ DOCBUILD_BEGIN = { \
 DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
-        test -d "$@" && rm -rf "$@" || true ; \
+        test -d '$@' && rm -rf '$@' || true ; \
         for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
             rm -f "./$${A2X_OUTDIR}/$$F" || true ; \
         done ; \
@@ -1897,7 +1897,7 @@ if KNOWN_UNABLE_MANS
 .txt.$(MAN_SECTION_CMD_SYS) .txt-prepped.$(MAN_SECTION_CMD_SYS) \
 .txt.$(MAN_SECTION_CMD_USR) .txt-prepped.$(MAN_SECTION_CMD_USR) \
 .txt.$(MAN_SECTION_MISC) .txt-prepped.$(MAN_SECTION_MISC) :
-	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r '$@' -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not functional (even though found)." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1947,7 +1947,7 @@ endif !KNOWN_UNABLE_MANS
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r '$@' -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page (as HTML), since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page (as HTML)." ; \
@@ -1956,7 +1956,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_CMD_USR):
-	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r '$@' -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1965,7 +1965,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_API):
-	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r '$@' -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1974,7 +1974,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_CFG):
-	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r '$@' -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1983,7 +1983,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_CMD_SYS):
-	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r '$@' -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -1992,7 +1992,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.$(MAN_SECTION_MISC):
-	@if [ -r "$@" -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
+	@if [ -r '$@' -o -r "$(srcdir)/$(@F)" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -2063,7 +2063,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	            /*) F="`echo \"$$F\" | sed 's#^$(abs_top_srcdir)/*#./#'`"; \
 	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
 	                    linkroot="$(abs_top_builddir)" ; \
 	                    cd "$(abs_top_builddir)" ; \
@@ -2105,7 +2105,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	    touch "$@.$$$$" ; \
 	    while test -f "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
 	    touch "$@.working" ; \
-	    if test -n "`find "$@" -newer "$@.$$$$" 2>/dev/null`" ; then \
+	    if test -n "`find '$@' -newer \"$@.$$$$\" 2>/dev/null`" ; then \
 	        rm -f "$@.$$$$" "$@.working" ; \
 	        exit 0; \
 	    fi ; \
@@ -2114,20 +2114,20 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	    linksrcroot="$(abs_srcdir)" ; \
 	    for F in `echo $(PREP_SRC) | tr ' ' '\n' | sort -n | uniq` ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	            /*) F="`echo \"$$F\" | sed 's#^$(abs_top_srcdir)/*#./#'`"; \
 	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
 	                    linkroot="$(abs_top_builddir)" ; \
 	                    linksrcroot="$(abs_top_srcdir)" ; \
 	                    cd "$(abs_top_builddir)" ; \
 	                fi ;; \
-	            "$(srcdir)"/*) F="`echo "$$F" | sed 's#^$(srcdir)/*#./#'`" ;; \
+	            "$(srcdir)"/*) F="`echo \"$$F\" | sed 's#^$(srcdir)/*#./#'`" ;; \
 	            */*) ;; \
 	            *) \
 	                linkroot="$(abs_builddir)" ; \
 	                linksrcroot="$(abs_srcdir)" ; \
 	                cd "$(abs_top_builddir)" ;; \
 	        esac ; \
-	        D="`dirname "$$F"`" ; \
+	        D="`dirname \"$$F\"`" ; \
 	        (cd '$(abs_builddir)' && $(MKDIR_P) "$${linkroot}/$$D") || { rm -f "$@.working" ; exit 1 ; } ; \
 	        if test ! -f "$${linkroot}/$$F" && test ! -h "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
 	            echo "  LN	'$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" >&2 ; \
@@ -2175,7 +2175,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC) Makefile
 	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 fi ; \
-	 if test "$$COUNT" -gt 0 -o ! -f "$@" ; then touch "$@" ; fi
+	 if test "$$COUNT" -gt 0 -o ! -f '$@' ; then touch '$@' ; fi
 	@rm -f "$@.working"
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
@@ -2184,7 +2184,7 @@ clean-local: clean-man-pages
 	$(AM_V_at)rm -rf tmp
 	$(AM_V_at)for F in $(PREP_SRC) ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
+	            /*) F="`echo \"$$F\" | sed 's#^$(abs_top_srcdir)/*#./#'`"; cd "$(abs_top_builddir)" ;; \
 	        esac ; \
 	        if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
 	            if test -L "$$F" || test -h "$$F" ; then \
