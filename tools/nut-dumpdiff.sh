@@ -24,8 +24,8 @@ fi
 [ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
 
 # Pre-sort just in case:
-DATA1="`sort -n < "$1"`"
-DATA2="`sort -n < "$2"`"
+DATA1="`sort -n < \"$1\"`"
+DATA2="`sort -n < \"$2\"`"
 
 # Strip away same-context lines,
 # and lines with measurements that are either decimal numbers
