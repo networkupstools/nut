@@ -70,8 +70,8 @@ TZ=UTC
 export LANG LC_ALL TZ
 
 if [ x"${abs_top_srcdir}" = x ]; then
-    SCRIPT_DIR="`dirname "$0"`"
-    SCRIPT_DIR="`cd "${SCRIPT_DIR}" && pwd`"
+    SCRIPT_DIR="`dirname \"$0\"`"
+    SCRIPT_DIR="`cd \"${SCRIPT_DIR}\" && pwd`"
     abs_top_srcdir="${SCRIPT_DIR}/.."
 fi
 if [ x"${abs_top_builddir}" = x ]; then
@@ -202,7 +202,7 @@ getver_git() {
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
     # Follow https://semver.org/#spec-item-10 about build metadata:
     # it is (a dot-separated list) separated by a plus sign from preceding
-    DESC="`echo "${DESC}" | sed 's/\(-[0-9][0-9]*\)-\(g[0-9a-fA-F][0-9a-fA-F]*\)$/\1+\2/'`"
+    DESC="`echo \"${DESC}\" | sed 's/\(-[0-9][0-9]*\)-\(g[0-9a-fA-F][0-9a-fA-F]*\)$/\1+\2/'`"
     if [ x"${DESC}" = x ] ; then
         echo "$0: FAILED to 'git describe' this codebase" >&2
         check_shallow_git "NOTE: Current checkout is shallow, may not include enough history to describe it"
@@ -224,7 +224,7 @@ getver_git() {
     # some of it if looking at a historic snapshot, or nothing if looking
     # at the tagged commit (it is the merge base for itself and any of
     # its descendants):
-    BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`" || BASE=""
+    BASE="`git merge-base HEAD \"${NUT_VERSION_GIT_TRUNK}\"`" || BASE=""
     if [ x"${BASE}" = x ] ; then
         echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2
         check_shallow_git "NOTE: Current checkout is shallow, may not include enough history to describe it or find intersections with other trees"
@@ -233,10 +233,10 @@ getver_git() {
     fi
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
-    TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
+    TAG="`echo \"${DESC}\" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
     TAG_PRERELEASE=""
     if [ -n "${DESC_PRERELEASE}" ] ; then
-        TAG_PRERELEASE="`echo "${DESC_PRERELEASE}" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
+        TAG_PRERELEASE="`echo \"${DESC_PRERELEASE}\" | sed 's/-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*$//'`"
         if [ x"${DESC_PRERELEASE}" != x"${TAG_PRERELEASE}" ] ; then
             # We did chop off something, so `git describe` above did not hit
             # exactly the tagged commit, but something later - not interesting
@@ -250,13 +250,13 @@ getver_git() {
 
     # Commit count since the tag, and hash, of the current HEAD commit;
     # empty e.g. when HEAD is the release-tagged commit:
-    SUFFIX="`echo "${DESC}" | sed 's/^.*\(-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*\)$/\1/'`" \
+    SUFFIX="`echo \"${DESC}\" | sed 's/^.*\(-[0-9][0-9]*[+-]g[0-9a-fA-F][0-9a-fA-F]*\)$/\1/'`" \
     && [ x"${SUFFIX}" != x"${TAG}" ] || SUFFIX=""
 
     # Tack on "this commit is a pre-release!" info, if known
     SUFFIX_PRERELEASE=""
     if [ -n "${TAG_PRERELEASE}" ] ; then
-        SUFFIX_PRERELEASE="`echo "${TAG_PRERELEASE}" | tr '-' '+'`"
+        SUFFIX_PRERELEASE="`echo \"${TAG_PRERELEASE}\" | tr '-' '+'`"
         if [ -n "${SUFFIX}" ] ; then
             SUFFIX="${SUFFIX}+${SUFFIX_PRERELEASE}"
         else
@@ -271,7 +271,7 @@ getver_git() {
     DESC5="${VER5}${SUFFIX}"
 
     # Strip up to two trailing zeroes for trunk snapshots and releases
-    VER50="`echo "${VER5}" | sed -e 's/\.0$//' -e 's/\.0$//'`"
+    VER50="`echo \"${VER5}\" | sed -e 's/\.0$//' -e 's/\.0$//'`"
     DESC50="${VER50}${SUFFIX}"
 
     # Leave exactly 3 components
@@ -281,9 +281,9 @@ getver_git() {
         if [ -n "${TAG_PRERELEASE}" ] ; then
             # Actually report as SEMVER the version of (next) release
             # for which this commit is candidate
-            SEMVER="`echo "${TAG_PRERELEASE}" | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)[^0-9].*$/\1/'`"
+            SEMVER="`echo \"${TAG_PRERELEASE}\" | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)[^0-9].*$/\1/'`"
         else
-            SEMVER="`echo "${VER5}" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`"
+            SEMVER="`echo \"${VER5}\" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`"
         fi
     fi
     # FIXME? Add ".0" up to 3 components?
@@ -307,41 +307,41 @@ getver_default() {
             # Assume triplet (possibly prefixed with `v`) + suffix
             # like `v2.8.3-rc6` or `2.8.2-beta-1`
             # FIXME: Check the assumption better!
-            SUFFIX="`echo "${NUT_VERSION_DEFAULT}" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
+            SUFFIX="`echo \"${NUT_VERSION_DEFAULT}\" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
             && [ -n "${SUFFIX}" ] \
-            && SUFFIX_PRERELEASE="`echo "${SUFFIX}" | sed 's/^-*//'`" \
-            && NUT_VERSION_DEFAULT="`echo "${NUT_VERSION_DEFAULT}" | sed -e 's/'"${SUFFIX}"'$//'`"
+            && SUFFIX_PRERELEASE="`echo \"${SUFFIX}\" | sed 's/^-*//'`" \
+            && NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT}\" | sed -e 's/'\"${SUFFIX}\"'$//'`"
             ;;
         *+rc*|*+alpha*|*+beta*)
             # Consider forced `2.8.2.2878.3-2881+g45029249f+v2.8.3+rc6` values
 
             # We remove up to 5 dot-separated leading numbers, so
             # for the example above, `-2881+g45029249f` remains:
-            tmpSUFFIX="`echo "${NUT_VERSION_DEFAULT}" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(.*\+(rc|alpha|beta)[+-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
+            tmpSUFFIX="`echo \"${NUT_VERSION_DEFAULT}\" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(.*\+(rc|alpha|beta)[+-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
             || tmpSUFFIX=""
             if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != "${NUT_VERSION_DEFAULT}" ] ; then
                 # Extract tagged NUT version from that suffix
                 SUFFIX="${tmpSUFFIX}"
                 # for the example above, `v2.8.3+rc6` remains
-                tmpTAG_PRERELEASE="`echo "${tmpSUFFIX}" | sed 's/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[+]\(rc\|alpha\|beta\)[+-]*[0-9][0-9]*\)$/\1/'`" \
+                tmpTAG_PRERELEASE="`echo \"${tmpSUFFIX}\" | sed 's/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[+]\(rc\|alpha\|beta\)[+-]*[0-9][0-9]*\)$/\1/'`" \
                 || tmpTAG_PRERELEASE=""
                 if [ -n "${tmpTAG_PRERELEASE}" ] && [ x"${tmpSUFFIX}" != "${tmpTAG_PRERELEASE}" ] ; then
                     # Replace back pluses to dashes for the tag
                     TAG_PRERELEASE="v`echo "${tmpTAG_PRERELEASE}" | sed -e 's/[+]\(rc\|alpha\|beta\)/-\1/' -e 's/\(rc\|alpha\|beta\)[+]/\1-/'`"
                     if [ -z "${SEMVER}" ] ; then
                         # for the example above, `2.8.3` remains:
-                        SEMVER="`echo "${tmpTAG_PRERELEASE}" | sed -e 's/[-+].*$//'`"
+                        SEMVER="`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[-+].*$//'`"
                     fi
                     # for the example above, `rc6` remains:
-                    SUFFIX_PRERELEASE="`echo "${tmpTAG_PRERELEASE}" | sed 's/^[^+-]*[+-]//'`"
+                    SUFFIX_PRERELEASE="`echo \"${tmpTAG_PRERELEASE}\" | sed 's/^[^+-]*[+-]//'`"
                     # for the example above, `2.8.2.2878.3-2881+g45029249f` remains:
-                    NUT_VERSION_DEFAULT="`echo "${NUT_VERSION_DEFAULT}" | sed -e 's/'"${SUFFIX}"'$//'`"
+                    NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT}\" | sed -e 's/'\"${SUFFIX}\"'$//'`"
                 fi
             fi
             ;;
     esac
 
-    NUT_VERSION_DEFAULT_DOTS="`echo "${NUT_VERSION_DEFAULT}" | sed 's/[^.]*//g' | tr -d '\n' | wc -c`"
+    NUT_VERSION_DEFAULT_DOTS="`echo \"${NUT_VERSION_DEFAULT}\" | sed 's/[^.]*//g' | tr -d '\n' | wc -c`"
 
     # Ensure at least 4 dots (5 presumed-numeric components)
     NUT_VERSION_DEFAULT5_DOTS="${NUT_VERSION_DEFAULT_DOTS}"
@@ -359,7 +359,7 @@ getver_default() {
         NUT_VERSION_DEFAULT3_DOTS="`expr $NUT_VERSION_DEFAULT3_DOTS + 1`"
     done
     while [ "${NUT_VERSION_DEFAULT3_DOTS}" -gt 2 ] ; do
-        NUT_VERSION_DEFAULT3="`echo "${NUT_VERSION_DEFAULT3}" | sed 's,\.[0-9][0-9]*[^.]*$,,'`"
+        NUT_VERSION_DEFAULT3="`echo \"${NUT_VERSION_DEFAULT3}\" | sed 's,\.[0-9][0-9]*[^.]*$,,'`"
         NUT_VERSION_DEFAULT3_DOTS="`expr $NUT_VERSION_DEFAULT3_DOTS - 1`"
     done
 
