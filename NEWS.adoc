@@ -40,6 +40,12 @@ https://github.com/networkupstools/nut/milestone/12
    to patterns defined in link:docs/nut-names.txt[]
 
  - common code:
+   * Generally improved shell script portability (including `Makefile.am`
+     embedded recipes) when mixing back-quotes and double-quotes. Namely,
+     the classic Solaris `ksh` implementation (also used in current versions
+     of Solaris and illumos based distributions) was strict about following
+     (an older revision of) the POSIX standard here, and some use-cases
+     misbehaved with our older script spelling. [issue #3196]
    * Introduced `setproctag()` and `getproctag()` (see examples in `upsmon`)
      to help track the log messages from massively-forking NUT daemons. [#3084]
    * Extended with plural `checkprocnames()` and `compareprocnames()`,
