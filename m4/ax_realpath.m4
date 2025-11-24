@@ -26,29 +26,29 @@ AC_DEFUN([AX_REALPATH_SHELL_ONELEVEL],
         TGT="$1"
 
         while test -h "$TGT" ; do
-            LS_OUT="`ls -ld "$TGT"`" || { RESOLVE_ERROR=$? ; break ; }
-            LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
+            LS_OUT="`ls -ld \"$TGT\"`" || { RESOLVE_ERROR=$? ; break ; }
+            LINK="`expr \"$LS_OUT\" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
             if expr "$LINK" : '/.*' > /dev/null; then
                 TGT="$LINK"
             else
-                TGT="`dirname "$TGT"`/$LINK"
+                TGT="`dirname \"$TGT\"`/$LINK"
             fi
         done
 
         if test "$RESOLVE_ERROR" = 0 ; then
-            TGTDIR="`dirname "$TGT"`" && \
-            TGTDIR="`cd "$TGTDIR" && pwd`" || {
-                TGTDIR="`dirname "$TGT"`" || \
+            TGTDIR="`dirname \"$TGT\"`" && \
+            TGTDIR="`cd \"$TGTDIR\" && pwd`" || {
+                TGTDIR="`dirname \"$TGT\"`" || \
                 RESOLVE_ERROR=$? ; }
 
             if test "$RESOLVE_ERROR" = 0 ; then
                 while test -h "$TGTDIR" ; do
-                    LS_OUT="`ls -ld "$TGTDIR"`" || { RESOLVE_ERROR=$? ; break ; }
-                    LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
+                    LS_OUT="`ls -ld \"$TGTDIR\"`" || { RESOLVE_ERROR=$? ; break ; }
+                    LINK="`expr \"$LS_OUT\" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
                     if expr "$LINK" : '/.*' > /dev/null; then
                         TGTDIR="$LINK"
                     else
-                        PARENTDIR="`dirname "$TGTDIR"`"
+                        PARENTDIR="`dirname \"$TGTDIR\"`"
                         case "$PARENTDIR" in
                             /) TGTDIR="/$LINK" ; break ;;
                             *) TGTDIR="$PARENTDIR/$LINK" ;;
@@ -93,11 +93,11 @@ AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
         if test x"$RESOLVE_ERROR" = x0 ; then
             dnl Recurse to check the (grand)parent dir (if any)
             if test -n "$RESOLVE_SUFFIX" ; then
-                RESOLVE_SUFFIX="`basename "$RESOLVE_PREFIX"`/$RESOLVE_SUFFIX"
+                RESOLVE_SUFFIX="`basename \"$RESOLVE_PREFIX\"`/$RESOLVE_SUFFIX"
             else
-                RESOLVE_SUFFIX="`basename "$RESOLVE_PREFIX"`"
+                RESOLVE_SUFFIX="`basename \"$RESOLVE_PREFIX\"`"
             fi
-            RESOLVE_PREFIX="`dirname "$RESOLVE_PREFIX"`"
+            RESOLVE_PREFIX="`dirname \"$RESOLVE_PREFIX\"`"
         else
             dnl Bail out, keep latest answer
             break
@@ -132,7 +132,7 @@ AC_DEFUN([AX_REALPATH],
 
     REALPRG=""
     AS_IF([test -n "$REALPATH"], [
-        REALPRG="`${REALPATH} "$1"`"
+        REALPRG="`${REALPATH} \"$1\"`"
     ])
 
     AS_IF([test -z "$REALPRG"], [

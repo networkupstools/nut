@@ -24,9 +24,9 @@ dnl Oddly, autoconf-2.69 on CentOS 7 both complains that AC INIT argument
 dnl is not a literal, and does contain expected values in the generated
 dnl script and include/config.h. A "pure" m4 solution would be quieter.
 AC_INIT([nut],
-    m4_esyscmd_s([NUT_VERSION_QUERY=VER50 "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null]),
+    m4_esyscmd_s([NUT_VERSION_QUERY=VER50 "`dirname \"$0\"`/tools/gitlog2version.sh" 2>/dev/null]),
     [https://github.com/networkupstools/nut/issues],[nut],
-    m4_esyscmd_s([NUT_VERSION_QUERY=URL "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null]))
+    m4_esyscmd_s([NUT_VERSION_QUERY=URL "`dirname \"$0\"`/tools/gitlog2version.sh" 2>/dev/null]))
 dnl See docs/maintainer-guide.txt about releases - updating the version
 dnl above is a small part of the consistent ritual!
 
@@ -43,7 +43,7 @@ dnl snapshots further set in stone. Either way, there should be a slash and
 dnl either a filename, or nothing. Adding a bogus filename and chopping it
 dnl off by `dirname` should do the trick.
 dnl NOTE: the resulting NUT_WEBSITE_BASE string does not end with a slash!
-NUT_WEBSITE_BASE="`dirname "${PACKAGE_URL}index.html"`"
+NUT_WEBSITE_BASE="`dirname \"${PACKAGE_URL}index.html\"`"
 dnl Fallback, no trailing slash!
 test -n "${NUT_WEBSITE_BASE-}" || NUT_WEBSITE_BASE='https://www.networkupstools.org'
 
@@ -54,12 +54,12 @@ dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ
 dnl (that one comes from the NUT_VERSION_MACRO from nut_version.h file).
 dnl # Example:   NUT_SOURCE_GITREV='2.8.2.695.1-696+g0e00f0777'
-NUT_SOURCE_GITREV="`NUT_VERSION_QUERY=DESC50 "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
+NUT_SOURCE_GITREV="`NUT_VERSION_QUERY=DESC50 \"${srcdir}/tools/gitlog2version.sh\" 2>/dev/null`"
 
 dnl A true/false (literally) response that can be used for prettier messages
 dnl emitted by NUT code, or make some "auto" configuration choices below.
-NUT_SOURCE_GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null || echo false`"
-NUT_SOURCE_GITREV_IS_PRERELEASE="`NUT_VERSION_QUERY=IS_PRERELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null || echo false`"
+NUT_SOURCE_GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE \"${srcdir}/tools/gitlog2version.sh\" 2>/dev/null || echo false`"
+NUT_SOURCE_GITREV_IS_PRERELEASE="`NUT_VERSION_QUERY=IS_PRERELEASE \"${srcdir}/tools/gitlog2version.sh\" 2>/dev/null || echo false`"
 
 AS_IF([$NUT_SOURCE_GITREV_IS_RELEASE], [NUT_SOURCE_GITREV_DEVREL="release"], [
     AS_IF([$NUT_SOURCE_GITREV_IS_PRERELEASE], [NUT_SOURCE_GITREV_DEVREL="pre-release"],
@@ -72,14 +72,14 @@ dnl this situation is only expected if NUT_SOURCE_GITREV_IS_RELEASE==true;
 dnl for a pre-release it may differ from even the base NUT_VERSION numbers
 dnl (e.g. a commit tagged as 2.8.3-rc5 can have its own NUT_VERSION based
 dnl on 2.8.2-something, but is assumed as a pre-release for 2.8.3 SEMVER).
-NUT_SOURCE_GITREV_SEMVER="`NUT_VERSION_QUERY=SEMVER "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
+NUT_SOURCE_GITREV_SEMVER="`NUT_VERSION_QUERY=SEMVER \"${srcdir}/tools/gitlog2version.sh\" 2>/dev/null`"
 
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
 dnl # Example:   NUT_SOURCE_GITREV_NUMERIC='2.8.2.695.1.696'
-dnl #   NUT_SOURCE_GITREV_NUMERIC="`echo "${NUT_SOURCE_GITREV}" | sed -e 's/^v//' -e 's/@<:@+-@:>@g.*$//' -e 's/-/./g'`"
+dnl #   NUT_SOURCE_GITREV_NUMERIC="`echo \"${NUT_SOURCE_GITREV}\" | sed -e 's/^v//' -e 's/@<:@+-@:>@g.*$//' -e 's/-/./g'`"
 dnl # Without the commit-count since tag (dash-separated part):
 dnl # Example:   NUT_SOURCE_GITREV_NUMERIC='2.8.2.695.1'
-NUT_SOURCE_GITREV_NUMERIC="`echo "${NUT_SOURCE_GITREV}" | sed -e 's/^v//' -e 's/@<:@+-@:>@g.*$//' -e 's/-@<:@0-9@:>@*$//'`"
+NUT_SOURCE_GITREV_NUMERIC="`echo \"${NUT_SOURCE_GITREV}\" | sed -e 's/^v//' -e 's/@<:@+-@:>@g.*$//' -e 's/-@<:@0-9@:>@*$//'`"
 
 dnl Note: except for experiments, do not pass this into config.h - use
 dnl the NUT_VERSION_MACRO from nut_version.h instead. Developers may
@@ -315,7 +315,7 @@ dnl ---------------------------------------------------------------------
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
 AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
 dnl # using printf formatting for some funniner shells out there
-nut_am_output="`printf 'export VAR=VAL\ntest:\n\t@echo "VAR=%s%sVAR%s"\n' '\$' '(' ')' | ${MAKE-make} -f - test`"
+nut_am_output="`printf 'export VAR=VAL\ntest:\n\t@echo \"VAR=%s%sVAR%s\"\n' '\$' '(' ')' | ${MAKE-make} -f - test`"
 nut_am_result="$?"
 AS_IF([test x"${nut_am_result}" = x0 -a x"${nut_am_output}" = x"VAR=VAL"], [
 	NUT_AM_MAKE_CAN_EXPORT=""
@@ -340,14 +340,14 @@ dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.68/html_node/Generic
 TAIL_ARGS_FROM_NTH_LINE=""
 ac_path_TAIL_found=""
 AC_PATH_PROGS_FEATURE_CHECK([TAIL], [tail gtail],
-	[_TAIL_OUT="`(echo "1"; echo "2"; echo "3"; echo "4"; echo "5"; echo "6"; echo "7") | $ac_path_TAIL +3`" || _TAIL_OUT=""
+	[_TAIL_OUT="`(echo \"1\"; echo \"2\"; echo \"3\"; echo \"4\"; echo \"5\"; echo \"6\"; echo \"7\") | $ac_path_TAIL +3`" || _TAIL_OUT=""
 	 AS_IF([(test x"${_TAIL_OUT}" != x && echo "${_TAIL_OUT}" | ${GREP} 3 && echo "${_TAIL_OUT}" | ${GREP} 7) >/dev/null],
 		[AS_IF([(echo "${_TAIL_OUT}" | ${GREP} 1 || echo "${_TAIL_OUT}" | ${GREP} 2) >/dev/null], [],
 			[ac_path_TAIL_found=:
 				 ac_cv_path_TAIL="${ac_path_TAIL}"])
 		])
 	 AS_IF([test x"${ac_path_TAIL_found}" != x:],
-		[_TAIL_OUT="`(echo "1"; echo "2"; echo "3"; echo "4"; echo "5"; echo "6"; echo "7") | $ac_path_TAIL -n +3`" || _TAIL_OUT=""
+		[_TAIL_OUT="`(echo \"1\"; echo \"2\"; echo \"3\"; echo \"4\"; echo \"5\"; echo \"6\"; echo \"7\") | $ac_path_TAIL -n +3`" || _TAIL_OUT=""
 		 AS_IF([(test x"${_TAIL_OUT}" != x && echo "${_TAIL_OUT}" | ${GREP} 3 && echo "${_TAIL_OUT}" | ${GREP} 7) >/dev/null],
 			[AS_IF([(echo "${_TAIL_OUT}" | ${GREP} 1 || echo "${_TAIL_OUT}" | ${GREP} 2) >/dev/null], [],
 				[ac_path_TAIL_found=:
@@ -409,7 +409,7 @@ AS_CASE([x"${nut_with_confdir}"],
 						[nut_with_confdir_suffix=""; RESULT_COMMENT='prefix was not customized...'])
 			], [
 				RESULT_COMMENT="normalized caller-provided suffix..."
-				nut_with_confdir_suffix="`echo "/${nut_with_confdir_suffix}" | sed -e 's,^/*,/,' -e 's,/*$,,'`"
+				nut_with_confdir_suffix="`echo \"/${nut_with_confdir_suffix}\" | sed -e 's,^/*,/,' -e 's,/*$,,'`"
 			]
 		)
 		AC_MSG_RESULT([${RESULT_COMMENT} '${nut_with_confdir_suffix}'])
@@ -505,7 +505,7 @@ dnl Note these defaults may change further below depending on OS and
 dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
-AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && test -z "`${PROBE_OS_GROUP} "${RUN_AS_GROUP}"`"],
+AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && test -z "`${PROBE_OS_GROUP} \"${RUN_AS_GROUP}\"`"],
 	[RUN_AS_GROUP="nogroup"]
 )
 
@@ -660,26 +660,26 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     AC_PATH_PROG([DEPLOYED_UPSIMAGE], [upsimage.cgi], [], [${PREFIX_CGIDIR}:${PREFIX_BINDIR}:${PATH}:/usr/lib/cgi-bin/nut:/usr/libexec/cgi-bin/nut:/usr/libexec/nut:/usr/libexec/nut/cgi-bin:/usr/lib/nut:/usr/lib/nut/cgi-bin])
     AS_IF([test -x "${DEPLOYED_UPSD}"], [
         AX_REALPATH([$DEPLOYED_UPSD], [DEPLOYED_UPSD])
-        DEPLOYED_SBINDIR="`dirname "${DEPLOYED_UPSD}"`"
+        DEPLOYED_SBINDIR="`dirname \"${DEPLOYED_UPSD}\"`"
         ])
     AS_IF([test -x "${DEPLOYED_UPSC}"], [
         AX_REALPATH([$DEPLOYED_UPSC], [DEPLOYED_UPSC])
-        DEPLOYED_BINDIR="`dirname "${DEPLOYED_UPSC}"`"
+        DEPLOYED_BINDIR="`dirname \"${DEPLOYED_UPSC}\"`"
         ])
     AS_IF([test -x "${DEPLOYED_DUMMYUPS}"], [
         AX_REALPATH([$DEPLOYED_DUMMYUPS], [DEPLOYED_DUMMYUPS])
-        DEPLOYED_DRVDIR="`dirname "${DEPLOYED_DUMMYUPS}"`"
+        DEPLOYED_DRVDIR="`dirname \"${DEPLOYED_DUMMYUPS}\"`"
         ])
     AS_IF([test -x "${DEPLOYED_UPSIMAGE}"], [
         AX_REALPATH([$DEPLOYED_UPSIMAGE], [DEPLOYED_UPSIMAGE])
-        DEPLOYED_CGIDIR="`dirname "${DEPLOYED_UPSIMAGE}"`"
+        DEPLOYED_CGIDIR="`dirname \"${DEPLOYED_UPSIMAGE}\"`"
         ])
 
     DEPLOYED_PREFIX=""
     AS_IF([test -d "${DEPLOYED_SBINDIR}"],
-        [DEPLOYED_PREFIX="`dirname "${DEPLOYED_SBINDIR}"`"],
+        [DEPLOYED_PREFIX="`dirname \"${DEPLOYED_SBINDIR}\"`"],
         [AS_IF([test -d "${DEPLOYED_BINDIR}"],
-            [DEPLOYED_PREFIX="`dirname "${DEPLOYED_BINDIR}"`"])]
+            [DEPLOYED_PREFIX="`dirname \"${DEPLOYED_BINDIR}\"`"])]
     )
 
     AC_MSG_CHECKING([for CONFIG_FLAGS of an already deployed NUT build (if it reports those)])
@@ -701,7 +701,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         AS_IF([test -x "${DEPLOYED_TOOL}"], [], [continue])
 
         AC_MSG_CHECKING([for CONFIG_FLAGS from ${DEPLOYED_TOOL}])
-        CONFIG_FLAGS_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | ${GREP} 'configured with flags:' | head -1 | sed 's,^.*configured with flags: *,,'`" \
+        CONFIG_FLAGS_DEPLOYED="`\"${DEPLOYED_TOOL}\" -DV 2>&1 | ${GREP} 'configured with flags:' | head -1 | sed 's,^.*configured with flags: *,,'`" \
         && test x"${CONFIG_FLAGS_DEPLOYED}" != x \
         || CONFIG_FLAGS_DEPLOYED=""
 
@@ -709,7 +709,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         dnl that we've "reentered" the configuration script), so we tolerate a
         dnl better detailed string that is more than just a version, e.g.:
         dnl   2.8.2.1829-1829+g8f8a4f417 (development iteration after 2.8.2) built with gcc (Debian 10.2.1-6) 10.2.1 20210110
-        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | ${GREP} 'configured with flags:' | head -1 | sed -e 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,' -e 's, and *$,,'`" \
+        NUT_VERSION_DEPLOYED="`\"${DEPLOYED_TOOL}\" -DV 2>&1 | ${GREP} 'configured with flags:' | head -1 | sed -e 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,' -e 's, and *$,,'`" \
         && test x"${NUT_VERSION_DEPLOYED}" != x \
         || NUT_VERSION_DEPLOYED=""
 
@@ -720,7 +720,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         AS_IF([test -x "${LDD}" 2>/dev/null], [
             for TOKEN in `$LDD "${DEPLOYED_TOOL}" 2>&1 | ${GREP} libupsclient` ; do
                 case "${TOKEN}" in
-                    /*/libupsclient*) DEPLOYED_LIBDIR="`dirname "$TOKEN"`" ;;
+                    /*/libupsclient*) DEPLOYED_LIBDIR="`dirname \"$TOKEN\"`" ;;
                 esac
             done
         ])
@@ -739,7 +739,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--prefix=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--prefix="*) prefix="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                    "--prefix="*) prefix="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ;;
                 esac
             done
         ]
@@ -791,7 +791,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--datarootdir=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--datarootdir="*) datarootdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                    "--datarootdir="*) datarootdir="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ;;
                 esac
             done
         ]
@@ -807,7 +807,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--datadir=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--datadir="*) datadir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                    "--datadir="*) datadir="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ;;
                 esac
             done
         ]
@@ -825,8 +825,8 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [AS_IF([test -f "${PREFIX_DATAROOTDIR}/cmdvartab" || test -f "${PREFIX_DATAROOTDIR}/driver.list"],
             [DEPLOYED_DATADIR="${PREFIX_DATAROOTDIR}"],
             [dnl FIXME: Be careful on WIN32 and its "find" vs. that in MINGW?
-             DEPLOYED_DATADIR="`find "${PREFIX_DATAROOTDIR}" -name cmdvartab | head -1 | sed 's,/@<:@^/@:>@*$,,'`" || DEPLOYED_DATADIR=""
-             AS_IF([test -z "${DEPLOYED_DATADIR}"], [DEPLOYED_DATADIR="`find "${PREFIX_DATAROOTDIR}" -name driver.list | head -1 | sed 's,/@<:@^/@:>@*$,,'`" || DEPLOYED_DATADIR=""])
+             DEPLOYED_DATADIR="`find \"${PREFIX_DATAROOTDIR}\" -name cmdvartab | head -1 | sed 's,/@<:@^/@:>@*$,,'`" || DEPLOYED_DATADIR=""
+             AS_IF([test -z "${DEPLOYED_DATADIR}"], [DEPLOYED_DATADIR="`find \"${PREFIX_DATAROOTDIR}\" -name driver.list | head -1 | sed 's,/@<:@^/@:>@*$,,'`" || DEPLOYED_DATADIR=""])
             ]
         )]
     )
@@ -846,7 +846,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--sysconfdir=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--sysconfdir="*) sysconfdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ; HAVE_DEPLOYED_CONFPATH=true ;;
+                    "--sysconfdir="*) sysconfdir="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ; HAVE_DEPLOYED_CONFPATH=true ;;
                 esac
             done
         ])
@@ -854,7 +854,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--with-confdir=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--with-confdir="*) nut_with_confdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ; HAVE_DEPLOYED_CONFPATH=true ;;
+                    "--with-confdir="*) nut_with_confdir="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ; HAVE_DEPLOYED_CONFPATH=true ;;
                 esac
             done
         ])
@@ -862,7 +862,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--with-confdir-suffix=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--with-confdir-suffix="*) nut_with_confdir_suffix="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ; HAVE_DEPLOYED_CONFPATH=true ;;
+                    "--with-confdir-suffix="*) nut_with_confdir_suffix="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ; HAVE_DEPLOYED_CONFPATH=true ;;
                 esac
             done
         ])
@@ -870,7 +870,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--with-confdir-examples=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--with-confdir-examples="*) nut_with_confdir_examples="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                    "--with-confdir-examples="*) nut_with_confdir_examples="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ;;
                 esac
             done
         ],[
@@ -951,7 +951,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--libdir=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--libdir="*) libdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                    "--libdir="*) libdir="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ;;
                 esac
             done
         ]
@@ -976,7 +976,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--libexecdir=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--libexecdir="*) libexecdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                    "--libexecdir="*) libexecdir="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ;;
                 esac
             done
         ]
@@ -991,7 +991,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         [*--with-pkgconfig-dir=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
-                    "--with-pkgconfig-dir="*) pkgconfigdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                    "--with-pkgconfig-dir="*) pkgconfigdir="`echo \"$F\" | ( IFS='=' read K V ; echo \"$V\" )`" ;;
                 esac
             done
         ]
@@ -1012,8 +1012,8 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         AS_IF([test -d "${udevdir}/rules.d"],
             [for F in "${udevdir}/rules.d"/*-nut-*.rules ; do
                 if test -s "$F" ; then
-                    nut_inplace_group="`${GREP} GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
-                    && test -n "`${PROBE_OS_GROUP} "${nut_inplace_group}"`" \
+                    nut_inplace_group="`${GREP} GROUP= \"$F\" | head -1 | sed 's,^.* GROUP=\"*\(.*\)\"*.*$,\1,'`" \
+                    && test -n "`${PROBE_OS_GROUP} \"${nut_inplace_group}\"`" \
                     && AC_MSG_RESULT([Got from ${F}]) \
                     && break \
                     || nut_inplace_group=""
@@ -1047,7 +1047,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
                 `${EGREP} '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
-                    test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
+                    test -n "`${PROBE_OS_USER} \"${nut_inplace_user}\"`" \
                     && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
                     || nut_inplace_user=""])
              done
@@ -1060,7 +1060,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
                 `${EGREP} '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
-                    test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
+                    test -n "`${PROBE_OS_USER} \"${nut_inplace_user}\"`" \
                     && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
                     || nut_inplace_user=""])
              done
@@ -1077,8 +1077,8 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             "${LIBDIR}/pkgconfig/libnutclient.pc" \
         ; do
             AS_IF([test -z "${nut_inplace_user}" && test -s "$F"],
-                [nut_inplace_user="`${EGREP} '^ *nutuser=' "$F" | sed 's,^ *nutuser=,,'`" \
-                && test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
+                [nut_inplace_user="`${EGREP} '^ *nutuser=' \"$F\" | sed 's,^ *nutuser=,,'`" \
+                && test -n "`${PROBE_OS_USER} \"${nut_inplace_user}\"`" \
                 && AC_MSG_RESULT([Got from $F]) \
                 || nut_inplace_user=""
             ])
@@ -1806,7 +1806,7 @@ AC_MSG_CHECKING([whether ln -sr works])
 dnl We need to relative-symlink some files. Or hardlink. Or copy...
 LN_S_R="cp -pR"
 if test "$as_ln_s" = "ln -s" ; then
-    _abs_srcdir="`cd "${srcdir}" && pwd`" || _abs_srcdir=""
+    _abs_srcdir="`cd \"${srcdir}\" && pwd`" || _abs_srcdir=""
     _abs_builddir="`pwd`"
     AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
         AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) srcdir='${srcdir}' _abs_srcdir='${_abs_srcdir}' _abs_builddir='${_abs_builddir}'])
@@ -1816,8 +1816,8 @@ if test "$as_ln_s" = "ln -s" ; then
     else
         dnl NOTE: Here we check equality of the file systems by the
         dnl devices they are mounted from (first column in df output):
-        _fs_srcdir="`df "${_abs_srcdir}" | tail -1 | awk '{print $1}'`" || fs_srcdir="XXXs"
-        _fs_builddir="`df "${_abs_builddir}" | tail -1 | awk '{print $1}'`" || fs_builddir="XXXb"
+        _fs_srcdir="`df \"${_abs_srcdir}\" | tail -1 | awk '{print $1}'`" || fs_srcdir="XXXs"
+        _fs_builddir="`df \"${_abs_builddir}\" | tail -1 | awk '{print $1}'`" || fs_builddir="XXXb"
         AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
             AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) _fs_srcdir='${_fs_srcdir}' _fs_builddir='${_fs_builddir}'])
         ])
@@ -2375,7 +2375,7 @@ AC_ARG_WITH(drivers,
 					[LB="[["; RB="]]"]
 				)
 				dnl ###DEBUG### echo "RECURSIVE SEARCH FOR: '$1'" >&2
-				SPACE="`printf "$LB"' \t'"$RB"`"
+				SPACE="`printf \"$LB\"' \t'\"$RB\"`"
 				SPACES="${SPACE}*"
 				sed -e "s/${SPACES}""$LB"'+'"$RB"'*='"${SPACES}/=/" \
 				    -e "s/^${SPACES}//" < "$srcdir/drivers/Makefile.am" \
@@ -2398,8 +2398,8 @@ AC_ARG_WITH(drivers,
 				| tr ' ' '\n' | while read TOKEN ; do
 					case x"${TOKEN}" in
 						x)	;;
-						'x$('*')') get_drivers_makefile_value "`echo "${TOKEN}" | sed -e 's,^\$(,,' -e 's,)$,,'`" ;;
-						'x${'*'}') get_drivers_makefile_value "`echo "${TOKEN}" | sed -e 's,^\${,,' -e 's,}$,,'`" ;;
+						'x$('*')') get_drivers_makefile_value "`echo \"${TOKEN}\" | sed -e 's,^\$(,,' -e 's,)$,,'`" ;;
+						'x${'*'}') get_drivers_makefile_value "`echo \"${TOKEN}\" | sed -e 's,^\${,,' -e 's,}$,,'`" ;;
 						*)	echo "${TOKEN} " ;;
 					esac
 				done dnl ###DEBUG### | tee -a /dev/stderr
@@ -2411,7 +2411,7 @@ AC_ARG_WITH(drivers,
 					[LB="[["; RB="]]"]
 				)
 				dnl ###DEBUG### echo "SEARCH FOR: '$1'" >&2
-				SPACE="`printf "$LB"' \t'"$RB"`"
+				SPACE="`printf \"$LB\"' \t'\"$RB\"`"
 				SPACES="${SPACE}*"
 
 				dnl Let it recurse, and only then we collect the
@@ -2421,7 +2421,7 @@ AC_ARG_WITH(drivers,
 			)
 
 			for DRVLIST_NAME in $DRVLIST_NAMES; do
-				OUT="`get_drvlist "$DRVLIST_NAME"`" \
+				OUT="`get_drvlist \"$DRVLIST_NAME\"`" \
 				&& test -n "$OUT" || OUT=""
 				eval $DRVLIST_NAME="\$OUT"
 				AC_MSG_NOTICE([Will check custom driver selection against $DRVLIST_NAME="$OUT"])
@@ -3372,9 +3372,9 @@ if test x"${nut_with_nut_monitor}" != xno ; then
                         AS_CASE([x"${PYTHON2}"],
                             [x/usr/bin/python2], [TRY_PYTHON2_VERS="python2 python2.7 python2.6"],
                             [x/usr/bin/python], [TRY_PYTHON2_VERS="python python2 python2.7 python2.6"],
-                                                [TRY_PYTHON2_VERS="`basename "${PYTHON2}"`"]
+                                                [TRY_PYTHON2_VERS="`basename \"${PYTHON2}\"`"]
                         )
-                        TRY_BASEDIR="`dirname "${PYTHON}"`"
+                        TRY_BASEDIR="`dirname \"${PYTHON}\"`"
                         for ARCHDIR in 64 amd64 sparcv9 32 i86 sparcv7 sparc ; do
                             for TRY_VERNAME in $TRY_PYTHON2_VERS ; do
                                 TRY_PYTHON2="${TRY_BASEDIR}/${ARCHDIR}/${TRY_VERNAME}"
@@ -3489,9 +3489,9 @@ if test x"${nut_with_nut_monitor}" != xno ; then
                         AS_CASE([x"${PYTHON}"],
                             [x/usr/bin/python2], [TRY_PYTHON2_VERS="python2 python2.7 python2.6"],
                             [x/usr/bin/python], [TRY_PYTHON2_VERS="python python2 python2.7 python2.6"],
-                                                [TRY_PYTHON2_VERS="`basename "${PYTHON}"`"]
+                                                [TRY_PYTHON2_VERS="`basename \"${PYTHON}\"`"]
                         )
-                        TRY_BASEDIR="`dirname "${PYTHON}"`"
+                        TRY_BASEDIR="`dirname \"${PYTHON}\"`"
                         for ARCHDIR in 64 amd64 sparcv9 32 i86 sparcv7 sparc ; do
                             for TRY_VERNAME in $TRY_PYTHON2_VERS ; do
                                 TRY_PYTHON2="${TRY_BASEDIR}/${ARCHDIR}/${TRY_VERNAME}"
@@ -3871,7 +3871,7 @@ have_disted_doc_man=no
 want_disted_doc_man=no
 if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
 	dnl Test that groff files exist (building from distributed tarball, not git repo)
-	if test x"PLACEHOLDER" = x"`cat "${abs_srcdir}"/docs/man/snmp-ups.8`" ; then
+	if test x"PLACEHOLDER" = x"`cat \"${abs_srcdir}\"/docs/man/snmp-ups.8`" ; then
 		dnl REALLY should not happen in real builds,
 		dnl but may be in distcheck-driven sub-builds
 		dnl where the external build agreed to use
@@ -3889,8 +3889,8 @@ for nut_doc_build_target in $nut_doc_build_list; do
 	*=*=*)	rm -rf "${DOCTESTDIR}"
 		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
 	*=*)
-		nut_doc_build_target_base="`echo "${nut_doc_build_target}" | sed 's,=.*$,,'`"
-		nut_doc_build_target_flag="`echo "${nut_doc_build_target}" | sed 's,^.*=,,'`"
+		nut_doc_build_target_base="`echo \"${nut_doc_build_target}\" | sed 's,=.*$,,'`"
+		nut_doc_build_target_flag="`echo \"${nut_doc_build_target}\" | sed 's,^.*=,,'`"
 		;;
 	*)
 		nut_doc_build_target_base="${nut_doc_build_target}"
@@ -4088,7 +4088,7 @@ no)
 	;;
 *)  dnl # yes, all, skip...
 	if test -n "${DOC_CANNOTBUILD_LIST}"; then
-		DOC_CANNOTBUILD_LIST_LINES="`echo "${DOC_CANNOTBUILD_LIST}" | tr ' ' '\n' | ${EGREP} -v '^$'`"
+		DOC_CANNOTBUILD_LIST_LINES="`echo \"${DOC_CANNOTBUILD_LIST}\" | tr ' ' '\n' | ${EGREP} -v '^$'`"
 		for DOCTYPE in ${nut_doc_build_list} ; do
 			if echo "${DOC_CANNOTBUILD_LIST_LINES}" | ${EGREP} "^${DOCTYPE}(=yes)?\$" >/dev/null 2>/dev/null ; then
 				AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
@@ -4351,7 +4351,7 @@ case "${nut_with_docs_changelog_start}" in
 			 GITLOG_START_POINT=v2.6.0
 			],
 			[dnl # Try to cut off from preceding release tag (as known in this git workspace index)
-			 GITLOG_START_POINT=v"`echo "${NUT_SOURCE_GITREV_NUMERIC}" | sed -e 's/^\(@<:@0-9@:>@*\.@<:@0-9@:>@*\.@<:@0-9@:>@*\)@<:@^0-9@:>@*.*$/\1/'`" \
+			 GITLOG_START_POINT=v"`echo \"${NUT_SOURCE_GITREV_NUMERIC}\" | sed -e 's/^\(@<:@0-9@:>@*\.@<:@0-9@:>@*\.@<:@0-9@:>@*\)@<:@^0-9@:>@*.*$/\1/'`" \
 			 && test x"${GITLOG_START_POINT}" != xv \
 			 || GITLOG_START_POINT="master"
 			])
@@ -4375,11 +4375,11 @@ MAN_SECTION_CMD_SYS="${nut_with_docs_man_section_cmd_sys}"
 MAN_SECTION_CMD_USR="${nut_with_docs_man_section_cmd_usr}"
 MAN_SECTION_MISC="${nut_with_docs_man_section_misc}"
 
-MAN_SECTION_API_BASE="`echo "${MAN_SECTION_API}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
-MAN_SECTION_CFG_BASE="`echo "${MAN_SECTION_CFG}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
-MAN_SECTION_CMD_SYS_BASE="`echo "${MAN_SECTION_CMD_SYS}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
-MAN_SECTION_CMD_USR_BASE="`echo "${MAN_SECTION_CMD_USR}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
-MAN_SECTION_MISC_BASE="`echo "${MAN_SECTION_MISC}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_API_BASE="`echo \"${MAN_SECTION_API}\" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_CFG_BASE="`echo \"${MAN_SECTION_CFG}\" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_CMD_SYS_BASE="`echo \"${MAN_SECTION_CMD_SYS}\" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_CMD_USR_BASE="`echo \"${MAN_SECTION_CMD_USR}\" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_MISC_BASE="`echo \"${MAN_SECTION_MISC}\" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
 
 dnl Full man page section IDs (e.g. '1m', '8')
 AC_DEFINE_UNQUOTED([MAN_SECTION_API], ["${MAN_SECTION_API}"], [man page section for library APIs])
@@ -5133,7 +5133,7 @@ Description=temp
 ExecStart=/bin/true
 Type=notify
 EOF
-	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" ; then
+	if myOUT="`\"$SYSTEMD_ANALYZE_PROGRAM\" verify \"$myFILE\" 2>&1`" ; then
 		if (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") ; then
 			true
 		else
@@ -5155,7 +5155,7 @@ Description=temp
 ExecStart=/bin/true
 Type=notify-reload
 EOF
-	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" ; then
+	if myOUT="`\"$SYSTEMD_ANALYZE_PROGRAM\" verify \"$myFILE\" 2>&1`" ; then
 		if (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") ; then
 			true
 		else
@@ -5827,9 +5827,9 @@ else
 	AS_CASE(["${target_os}"],
 		[*mingw*], [ dnl # At least tooling on MSYS2 semi-native builds can return
 			dnl # semicolon-separated paths with possibly "C:/mingw..." spelling
-			DEFAULT_SEARCH_DIRS="`echo ":$DEFAULT_SEARCH_DIRS" | sed 's,\(@<:@:;@:>@\)\(@<:@A-Z@:>@\):/,:/\2/,g' | tr ':' '\n' | sed 's,/*$,,'`"
+			DEFAULT_SEARCH_DIRS="`echo \":$DEFAULT_SEARCH_DIRS\" | sed 's,\(@<:@:;@:>@\)\(@<:@A-Z@:>@\):/,:/\2/,g' | tr ':' '\n' | sed 's,/*$,,'`"
 			],
-			[DEFAULT_SEARCH_DIRS="`echo "$DEFAULT_SEARCH_DIRS" | tr ':' '\n' | sed 's,/*$,,'`"]
+			[DEFAULT_SEARCH_DIRS="`echo \"$DEFAULT_SEARCH_DIRS\" | tr ':' '\n' | sed 's,/*$,,'`"]
 	)
 
 	NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS="no"
@@ -5838,15 +5838,15 @@ else
 
 	dnl # If NUT libdir does not exist, it is not systemic right away
 	if test -d "${LIBDIR}" ; then
-		LIBDIR_REALPATH="`cd "${LIBDIR}" && pwd`" || LIBDIR_REALPATH="${LIBDIR}"
-		LIBDIR_REALPATH="`echo "${LIBDIR_REALPATH}" | sed 's,/*$,,'`"
+		LIBDIR_REALPATH="`cd \"${LIBDIR}\" && pwd`" || LIBDIR_REALPATH="${LIBDIR}"
+		LIBDIR_REALPATH="`echo \"${LIBDIR_REALPATH}\" | sed 's,/*$,,'`"
 		for D in ${DEFAULT_SEARCH_DIRS} ; do
 			if test x"$D" = x"${LIBDIR_REALPATH}" ; then
 				NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS="yes"
 				NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT="NUT libdir is among common search paths"
 				break
 			else
-				D_REALPATH="`cd "${D}" 2>/dev/null && pwd`" && \
+				D_REALPATH="`cd \"${D}\" 2>/dev/null && pwd`" && \
 				if test x"${D_REALPATH}" = x"${LIBDIR_REALPATH}" ; then
 					NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS="yes"
 					NUT_LIBDIR_IN_DEFAULT_SEARCH_DIRS_TEXT="NUT libdir is among common search paths"
@@ -5883,7 +5883,7 @@ case "${nut_enable_ldflags_nut_rpath}" in
 		fi
 		if test "${nut_enable_ldflags_nut_rpath}" != no ; then
 			if test x"${hardcode_libdir_flag_spec}" != x ; then
-				LDFLAGS_NUT_RPATH="`libdir='${libdir}'; eval echo "${hardcode_libdir_flag_spec}"`"
+				LDFLAGS_NUT_RPATH="`libdir='${libdir}'; eval echo \"${hardcode_libdir_flag_spec}\"`"
 			else
 				RPATH_CIRCUMSTANCE="autotools did not report a way to specify rpath for C"
 				dnl # LDFLAGS_NUT_RPATH='-R${libdir} -Wl,-rpath,${libdir}'
@@ -5920,7 +5920,7 @@ case "${nut_enable_ldflags_nut_rpath_cxx}" in
 		fi
 		if test "${nut_enable_ldflags_nut_rpath_cxx}" != no ; then
 			if test x"${hardcode_libdir_flag_spec_CXX}" != x ; then
-				LDFLAGS_NUT_RPATH_CXX="`libdir='${libdir}'; eval echo "${hardcode_libdir_flag_spec_CXX}"`"
+				LDFLAGS_NUT_RPATH_CXX="`libdir='${libdir}'; eval echo \"${hardcode_libdir_flag_spec_CXX}\"`"
 			else
 				RPATH_CIRCUMSTANCE="autotools did not report a way to specify rpath for C++"
 				dnl # LDFLAGS_NUT_RPATH_CXX='-R${libdir} -Wl,-rpath,${libdir}'
@@ -6519,15 +6519,15 @@ AS_IF([test -n "${ac_abs_top_builddir}" && test -d "${ac_abs_top_builddir}"],
     [TOP_BUILDDIR="${ac_abs_top_builddir}"],
     [AS_IF([test -n "${ac_pwd}" && test -d "${ac_pwd}"],
         [TOP_BUILDDIR="${ac_pwd}"],
-        [TOP_BUILDDIR="`dirname "$0"`"
-         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`" || AC_MSG_ERROR([Can not detect TOP_BUILDDIR])]
+        [TOP_BUILDDIR="`dirname \"$0\"`"
+         TOP_BUILDDIR="`cd \"$TOP_BUILDDIR\" && pwd`" || AC_MSG_ERROR([Can not detect TOP_BUILDDIR])]
     )]
 )
 dnl Quoted in case someone copy-pastes this path and it has whitespaces:
 AC_MSG_RESULT(['${TOP_BUILDDIR}'])
 
-ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])
-ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
+ABS_TOP_BUILDDIR="`cd \"${TOP_BUILDDIR}\" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])
+ABS_TOP_SRCDIR="`cd \"${abs_srcdir}\" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
 AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
 dnl When building ON Windows (mingw/MSYS2, cygwin, etc.) fudge these
@@ -6539,14 +6539,14 @@ AS_CASE([${target_os}],
         dnl Cygwin path resolver
         AC_CHECK_TOOL([CYGPATH], [cygpath], [none])
         AS_IF([test "x${CYGPATH}" != "xnone" && test x"`${CYGPATH}`" != x], [
-            tmp="`${CYGPATH} -m "${ABS_TOP_BUILDDIR}" | sed -e 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
-            tmp="`${CYGPATH} -m "${ABS_TOP_SRCDIR}" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+            tmp="`${CYGPATH} -m \"${ABS_TOP_BUILDDIR}\" | sed -e 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+            tmp="`${CYGPATH} -m \"${ABS_TOP_SRCDIR}\" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
         ],[
             dnl MSYS pwd with -W option to resolve
             AC_CHECK_TOOL([PWDTOOL], [pwd], [none])
             AS_IF([test "x${PWDTOOL}" != "xnone" && test x"`${PWDTOOL} -W`" != x], [
-                tmp="`(cd "${ABS_TOP_BUILDDIR}" && ${PWDTOOL} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
-                tmp="`(cd "${ABS_TOP_SRCDIR}" && ${PWDTOOL} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+                tmp="`(cd \"${ABS_TOP_BUILDDIR}\" && ${PWDTOOL} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+                tmp="`(cd \"${ABS_TOP_SRCDIR}\" && ${PWDTOOL} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
             ])
         ])
 

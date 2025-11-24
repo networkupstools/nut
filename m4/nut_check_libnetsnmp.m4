@@ -151,7 +151,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 					dnl # In Makefiles be sure to use _LDFLAGS (not _LIBADD) to smuggle linker
 					dnl # arguments when building "if WITH_SNMP_STATIC" recipe blocks!
 					dnl # For a practical example, see tools/nut-scanner/Makefile.am.
-					depLIBS="`echo " $depLIBS" | sed 's/ -l/ -Wl,-l/g'`"
+					depLIBS="`echo \" $depLIBS\" | sed 's/ -l/ -Wl,-l/g'`"
 					LIBS="${LIBS_ORIG} ${depLIBS}"
 					AS_UNSET([ac_cv_func_init_snmp])
 					AC_CHECK_FUNCS(init_snmp, [
@@ -362,7 +362,7 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBNETSNMP], [])
 					AS_IF([test -n "${SOPATH_LIBNETSNMP}" && test -s "${SOPATH_LIBNETSNMP}"], [
 						AC_DEFINE_UNQUOTED([SOPATH_LIBNETSNMP],["${SOPATH_LIBNETSNMP}"],[Path to dynamic library on build system])
-						SOFILE_LIBNETSNMP="`basename "$SOPATH_LIBNETSNMP"`"
+						SOFILE_LIBNETSNMP="`basename \"$SOPATH_LIBNETSNMP\"`"
 						AC_DEFINE_UNQUOTED([SOFILE_LIBNETSNMP],["${SOFILE_LIBNETSNMP}"],[Base file name of dynamic library on build system])
 						break
 					])

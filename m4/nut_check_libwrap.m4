@@ -22,7 +22,7 @@ if test -z "${nut_have_libwrap_seen}"; then
 	dnl Collect possibly updated dependencies after AC SEARCH LIBS:
 	AS_IF([test x"${LIBS}" != x"${LIBS_ORIG}"], [
 		AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
-			depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
+			depLIBS="`echo \"$LIBS\" | sed -e 's|'\"${LIBS_ORIG}\"'| |' -e 's|^ *||' -e 's| *$||'`"
 		])
 	])
 

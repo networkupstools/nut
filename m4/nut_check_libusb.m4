@@ -310,7 +310,7 @@ if test -z "${nut_have_libusb_seen}"; then
 				dnl Collect possibly updated dependencies after AC SEARCH LIBS:
 				AS_IF([test x"${LIBS}" != x"${LIBS_ORIG} ${depLIBS}"], [
 					AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
-						depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
+						depLIBS="`echo \"$LIBS\" | sed -e 's|'\"${LIBS_ORIG}\"'| |' -e 's|^ *||' -e 's| *$||'`"
 					])
 				])
 				depLIBS="-R/usr/sfw/lib ${depLIBS}"
@@ -389,7 +389,7 @@ if test -z "${nut_have_libusb_seen}"; then
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBUSB1], [])
 					AS_IF([test -n "${SOPATH_LIBUSB1}" && test -s "${SOPATH_LIBUSB1}"], [
 						AC_DEFINE_UNQUOTED([SOPATH_LIBUSB1],["${SOPATH_LIBUSB1}"],[Path to dynamic library on build system])
-						SOFILE_LIBUSB1="`basename "$SOPATH_LIBUSB1"`"
+						SOFILE_LIBUSB1="`basename \"$SOPATH_LIBUSB1\"`"
 						AC_DEFINE_UNQUOTED([SOFILE_LIBUSB1],["${SOFILE_LIBUSB1}"],[Base file name of dynamic library on build system])
 						break
 					])
@@ -413,7 +413,7 @@ if test -z "${nut_have_libusb_seen}"; then
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBUSB0], [])
 					AS_IF([test -n "${SOPATH_LIBUSB0}" && test -s "${SOPATH_LIBUSB0}"], [
 						AC_DEFINE_UNQUOTED([SOPATH_LIBUSB0],["${SOPATH_LIBUSB0}"],[Path to dynamic library on build system])
-						SOFILE_LIBUSB0="`basename "$SOPATH_LIBUSB0"`"
+						SOFILE_LIBUSB0="`basename \"$SOPATH_LIBUSB0\"`"
 						AC_DEFINE_UNQUOTED([SOFILE_LIBUSB0],["${SOFILE_LIBUSB0}"],[Base file name of dynamic library on build system])
 						break
 					])

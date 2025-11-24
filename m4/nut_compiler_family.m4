@@ -37,15 +37,15 @@ if test -z "${nut_compiler_family_seen}"; then
     )])
 
   AS_IF([test "x$GCC" = "x" && test "$nut_cv_GCC" = yes],   [GCC=yes
-    CC_VERSION="`echo "${CC_VERSION_FULL}" | ${GREP} -i gcc | head -1`" \
+    CC_VERSION="`echo \"${CC_VERSION_FULL}\" | ${GREP} -i gcc | head -1`" \
     && test -n "${CC_VERSION}" || CC_VERSION=""
     ])
   AS_IF([test "x$GXX" = "x" && test "$nut_cv_GXX" = yes],   [GXX=yes
-    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | ${EGREP} -i 'g++|gcc' | head -1`" \
+    CXX_VERSION="`echo \"${CXX_VERSION_FULL}\" | ${EGREP} -i 'g++|gcc' | head -1`" \
     && test -n "${CXX_VERSION}" || CXX_VERSION=""
     ])
   AS_IF([test "x$GPP" = "x" && test "$nut_cv_GPP" = yes],   [GPP=yes
-    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | ${EGREP} -i 'cpp|gcc' | head -1`" \
+    CPP_VERSION="`echo \"${CPP_VERSION_FULL}\" | ${EGREP} -i 'cpp|gcc' | head -1`" \
     && test -n "${CPP_VERSION}" || CPP_VERSION=""
     ])
 
@@ -74,21 +74,21 @@ if test -z "${nut_compiler_family_seen}"; then
     )])
 
   AS_IF([test "x$CLANGCC" = "x" && test "$nut_cv_CLANGCC" = yes],   [CLANGCC=yes
-    CC_VERSION="`echo "${CC_VERSION_FULL}" | ${GREP} -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    CC_VERSION="`echo \"${CC_VERSION_FULL}\" | ${GREP} -v \"Dir:\" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
     && test -n "${CC_VERSION}" || CC_VERSION=""
     ])
   AS_IF([test "x$CLANGXX" = "x" && test "$nut_cv_CLANGXX" = yes],   [CLANGXX=yes
-    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | ${GREP} -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    CXX_VERSION="`echo \"${CXX_VERSION_FULL}\" | ${GREP} -v \"Dir:\" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
     && test -n "${CXX_VERSION}" || CXX_VERSION=""
     ])
   AS_IF([test "x$CLANGPP" = "x" && test "$nut_cv_CLANGPP" = yes],   [CLANGPP=yes
-    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | ${GREP} -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    CPP_VERSION="`echo \"${CPP_VERSION_FULL}\" | ${GREP} -v \"Dir:\" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
     && test -n "${CPP_VERSION}" || CPP_VERSION=""
     ])
 
-  AS_IF([test "x$CC_VERSION" = x],  [CC_VERSION="`echo "${CC_VERSION_FULL}" | head -1`"])
-  AS_IF([test "x$CXX_VERSION" = x], [CXX_VERSION="`echo "${CXX_VERSION_FULL}" | head -1`"])
-  AS_IF([test "x$CPP_VERSION" = x], [CPP_VERSION="`echo "${CPP_VERSION_FULL}" | head -1`"])
+  AS_IF([test "x$CC_VERSION" = x],  [CC_VERSION="`echo \"${CC_VERSION_FULL}\" | head -1`"])
+  AS_IF([test "x$CXX_VERSION" = x], [CXX_VERSION="`echo \"${CXX_VERSION_FULL}\" | head -1`"])
+  AS_IF([test "x$CPP_VERSION" = x], [CPP_VERSION="`echo \"${CPP_VERSION_FULL}\" | head -1`"])
 fi
 ])
 

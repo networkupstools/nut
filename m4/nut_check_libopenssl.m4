@@ -101,7 +101,7 @@ if test -z "${nut_have_libopenssl_seen}"; then
 				addCFLAGS=""
 				for TOKEN in ${depCFLAGS} ; do
 					case "${TOKEN}" in
-						-I*)	TOKENDIR="`echo "$TOKEN" | sed 's,^-I,,'`"
+						-I*)	TOKENDIR="`echo \"$TOKEN\" | sed 's,^-I,,'`"
 							case " ${CFLAGS} ${addCFLAGS} " in
 								*" -isystem $TOKENDIR "*) ;;
 								*) addCFLAGS="${addCFLAGS} -isystem $TOKENDIR" ;;

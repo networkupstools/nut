@@ -86,7 +86,7 @@ if test -z "${nut_have_neon_seen}"; then
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBNEON], [])
 					AS_IF([test -n "${SOPATH_LIBNEON}" && test -s "${SOPATH_LIBNEON}"], [
 						AC_DEFINE_UNQUOTED([SOPATH_LIBNEON],["${SOPATH_LIBNEON}"],[Path to dynamic library on build system])
-						SOFILE_LIBNEON="`basename "$SOPATH_LIBNEON"`"
+						SOFILE_LIBNEON="`basename \"$SOPATH_LIBNEON\"`"
 						AC_DEFINE_UNQUOTED([SOFILE_LIBNEON],["${SOFILE_LIBNEON}"],[Base file name of dynamic library on build system])
 						break
 					])
