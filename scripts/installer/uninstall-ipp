@@ -11,7 +11,7 @@ export PATH
 NUT_PACKAGE_SOLARI="NUT_solaris_sparc_package2.6.5.local"
 NUT_PACKAGE_SOLINT="NUT_solaris_i386_package2.6.5.local"
 
-cd "`dirname "$0"`"
+cd "`dirname \"$0\"`"
 
 #configuration data
 C_MODE="standalone"
