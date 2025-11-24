@@ -93,7 +93,7 @@ run_testcase_generic() {
     shift 4
 
     printf "Testing : SHELL='%s'\tCASE='%s'\t" "$USE_SHELL" "$CASE_DESCR"
-    OUT="`$CASE_CMD "$@"`" ; RESCODE=$?
+    OUT="`$CASE_CMD \"$@\"`" ; RESCODE=$?
     printf "Got : RESCODE='%s'\t" "$RESCODE"
 
     RES=0
@@ -116,7 +116,7 @@ run_testcase_generic() {
         ( rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" \
             && echo "$EXPECT_TEXT" > "/tmp/.nde.text.expected.$$" \
             && echo "$OUT" > "/tmp/.nde.text.actual.$$" \
-            && { OUTD="`diff -u "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" 2>/dev/null`"
+            && { OUTD="`diff -u \"/tmp/.nde.text.expected.$$\" \"/tmp/.nde.text.actual.$$\" 2>/dev/null`"
                 if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
                     echo "$OUTD"
                 else
