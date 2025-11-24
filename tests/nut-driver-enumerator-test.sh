@@ -1,6 +1,8 @@
 #!/bin/sh
 
-# Copyright (C) 2018 Eaton
+# Copyright (C)
+#   2018       Eaton
+#   2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -86,7 +88,7 @@ run_testcase_generic() {
     # CLI arg(s) to nut-driver-enumerator.sh
     CASE_CMD="$1"
     CASE_DESCR="$2"
-    EXPECT_CODE="$3"
+    EXPECT_CODE="$3"	# Can be '*' to ignore errors
     EXPECT_TEXT="$4"
     shift 4
 
@@ -95,7 +97,7 @@ run_testcase_generic() {
     printf "Got : RESCODE='%s'\t" "$RESCODE"
 
     RES=0
-    if [ "$RESCODE" = "$EXPECT_CODE" ]; then
+    if [ "$RESCODE" = "$EXPECT_CODE" ] || [ x'*' = x"$EXPECT_CODE" ]; then
         printf "STATUS_CODE='MATCHED'\t"
         GOOD_COUNT="`expr $GOOD_COUNT + 1`"
     else
@@ -122,8 +124,12 @@ run_testcase_generic() {
                 fi
             } ; ) 2>/dev/null || true
         rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$"
-        FAIL_COUNT="`expr $FAIL_COUNT + 1`"
-        RES="`expr $RES + 2`"
+        if [ x'*' = x"$EXPECT_CODE" ] ; then
+            echo 'MISMATCH IGNORED because EXPECT_CODE=*' >&2
+        else
+            FAIL_COUNT="`expr $FAIL_COUNT + 1`"
+            RES="`expr $RES + 2`"
+        fi
     fi
     if [ "$RES" != 0 ] || [ -n "$DEBUG" ] ; then echo "" ; fi
     return $RES
@@ -318,6 +324,7 @@ globalflag" \
 # double-quoted token and so abortion of a command mid-way; other shells
 # were not seen to work this way:
 testcase_backticks_cmd_natural() {
+    #DEBUG=yes \
     callSHELL << 'EOF'
     nut_with_python=yes; nut_with_python2=no; nut_with_python3=auto-prio=3; PYTHON=python; PYTHON2=auto-py; PYTHON3=python3
     RES=0
@@ -341,7 +348,7 @@ EOF
 
 testcase_backticks() {
     run_testcase_generic testcase_backticks_cmd_natural \
-        "Backticks wrapped in doublequotes, with doublequoted text inside" 0 \
+        "Backticks wrapped in doublequotes, with doublequoted text inside (can fail on some interpreters)" '*' \
 "yes|python
 auto-prio=3|python3"
 
