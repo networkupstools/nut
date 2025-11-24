@@ -175,7 +175,7 @@ Initial container installation (for various guest OSes)
 ------
 ...
     # If debian-archive-keyring isn't installed, fetch GPG keys directly
-    releasekeyring="`grep -E '^keyring ' "/usr/share/debootstrap/scripts/$release" | sed -e 's,^keyring ,,' -e 's,[ #].*$,,'`" 2>/dev/null
+    releasekeyring="`grep -E '^keyring ' \"/usr/share/debootstrap/scripts/$release\" | sed -e 's,^keyring ,,' -e 's,[ #].*$,,'`" 2>/dev/null
     if [ -z $releasekeyring ]; then
         releasekeyring=/usr/share/keyrings/debian-archive-keyring.gpg
     fi
