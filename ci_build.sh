@@ -10,10 +10,10 @@
 ################################################################################
 
 set -e
-SCRIPTDIR="`dirname "$0"`"
-SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
+SCRIPTDIR="`dirname \"$0\"`"
+SCRIPTDIR="`cd \"$SCRIPTDIR\" && pwd`"
 
-SCRIPT_PATH="${SCRIPTDIR}/`basename $0`"
+SCRIPT_PATH="${SCRIPTDIR}/`basename \"$0\"`"
 SCRIPT_ARGS=("$@")
 
 [ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; export GREP ; }
@@ -191,7 +191,7 @@ for TR_VARIANT in "tr 'A-Z' 'a-z'" "tr '[:upper:]' '[:lower:]'" "tr 'ABCDEFGHIJK
 done
 
 # Just in case we get blanks from CI - consider them as not-set:
-if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
+if [ -z "`echo \"${MAKE-}\" | tr -d ' '`" ] ; then
     if [ "$1" = spellcheck -o "$1" = spellcheck-interactive -o "$1" = spellcheck-quick -o "$1" = spellcheck-interactive-quick ] \
     && (command -v gmake) >/dev/null 2>/dev/null \
     ; then
@@ -218,7 +218,7 @@ normalize_path() {
             case "${D}" in
                 "") continue ;;
                 /)  ;;
-                */) D="`echo "${D}" | sed 's,/*$,,'`" ;;
+                */) D="`echo \"${D}\" | sed 's,/*$,,'`" ;;
             esac
             case "${P}" in
                 "${D}"|*":${D}"|"${D}:"*|*":${D}:"*) ;;
@@ -305,7 +305,7 @@ optional_prepare_ccache() {
     else
         if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
             # Tell ccache the PATH without itself in it, to avoid loops processing
-            PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+            PATH="`echo \"$PATH\" | sed -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,' -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,'`"
         fi
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
@@ -373,13 +373,13 @@ optional_prepare_compiler_family() {
         fi
 
         if ( [ "$COMPILER_FAMILY" = "GCC" ] && \
-            case "`ver_gnucc "$CC"`" in
+            case "`ver_gnucc \"$CC\"`" in
                 [123].*) true ;;
                 4.[0123][.,-]*) true ;;
                 4.[0123]) true ;;
                 *) false ;;
             esac && \
-            case "`ver_gnucc "$CXX"`" in
+            case "`ver_gnucc \"$CXX\"`" in
                 [123].*) true ;;
                 4.[0123][.,-]*) true ;;
                 4.[0123]) true ;;
@@ -458,7 +458,7 @@ optional_ensure_ccache() {
           if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`" ]; then
             case "$CC" in
                 *ccache*) ;;
-                */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
+                */*) DIR_CC="`dirname \"$CC\"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd \"$DIR_CC\" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CC" || \
                     if echo "$CCACHE_PATH" | ${EGREP} '(^'"$DIR_CC"':.*|^'"$DIR_CC"'$|:'"$DIR_CC"':|:'"$DIR_CC"'$)' ; then
                         CCACHE_PATH="$DIR_CC:$CCACHE_PATH"
@@ -474,7 +474,7 @@ optional_ensure_ccache() {
           if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`" ]; then
             case "$CXX" in
                 *ccache*) ;;
-                */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
+                */*) DIR_CXX="`dirname \"$CXX\"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd \"$DIR_CXX\" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CXX" || \
                     if echo "$CCACHE_PATH" | ${EGREP} '(^'"$DIR_CXX"':.*|^'"$DIR_CXX"'$|:'"$DIR_CXX"':|:'"$DIR_CXX"'$)' ; then
                         CCACHE_PATH="$DIR_CXX:$CCACHE_PATH"
@@ -490,7 +490,7 @@ optional_ensure_ccache() {
         && [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`" ]; then
             case "$CPP" in
                 *ccache*) ;;
-                */*) DIR_CPP="`dirname "$CPP"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd "$DIR_CPP" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
+                */*) DIR_CPP="`dirname \"$CPP\"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd \"$DIR_CPP\" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CPP" || \
                     if echo "$CCACHE_PATH" | ${EGREP} '(^'"$DIR_CPP"':.*|^'"$DIR_CPP"'$|:'"$DIR_CPP"':|:'"$DIR_CPP"'$)' ; then
                         CCACHE_PATH="$DIR_CPP:$CCACHE_PATH"
@@ -552,10 +552,10 @@ esac
     NCPUS="`cat /proc/cpuinfo | ${GREP} -wc processor`" || \
     { [ -x /usr/sbin/psrinfo ] && NCPUS="`/usr/sbin/psrinfo | wc -l`"; } \
     || NCPUS=1; } 2>/dev/null
-[ x"$NCPUS" = x ] || NCPUS="`echo "$NCPUS" | tr -d ' '`"
+[ x"$NCPUS" = x ] || NCPUS="`echo \"$NCPUS\" | tr -d ' '`"
 [ x"$NCPUS" != x -a "$NCPUS" -ge 1 ] || NCPUS=1
 
-[ x"$NPARMAKES" = x ] && { NPARMAKES="`expr "$NCPUS" '*' 2`" || NPARMAKES=2; }
+[ x"$NPARMAKES" = x ] && { NPARMAKES="`expr \"$NCPUS\" '*' 2`" || NPARMAKES=2; }
 [ x"$NPARMAKES" != x -a "$NPARMAKES" -ge 1 ] || NPARMAKES=2
 [ x"$MAXPARMAKES" != x ] && [ "$MAXPARMAKES" -ge 1 ] && \
     [ "$NPARMAKES" -gt "$MAXPARMAKES" ] && \
@@ -703,7 +703,7 @@ if [ -z "$CI_OS_NAME" ]; then
         [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
     done
 
-    case "`echo "$CI_OS_HINT" | $TOLOWER`" in
+    case "`echo \"$CI_OS_HINT\" | $TOLOWER`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
         *openbsd*)
@@ -867,7 +867,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
     # then, including a PKG_CONFIG_PATH), where a "-" value leaves it empty.
     SYS_PKG_CONFIG_PATH="" # Let the OS guess... usually
     BUILTIN_PKG_CONFIG_PATH="`$PKG_CONFIG --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
-    case "`echo "$CI_OS_NAME" | $TOLOWER`" in
+    case "`echo \"$CI_OS_NAME\" | $TOLOWER`" in
         *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
             _ARCHES="${ARCH_TGT-}${ARCH-}${ARCH32-}${ARCH64-}"
             _BITS="${BITS-}"
@@ -1086,7 +1086,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
     fi
 
     # Do not check for existence of non-trivial values, we normalize the mess (if any)
-    PKG_CONFIG_PATH="`echo "${DEFAULT_PKG_CONFIG_PATH-}:${SYS_PKG_CONFIG_PATH-}:${PKG_CONFIG_PATH-}:${BUILTIN_PKG_CONFIG_PATH-}" | normalize_path`"
+    PKG_CONFIG_PATH="`echo \"${DEFAULT_PKG_CONFIG_PATH-}:${SYS_PKG_CONFIG_PATH-}:${PKG_CONFIG_PATH-}:${BUILTIN_PKG_CONFIG_PATH-}\" | normalize_path`"
 }
 
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
@@ -1149,7 +1149,7 @@ configure_nut() {
     fi
 
     # Help copy-pasting build setups from CI logs to terminal:
-    local CONFIG_OPTS_STR="`END=' \'; NUM=0; for F in "${CONFIG_OPTS[@]}" ; do NUM=$(($NUM + 1)); [ x"$NUM" = x"${#CONFIG_OPTS[@]}" ] && END=''; printf "'%s'%s\n" "$F" "$END" ; done`"
+    local CONFIG_OPTS_STR="`END=' \'; NUM=0; for F in \"${CONFIG_OPTS[@]}\" ; do NUM=$(($NUM + 1)); [ x\"$NUM\" = x\"${#CONFIG_OPTS[@]}\" ] && END=''; printf \"'%s'%s\n\" \"$F\" \"$END\" ; done`"
     while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
       echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
@@ -1314,7 +1314,7 @@ check_gitignore() {
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
-    if [ -n "`git status $GIT_ARGS -s ${FILE_GLOB} ${FILE_GLOB_EXCLUDE} | ${EGREP} "^.. ${FILE_REGEX}"`" ] \
+    if [ -n "`git status $GIT_ARGS -s ${FILE_GLOB} ${FILE_GLOB_EXCLUDE} | ${EGREP} \"^.. ${FILE_REGEX}\"`" ] \
     && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
     ; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed! You can 'export CI_REQUIRE_GOOD_GITIGNORE=false' if appropriate." >&2
@@ -1340,12 +1340,12 @@ consider_cleanup_shortcut() {
     fi
 
     if ( [ -s Makefile ] && (
-            [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        ||  [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        ||  [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] ) ) \
+            [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile`" ] \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.in -newer \"${CI_BUILDDIR}\"/Makefile`" ] \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile.in`" ] ) ) \
     || ( [ -s configure ] && (
-            [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
-        ||  [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] ) ) \
+            [ -n "`find \"${SCRIPTDIR}\" -name configure.ac -newer \"${CI_BUILDDIR}\"/configure`" ] \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name '*.m4' -newer \"${CI_BUILDDIR}\"/configure`" ] ) ) \
     ; then
         # Avoid reconfiguring just for the sake of distclean
         echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
@@ -1468,7 +1468,7 @@ if [ -z "$BUILD_TYPE" ] ; then
         --with-docs|--with-docs=*|--with-doc|--with-doc=*)
             # Note: causes a developer-style build (not CI)
             # Arg will be passed to configure script as `--with-$1`
-            BUILD_TYPE="`echo "$1" | sed 's,^--with-,,'`"
+            BUILD_TYPE="`echo \"$1\" | sed 's,^--with-,,'`"
             shift
             ;;
 
@@ -1576,8 +1576,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         CONFIG_OPTS+=("PKG_CONFIG_PATH=${PKG_CONFIG_PATH}")
     fi
 
-    PATH="`echo "${PATH}" | normalize_path`"
-    CCACHE_PATH="`echo "${CCACHE_PATH}" | normalize_path`"
+    PATH="`echo \"${PATH}\" | normalize_path`"
+    CCACHE_PATH="`echo \"${CCACHE_PATH}\" | normalize_path`"
 
     # Note: Potentially there can be spaces in entries for multiple
     # *FLAGS here; this should be okay as long as entry expands to
@@ -1948,7 +1948,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
             # e.g. distcheck-ci, distcheck-light, distcheck-valgrind, cppcheck,
             # maybe others later, as defined in top-level Makefile.am:
-            BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
+            BUILD_TGT="`echo \"$BUILD_TYPE\" | sed 's,^default-tgt:,,'`"
             if [ -n "${PARMAKE_FLAGS}" ]; then
                 echo "`date`: Starting the parallel build attempt for singular target $BUILD_TGT..."
             else
@@ -1957,7 +1957,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
             # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
             # that include DISTCHECK_FLAGS if provided
-            DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
+            DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
 
             # Tell the sub-makes (likely distcheck*) to hush down
@@ -1985,7 +1985,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             # Note: no PARMAKE_FLAGS here - better have this output readably
             # ordered in case of issues (in sequential replay below).
             ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
-              $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS "`echo "$BUILD_TYPE" | sed 's,^default-,,'`" >/dev/null 2>&1 \
+              $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS "`echo \"$BUILD_TYPE\" | sed 's,^default-,,'`" >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
             ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to give more context first:" >&2
@@ -2591,7 +2591,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         (
         # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
         # that include DISTCHECK_FLAGS if provided
-        DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
+        DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
 
         # Tell the sub-makes (distcheck) to hush down
@@ -2626,7 +2626,7 @@ bindings)
     # NOTE: Alternative to optional_prepare_ccache()
     # FIXME: Can these be united and de-duplicated?
     if [ x"${CI_CCACHE_USE-}" != xno ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ] && [ -d "${CI_CCACHE_SYMLINKDIR}" ] ; then
-        PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        PATH="`echo \"$PATH\" | sed -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,' -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,'`"
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
         if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
@@ -2776,8 +2776,8 @@ bindings)
         [ -z "${LDFLAGS}" ]  || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export LDFLAGS='${LDFLAGS}'" >&2
     fi
 
-    PATH="`echo "${PATH}" | normalize_path`"
-    CCACHE_PATH="`echo "${CCACHE_PATH}" | normalize_path`"
+    PATH="`echo \"${PATH}\" | normalize_path`"
+    CCACHE_PATH="`echo \"${CCACHE_PATH}\" | normalize_path`"
 
     RES_CFG=0
     ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}" \
@@ -2830,7 +2830,7 @@ cross-windows-mingw*)
     && [ -n "${CI_CCACHE_SYMLINKDIR}" ] \
     && [ -d "${CI_CCACHE_SYMLINKDIR}" ] \
     ; then
-        PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        PATH="`echo \"$PATH\" | sed -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,' -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,'`"
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
         if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
