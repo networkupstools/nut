@@ -375,4 +375,26 @@ done
 
 echo "Test suite for nut-driver-enumerator has completed with $FAIL_COUNT failed cases and $GOOD_COUNT good cases" >&2
 
-[ "$FAIL_COUNT" = 0 ] || { echo "As a developer, you may want to export DEBUG=trace or export DEBUG=yes and re-run the test; also make sure you meant the nut-driver-enumerator.sh implementation as NDE='$NDE'" >&2 ; exit 1; }
+[ "$FAIL_COUNT" = 0 ] || {
+    echo "As a developer, you may want to export DEBUG=trace or export DEBUG=yes and re-run the test; also make sure you meant the nut-driver-enumerator.sh implementation as NDE='$NDE'"
+    for USE_SHELL in $SHELL_PROGS ; do
+        case "$USE_SHELL" in
+            */*) test -x "`echo $USE_SHELL | awk '{print $1}'`" ;;
+            busybox|busybox_sh|"busybox sh") command -v busybox ;;
+            *) command -v $USE_SHELL ;;
+        esac || echo "WARNING: Could not resolve shell interpreter '$USE_SHELL' in PATH='$PATH'"
+
+        case "$USE_SHELL" in
+            */sh|sh)
+                echo "WARNING: This test was executed with a system default shell interpreter '$USE_SHELL'; depends on implementation whether it supports the (legacy) POSIX syntax our scripts are written for or not" ;;
+            */ksh*|ksh*|*/ast-ksh*|ast-ksh*|*/oksh*|oksh*)
+                echo "INFO: We have reports that shell interpreter '$USE_SHELL' should support the (legacy) POSIX syntax our scripts are written for, but beware double-quotes inside and outside backticks" ;;
+            busybox|busybox_sh|"busybox sh"|*/busybox|*/bash|bash|*/dash|dash)
+                echo "INFO: We have reports that shell interpreter '$USE_SHELL' should support the (legacy) POSIX syntax our scripts are written for" ;;
+            */zsh|zsh|*/csh|*/tcsh)
+                echo "WARNING: Sadly, we have reports that shell interpreter '$USE_SHELL' does not support the (legacy) POSIX syntax our scripts are written for" ;;
+            *)  echo "WARNING: We do not have confirmation whether shell interpreter '$USE_SHELL' supports the (legacy) POSIX syntax our scripts are written for or not" ;;
+        esac
+    done
+    exit 1
+} >&2
