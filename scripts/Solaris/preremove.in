@@ -28,7 +28,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	# instance of nut-driver-enumerator so we can pass it to the
 	# next lifetime in case of re-install of NUT and keep the
 	# user's previously declared preference.
-	ACTIVE_ENUMERATOR="`/usr/bin/svcs -H -o state,fmri '*/nut-driver-enumerator:*' | while read S F ; do [ "$S" != "disabled" ] && [ "$S" != "offline" ] && echo "$F" && break ; done`"
+	ACTIVE_ENUMERATOR="`/usr/bin/svcs -H -o state,fmri '*/nut-driver-enumerator:*' | while read S F ; do [ \"$S\" != \"disabled\" ] && [ \"$S\" != \"offline\" ] && echo \"$F\" && break ; done`"
 	if [ -n "$ACTIVE_ENUMERATOR" ]; then
 		rm -f "${ACTIVE_ENUMERATOR_FMRI_FILE}"
 		touch "${ACTIVE_ENUMERATOR_FMRI_FILE}"
@@ -61,8 +61,8 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*' | grep -wv default` `/usr/bin/svcs -H -o fmri '*/nut-driver-enumerator:*' | grep -wv default` ; do
 		echo "Removing NUT service: $S..."
 		# Note: S here is a full FMRI URL
-		SB="`echo "$S" | sed 's,:[^:]*$,,'`"
-		SI="`echo "$S" | sed 's,^.*:\([^:]*\)$,\1,'`"
+		SB="`echo \"$S\" | sed 's,:[^:]*$,,'`"
+		SI="`echo \"$S\" | sed 's,^.*:\([^:]*\)$,\1,'`"
 		/usr/sbin/svcadm disable -s "$S"
 		/usr/sbin/svccfg -s "$SB" delete -f "$SI" || \
 		/usr/sbin/svccfg delete "$S"

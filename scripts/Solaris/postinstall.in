@@ -30,7 +30,7 @@ if [ -z "$res" ]; then
 	/usr/sbin/useradd -c "Network UPS Tools" -g "@RUN_AS_GROUP@" -G root -d "@STATEPATH@" -s /bin/false @RUN_AS_USER@
 fi
 
-res="`groups "@RUN_AS_GROUP@" | grep -w "@RUN_AS_USER@"`" || res=""
+res="`groups \"@RUN_AS_GROUP@\" | grep -w \"@RUN_AS_USER@\"`" || res=""
 if [ -z "$res" ]; then
 	/usr/sbin/usermod -g "@RUN_AS_GROUP@" -G root "@RUN_AS_USER@"
 fi
@@ -95,7 +95,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		# This may still fail if the daemon instance is somehow enabled (admin)
 		PREV_ACTIVE_ENUMERATOR=""
 		if test -s "${ACTIVE_ENUMERATOR_FMRI_FILE}" ; then
-			PREV_ACTIVE_ENUMERATOR="`head -1 "${ACTIVE_ENUMERATOR_FMRI_FILE}"`"
+			PREV_ACTIVE_ENUMERATOR="`head -1 \"${ACTIVE_ENUMERATOR_FMRI_FILE}\"`"
 		fi
 		[ x"nut-driver-enumerator:default" = x"${PREV_ACTIVE_ENUMERATOR}" ] && PREV_ACTIVE_ENUMERATOR=""
 		for ACTIVE_ENUMERATOR in ${PREV_ACTIVE_ENUMERATOR} nut-driver-enumerator:default ; do
