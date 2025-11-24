@@ -159,8 +159,8 @@ isBusy_NUT_PORT() {
         # IPv6:
         #   sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
         #   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
-        NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
-        NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | ${EGREP} ":${NUT_PORT_HEX}\$"`" \
+        NUT_PORT_HEX="`printf '%04X' \"${NUT_PORT}\"`"
+        NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | ${EGREP} \":${NUT_PORT_HEX}\$\"`" \
         && [ -n "$NUT_PORT_HITS" ] \
         && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per /proc/net/tcp*" \
         && return 0
@@ -248,8 +248,8 @@ runcmd() {
 
     "$@" > "${NUT_STATEPATH}/runcmd.out" 2>"${NUT_STATEPATH}/runcmd.err" || CMDRES=$?
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
-    CMDOUT="`cat "${NUT_STATEPATH}/runcmd.out"`"
-    CMDERR="`cat "${NUT_STATEPATH}/runcmd.err"`"
+    CMDOUT="`cat \"${NUT_STATEPATH}/runcmd.out\"`"
+    CMDERR="`cat \"${NUT_STATEPATH}/runcmd.err\"`"
 
     [ "$RUNCMD_QUIET_OUT" = true ] || { [ -z "$CMDOUT" ] || echo "$CMDOUT" ; }
     [ "$RUNCMD_QUIET_ERR" = true ] || { [ -z "$CMDERR" ] || echo "$CMDERR" >&2 ; }
@@ -266,19 +266,19 @@ BUILDDIR="`pwd`"
 TOP_BUILDDIR=""
 case "${BUILDDIR}" in
     */tests/NIT)
-        TOP_BUILDDIR="`cd "${BUILDDIR}"/../.. && pwd`" ;;
+        TOP_BUILDDIR="`cd \"${BUILDDIR}\"/../.. && pwd`" ;;
     *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
 esac
 if test ! -w "${BUILDDIR}" ; then
     log_error "BUILDDIR='${BUILDDIR}' is not writeable, tests may fail below"
 fi
 
-SRCDIR="`dirname "$0"`"
-SRCDIR="`cd "$SRCDIR" && pwd`"
+SRCDIR="`dirname \"$0\"`"
+SRCDIR="`cd \"$SRCDIR\" && pwd`"
 TOP_SRCDIR=""
 case "${SRCDIR}" in
     */tests/NIT)
-        TOP_SRCDIR="`cd "${SRCDIR}"/../.. && pwd`" ;;
+        TOP_SRCDIR="`cd \"${SRCDIR}\"/../.. && pwd`" ;;
     *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
 esac
 
@@ -363,7 +363,7 @@ get_user_id() {
         && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
     if _ID="`id ${1-} 2>/dev/null | sed -e 's,^.*uid=,,' -e 's,(.*$,,'`" \
         && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
-    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent passwd "$1" 2>/dev/null | awk -F: '{print $3}'`" \
+    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent passwd \"$1\" 2>/dev/null | awk -F: '{print $3}'`" \
         && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
 
     # Fallback
@@ -384,7 +384,7 @@ get_group_id() {
         && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
     if _ID="`id ${1-} 2>/dev/null | sed -e 's,^.*gid=,,' -e 's,(.*$,,'`" \
         && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
-    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent group "$1" 2>/dev/null | awk -F: '{print $3}'`" \
+    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent group \"$1\" 2>/dev/null | awk -F: '{print $3}'`" \
         && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
 
     # TOTHINK: Fallback to get "my current group": touch a file and see who owns it?
@@ -421,7 +421,7 @@ TWEAK_RUN_AS_USER=""
 TWEAK_RUN_AS_GROUP=""
 ARG_USER=""
 if [ x"${BUILTIN_RUN_AS_USER}" != x ] ; then
-    if [ "`get_user_id "${BUILTIN_RUN_AS_USER}"`" -ge 0 ] 2>/dev/null; then
+    if [ "`get_user_id \"${BUILTIN_RUN_AS_USER}\"`" -ge 0 ] 2>/dev/null; then
         # Do not bother to re-evaluate more IDs to rule out aliases - many names on same ID?
         if $I_AM_ROOT || [ x"${I_AM_NAME}" = x"${BUILTIN_RUN_AS_USER}" ] ; then
             log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems present on this system to run test daemons as"
@@ -433,7 +433,7 @@ if [ x"${BUILTIN_RUN_AS_USER}" != x ] ; then
         # account identification databases of this runtime environment...
         if $I_AM_ROOT ; then
             for U in nobody daemon bin ; do
-                if [ "`get_user_id "${U}"`" -ge 0 ] ; then
+                if [ "`get_user_id \"${U}\"`" -ge 0 ] ; then
                     TWEAK_RUN_AS_USER="${U}"
                     break
                 fi
@@ -457,7 +457,7 @@ if [ x"${BUILTIN_RUN_AS_GROUP}" != x ] ; then
     # * In `drivers/main.c` we can set FS access for the pipe to data server
     # * Otherwise in `common.c::become_user()` we try to assume the default
     #   GID of that user account we were asked to switch into.
-    if [ "`get_group_id "${BUILTIN_RUN_AS_GROUP}"`" -ge 0 ] 2>/dev/null ; then
+    if [ "`get_group_id \"${BUILTIN_RUN_AS_GROUP}\"`" -ge 0 ] 2>/dev/null ; then
         # Do not bother to re-evaluate more IDs to rule out aliases - many names on same ID?
         # TOTHINK: Would need I_AM_GROUP first?..
         if $I_AM_ROOT ; then
@@ -469,7 +469,7 @@ if [ x"${BUILTIN_RUN_AS_GROUP}" != x ] ; then
         # The string allegedly built into NUT binaries is unknown to the
         # account identification databases of this runtime environment...
         for G in nobody nogroup daemon bin ; do
-            if [ "`get_group_id "${G}"`" -ge 0 ] ; then
+            if [ "`get_group_id \"${G}\"`" -ge 0 ] ; then
                 TWEAK_RUN_AS_GROUP="${G}"
                 break
             fi
@@ -518,7 +518,7 @@ if [ x"${TESTDIR}" = x ] ; then
     fi
     log_warn "Will now mktemp a TESTDIR under '${TMPDIR}'. It will be wiped when the NIT script exits."
     log_warn "If you want a pre-determined location, pre-export a usable TESTDIR value."
-    TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
+    TESTDIR="`mktemp -d \"${TMPDIR}/nit-tmp.$$.XXXXXX\"`" || die "Failed to mktemp"
     if $I_AM_ROOT ; then
         # Cah be protected as 0700 by default
         chmod ugo+rx "${TESTDIR}"
@@ -558,11 +558,11 @@ stop_daemons() {
     fi
 
     if [ -z "$PID_UPSSCHED" ] && [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
-        PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+        PID_UPSSCHED="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
     if [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
-        PID_UPSSCHED_NOW="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+        PID_UPSSCHED_NOW="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
     if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
@@ -615,7 +615,7 @@ else
         fi
 
         log_warn "Selected NUT_PORT=$NUT_PORT seems occupied; will try another in a few seconds"
-        COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+        COUNTDOWN="`expr \"$COUNTDOWN\" - 1`"
 
         [ "$COUNTDOWN" = 0 ] || sleep 2
     done
@@ -633,7 +633,7 @@ else
             fi
 
             # Loop quickly, no sleep here
-            COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+            COUNTDOWN="`expr \"$COUNTDOWN\" - 1`"
         done
 
         if [ "$COUNTDOWN" = 0 ] ; then
@@ -1240,7 +1240,7 @@ sandbox_start_drivers() {
     sleep 5
 
     if shouldDebug ; then
-        (ps -ef || ps -xawwu) 2>/dev/null | ${EGREP} '(ups|nut|dummy|'"`basename "$0"`"')' | ${EGREP} -v '(ssh|startups|grep)' || true
+        (ps -ef || ps -xawwu) 2>/dev/null | ${EGREP} '(ups|nut|dummy|'"`basename \"$0\"`"')' | ${EGREP} -v '(ssh|startups|grep)' || true
     fi
 
     if isPidAlive "$PID_DUMMYUPS" \
@@ -1267,7 +1267,7 @@ testcase_sandbox_start_upsd_alone() {
 UPS1
 UPS2"
         # For windows runners (strip CR if any):
-        EXPECTED_UPSLIST="`echo "$EXPECTED_UPSLIST" | tr -d '\r'`"
+        EXPECTED_UPSLIST="`echo \"$EXPECTED_UPSLIST\" | tr -d '\r'`"
     fi
 
     log_info "[testcase_sandbox_start_upsd_alone] Query listing from UPSD by UPSC (driver not running yet)"
@@ -1275,7 +1275,7 @@ UPS2"
     runcmd upsc -l localhost:$NUT_PORT || die "[testcase_sandbox_start_upsd_alone] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     # For windows runners (printf can do wonders, so strip CR if any):
     if [ x"${TOP_SRCDIR}" != x ]; then
-        CMDOUT="`echo "$CMDOUT" | tr -d '\r'`"
+        CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
     fi
     if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST" ] ; then
         log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
@@ -1533,7 +1533,7 @@ isTestablePython() {
         return 0
     fi
 
-    PY_SHEBANG="`head -1 "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"`"
+    PY_SHEBANG="`head -1 \"${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py\"`"
     PY_RES=3
     case x"${PY_SHEBANG}" in
         x"#!"/*|x"#!"?":\\"*|x"#!"?":/"*) PY_RES=0 ;; # Seems like a full path
@@ -1543,7 +1543,7 @@ isTestablePython() {
     esac
     if [ x"${PY_RES}" = x0 ] ; then
         log_debug "=======\nDetected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
-        PYTHON="`echo "${PY_SHEBANG}" | sed 's,^#!,,'`"
+        PYTHON="`echo \"${PY_SHEBANG}\" | sed 's,^#!,,'`"
     else
         log_error "[isTestablePython] Detected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
     fi
@@ -1807,7 +1807,7 @@ testcase_sandbox_nutscanner_list() {
         else
             PORTS_WANT=3
         fi
-        PORTS_SEEN="`echo "$CMDOUT" | ${EGREP} -c 'port *='`"
+        PORTS_SEEN="`echo \"$CMDOUT\" | ${EGREP} -c 'port *='`"
 
         if [ "$PORTS_WANT" != "$PORTS_SEEN" ]; then
             log_error "[testcase_sandbox_nutscanner_list] Too many 'port=' lines: want $PORTS_WANT != seen $PORTS_SEEN" >&2
@@ -1999,7 +1999,7 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     fi
 
     if [ -z "$PID_UPSSCHED" ] && [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
-        PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+        PID_UPSSCHED="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
     log_separator
@@ -2007,7 +2007,7 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
     printf "PID_NIT_SCRIPT='%s'\nexport PID_NIT_SCRIPT\n" "$$" >> "$NUT_CONFPATH/NIT.env"
     set | ${EGREP} '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
-        V="`echo "$V" | tr -d "'"`"
+        V="`echo \"$V\" | tr -d \"'\"`"
         # Dummy comment to reset syntax highlighting due to ' quote above
         if [ -n "$V" ] ; then
             printf "%s='%s'\nexport %s\n" "$K" "$V" "$K"
