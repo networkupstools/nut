@@ -38,8 +38,8 @@ export LANG LC_ALL TZ
 
 ### Note: These are relative to where the selftest script lives,
 ### not the NUT top_srcdir etc. They can be exported by a Makefile.
-[ -n "${BUILDDIR-}" ] || BUILDDIR="`dirname $0`"
-[ -n "${SRCDIR-}" ] || SRCDIR="`dirname $0`"
+[ -n "${BUILDDIR-}" ] || BUILDDIR="`dirname \"$0\"`"
+[ -n "${SRCDIR-}" ] || SRCDIR="`dirname \"$0\"`"
 [ -n "${SHELL_PROGS-}" ] || SHELL_PROGS="/bin/sh"
 case "${DEBUG-}" in
     [Yy]|[Yy][Ee][Ss]) DEBUG=yes ;;
