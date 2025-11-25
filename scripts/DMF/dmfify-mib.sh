@@ -6,7 +6,7 @@
 #
 #   Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #   Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
-#   Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+#   Copyright (C) 2022 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 
 # A bashism, important for us here
@@ -17,7 +17,7 @@ XSD_DMFSNMP_VERSION='1.0.0'
 XSD_DMFSNMP_XMLNS='http://www.networkupstools.org/dmf/snmp/snmp-ups'
 
 # Where to look for python scripts - same dir as this shell script
-_SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
+_SCRIPT_DIR="`cd $(dirname \"$0\") && pwd`" || \
     _SCRIPT_DIR="./" # Fallback can fail
 [ -n "${ABS_OUTDIR-}" ] || ABS_OUTDIR="`pwd`" || exit
 [ -n "${ABS_BUILDDIR-}" ] || ABS_BUILDDIR="${ABS_OUTDIR}"
@@ -111,7 +111,7 @@ if [ -n "${CC-}" ] ; then
     esac
     case "$CC" in
         /*) ;;
-        *)  CC="`command -v "$CC"`" ;;
+        *)  CC="`command -v \"$CC\"`" ;;
     esac
     case "$CC" in
         *" "*|*"	"*) $CC --help >/dev/null 2>/dev/null && CC_WITH_ARGS=true;;
@@ -150,7 +150,7 @@ if [ -n "${CPP-}" ] ; then
     esac
     case "$CPP" in
         /*) ;;
-        *)  CPP="`command -v "$CPP"`" ;;
+        *)  CPP="`command -v \"$CPP\"`" ;;
     esac
     case "$CPP" in
         # FIXME: Make CPP single-token and prepend args to CPPFLAGS (if any)
