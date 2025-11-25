@@ -251,7 +251,7 @@ AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
-        dnl Causes calls to ac_prog stuff, so dittoed below if "no"
+	dnl Causes calls to ac_prog stuff, so dittoed below if "no"
 	AC_USE_SYSTEM_EXTENSIONS
 ], [
 	AC_MSG_RESULT(no)
@@ -4385,9 +4385,9 @@ case "${nut_with_docs_changelog_start}" in
 				GITLOG_START_POINT=master
 			 ], [
 				GITLOG_START_POINT=v"`echo \"${NUT_SOURCE_GITREV_NUMERIC}\" | sed -e 's/^\(@<:@0-9@:>@*\.@<:@0-9@:>@*\.@<:@0-9@:>@*\)@<:@^0-9@:>@*.*$/\1/'`" \
-			 && test x"${GITLOG_START_POINT}" != xv \
-			 || GITLOG_START_POINT="master"
-			])
+				 && test x"${GITLOG_START_POINT}" != xv \
+				 || GITLOG_START_POINT="master"
+			    ])
 			])
 		;;
 	*) dnl # Else assume this is a git hash/tag/branch...
@@ -4535,6 +4535,7 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 dnl # NOTE: This also initializes `hardcode_libdir_flag_spec` and
 dnl # `hardcode_libdir_flag_spec_CXX` that we use in LDFLAGS_NUT_RPATH
 LT_INIT
+
 AC_SUBST([LIBTOOL_DEPS])
 GCC="$SAVED_GCC"
 CC="$SAVED_CC"
@@ -4786,11 +4787,11 @@ NUT_ARG_ENABLE([force-nut-version-header], [Force nut_version.h generation for e
 AS_CASE([${nut_enable_force_nut_version_header}],
 	[no], [
 		AC_MSG_RESULT(no)
-                FORCE_NUT_VERSION=""
-], [
+		FORCE_NUT_VERSION=""
+	], [
 		AC_MSG_RESULT(yes)
 		FORCE_NUT_VERSION="FORCE"
-])
+	])
 
 
 dnl ---------------------------------------------------------------------
@@ -5170,8 +5171,8 @@ EOF
 		if (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") ; then
 			true
 		else
-		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=yes
-	fi
+			SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=yes
+		fi
 	fi
 	rm -f "$myFILE"
 	AC_MSG_RESULT([${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY}])
@@ -5192,8 +5193,8 @@ EOF
 		if (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") ; then
 			true
 		else
-		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=yes
-	fi
+			SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=yes
+		fi
 	fi
 	rm -f "$myFILE"
 	AC_MSG_RESULT([${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD}])
@@ -5420,12 +5421,12 @@ dnl # By default keep the originally detected have_cppunit value
 AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
 NUT_ARG_ENABLE([cppunit], [(yes|no|force|auto)], [Enable CPPUNIT tests for C++ bindings], [auto])
 AS_CASE(["${nut_enable_cppunit}"],
-		["force"], [AS_IF([test x"${have_cppunit}" = xyes], [], [
-			AC_MSG_WARN([--enable-cppunit=yes can not be satisfied, but developer asked for it])
-			have_cppunit=yes
-			])],
-		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--enable-cppunit=yes can not be satisfied])])],
-		["no"], [have_cppunit=no]
+	["force"], [AS_IF([test x"${have_cppunit}" = xyes], [], [
+		AC_MSG_WARN([--enable-cppunit=yes can not be satisfied, but developer asked for it])
+		have_cppunit=yes
+		])],
+	["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--enable-cppunit=yes can not be satisfied])])],
+	["no"], [have_cppunit=no]
 		dnl # "auto" and other values keep what was detected (or not)
 )
 AC_MSG_RESULT(${have_cppunit})
@@ -5493,16 +5494,16 @@ AS_CASE([${nut_with_augeas_lenses_dir}],
 	[yes],	[if test -z "${auglensdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but not found in default location])
-		fi
+		 fi
 		 if test ! -s scripts/augeas/nutupsconf.aug.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
-		fi
+		 fi
 		],
 	[auto],	[if test ! -s scripts/augeas/nutupsconf.aug.in ; then
 			AC_MSG_WARN([augeas lenses directory skipped because a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
 			auglensdir=""
-		fi
+		 fi
 		],
 	[no],	[auglensdir=""],
 		[auglensdir="${nut_with_augeas_lenses_dir}"]
@@ -5563,17 +5564,17 @@ AS_CASE([${nut_with_udev_dir}],
 		[if test -z "${udevdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
-		fi
+		 fi
 		 if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory and USB driver support requested but a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
-		fi
+		 fi
 		],
 	[auto],
 		[if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
 			AC_MSG_WARN([udev directory skipped because a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
 			udevdir=""
-		fi
+		 fi
 		],
 	[no],	[udevdir=""],
 		[udevdir="${nut_with_udev_dir}"]
@@ -5597,17 +5598,17 @@ AS_CASE([${nut_with_devd_dir}],
 		[if test -z "${devddir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
-		fi
+		 fi
 		 if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.conf.in ; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usb.conf.in was not provided by autogen.sh or dist archive])
-		fi
+		 fi
 		],
 	[auto],
 		[if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.conf.in ; then
 			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usb.conf.in was not provided by autogen.sh or dist archive])
 			devddir=""
-		fi
+		 fi
 		],
 	[no],	[devddir=""],
 		[devddir="${nut_with_devd_dir}"]
@@ -5632,11 +5633,11 @@ AS_CASE([${nut_with_freebsd_quirks_dir}],
 	[auto],	dnl Are we building for FreeBSD with such customizations?
 		[if test -s /boot/loader.conf.local ; then
 			freebsdquirksdir="${datadir}"
-		fi
+		 fi
 		 if test "${nut_with_usb}" = yes && test ! -s scripts/devd/nut-usb.quirks ; then
 			AC_MSG_WARN([freebsd-quirks-dir directory skipped because a non-trivial scripts/devd/nut-usb.quirks was not provided by autogen.sh or dist archive])
 			freebsdquirksdir=""
-		fi
+		 fi
 		],
 	[no],	[freebsdquirksdir=""],
 		[freebsdquirksdir="${nut_with_freebsd_quirks_dir}"]
@@ -5684,11 +5685,11 @@ AS_CASE([${nut_with_valgrind}],
 	[auto],	[with_valgrind="auto"],
 	[no],	[with_valgrind="no"],
 		[AC_PATH_PROGS([VALGRIND], ["${nut_with_valgrind}"], [none])
-		if test "x$VALGRIND" = "xnone"; then
+		 if test "x$VALGRIND" = "xnone"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([valgrind requested but not found])
-		fi
-		with_valgrind="yes"
+		 fi
+		 with_valgrind="yes"
 		]
 )
 
@@ -6614,8 +6615,8 @@ NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([user], [USERNAME], [(Unprivileged) user for pr
 AS_CASE([${nut_with_user}],
 	[yes|no], [AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)],
 	["${RUN_AS_USER}"], [
-	nut_user_given=no
-	AC_MSG_RESULT([default])
+		 nut_user_given=no
+		 AC_MSG_RESULT([default])
 		],
 		[RUN_AS_USER="${nut_with_user}"
 		 nut_user_given=yes
@@ -6633,8 +6634,8 @@ NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([group], [GROUPNAME], [(Unprivileged) group mem
 AS_CASE([${nut_with_group}],
 	[yes|no], [AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)],
 	["${RUN_AS_GROUP}"], [
-	nut_group_given=no
-	AC_MSG_RESULT([default])
+		 nut_group_given=no
+		 AC_MSG_RESULT([default])
 		],
 		[RUN_AS_GROUP="${nut_with_group}"
 		 nut_group_given=yes
