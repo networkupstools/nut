@@ -229,6 +229,8 @@ typedef int bool_t;
 # else
 #  define WITH_SNMP_LKP_FUN 1
 # endif
+#else
+# define WITH_SNMP_LKP_FUN 0
 #endif
 
 #ifndef WITH_SNMP_LKP_FUN_DUMMY

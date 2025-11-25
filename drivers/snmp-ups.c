@@ -503,8 +503,8 @@ void upsdrv_updateinfo(void)
 				 * a new firmware got installed or modules added?
 				 */
 				analyze_mapping_usage();
-			comm_status = COMM_OK;
-		}
+				comm_status = COMM_OK;
+			}
 		}
 		else {
 			upsdebugx(1, "%s: pollfreq: Data STALE", __func__);
