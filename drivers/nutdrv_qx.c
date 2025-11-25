@@ -4784,7 +4784,8 @@ int	ups_infoval_set(item_t *item)
 	}
 
 	if (item->qxflags & QX_FLAG_NONUT) {
-		upslogx(LOG_INFO, "%s: %s", item->info_type, value);
+		/* Hides QX_FLAG_NONUT variables from syslog unless the debug level is raised */
+		upsdebugx(2, "%s: %s", item->info_type, value);
 		return 1;
 	}
 
