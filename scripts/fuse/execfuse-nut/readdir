@@ -2,11 +2,11 @@
 
 # Simple PoC of NUT client as a FUSE mountable filesystem
 # Requires https://github.com/vi/execfuse
-# Copyright (C) 2024 by Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2024-2025 by Jim Klimov <jimklimov+nut@gmail.com>
 # Licensed GPLv2+ as NUT codebase
 
 if [ x"$NUT_DEBUG_FUSE" = xtrue ] ; then
-    exec 2>"/tmp/nut-debug-fuse-`basename $0`.log"
+    exec 2>"/tmp/nut-debug-fuse-`basename \"$0\"`.log"
     echo "ARGS($#, $0): 1='$1' 2='$2' @='$@'" >&2
     #echo "ARGS: $#: $@" >&2
     #set | grep -E '^[^ =]*=' >&2
@@ -48,15 +48,15 @@ case "$1" in
         exit 2 # ENOENT
         ;;
     /by-server/*/*) # list device variables
-        UPSNAME="`basename "$1"`"
-        UPSSRV="`echo "$1" | sed 's,^/by-server/\(.*\)/'"$UPSNAME"'$,\1,'`"
+        UPSNAME="`basename \"$1\"`"
+        UPSSRV="`echo \"$1\" | sed 's,^/by-server/\(.*\)/'\"$UPSNAME\"'$,\1,'`"
         print_dots
         for VARNAME in `upsc "$UPSNAME@$UPSSRV" | awk -F: '{print $1}'` ; do
             printf 'ino=1 mode=-r--r--r-- nlink=1 uid=0 gid=0 rdev=0 size=16 blksize=512 blocks=1 atime=0 mtime=0 ctime=0 %s\0' "$VARNAME"
         done
         ;;
     /by-server/*) # devices on hostname
-        UPSSRV="`basename "$1"`"
+        UPSSRV="`basename \"$1\"`"
         print_dots
         for UPSNAME in `upsc -l "$UPSSRV"` ; do
             printf 'ino=1 mode=drwxr-xr-x nlink=16 uid=0 gid=0 rdev=0 size=16 blksize=512 blocks=1 atime=0 mtime=0 ctime=0 %s\0' "$UPSNAME"

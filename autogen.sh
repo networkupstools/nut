@@ -27,7 +27,7 @@ fi
 [ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; export GREP ; }
 [ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; export EGREP ; }
 
-NUT_VERSION_QUERY=UPDATE_FILE "`dirname $0`"/tools/gitlog2version.sh
+NUT_VERSION_QUERY=UPDATE_FILE "`dirname \"$0\"`"/tools/gitlog2version.sh
 
 if [ -n "${PYTHON-}" ] ; then
 	# May be a name/path of binary, or one with args - check both
@@ -87,7 +87,7 @@ then
 			echo "Proceeding without Augeas integration, be sure to not require it in configure script" >&2
 			touch scripts/augeas/nutupsconf.aug.in scripts/augeas/nutupsconf.aug.in.AUTOGEN_WITHOUT
 		else
-			echo "Aborting $0! To avoid this, please   export WITHOUT_NUT_AUGEAS=true   and re-run" >&2
+			echo "Aborting $0! To avoid this, please   export WITHOUT_NUT_AUGEAS=true    and re-run" >&2
 			echo "or better yet,    export PYTHON=python-x.y   and re-run" >&2
 			exit 1
 		fi

@@ -48,7 +48,7 @@ AC_DEFUN([AX_REALPATH_LIB],
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes], [
         myLIBNAME="$1"
         AS_CASE(["${myLIBNAME}"],
-            [-l*], [myLIBNAME="`echo "$myLIBNAME" | sed 's/^-l/lib/'`"]
+            [-l*], [myLIBNAME="`echo \"$myLIBNAME\" | sed 's/^-l/lib/'`"]
         )
 
         dnl # Primarily we care to know dynamically linked (shared object)
@@ -71,7 +71,7 @@ AC_DEFUN([AX_REALPATH_LIB],
                 dnl Alas, the portable solution with sed is to avoid
                 dnl parentheses and pipe chars, got too many different
                 dnl ways to escape them in the wild
-                myLIBNAME_LD="`echo "$myLIBNAME" | sed -e 's/^lib/-l/' -e 's/\.dll$//' -e 's/\.dll\.a$//' -e 's/\.a$//' -e 's/\.o$//' -e 's/\.la$//' -e 's/\.lo$//' -e 's/\.lib$//' -e 's/\.dylib$//' -e 's/\.so\..*$//' -e 's/\.so//' -e 's/\.sl\..*$//' -e 's/\.sl//'`"
+                myLIBNAME_LD="`echo \"$myLIBNAME\" | sed -e 's/^lib/-l/' -e 's/\.dll$//' -e 's/\.dll\.a$//' -e 's/\.a$//' -e 's/\.o$//' -e 's/\.la$//' -e 's/\.lo$//' -e 's/\.lib$//' -e 's/\.dylib$//' -e 's/\.so\..*$//' -e 's/\.so//' -e 's/\.sl\..*$//' -e 's/\.sl//'`"
             ], [myLIBNAME_LD="-l$myLIBNAME"]    dnl best-effort...
         )
 
@@ -97,7 +97,7 @@ AC_DEFUN([AX_REALPATH_LIB],
                     dnl Resolve dynamic library "internal" name from its stub, if needed
                     AS_CASE(["${myLIBPATH}"],
                         [*.dll.a], [
-                            myLIBPATH="`$DLLTOOL -I "${myLIBPATH}"`" || myLIBPATH=""
+                            myLIBPATH="`$DLLTOOL -I \"${myLIBPATH}\"`" || myLIBPATH=""
                             ]
                     )
 
@@ -126,9 +126,9 @@ AC_DEFUN([AX_REALPATH_LIB],
                     )
                 ])
             ], [ dnl # POSIX/MacOS builds
-                { myLIBPATH="`${CC} --print-file-name="$myLIBNAME"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
-                || { myLIBPATH="`${CC} $CFLAGS --print-file-name="$myLIBNAME"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
-                || { myLIBPATH="`${CC} $CFLAGS $LDFLAGS $LIBS --print-file-name="$myLIBNAME"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                { myLIBPATH="`${CC} --print-file-name=\"$myLIBNAME\"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                || { myLIBPATH="`${CC} $CFLAGS --print-file-name=\"$myLIBNAME\"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                || { myLIBPATH="`${CC} $CFLAGS $LDFLAGS $LIBS --print-file-name=\"$myLIBNAME\"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
                 || myLIBPATH=""
             ]
         )
@@ -137,9 +137,9 @@ AC_DEFUN([AX_REALPATH_LIB],
             for TOKEN in $CFLAGS $LDFLAGS $LIBS ; do
                 D=""
                 case "$TOKEN" in
-                    -R*|-L*) D="`echo "$TOKEN" | sed 's,^-[RL],,'`" ;;
-                    -Wl,-R*) D="`echo "$TOKEN" | sed 's,^-Wl\,-R,,'`" ;;
-                    -Wl,-rpath,*) D="`echo "$TOKEN" | sed 's,^-Wl\,-rpath\,,,'`" ;;
+                    -R*|-L*) D="`echo \"$TOKEN\" | sed 's,^-[RL],,'`" ;;
+                    -Wl,-R*) D="`echo \"$TOKEN\" | sed 's,^-Wl\,-R,,'`" ;;
+                    -Wl,-rpath,*) D="`echo \"$TOKEN\" | sed 's,^-Wl\,-rpath\,,,'`" ;;
                 esac
                 if test -z "$D" || test ! -d "$D" ; then continue ; fi
                 if test -s "$D/${myLIBNAME}" 2>/dev/null ; then
@@ -170,13 +170,13 @@ AC_DEFUN([AX_REALPATH_LIB],
                     dnl Try MacOS-style LD as fallback; expecting strings like
                     dnl   ld: warning: /usr/local/lib/libneon.dylib, ignoring unexpected dylib file
                     my_uname_m="`uname -m`"
-                    { myLIBPATH="`${LD} -dynamic -r -arch "${target_cpu}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
-                    || { myLIBPATH="`${LD} $LDFLAGS -dynamic -r -arch "${target_cpu}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
-                    || { myLIBPATH="`${LD} $LDFLAGS $LIBS -dynamic -r -arch "${target_cpu}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                    { myLIBPATH="`${LD} -dynamic -r -arch \"${target_cpu}\" -search_dylibs_first \"${myLIBNAME_LD}\" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                    || { myLIBPATH="`${LD} $LDFLAGS -dynamic -r -arch \"${target_cpu}\" -search_dylibs_first \"${myLIBNAME_LD}\" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                    || { myLIBPATH="`${LD} $LDFLAGS $LIBS -dynamic -r -arch \"${target_cpu}\" -search_dylibs_first \"${myLIBNAME_LD}\" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
                     || if test x"${target_cpu}" != x"${my_uname_m}" ; then
-                        { myLIBPATH="`${LD} -dynamic -r -arch "${my_uname_m}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
-                        || { myLIBPATH="`${LD} $LDFLAGS -dynamic -r -arch "${my_uname_m}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
-                        || { myLIBPATH="`${LD} $LDFLAGS $LIBS -dynamic -r -arch "${my_uname_m}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                        { myLIBPATH="`${LD} -dynamic -r -arch \"${my_uname_m}\" -search_dylibs_first \"${myLIBNAME_LD}\" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                        || { myLIBPATH="`${LD} $LDFLAGS -dynamic -r -arch \"${my_uname_m}\" -search_dylibs_first \"${myLIBNAME_LD}\" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                        || { myLIBPATH="`${LD} $LDFLAGS $LIBS -dynamic -r -arch \"${my_uname_m}\" -search_dylibs_first \"${myLIBNAME_LD}\" 2>&1 | ${GREP} -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
                         || myLIBPATH=""
                     else
                         myLIBPATH=""
@@ -199,7 +199,7 @@ AC_DEFUN([AX_REALPATH_LIB],
                 # dnl may be present in a group (e.g. AS_NEEDED), and comment
                 # dnl strings are inconsistent (useless to match by).
                 AC_MSG_RESULT([yes, iterate further])
-                myLIBPATH_LDSCRIPT="`${GREP} -w GROUP "${myLIBPATH}" | sed 's,^.*GROUP *( *\(/@<:@^ @:>@*\.so@<:@^ @:>@*\)@<:@^0-9a-zA-Z_.-@:>@.*$,\1,'`"
+                myLIBPATH_LDSCRIPT="`${GREP} -w GROUP \"${myLIBPATH}\" | sed 's,^.*GROUP *( *\(/@<:@^ @:>@*\.so@<:@^ @:>@*\)@<:@^0-9a-zA-Z_.-@:>@.*$,\1,'`"
                 AS_IF([test -n "${myLIBPATH_LDSCRIPT}" && test -s "${myLIBPATH_LDSCRIPT}"], [
                     AC_MSG_NOTICE([will dig into ${myLIBPATH_LDSCRIPT}])
 

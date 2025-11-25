@@ -40,7 +40,7 @@ fi
 #call notifier script
 $CMD_NOTIFIER "$*" &
 
-PROC="`ps -ef | grep "$DAEMON" | awk   -F" " '{print $2}'`"
+PROC="`ps -ef | grep \"$DAEMON\" | awk   -F\" \" '{print $2}'`"
 case "$1" in
 	ONBATT)
 		if [ $PROC = "" ];then

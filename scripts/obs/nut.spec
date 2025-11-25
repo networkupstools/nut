@@ -527,13 +527,13 @@ fi
 find %{buildroot} -type f -name '*.sh' -o -name '*.py' -o -name '*.pl' | \
 while read F ; do
     if head -1 "$F" | grep bin/env >/dev/null ; then
-        F_SHEBANG="`head -1 "$F"`"
+        F_SHEBANG="`head -1 \"$F\"`"
 
-        F_SHELL_SHORT="`echo "$F_SHEBANG" | sed -e 's,^.*bin/env *,,' -e 's, .*$,,'`" \
+        F_SHELL_SHORT="`echo \"$F_SHEBANG\" | sed -e 's,^.*bin/env *,,' -e 's, .*$,,'`" \
         && [ -n "$F_SHELL_SHORT" ] \
         || { echo "WARNING: Failed to extract an interpreter from shebang '${F_SHEBANG}'" >&2 ; continue ; }
 
-        F_SHELL_PATH="`command -v "$F_SHELL_SHORT"`" \
+        F_SHELL_PATH="`command -v \"$F_SHELL_SHORT\"`" \
         && [ -n "$F_SHELL_PATH" ] && [ -x "$F_SHELL_PATH" ] \
         || { echo "WARNING: Failed to find executable path to interpreter '${F_SHELL_SHORT}' from shebang '${F_SHEBANG}'" >&2 ; continue; }
 

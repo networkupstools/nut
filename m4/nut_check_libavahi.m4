@@ -91,7 +91,7 @@ if test -z "${nut_have_avahi_seen}"; then
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBAVAHI], [])
 					AS_IF([test -n "${SOPATH_LIBAVAHI}" && test -s "${SOPATH_LIBAVAHI}"], [
 						AC_DEFINE_UNQUOTED([SOPATH_LIBAVAHI],["${SOPATH_LIBAVAHI}"],[Path to dynamic library on build system])
-						SOFILE_LIBAVAHI="`basename "$SOPATH_LIBAVAHI"`"
+						SOFILE_LIBAVAHI="`basename \"$SOPATH_LIBAVAHI\"`"
 						AC_DEFINE_UNQUOTED([SOFILE_LIBAVAHI],["${SOFILE_LIBAVAHI}"],[Base file name of dynamic library on build system])
 						break
 					])

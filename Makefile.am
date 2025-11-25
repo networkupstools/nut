@@ -686,11 +686,11 @@ spellcheck spellcheck-interactive:
 		(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -k -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
 		(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -k -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
 		for D in $(SPELLCHECK_DIRS_MOST) ; do \
-			D="`echo "$$D" | sed 's,^spellcheck/,,'`" ; \
+			D="`echo \"$$D\" | sed 's,^spellcheck/,,'`" ; \
 			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $@) || RES=$$? ; \
 		done ; \
 		for D in $(SPELLCHECK_DIRS_LAST) ; do \
-			D="`echo "$$D" | sed 's,^spellcheck/,,'`" ; \
+			D="`echo \"$$D\" | sed 's,^spellcheck/,,'`" ; \
 			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -k -s $@) || RES=$$? ; \
 		done ; \
 		exit $$RES ; \
@@ -703,7 +703,7 @@ spellcheck spellcheck-interactive:
 	  ( $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_TGT='$@' SUBDIR_MAKE_VERBOSE="$${SUBDIR_MAKE_VERBOSE}" -k -s $(SPELLCHECK_DIRS) && exit ; \
 	  echo "WARNING: FAILED fanned-out attempt in $@, retrying with NUT_MAKE_SKIP_FANOUT" >&2 ; \
 	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SPELLCHECK_TGT='$@' -k -s $(SPELLCHECK_DIRS) ) || exit ; \
-	  if [ x"$@" = xspellcheck-interactive ] ; then \
+	  if [ x'$@' = xspellcheck-interactive ] ; then \
 		echo "SUCCESS: $@: follow up with spellcheck-quick to revise and update timestamps"; \
 		$(MAKE) $(AM_MAKEFLAGS) spellcheck-quick ; \
 	  fi
@@ -787,7 +787,7 @@ maintainer-asciidocs:
 	        esac ; \
 	        printf '%s\n' "$${LINE}" >> "$${F}.$${EXT}" || exit ; \
 	    done < "$$F" || { echo "$@: FAILED injection for $${F}" >&2; exit 1; } ; \
-	    if test -s "$${F}.2.tmp" && test -z "`diff "$${F}.2.tmp" docs/asciidoc-vars.conf | tr -d '\n'`" ; then \
+	    if test -s "$${F}.2.tmp" && test -z "`diff \"$${F}.2.tmp\" docs/asciidoc-vars.conf | tr -d '\n'`" ; then \
 	        rm -f "$${F}"*.tmp ; \
 	        echo "$@: SKIP: no changes: $$F"; continue ; \
 	    fi; \
@@ -852,7 +852,7 @@ check-scripts-syntax:
 	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
 	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | $(EGREP) '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
 	 for F in `git ls-files || find . -type f` ; do \
-	    case "`file "$$F"`" in \
+	    case "`file \"$$F\"`" in \
 	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
 	        *"POSIX shell script"*|*"shell script"*) ( set -x ; /bin/sh -n "$$F" ; ) ;; \
 	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
@@ -964,42 +964,42 @@ CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR = true
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
 	    if ( test -e .git ) 2>/dev/null || test -d .git || test -f .git || test -h .git ; then \
-	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`$(EGREP) '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
-	        if test -s "$@" -a -d "$${NUT_GITDIR}" && test -z "`find "$${NUT_GITDIR}" -newer "$@" 2>/dev/null`" ; then \
+	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`$(EGREP) '^gitdir:' \"$${NUT_GITDIR}\" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
+	        if test -s '$@' -a -d "$${NUT_GITDIR}" && test -z "`find \"$${NUT_GITDIR}\" -newer '$@' 2>/dev/null`" ; then \
 	            echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
 	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
 	        else \
-	            if test -s "$@" ; then \
+	            if test -s '$@' ; then \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : RE-GENERATE (older than Git workspace metadata) ..." ; \
 	            else \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : GENERATE (currently absent) ..." ; \
 	            fi ; \
-	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
+	            CHANGELOG_FILE='$@' $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
 	            CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR="$(CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR)" \
 	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) $(GITLOG_END_POINT) \
 	              && { echo "  DOC-CHANGELOG-GENERATE	$@ : SUCCESS"; } \
 	              || { \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : FAILED (non-fatal)" >&2 ; \
-	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > '$@' ; \
 	            } ; \
 	        fi ; \
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
 	            echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
-	            if diff ./ChangeLog "$@" >/dev/null 2>/dev/null ; then \
+	            if diff ./ChangeLog '$@' >/dev/null 2>/dev/null ; then \
 	                echo "Using distributed ChangeLog file from sources (and builddir already has content identical to one in srcdir)" >&2 ; \
 	            else \
 	                echo "Using distributed ChangeLog file from sources (and builddir is not srcdir)" >&2 ; \
-	                rm -f "$@" || true ; \
-	                cp -pf ./ChangeLog "$@" || { cat ./ChangeLog > "$@" ; touch -r ./ChangeLog "$@" || true ; } ; \
+	                rm -f '$@' || true ; \
+	                cp -pf ./ChangeLog '$@' || { cat ./ChangeLog > '$@' ; touch -r ./ChangeLog '$@' || true ; } ; \
 	            fi ; \
 	        else \
-	            if test -s "$@" ; then \
+	            if test -s '$@' ; then \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
 	                echo "Using distributed ChangeLog file from sources (and builddir is srcdir)" >&2 ; \
 	            else \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : FAILED (non-fatal)" >&2 ; \
-	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > '$@' ; \
 	            fi ; \
 	        fi ; \
 	    fi
@@ -1494,7 +1494,7 @@ install-win-bundle-thirdparty:
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->sbin      $$D" 2>&1 ; \
-	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
 	 (  if test x"$(driverexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
@@ -1503,7 +1503,7 @@ install-win-bundle-thirdparty:
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->drv       $$D" 2>&1 ; \
-	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
 	 (  if test -z "$(cgiexecdir)" -o ! -d "$(DESTDIR)/$(cgiexecdir)" ; then exit 0 ; fi ; \
@@ -1514,7 +1514,7 @@ install-win-bundle-thirdparty:
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->cgi       $$D" 2>&1 ; \
-	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
 	 (  if test x"$(libexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
@@ -1525,7 +1525,7 @@ install-win-bundle-thirdparty:
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->libexec   $$D" 2>&1 ; \
-	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit
 	@echo "CHECKING if any executable files were installed to locations other than those covered by this recipe, so might not have needed DLLs bundled near them" >&2 ; \

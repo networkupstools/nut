@@ -34,7 +34,7 @@ date
 svcs -p "$DEVICE" ; upsc "$DEVICE"
 
 DO_SVC=false
-if [ "`svcs -Hostate "$DEVICE"`" = "online" ]; then
+if [ "`svcs -Hostate \"$DEVICE\"`" = "online" ]; then
     DO_SVC=true
     svcadm disable -ts "$DEVICE"
 fi

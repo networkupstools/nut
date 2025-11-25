@@ -1,6 +1,8 @@
 #!/bin/sh
 
-# Copyright (C) 2018 Eaton
+# Copyright (C)
+#   2018       Eaton
+#   2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,8 +38,8 @@ export LANG LC_ALL TZ
 
 ### Note: These are relative to where the selftest script lives,
 ### not the NUT top_srcdir etc. They can be exported by a Makefile.
-[ -n "${BUILDDIR-}" ] || BUILDDIR="`dirname $0`"
-[ -n "${SRCDIR-}" ] || SRCDIR="`dirname $0`"
+[ -n "${BUILDDIR-}" ] || BUILDDIR="`dirname \"$0\"`"
+[ -n "${SRCDIR-}" ] || SRCDIR="`dirname \"$0\"`"
 [ -n "${SHELL_PROGS-}" ] || SHELL_PROGS="/bin/sh"
 case "${DEBUG-}" in
     [Yy]|[Yy][Ee][Ss]) DEBUG=yes ;;
@@ -68,28 +70,34 @@ fi
 
 FAIL_COUNT=0
 GOOD_COUNT=0
-callNDE() {
+callSHELL() {
+    # Calls shell as-is, pass the script name (or stdin) to execute some logic
     case "$DEBUG" in
-        yes)   time $USE_SHELL $NDE "$@" ;;
-        trace) time $USE_SHELL -x $NDE "$@" ;;
-        *)     $USE_SHELL $NDE "$@" 2>/dev/null ;;
+        yes)   time $USE_SHELL "$@" ;;
+        trace) time $USE_SHELL -x "$@" ;;
+        *)     $USE_SHELL "$@" 2>/dev/null ;;
     esac
 }
 
-run_testcase() {
-    # First 3 args are required as defined below; the rest are
+callNDE() {
+    callSHELL $NDE "$@"
+}
+
+run_testcase_generic() {
+    # First 4 args are required as defined below; the rest are
     # CLI arg(s) to nut-driver-enumerator.sh
-    CASE_DESCR="$1"
-    EXPECT_CODE="$2"
-    EXPECT_TEXT="$3"
-    shift 3
+    CASE_CMD="$1"
+    CASE_DESCR="$2"
+    EXPECT_CODE="$3"	# Can be '*' to ignore errors
+    EXPECT_TEXT="$4"
+    shift 4
 
     printf "Testing : SHELL='%s'\tCASE='%s'\t" "$USE_SHELL" "$CASE_DESCR"
-    OUT="`callNDE "$@"`" ; RESCODE=$?
+    OUT="`$CASE_CMD \"$@\"`" ; RESCODE=$?
     printf "Got : RESCODE='%s'\t" "$RESCODE"
 
     RES=0
-    if [ "$RESCODE" = "$EXPECT_CODE" ]; then
+    if [ "$RESCODE" = "$EXPECT_CODE" ] || [ x'*' = x"$EXPECT_CODE" ]; then
         printf "STATUS_CODE='MATCHED'\t"
         GOOD_COUNT="`expr $GOOD_COUNT + 1`"
     else
@@ -108,7 +116,7 @@ run_testcase() {
         ( rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" \
             && echo "$EXPECT_TEXT" > "/tmp/.nde.text.expected.$$" \
             && echo "$OUT" > "/tmp/.nde.text.actual.$$" \
-            && { OUTD="`diff -u "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" 2>/dev/null`"
+            && { OUTD="`diff -u \"/tmp/.nde.text.expected.$$\" \"/tmp/.nde.text.actual.$$\" 2>/dev/null`"
                 if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
                     echo "$OUTD"
                 else
@@ -116,11 +124,20 @@ run_testcase() {
                 fi
             } ; ) 2>/dev/null || true
         rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$"
-        FAIL_COUNT="`expr $FAIL_COUNT + 1`"
-        RES="`expr $RES + 2`"
+        if [ x'*' = x"$EXPECT_CODE" ] ; then
+            echo 'MISMATCH IGNORED because EXPECT_CODE=*' >&2
+        else
+            FAIL_COUNT="`expr $FAIL_COUNT + 1`"
+            RES="`expr $RES + 2`"
+        fi
     fi
     if [ "$RES" != 0 ] || [ -n "$DEBUG" ] ; then echo "" ; fi
     return $RES
+}
+
+run_testcase() {
+    # Main call for NDE test suites:
+    run_testcase_generic callNDE "$@"
 }
 
 ##################################################################
@@ -298,6 +315,48 @@ globalflag" \
         --show-config-value '' nosuchflag
 }
 
+# This one is not about NDE as such, but piggy-backs on our ability to test
+# multiple shells at once, with a test relevant for how we write scripts
+# (with backticks to remain compatible with older Bourne-like shells).
+# In particular, we have a problem with KSH on Solaris, treating double
+# quotes inside backticked text which is wrapped in more double quotes
+# (so some command execution would be a single token) as an end of a
+# double-quoted token and so abortion of a command mid-way; other shells
+# were not seen to work this way:
+testcase_backticks_cmd_natural() {
+    #DEBUG=yes \
+    callSHELL << 'EOF'
+    nut_with_python=yes; nut_with_python2=no; nut_with_python3=auto-prio=3; PYTHON=python; PYTHON2=auto-py; PYTHON3=python3
+    RES=0
+    FOUND_PYTHONS="`( echo "${nut_with_python}|${PYTHON}"; echo "${nut_with_python2}|${PYTHON2}"; echo "${nut_with_python3}|${PYTHON3}" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`" || RES=$?
+    echo "${FOUND_PYTHONS}"
+    exit $RES
+EOF
+}
+
+testcase_backticks_cmd_escaped() {
+    callSHELL << 'EOF'
+    nut_with_python=yes; nut_with_python2=no; nut_with_python3=auto-prio=3; PYTHON=python; PYTHON2=auto-py; PYTHON3=python3
+    RES=0
+    # Escape the quotes, following examples at
+    # https://stackoverflow.com/a/33301370/4715872
+    FOUND_PYTHONS="`( echo \"${nut_with_python}|${PYTHON}\"; echo \"${nut_with_python2}|${PYTHON2}\"; echo \"${nut_with_python3}|${PYTHON3}\" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`" || RES=$?
+    echo "${FOUND_PYTHONS}"
+    exit $RES
+EOF
+}
+
+testcase_backticks() {
+    run_testcase_generic testcase_backticks_cmd_natural \
+        "Backticks wrapped in doublequotes, with doublequoted text inside (can fail on some interpreters)" '*' \
+"yes|python
+auto-prio=3|python3"
+
+    run_testcase_generic testcase_backticks_cmd_escaped \
+        "Backticks wrapped in doublequotes, with escaped-doublequoted text inside" 0 \
+"yes|python
+auto-prio=3|python3"
+}
 
 # Combine the cases above into a stack
 testsuite() {
@@ -308,6 +367,8 @@ testsuite() {
     testcase_globalSection
     # This one can take a while, put it last
     testcase_upslist_debug
+    # Something very different
+    testcase_backticks
 }
 
 # If no args...
@@ -321,4 +382,26 @@ done
 
 echo "Test suite for nut-driver-enumerator has completed with $FAIL_COUNT failed cases and $GOOD_COUNT good cases" >&2
 
-[ "$FAIL_COUNT" = 0 ] || { echo "As a developer, you may want to export DEBUG=trace or export DEBUG=yes and re-run the test; also make sure you meant the nut-driver-enumerator.sh implementation as NDE='$NDE'" >&2 ; exit 1; }
+[ "$FAIL_COUNT" = 0 ] || {
+    echo "As a developer, you may want to export DEBUG=trace or export DEBUG=yes and re-run the test; also make sure you meant the nut-driver-enumerator.sh implementation as NDE='$NDE'"
+    for USE_SHELL in $SHELL_PROGS ; do
+        case "$USE_SHELL" in
+            */*) test -x "`echo $USE_SHELL | awk '{print $1}'`" ;;
+            busybox|busybox_sh|"busybox sh") command -v busybox ;;
+            *) command -v $USE_SHELL ;;
+        esac || echo "WARNING: Could not resolve shell interpreter '$USE_SHELL' in PATH='$PATH'"
+
+        case "$USE_SHELL" in
+            */sh|sh)
+                echo "WARNING: This test was executed with a system default shell interpreter '$USE_SHELL'; depends on implementation whether it supports the (legacy) POSIX syntax our scripts are written for or not" ;;
+            */ksh*|ksh*|*/ast-ksh*|ast-ksh*|*/oksh*|oksh*)
+                echo "INFO: We have reports that shell interpreter '$USE_SHELL' should support the (legacy) POSIX syntax our scripts are written for, but beware double-quotes inside and outside backticks" ;;
+            busybox|busybox_sh|"busybox sh"|*/busybox|*/bash|bash|*/dash|dash)
+                echo "INFO: We have reports that shell interpreter '$USE_SHELL' should support the (legacy) POSIX syntax our scripts are written for" ;;
+            */zsh|zsh|*/csh|*/tcsh)
+                echo "WARNING: Sadly, we have reports that shell interpreter '$USE_SHELL' does not support the (legacy) POSIX syntax our scripts are written for" ;;
+            *)  echo "WARNING: We do not have confirmation whether shell interpreter '$USE_SHELL' supports the (legacy) POSIX syntax our scripts are written for or not" ;;
+        esac
+    done
+    exit 1
+} >&2

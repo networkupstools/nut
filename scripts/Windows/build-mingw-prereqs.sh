@@ -52,7 +52,7 @@ prepareEnv() {
 			[ -n "${PREFIX_ROOT-}" ] || PREFIX_ROOT="/"
 			[ -n "${PREFIX-}" ] || PREFIX="${PREFIX_ROOT}/$MINGW_PREFIX"
 			# Normalize away extra slashes, they confuse at least MSYS2 tools
-			PREFIX="`echo "${PREFIX}" | sed 's,//*,/,g'`"
+			PREFIX="`echo \"${PREFIX}\" | sed 's,//*,/,g'`"
 			case "${PATH}" in
 				"${PREFIX}/bin"|"${PREFIX}/bin:"*|*":${PREFIX}/bin:"*|*":${PREFIX}/bin") ;;
 				*) PATH="${PREFIX}/bin:${PATH}" ;;
@@ -84,7 +84,7 @@ prepareEnv() {
 			HOST_FLAG="--host=$ARCH"
 			[ -n "${PREFIX_ROOT-}" ] || PREFIX_ROOT="/usr"
 			[ -n "${PREFIX-}" ] || PREFIX="${PREFIX_ROOT}/${ARCH}"
-			PREFIX="`echo "${PREFIX}" | sed 's,//*,/,g'`"
+			PREFIX="`echo \"${PREFIX}\" | sed 's,//*,/,g'`"
 
 			export ARCH PREFIX
 
@@ -233,7 +233,7 @@ provide_libmodbus_git() (
 			# there's nothing to change (avoid re-packaging of CI artifact cache)
 			cd "${DEP_DIRNAME}" && \
 			LOCAL_HASH="`git log -1 --format='%H'`" && \
-			OTHER_HASH="`git ls-remote "${DEP_GITREPO}" | grep -E '(refs/(heads|tags)/'"${DEP_VERSION}"'$|^'"${DEP_VERSION}"')' | awk '{print $1}'`" && \
+			OTHER_HASH="`git ls-remote \"${DEP_GITREPO}\" | grep -E '(refs/(heads|tags)/'\"${DEP_VERSION}\"'$|^'\"${DEP_VERSION}\"')' | awk '{print $1}'`" && \
 			if [ x"${LOCAL_HASH}" = x"${OTHER_HASH}" ] ; then
 				echo "FETCH: Current git commit in '`pwd`' matches current '${DEP_VERSION}' in '${DEP_GITREPO}'" >&2
 			else
@@ -241,7 +241,7 @@ provide_libmodbus_git() (
 				git fetch --tags && \
 				git fetch --all && \
 				git checkout "${DEP_VERSION}" && \
-				_GITDIFF="`git diff "origin/${DEP_VERSION}"`" && \
+				_GITDIFF="`git diff \"origin/${DEP_VERSION}\"`" && \
 				if [ -n "${_GITDIFF}" ] ; then
 					# Ensure rebase etc. or fail
 					git pull && \

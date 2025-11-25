@@ -101,19 +101,19 @@ $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c $(top_srcdir)/tools/nut-s
 # use files pre-generated in SRCDIR if those in BUILDDIR dir are empty
 # or did not appear.
 $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
-	@test -s "$@" || echo "WARNING: GENERATED_USB_OS_FILES: '$@' is empty or missing; do not use this build to generate 'dist' tarballs" >&2
+	@test -s '$@' || echo "WARNING: GENERATED_USB_OS_FILES: '$@' is empty or missing; do not use this build to generate 'dist' tarballs" >&2
 	@$(MKDIR_P) "$(@D)"
-	@if test ! -s "$@" ; then \
+	@if test ! -s '$@' ; then \
 	    if test x"$(top_srcdir)" != x"$(top_builddir)" ; then \
-	        RELNAME="`echo "$@" | sed 's,^$(top_builddir)/*,,'`" ; \
+	        RELNAME="`echo '$@' | sed 's,^$(top_builddir)/*,,'`" ; \
 	        SRCNAME="$(top_srcdir)/$${RELNAME}" ; \
 	        if test -s "$${SRCNAME}" ; then \
 	            echo "WARNING: GENERATED_USB_OS_FILES: using '$${SRCNAME}' for '$@'" >&2 ; \
-	            cp "$${SRCNAME}" "$@" ; \
+	            cp "$${SRCNAME}" '$@' ; \
 	        fi ; \
 	    fi ; \
 	 fi
-	@touch "$@"
+	@touch '$@'
 
 $(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c $(top_srcdir)/tools/nut-usbinfo.pl
 	@if perl -e 1; then \

@@ -12,7 +12,7 @@
 ################################################################################
 
 # Adapt path for either dist target or manual call
-CURRENT_PATH="`dirname $0`"
+CURRENT_PATH="`dirname \"$0\"`"
 DRVLIST_PATH=""
 
 # Integrate with Makefile recipes
@@ -84,7 +84,7 @@ do
 			# verify that lines are either empty, all-comments,
 			# or have six quoted fields (and optional comment);
 			# the fields may be empty (just two double-quotes).
-			BADLINES="`$EGREP -v "${VALID_LINE}" < "${TMPBUILD_PATH}/${drvfile}.tabbed"`"
+			BADLINES="`$EGREP -v \"${VALID_LINE}\" < \"${TMPBUILD_PATH}/${drvfile}.tabbed\"`"
 			if [ x"${BADLINES}" != x ] ; then
 				echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: some lines are not exactly 6 fields (and optional comment)" >&2
 				echo "$BADLINES" | head -5
@@ -101,7 +101,7 @@ do
 				mv -f "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}"
 			fi
 		else # Checking; also report the diff markup
-			if OUTD="`diff -u "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}" 2>/dev/null`" ; then
+			if OUTD="`diff -u \"${TMPBUILD_PATH}/${drvfile}.tabbed\" \"${DRVLIST_PATH}/${drvfile}\" 2>/dev/null`" ; then
 				# Ok, no differences encountered
 				OUTD=""
 			else
@@ -109,7 +109,7 @@ do
 				if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
 					true
 				else
-					if OUTD="`diff "${TMPBUILD_PATH}/${drvfile}.tabbed" "${DRVLIST_PATH}/${drvfile}"`" ; then
+					if OUTD="`diff \"${TMPBUILD_PATH}/${drvfile}.tabbed\" \"${DRVLIST_PATH}/${drvfile}\"`" ; then
 						# Ok, no differences encountered
 						OUTD=""
 					fi

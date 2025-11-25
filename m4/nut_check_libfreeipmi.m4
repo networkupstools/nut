@@ -88,7 +88,7 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	dnl Collect possibly updated dependencies after AC SEARCH LIBS:
 	AS_IF([test x"${LIBS}" != x"${LIBS_ORIG} ${depLIBS}"], [
 		AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
-			depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
+			depLIBS="`echo \"$LIBS\" | sed -e 's|'\"${LIBS_ORIG}\"'| |' -e 's|^ *||' -e 's| *$||'`"
 		])
 	])
 
@@ -110,7 +110,7 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBFREEIPMI], [])
 					AS_IF([test -n "${SOPATH_LIBFREEIPMI}" && test -s "${SOPATH_LIBFREEIPMI}"], [
 						AC_DEFINE_UNQUOTED([SOPATH_LIBFREEIPMI],["${SOPATH_LIBFREEIPMI}"],[Path to dynamic library on build system])
-						SOFILE_LIBFREEIPMI="`basename "$SOPATH_LIBFREEIPMI"`"
+						SOFILE_LIBFREEIPMI="`basename \"$SOPATH_LIBFREEIPMI\"`"
 						AC_DEFINE_UNQUOTED([SOFILE_LIBFREEIPMI],["${SOFILE_LIBFREEIPMI}"],[Base file name of dynamic library on build system])
 						break
 					])

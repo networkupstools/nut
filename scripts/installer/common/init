@@ -69,7 +69,7 @@ fi
 
 # TODO: Here we want to refine the list to only MONITORed UPSes that power us?
 # Convert to parsing of "ipp-status -p" which reports all needed details
-upslist="`"$NUT_UPSC" -l`"
+upslist="`\"$NUT_UPSC\" -l`"
 echo "$upslist"
 for u in $upslist; do
 	echo "Disabling poweroff for UPS outlet-groups on '$u' ..."

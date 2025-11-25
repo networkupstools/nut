@@ -80,7 +80,7 @@ DELAYON="`expr $DELAY + 10`"
 # and/or take into account the killpower flag-file (upsmon master vs. slave
 # and/or `upsmon -k` status)
 # Convert to parsing of "ipp-status -p" which reports all needed details
-upslist="`"$NUT_UPSC" -l`"
+upslist="`\"$NUT_UPSC\" -l`"
 echo "$upslist"
 # NOTE: not all UPSes and not all drivers support all possible instcmd's
 # so we try as many as possible

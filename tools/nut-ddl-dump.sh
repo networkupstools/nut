@@ -4,7 +4,7 @@
 ################################################################################
 # Authors:
 #   Copyright (C) 2015 - 2017 by Arnaud Quette <ArnaudQuette@Eaton.com>
-#   Copyright (C) 2020 - 2023 by Jim Klimov <jimklimov+nut@gmail.com>
+#   Copyright (C) 2020 - 2025 by Jim Klimov <jimklimov+nut@gmail.com>
 # License: GPL v2+
 ################################################################################
 # FIXME:
@@ -24,7 +24,7 @@ else
 fi
 
 # Test communication with the device
-upscResult="`upsc "${DDL_DEVICE_NAME}" 2> /dev/null`"
+upscResult="`upsc \"${DDL_DEVICE_NAME}\" 2> /dev/null`"
 if [ $? -gt 0 ]; then
 	echo "Can't communicate with ${DDL_DEVICE_NAME}" >&2
 	exit
@@ -32,25 +32,25 @@ fi
 
 # Collect more information
 dumpDate="`date -R`"
-upsrwResult="`upsrw "${DDL_DEVICE_NAME}" 2> /dev/null`"
-upscmdResult="`upscmd -l "${DDL_DEVICE_NAME}" 2> /dev/null`"
+upsrwResult="`upsrw \"${DDL_DEVICE_NAME}\" 2> /dev/null`"
+upscmdResult="`upscmd -l \"${DDL_DEVICE_NAME}\" 2> /dev/null`"
 
 # Build the filename
 # <manufacturer>__<model>__<driver-name>__<nut-version>__<report-number>.<extension>
 # Process the Manufacturer name
-RAW_DDL_MFR="`upsc "${DDL_DEVICE_NAME}" device.mfr 2>/dev/null`"
+RAW_DDL_MFR="`upsc \"${DDL_DEVICE_NAME}\" device.mfr 2>/dev/null`"
 if [ "${RAW_DDL_MFR}" = "EATON" ]; then
 	RAW_DDL_MFR="Eaton"
 fi
 # Replace spaces with underscores
-DDL_MFR="`echo "${RAW_DDL_MFR}" | sed s/\ /_/g`"
+DDL_MFR="`echo \"${RAW_DDL_MFR}\" | sed s/\ /_/g`"
 # Process the Model name
 # Replace spaces with underscores
-RAW_DDL_MODEL="`upsc "${DDL_DEVICE_NAME}" device.model 2>/dev/null`"
-DDL_MODEL="`echo "${RAW_DDL_MODEL}" | sed s/\ /_/g`"
+RAW_DDL_MODEL="`upsc \"${DDL_DEVICE_NAME}\" device.model 2>/dev/null`"
+DDL_MODEL="`echo \"${RAW_DDL_MODEL}\" | sed s/\ /_/g`"
 # Process the driver name and NUT version
-DDL_DRIVER_NAME="`upsc "${DDL_DEVICE_NAME}" driver.name 2>/dev/null`"
-DDL_NUT_VERSION="`upsc "${DDL_DEVICE_NAME}" driver.version 2>/dev/null`"
+DDL_DRIVER_NAME="`upsc \"${DDL_DEVICE_NAME}\" driver.name 2>/dev/null`"
+DDL_NUT_VERSION="`upsc \"${DDL_DEVICE_NAME}\" driver.version 2>/dev/null`"
 # TODO: check if a similar file exists in nut-ddl repo, to update Report nb
 DDL_REPORT_NUMBER="01"
 DDL_FILENAME="${DDL_MFR}__${DDL_MODEL}__${DDL_DRIVER_NAME}__${DDL_NUT_VERSION}__${DDL_REPORT_NUMBER}.dev"

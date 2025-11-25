@@ -48,8 +48,8 @@ if test -z "${nut_have_libregex_seen}"; then
 	)
 
 	AS_IF([test x"$LIBREGEX_VERSION" != xnone && test x"$LIBREGEX_MODULE" != x],
-		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags "${LIBREGEX_MODULE}" 2>/dev/null`"
-		 depLIBS="`$PKG_CONFIG --silence-errors --libs "${LIBREGEX_MODULE}" 2>/dev/null`"
+		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags \"${LIBREGEX_MODULE}\" 2>/dev/null`"
+		 depLIBS="`$PKG_CONFIG --silence-errors --libs \"${LIBREGEX_MODULE}\" 2>/dev/null`"
 		 depREQUIRES="${LIBREGEX_MODULE}"
 		 depCFLAGS_SOURCE="pkg-config"
 		 depLIBS_SOURCE="pkg-config"
@@ -116,7 +116,7 @@ if test -z "${nut_have_libregex_seen}"; then
 	dnl Collect possibly updated dependencies after AC SEARCH LIBS:
 	AS_IF([test x"${LIBS}" != x"${LIBS_ORIG} ${depLIBS}"], [
 		AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
-			depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
+			depLIBS="`echo \"$LIBS\" | sed -e 's|'\"${LIBS_ORIG}\"'| |' -e 's|^ *||' -e 's| *$||'`"
 		])
 	])
 

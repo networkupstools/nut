@@ -55,17 +55,17 @@ AC_DEFUN([NUT_CHECK_PYTHON_INTERIM_RESULTS],
 AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT_BEST],
 [
     dnl Pick the top-most hit (smallest prio number, to be considered if no explicit variants were requested)
-    FOUND_PYTHONS="`( echo "${nut_with_python}|${PYTHON}"; echo "${nut_with_python2}|${PYTHON2}"; echo "${nut_with_python3}|${PYTHON3}" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`"
+    FOUND_PYTHONS="`( echo \"${nut_with_python}|${PYTHON}\"; echo \"${nut_with_python2}|${PYTHON2}\"; echo \"${nut_with_python3}|${PYTHON3}\" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`"
     AS_IF([test x"${FOUND_PYTHONS}" = x], [
         AC_MSG_NOTICE([No Python interpreter versions were found or requested])
     ], [
-        NON_AUTO="`echo "${FOUND_PYTHONS}" | ${EGREP} -v "^auto-prio="`"
-        BEST_AUTO="`echo "${FOUND_PYTHONS}" | ${EGREP} "^auto-prio=" | sort -n | head -1`"
+        NON_AUTO="`echo \"${FOUND_PYTHONS}\" | ${EGREP} -v \"^auto-prio=\"`"
+        BEST_AUTO="`echo \"${FOUND_PYTHONS}\" | ${EGREP} \"^auto-prio=\" | sort -n | head -1`"
         AS_IF([test x"${NON_AUTO}" = x], [
             dnl All findings were auto-prio, else silently keep what we have
             dnl from "auto", "yes" or explicit settings
-            BEST_AUTO_PRIO="`echo "${BEST_AUTO}" | sed 's,|.*$,,'`"
-            BEST_AUTO_PYTHON="`echo "${BEST_AUTO}" | sed 's,^.*|,,'`"
+            BEST_AUTO_PRIO="`echo \"${BEST_AUTO}\" | sed 's,|.*$,,'`"
+            BEST_AUTO_PYTHON="`echo \"${BEST_AUTO}\" | sed 's,^.*|,,'`"
             AS_IF([test x"${BEST_AUTO_PYTHON}" != x], [
                 AC_MSG_NOTICE([Got an auto-priority preferred hit: ${BEST_AUTO_PRIO} => ${BEST_AUTO_PYTHON}"])
                 AS_CASE([x"${nut_with_python3}"],
@@ -161,7 +161,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
                 ],
             [*], [
                 dnl Note: no "realpath" here, see comment below
-                myPYTHON="`command -v "${PYTHON}" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
+                myPYTHON="`command -v \"${PYTHON}\" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
                 && PYTHON="${myPYTHON}" \
                 || PYTHON="/usr/bin/env ${PYTHON}"
                 unset myPYTHON
@@ -230,14 +230,14 @@ AC_DEFUN([NUT_CHECK_PYTHON_SITE_PACKAGES],
                          dnl Note that the list at getsitepackages() MAY start
                          dnl with a "platlib" location (including compiled code):
                          AS_IF([test x"`${PYTHON} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue || test x"`${PYTHON} -c 'import sys; print (sys.version_info >= (2, 7) and sys.version_info < (3, 0))'`"],
-                            [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
+                            [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import sysconfig; print(sysconfig.get_path(\"purelib\"))'`"],
                             [nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"])
                         ]
                     )
                 AS_CASE(["$nut_cv_PYTHON_SITE_PACKAGES"],
                     [*:*], [
                         dnl Note: on Windows MSYS2 this embeds "C:/msys64/mingw..." into the string [nut#1584]
-                        nut_cv_PYTHON_SITE_PACKAGES="`cd "$nut_cv_PYTHON_SITE_PACKAGES" && pwd`"
+                        nut_cv_PYTHON_SITE_PACKAGES="`cd \"$nut_cv_PYTHON_SITE_PACKAGES\" && pwd`"
                         ]
                     )
                ])
@@ -264,16 +264,16 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                 AS_CASE(["${PYTHON_VERSION_INFO_REPORT}"],
                     [*major=2,*], [
                         PYTHON2="`${PYTHON} -c 'import sys; print(sys.executable);' 2>/dev/null`" && test -n "${PYTHON2}" || PYTHON2="${PYTHON}"
-                        PYTHON2="`realpath "${PYTHON2}" 2>/dev/null`" && test -n "${PYTHON2}" || {
+                        PYTHON2="`realpath \"${PYTHON2}\" 2>/dev/null`" && test -n "${PYTHON2}" || {
                             PYTHON2="${PYTHON}"
-                            PYTHON_CONFIG="`command -v "${PYTHON}-config" 2>/dev/null`" || PYTHON_CONFIG=""
+                            PYTHON_CONFIG="`command -v \"${PYTHON}-config\" 2>/dev/null`" || PYTHON_CONFIG=""
                             if test -n "${PYTHON_CONFIG}" ; then
                                 mySHEBANG_SCRIPT="`${PYTHON_CONFIG} --config-dir 2>/dev/null`/python-config.py" \
                                 || mySHEBANG_SCRIPT="${PYTHON_CONFIG}"
                                 if test -f "${mySHEBANG_SCRIPT}" ; then
-                                    mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | ${EGREP} '^#!'`" || mySHEBANG=""
+                                    mySHEBANG="`head -1 \"${mySHEBANG_SCRIPT}\" | ${EGREP} '^#!'`" || mySHEBANG=""
                                     if test -n "${mySHEBANG}" ; then
-                                        PYTHON2="`echo "${mySHEBANG}" | sed 's,^#! *,,'`" \
+                                        PYTHON2="`echo \"${mySHEBANG}\" | sed 's,^#! *,,'`" \
                                         && test -n "${PYTHON2}" || PYTHON2="${PYTHON}"
                                     fi
                                 fi
@@ -320,7 +320,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                 PYTHON2="/usr/bin/env ${PYTHON2}"
                 ],
             [*], [
-                myPYTHON="`command -v "${PYTHON2}" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
+                myPYTHON="`command -v \"${PYTHON2}\" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
                 && PYTHON2="${myPYTHON}" \
                 || PYTHON2="/usr/bin/env ${PYTHON2}"
                 unset myPYTHON
@@ -372,14 +372,14 @@ AC_DEFUN([NUT_CHECK_PYTHON2_SITE_PACKAGES],
                          dnl Note that the list at getsitepackages() MAY start
                          dnl with a "platlib" location (including compiled code):
                          AS_IF([test x"`${PYTHON2} -c 'import sys; print (sys.version_info >= (2, 7) and sys.version_info < (3, 0))'`"],
-                            [nut_cv_PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
+                            [nut_cv_PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import sysconfig; print(sysconfig.get_path(\"purelib\"))'`"],
                             [nut_cv_PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import site; print(site.getsitepackages().pop(0))'`"])
                         ]
                     )
                 AS_CASE(["$nut_cv_PYTHON2_SITE_PACKAGES"],
                     [*:*], [
                         dnl Note: on Windows MSYS2 this embeds "C:/msys64/mingw..." into the string [nut#1584]
-                        nut_cv_PYTHON2_SITE_PACKAGES="`cd "$nut_cv_PYTHON2_SITE_PACKAGES" && pwd`"
+                        nut_cv_PYTHON2_SITE_PACKAGES="`cd \"$nut_cv_PYTHON2_SITE_PACKAGES\" && pwd`"
                         ]
                     )
                 ])
@@ -406,16 +406,16 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                 AS_CASE(["${PYTHON_VERSION_INFO_REPORT}"],
                     [*major=3,*], [
                         PYTHON3="`${PYTHON} -c 'import sys; print(sys.executable);' 2>/dev/null`" && test -n "${PYTHON3}" || PYTHON3="${PYTHON}"
-                        PYTHON3="`realpath "${PYTHON3}" 2>/dev/null`" && test -n "${PYTHON3}" || {
+                        PYTHON3="`realpath \"${PYTHON3}\" 2>/dev/null`" && test -n "${PYTHON3}" || {
                             PYTHON3="${PYTHON}"
-                            PYTHON_CONFIG="`command -v "${PYTHON}-config" 2>/dev/null`" || PYTHON_CONFIG=""
+                            PYTHON_CONFIG="`command -v \"${PYTHON}-config\" 2>/dev/null`" || PYTHON_CONFIG=""
                             if test -n "${PYTHON_CONFIG}" ; then
                                 mySHEBANG_SCRIPT="`${PYTHON_CONFIG} --config-dir 2>/dev/null`/python-config.py" \
                                 || mySHEBANG_SCRIPT="${PYTHON_CONFIG}"
                                 if test -f "${mySHEBANG_SCRIPT}" ; then
-                                    mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | ${EGREP} '^#!'`" || mySHEBANG=""
+                                    mySHEBANG="`head -1 \"${mySHEBANG_SCRIPT}\" | ${EGREP} '^#!'`" || mySHEBANG=""
                                     if test -n "${mySHEBANG}" ; then
-                                        PYTHON3="`echo "${mySHEBANG}" | sed 's,^#! *,,'`" \
+                                        PYTHON3="`echo \"${mySHEBANG}\" | sed 's,^#! *,,'`" \
                                         && test -n "${PYTHON3}" || PYTHON3="${PYTHON}"
                                     fi
                                 fi
@@ -462,7 +462,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                 PYTHON3="/usr/bin/env ${PYTHON3}"
                 ],
             [*], [
-                myPYTHON="`command -v "${PYTHON3}" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
+                myPYTHON="`command -v \"${PYTHON3}\" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
                 && PYTHON3="${myPYTHON}" \
                 || PYTHON3="/usr/bin/env ${PYTHON3}"
                 unset myPYTHON
@@ -514,14 +514,14 @@ AC_DEFUN([NUT_CHECK_PYTHON3_SITE_PACKAGES],
                          dnl Note that the list at getsitepackages() MAY start
                          dnl with a "platlib" location (including compiled code):
                          AS_IF([test x"`${PYTHON3} -c 'import sys; print (sys.version_info >= (3, 2))'`" = xTrue],
-                            [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import sysconfig; print(sysconfig.get_path("purelib"))'`"],
+                            [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import sysconfig; print(sysconfig.get_path(\"purelib\"))'`"],
                             [nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"])
                         ]
                     )
                 AS_CASE(["$nut_cv_PYTHON3_SITE_PACKAGES"],
                     [*:*], [
                         dnl Note: on Windows MSYS2 this embeds "C:/msys64/mingw..." into the string [nut#1584]
-                        nut_cv_PYTHON3_SITE_PACKAGES="`cd "$nut_cv_PYTHON3_SITE_PACKAGES" && pwd`"
+                        nut_cv_PYTHON3_SITE_PACKAGES="`cd \"$nut_cv_PYTHON3_SITE_PACKAGES\" && pwd`"
                         ]
                     )
                 ])
