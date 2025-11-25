@@ -153,7 +153,7 @@ is present, the driver will load in alphabetic order all DMF files located
 in the specified path instead of the default path (e.g. from
 `/usr/local/share/nut/dmfsnmp.custom/*.dmf`).
 
-NOTE: the `mibs` option, if specified and pointing to a specific MIB mapping,
+NOTE: The `mibs` option, if specified and pointing to a specific MIB mapping,
 should refer to a mapping named in one of the ultimately loaded DMF files.
 
 REQUIREMENTS
