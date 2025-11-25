@@ -583,10 +583,16 @@ void upsdrv_help(void)
 /* optionally tweak prognames[] entries */
 void upsdrv_tweak_prognames(void)
 {
+#if WITH_DMFMIB
+	char	*alias = "snmp-ups-dmf";
+#else
+	char	*alias = "snmp-ups-old";
+#endif	/* WITH_DMFMIB */
+
 	upsdebugx(1, "entering %s", __func__);
 
 	/* If executed via an accepted alias, move it down in prognames[] stack */
-	if (!strcmp(prognames[0], "snmp-ups-old")) {
+	if (!strcmp(prognames[0], alias)) {
 		upsdebugx(3, "%s: marking program name '%s' as an alias for '%s'",
 			__func__, prognames[0], "snmp-ups");
 
@@ -602,11 +608,11 @@ void upsdrv_tweak_prognames(void)
 	} else {
 		if (!strcmp(prognames[0], "snmp-ups")) {
 			upsdebugx(3, "%s: marking program name '%s' as an alias for '%s'",
-				__func__, "snmp-ups-old", prognames[0]);
+				__func__, alias, prognames[0]);
 
 			if (prognames_should_free[1])
 				free((char*)prognames[1]);
-			prognames[1] = xstrdup("snmp-ups-old");
+			prognames[1] = xstrdup(alias);
 			prognames_should_free[1] = 1;
 		}
 	}
