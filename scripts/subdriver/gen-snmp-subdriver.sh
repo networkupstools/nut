@@ -335,13 +335,13 @@ EOF
 generate_DMF() {
 
 	# create file names
-	LDRIVER="`echo "$DRIVER" | tr A-Z a-z`"
-	UDRIVER="`echo "$DRIVER" | tr a-z A-Z`"
+	LDRIVER="`echo \"$DRIVER\" | $TOLOWER`"
+	UDRIVER="`echo \"$DRIVER\" | $TOUPPER`"
 	DMFFILE="$LDRIVER-mib.dmf"
 
 	# but replace with underscores for the structures and defines
-	LDRIVER="`echo "$LDRIVER" | tr - _`"
-	UDRIVER="`echo "$UDRIVER" | tr - _`"
+	LDRIVER="`echo \"$LDRIVER\" | tr - _`"
+	UDRIVER="`echo \"$UDRIVER\" | tr - _`"
 
 	# generate DMF file
 	echo "Creating $DMFFILE"
@@ -398,13 +398,13 @@ generate_DMF() {
 	printf "\t\t\t<info_alarm alarm=\"Output overload!\" oid=\".1.3.6.1.4.1.534.1.7.7\" status=\"OVER\"/>\n" >> "${DMFFILE}"
 	printf "\t\t\t<info_alarm alarm=\"Internal failure!\" oid=\".1.3.6.1.4.1.534.1.7.8\" status=\"None\"/>\n" >> "${DMFFILE}"
 	printf "\t\t</alarm>\n\t\t-->\n" >> "${DMFFILE}"
-	
+
 	# extract OID string paths, one by one
 	LINENB="0"
 	while IFS= read -r line; do
 		LINENB="`expr $LINENB + 1`"
 		FULL_STR_OID="$line"
-		STR_OID="`echo "$line" | cut -d'.' -f1`"
+		STR_OID="`echo \"$line\" | cut -d'.' -f1`"
 		echo $line | grep STRING > /dev/null
 		if [ $? -eq 0 ]; then
 			ST_FLAG_TYPE="ST_FLAG_STRING"
@@ -414,7 +414,7 @@ generate_DMF() {
 			SU_INFOSIZE="1"
 		fi
 		# get the matching numeric OID
-		NUM_OID="`sed -n "${LINENB}p" "${NUMWALKFILE}" | cut -d' ' -f1`"
+		NUM_OID="`sed -n \"${LINENB}p\" \"${NUMWALKFILE}\" | cut -d' ' -f1`"
 		printf "\t\t<!-- ${FULL_STR_OID} -->\n\t\t<snmp_info name=\"unmapped.${STR_OID}\", oid=\"${NUM_OID}\", default=\"\"/>\n"
 	done < "${STRWALKFILE}" >> "${DMFFILE}"
 
