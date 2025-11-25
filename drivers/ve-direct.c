@@ -22,7 +22,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Victron Energy Direct UPS and solar controller driver"
-#define DRIVER_VERSION	"0.22"
+#define DRIVER_VERSION	"0.23"
 
 #define VE_GET	7
 #define VE_SET	8
@@ -285,6 +285,11 @@ void upsdrv_shutdown(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

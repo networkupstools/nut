@@ -18,8 +18,11 @@ if test -z "${nut_have_libregex_seen}"; then
 	LIBS=""
 	REQUIRES=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 	depREQUIRES=""
+	depREQUIRES_SOURCE=""
 
 	dnl Actually did not see it in any systems' pkg-config info...
 	dnl Part of standard footprint?
@@ -45,15 +48,40 @@ if test -z "${nut_have_libregex_seen}"; then
 	)
 
 	AS_IF([test x"$LIBREGEX_VERSION" != xnone && test x"$LIBREGEX_MODULE" != x],
-		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags "${LIBREGEX_MODULE}" 2>/dev/null`"
-		 depLIBS="`$PKG_CONFIG --silence-errors --libs "${LIBREGEX_MODULE}" 2>/dev/null`"
+		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags \"${LIBREGEX_MODULE}\" 2>/dev/null`"
+		 depLIBS="`$PKG_CONFIG --silence-errors --libs \"${LIBREGEX_MODULE}\" 2>/dev/null`"
 		 depREQUIRES="${LIBREGEX_MODULE}"
+		 depCFLAGS_SOURCE="pkg-config"
+		 depLIBS_SOURCE="pkg-config"
+		 depREQUIRES_SOURCE="pkg-config"
 		],
 		[depCFLAGS=""
 		 depLIBS=""
 		 depREQUIRES=""
+		 depCFLAGS_SOURCE="default"
+		 depLIBS_SOURCE="default"
+		 depREQUIRES_SOURCE="default"
 		]
 	)
+
+	dnl allow overriding libregex settings if the user knows best
+	AC_MSG_CHECKING(for libregex cflags)
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([regex], [auto])
+	AS_CASE([${nut_with_regex_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_regex_includes}"
+			 depCFLAGS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
+
+	AC_MSG_CHECKING(for libregex ldflags)
+	NUT_ARG_WITH_LIBOPTS_LIBS([regex], [auto])
+	AS_CASE([${nut_with_regex_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLIBS="${nut_with_regex_libs}"
+			 depLIBS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl Check if libregex is usable
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
@@ -88,7 +116,7 @@ if test -z "${nut_have_libregex_seen}"; then
 	dnl Collect possibly updated dependencies after AC SEARCH LIBS:
 	AS_IF([test x"${LIBS}" != x"${LIBS_ORIG} ${depLIBS}"], [
 		AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
-			depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
+			depLIBS="`echo \"$LIBS\" | sed -e 's|'\"${LIBS_ORIG}\"'| |' -e 's|^ *||' -e 's| *$||'`"
 		])
 	])
 
@@ -110,9 +138,15 @@ if test -z "${nut_have_libregex_seen}"; then
 	unset depCFLAGS
 	unset depLIBS
 	unset depREQUIRES
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
+	unset depREQUIRES_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
 	LIBS="${LIBS_ORIG}"
+
+	dnl FIXME? We did not restore this value, is this needed by libs checked later?
+	dnl REQUIRES="${REQUIRES_ORIG}"
 fi
 ])

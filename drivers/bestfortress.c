@@ -35,7 +35,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.13"
+#define DRIVER_VERSION  "0.15"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -119,6 +119,9 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("battery.runtime.low", "%s", "");
 	dstate_setflags("battery.runtime.low", ST_FLAG_STRING | ST_FLAG_RW);
 	dstate_setaux("battery.runtime.low", 3);
+
+	/* Set early so that it is in place for shutdown. */
+	dstate_setinfo("ups.delay.shutdown", "%s", shutdown_delay);
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = upsdrv_setvar;
@@ -573,6 +576,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
@@ -626,9 +634,6 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "%s: opened %s speed %s upsfd %d",
 		  __func__, device_path, speed_val ? speed_val : "DEFAULT", upsfd);
-
-	/* Set early so that it is in place for shutdown. */
-	dstate_setinfo("ups.delay.shutdown", "%s", shutdown_delay);
 
 	upsdebugx(1, "%s: end", __func__);
 }

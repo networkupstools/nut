@@ -97,14 +97,24 @@ NUT_MONITOR_COMMON_TEMPLATE = \
 	app/locale/it/it.po \
 	app/locale/ru/ru.po
 
+# Platforms vary with tooling abilitites...
+DEF_TOUPPER = { TOUPPER="cat" ; \
+for TR_VARIANT in "tr 'a-z' 'A-Z'" "tr '[:lower:]' '[:upper:]'" "tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" ; do \
+    if [ x"`echo c | $${TR_VARIANT}`" = xC ] ; then \
+        TOUPPER="$${TR_VARIANT}" ; \
+        break ; \
+    fi ; \
+done ; \
+}
 
 # Craft locale subdirs with "xx_YY.UTF-8" patterned names,
 # and similarly alias the "*.po" files inside, as needed
 # by some platforms but not others to find these files.
 install-data-hook-app-locale-symlinks:
-	@cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
+	@cd "$(DESTDIR)$(nutmonitordir)/app/locale" || exit ; \
+	 $(DEF_TOUPPER) ; \
 	 for L in fr it ru ; do \
-	    UTF8_NAME="$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	    UTF8_NAME="$$L"_"`echo \"$$L\" | $${TOUPPER}`".UTF-8 || exit ; \
 	    UTF8_POFILE="$${L}/$${UTF8_NAME}.po" || exit ; \
 	    UTF8_SUBDIR="$${UTF8_NAME}" || exit ; \
 	    rm -f "$${UTF8_POFILE}" || true ; rm -f "$${UTF8_SUBDIR}" || true ; \
@@ -114,9 +124,10 @@ install-data-hook-app-locale-symlinks:
 
 uninstall-hook-app-locale-symlinks:
 	@RES=0 ; \
-	 cd "$(DESTDIR)$(nutmonitordir)/app/locale" && \
+	 cd "$(DESTDIR)$(nutmonitordir)/app/locale" || exit ; \
+	 $(DEF_TOUPPER) ; \
 	 for L in fr it ru ; do \
-	    UTF8_NAME="$$L"_"`echo "$$L" | tr '[a-z]' '[A-Z]'`".UTF-8 || exit ; \
+	    UTF8_NAME="$$L"_"`echo \"$$L\" | $${TOUPPER}`".UTF-8 || exit ; \
 	    UTF8_POFILE="$${L}/$${UTF8_NAME}.po" || exit ; \
 	    UTF8_SUBDIR="$${UTF8_NAME}" || exit ; \
 	    rm -f "$${UTF8_POFILE}" || RES=$$? ; \
@@ -178,7 +189,7 @@ if HAVE_MSGFMT
 #   https://github.com/sphinx-doc/sphinx/issues/3443
 # Note that OUTFILE may be in builddir (not necessarily same as srcdir)
 ACT_MSGFMT = { \
-	$(GREP) -v -E '^.?POT-Creation-Date: ' < "$${SRCFILE}" > "$${OUTFILE}.tmpsrc" && \
+	$(EGREP) -v '^.?POT-Creation-Date: ' < "$${SRCFILE}" > "$${OUTFILE}.tmpsrc" && \
 	$(MSGFMT) -o "$${OUTFILE}" "$${OUTFILE}.tmpsrc" && \
 	rm -f "$${OUTFILE}.tmpsrc" ; \
 }
@@ -186,17 +197,17 @@ ACT_MSGFMT = { \
 app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: $(abs_builddir)/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo
 $(abs_builddir)/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
 	@$(MKDIR_P) "$(builddir)/app/locale/fr/LC_MESSAGES"
-	SRCFILE="$?"; OUTFILE="$@"; $(ACT_MSGFMT)
+	SRCFILE='$?'; OUTFILE='$@'; $(ACT_MSGFMT)
 
 app/locale/it/LC_MESSAGES/NUT-Monitor.mo: $(abs_builddir)/app/locale/it/LC_MESSAGES/NUT-Monitor.mo
 $(abs_builddir)/app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
 	@$(MKDIR_P) "$(builddir)/app/locale/it/LC_MESSAGES"
-	SRCFILE="$?"; OUTFILE="$@"; $(ACT_MSGFMT)
+	SRCFILE='$?'; OUTFILE='$@'; $(ACT_MSGFMT)
 
 app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: $(abs_builddir)/app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
 $(abs_builddir)/app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
 	@$(MKDIR_P) "$(builddir)/app/locale/ru/LC_MESSAGES"
-	SRCFILE="$?"; OUTFILE="$@"; $(ACT_MSGFMT)
+	SRCFILE='$?'; OUTFILE='$@'; $(ACT_MSGFMT)
 endif HAVE_MSGFMT
 
 if WITH_NUT_MONITOR_PY2GTK2
@@ -228,8 +239,8 @@ sysbin_SCRIPTS = NUT-Monitor
 
 # Dummy redirector for /usr/bin/... presence
 NUT-Monitor: Makefile
-	@echo '#!/bin/sh' > "$@"
-	@echo 'exec "$(nutmonitordir)/app/NUT-Monitor" "$$@"' >> "$@"
+	@echo '#!/bin/sh' > '$@'
+	@echo 'exec "$(nutmonitordir)/app/NUT-Monitor" "$$@"' >> '$@'
 
 endif WITH_NUT_MONITOR
 
@@ -243,17 +254,21 @@ endif
 
 
 if WITH_PYNUT_PY2
+if !PYTHON_SITE_PACKAGES_IS_PY2
 pynut_py2_sitedir = $(PYTHON2_SITE_PACKAGES)
 pynut_py2_site_DATA = $(PYNUT_GENERATED_NOEXEC)
 pynut_py2_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT) $(PYNUT_COMMON_CODE)
-endif
+endif !PYTHON_SITE_PACKAGES_IS_PY2
+endif WITH_PYNUT_PY2
 
 
 if WITH_PYNUT_PY3
+if !PYTHON_SITE_PACKAGES_IS_PY3
 pynut_py3_sitedir = $(PYTHON3_SITE_PACKAGES)
 pynut_py3_site_DATA = $(PYNUT_GENERATED_NOEXEC)
 pynut_py3_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT) $(PYNUT_COMMON_CODE)
-endif
+endif !PYTHON_SITE_PACKAGES_IS_PY3
+endif WITH_PYNUT_PY3
 
 #################################################################
 
@@ -267,17 +282,17 @@ SPELLCHECK_SRC = \
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
 # via expanded $(top_builddir)/install-sh):
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-#	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+#	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
 # by a wildcard target in case the make implementation can put the two together.
 *-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 
 .sample.sample-spellchecked:
-	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 .in.in-spellchecked:
-	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@

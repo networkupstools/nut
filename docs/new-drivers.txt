@@ -1,6 +1,11 @@
 Creating a new driver to support another device
 ===============================================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/new-drivers.html
+//////////////////////////////////////////////////////////////////////////////
+
 This chapter will present the process of creating a new driver to support
 another device.
 
@@ -105,6 +110,10 @@ This information is currently used for the startup banner printing and tests.
 Essential functions
 -------------------
 
+For a full current list of functions expected in this context, please see the
+`drivers/main.h` file in NUT sources.  Some more methods may be required by
+driver structure, even if in the common case they have no-op implementations.
+
 upsdrv_initups
 ~~~~~~~~~~~~~~
 
@@ -171,6 +180,87 @@ should it call `fatalx()` nor `fatal_with_errno()` methods).  It can
 for eventual `exit(EXIT_FAILURE)` and `EF_EXIT_SUCCESS` (`-2`) for
 `exit(EXIT_SUCCESS)`, which would be handled in the standard driver
 loop or in `forceshutdown()` method of `main.c`.
+
+addvar, getval and testvar
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NUT drivers can be configured at run-time with optional settings, which
+can be passed on command line or via the linkman:ups.conf[5] file.
+Such settings broadly fall into two categories: "values" which convey
+some specific value (e.g. `port` or `desc` strings), and "flags" which
+can be seen as a sort of booleans which are `true` if mentioned and
+`false` if not (any assigned value would be ignored, if not rejected
+by configuration parser).
+
+Some options are common to all drivers and are handled in `drivers/main.c`
+(which also defines and implements most of the methods in this area), while
+others may be specific to individual drivers or even their sub-drivers.
+
+The `addvar()` method allows to specify a certain option name, with its
+type and a help message string:
+
+	addvar(VAR_VALUE, "sdtype", "Specify simple shutdown method (0-6)");
+
+	addvar(VAR_FLAG,  "wait",   "Wait for AC power");
+
+In driver code, these calls should comprise the `upsdrv_makevartable()`
+method.
+
+The `getval()` method allows to get the user-provided string value (or
+`NULL` -- but it is hard to tell apart if the option was not specified
+or no value was assigned).  The `testvar()` method allows to check if
+the option name was specified (even if without a value), so is better
+suited for flags.  Internally there is no difference between "values"
+and "flags", so historically some flags were "promoted" to values with
+boolean-ish strings handled explicitly, in addition to some new features.
+
+NOTE: Internally, the values can also be marked as reloadable (so that a
+running driver program may change them when re-reading the configuration
+file due to a signal).  The implementation may be currently limited to
+common options handled by `main.c` itself.  In code base this is exposed
+with the `addvar_reloadable()` and several `test*_reloadable()` methods.
+
+Since these methods involve a data structure walk to locate (or not) the
+entry for each option, they should not be used in data processing loops.
+Instead, the driver initialization methods such as `upsdrv_initups()`
+should consider all values and flags that can impact the set-up of the
+driver, and save them into C variables (typically strings, booleans, or
+processed and range/value-checked number types) which are then directly
+used in the driver program code.
+
+nut_usb_addvars
+~~~~~~~~~~~~~~~
+
+For consistency between USB-capable NUT drivers, a set of `addvar()`
+options related to USB media setup and expected by `nut_libusb_open()`
+can be defined by calling the `nut_usb_addvars()` method, which can be
+seen in `drivers/libusb{0,1}.c`.
+
+Like `addvar()`, a call to this method belongs in `upsdrv_makevartable()`
+(see existing drivers for examples).
+
+
+nut_ser_addvars
+~~~~~~~~~~~~~~~
+
+WARNING: NOT CURRENTLY IMPLEMENTED.
+
+Issue https://github.com/networkupstools/nut/issues/2748 tracks the idea
+to standardize the set and names of options involved in the serial driver
+connection set-up (speed, parity, stop-bits, etc.) similarly to the
+precedent of `nut_usb_addvars()`.  One problem is that many drivers
+released during the past decades reinvented this wheel with different
+option names.
+
+nut_modbus_addvars
+~~~~~~~~~~~~~~~~~~
+
+WARNING: NOT CURRENTLY IMPLEMENTED.
+
+Issue https://github.com/networkupstools/nut/issues/2419 tracks a similar
+idea for Modbus-capable drivers (which may involve or not Serial and/or
+USB link and option support, and uniquely TCP/IP RTU support, for example).
+
 
 Data types
 ----------
@@ -348,17 +438,17 @@ must use to manage them.
 
 	alarm_commit() -- push the value into ups.alarm
 
-NOTE: the ALARM flag in ups.status is automatically set whenever you use
-alarm_set.  To remove that flag from ups.status, call alarm_init and
-alarm_commit without calling alarm_set in the middle.
+NOTE: The ALARM flag in `ups.status` is automatically set whenever you use
+`alarm_set()`.  To remove that flag from `ups.status`, call `alarm_init()`
+and `alarm_commit()` without calling `alarm_set()` in the middle.
 
 You should never try to set or unset the ALARM flag manually.
 
-If you use UPS alarms, the call to status_commit() should be after
-alarm_commit(), otherwise there will be a delay in setting the ALARM
-flag in ups.status.
+If you use UPS alarms, the call to `status_commit()` should be *after*
+`alarm_commit()`, otherwise there will be a delay in setting the ALARM
+flag in `ups.status`.
 
-There is no official list of alarm words as of this writing, so don't
+There is no official list of alarm keywords as of this writing, so don't
 use these functions until you check with the upsdev list.
 
 Also refer to the <<daisychain,NUT daisychain support notes>> chapter

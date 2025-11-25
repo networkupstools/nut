@@ -68,13 +68,14 @@ values, and multiply by 3.
 
 *FINALDELAY* 'seconds'::
 
-When running in primary mode, upsmon waits this long after sending the
-NOTIFY_SHUTDOWN to warn the users.  After the timer elapses, it then
-runs your SHUTDOWNCMD.  By default this is set to 5 seconds.
+When handling a forced shutdown (FSD) due to a critical UPS state or
+explicit user signal, `upsmon` waits this long after sending the
+NOTIFY_SHUTDOWN message to warn the users.  After the timer elapses,
+it then runs your SHUTDOWNCMD.  By default this is set to 5 seconds.
 +
-If you need to let your users do something in between those events,
-increase this number.  Remember, at this point your UPS battery is
-almost depleted, so don't make this too big.
+If you need to let your users (or the NOTIFYCMD script) do something
+in between those events, increase this number.  Remember, at this point
+your UPS battery is almost depleted, so don't make this too big.
 +
 Alternatively, you can set this very low so you don't wait around when
 it's time to shut down.  Some UPSes don't give much warning for low
@@ -271,6 +272,8 @@ COMMBAD;; Communications lost to the UPS
 
 SHUTDOWN;; The system is being shutdown
 
+SHUTDOWN_HOSTSYNC;; This primary system began the shutdown, and is waiting for secondaries
+
 REPLBATT;; The UPS battery is bad and needs to be replaced
 
 NOCOMM;; A UPS is unavailable (can't be contacted for monitoring)
@@ -388,7 +391,8 @@ may be called for this effect, if NUT configuration files remain readable
 at that point (file systems mostly unmounted or changed to read-only).
 +
 Historically it was often `/etc/killpower` but nowadays you may want it
-in a temporary filesystem (e.g. under `/run` or `/run/nut` location).
+in a temporary filesystem (e.g. under `(/var)/run` or even a dedicated
+`(/var)/run/nut` location).
 +
 Note that double backslashes must be used for Windows paths, e.g.
 `C:\\Temp\\killpower` (modern Windows may also accept forward slashes
@@ -425,7 +429,7 @@ supplies in such cases, and a zero makes the effect of detected "OFF" state
 immediate. Built-in default value is 30 (seconds), to put an "OFF" state into
 effect (decrease known-fed supplies count) if it persists for this many seconds.
 +
-NOTE: so far we support the device reporting an "OFF" state which usually
+NOTE: So far we support the device reporting an "OFF" state which usually
 means completely un-powering the load; a bug-tracker issue was logged to
 design similar support for just some manageable outlets or outlet groups.
 
@@ -645,7 +649,7 @@ troubleshooting a deployment, without impacting foreground or background
 running mode directly. Command-line option `-D` can only increase this
 verbosity level.
 +
-NOTE: if the running daemon receives a `reload` command, presence of the
+NOTE: If the running daemon receives a `reload` command, presence of the
 `DEBUG_MIN NUMBER` value in the configuration file can be used to tune
 debugging verbosity in the running service daemon (it is recommended to
 comment it away or set the minimum to explicit zero when done, to avoid

@@ -687,12 +687,23 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		if (pid != 0) {			/* parent */
 			int	wstat;
 			struct sigaction	sa;
+			const char	*oldTag = getproctag();
 
 			/* work around const for this one... */
 			int *pupid = (int *)&(ups->pid);
 			int *puexectimeout = (int *)&(ups->exceeded_timeout);
 			*pupid = pid;
 			*puexectimeout = 0;
+
+			if (oldTag) {
+				if (!strstr(oldTag, "parent")) {
+					char	tag[SMALLBUF];
+					snprintf(tag, sizeof(tag), "%s-parent", getproctag());
+					setproctag(tag);
+				}
+			} else {
+				setproctag("parent");
+			}
 
 			/* Handle "parallel" drivers startup */
 			if (waitfordrivers == 0) {
@@ -770,10 +781,21 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 			return;
 		}
+
+		if (getproctag()) {
+			char	tag[SMALLBUF];
+			snprintf(tag, sizeof(tag), "%s-child", getproctag());
+			setproctag(tag);
+		} else {
+			setproctag("child");
+		}
 	}
 
-	/* child or foreground mode (no fork) */
+	/* child or foreground mode (no fork, e.g. single driver operation)
+	 * execute the specified binary and args into current process
+	 */
 
+	upsdebugx(1, "%s: calling execv(%s, ...)", __func__, argv[0]);
 	ret = execv(argv[0], argv);
 
 	/* shouldn't get here normally */
@@ -1210,7 +1232,7 @@ static void start_driver(const ups_t *ups)
 	}
 }
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
 static void help(const char *arg_progname)
@@ -1593,6 +1615,8 @@ int main(int argc, char **argv)
 		}	/* else nothing to bother about */
 	}
 
+	setproctag("init");
+
 	argc -= optind;
 	argv += optind;
 
@@ -1661,6 +1685,8 @@ int main(int argc, char **argv)
 
 	if (argc == lastarg) {
 		ups_t	*tmp = upstable;
+		char	tag[SMALLBUF];
+
 		upscount = 0;
 
 		while (tmp) {
@@ -1670,12 +1696,27 @@ int main(int argc, char **argv)
 
 		upsdebugx(1, "upsdrvctl commanding all drivers (%d found): %s",
 			upscount, (pt_cmd ? pt_cmd : NUT_STRARG(command_name)));
+
+		snprintf(tag, sizeof(tag), "%s-all",
+			pt_cmd ? pt_cmd : (command_name ? command_name : "unknown-command"));
+		if (command_name || pt_cmd)
+			setproctag(tag);
+
 		send_all_drivers(command);
 	} else
 	if (argc == (lastarg + 1)) {
+		char	tag[SMALLBUF];
+
 		upscount = 1;
 		upsdebugx(1, "upsdrvctl commanding one driver (%s): %s",
 			argv[lastarg], (pt_cmd ? pt_cmd : NUT_STRARG(command_name)));
+
+		snprintf(tag, sizeof(tag), "%s-%s",
+			pt_cmd ? pt_cmd : (command_name ? command_name : "unknown-command"),
+			argv[lastarg]);
+		if (command_name || pt_cmd)
+			setproctag(tag);
+
 		send_one_driver(command, argv[lastarg]);
 	} else {
 		fatalx(EXIT_FAILURE, "Error: extra arguments left on command line\n"

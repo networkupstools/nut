@@ -116,7 +116,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.38"
+#define DRIVER_VERSION	"0.39"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -2218,6 +2218,11 @@ static int decode_instcmd_exec(const ssize_t res, const unsigned char exec_statu
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

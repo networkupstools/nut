@@ -52,7 +52,7 @@
 # endif
 #endif	/* WIN32 */
 
-#define MGE_HID_VERSION		"MGE HID 1.55"
+#define MGE_HID_VERSION		"MGE HID 1.57"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -73,7 +73,7 @@
 /* Note that normally this VID is handled by Liebert/Phoenixtec HID mapping,
  * here it is just for for AEG PROTECT NAS devices: */
 /* Phoenixtec Power Co., Ltd */
-#define PHOENIXTEC		0x06da
+#define PHOENIXTEC_VENDORID	0x06da
 
 /* IBM */
 #define IBM_VENDORID		0x04b3
@@ -106,7 +106,7 @@ static usb_device_id_t mge_usb_device_table[] = {
 
 	/* PROTECT B / NAS */
 	{ USB_DEVICE(AEG_VENDORID, 0xffff), NULL },
-	{ USB_DEVICE(PHOENIXTEC, 0xffff), NULL },
+	{ USB_DEVICE(PHOENIXTEC_VENDORID, 0xffff), NULL },
 
 	/* 6000 VA LCD 4U Rack UPS; 5396-1Kx */
 	{ USB_DEVICE(IBM_VENDORID, 0x0001), NULL },
@@ -1843,6 +1843,12 @@ static models_name_t mge_model_names [] =
 	 * USB metadata; the trailing space after "1200 " was significant for matching it.
 	 */
 	{ "Ellipse PRO", "1200 ", EATON_5P, "Eaton 5S1200" },
+	/* US version, 5S1500LCD, per
+	 * https://github.com/networkupstools/nut/issues/2380#issuecomment-3263848849
+	 */
+	{ "Ellipse PRO", "1500 ", EATON_5P, "Eaton 5S1500" },
+	/* https://github.com/networkupstools/nut/issues/2380#issuecomment-3380826913 */
+	{ "Ellipse PRO", "1600 ", EATON_5P, "Eaton 5S1600" },
 
 	/* Eaton 9E entry-level series per discussions in
 	 * https://github.com/networkupstools/nut/issues/1925
@@ -2460,7 +2466,7 @@ static int mge_claim(HIDDevice_t *hd) {
 				 */
 				return 0;
 
-			case PHOENIXTEC:
+			case PHOENIXTEC_VENDORID:
 				/* The vendorid 0x06da is primarily handled by
 				 * liebert-hid, except for (maybe) AEG PROTECT NAS
 				 * branded devices */
@@ -2496,7 +2502,7 @@ static int mge_claim(HIDDevice_t *hd) {
 
 		switch (hd->VendorID)
 		{
-			case PHOENIXTEC: /* see comments above */
+			case PHOENIXTEC_VENDORID: /* see comments above */
 				if (hd->Vendor && strstr(hd->Vendor, "AEG")) {
 					return 1;
 				}

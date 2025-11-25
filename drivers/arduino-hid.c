@@ -41,7 +41,7 @@
 
 /* Arduino */
 #define ARDUINO_VENDORID	0x2341
-#define ARDUINO_VENDORID2	0x2A03
+#define ARDUINO_VENDORID2	0x2a03
 
 /* USB IDs device table */
 static usb_device_id_t arduino_usb_device_table[] = {

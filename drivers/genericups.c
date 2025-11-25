@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.41"
+#define DRIVER_VERSION	"1.42"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -406,6 +406,11 @@ void upsdrv_shutdown(void)
 void upsdrv_help(void)
 {
 	listtypes();
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_makevartable(void)

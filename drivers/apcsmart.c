@@ -37,7 +37,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.36"
+#define DRIVER_VERSION	"3.37"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -2152,6 +2152,11 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "sdtype", "simple shutdown method");
 	addvar(VAR_VALUE, "advorder", "advanced shutdown control");
 	addvar(VAR_VALUE, "cshdelay", "CS hack delay");
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_help(void)

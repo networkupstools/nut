@@ -46,6 +46,10 @@ Restart=on-failure
 Type=@SYSTEMD_DAEMON_TYPE_UPSMON@
 @SYSTEMD_DAEMON_WATCHDOG_UPSMON@
 @SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON@
+# With "SHUTDOWNEXIT" in play, stopping this unit MAY take time (or forever);
+# note that if a "Type=notify*" mode is enabled, the daemon would try to set
+# the infinite timeout when it begins OS shutdown and reports itself as stopping:
+@SYSTEMD_DAEMON_TIMEOUT_STOP_UPSMON@
 
 [Install]
 WantedBy=nut.target

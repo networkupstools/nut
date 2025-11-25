@@ -52,7 +52,7 @@ typedef	uint8_t byte_t;
 
 
 #define DRIVER_NAME	"Eltek AL175/COMLI driver"
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1324,6 +1324,11 @@ static int instcmd(const char *cmdname, const char *extra)
 
 /* no help */
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

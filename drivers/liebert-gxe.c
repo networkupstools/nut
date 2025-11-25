@@ -24,7 +24,7 @@
 #include "ydn23.h"
 
 #define DRIVER_NAME	"Liebert GXE Series UPS driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 #define PROBE_RETRIES	3
 #define DEFAULT_STALE_RETRIES	3
@@ -494,6 +494,11 @@ void upsdrv_initinfo(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

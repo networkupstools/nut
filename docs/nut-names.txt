@@ -3,6 +3,12 @@ NUT variable names and instant commands
 =======================================
 endif::external_title[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/nut-names.html
+// and subsequent pages (next-next-next...)
+//////////////////////////////////////////////////////////////////////////////
+
 [NOTE]
 .RFC 9271 Recording Document
 ====
@@ -1024,6 +1030,7 @@ Instant commands
 | test.failure.stop        | Stop simulating a power failure
 | test.battery.start       | Start a battery test
 | test.battery.start.quick | Start a "quick" battery test
+| test.battery.start.low   | Start a battery test until battery low
 | test.battery.start.deep  | Start a "deep" battery test
 | test.battery.stop        | Stop the battery test
 | test.system.start        | Start a system test
@@ -1073,6 +1080,8 @@ to last as part of NUT standard protocol in the long run.
 [options="header"]
 |========================================================================
 | Name                              | Driver/Devices        | Description
+| clear.fault.record                | nutdrv_qx_masterguard => Masterguard
+    | Clear fault/error record
 | experimental.test.beeper.start    | nutdrv_hashx => Atlantis Land
     | Start testing the UPS beeper
 | experimental.test.beeper.stop     | nutdrv_hashx => Atlantis Land

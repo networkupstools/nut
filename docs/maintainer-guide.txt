@@ -248,15 +248,19 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
    make -j 8 spellcheck && \
    make -j 8 distcheck
 ----
-* create an annotated GPG-signed tag v<incremented version> (ex: `v2.8.0`):
+* create an annotated GPG-signed tag v<incremented version> (ex: `v2.8.0-rc1`):
 +
 ----
-:; git tag -asm 'Release NUT v2.8.0' v2.8.0
+:; git tag -asm 'Release NUT v2.8.0' v2.8.0-rc1
 ----
-** in case of second thoughts, `git tag -d v2.8.0` and retry later
+* push the tag to a developer's private repository first; wait for CI
+  builds to complete without hiccup (test-PyPI push, GHA scanning, etc.)
+** in case of second thoughts, `git tag -d v2.8.0-rc1` and retry later
 ** try to avoid adding signed tags later (ex. v2.8.0-signed) to avoid the
    mess in GitHub release URLs (or do amend that post-factum), for more
    details see e.g. https://github.com/networkupstools/nut/issues/1971
+* only when the tagged builds seem viable, push the RC tag to upstream
+  NUT repository; eventually create the final release tag like `v2.8.0`
 * don't forget to push not only the code, but also the tag:
 +
 ----
@@ -268,6 +272,8 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 * `make dist-files` (especially if you did not `make distcheck` above,
   or had some changes since then) to store the source tarball, checksum
   and signature files
+** Bonus feature: `make dist-docs` (if on a system configured to build all
+   documentation types)
 
 * post-release update of the "in-development" codebase:
 ** start a feature branch to return the master branch into development state
@@ -299,7 +305,7 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 ** add an entry to `news.txt`
 ** update `nut` and `ddl` submodules in nut-website/ to refer to latest info
    as of current release (this should update the website's version as well).
-   NOTE: for `nut` submodule be sure to refer to the tagged commit, not to
+   NOTE: For `nut` submodule be sure to refer to the tagged commit, not to
    the subsequent "in-development" codebase.
 ** in `source` submodule add a copy of tarball, checksum and hash files for
    download: `make dist{,-hash,-sig}` (or since NUT v2.8.3, `make dist-files`)

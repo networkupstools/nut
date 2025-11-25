@@ -13,10 +13,375 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 
+PLANNED: Release notes for NUT 2.8.5 - what's new since 2.8.4
+-------------------------------------------------------------
+
+https://github.com/networkupstools/nut/milestone/12
+
+ - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
+   the driver binaries to be built once and data mappings to be loaded
+   and modernized on the fly (porting from 42ITy project)
+
+ - (expected) Porting of reference packaging from 42ITy project
+
+ - (expected) Porting of patches suggested by different distribution packages
+
+ - (expected) C code clean-up/consistency (string format security, work with
+   Boolean values, string to number conversions, etc. in the same manner)
+
+ - (expected) clean-up of libusb API variants support [#300 and follow-ups]
+
+ - (expected) CI automation for coding style
+
+ - (expected) CI automation for driver flags and variables to be certainly
+   documented, handled in augeas lenses, nutconf classes, etc.
+
+ - (expected) CI automation for use of data points in drivers that conform
+   to patterns defined in link:docs/nut-names.txt[]
+
+ - common code:
+   * Generally improved shell script portability (including `Makefile.am`
+     embedded recipes) when mixing back-quotes and double-quotes. Namely,
+     the classic Solaris `ksh` implementation (also used in current versions
+     of Solaris and illumos based distributions) was strict about following
+     (an older revision of) the POSIX standard here, and some use-cases
+     misbehaved with our older script spelling. [issue #3196]
+   * Introduced `setproctag()` and `getproctag()` (see examples in `upsmon`)
+     to help track the log messages from massively-forking NUT daemons. [#3084]
+   * Extended with plural `checkprocnames()` and `compareprocnames()`,
+     as well as `sendsignalpidaliases()` and `sendsignalfnaliases()`, for
+     binaries that expect to have one of several names at the moment (e.g.
+     when renaming a program to "*-old" or promoting a "*-new" into the
+     stable name as a default implementation). Drivers united by `main.c`
+     framework introduced a `upsdrv_tweak_prognames()` hook method to let
+     them manipulate the array of `prognames[]` aliases. [PR #3101]
+   * `libusb0` and `libusb1` integrations now try both "Resource Descriptor
+     Length" values they could identify on some devices: sometimes the first
+     (or otherwise preferred) option may be not the correct one, so try the
+     other too. [issue #3136]
+   * For state tree methods, introduced `difftime_st_tree_timespec()` to
+     abstract platform-dependent definitions of `st_tree_timespec_t`. [PR #3156]
+   * Introduced global variables for last changed timestamp and value of
+     `battery.charge`, integrated with `status_commit()`, so all drivers
+     should now report a `CHRG` or `DISCHRG` status, and verify whether
+     reality agrees with a status reported by device/protocol (if any).
+     This is also a step in direction of eventually providing a common
+     `runtimecal` style fallback to all drivers. [issue #3146, PR #3156]
+   * Introduced `NOTIFY_STATE_EXTEND_TIMEOUT` option and relevant variables
+     for `upsnotify()` method, so we can tell systemd to not kill the service
+     unit if its shutdown takes long (see also the `SHUTDOWNEXIT` option in
+     the `upsmon` client). [issue #3003, PR #3151]
+   * Daemons running with systemd integration tended to report "logged the
+     systemd watchdog situation once, will not spam more about it" even if
+     those "logged" messages were at an invisible verbosity level. [issue #3157,
+     PR #3151]
+
+ - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
+   `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
+   `powercom`, `powervar_cx_ser`, `usbhid-ups`, `victronups` driver updates:
+   * Moved code to align with NUT driver architecture, so `upsdrv_initups()`
+     would focus on preparing communications, and `upsdrv_initinfo()` would
+     actually talk to the device and set initial critical data values. [#1962]
+
+ - `apcupsd-ups` driver updates:
+   * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
+     Extended to be IPv6-capable along the way. [#1209]
+
+ - `nhs_ser` driver updates:
+   * Driver source code includes a table to map baud rates (defined by the OS
+     as C macros) to numbers and strings more useful to the driver program.
+     It was discovered that not all operating systems define all the baud rates
+     referenced by this table, so now several higher speeds would be compiled
+     conditionally. [issue #3163]
+
+ - `nutdrv_qx` driver updates:
+   * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
+     code (mapping table) and the data found from device walk sit together
+     well -- namely, that we successfully use reasonably many of the existing
+     mappings. Suggest how user can help improve the driver if too few data
+     points were seen. [PR #3095]
+   * New `nutdrv_qx_innovatae` adds support for Ippon INNOVA TAE series which
+     are similar to Q1 except in reporting of nominal `voltage`, `current`,
+     `frequency` data (that along with `battery_voltage_reports_one_pack` and
+     `override.battery.packs=12` settings yields reasonable `battery.voltage.*`
+     data points). [issue #3137, PR #3139]
+   * `nutdrv_qx_masterguard` sub-driver adds a way to call battery test until
+     the battery charge is low, using a new `test.battery.start.low` instant
+     command name (registered in `docs/nut-names.txt`). The difference between
+     the "battery test until battery low" and "deep battery test" is that the
+     latter is actually a battery calibration test and needs some preconditions
+     to be met, i.e. the load must be between 30% and 100% and the starting
+     battery capacity is greater than 99%. The "Battery test until battery low"
+     can be started anytime. Tested on Masterguard A1000 and A2000 units. [#3135]
+   * `nutdrv_qx_masterguard` sub-driver fix `masterguard_add_slaveaddr` to
+     return the correct command length, resolving a bug for all commands using
+     the `,XX` slave address placeholder. This also enables support for the
+     `test.battery.start.deep` (`TUD`) command. [#3141]
+   * `nutdrv_qx_masterguard` sub-driver adds a `clear.fault.record` instant
+     command to clear the fault record. Also adds two experimental variables:
+     `battery.ageing.factor` (Battery ageing factor in promille) and
+     `battery.calibration.factor` (Battery calibration factor in percent).
+     Tested on A1000 and A2000 units. [#3181]
+   * Hides QX_FLAG_NONUT variables from syslog unless the debug level
+     is raised. [issue #3190, PR #3198]
+
+ - `powerp-bin` and `powerp-txt` driver updates:
+   * Their `upsdrv_initinfo()` methods did not explicitly reference the
+     `INSTCMD` and `SETVAR` handler methods (it is unknown whether this
+     actually broke anything, or the needed values were deduced from
+     subdriver definition then). For consistency, these pointers are now
+     assigned. [#1962]
+
+ - `riello_ser` and `riello_usb` driver updates:
+   * Since the beginning, these drivers fenced availability of *either*
+     `load.*` *or* `shutdown.return` instant commands based on current
+     power situation (which was also unknown when the `drivername -k` mode
+     was used to shut down the system). There seems to be little reason for
+     such separation, so it is now avoided and the current device status
+     is queried when starting to handle the UPS poweroff, as a means to
+     verify communication ability. [#1962]
+
+ - `snmp-ups` driver updates:
+   * Define an internal `SU_FLAG_MAPPING_HANDLED` to check if the subdriver
+     code (mapping table) and the data found from device walk sit together
+     well -- namely, that we successfully use reasonably many of the existing
+     mappings. Suggest how user can help improve the driver if too few data
+     points were seen, or if the `mibs=auto` detection only found the fallback
+     IETF mapping. [PR #3095]
+
+ - `tripplite_usb` driver updates:
+   * Added support for Tripplite protocol 3017 (mostly ASCII). [issue #2258,
+     PR #3093]
+   * Fixed default `unit_id`, apparently broken by changes in NUT v2.8.1.
+     [issue #3191, PR #3192]
+
+ - `usbhid-ups` driver updates:
+   * Declared support for APC with USB ID `051d:0005` (details may evolve
+     as the devices become better known). [issue #3047, PR #3081]
+   * Improved support for Eaton 5S1500LCD and 5S1600LCD (US version). [#2380]
+   * The driver used to report `CHRG` status if the device was not "fully
+     charged", however the latter status was only queried and reported by
+     some (not all) subdrivers and probably not by all devices out in the
+     field. Now we fall back to check that if the "fully charged" status
+     is not defined at all, consider the `battery.charge` value (100 or not).
+     [issue #3146]
+   * For `ups.status` processing, do not assume that `!online`==`offline`,
+     it may well be that the device just did not report anything (e.g. if
+     it does not really talk USB HID). [#3080]
+   * Suggest iterative testing with explicit `subdrivers` if collected data
+     looks wrong. [#2058, #3061 et al]
+   * Check if the subdriver code (mapping table) and the device report
+     descriptor sit together well -- namely, that we do not unwittingly
+     ignore any useful reports, and that we successfully use reasonably many
+     of the existing mappings. Suggest how user can help improve the driver
+     if too few data points were seen. [#3082, #3095]
+
+ - `upsd` data server updates:
+   * Sometimes "Data for UPS [X] is stale" and "UPS [X] data is no longer
+     stale" messages were logged in the same second, especially no busy
+     systems. Now we allow one more second on top of `MAXAGE` setting to
+     declare the device dead, just in case fractional/whole second rounding
+     comes into play and breaks things. [issue #661]
+
+ - `upsdrvctl` tool updates:
+   * Make use of `setproctag()` and `getproctag()` to report parent/child
+     process names. [#3084]
+
+ - `upslog` tool updates:
+   * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
+     of all known local devices to stdout. [#3083]
+
+ - `upsmon` client updates:
+   * The `SHUTDOWNEXIT` option was not handled properly, and the requested
+     long delays did not happen in practice. [issues #2133 and #3084, PR #3086]
+   * Make use of `setproctag()` and `getproctag()` to report parent/child
+     process names. [#3084]
+   * Introduced a `SHUTDOWN_HOSTSYNC` notification message, to report that
+     the primary `upsmon` initiated the shutdown and has some secondaries
+     to wait for first. [#3084]
+   * Make sure an `FSD` notification is issued for each UPS when this primary
+     `upsmon` instance sets it (and does not return to usual data processing
+     loop to see and report it like secondaries do). This allows a `NOTIFYCMD`
+     such as `upssched` on the primary to handle the pending power outage
+     (e.g. begin stopping heavy services) even while `upsmon` waits for the
+     secondaries to complete their shutdowns and log out of the `upsd` data
+     server. [issue #3003, PR #3110]
+   * Tickle service watchdog timer (if any) so the `nut-monitor.service` or
+     equivalent unit is not killed off due to quietness during shutdown. [#3003]
++
+NOTE: If using `upssched` and monitoring multiple UPSes, consider setting up
+a `START-TIMER-SHARED` rule with a short (approx. 1 second) timeout to group
+several `FSD` notifications into one executed action. [PR #3097]
+
+ - `upsc` has now optional JSON output [issue #3172, PR #3178]
+
+ - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
+
+ - `upsstats` tool updates:
+   * Now has JSON output mode via `?json` (or `&json`) CGI query
+     parameter. [issue #2524, PR #3171]
+   * Handle `device.model` in addition to `ups.model` in upsstats HTML
+     templates. [#3180]
+
+ - `upssched` tool updates:
+   * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
+     `NOTIFYTYPE` environment variables were neutered for the timer daemon,
+     since their values at the moment it first started were irrelevant when
+     actual timers fired. Lack of those values was however also against the
+     documented expectations. Now the values set when the `upssched` client
+     is called and ends up updating the timer daemon would be passed into
+     the timer. Also a `START-TIMER-SHARED` operation was added, to track a
+     single named timer for possibly many devices and/or event types -- in
+     this case they would be comma-separated in the environment variable
+     values. [issue #3092, PR #3097]
+   * The `CANCEL-TIMER` action no longer stops at first hit for the timer name,
+     but goes on (in case there are duplicates). A new `CANCEL-TIMER-MATCHED`
+     was added, which also cares to match `UPSNAME` and `NOTIFYTYPE` values
+     (if passed). [#3097]
+   * Introduced support for `DEBUG_MIN` setting via `upssched.conf`. [#3097]
+   * Introduced `upssched -l` mode to list currently tracked timers. [#3097]
+   * Make use of `setproctag()` and `getproctag()` to report parent/child
+     process names. [#3084]
+   * Introduced optional passing of `NOTIFYMSG` text (normally originating
+     from `upsmon` which calls `upssched`) as an environment variable into
+     the ultimately executed `CMDSCRIPT` processes. [#3105]
+
+ - The `nut-driver-enumerator.sh` script (NDE) updates:
+   * Revised info/error/warning/debug message emission so they go to `stderr`
+     and have a consistent look. Revised some typos along the way. [issue #3194]
+
+ - `configure` script options:
+   * For ages, most recipes for building NUT had customized the `sysconfdir` to
+     be `/etc/nut`, which is not exactly the *system* configuration directory.
+     This is finally deprecated, with new `--with-confdir` configuration option
+     taking over the role of a full path to configuration files (by default
+     `${sysconfdir}${confdir_suffix}`), and new `--with-confdir-suffix` allowing
+     to specify just `/nut` or `/ups` that would be tacked onto the default
+     `${sysconfdir}` to resolve the `${confdir}`. Default behavior should be
+     same as with previous builds: if `sysconfdir` is customized (or `prefix`
+     is kept at built-in default), the `confdir_suffix` will default to empty;
+     otherwise it assumes the value of `/${PACKAGE_NAME}` to become `/nut` in
+     most cases. A `--with-confdir-examples` option was also introduced, to
+     help distributions that place `*.conf.sample` files into docs or other
+     locations. [#3131]
+   * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)
+     module installation location (for module-named dir to be created under
+     it), if not bundling with NUT-Monitor UI app. By default the respective
+     interpreter's 'site-packages' or 'dist-packages' location will be used,
+     so you may have to adjust search paths for any other values. [#3062]
+   * The script would now warn the caller if several different Python program
+     paths or module locations were discovered (at least one automatically),
+     in case this was not something the callers wanted -- just so they know.
+     [#1792]
+   * New supported values were introduced for `--with-python{,2,3}=auto-prio=NUM`:
+     this allows to auto-prioritize some *one* available Python interpreter.
+     Default settings were changed from plain `auto` (allowing for multiple
+     `python*` interpreters and `site-package` locations to be used), to
+     prefer a `python3` if available, else `python2`, else `python`. [#1792]
+   * Streamlined handling of `--with-*` and `--enable-*` options using NUT 'm4'
+     macros; fixed reporting help for options whose defaults are evaluated.
+     [issue #3049, PR #3140]
+   * Automatic `--with-devd` could not detect the need to install a FreeBSD
+     devd configuration snippet file, because it expected a source that should
+     not have been there (probably a copy-paste typo in NUT v2.8.0). Also
+     fixed a missed compiler family dependency when handling `--enable-strip`,
+     a few logical mismatches of Solaris/illumos packaging options, and default
+     report vs. setting of `--enable-force-nut-version-header`. Rephrased and
+     updated many help messages. The `configure` script logs should now clarify
+     where CFLAGS/LIBS/LDFLAGS values come from ('pkg-config', 'default', user
+     provided 'confargs' etc.) [#3140]
+   * Added configure script options for 'libregex' tuning, just so it is on par
+     with our other optional dependencies. [#3140]
+
+ - Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
+   include the source distribution (was posted for NUT v2.8.1 and v2.8.2
+   tagged releases, but absent for v2.8.3 and v2.8.4). [#3056]
+
+ - The `configure` script would now probe (if it can) the operating systems for
+   more user and group account names, such as `upsmon`, `nutmon`, `ups`, `nut`
+   (last hit wins, separately for user and groups accounts) settling on one of
+   those if detected instead of `nobody` (and optionally `nogroup`). It would
+   also warn if `nobody` or `nogroup` end up being used for a build. [#3173]
+
+ - Updated `make spellcheck` to help avoid asciidoc admonition blocks with
+   visually invalid sentences (after rendering as a box in HTML or PDF). [#3077]
+
+ - Updated `docs/*.txt`: add asciidoc comments with links to nut-website
+   rendered contents of most interesting pages. [#3095]
+
+ - HTML renditions of NUT man pages and books (or chunked chapters thereof)
+   now include the AnchorJS script to provide permalinks to sections. [#3185]
+
+ - Added a `make dist-docs` goal to generate, collect and tarball all document
+   types (man, html-single, html-chunked, pdf) that we may have enabled for the
+   current build configuration and available tooling. [#1400]
+
+ - Further developer workflow speedup with `make spellcheck-interactive-quick`
+   which should now not re-check source texts that were okay with the previous
+   dictionary contents, in case some new terms have to be added. [PRs #3186, #2871]
+
+ - Added a GitHub Actions CI job to generate, upload and recycle `make dist`
+   and `make dist-docs` tarballs so they are easier to obtain for people and
+   other CI systems (which might not want to follow a Git repository). Links
+   to these artifacts can be seen in workflow page (or its logs), and added
+   as a line in GitHub Checks list associated with a commit. Note that the
+   GitHub Action storage keeps artifacts for at most 90 days. [#1400, #2829]
+
+ - Source directory `data/html` was renamed to `data/htmlcgi` in order to
+   better reflect its contents and purpose, compared to documentation-oriented
+   `html*` directories (and recipe variable names). This may impact some
+   packaging recipes which do not rely on `make install` alone. [#3049]
+
+ - Dropped the `compile` script from Git sources. It originates from automake
+   and is added to work area (if missing) during `autogen.sh` rituals anyway.
+   It is still distributed as part of `make dist` tarball. [#1209]
+
+ - Default `PIDPATH` is now more strictly `/var/run`, unless building on a
+   system conforming to FHS-3.0 standard where that location is absent or
+   is a symlink, while `/run` exists and is a true directory. [#3099]
+
+ - Revised CI and deliverable scripts, and Makefile recipes, to not use
+   the verbatim `grep -E` (loudly preferred by newer systems, but may be
+   absent on older ones) after all, nor use `egrep` (loudly disliked by
+   newer systems). Instead, use what `configure` script detected for the
+   generated files (or ones made from templates), and use a similar
+   detection in standalone scripts. Also revised the use of `grep -q`,
+   `id -u`, `diff -u`, etc. which are not ubiquitous, and of `test -e`
+   which is not only absent in some older shells, but can cause them to
+   abort processing the script immediately. Also the `if ! condition`
+   syntax is not supported everywhere (or the `!` operator generally).
+   [#3099, #1660]
+
+ - The NUT Integration Testing suite (NIT) script, if started as `root`,
+   can now consult its run-time situation vs. `BUILTIN_RUN_AS_USER` and
+   `BUILTIN_RUN_AS_GROUP` environment variables, and if those accounts
+   do not exist (e.g. running in a packaging build root), a different
+   value like "nobody" or "nogroup" would be defaulted for tests. [#1209]
+
+ - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
+   to match the driver program name. Follow-up from slightly botched renaming
+   in original contribution. [PR #545]
+
+ - The `configure` script should now try harder to report specifically
+   the "purelib" location as `PYTHON*_SITE_PACKAGES`. [#1209]
+
+ - Introduce `make distcheck-completeness` goal to verify that our distribution
+   archives can exactly reproduce themselves. [#2829]
+
+ - Upstreamed reference packaging recipes (DEB, RPM) from the 42ITy project
+   which can be used with OBS (Open Build Service by SUSE), both to support
+   end-user testing of NUT development, and to have a yet another NUT CI farm
+   player with a distinct opinion on code quality. Many of the changes listed
+   above happened thanks to this effort, and due to concerns raised by OBS
+   build agents with various Linux distributions. [#1209, #1316, #3144]
+
+ - Revised use of NUT macros for USB Vendor IDs listed in different drivers,
+   so the names would be better exposed in generated `udev.rules` and similar
+   files. [PR #3139]
+
+
 Release notes for NUT 2.8.4 - what's new since 2.8.3
 ----------------------------------------------------
-
-https://github.com/networkupstools/nut/milestone/9
 
  - Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+:
    * In `usbhid-ups` sources, introduced optional `HU_FLAG_PARAM_REQUIRED` for
@@ -232,6 +597,12 @@ Still TODO:
    * Added APC BVKxxxM2 and BKxxxM2-CH to list of devices where
      `lbrb_log_delay_sec=N` may be necessary to address spurious LOWBATT
      and REPLACEBATT events. [PR #2942, PR #3007, issue #2347, issue #3006]
+   * The `powercom-hid` subdriver did not handle delayed shutdown commands
+     properly, at least as of RAPTOR RPT-1500AP LCD models. The RPT series
+     seem to have same USB protocol like Smart KING Pro series, and that
+     only supports a specific set of possible delays for Shutdown commands
+     (certain fractions or counts of whole minutes) -- which should now be
+     handled if `powercom_sdcmd_discrete_delay` flag is set. [issue #3000]
 
  - New NUT drivers:
    * Introduced a `ve-direct` driver for Victron Energy UPS/solar panels
@@ -900,7 +1271,7 @@ to avoid magic numbers in code like `set_exit_flag(-2)`, and revised whether
 it is getting set at all in "killpower" vs. other cases, based on new
 `handling_upsdrv_shutdown` internal flag.
 +
-NOTE: during this overhaul, many older drivers got their first ever supported
+NOTE: During this overhaul, many older drivers got their first ever supported
 INSTCMD such as `shutdown.return`, `shutdown.stayoff` or `load.off`. Default
 logic that was previously the content of `upsdrv_shutdown()` methods was often
 relocated into new `shutdown.default` INSTCMD definitions. [#2670]
@@ -1423,7 +1794,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    * extended default ranges for max battery voltage when guessing [#1279]
 
  - sms_ser, a driver for SMS Brazil UPS Protocol 1Phase, was introduced.
-   NOTE: it may later become a subdriver under nutdrv_qx. [#2090]
+   NOTE: It may later become a subdriver under nutdrv_qx. [#2090]
 
  - usbhid-ups updates:
    * added support for `subdriver` configuration option, to select the

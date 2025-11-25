@@ -9,11 +9,11 @@ upsc - Lightweight read-only NUT client
 SYNOPSIS
 --------
 
-*upsc* -l | -L ['host']
+*upsc* [-j] -l | -L ['host']
 
-*upsc* 'ups' ['variable']
+*upsc* [-j] 'ups' ['variable']
 
-*upsc* -c 'ups'
+*upsc* [-j] -c 'ups'
 
 DESCRIPTION
 -----------
@@ -24,6 +24,19 @@ want to include the full interface.
 
 OPTIONS
 -------
+
+*-j*::
+  Output the results in JSON format. This will bypass the standard
+  text output and print a JSON object to `stdout`. The structure
+  of the JSON depends on the mode:
+
+--
+  `upsc -j -l`: Returns a JSON array of UPS names.
+  `upsc -j -L`: Returns a JSON object mapping UPS names to their descriptions.
+  `upsc -j <ups>`: Returns a JSON object of all variables and their values.
+  `upsc -j <ups> <variable>`: Returns a single JSON string (the value).
+  `upsc -j -c <ups>`: Returns a JSON array of client addresses.
+--
 
 *-l* 'host'::
 
@@ -82,6 +95,16 @@ called "mybox", with linkman:upsd[8] running on port '1234':
     battery.voltage: 13.9
     battery.voltage.nominal: 13.6
     . . .
+
+To retrieve all variables for "myups" as a JSON object:
+
+    :; upsc -j myups@mybox:1234
+    {
+      "battery.charge": "100.0",
+      "battery.voltage": "13.9",
+      "battery.voltage.nominal": "13.6",
+      ...
+    }
 
 To list the UPSes configured on this system, along with their descriptions:
 

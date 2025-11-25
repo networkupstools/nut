@@ -2,9 +2,22 @@
 
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
-include /usr/share/cdbs/1/class/python-module.mk
+-include /usr/share/cdbs/1/class/python-module.mk
 
-include /usr/share/cdbs/1/rules/autoreconf.mk
+-include /usr/share/cdbs/1/rules/autoreconf.mk
+
+# CDBS has some issues detecting something other than dh_python2
+# which is absent on Debian 12+ and Ubuntu 25.04 for example.
+# This hack is broken for Debian Next in Oct 2025, as CDBS sheds
+# a lot of older scripts and the helpers seem to get implemented
+# somehow differently.
+ifeq  (,$(shell command -v dh_python2 || which dh_python2 || dh_python2 --help 2>/dev/null))
+ifneq (,$(shell command -v dh_python3 || which dh_python3 || dh_python3 --help 2>/dev/null))
+ifneq (,$(shell command -v python3 || which python3 || python3 --help 2>/dev/null))
+cdbs_curpythonsystems := python3
+endif
+endif
+endif
 
 export DH_OPTIONS
 
@@ -19,24 +32,30 @@ DEB_DH_AUTORECONF_ARGS = --as-needed
 DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
 
 # echoed fallbacks are for Ubuntu primarily
-systemdsystemunitdir := $(shell pkg-config --variable=systemdsystemunitdir systemd || echo /lib/systemd/system)
-systemdsystemdutildir := $(shell pkg-config --variable=systemdutildir systemd || echo /lib/systemd)
-systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir systemd || echo /lib/systemd/system-shutdown)
-systemdtmpfilesdir := $(shell pkg-config --variable=systemdtmpfilesdir systemd || echo /usr/lib/tmpfiles.d)
+systemdsystemunitdir := $(shell OUT="`pkg-config --variable=systemdsystemunitdir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdsystemunitdir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /lib/systemd/system)
+systemdsystemdutildir := $(shell OUT="`pkg-config --variable=systemdutildir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdutildir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /lib/systemd)
+systemdshutdowndir := $(shell OUT="`pkg-config --variable=systemdshutdowndir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdshutdowndir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /lib/systemd/system-shutdown)
+systemdtmpfilesdir := $(shell OUT="`pkg-config --variable=systemdtmpfilesdir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdtmpfilesdir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /usr/lib/tmpfiles.d)
+
+# Does this NUT branch have DMF feature code?
+NUTPKG_WITH_DMF := $(shell test -d scripts/DMF && echo 1 || echo 0)
 
 # Newer systems have just /run (and yet newer systemd noisily suggests it)
 runbasedir := $(shell test -d /run && echo /run || echo /var/run)
 
 # FIXME: Find a smarter way to set those from main codebase recipes...
-# Something like `grep 'version-info' **/Makefile.am` ?
-SO_MAJOR_LIBUPSCLIENT=5
-SO_MAJOR_LIBNUTCLIENT=1
+# Something like `git grep 'version-info' '*.am'` ?
+SO_MAJOR_LIBUPSCLIENT=7
+SO_MAJOR_LIBNUTCLIENT=2
 SO_MAJOR_LIBNUTCLIENTSTUB=1
-SO_MAJOR_LIBNUTSCAN=1
+SO_MAJOR_LIBNUTSCAN=4
+SO_MAJOR_LIBNUTCONF=0
 
+ifneq (,$(shell ls -1 /usr/share/cdbs/1/rules/utils.mk 2>/dev/null))
 # List any files which are not installed
 include /usr/share/cdbs/1/rules/utils.mk
 common-binary-post-install-arch:: list-missing
+endif
 
 DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,defs -Wl,-O1 -Wl,--as-needed
 include /usr/share/dpkg/buildflags.mk
@@ -49,9 +68,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 			     --with-ssl --with-openssl --with-libltdl=yes \
 			     --with-cgi=auto --with-powerman=auto \
 			     --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
-			     --with-snmp_dmf_lua=yes \
-			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no \
-			     --with-dev \
+			     --with-dev --with-dev-libnutconf \
 			     --disable-static \
 			     --with-statepath=$(runbasedir)/nut \
 			     --with-altpidpath=$(runbasedir)/nut \
@@ -61,7 +78,15 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 			     --with-pidpath=$(runbasedir)/nut \
 			     --datadir=/usr/share/nut \
 			     --with-pkgconfig-dir=/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig \
-			     --with-user=nut --with-group=nut
+			     --with-user=nut --with-group=nut\
+			     --enable-strip\
+			     --enable-keep_nut_report_feature --enable-check-NIT
+
+ifeq (1,$(NUTPKG_WITH_DMF))
+DEB_CONFIGURE_EXTRA_FLAGS += \
+			     --with-snmp_dmf_lua=yes \
+			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
+endif
 
 ifeq (linux,$(DEB_HOST_ARCH_OS))
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-udev-dir=/lib/udev
@@ -83,11 +108,21 @@ endif
 DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man=dist-auto
 
 configure: configure.ac
-	(cd tools; python nut-snmpinfo.py)
+	###Part of normal build now### (cd tools; python nut-snmpinfo.py)
 	sh autogen.sh
 	echo "PKG_CONFIG_PATH default:" ; pkg-config --variable pc_path pkg-config || true
 
-pre-build:: debian/compat configure
+ifeq (0,$(NUTPKG_WITH_DMF))
+# hide
+patch-recipe-dmf:
+	for F in debian.*.install debian/*.install ; do [ -s "$$F" ] || continue ; sed 's,^\([^#].*dmf.*\)$$,#\1,' -i "$$F" || exit ; done
+else
+# expose
+patch-recipe-dmf:
+	for F in debian.*.install debian/*.install ; do [ -s "$$F" ] || continue ; sed 's,^#\(.*dmf.*\)$$,\1,' -i "$$F" || exit ; done
+endif
+
+pre-build:: patch-recipe-dmf debian/compat configure
 
 # FIXME : The recipe below is a crime scene regarding hardcoded paths that
 # are more or less relevant for a particular OS distribution and version,
@@ -98,8 +133,8 @@ common-install-arch::
 	# prepare debian packaging files
 	mkdir -p $(CURDIR)/debian
 	for F in nut-client.init nut-common.postinst nut-common.prerm nut-server.init nut-server.prerm nut-common.tmpfiles ; do \
-		echo "  SED	$F.in => $F" ; \
-		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/obs/debian.$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
+		echo "  SED    $$F.in => $$F" ; \
+		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/scripts/obs/debian.$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
 	done
 
 	# install the bash completion script
@@ -142,6 +177,10 @@ common-install-arch::
 	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) && \
 	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutconf.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutconf.so.$(SO_MAJOR_LIBNUTCONF) && \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutconf.so.$(SO_MAJOR_LIBNUTCONF) \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutconf.so
 
 	# Install systemd files only on systems where it's supported
 	### Package files for nut-client:
@@ -187,7 +226,14 @@ common-install-indep::
 	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/nut-doc
 
 binary-install/nut-monitor::
-	dh_python2 -pnut-monitor || dh_python3 -pnut-monitor || dh_python -pnut-monitor
+	if (command -v dh_python2) ; then \
+		dh_python2 -pnut-monitor ; \
+	else if (command -v dh_python3) ; then \
+		dh_python3 -pnut-monitor ; \
+	else if (command -v dh_python) ; then \
+		dh_python -pnut-monitor ; \
+	else echo "$@: no implementation of dh_python was found!" >&2 ; exit 1 ; \
+	fi; fi; fi
 
 DEB_DH_INSTALLINIT_ARGS_nut-server := --init-script=nut-server --restart-after-upgrade
 DEB_DH_INSTALLINIT_ARGS_nut-client := --init-script=nut-client --restart-after-upgrade

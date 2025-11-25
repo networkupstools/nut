@@ -156,6 +156,17 @@ int state_get_timestamp(st_tree_timespec_t *now)
 #endif
 }
 
+double difftime_st_tree_timespec(
+	const st_tree_timespec_t finish,
+	const st_tree_timespec_t start
+) {
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+	return difftimespec(finish, start);
+#else
+	return difftimeval(finish, start);
+#endif
+}
+
 /* Returns -1 if the node->lastset is "older" than cutoff,
  * 0 if it is equal, or +1 if it is newer.
  * Returns -2 or -3 if node or cutoff are null.
@@ -177,11 +188,7 @@ int st_tree_node_compare_timestamp(
 	 * so if the diff is negative, then "lastset" happened
 	 * before "cutoff":
 	 */
-#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
-	d = difftimespec(node->lastset, *cutoff);
-#else
-	d = difftimeval(node->lastset, *cutoff);
-#endif
+	d = difftime_st_tree_timespec(node->lastset, *cutoff);
 
 	if (d < 0)
 		return -1;

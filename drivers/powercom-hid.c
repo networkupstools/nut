@@ -26,7 +26,7 @@
 #include "powercom-hid.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.71"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.72"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -62,10 +62,30 @@ static char powercom_scratch_buf[32];
  */
 static char powercom_sdcmd_byte_order_fallback = 0;
 
+/* Some devices (Raptor and Smart KING Pro series) follow the protocol
+ * where we can not set arbitrary value of shutdown delay in seconds
+ * (like in other powercom UPSes), but the shutdown delay can be set
+ * only from table "Table of possible delays for Shutdown commands"
+ * specified at page 17 of the protocol document:
+ *   https://networkupstools.org/protocols/powercom/Software_USB_communication_controller_SKP_series.doc
+ *
+ * "Table of possible delays for Shutdown commands" (mentioned for
+ * `DelayBeforeShutdown` and `DelayBeforeStartup` HID Usages):
+ *       Index	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18
+ *       Value	12s	18s	24s	30s	36s	42s	48s	54s	1m	2m	3m	4m	5m	6m	7m	8m	9m	10m
+ * Sent to UPS	.2	.3	.4	.5	.6	.7	.8	.9	01	02	03	04	05	06	07	08	09	10
+ *
+ */
+static char powercom_sdcmd_discrete_delay = 0;
+
 static const char *powercom_startup_fun(double value)
 {
 	uint16_t	i = value;
 
+	/* For powercom_sdcmd_discrete_delay we also read minutes
+	 * from DelayBeforeStartup (same as for older dialects).
+	 * FIXME: ...but theoretically they can be 32-bit (1..99999)
+	 */
 	snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * (((i & 0x00FF) << 8) + (i >> 8)));
 	upsdebugx(3, "%s: value = %.0f, buf = %s", __func__, value, powercom_scratch_buf);
 
@@ -75,20 +95,40 @@ static const char *powercom_startup_fun(double value)
 static double powercom_startup_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.start");
-	uint16_t	val, command;
+	uint32_t	val, command;
 	int iv;
 
-	iv = atoi(value ? value : s) / 60;
-	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
-		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
+	/* Start with seconds "as is" - convert into whole minutes */
+	iv = atoi(value ? value : s) / 60;	/* minutes */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT32_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		upsdebugx(0, "%s: value = %d is not in uint32_t range", __func__, iv);
 		return 0;
 	}
 
-	/* COMMENTME: What are we doing here, a byte-swap in the word? */
-	val = (uint16_t)iv;
-	command =  (uint16_t)(val << 8);
-	command += (uint16_t)(val >> 8);
-	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
+	if (powercom_sdcmd_discrete_delay) {
+		/* Per spec, DelayBeforeStartup reads and writes
+		 * 4-byte "mmmm" values in minutes (1..99999) */
+		command = (uint32_t)iv;
+	} else {
+		/* COMMENTME: What are we doing here, a byte-swap in the word? */
+		val = (uint16_t)iv;
+		command =  (uint16_t)(val << 8);
+		command += (uint16_t)(val >> 8);
+	}
+
+	upsdebugx(3, "%s: value = %s, command = 0x%08X", __func__, value, command);
 
 	return command;
 }
@@ -100,6 +140,12 @@ static info_lkp_t powercom_startup_info[] = {
 static const char *powercom_shutdown_fun(double value)
 {
 	uint16_t	i = value;
+
+	/* NOTE: for powercom_sdcmd_discrete_delay mode it seems we
+	 * do not read DelayBeforeShutdown at all (not for time),
+	 * the value is stored and retrieved as DelayBeforeStartup.
+	 * FIXME: Should anything be changed here?
+	 */
 
 	if (powercom_sdcmd_byte_order_fallback) {
 		/* Legacy behavior */
@@ -120,25 +166,46 @@ static double powercom_shutdown_nuf(const char *value)
 	uint16_t	val, command;
 	int iv;
 
-	iv = atoi(value ? value : s);
+	iv = atoi(value ? value : s);	/* seconds */
 	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
 		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
 		return 0;
 	}
 
-	val = (uint16_t)iv;
-	val = val ? val : 1;    /* 0 sets the maximum delay */
-	if (powercom_sdcmd_byte_order_fallback) {
-		/* Legacy behavior */
-		command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
-		command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
+	if (powercom_sdcmd_discrete_delay) {
+		if (iv <= 12)		command = 1;
+		else if (iv <= 18)	command = 2;
+		else if (iv <= 24)	command = 3;
+		else if (iv <= 30)	command = 4;
+		else if (iv <= 36)	command = 5;
+		else if (iv <= 42)	command = 6;
+		else if (iv <= 48)	command = 7;
+		else if (iv <= 54)	command = 8;
+		else if (iv <= 60)	command = 9;
+		else if (iv <= 120)	command = 10;
+		else if (iv <= 180)	command = 11;
+		else if (iv <= 240)	command = 12;
+		else if (iv <= 300)	command = 13;
+		else if (iv <= 360)	command = 14;
+		else if (iv <= 420)	command = 15;
+		else if (iv <= 480)	command = 16;
+		else if (iv <= 540)	command = 17;
+		else				command = 18;
 	} else {
-		/* New default */
-		command = ((uint16_t)((val / 60) << 8)) + (uint16_t)(val % 60);
-		command |= 0x0040;	/* AC RESTART NORMAL ENABLE */
+		val = (uint16_t)iv;
+		val = val ? val : 1;    /* 0 sets the maximum delay */
+		if (powercom_sdcmd_byte_order_fallback) {
+			/* Legacy behavior */
+			command = ((uint16_t)((val % 60) <<  8)) + (uint16_t)(val / 60);
+			command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
+		} else {
+			/* New default */
+			command = ((uint16_t)((val / 60) << 8)) + (uint16_t)(val % 60);
+			command |= 0x0040;	/* AC RESTART NORMAL ENABLE */
+		}
 	}
 
-	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
+	upsdebugx(3, "%s: value = %s, command = 0x%04X", __func__, value, command);
 
 	return command;
 }
@@ -153,6 +220,7 @@ static double powercom_stayoff_nuf(const char *value)
 	uint16_t	val, command;
 	int iv;
 
+	/* FIXME: Anything for powercom_sdcmd_discrete_delay? */
 	iv = atoi(value ? value : s);
 	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
 		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
@@ -171,7 +239,7 @@ static double powercom_stayoff_nuf(const char *value)
 		command |= 0x0080;	/* AC RESTART NORMAL DISABLE */
 	}
 
-	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
+	upsdebugx(3, "%s: value = %s, command = 0x%04X", __func__, value, command);
 
 	return command;
 }
@@ -592,6 +660,7 @@ static int powercom_claim(HIDDevice_t *hd)
 
 accept:
 	powercom_sdcmd_byte_order_fallback = testvar("powercom_sdcmd_byte_order_fallback");
+	powercom_sdcmd_discrete_delay = testvar("powercom_sdcmd_discrete_delay");
 
 	return 1;
 }

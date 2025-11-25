@@ -1,6 +1,11 @@
 Setting up the non-standard VM farm for NUT CI on DigitalOcean
 --------------------------------------------------------------
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/qa-guide.chunked/_continuous_integration_nut_ci_farm_build_agent_preparation.html
+//////////////////////////////////////////////////////////////////////////////
+
 Since 2023 the Network UPS Tools project employs virtual machines,
 hosted and courteously sponsored as part of FOSS support program by
 link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean],

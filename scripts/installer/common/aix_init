@@ -120,7 +120,7 @@ do_restart() {
 	while [ -n "$(ls /var/run/nut/)" -a $waitmore -ge 1 ]
 	do
 	  sleep 1
-	  waitmore=$((waitmore-1))
+	  waitmore="`expr $waitmore - 1`"
 	done
 	do_start
 }

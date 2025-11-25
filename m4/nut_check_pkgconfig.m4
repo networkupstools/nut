@@ -11,7 +11,7 @@ AC_DEFUN([NUT_CHECK_PKGCONFIG],
 	dnl Note that PKG_CONFIG may be a filename, path,
 	dnl or either with args - so no quoting here
 	AC_MSG_CHECKING([whether usable PKG_CONFIG was already detected by autoconf])
-	AS_IF([test -n "${PKG_CONFIG-}" && test x"${PKG_CONFIG-}" != x"false" && $PKG_CONFIG --help 2>&1 | grep -E '(--cflags|--libs)' >/dev/null],
+	AS_IF([test -n "${PKG_CONFIG-}" && test x"${PKG_CONFIG-}" != x"false" && $PKG_CONFIG --help 2>&1 | ${EGREP} '(--cflags|--libs)' >/dev/null],
 		[AC_MSG_RESULT([yes: ${PKG_CONFIG}])
 		 have_PKG_CONFIG=yes
 		],
@@ -26,20 +26,12 @@ AC_DEFUN([NUT_CHECK_PKGCONFIG],
 		have_PKG_CONFIG=yes
 		AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
 
-		AC_ARG_WITH(pkg-config,
-			AS_HELP_STRING([--with-pkg-config=/path/to/pkg-config],
-				[path to program that reports development package configuration]),
-		[
-			case "${withval}" in
-			"") ;;
-			yes|no)
-				AC_MSG_ERROR(invalid option --with(out)-pkg-config - see docs/configure.txt)
-				;;
-			*)
-				dummy_PKG_CONFIG="${withval}"
-				;;
-			esac
-		])
+		NUT_ARG_WITH([pkg-config], [auto|/path/to/pkg-config], [Path to program that reports development package configuration], [auto])
+		AS_CASE([${nut_with_pkg_config}],
+			[""|auto],	[],	dnl Keep what we had found above
+			[yes|no],	[AC_MSG_ERROR(invalid option --with(out)-pkg-config - see docs/configure.txt)],
+					[dummy_PKG_CONFIG="${nut_with_pkg_config}"]
+		)
 
 		AC_MSG_CHECKING([whether usable PKG_CONFIG is present in PATH or was set by caller])
 		AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
@@ -47,7 +39,7 @@ AC_DEFUN([NUT_CHECK_PKGCONFIG],
 			 PKG_CONFIG=false
 			 have_PKG_CONFIG=no
 			],
-			[AS_IF([$dummy_PKG_CONFIG --help 2>&1 | grep -E '(--cflags|--libs)' >/dev/null],
+			[AS_IF([$dummy_PKG_CONFIG --help 2>&1 | ${EGREP} '(--cflags|--libs)' >/dev/null],
 				[AC_MSG_RESULT([yes: ${dummy_PKG_CONFIG}])
 				 have_PKG_CONFIG=yes
 				 PKG_CONFIG="$dummy_PKG_CONFIG"

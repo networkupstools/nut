@@ -27,7 +27,7 @@
 #include "upsdrvquery.h"
 
 #define DRIVER_NAME      "UPS Failover Driver"
-#define DRIVER_VERSION   "0.01"
+#define DRIVER_VERSION   "0.02"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -233,7 +233,11 @@ void upsdrv_shutdown(void)
 
 void upsdrv_help(void)
 {
+}
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_makevartable(void)

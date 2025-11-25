@@ -94,7 +94,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Belkin 'Universal UPS' driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1355,6 +1355,11 @@ void upsdrv_help(void)
 	printf(" ups.beeper.status: enabled, disabled, muted\n");
 	printf(" input.transfer.low: (in V)\n");
 	printf(" input.transfer.high: (in V)\n");
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* list flags and values that you want to receive via -x */

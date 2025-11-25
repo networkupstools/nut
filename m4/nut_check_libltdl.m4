@@ -12,45 +12,37 @@ if test -z "${nut_have_libltdl_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
-	LIBS=""
 	CFLAGS=""
-	depLIBS=""
+	LIBS=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
+	depLIBS=""
+	depLIBS_SOURCE=""
 	dnl For fallback below:
 	myCFLAGS=""
 
 	AC_MSG_CHECKING(for libltdl cflags)
-	AC_ARG_WITH(libltdl-includes,
-		AS_HELP_STRING([@<:@--with-libltdl-includes=CFLAGS@:>@], [include flags for the libltdl library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-libltdl-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [dnl Best-Effort Fallback (LDFLAGS might make more sense for -L...,
-		dnl but other m4's have it so) to use if probe below fails:
-		myCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"
-	])
-	AC_MSG_RESULT([${depCFLAGS}])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([libltdl], [auto])
+	AS_CASE([${nut_with_libltdl_includes}],
+		[auto], [
+			 dnl Best-Effort Fallback (LDFLAGS might make more sense for -L...,
+			 dnl but other m4 files have it so) to use if probe below fails:
+			 myCFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"
+			 depCFLAGS_SOURCE="default"
+			],
+			[depCFLAGS="${nut_with_libltdl_includes}"
+			 depCFLAGS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for libltdl ldflags)
-	AC_ARG_WITH(libltdl-libs,
-		AS_HELP_STRING([@<:@--with-libltdl-libs=LIBS@:>@], [linker flags for the libltdl library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-libltdl-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])dnl No fallback here - we probe suitable libs below
-	AC_MSG_RESULT([${depLIBS}])
+	NUT_ARG_WITH_LIBOPTS_LIBS([libltdl], [auto])
+	AS_CASE([${nut_with_libltdl_libs}],
+		[auto], [depLIBS_SOURCE="default (probe later)"],	dnl No fallback here - we probe suitable libs below
+			[depLIBS="${nut_with_libltdl_libs}"
+			 depLIBS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
 	LIBS="${LIBS_ORIG} ${depLIBS}"
@@ -80,7 +72,7 @@ if test -z "${nut_have_libltdl_seen}"; then
 	dnl Collect possibly updated dependencies after AC SEARCH LIBS:
 	AS_IF([test x"${LIBS}" != x"${LIBS_ORIG} ${depLIBS}"], [
 		AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
-			depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
+			depLIBS="`echo \"$LIBS\" | sed -e 's|'\"${LIBS_ORIG}\"'| |' -e 's|^ *||' -e 's| *$||'`"
 		])
 	])
 
@@ -89,9 +81,12 @@ if test -z "${nut_have_libltdl_seen}"; then
 		LIBLTDL_CFLAGS="${depCFLAGS}"
 		LIBLTDL_LIBS="${depLIBS}"
 	])
+
 	unset myCFLAGS
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

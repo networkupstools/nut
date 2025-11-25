@@ -32,7 +32,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.11"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
@@ -225,12 +225,14 @@ void upsdrv_initinfo(void)
 	uint64_t PartNumber = 0;
 	size_t i;
 
+	upsdebugx(2, "upsdrv_initinfo");
+
+	phoenixcontact_apply_advanced_config(modbus_ctx);
+
 	for (i = 0; i < (sizeof(tab_reg) / sizeof(tab_reg[0])); i++)
 	{
 		tab_reg[i] = 0;
 	}
-
-	upsdebugx(2, "upsdrv_initinfo");
 
 	dstate_setinfo("device.mfr", "Phoenix Contact");
 
@@ -804,6 +806,11 @@ void upsdrv_help(void)
 		"\n");
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
@@ -836,6 +843,7 @@ void upsdrv_initups(void)
 	result = mrir(modbus_ctx, 0x0004, 1, &FWVersion);
 	if (result == -1)
 	{
+		/* Try to go slower... */
 		modbus_close(modbus_ctx);
 		modbus_free(modbus_ctx);
 
@@ -860,12 +868,10 @@ void upsdrv_initups(void)
 
 		if (r < 0)
 		{
-			fatalx(EXIT_FAILURE, "UPS does not repond to read requests.");
+			fatalx(EXIT_FAILURE, "UPS does not respond to read requests.");
 		}
-
 	}
 
-	phoenixcontact_apply_advanced_config(modbus_ctx);
 	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
 }
 

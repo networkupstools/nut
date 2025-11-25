@@ -770,6 +770,19 @@ static void do_type(const char *varname)
 			return;
 		}
 
+		if (!strcasecmp(answer[i], "NUMBER")) {
+			/* 20 is a reasonable default size for the text box */
+			do_string(varname, 20);
+			return;
+		}
+
+		/* RANGE is usually paired with NUMBER.
+		   We can ignore 'RANGE' and let the 'NUMBER'
+		   case (which should come next) handle it. */
+		if (!strcasecmp(answer[i], "RANGE")) {
+			continue;
+		}
+
 		/* ignore this one */
 		if (!strcasecmp(answer[i], "RW"))
 			continue;
