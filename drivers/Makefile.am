@@ -82,10 +82,14 @@ if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
 SERIAL_DRIVERLIST += nhs_ser
 endif HAVE_LINUX_SERIAL_H
+
+# Note: distributions may deliver this "monolithic" driver program file named
+# "snmp-ups-old", and symlink "snmp-ups" pointing to a preferred implementation:
 SNMP_DRIVERLIST = snmp-ups
 if WITH_DMFMIB
   SNMP_DRIVERLIST += snmp-ups-dmf
 endif
+
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb powervar_cx_usb \
  nutdrv_atcl_usb

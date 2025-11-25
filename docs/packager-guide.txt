@@ -284,6 +284,14 @@ nut-snmp
 - Size:
 - Deps:
 
+NOTE: With DMF capability merged, two variants of the `snmp-ups` driver can
+be built: a legacy-style "monolithic" program with a fixed set of built-in
+mapping tables, and `snmp-ups-dmf` with a parsing engine that can load chosen
+only the relevant mappings at run-time (and mapping files can be delivered or
+modified in the field).  Distributions may deliver the legacy driver program
+file named as `snmp-ups-old`, and symlink the well-known `snmp-ups` program
+name pointing to a preferred implementation (legacy or DMF).
+
 [[pkg-nut-xml]]
 nut-xml
 ^^^^^^^
