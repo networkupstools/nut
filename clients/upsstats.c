@@ -23,6 +23,7 @@
 #include "timehead.h"
 #include "upsclient.h"
 #include "status.h"
+#include "strjson.h"
 #include "cgilib.h"
 #include "parseconf.h"
 #include "upsstats.h"
@@ -36,6 +37,7 @@
 
 static char	*monhost = NULL;
 static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
+static int	output_json = 0;
 
 	/* from cgilib's checkhost() */
 static char	*monhostdesc = NULL;
@@ -70,6 +72,10 @@ void parsearg(char *var, char *value)
 	if (!strcmp(var, "treemode")) {
 		/* FIXME: Validate that treemode is allowed */
 		treemode = 1;
+	}
+
+	if (!strcmp(var, "json")) {
+		output_json = 1;
 	}
 }
 
@@ -111,7 +117,8 @@ static int get_var(const char *var, char *buf, size_t buflen, int verbose)
 	const	char	*query[4];
 	char	**answer;
 
-	if (!check_ups_fd(1))
+	/* pass verbose to check_ups_fd */
+	if (!check_ups_fd(verbose))
 		return 0;
 
 	if (!upsname) {
@@ -354,13 +361,13 @@ static void ups_connect(void)
 {
 	static ulist_t	*lastups = NULL;
 	char	*newups, *newhost;
-	uint16_t	newport;
+	uint16_t	newport = 0;
 
 	/* try to minimize reconnects */
 	if (lastups) {
 
 		/* don't reconnect if these are both the same UPS */
-		if (!strcmp(lastups->sys, currups->sys)) {
+		if (currups && !strcmp(lastups->sys, currups->sys)) {
 			lastups = currups;
 			return;
 		}
@@ -368,7 +375,7 @@ static void ups_connect(void)
 		/* see if it's just on the same host */
 		newups = newhost = NULL;
 
-		if (upscli_splitname(currups->sys, &newups, &newhost,
+		if (currups && upscli_splitname(currups->sys, &newups, &newhost,
 			&newport) != 0) {
 			printf("Unusable UPS definition [%s]\n", currups->sys);
 			fprintf(stderr, "Unusable UPS definition [%s]\n",
@@ -376,7 +383,7 @@ static void ups_connect(void)
 			exit(EXIT_FAILURE);
 		}
 
-		if ((!strcmp(newhost, hostname)) && (port == newport)) {
+		if (currups && hostname && (!strcmp(newhost, hostname)) && (port == newport)) {
 			free(upsname);
 			upsname = newups;
 
@@ -394,14 +401,16 @@ static void ups_connect(void)
 
 	free(upsname);
 	free(hostname);
+	upsname = NULL;
+	hostname = NULL;
 
-	if (upscli_splitname(currups->sys, &upsname, &hostname, &port) != 0) {
+	if (currups && upscli_splitname(currups->sys, &upsname, &hostname, &port) != 0) {
 		printf("Unusable UPS definition [%s]\n", currups->sys);
 		fprintf(stderr, "Unusable UPS definition [%s]\n", currups->sys);
 		exit(EXIT_FAILURE);
 	}
 
-	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
+	if (currups && upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n", currups->sys, upscli_strerror(&ups));
 
 	lastups = currups;
@@ -597,7 +606,7 @@ static void do_degrees(void)
 static void do_statuscolor(void)
 {
 	int	severity, i;
-	char	stat[SMALLBUF], *sp, *ptr;
+	char	stat[SMALLBUF], *ptr, *last = NULL;
 
 	if (!check_ups_fd(0)) {
 
@@ -613,20 +622,15 @@ static void do_statuscolor(void)
 	}
 
 	severity = 0;
-	sp = stat;
 
-	while (sp) {
-		ptr = strchr(sp, ' ');
-		if (ptr)
-			*ptr++ = '\0';
+	/* Use strtok_r for safety */
+	for (ptr = strtok_r(stat, " \n", &last); ptr != NULL; ptr = strtok_r(NULL, " \n", &last)) {
 
 		/* expand from table in status.h */
 		for (i = 0; stattab[i].name != NULL; i++)
-			if (!strcmp(stattab[i].name, sp))
+			if (stattab[i].name && ptr && !strcmp(stattab[i].name, ptr))
 				if (stattab[i].severity > severity)
 					severity = stattab[i].severity;
-
-		sp = ptr;
 	}
 
 	switch(severity) {
@@ -978,13 +982,18 @@ static void load_hosts_conf(void)
 	if (!pconf_file_begin(&ctx, fn)) {
 		pconf_finish(&ctx);
 
-		printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
-		printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
-		printf("<HTML><HEAD>\n");
-		printf("<TITLE>Error: can't open hosts.conf</TITLE>\n");
-		printf("</HEAD><BODY>\n");
-		printf("Error: can't open hosts.conf\n");
-		printf("</BODY></HTML>\n");
+		/* Don't print HTML here if we are in JSON mode.
+		 * The JSON function will handle the error.
+		 */
+		if (!output_json) {
+			printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
+			printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
+			printf("<HTML><HEAD>\n");
+			printf("<TITLE>Error: can't open hosts.conf</TITLE>\n");
+			printf("</HEAD><BODY>\n");
+			printf("Error: can't open hosts.conf\n");
+			printf("</BODY></HTML>\n");
+		}
 
 		/* leave something for the admin */
 		fprintf(stderr, "upsstats: %s\n", ctx.errmsg);
@@ -1010,13 +1019,18 @@ static void load_hosts_conf(void)
 	pconf_finish(&ctx);
 
 	if (!ulhead) {
-		printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
-		printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
-		printf("<HTML><HEAD>\n");
-		printf("<TITLE>Error: no hosts to monitor</TITLE>\n");
-		printf("</HEAD><BODY>\n");
-		printf("Error: no hosts to monitor (check <CODE>hosts.conf</CODE>)\n");
-		printf("</BODY></HTML>\n");
+		/* Don't print HTML here if we are in JSON mode.
+		 * The JSON function will handle the error.
+		 */
+		if (!output_json) {
+			printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
+			printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
+			printf("<HTML><HEAD>\n");
+			printf("<TITLE>Error: no hosts to monitor</TITLE>\n");
+			printf("</HEAD><BODY>\n");
+			printf("Error: no hosts to monitor (check <CODE>hosts.conf</CODE>)\n");
+			printf("</BODY></HTML>\n");
+		}
 
 		/* leave something for the admin */
 		fprintf(stderr, "upsstats: no hosts to monitor\n");
@@ -1046,6 +1060,151 @@ static void display_single(void)
 	upscli_disconnect(&ups);
 }
 
+/* ------------------------------------------------------------- */
+/* ---NEW FUNCTION FOR JSON API -------------------------------- */
+/* ------------------------------------------------------------- */
+
+/**
+ * @brief Main JSON output function.
+ * This function replaces all template logic and outputs a JSON object
+ * containing data for one or all devices.
+ */
+static void display_json(void)
+{
+	size_t	numq, numa;
+	const	char	*query[4];
+	char	**answer;
+	char	status_buf[SMALLBUF], status_copy[SMALLBUF];
+	int i;
+	int is_first_status;
+	int is_first_ups = 1;
+	int is_first_var = 1;
+	char *ptr, *last = NULL;
+
+	/* If monhost is set, we're in single-host mode.
+	 * If not, we're in multi-host mode.
+	 * We need to load hosts.conf ONLY in multi-host mode.
+	 */
+	if (monhost) {
+		if (!checkhost(monhost, &monhostdesc)) {
+			printf("{\"error\": \"Access to host %s is not authorized.\"}", monhost);
+			return;
+		}
+		add_ups(monhost, monhostdesc);
+		currups = ulhead;
+	} else {
+		load_hosts_conf(); /* This populates ulhead */
+		currups = ulhead;
+	}
+
+	if (!currups) {
+		/* load_hosts_conf() would have exited, but check anyway */
+		printf("{\"error\": \"No hosts to monitor.\"}");
+		return;
+	}
+
+	/* In multi-host mode, wrap in a root object.
+	 * In single-host mode, just output the single device object.
+	 */
+	if (!monhost) {
+		printf("{\"devices\": [\n");
+	}
+
+	/* Loop through all devices (in single-host mode, this is just one) */
+	for (currups = ulhead; currups != NULL; currups = currups->next) {
+		ups_connect();
+
+		if (!is_first_ups) printf(",\n");
+
+		if (upscli_fd(&ups) == -1) {
+			printf("  {\"host\": \"");
+			json_print_esc(currups->sys);
+			printf("\", \"desc\": \"");
+			json_print_esc(currups->desc);
+			printf("\", \"error\": \"Connection failed: %s\"}", upscli_strerror(&ups));
+			is_first_ups = 0;
+			continue;
+		}
+
+		printf("  {\n"); /* Start UPS object */
+		printf("    \"host\": \"");
+		json_print_esc(currups->sys);
+		printf("\",\n");
+		printf("    \"desc\": \"");
+		json_print_esc(currups->desc);
+		printf("\",\n");
+
+		/* Add pre-processed status, as the old template did */
+		if (get_var("ups.status", status_buf, sizeof(status_buf), 0)) {
+			printf("    \"status_raw\": \"");
+			json_print_esc(status_buf);
+			printf("\",\n");
+			printf("    \"status_parsed\": [");
+
+			is_first_status = 1;
+			/* Copy status_buf as strtok_r is destructive */
+			strncpy(status_copy, status_buf, sizeof(status_copy));
+			status_copy[sizeof(status_copy) - 1] = '\0';
+
+			for (ptr = strtok_r(status_copy, " \n", &last); ptr != NULL; ptr = strtok_r(NULL, " \n", &last)) {
+				for (i = 0; stattab[i].name != NULL; i++) {
+					if (stattab[i].name && ptr && !strcasecmp(stattab[i].name, ptr)) {
+						if (!is_first_status) printf(", ");
+						printf("\"");
+						json_print_esc(stattab[i].desc);
+						printf("\"");
+						is_first_status = 0;
+					}
+				}
+			}
+			printf("],\n");
+		}
+
+		printf("    \"vars\": {\n"); /* Start vars object */
+		is_first_var = 1;
+
+		/* Full tree mode: list all variables */
+		query[0] = "VAR";
+		query[1] = upsname;
+		numq = 2;
+
+		if (upscli_list_start(&ups, numq, query) < 0) {
+			printf("      \"error\": \"Failed to list variables: %s\"", upscli_strerror(&ups));
+		} else {
+			while (upscli_list_next(&ups, numq, query, &numa, &answer) == 1) {
+				if (numa < 4) continue; /* Invalid response */
+
+				if (!is_first_var) printf(",\n");
+
+				printf("      \"");
+				json_print_esc(answer[2]); /* var name */
+				printf("\": \"");
+				json_print_esc(answer[3]); /* var value */
+				printf("\"");
+
+				is_first_var = 0;
+			}
+		}
+
+		printf("\n    }\n"); /* End vars object */
+		printf("  }"); /* End UPS object */
+
+		is_first_ups = 0;
+		upscli_disconnect(&ups); /* Disconnect after each UPS */
+	}
+
+	/* Close the root object in multi-host mode */
+	if (!monhost) {
+		printf("\n]}\n");
+	}
+}
+
+
+/* ------------------------------------------------------------- */
+/* --- END: NEW JSON FUNCTION ---------------------------------- */
+/* ------------------------------------------------------------- */
+
+
 int main(int argc, char **argv)
 {
 	NUT_UNUSED_VARIABLE(argc);
@@ -1055,6 +1214,33 @@ int main(int argc, char **argv)
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
+	/*
+	 * If json is in the query, bypass all HTML and call display_json()
+	 */
+	if (output_json) {
+		printf("Content-type: application/json; charset=utf-8\n");
+		printf("Pragma: no-cache\n");
+		printf("\n");
+
+		display_json();
+
+		/* Clean up memory */
+		free(monhost);
+		while (ulhead) {
+			currups = ulhead->next;
+			free(ulhead->sys);
+			free(ulhead->desc);
+			free(ulhead);
+			ulhead = currups;
+		}
+		free(upsname);
+		free(hostname);
+
+		exit(EXIT_SUCCESS);
+	}
+
+	/* --- Original HTML logic continues below --- */
+
 	printf("Content-type: text/html\n");
 	printf("Pragma: no-cache\n");
 	printf("\n");
@@ -1062,18 +1248,25 @@ int main(int argc, char **argv)
 	/* if a host is specified, use upsstats-single.html instead */
 	if (monhost) {
 		display_single();
-		exit(EXIT_SUCCESS);
+	} else {
+		/* default: multimon replacement mode */
+		load_hosts_conf();
+		currups = ulhead;
+		display_template("upsstats.html");
 	}
 
-	/* default: multimon replacement mode */
-
-	load_hosts_conf();
-
-	currups = ulhead;
-
-	display_template("upsstats.html");
-
+	/* Clean up memory */
+	free(monhost);
 	upscli_disconnect(&ups);
+	free(upsname);
+	free(hostname);
+	while (ulhead) {
+		currups = ulhead->next;
+		free(ulhead->sys);
+		free(ulhead->desc);
+		free(ulhead);
+		ulhead = currups;
+	}
 
 	return 0;
 }

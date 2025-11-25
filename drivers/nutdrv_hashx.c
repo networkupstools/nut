@@ -28,7 +28,6 @@
 #include "serial.h"
 #include "str.h"
 #include "upshandler.h"
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -36,7 +35,7 @@
 #define IGNCHARS	""
 
 #define DRIVER_NAME	"Generic #* Serial driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 #define SESSION_ID	"OoNUTisAMAZINGoO"
 #define SESSION_HASH	"74279F35A48F5F13"
@@ -641,6 +640,11 @@ void upsdrv_shutdown(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

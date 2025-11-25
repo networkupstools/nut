@@ -3,6 +3,10 @@ Support instructions
 ====================
 endif::website[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/support.html
+//////////////////////////////////////////////////////////////////////////////
 
 There are various ways to obtain support for NUT.
 

@@ -89,7 +89,7 @@ necessary to develop NUT client applications.
     --with-statepath=%{piddir} \
     --with-pidpath=%{piddir} \
     --with-altpidpath=%{piddir} \
-    --sysconfdir=%{confdir} \
+    --with-confdir=%{confdir} \
     --with-cgipath=%{cgidir} \
     --with-drvpath=%{_sbindir} \
     --with-pkgconfig-dir=%{_libdir}/pkgconfig \

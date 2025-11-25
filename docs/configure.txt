@@ -3,6 +3,12 @@ Configure options
 =================
 endif::website[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/user-manual.chunked/Configure_options.html
+// and subsequent pages (next-next-next...)
+//////////////////////////////////////////////////////////////////////////////
+
 As many other projects relying on GNU autotools for build recipe automation,
 NUT sources deliver a `configure` script which is used to set up numerous
 nuances relevant for your build of the project.  Most of the configuration
@@ -89,7 +95,8 @@ Tries to detect and pre-set `configure` defaults for run-time settings
 (which you can still override if needed, but no longer *must* specify
 explicitly to be on same page as the existing setup), most notably:
 
-* `--sysconfdir`
+* `--sysconfdir` and perhaps `--with-confdir-suffix`,
+  or `--with-confdir` altogether
 * `--with-user`
 * `--with-group`
 
@@ -281,8 +288,8 @@ CGI client interface
 
 Build and install the optional CGI programs, HTML files, and sample
 CGI configuration files. This is not enabled by default, as they
-are only useful on web servers. See link:data/html/README[] for additional
-information on how to set up CGI programs.
+are only useful on web servers. See link:data/htmlcgi/README[] for
+additional information on how to set up CGI programs.
 
 NUT Scanner tool
 ~~~~~~~~~~~~~~~~
@@ -494,20 +501,42 @@ etc.
 
 One exception is generation of NUT-Monitor GUI application, being separated
 for `NUT-Monitor-py2gtk2`, `NUT-Monitor-py3qt5`, `NUT-Monitor-py3qt6` due
-to further backend platform technical differences -- these build products 
+to further backend platform technical differences -- these build products
 specifically use `PYTHON2` and `PYTHON3` substitutions. They may also be
-co-installed on the same system. A dispatcher shell script `NUT-Monitor`
-is used to launch the preferred (newest) or only existing implementation.
+co-installed on the same system. A dispatcher shell script `NUT-Monitor` is
+used to launch the preferred (newest) or the only existing implementation.
 
 Please note that by default NUT tries to make use of everything in your
-build environment, so if both Python generation are detected -- the binding
+build environment, so if both Python generations are detected -- the binding
 module will be delivered into both, and two versions of NUT-Monitor GUI
 application will be installed.  If you want to avoid that behaviour on a
 build system with both interpreters present, you can explicitly specify
 to build e.g. `--without-python2 --with-python=/usr/bin/python-3.9`.
 
+Default values are currently prioritized for auto-detection to result in
+some one Python interpreter version to be chosen even if several were
+discovered (in order: '3', '2', or not numbered), using `auto-prio=NUM`
+syntax. If some of these options specify a particular interpreter, none
+of the `auto-prio` hits are considered.
+
+NOTE: Previous default (from NUT v2.8.0 to v2.8.4) was `auto` to allow all up
+to three hits to be considered as script shebang and as `make install` targets.
+When using `auto` values, specifying an explicit `--with-python` value does
+not implicitly mean `--without-python2` nor `--without-python3`, and those
+would be discovered and configured for, if possible. Conversely, an explicit
+e.g. `--with-python2` setting does not automatically mean `--without-python`
+nor `--without-python3`.
+Since this may come across surprising to some people, the `configure` script
+would warn in the end if several Python versions were auto-detected one way
+or another.
+
+A value of `yes` (default if e.g `--with-python` is specified without an
+argument) means to search for an implementation, and fail if one was not
+located.
+
 The settings below may be of particular interest to non-distribution
-packaging efforts with their own dedicated directory trees:
+packaging efforts with their own dedicated directory trees (like pkgsrc),
+or where all packages have dedicated sub-trees (like NixOS):
 
 	--with-python=SHEBANG_PATH
 
@@ -516,8 +545,10 @@ code (except version-dependent scripts, see above).
 
 The `SHEBANG_PATH` should be a full program pathname, optionally with
 one argument, e.g. `/usr/bin/python-3.9` or `/usr/bin/env python2`.
+Note that packaging distributions generally aim for predictable setups,
+and disapprove of `/usr/bin/env` in shebangs for packaged scripts.
 
-Defaults (in order):
+Defaults for `--with-python` if it was not specified (in order):
 * `python`, `python3` or `python2` program if present in `PATH` by such name,
 * or the newest of `PYTHON3` or `PYTHON2` values (specified or detected below).
 
@@ -542,8 +573,28 @@ availability), and optional `desktop-file-install` integration).
 	--with-pynut
 
 Install the PyNUT module files for general consumption into "site-packages"
-location of the currently chosen Python interpreter(s): yes, no, auto.
+location of the currently chosen Python interpreter(s): `yes`, `no`, `auto`.
 or dedicated as the required dependency of NUT-Monitor application (app).
+
+	--with-python-modules-dir=(auto|PATH)
+	--with-python2-modules-dir=(auto|PATH)
+	--with-python3-modules-dir=(auto|PATH)
+
+Optional, to specify PyNUT(Client) module installation location (for the
+module-named dir to be created under it), if not bundling with NUT-Monitor
+UI app. By default the respective interpreter's 'site-packages' or
+'dist-packages' location will be used, so you may have to adjust module
+search paths for any other values (see `NUT-Monitor` GUI sources for an
+example).
+
+NOTE: Specifically in `NUT-Monitor` scripts, the version-less option gets
+least priority in search path, but corresponding versioned ones (if not
+there yet) would be searched first. Any copy of the PyNUT module located
+near the script (as in NUT source tree) has the highest priority of all.
+This option may help to make use of that module installed by other means
+(e.g. as a released PyPI repository package), if you for some reason (like
+OS packaging policy) choose to build and install NUT itself `--without-pynut`.
+
 
 [WARNING]
 =========
@@ -779,17 +830,33 @@ initiate a shutdown.  There is always at least a stub process
 remaining with `root` powers.  The network code runs in another
 (separate) process as the new user.
 
-The `<groupname>` is used for the permissions of some files,
-particularly the hotplugging rules for USB. The idea is that the
-device files for any UPS devices should be readable and writable by
-members of that group.
-
 The default value for both the username and groupname is `nobody`
 (or `nogroup` on systems that have it when `configure` script runs).
 This was done since it's slightly better than staying around as
 `root`.  Running things as `nobody` is not a good idea, since it's a
 hack for NFS access.  You should create at least one separate user
 for this software.
+
+Starting from NUT v2.8.5, further default user and group account names
+are probed in the operating system (which might exist if a different
+version of NUT was already installed before the build), currently trying
+`upsmon`, `nutmon`, `ups` or `nut` (last hit wins, separately for groups
+and users).
+
+When such NUT daemons `setuid()` to some user account (whether built-in,
+or specified in configuration files, or passed on command line), they
+also typically assume that account's primary group via `setgid()`.
+With default installation or packaging approaches, the dedicated user
+account "coincidentally" has the group specified here as its primary.
+
+The specified `<groupname>` is used for the permissions of some files,
+particularly the hotplugging rules for USB. The idea is that the
+device files for any UPS devices should be readable and writable by
+members of that group. It also allows to run the drivers and the data
+server as different user accounts, which have some group in common
+(it should be the primary group for the user linkman:upsd[8] runs as,
+and such deployment would be using explicit user/group account settings
+beyond the one built-in value configurable here).
 
 If you use one of the `--with-user` and `--with-group` options, then
 you have to use the other one too.
@@ -851,11 +918,45 @@ default, it is the same as `<prefix>`.
 
 	--sysconfdir=PATH
 
+Base system location for configuration files. By default this path is
+`<prefix>/etc`.
+
+From time immemorial until NUT v2.8.5, this was the option to change
+in order to define a dedicated directory for NUT configuration files.
+Setting this to `/etc/nut` or `/etc/ups` might be useful in older builds.
+Now the `--with-confdir*` options are preferable.
+
+	--with-confdir-suffix=DIRNAME
+
+Provides a partial location where NUT's configuration files are stored,
+relative to `<sysconfdir>`. By default this path is empty if either
+`<sysconfdir>` was modified (assuming legacy build configuration was
+re-used for current NUT), or if `<prefix>` was NOT modified (then the
+value of `/usr/local/ups/etc` makes sense to directly hold NUT configuration
+files).  Otherwise it defaults to `<PACKAGE_NAME>` which is `nut` (unless
+some distribution hacks the `configure` script to their liking).
+
+Surrounding slashes would be removed and a trailing one added, to normalize
+the paths and avoid double-slashes etc.
+
+See also `--enable-inplace-runtime`.
+
+	--with-confdir=PATH
+
 Changes the location where NUT's configuration files are stored.
-By default this path is `<prefix>/etc`.  Setting this to `/etc/nut` or
-`/etc/ups` might be useful. See also `--enable-inplace-runtime`.
+By default this path is `<sysconfdir>/<confdir_suffix>` which on
+most systems resolves to `/etc/nut`.
+
+See also `--enable-inplace-runtime`.
 
 The `NUT_CONFPATH` environment variable overrides this at run time.
+
+	--with-confdir-examples=PATH
+
+Changes the location where NUT's configuration file examples are stored.
+By default this path is `<confdir>`, but some distributions prefer to
+store examples under `<docdir>` or somewhere else, requiring `<sysconfdir>`
+to be used only by actual live system configuration.
 
 	--sbindir=PATH
 	--bindir=PATH
@@ -1069,8 +1170,14 @@ Directories used by NUT at run-time
 	--with-pidpath=PATH
 
 Changes the directory where NUT pid files are stored for processes running
-as `root`.  By default this is `/var/run`.  Certain programs like `upsmon`
-will leave files here.
+as `root`.  By default this is `/var/run` (or `/run` on systems that follow
+FHS-3.0 standard strictly and do not offer a legacy symlink).  A build of
+NUT is encouraged to configure the use of a dedicated sub-directory, like
+`/var/run/ups` or `/var/run/nut`, as long as its existence and proper
+ownership and permissions can be ensured by the time NUT daemons start.
+Certain programs like `upsmon` will leave files here.
+
+The `NUT_PIDPATH` environment variable overrides this at run time.
 
 	--with-altpidpath=PATH
 
@@ -1088,6 +1195,12 @@ commands. Default is `/var/state/ups`.
 
 This is also the default location for non-`root` daemons to write a PID file,
 if a separate location is not specified by `--with-altpidpath` option.
+
+Sample configuration examples for `upssched.conf` (and default systemd-tmpfiles
+configuration generated with a NUT build) suggest using a sub-directory like
+`${STATEPATH}/upssched` for the tool's lock file and client-daemon communication
+pipe.  This allows to potentially run that tool and daemon under a dedicated
+user account, without overlapping with permissions needed by other NUT programs.
 
 The `NUT_STATEPATH` environment variable overrides this at run time.
 
@@ -1130,7 +1243,7 @@ find the header files, use this switch to add additional `-I` flags.
 If your copy of `libgd` isn't linking properly, use this to give the
 proper `-L` and `-l` flags to make it work.  See `LIBS=` in gd's `Makefile`.
 
-NOTE: the `--with-gd` switches are not necessary if you have gd 2.0.8
+NOTE: The `--with-gd` switches are not necessary if you have gd 2.0.8
 or higher installed properly.  The `gdlib-config` script or pkg-config
 manifest will be detected and used by default in that situation.
 

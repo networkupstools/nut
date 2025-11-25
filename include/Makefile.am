@@ -12,7 +12,7 @@
 include_HEADERS =
 dist_noinst_HEADERS = \
     attribute.h common.h extstate.h proto.h			\
-    state.h str.h timehead.h upsconf.h				\
+    state.h str.h strjson.h timehead.h upsconf.h		\
     nut_bool.h nut_float.h nut_stdint.h nut_platform.h		\
     dmf.h alist.h dmfsnmp.h dmfcore.h				\
     wincompat.h
@@ -43,6 +43,8 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 nut_version.h: @FORCE_NUT_VERSION@
 	@echo "  GENERATE-HEADER	$@" ; \
 	 RES=0; \
+	 GREP="$(GREP)"; EGREP="$(EGREP)"; \
+	 export GREP; export EGREP; \
 	 GITREV="`$(top_srcdir)/tools/gitlog2version.sh`" || GITREV=""; \
 	 GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE $(top_srcdir)/tools/gitlog2version.sh 2>/dev/null`" || GITREV_IS_RELEASE="false"; \
 	 GITREV_IS_PRERELEASE="`NUT_VERSION_QUERY=IS_PRERELEASE $(top_srcdir)/tools/gitlog2version.sh 2>/dev/null`" || GITREV_IS_PRERELEASE="false"; \

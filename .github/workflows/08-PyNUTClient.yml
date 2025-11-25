@@ -1,4 +1,4 @@
-name: Publish PyNUT client bindings for NUT 🐍 distributions 📦 to PyPI
+name: "GHA-08: Publish PyNUT client bindings for NUT 🐍 distributions 📦 to PyPI"
 # based on https://medium.com/@VersuS_/automate-pypi-releases-with-github-actions-4c5a9cfe947d
 # and https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 
@@ -13,6 +13,8 @@ on:
      - '*'
     branches:
      - 'master'
+  workflow_dispatch:
+    # Allow manually running the action, e.g. if disabled after some quietness in the source
 
 permissions:
   id-token: write
@@ -35,7 +37,7 @@ jobs:
       id: pythoncmd
       run: >-
         set -x ;
-        echo "PYTHON=$(command -v python)" >> $GITHUB_OUTPUT
+        echo "PYTHON_DEFAULT=$(command -v python)" >> $GITHUB_OUTPUT
     - name: Extract tag name
       id: tag
       # Note: this is all a single shell line in the end,
@@ -53,14 +55,14 @@ jobs:
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
     - name: Install pypa/setuptools
       run: >-
-        ${{ steps.pythoncmd.outputs.PYTHON }} -m
-        pip install wheel build
+        ${{ steps.pythoncmd.outputs.PYTHON_DEFAULT }} -m \
+            pip install wheel build setuptools
     - name: Prepare source layout and Build a binary wheel
       run: >-
         set -e ;
         cd scripts/python/module ;
         cp -f Makefile.am Makefile ;
-        make -f Makefile.am clean-local dist NUT_SOURCE_GITREV_NUMERIC="${{ steps.tag.outputs.TAG_NAME }}" PYTHON="${{ steps.pythoncmd.outputs.PYTHON }}" top_srcdir="../../.." srcdir="." builddir="." ;
+        make -f Makefile.am clean-local dist NUT_SOURCE_GITREV_NUMERIC="${{ steps.tag.outputs.TAG_NAME }}" PYTHON_DEFAULT="${{ steps.pythoncmd.outputs.PYTHON_DEFAULT }}" top_srcdir="../../.." srcdir="." builddir="." ;
         find . -ls
     - name: Publish master distribution 📦 to Test PyPI
       # https://github.com/pypa/gh-action-pypi-publish

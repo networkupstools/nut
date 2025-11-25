@@ -32,7 +32,7 @@
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Phoenixtec Power Co., Ltd */
-#define LIEBERT_VENDORID	0x06da
+#define PHOENIXTEC_VENDORID	0x06da
 
 /*! USB IDs device table.
  *
@@ -42,7 +42,7 @@
  * Belkin HID firmware. */
 static usb_device_id_t liebert_usb_device_table[] = {
 	/* various models */
-	{ USB_DEVICE(LIEBERT_VENDORID, 0xffff), NULL },
+	{ USB_DEVICE(PHOENIXTEC_VENDORID, 0xffff), NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }

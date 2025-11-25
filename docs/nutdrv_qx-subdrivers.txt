@@ -1,6 +1,10 @@
 How to make a new subdriver to support another Q* UPS
 -----------------------------------------------------
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/new-drivers.html#nutdrv_qx-subdrivers
+//////////////////////////////////////////////////////////////////////////////
 
 Overall concept
 ~~~~~~~~~~~~~~~
@@ -1180,6 +1184,7 @@ For more details, have a look at the currently available subdrivers:
 - +nutdrv_qx_bestups.+{+c+,+h+}
 - +nutdrv_qx_innovart31.+{+c+,+h+}
 - +nutdrv_qx_innovart33.+{+c+,+h+}
+- +nutdrv_qx_innovatae.+{+c+,+h+}
 - +nutdrv_qx_masterguard.+{+c+,+h+}
 - +nutdrv_qx_mecer.+{+c+,+h+}
 - +nutdrv_qx_megatec.+{+c+,+h+}

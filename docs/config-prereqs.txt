@@ -3,6 +3,11 @@ Prerequisites for building NUT on different OSes
 ================================================
 endif::website[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/qa-guide.chunked/_prerequisites_for_building_nut_on_different_oses.html
+//////////////////////////////////////////////////////////////////////////////
+
 This chapter aims to list packages with the tools needed on a freshly minimally
 deployed worker to build as many targets of NUT recipes as possible, mainly
 the diverse driver and documentation types.
@@ -1779,7 +1784,7 @@ Currently known dependencies for basic build include:
 :; brew install curl wget midnight-commander
 ----
 
-NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
+NOTE: For `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
 the location of packaged resources (`${HOMEBREW_PREFIX}/etc/xml/catalog`).
 On one test system, man page builds spewed warnings like
 `<unknown>:1: SyntaxWarning: invalid escape sequence '\S'`

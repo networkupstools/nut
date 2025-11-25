@@ -14,7 +14,7 @@
 # WARNING: Current working directory when starting the script should be
 # the location where it may create temporary data (e.g. the BUILDDIR).
 # Caller can export envvars to impact the script behavior, e.g.:
-#	DEBUG=true	to print debug messages, running processes, etc.
+#	DEBUG_NIT=true	to print debug messages, running processes, etc.
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
 #	NUT_DEBUG_MIN=3	to set (minimum) debug level for drivers, upsd...
 #	NUT_DEBUG_LEVEL_UPSSCHED=3	to set debug level for particular
@@ -34,6 +34,16 @@
 # Design note: written with dumbed-down POSIX shell syntax, to
 # properly work in whatever different OSes have (bash, dash,
 # ksh, busybox sh...)
+#
+# Special considerations for starting the tests as "root":
+# * See I_AM_ROOT evaluation and conditional uses in code below for the
+#   most authoritative reference.
+# * More liberal permissions to TESTDIR, STATEPATH and configuration files
+#   than when a non-root user started the test suite right away and could
+#   only constrain access to allow itself.
+# * BUILTIN_RUN_AS_USER and BUILTIN_RUN_AS_GROUP envvars would be consulted
+#   and if those accounts do not exist (e.g. in a packaging build root), a
+#   different value like "nobody" or "nogroup" would be defaulted for test.
 #
 # Copyright
 #	2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
@@ -87,6 +97,10 @@ export NUT_QUIET_INIT_NDE_WARNING
 ARG_FG="-F"
 if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 TABCHAR="`printf '\t'`"
 
 log_separator() {
@@ -95,7 +109,7 @@ log_separator() {
 }
 
 shouldDebug() {
-    [ -n "$DEBUG" ] || [ -n "$DEBUG_SLEEP" ]
+    [ -n "$DEBUG" ] || [ -n "$DEBUG_NIT" ] || [ -n "$DEBUG_SLEEP" ]
 }
 
 log_debug() {
@@ -123,7 +137,7 @@ report_NUT_PORT() {
 
     log_info "Trying to report users of NUT_PORT=${NUT_PORT}"
     # Note: on Solarish systems, `netstat -anp` does not report PID info
-    (netstat -an ; netstat -anp || sockstat -l) 2>/dev/null | grep -w "${NUT_PORT}" \
+    (netstat -an ; netstat -anp || sockstat -l) 2>/dev/null | ${GREP} -w "${NUT_PORT}" \
     || (lsof -i :"${NUT_PORT}") 2>/dev/null \
     || true
 
@@ -145,8 +159,8 @@ isBusy_NUT_PORT() {
         # IPv6:
         #   sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
         #   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
-        NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
-        NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | grep -E ":${NUT_PORT_HEX}\$"`" \
+        NUT_PORT_HEX="`printf '%04X' \"${NUT_PORT}\"`"
+        NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | ${EGREP} \":${NUT_PORT_HEX}\$\"`" \
         && [ -n "$NUT_PORT_HITS" ] \
         && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per /proc/net/tcp*" \
         && return 0
@@ -156,7 +170,7 @@ isBusy_NUT_PORT() {
         return 1
     fi
 
-    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(${TABCHAR}| |\$)" > /dev/null \
+    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | ${EGREP} "[:.]${NUT_PORT}(${TABCHAR}| |\$)" > /dev/null \
     && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat, sockstat or ss" \
     && return
 
@@ -234,8 +248,8 @@ runcmd() {
 
     "$@" > "${NUT_STATEPATH}/runcmd.out" 2>"${NUT_STATEPATH}/runcmd.err" || CMDRES=$?
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
-    CMDOUT="`cat "${NUT_STATEPATH}/runcmd.out"`"
-    CMDERR="`cat "${NUT_STATEPATH}/runcmd.err"`"
+    CMDOUT="`cat \"${NUT_STATEPATH}/runcmd.out\"`"
+    CMDERR="`cat \"${NUT_STATEPATH}/runcmd.err\"`"
 
     [ "$RUNCMD_QUIET_OUT" = true ] || { [ -z "$CMDOUT" ] || echo "$CMDOUT" ; }
     [ "$RUNCMD_QUIET_ERR" = true ] || { [ -z "$CMDERR" ] || echo "$CMDERR" >&2 ; }
@@ -252,19 +266,19 @@ BUILDDIR="`pwd`"
 TOP_BUILDDIR=""
 case "${BUILDDIR}" in
     */tests/NIT)
-        TOP_BUILDDIR="`cd "${BUILDDIR}"/../.. && pwd`" ;;
+        TOP_BUILDDIR="`cd \"${BUILDDIR}\"/../.. && pwd`" ;;
     *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
 esac
 if test ! -w "${BUILDDIR}" ; then
     log_error "BUILDDIR='${BUILDDIR}' is not writeable, tests may fail below"
 fi
 
-SRCDIR="`dirname "$0"`"
-SRCDIR="`cd "$SRCDIR" && pwd`"
+SRCDIR="`dirname \"$0\"`"
+SRCDIR="`cd \"$SRCDIR\" && pwd`"
 TOP_SRCDIR=""
 case "${SRCDIR}" in
     */tests/NIT)
-        TOP_SRCDIR="`cd "${SRCDIR}"/../.. && pwd`" ;;
+        TOP_SRCDIR="`cd \"${SRCDIR}\"/../.. && pwd`" ;;
     *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
 esac
 
@@ -319,6 +333,156 @@ PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 
+# Platforms vary in abilities to report this...
+I_AM_NAME=""
+get_my_user_name() {
+    if [ x"${I_AM_NAME}" != x ]; then
+        # Use cache
+        echo "${I_AM_NAME}"
+        return
+    fi
+
+    _ME="`whoami 2>/dev/null`" && [ x"${_ME}" != x ] \
+    || { _ME="`ps -ef 2>/dev/null | grep -v grep | grep $$`" && [ x"${_ME}" != x ] ; } \
+    || { _ME="`ps -xawwu 2>/dev/null | grep -v grep | grep $$`" && [ x"${_ME}" != x ] ; } \
+    || _ME=""
+
+    if [ x"${_ME}" != x ] ; then
+        echo "${_ME}"
+        return
+    fi
+
+    # TOTHINK: Fallback to get "my current user": touch a file and see who owns it?
+
+    # Non-numeric (empty) stdout; non-successful exit code
+    return 1
+}
+
+get_user_id() {
+    if _ID="`id -u ${1-} 2>/dev/null`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if _ID="`id ${1-} 2>/dev/null | sed -e 's,^.*uid=,,' -e 's,(.*$,,'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent passwd \"$1\" 2>/dev/null | awk -F: '{print $3}'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+
+    # Fallback
+    if [ x"${1-}" = x ] 2>/dev/null ; then
+        if _ME="`get_my_user_name`" 2>/dev/null && [ x"${_ME}" != x ] ; then
+            _RES=0
+            get_user_id "${_ME}" || _RES=$?
+            return ${_RES}
+        fi
+    fi
+
+    # Non-numeric (empty) stdout; non-successful exit code
+    return 1
+}
+
+get_group_id() {
+    if _ID="`id -g ${1-} 2>/dev/null`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if _ID="`id ${1-} 2>/dev/null | sed -e 's,^.*gid=,,' -e 's,(.*$,,'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent group \"$1\" 2>/dev/null | awk -F: '{print $3}'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+
+    # TOTHINK: Fallback to get "my current group": touch a file and see who owns it?
+
+    # Non-numeric (empty) stdout; non-successful exit code
+    return 1
+}
+
+I_AM_NAME="`get_my_user_name`"
+I_AM_NAME_REPORT="'${I_AM_NAME}'"
+I_AM_ROOT=false
+if [ "`get_user_id`" = 0 ] ; then
+    if [ x"${I_AM_NAME}" = x ]; then
+        log_warn "Seems we have started as UID 0, but could not detect user name: assuming 'root'"
+    else if [ x"${I_AM_NAME}" != xroot ]; then
+        log_warn "Seems we have started as UID 0, but detected user name was not 'root': '${I_AM_NAME}'"
+        I_AM_NAME_REPORT="'${I_AM_NAME}' (root?)"
+    fi; fi
+    I_AM_ROOT=true
+fi
+
+# We have a certain problem when the requested user account does not exist:
+# our `common::get_user_pwent()` aborts with `fatalx()` during such a check for
+# validity of built-in or CLI-requested account (sometimes before even looking
+# at any config files), and fails like "OS user upsd not found". Note we do not
+# currently have similar troubles for groups (and interactions with customizing
+# them seem limited to `chgrp()` of driver-upsd local socket).
+# While this should not happen in real life, it can on test or packaging
+# systems that did not provision the accounts (claimed by a NUT build) for
+# the build/test run-time environment. In this case, tweak it into something
+# we know exists (current non-root user explicitly, or a commonly available
+# name if we are running as root).
+TWEAK_RUN_AS_USER=""
+TWEAK_RUN_AS_GROUP=""
+ARG_USER=""
+if [ x"${BUILTIN_RUN_AS_USER}" != x ] ; then
+    if [ "`get_user_id \"${BUILTIN_RUN_AS_USER}\"`" -ge 0 ] 2>/dev/null; then
+        # Do not bother to re-evaluate more IDs to rule out aliases - many names on same ID?
+        if $I_AM_ROOT || [ x"${I_AM_NAME}" = x"${BUILTIN_RUN_AS_USER}" ] ; then
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems present on this system to run test daemons as"
+        else
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems present on this system (but we would run test daemons as current unprivileged user)"
+        fi
+    else
+        # The string allegedly built into NUT binaries is unknown to the
+        # account identification databases of this runtime environment...
+        if $I_AM_ROOT ; then
+            for U in nobody daemon bin ; do
+                if [ "`get_user_id \"${U}\"`" -ge 0 ] ; then
+                    TWEAK_RUN_AS_USER="${U}"
+                    break
+                fi
+            done
+        else
+            TWEAK_RUN_AS_USER="${I_AM_NAME}"
+        fi
+
+        if [ x"${TWEAK_RUN_AS_USER}" = x ] ; then
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems absent on this system, and did not find a common alternative to run test daemons as; NIT suite can fail below!"
+        else
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems absent on this system, will run test daemons as '${TWEAK_RUN_AS_USER}'"
+            # Needed e.g. for upsd, its config has no RUN_AS_USER setting
+            ARG_USER="-u ${TWEAK_RUN_AS_USER}"
+        fi
+    fi
+fi
+
+if [ x"${BUILTIN_RUN_AS_GROUP}" != x ] ; then
+    # Note: GID setting is not much used in NUT code at the moment:
+    # * In `drivers/main.c` we can set FS access for the pipe to data server
+    # * Otherwise in `common.c::become_user()` we try to assume the default
+    #   GID of that user account we were asked to switch into.
+    if [ "`get_group_id \"${BUILTIN_RUN_AS_GROUP}\"`" -ge 0 ] 2>/dev/null ; then
+        # Do not bother to re-evaluate more IDs to rule out aliases - many names on same ID?
+        # TOTHINK: Would need I_AM_GROUP first?..
+        if $I_AM_ROOT ; then
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems present on this system to run test daemons as"
+        else
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems present on this system (but we would run test daemons as current unprivileged user and untweaked group)"
+        fi
+    else
+        # The string allegedly built into NUT binaries is unknown to the
+        # account identification databases of this runtime environment...
+        for G in nobody nogroup daemon bin ; do
+            if [ "`get_group_id \"${G}\"`" -ge 0 ] ; then
+                TWEAK_RUN_AS_GROUP="${G}"
+                break
+            fi
+        done
+
+        if [ x"${TWEAK_RUN_AS_GROUP}" = x ] ; then
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems absent on this system, and did not find a common alternative to run test daemons as; NIT suite can fail below!"
+        else
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems absent on this system, will run test daemons as '${TWEAK_RUN_AS_GROUP}'"
+        fi
+    fi
+fi
+
 # Stash it for some later decisions
 TESTDIR_CALLER="${TESTDIR-}"
 [ -n "${TESTDIR-}" ] || TESTDIR="$BUILDDIR/tmp"
@@ -329,15 +493,17 @@ if [ `echo "${TESTDIR}" | wc -c` -gt 80 ]; then
     log_info "'${TESTDIR}' is too long to store AF_UNIX socket files, will mktemp"
     TESTDIR=""
 else
-    if [ "`id -u`" = 0 ]; then
+    if $I_AM_ROOT ; then
         case "${TESTDIR}" in
             "${HOME}"/*)
-                log_info "Test script was started by 'root' and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
+                log_info "Test script was started by ${I_AM_NAME_REPORT} and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
                 TESTDIR=""
                 ;;
         esac
     else
-        if ! mkdir -p "${TESTDIR}" || ! [ -w "${TESTDIR}" ] ; then
+        if mkdir -p "${TESTDIR}" && [ -w "${TESTDIR}" ] ; then
+            true
+        else
             log_info "'${TESTDIR}' could not be created/used, will mktemp"
             TESTDIR=""
         fi
@@ -352,14 +518,14 @@ if [ x"${TESTDIR}" = x ] ; then
     fi
     log_warn "Will now mktemp a TESTDIR under '${TMPDIR}'. It will be wiped when the NIT script exits."
     log_warn "If you want a pre-determined location, pre-export a usable TESTDIR value."
-    TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
-    if [ "`id -u`" = 0 ]; then
+    TESTDIR="`mktemp -d \"${TMPDIR}/nit-tmp.$$.XXXXXX\"`" || die "Failed to mktemp"
+    if $I_AM_ROOT ; then
         # Cah be protected as 0700 by default
         chmod ugo+rx "${TESTDIR}"
     fi
 else
     NUT_CONFPATH="${TESTDIR}/etc"
-    if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+    if [ -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
         log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running with same configs?"
         sleep 3
     fi
@@ -380,8 +546,8 @@ fi
 mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
 
-if [ "`id -u`" = 0 ]; then
-    log_info "Test script was started by 'root' - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
+if $I_AM_ROOT ; then
+    log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
     chmod 777 "${TESTDIR}/run"
 fi
 
@@ -392,11 +558,11 @@ stop_daemons() {
     fi
 
     if [ -z "$PID_UPSSCHED" ] && [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
-        PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+        PID_UPSSCHED="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
     if [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
-        PID_UPSSCHED_NOW="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+        PID_UPSSCHED_NOW="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
     if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
@@ -423,7 +589,7 @@ NUT_ALTPIDPATH="${TESTDIR}/run"
 NUT_CONFPATH="${TESTDIR}/etc"
 export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH
 
-if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+if [ -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
     log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running?"
     sleep 3
 fi
@@ -449,7 +615,7 @@ else
         fi
 
         log_warn "Selected NUT_PORT=$NUT_PORT seems occupied; will try another in a few seconds"
-        COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+        COUNTDOWN="`expr \"$COUNTDOWN\" - 1`"
 
         [ "$COUNTDOWN" = 0 ] || sleep 2
     done
@@ -467,7 +633,7 @@ else
             fi
 
             # Loop quickly, no sleep here
-            COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+            COUNTDOWN="`expr \"$COUNTDOWN\" - 1`"
         done
 
         if [ "$COUNTDOWN" = 0 ] ; then
@@ -494,7 +660,7 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 # the values when fallback is used. If this is a
 # problem on any platform (Win/Mac and spaces in
 # paths?) please investigate and fix accordingly.
-set | grep -E '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
+set | ${EGREP} '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
 | while IFS='=' read K V ; do
     case "$K" in
         LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*|TESTDIR_*)
@@ -522,8 +688,9 @@ LISTEN localhost $NUT_PORT
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
 
-    if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.conf' so unprivileged daemons (after de-elevation) may read it"
+    if $I_AM_ROOT ; then
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/upsd.conf' so unprivileged daemons (after de-elevation) may read it"
+        # NOTE: No RUN_AS_USER in upsd.conf currently; tweaking via CLI args if needed
         chmod 644 "$NUT_CONFPATH/upsd.conf"
     else
         chmod 640 "$NUT_CONFPATH/upsd.conf"
@@ -535,7 +702,7 @@ EOF
     # both addresses in one command.
     for LH in 127.0.0.1 '::1' ; do
         if (
-           ( cat /etc/hosts || getent hosts ) | grep "$LH" \
+           ( cat /etc/hosts || getent hosts ) | ${GREP} "$LH" \
              || ping -c 1 "$LH"
         ) 2>/dev/null >/dev/null ; then
             echo "LISTEN $LH $NUT_PORT" >> "$NUT_CONFPATH/upsd.conf"
@@ -590,8 +757,8 @@ generatecfg_upsdusers_trivial() {
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.users"
 
-    if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.users' so unprivileged daemons (after de-elevation) may read it"
+    if $I_AM_ROOT ; then
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/upsd.users' so unprivileged daemons (after de-elevation) may read it"
         chmod 644 "$NUT_CONFPATH/upsd.users"
     else
         chmod 640 "$NUT_CONFPATH/upsd.users"
@@ -636,7 +803,7 @@ generatecfg_upsmon_trivial() {
 
         if [ -n "${NOTIFYTGT}" ]; then
             if [ -s "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" ] ; then
-                grep -E '# NOTIFYFLAG .*SYSLOG\+WALL$' \
+                ${EGREP} '# NOTIFYFLAG .*SYSLOG\+WALL$' \
                 < "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" \
                 | sed 's,^# \(NOTIFYFLAG[^A-Z_]*[A-Z_]*\)[^A-Z_]*SYSLOG.*$,\1\t'"${NOTIFYTGT}"',' \
                 >> "$NUT_CONFPATH/upsmon.conf" || exit
@@ -656,11 +823,15 @@ generatecfg_upsmon_trivial() {
     < "${TOP_SRCDIR-}/tests/NIT/upssched.conf.in" > "$NUT_CONFPATH/upssched.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upssched.conf"
 
-    if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsmon.conf' and '$NUT_CONFPATH/upssched.conf' so unprivileged daemons (after de-elevation) may read them"
+    if $I_AM_ROOT ; then
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/upsmon.conf' and '$NUT_CONFPATH/upssched.conf' so unprivileged daemons (after de-elevation) may read them"
         chmod 644 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
     else
         chmod 640 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
+    fi
+
+    if [ x"${TWEAK_RUN_AS_USER}" != x ] ; then
+        echo "RUN_AS_USER ${TWEAK_RUN_AS_USER}" >> "$NUT_CONFPATH/upsmon.conf"
     fi
 
     if [ $# -gt 0 ] ; then
@@ -721,11 +892,18 @@ generatecfg_ups_trivial() {
         fi
     ) || die "Failed to populate temporary FS structure for the NIT: ups.conf"
 
-    if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/ups.conf' so unprivileged daemons (after de-elevation) may read it"
+    if $I_AM_ROOT ; then
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/ups.conf' so unprivileged daemons (after de-elevation) may read it"
         chmod 644 "$NUT_CONFPATH/ups.conf"
     else
         chmod 640 "$NUT_CONFPATH/ups.conf"
+    fi
+
+    if [ x"${TWEAK_RUN_AS_USER}" != x ] ; then
+        echo "user ${TWEAK_RUN_AS_USER}" >> "$NUT_CONFPATH/ups.conf"
+    fi
+    if [ x"${TWEAK_RUN_AS_GROUP}" != x ] ; then
+        echo "group ${TWEAK_RUN_AS_GROUP}" >> "$NUT_CONFPATH/ups.conf"
     fi
 }
 
@@ -774,7 +952,7 @@ EOF
         for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
             sed -e 's,^ups.status: *$,ups.status: OL BOOST,' "$F" > "$F.bak"
             mv -f "$F.bak" "$F"
-            grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
+            ${EGREP} '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
     fi
 
@@ -797,7 +975,7 @@ testcase_upsd_no_configs_at_all() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG}
+    upsd ${ARG_FG} ${ARG_USER}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
@@ -816,7 +994,7 @@ testcase_upsd_no_configs_driver_file() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG}
+    upsd ${ARG_FG} ${ARG_USER}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
@@ -836,7 +1014,7 @@ testcase_upsd_no_configs_in_driver_file() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG}
+    upsd ${ARG_FG} ${ARG_USER}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
@@ -858,7 +1036,7 @@ upsd_start_loop() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} &
+    upsd ${ARG_FG} ${ARG_USER} &
     PID_UPSD="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSD as PID $PID_UPSD"
@@ -892,7 +1070,7 @@ upsd_start_loop() {
         if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
             NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
         fi
-        upsd ${ARG_FG} &
+        upsd ${ARG_FG} ${ARG_USER} &
         PID_UPSD="$!"
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
         log_warn "[${TESTCASE}] Tried to start UPSD again, now as PID $PID_UPSD"
@@ -939,12 +1117,12 @@ testcase_upsd_allow_no_device() {
             :
         else
             # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
-            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
+            if echo "$CMDERR" | ${GREP} "Error: Server disconnected" >/dev/null ; then
                 log_warn "[testcase_upsd_allow_no_device] Retry once to rule out laggy systems"
                 sleep 3
                 runcmd upsc -l localhost:$NUT_PORT
             fi
-            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
+            if echo "$CMDERR" | ${GREP} "Error: Server disconnected" >/dev/null ; then
                 log_warn "[testcase_upsd_allow_no_device] Retry once more to rule out very laggy systems"
                 sleep 15
                 runcmd upsc -l localhost:$NUT_PORT
@@ -1043,17 +1221,17 @@ sandbox_start_drivers() {
     if [ -n "${NUT_DEBUG_LEVEL_DRIVERS-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_DRIVERS}"
     fi
-    #upsdrvctl ${ARG_FG} start dummy &
-    dummy-ups -a dummy ${ARG_FG} &
+    #upsdrvctl ${ARG_FG} ${ARG_USER} start dummy &
+    dummy-ups -a dummy ${ARG_USER} ${ARG_FG} &
     PID_DUMMYUPS="$!"
     log_debug "Tried to start dummy-ups driver for 'dummy' as PID $PID_DUMMYUPS"
 
     if [ x"${TOP_SRCDIR}" != x ]; then
-        dummy-ups -a UPS1 ${ARG_FG} &
+        dummy-ups -a UPS1 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS1="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS1' as PID $PID_DUMMYUPS1"
 
-        dummy-ups -a UPS2 ${ARG_FG} &
+        dummy-ups -a UPS2 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS2="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
     fi
@@ -1062,7 +1240,7 @@ sandbox_start_drivers() {
     sleep 5
 
     if shouldDebug ; then
-        (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy|'"`basename "$0"`"')' | grep -vE '(ssh|startups|grep)' || true
+        (ps -ef || ps -xawwu) 2>/dev/null | ${EGREP} '(ups|nut|dummy|'"`basename \"$0\"`"')' | ${EGREP} -v '(ssh|startups|grep)' || true
     fi
 
     if isPidAlive "$PID_DUMMYUPS" \
@@ -1089,7 +1267,7 @@ testcase_sandbox_start_upsd_alone() {
 UPS1
 UPS2"
         # For windows runners (strip CR if any):
-        EXPECTED_UPSLIST="`echo "$EXPECTED_UPSLIST" | tr -d '\r'`"
+        EXPECTED_UPSLIST="`echo \"$EXPECTED_UPSLIST\" | tr -d '\r'`"
     fi
 
     log_info "[testcase_sandbox_start_upsd_alone] Query listing from UPSD by UPSC (driver not running yet)"
@@ -1097,7 +1275,7 @@ UPS2"
     runcmd upsc -l localhost:$NUT_PORT || die "[testcase_sandbox_start_upsd_alone] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     # For windows runners (printf can do wonders, so strip CR if any):
     if [ x"${TOP_SRCDIR}" != x ]; then
-        CMDOUT="`echo "$CMDOUT" | tr -d '\r'`"
+        CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
     fi
     if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST" ] ; then
         log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
@@ -1116,7 +1294,7 @@ UPS2"
         res_testcase_sandbox_start_upsd_alone=1
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
-    if echo "$CMDERR" | grep 'Error: Driver not connected' >/dev/null ; then
+    if echo "$CMDERR" | ${GREP} 'Error: Driver not connected' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
     else
         log_error "[testcase_sandbox_start_upsd_alone] got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
@@ -1145,7 +1323,7 @@ testcase_sandbox_start_upsd_after_drivers() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} &
+    upsd ${ARG_FG} ${ARG_USER} &
     PID_UPSD="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
@@ -1258,7 +1436,7 @@ testcase_sandbox_upsc_query_bogus() {
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
-    if echo "$CMDERR" | grep 'Error: Variable not supported by UPS' >/dev/null ; then
+    if echo "$CMDERR" | ${GREP} 'Error: Variable not supported by UPS' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
         log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query"
     else
@@ -1312,9 +1490,9 @@ testcase_sandbox_upsc_query_timer() {
     kill -15 $PID_UPSLOG 2>/dev/null || true
     wait $PID_UPSLOG || true
 
-    if (grep " [OB] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " [OL] " "${NUT_STATEPATH}/upslog-dummy.log") \
-    || (grep " \[OB\] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " \[OL\] " "${NUT_STATEPATH}/upslog-dummy.log") \
-    || (echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OL") \
+    if (${GREP} " [OB] " "${NUT_STATEPATH}/upslog-dummy.log" && ${GREP} " [OL] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (${GREP} " \[OB\] " "${NUT_STATEPATH}/upslog-dummy.log" && ${GREP} " \[OL\] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | ${GREP} "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | ${GREP} "OL") \
     ; then
         log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
@@ -1327,28 +1505,59 @@ testcase_sandbox_upsc_query_timer() {
     #rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
 }
 
+PY_SHEBANG=""
+PY_RES=127
 isTestablePython() {
     # We optionally make python module (if interpreter is found):
+    case x"${PY_SHEBANG}" in
+        x"") ;; # Fall through to detection
+        *) return $PY_RES ;; # Probably resolved (if not a comment)?
+    esac
+
     if [ x"${TOP_BUILDDIR}" = x ] \
     || [ ! -x "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py" ] \
     ; then
         return 1
     fi
-    PY_SHEBANG="`head -1 "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"`"
-    if [ x"${PY_SHEBANG}" = x"#!no" ] ; then
-        return 1
+
+    if [ x"${PYTHON}" != x ] ; then
+        PY_SHEBANG="#!${PYTHON}"
+        PY_RES=0
+        return 0
     fi
-    log_debug "=======\nDetected python shebang: '${PY_SHEBANG}'"
-    return 0
+
+    if [ x"${PYTHON_DEFAULT}" != x ] ; then
+        PYTHON="${PYTHON_DEFAULT}"
+        PY_SHEBANG="#!${PYTHON_DEFAULT}"
+        PY_RES=0
+        return 0
+    fi
+
+    PY_SHEBANG="`head -1 \"${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py\"`"
+    PY_RES=3
+    case x"${PY_SHEBANG}" in
+        x"#!"/*|x"#!"?":\\"*|x"#!"?":/"*) PY_RES=0 ;; # Seems like a full path
+        x"#!no")   PY_RES=1 ;; # Explicitly skipped
+        x"#!@")    PY_RES=2 ;; # Unresolved
+        *)         PY_RES=3 ;; # Unexpected twist
+    esac
+    if [ x"${PY_RES}" = x0 ] ; then
+        log_debug "=======\nDetected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
+        PYTHON="`echo \"${PY_SHEBANG}\" | sed 's,^#!,,'`"
+    else
+        log_error "[isTestablePython] Detected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
+    fi
+    return $PY_RES
 }
 
 testcase_sandbox_python_without_credentials() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || return 0
+
     log_separator
     log_info "[testcase_sandbox_python_without_credentials] Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
     if ( unset NUT_USER || true
          unset NUT_PASS || true
-        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1360,7 +1569,7 @@ testcase_sandbox_python_without_credentials() {
 }
 
 testcase_sandbox_python_with_credentials() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || return 0
 
     # That script says it expects data/evolution500.seq (as the UPS1 dummy)
     # but the dummy data does not currently let issue the commands and
@@ -1371,7 +1580,7 @@ testcase_sandbox_python_with_credentials() {
         NUT_USER='admin'
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
-        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1383,7 +1592,7 @@ testcase_sandbox_python_with_credentials() {
 }
 
 testcase_sandbox_python_with_upsmon_credentials() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || return 0
 
     log_separator
     log_info "[testcase_sandbox_python_with_upsmon_credentials] Call Python module test suite: PyNUT (NUT Python bindings) with upsmon role login credentials"
@@ -1391,7 +1600,7 @@ testcase_sandbox_python_with_upsmon_credentials() {
         NUT_USER='dummy-admin'
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
-        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1403,7 +1612,8 @@ testcase_sandbox_python_with_upsmon_credentials() {
 }
 
 testcases_sandbox_python() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || return 0
+
     testcase_sandbox_python_without_credentials
     testcase_sandbox_python_with_credentials
     testcase_sandbox_python_with_upsmon_credentials
@@ -1565,14 +1775,14 @@ testcase_sandbox_nutscanner_list() {
     # the scanned buses (serial, snmp, usb, etc.)
     if (
         test -n "$CMDOUT" \
-        && echo "$CMDOUT" | grep -E '^\[nutdev-nut1\]$' \
-        && echo "$CMDOUT" | grep 'port = "dummy@' \
+        && echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut1\]$' \
+        && echo "$CMDOUT" | ${GREP} 'port = "dummy@' \
         || return
 
         if [ "${NUT_PORT}" = 3493 ] || [ x"$NUT_PORT" = x ]; then
             log_info "[testcase_sandbox_nutscanner_list] Note: not testing for suffixed port number" >&2
         else
-            echo "$CMDOUT" | grep -E 'dummy@.*'":${NUT_PORT}" \
+            echo "$CMDOUT" | ${EGREP} 'dummy@.*'":${NUT_PORT}" \
             || {
                 log_error "[testcase_sandbox_nutscanner_list] dummy@... not found" >&2
                 return 1
@@ -1582,10 +1792,10 @@ testcase_sandbox_nutscanner_list() {
         if [ x"${TOP_SRCDIR}" = x ]; then
             log_info "[testcase_sandbox_nutscanner_list] Note: only testing one dummy device" >&2
         else
-            echo "$CMDOUT" | grep -E '^\[nutdev-nut2\]$' \
-            && echo "$CMDOUT" | grep 'port = "UPS1@' \
-            && echo "$CMDOUT" | grep -E '^\[nutdev-nut3\]$' \
-            && echo "$CMDOUT" | grep 'port = "UPS2@' \
+            echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut2\]$' \
+            && echo "$CMDOUT" | ${GREP} 'port = "UPS1@' \
+            && echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut3\]$' \
+            && echo "$CMDOUT" | ${GREP} 'port = "UPS2@' \
             || {
                 log_error "[testcase_sandbox_nutscanner_list] something about UPS1/UPS2 not found" >&2
                 return 1
@@ -1597,7 +1807,7 @@ testcase_sandbox_nutscanner_list() {
         else
             PORTS_WANT=3
         fi
-        PORTS_SEEN="`echo "$CMDOUT" | grep -Ec 'port *='`"
+        PORTS_SEEN="`echo \"$CMDOUT\" | ${EGREP} -c 'port *='`"
 
         if [ "$PORTS_WANT" != "$PORTS_SEEN" ]; then
             log_error "[testcase_sandbox_nutscanner_list] Too many 'port=' lines: want $PORTS_WANT != seen $PORTS_SEEN" >&2
@@ -1607,7 +1817,7 @@ testcase_sandbox_nutscanner_list() {
         log_info "[testcase_sandbox_nutscanner_list] PASSED: nut-scanner found all expected devices"
         PASSED="`expr $PASSED + 1`"
     else
-        if ( echo "$CMDERR" | grep -E "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
+        if ( echo "$CMDERR" | ${EGREP} "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
             log_warn "[testcase_sandbox_nutscanner_list] SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
         else
             log_error "[testcase_sandbox_nutscanner_list] nut-scanner complained or did not return all expected data, check above"
@@ -1638,7 +1848,7 @@ upsmon_start_loop() {
         # but the sample script honours NUT_DEBUG_LEVEL_UPSSCHED if set
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSMON}"
     fi
-    upsmon ${ARG_FG} &
+    upsmon ${ARG_FG} ${ARG_USER} &
     PID_UPSMON="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSMON as PID $PID_UPSMON"
@@ -1789,15 +1999,15 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     fi
 
     if [ -z "$PID_UPSSCHED" ] && [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
-        PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+        PID_UPSSCHED="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
     log_separator
     log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running"
     log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
     printf "PID_NIT_SCRIPT='%s'\nexport PID_NIT_SCRIPT\n" "$$" >> "$NUT_CONFPATH/NIT.env"
-    set | grep -E '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
-        V="`echo "$V" | tr -d "'"`"
+    set | ${EGREP} '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
+        V="`echo \"$V\" | tr -d \"'\"`"
         # Dummy comment to reset syntax highlighting due to ' quote above
         if [ -n "$V" ] ; then
             printf "%s='%s'\nexport %s\n" "$K" "$V" "$K"

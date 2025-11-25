@@ -43,7 +43,7 @@
 #include <math.h>
 
 #define DRIVER_NAME	"NHS Nobreak Drivers"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.04"
 #define MANUFACTURER	"NHS Sistemas Eletronicos LTDA"
 
 #define DEFAULTBAUD	2400
@@ -96,10 +96,22 @@ static baud_rate_t baud_rates[] = {
 	{ B921600,	921600,	"921600 bps" },
 	{ B1500000,	1500000,	"1.5 Mbps" },
 	{ B2000000,	2000000,	"2 Mbps" },
+/* NOTE: Per https://github.com/networkupstools/nut/issues/3163
+ * not all platforms offer all baud rates, so we wrap some into
+ * conditional uses.
+ */
+#ifdef B2500000
 	{ B2500000,	2500000,	"2.5 Mbps" },
+#endif
+#ifdef B3000000
 	{ B3000000,	3000000,	"3 Mbps" },
+#endif
+#ifdef B3500000
 	{ B3500000,	3500000,	"3.5 Mbps" },
+#endif
+#ifdef B4000000
 	{ B4000000,	4000000,	"4 Mbps" },
+#endif
 };
 #define NUM_BAUD_RATES (sizeof(baud_rates) / sizeof(baud_rates[0]))
 
@@ -2470,4 +2482,9 @@ void upsdrv_makevartable(void) {
 }
 
 void upsdrv_help(void) {
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }

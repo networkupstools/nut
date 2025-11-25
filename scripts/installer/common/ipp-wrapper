@@ -14,7 +14,7 @@ NUT_BIN_DIR="$NUT_DIR/bin"
 NUT_SBIN_DIR="$NUT_DIR/sbin"
 NUT_LIB_DIR="$NUT_DIR/lib"
 
-PROGNAME="`basename $0`"
+PROGNAME="`basename \"$0\"`"
 
 if [ "$PROGNAME" = "ipp-wrapper" ]; then
     echo "This is a wrapper to call other programs; do not call it directly!" >&2

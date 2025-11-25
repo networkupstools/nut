@@ -9,10 +9,12 @@
 # Copyright (C) 2023-2025 by Jim Klimov <jimklimov+nut@gmail.com>
 # Licensed under GPLv2+ terms
 
-SCRIPTDIR="`dirname "$0"`" \
-&& SCRIPTDIR="`cd "${SCRIPTDIR}" && pwd`" \
+SCRIPTDIR="`dirname \"$0\"`" \
+&& SCRIPTDIR="`cd \"${SCRIPTDIR}\" && pwd`" \
 && [ -n "${SCRIPTDIR}" ] && [ -d "${SCRIPTDIR}" ] \
 || exit
+
+EGREP="@EGREP@"
 
 [ -n "${DOCINFO_XML-}" ] || DOCINFO_XML="${SCRIPTDIR}/docinfo.xml.in"
 
@@ -25,11 +27,11 @@ esac
 
 generate_tags() {
     # Find commits whose history includes DOCINFO_OLDEST_TAG
-    for RELTAG in `git tag -l 'v*' --contains "${DOCINFO_OLDEST_TAG}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -e 's,-.*$,,' | sort -nr | uniq` ; do
-        NUT_RELEASE="`echo "$RELTAG" | sed -e 's,^v,,'`"
+    for RELTAG in `git tag -l 'v*' --contains "${DOCINFO_OLDEST_TAG}" | $EGREP '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -e 's,-.*$,,' | sort -nr | uniq` ; do
+        NUT_RELEASE="`echo \"$RELTAG\" | sed -e 's,^v,,'`"
         grep "<revnumber>${NUT_RELEASE}</revnumber>" "${DOCINFO_XML}" >/dev/null 2>&1 && continue
 
-        NUT_RELEASER="`git log -1 --pretty=format:'%cn' "${RELTAG}" | tr -d 'a-z '`"
+        NUT_RELEASER="`git log -1 --pretty=format:'%cn' \"${RELTAG}\" | tr -d 'a-z '`"
         # Beware to not use "|" in formatting below! Used for sed magic later.
         git log -1 --pretty=tformat:'  <revision>%n    <revnumber>@NUT_RELEASE@</revnumber>%n    <date>%cs</date>%n    <authorinitials>@NUT_RELEASER@</authorinitials>%n    <revremark></revremark>%n  </revision>%n' \
             "${RELTAG}" \
@@ -88,7 +90,7 @@ fi
 # the leading space to enforce it in "sed a" command
 # (it eats whitespace otherwise).
 echo "INJECTING to DOCINFO_XML:" >&2
-NEWTAGS_SED="`echo "$NEWTAGS" | tr '\n' '|' | sed -e 's,\([/<>]\),\\1,g' -e 's,^ ,\\\\ ,'`" || exit
+NEWTAGS_SED="`echo \"$NEWTAGS\" | tr '\n' '|' | sed -e 's,\([/<>]\),\\1,g' -e 's,^ ,\\\\ ,'`" || exit
 echo "NEWTAGS_SED: $NEWTAGS_SED" >&2
 
 sed -e '/<!-- AUTOINSERT LOCATION -->/a'"$NEWTAGS_SED" \
@@ -96,7 +98,12 @@ sed -e '/<!-- AUTOINSERT LOCATION -->/a'"$NEWTAGS_SED" \
     | tr '|' '\n' \
     > "${DOCINFO_XML}.tmp"
 
-diff -bu "${DOCINFO_XML}" "${DOCINFO_XML}.tmp"
+OUTD="`diff -bu \"${DOCINFO_XML}\" \"${DOCINFO_XML}.tmp\" 2>/dev/null`"
+if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
+    echo "$OUTD"
+else
+    diff "${DOCINFO_XML}" "${DOCINFO_XML}.tmp"
+fi
 
 echo "Was the change acceptable? Press Y to modify the original '${DOCINFO_XML}' file [Y/N]" >&2
 read LINE

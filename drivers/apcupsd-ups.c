@@ -18,13 +18,24 @@
 
 #include "config.h"
 
+#define NUT_WANT_INET_NTOP_XX	1
+#include "common.h"
+
 #ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
 #else	/* WIN32 */
+# define SOCK_OPT_CAST (char *)
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+# include <ws2tcpip.h>
+# include <wspiapi.h>
+/* This override network system calls to adapt to Windows specificity */
+# define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
+# undef W32_NETWORK_CALL_OVERRIDE
 #endif	/* WIN32 */
 
 #ifdef HAVE_POLL_H
@@ -57,7 +68,7 @@ typedef struct pollfd {
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.73"
+#define DRIVER_VERSION	"0.75"
 
 #define POLL_INTERVAL_MIN 10
 
@@ -70,8 +81,8 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-static uint16_t port=3551;
-static struct sockaddr_in host;
+static uint16_t	port = 3551;	/* apcupsd default port */
+static struct addrinfo	*host = NULL;
 
 static void process(char *item,char *data)
 {
@@ -195,7 +206,7 @@ static int getdata(void)
 
 	state_get_timestamp((st_tree_timespec_t *)&start);
 
-	if (INVALID_FD_SOCK( (p.fd = socket(AF_INET, SOCK_STREAM, 0)) ))
+	if (INVALID_FD_SOCK( (p.fd = socket(host->ai_family, SOCK_STREAM, 0)) ))
 	{
 		upsdebugx(1,"socket error");
 		/* return -1; */
@@ -203,7 +214,7 @@ static int getdata(void)
 		goto getdata_return;
 	}
 
-	if(connect(p.fd,(struct sockaddr *)&host,sizeof(host)))
+	if (connect(p.fd, host->ai_addr, host->ai_addrlen))
 	{
 		upsdebugx(1,"can't connect to apcupsd");
 		/* close(p.fd);
@@ -245,7 +256,7 @@ static int getdata(void)
 	p.events=POLLIN;
 
 	n=htons(6);
-	x=write(p.fd,&n,2);
+	x=write(p.fd,(void*)&n,2);
 	x=write(p.fd,"status",6);
 
 	/* TODO: double-check for poll() in configure script */
@@ -255,7 +266,7 @@ static int getdata(void)
 	while (WaitForMultipleObjects(1, &event, FALSE, 15000) == WAIT_TIMEOUT)
 #endif	/* WIN32 */
 	{
-		if(read(p.fd,&n,2)!=2)
+		if(read(p.fd,(void*)&n,2)!=2)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			ret = -1;
@@ -334,8 +345,11 @@ getdata_return:
 
 void upsdrv_initinfo(void)
 {
-	if(!port)fatalx(EXIT_FAILURE,"invalid host or port specified!");
-	if(getdata())fatalx(EXIT_FAILURE,"can't communicate with apcupsd!");
+	if (!port || !host)
+		fatalx(EXIT_FAILURE,"invalid host or port specified!");
+
+	if (getdata())
+		fatalx(EXIT_FAILURE,"can't communicate with apcupsd!");
 	else dstate_dataok();
 
 	poll_interval = (poll_interval < POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
@@ -343,8 +357,10 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	if(getdata())upslogx(LOG_ERR,"can't communicate with apcupsd!");
-	else dstate_dataok();
+	if (getdata()) {
+		upslogx(LOG_ERR,"can't communicate with apcupsd!");
+		dstate_datastale();
+	} else dstate_dataok();
 
 	poll_interval = (poll_interval < POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
@@ -364,14 +380,20 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 void upsdrv_makevartable(void)
 {
 }
 
 void upsdrv_initups(void)
 {
-	char *p;
-	struct hostent *h;
+	struct addrinfo	hints, *res;
+	char	*p, *namestart = device_path, *nameend = NULL, *portstart = device_path, sport[NI_MAXSERV];
+	int	v;
 
 #ifdef WIN32
 	WSADATA WSAdata;
@@ -379,28 +401,97 @@ void upsdrv_initups(void)
 	atexit((void(*)(void))WSACleanup);
 #endif	/* WIN32 */
 
-	if(device_path&&*device_path)
+	/* NOTE: in case of errors below we set "port" to 0,
+	 * and bail out with fatalx() in upsdrv_initinfo() */
+	if (device_path && *device_path)
 	{
-		/* TODO: fix parsing since bare IPv6 addresses contain colons */
-		if((p=strchr(device_path,':')))
+		/* IPv6 */
+		if (*device_path == '[') {
+			namestart++;
+			nameend = strchr(namestart, ']');
+			if (nameend) {
+				*nameend = '\0';
+				portstart = (nameend + 1);
+			} else {
+				upslogx(LOG_WARNING, "%s: Seems we were asked for IPv6 address (had an opening bracket, but never a closing one): '%s'", __func__, device_path);
+			}
+		}
+
+		/* Look for last colon, since bare IPv6 addresses contain colons too */
+		if((p=strrchr(portstart, ':')))
 		{
-			int i;
-			*p++=0;
-			i=atoi(p);
-			if(i<1||i>65535)i=0;
+			int	i;
+			*p++ = '\0';	/* cut off just the host name in device_path */
+			i = atoi(p);
+			if (i<1 || i>65535)
+				i = 0;
 			port = (uint16_t)i;
 		}
 	}
-	else device_path="localhost";
 
-	if(!(h=gethostbyname(device_path)))port=0;
-	else memcpy(&host.sin_addr,h->h_addr,4);
+	if (!namestart || !(*namestart))	/* did we chop it all off above? */
+		namestart = "localhost";	/* keep default port e.g. 3551 was set at start */
 
-	/* TODO: add IPv6 support */
-	host.sin_family=AF_INET;
-	host.sin_port=htons(port);
+	snprintf(sport, sizeof(sport), "%" PRIuMAX, (uintmax_t)port);
+
+	memset(&hints, 0, sizeof(hints));
+
+	hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	while ((v = getaddrinfo(namestart, sport, &hints, &res)) != 0) {
+		upsdebugx(1, "%s: getaddrinfo: %s", __func__, NUT_STRARG(gai_strerror(v)));
+
+		switch (v)
+		{
+		case EAI_AGAIN:
+			continue;
+		case EAI_NONAME:
+			upslogx(LOG_WARNING, "%s: Host not found: '%s'", __func__, NUT_STRARG(namestart));
+			break;
+		case EAI_MEMORY:
+			upslogx(LOG_WARNING, "%s: Insufficient memory", __func__);
+			break;
+		case EAI_SYSTEM:
+			upslog_with_errno(LOG_WARNING, "%s: System error happened during getaddrinfo()", __func__);
+			break;
+		default:
+			upslog_with_errno(LOG_WARNING, "%s: Unknown error happened during getaddrinfo()", __func__);
+			break;
+		}
+
+		port = 0;	/* abort later in upsdrv_initinfo() */
+		res = NULL;	/* whatever got populated into the pointer is anyway undefined */
+		break;
+	}
+
+	if (res)
+	{
+		/* TODO: loop, connect, retry?
+		 * See the more elaborate examples in NUT code (upsclient) or
+		 * https://man7.org/linux/man-pages/man3/getaddrinfo.3.html
+		 */
+		if (res->ai_next) {
+			upslogx(LOG_WARNING, "%s: Host %s does not map to a unique address; "
+				"we only tried the first hit", __func__, NUT_STRARG(namestart));
+		}
+	}
+
+	/* Maybe loop above; end up with what we have (or don't) */
+	if (port) {
+		host = res;	/* Keep until upsdrv_cleanup()... may be done better */
+
+		upslogx(LOG_INFO, "Will poll apcupsd at IPv%s address %s port %" PRIu16,
+			(host->ai_family == AF_INET ? "4" : (host->ai_family == AF_INET6 ? "6" : "?")),
+			NUT_STRARG(inet_ntopAI(host)), port);
+	} else if(res) {
+		freeaddrinfo(res);
+	}
 }
 
 void upsdrv_cleanup(void)
 {
+	if (host)
+		freeaddrinfo(host);
 }

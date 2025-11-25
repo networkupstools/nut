@@ -4,7 +4,7 @@
 # **********************************************************#
 # Copyright 2003 - Arnaud Quette                            #
 # Distributed under the GNU GPL v2+                         #
-# See the distribution lib/README for usage information     #
+# See the distribution lib/README.adoc for usage information#
 # **********************************************************#
 
 # Note: PACKAGE_VERSION is baked into configure script used
@@ -20,7 +20,7 @@ datadir="@datadir@"
 libexecdir="@libexecdir@"
 libdir="@libdir@"
 includedir="@includedir@"
-sysconfdir="@sysconfdir@"
+confdir="@CONFPATH@"
 Libs="-L@libdir@ @LDFLAGS_NUT_RPATH@ -lupsclient @LIBSSL_LIBS@"
 Cflags="-I@includedir@ @LIBSSL_CFLAGS@"
 ConfigFlags='@CONFIG_FLAGS@'

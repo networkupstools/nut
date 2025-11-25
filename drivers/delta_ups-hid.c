@@ -33,13 +33,13 @@
 #define DELTA_UPS_HID_VERSION	"Delta UPS HID 0.6"
 
 /* Delta UPS */
-#define DELTA_UPS_VENDORID	0x05dd
+#define DELTA_VENDORID	0x05dd
 
 /* USB IDs device table */
 static usb_device_id_t delta_ups_usb_device_table[] = {
 	/* Delta RT Series, Single Phase, 1/2/3 kVA */
 	/* Delta UPS Amplon R Series, Single Phase UPS, 1/2/3 kVA */
-	{ USB_DEVICE(DELTA_UPS_VENDORID, 0x041b), NULL },
+	{ USB_DEVICE(DELTA_VENDORID, 0x041b), NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }

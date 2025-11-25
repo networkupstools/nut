@@ -44,12 +44,12 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.17"
 
 #if defined NUT_MODBUS_HAS_USB
 
 /* APC */
-#define APC_VENDORID 0x051D
+#define APC_VENDORID	0x051d
 
 /* USB IDs device table */
 static usb_device_id_t apc_modbus_usb_device_table[] = {
@@ -79,7 +79,7 @@ static const HIDNode_t modbus_rtu_usb_usage_tx = 0xff8600fd;
 /* Variables */
 static modbus_t *modbus_ctx = NULL;
 #if defined NUT_MODBUS_HAS_USB
-static USBDevice_t usbdevice;
+static USBDevice_t usbdevice = {0};
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
 static USBDeviceMatcher_t *best_matcher = NULL;
@@ -1594,6 +1594,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 void upsdrv_makevartable(void)
 {
 #if defined NUT_MODBUS_HAS_USB
@@ -1659,9 +1664,9 @@ static void _apc_modbus_usb_lib_to_nut(const modbus_usb_device_t *device, USBDev
 
 	out->VendorID = device->vid;
 	out->ProductID = device->pid;
-	out->Vendor = device->vendor_str;
-	out->Product = device->product_str;
-	out->Serial = device->serial_str;
+	out->Vendor = device->vendor_str ? strdup(device->vendor_str) : NULL;
+	out->Product = device->product_str ? strdup(device->product_str) : NULL;
+	out->Serial = device->serial_str ? strdup(device->serial_str) : NULL;
 	out->bcdDevice = device->bcd_device;
 
 	res = snprintf(bus_buf, sizeof(bus_buf), "%03u", device->bus);
@@ -1983,5 +1988,14 @@ void upsdrv_cleanup(void)
 #if defined NUT_MODBUS_HAS_USB
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeExactMatcher(regex_matcher);
+
+	if (usbdevice.Vendor)
+		free(usbdevice.Vendor);
+	if (usbdevice.Product)
+		free(usbdevice.Product);
+	if (usbdevice.Serial)
+		free(usbdevice.Serial);
+
+	memset(&usbdevice, 0, sizeof(usbdevice));
 #endif /* defined NUT_MODBUS_HAS_USB */
 }

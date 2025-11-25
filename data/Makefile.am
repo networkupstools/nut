@@ -1,16 +1,18 @@
 # Network UPS Tools: data
 
-SUBDIRS = html
+SUBDIRS = htmlcgi
 
 dist_data_DATA = cmdvartab
 nodist_data_DATA = driver.list
 EXTRA_DIST = evolution500.seq epdu-managed.dev
 
 dist-hook:
-	@$(distdir)/../tools/driver-list-format.sh
+	@GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
+	 $(distdir)/../tools/driver-list-format.sh
 
 check-local:
-	@abs_top_builddir='$(abs_top_builddir)' abs_top_srcdir='$(abs_top_srcdir)' $(top_srcdir)/tools/driver-list-format.sh --check
+	@GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
+	 abs_top_builddir='$(abs_top_builddir)' abs_top_srcdir='$(abs_top_srcdir)' $(top_srcdir)/tools/driver-list-format.sh --check
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative

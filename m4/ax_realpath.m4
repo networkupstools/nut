@@ -26,29 +26,29 @@ AC_DEFUN([AX_REALPATH_SHELL_ONELEVEL],
         TGT="$1"
 
         while test -h "$TGT" ; do
-            LS_OUT="`ls -ld "$TGT"`" || { RESOLVE_ERROR=$? ; break ; }
-            LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
+            LS_OUT="`ls -ld \"$TGT\"`" || { RESOLVE_ERROR=$? ; break ; }
+            LINK="`expr \"$LS_OUT\" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
             if expr "$LINK" : '/.*' > /dev/null; then
                 TGT="$LINK"
             else
-                TGT="`dirname "$TGT"`/$LINK"
+                TGT="`dirname \"$TGT\"`/$LINK"
             fi
         done
 
         if test "$RESOLVE_ERROR" = 0 ; then
-            TGTDIR="`dirname "$TGT"`" && \
-            TGTDIR="`cd "$TGTDIR" && pwd`" || {
-                TGTDIR="`dirname "$TGT"`" || \
+            TGTDIR="`dirname \"$TGT\"`" && \
+            TGTDIR="`cd \"$TGTDIR\" && pwd`" || {
+                TGTDIR="`dirname \"$TGT\"`" || \
                 RESOLVE_ERROR=$? ; }
 
             if test "$RESOLVE_ERROR" = 0 ; then
                 while test -h "$TGTDIR" ; do
-                    LS_OUT="`ls -ld "$TGTDIR"`" || { RESOLVE_ERROR=$? ; break ; }
-                    LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
+                    LS_OUT="`ls -ld \"$TGTDIR\"`" || { RESOLVE_ERROR=$? ; break ; }
+                    LINK="`expr \"$LS_OUT\" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
                     if expr "$LINK" : '/.*' > /dev/null; then
                         TGTDIR="$LINK"
                     else
-                        PARENTDIR="`dirname "$TGTDIR"`"
+                        PARENTDIR="`dirname \"$TGTDIR\"`"
                         case "$PARENTDIR" in
                             /) TGTDIR="/$LINK" ; break ;;
                             *) TGTDIR="$PARENTDIR/$LINK" ;;
@@ -93,11 +93,11 @@ AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
         if test x"$RESOLVE_ERROR" = x0 ; then
             dnl Recurse to check the (grand)parent dir (if any)
             if test -n "$RESOLVE_SUFFIX" ; then
-                RESOLVE_SUFFIX="`basename "$RESOLVE_PREFIX"`/$RESOLVE_SUFFIX"
+                RESOLVE_SUFFIX="`basename \"$RESOLVE_PREFIX\"`/$RESOLVE_SUFFIX"
             else
-                RESOLVE_SUFFIX="`basename "$RESOLVE_PREFIX"`"
+                RESOLVE_SUFFIX="`basename \"$RESOLVE_PREFIX\"`"
             fi
-            RESOLVE_PREFIX="`dirname "$RESOLVE_PREFIX"`"
+            RESOLVE_PREFIX="`dirname \"$RESOLVE_PREFIX\"`"
         else
             dnl Bail out, keep latest answer
             break
@@ -132,14 +132,14 @@ AC_DEFUN([AX_REALPATH],
 
     REALPRG=""
     AS_IF([test -n "$REALPATH"], [
-        REALPRG="`${REALPATH} "$1"`"
+        REALPRG="`${REALPATH} \"$1\"`"
     ])
 
     AS_IF([test -z "$REALPRG"], [
         RESOLVE_ERROR=0
 
         dnl Note: not all "test" implementations have "-e", so got fallbacks:
-        AS_IF([test -e "$1" || test -f "$1" || test -s "$1" || test -d "$1" || test -L "$1" || test -h "$1" || test -c "$1" || test -b "$1" || test -p "$1"],
+        AS_IF([(test -e "$1") >/dev/null || test -f "$1" || test -s "$1" || test -d "$1" || test -L "$1" || test -h "$1" || test -c "$1" || test -b "$1" || test -p "$1"],
             [], [
             AC_MSG_WARN([Path name '$1' not found (absent or access to ancestor directories denied)])
             dnl We can still try to resolve, e.g. to find
@@ -174,7 +174,7 @@ AC_DEFUN([UNITTEST_AX_REALPATH],
 [
     AC_MSG_NOTICE([======= starting UNITTEST for REALPATH macro])
     AC_MSG_NOTICE([=== Testing macro for realpath; .../q/x are directories, qwe is a file inside, and .../Q is a symlink to .../q])
-    TESTDIR="`mktemp -d`" && test -d "$TESTDIR" && test -w "$TESTDIR" || TESTDIR="/tmp"
+    TESTDIR="`${MKTEMP} -d`" && test -d "$TESTDIR" && test -w "$TESTDIR" || TESTDIR="/tmp"
     rm -rf "$TESTDIR"/q ; mkdir -p "$TESTDIR"/q/x ; echo qwe > "$TESTDIR"/q/x/qwe ; ln -fs q "$TESTDIR"/Q
     dnl Do not quote TESTDIR in macro calls below, shell quotes are added in implem
     AC_MSG_NOTICE([=======])

@@ -1,6 +1,11 @@
 Setting up the multi-arch Linux LXC container farm for NUT CI
 -------------------------------------------------------------
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/qa-guide.chunked/_continuous_integration_nut_ci_farm_build_agent_preparation.html
+//////////////////////////////////////////////////////////////////////////////
+
 Due to some historical reasons including earlier personal experience,
 the Linux container setup implemented as described below was done with
 persistent LXC containers wrapped by LIBVIRT for management. There was
@@ -170,7 +175,7 @@ Initial container installation (for various guest OSes)
 ------
 ...
     # If debian-archive-keyring isn't installed, fetch GPG keys directly
-    releasekeyring="`grep -E '^keyring ' "/usr/share/debootstrap/scripts/$release" | sed -e 's,^keyring ,,' -e 's,[ #].*$,,'`" 2>/dev/null
+    releasekeyring="`grep -E '^keyring ' \"/usr/share/debootstrap/scripts/$release\" | sed -e 's,^keyring ,,' -e 's,[ #].*$,,'`" 2>/dev/null
     if [ -z $releasekeyring ]; then
         releasekeyring=/usr/share/keyrings/debian-archive-keyring.gpg
     fi

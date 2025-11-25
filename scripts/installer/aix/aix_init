@@ -112,7 +112,7 @@ do_start() {
 do_stop() {
 	if test -e "${NUT_RUN_DIR}/upsmon.pid" ; then
 		echo "Stopping UPS monitor: \c"
-		PID="`cat "${NUT_RUN_DIR}/upsmon.pid"`"
+		PID="`cat \"${NUT_RUN_DIR}/upsmon.pid\"`"
 		( kill $PID && success || failure ) || \
 			RETVAL=$?
 		rm "${NUT_RUN_DIR}/upsmon.pid"
@@ -121,7 +121,7 @@ do_stop() {
 	if [ "$SERVER" = "yes" ]; then
 		if test -e "${NUT_RUN_DIR}/upsd.pid" ; then
 			echo "Stopping upsd: \c"
-			PID="`cat "${NUT_RUN_DIR}/upsd.pid"`"
+			PID="`cat \"${NUT_RUN_DIR}/upsd.pid\"`"
 			( kill -9 $PID && success || failure ) || \
 				RETVAL=$?
 			rm "${NUT_RUN_DIR}/upsd.pid"
@@ -186,7 +186,7 @@ case "$1" in
 		if [ "$SERVER" = "yes" ]; then
 			RETVAL_UPSD=1
 			if test -f "${NUT_LOCK_FILE}" -o -s "${NUT_RUN_DIR}/upsd.pid" ; then
-				PID_UPSD="`cat "${NUT_RUN_DIR}/upsd.pid"`" && \
+				PID_UPSD="`cat \"${NUT_RUN_DIR}/upsd.pid\"`" && \
 					test -n "$PID_UPSD" && \
 					test -d "/proc/${PID_UPSD}" && \
 					echo "upsd is running with PID $PID_UPSD" && \
@@ -200,7 +200,7 @@ case "$1" in
 
 		RETVAL_UPSMON=1
 		if test -s "${NUT_RUN_DIR}/upsmon.pid" ; then
-			PID_UPSMON="`cat "${NUT_RUN_DIR}/upsmon.pid"`" && \
+			PID_UPSMON="`cat \"${NUT_RUN_DIR}/upsmon.pid\"`" && \
 				test -n "$PID_UPSMON" && \
 				test -d "/proc/${PID_UPSMON}" && \
 				echo "upsmon is running with PID $PID_UPSMON" && \

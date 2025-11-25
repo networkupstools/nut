@@ -1,0 +1,6 @@
+usr/lib/*/libnutscan.so
+usr/lib/*/pkgconfig/libnutscan.pc
+usr/include/nut-scan.h
+usr/include/nutscan-ip.h
+usr/include/nutscan-device.h
+usr/include/nutscan-init.h

@@ -139,6 +139,7 @@ extern info_lkp_t kelvin_celsius_conversion[];
 
 typedef enum {
 	ONLINE = 0,	/* on line */
+	OFFLINE,	/* explicitly known as offline */
 	DISCHRG,	/* discharging */
 	CHRG,		/* charging */
 	LOWBATT,	/* low battery */
@@ -157,7 +158,8 @@ typedef enum {
 	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
 	DEPLETED,	/* battery depleted; Belkin */
 	TIMELIMITEXP,	/* time limit expired; APC */
-	FULLYCHARGED,	/* battery full; CyberPower */
+	FULLYCHARGED,	/* battery full; CyberPower and others */
+	NOTFULLYCHARGED,	/* battery reported as not full; CyberPower and others */
 	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
 	FANFAIL,	/* fan failure; MGE */
 	NOBATTERY,	/* battery missing; MGE */

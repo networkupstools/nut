@@ -10,7 +10,7 @@ EXTRA_DIST = \
     HP-UX/nut-upsmon \
     HP-UX/nut-upsmon.sh \
     logrotate/nutlogd \
-    misc/nut.bash_completion \
+    misc/nut.bash_completion.in \
     misc/osd-notify \
     perl/Nut.pm \
     RedHat/halt.patch \
@@ -28,10 +28,9 @@ EXTRA_DIST = \
     valgrind/README.adoc \
     valgrind/.valgrind.supp.in \
     valgrind/valgrind.sh.in \
-    Windows/halt.c \
-    Windows/Makefile
+    Windows/halt.c
 
-SUBDIRS = augeas devd hotplug installer python systemd udev ufw Solaris Windows upsdrvsvcctl external_apis
+SUBDIRS = augeas devd hotplug installer obs python systemd udev ufw Solaris Windows upsdrvsvcctl external_apis
 
 if WITH_SNMP
 if WITH_NEON
@@ -39,7 +38,7 @@ if WITH_NEON
 endif
 endif
 
-SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc
+SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc obs/README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
@@ -62,5 +61,7 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) $(AM_MAKEFLAGS) -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 CLEANFILES = *-spellchecked RedHat/*-spellchecked usb_resetter/*-spellchecked
+
+DISTCLEANFILES = misc/nut.bash_completion
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

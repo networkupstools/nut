@@ -105,6 +105,7 @@
 #include "attribute.h"
 #include "proto.h"
 #include "str.h"
+#include "nut_stdint.h"
 
 #if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
 # include <regex.h>
@@ -273,6 +274,18 @@ void open_syslog(const char *progname);
 /* close ttys and become a daemon */
 void background(void);
 
+/* allow tagging the (forked) process in logs to ease debugging */
+const char *getproctag(void);
+/* save a copy of tag, or call with NULL to clean and free the internal buffer;
+ * if using this feature in a particular NUT program at all - it automatically
+ * registers with atexit() to do such clean-up in exit handling.
+ *
+ * WARNING: first call to this method also caches the getprocname(getpid())
+ * so if you want to see debug logs from that - only call this after setting
+ * the nut_debug_level (by parsing CLI arguments and/or NUT_DEBUG_LEVEL envvar).
+ */
+void setproctag(const char *tag);
+
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name);
 
@@ -309,14 +322,20 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
  *	0	Process name identified, does not seem to match
  *	1+	Process name identified, and seems to match with
  *		varying precision
- * Generally speaking, if (checkprocname(...)) then ok to proceed
+ * Generally speaking, if (checkprocname(...)) then ok to proceed.
+ * Singular for programs with a single expected executable name,
+ * plural for programs with expected aliases (e.g. "old"/new" migrations).
  */
 int checkprocname(pid_t pid, const char *progname);
-/* compareprocname() does the bulk of work for checkprocname()
- * and returns same values. The "pid" argument is used for logging.
- * Generally speaking, if (compareprocname(...)) then ok to proceed
+int checkprocnames(pid_t pid, const char **prognames);
+/* compareprocname*() methods do the bulk of work for checkprocname*()
+ * and return same values. The "pid" argument is used for logging.
+ * Generally speaking, if (compareprocname(...)) then ok to proceed.
+ * Singular for programs with a single expected executable name,
+ * plural for programs with expected aliases (e.g. "old"/new" migrations).
  */
 int compareprocname(pid_t pid, const char *procname, const char *progname);
+int compareprocnames(pid_t pid, const char *procname, const char **prognames);
 /* Helper for the above methods and some others. If it returns true (1),
  * work about PID-name comparison should be quickly skipped.
  */
@@ -376,6 +395,7 @@ pid_t get_max_pid_t(void);
 /* send sig to pid after some sanity checks, returns
  * -1 for error, or zero for a successfully sent signal */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
+int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_current_progname);
 
 /* open <pidfn> and get the pid
  * returns zero or more for successfully retrieved value,
@@ -400,11 +420,15 @@ pid_t parsepidfile(const char *pidfn);
  * named driver programs does not request it)
  */
 int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname);
+int sendsignalfnaliases(const char *pidfn, int sig, const char **prognames, int check_current_progname);
 #else	/* WIN32 */
 /* No progname here - communications via named pipe */
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored);
+int sendsignalfnaliases(const char *pidfn, const char * sig, const char **prognames_ignored, int check_current_progname_ignored);
 #endif	/* WIN32 */
 
+/* return a pointer to character inside the file that starts a basename
+ * caller should strdup() a copy to retain beyond the lifetime of "file" */
 const char *xbasename(const char *file);
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
@@ -470,12 +494,30 @@ typedef enum eupsnotify_state {
 	NOTIFY_STATE_RELOADING,
 	NOTIFY_STATE_STOPPING,
 	NOTIFY_STATE_STATUS,	/* Send a text message per "fmt" below */
-	NOTIFY_STATE_WATCHDOG	/* Ping the framework that we are still alive */
+	NOTIFY_STATE_WATCHDOG,	/* Ping the framework that we are still alive */
+	NOTIFY_STATE_EXTEND_TIMEOUT	/* Ping the framework that we are still alive when starting/stopping */
 } upsnotify_state_t;
 const char *str_upsnotify_state(upsnotify_state_t state);
 /* Note: here fmt may be null, then the STATUS message would not be sent/added */
 int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
+
+/* Exposed to code consumers (NUT daemons) for NOTIFY_STATE_EXTEND_TIMEOUT
+ * By default upsnotify_extend_timeout_usec == 0 so the
+ * upsnotify() method would fall back to current WATCHDOG_USEC
+ * if available, or to upsnotify_extend_timeout_usec_default.
+ * NOTE: It seems that internally in systemd, UINT64_MAX or
+ *  ((uint64_t)-1) means "infinity". Internally systemd uses
+ *  uint64_t as their usec_t (at least currently) but this
+ *  does not seem to be a public API/contract. De-facto the
+ *  value did not have any effect; however INT64_MAX did work
+ *  (presumably as almost 300K years, did not check that long).
+ *  More at https://github.com/systemd/systemd/issues/39535
+ * Whatever value gets applied, it should exceed the relevant
+ * loop cycle duration at that point in daemon life time.
+ */
+#define UPSNOTIFY_EXTEND_TIMEOUT_USEC_INFINITY	((uint64_t)INT64_MAX)
+extern uint64_t upsnotify_extend_timeout_usec_default, upsnotify_extend_timeout_usec;
 
 /* upslog*() messages are sent to syslog always;
  * their life after that is out of NUT's control */

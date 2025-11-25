@@ -72,11 +72,11 @@ devices_formatted="yes"
 #
 get_devices_info() {
 	for dev in `$awk '/^MONITOR / { print $2 }' "$CONFIG_UPSMON"`; do
-		status="`$NUT_UPSC "$dev" ups.status 2>/dev/null`"
-		runtime="`$NUT_UPSC "$dev" battery.runtime 2>/dev/null`"
-		batterypct="`$NUT_UPSC "$dev" battery.charge 2>/dev/null`"
-		supplies="`get_pwr_value "$dev" | egrep '^[0-9]*$'`"
-		upsmon_ms="`get_ms_value "$dev" | egrep 'master|slave'`"
+		status="`$NUT_UPSC \"$dev\" ups.status 2>/dev/null`"
+		runtime="`$NUT_UPSC \"$dev\" battery.runtime 2>/dev/null`"
+		batterypct="`$NUT_UPSC \"$dev\" battery.charge 2>/dev/null`"
+		supplies="`get_pwr_value \"$dev\" | egrep '^[0-9]*$'`"
+		upsmon_ms="`get_ms_value \"$dev\" | egrep 'master|slave'`"
 
 		echo "$dev:$status:$runtime:$batterypct:$supplies:$upsmon_ms"
 	done
@@ -178,8 +178,8 @@ overall_status() {
 				# when UPS are on battery
 
 	# Get non-low battery UPSes (still protecting the system)
-	protectors="`echo "$devices_info" | parse_protectors_knowngood "${onbattery_sdtimer}"`"
-	protectors_unknown="`echo "$devices_info" | parse_protectors_unknown`"
+	protectors="`echo \"$devices_info\" | parse_protectors_knowngood \"${onbattery_sdtimer}\"`"
+	protectors_unknown="`echo \"$devices_info\" | parse_protectors_unknown`"
 
 	# Get total powervalue of protecting UPSes
 	protectors_pwr_value=0
@@ -187,7 +187,7 @@ overall_status() {
 	not_protectors=0
 
 	for ups in $protectors; do
-		pwr_value="`get_pwr_value "$ups"`"
+		pwr_value="`get_pwr_value \"$ups\"`"
 
 		test -n "$pwr_value" || pwr_value=1
 
@@ -199,7 +199,7 @@ overall_status() {
 	done
 
 	for ups in $protectors_unknown; do
-		pwr_value="`get_pwr_value "$ups"`"
+		pwr_value="`get_pwr_value \"$ups\"`"
 
 		test -n "$pwr_value" || pwr_value=1
 
@@ -398,7 +398,7 @@ HERE
 # Usage
 #
 usage() {
-	this="`basename $0`"
+	this="`basename \"$0\"`"
 
 	cat <<HERE
 Usage: $this [OPTIONS]

@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.20"
+#define DRIVER_VERSION	"1.22"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -53,9 +53,12 @@ upsdrv_info_t upsdrv_info = {
 
 #define USB_VENDOR_STRING "ATCL FOR UPS"
 
+/* Unregistered vendor 0x0001 (commonly identified as Fry's Electronics) */
+#define NONAME0001_VENDORID	0x0001
+
 static usb_device_id_t atcl_usb_id[] = {
 	/* ATCL FOR UPS */
-	{ USB_DEVICE(0x0001, 0x0000),  NULL },
+	{ USB_DEVICE(NONAME0001_VENDORID, 0x0000),  NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -559,11 +562,14 @@ void upsdrv_initups(void)
 			"Unable to find ATCL FOR UPS\n\n"
 
 			"Things to try:\n"
-			" - Connect UPS device to USB bus\n"
+			" - Connect UPS device to USB bus.\n"
 			" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n"
-			"   See upsdrvctl(8) and ups.conf(5).\n\n"
+			"   See upsdrvctl(%s) and ups.conf(%s).\n"
+			" - Check with nutdrv_qx(%s) or blazer_usb(%s) driver instead.\n"
 
-			"Fatal error: unusable configuration");
+			"\nFatal error: unusable configuration",
+			MAN_SECTION_CMD_SYS, MAN_SECTION_CFG,
+			MAN_SECTION_CMD_SYS, MAN_SECTION_CMD_SYS);
 	}
 
 }
@@ -732,6 +738,11 @@ void upsdrv_shutdown(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

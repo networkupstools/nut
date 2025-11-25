@@ -21,7 +21,9 @@ endif
 # Run in builddir, use script from srcdir
 # Avoid running "$<" - not all make implementations handle that
 check-NIT: $(abs_srcdir)/nit.sh
-	"$(abs_srcdir)/nit.sh"
+	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
+	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
+	 "$(abs_srcdir)/nit.sh"
 
 # Make sure pre-requisites for NIT are fresh as we iterate
 check-NIT-devel: $(abs_srcdir)/nit.sh
@@ -36,15 +38,19 @@ check-NIT-devel: $(abs_srcdir)/nit.sh
 NIT_CASE = testgroup_sandbox_upsmon_master
 NUT_PORT = 12345
 check-NIT-sandbox: $(abs_srcdir)/nit.sh
+	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
 	[ -n "$${DEBUG_SLEEP-}" ] && [ "$${DEBUG_SLEEP-}" -gt 0 ] || DEBUG_SLEEP=600 ; export DEBUG_SLEEP ; \
 	LANG=C LC_ALL=C TZ=UTC \
 	NUT_PORT=$(NUT_PORT) NIT_CASE="$(NIT_CASE)" NUT_FOREGROUND_WITH_PID=true \
+	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	"$(abs_srcdir)/nit.sh"
 
 check-NIT-sandbox-devel: $(abs_srcdir)/nit.sh
 	+[ -n "$${DEBUG_SLEEP-}" ] && [ "$${DEBUG_SLEEP-}" -gt 0 ] || DEBUG_SLEEP=600 ; export DEBUG_SLEEP ; \
+	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
 	LANG=C LC_ALL=C TZ=UTC \
 	NUT_PORT=$(NUT_PORT) NIT_CASE="$(NIT_CASE)" NUT_FOREGROUND_WITH_PID=true \
+	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	$(MAKE) $(AM_MAKEFLAGS) check-NIT-devel
 
 SPELLCHECK_SRC = README.adoc
