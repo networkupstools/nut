@@ -238,7 +238,8 @@ metadata about recently published package revisions:
 # service unit files in a separate development package; earlier distro
 # releases did not seem to require it explicitly:
 :; apt-get install \
-    systemd-dev
+    systemd-dev \
+    || true
 
 # Optionally for sd_notify integration:
 :; apt-get install \
@@ -300,7 +301,8 @@ complete environments):
     qemu-user-static
 ------
 
-NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`.
+NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`
+(or `apt-get install openjdk-17-jdk-headless` on Debian 12 and older).
 You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 
