@@ -21,6 +21,12 @@ of new releases.
 
 * For Linux systems, we have notes on linkdoc:qa-guide[Custom NUT CI farm
   build agents: LXC multi-arch containers,CI_LXC,docs/ci-farm-lxc-setup.txt]
+* After installing the build prerequisites needed on your platform as listed
+  below, you might want to follow up with
+  linkdoc:user-manual[Building NUT for in-place upgrades or non-disruptive tests,Installing_inplace,INSTALL.nut.adoc,_installation_instructions]
+//////////////////////////////////////////////////////////////////////////////
+// https://networkupstools.org/docs/user-manual.chunked/_installation_instructions.html#5-2-building-nut-for-in-place-upgrades-or-non-disruptive-tests
+//////////////////////////////////////////////////////////////////////////////
 
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
 or SSL implementations (OpenSSL vs. Mozilla NSS) -- no problem installing
@@ -238,7 +244,8 @@ metadata about recently published package revisions:
 # service unit files in a separate development package; earlier distro
 # releases did not seem to require it explicitly:
 :; apt-get install \
-    systemd-dev
+    systemd-dev \
+    || true
 
 # Optionally for sd_notify integration:
 :; apt-get install \
@@ -300,7 +307,8 @@ complete environments):
     qemu-user-static
 ------
 
-NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`.
+NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`
+(or `apt-get install openjdk-17-jdk-headless` on Debian 12 and older).
 You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 
