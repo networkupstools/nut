@@ -87,7 +87,7 @@ static int parse_q_response(const char *buf)
     int i;
 
     int fields = sscanf(buf,
-        " ( %d %d %f %d %f %d %f %d %7s %31s",
+        "( %d %d %f %d %f %d %f %d %7s %31s",
         &raw_vout,
         &load_step,
         &vbat,
@@ -250,7 +250,7 @@ static void parse_i_response(const char *buf)
 
     {
         int fields = sscanf(buf,
-            "#%f %f %f %f %f %31s %31s REV:%31s %31s",
+            "#%f %f %f %f %f %31s %31s REV:%31s %31s %*s %*s",
             &eq, &flt, &alarm_v, &shutdown_v, &xfer_v,
             mfr, serial, fw, model
         );
@@ -314,17 +314,19 @@ static int meanwell_ntu_update(void)
 
 /* ------------------ Instant Commands ------------------ */
 
-int instcmd(const char *cmd, const char *extra)
+static int instcmd(const char *cmd, const char *extra)
 {
     (void)extra; /* unused */
 
     if (!strcasecmp(cmd, "load.off")) {
-        ser_send(upsfd, CMD_SHUTDOWN);
+        if (ser_send(upsfd, CMD_SHUTDOWN) < 0)
+            return STAT_INSTCMD_FAILED;
         return STAT_INSTCMD_HANDLED;
     }
 
     if (!strcasecmp(cmd, "load.on")) {
-        ser_send(upsfd, CMD_ON);
+        if (ser_send(upsfd, CMD_ON) < 0)
+            return STAT_INSTCMD_FAILED;
         return STAT_INSTCMD_HANDLED;
     }
 
@@ -349,7 +351,7 @@ void upsdrv_initups(void)
 
     /* Probe with I-command for model/info (if supported) */
     if (ser_send(upsfd, CMD_I) >= 0) {
-        if (ser_get_line(upsfd, buf, sizeof(buf), '\\', "", 2, 0) > 0) {
+        if (ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 2, 0) > 0) {
             parse_i_response(buf);
         }
     }
