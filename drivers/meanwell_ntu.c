@@ -13,7 +13,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <termios.h>   /* for B9600 */
 
 extern TYPE_FD_SER upsfd;
 
