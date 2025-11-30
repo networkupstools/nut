@@ -10,233 +10,218 @@ meanwell_ntu - Driver for Mean Well NTU series inverter/UPS units
 SYNOPSIS
 --------
 
-`meanwell_ntu` -h
+*meanwell_ntu* -h
 
-`meanwell_ntu` -a *upsname* [*options*]
+*meanwell_ntu* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page documents the hardware-specific features of the
+*meanwell_ntu* driver. For general information about NUT drivers, see
+linkman:nutupsdrv[8].
 
 
 DESCRIPTION
 -----------
 
-The `meanwell_ntu` driver provides support for the Mean Well NTU series
-inverter/UPS units, using the vendor’s ASCII serial protocol.
+The *meanwell_ntu* driver provides support for Mean Well NTU series
+inverter/UPS units that implement the vendor’s ASCII serial protocol.
 
-It is an experimental driver and is currently intended for testing and
-early adopters.  Behaviour and reported variables may change between
-NUT releases as more models are tested in the field.
+This driver is currently experimental and intended for early adopters.
+Reported variables and behavior may evolve as additional models and
+firmware revisions are tested.
 
 
 SUPPORTED HARDWARE
 ------------------
 
-The driver is known to work with the following Mean Well NTU series
-devices:
+The driver is known to work with the following NTU models:
 
 * NTU-1200
 * NTU-1700
 * NTU-2200
 * NTU-3200
 
-All nominal DC voltage variants are supported, for example:
+Supported DC-voltage variants include:
 
 * NTU-1200-112, -124, -148
 * NTU-1700-112, -124, -148
 * NTU-2200-112, -124, -148
 * NTU-3200-212, -224, -248
 
-Support for other NTU family members using the same serial protocol is
-expected but not guaranteed.
+Other NTU-series devices using the same protocol may also work.
 
-The driver talks to the unit over a 9600 8N1 serial link.  This may be
-provided either by an RS-232 port or by a USB–serial bridge exposed as
-a tty device (for example `/dev/ttyUSB0`).
+Communication uses a 9600 8N1 serial connection via RS-232 or a
+USB-serial adapter such as */dev/ttyUSB0*.
 
 
 CABLES
 ------
 
-The driver expects a straight-through serial connection (no modem control),
-or an equivalent USB–serial adapter connected to the NTU’s RS-232 port.
-
-If you are using a USB–serial adapter, make sure that it is detected by
-the operating system and a device node such as `/dev/ttyUSB0` is present.
+MEAN WELL p/n: RJ11-RS232
+A straight-through serial cable (no modem control) is required.
+USB-to-RS-232 adapters work as long as they expose a standard tty device.
 
 
 CONFIGURATION
 -------------
 
-The driver is configured via *ups.conf(5)*.  A minimal configuration
-might look like:
+The driver is configured in linkman:ups.conf[5].  
+A minimal configuration:
 
----------------------- /etc/nut/ups.conf ----------------------
+----
 [meanwell-ntu]
-    driver  = meanwell_ntu
-    port    = /dev/ttyUSB0
-    desc    = "Mean Well NTU-1200-124"
----------------------------------------------------------------
+    driver = meanwell_ntu
+    port   = /dev/ttyUSB0
+    desc   = "Mean Well NTU-1200-124"
+----
 
 Required parameters
 ~~~~~~~~~~~~~~~~~~~
 
-`driver`
-  Must be set to `meanwell_ntu`.
+*driver*::
+  Must be set to *meanwell_ntu*.
 
-`port`
-  The serial or USB tty where the NTU is connected, such as
-  `/dev/ttyS0` or `/dev/ttyUSB0`.
+*port*::
+  The serial/USB tty device (e.g. */dev/ttyS0*, */dev/ttyUSB0*).
 
 Optional parameters
 ~~~~~~~~~~~~~~~~~~~
 
-This driver currently uses only standard NUT-level options:
+This driver currently relies only on standard NUT parameters:
 
-`pollinterval`
-  Interval in seconds between status polls (default: 2).
+*pollinterval*::
+  Interval between status polls (default: 2 seconds).
 
-`synchronous`
-  Serial I/O mode as documented in *nutupsdrv(8)* (default: `auto`).
-
-No driver-specific options are defined yet.
+*synchronous*::
+  Serial I/O mode as documented in linkman:nutupsdrv[8].
 
 
 INSTANT COMMANDS
 ----------------
 
-When supported by the attached hardware, the following instant commands
-are available via *upscmd(8)*:
+The following instant commands are supported when the connected hardware
+implements them (see linkman:upscmd[8]):
 
-`load.off`
-  Request the NTU to shut down its inverter output and power off the load.
-  This is implemented using the vendor `C100000000000000` command and may
-  imply a delayed shutdown, depending on the unit’s configuration.
+*load.off*::
+  Request shutdown of inverter output and load power-off
+  (vendor command `C100000000000000`).
 
-`load.on`
-  Request the NTU to enable its inverter output and power on the load,
-  using the vendor `C010000000000000` command.
+*load.on*::
+  Request inverter output power-on
+  (vendor command `C010000000000000`).
 
-Not all models or firmware revisions may honour these commands.  Check
-the unit’s documentation and test carefully before relying on them for
-unattended shutdown or restart sequences.
+Support varies across firmware revisions; test before relying on them.
 
 
 STATUS AND VARIABLES
 --------------------
 
-The driver periodically issues the `Q` (Status) and `I` (Inverter Info)
-commands to the NTU and maps the responses onto standard NUT variables.
+The driver regularly sends the `Q` (status) and `I` (info) commands and
+maps their fields to standard NUT variables.
 
 Selected read-only variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`battery.voltage` (V)
-  Measured DC bus / battery voltage.
+*battery.voltage*::
+  Battery/DC bus voltage (V).
 
-`battery.charge` (%)
-  Remaining capacity as reported by the NTU.
+*battery.charge*::
+  Remaining capacity (%).
 
-`battery.alarm.voltage` (V)
-  Low-voltage alarm threshold, when provided by the `I` response.
+*battery.alarm.voltage*::
+  Low-voltage alarm threshold (V).
 
-`battery.shutdown.voltage` (V)
-  Low-voltage shutdown threshold, when provided by the `I` response.
+*battery.shutdown.voltage*::
+  Low-voltage shutdown threshold (V).
 
-`input.voltage` (V)
-  Utility (AC input) voltage.  This is typically only non-zero while the
-  unit is in bypass/line mode.
+*input.voltage*::
+  Utility AC input voltage (non-zero in line or bypass mode).
 
-`output.voltage` (V)
-  Output voltage (derived from the raw field in the `Q` response and
-  scaled by 10).  Only valid in inverter mode.
+*output.voltage*::
+  Inverter output voltage (V).
 
-`output.frequency` (Hz)
-  Output frequency, when the unit is running on battery.
+*output.frequency*::
+  Output frequency when running on battery (Hz).
 
-`ups.temperature` (°C)
-  Inverter temperature as reported by the NTU.
+*ups.temperature*::
+  Inverter temperature (°C).
 
-`ups.load` (%)
-  Approximate load percentage, derived from the *PPP* bits in the `Q`
-  response.
+*ups.load*::
+  Approximate load percentage, derived from PPP bits.
 
-`device.mfr`
-  Manufacturer string from the `I` response (typically `MEANWELL`).
+*device.mfr*::
+  Manufacturer string (typically `MEANWELL`).
 
-`device.model`, `ups.model`
-  Model identifier from the `I` response (for example `NTU-1200-124`).
+*device.model*, *ups.model*::
+  Model descriptor (e.g. `NTU-1200-124`).
 
-`device.serial`
-  Serial number string, when reported.
+*device.serial*::
+  Serial number when reported.
 
-`device.firmware`
-  Firmware revision string (for example `REV:01.8`).
+*device.firmware*::
+  Firmware revision string.
 
 
 UPS status flags
 ~~~~~~~~~~~~~~~~
 
-The NTU protocol exposes a 19-bit status word.  The driver maps selected
-bits to NUT `ups.status` flags, including:
+The NTU protocol exposes a 19-bit status word.  
+The driver maps selected bits to *ups.status*:
 
-`OB`
+*OB*::
   On battery / inverter mode.
 
-`BYPASS`
-  Bypass mode (utility path in use).
+*BYPASS*::
+  Bypass mode active.
 
-`OL`
-  Utility present, output on line.
+*OL*::
+  Utility present / online.
 
-`LB`
+*LB*::
   Battery low.
 
-`OVER`
+*OVER*::
   Over-temperature condition.
 
-`FSD`
-  Inverter fault or forced shutdown condition.
-
-The raw status bits are also exported as individual informational
-variables named after their meaning (for example `battery.low`,
-`bypass.mode`, `utility.present`, `overtemp`, etc.) which may be useful
-for detailed monitoring and debugging.
+The raw bitfields are also exported as informational variables such as
+*battery.low*, *utility.present*, *bypass.mode*, *overtemp*, etc.
 
 
 LIMITATIONS
 -----------
 
-This driver is currently marked experimental:
+This driver is marked experimental:
 
-* It is based on vendor protocol documentation and limited field testing.
-* Some fields in the `Q` and `I` responses are not yet used.
-* Reporting of `battery.charge`, `ups.load` and status flags may be
-  refined as more devices and firmware revisions are tested.
-* Shutdown and restart sequences are not yet integrated with NUT’s
-  more advanced timing and power-path logic.
+* Protocol interpretation based on limited test samples.
+* Some fields in `Q`/`I` responses are currently unused.
+* Load and capacity reporting may be refined with further testing.
+* Shutdown and restart behavior is basic and may not integrate with all
+  NUT power-path logic.
 
-Users are encouraged to run the driver in debug mode and collect logs
-when reporting issues:
+For debugging, run the driver with high verbosity:
 
-----------------
+----
 /usr/local/ups/bin/meanwell_ntu -DDDDD -a meanwell-ntu
-----------------
+----
 
-Please include the exact NTU model, firmware revision (from the `I`
-command) and a description of the operating mode (bypass, inverter,
-charging, etc.) when filing bug reports or sending patches.
+Please include model, firmware version, and operating mode details when
+reporting issues.
 
 
 AUTHOR
 ------
 
-The `meanwell_ntu` driver was contributed by Jonathan Hite for use
-with Mean Well NTU series devices.  Subsequent enhancements and fixes
-may have been made by other contributors.  See the NUT source
-repository for detailed revision history.
+The *meanwell_ntu* driver was contributed by Jonathan Hite.  
+Additional improvements may be provided by the NUT community.  
+See the project repository for revision history.
 
 
 SEE ALSO
 --------
 
-*ups.conf*(5), *nutupsdrv*(8), *upsd*(8), *upsmon*(8), *upsc*(8),
-*upscmd*(8)
+linkman:ups.conf[5],
+linkman:nutupsdrv[8],
+linkman:upsd[8],
+linkman:upsmon[8],
+linkman:upsc[8],
+linkman:upscmd[8]
 
