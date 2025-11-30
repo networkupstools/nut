@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT Generic Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -347,6 +347,11 @@ void upsdrv_shutdown(void)
 
 /* print driver usage info */
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

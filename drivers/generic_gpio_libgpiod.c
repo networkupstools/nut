@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"GPIO UPS driver (API " WITH_LIBGPIO_VERSION_STR ")"
-#define DRIVER_VERSION	"1.04"
+#define DRIVER_VERSION	"1.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

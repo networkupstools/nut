@@ -1,3 +1,9 @@
+nut (2.8.4-1) UNRELEASED; urgency=high
+
+  * Revising recipes for OBS builds
+
+ -- Jim Klimov <EvgenyKlimov@Eaton.com>  Sun, 5 Oct 2025 14:00:00 +0200
+
 nut (2.7.4-14) UNRELEASED; urgency=high
 
   * Ported packaging recipes over upstream NUT, commented away DMF

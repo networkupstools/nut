@@ -79,27 +79,67 @@
 #   start-up lacking a driver, there should be some timer to re-enable
 #   failed not-disabled drivers (would be useful in any case though).
 
+# The GREP and EGREP commands found during configuration for the platform
+GREP="@GREP@"
+EGREP="@EGREP@"
+
 # Directory where NUT configs are located, e.g. /etc/nut or /etc/ups
 # Set at package configuration, compiled into daemons and drivers
 prefix="@prefix@"
-[ -n "${NUT_CONFPATH-}" ] || NUT_CONFPATH="@sysconfdir@"
+[ -n "${NUT_CONFPATH-}" ] || NUT_CONFPATH="@CONFPATH@"
 # Technically this should be a distribution-dependent value configured
 # during package build. But everyone has it the same from systemd defaults:
 [ -n "${SYSTEMD_CONFPATH-}" ] || SYSTEMD_CONFPATH="/etc/systemd/system"
 
+# NOTE: We log whatever info traces to stderr, because many modes expect
+# user/program consumable outputs on stdout.
+shouldDebug() {
+    [ -n "$DEBUG" ] || [ "${NUT_DEBUG_LEVEL}" -gt 0 ] 2>/dev/null
+}
+
+log_debug() {
+    # TODO: Provide an equivalent of upsdebugx and verbosity levels?..
+    if shouldDebug ; then
+        echo "`TZ=UTC LANG=C date` [DEBUG] $@" >&2
+    fi
+    return 0
+}
+
+log_info() {
+    echo "`TZ=UTC LANG=C date` [INFO] $@" >&2
+}
+
+log_warn() {
+    echo "`TZ=UTC LANG=C date` [WARNING] $@" >&2
+}
+
+log_error() {
+    echo "`TZ=UTC LANG=C date` [ERROR] $@" >&2
+}
+
+log_fatal() {
+    EXITCODE="$1"
+    if [ "${EXITCODE}" -ge 0 ] 2>/dev/null ; then
+        shift 1
+    else
+        EXITCODE=1
+    fi
+    echo "`TZ=UTC LANG=C date` [FATAL] $@" >&2
+    exit $EXITCODE
+}
+
 if [ -n "$ZSH_VERSION" ]; then
     ### Problem: loops like `for UPS in $UPSLIST` do not separate
     ### the UPSLIST into many tokens but use it as one string.
-    echo "FATAL: zsh is not supported in this script" >&2
-    exit 1
+    log_fatal 1 "zsh is not supported in this script"
+# FIXME: Try some more checks/solutions like these?
 #    setopt noglob
 #    setopt +F
 #    IFS="`printf ' \t\r\n'`" ; export IFS
 fi
 
-if set | grep -E '^(shell|version|t?csh)' | grep -E 't?csh' >/dev/null ; then
-    echo "FATAL: csh or tcsh is not supported in this script" >&2
-    exit 1
+if set | $EGREP '^(shell|version|t?csh)' | $EGREP 't?csh' >/dev/null ; then
+    log_fatal 1 "csh or tcsh is not supported in this script"
 fi
 
 # Third-party services to depend on (can be overridden by config file)
@@ -147,8 +187,8 @@ SVCNAME_SMF="svc:/system/power/nut-driver"
     NUT_DRIVER_ENUMERATOR_CONF="${NUT_CONFPATH}/nut-driver-enumerator.conf"
 
 [ -s "${NUT_DRIVER_ENUMERATOR_CONF}" ] && \
-    echo "Sourcing config file: ${NUT_DRIVER_ENUMERATOR_CONF}" && \
-    . "${NUT_DRIVER_ENUMERATOR_CONF}"
+    log_info "Sourcing config file: ${NUT_DRIVER_ENUMERATOR_CONF}" && \
+    . "${NUT_DRIVER_ENUMERATOR_CONF}" >&2
 
 [ -z "${UPSCONF-}" ] && \
     UPSCONF="${NUT_CONFPATH}/ups.conf"
@@ -271,17 +311,15 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_restart_drv="selftest_NOOP"
         ;;
     "")
-        echo "Error detecting the service-management framework on this OS" >&2
-        exit 1
+        log_fatal 1 "Error detecting the service-management framework on this OS"
         ;;
     *)
-        echo "Error: User provided an unknown service-management framework '$SERVICE_FRAMEWORK'" >&2
-        exit 1
+        log_fatal 1 "Error: User provided an unknown service-management framework '$SERVICE_FRAMEWORK'"
         ;;
 esac
 
 selftest_NOOP() {
-    echo "NO-OP: Self-testing context does not do systems configuration" >&2
+    log_warn "NO-OP: Self-testing context does not do systems configuration"
     return 0
 }
 
@@ -289,7 +327,7 @@ common_isFiled() {
     [ "${#UPSLIST_FILE}" != 0 ] && \
     for UPSF in $UPSLIST_FILE ; do
         [ "$1" = "$UPSF" ] && return 0
-        [ "`$hook_validInstanceName "$UPSF"`" = "$1" ] && return 0
+        [ "`$hook_validInstanceName \"$UPSF\"`" = "$1" ] && return 0
     done
     return 1
 }
@@ -298,7 +336,7 @@ common_isRegistered() {
     [ "${#UPSLIST_SVCS}" != 0 ] && \
     for UPSS in $UPSLIST_SVCS ; do
         [ "$1" = "$UPSS" ] && return 0
-        [ "`$hook_validInstanceName "$1"`" = "$UPSS" ] && return 0
+        [ "`$hook_validInstanceName \"$1\"`" = "$UPSS" ] && return 0
     done
     return 1
 }
@@ -320,11 +358,11 @@ upslist_equals() {
     # Trivial case 1: equal strings
     [ "$1" = "$2" ] && return 0
     # Trivial case 2: different amount of entries
-    [ "`echo "$1" | wc -l`" = "`echo "$2" | wc -l`" ] || return $?
+    [ "`echo \"$1\" | wc -l`" = "`echo \"$2\" | wc -l`" ] || return $?
 
     _TMP_DEV_SVC=""
     for _DEV in $1 ; do
-        DEVINST="`$hook_validInstanceName "${_DEV}"`"
+        DEVINST="`$hook_validInstanceName \"${_DEV}\"`"
         for _SVC in $2 ; do
             [ "${_DEV}" = "${_SVC}" ] \
             || [ "$DEVINST" = "${_SVC}" ] \
@@ -339,7 +377,7 @@ ${_DEV} = ${_SVC}" ; }
     [ "${#_TMP_DEV_SVC}" = 0 ] && return 1
 
     # Exit code : is the built mapping as long as the source list(s)?
-    [ "`echo "$1" | wc -l`" = "`echo "${_TMP_DEV_SVC}" | wc -l`" ]
+    [ "`echo \"$1\" | wc -l`" = "`echo \"${_TMP_DEV_SVC}\" | wc -l`" ]
 }
 
 upssvcconf_checksum_unchanged() {
@@ -347,7 +385,7 @@ upssvcconf_checksum_unchanged() {
     # compare checksums of the configuration section from the file and the
     # stashed configuration in a service instance (if any).
     # FIXME : optimize by caching, we likely have quite a few requests
-    [ "`upsconf_getSection_MD5 "$1"`" = "`$hook_getSavedMD5 "$2"`" ]
+    [ "`upsconf_getSection_MD5 \"$1\"`" = "`$hook_getSavedMD5 \"$2\"`" ]
 }
 
 upslist_checksums_unchanged() {
@@ -359,7 +397,7 @@ upslist_checksums_unchanged() {
 
     _TMP_SVC=""
     for _DEV in $1 ; do
-        DEVINST="`$hook_validInstanceName "${_DEV}"`"
+        DEVINST="`$hook_validInstanceName \"${_DEV}\"`"
         for _SVC in $2 ; do
             if [ "${_DEV}" = "${_SVC}" ] \
             || [ "$DEVINST" = "${_SVC}" ] \
@@ -397,8 +435,8 @@ upslist_savednames_find_missing() {
     # props (do not report those that have a non-trivial prop value):
     # whether an empty value or completely absent from the list
     for SVCINST in $SVCINSTS ; do
-        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}"'$' >/dev/null && echo "$SVCINST"
-        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}" >/dev/null || echo "$SVCINST"
+        echo "$SVCINST_PROPS" | $EGREP "^${SVCINST}${TABCHAR}"'$' >/dev/null && echo "$SVCINST"
+        echo "$SVCINST_PROPS" | $EGREP "^${SVCINST}${TABCHAR}" >/dev/null || echo "$SVCINST"
     done
     return 0
 }
@@ -430,15 +468,15 @@ upslist_savednames_find_mismatch() {
     # Find services whose props exist but services themselves do not
     # (e.g. upgrading from some version with different naming patterns)
     echo "$SVCINST_PROPS" | while read SVCINST_PROP DEVNAME_PROP ; do
-        echo "$SVCINSTS" | grep -E "^${SVCINST_PROP}"'$' >/dev/null || echo "$SVCINST_PROP"
+        echo "$SVCINSTS" | $EGREP "^${SVCINST_PROP}"'$' >/dev/null || echo "$SVCINST_PROP"
     done
 
     # Find and report services which do *not* have saved device names in
     # props (do not report those that have a non-trivial prop value):
     # whether an empty value or completely absent from the list
     for SVCINST in $SVCINSTS ; do
-        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}"'$' >/dev/null && echo "$SVCINST"
-        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}" >/dev/null || echo "$SVCINST"
+        echo "$SVCINST_PROPS" | $EGREP "^${SVCINST}${TABCHAR}"'$' >/dev/null && echo "$SVCINST"
+        echo "$SVCINST_PROPS" | $EGREP "^${SVCINST}${TABCHAR}" >/dev/null || echo "$SVCINST"
     done
     return 0
 }
@@ -500,7 +538,7 @@ $LINE"
         echo "$SECTION_CONTENT"
     fi
 
-    [ "$RES" = 0 ] || echo "ERROR: Section [$1] was not found in the '$UPSCONF' file" >&2
+    [ "$RES" = 0 ] || log_error "Section [$1] was not found in the '$UPSCONF' file"
     return $RES
 }
 
@@ -515,7 +553,7 @@ EOF
 }
 
 upsconf_getSection_MD5() {
-    calc_md5 "`upsconf_getSection "$@"`"
+    calc_md5 "`upsconf_getSection \"$@\"`"
 }
 
 upsconf_getSection_SDP() {
@@ -539,7 +577,7 @@ upsconf_getValue() {
 
     # Note: Primary aim of this egrep is to pick either assignments or flags
     # As a by-product it can be used to test if a particular value is set ;)
-    SECTION_CONTENT="`$GETSECTION "$1"`" || return
+    SECTION_CONTENT="`$GETSECTION \"$1\"`" || return
     shift
     KEYS="$*"
 
@@ -547,17 +585,17 @@ upsconf_getValue() {
         RES_L=0
         VALUE=""
 
-        LINE="`echo "$SECTION_CONTENT" | grep -E '(^'"$1"'=|^'"$1"'$)'`" \
+        LINE="`echo \"$SECTION_CONTENT\" | $EGREP '(^'\"$1\"'=|^'\"$1\"'$)'`" \
         && VALUE="$(echo "$LINE" | sed -e "s,^$1=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'\$,\1,")" \
         || RES_L=$?
 
-        [ "$RES_L" = 0 ] || { RES="$RES_L" ; echo "ERROR: Section [$CURR_SECTION] or key '$1' in it was not found in the '$UPSCONF' file" >&2 ; }
+        [ "$RES_L" = 0 ] || { RES="$RES_L" ; log_error "Section [$CURR_SECTION] or key '$1' in it was not found in the '$UPSCONF' file" ; }
 
         echo "$VALUE"
         shift
     done
 
-    [ "$RES" = 0 ] || echo "ERROR: Section [$CURR_SECTION] or key(s) '$KEYS' in it was not found in the '$UPSCONF' file" >&2
+    [ "$RES" = 0 ] || log_error "ERROR: Section [$CURR_SECTION] or key(s) '$KEYS' in it was not found in the '$UPSCONF' file"
     return $RES
 }
 
@@ -581,13 +619,13 @@ upsconf_getDriverMedia() {
     # unit), newline-separated (drvname<EOL>type). Empty type for unclassified
     # results, assuming no known special dependencies (note that depending on
     # particular system's physics, both serial and network media may need USB).
-    CURR_DRV="`upsconf_getDriver "$1"`" || return $?
+    CURR_DRV="`upsconf_getDriver \"$1\"`" || return $?
     case "$CURR_DRV" in
         *netxml*|*snmp*|*ipmi*|*powerman*|*-mib*|*avahi*)
             printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
         *apcupsd-ups*)
             # Relay from a nearby apcupsd network server into NUT ecosystem:
-            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
+            CURR_PORT="`upsconf_getPort \"$1\"`" || CURR_PORT=""
             case "$CURR_PORT" in
                 *localhost*|*127.0.0.1*|*::1*)
                     printf '%s\n%s\n' "$CURR_DRV" "network-localhost" ; return ;;
@@ -596,8 +634,8 @@ upsconf_getDriverMedia() {
             esac
             ;;
         *apc_modbus*)
-            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
-            CURR_PORTTYPE="`upsconf_getValue "$1" 'porttype'`" || CURR_PORTTYPE=""
+            CURR_PORT="`upsconf_getPort \"$1\"`" || CURR_PORT=""
+            CURR_PORTTYPE="`upsconf_getValue \"$1\" 'porttype'`" || CURR_PORTTYPE=""
             case "$CURR_PORTTYPE" in
                 *usb*)
                     printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
@@ -625,13 +663,13 @@ upsconf_getDriverMedia() {
         *usb*)
             printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
         nutdrv_qx) # May be direct serial or USB
-            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
+            CURR_PORT="`upsconf_getPort \"$1\"`" || CURR_PORT=""
             case "$CURR_PORT" in
                 auto|/dev/*usb*|/dev/*hid*)
                     printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
                 /dev/*)
                     # See drivers/nutdrv_qx.c :: upsdrv_initups() for a list
-                    if [ -n "`upsconf_getValue "$1" 'subdriver' 'vendorid' 'productid' 'vendor' 'product' 'serial' 'bus' 'busport' 'langid_fix'`" ] \
+                    if [ -n "`upsconf_getValue \"$1\" 'subdriver' 'vendorid' 'productid' 'vendor' 'product' 'serial' 'bus' 'busport' 'langid_fix'`" ] \
                     ; then
                         printf '%s\n%s\n' "$CURR_DRV" "usb" ; return
                     else
@@ -643,7 +681,7 @@ upsconf_getDriverMedia() {
             esac
             ;;
         *dummy*) # May be networked (proxy to remote NUT)
-            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
+            CURR_PORT="`upsconf_getPort \"$1\"`" || CURR_PORT=""
             case "$CURR_PORT" in
                 *@localhost|*@|*@127.0.0.1|*@::1)
                     printf '%s\n%s\n' "$CURR_DRV" "network-localhost,drivers=`echo "${CURR_PORT}" | sed 's,@.*$,,'`" ; return ;;
@@ -663,8 +701,8 @@ upsconf_getDriverMedia() {
 }
 
 upsconf_getMedia() {
-    _DRVMED="`upsconf_getDriverMedia "$1"`" || return
-    echo "${_DRVMED}" | tail -n +2
+    _DRVMED="`upsconf_getDriverMedia \"$1\"`" || return
+    echo "${_DRVMED}" | @TAIL@ @TAIL_ARGS_FROM_NTH_LINE@ +2
     return 0
 }
 
@@ -672,31 +710,33 @@ upsconf_list_dev_drv_socket_checksum() {
     # NOTE: Output column order matters, it is parsed e.g. to check
     # for driver-on-driver dependencies when adding services
     upslist_readFile_once && [ "${#UPSLIST_FILE}" != 0 ] \
-        || { echo "No devices detected in '$UPSCONF'" >&2 ; return 1 ; }
+        || { log_warn "No devices detected in '$UPSCONF'" ; return 1 ; }
     # Use the section-driver-port subset
     if [ x"${AVOID_REPARSE}" != xyes ] ; then
         upslist_normalizeFile_once || return    # Propagate errors upwards
     fi
     for _DEV in $UPSLIST_FILE ; do
-        _DRV="`upsconf_getDriver "${_DEV}"`"
-        _MD5="`upsconf_getSection_MD5 "${_DEV}"`"
+        _DRV="`upsconf_getDriver \"${_DEV}\"`"
+        _MD5="`upsconf_getSection_MD5 \"${_DEV}\"`"
         printf '%s\t%s\t%s\t%s\n' "${_DEV}" "${_DRV}" "${_DRV}-${_DEV}" "${_MD5}"
     done
 }
 
 upsconf_debug() {
-    _DRV="`upsconf_getDriver "$1"`"
-    _PRT="`upsconf_getPort "$1"`"
-    _MED="`upsconf_getMedia "$1"`"
-    _MD5="`upsconf_getSection_MD5 "$1"`"
-    NAME_MD5="`calc_md5 "$1"`"
+    _DRV="`upsconf_getDriver \"$1\"`"
+    _PRT="`upsconf_getPort \"$1\"`"
+    _MED="`upsconf_getMedia \"$1\"`"
+    _MD5="`upsconf_getSection_MD5 \"$1\"`"
+    NAME_MD5="`calc_md5 \"$1\"`"
+    # Not public, not in usage()
+    # Used by tests, echo as formatted here to stdout
     echo "INST: ${NAME_MD5}~[$1]: DRV='${_DRV}' PORT='${_PRT}' MEDIA='${_MED}' SECTIONMD5='${_MD5}'"
 }
 
 calc_md5() {
     # Tries several ways to produce an MD5 of the "$1" argument
-    _MD5="`echo "$1" | md5sum 2>/dev/null | awk '{print $1}'`" && [ -n "${_MD5}" ] || \
-    { _MD5="`echo "$1" | openssl dgst -md5 2>/dev/null | awk '{print $NF}'`" && [ -n "${_MD5}" ]; } || \
+    _MD5="`echo \"$1\" | md5sum 2>/dev/null | awk '{print $1}'`" && [ -n "${_MD5}" ] || \
+    { _MD5="`echo \"$1\" | openssl dgst -md5 2>/dev/null | awk '{print $NF}'`" && [ -n "${_MD5}" ]; } || \
     return 1
 
     echo "${_MD5}"
@@ -706,8 +746,8 @@ calc_md5_file() {
     # Tries several ways to produce an MD5 of the file named by "$1" argument
     [ -s "$1" ] || return 2
 
-    _MD5="`md5sum 2>/dev/null < "$1" | awk '{print $1}'`" && [ -n "${_MD5}" ] || \
-    { _MD5="`openssl dgst -md5 2>/dev/null < "$1" | awk '{print $NF}'`" && [ -n "${_MD5}" ]; } || \
+    _MD5="`md5sum 2>/dev/null < \"$1\" | awk '{print $1}'`" && [ -n "${_MD5}" ] || \
+    { _MD5="`openssl dgst -md5 2>/dev/null < \"$1\" | awk '{print $NF}'`" && [ -n "${_MD5}" ]; } || \
     return 1
 
     echo "${_MD5}"
@@ -735,16 +775,16 @@ smf_registerInstance() {
         smf_unregisterInstance "$SVCINST"
     fi
     /usr/sbin/svccfg -s nut-driver add "$DEVICE" || \
-    { SVCINST="`smf_validInstanceName "$1"`" || return
+    { SVCINST="`smf_validInstanceName \"$1\"`" || return
       if /usr/bin/svcs "nut-driver:$SVCINST" >/dev/null 2>&1 ; then
         smf_unregisterInstance "$SVCINST"
       fi
       /usr/sbin/svccfg -s nut-driver add "$SVCINST" || return ; }
-    echo "Added instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'" >&2
+    log_info "Added instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'"
 
     DEPSVC=""
     DEPREQ=""
-    _MED="`upsconf_getMedia "$DEVICE"`"
+    _MED="`upsconf_getMedia \"$DEVICE\"`"
     case "${_MED}" in
         usb|usb,*)
             DEPSVC="$DEPSVC_USB_SMF"
@@ -759,18 +799,19 @@ smf_registerInstance() {
         drivers=*) ;; # Handled just below
         '') ;;
         # FIXME: modbus? sysfs like INA219? GPIO? Other local devices?
-        *)  echo "WARNING: Unexpected NUT media type ignored: '${_MED}'" >&2 ;;
+        *)  log_warn "WARNING: Unexpected NUT media type ignored: '${_MED}'" ;;
     esac
 
     case "${_MED}" in
         drivers=*|*,drivers=*)
             OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
+            # Not double-quoting here to iterate the string tokens:
             for DEPDRV in `echo "${_MED}" | sed -e 's/^\(.*,d\|d\)rivers=//' -e 's/,/ /g'` ; do
                 case "${DEPDRV}" in
                     *-*) # May be "drivername-upsname", where either sub-string
                          # may have dashes inside too; try to find the right one:
-                         OTHERDEV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $1 }'`" && \
-                         OTHERDRV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $2 }'`" && \
+                         OTHERDEV="`echo \"${OTHERLIST}\" | awk '($3 == \"'\"${DEPDRV}\"'\") { print $1 }'`" && \
+                         OTHERDRV="`echo \"${OTHERLIST}\" | awk '($3 == \"'\"${DEPDRV}\"'\") { print $2 }'`" && \
                          [ x"${DEPDRV}" = x"${OTHERDRV}-${OTHERDEV}" ] && \
                          [ x"${OTHERDEV}" != x"${DEVICE}" ] \
                          || {
@@ -778,7 +819,7 @@ smf_registerInstance() {
                                 case "${DEPDRV}" in
                                     *-"${OTHERDEV}")
                                         OTHERDRV="'`echo "${OTHERLIST}" | awk '($1 == "'"${OTHERDEV}"'") { print $2 }'`'" || OTHERDRV="<N/A>"
-                                        echo "WARNING: Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}" >&2
+                                        log_warn "Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}"
                                         ;;
                                 esac
                              done
@@ -788,32 +829,35 @@ smf_registerInstance() {
                         ;;
                     *)  OTHERDEV="${DEPDRV}" ;;
                 esac
-                if [ x"${OTHERDEV}" = x ] || ! (echo "$OTHERLIST" | grep -E "^${OTHERDEV}\t") >/dev/null ; then
-                    echo "WARNING: Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it" >&2
-                else
+                if [ x"${OTHERDEV}" != x ] && (echo "$OTHERLIST" | $EGREP "^${OTHERDEV}\t") >/dev/null ; then
                     DEPSVC="$DEPSVC ${SVCNAME_SMF}${SVCNAMESEP_SMF}`smf_validInstanceName ${OTHERDEV}`"
+                else
+                    log_warn "Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it"
                 fi
             done
-            if [ x"`echo "$DEPSVC" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SMF" ; fi
+            if [ x"`echo \"$DEPSVC\" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SMF" ; fi
             ;;
     esac
 
     TARGET_FMRI="nut-driver:$SVCINST"
     if [ -n "$DEPSVC" ]; then
         [ -n "$DEPREQ" ] || DEPREQ="optional_all"
-        echo "Adding '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'..."
+        log_info "Adding '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'..."
 
+        # NOTE: it seems (at least as of Solaris 11) that the fmri: definition
+        #  below (especially when there are many dependency FMRI's) must be a
+        #  multi-token list with parentheses, not a single quoted string.
         DEPPG="nut-driver-enumerator-generated"
         RESTARTON="refresh"
         /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$DEPPG" dependency && \
         /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/grouping = astring: "$DEPREQ" && \
         /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/restart_on = astring: "$RESTARTON" && \
         /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/type = astring: service && \
-        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "($DEPSVC)" && \
-        echo "OK" || echo "FAILED to define the dependency" >&2
+        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "(" $DEPSVC ")" && \
+        log_info "OK: Defined the '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'" || log_error "FAILED to define the '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'"
     fi
 
-    smf_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
+    smf_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 \"$DEVICE\"`"
     # Save original device (config section) name to speed up some searches
     smf_setSavedDeviceName "$SVCINST" "$DEVICE"
     smf_setDocLink "$SVCINST" "$DEVICE"
@@ -822,11 +866,11 @@ smf_registerInstance() {
     if [ "$AUTO_START" = yes ] ; then
         /usr/sbin/svcadm clear "${TARGET_FMRI}" 2>/dev/null || true
         /usr/sbin/svcadm enable "${TARGET_FMRI}" || return
-        echo "Started instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'" >&2
+        log_info "Started instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'"
     fi
 }
 smf_unregisterInstance() {
-    echo "Removing instance: 'nut-driver:$1' ..." >&2
+    log_info "Removing instance: 'nut-driver:$1' ..."
     /usr/sbin/svcadm disable -ts 'nut-driver:'"$1" || false
     /usr/sbin/svccfg -s nut-driver delete "$1"
 }
@@ -835,7 +879,7 @@ smf_refreshSupervizor() {
 }
 smf_listInstances_raw() {
     # Newer versions have pattern matching; older SMF might not have this luxury
-    /usr/bin/svcs -a -H -o fmri | grep -E '/nut-driver:'
+    /usr/bin/svcs -a -H -o fmri | $EGREP '/nut-driver:'
 }
 smf_listInstances() {
     # Chop twice, in case there is a leading "svc:/...."
@@ -899,10 +943,11 @@ smf_setSavedUniq() {
         *) __TYPE="${__TYPE}:" ;;
     esac
     __VAL="$5"
+    log_info "Stashing service property '${__PG}/${__PROP}' of '${__TARGET_FMRI}'..."
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" delprop "${__PG}" 2>/dev/null || true
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" addpg "${__PG}" application && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/${__PROP}" = "${__TYPE}" "${__VAL}"
-    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property ${__PG}/${__PROP}">&2 ; return 1 ; }
+    [ $? = 0 ] && log_info "OK: Stashed the service property ${__PG}/${__PROP}" || { log_error "FAILED to stash the service property ${__PG}/${__PROP}" ; return 1 ; }
 
     case "${__TARGET_FMRI}" in
         svc:/*:*) ;; # A service instance by full FMRI, refresh
@@ -936,7 +981,7 @@ smf_setDocLink() {
     # into service instance $1
     [ -n "$1" ] || return # No-op for global section
     __TARGET_FMRI="nut-driver:$1"
-    __DRV="`upsconf_getDriver "$2"`"
+    __DRV="`upsconf_getDriver \"$2\"`"
 
 ### Sample:
 #tm_common_name                                           template
@@ -950,32 +995,36 @@ smf_setDocLink() {
 #tm_man_nwamd8/title                                      astring  nwamd
 
     __PG="tm_doc_${__DRV}_Page"
+    log_info "Stashing service property group '${__PG}' for '${__TARGET_FMRI}' for online docs..."
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" delprop "${__PG}" 2>/dev/null || true
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" addpg "${__PG}" template && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/name" = "astring:" "\"${__DRV} online\"" && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/uri" = "astring:" "${NUT_WEBSITE_BASE}/docs/man/${__DRV}.html"
-    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property group '${__PG}' for online docs">&2 ; return 1 ; }
+    [ $? = 0 ] && log_info "OK: Stashed the service property group '${__PG}' for '${__TARGET_FMRI}' for online docs" \
+    || { log_error "FAILED to stash the service property group '${__PG}' for '${__TARGET_FMRI}' for online docs" ; return 1 ; }
 
     __PG="tm_man_${__DRV}@MAN_SECTION_CMD_SYS@"
+    log_info "Stashing service property group '${__PG}' for '${__TARGET_FMRI}' for local docs..."
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" delprop "${__PG}" 2>/dev/null || true
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" addpg "${__PG}" template && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/manpath" = "astring:" "@NUT_MANDIR@" && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/section" = "astring:" "@MAN_SECTION_CMD_SYS@" && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/title" = "astring:" "${__DRV}"
-    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property group '${__PG}' for local docs">&2 ; return 1 ; }
+    [ $? = 0 ] && log_info "OK: Stashed the service property group '${__PG}' for '${__TARGET_FMRI}' for local docs" \
+    || { log_error "FAILED to stash the service property group '${__PG}' for '${__TARGET_FMRI}' for local docs" ; return 1 ; }
 
     unset __DRV __PG __TARGET_FMRI
-    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the device doc links">&2 ; return 1 ; }
+    [ $? = 0 ] || { log_error "FAILED to stash the device doc links" ; return 1 ; }
 }
 smf_restart_upsd() {
-    echo "Reloading or restarting NUT data server to make sure it knows new configuration..."
+    log_info "Reloading or restarting NUT data server to make sure it knows new configuration..."
     /usr/sbin/svcadm enable "nut-server" 2>/dev/null
     /usr/sbin/svcadm clear "nut-server" 2>/dev/null
     /usr/sbin/svcadm refresh "nut-server" || \
     /usr/sbin/svcadm restart "nut-server"
 }
 smf_restart_drv() {
-    echo "Reloading or restarting NUT driver instance '$1' to make sure it knows new configuration..."
+    log_info "Reloading or restarting NUT driver instance '$1' to make sure it knows new configuration..."
     /usr/sbin/svcadm enable "nut-driver:$1" 2>/dev/null
     /usr/sbin/svcadm clear "nut-driver:$1" 2>/dev/null
     /usr/sbin/svcadm refresh "nut-driver:$1" || \
@@ -1000,26 +1049,26 @@ systemd_registerInstance() {
     DEVICE="$1"
     SVCINST="$1"
     /bin/systemctl enable 'nut-driver@'"$DEVICE".service || \
-    { if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | grep -E "^nut-driver@${DEVICE}.service$"; then
-        echo "SKIP: Unit 'nut-driver@${DEVICE}.service' seems deliberately masked" >&2
+    { if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | $EGREP "^nut-driver@${DEVICE}.service$"; then
+        log_warn "SKIP: Unit 'nut-driver@${DEVICE}.service' seems deliberately masked"
         return 0
       fi
-      echo "RETRY with validInstanceName of '$1'" >&2
-      SVCINST="`systemd_validInstanceName "$1"`" && \
+      log_warn "RETRY with validInstanceName of '$1'"
+      SVCINST="`systemd_validInstanceName \"$1\"`" && \
       /bin/systemctl enable 'nut-driver@'"$SVCINST".service || {
         RES=$?
-        if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | grep -E "^nut-driver@${SVCINST}.service$"; then
-          echo "SKIP: Unit 'nut-driver@${SVCINST}.service' seems deliberately masked" >&2
+        if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | $EGREP "^nut-driver@${SVCINST}.service$"; then
+          log_warn "SKIP: Unit 'nut-driver@${SVCINST}.service' seems deliberately masked"
           return 0
         fi
         return $RES
         }
       }
-    echo "Enabled instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
+    log_info "Enabled instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'"
 
     DEPSVC=""
     DEPREQ=""
-    _MED="`upsconf_getMedia "$DEVICE"`"
+    _MED="`upsconf_getMedia \"$DEVICE\"`"
     case "${_MED}" in
         usb|usb,*)
             DEPSVC="$DEPSVC_USB_SYSTEMD"
@@ -1036,18 +1085,19 @@ systemd_registerInstance() {
         drivers=*) ;; # Handled just below
         '') ;;
         # FIXME: modbus? sysfs like INA219? GPIO? Other local devices?
-        *)  echo "WARNING: Unexpected NUT media type ignored: '${_MED}'" >&2 ;;
+        *)  log_warn "Unexpected NUT media type ignored: '${_MED}'" ;;
     esac
 
     case "${_MED}" in
         drivers=*|*,drivers=*)
             OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
+            # Not double-quoting here to iterate the string tokens:
             for DEPDRV in `echo "${_MED}" | sed -e 's/^\(.*,d\|d\)rivers=//' -e 's/,/ /g'` ; do
                 case "${DEPDRV}" in
                     *-*) # May be "drivername-upsname", where either sub-string
                          # may have dashes inside too; try to find the right one:
-                         OTHERDEV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $1 }'`" && \
-                         OTHERDRV="`echo "${OTHERLIST}" | awk '($3 == "'"${DEPDRV}"'") { print $2 }'`" && \
+                         OTHERDEV="`echo \"${OTHERLIST}\" | awk '($3 == \"'\"${DEPDRV}\"'\") { print $1 }'`" && \
+                         OTHERDRV="`echo \"${OTHERLIST}\" | awk '($3 == \"'\"${DEPDRV}\"'\") { print $2 }'`" && \
                          [ x"${DEPDRV}" = x"${OTHERDRV}-${OTHERDEV}" ] && \
                          [ x"${OTHERDEV}" != x"${DEVICE}" ] \
                          || {
@@ -1055,7 +1105,7 @@ systemd_registerInstance() {
                                 case "${DEPDRV}" in
                                     *-"${OTHERDEV}")
                                         OTHERDRV="'`echo "${OTHERLIST}" | awk '($1 == "'"${OTHERDEV}"'") { print $2 }'`'" || OTHERDRV="<N/A>"
-                                        echo "WARNING: Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}" >&2
+                                        log_warn "Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}"
                                         ;;
                                 esac
                              done
@@ -1065,19 +1115,19 @@ systemd_registerInstance() {
                         ;;
                     *)  OTHERDEV="${DEPDRV}" ;;
                 esac
-                if [ x"${OTHERDEV}" = x ] || ! (echo "$OTHERLIST" | grep -E "^${OTHERDEV}\t") >/dev/null ; then
-                    echo "WARNING: Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it" >&2
-                else
+                if [ x"${OTHERDEV}" != x ] && (echo "$OTHERLIST" | $EGREP "^${OTHERDEV}\t") >/dev/null ; then
                     DEPSVC="$DEPSVC ${SVCNAME_SYSTEMD}${SVCNAMESEP_SYSTEMD}`systemd_validInstanceName ${OTHERDEV}`"
+                else
+                    log_warn "Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it"
                 fi
             done
-            if [ x"`echo "$DEPSVC" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SYSTEMD" ; fi
+            if [ x"`echo \"$DEPSVC\" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SYSTEMD" ; fi
             ;;
     esac
 
     if [ -n "$DEPSVC" ]; then
         [ -n "$DEPREQ" ] || DEPREQ="#Wants"
-        echo "Adding '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'..."
+        log_info "Adding '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'..."
         mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$SVCINST.service.d" && \
         cat > "${SYSTEMD_CONFPATH}/nut-driver@$SVCINST.service.d/nut-driver-enumerator-generated.conf" <<EOF
 # Customization generated `date -u` by nut-driver-enumerator for NUT device '$DEVICE'
@@ -1087,21 +1137,21 @@ Description=Network UPS Tools - device driver for NUT device '$DEVICE'
 ${DEPREQ}=${DEPSVC}
 After=${DEPSVC}
 EOF
-        [ $? = 0 ] && echo "OK" || echo "FAILED to define the dependency" >&2
+        [ $? = 0 ] && log_info "OK: Defined the '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'" || log_error "FAILED to define the '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'"
     fi
 
-    systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
+    systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 \"$DEVICE\"`"
     systemd_setSavedDeviceName "$SVCINST" "$DEVICE"
     systemd_setDocLink "$SVCINST" "$DEVICE"
 
     if [ "$AUTO_START" = yes ] ; then
-        systemd_refreshSupervizor || echo "WARNING: Somehow managed to fail systemd_refreshSupervizor()" >&2
+        systemd_refreshSupervizor || log_warn "Somehow managed to fail systemd_refreshSupervizor()"
         $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
-        echo "Started instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
+        log_info "Started instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'"
     fi
 }
 systemd_unregisterInstance() {
-    echo "Removing instance: 'nut-driver@$1' ..." >&2
+    log_info "Removing instance: 'nut-driver@$1' ..."
     $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl stop 'nut-driver@'"$1".service || \
     $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl stop 'nut-driver@'"$1".service || \
     $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl stop 'nut-driver@'"$1".service || false
@@ -1114,7 +1164,7 @@ systemd_refreshSupervizor() {
     /bin/systemctl daemon-reload
 }
 systemd_listInstances_raw() {
-    /bin/systemctl show --all 'nut-driver@*' -p Id | grep -E '=nut-driver' | sed 's,^Id=,,'
+    /bin/systemctl show --all 'nut-driver@*' -p Id | $EGREP '=nut-driver' | sed 's,^Id=,,'
 }
 systemd_listInstances() {
     systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -k1n -k1
@@ -1125,18 +1175,18 @@ systemd_getSavedMD5() {
     [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf"
     [ -s "${PROPFILE}" ] \
-    && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
-    || { echo "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
+    && $GREP "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
+    || { log_warn "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
 }
 systemd_findSavedDeviceName() {
     # Returns long service instance name which has DEVICE=="$1"
     # For empty "$1" returns a list of all recorded "SVC<TAB>DEVICE"
     if [ -z "$1" ]; then
-        grep -H "Environment='DEVICE=" \
+        $GREP -H "Environment='DEVICE=" \
             "${SYSTEMD_CONFPATH}"/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
         | sed 's|^'"${SYSTEMD_CONFPATH}"'/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*\([^\"']*\)[\"']*"'$|\1\t\2|'
     else
-        grep -E -H "Environment='DEVICE=($1|\"$1\")'" \
+        $EGREP -H "Environment='DEVICE=($1|\"$1\")'" \
             "${SYSTEMD_CONFPATH}"/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
         | sed 's|^'"${SYSTEMD_CONFPATH}"'/\(nut-driver@[^/]*\.service\)\.d/.*$|\1|'
     fi
@@ -1149,56 +1199,62 @@ systemd_getSavedDeviceName() {
     PROP="DEVICE"
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf"
     [ -s "${PROPFILE}" ] \
-    && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," -e 's,^"\(.*\)"$,\1,' \
-    || { echo "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
+    && $GREP "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," -e 's,^"\(.*\)"$,\1,' \
+    || { log_warn "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
 }
 systemd_setSavedDeviceName() {
     # Save device (config section) name $2 into service instance $1
     [ -n "$1" ] || return # No-op for global section
+    log_info "Saving device (config section) name $2 into service instance $1..."
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
     cat > "${PROPFILE}" << EOF
 [Service]
 Environment='DEVICE="$2"'
 EOF
-    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the device name">&2 ; return 1 ; }
+    [ $? = 0 ] && log_info "OK: Stashed the device name" \
+    || { log_error "FAILED to stash the device name" ; return 1 ; }
 }
 systemd_setDocLink() {
     # Save documentation links for driver of device (config section) named $2
     # into service instance $1
     [ -n "$1" ] || return # No-op for global section
+    log_info "Saving documentation links for driver of device (config section) named $2 into service instance $1..."
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-doclink.conf"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
-    __DRV="`upsconf_getDriver "$2"`"
+    __DRV="`upsconf_getDriver \"$2\"`"
     cat > "${PROPFILE}" << EOF
 [Unit]
 Documentation=man:${__DRV}(@MAN_SECTION_CMD_SYS@)
 Documentation=${NUT_WEBSITE_BASE}/docs/man/${__DRV}.html
 EOF
     unset __DRV
-    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the device name">&2 ; return 1 ; }
+    [ $? = 0 ] && log_info "OK: Saved documentation links for driver of device (config section) named $2 into service instance $1" \
+    || { log_error "FAILED to save the documentation links" ; return 1 ; }
 }
 systemd_setSavedMD5() {
     # Save checksum value $2 into service instance $1
     PROP="SECTION_CHECKSUM"
     [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
+    log_info "Saving checksum value $2 into service instance $1..."
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
     cat > "${PROPFILE}" << EOF
 [Service]
 Environment='$PROP=$2'
 EOF
-    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
+    [ $? = 0 ] && log_info "OK: Stashed the checksum" \
+    || { log_error "FAILED to stash the checksum" ; return 1 ; }
 }
 systemd_restart_upsd() {
     # Do not restart/reload if not already running
-    case "`/bin/systemctl is-active "nut-server"`" in
+    case "`/bin/systemctl is-active \"nut-server\"`" in
         active|unknown) ;; # unknown meant "starting" in our testing...
-        failed) echo "Note: nut-server unit was 'failed' - not disabled by user, so (re)starting it (probably had no config initially)" >&2 ;;
+        failed) log_warn "Note: nut-server unit was 'failed' - not disabled by user, so (re)starting it (probably had no config initially)" ;;
         *) return 0 ;;
     esac
 
-    echo "Reloading or restarting NUT data server to make sure it knows new configuration..."
+    log_info "Reloading or restarting NUT data server to make sure it knows new configuration..."
     # Note: reload is a better way to go about this, so the
     # data service is not interrupted by re-initialization
     # of the daemon. But systemd/systemctl sometimes stalls...
@@ -1209,12 +1265,12 @@ systemd_restart_upsd() {
 
 systemd_restart_drv() {
     # Do not restart/reload if not already running
-    case "`/bin/systemctl is-active "nut-driver@$1"`" in
+    case "`/bin/systemctl is-active \"nut-driver@$1\"`" in
         active|unknown) ;;
         *) return 0 ;;
     esac
 
-    echo "Reloading or restarting NUT driver instance '$1' to make sure it knows new configuration..."
+    log_info "Reloading or restarting NUT driver instance '$1' to make sure it knows new configuration..."
 
     # Full restart, e.g. in case we changed the user= in configs
     # however let "reload" try, in case we changed something that
@@ -1237,15 +1293,15 @@ upslist_normalizeFile_filter() {
     # are dropped. Note that brackets with spaces inside, and brackets
     # that do not start the non-whitespace payload of the line, are not
     # sections.
-    grep -E -v '(^$|^#)' | \
+    $EGREP -v '(^$|^#)' | \
     sed -e 's,^['"$TABCHAR"'\ ]*,,' \
         -e 's,^\#.*$,,' \
         -e 's,['"$TABCHAR"'\ ]*$,,' \
         -e 's,^\([^=\ '"$TABCHAR"']*\)['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,\1=,g' \
         -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' \
         -e 's,^\(\[[^]'"$TABCHAR"'\ ]*\]\)['"$TABCHAR"'\ ]*\(#.*\)*$,\1,' \
-    | grep -E -v '^$' \
-    | grep -E '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*#.*$)'
+    | $EGREP -v '^$' \
+    | $EGREP '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*#.*$)'
 }
 
 upslist_normalizeFile() {
@@ -1259,11 +1315,12 @@ upslist_normalizeFile() {
     UPSCONF_DATA_SDP=""
     if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
         [ ! -s "$UPSCONF" ] \
-        && echo "WARNING: The '$UPSCONF' file exists but is empty" >&2 \
+        && log_warn "The '$UPSCONF' file exists but is empty" \
         && return 0
         # Ok to continue - we may end up removing all instances
     else
-        echo "FATAL: The '$UPSCONF' file does not exist or is not readable" >&2
+        # TOTHINK: log_fatal() right away?
+        log_error "The '$UPSCONF' file does not exist or is not readable"
         return 2
     fi
 
@@ -1272,10 +1329,10 @@ upslist_normalizeFile() {
     # for faster parsing when determining driver-required media etc.
     UPSCONF_DATA="$(upslist_normalizeFile_filter < "$UPSCONF")" \
         && [ "${#UPSCONF_DATA}" != 0 ] \
-        && UPSCONF_DATA_SDP="`grep -E '^(\[.*\]|driver=|port=)' << EOF
+        && UPSCONF_DATA_SDP="`$EGREP '^(\[.*\]|driver=|port=)' << EOF
 $UPSCONF_DATA
 EOF`" \
-        ||  { echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: nothing left after normalization" >&2
+        ||  { log_error "Could not read the '$UPSCONF' file or it does not declare any device configurations: nothing left after normalization"
               UPSCONF_DATA=""
               UPSCONF_DATA_SDP=""
             }
@@ -1303,10 +1360,10 @@ upslist_readFile() {
 
     if [ "${#UPSCONF_DATA}" != 0 ] ; then
         # Note that section-name brackets should contain a single token
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | grep -E '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -k1n -k1)" \
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | $EGREP '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -k1n -k1)" \
             || UPSLIST_FILE=""
         if [ "${#UPSLIST_FILE}" = 0 ] ; then
-            echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2
+            log_error "Could not read the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents"
         fi
     fi
     # Ok to continue with empty results - we may end up removing all instances
@@ -1325,7 +1382,7 @@ upslist_readSvcs() {
     if [ "${#UPSLIST_SVCS}" = 0 ] && [ "$1" != "-" ] ; then
         EXPLAIN=""
         [ -z "$1" ] || EXPLAIN=" - $1"
-        echo "Error reading the list of ${SERVICE_FRAMEWORK-} service instances for UPS drivers, or none are defined${EXPLAIN}" >&2
+        log_error "Could not read the list of ${SERVICE_FRAMEWORK-} service instances for UPS drivers, or none are defined${EXPLAIN}"
         # Ok to continue - we may end up defining new instances
     fi
 }
@@ -1343,8 +1400,10 @@ upslist_addSvcs() {
     # recreating it here, since any data could change including the dependency
     # list, etc.
     for UPSF in $UPSLIST_FILE ; do
-        if ! common_isRegistered "$UPSF" ; then
-            echo "Adding new ${SERVICE_FRAMEWORK} service instance for power device [${UPSF}]..." >&2
+        if common_isRegistered "$UPSF" ; then
+            true
+        else
+            log_info "Adding new ${SERVICE_FRAMEWORK} service instance for power device [${UPSF}]..."
             $hook_registerInstance "$UPSF"
         fi
     done
@@ -1352,8 +1411,10 @@ upslist_addSvcs() {
 
 upslist_delSvcs() {
     for UPSS in $UPSLIST_SVCS ; do
-        if ! common_isFiled "$UPSS" ; then
-            echo "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] which is no longer in config file..." >&2
+        if common_isFiled "$UPSS" ; then
+            true
+        else
+            log_info "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] which is no longer in config file..."
             $hook_unregisterInstance "$UPSS"
         fi
     done
@@ -1376,14 +1437,14 @@ RECONFIGURATION_SIGNALS="1"
 TERMINATE_ASAP=false
 trap_handle_interruption_exit() {
     # Handle SIGINT, SIGQUIT, SIGTERM with a message
-    echo "`date -u` : Received an interruption signal, terminating the script now" >&2
-    exit 0
+    log_fatal 0 "Received an interruption signal, terminating the script now"
 }
 
 trap_handle_interruption() {
     # Handle SIGINT, SIGQUIT, SIGTERM gracefully - tell the main
     # iteration to complete and just then abort
-    echo "`date -u` : Received an interruption signal, will terminate the script after ending the main routine. Repeat the signal if urgent!" >&2
+    # Sub-shell "log_fatal" to get a standard message but not exit right now:
+    log_fatal 0 "Received an interruption signal, will terminate the script after ending the main routine. Repeat the signal if urgent!" || true
     TERMINATE_ASAP=true
     trap 'trap_handle_interruption_exit' $TERMINATION_SIGNALS
 }
@@ -1405,7 +1466,7 @@ nut_driver_enumerator_main() {
     # device sections yet) we do not want to spend time and log storage to
     # parse again and complain again.
     RESTART_ALL=no
-    AVOID_REPARSE=yes upssvcconf_checksum_unchanged "" || { echo "`date -u` : Detected changes in global section of '$UPSCONF', will restart all drivers"; RESTART_ALL=yes; }
+    AVOID_REPARSE=yes upssvcconf_checksum_unchanged "" || { log_info "Detected changes in global section of '$UPSCONF', will restart all drivers"; RESTART_ALL=yes; }
 
     # Quickly exit if there's nothing to do (both lists empty or equal); note
     # the lists are pre-sorted. Otherwise a non-zero exit will be done below.
@@ -1417,12 +1478,12 @@ nut_driver_enumerator_main() {
     # We can only exit quickly if both there are no changed sections and no
     # new or removed sections since last run.
     { [ -z "$UPSLIST_FILE" -a -z "$UPSLIST_SVCS" ] || { \
-        NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
+        NEW_CHECKSUM="`upslist_checksums_unchanged \"$UPSLIST_FILE\" \"$UPSLIST_SVCS\"`" \
         && [ "${#NEW_CHECKSUM}" = 0 ] \
         && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; \
     } ; } \
     && if [ -z "$DAEMON_SLEEP" -o "${VERBOSE_LOOP}" = yes ] ; then \
-        echo "`date -u` : OK: No changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" ; \
+        log_info "OK: No changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" ; \
        fi \
     && [ "$RESTART_ALL" = no ] && return 0
 
@@ -1430,38 +1491,38 @@ nut_driver_enumerator_main() {
     # compared to older runs (stashed in service instance configurations).
     if [ "${#NEW_CHECKSUM}" = 0 ]; then
         if [ "${VERBOSE_LOOP}" = yes ] ; then
-            echo "`date -u` : No changes to reconcile between *contents* of ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', but the *list* of instances vs. devices seems to have changed"
+            log_info "No changes to reconcile between *contents* of ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', but the *list* of instances vs. devices seems to have changed"
         fi
     else
         if [ "${VERBOSE_LOOP}" = yes ] ; then
-            echo "`date -u` : Got some changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', content checksums changed for: `echo ${NEW_CHECKSUM} | tr '\n' ' '`"
+            log_info "Got some changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', content checksums changed for: `echo ${NEW_CHECKSUM} | tr '\n' ' '`"
         fi
         for UPSS in $NEW_CHECKSUM ; do
             # NOTE: Pedantically, UPSS is a service instance name,
             # and may be the MD5-normalized version in certain cases.
             # For some operations below we need the original ups.conf
             # section name for the device - the CURR_DEV value.
-            CURR_DEV="`USE_SAVEDINST=true get_device_for_service "${UPSS}"`" && [ "${#CURR_DEV}" -gt 0 ] || CURR_DEV="${UPSS}"
-            CURR_DRV="`upsconf_getDriver "${CURR_DEV}"`" || CURR_DRV=""
+            CURR_DEV="`USE_SAVEDINST=true get_device_for_service \"${UPSS}\"`" && [ "${#CURR_DEV}" -gt 0 ] || CURR_DEV="${UPSS}"
+            CURR_DRV="`upsconf_getDriver \"${CURR_DEV}\"`" || CURR_DRV=""
             DO_UNREGISTER=yes
             if [ -n "$CURR_DRV" ] ; then
                 # If reload is handled and does not complain,
                 # we are OK to proceed without re-defining
                 # and restarting the driver service instance.
                 if [ "${VERBOSE_LOOP}" = yes ] ; then
-                    echo "`date -u` : Reloading ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: calling driver program '${CURR_DRV}' for the low-level work..." >&2
+                    log_info "Reloading ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: calling driver program '${CURR_DRV}' for the low-level work..."
                 fi
                 "@DRVPATH@/$CURR_DRV" -a "${CURR_DEV}" -c reload-or-error >/dev/null 2>/dev/null \
                 || { if [ "${VERBOSE_LOOP}" = yes ] ; then sleep 1; "@DRVPATH@/$CURR_DRV" -a "${CURR_DEV}" -c reload-or-error >&2 ; fi; } \
                 && DO_UNREGISTER=no
             fi
             if [ "$DO_UNREGISTER" = yes ] ; then
-                echo "Dropping old ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed..." >&2
+                log_info "Dropping old ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed..."
                 $hook_unregisterInstance "$UPSS"
                 # Re-registration to reconcile below should set the "saved" values
             else
-                echo "Keeping ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: live reload sufficed. Saving updated info into service properties." >&2
-                $hook_setSavedMD5 "$UPSS" "`upsconf_getSection_MD5 "${CURR_DEV}"`"
+                log_info "Keeping ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: live reload sufficed. Saving updated info into service properties."
+                $hook_setSavedMD5 "$UPSS" "`upsconf_getSection_MD5 \"${CURR_DEV}\"`"
                 # TOTHINK: This is already there, else we redefine units for bigger discrepancies?
                 # $hook_setSavedDeviceName "$UPSS" "${CURR_DEV}"
             fi
@@ -1494,14 +1555,14 @@ nut_driver_enumerator_main() {
 
     upslist_readSvcs
     if [ "${#UPSLIST_SVCS}" != 0 ] ; then
-        echo "=== The currently defined service instances are:"
+        log_info "The currently defined service instances are:"
         echo "$UPSLIST_SVCS"
-    fi
+    fi >&2
 
     if [ "${#UPSLIST_FILE}" != 0 ] ; then
-        echo "=== The currently defined configurations in '$UPSCONF' are:"
+        log_info "The currently defined configurations in '$UPSCONF' are:"
         echo "$UPSLIST_FILE"
-    fi
+    fi >&2
 
     # We had some changes to the config file; upsd must be made aware
     if [ "$AUTO_START" = yes ] ; then
@@ -1518,12 +1579,12 @@ nut_driver_enumerator_main() {
     # NOTE: Check this at the last moment to minimize
     # the chance of still not noticing the change made
     # at just the wrong moment.
-    UPSCONF_CHECKSUM_END="`calc_md5_file "$UPSCONF"`" || true
+    UPSCONF_CHECKSUM_END="`calc_md5_file \"$UPSCONF\"`" || true
     if [ "$UPSCONF_CHECKSUM_END" != "$UPSCONF_CHECKSUM_START" ] ; then
         # NOTE: even if daemonized, the sleep between iterations
         # can be configured into an uncomfortably long lag, so
         # we should re-sync the system config in any case.
-        echo "`date -u` : '$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up the late-coming changes"
+        log_info "'$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up the late-coming changes"
         # Make sure the cycle does not repeat itself due to diffs
         # from an ages-old state of the file from when we started.
         UPSCONF_CHECKSUM_START="$UPSCONF_CHECKSUM_END"
@@ -1533,7 +1594,7 @@ nut_driver_enumerator_main() {
     fi
 
     if [ "$UPSLIST_EQ_RES" = 0 ] ; then
-        echo "`date -u` : OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
+        log_info "OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
         [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
     fi
     return 13
@@ -1548,7 +1609,7 @@ nut_driver_enumerator_full_reconfigure() {
 
     if [ "${#UPSLIST_SVCS}" != 0 ]; then
         for UPSS in $UPSLIST_SVCS ; do
-            echo "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] to reconfigure the service unit..." >&2
+            log_info "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] to reconfigure the service unit..."
             $hook_unregisterInstance "$UPSS"
         done
         upslist_readSvcs "after dropping"
@@ -1566,14 +1627,14 @@ nut_driver_enumerator_full_reconfigure() {
     $hook_refreshSupervizor
 
     if [ "${#UPSLIST_SVCS}" != 0 ] ; then
-        echo "=== The currently defined service instances are:"
+        log_info "The currently defined service instances are:"
         echo "$UPSLIST_SVCS"
-    fi
+    fi >&2
 
     if [ "${#UPSLIST_FILE}" != 0 ] ; then
-        echo "=== The currently defined configurations in '$UPSCONF' are:"
+        log_info "The currently defined configurations in '$UPSCONF' are:"
         echo "$UPSLIST_FILE"
-    fi
+    fi >&2
 
     # We had some changes to the config file; upsd must be made aware
     if [ "$AUTO_START" = yes ] ; then
@@ -1590,15 +1651,15 @@ nut_driver_enumerator_full_reconfigure() {
     # NOTE: Check this at the last moment to minimize
     # the chance of still not noticing the change made
     # at just the wrong moment.
-    UPSCONF_CHECKSUM_END="`calc_md5_file "$UPSCONF"`" || true
+    UPSCONF_CHECKSUM_END="`calc_md5_file \"$UPSCONF\"`" || true
     if [ "$UPSCONF_CHECKSUM_END" != "$UPSCONF_CHECKSUM_START" ] ; then
-        echo "`date -u` : '$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up and reconcile the late-coming changes"
+        log_info "'$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up and reconcile the late-coming changes"
         nut_driver_enumerator_main ; return $?
         # The "main" routine will do REPORT_RESTART_42 logic too
     fi
 
     if [ "$UPSLIST_EQ_RES" = 0 ] ; then
-        echo "`date -u` : OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
+        log_info "OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
         [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
     fi
 
@@ -1608,15 +1669,15 @@ nut_driver_enumerator_full_reconfigure() {
 list_services_for_devices() {
     FINAL_RES=0
     upslist_readFile_once && [ "${#UPSLIST_FILE}" != 0 ] \
-        || { echo "No devices detected in '$UPSCONF'" >&2 ; return 1 ; }
+        || { log_warn "No devices detected in '$UPSCONF'" ; return 1 ; }
     upslist_readSvcs "by user request" && [ "${#UPSLIST_SVCS}" != 0 ] \
-        || { echo "No service instances detected" >&2 ; return 1; }
+        || { log_warn "No service instances detected" ; return 1; }
     UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ "${#UPSLIST_SVCS_RAW}" != 0 ] \
-        || { echo "No service units detected" >&2 ; return 1; }
+        || { log_warn "No service units detected" ; return 1; }
     for DEV in $UPSLIST_FILE ; do
-        vINST="`$hook_validInstanceName "$DEV"`"
-        vUNITD="`$hook_validFullUnitName "$DEV"`"
-        vUNITI="`$hook_validFullUnitName "$vINST"`"
+        vINST="`$hook_validInstanceName \"$DEV\"`"
+        vUNITD="`$hook_validFullUnitName \"$DEV\"`"
+        vUNITI="`$hook_validFullUnitName \"$vINST\"`"
         # First pass over simple verbatim names
         for INST in $UPSLIST_SVCS ; do
             if [ "$INST" = "$DEV" ] ; then
@@ -1638,7 +1699,7 @@ list_services_for_devices() {
                 done
             fi
         done
-        echo "WARNING: no service instances detected that match device '$DEV'" >&2
+        log_warn "No service instances detected that match device '$DEV'"
         FINAL_RES=1
     done
     return $FINAL_RES
@@ -1655,29 +1716,29 @@ list_services_for_devices_once() {
     # Pre-cache config file data, if nobody read it yet,
     # and keep in main script context for reuse (no subshell)
     upslist_readFile_once && \
-    SVCS_DEVS_LIST="`list_services_for_devices "$@"`" || return $?
+    SVCS_DEVS_LIST="`list_services_for_devices \"$@\"`" || return $?
 }
 
 get_device_for_service() {
-    [ -z "$1" ] && echo "Service (instance) name argument required" >&2 && return 1
+    [ -z "$1" ] && { log_error "Service (instance) name argument required"; return 1; }
 
     # Instance name can be a hash or "native" NUT section name
-    SVC="`$hook_validInstanceSuffixName "$1"`" && [ -n "$SVC" ] \
-    || { echo "Error getting SVC name from the inputs" >&2 ; return 1; }
+    SVC="`$hook_validInstanceSuffixName \"$1\"`" && [ -n "$SVC" ] \
+    || { log_error "Error getting SVC name from the inputs"; return 1; }
 
     # Reading the config is too expensive to do for every
     # driver management attempt when there are many devices
     if [ "${USE_SAVEDINST-}" != false ]; then
         # Try to use last-stashed values from service properties first
         # (NOTE: saved value is assumed to be valid if present)
-        SAVEDINST="`$hook_getSavedDeviceName "$SVC"`" || SAVEDINST=""
+        SAVEDINST="`$hook_getSavedDeviceName \"$SVC\"`" || SAVEDINST=""
         [ "${#SAVEDINST}" = 0 ] || { echo "$SAVEDINST" ; return 0 ; }
     fi
 
     case "$SVC" in
         MD5_*) ;; # fall through to the bulk of code
         *)  upslist_readFile_once || return $?
-            echo "$UPSLIST_FILE" | grep -E "^$SVC\$"
+            echo "$UPSLIST_FILE" | $EGREP "^$SVC\$"
             return $?
             ;;
     esac
@@ -1686,36 +1747,36 @@ get_device_for_service() {
     FINAL_RES=0
     list_services_for_devices_once && [ "${#SVCS_DEVS_LIST}" != 0 ] || FINAL_RES=$?
     if [ "$FINAL_RES" = 0 ]; then
-        echo "$SVCS_DEVS_LIST" | grep "$SVC" | ( \
+        echo "$SVCS_DEVS_LIST" | $GREP "$SVC" | ( \
             while read _SVC _DEV ; do
-                _SVC="`$hook_validInstanceSuffixName "${_SVC}"`" || exit
+                _SVC="`$hook_validInstanceSuffixName \"${_SVC}\"`" || exit
                 [ "${_SVC}" = "${SVC}" ] && echo "${_DEV}" && exit 0
             done ; exit 1 ) && return 0
     fi
-    echo "No service instance '$1' was detected that matches a NUT device" >&2
+    log_warn "No service instance '$1' was detected that matches a NUT device"
     return 1
 }
 
 get_service_for_device() {
     DEV="$1"
-    [ -z "$DEV" ] && echo "Device name argument required" >&2 && return 1
+    [ -z "$DEV" ] && { log_error "Device name argument required"; return 1; }
 
     # Cheap check in service instance metadata, if saved
     # (NOTE: saved value is assumed to be valid if present)
     if [ "${USE_SAVEDSVC-}" != false ]; then
-        SAVEDSVC="`$hook_findSavedDeviceName "$DEV"`" || SAVEDSVC=""
+        SAVEDSVC="`$hook_findSavedDeviceName \"$DEV\"`" || SAVEDSVC=""
         [ "${#SAVEDSVC}" = 0 ] || { echo "$SAVEDSVC" ; return 0 ; }
     fi
 
     # Trawl all the data we have...
     # TODO: Reorder to avoid extra parsing if we have an early hit?
     upslist_readSvcs "by user request" && [ "${#UPSLIST_SVCS}" != 0 ] \
-        || { echo "No service instances detected" >&2 ; return 1; }
+        || { log_warn "No service instances detected" ; return 1; }
     UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ "${#UPSLIST_SVCS_RAW}" != 0 ] \
-        || { echo "No service units detected" >&2 ; return 1; }
-    vINST="`$hook_validInstanceName "$DEV"`"
-    vUNITD="`$hook_validFullUnitName "$DEV"`"
-    vUNITI="`$hook_validFullUnitName "$vINST"`"
+        || { log_warn "No service units detected" ; return 1; }
+    vINST="`$hook_validInstanceName \"$DEV\"`"
+    vUNITD="`$hook_validFullUnitName \"$DEV\"`"
+    vUNITI="`$hook_validFullUnitName \"$vINST\"`"
 
     # First pass over simple verbatim names
     for INST in $UPSLIST_SVCS ; do
@@ -1739,7 +1800,7 @@ get_service_for_device() {
             done
         fi
     done
-    echo "No service instances detected that match device '$DEV'" >&2
+    log_warn "No service instances detected that match device '$DEV'"
     return 1
 }
 
@@ -1765,17 +1826,17 @@ update_upslist_savednames_find_missing() {
     # and write the values learned from mapping above
     _MISSING_RES=0
     for SVCINST in $SVCINSTS_NO_DEVICE ; do
-        _DEV="`printf '%s\n' "$SVCS_DEVS_LIST" | awk '( \$1 == "'"${SVCINST}"'" ) {print \$NF}'`"
-        echo "Service instance '$SVCINST' did not have a device recorded into properties, setting to '${_DEV}'"
-        [ -n "${_DEV}" ] || { echo "The device name value for '$SVCINST' is empty, skipping" >&2 ; _MISSING_RES=1 ; continue ; }
-        $hook_setSavedDeviceName "`$hook_validInstanceSuffixName "$SVCINST"`" "${_DEV}" || _MISSING_RES=$?
+        _DEV="`printf '%s\n' \"$SVCS_DEVS_LIST\" | awk '( \$1 == \"'\"${SVCINST}\"'\" ) {print \$NF}'`"
+        log_warn "Service instance '$SVCINST' did not have a device recorded into properties, setting to '${_DEV}'"
+        [ -n "${_DEV}" ] || { log_warn "The device name value for '$SVCINST' is empty, skipping" ; _MISSING_RES=1 ; continue ; }
+        $hook_setSavedDeviceName "`$hook_validInstanceSuffixName \"$SVCINST\"`" "${_DEV}" || _MISSING_RES=$?
     done
     return ${_MISSING_RES}
 }
 
 RECONFIGURE_ASAP=false
 trap_handle_hup_main() {
-    echo "`date -u` : Received a HUP during processing, scheduling reconfiguration to repeat ASAP (after the current iteration is done)" >&2
+    log_info "Received a HUP during processing, scheduling reconfiguration to repeat ASAP (after the current iteration is done)"
     # Note: in the worst case the reconfig would run twice;
     # we do not update UPSCONF_CHECKSUM_START in this case
     # to avoid corrupting decisions of the currently running
@@ -1784,10 +1845,10 @@ trap_handle_hup_main() {
 }
 
 trap_handle_hup_sleep() {
-    echo "`date -u` : Received a HUP in my sleep, reprocessing configs right now!" >&2
+    log_info "Received a HUP in my sleep, reprocessing configs right now!"
     # Avoid re-parsing main twice, though don't recalculate
     # checksums needlessly on every loop cycle, either...
-    UPSCONF_CHECKSUM_START="`calc_md5_file "$UPSCONF"`" || true
+    UPSCONF_CHECKSUM_START="`calc_md5_file \"$UPSCONF\"`" || true
     RECONFIGURE_ASAP=true
     if [ -n "$1" ] ; then
         # Kill the sleeper PID
@@ -1798,7 +1859,7 @@ trap_handle_hup_sleep() {
 daemonize() {
     # Note: do not further sub-shell this routine, so systemd
     # is not confused whom to signal.
-    echo "`date -u` : Daemonizing $0 with config re-evaluation frequency $DAEMON_SLEEP" >&2
+    log_info "Daemonizing $0 with config re-evaluation frequency $DAEMON_SLEEP"
 
     # Support (SIG)HUP == signal code 1 to quickly reconfigure,
     # e.g. to request it while the sleep is happening or while
@@ -1821,12 +1882,12 @@ daemonize() {
     while nut_driver_enumerator_main ; do
         trap 'trap_handle_interruption_exit' $TERMINATION_SIGNALS
         if $TERMINATE_ASAP ; then
-            echo "`date -u` : Trapped a SIGTERM/SIGINT/SIGQUIT during last run of nut_driver_enumerator_main, terminating gracefully now" >&2
+            log_info "Trapped a SIGTERM/SIGINT/SIGQUIT during last run of nut_driver_enumerator_main, terminating gracefully now"
             exit 0
         fi
 
         if $RECONFIGURE_ASAP ; then
-            echo "`date -u` : Trapped a SIGHUP during last run of nut_driver_enumerator_main, repeating reconfiguration quickly" >&2
+            log_info "Trapped a SIGHUP during last run of nut_driver_enumerator_main, repeating reconfiguration quickly"
         else
             sleep $DAEMON_SLEEP &
             trap "trap_handle_hup_sleep $!" $RECONFIGURATION_SIGNALS
@@ -1840,7 +1901,7 @@ daemonize() {
 
 # Save the checksum of ups.conf as early as possible,
 # to test in the end that it is still the same file.
-UPSCONF_CHECKSUM_START="`calc_md5_file "$UPSCONF"`" || true
+UPSCONF_CHECKSUM_START="`calc_md5_file \"$UPSCONF\"`" || true
 
 # By default, update wrapping of devices into services
 if [ $# = 0 ]; then
@@ -1852,8 +1913,8 @@ if [ $# = 1 ] ; then
     [ -n "$DAEMON_SLEEP" ] || DAEMON_SLEEP=60
     # Note: Not all shells have 'case ... ;&' support
     case "$1" in
-        --daemon=*) DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon=,,'`" ;;
-        --daemon-after=*) DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon-after=,,'`" ;;
+        --daemon=*) DAEMON_SLEEP="`echo \"$1\" | sed 's,^--daemon=,,'`" ;;
+        --daemon-after=*) DAEMON_SLEEP="`echo \"$1\" | sed 's,^--daemon-after=,,'`" ;;
     esac
     case "$1" in
         --daemon-after|--daemon-after=*)
@@ -1935,31 +1996,34 @@ while [ $# -gt 0 ]; do
         --list-devices)
             upslist_readFile_once && \
             if [ "${#UPSLIST_FILE}" != 0 ] ; then
-                echo "=== The currently defined configurations in '$UPSCONF' are:" >&2
+                log_info "The currently defined configurations in '$UPSCONF' are:"
+                # echo this to stdout:
                 echo "$UPSLIST_FILE"
                 exit 0
             fi
-            echo "No devices detected in '$UPSCONF'" >&2
+            log_warn "No devices detected in '$UPSCONF'"
             exit 1
             ;;
         --list-services)
             UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && \
             if [ "${#UPSLIST_SVCS_RAW}" != 0 ] ; then
-                echo "=== The currently defined service units are:" >&2
+                log_info "The currently defined service units are:"
+                # echo this to stdout:
                 echo "$UPSLIST_SVCS_RAW"
                 exit 0
             fi
-            echo "No service units detected" >&2
+            log_warn "No service units detected"
             exit 1
             ;;
         --list-instances)
             upslist_readSvcs "by user request" && \
             if [ "${#UPSLIST_SVCS}" != 0 ] ; then
-                echo "=== The currently defined service instances are:" >&2
+                log_info "The currently defined service instances are:"
+                # echo this to stdout:
                 echo "$UPSLIST_SVCS"
                 exit 0
             fi
-            echo "No service instances detected" >&2
+            log_warn "No service instances detected"
             exit 1
             ;;
         --get-service-for-device)
@@ -1980,28 +2044,29 @@ while [ $# -gt 0 ]; do
         --show-configs|--show-device-configs|--show-all-configs|--show-all-device-configs)
             RES=0
             upslist_readFile_once || RES=$?
-            [ "$RES" != 0 ] && { echo "ERROR: upslist_readFile_once () failed with code $RES" >&2; exit $RES; }
+            [ "$RES" != 0 ] && log_fatal $RES "upslist_readFile_once() failed with code $RES"
             [ "${#UPSLIST_FILE}" != 0 ] \
-                || { echo "WARNING: No devices detected in '$UPSCONF'" >&2 ; RES=1 ; }
+                || { log_warn "No devices detected in '$UPSCONF'" ; RES=1 ; }
+            # echo this to stdout:
             echo "$UPSCONF_DATA"
             exit $RES
             ;;
         --show-config|--show-device-config)
-            [ -z "$2" ] && echo "WARNING: Device name argument empty, will show global config" >&2
+            [ -z "$2" ] && log_warn "Device name argument empty, will show global config"
             DEV="$2"
             upsconf_getSection "$DEV"
             exit $?
             ;;
         --show-config-value|--show-device-config-value)
-            [ -z "$3" ] && echo "At least one configuration key name argument is required" >&2 && exit 1
-            [ -z "$2" ] && echo "WARNING: Device name argument empty, will show global config" >&2
+            [ -z "$3" ] && log_fatal 1 "At least one configuration key name argument is required"
+            [ -z "$2" ] && log_warn "Device name argument empty, will show global config"
             DEV="$2"
             shift 2
             upsconf_getValue "$DEV" "$@"
             exit $?
             ;;
         upsconf_debug) # Not public, not in usage()
-            [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
+            [ -z "$2" ] && log_fatal 1 "Device name argument required"
             upsconf_debug "$2"
             exit $?
             ;;
@@ -2024,7 +2089,7 @@ while [ $# -gt 0 ]; do
             ;;
         hook_findSavedDeviceName) shift ; $hook_findSavedDeviceName "$@" ; exit $? ;;
         hook_getSavedDeviceName) shift ; $hook_getSavedDeviceName "$@" ; exit $? ;;
-        *) echo "Unrecognized argument: $1" >&2 ; exit 1 ;;
+        *) log_fatal 1 "Unrecognized argument: $1" ;;
     esac
     shift
 done

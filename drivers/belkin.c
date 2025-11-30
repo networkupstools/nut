@@ -29,7 +29,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.30"
 
 static ssize_t init_communication(void);
 static ssize_t get_belkin_reply(char *buf);
@@ -483,6 +483,11 @@ static int instcmd(const char *cmdname, const char *extra)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

@@ -21,7 +21,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Ever UPS driver (serial)"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -87,6 +87,8 @@ static const char *GetTypeUpsName(void)
 
 void upsdrv_initinfo(void)
 {
+	InitUpsType();
+
 	dstate_setinfo("ups.mfr", "Ever");
 	dstate_setinfo("ups.model", "%s", GetTypeUpsName());
 
@@ -222,6 +224,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
@@ -233,7 +240,6 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, B300);
 
 	init_serial();
-	InitUpsType();
 }
 
 void upsdrv_cleanup(void)

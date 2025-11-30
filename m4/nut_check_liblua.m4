@@ -38,7 +38,7 @@ if test -z "${nut_have_lua_seen}"; then
 		    lua54 lua5.4 lua-54 lua-5.4 \
 		    lua55 lua5.5 lua-55 lua-5.5 \
 		 ; do
-			LUA_VERSION="`$PKG_CONFIG --silence-errors --modversion "$V" 2>/dev/null`"
+			LUA_VERSION="`$PKG_CONFIG --silence-errors --modversion \"$V\" 2>/dev/null`"
 			if test "$?" != "0" -o -z "${LUA_VERSION}"; then
 				LUA_VERSION="none"
 			else
@@ -122,7 +122,7 @@ if test -z "${nut_have_lua_seen}"; then
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBLUA], [])
 					AS_IF([test -n "${SOPATH_LIBLUA}" && test -s "${SOPATH_LIBLUA}"], [
 						AC_DEFINE_UNQUOTED([SOPATH_LIBLUA],["${SOPATH_LIBLUA}"],[Path to dynamic library on build system])
-						SOFILE_LIBLUA="`basename "$SOPATH_LIBLUA"`"
+						SOFILE_LIBLUA="`basename \"$SOPATH_LIBLUA\"`"
 						AC_DEFINE_UNQUOTED([SOFILE_LIBLUA],["${SOFILE_LIBLUA}"],[Base file name of dynamic library on build system])
 						break
 					])

@@ -1315,6 +1315,8 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_COMMBAD;
 	else if(str=="SHUTDOWN")
 		return NOTIFY_SHUTDOWN;
+	else if(str=="SHUTDOWN_HOSTSYNC")
+		return NOTIFY_SHUTDOWN_HOSTSYNC;
 	else if(str=="REPLBATT")
 		return NOTIFY_REPLBATT;
 	else if(str=="NOCOMM")

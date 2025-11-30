@@ -794,6 +794,11 @@ void upsdrv_help(void)
 	printf(" These are valid only if prgshut = 2 or 3\n");
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "battext", "Battery extension (0-80AH)");

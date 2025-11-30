@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Opti-UPS driver"
-#define DRIVER_VERSION	"1.08"
+#define DRIVER_VERSION	"1.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -424,8 +424,9 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.failure.start");
 	dstate_addcmd("load.off");
 	dstate_addcmd("load.on");
-	if( optimodel != OPTIMODEL_ZINTO )
-	dstate_addcmd("shutdown.stop");
+	if (optimodel != OPTIMODEL_ZINTO) {
+		dstate_addcmd("shutdown.stop");
+	}
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 	upsh.instcmd = instcmd;
@@ -602,6 +603,11 @@ void upsdrv_shutdown(void)
 void upsdrv_help(void)
 {
 	printf(HELP);
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* list flags and values that you want to receive via -x */

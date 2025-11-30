@@ -1,4 +1,4 @@
-#!@PYTHON@
+#!@PYTHON_DEFAULT@
 #   Copyright (C) 2011-2021 Eaton
 # 		Authors:	Frederic Bohe <FredericBohe@Eaton.com>
 #   				Arnaud Quette <ArnaudQuette@Eaton.com>

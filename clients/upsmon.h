@@ -92,9 +92,11 @@ typedef struct {
 	int	pollfail_log_throttle_count;	/* How many pollfreq loops this UPS was in this state since last logged report? */
 
 	time_t	lastpoll;		/* time of last successful poll	*/
-	time_t  lastnoncrit;		/* time of last non-crit poll	*/
+	time_t	lastnoncrit;		/* time of last non-crit poll	*/
 	time_t	lastrbwarn;		/* time of last REPLBATT warning*/
 	time_t	lastncwarn;		/* time of last NOCOMM warning	*/
+
+	time_t	lastfsdnotify;		/* time of last FSD notification (when first discovering the state, or setting it - avoid duplicate notification); 0 initially or if that state clears	*/
 
 	time_t	offsince;		/* time of recent entry into OFF state	*/
 	time_t	oblbsince;		/* time of recent entry into OB LB state (normally this causes immediate shutdown alert, unless we are configured to delay it)	*/
@@ -131,6 +133,8 @@ typedef struct {
 #define NOTIFY_NOTTRIM	23	/* UPS is not anymore trimming incoming voltage */
 #define NOTIFY_BOOST	24	/* UPS is boosting incoming voltage     */
 #define NOTIFY_NOTBOOST	25	/* UPS is not anymore boosting incoming voltage */
+
+#define NOTIFY_SHUTDOWN_HOSTSYNC	26	/* Shutdown initiated; primary system is waiting for secondaries to log out or time out */
 
 /* Special handling below */
 #define NOTIFY_OTHER	28	/* UPS has at least one unclassified status token */
@@ -174,6 +178,7 @@ static struct {
 	{ NOTIFY_COMMOK,   "COMMOK",   NULL, "Communications with UPS %s established", NOTIFY_DEFAULT },
 	{ NOTIFY_COMMBAD,  "COMMBAD",  NULL, "Communications with UPS %s lost", NOTIFY_DEFAULT },
 	{ NOTIFY_SHUTDOWN, "SHUTDOWN", NULL, "Auto logout and shutdown proceeding", NOTIFY_DEFAULT },
+	{ NOTIFY_SHUTDOWN_HOSTSYNC, "SHUTDOWN_HOSTSYNC", NULL,  "Shutdown initiated; primary system is waiting for secondaries to log out or time out", NOTIFY_DEFAULT },
 	{ NOTIFY_REPLBATT, "REPLBATT", NULL, "UPS %s battery needs to be replaced", NOTIFY_DEFAULT },
 	{ NOTIFY_NOCOMM,   "NOCOMM",   NULL, "UPS %s is unavailable", NOTIFY_DEFAULT },
 	{ NOTIFY_NOPARENT, "NOPARENT", NULL, "upsmon parent process died - shutdown impossible", NOTIFY_DEFAULT },

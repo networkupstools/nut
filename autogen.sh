@@ -24,7 +24,10 @@ else
 	DEBUG=false
 fi
 
-NUT_VERSION_QUERY=UPDATE_FILE "`dirname $0`"/tools/gitlog2version.sh
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; export GREP ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; export EGREP ; }
+
+NUT_VERSION_QUERY=UPDATE_FILE "`dirname \"$0\"`"/tools/gitlog2version.sh
 
 if [ -n "${PYTHON-}" ] ; then
 	# May be a name/path of binary, or one with args - check both
@@ -84,7 +87,7 @@ then
 			echo "Proceeding without Augeas integration, be sure to not require it in configure script" >&2
 			touch scripts/augeas/nutupsconf.aug.in scripts/augeas/nutupsconf.aug.in.AUTOGEN_WITHOUT
 		else
-			echo "Aborting $0! To avoid this, please   export WITHOUT_NUT_AUGEAS=true   and re-run" >&2
+			echo "Aborting $0! To avoid this, please   export WITHOUT_NUT_AUGEAS=true    and re-run" >&2
 			echo "or better yet,    export PYTHON=python-x.y   and re-run" >&2
 			exit 1
 		fi
@@ -108,8 +111,8 @@ if [ ! -f scripts/udev/nut-usbups.rules.in -o \
      ! -f scripts/devd/nut-usb.conf.in -o \
      ! -f scripts/devd/nut-usb.quirks -o \
      ! -f tools/nut-scanner/nutscan-usb.h ] \
-|| [ -n "`find drivers -newer scripts/hotplug/libhid.usermap | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
-|| [ -n "`find drivers -not -newer tools/nut-usbinfo.pl | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+|| [ -n "`find drivers -newer scripts/hotplug/libhid.usermap | ${EGREP} '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+|| [ -n "`find drivers \! -newer tools/nut-usbinfo.pl | ${EGREP} '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
 ; then
 	if perl -e 1; then
 		VERBOSE_FLAG_PERL=""
@@ -200,7 +203,7 @@ else
 fi
 
 [ "$AUTOTOOL_RES" = 0 ] && [ -s configure ] && [ -x configure ] \
-|| { cat << EOF
+|| { ( cat << EOF
 ----------------------------------------------------------------------
 FAILED: did not generate an executable configure script!
 
@@ -215,8 +218,9 @@ FAILED: did not generate an executable configure script!
 # "ifdef" block if your autotools still would not grok it.
 ----------------------------------------------------------------------
 EOF
+	) >&2
 	exit 1
-} >&2
+}
 
 # Some autoconf versions may leave "/bin/sh" regardless of CONFIG_SHELL
 # which originally was made for "recheck" operations
@@ -242,6 +246,7 @@ else
 	CONFIG_SHELL="`head -1 configure | sed 's,^#!,,'`"
 fi
 
+echo "autogen.sh: testing generated script syntax with $CONFIG_SHELL" >&2
 # NOTE: Unquoted CONFIG_SHELL, may be multi-token
 $CONFIG_SHELL -n configure 2>/dev/null >/dev/null \
 || {

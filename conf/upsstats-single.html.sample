@@ -24,7 +24,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 @REFRESH@
-<title>@HOSTDESC@ : @VAR ups.model@ on @HOST@</title>
+<title>
+@HOSTDESC@ :
+@IFSUPP device.model@
+@VAR device.model@
+@ELSE@
+@VAR ups.model@
+@ENDIF@
+on @HOST@
+</title>
 <!-- LINK REL="stylesheet" TYPE="text/css" HREF="http://localhost/nut/nut.css" / -->
 <style type="text/css">
 body{color:#00fc00; background:#808080; font-family:"Times New Roman", Times, serif;}
@@ -38,7 +46,15 @@ table{background:#000;}
 <table style="margin:auto" BORDER="1" CELLSPACING="0" CELLPADDING="10">
 
 <tr>
-<th COLSPAN="20">Network UPS Tools upsstats @VERSION@ - @HOSTDESC@ - @VAR ups.model@ on @HOST@</th>
+<th COLSPAN="20">
+Network UPS Tools upsstats @VERSION@ - @HOSTDESC@ -
+@IFSUPP device.model@
+@VAR device.model@
+@ELSE@
+@VAR ups.model@
+@ENDIF@
+on @HOST@
+</th>
 </tr>
 
 <tr>
@@ -63,7 +79,13 @@ table{background:#000;}
 
 <tr>
 <th ALIGN="RIGHT">UPS Model:</th>
-<td>@VAR ups.model@</td>
+<td>
+@IFSUPP device.model@
+@VAR device.model@
+@ELSE@
+@VAR ups.model@
+@ENDIF@
+</td>
 </tr>
 
 <tr>

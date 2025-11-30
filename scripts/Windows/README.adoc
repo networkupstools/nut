@@ -590,8 +590,9 @@ net-snmp
 	:; find . -type f -name '*.dll' -o -name '*.dll.a'
 	:; sudo make install
 
-NOTE: net-snmp tends to only `make` a static-linking library for Windows
-by default (the shared library only appears with `LDFLAGS` proposed above).
+NOTE: The `net-snmp` code base tends to only `make` a static-linking
+library for Windows by default (the shared library only appears with
+`LDFLAGS` proposed above).
 In this case consumers must link not only with `-lnetsnmp` but also its
 dependencies explicitly -- see `Libs.private` line in `netsnmp.pc` of
 your build (or installation in `${PREFIX}/lib/pkgconfig/netsnmp.pc`).

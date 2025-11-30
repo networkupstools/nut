@@ -9,11 +9,11 @@
 # Be portable - no bash etc... plain minimal shell. Tested with bash, dash,
 # busybox sh and ksh for good measure.
 #
-#   Copyright (C) 2016-2024 Jim Klimov <EvgenyKlimov@eaton.com>
+#   Copyright (C) 2016-2025 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 # Relative to here we look for old sources
-_SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
+_SCRIPT_DIR="`cd $(dirname \"$0\") && pwd`" || \
     _SCRIPT_DIR="./" # Fallback can fail
 
 # Note that technically it is not required that this is an ".in" template
@@ -42,7 +42,7 @@ LEGACY_NUT_C_MIBS_LIST=""
 sort_LEGACY_NUT_C_MIBS() {
     [ -n "${LEGACY_NUT_C_MIBS_LIST}" ] || \
         { LEGACY_NUT_C_MIBS_LIST="`list_LEGACY_NUT_C_MIBS`" && \
-          LEGACY_NUT_C_MIBS_LIST="`echo "$LEGACY_NUT_C_MIBS_LIST" | sort | uniq`"; } \
+          LEGACY_NUT_C_MIBS_LIST="`echo \"$LEGACY_NUT_C_MIBS_LIST\" | sort | uniq`"; } \
         || return $?
     [ -n "${LEGACY_NUT_C_MIBS_LIST}" ] || return $?
     echo "$LEGACY_NUT_C_MIBS_LIST"
@@ -58,10 +58,10 @@ print_makefile_LEGACY_NUT_DMF_RULES() {
 
     for CMIBBASE in `sort_LEGACY_NUT_C_MIBS` ; do
         case "$CMIBBASE" in
-            */*) CMIBFILE="$CMIBBASE"; CMIBBASE="`basename "$CMIBBASE"`" ;;
+            */*) CMIBFILE="$CMIBBASE"; CMIBBASE="`basename \"$CMIBBASE\"`" ;;
             *)   CMIBFILE='$(abs_top_srcdir)/drivers/'"$CMIBBASE" ;;
         esac
-        DMFBASE="`basename "$CMIBBASE" .c`".dmf
+        DMFBASE="`basename \"$CMIBBASE\" .c`".dmf
         DMFSUBDIR='$(DMFSNMP_RES_SUBDIR)/'
         DMFFILE="${DMFSUBDIR}${DMFBASE}"
         case "$DMFBASE" in

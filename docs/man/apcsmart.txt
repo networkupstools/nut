@@ -52,12 +52,12 @@ those are pretty fuzzy):
 	and should work just fine with the apcsmart driver.
 
 "microlink" models::
-    WARNING: these are not _natively_ supported by *apcsmart* (or as of
+    WARNING: These are not _natively_ supported by *apcsmart* (or as of
 	this writing by *apcupsd*, for that matter, if you're wondering).
 	Around 2007, APC (now APC Schneider) decided to go back to its
 	proprietary roots, and all the new models (SMT, SMX, SURTD) use
 	completely different protocol and cables. If you purchased
-    a new APC UPS -- that uses cable with RJ45 on the one end, and DB-9
+	a new APC UPS -- that uses cable with RJ45 on the one end, and DB-9
 	on the other -- then you have such model. Your only option to support
 	it through *NUT* is to purchase a "legacy communications card" --
 	part #AP9620 (google 'AP9620' for more details). Or if that's not

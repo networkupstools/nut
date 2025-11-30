@@ -31,7 +31,7 @@
 #define ENDCHAR '\r'
 
 #define DRIVER_NAME	"SMS Brazil UPS driver"
-#define DRIVER_VERSION	"1.03"
+#define DRIVER_VERSION	"1.04"
 
 #define QUERY_SIZE 7
 #define BUFFER_SIZE 18
@@ -570,6 +570,11 @@ void upsdrv_shutdown(void) {
 }
 
 void upsdrv_help(void) {
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* list flags and values that you want to receive via -x */

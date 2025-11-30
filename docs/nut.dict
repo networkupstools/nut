@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3591 utf-8
+personal_ws-1.1 en 3632 utf-8
 AAC
 AAS
 ABI
@@ -55,6 +55,7 @@ Alexey
 AllowOverride
 Alm
 Amplon
+AnchorJS
 Andreas
 Andreassen
 Andrzej
@@ -105,6 +106,7 @@ BTEST
 BTS
 BTV
 BUFRD
+BUILTIN
 BUZ
 BVKnnnnM
 BVKxxxM
@@ -147,6 +149,7 @@ Breiland
 Brownell
 Bs
 BuildBot
+BuildRequires
 Buildbot
 Bxx
 ByPass
@@ -262,6 +265,7 @@ DEXP
 DF
 DHEA
 DIGYS
+DIRNAME
 DISCHRG
 DLDIR
 DLLs
@@ -840,6 +844,7 @@ Neus
 Niels
 Niklas
 Niro
+NixOS
 Nobreak
 Nobreaks
 Nom
@@ -1299,6 +1304,7 @@ SystemIO
 Systeme
 Syu
 Szady
+TAE
 TBD
 TBR
 TCIFLUSH
@@ -1325,6 +1331,7 @@ TSR
 TST
 TT
 TTT
+TUD
 TXF
 TXG
 TXV
@@ -1415,6 +1422,7 @@ Uncomment
 Unices
 Unitek
 Upsonic
+Upstreamed
 Ut
 V'ger
 VALIGN
@@ -1549,6 +1557,7 @@ additionalSOLibSearchPath
 addons
 addr
 addrange
+addvar
 addvars
 adelsystem
 adkorte
@@ -1562,6 +1571,7 @@ ae
 aec
 af
 afeb
+ageing
 aggregator
 ai
 aix
@@ -1712,6 +1722,7 @@ bmake
 bn
 bool
 boolean
+booleans
 bootable
 bootenv
 bootfs
@@ -1779,6 +1790,7 @@ cgroupsv
 changelog
 chargetime
 charset
+checkprocnames
 checkruntime
 checksum
 checksums
@@ -1822,9 +1834,12 @@ command's
 commandlen
 committer
 comms
+compareprocnames
 compat
 compilerPath
 conf
+confargs
+confdir
 config
 configparser
 configs
@@ -1949,6 +1964,7 @@ devscan
 dfl
 dhcp
 dialout
+difftime
 diffutils
 dir
 dirpath
@@ -1983,6 +1999,7 @@ docinfo
 docs
 dod
 domxml
+doshutdown
 dotnet
 downloadable
 dpkg
@@ -2155,12 +2172,16 @@ getDevicesVariableValues
 getTrackingResult
 getValue
 getVariable
+getaddrinfo
 getconf
 getent
 getenv
+gethostbyname
 getopt
+getproctag
 gettext
 gettextize
+getval
 getvar
 gh
 gif
@@ -2228,6 +2249,7 @@ href
 htaccess
 htm
 html
+htmlcgi
 htmlpath
 http
 httpd
@@ -2287,6 +2309,7 @@ initctl
 initializer
 initializers
 initinfo
+initrd
 initscripts
 inittime
 initups
@@ -2294,6 +2317,7 @@ inline
 inlined
 innotech
 innovart
+innovatae
 inode
 inplace
 installable
@@ -2519,6 +2543,7 @@ lz
 mA
 mDNS
 mS
+macOS
 macaddr
 macosx
 mailo
@@ -2637,6 +2662,7 @@ nSHUTDOWNCMD
 nabcd
 nameserver
 namespace
+namespaces
 nano
 nanosleep
 nashkaminski
@@ -2779,6 +2805,7 @@ optimizations
 optiups
 oq
 os
+osc
 ostream
 other's
 otheruser
@@ -2815,6 +2842,7 @@ peername
 pem
 perc
 perl
+permalinks
 pfSense
 pfexec
 pfy
@@ -2864,6 +2892,7 @@ powermand
 powermust
 powernet
 poweroff
+powerp
 powerpal
 powerpanel
 powershell
@@ -2889,16 +2918,20 @@ prereqs
 pretentiousVariableNamingSchemes
 prgshut
 printf
+prio
 priv
 privPassword
 privProtocol
+prjconf
 problemMatcher
 probu
 proc
 productid
 prog
 progname
+prognames
 progs
+promille
 prototyped
 proxied
 prtconf
@@ -2910,6 +2943,7 @@ pts
 ptv
 pty
 pulizzi
+purelib
 pv
 pw
 pwd
@@ -2964,6 +2998,7 @@ reindex
 relatime
 releasekeyring
 relicensing
+reloadable
 relogtime
 remoteip
 renderer
@@ -3062,7 +3097,9 @@ sendline
 sendmail
 sendsignal
 sendsignalfn
+sendsignalfnaliases
 sendsignalpid
+sendsignalpidaliases
 senoidal
 sequentialized
 ser
@@ -3073,9 +3110,11 @@ servicebypass
 setFeature
 setaux
 setflags
+setfsd
 setgid
 setinfo
 setpci
+setproctag
 setq
 setuid
 setupCommands
@@ -3107,6 +3146,7 @@ ske
 skel
 sl
 slackpkg
+slaveaddr
 slaveid
 slavesync
 slibtool
@@ -3270,6 +3310,7 @@ termios
 testime
 testtime
 testuser
+testvar
 textproc
 tgcware
 tgt

@@ -24,7 +24,7 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.55"
+#define CYBERPOWER_MIB_VERSION		"0.56"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 /* CPS-MIB::ups */
@@ -134,6 +134,8 @@ static snmp_info_t cyberpower_mib[] = {
 		SU_FLAG_OK | SU_STATUS_RB, &cyberpower_battrepl_status[0]),
 	snmp_info_default("ups.load", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.4.2.3.0", "",
 		0, NULL),
+	snmp_info_default("ups.realpower", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.4.2.5.0", "",
+        0, NULL),
 
 	snmp_info_default("ups.temperature", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.10.2.0", "", SU_FLAG_OK, NULL),
 

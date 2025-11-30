@@ -26,7 +26,7 @@
 #include <stddef.h>
 #include "nut_stdint.h"
 
-#define MASTERGUARD_VERSION "Masterguard 0.03"
+#define MASTERGUARD_VERSION "Masterguard 0.05"
 
 /* series (for un-SKIP) */
 static char masterguard_my_series = '?';
@@ -456,7 +456,7 @@ static int masterguard_add_slaveaddr(item_t *item, char *command, const size_t c
 	}
 	upsdebugx(4, "add slaveaddr %s to command %s", masterguard_my_slaveaddr, command);
 	memcpy(command + l - 3, masterguard_my_slaveaddr, 2);
-	return 0;
+	return l;
 }
 
 
@@ -767,6 +767,8 @@ static item_t masterguard_qx2nut[] = {
 	 */
 	/* type			flags	rw	command		answer	len	leading	value	from	to	dfl	qxflags	precmd				preans	preproc */
 	{ "battery.charge",	0,	NULL,	"GBS,XX\r",	"",	43,	'(',	"",	4,	6,	"%.0f",	0,	masterguard_add_slaveaddr,	NULL,	NULL },
+	{ "experimental.battery.ageing.factor",	0,	NULL,	"GBS,XX\r",	"",	43,	'(',	"",	18,	21,	"%.0f",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	NULL },
+	{ "experimental.battery.calibration.factor",	0,	NULL,	"GBS,XX\r",	"",	43,	'(',	"",	33,	35,	"%.0f",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	NULL },
 	/* 
 	 * hhhh: hold time (minutes)
 	 * HHHH: recharge time to 90% (minutes)
@@ -858,11 +860,13 @@ static item_t masterguard_qx2nut[] = {
 	/* test.failure.stop */
 	{ "test.battery.start",		0,	NULL,	NULL,		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	masterguard_test_battery },
 	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
-	{ "test.battery.start.deep",	0,	NULL,	"TUD\r",	"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
+	{ "test.battery.start.low",	0,	NULL,	"TL\r",		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
+	{ "test.battery.start.deep",	0,	NULL,	"TUD,XX\r",	"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	masterguard_add_slaveaddr,	NULL,	NULL },
 	{ "test.battery.stop",		0,	NULL,	"CT\r",		"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
 	/* test.system.start */
 	/* calibrate.start */
 	/* calibrate.stop */
+	{ "clear.fault.record",		0,	NULL,	"FCLR,XX\r",	"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	masterguard_add_slaveaddr,	NULL,	NULL },
 	{ "bypass.start",		0,	NULL,	"FOFF\r",	"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
 	{ "bypass.stop",		0,	NULL,	"FON\r",	"",	0,	'\0',	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,				NULL,	NULL },
 	/* reset.input.minmax */
@@ -1060,6 +1064,8 @@ static void masterguard_makevartable(void) {
 	addvar(VAR_VALUE, "fault_3", "Fault record 3");
 	addvar(VAR_VALUE, "fault_4", "Fault record 4");
 	addvar(VAR_VALUE, "fault_5", "Fault record 5 (oldest)");
+	addvar(VAR_VALUE, "experimental.battery.ageing.factor", "Battery ageing factor (promille, 1000=new)");
+	addvar(VAR_VALUE, "experimental.battery.calibration.factor", "Battery calibration factor (percent)");
 }
 
 

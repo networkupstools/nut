@@ -34,7 +34,7 @@ date
 svcs -p "$DEVICE" ; upsc "$DEVICE"
 
 DO_SVC=false
-if [ "`svcs -Hostate "$DEVICE"`" = "online" ]; then
+if [ "`svcs -Hostate \"$DEVICE\"`" = "online" ]; then
     DO_SVC=true
     svcadm disable -ts "$DEVICE"
 fi
@@ -58,13 +58,13 @@ cfgadm -lv "${CFGADM_APID}"
 if $DO_SVC ; then svcadm enable "$DEVICE" ; fi
 svcadm clear "$DEVICE" 2>/dev/null
 
-dmesg | tail -n 20
+dmesg | tail -20
 date
 svcs -p "$DEVICE" ; upsc "$DEVICE" || { \
     COUNT=60
     while [ "$COUNT" -gt 0 ] ; do
         COUNT="`expr $COUNT - 1`"
-        if upsc "$DEVICE" 2>&1 | grep -Ei '^ups\.status:' >/dev/null ; then break ; fi
+        if upsc "$DEVICE" 2>&1 | egrep -i '^ups\.status:' >/dev/null ; then break ; fi
         sleep 1
     done
     svcs -p "$DEVICE" ; upsc "$DEVICE"

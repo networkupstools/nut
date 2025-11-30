@@ -82,10 +82,14 @@ if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
 SERIAL_DRIVERLIST += nhs_ser
 endif HAVE_LINUX_SERIAL_H
+
+# Note: distributions may deliver this "monolithic" driver program file named
+# "snmp-ups-old", and symlink "snmp-ups" pointing to a preferred implementation:
 SNMP_DRIVERLIST = snmp-ups
 if WITH_DMFMIB
   SNMP_DRIVERLIST += snmp-ups-dmf
 endif
+
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb powervar_cx_usb \
  nutdrv_atcl_usb
@@ -156,7 +160,7 @@ sbin_PROGRAMS = upsdrvctl
 
 # upsdrvctl: the all-singing all-dancing driver control program
 upsdrvctl_SOURCES = upsdrvctl.c
-upsdrvctl_LDADD = $(LDADD_COMMON) libdummy_upsdrvquery.la
+upsdrvctl_LDADD = libdummy_upsdrvquery.la $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
@@ -440,6 +444,7 @@ NUTDRV_QX_SUBDRIVERS =	\
  nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
  nutdrv_qx_innovart31.c	\
  nutdrv_qx_innovart33.c	\
+ nutdrv_qx_innovatae.c	\
  nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
  nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c	\
@@ -467,7 +472,8 @@ dist_noinst_HEADERS = \
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
- nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_innovart33.h nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
+ nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_innovart33.h nutdrv_qx_innovatae.h	\
+ nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
  nutdrv_qx.h common_voltronic-crc.h nutdrv_qx_voltronic.h	\
  nutdrv_qx_voltronic-axpert.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h \

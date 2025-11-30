@@ -27,7 +27,7 @@
 #include "nut-ipmi.h"
 
 #define DRIVER_NAME	"IPMI PSU driver"
-#define DRIVER_VERSION	"0.35"
+#define DRIVER_VERSION	"0.36"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -201,6 +201,11 @@ static int setvar(const char *varname, const char *val)
 */
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

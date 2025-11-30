@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -386,6 +386,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
@@ -429,7 +434,7 @@ void upsdrv_initups(void)
 	/* upsfd = ser_open(device_path); */
 	/* ser_set_speed(upsfd, device_path, B1200); */
 
-	/* probe ups type */
+	/* probe ups type later, in upsdrv_initinfo() */
 
 	/* to get variables and flags from the command line, use this:
 	 *
@@ -454,7 +459,8 @@ void upsdrv_initups(void)
 	 */
 
 	/* the upsh handlers can't be done here, as they get initialized
-	 * shortly after upsdrv_initups returns to main.
+	 * shortly after upsdrv_initups() returns to main, and goes back
+	 * to upsdrv_initinfo().
 	 */
 }
 

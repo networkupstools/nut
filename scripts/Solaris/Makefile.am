@@ -3,7 +3,7 @@
 EXTRA_DIST = makelocal.sh precheck.py.in preproto.pl.in README.adoc
 PROTOTYPE_DIR = $(DESTDIR)@prefix@
 SOLARIS_CHECK_TARGETS =
-PYTHON = @PYTHON@
+PYTHON_DEFAULT = @PYTHON_DEFAULT@
 
 SOLARIS_SMF_MANIFESTS = \
 	nut.xml \
@@ -62,15 +62,18 @@ SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremov
 SOLARIS_PACKAGE_SVR4_INSTALLDATA = pkginfo
 package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA)
 	ISANAME=''; case x"$(target_cpu)" in \
-		xi386|xsparc|xsparcv9|xamd64)	ISANAME='$(target_cpu)' ;; \
+		xi386|xsparc|xsparcv7|xsparcv9|xamd64)	ISANAME='$(target_cpu)' ;; \
 		xx86_64)	ISANAME='amd64' ;; \
 		xi686)	ISANAME='i386' ;; \
-		xsparcv7)ISANAME='sparc' ;; \
 		x) UNAME_P="`uname -p`" && ISANAME="$${UNAME_P}" ;; \
 	esac ; \
 	ISABITS=32; case x"$${ISANAME}" in \
-		xi386|xsparc)	ISABITS=32 ;; \
+		xi386|xsparcv7)	ISABITS=32 ;; \
 		xsparcv9|xamd64)	ISABITS=64 ;; \
+		xsparc) case "`(file server/upsd || file server/.libs/upsd) 2>/dev/null`" in \
+			*32-bit*)	ISABITS=32 ;; \
+			*64-bit*)	ISABITS=64 ;; \
+			esac ;; \
 		x*) echo "WARNING: Unexpected ISANAME='$${ISANAME}'" >&2 ;; \
 	esac; \
 	case x"$${ISABITS}" in \
@@ -87,8 +90,8 @@ package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SV
 	cp $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA) $(PROTOTYPE_DIR) || exit ; \
 	( cd $(PROTOTYPE_DIR) && chmod +x $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) ) || exit ; \
 	( cd $(PROTOTYPE_DIR) && perl preproto.pl ) || exit ; \
-	if test -n '$(PYTHON)' ; then \
-		( cd $(PROTOTYPE_DIR) && $(PYTHON) precheck.py ) || exit ; \
+	if test -n '$(PYTHON_DEFAULT)' ; then \
+		( cd $(PROTOTYPE_DIR) && $(PYTHON_DEFAULT) precheck.py ) || exit ; \
 	fi ; \
 	( cd $(PROTOTYPE_DIR) && rm -f prototype1 ) || exit ; \
 	( cd $(PROTOTYPE_DIR) && ./makelocal.sh ) || exit ; \

@@ -18,6 +18,8 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	LIBS=""
 	depCFLAGS=""
 	depLIBS=""
+	depCFLAGS_SOURCE=""
+	depLIBS_SOURCE=""
 
 	dnl We prefer to get info from pkg-config (for suitable arch/bitness as
 	dnl specified in args for that mechanism), unless (legacy) a particular
@@ -34,30 +36,31 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	)
 
 	prefer_NET_SNMP_CONFIG=false
-	AC_ARG_WITH(net-snmp-config,
-		AS_HELP_STRING([@<:@--with-net-snmp-config=/path/to/net-snmp-config@:>@],
-			[path to program that reports Net-SNMP configuration]),
-	[
-		case "${withval}" in
-		""|yes) prefer_NET_SNMP_CONFIG=true ;;
-		no)
+	NUT_ARG_WITH_LIBOPTS([net-snmp-config], [/path/to/net-snmp-config],
+			[Path to program that reports Net-SNMP configuration], [auto])
+
+	AS_CASE([${nut_with_net_snmp_config}],
+		[""|yes],	[prefer_NET_SNMP_CONFIG=true],
+		[auto],	[prefer_NET_SNMP_CONFIG=auto],
+		[no], [
 			dnl AC_MSG_ERROR(invalid option --with(out)-net-snmp-config - see docs/configure.txt)
 			prefer_NET_SNMP_CONFIG=false
-			;;
-		*)
-			NET_SNMP_CONFIG="${withval}"
-			prefer_NET_SNMP_CONFIG=true
-			;;
-		esac
-	])
+			],
+			[NET_SNMP_CONFIG="${nut_with_net_snmp_config}"
+			 prefer_NET_SNMP_CONFIG=true
+			]
+	)
 
-	if test x"$have_PKG_CONFIG" = xyes && ! "${prefer_NET_SNMP_CONFIG}" ; then
+	if test x"$have_PKG_CONFIG" = xyes -a x"${prefer_NET_SNMP_CONFIG}" != xtrue ; then
 		AC_MSG_CHECKING(for Net-SNMP version via pkg-config)
 		dnl TODO? Loop over possible/historic pkg names, like
 		dnl netsnmp, net-snmp, ucd-snmp, libsnmp, snmp...
 		SNMP_VERSION="`$PKG_CONFIG --silence-errors --modversion netsnmp 2>/dev/null`"
 		if test "$?" = "0" -a -n "${SNMP_VERSION}" ; then
 			AC_MSG_RESULT(${SNMP_VERSION} found)
+			if test x"${prefer_NET_SNMP_CONFIG}" = xauto; then
+				prefer_NET_SNMP_CONFIG=false
+			fi
 		else
 			AC_MSG_RESULT(none found)
 			prefer_NET_SNMP_CONFIG=true
@@ -79,59 +82,43 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		AC_MSG_RESULT(${SNMP_VERSION} found)
 	fi
 
-	if test x"$have_PKG_CONFIG" != xyes && ! "${prefer_NET_SNMP_CONFIG}" ; then
+	if test x"$have_PKG_CONFIG" != xyes -a x"${prefer_NET_SNMP_CONFIG}" = xfalse ; then
 		AC_MSG_WARN([did not find either net-snmp-config or pkg-config for net-snmp])
 	fi
 
-	depCFLAGS_SOURCE=""
 	AC_MSG_CHECKING(for Net-SNMP cflags)
-	AC_ARG_WITH(snmp-includes,
-		AS_HELP_STRING([@<:@--with-snmp-includes=CFLAGS@:>@], [include flags for the Net-SNMP library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-snmp-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS_SOURCE="confarg"
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
-		[depCFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"
-		 depCFLAGS_SOURCE="netsnmp-config"],
-		[AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags netsnmp 2>/dev/null`"
-			 depCFLAGS_SOURCE="pkg-config"],
-			[depCFLAGS_SOURCE="default"]
-			)]
-		)]
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([snmp], [auto], [Net-SNMP])
+	AS_CASE([${nut_with_snmp_includes}],
+		[auto], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
+				[depCFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"
+				 depCFLAGS_SOURCE="${NET_SNMP_CONFIG} program"],
+				[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+					[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags netsnmp 2>/dev/null`"
+					 depCFLAGS_SOURCE="pkg-config"],
+					[depCFLAGS_SOURCE="default"]
+				)]
+			)],
+			[depCFLAGS_SOURCE="confarg"
+			 depCFLAGS="${nut_with_snmp_includes}"]
 	)
 	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
-	depLIBS_SOURCE=""
+	dnl Note: below we check for specifically `if depLIBS_SOURCE == "pkg-config"`
 	AC_MSG_CHECKING(for Net-SNMP libs)
-	AC_ARG_WITH(snmp-libs,
-		AS_HELP_STRING([@<:@--with-snmp-libs=LIBS@:>@], [linker flags for the Net-SNMP library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-snmp-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS_SOURCE="confarg"
-			depLIBS="${withval}"
-			;;
-		esac
-	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
-		[depLIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"
-		 depLIBS_SOURCE="netsnmp-config"],
-		[AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[depLIBS="`$PKG_CONFIG --silence-errors --libs netsnmp 2>/dev/null`"
-			 depLIBS_SOURCE="pkg-config"],
-			[depLIBS="-lnetsnmp"
-			 depLIBS_SOURCE="default"])]
-		)]
+	NUT_ARG_WITH_LIBOPTS_LIBS([snmp], [auto], [Net-SNMP])
+	AS_CASE([${nut_with_snmp_libs}],
+		[auto], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
+				[depLIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"
+				 depLIBS_SOURCE="${NET_SNMP_CONFIG} program"],
+				[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+					[depLIBS="`$PKG_CONFIG --silence-errors --libs netsnmp 2>/dev/null`"
+					 depLIBS_SOURCE="pkg-config"],
+					[depLIBS="-lnetsnmp"
+					 depLIBS_SOURCE="default"]
+				 )]
+			)],
+			[depLIBS_SOURCE="confarg"
+			 depLIBS="${nut_with_snmp_libs}"]
 	)
 	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
@@ -164,7 +151,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 					dnl # In Makefiles be sure to use _LDFLAGS (not _LIBADD) to smuggle linker
 					dnl # arguments when building "if WITH_SNMP_STATIC" recipe blocks!
 					dnl # For a practical example, see tools/nut-scanner/Makefile.am.
-					depLIBS="`echo " $depLIBS" | sed 's/ -l/ -Wl,-l/g'`"
+					depLIBS="`echo \" $depLIBS\" | sed 's/ -l/ -Wl,-l/g'`"
 					LIBS="${LIBS_ORIG} ${depLIBS}"
 					AS_UNSET([ac_cv_func_init_snmp])
 					AC_CHECK_FUNCS(init_snmp, [
@@ -375,7 +362,7 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBNETSNMP], [])
 					AS_IF([test -n "${SOPATH_LIBNETSNMP}" && test -s "${SOPATH_LIBNETSNMP}"], [
 						AC_DEFINE_UNQUOTED([SOPATH_LIBNETSNMP],["${SOPATH_LIBNETSNMP}"],[Path to dynamic library on build system])
-						SOFILE_LIBNETSNMP="`basename "$SOPATH_LIBNETSNMP"`"
+						SOFILE_LIBNETSNMP="`basename \"$SOPATH_LIBNETSNMP\"`"
 						AC_DEFINE_UNQUOTED([SOFILE_LIBNETSNMP],["${SOFILE_LIBNETSNMP}"],[Base file name of dynamic library on build system])
 						break
 					])
@@ -389,6 +376,8 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
 
 	unset depCFLAGS
 	unset depLIBS
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

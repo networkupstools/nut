@@ -79,7 +79,11 @@ th, td{padding:0.5ex;}
 </td>
 
 <td class="t1">
+@IFSUPP device.model@
+@VAR device.model@
+@ELSE@
 @VAR ups.model@
+@ENDIF@
 </td>
 
 <td style="background:@STATUSCOLOR@">
