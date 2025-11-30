@@ -1,0 +1,242 @@
+MEANWELL_NTU(8)
+===============
+
+NAME
+----
+
+meanwell_ntu - Driver for Mean Well NTU series inverter/UPS units
+
+
+SYNOPSIS
+--------
+
+`meanwell_ntu` -h
+
+`meanwell_ntu` -a *upsname* [*options*]
+
+
+DESCRIPTION
+-----------
+
+The `meanwell_ntu` driver provides support for the Mean Well NTU series
+inverter/UPS units, using the vendor’s ASCII serial protocol.
+
+It is an experimental driver and is currently intended for testing and
+early adopters.  Behaviour and reported variables may change between
+NUT releases as more models are tested in the field.
+
+
+SUPPORTED HARDWARE
+------------------
+
+The driver is known to work with the following Mean Well NTU series
+devices:
+
+* NTU-1200
+* NTU-1700
+* NTU-2200
+* NTU-3200
+
+All nominal DC voltage variants are supported, for example:
+
+* NTU-1200-112, -124, -148
+* NTU-1700-112, -124, -148
+* NTU-2200-112, -124, -148
+* NTU-3200-212, -224, -248
+
+Support for other NTU family members using the same serial protocol is
+expected but not guaranteed.
+
+The driver talks to the unit over a 9600 8N1 serial link.  This may be
+provided either by an RS-232 port or by a USB–serial bridge exposed as
+a tty device (for example `/dev/ttyUSB0`).
+
+
+CABLES
+------
+
+The driver expects a straight-through serial connection (no modem control),
+or an equivalent USB–serial adapter connected to the NTU’s RS-232 port.
+
+If you are using a USB–serial adapter, make sure that it is detected by
+the operating system and a device node such as `/dev/ttyUSB0` is present.
+
+
+CONFIGURATION
+-------------
+
+The driver is configured via *ups.conf(5)*.  A minimal configuration
+might look like:
+
+---------------------- /etc/nut/ups.conf ----------------------
+[meanwell-ntu]
+    driver  = meanwell_ntu
+    port    = /dev/ttyUSB0
+    desc    = "Mean Well NTU-1200-124"
+---------------------------------------------------------------
+
+Required parameters
+~~~~~~~~~~~~~~~~~~~
+
+`driver`
+  Must be set to `meanwell_ntu`.
+
+`port`
+  The serial or USB tty where the NTU is connected, such as
+  `/dev/ttyS0` or `/dev/ttyUSB0`.
+
+Optional parameters
+~~~~~~~~~~~~~~~~~~~
+
+This driver currently uses only standard NUT-level options:
+
+`pollinterval`
+  Interval in seconds between status polls (default: 2).
+
+`synchronous`
+  Serial I/O mode as documented in *nutupsdrv(8)* (default: `auto`).
+
+No driver-specific options are defined yet.
+
+
+INSTANT COMMANDS
+----------------
+
+When supported by the attached hardware, the following instant commands
+are available via *upscmd(8)*:
+
+`load.off`
+  Request the NTU to shut down its inverter output and power off the load.
+  This is implemented using the vendor `C100000000000000` command and may
+  imply a delayed shutdown, depending on the unit’s configuration.
+
+`load.on`
+  Request the NTU to enable its inverter output and power on the load,
+  using the vendor `C010000000000000` command.
+
+Not all models or firmware revisions may honour these commands.  Check
+the unit’s documentation and test carefully before relying on them for
+unattended shutdown or restart sequences.
+
+
+STATUS AND VARIABLES
+--------------------
+
+The driver periodically issues the `Q` (Status) and `I` (Inverter Info)
+commands to the NTU and maps the responses onto standard NUT variables.
+
+Selected read-only variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`battery.voltage` (V)
+  Measured DC bus / battery voltage.
+
+`battery.charge` (%)
+  Remaining capacity as reported by the NTU.
+
+`battery.alarm.voltage` (V)
+  Low-voltage alarm threshold, when provided by the `I` response.
+
+`battery.shutdown.voltage` (V)
+  Low-voltage shutdown threshold, when provided by the `I` response.
+
+`input.voltage` (V)
+  Utility (AC input) voltage.  This is typically only non-zero while the
+  unit is in bypass/line mode.
+
+`output.voltage` (V)
+  Output voltage (derived from the raw field in the `Q` response and
+  scaled by 10).  Only valid in inverter mode.
+
+`output.frequency` (Hz)
+  Output frequency, when the unit is running on battery.
+
+`ups.temperature` (°C)
+  Inverter temperature as reported by the NTU.
+
+`ups.load` (%)
+  Approximate load percentage, derived from the *PPP* bits in the `Q`
+  response.
+
+`device.mfr`
+  Manufacturer string from the `I` response (typically `MEANWELL`).
+
+`device.model`, `ups.model`
+  Model identifier from the `I` response (for example `NTU-1200-124`).
+
+`device.serial`
+  Serial number string, when reported.
+
+`device.firmware`
+  Firmware revision string (for example `REV:01.8`).
+
+
+UPS status flags
+~~~~~~~~~~~~~~~~
+
+The NTU protocol exposes a 19-bit status word.  The driver maps selected
+bits to NUT `ups.status` flags, including:
+
+`OB`
+  On battery / inverter mode.
+
+`BYPASS`
+  Bypass mode (utility path in use).
+
+`OL`
+  Utility present, output on line.
+
+`LB`
+  Battery low.
+
+`OVER`
+  Over-temperature condition.
+
+`FSD`
+  Inverter fault or forced shutdown condition.
+
+The raw status bits are also exported as individual informational
+variables named after their meaning (for example `battery.low`,
+`bypass.mode`, `utility.present`, `overtemp`, etc.) which may be useful
+for detailed monitoring and debugging.
+
+
+LIMITATIONS
+-----------
+
+This driver is currently marked experimental:
+
+* It is based on vendor protocol documentation and limited field testing.
+* Some fields in the `Q` and `I` responses are not yet used.
+* Reporting of `battery.charge`, `ups.load` and status flags may be
+  refined as more devices and firmware revisions are tested.
+* Shutdown and restart sequences are not yet integrated with NUT’s
+  more advanced timing and power-path logic.
+
+Users are encouraged to run the driver in debug mode and collect logs
+when reporting issues:
+
+----------------
+/usr/local/ups/bin/meanwell_ntu -DDDDD -a meanwell-ntu
+----------------
+
+Please include the exact NTU model, firmware revision (from the `I`
+command) and a description of the operating mode (bypass, inverter,
+charging, etc.) when filing bug reports or sending patches.
+
+
+AUTHOR
+------
+
+The `meanwell_ntu` driver was contributed by Jonathan Hite for use
+with Mean Well NTU series devices.  Subsequent enhancements and fixes
+may have been made by other contributors.  See the NUT source
+repository for detailed revision history.
+
+
+SEE ALSO
+--------
+
+*ups.conf*(5), *nutupsdrv*(8), *upsd*(8), *upsmon*(8), *upsc*(8),
+*upscmd*(8)
+
