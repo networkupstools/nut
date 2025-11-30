@@ -13,6 +13,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <strings.h>
 
 /* Driver identification */
 #define DRIVER_NAME      "meanwell_ntu"
@@ -41,10 +42,10 @@ struct upsdrv_info_s upsdrv_info = {
  *  0    1    2     3    4    5    6    7    8           9
  *
  * 0  output voltage raw*10     (only shows when on battery)
- * 1  digital load step range   (0–100% in coarse steps)
+ * 1  digital load step range   (0-100% in coarse steps)
  * 2  battery voltage
  * 3  battery capacity %
- * 4  inverter temperature °C
+ * 4  inverter temperature degC
  * 5  utility voltage (AC input, bypass mode only)
  * 6  output frequency (battery mode only)
  * 7  unused
@@ -64,8 +65,8 @@ static const char *status_labels[19] = {
     "experimental.shutdown.mode",        /* bit 7 */
     "experimental.battery.ovp",          /* bit 8 */
     "experimental.remote.shutdown",      /* bit 9 */
-    "experimental.overload.level1",      /* bit 10 (100–115%) */
-    "experimental.overload.level2",      /* bit 11 (115–150%) */
+    "experimental.overload.level1",      /* bit 10 (100-115%) */
+    "experimental.overload.level2",      /* bit 11 (115-150%) */
     "experimental.overload.level3",      /* bit 12 (150%+) */
     "experimental.overtemp",             /* bit 13 */
     "experimental.inverter.uvp",         /* bit 14 */
@@ -106,8 +107,9 @@ static int parse_q_response(const char *buf)
             fields, buf);
         return 0;
     }
+    (void)unused;
 
-    /* Output voltage: protocol doc says “raw*10”, but samples are real volts */
+    /* Output voltage: protocol doc says "raw*10", but samples are real volts */
     dstate_setinfo("output.voltage", "%.1f", (double)raw_vout);
 
     dstate_setinfo("battery.voltage", "%.2f", vbat);
@@ -250,7 +252,7 @@ static void parse_i_response(const char *buf)
 
     {
         int fields = sscanf(buf,
-            "#%f %f %f %f %f %31s %31s REV:%31s %31s %*s %*s",
+            "#%f %f %f %f %f %31s %31s REV:%31s %31s",
             &eq, &flt, &alarm_v, &shutdown_v, &xfer_v,
             mfr, serial, fw, model
         );
@@ -259,6 +261,9 @@ static void parse_i_response(const char *buf)
             /* Not enough numeric fields; leave defaults alone */
             return;
         }
+	(void)eq;
+	(void)flt;
+	(void)xfer_v;
     }
 
     if (mfr[0]) {
@@ -398,7 +403,11 @@ void upsdrv_tweak_prognames(void)
 void upsdrv_shutdown(void)
 {
     /* Best-effort shutdown; do not exit() here */
-    ser_send(upsfd, CMD_SHUTDOWN);
+    if (VALID_FD(upsfd)) {
+        if (ser_send(upsfd, CMD_SHUTDOWN) < 0) {
+            upslogx(LOG_ERR, "meanwell_ntu: failed to send shutdown command");
+        }
+    }
 }
 
 void upsdrv_help(void)
