@@ -14,8 +14,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-extern TYPE_FD_SER upsfd;
-
 /* Driver identification */
 #define DRIVER_NAME      "meanwell_ntu"
 #define DRIVER_VERSION   "1.6"
@@ -341,7 +339,7 @@ void upsdrv_initups(void)
 
     /* Open serial port (device_path from main.h / ups.conf) */
     upsfd = ser_open(device_path);
-    if (upsfd < 0) {
+    if (!VALID_FD(upsfd)) {
         fatalx(EXIT_FAILURE, "Cannot open %s", device_path);
     }
 
@@ -384,9 +382,9 @@ void upsdrv_makevartable(void)
 
 void upsdrv_cleanup(void)
 {
-    if (VALID_FD_SER(upsfd)) {
+    if (VALID_FD(upsfd)) {
         ser_close(upsfd, device_path);
-        upsfd = ERROR_FD_SER;
+        upsfd = ERROR_FD;
     }
 }
 
