@@ -16,7 +16,7 @@
 
 /* Driver identification */
 #define DRIVER_NAME      "meanwell_ntu"
-#define DRIVER_VERSION   "1.6"
+#define DRIVER_VERSION   "1.60"
 
 /* UART Commands (sent as plain strings with CR terminator) */
 #define CMD_Q            "Q\r"
