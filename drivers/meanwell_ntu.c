@@ -31,7 +31,7 @@ extern TYPE_FD_SER upsfd;
 struct upsdrv_info_s upsdrv_info = {
     DRIVER_NAME,                        /* name */
     DRIVER_VERSION,                     /* version (driver.version.internal) */
-    "Jonathan Hite",			/* authors */
+    "Jonathan Hite",                    /* authors */
     DRV_EXPERIMENTAL,                   /* status */
     { NULL, NULL }                      /* subdrv_info */
 };
@@ -51,31 +51,31 @@ struct upsdrv_info_s upsdrv_info = {
  * 5  utility voltage (AC input, bypass mode only)
  * 6  output frequency (battery mode only)
  * 7  unused
- * 8  PPP bits (analog load %)
+ * 8  PPP bits (actual load %)
  * 9  19-bit status flags (string of '0'/'1')
  */
 
-/* Human-readable names for the 19 status bits (we expose as info vars) */
+/* Human-readable names for the 19 status bits (info vars) */
 static const char *status_labels[19] = {
-    "inverter.mode",            /* bit 0 */
-    "bypass.mode",              /* bit 1 */
-    "utility.present",          /* bit 2 */
-    "charge.utility",           /* bit 3 */
-    "charge.solar",             /* bit 4 */
-    "saving.mode",              /* bit 5 */
-    "battery.low",              /* bit 6 */
-    "shutdown.mode",            /* bit 7 */
-    "battery.ovp",              /* bit 8 */
-    "remote.shutdown",          /* bit 9 */
-    "overload.level1",          /* bit 10 (100–115%) */
-    "overload.level2",          /* bit 11 (115–150%) */
-    "overload.level3",          /* bit 12 (150%+) */
-    "overtemp",                 /* bit 13 */
-    "inv.uvp",                  /* bit 14 */
-    "inv.ovp",                  /* bit 15 */
-    "inv.fault",                /* bit 16 */
-    "eeprom.error",             /* bit 17 */
-    "system.shutdown"           /* bit 18 */
+    "experimental.inverter.mode",        /* bit 0 */
+    "experimental.bypass.mode",          /* bit 1 */
+    "experimental.utility.present",      /* bit 2 */
+    "experimental.charge.utility",       /* bit 3 */
+    "experimental.charge.solar",         /* bit 4 */
+    "experimental.saving.mode",          /* bit 5 */
+    "experimental.battery.low",          /* bit 6 */
+    "experimental.shutdown.mode",        /* bit 7 */
+    "experimental.battery.ovp",          /* bit 8 */
+    "experimental.remote.shutdown",      /* bit 9 */
+    "experimental.overload.level1",      /* bit 10 (100–115%) */
+    "experimental.overload.level2",      /* bit 11 (115–150%) */
+    "experimental.overload.level3",      /* bit 12 (150%+) */
+    "experimental.overtemp",             /* bit 13 */
+    "experimental.inverter.uvp",         /* bit 14 */
+    "experimental.inverter.ovp",         /* bit 15 */
+    "experimental.inverter.fault",       /* bit 16 */
+    "experimental.eeprom.error",         /* bit 17 */
+    "experimental.system.shutdown"       /* bit 18 */
 };
 
 /* ------------------ Parsing Functions ------------------ */
@@ -124,14 +124,16 @@ static int parse_q_response(const char *buf)
     /* ---- Load from PPP (actual load %) ----
      * PPP is sent as a decimal string (e.g. "011" means 11%).
      */
-    int load_pct = (int)strtol(ppp, NULL, 10);
+    {
+        int load_pct = (int)strtol(ppp, NULL, 10);
 
-    /* If PPP is zero/bogus but coarse step is non-zero, fall back */
-    if (load_pct <= 0 && load_step > 0) {
-        load_pct = load_step;
+        /* If PPP is zero/bogus but coarse step is non-zero, fall back */
+        if (load_pct <= 0 && load_step > 0) {
+            load_pct = load_step;
+        }
+
+        dstate_setinfo("ups.load", "%d", load_pct);
     }
-
-    dstate_setinfo("ups.load", "%d", load_pct);
 
     /* ---- Bit-field handling: info vars + ups.status ---- */
 
@@ -144,89 +146,95 @@ static int parse_q_response(const char *buf)
     status_init();
 
     /* Track key bits so we can derive CHRG/DISCHRG and ups.mode */
-    int inv_mode     = 0;
-    int bypass_mode  = 0;
-    int util_present = 0;
-    int chg_util     = 0;
-    int chg_solar    = 0;
+    {
+        int inv_mode     = 0;
+        int bypass_mode  = 0;
+        int util_present = 0;
+        int chg_util     = 0;
+        int chg_solar    = 0;
 
-    for (i = 0; i < 19 && flags[i] != '\0'; i++) {
-        if (flags[i] == '1') {
-            dstate_setinfo(status_labels[i], "1");
+        for (i = 0; i < 19 && flags[i] != '\0'; i++) {
+            if (flags[i] == '1') {
+                dstate_setinfo(status_labels[i], "1");
 
-            switch (i) {
-            case 0: /* inverter.mode */
-                inv_mode = 1;
-                status_set("OB");      /* on battery */
-                break;
+                switch (i) {
+                case 0: /* inverter.mode */
+                    inv_mode = 1;
+                    status_set("OB");      /* on battery */
+                    break;
 
-            case 1: /* bypass.mode */
-                bypass_mode = 1;
-                status_set("BYPASS");
-                break;
+                case 1: /* bypass.mode */
+                    bypass_mode = 1;
+                    status_set("BYPASS");
+                    break;
 
-            case 2: /* utility.present */
-                util_present = 1;
-                status_set("OL");      /* on line */
-                break;
+                case 2: /* utility.present */
+                    util_present = 1;
+                    status_set("OL");      /* on line */
+                    break;
 
-            case 3: /* charge.utility */
-                chg_util = 1;
-                break;
+                case 3: /* charge.utility */
+                    chg_util = 1;
+                    break;
 
-            case 4: /* charge.solar */
-                chg_solar = 1;
-                break;
+                case 4: /* charge.solar */
+                    chg_solar = 1;
+                    break;
 
-            case 6: /* battery.low */
-                status_set("LB");
-                break;
+                case 6: /* battery.low */
+                    status_set("LB");
+                    break;
 
-            case 13: /* overtemp */
-                status_set("OVER");
-                break;
+                case 13: /* overtemp */
+                    status_set("OVER");
+                    break;
 
-            default:
-                /* Bit 16 (inv.fault) is exposed as info only; no FSD. */
-                break;
+                default:
+                    /* Bit 16 (inverter.fault) is exposed as info only; no FSD. */
+                    break;
+                }
             }
         }
-    }
 
-    /* ---- Derived status flags: CHRG / DISCHRG ---- */
-    if (chg_util || chg_solar) {
-        status_set("CHRG");
-    }
+        /* ---- Derived status flags: CHRG / DISCHRG ---- */
+        if (chg_util || chg_solar) {
+            status_set("CHRG");
+        }
 
-    if (inv_mode && !util_present && !(chg_util || chg_solar)) {
-        status_set("DISCHRG");
-    }
+        if (inv_mode && !util_present && !(chg_util || chg_solar)) {
+            status_set("DISCHRG");
+        }
 
-    /* ---- Input voltage validity ----
-     * Only trust/display input.voltage when utility.present bit is set.
-     * Otherwise force it to 0 so stale or noisy values don't linger.
-     */
-    if (util_present && util_v > 0) {
-        dstate_setinfo("input.voltage", "%d", util_v);
-    } else {
-        dstate_setinfo("input.voltage", "0");
-    }
+        /* ---- Input voltage validity ----
+         * Only trust/display input.voltage when utility.present bit is set.
+         * Otherwise force it to 0 so stale or noisy values don't linger.
+         */
+        if (util_present && util_v > 0) {
+            dstate_setinfo("input.voltage", "%d", util_v);
+        } else {
+            dstate_setinfo("input.voltage", "0");
+        }
 
-    /* ---- Mirror output voltage when in bypass ---- */
-    if (bypass_mode && raw_vout == 0 && util_v > 0) {
-        dstate_setinfo("output.voltage", "%d", util_v);
-    }
+        /* ---- Mirror output voltage when in bypass ----
+         * In bypass, raw_vout is 0, but the real output equals input.voltage.
+         */
+        if (bypass_mode && raw_vout == 0 && util_v > 0) {
+            dstate_setinfo("output.voltage", "%d", util_v);
+        }
 
-    /* ---- Synthetic mode summary ---- */
-
-    if (inv_mode && !util_present) {
-        dstate_setinfo("ups.mode", "battery");
-    } else if (bypass_mode) {
-        dstate_setinfo("ups.mode", "bypass");
-    } else if (util_present) {
-        dstate_setinfo("ups.mode", "line");
-    } else {
-        dstate_setinfo("ups.mode", "unknown");
+        /* ---- Synthetic mode summary ----
+         * Per nut-names.txt, ups.mode should be one of:
+         *   online | line-interactive | bypass
+         * The NTU is a line-interactive unit which can enter bypass.
+         */
+        if (bypass_mode) {
+            dstate_setinfo("ups.mode", "bypass");
+        } else {
+            /* Inverter + transfer behavior is line-interactive regardless
+             * of whether it is currently on battery or on mains.
+             */
+            dstate_setinfo("ups.mode", "line-interactive");
+        }
     }
 
     status_commit();
@@ -243,15 +251,17 @@ static void parse_i_response(const char *buf)
        #00.0 00.0 22.0 20.0 00.0 MEANWELL LOC-0123456789 REV:01.8 NTU-1200-124 1 00/00/0000\
     */
 
-    int fields = sscanf(buf,
-        "#%f %f %f %f %f %31s %31s REV:%31s %31s",
-        &eq, &flt, &alarm_v, &shutdown_v, &xfer_v,
-        mfr, serial, fw, model
-    );
+    {
+        int fields = sscanf(buf,
+            "#%f %f %f %f %f %31s %31s REV:%31s %31s",
+            &eq, &flt, &alarm_v, &shutdown_v, &xfer_v,
+            mfr, serial, fw, model
+        );
 
-    if (fields < 5) {
-        /* Not enough numeric fields; leave defaults alone */
-        return;
+        if (fields < 5) {
+            /* Not enough numeric fields; leave defaults alone */
+            return;
+        }
     }
 
     if (mfr[0]) {
