@@ -751,6 +751,8 @@
 
 "Maxxtro"	"ups"	"2"	"UPS 600 VA"	"serial port"	"blazer_ser"
 
+"Mean Well"	"ups"	"2"	"NTU Series"	""	"meanwell_ntu"
+
 "Mecer"	"ups"	"2"	"ME-1000-WTU"	"USB"	"nutdrv_qx"	# http://www.comx-computers.co.za/download/mecer/ME-1000-WTU.pdf
 "Mecer"	"ups"	"2"	"ME-2000"	""	"blazer_ser"
 
