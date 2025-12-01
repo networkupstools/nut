@@ -182,7 +182,7 @@ The driver maps selected bits to *ups.status*:
 *OVER*::
   Over-temperature condition.
 
-The raw bitfields are also exported as informational variables such as
+The raw bit fields are also exported as informational variables such as
 *battery.low*, *utility.present*, *bypass.mode*, *overtemp*, etc.
 
 
