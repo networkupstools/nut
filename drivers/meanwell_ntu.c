@@ -19,7 +19,10 @@
 #define DRIVER_NAME      "meanwell_ntu"
 #define DRIVER_VERSION   "1.60"
 
-/* UART Commands (sent as plain strings with CR terminator) */
+/* UART Commands (sent as plain strings with CR terminator)
+ * Note the protocol on surface seems related to Megatec Qx,
+ * but is sufficiently different to warrant a separate driver.
+ */
 #define CMD_Q            "Q\r"
 #define CMD_I            "I\r"
 #define CMD_SHUTDOWN     "C100000000000000\r"

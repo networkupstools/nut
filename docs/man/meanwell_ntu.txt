@@ -207,6 +207,14 @@ Please include model, firmware version, and operating mode details when
 reporting issues.
 
 
+IMPLEMENTATION
+--------------
+
+Note the protocol on surface seems related to Megatec Qx,
+but is sufficiently different to warrant a separate driver
+and not a sub-driver of e.g. linkman:nutdrv_qx[8].
+
+
 AUTHOR
 ------
 
