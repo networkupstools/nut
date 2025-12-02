@@ -49,22 +49,26 @@ Supported DC-voltage variants include:
 
 Other NTU-series devices using the same protocol may also work.
 
-Communication uses a 9600 8N1 serial connection via RS-232 or a
-USB-serial adapter such as */dev/ttyUSB0*.
+Communication uses a 9600-8-N-1 serial connection via RS-232 or
+a USB-serial adapter seen by the operating system as a serial
+port, e.g. `/dev/ttyUSB0` (on Linux).
 
 
 CABLES
 ------
 
 MEAN WELL p/n: RJ11-RS232
+
 A straight-through serial cable (no modem control) is required.
-USB-to-RS-232 adapters work as long as they expose a standard tty device.
+
+USB-to-RS-232 adapters work as long as they expose a standard TTY device.
 
 
 CONFIGURATION
 -------------
 
-The driver is configured in linkman:ups.conf[5].
+The driver is configured via linkman:ups.conf[5].
+
 A minimal configuration:
 
 ----
@@ -77,11 +81,13 @@ A minimal configuration:
 Required parameters
 ~~~~~~~~~~~~~~~~~~~
 
+Example standard parameters:
+
 *driver*::
-  Must be set to *meanwell_ntu*.
+Must be set to `meanwell_ntu`.
 
 *port*::
-  The serial/USB tty device (e.g. */dev/ttyS0*, */dev/ttyUSB0*).
+The serial/USB tty device (e.g. `/dev/ttyS0`, `/dev/ttyUSB0`).
 
 Optional parameters
 ~~~~~~~~~~~~~~~~~~~
@@ -89,10 +95,10 @@ Optional parameters
 This driver currently relies only on standard NUT parameters:
 
 *pollinterval*::
-  Interval between status polls (default: 2 seconds).
+Interval between status polls (default: 2 seconds).
 
 *synchronous*::
-  Serial I/O mode as documented in linkman:nutupsdrv[8].
+Serial I/O mode as documented in linkman:nutupsdrv[8].
 
 
 INSTANT COMMANDS
@@ -102,12 +108,12 @@ The following instant commands are supported when the connected hardware
 implements them (see linkman:upscmd[8]):
 
 *load.off*::
-  Request shutdown of inverter output and load power-off
-  (vendor command `C100000000000000`).
+Request shutdown of inverter output and load power-off
+(vendor command `C100000000000000`).
 
 *load.on*::
-  Request inverter output power-on
-  (vendor command `C010000000000000`).
+Request inverter output power-on
+(vendor command `C010000000000000`).
 
 Support varies across firmware revisions; test before relying on them.
 
@@ -122,65 +128,66 @@ Selected read-only variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *battery.voltage*::
-  Battery/DC bus voltage (V).
+Battery/DC bus voltage (V).
 
 *battery.charge*::
-  Remaining capacity (%).
+Remaining capacity (%).
 
 *battery.alarm.voltage*::
-  Low-voltage alarm threshold (V).
+Low-voltage alarm threshold (V).
 
 *battery.shutdown.voltage*::
-  Low-voltage shutdown threshold (V).
+Low-voltage shutdown threshold (V).
 
 *input.voltage*::
-  Utility AC input voltage (non-zero in line or bypass mode).
+Utility AC input voltage (non-zero in line or bypass mode).
 
 *output.voltage*::
-  Inverter output voltage (V).
+Inverter output voltage (V).
 
 *output.frequency*::
-  Output frequency when running on battery (Hz).
+Output frequency when running on battery (Hz).
 
 *ups.temperature*::
-  Inverter temperature (°C).
+Inverter temperature (°C).
 
 *ups.load*::
-  Approximate load percentage, derived from PPP bits.
+Approximate load percentage, derived from PPP bits.
 
 *device.mfr*::
-  Manufacturer string (typically `MEANWELL`).
+Manufacturer string (typically `MEANWELL`).
 
 *device.model*, *ups.model*::
-  Model descriptor (e.g. `NTU-1200-124`).
+Model descriptor (e.g. `NTU-1200-124`).
 
 *device.serial*::
-  Serial number when reported.
+Serial number when reported.
 
 *device.firmware*::
-  Firmware revision string.
+Firmware revision string.
 
 
 UPS status flags
 ~~~~~~~~~~~~~~~~
 
 The NTU protocol exposes a 19-bit status word.
-The driver maps selected bits to *ups.status*:
+
+The driver maps selected bits into `ups.status` keywords:
 
 *OB*::
-  On battery / inverter mode.
+On battery / inverter mode.
 
 *BYPASS*::
-  Bypass mode active.
+Bypass mode active.
 
 *OL*::
-  Utility present / online.
+Utility present / online.
 
 *LB*::
-  Battery low.
+Battery low.
 
 *OVER*::
-  Over-temperature condition.
+Over-temperature condition.
 
 The raw bit fields are also exported as informational variables such as
 *battery.low*, *utility.present*, *bypass.mode*, *overtemp*, etc.
