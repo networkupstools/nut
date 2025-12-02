@@ -64,7 +64,7 @@ USB-to-RS-232 adapters work as long as they expose a standard tty device.
 CONFIGURATION
 -------------
 
-The driver is configured in linkman:ups.conf[5].  
+The driver is configured in linkman:ups.conf[5].
 A minimal configuration:
 
 ----
@@ -164,7 +164,7 @@ Selected read-only variables
 UPS status flags
 ~~~~~~~~~~~~~~~~
 
-The NTU protocol exposes a 19-bit status word.  
+The NTU protocol exposes a 19-bit status word.
 The driver maps selected bits to *ups.status*:
 
 *OB*::
@@ -197,7 +197,7 @@ This driver is marked experimental:
 * Shutdown and restart behavior is basic and may not integrate with all
   NUT power-path logic.
 
-For debugging, run the driver with high verbosity:
+For debugging, run the driver with high verbosity, e.g.:
 
 ----
 /usr/local/ups/bin/meanwell_ntu -DDDDD -a meanwell-ntu
@@ -210,8 +210,9 @@ reporting issues.
 AUTHOR
 ------
 
-The *meanwell_ntu* driver was contributed by Jonathan Hite.  
-Additional improvements may be provided by the NUT community.  
+The *meanwell_ntu* driver was contributed by Jonathan Hite.
+
+Additional improvements may be provided by the NUT community.
 See the project repository for revision history.
 
 
