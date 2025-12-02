@@ -234,3 +234,8 @@ linkman:upsmon[8],
 linkman:upsc[8],
 linkman:upscmd[8]
 
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* Vendor documentation: https://www.meanwell.com/Upload/PDF/NTS,NTU-E.pdf
