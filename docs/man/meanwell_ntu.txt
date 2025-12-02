@@ -23,7 +23,7 @@ DESCRIPTION
 -----------
 
 The *meanwell_ntu* driver provides support for Mean Well NTU series
-inverter/UPS units that implement the vendor’s ASCII serial protocol.
+inverter/UPS units that implement the vendor's ASCII serial protocol.
 
 This driver is currently experimental and intended for early adopters.
 Reported variables and behavior may evolve as additional models and
