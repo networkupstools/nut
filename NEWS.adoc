@@ -87,6 +87,9 @@ https://github.com/networkupstools/nut/milestone/12
    * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
      Extended to be IPv6-capable along the way. [#1209]
 
+ - Introduced a new NUT driver named `meanwell_ntu` which provides support for
+   the Mean Well NTU series hybrid inverter and UPS units. [PR #3206]
+
  - `nhs_ser` driver updates:
    * Driver source code includes a table to map baud rates (defined by the OS
      as C macros) to numbers and strings more useful to the driver program.

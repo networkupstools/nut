@@ -1,0 +1,248 @@
+MEANWELL_NTU(8)
+===============
+
+NAME
+----
+
+meanwell_ntu - Driver for Mean Well NTU series inverter/UPS units
+
+
+SYNOPSIS
+--------
+
+*meanwell_ntu* -h
+
+*meanwell_ntu* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page documents the hardware-specific features of the
+*meanwell_ntu* driver. For general information about NUT drivers, see
+linkman:nutupsdrv[8].
+
+
+DESCRIPTION
+-----------
+
+The *meanwell_ntu* driver provides support for Mean Well NTU series
+inverter/UPS units that implement the vendor's ASCII serial protocol.
+
+This driver is currently experimental and intended for early adopters.
+Reported variables and behavior may evolve as additional models and
+firmware revisions are tested.
+
+
+SUPPORTED HARDWARE
+------------------
+
+The driver is known to work with the following NTU models:
+
+* NTU-1200
+* NTU-1700
+* NTU-2200
+* NTU-3200
+
+Supported DC-voltage variants include:
+
+* NTU-1200-112, -124, -148
+* NTU-1700-112, -124, -148
+* NTU-2200-112, -124, -148
+* NTU-3200-212, -224, -248
+
+Other NTU-series devices using the same protocol may also work.
+
+Communication uses a 9600-8-N-1 serial connection via RS-232 or
+a USB-serial adapter seen by the operating system as a serial
+port, e.g. `/dev/ttyUSB0` (on Linux).
+
+
+CABLES
+------
+
+MEAN WELL p/n: RJ11-RS232
+
+A straight-through serial cable (no modem control) is required.
+
+USB-to-RS-232 adapters work as long as they expose a standard TTY device.
+
+
+CONFIGURATION
+-------------
+
+The driver is configured via linkman:ups.conf[5].
+
+A minimal configuration:
+
+----
+[meanwell-ntu]
+    driver = meanwell_ntu
+    port   = /dev/ttyUSB0
+    desc   = "Mean Well NTU-1200-124"
+----
+
+Required parameters
+~~~~~~~~~~~~~~~~~~~
+
+Example standard parameters:
+
+*driver*::
+Must be set to `meanwell_ntu`.
+
+*port*::
+The serial/USB tty device (e.g. `/dev/ttyS0`, `/dev/ttyUSB0`).
+
+Optional parameters
+~~~~~~~~~~~~~~~~~~~
+
+This driver currently relies only on standard NUT parameters:
+
+*pollinterval*::
+Interval between status polls (default: 2 seconds).
+
+*synchronous*::
+Serial I/O mode as documented in linkman:nutupsdrv[8].
+
+
+INSTANT COMMANDS
+----------------
+
+The following instant commands are supported when the connected hardware
+implements them (see linkman:upscmd[8]):
+
+*load.off*::
+Request shutdown of inverter output and load power-off
+(vendor command `C100000000000000`).
+
+*load.on*::
+Request inverter output power-on
+(vendor command `C010000000000000`).
+
+Support varies across firmware revisions; test before relying on them.
+
+
+STATUS AND VARIABLES
+--------------------
+
+The driver regularly sends the `Q` (status) and `I` (info) commands and
+maps their fields to standard NUT variables.
+
+Selected read-only variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*battery.voltage*::
+Battery/DC bus voltage (V).
+
+*battery.charge*::
+Remaining capacity (%).
+
+*battery.alarm.voltage*::
+Low-voltage alarm threshold (V).
+
+*battery.shutdown.voltage*::
+Low-voltage shutdown threshold (V).
+
+*input.voltage*::
+Utility AC input voltage (non-zero in line or bypass mode).
+
+*output.voltage*::
+Inverter output voltage (V).
+
+*output.frequency*::
+Output frequency when running on battery (Hz).
+
+*ups.temperature*::
+Inverter temperature (°C).
+
+*ups.load*::
+Approximate load percentage, derived from PPP bits.
+
+*device.mfr*::
+Manufacturer string (typically `MEANWELL`).
+
+*device.model*, *ups.model*::
+Model descriptor (e.g. `NTU-1200-124`).
+
+*device.serial*::
+Serial number when reported.
+
+*device.firmware*::
+Firmware revision string.
+
+
+UPS status flags
+~~~~~~~~~~~~~~~~
+
+The NTU protocol exposes a 19-bit status word.
+
+The driver maps selected bits into `ups.status` keywords:
+
+*OB*::
+On battery / inverter mode.
+
+*BYPASS*::
+Bypass mode active.
+
+*OL*::
+Utility present / online.
+
+*LB*::
+Battery low.
+
+*OVER*::
+Over-temperature condition.
+
+The raw bit fields are also exported as informational variables such as
+*battery.low*, *utility.present*, *bypass.mode*, *overtemp*, etc.
+
+
+LIMITATIONS
+-----------
+
+This driver is marked experimental:
+
+* Protocol interpretation based on limited test samples.
+* Some fields in `Q`/`I` responses are currently unused.
+* Load and capacity reporting may be refined with further testing.
+* Shutdown and restart behavior is basic and may not integrate with all
+  NUT power-path logic.
+
+For debugging, run the driver with high verbosity, e.g.:
+
+----
+/usr/local/ups/bin/meanwell_ntu -DDDDD -a meanwell-ntu
+----
+
+Please include model, firmware version, and operating mode details when
+reporting issues.
+
+
+IMPLEMENTATION
+--------------
+
+Note the protocol on surface seems related to Megatec Qx,
+but is sufficiently different to warrant a separate driver
+and not a sub-driver of e.g. linkman:nutdrv_qx[8].
+
+
+AUTHOR
+------
+
+The *meanwell_ntu* driver was contributed by Jonathan Hite.
+
+Additional improvements may be provided by the NUT community.
+See the project repository for revision history.
+
+
+SEE ALSO
+--------
+
+linkman:ups.conf[5],
+linkman:nutupsdrv[8],
+linkman:upsd[8],
+linkman:upsmon[8],
+linkman:upsc[8],
+linkman:upscmd[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* Vendor documentation: https://www.meanwell.com/Upload/PDF/NTS,NTU-E.pdf
