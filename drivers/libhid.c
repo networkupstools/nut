@@ -228,6 +228,8 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 # pragma GCC diagnostic pop
 #endif
 
+	upsdebugx(5, "%s: investigating path: %s",
+		__func__, HIDGetDataItem(pData, NULL));
 	ret = comm_driver->get_report(udev, id,
 		(usb_ctrl_charbuf)rbuf->data[id],
 		(usb_ctrl_charbufsize)r);
@@ -987,7 +989,9 @@ badvalue:
 	return i;
 }
 
-/* translate HID numeric path to string path and return path depth */
+/* translate HID numeric path to string path and return path depth
+ * can pass utab=NULL to leave it a chain of HEX strings
+ */
 static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab)
 {
 	int	i;
@@ -1001,7 +1005,7 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 			snprintfcat(string, size, ".");
 
 		/* lookup tables first (to override defaults) */
-		if ((p = hid_lookup_path(path->Node[i], utab)) != NULL)
+		if (utab != NULL && ((p = hid_lookup_path(path->Node[i], utab)) != NULL))
 		{
 			snprintfcat(string, size, "%s", p);
 			continue;
