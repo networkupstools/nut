@@ -485,8 +485,7 @@ int nut_usb_get_string(
 	}
 
 	/* translate simple UTF-16LE to 8-bit */
-	len = ret < (int)buflen ? ret : (int)buflen;
-	len = len / 2 - 1;	/* 16-bit characters, without header */
+	len = ret / 2 - 1;	/* 16-bit characters, without header */
 	len = len < (int)buflen - 1 ? len : (int)buflen - 1;	/* reserve for null terminator */
 	for (i = 0; i < len; i++) {
 		if (buffer[2 + i * 2 + 1] == 0)
