@@ -55,6 +55,9 @@ https://github.com/networkupstools/nut/milestone/12
      stable name as a default implementation). Drivers united by `main.c`
      framework introduced a `upsdrv_tweak_prognames()` hook method to let
      them manipulate the array of `prognames[]` aliases. [PR #3101]
+   * USB drivers could truncate strings received from devices as a fallout
+     of PR #2604 merged in NUT v2.8.3; this should now be fixed. [PR #3211,
+     issue #3201]
    * `libusb0` and `libusb1` integrations now try both "Resource Descriptor
      Length" values they could identify on some devices: sometimes the first
      (or otherwise preferred) option may be not the correct one, so try the
