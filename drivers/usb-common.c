@@ -484,6 +484,10 @@ int nut_usb_get_string(
 		return ret;
 	}
 
+	upsdebugx(6, "%s: from nut_usb_get_string_descriptor() got %d useful bytes", __func__, ret);
+	upsdebug_hex(6, "...into buffer, presumably in simple UTF-16LE encoding",
+		buffer, ((size_t)ret < sizeof(buffer) ? (size_t)ret : sizeof(buffer)));
+
 	/* translate simple UTF-16LE to 8-bit */
 	len = ret / 2 - 1;	/* 16-bit characters, without header */
 	if ((int)buflen - 1 < len) {
@@ -497,6 +501,11 @@ int nut_usb_get_string(
 			buf[i] = '?';	/* not decoded */
 	}
 	buf[i] = '\0';
+
+	/* "data bytes" because we have null terminator on top */
+	upsdebugx(6, "%s: converted into %d data bytes as: [%s]", __func__, len, buf);
+	upsdebug_hex(6, "...should be in 8-bit encoding", buf,
+		(len >= 0 && (size_t)len < buflen ? (size_t)len : buflen));
 
 	return len;
 }
