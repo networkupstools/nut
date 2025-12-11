@@ -88,6 +88,12 @@ callNDE() {
     callSHELL $NDE "$@"
 }
 
+callG2V() {
+    # Test case runner may want to pass NUT_VERSION_QUERY, NUT_VERSION_FORCED etc.
+    # Collect debug output line into stdout too
+    "${SRCDIR}/../tools/gitlog2version.sh" 2>&1
+}
+
 run_testcase_generic() {
     # First 4 args are required as defined below; the rest are
     # CLI arg(s) to nut-driver-enumerator.sh
@@ -367,6 +373,83 @@ auto-prio=3|python3"
 auto-prio=3|python3"
 }
 
+# Make sure our weird version parsing works with different shell interpreters
+# (and related toolkits like sed, printf, grep, awk, tr, etc.)
+testcase_gitlog2version() {
+    # A couple of version tests below are almost directly taken
+    # from what the script returns in a git workspace, to compare
+    # that it parses the same values in (legacy) mode for fixed
+    # strings, such as dist tarball or for version comparisons.
+    # Note that TRUNK and BASE are normally unknown when running
+    # as a script for legacy version mode (and currently ignored
+    # even if passed by caller like below). Also note that for
+    # an RC, the SEMVER is "+1 from last tag" (by design), and
+    # that the "vX.Y.Z+rcN" tail of the SUFFIX and extra numbers
+    # (that are not in preceding-release tag) are not parts of
+    # the `git describe`-aligned DESC value (the RC tag is added
+    # to SUFFIX by script, when running in the git workspace)
+
+    # Taken from `git checkout v2.8.4-rc3` (emptied TRUNK and BASE):
+    NUT_VERSION_FORCED=2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3 \
+    TRUNK='origin/master' BASE='adfdbe3aba19e157010075c42fba7c3174e9baa7' \
+    run_testcase_generic callG2V \
+        "Testing that parsing from a NUT_VERSION_FORCED string for a known git checkout returns same results, for a release candidate" 0 \
+"SEMVER=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.3-786+gadfdbe3ab' => TAG='v2.8.3' + SUFFIX='-786+gadfdbe3ab+v2.8.4+rc3' => VER5='2.8.3.786.0' => DESC5='2.8.3.786.0-786+gadfdbe3ab+v2.8.4+rc3' => VER50='2.8.3.786' => DESC50='2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3'
+2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3"
+
+    # Taken from `git checkout v2.8.4` (emptied TRUNK and BASE):
+    NUT_VERSION_FORCED=2.8.4 \
+    TRUNK='origin/master' BASE='541c2ecf0b2ec33dadb9f40b16acbe39042bd103' \
+    run_testcase_generic callG2V \
+        "Testing that parsing from a NUT_VERSION_FORCED string for a known git checkout returns same results, for a release (tag)" 0 \
+"SEMVER=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.4' => TAG='v2.8.4' + SUFFIX='' => VER5='2.8.4.0.0' => DESC5='2.8.4.0.0' => VER50='2.8.4' => DESC50='2.8.4'
+2.8.4"
+
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a release candidate, with extra fields" 0 \
+"SEMVER=3.14.160; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef+v3.14.160+rc1' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1'
+000003.000014.000159.002653.000059-2712+gdeadbeef+v3.14.160+rc1"
+
+    NUT_VERSION_QUERY=VER5X \
+    NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1 \
+    NUT_VERSION_EXTRA_WIDTH=9 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a release candidate, just the numeric part" 0 \
+"SEMVER=3.14.160; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef+v3.14.160+rc1' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1'
+000000003.000000014.000000159.000002653.000000059"
+
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a dev iteration, with extra fields" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
+000003.000014.000159.002653.000059-2712+gdeadbeef"
+
+    NUT_VERSION_QUERY=VER5X \
+    NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
+    NUT_VERSION_EXTRA_WIDTH=8 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a dev iteration, just the numeric part, wider numbers" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
+00000003.00000014.00000159.00002653.00000059"
+
+    NUT_VERSION_QUERY=VER5X \
+    NUT_VERSION_FORCED=3.14.159.2653 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a master merge increment, just the numeric part (requiring at least 5 numeric components)" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159' => TAG='v3.14.159' + SUFFIX='' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0' => VER50='3.14.159.2653' => DESC50='3.14.159.2653'
+000003.000014.000159.002653.000000"
+
+    NUT_VERSION_QUERY=VER50X \
+    NUT_VERSION_FORCED=3.14.159.2653 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a master merge increment, just the numeric part (dropping trailing zero numeric components)" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159' => TAG='v3.14.159' + SUFFIX='' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0' => VER50='3.14.159.2653' => DESC50='3.14.159.2653'
+000003.000014.000159.002653"
+}
+
 # Combine the cases above into a stack
 testsuite() {
     testcase_bogus_args
@@ -378,6 +461,7 @@ testsuite() {
     testcase_upslist_debug
     # Something very different
     testcase_backticks
+    testcase_gitlog2version
 }
 
 # If no args...
