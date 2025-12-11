@@ -473,7 +473,9 @@ filter_extra_width() {
                 ".") echo "." ;;
                 0*|1*|2*|3*|4*|5*|6*|7*|8*|9*)
                     if $NUMERIC && [ x = x"`echo \"$LINE\" | sed 's,[0-9],,g'`" ] ; then
-                        printf '%0.*d' "${NUT_VERSION_EXTRA_WIDTH}" "${LINE}"
+                        # NOTE: Not all shells have printf '%0.*d' (variable width)
+                        # support, so we embed the number into formatting string:
+                        printf "%0.${NUT_VERSION_EXTRA_WIDTH}d" "${LINE}"
                     else
                         NUMERIC=false
                         echo "$LINE"
