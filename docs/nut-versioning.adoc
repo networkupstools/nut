@@ -291,6 +291,15 @@ DESC='v2.8.2-2381+g1faa9945d'
 |`VER50`	| 3-to-5 non-zero component version
 			| * dev: `2.8.2.2379.2`
 			  * release tarball: `2.8.0`
+|`DESC5X`, `DESC50X`, `VER5X` and `VER50X`	| Expanded variants of respective
+			  reports, with leading zeroes padding up the initial
+			  dot-separated numbers to `${NUT_VERSION_EXTRA_WIDTH}`
+			  (minimum 6) digits each, allowing for easy scripted
+			  alphanumeric comparisons of different NUT releases
+			  regardless of digit count in original components.
+			| * VER5X: `000002.000008.000004.000910.000002`
+			  * DESC5X with also `NUT_VERSION_EXTRA_WIDTH=9`:
+			    `000000002.000000008.000000004.000000910.000000002-912+g081755da0`
 |`SEMVER`	| Exactly three leading numeric components	| `2.8.2`
 |`IS_RELEASE`	| `true` if `SEMVER`==`VER50`, `false` otherwise
 			| * dev: `false`

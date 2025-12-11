@@ -162,6 +162,12 @@ fi
 # Must be "true" or "false" exactly, interpreted as such below:
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ x"${SRC_IS_GIT}" = xtrue ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
 
+if [ "${NUT_VERSION_EXTRA_WIDTH-}" -gt 6 ] 2>/dev/null ; then
+    :
+else
+    NUT_VERSION_EXTRA_WIDTH=6
+fi
+
 check_shallow_git() {
     if git log --oneline --decorate=short | tail -1 | $GREP -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
         echo "$0: $1" >&2
@@ -396,6 +402,31 @@ getver_default() {
     fi
 }
 
+filter_extra_width() {
+    # Expand the dot-separated numeric leading part of the version string for
+    # relevant alphanumeric comparisons of the result, regardless of digit
+    # counts. Above we ensure NUT_VERSION_EXTRA_WIDTH >= 6.
+    sed -e 's,\.,\n\.\n,g' -e 's,\([0-9][0-9]*\)\([^.]*\),\1\n\2\n,g' | (
+        #set -x
+        NUMERIC=true; while read LINE ; do
+            #echo "=== '$LINE'" >&2
+            case "$LINE" in
+                ".") echo "." ;;
+                0*|1*|2*|3*|4*|5*|6*|7*|8*|9*)
+                    if $NUMERIC && [ x = x"`echo \"$LINE\" | sed 's,[0-9],,g'`" ] ; then
+                        printf "%0*d" "${NUT_VERSION_EXTRA_WIDTH}" "$LINE"
+                    else
+                        NUMERIC=false
+                        echo "$LINE"
+                    fi
+                    ;;
+                "") ;;
+                *) NUMERIC=false ; echo "$LINE" ;;
+            esac
+        done) | tr -d '\n'
+    echo ''
+}
+
 report_debug() {
     # Debug
     echo "SEMVER=${SEMVER}; TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => DESC5='${DESC5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
@@ -404,9 +435,13 @@ report_debug() {
 report_output() {
     case "${NUT_VERSION_QUERY-}" in
         "DESC5")	echo "${DESC5}" ;;
+        "DESC5x"|"DESC5X")	echo "${DESC5}" | filter_extra_width ;;
         "DESC50")	echo "${DESC50}" ;;
+        "DESC50x"|"DESC50X")	echo "${DESC50}" | filter_extra_width ;;
         "VER5") 	echo "${VER5}" ;;
+        "VER5x"|"VER5X")	echo "${VER5}" | filter_extra_width ;;
         "VER50")	echo "${VER50}" ;;
+        "VER50x"|"VER50X")	echo "${VER50}" | filter_extra_width ;;
         "SEMVER")	echo "${SEMVER}" ;;
         "IS_RELEASE")	[ x"${SEMVER}" = x"${VER50}" ] && echo true || echo false ;;
         "IS_PRERELEASE")	[ x"${SUFFIX_PRERELEASE}" != x ] && echo true || echo false ;;
