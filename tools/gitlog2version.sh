@@ -80,7 +80,7 @@ fi
 
 SRC_IS_GIT=false
 if ( [ -e "${abs_top_srcdir}/.git" ] ) 2>/dev/null || [ -d "${abs_top_srcdir}/.git" ] || [ -f "${abs_top_srcdir}/.git" ] || [ -h "${abs_top_srcdir}/.git" ] ; then
-   SRC_IS_GIT=true
+    SRC_IS_GIT=true
 fi
 
 [ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
@@ -106,6 +106,8 @@ fi
 # caller environment, or a file setting it reproducibly, can help
 # identify the actual NUT release version triplet used on the box.
 # Please use it, it immensely helps with community troubleshooting!
+
+# These *FORCED files can be (re-)populated with UPDATE_FILE_GIT_RELEASE:
 if [ x"${NUT_VERSION_QUERY-}" = x"UPDATE_FILE_GIT_RELEASE" ] ; then
     if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
         echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED', will replace with git info" >&2
@@ -128,7 +130,10 @@ if [ -n "${NUT_VERSION_FORCED-}" ] ; then
     NUT_VERSION_PREFER_GIT=false
 fi
 
+# The VERSION_DEFAULT file can be (re-)populated with UPDATE_FILE:
 if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_builddir}/VERSION_DEFAULT" ] ; then
+    # Should set NUT_VERSION_DEFAULT=X.Y.Z(.a.b...)
+    # Not practically used if NUT_VERSION_FORCED is set
     . "${abs_top_builddir}/VERSION_DEFAULT" || exit
     [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ x"${SRC_IS_GIT}" = xtrue ] || NUT_VERSION_PREFER_GIT=false ; }
 fi
