@@ -116,13 +116,23 @@ if [ x"${NUT_VERSION_QUERY-}" = x"UPDATE_FILE_GIT_RELEASE" ] ; then
         echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED_SEMVER', will replace with git info" >&2
     fi
 else
-    if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
-        # Should set NUT_VERSION_FORCED=X.Y.Z(.a.b...)
-        . "${abs_top_srcdir}/VERSION_FORCED" || exit
-    fi
-    if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
-        # Should set NUT_VERSION_FORCED_SEMVER=X.Y.Z
-        . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+    # If envvar is passed by caller, ignore the files
+    if [ x"${NUT_VERSION_FORCED-}${NUT_VERSION_FORCED_SEMVER-}" = x ] ; then
+        if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+            # Should set NUT_VERSION_FORCED=X.Y.Z(.a.b...)
+            . "${abs_top_srcdir}/VERSION_FORCED" || exit
+        fi
+        if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+            # Should set NUT_VERSION_FORCED_SEMVER=X.Y.Z
+            . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+        fi
+    else
+        if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+            echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED', because envvars were passed" >&2
+        fi
+        if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+            echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED_SEMVER', because envvars were passed" >&2
+        fi
     fi
 fi
 if [ -n "${NUT_VERSION_FORCED-}" ] ; then
