@@ -340,13 +340,13 @@ getver_default() {
             # for the example above, `-2881+g45029249f` remains:
             tmpSUFFIX="`echo \"${NUT_VERSION_DEFAULT}\" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(.*\+(rc|alpha|beta)[+-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
             || tmpSUFFIX=""
-            if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != "${NUT_VERSION_DEFAULT}" ] ; then
+            if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != x"${NUT_VERSION_DEFAULT}" ] ; then
                 # Extract tagged NUT version from that suffix
                 SUFFIX="${tmpSUFFIX}"
                 # for the example above, `v2.8.3+rc6` remains
                 tmpTAG_PRERELEASE="`echo \"${tmpSUFFIX}\" | sed 's/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[+]\(rc\|alpha\|beta\)[+-]*[0-9][0-9]*\)$/\1/'`" \
                 || tmpTAG_PRERELEASE=""
-                if [ -n "${tmpTAG_PRERELEASE}" ] && [ x"${tmpSUFFIX}" != "${tmpTAG_PRERELEASE}" ] ; then
+                if [ -n "${tmpTAG_PRERELEASE}" ] && [ x"${tmpSUFFIX}" != x"${tmpTAG_PRERELEASE}" ] ; then
                     # Replace back pluses to dashes for the tag
                     TAG_PRERELEASE="v`echo "${tmpTAG_PRERELEASE}" | sed -e 's/[+]\(rc\|alpha\|beta\)/-\1/' -e 's/\(rc\|alpha\|beta\)[+]/\1-/'`"
                     if [ -z "${SEMVER}" ] ; then
