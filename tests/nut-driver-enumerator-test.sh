@@ -448,6 +448,29 @@ testcase_gitlog2version() {
         "Complex (forced) NUT version expanded for alphanumeric comparisons, for a master merge increment, just the numeric part (dropping trailing zero numeric components)" 0 \
 "SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159' => TAG='v3.14.159' + SUFFIX='' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0' => VER50='3.14.159.2653' => DESC50='3.14.159.2653'
 000003.000014.000159.002653"
+
+    # Note that DESC must be either a tag as is,
+    # or suffixed with commit count and git hash
+    NUT_VERSION_FORCED=3.14.159+gdeadbeef \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-0+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-0+gdeadbeef' => VER5='3.14.159.0.0' => DESC5='3.14.159.0.0-0+gdeadbeef' => VER50='3.14.159' => DESC50='3.14.159-0+gdeadbeef'
+3.14.159-0+gdeadbeef"
+
+    # ...auto-account the offset since tag correctly:
+    NUT_VERSION_FORCED=3.14.159.2653+gdeadbeef \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2653+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2653+gdeadbeef' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0-2653+gdeadbeef' => VER50='3.14.159.2653' => DESC50='3.14.159.2653-2653+gdeadbeef'
+3.14.159.2653-2653+gdeadbeef"
+
+    # ...auto-account the offset since tag correctly
+    # (note two steps to add):
+    NUT_VERSION_FORCED=3.14.159.2653.5+gdeadbeef \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
+3.14.159.2653.5-2658+gdeadbeef"
 }
 
 # Combine the cases above into a stack

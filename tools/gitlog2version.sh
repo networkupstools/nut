@@ -376,6 +376,27 @@ getver_default() {
                 NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT}\" | sed -e 's/'\"${SUFFIX}\"'$//'`"
             fi
             ;;
+        *+g*)
+            # Assume a saved/forced non-RC (buggy?) value like `2.8.3.786+gadfdbe3ab`
+            # and assume it meant but missed a "-0" for no commits since tag
+            tmpSUFFIX="`echo \"${NUT_VERSION_DEFAULT}\" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(\.[0-9][0-9]*)*(\+g*[0-9a-fA-F][0-9a-fA-F]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
+            || tmpSUFFIX=""
+            if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != x"${NUT_VERSION_DEFAULT}" ] ; then
+                # Extract tagged NUT version from that suffix
+                NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT}\" | sed -e 's/'\"${tmpSUFFIX}\"'$//'`"
+
+                # Sum up commits after tag (assuming 3 components are it) as the DESC offset
+                OFFSET="`echo \"${NUT_VERSION_DEFAULT}\" | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\.//'`"
+                if [ -n "${OFFSET}" -a x"${OFFSET}" != x"${NUT_VERSION_DEFAULT}" ] ; then
+                    OFFSET="`echo \"${OFFSET}\" | sed 's/\./ \+ /g'`"
+                    OFFSET="`expr $OFFSET`" && [ "${OFFSET}" -gt 0 ] || OFFSET=0
+                else
+                    OFFSET=0
+                fi
+
+                SUFFIX="-${OFFSET}${tmpSUFFIX}"
+            fi
+            ;;
     esac
 
     NUT_VERSION_DEFAULT_DOTS="`echo \"${NUT_VERSION_DEFAULT}\" | sed 's/[^.]*//g' | tr -d '\n' | wc -c`"
