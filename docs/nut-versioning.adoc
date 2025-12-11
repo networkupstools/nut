@@ -242,7 +242,7 @@ implementations).
 			| `2.8.0`
 |`SUFFIX`		| Empty, unless `NUT_VERSION_DEFAULT` had a suffix
 			  for pre-release information roughly matching the
-			  `-(rc|alpha|beta)[0-9]*` regular expression
+			  `-(rc\|alpha\|beta)[0-9]*` regular expression
 			| `""` `-rc6`
 |`VER5`			| Full 5-component version, `NUT_VERSION_DEFAULT5`
 			| `2.8.2.2379.2`
@@ -323,7 +323,7 @@ DESC='v2.8.2-2381+g1faa9945d'
 		  DEFAULT: Constructed from `SEMVER`
 		| `v2.8.2`
 |`TAG_PRERELEASE`	| GIT: if the `HEAD` itself has a tag matching
-		  the `-(rc|alpha|beta)[0-9]*` regular expression.
+		  the `-(rc\|alpha\|beta)[0-9]*` regular expression.
 		  DEFAULT: Constructed from `NUT_VERSION_DEFAULT3`
 		  and `SUFFIX_PRERELEASE`.
 		  Empty for not-pre-releases.
@@ -344,7 +344,7 @@ DESC='v2.8.2-2381+g1faa9945d'
 |`SUFFIX_PRERELEASE`	| GIT: Constructed from `TAG_PRERELEASE` replacing any
 			  dash with a plus character.
 			  DEFAULT: empty unless `NUT_VERSION_DEFAULT` has a
-			  suffix matching the `-(rc|alpha|beta)[0-9]*`
+			  suffix matching the `-(rc\|alpha\|beta)[0-9]*`
 			  regular expression, or git info followed by
 			  the pre-release tag.
                           NOTE: No leading dash in this value (unlike `SUFFIX`).
