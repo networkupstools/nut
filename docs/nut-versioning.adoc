@@ -255,6 +255,14 @@ implementations).
 			  Either `NUT_VERSION_FORCED_SEMVER` (if provided by caller or
 			  configuration files), or `NUT_VERSION_DEFAULT3` (see above)
 			| `2.8.0`
+|`SUFFIX_DESC`		| Optionally populated to construct `DESC` (trimming
+			  rc/alpha/beta suffixes from `SUFFIX`, if any)
+			| empty, `-123+gc0ffee`
+|`DESC`			| Constructed from `NUT_VERSION_DEFAULT` for consistency,
+			  as `v${NUT_VERSION_DEFAULT3}${SUFFIX_DESC}`, to emulate
+			  what `git describe` would have returned, to support NUT
+			  SEMVER values saved "as is" into dist tarball files
+			| empty, `v2.8.0`, `v2.8.3-786+gadfdbe3ab`
 |`TAG`			| Constructed as `v${NUT_VERSION_DEFAULT3}${SUFFIX}`
 			| `v2.8.0` `v2.8.3-rc6`
 |=========================================================================
