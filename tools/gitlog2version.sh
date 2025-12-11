@@ -473,7 +473,7 @@ filter_extra_width() {
                 ".") echo "." ;;
                 0*|1*|2*|3*|4*|5*|6*|7*|8*|9*)
                     if $NUMERIC && [ x = x"`echo \"$LINE\" | sed 's,[0-9],,g'`" ] ; then
-                        printf '%0*d' "${NUT_VERSION_EXTRA_WIDTH}" "${LINE}"
+                        printf '%0.*d' "${NUT_VERSION_EXTRA_WIDTH}" "${LINE}"
                     else
                         NUMERIC=false
                         echo "$LINE"
