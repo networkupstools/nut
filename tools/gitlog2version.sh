@@ -288,7 +288,7 @@ getver_git() {
     # 5-digit version, note we strip leading "v" from the expected TAG value
     # Note the commit count will be non-trivial even if this is commit tagged
     # as a final release but it is not (yet?) on the BASE branch!
-    VER5="`echo "${TAG}" | sed 's,^v,,'`.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${NUT_VERSION_GIT_TRUNK}..HEAD" | wc -l | tr -d ' '`"
+    VER5="`echo \"${TAG}\" | sed 's,^v,,'`.`git log --oneline \"${TAG}..${BASE}\" | wc -l | tr -d ' '`.`git log --oneline \"${NUT_VERSION_GIT_TRUNK}..HEAD\" | wc -l | tr -d ' '`"
     DESC5="${VER5}${SUFFIX}"
 
     # Strip up to two trailing zeroes for trunk snapshots and releases
@@ -353,7 +353,7 @@ getver_default() {
                 SUFFIX_DESC="`echo \"${SUFFIX}\" | sed -e 's/[+]v[0-9.][0-9.]*[+]\(rc\|alpha\|beta\).*$//'`"
                 if [ -n "${tmpTAG_PRERELEASE}" ] && [ x"${tmpSUFFIX}" != x"${tmpTAG_PRERELEASE}" ] ; then
                     # Replace back pluses to dashes for the tag
-                    TAG_PRERELEASE="v`echo "${tmpTAG_PRERELEASE}" | sed -e 's/[+]\(rc\|alpha\|beta\)/-\1/' -e 's/\(rc\|alpha\|beta\)[+]/\1-/'`"
+                    TAG_PRERELEASE="v`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[+]\(rc\|alpha\|beta\)/-\1/' -e 's/\(rc\|alpha\|beta\)[+]/\1-/'`"
                     if [ -z "${SEMVER}" ] ; then
                         # for the example above, `2.8.3` remains:
                         SEMVER="`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[-+].*$//'`"
