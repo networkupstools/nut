@@ -463,7 +463,9 @@ filter_extra_width() {
     # Expand the dot-separated numeric leading part of the version string for
     # relevant alphanumeric comparisons of the result, regardless of digit
     # counts. Above we ensure NUT_VERSION_EXTRA_WIDTH >= 6.
-    sed -e 's,\.,\n\.\n,g' -e 's,\([0-9][0-9]*\)\([^.]*\),\1\n\2\n,g' | (
+    # NOTE: Not all SEDs allow to substitute a `\n` as a newline in output,
+    #  so here we must assume a '|' does not appear in version string values.
+    sed -e 's,\.,|\.|,g' -e 's,\([0-9][0-9]*\)\([^.]*\),\1|\2|,g' | tr '|' '\n' | (
         #set -x
         NUMERIC=true; while read LINE ; do
             #echo "=== '$LINE'" >&2
@@ -471,7 +473,7 @@ filter_extra_width() {
                 ".") echo "." ;;
                 0*|1*|2*|3*|4*|5*|6*|7*|8*|9*)
                     if $NUMERIC && [ x = x"`echo \"$LINE\" | sed 's,[0-9],,g'`" ] ; then
-                        printf "%0*d" "${NUT_VERSION_EXTRA_WIDTH}" "$LINE"
+                        printf '%0*d' "${NUT_VERSION_EXTRA_WIDTH}" "${LINE}"
                     else
                         NUMERIC=false
                         echo "$LINE"
