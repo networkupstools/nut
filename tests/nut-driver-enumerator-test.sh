@@ -88,11 +88,17 @@ callNDE() {
     callSHELL $NDE "$@"
 }
 
-callG2V() {
+callG2V() (
     # Test case runner may want to pass NUT_VERSION_QUERY, NUT_VERSION_FORCED etc.
     # Collect debug output line into stdout too
-    "${SRCDIR}/../tools/gitlog2version.sh" 2>&1
-}
+    export NUT_VERSION_QUERY
+    export NUT_VERSION_FORCED
+    export NUT_VERSION_EXTRA_WIDTH
+    export BASE
+    export TRUNK
+
+    $USE_SHELL "${SRCDIR}/../tools/gitlog2version.sh" 2>&1
+)
 
 run_testcase_generic() {
     # First 4 args are required as defined below; the rest are
@@ -420,6 +426,8 @@ testcase_gitlog2version() {
 "SEMVER=3.14.160; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef+v3.14.160+rc1' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1'
 000000003.000000014.000000159.000002653.000000059"
 
+    # Reset NUT_VERSION_EXTRA_WIDTH for ksh out there
+    NUT_VERSION_EXTRA_WIDTH='' \
     NUT_VERSION_QUERY=DESC5X \
     NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
     run_testcase_generic callG2V \
@@ -435,6 +443,8 @@ testcase_gitlog2version() {
 "SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
 00000003.00000014.00000159.00002653.00000059"
 
+    # Reset NUT_VERSION_EXTRA_WIDTH for ksh out there
+    NUT_VERSION_EXTRA_WIDTH='' \
     NUT_VERSION_QUERY=VER5X \
     NUT_VERSION_FORCED=3.14.159.2653 \
     run_testcase_generic callG2V \
@@ -451,6 +461,8 @@ testcase_gitlog2version() {
 
     # Note that DESC must be either a tag as is,
     # or suffixed with commit count and git hash
+    # Reset NUT_VERSION_QUERY for ksh out there
+    NUT_VERSION_QUERY='' \
     NUT_VERSION_FORCED=3.14.159+gdeadbeef \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
