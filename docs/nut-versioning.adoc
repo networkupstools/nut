@@ -30,6 +30,10 @@ codified as a formal standard at link:https://semver.org/[semver.org]:
   skipped (or effectively abandoned, as over a decade passed) with the
   move to Git branches for development -- as numerous NUT v2.7.x based
   releases were produced, and development continued into NUT v2.8.x.
++
+NOTE: The project reserves an option to return to the even-odd cadence
+(and perhaps proper major-minor-patch versioning on stable tree) later.
+
 * NUT development versions were specified by the next commit after a
   release was published, spelling an `AC_INIT` macro argument like
   `MAJOR.MINOR.PATCH.1` to provide a fourth component -- which is
