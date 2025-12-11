@@ -46,6 +46,11 @@ case "${DEBUG-}" in
     [Tt][Rr][Aa][Cc][Ee]) DEBUG=trace ;;
     *) DEBUG="" ;;
 esac
+case "${FAILFAST-}" in
+    [Yy]|[Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]) FAILFAST=true ;;
+    [Nn]|[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee]) FAILFAST=false ;;
+    *) FAILFAST=false ;;
+esac
 
 SYSTEMD_CONFPATH="${BUILDDIR}/selftest-rw/systemd-units"
 export SYSTEMD_CONFPATH
@@ -132,6 +137,10 @@ run_testcase_generic() {
         fi
     fi
     if [ "$RES" != 0 ] || [ -n "$DEBUG" ] ; then echo "" ; fi
+    if [ "$RES" != 0 ] && $FAILFAST ; then
+        echo "FAILFAST: abort after test case failure" >&2
+        exit $RES
+    fi
     return $RES
 }
 
