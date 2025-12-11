@@ -326,6 +326,17 @@ getver_default() {
     SUFFIX_PRERELEASE=""
     TAG=""
     DESC=""
+
+    # NOTE: We can not rely on SED supporting extended regular
+    # expressions, and those with BRE only/by default do not
+    # support alternations ("one of..." pipes in parentheses).
+    KEYWORD_PRERELEASE=""
+    case "${NUT_VERSION_DEFAULT}" in
+        *-rc*|*+rc*)        KEYWORD_PRERELEASE="rc" ;;
+        *-alpha*|*+alpha*)  KEYWORD_PRERELEASE="alpha" ;;
+        *-beta*|*+beta*)    KEYWORD_PRERELEASE="beta" ;;
+    esac
+
     case "${NUT_VERSION_DEFAULT}" in
         *-rc*|*-alpha*|*-beta*)
             # Assume triplet (possibly prefixed with `v`) + suffix
@@ -333,7 +344,7 @@ getver_default() {
             # FIXME: Check the assumption better!
             SUFFIX="`echo \"${NUT_VERSION_DEFAULT}\" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
             && [ -n "${SUFFIX}" ] \
-            && SUFFIX_DESC="`echo \"${SUFFIX}\" | sed -e 's/[-]\(rc\|alpha\|beta\).*$//'`" \
+            && SUFFIX_DESC="`echo \"${SUFFIX}\" | sed -e 's/[-]\('\"${KEYWORD_PRERELEASE}\"'\).*$//'`" \
             && SUFFIX_PRERELEASE="`echo \"${SUFFIX}\" | sed 's/^-*//'`" \
             && NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT}\" | sed -e 's/'\"${SUFFIX}\"'$//'`"
             ;;
@@ -348,12 +359,12 @@ getver_default() {
                 # Extract tagged NUT version from that suffix
                 SUFFIX="${tmpSUFFIX}"
                 # for the example above, `v2.8.3+rc6` remains
-                tmpTAG_PRERELEASE="`echo \"${tmpSUFFIX}\" | sed 's/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[+]\(rc\|alpha\|beta\)[+-]*[0-9][0-9]*\)$/\1/'`" \
+                tmpTAG_PRERELEASE="`echo \"${tmpSUFFIX}\" | sed 's/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[+]\('\"${KEYWORD_PRERELEASE}\"'\)[+-]*[0-9][0-9]*\)$/\1/'`" \
                 || tmpTAG_PRERELEASE=""
-                SUFFIX_DESC="`echo \"${SUFFIX}\" | sed -e 's/[+]v[0-9.][0-9.]*[+]\(rc\|alpha\|beta\).*$//'`"
+                SUFFIX_DESC="`echo \"${SUFFIX}\" | sed -e 's/[+]v[0-9.][0-9.]*[+]\('\"${KEYWORD_PRERELEASE}\"'\).*$//'`"
                 if [ -n "${tmpTAG_PRERELEASE}" ] && [ x"${tmpSUFFIX}" != x"${tmpTAG_PRERELEASE}" ] ; then
                     # Replace back pluses to dashes for the tag
-                    TAG_PRERELEASE="v`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[+]\(rc\|alpha\|beta\)/-\1/' -e 's/\(rc\|alpha\|beta\)[+]/\1-/'`"
+                    TAG_PRERELEASE="v`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[+]\('\"${KEYWORD_PRERELEASE}\"'\)/-\1/' -e 's/\('\"${KEYWORD_PRERELEASE}\"'\)[+]/\1-/'`"
                     if [ -z "${SEMVER}" ] ; then
                         # for the example above, `2.8.3` remains:
                         SEMVER="`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[-+].*$//'`"
