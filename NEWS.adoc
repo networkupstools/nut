@@ -360,6 +360,16 @@ several `FSD` notifications into one executed action. [PR #3097]
    syntax is not supported everywhere (or the `!` operator generally).
    [#3099, #1660]
 
+ - Revised `tools/gitlog2version.sh` helper script with a mode to expand
+   NUT SEMVER components into wide zero-padded numbers, so it is easier
+   to alphanumerically compare different releases regardless of version
+   component lengths in digits (and differences in their amounts).
+   Added tests to cover different shell interpreter platforms (piggy-back
+   on the `tests/nut-driver-enumerator-test.sh` script), and made sure
+   that outputs of legacy-mode processing (with `NUT_VERSION_DEFAULT`
+   string provided by caller or saved in a tarball) are consistent with
+   git-mode. [issue #3055, PR #3213]
+
  - The NUT Integration Testing suite (NIT) script, if started as `root`,
    can now consult its run-time situation vs. `BUILTIN_RUN_AS_USER` and
    `BUILTIN_RUN_AS_GROUP` environment variables, and if those accounts
