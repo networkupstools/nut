@@ -380,6 +380,29 @@ DESC='v2.8.2-2381+g1faa9945d'
 |default	| Report `DESC50`	| * `v2.8.2-2381-g1faa9945d`
 |=========================================================================
 
+[NOTE]
+======
+To facilitate version comparisons of different NUT iterations in scripts,
+the "expanded variants" of the two versions can be requested.  This pads each
+semver component (but not other numbers) with zeroes to a specified width (by
+default 6 digits):
+
+----
+:; NUT_VERSION_QUERY=VER5X \
+   NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
+   gitlog2version.sh 2>/dev/null
+000003.000014.000159.002653.000059
+----
+
+If you map this as an e.g. tab-separated list of "expanded" and original
+version strings, you can use the shell `sort` command to find the oldest
+and newest builds, construct an ordered list for downloads, etc.
+
+Keep in mind that you should not use those zero-padded component numbers
+in shell math operations, as they would be considered octal numbers (and
+possibly invalid ones, if they contain digits `8` or `9`).
+=====
+
 Variables propagated by configure.ac
 ------------------------------------
 
