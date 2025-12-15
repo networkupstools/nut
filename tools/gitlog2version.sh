@@ -168,6 +168,11 @@ else
     NUT_VERSION_EXTRA_WIDTH=6
 fi
 
+# Note we optionally NUT_VERSION_DEFAULT early in the script logic, far below
+if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+    NUT_VERSION_STRIP_LEADING_ZEROES=false
+fi
+
 filter_add_extra_width() {
     # Expand the dot-separated numeric leading part of the version string for
     # relevant alphanumeric comparisons of the result, regardless of digit
@@ -195,6 +200,54 @@ filter_add_extra_width() {
             esac
         done) | tr -d '\n'
     echo ''
+}
+
+filter_away_leading_zeroes() {
+    # Chop off leading zeroes in semver part (only impact the numbers-and-dots
+    # part of the text), e.g. 02.008.0004-001 => 2.8.4-001
+    # Initially this should help convert back values expanded with "extra width"
+    # Remain in confines of basic regular expressions (so no alternations with
+    # the pipe in parentheses). Order of operations:
+    # * Convert repetitive zeroes which ARE the one leading (or only) component
+    #   into one zero
+    # * Strip away any leading zeroes from start of input (if followed by at
+    #   least one other digit)
+    # * For string part starting with only zeroes and dots:
+    # ** Collapse a trailing all-zeroes component into one zero
+    # ** Collapse each intermediate all-zeroes component into one zero
+    # ** Strip away any leading zeroes if followed by at least one other digit
+    #    and this ends the string
+    # ** Strip away any leading zeroes if followed by at least one other digit
+    #    and is followed by non-digit-or-dot
+    # ** FIXME: The latter three are copy-pasted to match the patterns in
+    #    different components, if several are impacted; expecting up to 4
+    #    hits with 5-component NUT semver (portable improvements welcome!)
+    sed \
+        -e 's,^00*$,0,' \
+        -e 's,^00*\.,0.,' \
+        -e 's,^00*\([1-9][0-9]*\),\1,' \
+        -e 's,^\([0-9.]*\)\.00*$,\1.0,' \
+        -e 's,^\([0-9.]*\)\.00*\([^0-9]\),\1.0\2,g' \
+        -e 's,^\([0-9.]*\)\.00*\([^0-9]\),\1.0\2,g' \
+        -e 's,^\([0-9.]*\)\.00*\([^0-9]\),\1.0\2,g' \
+        -e 's,^\([0-9.]*\)\.00*\([^0-9]\),\1.0\2,g' \
+        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)$,\1.\2,g' \
+        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)$,\1.\2,g' \
+        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)$,\1.\2,g' \
+        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)$,\1.\2,g' \
+        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)\([^0-9]\),\1.\2\3,g' \
+        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)\([^0-9]\),\1.\2\3,g' \
+        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)\([^0-9]\),\1.\2\3,g' \
+        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)\([^0-9]\),\1.\2\3,g'
+}
+
+optional_filter_away_leading_zeroes() {
+    if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+        # Not requested => no-op
+        cat
+        return
+    fi
+    filter_away_leading_zeroes
 }
 
 check_shallow_git() {
@@ -326,7 +379,11 @@ getver_git() {
 
     # Leave exactly 3 components
     if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
-        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+            SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        else
+            SEMVER="`echo \"${NUT_VERSION_FORCED_SEMVER-}\" | filter_away_leading_zeroes`"
+        fi
     else
         if [ -n "${TAG_PRERELEASE}" ] ; then
             # Actually report as SEMVER the version of (next) release
@@ -343,7 +400,11 @@ getver_default() {
     # We will collect this value as we go
     SEMVER=""
     if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
-        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+            SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        else
+            SEMVER="`echo \"${NUT_VERSION_FORCED_SEMVER-}\" | filter_away_leading_zeroes`"
+        fi
     fi
 
     # Similar to DESC_PRERELEASE filtering above, should yield non-trivial
@@ -397,6 +458,9 @@ getver_default() {
                     if [ -z "${SEMVER}" ] ; then
                         # for the example above, `2.8.3` remains:
                         SEMVER="`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[-+].*$//'`"
+                        if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" = xtrue ] ; then
+                            SEMVER="`echo \"${SEMVER}\" | filter_away_leading_zeroes`"
+                        fi
                     fi
                     # for the example above, `rc6` remains:
                     SUFFIX_PRERELEASE="`echo \"${tmpTAG_PRERELEASE}\" | sed 's/^[^+-]*[+-]//'`"
@@ -561,6 +625,10 @@ report_output() {
         *)		echo "${DESC50}" ;;
     esac
 }
+
+if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" = xtrue ] ; then
+    NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT-}\" | filter_away_leading_zeroes`"
+fi
 
 DESC=""
 NUT_VERSION_TRIED_GIT=false

@@ -94,6 +94,7 @@ callG2V() (
     export NUT_VERSION_QUERY
     export NUT_VERSION_FORCED
     export NUT_VERSION_EXTRA_WIDTH
+    export NUT_VERSION_STRIP_LEADING_ZEROES
     export BASE
     export TRUNK
 
@@ -483,6 +484,23 @@ testcase_gitlog2version() {
         "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
 "SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
 3.14.159.2653.5-2658+gdeadbeef"
+
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.014.00159.02653.05+gdeadbeef \
+    NUT_VERSION_STRIP_LEADING_ZEROES=true \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also a trailing gHASH but no commit count" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
+000003.000014.000159.002653.000005-2658+gdeadbeef"
+
+    # Note here SEMVER is taken from the future version that the RC is for
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.014.00159.02653.05-002658+gdeadbeef+v04.005.0006+rc001 \
+    NUT_VERSION_STRIP_LEADING_ZEROES=true \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also a trailing gHASH but no commit count" 0 \
+"SEMVER=4.5.6; TRUNK=''; BASE=''; DESC='v3.14.159-002658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-002658+gdeadbeef+v04.005.0006+rc001' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001'
+000003.000014.000159.002653.000005-002658+gdeadbeef+v04.005.0006+rc001"
 }
 
 # Combine the cases above into a stack

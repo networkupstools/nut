@@ -400,7 +400,18 @@ and newest builds, construct an ordered list for downloads, etc.
 
 Keep in mind that you should not use those zero-padded component numbers
 in shell math operations, as they would be considered octal numbers (and
-possibly invalid ones, if they contain digits `8` or `9`).
+possibly invalid ones, if they contain digits `8` or `9`). You can revert
+the operation with envvar toggle `NUT_VERSION_STRIP_LEADING_ZEROES=true`
+(note it only impacts the leading dot-separated numbers semver part of the
+string, but not any numbers in the suffix):
+
+----
+:; NUT_VERSION_QUERY=DESC5 \
+   NUT_VERSION_FORCED=3.014.00159.02653.05-002658+gdeadbeef+v01.002.0003 \
+   NUT_VERSION_STRIP_LEADING_ZEROES=true \
+   gitlog2version.sh 2>/dev/null
+3.14.159.2653.5-002658+gdeadbeef+v01.002.0003
+----
 =====
 
 Variables propagated by configure.ac
