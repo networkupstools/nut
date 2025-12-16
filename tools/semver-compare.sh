@@ -68,6 +68,10 @@ filter_add_extra_width() {
                     if $NUMERIC && [ x = x"`echo \"$LINE\" | sed 's,[0-9],,g'`" ] ; then
                         # NOTE: Not all shells have `printf '%0.*d'` (variable width)
                         # support, so we embed the number into formatting string:
+                        case "$LINE" in
+                            0|1*|2*|3*|4*|5*|6*|7*|8*|9*) ;;
+                            0*) LINE="`echo \"${LINE}\" | sed -e 's/^00*/0/' -e 's/^0*\([1-9]\)/\1/'`" ;;
+                        esac
                         printf "%0.${NUT_VERSION_EXTRA_WIDTH}d" "${LINE}"
                         COMPONENTS="`expr ${COMPONENTS} + 1`"
                     else
