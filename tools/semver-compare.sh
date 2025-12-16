@@ -221,7 +221,7 @@ EOF
             | awk '{print $2}'
             exit
             ;;
-        '['|test|--test)
+        '['|'[['|test|--test)
             if [ $# -lt 4 ] ; then
                 echo "ERROR: Not enough args to 'test' comparison of two semvers" >&2
                 exit 2
@@ -235,6 +235,13 @@ EOF
                         exit 0
                     else
                         exit 1
+                    fi
+                    ;;
+                '-ne'|'!='|'<>')
+                    if [ x"${SEMVER1}" = x"${SEMVER2}" ] ; then
+                        exit 1
+                    else
+                        exit 0
                     fi
                     ;;
                 '-gt'|'>')
