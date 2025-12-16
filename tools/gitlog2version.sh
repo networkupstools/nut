@@ -69,9 +69,10 @@ LC_ALL=C
 TZ=UTC
 export LANG LC_ALL TZ
 
+SCRIPT_DIR="`dirname \"$0\"`"
+SCRIPT_DIR="`cd \"${SCRIPT_DIR}\" && pwd`"
+
 if [ x"${abs_top_srcdir}" = x ]; then
-    SCRIPT_DIR="`dirname \"$0\"`"
-    SCRIPT_DIR="`cd \"${SCRIPT_DIR}\" && pwd`"
     abs_top_srcdir="${SCRIPT_DIR}/.."
 fi
 if [ x"${abs_top_builddir}" = x ]; then
@@ -85,6 +86,8 @@ fi
 
 [ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
 [ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${SEMVER_COMPARE}" ] || { SEMVER_COMPARE="${SCRIPT_DIR}/semver-compare.sh" ; }
+[ -x "${SEMVER_COMPARE}" ] || { echo "$0: FAILED to locate semver-compare.sh helper" >&2 ; exit 1 ; }
 
 ############################################################################
 # Numeric-only default version, for AC_INIT and similar consumers
@@ -162,11 +165,33 @@ fi
 # Must be "true" or "false" exactly, interpreted as such below:
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ x"${SRC_IS_GIT}" = xtrue ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
 
-if [ "${NUT_VERSION_EXTRA_WIDTH-}" -gt 6 ] 2>/dev/null ; then
+##############################################################################
+# For tools/semver-compare.sh ($SEMVER_COMPARE):
+if [ -n "${NUT_VERSION_EXTRA_WIDTH-}" -a "${NUT_VERSION_EXTRA_WIDTH-}" -gt 6 ] 2>/dev/null ; then
     :
 else
     NUT_VERSION_EXTRA_WIDTH=6
 fi
+
+# Note we optionally NUT_VERSION_DEFAULT early in the script logic, far below
+if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+    NUT_VERSION_STRIP_LEADING_ZEROES=false
+fi
+
+# When padding extra width for e.g. comparisons, is 1.2.3 equal to 1.2.3.0.0?
+# Should we add those ".0" in the end?
+if [ -n "${NUT_VERSION_MIN_COMPONENTS-}" -a "${NUT_VERSION_MIN_COMPONENTS-}" -ge 0 ] 2>/dev/null ; then
+    # A number specified by caller is valid (positive integer)
+    :
+else
+    # Default or wrong spec - do not add components (might use NUT default 5)
+    NUT_VERSION_MIN_COMPONENTS=0
+fi
+
+export NUT_VERSION_EXTRA_WIDTH
+export NUT_VERSION_STRIP_LEADING_ZEROES
+export NUT_VERSION_MIN_COMPONENTS
+##############################################################################
 
 check_shallow_git() {
     if git log --oneline --decorate=short | tail -1 | $GREP -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
@@ -297,7 +322,11 @@ getver_git() {
 
     # Leave exactly 3 components
     if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
-        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+            SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        else
+            SEMVER="`\"${SEMVER_COMPARE}\" --strip \"${NUT_VERSION_FORCED_SEMVER-}\"`"
+        fi
     else
         if [ -n "${TAG_PRERELEASE}" ] ; then
             # Actually report as SEMVER the version of (next) release
@@ -314,7 +343,11 @@ getver_default() {
     # We will collect this value as we go
     SEMVER=""
     if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
-        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+            SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        else
+            SEMVER="`\"${SEMVER_COMPARE}\" --strip \"${NUT_VERSION_FORCED_SEMVER-}\"`"
+        fi
     fi
 
     # Similar to DESC_PRERELEASE filtering above, should yield non-trivial
@@ -368,6 +401,9 @@ getver_default() {
                     if [ -z "${SEMVER}" ] ; then
                         # for the example above, `2.8.3` remains:
                         SEMVER="`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[-+].*$//'`"
+                        if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" = xtrue ] ; then
+                            SEMVER="`\"${SEMVER_COMPARE}\" --strip \"${SEMVER}\"`"
+                        fi
                     fi
                     # for the example above, `rc6` remains:
                     SUFFIX_PRERELEASE="`echo \"${tmpTAG_PRERELEASE}\" | sed 's/^[^+-]*[+-]//'`"
@@ -459,35 +495,6 @@ getver_default() {
     fi
 }
 
-filter_extra_width() {
-    # Expand the dot-separated numeric leading part of the version string for
-    # relevant alphanumeric comparisons of the result, regardless of digit
-    # counts. Above we ensure NUT_VERSION_EXTRA_WIDTH >= 6.
-    # NOTE: Not all SEDs allow to substitute a `\n` as a newline in output,
-    #  so here we must assume a '|' does not appear in version string values.
-    sed -e 's,\.,|\.|,g' -e 's,\([0-9][0-9]*\)\([^.]*\),\1|\2|,g' | tr '|' '\n' | (
-        #set -x
-        NUMERIC=true; while read LINE ; do
-            #echo "=== '$LINE'" >&2
-            case "$LINE" in
-                ".") echo "." ;;
-                0*|1*|2*|3*|4*|5*|6*|7*|8*|9*)
-                    if $NUMERIC && [ x = x"`echo \"$LINE\" | sed 's,[0-9],,g'`" ] ; then
-                        # NOTE: Not all shells have printf '%0.*d' (variable width)
-                        # support, so we embed the number into formatting string:
-                        printf "%0.${NUT_VERSION_EXTRA_WIDTH}d" "${LINE}"
-                    else
-                        NUMERIC=false
-                        echo "$LINE"
-                    fi
-                    ;;
-                "") ;;
-                *) NUMERIC=false ; echo "$LINE" ;;
-            esac
-        done) | tr -d '\n'
-    echo ''
-}
-
 report_debug() {
     # Debug
     echo "SEMVER=${SEMVER}; TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => DESC5='${DESC5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
@@ -496,13 +503,13 @@ report_debug() {
 report_output() {
     case "${NUT_VERSION_QUERY-}" in
         "DESC5")	echo "${DESC5}" ;;
-        "DESC5x"|"DESC5X")	echo "${DESC5}" | filter_extra_width ;;
+        "DESC5x"|"DESC5X")	"${SEMVER_COMPARE}" --expand "${DESC5}" ;;
         "DESC50")	echo "${DESC50}" ;;
-        "DESC50x"|"DESC50X")	echo "${DESC50}" | filter_extra_width ;;
+        "DESC50x"|"DESC50X")	"${SEMVER_COMPARE}" --expand "${DESC50}" ;;
         "VER5") 	echo "${VER5}" ;;
-        "VER5x"|"VER5X")	echo "${VER5}" | filter_extra_width ;;
+        "VER5x"|"VER5X")	"${SEMVER_COMPARE}" --expand "${VER5}" ;;
         "VER50")	echo "${VER50}" ;;
-        "VER50x"|"VER50X")	echo "${VER50}" | filter_extra_width ;;
+        "VER50x"|"VER50X")	"${SEMVER_COMPARE}" --expand "${VER50}" ;;
         "SEMVER")	echo "${SEMVER}" ;;
         "IS_RELEASE")	[ x"${SEMVER}" = x"${VER50}" ] && echo true || echo false ;;
         "IS_PRERELEASE")	[ x"${SUFFIX_PRERELEASE}" != x ] && echo true || echo false ;;
@@ -561,6 +568,10 @@ report_output() {
         *)		echo "${DESC50}" ;;
     esac
 }
+
+if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" = xtrue ] ; then
+    NUT_VERSION_DEFAULT="`\"${SEMVER_COMPARE}\" --strip \"${NUT_VERSION_DEFAULT-}\"`"
+fi
 
 DESC=""
 NUT_VERSION_TRIED_GIT=false

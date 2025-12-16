@@ -25,6 +25,10 @@
 #           using different shells (per $SHELL_PROGS) and CLI requests
 #           for regression and compatibility tests as well as for TDD
 #           fueled by pre-decided expected outcomes.
+#           Since that time it was used for multi-shell tests of our
+#           other helper scripts (which must work in the same manner
+#           as part of buid recipes on numerous platforms, or be known
+#           broken so we consciously fix something or mark unsupported).
 
 ### Use a standard locale setup so sorting in expected results is not confused
 LANG=C
@@ -91,14 +95,24 @@ callNDE() {
 callG2V() (
     # Test case runner may want to pass NUT_VERSION_QUERY, NUT_VERSION_FORCED etc.
     # Collect debug output line into stdout too
+
+    # Exports due to older ksh where `VAR=VAL cmd` just sets `VAR=VAL` in parent
+    # shell (for later calls too) and does not export it into children:
     export NUT_VERSION_QUERY
     export NUT_VERSION_FORCED
     export NUT_VERSION_EXTRA_WIDTH
+    export NUT_VERSION_STRIP_LEADING_ZEROES
     export BASE
     export TRUNK
 
     $USE_SHELL "${SRCDIR}/../tools/gitlog2version.sh" 2>&1
 )
+
+callSEMVERCMP() {
+    # All options to that helper can be passed via command line
+    # so no hassle with exports
+    callSHELL "${SRCDIR}/../tools/semver-compare.sh" "$@"
+}
 
 run_testcase_generic() {
     # First 4 args are required as defined below; the rest are
@@ -483,6 +497,144 @@ testcase_gitlog2version() {
         "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
 "SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
 3.14.159.2653.5-2658+gdeadbeef"
+
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.014.00159.02653.05+gdeadbeef \
+    NUT_VERSION_STRIP_LEADING_ZEROES=true \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also a trailing gHASH but no commit count" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
+000003.000014.000159.002653.000005-2658+gdeadbeef"
+
+    # Note here SEMVER is taken from the future version that the RC is for
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.014.00159.02653.05-002658+gdeadbeef+v04.005.0006+rc001 \
+    NUT_VERSION_STRIP_LEADING_ZEROES=true \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also in the commit count and RC suffix" 0 \
+"SEMVER=4.5.6; TRUNK=''; BASE=''; DESC='v3.14.159-002658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-002658+gdeadbeef+v04.005.0006+rc001' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001'
+000003.000014.000159.002653.000005-002658+gdeadbeef+v04.005.0006+rc001"
+}
+
+testcase_semver_compare() {
+    # Note: first 4 args of run_testcase_generic are fixed, the rest are passed into called command
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: expand triplet into pentuplet (by default)" 0 \
+        "000001.000003.000002.000000.000000" \
+        --expand 1.3.2
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: expand triplet into quadruplet with specified width and component count" 0 \
+        "00000001.00000003.00000002.00000000" \
+        --width 8 --min-components 4 --expand 1.3.2
+
+    # Note: forced min width is 6, smaller args ignored:
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: expand triplet without adding component count" 0 \
+        "000001.000003.000002" \
+        --width 3 --min-components 0 --expand 1.3.2
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: sorting (results are printed in original form, even if with leading zeroes)" 0 \
+"001.1.038
+01.02.03
+1.002.0003
+1.002.0006
+1.002.00030
+4.5.6" \
+        sort 01.02.03 1.002.00030 1.002.0003 4.5.6 1.002.0006 001.1.038
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: sorting of realistic iteration IDs" 0 \
+"2.8.4.326.80-406+g285c532d9
+2.8.4.753-753+gc1c3d7f4d
+2.8.4.754
+2.8.4.903.3-906+g62b0e39b2
+2.8.4.3829
+2.8.4.3829.0
+2.8.4.3829.9
+2.8.4.3829.10
+2.8.4.3829.22" \
+        sort 2.8.4.754 2.8.4.3829 2.8.4.903.3-906+g62b0e39b2 2.8.4.326.80-406+g285c532d9 2.8.4.753-753+gc1c3d7f4d 2.8.4.3829.0 2.8.4.3829.22 2.8.4.3829.10 2.8.4.3829.9
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: reverse sorting of realistic iteration IDs" 0 \
+"2.8.4.3829.22
+2.8.4.3829.10
+2.8.4.3829.9
+2.8.4.3829.0
+2.8.4.3829
+2.8.4.903.3-906+g62b0e39b2
+2.8.4.754
+2.8.4.753-753+gc1c3d7f4d
+2.8.4.326.80-406+g285c532d9" \
+        sort -r 2.8.4.754 2.8.4.3829 2.8.4.903.3-906+g62b0e39b2 2.8.4.326.80-406+g285c532d9 2.8.4.753-753+gc1c3d7f4d 2.8.4.3829.0 2.8.4.3829.22 2.8.4.3829.10 2.8.4.3829.9
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -gt" 1 "" \
+        test 01.02.03 -gt 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: >" 1 "" \
+        [ 01.02.03 '>' 4.5.6 ]
+
+    # Note: here a trailing ] is not required for [ test alias
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: >=" 1 "" \
+        [ 01.02.03 '>=' 4.5.6
+
+    # Note: here a trailing ]] is not required for [[ test alias
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -ge" 1 "" \
+        [[ 01.02.03 -ge 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -eq" 1 "" \
+        test 01.02.03 -eq 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -lt" 0 "" \
+        test 01.02.03 -lt 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: <" 0 "" \
+        [[ 01.02.03 '<' 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: <=" 0 "" \
+        test 01.02.03.0 '<=' 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -le" 0 "" \
+        test 01.02.03 -le 4.5.6.0.0
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: equality with added trailing zeroed components (and different leading zero pads)" 0 "" \
+        test 01.02.03 = 1.002.0003.0
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: (non-)equality with added trailing zero value e.g. 3 vs 30" 1 "" \
+        test 01.02.03 == 1.002.00030
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: non-equality with added trailing zeroed components (and different leading zero pads)" 1 "" \
+        test 01.02.03 != 1.002.0003.0
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: non-equality with added trailing zero value e.g. 3 vs 30" 0 "" \
+        test 01.02.03 -ne 1.002.00030
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: unknown operation" 2 "" \
+        test 01.02.03 foo 1.002.00030
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: unknown action" 2 "" \
+        bogustest 01.02.03 foo 1.002.00030
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: unknown option" 2 "" \
+        --with-foo bar --expand 01.02.03
 }
 
 # Combine the cases above into a stack
@@ -497,6 +649,7 @@ testsuite() {
     # Something very different
     testcase_backticks
     testcase_gitlog2version
+    testcase_semver_compare
 }
 
 # If no args...

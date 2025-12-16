@@ -317,9 +317,10 @@ DESC='v2.8.2-2381+g1faa9945d'
 			  (minimum 6) digits each, allowing for easy scripted
 			  alphanumeric comparisons of different NUT releases
 			  regardless of digit count in original components.
-			| * VER5X: `000002.000008.000004.000910.000002`
-			  * DESC5X with also `NUT_VERSION_EXTRA_WIDTH=9`:
-			    `000000002.000000008.000000004.000000910.000000002-912+g081755da0`
+			| * VER5X with also `NUT_VERSION_EXTRA_WIDTH=9`:
+			    `000000002.000000008.000000004.000000910.000000002`
+			  * DESC5X with default width (6):
+			    `000002.000008.000004.000910.000002-912+g081755da0`
 |`SEMVER`	| Exactly three leading numeric components	| * `2.8.2`
 |`IS_RELEASE`	| `true` if `SEMVER`==`VER50`, `false` otherwise
 			| * dev: `false`
@@ -378,6 +379,40 @@ DESC='v2.8.2-2381+g1faa9945d'
 			  * `NUT_VERSION_FORCED_SEMVER='2.8.3'`
 |default	| Report `DESC50`	| * `v2.8.2-2381-g1faa9945d`
 |=========================================================================
+
+[NOTE]
+======
+To facilitate version comparisons of different NUT iterations in scripts,
+the "expanded variants" of the two versions can be requested.  This pads each
+semver component (but not other numbers) with zeroes to a specified width (by
+default 6 digits):
+
+----
+:; NUT_VERSION_QUERY=VER5X \
+   NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
+   gitlog2version.sh 2>/dev/null
+000003.000014.000159.002653.000059
+----
+
+If you map this as an e.g. tab-separated list of "expanded" and original
+version strings, you can use the shell `sort` command to find the oldest
+and newest builds, construct an ordered list for downloads, etc.
+
+Keep in mind that you should not use those zero-padded component numbers
+in shell math operations, as they would be considered octal numbers (and
+possibly invalid ones, if they contain digits `8` or `9`). You can revert
+the operation with envvar toggle `NUT_VERSION_STRIP_LEADING_ZEROES=true`
+(note it only impacts the leading dot-separated numbers semver part of the
+string, but not any numbers in the suffix):
+
+----
+:; NUT_VERSION_QUERY=DESC5 \
+   NUT_VERSION_FORCED=3.014.00159.02653.05-002658+gdeadbeef+v01.002.0003 \
+   NUT_VERSION_STRIP_LEADING_ZEROES=true \
+   gitlog2version.sh 2>/dev/null
+3.14.159.2653.5-002658+gdeadbeef+v01.002.0003
+----
+=====
 
 Variables propagated by configure.ac
 ------------------------------------
