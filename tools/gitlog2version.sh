@@ -85,6 +85,8 @@ fi
 
 [ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
 [ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${SEMVER_COMPARE}" ] || { SEMVER_COMPARE="${SCRIPT_DIR}/semver-compare.sh" ; }
+[ -x "${SEMVER_COMPARE}" ] || { echo "$0: FAILED to locate semver-compare.sh helper" >&2 ; exit 1 ; }
 
 ############################################################################
 # Numeric-only default version, for AC_INIT and similar consumers
@@ -162,6 +164,8 @@ fi
 # Must be "true" or "false" exactly, interpreted as such below:
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ x"${SRC_IS_GIT}" = xtrue ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
 
+##############################################################################
+# For tools/semver-compare.sh ($SEMVER_COMPARE):
 if [ "${NUT_VERSION_EXTRA_WIDTH-}" -gt 6 ] 2>/dev/null ; then
     :
 else
@@ -173,82 +177,20 @@ if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
     NUT_VERSION_STRIP_LEADING_ZEROES=false
 fi
 
-filter_add_extra_width() {
-    # Expand the dot-separated numeric leading part of the version string for
-    # relevant alphanumeric comparisons of the result, regardless of digit
-    # counts. Above we ensure NUT_VERSION_EXTRA_WIDTH >= 6.
-    # NOTE: Not all SEDs allow to substitute a `\n` as a newline in output,
-    #  so here we must assume a '|' does not appear in version string values.
-    sed -e 's,\.,|\.|,g' -e 's,\([0-9][0-9]*\)\([^.]*\),\1|\2|,g' | tr '|' '\n' | (
-        #set -x
-        NUMERIC=true; while read LINE ; do
-            #echo "=== '$LINE'" >&2
-            case "$LINE" in
-                ".") echo "." ;;
-                0*|1*|2*|3*|4*|5*|6*|7*|8*|9*)
-                    if $NUMERIC && [ x = x"`echo \"$LINE\" | sed 's,[0-9],,g'`" ] ; then
-                        # NOTE: Not all shells have `printf '%0.*d'` (variable width)
-                        # support, so we embed the number into formatting string:
-                        printf "%0.${NUT_VERSION_EXTRA_WIDTH}d" "${LINE}"
-                    else
-                        NUMERIC=false
-                        echo "$LINE"
-                    fi
-                    ;;
-                "") ;;
-                *) NUMERIC=false ; echo "$LINE" ;;
-            esac
-        done) | tr -d '\n'
-    echo ''
-}
+# When padding extra width for e.g. comparisons, is 1.2.3 equal to 1.2.3.0.0?
+# Should we add those ".0" in the end?
+if [ "${NUT_VERSION_MIN_COMPONENTS-}" -ge 0 ] 2>/dev/null ; then
+    # A number specified by caller is valid (positive integer)
+    :
+else
+    # Default or wrong spec - do not add components (might use NUT default 5)
+    NUT_VERSION_MIN_COMPONENTS=0
+fi
 
-filter_away_leading_zeroes() {
-    # Chop off leading zeroes in semver part (only impact the numbers-and-dots
-    # part of the text), e.g. 02.008.0004-001 => 2.8.4-001
-    # Initially this should help convert back values expanded with "extra width"
-    # Remain in confines of basic regular expressions (so no alternations with
-    # the pipe in parentheses). Order of operations:
-    # * Convert repetitive zeroes which ARE the one leading (or only) component
-    #   into one zero
-    # * Strip away any leading zeroes from start of input (if followed by at
-    #   least one other digit)
-    # * For string part starting with only zeroes and dots:
-    # ** Collapse a trailing all-zeroes component into one zero
-    # ** Collapse each intermediate all-zeroes component into one zero
-    # ** Strip away any leading zeroes if followed by at least one other digit
-    #    and this ends the string
-    # ** Strip away any leading zeroes if followed by at least one other digit
-    #    and is followed by non-digit-or-dot
-    # ** FIXME: The latter three are copy-pasted to match the patterns in
-    #    different components, if several are impacted; expecting up to 4
-    #    hits with 5-component NUT semver (portable improvements welcome!)
-    sed \
-        -e 's,^00*$,0,' \
-        -e 's,^00*\.,0.,' \
-        -e 's,^00*\([1-9][0-9]*\),\1,' \
-        -e 's,^\([0-9.]*\)\.00*$,\1.0,' \
-        -e 's,^\([0-9.]*\)\.00*\([^0-9]\),\1.0\2,g' \
-        -e 's,^\([0-9.]*\)\.00*\([^0-9]\),\1.0\2,g' \
-        -e 's,^\([0-9.]*\)\.00*\([^0-9]\),\1.0\2,g' \
-        -e 's,^\([0-9.]*\)\.00*\([^0-9]\),\1.0\2,g' \
-        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)$,\1.\2,g' \
-        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)$,\1.\2,g' \
-        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)$,\1.\2,g' \
-        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)$,\1.\2,g' \
-        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)\([^0-9]\),\1.\2\3,g' \
-        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)\([^0-9]\),\1.\2\3,g' \
-        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)\([^0-9]\),\1.\2\3,g' \
-        -e 's,^\([0-9.]*\)\.00*\([1-9][0-9]*\)\([^0-9]\),\1.\2\3,g'
-}
-
-optional_filter_away_leading_zeroes() {
-    if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
-        # Not requested => no-op
-        cat
-        return
-    fi
-    filter_away_leading_zeroes
-}
+export NUT_VERSION_EXTRA_WIDTH
+export NUT_VERSION_STRIP_LEADING_ZEROES
+export NUT_VERSION_MIN_COMPONENTS
+##############################################################################
 
 check_shallow_git() {
     if git log --oneline --decorate=short | tail -1 | $GREP -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
@@ -382,7 +324,7 @@ getver_git() {
         if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
             SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
         else
-            SEMVER="`echo \"${NUT_VERSION_FORCED_SEMVER-}\" | filter_away_leading_zeroes`"
+            SEMVER="`\"${SEMVER_COMPARE}\" --strip \"${NUT_VERSION_FORCED_SEMVER-}\"`"
         fi
     else
         if [ -n "${TAG_PRERELEASE}" ] ; then
@@ -403,7 +345,7 @@ getver_default() {
         if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
             SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
         else
-            SEMVER="`echo \"${NUT_VERSION_FORCED_SEMVER-}\" | filter_away_leading_zeroes`"
+            SEMVER="`\"${SEMVER_COMPARE}\" --strip \"${NUT_VERSION_FORCED_SEMVER-}\"`"
         fi
     fi
 
@@ -459,7 +401,7 @@ getver_default() {
                         # for the example above, `2.8.3` remains:
                         SEMVER="`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[-+].*$//'`"
                         if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" = xtrue ] ; then
-                            SEMVER="`echo \"${SEMVER}\" | filter_away_leading_zeroes`"
+                            SEMVER="`\"${SEMVER_COMPARE}\" --strip \"${SEMVER}\"`"
                         fi
                     fi
                     # for the example above, `rc6` remains:
@@ -560,13 +502,13 @@ report_debug() {
 report_output() {
     case "${NUT_VERSION_QUERY-}" in
         "DESC5")	echo "${DESC5}" ;;
-        "DESC5x"|"DESC5X")	echo "${DESC5}"  | filter_add_extra_width ;;
+        "DESC5x"|"DESC5X")	"${SEMVER_COMPARE}" --expand "${DESC5}" ;;
         "DESC50")	echo "${DESC50}" ;;
-        "DESC50x"|"DESC50X")	echo "${DESC50}" | filter_add_extra_width ;;
+        "DESC50x"|"DESC50X")	"${SEMVER_COMPARE}" --expand "${DESC50}" ;;
         "VER5") 	echo "${VER5}" ;;
-        "VER5x"|"VER5X")	echo "${VER5}"   | filter_add_extra_width ;;
+        "VER5x"|"VER5X")	"${SEMVER_COMPARE}" --expand "${VER5}" ;;
         "VER50")	echo "${VER50}" ;;
-        "VER50x"|"VER50X")	echo "${VER50}"  | filter_add_extra_width ;;
+        "VER50x"|"VER50X")	"${SEMVER_COMPARE}" --expand "${VER50}" ;;
         "SEMVER")	echo "${SEMVER}" ;;
         "IS_RELEASE")	[ x"${SEMVER}" = x"${VER50}" ] && echo true || echo false ;;
         "IS_PRERELEASE")	[ x"${SUFFIX_PRERELEASE}" != x ] && echo true || echo false ;;
@@ -627,7 +569,7 @@ report_output() {
 }
 
 if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" = xtrue ] ; then
-    NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT-}\" | filter_away_leading_zeroes`"
+    NUT_VERSION_DEFAULT="`\"${SEMVER_COMPARE}\" --strip \"${NUT_VERSION_DEFAULT-}\"`"
 fi
 
 DESC=""

@@ -360,16 +360,19 @@ several `FSD` notifications into one executed action. [PR #3097]
    syntax is not supported everywhere (or the `!` operator generally).
    [#3099, #1660]
 
- - Revised `tools/gitlog2version.sh` helper script with a mode to expand
-   NUT SEMVER components into wide zero-padded numbers, so it is easier
-   to alphanumerically compare different releases regardless of version
+ - Revised `tools/gitlog2version.sh` helper script (logic added into
+   a new `tools/semver-compare.sh`) with a mode to expand NUT SEMVER
+   components into wide zero-padded numbers, so it is easier to
+   alphanumerically compare different releases regardless of version
    component lengths in digits (and differences in their amounts). You can
    request an inverse operation with `NUT_VERSION_STRIP_LEADING_ZEROES=true`.
    Added tests to cover different shell interpreter platforms (piggy-back
    on the `tests/nut-driver-enumerator-test.sh` script), and made sure
    that outputs of legacy-mode processing (with `NUT_VERSION_DEFAULT`
    string provided by caller or saved in a tarball) are consistent with
-   git-mode. [issue #3055, PRs #3213, #3217]
+   git-mode. The new `tools/semver-compare.sh` helper can be used directly
+   to expand and strip version strings, sort and compare multiple versions
+   as one simple operation. [issue #3055, PRs #3213, #3217]
 
  - The NUT Integration Testing suite (NIT) script, if started as `root`,
    can now consult its run-time situation vs. `BUILTIN_RUN_AS_USER` and
