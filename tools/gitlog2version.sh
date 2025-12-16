@@ -167,7 +167,7 @@ fi
 
 ##############################################################################
 # For tools/semver-compare.sh ($SEMVER_COMPARE):
-if [ "${NUT_VERSION_EXTRA_WIDTH-}" -gt 6 ] 2>/dev/null ; then
+if [ -n "${NUT_VERSION_EXTRA_WIDTH-}" -a "${NUT_VERSION_EXTRA_WIDTH-}" -gt 6 ] 2>/dev/null ; then
     :
 else
     NUT_VERSION_EXTRA_WIDTH=6
@@ -180,7 +180,7 @@ fi
 
 # When padding extra width for e.g. comparisons, is 1.2.3 equal to 1.2.3.0.0?
 # Should we add those ".0" in the end?
-if [ "${NUT_VERSION_MIN_COMPONENTS-}" -ge 0 ] 2>/dev/null ; then
+if [ -n "${NUT_VERSION_MIN_COMPONENTS-}" -a "${NUT_VERSION_MIN_COMPONENTS-}" -ge 0 ] 2>/dev/null ; then
     # A number specified by caller is valid (positive integer)
     :
 else

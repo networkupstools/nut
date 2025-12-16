@@ -28,13 +28,13 @@ LC_ALL=C
 TZ=UTC
 export LANG LC_ALL TZ
 
-if [ "${NUT_VERSION_EXTRA_WIDTH-}" -gt 6 ] 2>/dev/null ; then
+if [ -n "${NUT_VERSION_EXTRA_WIDTH-}" -a "${NUT_VERSION_EXTRA_WIDTH-}" -gt 6 ] 2>/dev/null ; then
     :
 else
     NUT_VERSION_EXTRA_WIDTH=6
 fi
 
-if [ "${NUT_VERSION_MIN_COMPONENTS-}" -ge 0 ] 2>/dev/null ; then
+if [ -n "${NUT_VERSION_MIN_COMPONENTS-}" -a "${NUT_VERSION_MIN_COMPONENTS-}" -ge 0 ] 2>/dev/null ; then
     # A number specified by caller is valid (positive integer)
     :
 else
@@ -189,14 +189,14 @@ EOF
             exit 0
             ;;
         --width|-w)
-            if [ "$2" -ge 6 ]; then
+            if [ -n "$2" -a "$2" -ge 6 ]; then
                 NUT_VERSION_EXTRA_WIDTH="$2"
             fi
             # FIXME: "else" and error handling vs number too small and ignored?
             shift
             ;;
         --min-components)
-            if [ "$2" -ge 0 ]; then
+            if [ -n "$2" -a "$2" -ge 0 ]; then
                 NUT_VERSION_MIN_COMPONENTS="$2"
             fi
             # FIXME: "else" and error handling vs number too small and ignored?
