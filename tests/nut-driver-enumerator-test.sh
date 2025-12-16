@@ -25,6 +25,10 @@
 #           using different shells (per $SHELL_PROGS) and CLI requests
 #           for regression and compatibility tests as well as for TDD
 #           fueled by pre-decided expected outcomes.
+#           Since that time it was used for multi-shell tests of our
+#           other helper scripts (which must work in the same manner
+#           as part of buid recipes on numerous platforms, or be known
+#           broken so we consciously fix something or mark unsupported).
 
 ### Use a standard locale setup so sorting in expected results is not confused
 LANG=C
