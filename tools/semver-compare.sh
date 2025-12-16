@@ -221,7 +221,7 @@ EOF
                 printf '%s\t%s\n' "`echo \"$1\" | filter_add_extra_width`" "$1"
                 shift
             done \
-            | sort -n $SORT_OPTS \
+            | sort $SORT_OPTS \
             | awk '{print $2}'
             exit
             ;;
@@ -232,7 +232,7 @@ EOF
             fi
             SEMVER1="`echo "$2" | filter_add_extra_width`"
             SEMVER2="`echo "$4" | filter_add_extra_width`"
-            SEMVER_MIN="`(echo \"$SEMVER1\" ; echo \"$SEMVER2\") | sort -n | head -1`"
+            SEMVER_MIN="`(echo \"$SEMVER1\" ; echo \"$SEMVER2\") | sort | head -1`"
             case "$3" in
                 '-eq'|'='|'==')
                     if [ x"${SEMVER1}" = x"${SEMVER2}" ] ; then
