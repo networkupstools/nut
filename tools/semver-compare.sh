@@ -179,7 +179,7 @@ Actions:
     $0 [OPTS] --sortable-strip "SEMVER"
         Print a tab-separated line with original (presumed expanded) variant in first column, and stripped in second
 
-    $0 [OPTS] sort "SEMVER" "SEMVER"...
+    $0 [OPTS] sort [-r] "SEMVER" "SEMVER"...
         Return sorted (via expansion) list of original semvers (till end of args)
         in their original spelling (with unstripped leading zeroes, if present)
 
@@ -208,11 +208,16 @@ EOF
         --sortable-strip)  printf '%s\t%s\n' "$2" "`echo \"$2\" | filter_away_leading_zeroes`" ; shift ;;
         --sort|sort)
             shift
+            SORT_OPTS=""
+            if [ x"$1" = x-r ] ; then
+                SORT_OPTS="-r"
+                shift
+            fi
             while [ $# -gt 0 ] ; do
                 printf '%s\t%s\n' "`echo \"$1\" | filter_add_extra_width`" "$1"
                 shift
             done \
-            | sort -n \
+            | sort -n $SORT_OPTS \
             | awk '{print $2}'
             exit
             ;;
