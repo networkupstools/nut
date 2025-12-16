@@ -69,9 +69,10 @@ LC_ALL=C
 TZ=UTC
 export LANG LC_ALL TZ
 
+SCRIPT_DIR="`dirname \"$0\"`"
+SCRIPT_DIR="`cd \"${SCRIPT_DIR}\" && pwd`"
+
 if [ x"${abs_top_srcdir}" = x ]; then
-    SCRIPT_DIR="`dirname \"$0\"`"
-    SCRIPT_DIR="`cd \"${SCRIPT_DIR}\" && pwd`"
     abs_top_srcdir="${SCRIPT_DIR}/.."
 fi
 if [ x"${abs_top_builddir}" = x ]; then
