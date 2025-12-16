@@ -95,6 +95,9 @@ callNDE() {
 callG2V() (
     # Test case runner may want to pass NUT_VERSION_QUERY, NUT_VERSION_FORCED etc.
     # Collect debug output line into stdout too
+
+    # Exports due to older ksh where `VAR=VAL cmd` just sets `VAR=VAL` in parent
+    # shell (for later calls too) and does not export it into children:
     export NUT_VERSION_QUERY
     export NUT_VERSION_FORCED
     export NUT_VERSION_EXTRA_WIDTH
@@ -502,7 +505,7 @@ testcase_gitlog2version() {
     NUT_VERSION_FORCED=3.014.00159.02653.05-002658+gdeadbeef+v04.005.0006+rc001 \
     NUT_VERSION_STRIP_LEADING_ZEROES=true \
     run_testcase_generic callG2V \
-        "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also a trailing gHASH but no commit count" 0 \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also in the commit count and RC suffix" 0 \
 "SEMVER=4.5.6; TRUNK=''; BASE=''; DESC='v3.14.159-002658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-002658+gdeadbeef+v04.005.0006+rc001' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001'
 000003.000014.000159.002653.000005-002658+gdeadbeef+v04.005.0006+rc001"
 }
