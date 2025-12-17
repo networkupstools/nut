@@ -424,14 +424,14 @@ $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	$(DMF_REINDEX) -Z "$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)" > "$@.tmp"
 	( LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
-	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | head -2 ; \
-	  grep '<mib2nut ' "$@.tmp" | sort | uniq | grep -v 'mib_name="ietf"'; \
-	  grep '<mib2nut ' "$@.tmp" | sort | uniq | grep 'mib_name="ietf"'; \
-	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | tail -1 ; \
+	  $(EGREP) -v '^$$|\<mib2nut ' "$@.tmp" | head -2 ; \
+	  $(GREP) '<mib2nut ' "$@.tmp" | sort | uniq | $(GREP) -v 'mib_name="ietf"'; \
+	  $(GREP) '<mib2nut ' "$@.tmp" | sort | uniq | $(GREP) 'mib_name="ietf"'; \
+	  $(EGREP) -v '^$$|\<mib2nut ' "$@.tmp" | tail -1 ; \
 	) > '$@'
 	@LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
-	  sort "$@.tmp" | egrep -v '^$$' | uniq > "$@.tmp1" ; \
-	    sort '$@' | egrep -v '^$$' | uniq > "$@.tmp2" ; \
+	  sort "$@.tmp" | $(EGREP) -v '^$$' | uniq > "$@.tmp1" ; \
+	    sort '$@' | $(EGREP) -v '^$$' | uniq > "$@.tmp2" ; \
 	  diff "$@.tmp1" "$@.tmp2" >/dev/null \
 	|| { echo "FAILED to sort generated $@ without losses!" >&2; \
 	     rm -f "$@.tmp"* ; exit 1; } ; exit 0
