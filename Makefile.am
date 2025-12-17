@@ -109,7 +109,10 @@ all-fanout-maybe:
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 				echo "  SUBDIR-MAKE	$@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
 			fi ; \
-			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs ;; \
+			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs || exit ; \
+			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
+				echo "  SUBDIR-MAKE	$@: optimization for parallel make as 'make all-fanout-subdirs' finished; now automake rules can follow up with default implementation of 'all-recursive' and/or 'all' (may try to regenerate some files again; should keep existing results though)" ; \
+			fi ;; \
 		*) \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 				echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
