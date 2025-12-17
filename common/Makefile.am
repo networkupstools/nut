@@ -60,7 +60,8 @@ else !BUILDING_IN_TREE
 endif !BUILDING_IN_TREE
 
 $(top_builddir)/include/nut_version.h:
-	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@if [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ; then exit 0 ; fi ; \
+	  cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # FIXME: If we maintain some of those helper libs as subsets of the others
 # (strictly), maybe build the lowest common denominator only and link the

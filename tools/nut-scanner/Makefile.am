@@ -33,7 +33,6 @@ $(NUT_SCANNER_DEPS): dummy
 	+@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
-$(top_builddir)/include/nut_version.h \
 $(top_builddir)/clients/libupsclient-version.h \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/common/libnutwincompat.la \
@@ -42,6 +41,10 @@ $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/include/nut_version.h:
+	+@if [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ; then exit 0 ; fi ; \
+	  cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Builds from root dir arrange stuff decently. Make sure parallel builds
 # started from scratch right in this dir get dependencies in proper order
