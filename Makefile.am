@@ -85,7 +85,9 @@ SUBDIRS_ALL_LIBS_LOCAL = \
 
 # For the intents and purposes of recursive-make calls, we have built
 # or updated include/nut_version.h before other targets in all-recursive
-export NUT_VERSION_H_GENERATED = true
+### MAINTAINER_GENERATE_HEADER_DEBUG = yes
+### export NUT_VERSION_H_GENERATED = true
+
 #all all-recursive all-am-local all-local: all-fanout-maybe
 all-recursive: all-fanout-maybe
 
