@@ -414,6 +414,70 @@ string, but not any numbers in the suffix):
 ----
 =====
 
+Using semver-compare.sh
+-----------------------
+
+As a result of work on `gitlog2version.sh`, and specifically the next-level
+problems of managing the data set of multiple NUT SEMVER strings (sorting,
+comparisons, etc.), another helper script was born: the `semver-compare.sh`.
+
+It contains the implementation of "expanded variants" of the versions and
+"stripping leading zeroes" used above by the original `gitlog2version.sh`
+script, as well as more features used by, for example, the `Makefile.am`
+recipes for link:https://github.com/networkupstools/nut-website[nut-website]
+which deal with sorted lists of NUT versions for the DDL page rendering
+(reports about same device model which originated from different NUT releases).
+
+Common options for scripted actions are (must be mentioned before the action):
+
+`{--width|-w} NUM`::
+Pad semver components with leading zeroes to this width (default/min `6`).
+
+`{--min-components} NUM`::
+Ensure there are at least so many components - add `.0` in the end if
+needed (NUT SEMVER default is `5` for `expand` action).
++
+NOTE: Not implemented yet for stripping extra zeroed components from a semver.
+
+Actions which can be repeated on same command line include:
+
+`semver-compare.sh [OPTS] expand "SEMVER"`::
+Pad components in semver start of string with leading zeroes up to desired
+width.
+
+`semver-compare.sh [OPTS] strip "SEMVER"`::
+Strip leading zeroes from components in semver start of string.
+
+`semver-compare.sh [OPTS] --sortable-expand "SEMVER"`::
+Print a tab-separated line with expanded variant in first column,
+and original in second (so you can `sort` by the first column).
+
+`semver-compare.sh [OPTS] --sortable-strip "SEMVER"`::
+Print a tab-separated line with original (presumed expanded) variant in first
+column, and stripped in second (so you can `sort` by the first column).
+
+Actions which end the script execution include:
+
+`semver-compare.sh [OPTS] sort [-r] "SEMVER" "SEMVER"...`::
+Return sorted (via expansion) list of original semver strings (till end
+of args), in their original spelling (with leading zeroes, if present,
+not stripped away).
+
+`semver-compare.sh [OPTS] {test|[} "SEMVER1" {-gt|-ge|-lt|-le|-eq|=|==|-ne|!=|<>|<|<=|>|>=} "SEMVER2"`::
+Shell-style syntax to compare two semver strings (via expanded variants).
++
+Note that `--min-components` can play a role here (e.g. is `1.2.3` equal
+to `1.2.3.0.0`? You can specify whether and how many zeroes can be added
+so it would be or not be equal).
+
+NOTE: If you would `sort` expanded semver strings yourself, be sure
+to NOT mention the numeric sorting option -- it misbehaves for strings
+which do not look like exactly an integer or floating-point number.
+
+For portability and non-regression, the functionality of both scripts is
+extensively tested by `tests/nut-driver-enumerator-test.sh` in the NUT code
+base.
+
 Variables propagated by configure.ac
 ------------------------------------
 
