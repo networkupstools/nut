@@ -60,7 +60,12 @@ else !BUILDING_IN_TREE
 endif !BUILDING_IN_TREE
 
 $(top_builddir)/include/nut_version.h:
-	+@if [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ; then exit 0 ; fi ; \
+	+@if [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ; then \
+	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	        echo "=== SKIP (common) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \
+	    fi; \
+	    exit 0 ; \
+	  fi ; \
 	  cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # FIXME: If we maintain some of those helper libs as subsets of the others

@@ -44,11 +44,18 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # NOTE: For pre-releases, SEMVER may differ from NUT_VERSION base
 # (e.g. a commit tagged as 2.8.3-rc5 can have its own NUT_VERSION based
 # on 2.8.2-something, but is assumed as a pre-release for 2.8.3 SEMVER)
-### echo "  GENERATE-HEADER	$@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})";
-
 nut_version.h: @FORCE_NUT_VERSION@
-	@if [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ; then exit 0 ; fi ; \
-	 echo "  GENERATE-HEADER	$@"; \
+	@if [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ; then \
+	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	        echo "=== SKIP (include) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \
+	    fi ; \
+	    exit 0 ; \
+	 fi ; \
+	 if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	    echo "  GENERATE-HEADER	$@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})"; \
+	 else \
+	    echo "  GENERATE-HEADER	$@"; \
+	 fi ; \
 	 RES=0; \
 	 GREP="$(GREP)"; EGREP="$(EGREP)"; \
 	 export GREP; export EGREP; \
