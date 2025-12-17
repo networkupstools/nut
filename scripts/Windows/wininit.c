@@ -165,7 +165,7 @@ static DWORD stop_drivers(void)
 	char command[NUT_PATH_MAX];
 	char *path;
 
-	path = getfullpath(PATH_BIN);
+	path = getfullpath(PATH_SBIN);
 	if (nut_debug_level < 1) {
 		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe stop", path);
 	} else {
@@ -282,7 +282,7 @@ static DWORD shutdown_ups(void)
 	char command[NUT_PATH_MAX];
 	char *path;
 
-	path = getfullpath(PATH_BIN);
+	path = getfullpath(PATH_SBIN);
 	if (nut_debug_level < 1) {
 		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe shutdown", path);
 	} else {
