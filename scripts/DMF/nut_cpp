@@ -26,6 +26,10 @@
 [ -z "${CPP_ENV-}" ] || eval export $CPP_ENV
 [ "${DEBUG_NUT_CPP-}" = "true" ] || DEBUG_NUT_CPP=false
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 set -o pipefail
 #set -exv
 
@@ -99,7 +103,7 @@ sed \
     -e 's/^_Noreturn'"${SPACETAB}"'/ /g' \
     -e 's/__NORETURN_*//g' \
     -e 's/__builtin_va_list/int/g' \
-| grep -E -v 'typedef [^;]* float;'
+| ${EGREP} -v 'typedef [^;]* float;'
 } # // end of do_filter()
 
 

@@ -6347,7 +6347,7 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 		test -d "$OUTDIR" && OUTDIR="$(cd "${OUTDIR}" && pwd)" && \
 		if ! test "${DEBUG_CONFIGURE_AC-}" = true ; then trap "cd '${CURDIR}' && rm -rf '${OUTDIR}'" 0 1 2 3 15 ; fi && \
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
-		export CC CXX CPP LD CFLAGS CPPFLAGS LDFLAGS ; \
+		export CC CXX CPP LD CFLAGS CPPFLAGS LDFLAGS GREP EGREP ; \
 		DMFDIR="$(cd "${SRCDIR}/scripts/DMF" && pwd)" && \
 		{	cd "${DMFDIR}" && \
 				echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2 && \

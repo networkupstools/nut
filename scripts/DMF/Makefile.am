@@ -294,6 +294,7 @@ if WITH_REGENERATE_DMF_SNMP
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS_DMF) $(AM_CPPFLAGS)" \
 	      ABS_BUILDDIR="$(abs_builddir)" \
 	      DEBUG="$(V)" \
+	      GREP="$(GREP)" EGREP="$(EGREP)" \
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" '$@' \
 	    ) || exit; \
 	fi ; \
@@ -310,7 +311,8 @@ $(DMFGEN_SANITY_VALIDATED): dmfgen-sanity
 dmfgen-sanity: $(srcdir)/dmfify-mib.sh
 	@DEBUG="$(V)"; export DEBUG; \
 	 CC='$(CC)'; CXX='$(CXX)'; CPP='$(CPP)'; LD='$(LD)'; \
-	 export CC CXX CPP LD ; \
+	 GREP='$(GREP)'; EGREP='$(EGREP)'; \
+	 export CC CXX CPP LD GREP EGREP; \
 	 if $(abs_srcdir)/dmfify-mib.sh --sanity-check ; then \
 	    echo "Sanity-checked the low-level ability to generate DMF files - OK" >&2; \
 	    test -f "$(DMFGEN_SANITY_VALIDATED)" || touch $(DMFGEN_SANITY_VALIDATED); \
