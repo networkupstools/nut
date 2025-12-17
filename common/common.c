@@ -1759,6 +1759,16 @@ char * getfullpath(char * relative_path)
 	*last_slash = '\0';
 
 	if (relative_path) {
+		size_t	len = strlen(buf);
+
+		/* Avoid "DIRNAME../etc" kind of bugs - should be "DIRNAME/../etc" */
+		if (len > 0
+		 && relative_path[0] != '\\' && relative_path[0] != '/'
+		 && buf[len] != '\\' && buf[len] != '/'
+		) {
+			strncat(buf, "\\", sizeof(buf) - 1);
+		}
+
 		strncat(buf, relative_path, sizeof(buf) - 1);
 	}
 
