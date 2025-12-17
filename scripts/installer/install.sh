@@ -1,6 +1,7 @@
 #!/bin/sh
 #	install.sh
 #	Copyright (c) 2013-2016, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #	A shell script which installs IPP - Unix
 #	It installs the native package then runs NUT configuration tools
 #	to create an initial configuration and finally run the service.

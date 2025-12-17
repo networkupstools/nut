@@ -3,6 +3,7 @@
 #	ipp-os-shutdown
 #
 #	Copyright (c) 2015-2017, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #	A shell script to manage the emergency shutdown driven by IPP - Unix
 #	(NUT) in a way that can be customized more easily; called from upsmon

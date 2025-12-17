@@ -5,6 +5,7 @@ exit
 #       ipp-shutdown-daemon
 #
 #       Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#       Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #       A shell script to detect shutdown from NMC cards IPP - Unix (NUT)
 #       It needs ipp.conf file.

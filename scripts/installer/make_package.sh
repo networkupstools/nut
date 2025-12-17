@@ -2,6 +2,7 @@
 
 #	make_package.sh
 #	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #	Unlike what the name implies, this script prepares tarballs for each
 #	supported platform, including a separately prepared platform package
 #	with compiled NUT and adds third-party libs and Eaton IPP - Unix
