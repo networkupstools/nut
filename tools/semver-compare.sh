@@ -174,20 +174,23 @@ Common options:
 Actions:
 
     $0 [OPTS] {--expand|-x} "SEMVER"
-        Pad components in semver start of string with leading zeroes up to desired width
+        Pad components in semver start of string with leading zeroes up to
+        desired width
     $0 [OPTS] {--strip|+x} "SEMVER"
         Strip leading zeroes from components in semver start of string
 
     $0 [OPTS] --sortable-expand "SEMVER"
-        Print a tab-separated line with expanded variant in first column, and original in second
+        Print a tab-separated line with expanded variant in first column,
+        and original in second
     $0 [OPTS] --sortable-strip "SEMVER"
-        Print a tab-separated line with original (presumed expanded) variant in first column, and stripped in second
+        Print a tab-separated line with original (presumed expanded) variant
+        in first column, and stripped in second
 
     $0 [OPTS] sort [-r] "SEMVER" "SEMVER"...
         Return sorted (via expansion) list of original semvers (till end of args)
         in their original spelling (with unstripped leading zeroes, if present)
 
-    $0 [OPTS] {test|[} "SEMVER1" {-gt|-ge|-lt|-le|-eq|=|==|<|<=|>|>=} "SEMVER2"
+    $0 [OPTS] {test|[} "SEMVER1" {-gt|-ge|-lt|-le|-eq|=|==|-ne|!=|<>|<|<=|>|>=} "SEMVER2"
         Shellish syntax to compare two semvers
 EOF
             exit 0
