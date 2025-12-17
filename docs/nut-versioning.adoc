@@ -573,6 +573,9 @@ It is used from a number of other methods, such as `print_banner_once()`,
   tool programs to report in their `help()`/`usage()` methods, to refer to
   their manual page under the `NUT_WEBSITE_BASE`.
 
+Use in resource files and documentation
+---------------------------------------
+
 Man pages
 ~~~~~~~~~
 
