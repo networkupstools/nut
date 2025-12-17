@@ -1936,7 +1936,8 @@ int main(int argc, char **argv)
 #ifndef WIN32
 	datapath = xstrdup(NUT_DATADIR);
 #else	/* WIN32 */
-	datapath = getfullpath(PATH_SHARE);
+	datapath = getfullpath2(NUT_DATADIR, PATH_SHARE);
+	/* no statepath here, we talk via named pipes */
 
 	/* remove trailing .exe */
 	char * drv_name;

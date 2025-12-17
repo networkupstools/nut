@@ -148,7 +148,7 @@ static DWORD run_drivers(void)
 	char command[NUT_PATH_MAX];
 	char *path;
 
-	path = getfullpath(PATH_SBIN);
+	path = getfullpath2(SBINDIR, PATH_SBIN);
 	if (nut_debug_level < 1) {
 		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe start", path);
 	} else {
@@ -165,7 +165,7 @@ static DWORD stop_drivers(void)
 	char command[NUT_PATH_MAX];
 	char *path;
 
-	path = getfullpath(PATH_SBIN);
+	path = getfullpath2(SBINDIR, PATH_SBIN);
 	if (nut_debug_level < 1) {
 		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe stop", path);
 	} else {
@@ -182,7 +182,7 @@ static void run_upsd(void)
 	char command[NUT_PATH_MAX];
 	char *path;
 
-	path = getfullpath(PATH_SBIN);
+	path = getfullpath2(SBINDIR, PATH_SBIN);
 	snprintf(command, sizeof(command), "%s\\upsd.exe", path);
 	if (nut_debug_level > 0) {
 		snprintfcat(command, sizeof(command), " %s", makearg_debug());
@@ -204,7 +204,7 @@ static void run_upsmon(void)
 	char command[NUT_PATH_MAX];
 	char *path;
 
-	path = getfullpath(PATH_SBIN);
+	path = getfullpath2(SBINDIR, PATH_SBIN);
 	snprintf(command, sizeof(command), "%s\\upsmon.exe", path);
 	if (nut_debug_level > 0) {
 		snprintfcat(command, sizeof(command), " %s", makearg_debug());
@@ -233,7 +233,7 @@ static DWORD test_powerdownflag(void)
 	int i = 10;
 	int timeout = 500;
 
-	path = getfullpath(PATH_SBIN);
+	path = getfullpath2(SBINDIR, PATH_SBIN);
 	snprintf(command, sizeof(command), "%s\\upsmon.exe -K", path);
 	if (nut_debug_level > 0) {
 		snprintfcat(command, sizeof(command), " %s", makearg_debug());
@@ -282,7 +282,7 @@ static DWORD shutdown_ups(void)
 	char command[NUT_PATH_MAX];
 	char *path;
 
-	path = getfullpath(PATH_SBIN);
+	path = getfullpath2(SBINDIR, PATH_SBIN);
 	if (nut_debug_level < 1) {
 		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe shutdown", path);
 	} else {

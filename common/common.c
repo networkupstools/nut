@@ -1891,6 +1891,29 @@ char * getfullpath(char * relative_path)
 	/* Caller should free this eventually */
 	return(xstrdup(buf));
 }
+
+char * getfullpath2(char * cfg_path, char * fallback_path)
+{
+	/* First try configured (run-time or built-in */
+	char	*path = getfullpath(cfg_path);
+
+	if (path && *path) {
+		struct stat	statbuf;
+		if ( (stat(path, &statbuf) != 0)
+		 || !(S_ISDIR(statbuf.st_mode))
+		) {
+			free(path);
+			path = NULL;
+		}
+	}
+
+	if (!path || !(*path)) {
+		/* Fall back to fixed built-in pathname relative to binary/workdir */
+		path = getfullpath(fallback_path);
+	}
+
+	return path;
+}
 #endif	/* WIN32 */
 
 /* drop off a pidfile for this process */
@@ -3883,11 +3906,7 @@ vupslog_too_long:
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
 {
-#ifdef WIN32
-	static char *path = NULL;
-#else
 	static const char *path = NULL;
-#endif
 
 	/* Cached by earlier calls? */
 	if (path)
@@ -3898,22 +3917,7 @@ const char * confpath(void)
 #ifdef WIN32
 	/* FIXME: getfullpath() returns an xstrdup'ed string that we should free */
 	if (path == NULL) {
-		path = getfullpath(CONFPATH);
-
-		if (path != NULL && *path != '\0') {
-			struct stat	statbuf;
-			if ( (stat(path, &statbuf) != 0)
-			 || !(S_ISDIR(statbuf.st_mode))
-			) {
-				free(path);
-				path = NULL;
-			}
-		}
-
-		if (path == NULL || *path == '\0') {
-			/* fall back to built-in pathname relative to binary/workdir */
-			path = getfullpath(PATH_ETC);
-		}
+		path = getfullpath2(CONFPATH, PATH_ETC);
 	}
 #endif	/* WIN32 */
 
@@ -3939,7 +3943,7 @@ const char * dflt_statepath(void)
 #ifdef WIN32
 	if (path == NULL) {
 		/* fall back to built-in pathname relative to binary/workdir */
-		path = getfullpath(PATH_VAR_RUN);
+		path = getfullpath2(STATEPATH, PATH_VAR_RUN);
 	}
 #endif	/* WIN32 */
 
@@ -3972,7 +3976,11 @@ const char * altpidpath(void)
 #ifdef WIN32
 		if (path == NULL) {
 			/* fall back to built-in pathname relative to binary/workdir */
+# ifdef ALTPIDPATH
+			path = getfullpath2(ALTPIDPATH, PATH_VAR_RUN);
+# else
 			path = getfullpath(PATH_VAR_RUN);
+# endif
 		}
 #endif	/* WIN32 */
 	}
@@ -4007,8 +4015,12 @@ const char * rootpidpath(void)
 
 #ifdef WIN32
 	if (path == NULL) {
-		/* fall back to built-in pathname relative to binary/workdir */
-		path = getfullpath(PATH_ETC);
+		/* fall back to built-in pathname relative to binary/workdir
+		 * Note we may not have a run dir, but should have a config location
+		 */
+		path = getfullpath2(PIDPATH, CONFPATH);
+		if (path == NULL || *path == '\0')
+			path = getfullpath(PATH_ETC);
 	}
 #endif	/* WIN32 */
 
