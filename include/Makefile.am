@@ -45,7 +45,7 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # (e.g. a commit tagged as 2.8.3-rc5 can have its own NUT_VERSION based
 # on 2.8.2-something, but is assumed as a pre-release for 2.8.3 SEMVER)
 nut_version.h: @FORCE_NUT_VERSION@
-	@if [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ; then \
+	@if [ -s '$@' ] && ( [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ) ; then \
 	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
 	        echo "=== SKIP (include) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \
 	    fi ; \

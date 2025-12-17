@@ -43,7 +43,7 @@ $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 $(top_builddir)/include/nut_version.h:
-	+@if [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ; then \
+	+@if [ -s '$@' ] && ( [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ) ; then \
 	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
 	        echo "=== SKIP (nut-scanner) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \
 	    fi; \
