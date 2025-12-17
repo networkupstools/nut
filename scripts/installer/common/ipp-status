@@ -81,7 +81,7 @@ get_devices_info() {
 		runtime="`$NUT_UPSC \"$dev\" battery.runtime 2>/dev/null`"
 		batterypct="`$NUT_UPSC \"$dev\" battery.charge 2>/dev/null`"
 		supplies="`get_pwr_value \"$dev\" | ${EGREP} '^[0-9]*$'`"
-		upsmon_ms="`get_ms_value \"$dev\" | ${EGREP} 'master|slave'`"
+		upsmon_ms="`get_ms_value \"$dev\" | ${EGREP} 'master|slave|primary|secondary'`"
 
 		echo "$dev:$status:$runtime:$batterypct:$supplies:$upsmon_ms"
 	done
@@ -108,7 +108,7 @@ get_pwr_value() {
 }
 
 #
-# Get a UPS master/slave value (influences shutdown sequence and poweroffs)
+# Get a UPS primary/master/secondary/slave value (influences shutdown sequence and poweroffs)
 #
 get_ms_value() {
 	$awk '/^[ \t]*MONITOR/ {
@@ -421,7 +421,7 @@ OPTIONS:
 Full devices status report consists of the device ID, its power status (as
 a readable meaningful string), on-battery runtime in form [[H:]MM:]SS, the
 percentage of the battery charged, the number of this machine's sources
-this UPS feeds, and its upsmon master/slave setting.
+this UPS feeds, and its upsmon primary/secondary (master/slave) setting.
 In the short form (for scripting), the runtime is shown in seconds and the
 six fields are separated by colon.
 

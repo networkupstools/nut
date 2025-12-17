@@ -1552,12 +1552,14 @@ setup_tty () {
 
 set_device_monitor_user () {
 	NDEV=1
+	ROLE=master
+	#ROLE=primary
 
 	split_device
 
 	eval TMP=\$C_OPTION$NDEV
 	$NUTCONF --set-device "${ID}$NDEV" "$DRIVER" "$PORT" $TMP 2>> "$LOG_FILE"
-	$NUTCONF --set-monitor "${ID}$NDEV" localhost 1 upsmon upsmon master 2>> "$LOG_FILE"
+	$NUTCONF --set-monitor "${ID}$NDEV" localhost 1 upsmon upsmon "$ROLE" 2>> "$LOG_FILE"
 
 	echo "$PORT" | grep '^/dev/tty' >/dev/null && setup_tty "$PORT"
 
@@ -1566,13 +1568,13 @@ set_device_monitor_user () {
 		split_device
 		eval TMP=\$C_OPTION$NDEV
 		$NUTCONF --add-device "${ID}$NDEV" "$DRIVER" "$PORT" $TMP 2>> "$LOG_FILE"
-		$NUTCONF --add-monitor "${ID}$NDEV" localhost 1 upsmon upsmon master 2>> "$LOG_FILE"
+		$NUTCONF --add-monitor "${ID}$NDEV" localhost 1 upsmon upsmon "$ROLE" 2>> "$LOG_FILE"
 
 		echo "$PORT" | grep '^/dev/tty' >/dev/null && setup_tty "$PORT"
 	done
 
 	$NUTCONF --set-user admin password="$C_PASSWORD" actions=SET instcmds=all 2>> "$LOG_FILE"
-	$NUTCONF --add-user upsmon=master password=upsmon 2>> "$LOG_FILE"
+	$NUTCONF --add-user upsmon="$ROLE" password=upsmon 2>> "$LOG_FILE"
 }
 
 apply_conf_server() {
