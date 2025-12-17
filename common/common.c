@@ -1742,21 +1742,23 @@ finish:
 
 #ifdef WIN32
 /* In WIN32 all non binaries files (namely configuration and PID files)
-   are retrieved relative to the path of the binary itself.
-   So this function fill "dest" with the full path to "relative_path"
-   depending on the .exe path */
+ * are retrieved relative to the path of the binary itself.
+ * So this function fills dest "buf" with the full path to "relative_path"
+ * depending on the .exe path.
+ */
 char * getfullpath(char * relative_path)
 {
-	char buf[NUT_PATH_MAX + 1];
-	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
+	char	buf[NUT_PATH_MAX + 1], *last_slash = NULL;
+
+	if (GetModuleFileName(NULL, buf, sizeof(buf)) == 0) {
 		return NULL;
 	}
 
 	/* remove trailing executable name and its preceeding slash */
-	char * last_slash = strrchr(buf, '\\');
+	last_slash = strrchr(buf, '\\');
 	*last_slash = '\0';
 
-	if( relative_path ) {
+	if (relative_path) {
 		strncat(buf, relative_path, sizeof(buf) - 1);
 	}
 
