@@ -3883,7 +3883,11 @@ vupslog_too_long:
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
 {
+#ifdef WIN32
+	static char *path = NULL;
+#else
 	static const char *path = NULL;
+#endif
 
 	/* Cached by earlier calls? */
 	if (path)
@@ -3892,9 +3896,24 @@ const char * confpath(void)
 	path = getenv("NUT_CONFPATH");
 
 #ifdef WIN32
+	/* FIXME: getfullpath() returns an xstrdup'ed string that we should free */
 	if (path == NULL) {
-		/* fall back to built-in pathname relative to binary/workdir */
-		path = getfullpath(PATH_ETC);
+		path = getfullpath(CONFPATH);
+
+		if (path != NULL && *path != '\0') {
+			struct stat	statbuf;
+			if ( (stat(path, &statbuf) != 0)
+			 || !(S_ISDIR(statbuf.st_mode))
+			) {
+				free(path);
+				path = NULL;
+			}
+		}
+
+		if (path == NULL || *path == '\0') {
+			/* fall back to built-in pathname relative to binary/workdir */
+			path = getfullpath(PATH_ETC);
+		}
 	}
 #endif	/* WIN32 */
 
