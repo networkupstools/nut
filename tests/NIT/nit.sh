@@ -355,6 +355,7 @@ get_my_user_name() {
     # TOTHINK: Fallback to get "my current user": touch a file and see who owns it?
 
     # Non-numeric (empty) stdout; non-successful exit code
+    log_warn "Current user account name was not found"
     return 1
 }
 
@@ -376,6 +377,7 @@ get_user_id() {
     fi
 
     # Non-numeric (empty) stdout; non-successful exit code
+    log_warn "User ID for name '${1-}' was not found"
     return 1
 }
 
@@ -390,6 +392,15 @@ get_group_id() {
     # TOTHINK: Fallback to get "my current group": touch a file and see who owns it?
 
     # Non-numeric (empty) stdout; non-successful exit code
+    case "`uname -a | tr 'A-Z' 'a-z'`" in
+        *mingw*|*msys*|*win*)
+            # Windows? Avoid "not a number" error messages,
+            # common Unix groups are unlikely here...
+            echo "-1"
+            ;;
+    esac
+
+    log_warn "Group ID for name '${1-}' was not found"
     return 1
 }
 
