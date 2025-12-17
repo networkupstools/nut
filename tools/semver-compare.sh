@@ -233,6 +233,15 @@ EOF
                 echo "ERROR: Not enough args to 'test' comparison of two semvers" >&2
                 exit 2
             fi
+            if [ $# -gt 4 ] ; then
+                DO_WARN=true
+                case "$5" in
+                    ']'|']]') if [ $# -eq 5 ] ; then DO_WARN=false ; fi ;;
+                esac
+                if $DO_WARN ; then
+                    echo "WARNING: Extra args ignored after 'test' comparison of two semvers" >&2
+                fi
+            fi
             SEMVER1="`echo "$2" | filter_add_extra_width`"
             SEMVER2="`echo "$4" | filter_add_extra_width`"
             SEMVER_MIN="`(echo \"$SEMVER1\" ; echo \"$SEMVER2\") | sort | head -1`"
