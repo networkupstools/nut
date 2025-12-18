@@ -2,6 +2,7 @@
 #	ipp-notifier
 #
 #	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #	A shell script to send e-mail from IPP - Unix (NUT)
 #	Sends an email messages to one user to notify of a power event.

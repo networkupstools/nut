@@ -84,6 +84,11 @@ SUBDIRS_ALL_LIBS_LOCAL = \
 # (which used to cause us a lot of headache, building same things twice at
 # the same time).
 
+# For the intents and purposes of recursive-make calls, we have built
+# or updated include/nut_version.h before other targets in all-recursive
+### MAINTAINER_GENERATE_HEADER_DEBUG = yes
+### export NUT_VERSION_H_GENERATED = true
+
 #all all-recursive all-am-local all-local: all-fanout-maybe
 all-recursive: all-fanout-maybe
 
@@ -105,7 +110,10 @@ all-fanout-maybe:
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 				echo "  SUBDIR-MAKE	$@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
 			fi ; \
-			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs ;; \
+			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs || exit ; \
+			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
+				echo "  SUBDIR-MAKE	$@: optimization for parallel make as 'make all-fanout-subdirs' finished; now automake rules can follow up with default implementation of 'all-recursive' and/or 'all' (may try to regenerate some files again; should keep existing results though)" ; \
+			fi ;; \
 		*) \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 				echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
@@ -123,10 +131,10 @@ all-fanout-maybe:
 # FIXME: Alas, we still tend to step on our toes when making everything at
 # once from scratch, so still do benefit from pre-making the libraries:
 all-fanout-staged:
-	+$(MAKE) $(AM_MAKEFLAGS) all/include
-	+$(MAKE) $(AM_MAKEFLAGS) all/common
-	+$(MAKE) $(AM_MAKEFLAGS) all-fanout-libs
-	+$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false all/include
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=true all/common
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=true all-fanout-libs
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=true all-fanout-subdirs
 
 all-fanout-subdirs: $(SUBDIRS_ALL_RECURSIVE)
 
@@ -190,12 +198,12 @@ SUBDIR_TGT_RULE = ( \
 	[ x"$${TGT-}" != x ] || TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
 	[ x"$${DIR-}" != x ] || DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
 	if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-		echo "  SUBDIR-MAKE	STARTING: 'make $$TGT' in $$DIR ..." ; \
+		echo "  SUBDIR-MAKE	STARTING $@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR ..." ; \
 	fi ; \
 	cd "$(abs_builddir)/$${DIR}" && \
 	$(MAKE) $(AM_MAKEFLAGS) $${SUBDIR_TGT_MAKEFLAGS-} "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE	FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
 	if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-		echo "  SUBDIR-MAKE	SUCCESS: 'make $$TGT' in $$DIR" ; \
+		echo "  SUBDIR-MAKE	SUCCESS  $@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR" ; \
 	fi ; \
 	)
 
@@ -207,7 +215,8 @@ SUBDIR_TGT_RULE = ( \
 
 ### Delivers: nut_version.h
 all-libs-local/include:
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=false; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Delivers: libcommon.la libcommonclient.la libcommonstr.la libcommonstrjson.la
 ###           (consume only one of these at a time!)
@@ -216,7 +225,8 @@ all-libs-local/include:
 ### Requires-ext: include/nut_version.h
 ### Requires-int: libparseconf.la libcommonclient.la
 all-libs-local/common: all-libs-local/include
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Delivers: libupsclient.la libnutclient.la libnutclientstub.la
 ### Delivers: libupsclient-version.h
@@ -226,7 +236,8 @@ all-libs-local/common: all-libs-local/include
 ### Requires-ext: common/libparseconf.la
 ### Requires-int: libupsclient.la
 all-libs-local/clients: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Delivers: libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
 ### Delivers: libdummy_mockdrv.la libserial-nutscan.la
@@ -236,7 +247,8 @@ all-libs-local/clients: all-libs-local/common
 ### Requires-int: libdummy.la libdummy_upsdrvquery.la
 ### Requires-int: libdummy_serial.la
 all-libs-local/drivers: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Delivers: libdriverstubusb.la
 ### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
@@ -245,7 +257,8 @@ all-libs-local/drivers: all-libs-local/common
 ### Requires-ext: drivers/libdummy_mockdrv.la
 ### Requires-int: libdriverstubusb.la
 all-libs-local/tests: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Delivers: generated sources and/or headers for nut-scanner
 ### No dependencies: actually runs as part of autogen.sh but may be
@@ -265,7 +278,8 @@ all-libs-local/tools:
 ###       however does directly use libupsclient-version.h
 ###       for hints to find it at run-time
 all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/common all-libs-local/clients all-libs-local/tools
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # Handle all SUBDIRS_ALL_RECURSIVE in a way that dependencies can be specified,
 # and portably to different make program implementations. Note we may revisit
@@ -282,13 +296,16 @@ all-recursive/data:
 	+@$(SUBDIR_TGT_RULE)
 
 all/include: all-libs-local/include
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 prep-src-docs/docs/man:
-	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3'; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
+	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3'; export SUBDIR_TGT_MAKEFLAGS; \
+	  $(SUBDIR_TGT_RULE)
 
 prep-src-docs/docs:
-	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
+	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; \
+	  $(SUBDIR_TGT_RULE)
 
 all/docs/man: prep-src-docs/docs/man
 	+@$(SUBDIR_TGT_RULE)
@@ -325,7 +342,8 @@ all-recursive/docs: all/docs all/docs/man
 
 ### Requires-int: libparseconf.la libcommonclient.la
 all/common: all/include all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Requires-ext: common/libcommon.la common/libcommonclient.la
 ### Requires-ext: common/libparseconf.la
@@ -333,7 +351,8 @@ all/common: all/include all-libs-local/common
 ### Requires-ext: common/libcommonstrjson.la
 ### Requires-int: libupsclient.la
 all/clients: all/common all-libs-local/clients
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Summary of drivers/ subdir dependencies:
 ### Requires-ext: common/libcommon.la common/libparseconf.la
@@ -356,7 +375,8 @@ if SOME_DRIVERS
 # in the default list - FIXME: configure.ac could tell us, so
 # we could provide it for tests/NIT anyway...)
 all/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 all-drivers: all/drivers
 else !SOME_DRIVERS
@@ -368,10 +388,13 @@ else !SOME_DRIVERS
 # should depend on both "dummy-ups" and the rest in so constrained
 # "all/drivers". This allows to ultimately not order one after another.
 dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 all/drivers: all/common all-libs-local/drivers
-	+@SUBDIR_TGT_MAKEFLAGS='NUTSW_DRIVERLIST_DUMMY_UPS=dummy'; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  SUBDIR_TGT_MAKEFLAGS='NUTSW_DRIVERLIST_DUMMY_UPS=dummy'; export SUBDIR_TGT_MAKEFLAGS; \
+	  $(SUBDIR_TGT_RULE)
 
 all-drivers: dummy-ups$(EXEEXT)/drivers all/drivers
 endif !SOME_DRIVERS
@@ -379,7 +402,8 @@ endif !SOME_DRIVERS
 ### Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: common/libcommonversion.la
 all/server: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### LIB-Requires-ext: drivers/libserial-nutscan.la
 ### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
@@ -389,7 +413,8 @@ all/server: all-libs-local/common
 all/tools/nut-scanner: all-libs-local/include all-libs-local/common \
 	all-libs-local/drivers all-libs-local/clients \
 	all-libs-local/tools/nut-scanner
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # only libnutscan is needed for nutconf,
 # but we do wholesale subdir all-libs-local at the moment...
@@ -397,10 +422,12 @@ all/tools/nut-scanner: all-libs-local/include all-libs-local/common \
 ### Requires-ext: common/libcommonversion.la
 ### Requires-ext: tools/nut-scanner/libnutscan.la
 all/tools/nutconf: all-libs-local/tools/nut-scanner all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # Prereqs for NIT are runnable upsd, upsc, upsmon, dummy-ups, sample configs...
 # For the actual "make check-NIT" runs - also python scripts and/or compiled
@@ -410,7 +437,8 @@ all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
 # But then we should also consider what is enabled by configure and what is not.
 # Maybe we are doing a quick build not to be tested at all? :-/
 all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recursive/data
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
 ### Requires-ext: common/libcommon.la common/libnutconf.la
@@ -418,24 +446,29 @@ all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recurs
 ### Requires-ext: drivers/libdummy_mockdrv.la
 ### Requires-int: libdriverstubusb.la
 all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 all-recursive/tests: all/tests/NIT all/tests
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 if HAVE_MINGW_RESGEN
 if HAVE_WINDOWS
 ### Requires-ext: common/libcommon.la
 ### Requires-ext: common/libcommonversion.la
 all/scripts/Windows: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 else !HAVE_WINDOWS
 all/scripts/Windows:
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 endif !HAVE_WINDOWS
 else !HAVE_MINGW_RESGEN
 all/scripts/Windows:
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 endif !HAVE_MINGW_RESGEN
 
 # May rely on dstate.o as well as common libs
@@ -448,10 +481,12 @@ if WITH_REGENERATE_DMF_NUTSCAN
 DMF_DEP_NUTSCAN += all-libs-local/tools/nut-scanner
 endif WITH_REGENERATE_DMF_NUTSCAN
 all/scripts/DMF: all-libs-local/drivers all-libs-local/common $(DMF_DEP_NUTSCAN)
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 all-recursive/scripts: all/scripts/Windows all/scripts/DMF
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
@@ -1588,6 +1623,7 @@ install-win-bundle-thirdparty:
 	 if test -n "$$ARCH" ; then export ARCH ; fi ; \
 	 DESTDIR='$(DESTDIR)' ; export DESTDIR ; \
 	 (  cd '$(DESTDIR)' || exit ; \
+	    GREP=$(GREP)' EGREP='$(EGREP)' \
 	    DESTDIR="" '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->bin       $$D" 2>&1 ; \
@@ -1596,6 +1632,7 @@ install-win-bundle-thirdparty:
 	 ) || exit ; \
 	 (  if test x"$(bindir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(sbindir)' || exit ; \
+	    GREP=$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->sbin      $$D" 2>&1 ; \
@@ -1605,6 +1642,7 @@ install-win-bundle-thirdparty:
 	 (  if test x"$(driverexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(driverexecdir)' || exit ; \
+	    GREP=$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->drv       $$D" 2>&1 ; \
@@ -1616,6 +1654,7 @@ install-win-bundle-thirdparty:
 	    if test x"$(cgiexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(cgiexecdir)' || exit ; \
+	    GREP=$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->cgi       $$D" 2>&1 ; \
@@ -1627,6 +1666,7 @@ install-win-bundle-thirdparty:
 	    if test x"$(libexecdir)" = x"$(driverexecdir)" ; then exit 0 ; fi ; \
 	    if test x"$(libexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(libexecdir)' || exit ; \
+	    GREP=$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->libexec   $$D" 2>&1 ; \

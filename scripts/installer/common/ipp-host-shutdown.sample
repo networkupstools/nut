@@ -5,6 +5,7 @@
 # Must run as root or with sufficient privileges to execute the actions.
 # Can print to >&3 some shell lines that would be sourced by the main script.
 #	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 # Note: This file (ipp-host-shutdown.sample) is delivered by the package and
 # will be overwritten in case of upgrades. It is an example implementation of

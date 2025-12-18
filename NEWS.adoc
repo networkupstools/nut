@@ -55,10 +55,15 @@ https://github.com/networkupstools/nut/milestone/12
      stable name as a default implementation). Drivers united by `main.c`
      framework introduced a `upsdrv_tweak_prognames()` hook method to let
      them manipulate the array of `prognames[]` aliases. [PR #3101]
+   * USB drivers could truncate strings received from devices as a fallout
+     of PR #2604 merged in NUT v2.8.3; this should now be fixed. [PR #3211,
+     issue #3201]
    * `libusb0` and `libusb1` integrations now try both "Resource Descriptor
      Length" values they could identify on some devices: sometimes the first
      (or otherwise preferred) option may be not the correct one, so try the
      other too. [issue #3136]
+   * Improved high-verbosity debug tracing of NUT `libhid` and `usbhid-ups`
+     to help make sense of data processing issues (HID paths, strings). [#3201]
    * For state tree methods, introduced `difftime_st_tree_timespec()` to
      abstract platform-dependent definitions of `st_tree_timespec_t`. [PR #3156]
    * Introduced global variables for last changed timestamp and value of
@@ -75,6 +80,9 @@ https://github.com/networkupstools/nut/milestone/12
      systemd watchdog situation once, will not spam more about it" even if
      those "logged" messages were at an invisible verbosity level. [issue #3157,
      PR #3151]
+   * Revised detection of (relative) paths to program and configuration files
+     near the currently running program in NUT for Windows builds. [issues #3207,
+     #3063, #3065, #3219]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
@@ -86,6 +94,9 @@ https://github.com/networkupstools/nut/milestone/12
  - `apcupsd-ups` driver updates:
    * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
      Extended to be IPv6-capable along the way. [#1209]
+
+ - Introduced a new NUT driver named `meanwell_ntu` which provides support for
+   the Mean Well NTU series hybrid inverter and UPS units. [PR #3206]
 
  - `nhs_ser` driver updates:
    * Driver source code includes a table to map baud rates (defined by the OS
@@ -351,6 +362,20 @@ several `FSD` notifications into one executed action. [PR #3097]
    abort processing the script immediately. Also the `if ! condition`
    syntax is not supported everywhere (or the `!` operator generally).
    [#3099, #1660]
+
+ - Revised `tools/gitlog2version.sh` helper script (logic added into
+   a new `tools/semver-compare.sh`) with a mode to expand NUT SEMVER
+   components into wide zero-padded numbers, so it is easier to
+   alphanumerically compare different releases regardless of version
+   component lengths in digits (and differences in their amounts). You can
+   request an inverse operation with `NUT_VERSION_STRIP_LEADING_ZEROES=true`.
+   Added tests to cover different shell interpreter platforms (piggy-back
+   on the `tests/nut-driver-enumerator-test.sh` script), and made sure
+   that outputs of legacy-mode processing (with `NUT_VERSION_DEFAULT`
+   string provided by caller or saved in a tarball) are consistent with
+   git-mode. The new `tools/semver-compare.sh` helper can be used directly
+   to expand and strip version strings, sort and compare multiple versions
+   as one simple operation. [issue #3055, PRs #3213, #3217]
 
  - The NUT Integration Testing suite (NIT) script, if started as `root`,
    can now consult its run-time situation vs. `BUILTIN_RUN_AS_USER` and

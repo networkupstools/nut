@@ -1,6 +1,7 @@
 #!/bin/sh
 #	uninstall.sh
 #	Copyright (c) 2013-2016, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #	A shell script which uninstalls IPP - Unix
 #	It stops daemons and removes the native package
 #

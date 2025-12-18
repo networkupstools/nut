@@ -50,6 +50,15 @@ jobs:
       with:
         fetch-depth: 0
         fetch-tags: true
+        # NOTE: pull_request_target protects us by using the workflow definition
+        # from target branch (so trusted operations like artifact management can
+        # be used), but it also uses the code from that branch too, so fix it back.
+        # Maybe use "github.event.pull_request.merge_commit_sha" instead?.. though
+        # it may be null if the PR is not mergeable or is still checked for that,
+        # or may return the commit for PREVIOUS pushed iteration's merge to target.
+        # See more ideas in https://github.com/actions/checkout/issues/518 :
+        ref: "${{ github.event.pull_request.number > 0 && github.event.pull_request.head.sha || github.ref_name }}"
+        persist-credentials: false
 
     # https://github.com/marketplace/actions/substitute-string
     # See also examples in https://github.com/dhimmel/dump-actions-context/

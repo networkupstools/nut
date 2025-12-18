@@ -484,10 +484,16 @@ int nut_usb_get_string(
 		return ret;
 	}
 
+	upsdebugx(6, "%s: from nut_usb_get_string_descriptor() got %d useful bytes", __func__, ret);
+	upsdebug_hex(6, "...into buffer, presumably in simple UTF-16LE encoding",
+		buffer, ((size_t)ret < sizeof(buffer) ? (size_t)ret : sizeof(buffer)));
+
 	/* translate simple UTF-16LE to 8-bit */
-	len = ret < (int)buflen ? ret : (int)buflen;
-	len = len / 2 - 1;	/* 16-bit characters, without header */
-	len = len < (int)buflen - 1 ? len : (int)buflen - 1;	/* reserve for null terminator */
+	len = ret / 2 - 1;	/* 16-bit characters, without header */
+	if ((int)buflen - 1 < len) {
+		upsdebugx(1, "%s: buflen %" PRIuSIZE " is too short for USB str desc len %d, returned string will be truncated", __func__, buflen, ret);
+		len = (int)buflen - 1;	/* reserve 1 byte for null terminator */
+	}
 	for (i = 0; i < len; i++) {
 		if (buffer[2 + i * 2 + 1] == 0)
 			buf[i] = buffer[2 + i * 2];
@@ -495,6 +501,11 @@ int nut_usb_get_string(
 			buf[i] = '?';	/* not decoded */
 	}
 	buf[i] = '\0';
+
+	/* "data bytes" because we have null terminator on top */
+	upsdebugx(6, "%s: converted into %d data bytes as: [%s]", __func__, len, buf);
+	upsdebug_hex(6, "...should be in 8-bit encoding", buf,
+		(len >= 0 && (size_t)len < buflen ? (size_t)len : buflen));
 
 	return len;
 }

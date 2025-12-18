@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3632 utf-8
+personal_ws-1.1 en 3649 utf-8
 AAC
 AAS
 ABI
@@ -516,6 +516,7 @@ Heavner
 Hessenflow
 HiBox
 Hirschler
+Hite
 Hlavinka
 Holger
 Homebrew
@@ -671,6 +672,7 @@ Lansafecable
 Laventhol
 Lce
 Legrand
+Lennart
 Lepple
 Levente
 LibGD
@@ -700,6 +702,7 @@ MBATTCHG
 MBR
 MCU
 MDigest
+MEANWELL
 MEC
 MERCHANTABILITY
 MF
@@ -818,6 +821,8 @@ NOTOVER
 NOTTRIM
 NQA
 NTP
+NTU
+NTU's
 NUT's
 NUTCI
 NUTCONF
@@ -985,6 +990,7 @@ PiJuice
 PiNUT
 Plesser
 PnP
+Poettering
 Pohle
 PointBre
 Pos
@@ -2113,6 +2119,7 @@ fe
 featureReport
 fenton
 fentonups
+ffee
 fffdddxxx
 ffff
 fi
@@ -2140,6 +2147,7 @@ freetype
 frob
 frontends
 fs
+fsck
 fsd
 fsdmode
 fsr
@@ -2150,6 +2158,7 @@ func
 functionset
 gamatronic
 gandi
+gc
 gcc
 gcpp
 gd
@@ -2302,6 +2311,7 @@ inet
 influenceable
 infos
 infoval
+ing
 inh
 init
 init's
@@ -2576,6 +2586,7 @@ mcview
 md
 mdadm
 mdutil
+meanwell
 mecer
 megatec
 memset
@@ -2674,6 +2685,7 @@ nc
 nd
 nde
 nds
+ne
 netcat
 netclient
 netmask
@@ -2742,6 +2754,7 @@ nss
 ntopAI
 ntopSS
 ntopW
+ntu
 nuf
 nuget
 num
@@ -2811,6 +2824,7 @@ other's
 otheruser
 ouGDQn
 outliers
+overtemp
 ovmf
 pF
 pacman
@@ -3177,6 +3191,7 @@ solis
 somename
 somepass
 something's
+sortable
 sortdict
 sp
 spanish
@@ -3337,6 +3352,7 @@ toolset
 topFrame
 topbot
 tport
+transactional
 tripplite
 tripplitesu
 troff
@@ -3388,6 +3404,7 @@ ukUNV
 ul
 ulimit
 ulink
+umount
 un
 uname
 uncomment

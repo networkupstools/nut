@@ -903,6 +903,7 @@ SRC_SERIAL_PAGES = \
 	liebert-gxe.txt	\
 	liebert-esp2.txt	\
 	masterguard.txt	\
+	meanwell_ntu.txt 	\
 	metasys.txt	\
 	mge-shut.txt	\
 	mge-utalk.txt	\
@@ -955,6 +956,7 @@ INST_MAN_SERIAL_PAGES = \
 	liebert-gxe.$(MAN_SECTION_CMD_SYS)	\
 	liebert-esp2.$(MAN_SECTION_CMD_SYS)	\
 	masterguard.$(MAN_SECTION_CMD_SYS)	\
+	meanwell_ntu.$(MAN_SECTION_CMD_SYS)	\
 	metasys.$(MAN_SECTION_CMD_SYS)	\
 	mge-shut.$(MAN_SECTION_CMD_SYS)	\
 	mge-utalk.$(MAN_SECTION_CMD_SYS)	\
@@ -1024,6 +1026,7 @@ INST_HTML_SERIAL_MANS = \
 	liebert-gxe.html\
 	liebert-esp2.html	\
 	masterguard.html	\
+	meanwell_ntu.html	\
 	metasys.html	\
 	mge-shut.html	\
 	mge-utalk.html	\

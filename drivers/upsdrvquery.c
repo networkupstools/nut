@@ -102,7 +102,7 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 
 	if (result == FALSE) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
-			upslog_with_errno(LOG_ERR, "WaitNamedPipe : %d\n", GetLastError());
+			upslog_with_errno(LOG_ERR, "WaitNamedPipe (%s): %d", sockfn, GetLastError());
 		return NULL;
 	}
 
