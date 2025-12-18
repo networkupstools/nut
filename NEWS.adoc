@@ -80,6 +80,9 @@ https://github.com/networkupstools/nut/milestone/12
      systemd watchdog situation once, will not spam more about it" even if
      those "logged" messages were at an invisible verbosity level. [issue #3157,
      PR #3151]
+   * Revised detection of (relative) paths to program and configuration files
+     near the currently running program in NUT for Windows builds. [issues #3207,
+     #3063, #3065, #3219]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,

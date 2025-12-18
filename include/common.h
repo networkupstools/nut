@@ -767,6 +767,10 @@ extern int optind;
 #define UPSD_PIPE_NAME TEXT("upsd")
 
 char * getfullpath(char * relative_path);
+
+/* e.g. getfullpath2(CONFPATH, PATH_ETC) */
+char * getfullpath2(char * cfg_path, char * fallback_path);
+
 #define PATH_ETC	"\\..\\etc"
 #define PATH_VAR_RUN "\\..\\var\\run"
 #define PATH_SHARE "\\..\\share"

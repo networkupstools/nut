@@ -140,7 +140,13 @@ do_build_mingw_nut() {
 
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
-	# FIXME: Implement support for --without-pkg-config in m4 and use it
+	# WIN32 builds resolve PREFIX'ed paths relative to each current binary
+	# so the build can be installed (tarball unpacked) to any location.
+	# NUT config files are under just "PREFIX/etc", no layers like "/etc/nut";
+	# note the PREFIX string should exist there for getfullpath() to find it.
+	# FIXME: Implement support for --without-pkg-config in m4 and use it.
+	# Currently "/run" location is not relevant (writepid() is a stub)
+	# and "/var/state/ups" is utterly unused (Windows named pipes instead).
 	RES_CFG=0
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
@@ -151,6 +157,7 @@ do_build_mingw_nut() {
 	    --with-pynut=app \
 	    --with-augeas-lenses-dir=/augeas-lenses \
 	    --enable-Werror \
+	    --with-confdir='${prefix}/etc' \
 	|| RES_CFG=$?
 	echo "$0: configure phase complete ($RES_CFG)" >&2
 	[ x"$RES_CFG" = x0 ] || exit $RES_CFG
