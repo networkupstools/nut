@@ -2,6 +2,7 @@
 #	ipp-status
 #
 #	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #	A shell script to request UPS status (power state, runtime remaining)
 #	with upsc and aggregate the results as a table and an exit-status that
@@ -31,6 +32,10 @@ CONFIG_IPP="$NUT_CFG_DIR/ipp.conf"
 # third party libs and hopefully without conflicts induced for the OS binaries
 PATH="$NUT_DIR/xbin:$NUT_DIR/sbin:$NUT_DIR/bin:$PATH"
 export PATH
+
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
 
 # Search for binaries under current PATH normally, no hardcoding
 NUT_UPSC="upsc"
@@ -75,8 +80,8 @@ get_devices_info() {
 		status="`$NUT_UPSC \"$dev\" ups.status 2>/dev/null`"
 		runtime="`$NUT_UPSC \"$dev\" battery.runtime 2>/dev/null`"
 		batterypct="`$NUT_UPSC \"$dev\" battery.charge 2>/dev/null`"
-		supplies="`get_pwr_value \"$dev\" | egrep '^[0-9]*$'`"
-		upsmon_ms="`get_ms_value \"$dev\" | egrep 'master|slave'`"
+		supplies="`get_pwr_value \"$dev\" | ${EGREP} '^[0-9]*$'`"
+		upsmon_ms="`get_ms_value \"$dev\" | ${EGREP} 'master|slave|primary|secondary'`"
 
 		echo "$dev:$status:$runtime:$batterypct:$supplies:$upsmon_ms"
 	done
@@ -103,7 +108,7 @@ get_pwr_value() {
 }
 
 #
-# Get a UPS master/slave value (influences shutdown sequence and poweroffs)
+# Get a UPS primary/master/secondary/slave value (influences shutdown sequence and poweroffs)
 #
 get_ms_value() {
 	$awk '/^[ \t]*MONITOR/ {
@@ -416,7 +421,7 @@ OPTIONS:
 Full devices status report consists of the device ID, its power status (as
 a readable meaningful string), on-battery runtime in form [[H:]MM:]SS, the
 percentage of the battery charged, the number of this machine's sources
-this UPS feeds, and its upsmon master/slave setting.
+this UPS feeds, and its upsmon primary/secondary (master/slave) setting.
 In the short form (for scripting), the runtime is shown in seconds and the
 six fields are separated by colon.
 

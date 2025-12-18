@@ -2,6 +2,7 @@
 #
 # ups: Starts the Network UPS Tools for IPP - Unix
 #       Customizations copyright (c) 2015, by Eaton (R) Corporation. All rights reserved.
+#       Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 # chkconfig: - 26 74
 # description: Network UPS Tools is a collection of programs which provide a common \
