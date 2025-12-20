@@ -416,7 +416,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		r = set_beeper(0);
 		return r != -1 ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else if (!strcasecmp(cmdname, "shutdown.return")) {
-		return mb_write(32002, 1); /*32002 Remote shutdown*/
+		r = mb_write(32002, 1); /*32002 Remote shutdown*/
 		return r != -1 ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	}
 
