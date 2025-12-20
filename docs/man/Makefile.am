@@ -1342,6 +1342,7 @@ SRC_MODBUS_PAGES = \
 	generic_modbus.txt \
 	huawei-ups2000.txt \
 	socomec_jbus.txt   \
+	must_ep2000pro.txt   \
 	adelsystem_cbi.txt \
 	apc_modbus.txt
 
@@ -1350,6 +1351,7 @@ INST_MAN_MODBUS_PAGES = \
 	generic_modbus.$(MAN_SECTION_CMD_SYS) \
 	huawei-ups2000.$(MAN_SECTION_CMD_SYS) \
 	socomec_jbus.$(MAN_SECTION_CMD_SYS)   \
+	must_ep2000pro.$(MAN_SECTION_CMD_SYS)   \
 	adelsystem_cbi.$(MAN_SECTION_CMD_SYS) \
 	apc_modbus.$(MAN_SECTION_CMD_SYS)
 
@@ -1370,6 +1372,7 @@ INST_HTML_MODBUS_MANS = \
 	generic_modbus.html \
 	huawei-ups2000.html \
 	socomec_jbus.html   \
+	must_ep2000pro.html   \
 	adelsystem_cbi.html \
 	apc_modbus.html
 DIST_ALL_HTML_PAGES += $(INST_HTML_MODBUS_MANS)
