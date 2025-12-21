@@ -236,7 +236,7 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.firmware", "%u", base_reg[1]); /*30001 Software version*/
 	dstate_setinfo("battery.voltage.nominal", "%u", base_reg[3]); /*30003 BatClass*/
 	dstate_setinfo("ups.power.nominal", "%u", base_reg[4]); /*30004 Rated power*/
-	dstate_setinfo("output.frequency.nominal", "%u", conf_reg[0] ? 60 : 50); /*31000 Grid frequency type*/
+	dstate_setinfo("output.frequency.nominal", "%d", conf_reg[0] ? 60 : 50); /*31000 Grid frequency type*/
 	dstate_setinfo("output.voltage.nominal", "%u", conf_reg[1]); /*31001 Grid voltage Type*/
 	dstate_setinfo("battery.voltage.low", "%.1f", conf_reg[2] * 0.1); /*31002 Shutdown voltage*/
 	dstate_setinfo("battery.voltage.high", "%.1f", conf_reg[3] * 0.1); /*31003 Absorption charge voltage*/
@@ -455,14 +455,14 @@ static int set_ivar(const char *varname, int val, int addr, uint16_t setval, int
 	int r;
 
 	if (val != val1 && val != val2) {
-		upslogx(LOG_WARNING, "%s %u out list of valid values: %u, %u", varname, val, val1, val2);
+		upslogx(LOG_WARNING, "%s %d out list of valid values: %d, %d", varname, val, val1, val2);
 		return STAT_SET_FAILED;
 	} else {
 		r = mb_write(addr, setval);
 		if (r == -1) {
 			return STAT_SET_FAILED;
 		} else {
-			dstate_setinfo(varname, "%u", val);
+			dstate_setinfo(varname, "%d", val);
 			return STAT_SET_HANDLED;
 		}
 	}
