@@ -98,6 +98,10 @@ https://github.com/networkupstools/nut/milestone/12
  - Introduced a new NUT driver named `meanwell_ntu` which provides support for
    the Mean Well NTU series hybrid inverter and UPS units. [PR #3206]
 
+ - Introduced a new NUT driver named `must_ep2000pro` which provides support
+   for the MUST EP2000Pro compatible, line-interactive UPS models which talk
+   serial-protocol modbus protocol. [PR #3228]
+
  - `nhs_ser` driver updates:
    * Driver source code includes a table to map baud rates (defined by the OS
      as C macros) to numbers and strings more useful to the driver program.
