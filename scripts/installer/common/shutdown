@@ -2,6 +2,7 @@
 #	shutdown
 #
 #	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #	A shell script to command UPSes to power off and back on as part of
 #	the emergency shutdown driven by IPP - Unix (NUT); called from upsmon
@@ -77,8 +78,8 @@ if test -n "$DELAY" && test "$DELAY" -ge 0 ; then true; else DELAY=120; fi
 DELAYON="`expr $DELAY + 10`"
 
 # TODO: Here we want to refine the list to only MONITORed UPSes that power us
-# and/or take into account the killpower flag-file (upsmon master vs. slave
-# and/or `upsmon -k` status)
+# and/or take into account the killpower flag-file (upsmon primary/master vs.
+# secondary/slave and/or `upsmon -k` status)
 # Convert to parsing of "ipp-status -p" which reports all needed details
 upslist="`\"$NUT_UPSC\" -l`"
 echo "$upslist"

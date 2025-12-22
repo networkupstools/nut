@@ -5,6 +5,7 @@ exit
 #	ipp-event
 #
 #	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #	A shell script to manage event from IPP - Unix (NUT)
 #	It needs ipp.conf file.

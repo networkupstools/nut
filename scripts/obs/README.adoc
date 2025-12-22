@@ -48,6 +48,19 @@ For some historical and/or practical details see:
 
 * https://github.com/networkupstools/nut/issues/1209
 
+== Preinstall images
+
+OBS builds can be sped up by use of `preinstallimage` recipes seen in the
+sibling or "upstream" build dependency repositories for a built project,
+if such image contains a subset of the packages that the current build
+aims to use.
+
+TODO: Document actually getting PR builds to see such prepared images.
+
+A recipe can be generated from current `nut.spec` and `nut.dsc` files
+via `make _preinstallimage` and uploaded into a dedicated package near
+the `nut` package in an OBS project.
+
 == Other notes
 
 The recipe files themselves would likely cross-pollinate with popular

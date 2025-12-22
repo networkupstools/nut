@@ -482,8 +482,9 @@ sh autogen.sh
 	--with-dev-libnutconf\
 %endif
 %if 0%{?NUTPKG_WITH_DMF}
+	--with-dmf\
 	--with-snmp_dmf_lua\
-	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no\
+	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=yes --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no\
 %endif
 	--enable-keep_nut_report_feature\
 	--enable-strip\
@@ -753,16 +754,10 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %{_mandir}/man8/snmp-ups*.*
 %{_sbindir}/gen-snmp-subdriver.sh
 %if 0%{?NUTPKG_WITH_DMF}
-%{_bindir}/nut-scanner-reindex-dmfsnmp
-%dir %{_datadir}/nut/dmfnutscan
 %dir %{_datadir}/nut/dmfsnmp
-%{_datadir}/nut/dmfnutscan/*.dmf
 %{_datadir}/nut/dmfsnmp/*.dmf
-%{_datadir}/nut/dmfnutscan/*.xsd
 %{_datadir}/nut/dmfsnmp/*.xsd
-%dir %{_datadir}/nut/dmfnutscan.d
 %dir %{_datadir}/nut/dmfsnmp.d
-%{_datadir}/nut/dmfnutscan.d/*.dmf
 %{_datadir}/nut/dmfsnmp.d/*.dmf
 %endif
 
@@ -782,6 +777,14 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %files -n libnutscan%{SO_MAJOR_LIBNUTSCAN}
 %defattr(-,root,root)
 %{_libdir}/libnutscan.so.*
+%if 0%{?NUTPKG_WITH_DMF}
+%{_bindir}/nut-scanner-reindex-dmfsnmp
+%dir %{_datadir}/nut/dmfnutscan
+%{_datadir}/nut/dmfnutscan/*.dmf
+%{_datadir}/nut/dmfnutscan/*.xsd
+%dir %{_datadir}/nut/dmfnutscan.d
+%{_datadir}/nut/dmfnutscan.d/*.dmf
+%endif
 
 %if 0%{?NUTPKG_WITH_LIBNUTCONF} > 0
 %files -n libnutconf%{SO_MAJOR_LIBNUTCONF}

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2020,2022 by Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2020,2022,2025 by Jim Klimov <jimklimov+nut@gmail.com>
 # Licensed according to GPLv2+ for the NUT project
 
 # If your USB connection on Solaris/illumos platform gets lost regularly
@@ -20,8 +20,12 @@ echo "WARNING: Script $0 was not yet tailored to this deployment!" >&2 ; exit
 # Can specify '-' to not reload OS driver:
 [ -n "$UGEN_DRV_ID" ] || UGEN_DRV_ID='"usb665,5161.2"'
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 if [ "$MODE" = optional ]; then
-    if upsc "$DEVICE" 2>&1 | grep -i 'Data stale' ; then : ; else exit 0 ; fi
+    if upsc "$DEVICE" 2>&1 | ${GREP} -i 'Data stale' ; then : ; else exit 0 ; fi
 fi
 
 # Sanity-checks
@@ -64,7 +68,7 @@ svcs -p "$DEVICE" ; upsc "$DEVICE" || { \
     COUNT=60
     while [ "$COUNT" -gt 0 ] ; do
         COUNT="`expr $COUNT - 1`"
-        if upsc "$DEVICE" 2>&1 | egrep -i '^ups\.status:' >/dev/null ; then break ; fi
+        if upsc "$DEVICE" 2>&1 | ${EGREP} -i '^ups\.status:' >/dev/null ; then break ; fi
         sleep 1
     done
     svcs -p "$DEVICE" ; upsc "$DEVICE"

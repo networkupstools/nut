@@ -79,7 +79,11 @@
 #   start-up lacking a driver, there should be some timer to re-enable
 #   failed not-disabled drivers (would be useful in any case though).
 
-# The GREP and EGREP commands found during configuration for the platform
+# The SED, GREP and EGREP commands found during configuration for the platform
+# Specifically look out for "sed" versions that can not do alternations inside
+# parentheses in their default (e.g. BRE) mode, so 's/\(a\|b\)/.../' does NOT
+# match "either 'a' or 'b'".
+SED="@SED@"
 GREP="@GREP@"
 EGREP="@EGREP@"
 
@@ -586,7 +590,7 @@ upsconf_getValue() {
         VALUE=""
 
         LINE="`echo \"$SECTION_CONTENT\" | $EGREP '(^'\"$1\"'=|^'\"$1\"'$)'`" \
-        && VALUE="$(echo "$LINE" | sed -e "s,^$1=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'\$,\1,")" \
+        && VALUE="$(echo "$LINE" | $SED -e "s,^$1=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'\$,\1,")" \
         || RES_L=$?
 
         [ "$RES_L" = 0 ] || { RES="$RES_L" ; log_error "Section [$CURR_SECTION] or key '$1' in it was not found in the '$UPSCONF' file" ; }
@@ -684,9 +688,9 @@ upsconf_getDriverMedia() {
             CURR_PORT="`upsconf_getPort \"$1\"`" || CURR_PORT=""
             case "$CURR_PORT" in
                 *@localhost|*@|*@127.0.0.1|*@::1)
-                    printf '%s\n%s\n' "$CURR_DRV" "network-localhost,drivers=`echo "${CURR_PORT}" | sed 's,@.*$,,'`" ; return ;;
+                    printf '%s\n%s\n' "$CURR_DRV" "network-localhost,drivers=`echo "${CURR_PORT}" | $SED 's,@.*$,,'`" ; return ;;
                 *@"`hostname`"*)  # Technically also local host, but via public host name (so networking must be up)
-                    printf '%s\n%s\n' "$CURR_DRV" "network,drivers=`echo "${CURR_PORT}" | sed 's,@.*$,,'`" ; return ;;
+                    printf '%s\n%s\n' "$CURR_DRV" "network,drivers=`echo "${CURR_PORT}" | $SED 's,@.*$,,'`" ; return ;;
                 *@*)  # Might be local host via public IP address, but harder to detect portably
                     printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
                 *)  # Assume DEV/SEQ file:
@@ -764,7 +768,7 @@ smf_validInstanceName() {
 }
 smf_validInstanceSuffixName() {
     case "$1" in
-        *:*) echo "$1" | sed 's,^.*:\([^:]*\)$,\1,' ;;
+        *:*) echo "$1" | $SED 's,^.*:\([^:]*\)$,\1,' ;;
         *)   echo "$1" ;;
     esac
 }
@@ -806,7 +810,7 @@ smf_registerInstance() {
         drivers=*|*,drivers=*)
             OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
             # Not double-quoting here to iterate the string tokens:
-            for DEPDRV in `echo "${_MED}" | sed -e 's/^\(.*,d\|d\)rivers=//' -e 's/,/ /g'` ; do
+            for DEPDRV in `echo "${_MED}" | $SED -e 's/^drivers=//' -e 's/^.*,drivers=//' -e 's/,/ /g'` ; do
                 case "${DEPDRV}" in
                     *-*) # May be "drivername-upsname", where either sub-string
                          # may have dashes inside too; try to find the right one:
@@ -883,7 +887,7 @@ smf_listInstances_raw() {
 }
 smf_listInstances() {
     # Chop twice, in case there is a leading "svc:/...."
-    smf_listInstances_raw | sed -e 's/^.*://' -e 's/^.*://' | sort -k1n -k1
+    smf_listInstances_raw | $SED -e 's/^.*://' -e 's/^.*://' | sort -k1n -k1
 }
 smf_getSavedMD5() {
     # Query service instance $1
@@ -907,11 +911,11 @@ smf_findSavedDeviceName() {
     if [ -z "$1" ]; then
         /usr/bin/svcprop -p "nut-driver-enumerator-generated-devicename/DEVICE" \
             'svc:/system/power/nut-driver:*' 2>/dev/null \
-            | sed 's|^\(svc:/[^:]*:[^/:]*\)/:properties/nut-driver-enumerator-generated-devicename/DEVICE astring \(.*\)$|\1\t\2|'
+            | $SED 's|^\(svc:/[^:]*:[^/:]*\)/:properties/nut-driver-enumerator-generated-devicename/DEVICE astring \(.*\)$|\1\t\2|'
     else
         /usr/bin/svcprop -p "nut-driver-enumerator-generated-devicename/DEVICE" \
             "svc:/system/power/nut-driver:$1" 2>/dev/null \
-            | sed 's|^\(svc:/[^:]*:[^/:]*\)/:prop.*$|\1|'
+            | $SED 's|^\(svc:/[^:]*:[^/:]*\)/:prop.*$|\1|'
     fi
 }
 smf_getSavedDeviceName() {
@@ -1042,7 +1046,7 @@ systemd_validInstanceName() {
     echo "MD5_`calc_md5 "$1"`"
 }
 systemd_validInstanceSuffixName() {
-    echo "$1" | sed -e 's,^.*@,,' -e 's,\.service$,,'
+    echo "$1" | $SED -e 's,^.*@,,' -e 's,\.service$,,'
 }
 systemd_registerInstance() {
     # Instance is registered by device section name; ultimate name in systemd may differ
@@ -1092,7 +1096,7 @@ systemd_registerInstance() {
         drivers=*|*,drivers=*)
             OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
             # Not double-quoting here to iterate the string tokens:
-            for DEPDRV in `echo "${_MED}" | sed -e 's/^\(.*,d\|d\)rivers=//' -e 's/,/ /g'` ; do
+            for DEPDRV in `echo "${_MED}" | $SED 's/^drivers=//' -e 's/^.*,drivers=//' -e 's/,/ /g'` ; do
                 case "${DEPDRV}" in
                     *-*) # May be "drivername-upsname", where either sub-string
                          # may have dashes inside too; try to find the right one:
@@ -1164,10 +1168,10 @@ systemd_refreshSupervizor() {
     /bin/systemctl daemon-reload
 }
 systemd_listInstances_raw() {
-    /bin/systemctl show --all 'nut-driver@*' -p Id | $EGREP '=nut-driver' | sed 's,^Id=,,'
+    /bin/systemctl show --all 'nut-driver@*' -p Id | $EGREP '=nut-driver' | $SED 's,^Id=,,'
 }
 systemd_listInstances() {
-    systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -k1n -k1
+    systemd_listInstances_raw | $SED -e 's/^.*@//' -e 's/\.service$//' | sort -k1n -k1
 }
 systemd_getSavedMD5() {
     # Query service instance $1 or global section
@@ -1175,7 +1179,7 @@ systemd_getSavedMD5() {
     [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf"
     [ -s "${PROPFILE}" ] \
-    && $GREP "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
+    && $GREP "Environment='$PROP=" "${PROPFILE}" | $SED -e "s,^Environment='$PROP=,," -e "s,'\$,," \
     || { log_warn "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
 }
 systemd_findSavedDeviceName() {
@@ -1184,11 +1188,11 @@ systemd_findSavedDeviceName() {
     if [ -z "$1" ]; then
         $GREP -H "Environment='DEVICE=" \
             "${SYSTEMD_CONFPATH}"/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
-        | sed 's|^'"${SYSTEMD_CONFPATH}"'/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*\([^\"']*\)[\"']*"'$|\1\t\2|'
+        | $SED 's|^'"${SYSTEMD_CONFPATH}"'/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*\([^\"']*\)[\"']*"'$|\1\t\2|'
     else
         $EGREP -H "Environment='DEVICE=($1|\"$1\")'" \
             "${SYSTEMD_CONFPATH}"/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
-        | sed 's|^'"${SYSTEMD_CONFPATH}"'/\(nut-driver@[^/]*\.service\)\.d/.*$|\1|'
+        | $SED 's|^'"${SYSTEMD_CONFPATH}"'/\(nut-driver@[^/]*\.service\)\.d/.*$|\1|'
     fi
 }
 systemd_getSavedDeviceName() {
@@ -1199,7 +1203,7 @@ systemd_getSavedDeviceName() {
     PROP="DEVICE"
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf"
     [ -s "${PROPFILE}" ] \
-    && $GREP "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," -e 's,^"\(.*\)"$,\1,' \
+    && $GREP "Environment='$PROP=" "${PROPFILE}" | $SED -e "s,^Environment='$PROP=,," -e "s,'\$,," -e 's,^"\(.*\)"$,\1,' \
     || { log_warn "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
 }
 systemd_setSavedDeviceName() {
@@ -1294,7 +1298,7 @@ upslist_normalizeFile_filter() {
     # that do not start the non-whitespace payload of the line, are not
     # sections.
     $EGREP -v '(^$|^#)' | \
-    sed -e 's,^['"$TABCHAR"'\ ]*,,' \
+    $SED -e 's,^['"$TABCHAR"'\ ]*,,' \
         -e 's,^\#.*$,,' \
         -e 's,['"$TABCHAR"'\ ]*$,,' \
         -e 's,^\([^=\ '"$TABCHAR"']*\)['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,\1=,g' \
@@ -1360,7 +1364,7 @@ upslist_readFile() {
 
     if [ "${#UPSCONF_DATA}" != 0 ] ; then
         # Note that section-name brackets should contain a single token
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | $EGREP '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -k1n -k1)" \
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | $EGREP '^\[[^'"$TABCHAR"'\ ]*\]$' | $SED 's,^\[\(.*\)\]$,\1,' | sort -k1n -k1)" \
             || UPSLIST_FILE=""
         if [ "${#UPSLIST_FILE}" = 0 ] ; then
             log_error "Could not read the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents"
@@ -1913,8 +1917,8 @@ if [ $# = 1 ] ; then
     [ -n "$DAEMON_SLEEP" ] || DAEMON_SLEEP=60
     # Note: Not all shells have 'case ... ;&' support
     case "$1" in
-        --daemon=*) DAEMON_SLEEP="`echo \"$1\" | sed 's,^--daemon=,,'`" ;;
-        --daemon-after=*) DAEMON_SLEEP="`echo \"$1\" | sed 's,^--daemon-after=,,'`" ;;
+        --daemon=*) DAEMON_SLEEP="`echo \"$1\" | $SED 's,^--daemon=,,'`" ;;
+        --daemon-after=*) DAEMON_SLEEP="`echo \"$1\" | $SED 's,^--daemon-after=,,'`" ;;
     esac
     case "$1" in
         --daemon-after|--daemon-after=*)

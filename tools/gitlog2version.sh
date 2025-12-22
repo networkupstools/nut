@@ -69,9 +69,10 @@ LC_ALL=C
 TZ=UTC
 export LANG LC_ALL TZ
 
+SCRIPT_DIR="`dirname \"$0\"`"
+SCRIPT_DIR="`cd \"${SCRIPT_DIR}\" && pwd`"
+
 if [ x"${abs_top_srcdir}" = x ]; then
-    SCRIPT_DIR="`dirname \"$0\"`"
-    SCRIPT_DIR="`cd \"${SCRIPT_DIR}\" && pwd`"
     abs_top_srcdir="${SCRIPT_DIR}/.."
 fi
 if [ x"${abs_top_builddir}" = x ]; then
@@ -80,11 +81,13 @@ fi
 
 SRC_IS_GIT=false
 if ( [ -e "${abs_top_srcdir}/.git" ] ) 2>/dev/null || [ -d "${abs_top_srcdir}/.git" ] || [ -f "${abs_top_srcdir}/.git" ] || [ -h "${abs_top_srcdir}/.git" ] ; then
-   SRC_IS_GIT=true
+    SRC_IS_GIT=true
 fi
 
 [ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
 [ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${SEMVER_COMPARE}" ] || { SEMVER_COMPARE="${SCRIPT_DIR}/semver-compare.sh" ; }
+[ -x "${SEMVER_COMPARE}" ] || { echo "$0: FAILED to locate semver-compare.sh helper" >&2 ; exit 1 ; }
 
 ############################################################################
 # Numeric-only default version, for AC_INIT and similar consumers
@@ -106,6 +109,8 @@ fi
 # caller environment, or a file setting it reproducibly, can help
 # identify the actual NUT release version triplet used on the box.
 # Please use it, it immensely helps with community troubleshooting!
+
+# These *FORCED files can be (re-)populated with UPDATE_FILE_GIT_RELEASE:
 if [ x"${NUT_VERSION_QUERY-}" = x"UPDATE_FILE_GIT_RELEASE" ] ; then
     if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
         echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED', will replace with git info" >&2
@@ -114,13 +119,23 @@ if [ x"${NUT_VERSION_QUERY-}" = x"UPDATE_FILE_GIT_RELEASE" ] ; then
         echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED_SEMVER', will replace with git info" >&2
     fi
 else
-    if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
-        # Should set NUT_VERSION_FORCED=X.Y.Z(.a.b...)
-        . "${abs_top_srcdir}/VERSION_FORCED" || exit
-    fi
-    if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
-        # Should set NUT_VERSION_FORCED_SEMVER=X.Y.Z
-        . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+    # If envvar is passed by caller, ignore the files
+    if [ x"${NUT_VERSION_FORCED-}${NUT_VERSION_FORCED_SEMVER-}" = x ] ; then
+        if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+            # Should set NUT_VERSION_FORCED=X.Y.Z(.a.b...)
+            . "${abs_top_srcdir}/VERSION_FORCED" || exit
+        fi
+        if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+            # Should set NUT_VERSION_FORCED_SEMVER=X.Y.Z
+            . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
+        fi
+    else
+        if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+            echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED', because envvars were passed" >&2
+        fi
+        if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+            echo "NOTE: Ignoring '${abs_top_srcdir}/VERSION_FORCED_SEMVER', because envvars were passed" >&2
+        fi
     fi
 fi
 if [ -n "${NUT_VERSION_FORCED-}" ] ; then
@@ -128,7 +143,10 @@ if [ -n "${NUT_VERSION_FORCED-}" ] ; then
     NUT_VERSION_PREFER_GIT=false
 fi
 
+# The VERSION_DEFAULT file can be (re-)populated with UPDATE_FILE:
 if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_builddir}/VERSION_DEFAULT" ] ; then
+    # Should set NUT_VERSION_DEFAULT=X.Y.Z(.a.b...)
+    # Not practically used if NUT_VERSION_FORCED is set
     . "${abs_top_builddir}/VERSION_DEFAULT" || exit
     [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ x"${SRC_IS_GIT}" = xtrue ] || NUT_VERSION_PREFER_GIT=false ; }
 fi
@@ -146,6 +164,34 @@ fi
 
 # Must be "true" or "false" exactly, interpreted as such below:
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ x"${SRC_IS_GIT}" = xtrue ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
+
+##############################################################################
+# For tools/semver-compare.sh ($SEMVER_COMPARE):
+if [ -n "${NUT_VERSION_EXTRA_WIDTH-}" -a "${NUT_VERSION_EXTRA_WIDTH-}" -gt 6 ] 2>/dev/null ; then
+    :
+else
+    NUT_VERSION_EXTRA_WIDTH=6
+fi
+
+# Note we optionally NUT_VERSION_DEFAULT early in the script logic, far below
+if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+    NUT_VERSION_STRIP_LEADING_ZEROES=false
+fi
+
+# When padding extra width for e.g. comparisons, is 1.2.3 equal to 1.2.3.0.0?
+# Should we add those ".0" in the end?
+if [ -n "${NUT_VERSION_MIN_COMPONENTS-}" -a "${NUT_VERSION_MIN_COMPONENTS-}" -ge 0 ] 2>/dev/null ; then
+    # A number specified by caller is valid (positive integer)
+    :
+else
+    # Default or wrong spec - do not add components (might use NUT default 5)
+    NUT_VERSION_MIN_COMPONENTS=0
+fi
+
+export NUT_VERSION_EXTRA_WIDTH
+export NUT_VERSION_STRIP_LEADING_ZEROES
+export NUT_VERSION_MIN_COMPONENTS
+##############################################################################
 
 check_shallow_git() {
     if git log --oneline --decorate=short | tail -1 | $GREP -w grafted >&2 || [ 10 -gt `git log --oneline | wc -l` ] ; then
@@ -267,7 +313,7 @@ getver_git() {
     # 5-digit version, note we strip leading "v" from the expected TAG value
     # Note the commit count will be non-trivial even if this is commit tagged
     # as a final release but it is not (yet?) on the BASE branch!
-    VER5="`echo "${TAG}" | sed 's,^v,,'`.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${NUT_VERSION_GIT_TRUNK}..HEAD" | wc -l | tr -d ' '`"
+    VER5="`echo \"${TAG}\" | sed 's,^v,,'`.`git log --oneline \"${TAG}..${BASE}\" | wc -l | tr -d ' '`.`git log --oneline \"${NUT_VERSION_GIT_TRUNK}..HEAD\" | wc -l | tr -d ' '`"
     DESC5="${VER5}${SUFFIX}"
 
     # Strip up to two trailing zeroes for trunk snapshots and releases
@@ -276,7 +322,11 @@ getver_git() {
 
     # Leave exactly 3 components
     if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
-        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+            SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        else
+            SEMVER="`\"${SEMVER_COMPARE}\" --strip \"${NUT_VERSION_FORCED_SEMVER-}\"`"
+        fi
     else
         if [ -n "${TAG_PRERELEASE}" ] ; then
             # Actually report as SEMVER the version of (next) release
@@ -293,7 +343,11 @@ getver_default() {
     # We will collect this value as we go
     SEMVER=""
     if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
-        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" != xtrue ] ; then
+            SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+        else
+            SEMVER="`\"${SEMVER_COMPARE}\" --strip \"${NUT_VERSION_FORCED_SEMVER-}\"`"
+        fi
     fi
 
     # Similar to DESC_PRERELEASE filtering above, should yield non-trivial
@@ -301,7 +355,21 @@ getver_default() {
     # we can not say that this is a build based off old release N which
     # is a candidate for N+1, probably.
     SUFFIX=""
+    SUFFIX_DESC=""
     SUFFIX_PRERELEASE=""
+    TAG=""
+    DESC=""
+
+    # NOTE: We can not rely on SED supporting extended regular
+    # expressions, and those with BRE only/by default do not
+    # support alternations ("one of..." pipes in parentheses).
+    KEYWORD_PRERELEASE=""
+    case "${NUT_VERSION_DEFAULT}" in
+        *-rc*|*+rc*)        KEYWORD_PRERELEASE="rc" ;;
+        *-alpha*|*+alpha*)  KEYWORD_PRERELEASE="alpha" ;;
+        *-beta*|*+beta*)    KEYWORD_PRERELEASE="beta" ;;
+    esac
+
     case "${NUT_VERSION_DEFAULT}" in
         *-rc*|*-alpha*|*-beta*)
             # Assume triplet (possibly prefixed with `v`) + suffix
@@ -309,6 +377,7 @@ getver_default() {
             # FIXME: Check the assumption better!
             SUFFIX="`echo \"${NUT_VERSION_DEFAULT}\" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*([0-9]*|[-](rc|alpha|beta)[-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/'`" \
             && [ -n "${SUFFIX}" ] \
+            && SUFFIX_DESC="`echo \"${SUFFIX}\" | sed -e 's/[-]\('\"${KEYWORD_PRERELEASE}\"'\).*$//'`" \
             && SUFFIX_PRERELEASE="`echo \"${SUFFIX}\" | sed 's/^-*//'`" \
             && NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT}\" | sed -e 's/'\"${SUFFIX}\"'$//'`"
             ;;
@@ -319,24 +388,60 @@ getver_default() {
             # for the example above, `-2881+g45029249f` remains:
             tmpSUFFIX="`echo \"${NUT_VERSION_DEFAULT}\" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(.*\+(rc|alpha|beta)[+-]*[0-9][0-9]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
             || tmpSUFFIX=""
-            if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != "${NUT_VERSION_DEFAULT}" ] ; then
+            if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != x"${NUT_VERSION_DEFAULT}" ] ; then
                 # Extract tagged NUT version from that suffix
                 SUFFIX="${tmpSUFFIX}"
                 # for the example above, `v2.8.3+rc6` remains
-                tmpTAG_PRERELEASE="`echo \"${tmpSUFFIX}\" | sed 's/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[+]\(rc\|alpha\|beta\)[+-]*[0-9][0-9]*\)$/\1/'`" \
+                tmpTAG_PRERELEASE="`echo \"${tmpSUFFIX}\" | sed 's/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[+]\('\"${KEYWORD_PRERELEASE}\"'\)[+-]*[0-9][0-9]*\)$/\1/'`" \
                 || tmpTAG_PRERELEASE=""
-                if [ -n "${tmpTAG_PRERELEASE}" ] && [ x"${tmpSUFFIX}" != "${tmpTAG_PRERELEASE}" ] ; then
+                SUFFIX_DESC="`echo \"${SUFFIX}\" | sed -e 's/[+]v[0-9.][0-9.]*[+]\('\"${KEYWORD_PRERELEASE}\"'\).*$//'`"
+                if [ -n "${tmpTAG_PRERELEASE}" ] && [ x"${tmpSUFFIX}" != x"${tmpTAG_PRERELEASE}" ] ; then
                     # Replace back pluses to dashes for the tag
-                    TAG_PRERELEASE="v`echo "${tmpTAG_PRERELEASE}" | sed -e 's/[+]\(rc\|alpha\|beta\)/-\1/' -e 's/\(rc\|alpha\|beta\)[+]/\1-/'`"
+                    TAG_PRERELEASE="v`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[+]\('\"${KEYWORD_PRERELEASE}\"'\)/-\1/' -e 's/\('\"${KEYWORD_PRERELEASE}\"'\)[+]/\1-/'`"
                     if [ -z "${SEMVER}" ] ; then
                         # for the example above, `2.8.3` remains:
                         SEMVER="`echo \"${tmpTAG_PRERELEASE}\" | sed -e 's/[-+].*$//'`"
+                        if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" = xtrue ] ; then
+                            SEMVER="`\"${SEMVER_COMPARE}\" --strip \"${SEMVER}\"`"
+                        fi
                     fi
                     # for the example above, `rc6` remains:
                     SUFFIX_PRERELEASE="`echo \"${tmpTAG_PRERELEASE}\" | sed 's/^[^+-]*[+-]//'`"
                     # for the example above, `2.8.2.2878.3-2881+g45029249f` remains:
                     NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT}\" | sed -e 's/'\"${SUFFIX}\"'$//'`"
                 fi
+            fi
+            ;;
+        #*{0,1,2,3,4,5,6,7,8,9}-{0,1,2,3,4,5,6,7,8,9}*+g{0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,A,B,C,D,E,F}*)
+        *-*+g*)
+            # Assume a saved/forced non-RC value like `2.8.3.786-786+gadfdbe3ab`
+            tmpSUFFIX="`echo \"${NUT_VERSION_DEFAULT}\" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(\.[0-9][0-9]*)*(-[0-9][0-9]*\+g*[0-9a-fA-F][0-9a-fA-F]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
+            || tmpSUFFIX=""
+            if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != x"${NUT_VERSION_DEFAULT}" ] ; then
+                # Extract tagged NUT version from that suffix
+                SUFFIX="${tmpSUFFIX}"
+                NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT}\" | sed -e 's/'\"${SUFFIX}\"'$//'`"
+            fi
+            ;;
+        *+g*)
+            # Assume a saved/forced non-RC (buggy?) value like `2.8.3.786+gadfdbe3ab`
+            # and assume it meant but missed a "-0" for no commits since tag
+            tmpSUFFIX="`echo \"${NUT_VERSION_DEFAULT}\" | ${EGREP} '^v*[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*(\.[0-9][0-9]*)*(\+g*[0-9a-fA-F][0-9a-fA-F]*)$' | sed -e 's/^v*//' -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\([^0-9].*\)$/\2/' -e 's/^\(\.[0-9][0-9]*\)//' -e 's/^\(\.[0-9][0-9]*\)//'`" \
+            || tmpSUFFIX=""
+            if [ -n "${tmpSUFFIX}" ] && [ x"${tmpSUFFIX}" != x"${NUT_VERSION_DEFAULT}" ] ; then
+                # Extract tagged NUT version from that suffix
+                NUT_VERSION_DEFAULT="`echo \"${NUT_VERSION_DEFAULT}\" | sed -e 's/'\"${tmpSUFFIX}\"'$//'`"
+
+                # Sum up commits after tag (assuming 3 components are it) as the DESC offset
+                OFFSET="`echo \"${NUT_VERSION_DEFAULT}\" | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\.//'`"
+                if [ -n "${OFFSET}" -a x"${OFFSET}" != x"${NUT_VERSION_DEFAULT}" ] ; then
+                    OFFSET="`echo \"${OFFSET}\" | sed 's/\./ \+ /g'`"
+                    OFFSET="`expr $OFFSET`" && [ "${OFFSET}" -gt 0 ] || OFFSET=0
+                else
+                    OFFSET=0
+                fi
+
+                SUFFIX="-${OFFSET}${tmpSUFFIX}"
             fi
             ;;
     esac
@@ -371,7 +476,16 @@ getver_default() {
     if [ -z "${SEMVER}" ] ; then
         SEMVER="${NUT_VERSION_DEFAULT3}"
     fi
-    TAG="v${NUT_VERSION_DEFAULT3}${SUFFIX}"
+    if [ -z "${TAG}" ] ; then
+        TAG="v${NUT_VERSION_DEFAULT3}"
+    fi
+    if [ -z "${DESC}" ] ; then
+        if [ -z "${SUFFIX_DESC}" ] ; then
+            DESC="v${NUT_VERSION_DEFAULT3}${SUFFIX}"
+        else
+            DESC="v${NUT_VERSION_DEFAULT3}${SUFFIX_DESC}"
+        fi
+    fi
     if [ x"${TAG_PRERELEASE-}" = x ] ; then
         if [ x"${SUFFIX_PRERELEASE}" != x ] ; then
             TAG_PRERELEASE="v${NUT_VERSION_DEFAULT3}-${SUFFIX_PRERELEASE}"
@@ -389,9 +503,13 @@ report_debug() {
 report_output() {
     case "${NUT_VERSION_QUERY-}" in
         "DESC5")	echo "${DESC5}" ;;
+        "DESC5x"|"DESC5X")	"${SEMVER_COMPARE}" --expand "${DESC5}" ;;
         "DESC50")	echo "${DESC50}" ;;
+        "DESC50x"|"DESC50X")	"${SEMVER_COMPARE}" --expand "${DESC50}" ;;
         "VER5") 	echo "${VER5}" ;;
+        "VER5x"|"VER5X")	"${SEMVER_COMPARE}" --expand "${VER5}" ;;
         "VER50")	echo "${VER50}" ;;
+        "VER50x"|"VER50X")	"${SEMVER_COMPARE}" --expand "${VER50}" ;;
         "SEMVER")	echo "${SEMVER}" ;;
         "IS_RELEASE")	[ x"${SEMVER}" = x"${VER50}" ] && echo true || echo false ;;
         "IS_PRERELEASE")	[ x"${SUFFIX_PRERELEASE}" != x ] && echo true || echo false ;;
@@ -450,6 +568,10 @@ report_output() {
         *)		echo "${DESC50}" ;;
     esac
 }
+
+if [ x"${NUT_VERSION_STRIP_LEADING_ZEROES-}" = xtrue ] ; then
+    NUT_VERSION_DEFAULT="`\"${SEMVER_COMPARE}\" --strip \"${NUT_VERSION_DEFAULT-}\"`"
+fi
 
 DESC=""
 NUT_VERSION_TRIED_GIT=false

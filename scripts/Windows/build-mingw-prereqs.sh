@@ -19,6 +19,24 @@
 #   ARCH="`uname -s`-`uname -p`" ./scripts/Windows/build-mingw-prereqs.sh
 
 prepareEnv() {
+	[ -n "${GREP}" ] || {
+		GREP="`command -v grep`" \
+		&& [ x"${GREP}" != x ] \
+		|| { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; }
+	}
+	export GREP
+
+	[ -n "${EGREP}" ] || {
+		if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then
+			EGREP="$GREP -E"
+		else
+			EGREP="`command -v egrep`"
+		fi \
+		&& [ x"${EGREP}" != x ] \
+		|| { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; }
+	}
+	export EGREP
+
 	[ -n "${MAKE-}" ] || {
 		(command -v gmake) 2>/dev/null >/dev/null \
 		&& MAKE="gmake" \
@@ -233,7 +251,7 @@ provide_libmodbus_git() (
 			# there's nothing to change (avoid re-packaging of CI artifact cache)
 			cd "${DEP_DIRNAME}" && \
 			LOCAL_HASH="`git log -1 --format='%H'`" && \
-			OTHER_HASH="`git ls-remote \"${DEP_GITREPO}\" | grep -E '(refs/(heads|tags)/'\"${DEP_VERSION}\"'$|^'\"${DEP_VERSION}\"')' | awk '{print $1}'`" && \
+			OTHER_HASH="`git ls-remote \"${DEP_GITREPO}\" | ${EGREP} '(refs/(heads|tags)/'\"${DEP_VERSION}\"'$|^'\"${DEP_VERSION}\"')' | awk '{print $1}'`" && \
 			if [ x"${LOCAL_HASH}" = x"${OTHER_HASH}" ] ; then
 				echo "FETCH: Current git commit in '`pwd`' matches current '${DEP_VERSION}' in '${DEP_GITREPO}'" >&2
 			else
@@ -342,7 +360,7 @@ provide_libmodbus_git() (
 prepareEnv || exit
 
 echo "Prepared environment for $0:" >&2
-set | grep -E '^(ARCH|PREFIX|PREFIX_ROOT|PATH|MAKE|MAKEFLAGS|SUDO|DLDIR|WSDIR|CFLAGS|CXXFLAGS|LDFLAGS|PKG_CONFIG_PATH|BUILD_FLAG|HOST_FLAG|MINGW_CHOST|MINGW_PREFIX|MSYS2_PATH)=' >&2
+set | ${EGREP} '^(ARCH|PREFIX|PREFIX_ROOT|PATH|MAKE|MAKEFLAGS|SUDO|DLDIR|WSDIR|CFLAGS|CXXFLAGS|LDFLAGS|PKG_CONFIG_PATH|BUILD_FLAG|HOST_FLAG|MINGW_CHOST|MINGW_PREFIX|MSYS2_PATH)=' >&2
 
 # TODO: Loop, params, help, etc...
 # For now, let it pass "-f" to the builder
