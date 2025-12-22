@@ -84,6 +84,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 
 ifeq (1,$(NUTPKG_WITH_DMF))
 DEB_CONFIGURE_EXTRA_FLAGS += \
+			     --with-dmf=yes \
 			     --with-snmp_dmf_lua=yes \
 			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=yes --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
 endif

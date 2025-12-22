@@ -482,6 +482,7 @@ sh autogen.sh
 	--with-dev-libnutconf\
 %endif
 %if 0%{?NUTPKG_WITH_DMF}
+	--with-dmf\
 	--with-snmp_dmf_lua\
 	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=yes --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no\
 %endif
