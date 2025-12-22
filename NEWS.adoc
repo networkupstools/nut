@@ -303,6 +303,10 @@ several `FSD` notifications into one executed action. [PR #3097]
      provided 'confargs' etc.) [#3140]
    * Added configure script options for 'libregex' tuning, just so it is on par
      with our other optional dependencies. [#3140]
+   * Changed `--enable-extapi-enphase` to not default to `auto` and then get
+     installed on every system capable of using it; this is a niche capability
+     for users of specific devices via a cloud portal. [follow-up to PR #2813
+     for issue #2807]
 
  - Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
    include the source distribution (was posted for NUT v2.8.1 and v2.8.2

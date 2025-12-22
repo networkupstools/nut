@@ -6563,7 +6563,7 @@ nut_with_extapi_enphase="no"
 NUT_ARG_ENABLE([extapi-enphase], [(yes|no|auto)], [Enable installation of integration script for External API: Enphase Monitor], [no])
 
 AS_CASE([${nut_enable_extapi_enphase}],
-	[yes|""], [nut_enable_extapi_enphase="auto"],
+	[""], [nut_enable_extapi_enphase="yes"],
 	[auto|no], [],
 		[AC_MSG_ERROR([Unexpected argument for --enable-extapi-enphase=${nut_enable_extapi_enphase}])]
 )
