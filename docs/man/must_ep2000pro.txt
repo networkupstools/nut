@@ -15,18 +15,18 @@ SYNOPSIS
 *must_ep2000pro* -a 'DEVICE_NAME' ['OPTIONS']
 
 NOTE: This man page only documents the hardware-specific features of the
-must_ep2000pro driver.  For information about the core driver, see
+'must_ep2000pro' driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
 
 This driver supports MUST EP2000Pro compatible, line-interactive
-UPS with the following characteristics.
+UPS with the following characteristics:
 
 1. 12V or 24V external battery
 
-2. Connection: RS-232 or USB (by RS232-To-USB)
+2. Connection: RS-232 or USB (via RS232-to-USB converter dongle)
 
 Some models that may be covered by this driver:
 
@@ -40,11 +40,12 @@ Currently, it has only been tested on the following model:
 
 * Energy Smart.2 600W
 
-Generally, device doesn't have any identification data, so
-autodetection is not possible. Only one documented info is
-software version with unknown meaning.
+Generally, these device do not serve any identification data, so
+autodetection is not possible. Only one documented piece of info is
+"software version" with unknown meaning.
 
-must_ep2000pro uses the libmodbus project, for Modbus implementation.
+The `must_ep2000pro` driver uses the libmodbus project, for Modbus
+implementation.
 
 INSTALLATION
 ------------
@@ -53,7 +54,7 @@ This driver should be built by default if libmodbus and development headers
 are available. You can force the `configure` script to build it with the
 following arguments:
 
-    :; ./configure --with-serial=yes --with-modbus=yes
+	:; ./configure --with-serial=yes --with-modbus=yes
 
 You also need to give proper (R/W) permissions on the local serial device
 file to allow the NUT driver run-time user to access it. This may need
@@ -72,7 +73,7 @@ EXTRA ARGUMENTS
 This driver also supports the following optional settings:
 
 *lowbatt*='num'::
-Set the value of battery.charge.low to 'num'. Device itself has only switch off
+Set the value of `battery.charge.low` to 'num'. Device itself has only switch-off
 on low battery voltage.
 
 INSTANT COMMANDS
@@ -93,8 +94,11 @@ KNOWN PROBLEMS
 --------------
 
 If you run the *shutdown.return* command with mains present it does nothing.
-If you run the *shutdown.return* command without mains present it's poweroff
-device immediate. No any setting in device documentation for shutdown delay.
+
+If you run the *shutdown.return* command without mains present it immediately
+powers off the device.
+
+There is no setting in device documentation to specify a shutdown delay.
 
 AUTHOR
 ------
