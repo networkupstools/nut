@@ -99,9 +99,15 @@ SPELLCHECK_SRC = README.adoc
 # Produce an OBS preinstallimage recipe file from our SPEC and DSC resources,
 # to speed up PR and stable branch iteration builds (output of this processing
 # should be stored as a sibling OBS project "preinstallimage-nut" in the OBS
-# server):
+# server). Note that syntax for "one-of-options" installation accepted by deb
+# and rpm tooling differs: for DEB we need to list them without parentheses
+# and without spaces around the pipe character. Parentheses around version
+# constraints seem to be confusing, but spaces around comparison operators
+# seem to be optional, at least for the recipe syntax parser.
+# You can debug stacks of calls here by adding `| tee -a /dev/stderr \` layers
 _preinstallimage: nut.spec nut.dsc Makefile
-	( echo 'Name: preinstallimage-@PACKAGE_NAME@' ; \
+	@echo "  GENERATE-RECIPE	$@" ; \
+	 (echo 'Name: preinstallimage-@PACKAGE_NAME@' ; \
 	  echo '### Start of "if RPM"'; \
 	  echo '%if 0%{?rhel_version} || 0%{?rhel} || 0%{?sle_version} || 0%{?suse_version} || 0%{?centos_version} || 0%{?centos} || 0%{?fedora_version} || 0%{?fedora} || 0%{?opensuse_version}' ; \
 		cat nut.spec \
@@ -126,24 +132,19 @@ _preinstallimage: nut.spec nut.dsc Makefile
 		  }; \
 		  inBD { inBD=0; next; }; \
 		  END { print buf }; \
-		' nut.dsc | tee -a /dev/stderr | $(SED) \
+		' nut.dsc \
+		| $(SED) \
+		-e 's/[[:space:]]*//g' \
 		-e 's/,/\n/g' \
-		-e 's/^[[:space:]]*//g' \
-		-e 's/[[:space:]]*$$//g' \
-		 | tee -a /dev/stderr | $(SED) \
-		-e 's/(\([^)][^)]*\)\(>\|<\|=\|>=\|<=\|==\|!=\)\([^)][^)]*\))/ \1\2\3/g' \
-		-e 's/^\([^()][^()]*|[^()][^()]*\)$$/(\1)/' \
-		 | tee -a /dev/stderr | $(SED) \
+		-e 's/(\([^)][^)]*\)\(>\|<\|=\|>=\|<=\|==\|!=\)\([^)][^)]*\))/\1\2\3/g' \
 		-e 's/\[[^]]*\]//g' \
 		-e 's/<[^>]*>//g' \
 		-e 's/:any\|:native//g' \
-		-e 's/^[[:space:]]*//' \
-		-e 's/[[:space:]]*$$//' \
 		| $(GREP) -v '^\$$' \
 		| awk 'NF { printf "BuildRequires: %s\n", $$0 }'; \
 	  echo '%endif' ; \
 	  echo '### End of "if DEB"'; \
-	) > '$@'.tmp && [ -s '$@'.tmp ] && mv -f '$@'.tmp '$@'
+	 ) > '$@'.tmp && [ -s '$@'.tmp ] && mv -f '$@'.tmp '$@'
 
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
