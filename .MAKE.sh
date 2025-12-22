@@ -1,0 +1,1 @@
+./configure --prefix=/usr/local --sysconfdir=/etc/nut --with-modbus
