@@ -483,7 +483,7 @@ sh autogen.sh
 %endif
 %if 0%{?NUTPKG_WITH_DMF}
 	--with-snmp_dmf_lua\
-	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no\
+	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=yes --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no\
 %endif
 	--enable-keep_nut_report_feature\
 	--enable-strip\
