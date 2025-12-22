@@ -96,6 +96,57 @@ EXTRA_DIST += \
 
 SPELLCHECK_SRC = README.adoc
 
+# Produce an OBS preinstallimage recipe file from our SPEC and DSC resources,
+# to speed up PR and stable branch iteration builds (output of this processing
+# should be stored as a sibling OBS project "preinstallimage-nut" in the OBS
+# server). Note that syntax for "one-of-options" installation accepted by deb
+# and rpm tooling differs: for DEB we need to list them without parentheses
+# and without spaces around the pipe character. Parentheses around version
+# constraints seem to be confusing, but spaces around comparison operators
+# seem to be optional, at least for the recipe syntax parser.
+# You can debug stacks of calls here by adding `| tee -a /dev/stderr \` layers
+_preinstallimage: nut.spec nut.dsc Makefile
+	@echo "  GENERATE-RECIPE	$@" ; \
+	 (echo 'Name: preinstallimage-@PACKAGE_NAME@' ; \
+	  echo '### Start of "if RPM"'; \
+	  echo '%if 0%{?rhel_version} || 0%{?rhel} || 0%{?sle_version} || 0%{?suse_version} || 0%{?centos_version} || 0%{?centos} || 0%{?fedora_version} || 0%{?fedora} || 0%{?opensuse_version}' ; \
+		cat nut.spec \
+		| $(EGREP) '(% *(if|else|endif|define)|Requires:|Ignore:|Prefer:)' \
+		| $(EGREP) -v '(%{name} = %{version}|%{_s*bindir}/|python-base)' \
+		| $(SED) -e 's/^Requires:/BuildRequires:/' ; \
+	  echo '%endif' ; \
+	  echo '### End of "if RPM"'; \
+	  echo '# ---- blank ----'; \
+	  echo '### Start of "if DEB"'; \
+	  echo '%if 0%{?debian_version} || 0%{?debian} || 0%{?ubuntu_version} || 0%{?ubuntu}'; \
+		awk ' \
+		  /^Build-Depends(-Indep)?:/ { \
+		    inBD=1; \
+		    sub(/^Build-Depends(-Indep)?:[[:space:]]*/, ""); \
+		    buf = (buf ? buf "," : "") $$0; \
+		    next; \
+		  }; \
+		  inBD && /^[[:space:]]+/ { \
+		    buf = buf " " $$0; \
+		    next; \
+		  }; \
+		  inBD { inBD=0; next; }; \
+		  END { print buf }; \
+		' nut.dsc \
+		| $(SED) \
+		-e 's/[[:space:]]*//g' \
+		-e 's/,/\n/g' \
+		-e 's/(\([^)][^)]*\)\(>\|<\|=\|>=\|<=\|==\|!=\)\([^)][^)]*\))/\1\2\3/g' \
+		-e 's/\[[^]]*\]//g' \
+		-e 's/<[^>]*>//g' \
+		-e 's/:any\|:native//g' \
+		| $(GREP) -v '^\$$' \
+		| awk 'NF { printf "BuildRequires: %s\n", $$0 }'; \
+	  echo '%endif' ; \
+	  echo '### End of "if DEB"'; \
+	 ) > '$@'.tmp && [ -s '$@'.tmp ] && mv -f '$@'.tmp '$@'
+
+
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
@@ -117,5 +168,6 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) $(AM_MAKEFLAGS) -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 CLEANFILES = *-spellchecked
+CLEANFILES += _preinstallimage
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

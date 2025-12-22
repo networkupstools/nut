@@ -810,7 +810,7 @@ smf_registerInstance() {
         drivers=*|*,drivers=*)
             OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
             # Not double-quoting here to iterate the string tokens:
-            for DEPDRV in `echo "${_MED}" | $SED -e 's/^\(.*,d\|d\)rivers=//' -e 's/,/ /g'` ; do
+            for DEPDRV in `echo "${_MED}" | $SED -e 's/^drivers=//' -e 's/^.*,drivers=//' -e 's/,/ /g'` ; do
                 case "${DEPDRV}" in
                     *-*) # May be "drivername-upsname", where either sub-string
                          # may have dashes inside too; try to find the right one:
@@ -1096,7 +1096,7 @@ systemd_registerInstance() {
         drivers=*|*,drivers=*)
             OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
             # Not double-quoting here to iterate the string tokens:
-            for DEPDRV in `echo "${_MED}" | $SED -e 's/^\(.*,d\|d\)rivers=//' -e 's/,/ /g'` ; do
+            for DEPDRV in `echo "${_MED}" | $SED 's/^drivers=//' -e 's/^.*,drivers=//' -e 's/,/ /g'` ; do
                 case "${DEPDRV}" in
                     *-*) # May be "drivername-upsname", where either sub-string
                          # may have dashes inside too; try to find the right one:
