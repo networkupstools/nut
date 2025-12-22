@@ -1285,3 +1285,13 @@ If system doesn't have `pkg-config` or it fails to provides hints for
 some of the settings that are needed to set it up properly and the
 build in defaults are not right, you can specify the correct values
 for your system here.
+
+External API integrations
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	--enable-extapi-enphase
+
+For users of Enphase solar inverters and the Enlighten portal to monitor
+them in the cloud, this option adds a service and script to poll the portal
+and feed the information into the NUT linkman:dummy-ups[8] driver to see it
+as any other device.

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3649 utf-8
+personal_ws-1.1 en 3652 utf-8
 AAC
 AAS
 ABI
@@ -1028,6 +1028,7 @@ Powervar
 Powervar's
 Powerwell
 Prachi
+Preinstall
 Prereqs
 PresentStatus
 Priv
@@ -2020,6 +2021,7 @@ drvpath
 drwxr
 drwxrwx
 ds
+dsc
 dsi
 dsr
 dsssl
@@ -2921,6 +2923,7 @@ pragma
 pragmas
 pre
 preLaunchTask
+preinstallimage
 prepend
 prepended
 preprocess
