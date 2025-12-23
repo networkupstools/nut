@@ -100,6 +100,9 @@ powers off the device.
 
 There is no setting in device documentation to specify a shutdown delay.
 
+On development side: to write even a single register, you must use the
+"write multiple registers" command.
+
 AUTHOR
 ------
 
