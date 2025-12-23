@@ -1,0 +1,121 @@
+MUST_EP2000Pro(8)
+=================
+
+NAME
+----
+
+must_ep2000pro - Driver for MUST EP2000Pro UPS with
+RS-232 serial Modbus connection.
+
+SYNOPSIS
+--------
+
+*must_ep2000pro* -h
+
+*must_ep2000pro* -a 'DEVICE_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+'must_ep2000pro' driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This driver supports MUST EP2000Pro compatible, line-interactive
+UPS with the following characteristics:
+
+1. 12V or 24V external battery
+
+2. Connection: RS-232 or USB (via RS232-to-USB converter dongle)
+
+Some models that may be covered by this driver:
+
+* Original EP200Pro
+* Energy Smart.2
+* Luxeon UPS-500ZR
+* Bineos EP20-1000 PRO
+* any other work with original program from MUST
+
+Currently, it has only been tested on the following model:
+
+* Energy Smart.2 600W
+
+Generally, these device do not serve any identification data, so
+autodetection is not possible. Only one documented piece of info is
+"software version" with unknown meaning.
+
+The `must_ep2000pro` driver uses the libmodbus project, for Modbus
+implementation.
+
+INSTALLATION
+------------
+
+This driver should be built by default if libmodbus and development headers
+are available. You can force the `configure` script to build it with the
+following arguments:
+
+	:; ./configure --with-serial=yes --with-modbus=yes
+
+You also need to give proper (R/W) permissions on the local serial device
+file to allow the NUT driver run-time user to access it. This may need
+additional setup for start-up scripting, udev or upower rules, to apply
+the rights on every boot -- especially if your device nodes are tracked
+by a virtual filesystem.
+
+For example, a USB-to-serial converter can be identified as `/dev/ttyACM0`
+or `/dev/ttyUSB0` on Linux, or `/dev/ttyU0` on FreeBSD (note the capital "U").
+A built-in serial port can be identified as `/dev/ttyS0` on Linux or one of
+`/dev/cua*` names on FreeBSD.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver also supports the following optional settings:
+
+*lowbatt*='num'::
+Set the value of `battery.charge.low` to 'num'. Device itself has only switch-off
+on low battery voltage.
+
+INSTANT COMMANDS
+----------------
+
+This driver supports some instant commands (see linkman:upscmd[8]):
+
+*beeper.enable*::
+Enable the UPS beeper
+
+*beeper.disable*::
+Disable the UPS beeper
+
+*shutdown.return*::
+Turn off the load and wait for the power to return
+
+KNOWN PROBLEMS
+--------------
+
+If you run the *shutdown.return* command with mains present it does nothing.
+
+If you run the *shutdown.return* command without mains present it immediately
+powers off the device.
+
+There is no setting in device documentation to specify a shutdown delay.
+
+AUTHOR
+------
+
+Mikhail Mironov <mike@darkmike.ru>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* libmodbus home page: http://libmodbus.org
+* Simple data reader for similar device: https://github.com/reverieline/ep2000pro
