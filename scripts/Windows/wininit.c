@@ -3,7 +3,7 @@
 
    Copyright (C)
 	2010	Frederic Bohe <fredericbohe@eaton.com>
-	2021-2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2021-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -708,7 +708,7 @@ static void help(const char *arg_progname)
 	printf("including shutdown and power-off handling (where supported). All together they rely\n");
 	printf("on nut.conf and other files in %s\n", confpath());
 
-	printf("\nUsage: %s {start | stop}\n\n", arg_progname);
+	printf("\nUsage: %s {start | stop | status}\n\n", arg_progname);
 	printf("    start	Install as a service (%s) if not yet done, then `net start` it\n", SVCNAME);
 	printf("    stop	If the service (%s) is installed, command it to `net stop`\n", SVCNAME);
 	printf("Note you may have to run this in an elevated privilege command shell, or use `runas`\n");
@@ -733,37 +733,6 @@ int main(int argc, char **argv)
 {
 	int	i, default_opterr = opterr;
 	const char	*progname = xbasename(argc > 0 ? argv[0] : "nut.exe");
-
-	if (argc > 1) {
-		if (!strcmp(argv[1], "/?")) {
-			help(progname);
-			return EXIT_SUCCESS;
-		}
-
-		if (!strcmp(argv[1], "stop")) {
-			int ret;
-			if (SvcExists(SVCNAME) < 0)
-				fprintf(stderr, "WARNING: Can not access service \"%s\"", SVCNAME);
-
-			ret = system("net stop \"" SVCNAME "\"");
-			if (ret == 0)
-				return EXIT_SUCCESS;
-			fatalx(EXIT_FAILURE, "FAILED stopping %s: %i", SVCNAME, ret);
-		}
-
-		if (!strcmp(argv[1], "start")) {
-			int ret;
-			if (SvcExists(SVCNAME) < 0) {
-				fprintf(stderr, "WARNING: Can not access service \"%s\", registering first", SVCNAME);
-				SvcInstall(SVCNAME, NULL);
-			}
-
-			ret = system("net start \"" SVCNAME "\"");
-			if (ret == 0)
-				return EXIT_SUCCESS;
-			fatalx(EXIT_FAILURE, "FAILED starting %s: %i", SVCNAME, ret);
-		}
-	}
 
 	/* TODO: Do not warn about unknown args - pass them to SvcMain()
 	 * Currently neutered because that method ignores argc/argv de-facto.
@@ -797,10 +766,62 @@ int main(int argc, char **argv)
 				 * chars to '?' so we can not log what exactly was wrong.
 				 */
 				upsdebugx(1, "%s: unknown option ignored "
-					"(maybe SvcMain would use it later)",
-					progname);
+					"(maybe SvcMain would use it later): '%c'",
+					progname, i);
 				break;
 		}
+	}
+
+        /* Of short opts before this, primarily we might expect debug to be bumped */
+	if (argc > 1 && optind < argc) {
+		if (!strcmp(argv[optind], "/?")) {
+			help(progname);
+			return EXIT_SUCCESS;
+		}
+
+		if (!strcmp(argv[optind], "stop")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0)
+				fprintf(stderr, "WARNING: Can not access service \"%s\"\n", SVCNAME);
+
+			upsdebugx(1, "exec: net stop \"" SVCNAME "\"");
+			ret = system("net stop \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED stopping %s: %i", SVCNAME, ret);
+		}
+
+		if (!strcmp(argv[optind], "start")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0) {
+				fprintf(stderr, "WARNING: Can not access service \"%s\", registering first\n", SVCNAME);
+				SvcInstall(SVCNAME, NULL);
+			}
+
+			upsdebugx(1, "exec: net start \"" SVCNAME "\"");
+			ret = system("net start \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED starting %s: %i", SVCNAME, ret);
+		}
+
+		if (!strcmp(argv[optind], "status")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0) {
+				fprintf(stderr, "WARNING: Can not access service \"%s\"\n", SVCNAME);
+			}
+
+			upsdebugx(1, "exec: sc query \"" SVCNAME "\"");
+			ret = system("sc query \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED querying %s: %i", SVCNAME, ret);
+		}
+
+		fatalx(EXIT_FAILURE, "Unknown option: %s", argv[optind]);
 	}
 
 	optind = 0;
