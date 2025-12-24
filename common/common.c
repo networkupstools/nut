@@ -1836,7 +1836,7 @@ char * getfullpath(char * relative_path)
 					 */
 					int	depth = 0;
 
-					for (last_slash = prefix_in_buf + len_PREFIX; last_slash; last_slash++) {
+					for (last_slash = prefix_in_buf + len_PREFIX; *last_slash; last_slash++) {
 						if ( (*last_slash == '/' || *last_slash == '\\')
 						 &&  (*(last_slash+1) != '\0')
 						 &&  (*(last_slash+1) != '\\')
