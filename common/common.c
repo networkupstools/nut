@@ -5348,66 +5348,209 @@ int match_regex_hex(const regex_t *preg, const int n)
 }
 #endif	/* HAVE_LIBREGEX */
 
-/* NOT THREAD SAFE!
+/* NOT THREAD-SAFE WHERE MARKED!
  * Helpers to convert one IP address to string from different structure types
- * Return pointer to internal buffer, or NULL and errno upon errors */
-const char *inet_ntopSS(struct sockaddr_storage *s)
-{
-	static char str[40];
+ * Return pointer to provided (or internal, or allocated) buffer, or NULL and
+ * errno upon errors.
+ * WARNING: Do not fence this compilation with NUT_WANT_INET_NTOP_XX macro as
+ * used in header (although maybe consider moving it to another libcommon*?)
+ */
 
+/* https://stackoverflow.com/a/29147085/4715872
+ * obviously INET6_ADDRSTRLEN is expected to be larger
+ * than INET_ADDRSTRLEN, but this may be required in case
+ * if for some unexpected reason IPv6 is not supported, and
+ * INET6_ADDRSTRLEN is defined as 0
+ * but this is not very likely and I am aware of no cases of
+ * this in practice (editor)
+ */
+#define INETADDRBUF_SIZE	(MAX(40, MAX(INET6_ADDRSTRLEN, INET_ADDRSTRLEN) + 1))
+
+const char *inet_ntopSS(struct sockaddr_storage *s, char *addrstr, size_t addrstrsz)
+{
 	if (!s) {
 		errno = EINVAL;
 		return NULL;
 	}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	switch (s->ss_family)
 	{
 	case AF_INET:
-		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), str, 16);
+		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), addrstr, MIN(16, addrstrsz));
 	case AF_INET6:
-		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), str, 40);
+		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), addrstr, MIN(40, addrstrsz));
 	default:
 		errno = EAFNOSUPPORT;
 		return NULL;
 	}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 }
 
-const char *inet_ntopAI(struct addrinfo *ai)
+const char *inet_ntopSS_thread_unsafe(struct sockaddr_storage *s)
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	static char addrstr[INETADDRBUF_SIZE];
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	return inet_ntopSS(s, addrstr, sizeof(addrstr));
+}
+
+const char *xinet_ntopSS(struct sockaddr_storage *s)
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	const char	*ret;
+
+	if (!addrstr)
+		return NULL;
+	ret = inet_ntopSS(s, addrstr, INETADDRBUF_SIZE);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	if (ret) /* non-null pointer to our buffer */
+		return addrstr;
+
+	/* if error */
+	free(addrstr);
+	return NULL;
+}
+
+const char *inet_ntopAI(struct addrinfo *ai, char *addrstr, size_t addrstrsz)
 {
 	/* Note: below we manipulate copies of ai - cannot cast into
 	 * specific structure type pointers right away because:
 	 *   error: cast from 'struct sockaddr *' to 'struct sockaddr_storage *'
 	 *          increases required alignment from 2 to 8
 	 */
-	/* https://stackoverflow.com/a/29147085/4715872
-	 * obviously INET6_ADDRSTRLEN is expected to be larger
-	 * than INET_ADDRSTRLEN, but this may be required in case
-	 * if for some unexpected reason IPv6 is not supported, and
-	 * INET6_ADDRSTRLEN is defined as 0
-	 * but this is not very likely and I am aware of no cases of
-	 * this in practice (editor)
-	 */
-	static char	addrstr[(INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1];
-
 	if (!ai || !ai->ai_addr) {
 		errno = EINVAL;
 		return NULL;
 	}
 
 	addrstr[0] = '\0';
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	switch (ai->ai_family) {
 		case AF_INET: {
 			struct sockaddr_in	addr_in;
 			memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
-			return inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, INET_ADDRSTRLEN);
+			return inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, MIN(INET_ADDRSTRLEN, addrstrsz));
 		}
 		case AF_INET6: {
 			struct sockaddr_in6	addr_in6;
 			memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
-			return inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, INET6_ADDRSTRLEN);
+			return inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, MIN(INET6_ADDRSTRLEN, addrstrsz));
 		}
 		default:
 			errno = EAFNOSUPPORT;
 			return NULL;
 	}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+}
+
+const char *inet_ntopAI_thread_unsafe(struct addrinfo *ai)
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	static char	addrstr[INETADDRBUF_SIZE];
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	return inet_ntopAI(ai, addrstr, sizeof(addrstr));
+}
+
+const char *xinet_ntopAI(struct addrinfo *ai)
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	const char	*ret;
+
+	if (!addrstr)
+		return NULL;
+	ret = inet_ntopAI(ai, addrstr, INETADDRBUF_SIZE);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	if (ret) /* non-null pointer to our buffer */
+		return addrstr;
+
+	/* if error */
+	free(addrstr);
+	return NULL;
 }

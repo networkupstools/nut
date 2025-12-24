@@ -493,13 +493,15 @@ static void setuptcp(stype_t *server)
 		}
 
 		if (ai->ai_next) {
-			const char *ipaddr = inet_ntopAI(ai);
+			const char *ipaddr = xinet_ntopAI(ai);
 			upslogx(LOG_WARNING,
 				"setuptcp: bound to %s%s%s but there seem to be "
 				"further (ignored) addresses resolved for this name",
 				server->addr,
 				ipaddr == NULL ? "" : " as ",
-				ipaddr == NULL ? "" : ipaddr);
+				ipaddr == NULL ? "" : NUT_STRARG(ipaddr));
+			if (ipaddr)
+				free((char*)ipaddr);
 		}
 
 		server->sock_fd = sock_fd;
@@ -824,7 +826,7 @@ static void client_connect(stype_t *server)
 
 	time(&client->last_heard);
 
-	client->addr = xstrdup(inet_ntopSS(&csock));
+	client->addr = (char*)xinet_ntopSS(&csock);
 
 	client->tracking = 0;
 

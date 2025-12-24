@@ -83,6 +83,9 @@ https://github.com/networkupstools/nut/milestone/12
    * Revised detection of (relative) paths to program and configuration files
      near the currently running program in NUT for Windows builds. [issues #3207,
      #3063, #3065, #3219]
+   * Fixed thread-safety of IP address printout in `libupsclient` method
+    `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
+    [issue #3234]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
