@@ -1764,15 +1764,15 @@ char * getfullpath(char * relative_path)
 
 	if (!len_PREFIX) {
 		len_PREFIX = strlen(PREFIX);
-		upsdebugx(6, "%s: PREFIX (len=%" PRIuSIZE"):\t'%s'", __func__, len_PREFIX, PREFIX);
+		upsdebugx(6, "%s: built-in PREFIX (len=%" PRIuSIZE"):\t'%s'", __func__, len_PREFIX, PREFIX);
 	}
 
 	if (GetModuleFileName(NULL, buf, sizeof(buf)) == 0) {
 		return NULL;
 	}
 
-	upsdebugx(5, "%s: relative_path:\t'%s'", __func__, NUT_STRARG(relative_path));
-	upsdebugx(5, "%s: GetModuleFileName:\t'%s'", __func__, buf);
+	upsdebugx(5, "%s: passed relative_path:\t'%s'", __func__, NUT_STRARG(relative_path));
+	upsdebugx(5, "%s: GetModuleFileName (buf):\t'%s'", __func__, buf);
 
 	/* remove trailing executable name and its preceeding slash */
 	last_slash = strrchr(buf, '\\');
