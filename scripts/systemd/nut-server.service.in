@@ -57,7 +57,7 @@ SyslogIdentifier=%N
 # Note: foreground mode "-F" by default skips writing a PID file (and
 # needs default Type=simple); we can use "-FF" here to create the file
 # anyway, so that old "upsd -c reload" works rather than systemd action:
-ExecCondition=@SBINDIR@/sh -c '[ "$MODE" != "netclient" ]'
+ExecCondition=/bin/sh -c '[ "$MODE" != "netclient" ]'
 ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
 ExecStart=@SBINDIR@/upsd @SYSTEMD_DAEMON_ARGS_UPSD@
 ExecReload=@SBINDIR@/upsd -c reload -P $MAINPID
