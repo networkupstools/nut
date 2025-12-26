@@ -425,6 +425,7 @@ static void setuptcp(stype_t *server)
 		}
 		serverAnyV6 = NULL;
 
+		/* Splitting "LISTEN * [port]" was a special case, closed */
 		return;
 	}
 
@@ -509,13 +510,15 @@ static void setuptcp(stype_t *server)
 	}
 
 #ifdef WIN32
+	if (VALID_FD_SOCK(server->sock_fd)) {
 		server->Event = CreateEvent(NULL, /* Security */
-				FALSE, /* auto-reset */
-				FALSE, /* initial state */
-				NULL); /* no name */
+			FALSE, /* auto-reset */
+			FALSE, /* initial state */
+			NULL); /* no name */
 
 		/* Associate socket event to the socket via its Event object */
-		WSAEventSelect( server->sock_fd, server->Event, FD_ACCEPT );
+		WSAEventSelect(server->sock_fd, server->Event, FD_ACCEPT);
+	}
 #endif	/* WIN32 */
 
 	freeaddrinfo(res);
