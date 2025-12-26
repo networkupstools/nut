@@ -362,7 +362,8 @@ several `FSD` notifications into one executed action. [PR #3097]
    system conforming to FHS-3.0 standard where that location is absent or
    is a symlink, while `/run` exists and is a true directory. [#3099]
 
- - Augmented `nut.exe` launcher with a `status` action. [PR #3235]
+ - Augmented `nut.exe` launcher with a `status` action and ability to
+   debug-log the activities during service management operations. [PR #3235]
 
  - Revised CI and deliverable scripts, and Makefile recipes, to not use
    the verbatim `grep -E` (loudly preferred by newer systems, but may be
