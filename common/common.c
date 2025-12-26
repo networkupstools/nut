@@ -978,22 +978,8 @@ char * getprocname(pid_t pid)
 
 			/* Fall through to try /proc etc. if available */
 		} else {
-			LPVOID WinBuf;
-			DWORD WinErr = GetLastError();
-			FormatMessage(
-				FORMAT_MESSAGE_MAX_WIDTH_MASK |
-				FORMAT_MESSAGE_ALLOCATE_BUFFER |
-				FORMAT_MESSAGE_FROM_SYSTEM |
-				FORMAT_MESSAGE_IGNORE_INSERTS,
-				NULL,
-				WinErr,
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-				(LPTSTR) &WinBuf,
-				0, NULL );
-
-			upsdebugx(3, "%s: failed to get WIN32 process info: %s",
-				__func__, (char *)WinBuf);
-			LocalFree(WinBuf);
+			upsdebug_with_errno(3,
+				"%s: failed to get WIN32 process info", __func__);
 		}
 	}
 #endif	/* WIN32 */
@@ -1768,6 +1754,9 @@ char * getfullpath(char * relative_path)
 	}
 
 	if (GetModuleFileName(NULL, buf, sizeof(buf)) == 0) {
+		upsdebug_with_errno(3,
+			"%s: failed to get WIN32 process info "
+			"with GetModuleFileName() of current program", __func__);
 		return NULL;
 	}
 
