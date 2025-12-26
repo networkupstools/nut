@@ -107,6 +107,10 @@ and try to start this service.
 *stop*::
 Try to stop a Windows service called "Network UPS Tools".
 
+*restart*::
+Try to stop a Windows service called "Network UPS Tools" (do not fail if
+we can not), then try to install it (if not yet done) and start it.
+
 *status*::
 Try to query status of a Windows service called "Network UPS Tools".
 

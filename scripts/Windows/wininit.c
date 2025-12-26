@@ -751,6 +751,8 @@ static void help(const char *arg_progname)
 	printf("\nUsage: %s {start | stop | status}\n\n", arg_progname);
 	printf("    start	Install as a service (%s) if not yet done, then `net start` it\n", SVCNAME);
 	printf("    stop	If the service (%s) is installed, command it to `net stop`\n", SVCNAME);
+	printf("    restart	'stop' (do not fail), then 'start' (register '%s' as needed)\n", SVCNAME);
+	printf("    status	Query system for current status of service '%s'\n", SVCNAME);
 	printf("Note you may have to run this in an elevated privilege command shell, or use `runas`\n");
 
 	printf("\nUsage: %s [OPTION]\n\n", arg_progname);
@@ -838,6 +840,33 @@ int main(int argc, char **argv)
 				fprintf(stderr, "WARNING: Can not access service \"%s\", registering first\n", SVCNAME);
 				SvcInstall(SVCNAME, NULL);
 			}
+
+			upsdebugx(1, "exec: net start \"" SVCNAME "\"");
+			ret = system("net start \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED starting %s: %i", SVCNAME, ret);
+		}
+
+		if (!strcmp(argv[optind], "restart")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0)
+				fprintf(stderr, "WARNING: Can not access service \"%s\"\n", SVCNAME);
+
+			upsdebugx(1, "exec: net stop \"" SVCNAME "\"");
+			ret = system("net stop \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret != 0)
+				fprintf(stderr, "WARNING: FAILED stopping %s: %i", SVCNAME, ret);
+
+			if (SvcExists(SVCNAME) < 0) {
+				fprintf(stderr, "WARNING: Can not access service \"%s\", registering first\n", SVCNAME);
+				SvcInstall(SVCNAME, NULL);
+			}
+
+			/* FIXME: Query service status if it is stopping */
+			Sleep(15000);
 
 			upsdebugx(1, "exec: net start \"" SVCNAME "\"");
 			ret = system("net start \"" SVCNAME "\"");
