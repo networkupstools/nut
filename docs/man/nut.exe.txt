@@ -125,7 +125,13 @@ initialization while not running in a service context.
 Most of normal logging from *nut.exe* goes to the Windows Event Log.
 
 Launched NUT programs may emit messages of their own; their fate when no
-console is attached is questionable.
+console is attached is questionable. The service may be cheerfully "running"
+(as long as `MODE=...` is set in `nut.conf`), but specific daemons under it
+might refuse to start. For example, it may be troublesome to see (without
+perusing the Windows Event Log, Applications section) whether they are missing
+some configuration file or entry. You may have to launch respective daemons
+manually to check what they complain about, or use *nut.exe -N* mode,
+all with raised NUT debug verbosity settings.
 
 SEE ALSO
 --------
