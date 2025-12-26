@@ -484,7 +484,7 @@ void upsdrv_initups(void)
 
 		upslogx(LOG_INFO, "Will poll apcupsd at IPv%s address %s port %" PRIu16,
 			(host->ai_family == AF_INET ? "4" : (host->ai_family == AF_INET6 ? "6" : "?")),
-			NUT_STRARG(inet_ntopAI(host)), port);
+			NUT_STRARG(inet_ntopAI_thread_unsafe(host)), port);
 	} else if(res) {
 		freeaddrinfo(res);
 	}
