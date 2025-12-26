@@ -1543,6 +1543,7 @@ static void mainloop(void)
 
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "%s", __func__);
+		usleep(100000);	/* 0.1 sec */
 		return;
 	}
 
@@ -1767,6 +1768,7 @@ static void mainloop(void)
 		err = err; /* remove compile time warning */
 		upslog_with_errno(LOG_ERR, "%s", __func__);
 		upsdebugx(2, "%s: wait failed: code 0x%" PRIx64, __func__, err);
+		Sleep(100);	/* 0.1 sec */
 		return;
 	}
 
@@ -1799,6 +1801,7 @@ static void mainloop(void)
 	if (ret >= nfds) {
 		/* Array indexes are [0..nfds-1] */
 		upsdebugx(2, "%s: unexpected response to query about data available: %" PRIu64, __func__, ret);
+		Sleep(100);	/* 0.1 sec */
 		return;
 	}
 
