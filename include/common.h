@@ -117,6 +117,13 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+#ifndef MAX
+# define	MAX(p,q)	(((p) >= (q)) ? (p) : (q))
+#endif
+#ifndef MIN
+# define	MIN(p,q)	(((p) <= (q)) ? (p) : (q))
+#endif
+
 /* POSIX requires these, and most but not all systems use same
  * magical numbers for the file descriptors... yep, not all do!
  */
@@ -451,11 +458,17 @@ const char * rootpidpath(void);
 void check_unix_socket_filename(const char *fn);
 
 #ifdef NUT_WANT_INET_NTOP_XX
-/* NOT THREAD SAFE!
- * Helpers to convert one IP address to string from different structure types
- * Return pointer to internal buffer, or NULL and errno upon errors */
-const char *inet_ntopSS(struct sockaddr_storage *s);
-const char *inet_ntopAI(struct addrinfo *ai);
+/* Helpers to convert one IP address to string from different structure types
+ * Return pointer to internal buffer (in NOT THREAD SAFE! methods named as such)
+ * or caller-provided buffer or an allocated buffer that caller must free (in
+ * the "x" methods), or NULL and errno upon errors */
+const char *inet_ntopSS(struct sockaddr_storage *s, char *addrstr, size_t addrstrsz);
+const char *inet_ntopSS_thread_unsafe(struct sockaddr_storage *s);
+const char *xinet_ntopSS(struct sockaddr_storage *s);
+
+const char *inet_ntopAI(struct addrinfo *ai, char *addrstr, size_t addrstrsz);
+const char *inet_ntopAI_thread_unsafe(struct addrinfo *ai);
+const char *xinet_ntopAI(struct addrinfo *ai);
 #endif	/* NUT_WANT_INET_NTOP_XX */
 
 /* Provide integration for systemd inhibitor interface (where available,

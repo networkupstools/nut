@@ -1164,9 +1164,11 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			    ups->upserror == UPSCLI_ERR_CONNFAILURE &&
 			    ups->syserrno == ETIMEDOUT
 			) {
-				const char	*addrstr = inet_ntopAI(ai);
+				const char	*addrstr = xinet_ntopAI(ai);
 				upslogx(LOG_WARNING, "%s: Connection to host timed out: '%s'",
 					__func__, (addrstr && *addrstr) ? addrstr : NUT_STRARG(host));
+				if (addrstr)
+					free((char*)addrstr);
 				break;
 			}
 			continue;
