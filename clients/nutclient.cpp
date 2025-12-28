@@ -794,7 +794,7 @@ bool Client::hasFeature(const Feature& feature)
 TcpClient::TcpClient():
 Client(),
 _host("localhost"),
-_port(3493),
+_port(PORT),
 _timeout(0),
 _socket(new internal::Socket)
 {
