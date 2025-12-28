@@ -1696,7 +1696,7 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t 
 			return -1;
 		}
 
-		*port = PORT;
+		*port = NUT_PORT;
 		return 0;
 	}
 
@@ -1752,7 +1752,7 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 
 		/* no port specified, use default */
 		if (((s = strtok_r(NULL, "\0", &last)) == NULL) || (*s != ':')) {
-			*port = PORT;
+			*port = NUT_PORT;
 			return 0;
 		}
 	} else {
@@ -1765,7 +1765,7 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 
 		/* no port specified, use default */
 		if (s == NULL) {
-			*port = PORT;
+			*port = NUT_PORT;
 			return 0;
 		}
 	}

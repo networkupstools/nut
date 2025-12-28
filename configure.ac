@@ -4700,11 +4700,11 @@ AC_MSG_CHECKING(network port number)
 NUT_ARG_WITH([port], [PORTNUM], [port for network communications], [3493])
 
 AS_IF([(test 0 -lt "${nut_with_port}" && test 65536 -gt "${nut_with_port}") 2>/dev/null],
-	[PORT="${nut_with_port}"],
+	[NUT_PORT="${nut_with_port}"],
 	[AC_MSG_ERROR(invalid option --with(out)-port - see docs/configure.txt)]
 )
-AC_MSG_RESULT(${PORT})
-AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
+AC_MSG_RESULT(${NUT_PORT})
+AC_DEFINE_UNQUOTED(NUT_PORT, ${NUT_PORT}, [Port for NUT network communications])
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(facility for syslog)
@@ -6142,7 +6142,7 @@ AC_SUBST(LDFLAGS_NUT_RPATH)
 AC_SUBST(LDFLAGS_NUT_RPATH_CXX)
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
-AC_SUBST(PORT)
+AC_SUBST(NUT_PORT)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(SUN_LIBUSB)

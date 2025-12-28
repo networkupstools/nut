@@ -492,9 +492,9 @@ sh autogen.sh
 ### via Make now ### (cd tools; python nut-snmpinfo.py)
 
 make %{?_smp_mflags}
-PORT=$(sed -n 's/#define PORT //p' config.log)
-if test "$PORT" = 3493 ; then
-    PORT=nut
+NUT_PORT=$(sed -n 's/#define NUT_PORT //p' config.log)
+if test "$NUT_PORT" = 3493 ; then
+    NUT_PORT=nut
 fi
 
 %check

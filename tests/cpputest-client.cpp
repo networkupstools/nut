@@ -87,11 +87,11 @@ class NutActiveClientTest : public CppUnit::TestFixture
 
 private:
 	/* Fed by caller via envvars: */
-	uint16_t NUT_PORT = 0;
-	std::string NUT_USER = "";
-	std::string NUT_PASS = "";
-	std::string NUT_PRIMARY_DEVICE = "";
-	std::string NUT_SETVAR_DEVICE = "";
+	uint16_t env_NUT_PORT = 0;
+	std::string env_NUT_USER = "";
+	std::string env_NUT_PASS = "";
+	std::string env_NUT_PRIMARY_DEVICE = "";
+	std::string env_NUT_SETVAR_DEVICE = "";
 
 public:
 	void setUp() override;
@@ -125,7 +125,7 @@ strarr stringvector_to_strarr(const std::vector<std::string>& strset);
 
 void NutActiveClientTest::setUp()
 {
-	/* NUT_PORT etc. are provided by external test suite driver */
+	/* NUT_PORT etc. env vars are provided by external test suite driver */
 	char * s;
 
 	s = std::getenv("NUT_PORT");
@@ -134,29 +134,29 @@ void NutActiveClientTest::setUp()
 		if (l < 1 || l > 65535) {
 			throw std::runtime_error("NUT_PORT specified by caller is out of range");
 		}
-		NUT_PORT = static_cast<uint16_t>(l);
+		env_NUT_PORT = static_cast<uint16_t>(l);
 	} else {
 		throw std::runtime_error("NUT_PORT not specified by caller, NIT should call this test");
 	}
 
 	s = std::getenv("NUT_USER");
 	if (s) {
-		NUT_USER = s;
+		env_NUT_USER = s;
 	} // else stays empty
 
 	s = std::getenv("NUT_PASS");
 	if (s) {
-		NUT_PASS = s;
+		env_NUT_PASS = s;
 	} // else stays empty
 
 	s = std::getenv("NUT_PRIMARY_DEVICE");
 	if (s) {
-		NUT_PRIMARY_DEVICE = s;
+		env_NUT_PRIMARY_DEVICE = s;
 	} // else stays empty
 
 	s = std::getenv("NUT_SETVAR_DEVICE");
 	if (s) {
-		NUT_SETVAR_DEVICE = s;
+		env_NUT_SETVAR_DEVICE = s;
 	} // else stays empty
 }
 
@@ -165,7 +165,7 @@ void NutActiveClientTest::tearDown()
 }
 
 void NutActiveClientTest::test_query_ver() {
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c("localhost", env_NUT_PORT);
 	std::string s;
 
 	std::cerr << "[D] C++ NUT Client lib test running against Data Server at: "
@@ -219,7 +219,7 @@ void NutActiveClientTest::test_query_ver() {
 }
 
 void NutActiveClientTest::test_list_ups() {
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c("localhost", env_NUT_PORT);
 	std::set<std::string> devs;
 	bool noException = true;
 
@@ -251,12 +251,12 @@ void NutActiveClientTest::test_list_ups() {
 }
 
 void NutActiveClientTest::test_list_ups_clients() {
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c("localhost", env_NUT_PORT);
 	std::map<std::string, std::set<std::string>> deviceClients;
 	bool noException = true;
 
 	try {
-		c.authenticate(NUT_USER, NUT_PASS);
+		c.authenticate(env_NUT_USER, env_NUT_PASS);
 		std::cerr << "[D] Authenticated without exceptions" << std::endl;
 		/* Note: no high hopes here, credentials are checked by server
 		 * when running critical commands, not at auth request itself */
@@ -268,7 +268,7 @@ void NutActiveClientTest::test_list_ups_clients() {
 	}
 
 	try {
-		c.deviceLogin(NUT_PRIMARY_DEVICE);
+		c.deviceLogin(env_NUT_PRIMARY_DEVICE);
 	}
 	catch(nut::NutException& ex)
 	{
@@ -313,15 +313,15 @@ void NutActiveClientTest::test_list_ups_clients() {
 }
 
 void NutActiveClientTest::test_auth_user() {
-	if (NUT_USER.empty()) {
+	if (env_NUT_USER.empty()) {
 		std::cerr << "[D] SKIPPING test_auth_user()" << std::endl;
 		return;
 	}
 
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c("localhost", env_NUT_PORT);
 	bool noException = true;
 	try {
-		c.authenticate(NUT_USER, NUT_PASS);
+		c.authenticate(env_NUT_USER, env_NUT_PASS);
 		std::cerr << "[D] Authenticated without exceptions" << std::endl;
 		/* Note: no high hopes here, credentials are checked by server
 		 * when running critical commands, not at auth request itself */
@@ -332,22 +332,22 @@ void NutActiveClientTest::test_auth_user() {
 		noException = false;
 	}
 
-	if (!NUT_SETVAR_DEVICE.empty()) {
+	if (!env_NUT_SETVAR_DEVICE.empty()) {
 		try {
 			TrackingResult tres;
 			TrackingID tid;
 			int i;
 			std::string nutVar = "ups.status"; /* Has a risk of flip-flop with NIT dummy setup */
-			std::string s1 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+			std::string s1 = c.getDeviceVariableValue(env_NUT_SETVAR_DEVICE, nutVar)[0];
 			std::string sTest = s1 + "-test";
 
-			std::cerr << "[D] Got initial device '" << NUT_SETVAR_DEVICE
+			std::cerr << "[D] Got initial device '" << env_NUT_SETVAR_DEVICE
 				<< "' variable '" << nutVar << "' value: " << s1 << std::endl;
 			CPPUNIT_ASSERT_MESSAGE(
 				"Did not expect empty value here",
 				!s1.empty());
 
-			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, sTest);
+			tid = c.setDeviceVariable(env_NUT_SETVAR_DEVICE, nutVar, sTest);
 			while ( (tres = c.getTrackingResult(tid)) == PENDING) {
 				usleep(100);
 			}
@@ -366,7 +366,7 @@ void NutActiveClientTest::test_auth_user() {
 			 */
 			std::string s2;
 			for (i = 0; i < 100 ; i++) {
-				s2 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+				s2 = c.getDeviceVariableValue(env_NUT_SETVAR_DEVICE, nutVar)[0];
 				if (s2 == sTest)
 					break;
 				usleep(100000);
@@ -376,7 +376,7 @@ void NutActiveClientTest::test_auth_user() {
 				<< std::endl;
 
 			/* Fix it back */
-			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, s1);
+			tid = c.setDeviceVariable(env_NUT_SETVAR_DEVICE, nutVar, s1);
 			while ( (tres = c.getTrackingResult(tid)) == PENDING) {
 				usleep(100);
 			}
@@ -387,7 +387,7 @@ void NutActiveClientTest::test_auth_user() {
 			}
 			std::string s3;
 			for (i = 0; i < 100 ; i++) {
-				s3 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+				s3 = c.getDeviceVariableValue(env_NUT_SETVAR_DEVICE, nutVar)[0];
 				if (s3 == s1)
 					break;
 				usleep(100000);
@@ -434,15 +434,15 @@ void NutActiveClientTest::test_auth_user() {
 }
 
 void NutActiveClientTest::test_auth_primary() {
-	if (NUT_USER.empty() || NUT_PRIMARY_DEVICE.empty()) {
+	if (env_NUT_USER.empty() || env_NUT_PRIMARY_DEVICE.empty()) {
 		std::cerr << "[D] SKIPPING test_auth_primary()" << std::endl;
 		return;
 	}
 
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c("localhost", env_NUT_PORT);
 	bool noException = true;
 	try {
-		c.authenticate(NUT_USER, NUT_PASS);
+		c.authenticate(env_NUT_USER, env_NUT_PASS);
 		std::cerr << "[D] Authenticated without exceptions" << std::endl;
 	}
 	catch(nut::NutException& ex)
@@ -453,31 +453,31 @@ void NutActiveClientTest::test_auth_primary() {
 	}
 
 	try {
-		Device d = c.getDevice(NUT_PRIMARY_DEVICE);
+		Device d = c.getDevice(env_NUT_PRIMARY_DEVICE);
 		bool gotPrimary = false;
 		bool gotMaster = false;
 
 		try {
-			c.deviceMaster(NUT_PRIMARY_DEVICE);
+			c.deviceMaster(env_NUT_PRIMARY_DEVICE);
 			gotMaster = true;
 			std::cerr << "[D] Elevated as MASTER without exceptions" << std::endl;
 		}
 		catch(nut::NutException& ex)
 		{
 			std::cerr << "[D] Could not elevate as MASTER for "
-				<< "NUT_PRIMARY_DEVICE " << NUT_PRIMARY_DEVICE << ": "
+				<< "NUT_PRIMARY_DEVICE " << env_NUT_PRIMARY_DEVICE << ": "
 				<< ex.what() << std::endl;
 		}
 
 		try {
-			c.devicePrimary(NUT_PRIMARY_DEVICE);
+			c.devicePrimary(env_NUT_PRIMARY_DEVICE);
 			gotPrimary = true;
 			std::cerr << "[D] Elevated as PRIMARY without exceptions" << std::endl;
 		}
 		catch(nut::NutException& ex)
 		{
 			std::cerr << "[D] Could not elevate as PRIMARY for "
-				<< "NUT_PRIMARY_DEVICE " << NUT_PRIMARY_DEVICE << ": "
+				<< "NUT_PRIMARY_DEVICE " << env_NUT_PRIMARY_DEVICE << ": "
 				<< ex.what() << std::endl;
 		}
 
@@ -486,7 +486,7 @@ void NutActiveClientTest::test_auth_primary() {
 	}
 	catch(nut::NutException& ex)
 	{
-		std::cerr << "[D] NUT_PRIMARY_DEVICE " << NUT_PRIMARY_DEVICE
+		std::cerr << "[D] NUT_PRIMARY_DEVICE " << env_NUT_PRIMARY_DEVICE
 			<< " not found on Data Server: "
 			<< ex.what() << std::endl;
 		noException = false;

@@ -63,6 +63,12 @@ Changes from 2.8.4 to 2.8.5
   usually override `--with-pidpath` anyway to provide a dedicated location
   for NUT `root`-owned daemon PID files. [#3099]
 
+- The autoconf managed macro for `--with-port` option was renamed from plain
+  `PORT` to less ambiguous `NUT_PORT` to avoid potential conflicts with any
+  third-party code.  If anyone did use this macro in their custom builds or
+  integrations, some renaming (or stubbed definitions to the effect of
+  `PORT=NUT_PORT`) may be needed. [#3238]
+
 - In drivers using the common `main.c` and `main.h` framework, introduced
   a `void upsdrv_tweak_prognames(void)` required method (may be no-op) to
   optionally tweak `prognames[]` entries now that there is certain support

@@ -40,8 +40,8 @@
  * if that is included earlier by the program code.
  * If not - got a fallback here:
  */
-#ifndef PORT
-# define PORT 3493
+#ifndef NUT_PORT
+# define NUT_PORT 3493
 #endif
 
 namespace nut
@@ -397,7 +397,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	TcpClient(const std::string& host, uint16_t port = PORT);
+	TcpClient(const std::string& host, uint16_t port = NUT_PORT);
 	~TcpClient() override;
 
 	/**
@@ -405,7 +405,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	void connect(const std::string& host, uint16_t port = PORT);
+	void connect(const std::string& host, uint16_t port = NUT_PORT);
 
 	/**
 	 * Connect to the server.
