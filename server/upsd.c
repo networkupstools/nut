@@ -234,6 +234,10 @@ void listen_add(const char *addr, const char *port)
 	server->addr = xstrdup(addr);
 	server->port = xstrdup(port);
 	server->sock_fd = ERROR_FD_SOCK;
+#ifdef WIN32
+	/* field defined as a HANDLE not TYPE_FD, so stick with that for initializer */
+	server->Event = INVALID_HANDLE_VALUE;
+#endif
 	server->next = NULL;
 
 	if (firstaddr) {
