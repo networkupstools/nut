@@ -540,6 +540,19 @@ static void setuptcp(stype_t *server)
 		upslogx(LOG_ERR, "not listening on %s port %s", server->addr, server->port);
 	} else {
 		upslogx(LOG_INFO, "listening on %s port %s", server->addr, server->port);
+#ifndef WIN32
+		upsdebugx(1, "%s: SERVER listener [%s:%s] on FD %" PRIuMAX,
+			__func__, server->addr, server->port,
+			(uintmax_t)server->sock_fd);
+#else
+		upsdebugx(1, "%s: SERVER listener [%s:%s] on FD %" PRIuMAX
+			", event handler %" PRIuMAX "%s",
+			__func__, server->addr, server->port,
+			(uintmax_t)server->sock_fd,
+			(uintmax_t)server->Event,
+	                (server->Event == INVALID_HANDLE_VALUE ? " (INVALID_HANDLE_VALUE)" : "")
+                        );
+#endif
 	}
 
 	return;
