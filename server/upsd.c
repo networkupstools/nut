@@ -1528,16 +1528,16 @@ static void mainloop(void)
 
 		/* see if we need to (re)connect to the socket */
 		if (INVALID_FD(ups->sock_fd)) {
-			upsdebugx(1, "%s: UPS [%s] is not currently connected, "
+			upsdebugx(1, "%s: UPS [%s] driver is not currently connected, "
 				"trying to reconnect",
 				__func__, ups->name);
 			ups->sock_fd = sstate_connect(ups);
 			if (INVALID_FD(ups->sock_fd)) {
-				upsdebugx(1, "%s: UPS [%s] is still not connected (FD %d)",
+				upsdebugx(1, "%s: UPS [%s] driver is still not connected (FD %d)",
 					__func__, ups->name, ups->sock_fd);
 				continue;
 			} else {
-				upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
+				upsdebugx(1, "%s: UPS [%s] driver is now connected as FD %d",
 					__func__, ups->name, ups->sock_fd);
 				/* fall through to handle it right away */
 			}
@@ -1554,17 +1554,17 @@ static void mainloop(void)
 		/* Note: not a SOCKET (type), as far as WinAPI is concerned,
 		 * so here also checking for Unix-style file descriptor as is: */
 		if (INVALID_FD(ups->sock_fd)) {
-			upsdebugx(5, "%s: skip UPS [%s, FD %d]: socket not bound", __func__, ups->name, ups->sock_fd);
+			upsdebugx(5, "%s: skip DRIVER [%s, FD %d]: socket not bound", __func__, ups->name, ups->sock_fd);
 			continue;
 		}
 
 		if (nfds >= maxconn) {
 			/* ignore devices that we are unable to handle */
-			upsdebugx(5, "%s: skip UPS [%s, FD %d]: too many handled already", __func__, ups->name, ups->sock_fd);
+			upsdebugx(5, "%s: skip DRIVER [%s, FD %d]: too many handled already", __func__, ups->name, ups->sock_fd);
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for UPS [%s, FD %d]",
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for DRIVER [%s, FD %d]",
 			__func__, (uintmax_t)nfds, ups->name, ups->sock_fd);
 		fds[nfds].fd = ups->sock_fd;
 		fds[nfds].events = POLLIN;
@@ -1770,16 +1770,16 @@ static void mainloop(void)
 
 		/* see if we need to (re)connect to the socket */
 		if (INVALID_FD(ups->sock_fd)) {
-			upsdebugx(1, "%s: UPS [%s] is not currently connected, "
+			upsdebugx(1, "%s: UPS [%s] driver is not currently connected, "
 				"trying to reconnect",
 				__func__, ups->name);
 			ups->sock_fd = sstate_connect(ups);
 			if (INVALID_FD(ups->sock_fd)) {
-				upsdebugx(1, "%s: UPS [%s] is still not connected (FD %d)",
+				upsdebugx(1, "%s: UPS [%s] driver is still not connected (FD %d)",
 					__func__, ups->name, ups->sock_fd);
 				continue;
 			} else {
-				upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
+				upsdebugx(1, "%s: UPS [%s] driver is now connected as FD %d",
 					__func__, ups->name, ups->sock_fd);
 				/* fall through to handle it right away */
 			}
@@ -1794,23 +1794,23 @@ static void mainloop(void)
 
 		/* Note: not a SOCKET (type), as far as WinAPI is concerned: */
 		if (INVALID_FD(ups->sock_fd)) {
-			upsdebugx(5, "%s: skip UPS [%s, FD %" PRIuMAX "]: socket not bound", __func__, ups->name, (uintmax_t)ups->sock_fd);
+			upsdebugx(5, "%s: skip DRIVER [%s, FD %" PRIuMAX "]: socket not bound", __func__, ups->name, (uintmax_t)ups->sock_fd);
 			continue;
 		}
 
 		if (INVALID_FD(ups->read_overlapped.hEvent)) {
-			upsdebugx(5, "%s: skip UPS [%s, FD %" PRIuMAX "]: event loop not bound", __func__, ups->name, (uintmax_t)ups->sock_fd);
+			upsdebugx(5, "%s: skip DRIVER [%s, FD %" PRIuMAX "]: event loop not bound", __func__, ups->name, (uintmax_t)ups->sock_fd);
 			continue;
 		}
 
 		nfds_wanted++;
 		if (nfds >= maxconn) {
 			/* ignore devices that we are unable to handle */
-			upsdebugx(5, "%s: skip UPS [%s, FD %" PRIuMAX "]: too many handled already", __func__, ups->name, (uintmax_t)ups->sock_fd);
+			upsdebugx(5, "%s: skip DRIVER [%s, FD %" PRIuMAX "]: too many handled already", __func__, ups->name, (uintmax_t)ups->sock_fd);
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for UPS [%s, FD %" PRIuMAX "]",
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for DRIVER [%s, FD %" PRIuMAX "]",
 			__func__, (uintmax_t)nfds, ups->name, (uintmax_t)ups->sock_fd);
 		fds[nfds] = ups->read_overlapped.hEvent;
 
