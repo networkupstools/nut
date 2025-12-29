@@ -1189,11 +1189,14 @@ static void upsd_cleanup(void)
 
 static void poll_reload(void)
 {
-#ifndef WIN32
 	long	ret;
 	size_t	maxalloc;
 
+#ifndef WIN32
 	ret = sysconf(_SC_OPEN_MAX);
+#else	/* WIN32 */
+	ret = (long)MAXIMUM_WAIT_OBJECTS;
+#endif	/* WIN32 */
 
 	if ((intmax_t)ret < (intmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
@@ -1208,8 +1211,12 @@ static void poll_reload(void)
 			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn);
 	}
 
+#ifndef WIN32
 	/* How many items can we stuff into the array? */
 	maxalloc = SIZE_MAX / sizeof(void *);
+#else	/* WIN32 */
+	maxalloc = MAXIMUM_WAIT_OBJECTS;
+#endif	/* WIN32 */
 	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
 			"You requested %" PRIdMAX " as maximum number of connections, but we can only allocate %" PRIuSIZE ".\n"
@@ -1217,12 +1224,11 @@ static void poll_reload(void)
 	}
 
 	/* The checks above effectively limit that maxconn is in size_t range */
+	upsdebugx(1, "%s: (p)re-allocate %" PRIuMAX
+		" entries for polling FDs and handlers",
+		__func__, (uintmax_t)maxconn);
 	fds = xrealloc(fds, (size_t)maxconn * sizeof(*fds));
 	handler = xrealloc(handler, (size_t)maxconn * sizeof(*handler));
-#else	/* WIN32 */
-	fds = xrealloc(fds, (size_t)MAXIMUM_WAIT_OBJECTS * sizeof(*fds));
-	handler = xrealloc(handler, (size_t)MAXIMUM_WAIT_OBJECTS * sizeof(*handler));
-#endif	/* WIN32 */
 }
 
 /* instant command and setvar status tracking */
@@ -2334,7 +2340,8 @@ int main(int argc, char **argv)
 	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
 	maxconn = (nfds_t)sysconf(_SC_OPEN_MAX);
 #else	/* WIN32 */
-	maxconn = 64;  /*FIXME NUT_WIN32_INCOMPLETE : arbitrary value, need adjustement */
+	/* hard-coded 64 (from ddk/wdm.h or winnt.h) */
+	maxconn = MAXIMUM_WAIT_OBJECTS;
 #endif	/* WIN32 */
 
 	/* handle upsd.conf */
