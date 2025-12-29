@@ -868,6 +868,14 @@ int main(int argc, char **argv)
 			case 'I':
 				return SvcInstall(SVCNAME, NULL);
 			case 'U':
+				{ /* scoping */
+					int	ret = 0;
+					upsdebugx(1, "exec: net stop \"" SVCNAME "\"");
+					ret = system("net stop \"" SVCNAME "\"");
+					upsdebugx(1, "exec: returned: %d", ret);
+					if (ret != 0)
+						upsdebugx(0, "FAILED stopping %s: %i", SVCNAME, ret);
+				}
 				return SvcUninstall(SVCNAME);
 			case 'N':
 				service_flag = FALSE;
