@@ -171,8 +171,13 @@ extern "C" {
 #  define INVALID_SOCKET (-1)
 # endif
 
+/* Bitness-dependent "pointer-sized unsigned integer" (usually 32 or 64 bits) */
 # define TYPE_FD_SOCK SOCKET
 # define ERROR_FD_SOCK INVALID_SOCKET
+/* Valid range for SOCKET is 0..(INVALID_SOCKET-1) and there is no special
+ * check for "-1" (may be or not be coincidental by casting and/or definition
+ * in existing headers) nor generally negative values, as in Unix socket API.
+ */
 # define VALID_FD_SOCK(a) ((a)!=INVALID_SOCKET)
 
 typedef struct serial_handler_s {

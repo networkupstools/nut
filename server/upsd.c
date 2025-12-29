@@ -1680,8 +1680,8 @@ static void mainloop(void)
 
 		/* FIXME: Is the conditional needed? We got here... */
 		if (VALID_FD(ups->sock_fd)) {
-			upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for UPS [%s, FD %" PRIi64 "]",
-				__func__, (uintmax_t)nfds, ups->name, (int64_t)ups->sock_fd);
+			upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for UPS [%s, FD %" PRIuMAX "]",
+				__func__, (uintmax_t)nfds, ups->name, (uintmax_t)ups->sock_fd);
 			fds[nfds] = ups->read_overlapped.hEvent;
 
 			handler[nfds].type = DRIVER;
@@ -1698,19 +1698,19 @@ static void mainloop(void)
 
 		if (difftime(now, client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
-			upsdebugx(5, "%s: skip CLIENT [%s => %s, FD %" PRIi64 "]: inactive too long", __func__, client->addr, client->loginups, (int64_t)client->sock_fd);
+			upsdebugx(5, "%s: skip CLIENT [%s => %s, FD %" PRIuMAX "]: inactive too long", __func__, client->addr, client->loginups, (uintmax_t)client->sock_fd);
 			client_disconnect(client);
 			continue;
 		}
 
 		if (nfds >= maxconn) {
 			/* ignore clients that we are unable to handle */
-			upsdebugx(5, "%s: skip CLIENT [%s => %s, FD %" PRIi64 "]: too many handled already", __func__, client->addr, client->loginups, (int64_t)client->sock_fd);
+			upsdebugx(5, "%s: skip CLIENT [%s => %s, FD %" PRIuMAX "]: too many handled already", __func__, client->addr, client->loginups, (uintmax_t)client->sock_fd);
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for CLIENT [%s => %s, FD %" PRIi64 "]",
-			__func__, (uintmax_t)nfds, client->addr, client->loginups, (int64_t)client->sock_fd);
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for CLIENT [%s => %s, FD %" PRIuMAX "]",
+			__func__, (uintmax_t)nfds, client->addr, client->loginups, (uintmax_t)client->sock_fd);
 		fds[nfds] = client->Event;
 
 		handler[nfds].type = CLIENT;
@@ -1723,12 +1723,12 @@ static void mainloop(void)
 	for (server = firstaddr; server && (nfds < maxconn); server = server->next) {
 
 		if (INVALID_FD_SOCK(server->sock_fd)) {
-			upsdebugx(5, "%s: skip invalid (unbound) SERVER listener [%s:%s, FD %" PRIi64 "]", __func__, server->addr, server->port, (int64_t)server->sock_fd);
+			upsdebugx(5, "%s: skip invalid (unbound) SERVER listener [%s:%s, FD %" PRIuMAX "]", __func__, server->addr, server->port, (uintmax_t)server->sock_fd);
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for SERVER listener [%s:%s, FD %" PRIi64 "]",
-			__func__, (uintmax_t)nfds, server->addr, server->port, (int64_t)server->sock_fd);
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for SERVER listener [%s:%s, FD %" PRIuMAX "]",
+			__func__, (uintmax_t)nfds, server->addr, server->port, (uintmax_t)server->sock_fd);
 		fds[nfds] = server->Event;
 
 		handler[nfds].type = SERVER;
