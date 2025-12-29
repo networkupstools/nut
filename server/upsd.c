@@ -931,7 +931,12 @@ void server_load(void)
 		listenersValidLocalhostName = 0,
 		listenersValidLocalhostName6 = 0,
 		listenersValidLocalhostIPv4 = 0,
-		listenersValidLocalhostIPv6 = 0;
+		listenersValidLocalhostIPv6 = 0,
+		listenersTotalAny = 0, listenersValidAny = 0,
+		listenersAnyIPv4 = 0,
+		listenersAnyIPv6 = 0,
+		listenersValidAnyIPv4 = 0,
+		listenersValidAnyIPv6 = 0;
 
 	/* default behaviour if no LISTEN address has been specified */
 	if (!firstaddr) {
@@ -995,6 +1000,24 @@ void server_load(void)
 				listenersValidLocalhost++;
 			}
 		}
+
+		if (!strcmp(server->addr, "0.0.0.0")) {
+			listenersAnyIPv4++;
+			listenersTotalAny++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidAnyIPv4++;
+				listenersValidAny++;
+			}
+		}
+
+		if (!strcmp(server->addr, "::0")) {
+			listenersAnyIPv6++;
+			listenersTotalAny++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidAnyIPv6++;
+				listenersValidAny++;
+			}
+		}
 	}
 
 	upsdebugx(1, "%s: tried to set up %" PRIuSIZE
@@ -1012,6 +1035,15 @@ void server_load(void)
 		listenersLocalhostName6, listenersValidLocalhostName6,
 		listenersLocalhostIPv4, listenersValidLocalhostIPv4,
 		listenersLocalhostIPv6, listenersValidLocalhostIPv6
+		);
+	upsdebugx(3, "%s: ...of those related to ANY: "
+		"overall: %" PRIuSIZE "(T)ried/%" PRIuSIZE "(S)ucceeded; "
+		"by IPv4 addr: %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by IPv6 addr: %" PRIuSIZE "T/%" PRIuSIZE "S",
+		__func__,
+		listenersTotalAny, listenersValidAny,
+		listenersAnyIPv4, listenersValidAnyIPv4,
+		listenersAnyIPv6, listenersValidAnyIPv6
 		);
 
 	/* check if we have at least 1 valid LISTEN interface */
