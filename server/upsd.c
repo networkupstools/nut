@@ -1001,7 +1001,7 @@ void server_load(void)
 		" listening sockets, succeeded with %" PRIuSIZE,
 		__func__, listenersTotal, listenersValid);
 	upsdebugx(3, "%s: ...of those related to localhost: "
-		"overall: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
+		"overall: %" PRIuSIZE "(T)ried/%" PRIuSIZE "(S)ucceeded; "
 		"by name: %" PRIuSIZE "T/%" PRIuSIZE "S; "
 		"by name(6): %" PRIuSIZE "T/%" PRIuSIZE "S; "
 		"by IPv4 addr: %" PRIuSIZE "T/%" PRIuSIZE "S; "
