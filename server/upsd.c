@@ -520,8 +520,15 @@ static void setuptcp(stype_t *server)
 			FALSE, /* initial state */
 			NULL); /* no name */
 
-		/* Associate socket event to the socket via its Event object */
-		WSAEventSelect(server->sock_fd, server->Event, FD_ACCEPT);
+		/* TOTHINK: Should failures here be fatal? */
+		if (server->Event) {
+			/* Associate socket event to the socket via its Event object */
+			if (WSAEventSelect(server->sock_fd, server->Event, FD_ACCEPT)) {
+				upsdebug_with_errno(3, "setuptcp: WSAEventSelect");
+                        }
+		} else {
+			upsdebug_with_errno(3, "setuptcp: CreateEvent");
+		}
 	}
 #endif	/* WIN32 */
 
