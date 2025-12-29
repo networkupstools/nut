@@ -40,6 +40,10 @@ typedef struct conn_s {
 
 static DWORD			upsd_pid = 0;
 static DWORD			upsmon_pid = 0;
+static DWORD			upsdrvctl_pid = 0;
+static HANDLE			upsd_handle = INVALID_HANDLE_VALUE;
+static HANDLE			upsmon_handle = INVALID_HANDLE_VALUE;
+static HANDLE			upsdrvctl_handle = INVALID_HANDLE_VALUE;
 static BOOL			service_flag = TRUE;
 HANDLE				svc_stop = NULL;
 static SERVICE_STATUS		SvcStatus;
@@ -88,7 +92,7 @@ static void print_event(DWORD priority, const char * fmt, ...)
 }
 
 /* returns PID of the newly created process or 0 on failure */
-static DWORD create_process(char * command)
+static DWORD create_process(char * command, HANDLE *pHandle)
 {
 	STARTUPINFO StartupInfo;
 	PROCESS_INFORMATION ProcessInformation;
@@ -122,6 +126,8 @@ static DWORD create_process(char * command)
 
 	upsdebugx(3, "%s: %s returned PID: %" PRIiMAX, __func__,
 		NUT_STRARG(command), (intmax_t)(ProcessInformation.dwProcessId));
+	if (pHandle)
+		*pHandle = ProcessInformation.hProcess;
 	return  ProcessInformation.dwProcessId;
 }
 
@@ -159,7 +165,9 @@ static DWORD run_drivers(void)
 			path, makearg_debug());
 	}
 	free(path);
-	return create_process(command);
+
+	upsdrvctl_pid = create_process(command, &upsdrvctl_handle);
+	return upsdrvctl_pid;
 }
 
 /* return PID of created process or 0 on failure */
@@ -176,7 +184,7 @@ static DWORD stop_drivers(void)
 			path, makearg_debug());
 	}
 	free(path);
-	return create_process(command);
+	return create_process(command, NULL);
 }
 
 /* return PID of created process or 0 on failure */
@@ -191,7 +199,7 @@ static void run_upsd(void)
 		snprintfcat(command, sizeof(command), " %s", makearg_debug());
 	}
 	free(path);
-	upsd_pid = create_process(command);
+	upsd_pid = create_process(command, &upsd_handle);
 }
 
 static void stop_upsd(void)
@@ -215,7 +223,7 @@ static void run_upsmon(void)
 		snprintfcat(command, sizeof(command), " %s", makearg_debug());
 	}
 	free(path);
-	upsmon_pid = create_process(command);
+	upsmon_pid = create_process(command, &upsmon_handle);
 }
 
 static void stop_upsmon(void)
@@ -301,7 +309,7 @@ static DWORD shutdown_ups(void)
 			path, makearg_debug());
 	}
 	free(path);
-	return create_process(command);
+	return create_process(command, NULL);
 }
 
 /* return 0 on failure */
@@ -741,6 +749,61 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 					pipe_disconnect(conn);
 				}
+			}
+		}
+
+		/* Check on each daemon: Was it supposed to run? Does it still? */
+		if (upsdrvctl_pid) {
+			DWORD	status = 0;
+			BOOL	res = FALSE;
+
+			res = GetExitCodeProcess(upsdrvctl_handle, &status);
+			if (res != 0) {
+				if (status != STILL_ACTIVE) {
+					upslog_with_errno(LOG_WARNING, "%s: GetExitCodeProcess(upsdrvctl): daemon died, restarting", __func__);
+					run_drivers();
+					Sleep(5000);
+				} else {
+					upsdebugx(2, "%s: upsdrvctl is still running as PID %" PRIuMAX, __func__, (uintmax_t)upsdrvctl_pid);
+				}
+			} else {
+				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsdrvctl)", __func__);
+			}
+		}
+
+		if (upsd_pid) {
+			DWORD	status = 0;
+			BOOL	res = FALSE;
+
+			res = GetExitCodeProcess(upsd_handle, &status);
+			if (res != 0) {
+				if (status != STILL_ACTIVE) {
+					upslog_with_errno(LOG_WARNING, "%s: GetExitCodeProcess(upsd): daemon died, restarting", __func__);
+					run_upsd();
+					Sleep(5000);
+				} else {
+					upsdebugx(2, "%s: upsd is still running as PID %" PRIuMAX, __func__, (uintmax_t)upsd_pid);
+				}
+			} else {
+				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsd)", __func__);
+			}
+		}
+
+		if (upsmon_pid) {
+			DWORD	status = 0;
+			BOOL	res = FALSE;
+
+			res = GetExitCodeProcess(upsmon_handle, &status);
+			if (res != 0) {
+				if (status != STILL_ACTIVE) {
+					upslog_with_errno(LOG_WARNING, "%s: GetExitCodeProcess(upsmon): daemon died, restarting", __func__);
+					run_upsmon();
+					Sleep(5000);
+				} else {
+					upsdebugx(2, "%s: upsmon is still running as PID %" PRIuMAX, __func__, (uintmax_t)upsmon_pid);
+				}
+			} else {
+				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsmon)", __func__);
 			}
 		}
 	}
