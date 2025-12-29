@@ -268,15 +268,18 @@ static void stype_free(stype_t *server)
 /* create a listening socket for tcp connections */
 static void setuptcp(stype_t *server)
 {
-#ifdef WIN32
-	WSADATA WSAdata;
-#endif	/* WIN32 */
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
 
 #ifdef WIN32
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 #endif	/* WIN32 */
 
 	if (VALID_FD_SOCK(server->sock_fd)) {

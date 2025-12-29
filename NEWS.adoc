@@ -368,6 +368,13 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - Fixed `LISTEN *` handling for `upsd.exe` in NUT for Windows builds. [PR #3237]
 
+ - Revised WIN32 `WSAStartup()` and registration of `atexit(WSACleanup)` to
+   only be done once per program (and cleanups to be always registered); this
+   impacts the C `libupsclient` and C++ `libnutclient` libraries (and so most
+   NUT clients and tools which use the former, and `nutconf` which uses the
+   latter), the `apcupsd` driver, `upsd` data server, and `nut-scanner` tool.
+   [PR #3237]
+
  - Revised CI and deliverable scripts, and Makefile recipes, to not use
    the verbatim `grep -E` (loudly preferred by newer systems, but may be
    absent on older ones) after all, nor use `egrep` (loudly disliked by
