@@ -637,8 +637,8 @@ static void close_all(void)
 static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 {
 	DWORD	ret;
-	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];
-	int	maxhandle = 0;
+	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];  /* 64 per current WinAPI sheaders */
+	size_t	maxhandle = 0;
 	pipe_conn_t	*conn;
 	DWORD	priority;
 	char	*buf;
@@ -681,11 +681,16 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 		/* Wait on the read IO of each connections */
 		for (conn = pipe_connhead; conn; conn = conn->next) {
+			/* Leave one or two for "new event" below */
+			if (maxhandle + 1 + (service_flag ? 1 : 0) >= sizeof(handles)) {
+				upsdebugx(1, "%s: skipping handle: too many connected already", __func__);
+				continue;
+			}
 			handles[maxhandle] = conn->overlapped.hEvent;
 			maxhandle++;
 		}
 
-		/* Add the new pipe connected event */
+		/* Add the "new pipe connected" event */
 		handles[maxhandle] = pipe_connection_overlapped.hEvent;
 		maxhandle++;
 
@@ -699,6 +704,7 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 		if (ret == WAIT_FAILED) {
 			print_event(LOG_ERR, "Wait failed");
+			upsdebug_with_errno(1, "%s: WaitForMultipleObjects", __func__);
 			return;
 		}
 
