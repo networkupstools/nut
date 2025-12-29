@@ -1535,11 +1535,12 @@ static void mainloop(void)
 			if (INVALID_FD(ups->sock_fd)) {
 				upsdebugx(1, "%s: UPS [%s] is still not connected (FD %d)",
 					__func__, ups->name, ups->sock_fd);
+				continue;
 			} else {
 				upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
 					__func__, ups->name, ups->sock_fd);
+				/* fall through to handle it right away */
 			}
-			continue;
 		}
 
 		/* throw some warnings if it's not feeding us data any more */
@@ -1776,11 +1777,12 @@ static void mainloop(void)
 			if (INVALID_FD(ups->sock_fd)) {
 				upsdebugx(1, "%s: UPS [%s] is still not connected (FD %d)",
 					__func__, ups->name, ups->sock_fd);
+				continue;
 			} else {
 				upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
 					__func__, ups->name, ups->sock_fd);
+				/* fall through to handle it right away */
 			}
-			continue;
 		}
 
 		/* throw some warnings if it's not feeding us data any more */
