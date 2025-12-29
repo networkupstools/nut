@@ -168,7 +168,7 @@ extern "C" {
 # define VALID_FD(a) ((a)!=INVALID_HANDLE_VALUE)
 
 # ifndef INVALID_SOCKET
-#  define INVALID_SOCKET (-1)
+#  define INVALID_SOCKET ((SOCKET)(-1))
 # endif
 
 /* Bitness-dependent "pointer-sized unsigned integer" (usually 32 or 64 bits) */
