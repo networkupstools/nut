@@ -443,6 +443,20 @@ static int SvcInstall(const char * SvcName, const char * args)
 		upslogx(LOG_INFO, "Service installed successfully\n");
 	}
 
+#ifdef SERVICE_CONFIG_DESCRIPTION
+	{ /* scope */
+		SERVICE_DESCRIPTIONA	descr;
+		descr.lpDescription = "The Network UPS Tools (NUT) project "
+                        "provides monitoring and management of "
+                        "Uninterruptible Power Sources (UPS) and similar hardware, "
+                        "allowing for multiple systems fed by an UPS to be "
+                        "safely shut down in case of a power outage. "
+                        "For more details please see " NUT_WEBSITE_BASE;
+
+		ChangeServiceConfig2A(Service, SERVICE_CONFIG_DESCRIPTION, &descr);
+	}
+#endif
+
 	CloseServiceHandle(Service);
 	CloseServiceHandle(SCManager);
 

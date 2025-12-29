@@ -364,7 +364,8 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - Augmented `nut.exe` launcher with `status` and `restart` actions, and
    general ability to debug-log the activities during service management
-   operations. [PR #3235]
+   operations. (Re-)registration of the "Network UPS Tools" service should
+   now populate a nice description of it. [PR #3235]
 
  - Fixed `LISTEN *` handling for `upsd.exe` in NUT for Windows builds. [PR #3237]
 
