@@ -392,6 +392,9 @@ static void setuptcp(stype_t *server)
 			server->addr = serverAnyV4->addr;
 			server->port = serverAnyV4->port;
 			server->sock_fd = serverAnyV4->sock_fd;
+#ifdef WIN32
+			server->Event = serverAnyV4->Event;
+#endif
 			/* ...and keep whatever server->next there was */
 
 			/* Free the ghost, all needed info was relocated */
@@ -416,6 +419,9 @@ static void setuptcp(stype_t *server)
 				server->addr = serverAnyV6->addr;
 				server->port = serverAnyV6->port;
 				server->sock_fd = serverAnyV6->sock_fd;
+#ifdef WIN32
+				server->Event = serverAnyV6->Event;
+#endif
 				/* ...and keep whatever server->next there was */
 
 				/* Free the ghost, all needed info was relocated */
