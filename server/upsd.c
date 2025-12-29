@@ -1498,7 +1498,8 @@ static void mainloop(void)
 	pipe_conn_t * conn;
 #endif	/* WIN32 */
 
-	size_t	nfds_wanted = 0;
+	size_t	nfds_wanted = 0,	/* Connections we looked at (some may be invalid) */
+		nfds_considered = 0;	/* Connections we wanted to poll (but might be over maxconn limit) */
 	nfds_t	nfds = 0;
 	upstype_t	*ups;
 	nut_ctype_t		*client, *cnext;
@@ -1523,6 +1524,8 @@ static void mainloop(void)
 #ifndef WIN32
 	/* scan through driver sockets */
 	for (ups = firstups; ups; ups = ups->next) {
+		nfds_considered++;
+
 		/* see if we need to (re)connect to the socket */
 		if (INVALID_FD(ups->sock_fd)) {
 			upsdebugx(1, "%s: UPS [%s] is not currently connected, "
@@ -1547,6 +1550,13 @@ static void mainloop(void)
 		}
 
 		nfds_wanted++;
+		/* Note: not a SOCKET (type), as far as WinAPI is concerned,
+		 * so here also checking for Unix-style file descriptor as is: */
+		if (INVALID_FD(ups->sock_fd)) {
+			upsdebugx(5, "%s: skip UPS [%s, FD %d]: socket not bound", __func__, ups->name, ups->sock_fd);
+			continue;
+		}
+
 		if (nfds >= maxconn) {
 			/* ignore devices that we are unable to handle */
 			upsdebugx(5, "%s: skip UPS [%s, FD %d]: too many handled already", __func__, ups->name, ups->sock_fd);
@@ -1567,12 +1577,19 @@ static void mainloop(void)
 	/* scan through client sockets */
 	for (client = firstclient; client; client = cnext) {
 		cnext = client->next;
+		nfds_considered++;
 
 		if (difftime(now, client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
 			/* FIXME: create an upsd.conf parameter (CLIENT_INACTIVITY_DELAY) */
 			upsdebugx(5, "%s: skip CLIENT [%s => %s, FD %d]: inactive too long", __func__, client->addr, client->loginups, client->sock_fd);
 			client_disconnect(client);
+			continue;
+		}
+
+		/* Do this after disconnect attempt, so zombies do not pile up: */
+		if (INVALID_FD_SOCK(client->sock_fd)) {
+			upsdebugx(5, "%s: skip CLIENT [%s => %s, FD %d]: socket not bound", __func__, client->addr, client->loginups, client->sock_fd);
 			continue;
 		}
 
@@ -1596,8 +1613,10 @@ static void mainloop(void)
 
 	/* scan through server sockets */
 	for (server = firstaddr; server; server = server->next) {
-		if (server->sock_fd < 0) {
-			upsdebugx(5, "%s: skip invalid (unbound) SERVER listener [%s:%s, FD %d]", __func__, server->addr, server->port, server->sock_fd);
+		nfds_considered++;
+
+		if (INVALID_FD_SOCK(server->sock_fd)) {
+			upsdebugx(5, "%s: skip invalid SERVER listener [%s:%s, FD %d]: socket not bound", __func__, server->addr, server->port, server->sock_fd);
 			continue;
 		}
 
@@ -1619,7 +1638,13 @@ static void mainloop(void)
 		nfds++;
 	}
 
-	upsdebugx(2, "%s: polling %" PRIdMAX " filedescriptors", __func__, (intmax_t)nfds);
+	upsdebugx(2, "%s: polling %" PRIdMAX " filedescriptors; some stats: "
+		"considered %" PRIdMAX " connections, "
+		"wanted to actually poll %" PRIdMAX
+		" and was constrained by maxconn=%" PRIdMAX,
+		__func__, (intmax_t)nfds, (intmax_t)nfds_considered,
+		(intmax_t)nfds_wanted, (intmax_t)maxconn);
+
 	if (nfds_wanted != nfds || nfds_wanted >= maxconn) {
 		upslogx(LOG_ERR, "upsd polling %" PRIdMAX " filedescriptors,"
 			" but wanted to poll %" PRIdMAX
@@ -1740,6 +1765,8 @@ static void mainloop(void)
 #else	/* WIN32 */
 	/* scan through driver sockets */
 	for (ups = firstups; ups; ups = ups->next) {
+		nfds_considered++;
+
 		/* see if we need to (re)connect to the socket */
 		if (INVALID_FD(ups->sock_fd)) {
 			upsdebugx(1, "%s: UPS [%s] is not currently connected, "
@@ -1763,6 +1790,17 @@ static void mainloop(void)
 			ups_data_ok(ups);
 		}
 
+		/* Note: not a SOCKET (type), as far as WinAPI is concerned: */
+		if (INVALID_FD(ups->sock_fd)) {
+			upsdebugx(5, "%s: skip UPS [%s, FD %" PRIuMAX "]: socket not bound", __func__, ups->name, (uintmax_t)ups->sock_fd);
+			continue;
+		}
+
+		if (INVALID_FD(ups->read_overlapped.hEvent)) {
+			upsdebugx(5, "%s: skip UPS [%s, FD %" PRIuMAX "]: event loop not bound", __func__, ups->name, (uintmax_t)ups->sock_fd);
+			continue;
+		}
+
 		nfds_wanted++;
 		if (nfds >= maxconn) {
 			/* ignore devices that we are unable to handle */
@@ -1770,22 +1808,20 @@ static void mainloop(void)
 			continue;
 		}
 
-		/* FIXME: Is the conditional needed? We got here... */
-		if (VALID_FD(ups->sock_fd)) {
-			upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for UPS [%s, FD %" PRIuMAX "]",
-				__func__, (uintmax_t)nfds, ups->name, (uintmax_t)ups->sock_fd);
-			fds[nfds] = ups->read_overlapped.hEvent;
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for UPS [%s, FD %" PRIuMAX "]",
+			__func__, (uintmax_t)nfds, ups->name, (uintmax_t)ups->sock_fd);
+		fds[nfds] = ups->read_overlapped.hEvent;
 
-			handler[nfds].type = DRIVER;
-			handler[nfds].data = ups;
+		handler[nfds].type = DRIVER;
+		handler[nfds].data = ups;
 
-			nfds++;
-		}
+		nfds++;
 	}
 
 	/* scan through client sockets */
 	for (client = firstclient; client; client = cnext) {
 		cnext = client->next;
+		nfds_considered++;
 
 		if (difftime(now, client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
@@ -1793,6 +1829,17 @@ static void mainloop(void)
 			client_disconnect(client);
 			continue;
 		}
+
+		/* Do this after disconnect attempt, so zombies do not pile up: */
+		if (INVALID_FD_SOCK(client->sock_fd)) {
+			upsdebugx(5, "%s: skip CLIENT [%s => %s, FD %" PRIuMAX "]: socket not bound", __func__, client->addr, client->loginups, (uintmax_t)client->sock_fd);
+			continue;
+		}
+
+                if (INVALID_FD(client->Event)) {
+			upsdebugx(5, "%s: skip CLIENT [%s => %s, FD %" PRIuMAX "]: event loop not bound", __func__, client->addr, client->loginups, (uintmax_t)client->sock_fd);
+			continue;
+                }
 
 		nfds_wanted++;
 		if (nfds >= maxconn) {
@@ -1813,8 +1860,15 @@ static void mainloop(void)
 
 	/* scan through server sockets */
 	for (server = firstaddr; server; server = server->next) {
+		nfds_considered++;
+
 		if (INVALID_FD_SOCK(server->sock_fd)) {
-			upsdebugx(5, "%s: skip invalid (unbound) SERVER listener [%s:%s, FD %" PRIuMAX "]", __func__, server->addr, server->port, (uintmax_t)server->sock_fd);
+			upsdebugx(5, "%s: skip invalid SERVER listener [%s:%s, FD %" PRIuMAX "]: socket not bound", __func__, server->addr, server->port, (uintmax_t)server->sock_fd);
+			continue;
+		}
+
+		if (INVALID_FD(server->Event)) {
+			upsdebugx(5, "%s: skip invalid SERVER listener [%s:%s, FD %" PRIuMAX "]: event loop not bound", __func__, server->addr, server->port, (uintmax_t)server->sock_fd);
 			continue;
 		}
 
@@ -1837,6 +1891,16 @@ static void mainloop(void)
 
 	/* Wait on the read IO on named pipe  */
 	for (conn = pipe_connhead; conn; conn = conn->next) {
+		nfds_considered++;
+
+		/* FIXME: derive name from conn->handle to report it.
+		 * See GetFileInformationByHandleEx() in API
+		 */
+		if (INVALID_FD(conn->overlapped.hEvent)) {
+			upsdebugx(5, "%s: skip invalid NAMED PIPE listener: event loop not bound", __func__);
+			continue;
+		}
+
 		nfds_wanted++;
 		if (nfds >= maxconn) {
 			/* ignore listeners that we are unable to handle */
@@ -1844,9 +1908,6 @@ static void mainloop(void)
 			continue;
 		}
 
-		/* FIXME: derive name from conn->handle
-		 * See GetFileInformationByHandleEx() in API
-		 */
 		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for NAMED PIPE",
 			__func__, (uintmax_t)nfds);
 		fds[nfds] = conn->overlapped.hEvent;
@@ -1855,21 +1916,32 @@ static void mainloop(void)
 		nfds++;
 	}
 
-	/* Add the new named pipe connected event */
-	nfds_wanted++;
-	if (nfds >= maxconn) {
-		/* ignore listeners that we are unable to handle */
-		upsdebugx(5, "%s: skip handler for new NAMED PIPE connections: too many handled already", __func__);
+	/* Add the "new named pipe connected" event */
+	nfds_considered++;
+	if (INVALID_FD(pipe_connection_overlapped.hEvent)) {
+		upsdebugx(5, "%s: skip invalid handler for new NAMED PIPE connections: event loop not bound", __func__);
 	} else {
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for new NAMED PIPE connection",
-			__func__, (uintmax_t)nfds);
-		fds[nfds] = pipe_connection_overlapped.hEvent;
-		handler[nfds].type = NAMED_PIPE;
-		handler[nfds].data = NULL;
-		nfds++;
+		nfds_wanted++;
+		if (nfds >= maxconn) {
+			/* ignore listeners that we are unable to handle */
+			upsdebugx(5, "%s: skip handler for new NAMED PIPE connections: too many handled already", __func__);
+		} else {
+			upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for new NAMED PIPE connection",
+				__func__, (uintmax_t)nfds);
+			fds[nfds] = pipe_connection_overlapped.hEvent;
+			handler[nfds].type = NAMED_PIPE;
+			handler[nfds].data = NULL;
+			nfds++;
+		}
 	}
 
-	upsdebugx(2, "%s: wait for %d filedescriptors", __func__, nfds);
+	upsdebugx(2, "%s: wait for %" PRIdMAX " filedescriptors; some stats: "
+		"considered %" PRIdMAX " connections, "
+		"wanted to actually poll %" PRIdMAX
+		" and was constrained by maxconn=%" PRIdMAX,
+		__func__, (intmax_t)nfds, (intmax_t)nfds_considered,
+		(intmax_t)nfds_wanted, (intmax_t)maxconn);
+
 	if (nfds_wanted != nfds || nfds_wanted >= maxconn) {
 		upslogx(LOG_ERR, "upsd polling %" PRIuMAX " filedescriptors,"
 			" but wanted to poll %" PRIuMAX
