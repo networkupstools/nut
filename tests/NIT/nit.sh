@@ -1149,6 +1149,28 @@ testcase_upsd_allow_no_device() {
             log_info "[testcase_upsd_allow_no_device] OK, empty response as expected"
             PASSED="`expr $PASSED + 1`"
         fi
+
+        log_separator
+        log_info "[testcase_upsd_allow_no_device] Query JSON listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
+        if runcmd upsc -j -l localhost:$NUT_PORT && test x"${CMDOUT}" != x ; then
+            log_debug "[testcase_upsd_allow_no_device] got a JSON reply:" "$CMDOUT"
+            JSTRIP="`echo \"${CMDOUT}\" | tr -d ' ' | tr -d '\n' | tr -d '\r'`"
+            if test x"${JSTRIP}" = x'[]' ; then
+                log_info "[testcase_upsd_allow_no_device] OK, empty-list JSON response as expected"
+                PASSED="`expr $PASSED + 1`"
+            else
+                log_error "[testcase_upsd_allow_no_device] got a reply for upsc JSON listing for empty but running server, but it was not expected (not an empty list):" "$CMDOUT" "$CMDERR"
+                FAILED="`expr $FAILED + 1`"
+                FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
+                res_testcase_upsd_allow_no_device=1
+            fi
+        else
+            log_error "[testcase_upsd_allow_no_device] did not get a reply for upsc JSON listing for empty but running server:" "$CMDOUT" "$CMDERR"
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
+            res_testcase_upsd_allow_no_device=1
+        fi
+        log_separator
     else
         log_error "[testcase_upsd_allow_no_device] upsd was expected to be running although no devices are defined; is ups.conf populated?"
         ls -la "$NUT_CONFPATH/" || true
@@ -1281,6 +1303,18 @@ UPS2"
         EXPECTED_UPSLIST="`echo \"$EXPECTED_UPSLIST\" | tr -d '\r'`"
     fi
 
+    EXPECTED_UPSLIST_JSON='[
+  "dummy"'
+    if [ x"${TOP_SRCDIR}" != x ]; then
+        EXPECTED_UPSLIST_JSON="${EXPECTED_UPSLIST_JSON},"'
+  "UPS1",
+  "UPS2"'
+    fi
+    EXPECTED_UPSLIST_JSON="${EXPECTED_UPSLIST_JSON}"'
+]'
+    # For windows runners (strip CR if any):
+    EXPECTED_UPSLIST_JSON="`echo \"$EXPECTED_UPSLIST_JSON\" | tr -d '\r'`"
+
     log_info "[testcase_sandbox_start_upsd_alone] Query listing from UPSD by UPSC (driver not running yet)"
     res_testcase_sandbox_start_upsd_alone=0
     runcmd upsc -l localhost:$NUT_PORT || die "[testcase_sandbox_start_upsd_alone] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
@@ -1290,6 +1324,19 @@ UPS2"
     fi
     if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST" ] ; then
         log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
+    else
+        PASSED="`expr $PASSED + 1`"
+    fi
+
+    runcmd upsc -j -l localhost:$NUT_PORT || die "[testcase_sandbox_start_upsd_alone] upsd does not respond on port ${NUT_PORT} or JSON listing failed ($?): $CMDOUT"
+    if [ x"${TOP_SRCDIR}" != x ]; then
+        CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
+    fi
+    if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST_JSON" ] ; then
+        log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc JSON listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
         res_testcase_sandbox_start_upsd_alone=1
@@ -1314,6 +1361,30 @@ UPS2"
         res_testcase_sandbox_start_upsd_alone=1
     fi
 
+    log_info "[testcase_sandbox_start_upsd_alone] Query driver state from UPSD by UPSC (driver not running yet) in JSON mode"
+    runcmd upsc -j dummy@localhost:$NUT_PORT && {
+        log_error "upsc was supposed to answer with error exit code: $CMDOUT"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
+    }
+    log_debug "[testcase_sandbox_start_upsd_alone] got a JSON reply:" "$CMDOUT"
+    EXPECTED_UPSDATA_JSON='{
+  "error": "Driver not connected"
+}'
+    # For windows runners (strip CR if any):
+    EXPECTED_UPSDATA_JSON="`echo \"$EXPECTED_UPSDATA_JSON\" | tr -d '\r'`"
+    CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
+    # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
+    if echo "$CMDERR" | ${GREP} 'Error: Driver not connected' >/dev/null && test x"${CMDOUT}" = x"${EXPECTED_UPSDATA_JSON}"; then
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "[testcase_sandbox_start_upsd_alone] got some other reply for upsc JSON query when 'Error: Driver not connected' was expected on stderr and similar in JSON object: '$CMDOUT'"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
+    fi
+
     if [ "$res_testcase_sandbox_start_upsd_alone" = 0 ]; then
         log_info "[testcase_sandbox_start_upsd_alone] PASSED: got just the failures expected for data server alone (driver not running yet)"
     else
@@ -1322,6 +1393,17 @@ UPS2"
 
     return $res_testcase_sandbox_start_upsd_alone
 }
+
+EXPECTED_UPSWAIT_JSON='{
+  "ups.status": "WAIT"
+}'
+EXPECTED_UPSWAIT_JSON2='{
+  "driver.state": "updateinfo",
+  "ups.status": "WAIT"
+}'
+# For windows runners (strip CR if any):
+EXPECTED_UPSWAIT_JSON="`echo \"$EXPECTED_UPSDATA_JSON\" | tr -d '\r'`"
+EXPECTED_UPSWAIT_JSON2="`echo \"$EXPECTED_UPSDATA_JSON2\" | tr -d '\r'`"
 
 testcase_sandbox_start_upsd_after_drivers() {
     # Historically this is a fallback from testcase_sandbox_start_drivers_after_upsd
@@ -1345,13 +1427,24 @@ testcase_sandbox_start_upsd_after_drivers() {
     sleep 5
 
     COUNTDOWN=90
+    GOT_REPLY=false
     while [ "$COUNTDOWN" -gt 0 ]; do
         # For query errors or known wait, keep looping
         runcmd upsc dummy@localhost:$NUT_PORT \
         && case "$CMDOUT" in
             *"ups.status: WAIT"*) ;;
-            *) log_info "Got output:" ; echo "$CMDOUT" ; break ;;
+            *) log_info "[testcase_sandbox_start_upsd_after_drivers] Got output:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
         esac
+
+        runcmd upsc -j dummy@localhost:$NUT_PORT \
+        && case "$CMDOUT" in
+            "${EXPECTED_UPSWAIT_JSON}") ;;
+            "${EXPECTED_UPSWAIT_JSON2}") ;;
+            *) log_info "[testcase_sandbox_start_upsd_after_drivers] Got JSON output:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
+        esac
+
+        if $GOT_REPLY ; then break ; fi
+
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
@@ -1380,6 +1473,7 @@ testcase_sandbox_start_drivers_after_upsd() {
     # 40+(drv)/50+(upsd) sec a DUMPALL is processed (regular 30-sec loop?) -
     # so tightly near a minute until we have sturdy replies.
     COUNTDOWN=90
+    GOT_REPLY=false
     while [ "$COUNTDOWN" -gt 0 ]; do
         # For query errors or known wait, keep looping. May get:
         #   driver.state: updateinfo
@@ -1387,8 +1481,18 @@ testcase_sandbox_start_drivers_after_upsd() {
         runcmd upsc dummy@localhost:$NUT_PORT \
         && case "$CMDOUT" in
             *"ups.status: WAIT"*) ;;
-            *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:" ; echo "$CMDOUT" ; break ;;
+            *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
         esac
+
+        runcmd upsc -j dummy@localhost:$NUT_PORT \
+        && case "$CMDOUT" in
+            "${EXPECTED_UPSWAIT_JSON}") ;;
+            "${EXPECTED_UPSWAIT_JSON2}") ;;
+            *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got JSON output:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
+        esac
+
+        if $GOT_REPLY ; then break ; fi
+
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
@@ -1407,15 +1511,28 @@ testcase_sandbox_start_drivers_after_upsd() {
         log_info "[testcase_sandbox_start_drivers_after_upsd] Wait for dummy UPSes with larger data sets to initialize"
         for U in UPS1 UPS2 ; do
             COUNTDOWN=90
-            # TODO: Convert to runcmd()?
-            OUT=""
-            while [ x"$OUT" = x"ups.status: WAIT" ] ; do
-                OUT="`upsc $U@localhost:$NUT_PORT ups.status`" || break
-                [ x"$OUT" = x"ups.status: WAIT" ] || { log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:"; echo "$OUT"; break; }
+            GOT_REPLY=false
+
+            while [ "$COUNTDOWN" -gt 0 ]; do
+                runcmd upsc $U@localhost:$NUT_PORT ups.status \
+                && case "$CMDOUT" in
+                    WAIT) ;;
+                    *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got output for $U:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
+                esac
+
+                runcmd upsc -j $U@localhost:$NUT_PORT ups.status \
+                && case "$CMDOUT" in
+                    '"WAIT"') ;; # JSON string is a valid document too
+                    *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got JSON output for $U:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
+                esac
+
+                if $GOT_REPLY ; then break ; fi
+
                 sleep 1
                 COUNTDOWN="`expr $COUNTDOWN - 1`"
+
                 # Systemic error, e.g. could not create socket file?
-                [ "$COUNTDOWN" -lt 1 ] && die "[testcase_sandbox_start_drivers_after_upsd] Dummy driver did not start or respond in time"
+                [ "$COUNTDOWN" -lt 1 ] && die "[testcase_sandbox_start_drivers_after_upsd] Dummy driver for $U did not start or respond in time"
             done
             if [ "$COUNTDOWN" -le 88 ] ; then
                 log_warn "[testcase_sandbox_start_drivers_after_upsd] Had to wait a few retries for the $U driver to connect"
@@ -1437,6 +1554,22 @@ testcase_sandbox_upsc_query_model() {
         PASSED="`expr $PASSED + 1`"
         log_info "[testcase_sandbox_upsc_query_model] PASSED: got expected model from dummy device: $CMDOUT"
     fi
+
+    log_info "[testcase_sandbox_upsc_query_model] Query model from dummy device in JSON"
+    runcmd upsc -j dummy@localhost:$NUT_PORT device.model || die "[testcase_sandbox_upsc_query_model] upsd does not respond on port ${NUT_PORT} or can not get JSON output ($?): $CMDOUT"
+    log_debug "[testcase_sandbox_upsc_query_model] got a JSON reply:" "$CMDOUT"
+    EXPECTED_UPSDATA_JSON='"Dummy UPS"'
+    # For windows runners (strip CR if any):
+    EXPECTED_UPSDATA_JSON="`echo \"$EXPECTED_UPSDATA_JSON\" | tr -d '\r'`"
+    CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
+    if [ x"$CMDOUT" != x"${EXPECTED_UPSDATA_JSON}" ] ; then
+        log_error "[testcase_sandbox_upsc_query_model] got this reply for upsc JSON query when 'device.model: Dummy UPS' was expected: $CMDOUT"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_model"
+    else
+        PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_upsc_query_model] PASSED: got expected model from dummy device in JSON: $CMDOUT"
+    fi
 }
 
 testcase_sandbox_upsc_query_bogus() {
@@ -1452,6 +1585,31 @@ testcase_sandbox_upsc_query_bogus() {
         log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query"
     else
         log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
+    fi
+
+    log_info "[testcase_sandbox_upsc_query_bogus] Query driver state from UPSD by UPSC for bogus info in JSON"
+    runcmd upsc -j dummy@localhost:$NUT_PORT ups.bogus.value && {
+        log_error "[testcase_sandbox_upsc_query_bogus] upsc was supposed to answer with error exit code: $CMDOUT"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
+    }
+    log_debug "[testcase_sandbox_upsc_query_bogus] got a JSON reply:" "$CMDOUT"
+    EXPECTED_UPSDATA_JSON='{"error": "Variable not supported by UPS"}'
+    EXPECTED_UPSDATA_JSON2='{
+  "error": "Variable not supported by UPS"
+}'
+    # For windows runners (strip CR if any):
+    EXPECTED_UPSDATA_JSON="`echo \"$EXPECTED_UPSDATA_JSON\" | tr -d '\r'`"
+    EXPECTED_UPSDATA_JSON2="`echo \"$EXPECTED_UPSDATA_JSON2\" | tr -d '\r'`"
+    CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
+    # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
+    if echo "$CMDERR" | ${GREP} 'Error: Variable not supported by UPS' >/dev/null && test x"${CMDOUT}" = x"${EXPECTED_UPSDATA_JSON}" -o x"${CMDOUT}" = x"${EXPECTED_UPSDATA_JSON2}" ; then
+        PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query in JSON"
+    else
+        log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc JSON query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     fi
