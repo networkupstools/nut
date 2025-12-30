@@ -31,6 +31,13 @@
 # Common sandbox run for testing goes from NUT root build directory like:
 #	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd NUT_FOREGROUND_WITH_PID=true make check-NIT &
 #
+# NOTE: For systems where executables need an extension, like Windows,
+# you may require an EXEEXT variable to be exported (e.g. by a Makefile);
+# also on Windows the DLL shared libraries may have to be present in same
+# directory as the executable "module" (or in the current working directory).
+# Ability to run in cross-builds (e.g. NUT for Windows on Linux) may depend
+# on binary support deployed in the run-time system ( Wine, WSL... on Linux).
+#
 # Design note: written with dumbed-down POSIX shell syntax, to
 # properly work in whatever different OSes have (bash, dash,
 # ksh, busybox sh...)
@@ -219,6 +226,53 @@ die() {
 # By default, keep stdout hidden but report the errors:
 [ -n "$RUNCMD_QUIET_OUT" ] || RUNCMD_QUIET_OUT=true
 [ -n "$RUNCMD_QUIET_ERR" ] || RUNCMD_QUIET_ERR=false
+execcmd() {
+    # Help set up EXEEXT and logging, but allow use for backgrounded runs.
+    # WARNING: uses `exec` and overrides NUT_DEBUG_LEVEL, so must be
+    # called as sub-shelled (by pipe, amperesand, backticks, etc.)!
+    # Do not "fix" this method to round parentheses, because the way
+    # this is works just right for remembering CHILDPID="$!" and later
+    # killing off the daemons.
+    log_debug "execcmd: asked for: $@"
+    CMDPROG=""
+    case "$1" in
+        upsc|*/upsc|upsc"${EXEEXT-}"|*/upsc"${EXEEXT-}")
+            if [ -n "${NUT_DEBUG_LEVEL_UPSC-}" ]; then
+                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSC}"
+            fi
+            ;;
+        nut-scanner|*/nut-scanner|nut-scanner"${EXEEXT-}"|*/nut-scanner"${EXEEXT-}")
+            if [ -n "${NUT_DEBUG_LEVEL_NUT_SCANNER-}" ]; then
+                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_NUT_SCANNER}"
+            fi
+            ;;
+    esac
+
+    case "$1" in
+        *"${EXEEXT-}") CMDPROG="$1" ;;
+        *)  if [ -x "$1" ] || (command -v "$1") >/dev/null 2>/dev/null ; then
+                CMDPROG="$1"
+            else
+                if [ x"${EXEEXT-}" = x ] ; then
+                    log_warn "Did not find '$1' via 'command -v', the call below may fail"
+                    CMDPROG="$1"
+                else
+                    if [ -x "$1${EXEEXT-}" ] || (command -v "$1${EXEEXT-}") >/dev/null 2>/dev/null ; then
+                        CMDPROG="$1${EXEEXT}"
+                    else
+                        log_warn "Did not find '$1' nor '$1${EXEEXT-}' via 'command -v', the call below may fail"
+                        CMDPROG="$1"
+                    fi
+                fi
+            fi
+            ;;
+    esac
+    shift
+
+    log_debug "execcmd: running:   ${CMDPROG} $@"
+    exec "${CMDPROG}" "$@"
+}
+
 runcmd() {
     # Re-uses a couple of files in test scratch area NUT_STATEPATH
     # to store the stderr and stdout of the launched program.
@@ -232,21 +286,7 @@ runcmd() {
     CMDOUT=""
     CMDERR=""
 
-    # FIXME: Consider EXEEXT?
-    case "$0" in
-        upsc|*/upsc)
-            if [ -n "${NUT_DEBUG_LEVEL_UPSC-}" ]; then
-                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSC}"
-            fi
-            ;;
-        nut-scanner|*/nut-scanner)
-            if [ -n "${NUT_DEBUG_LEVEL_NUT_SCANNER-}" ]; then
-                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_NUT_SCANNER}"
-            fi
-            ;;
-    esac
-
-    "$@" > "${NUT_STATEPATH}/runcmd.out" 2>"${NUT_STATEPATH}/runcmd.err" || CMDRES=$?
+    (execcmd "$@" > "${NUT_STATEPATH}/runcmd.out" 2>"${NUT_STATEPATH}/runcmd.err") || CMDRES=$?
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     CMDOUT="`cat \"${NUT_STATEPATH}/runcmd.out\"`"
     CMDERR="`cat \"${NUT_STATEPATH}/runcmd.err\"`"
@@ -386,8 +426,9 @@ else
     LD_LIBRARY_PATH_CLIENT="${LD_LIBRARY_PATH_ORIG}"
 fi
 
+log_info "Locating NUT programs to test:"
 for PROG in upsd upsc dummy-ups upsmon upslog upssched ; do
-    (command -v ${PROG}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
+    (command -v ${PROG}) || (command -v ${PROG}${EXEEXT-}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
 done
 
 PID_UPSD=""
@@ -1050,7 +1091,7 @@ testcase_upsd_no_configs_at_all() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} ${ARG_USER}
+    (execcmd upsd ${ARG_FG} ${ARG_USER})
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
@@ -1069,7 +1110,7 @@ testcase_upsd_no_configs_driver_file() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} ${ARG_USER}
+    (execcmd upsd ${ARG_FG} ${ARG_USER})
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
@@ -1089,7 +1130,7 @@ testcase_upsd_no_configs_in_driver_file() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} ${ARG_USER}
+    (execcmd upsd ${ARG_FG} ${ARG_USER})
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
@@ -1111,7 +1152,7 @@ upsd_start_loop() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} ${ARG_USER} &
+    execcmd upsd ${ARG_FG} ${ARG_USER} &
     PID_UPSD="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSD as PID $PID_UPSD"
@@ -1145,7 +1186,7 @@ upsd_start_loop() {
         if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
             NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
         fi
-        upsd ${ARG_FG} ${ARG_USER} &
+        execcmd upsd ${ARG_FG} ${ARG_USER} &
         PID_UPSD="$!"
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
         log_warn "[${TESTCASE}] Tried to start UPSD again, now as PID $PID_UPSD"
@@ -1318,17 +1359,17 @@ sandbox_start_drivers() {
     if [ -n "${NUT_DEBUG_LEVEL_DRIVERS-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_DRIVERS}"
     fi
-    #upsdrvctl ${ARG_FG} ${ARG_USER} start dummy &
-    dummy-ups -a dummy ${ARG_USER} ${ARG_FG} &
+    #execcmd upsdrvctl ${ARG_FG} ${ARG_USER} start dummy &
+    execcmd dummy-ups -a dummy ${ARG_USER} ${ARG_FG} &
     PID_DUMMYUPS="$!"
     log_debug "Tried to start dummy-ups driver for 'dummy' as PID $PID_DUMMYUPS"
 
     if [ x"${TOP_SRCDIR}" != x ]; then
-        dummy-ups -a UPS1 ${ARG_USER} ${ARG_FG} &
+        execcmd dummy-ups -a UPS1 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS1="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS1' as PID $PID_DUMMYUPS1"
 
-        dummy-ups -a UPS2 ${ARG_USER} ${ARG_FG} &
+        execcmd dummy-ups -a UPS2 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS2="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
     fi
@@ -1480,7 +1521,7 @@ testcase_sandbox_start_upsd_after_drivers() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} ${ARG_USER} &
+    execcmd upsd ${ARG_FG} ${ARG_USER} &
     PID_UPSD="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
@@ -1693,13 +1734,13 @@ testcase_sandbox_upsc_query_timer() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSLOG-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSLOG}"
     fi
-    upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
+    execcmd upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
     PID_UPSLOG="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 
     # TODO: Any need to convert to runcmd()?
-    OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
-    OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
+    OUT1="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
+    OUT2="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
     OUT3=""
     OUT4=""
     OUT5=""
@@ -1708,13 +1749,13 @@ testcase_sandbox_upsc_query_timer() {
     # (pollfreq) after reading the file before wrapping around
     if [ x"$OUT1" = x"$OUT2" ]; then
         sleep 3
-        OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
+        OUT3="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
         if [ x"$OUT2" = x"$OUT3" ]; then
             sleep 3
-            OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            OUT4="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
             if [ x"$OUT3" = x"$OUT4" ]; then
                 sleep 8
-                OUT5="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+                OUT5="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
             fi
         fi
     fi
@@ -2081,7 +2122,7 @@ upsmon_start_loop() {
         # but the sample script honours NUT_DEBUG_LEVEL_UPSSCHED if set
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSMON}"
     fi
-    upsmon ${ARG_FG} ${ARG_USER} &
+    execcmd upsmon ${ARG_FG} ${ARG_USER} &
     PID_UPSMON="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSMON as PID $PID_UPSMON"

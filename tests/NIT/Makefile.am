@@ -25,6 +25,7 @@ check-NIT: $(abs_srcdir)/nit.sh
 	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	abs_srcdir='$(abs_srcdir)' abs_builddir='$(abs_builddir)' \
 	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
+	EXEEXT='$(EXEEXT)' \
 	"$(abs_srcdir)/nit.sh"
 
 # Make sure pre-requisites for NIT are fresh as we iterate
@@ -47,6 +48,7 @@ check-NIT-sandbox: $(abs_srcdir)/nit.sh
 	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	abs_srcdir='$(abs_srcdir)' abs_builddir='$(abs_builddir)' \
 	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
+	EXEEXT='$(EXEEXT)' \
 	"$(abs_srcdir)/nit.sh"
 
 check-NIT-sandbox-devel: $(abs_srcdir)/nit.sh
