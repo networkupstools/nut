@@ -534,7 +534,7 @@ static void setuptcp(stype_t *server)
 			/* Associate socket event to the socket via its Event object */
 			if (WSAEventSelect(server->sock_fd, server->Event, FD_ACCEPT)) {
 				upsdebug_with_errno(3, "setuptcp: WSAEventSelect");
-                        }
+			}
 		} else {
 			upsdebug_with_errno(3, "setuptcp: CreateEvent");
 		}
@@ -559,8 +559,8 @@ static void setuptcp(stype_t *server)
 			__func__, server->addr, server->port,
 			(uintmax_t)server->sock_fd,
 			(uintmax_t)server->Event,
-	                (server->Event == INVALID_HANDLE_VALUE ? " (INVALID_HANDLE_VALUE)" : "")
-                        );
+			(server->Event == INVALID_HANDLE_VALUE ? " (INVALID_HANDLE_VALUE)" : "")
+			);
 #endif
 	}
 
@@ -1838,10 +1838,10 @@ static void mainloop(void)
 			continue;
 		}
 
-                if (INVALID_FD(client->Event)) {
+		if (INVALID_FD(client->Event)) {
 			upsdebugx(5, "%s: skip CLIENT [%s => %s, FD %" PRIuMAX "]: event loop not bound", __func__, client->addr, client->loginups, (uintmax_t)client->sock_fd);
 			continue;
-                }
+		}
 
 		nfds_wanted++;
 		if (nfds >= maxconn) {
