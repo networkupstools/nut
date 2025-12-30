@@ -262,25 +262,89 @@ runcmd() {
 # from the source codebase are where the script resides, e.g.
 # the $(srcdir) from the Makefile. If we are not in the source
 # tree, tests would use binaries in PATH (e.g. packaged install).
-BUILDDIR="`pwd`"
+# Note that assumptions about relative paths below may NOT FIT
+# out-of-tree builds, like NUT for Windows under Linux, so we'd
+# better trust envvars from `make`, if exported and available to us!
+BUILDDIR=""
+log_debug "Current working directory: '`pwd`'"
+if [ x"${abs_builddir-}" != x ] ; then
+    BUILDDIR="${abs_builddir-}"
+    log_debug "Trying BUILDDIR='${BUILDDIR}' from make vars"
+else
+    if [ x"${builddir-}" != x ] ; then
+        log_debug "Trying BUILDDIR='${builddir}' from make vars"
+        BUILDDIR="`cd \"${builddir}\" && pwd`"
+    fi
+fi
+if [ x"${BUILDDIR}" = x ] || [ ! -d "${BUILDDIR}" ] ; then
+    BUILDDIR="`pwd`"
+    log_info "Guessing BUILDDIR='${BUILDDIR}' from script location..."
+else
+    log_info "Using BUILDDIR='${BUILDDIR}' from make vars"
+fi
+
 TOP_BUILDDIR=""
-case "${BUILDDIR}" in
-    */tests/NIT)
-        TOP_BUILDDIR="`cd \"${BUILDDIR}\"/../.. && pwd`" ;;
-    *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
-esac
+if [ x"${abs_top_builddir-}" != x ] ; then
+    TOP_BUILDDIR="${abs_top_builddir}"
+    log_debug "Trying TOP_BUILDDIR='${TOP_BUILDDIR}' from make vars"
+else
+    if [ x"${top_builddir-}" != x ] ; then
+        log_debug "Trying TOP_BUILDDIR='${top_builddir}' from make vars"
+        TOP_BUILDDIR="`cd \"${top_builddir}\" && pwd`"
+    fi
+fi
+if [ x"${TOP_BUILDDIR}" = x ] || [ ! -d "${TOP_BUILDDIR}" ] ; then
+    case "${BUILDDIR}" in
+        */tests/NIT)
+            TOP_BUILDDIR="`cd \"${BUILDDIR}\"/../.. && pwd`" ;;
+        *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
+    esac
+    log_info "Guessing TOP_BUILDDIR='${TOP_BUILDDIR}' from script location and/or BUILDDIR value..."
+else
+    log_info "Using TOP_BUILDDIR='${TOP_BUILDDIR}' from make vars"
+fi
 if test ! -w "${BUILDDIR}" ; then
     log_error "BUILDDIR='${BUILDDIR}' is not writeable, tests may fail below"
 fi
 
-SRCDIR="`dirname \"$0\"`"
-SRCDIR="`cd \"$SRCDIR\" && pwd`"
+SRCDIR=""
+if [ x"${abs_srcdir-}" != x ] ; then
+    SRCDIR="${abs_srcdir}"
+    log_debug "Trying SRCDIR='${SRCDIR}' from make vars"
+else
+    if [ x"${srcdir-}" != x ] ; then
+        log_debug "Trying SRCDIR='${srcdir}' from make vars"
+        SRCDIR="`cd \"${srcdir}\" && pwd`"
+    fi
+fi
+if [ x"${SRCDIR}" = x ] || [ ! -d "${SRCDIR}" ] ; then
+    SRCDIR="`dirname \"$0\"`"
+    SRCDIR="`cd \"$SRCDIR\" && pwd`"
+    log_info "Guessing SRCDIR='${SRCDIR}' from script location..."
+else
+    log_info "Using SRCDIR='${SRCDIR}' from make vars"
+fi
+
 TOP_SRCDIR=""
-case "${SRCDIR}" in
-    */tests/NIT)
-        TOP_SRCDIR="`cd \"${SRCDIR}\"/../.. && pwd`" ;;
-    *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
-esac
+if [ x"${abs_top_srcdir-}" != x ] ; then
+    TOP_SRCDIR="${abs_top_srcdir}"
+    log_debug "Trying TOP_SRCDIR='${TOP_SRCDIR}' from make vars"
+else
+    if [ x"${top_srcdir-}" != x ] ; then
+        log_debug "Trying TOP_SRCDIR='${top_srcdir}' from make vars"
+        TOP_SRCDIR="`cd \"${top_srcdir}\" && pwd`"
+    fi
+fi
+if [ x"${TOP_SRCDIR}" = x ] || [ ! -d "${TOP_SRCDIR}" ] ; then
+    case "${SRCDIR}" in
+        */tests/NIT)
+            TOP_SRCDIR="`cd \"${SRCDIR}\"/../.. && pwd`" ;;
+        *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
+    esac
+    log_info "Guessing TOP_SRCDIR='${TOP_SRCDIR}' from script location and/or SRCDIR value..."
+else
+    log_info "Using TOP_SRCDIR='${TOP_SRCDIR}' from make vars"
+fi
 
 # Make these paths known to e.g. upsmon/upssched and handler scripts they call
 export BUILDDIR TOP_BUILDDIR SRCDIR TOP_SRCDIR
