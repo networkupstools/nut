@@ -555,10 +555,10 @@ static void setuptcp(stype_t *server)
 			(uintmax_t)server->sock_fd);
 #else
 		upsdebugx(1, "%s: SERVER listener [%s:%s] on FD %" PRIuMAX
-			", event handler %" PRIuMAX "%s",
+			", event handler %p%s",
 			__func__, server->addr, server->port,
 			(uintmax_t)server->sock_fd,
-			(uintmax_t)server->Event,
+			server->Event,
 			(server->Event == INVALID_HANDLE_VALUE ? " (INVALID_HANDLE_VALUE)" : "")
 			);
 #endif
@@ -1792,26 +1792,26 @@ static void mainloop(void)
 			ups_data_ok(ups);
 		}
 
-		/* Note: not a SOCKET (type), as far as WinAPI is concerned: */
+		/* Note: not a SOCKET (type) but a HANDLE, as far as WinAPI is concerned: */
 		if (INVALID_FD(ups->sock_fd)) {
-			upsdebugx(5, "%s: skip DRIVER [%s, FD %" PRIuMAX "]: socket not bound", __func__, ups->name, (uintmax_t)ups->sock_fd);
+			upsdebugx(5, "%s: skip DRIVER [%s, handle %p]: socket not bound", __func__, ups->name, ups->sock_fd);
 			continue;
 		}
 
 		if (INVALID_FD(ups->read_overlapped.hEvent)) {
-			upsdebugx(5, "%s: skip DRIVER [%s, FD %" PRIuMAX "]: event loop not bound", __func__, ups->name, (uintmax_t)ups->sock_fd);
+			upsdebugx(5, "%s: skip DRIVER [%s, handle %p: event loop not bound", __func__, ups->name, ups->sock_fd);
 			continue;
 		}
 
 		nfds_wanted++;
 		if (nfds >= maxconn) {
 			/* ignore devices that we are unable to handle */
-			upsdebugx(5, "%s: skip DRIVER [%s, FD %" PRIuMAX "]: too many handled already", __func__, ups->name, (uintmax_t)ups->sock_fd);
+			upsdebugx(5, "%s: skip DRIVER [%s, handle %p]: too many handled already", __func__, ups->name, ups->sock_fd);
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for DRIVER [%s, FD %" PRIuMAX "]",
-			__func__, (uintmax_t)nfds, ups->name, (uintmax_t)ups->sock_fd);
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for DRIVER [%s, handle %p]",
+			__func__, (uintmax_t)nfds, ups->name, ups->sock_fd);
 		fds[nfds] = ups->read_overlapped.hEvent;
 
 		handler[nfds].type = DRIVER;
