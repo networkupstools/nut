@@ -304,7 +304,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 				nutscan_add_option_to_device(dev, "desc", "IPv6");
 			}
 
-			if (port != PORT) {
+			if (port != NUT_PORT) {
 				/* +5+1+1+1 is for :
 				 - port number (max 65535 so 5 characters),
 				 - '@' and ':' characters
@@ -359,7 +359,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			if (proto == AVAHI_PROTO_INET6) {
 				nutscan_add_option_to_device(dev, "desc", "IPv6");
 			}
-			if (port != PORT) {
+			if (port != NUT_PORT) {
 				/*+1+1 is for ':' character and terminating 0 */
 				/*buf is the string containing the port number*/
 				buf_size = strlen(host_name) + strlen(buf) + 1 + 1;
