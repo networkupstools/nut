@@ -92,10 +92,10 @@ The non-trivial debug level would be passed down to launched NUT programs.
 Primarily useful for troubleshooting with the non-service mode.
 
 *-I*::
-Install as a Windows service called "Network UPS Tools".
+Install as a Windows service called "Network UPS Tools". Does not start it.
 
 *-U*::
-Uninstall the Windows service.
+(Try to stop and) Uninstall the Windows service called "Network UPS Tools".
 
 *-N*::
 Run once in non-service mode (for troubleshooting).

@@ -40,6 +40,10 @@ typedef struct conn_s {
 
 static DWORD			upsd_pid = 0;
 static DWORD			upsmon_pid = 0;
+static DWORD			upsdrvctl_pid = 0;
+static HANDLE			upsd_handle = INVALID_HANDLE_VALUE;
+static HANDLE			upsmon_handle = INVALID_HANDLE_VALUE;
+static HANDLE			upsdrvctl_handle = INVALID_HANDLE_VALUE;
 static BOOL			service_flag = TRUE;
 HANDLE				svc_stop = NULL;
 static SERVICE_STATUS		SvcStatus;
@@ -88,7 +92,7 @@ static void print_event(DWORD priority, const char * fmt, ...)
 }
 
 /* returns PID of the newly created process or 0 on failure */
-static DWORD create_process(char * command)
+static DWORD create_process(char * command, HANDLE *pHandle)
 {
 	STARTUPINFO StartupInfo;
 	PROCESS_INFORMATION ProcessInformation;
@@ -122,6 +126,8 @@ static DWORD create_process(char * command)
 
 	upsdebugx(3, "%s: %s returned PID: %" PRIiMAX, __func__,
 		NUT_STRARG(command), (intmax_t)(ProcessInformation.dwProcessId));
+	if (pHandle)
+		*pHandle = ProcessInformation.hProcess;
 	return  ProcessInformation.dwProcessId;
 }
 
@@ -159,7 +165,9 @@ static DWORD run_drivers(void)
 			path, makearg_debug());
 	}
 	free(path);
-	return create_process(command);
+
+	upsdrvctl_pid = create_process(command, &upsdrvctl_handle);
+	return upsdrvctl_pid;
 }
 
 /* return PID of created process or 0 on failure */
@@ -176,7 +184,7 @@ static DWORD stop_drivers(void)
 			path, makearg_debug());
 	}
 	free(path);
-	return create_process(command);
+	return create_process(command, NULL);
 }
 
 /* return PID of created process or 0 on failure */
@@ -191,7 +199,7 @@ static void run_upsd(void)
 		snprintfcat(command, sizeof(command), " %s", makearg_debug());
 	}
 	free(path);
-	upsd_pid = create_process(command);
+	upsd_pid = create_process(command, &upsd_handle);
 }
 
 static void stop_upsd(void)
@@ -215,7 +223,7 @@ static void run_upsmon(void)
 		snprintfcat(command, sizeof(command), " %s", makearg_debug());
 	}
 	free(path);
-	upsmon_pid = create_process(command);
+	upsmon_pid = create_process(command, &upsmon_handle);
 }
 
 static void stop_upsmon(void)
@@ -301,7 +309,7 @@ static DWORD shutdown_ups(void)
 			path, makearg_debug());
 	}
 	free(path);
-	return create_process(command);
+	return create_process(command, NULL);
 }
 
 /* return 0 on failure */
@@ -434,6 +442,20 @@ static int SvcInstall(const char * SvcName, const char * args)
 	else {
 		upslogx(LOG_INFO, "Service installed successfully\n");
 	}
+
+#ifdef SERVICE_CONFIG_DESCRIPTION
+	{ /* scope */
+		SERVICE_DESCRIPTIONA	descr;
+		descr.lpDescription = "The Network UPS Tools (NUT) project "
+                        "provides monitoring and management of "
+                        "Uninterruptible Power Sources (UPS) and similar hardware, "
+                        "allowing for multiple systems fed by an UPS to be "
+                        "safely shut down in case of a power outage. "
+                        "For more details please see " NUT_WEBSITE_BASE;
+
+		ChangeServiceConfig2A(Service, SERVICE_CONFIG_DESCRIPTION, &descr);
+	}
+#endif
 
 	CloseServiceHandle(Service);
 	CloseServiceHandle(SCManager);
@@ -637,8 +659,8 @@ static void close_all(void)
 static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 {
 	DWORD	ret;
-	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];
-	int	maxhandle = 0;
+	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];  /* 64 per current WinAPI sheaders */
+	size_t	maxhandle = 0;
 	pipe_conn_t	*conn;
 	DWORD	priority;
 	char	*buf;
@@ -681,11 +703,16 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 		/* Wait on the read IO of each connections */
 		for (conn = pipe_connhead; conn; conn = conn->next) {
+			/* Leave one or two for "new event" below */
+			if (maxhandle + 1 + (service_flag ? 1 : 0) >= sizeof(handles)) {
+				upsdebugx(1, "%s: skipping handle: too many connected already", __func__);
+				continue;
+			}
 			handles[maxhandle] = conn->overlapped.hEvent;
 			maxhandle++;
 		}
 
-		/* Add the new pipe connected event */
+		/* Add the "new pipe connected" event */
 		handles[maxhandle] = pipe_connection_overlapped.hEvent;
 		maxhandle++;
 
@@ -699,6 +726,7 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 		if (ret == WAIT_FAILED) {
 			print_event(LOG_ERR, "Wait failed");
+			upsdebug_with_errno(1, "%s: WaitForMultipleObjects", __func__);
 			return;
 		}
 
@@ -735,6 +763,61 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 					pipe_disconnect(conn);
 				}
+			}
+		}
+
+		/* Check on each daemon: Was it supposed to run? Does it still? */
+		if (upsdrvctl_pid) {
+			DWORD	status = 0;
+			BOOL	res = FALSE;
+
+			res = GetExitCodeProcess(upsdrvctl_handle, &status);
+			if (res != 0) {
+				if (status != STILL_ACTIVE) {
+					upslog_with_errno(LOG_WARNING, "%s: GetExitCodeProcess(upsdrvctl): daemon died, restarting", __func__);
+					run_drivers();
+					Sleep(5000);
+				} else {
+					upsdebugx(2, "%s: upsdrvctl is still running as PID %" PRIuMAX, __func__, (uintmax_t)upsdrvctl_pid);
+				}
+			} else {
+				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsdrvctl)", __func__);
+			}
+		}
+
+		if (upsd_pid) {
+			DWORD	status = 0;
+			BOOL	res = FALSE;
+
+			res = GetExitCodeProcess(upsd_handle, &status);
+			if (res != 0) {
+				if (status != STILL_ACTIVE) {
+					upslog_with_errno(LOG_WARNING, "%s: GetExitCodeProcess(upsd): daemon died, restarting", __func__);
+					run_upsd();
+					Sleep(5000);
+				} else {
+					upsdebugx(2, "%s: upsd is still running as PID %" PRIuMAX, __func__, (uintmax_t)upsd_pid);
+				}
+			} else {
+				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsd)", __func__);
+			}
+		}
+
+		if (upsmon_pid) {
+			DWORD	status = 0;
+			BOOL	res = FALSE;
+
+			res = GetExitCodeProcess(upsmon_handle, &status);
+			if (res != 0) {
+				if (status != STILL_ACTIVE) {
+					upslog_with_errno(LOG_WARNING, "%s: GetExitCodeProcess(upsmon): daemon died, restarting", __func__);
+					run_upsmon();
+					Sleep(5000);
+				} else {
+					upsdebugx(2, "%s: upsmon is still running as PID %" PRIuMAX, __func__, (uintmax_t)upsmon_pid);
+				}
+			} else {
+				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsmon)", __func__);
 			}
 		}
 	}
@@ -785,6 +868,14 @@ int main(int argc, char **argv)
 			case 'I':
 				return SvcInstall(SVCNAME, NULL);
 			case 'U':
+				{ /* scoping */
+					int	ret = 0;
+					upsdebugx(1, "exec: net stop \"" SVCNAME "\"");
+					ret = system("net stop \"" SVCNAME "\"");
+					upsdebugx(1, "exec: returned: %d", ret);
+					if (ret != 0)
+						upsdebugx(0, "FAILED stopping %s: %i", SVCNAME, ret);
+				}
 				return SvcUninstall(SVCNAME);
 			case 'N':
 				service_flag = FALSE;

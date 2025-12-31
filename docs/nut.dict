@@ -1474,6 +1474,8 @@ WIP
 WIPO
 WMNut
 WS
+WSACleanup
+WSAStartup
 WSDIR
 WSE
 WSL
@@ -1628,6 +1630,7 @@ aspell
 ast
 async
 atcl
+atexit
 ats
 aug
 augeas

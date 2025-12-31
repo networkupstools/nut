@@ -145,7 +145,7 @@ extern "C" {
  * including pipes for driver-upsd communications: */
 # define TYPE_FD int
 # define ERROR_FD (-1)
-# define VALID_FD(a) (a>=0)
+# define VALID_FD(a) ((a)>=0)
 
 /* Type of what NUT serial/SHUT methods juggle: */
 # define TYPE_FD_SER TYPE_FD
@@ -165,15 +165,20 @@ extern "C" {
  */
 # define TYPE_FD HANDLE
 # define ERROR_FD (INVALID_HANDLE_VALUE)
-# define VALID_FD(a) (a!=INVALID_HANDLE_VALUE)
+# define VALID_FD(a) ((a)!=INVALID_HANDLE_VALUE)
 
 # ifndef INVALID_SOCKET
-#  define INVALID_SOCKET -1
+#  define INVALID_SOCKET ((SOCKET)(-1))
 # endif
 
+/* Bitness-dependent "pointer-sized unsigned integer" (usually 32 or 64 bits) */
 # define TYPE_FD_SOCK SOCKET
 # define ERROR_FD_SOCK INVALID_SOCKET
-# define VALID_FD_SOCK(a) (a!=INVALID_SOCKET)
+/* Valid range for SOCKET is 0..(INVALID_SOCKET-1) and there is no special
+ * check for "-1" (may be or not be coincidental by casting and/or definition
+ * in existing headers) nor generally negative values, as in Unix socket API.
+ */
+# define VALID_FD_SOCK(a) ((a)!=INVALID_SOCKET)
 
 typedef struct serial_handler_s {
 	HANDLE handle;
@@ -188,7 +193,7 @@ typedef struct serial_handler_s {
 
 # define TYPE_FD_SER serial_handler_t *
 # define ERROR_FD_SER (NULL)
-# define VALID_FD_SER(a) (a!=NULL)
+# define VALID_FD_SER(a) ((a)!=NULL)
 
 /* difftime returns erroneous value so we use this macro */
 # undef difftime

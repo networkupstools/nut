@@ -364,7 +364,18 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - Augmented `nut.exe` launcher with `status` and `restart` actions, and
    general ability to debug-log the activities during service management
-   operations. [PR #3235]
+   operations. (Re-)registration of the "Network UPS Tools" service should
+   now populate a nice description of it. The `-U` (uninstall) action should
+   now also try to stop the service first. [PR #3235]
+
+ - Fixed `LISTEN *` handling for `upsd.exe` in NUT for Windows builds. [PR #3237]
+
+ - Revised WIN32 `WSAStartup()` and registration of `atexit(WSACleanup)` to
+   only be done once per program (and cleanups to be always registered); this
+   impacts the C `libupsclient` and C++ `libnutclient` libraries (and so most
+   NUT clients and tools which use the former, and `nutconf` which uses the
+   latter), the `apcupsd` driver, `upsd` data server, and `nut-scanner` tool.
+   [PR #3237]
 
  - Revised CI and deliverable scripts, and Makefile recipes, to not use
    the verbatim `grep -E` (loudly preferred by newer systems, but may be

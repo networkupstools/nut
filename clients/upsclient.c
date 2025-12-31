@@ -1019,9 +1019,16 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 	HANDLE event = NULL;
 	unsigned long argp;
 
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 #endif	/* WIN32 */
+
 	if (!ups) {
 		return -1;
 	}
