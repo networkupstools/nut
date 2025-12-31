@@ -285,8 +285,14 @@ void Socket::connect(const std::string& host, uint16_t port)
 	HANDLE event = NULL;
 	unsigned long argp;
 
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 #endif	/* WIN32 */
 
 	_sock = INVALID_SOCKET;
@@ -794,7 +800,7 @@ bool Client::hasFeature(const Feature& feature)
 TcpClient::TcpClient():
 Client(),
 _host("localhost"),
-_port(3493),
+_port(NUT_PORT),
 _timeout(0),
 _socket(new internal::Socket)
 {

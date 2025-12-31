@@ -318,7 +318,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	/* LISTEN <address> [<port>] */
 	if (!strcmp(arg[0], "LISTEN")) {
 		if (numargs < 3)
-			listen_add(arg[1], string_const(PORT));
+			listen_add(arg[1], string_const(NUT_PORT));
 		else
 			listen_add(arg[1], arg[2]);
 		return 1;

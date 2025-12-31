@@ -1623,29 +1623,34 @@ install-win-bundle-thirdparty:
 	 if test -n "$$ARCH" ; then export ARCH ; fi ; \
 	 DESTDIR='$(DESTDIR)' ; export DESTDIR ; \
 	 (  cd '$(DESTDIR)' || exit ; \
-	    GREP=$(GREP)' EGREP='$(EGREP)' \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    DESTDIR="" '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
+	        BD="`basename \"$$D\"`" ; \
+	        if test -e './$(bindir)/'"$$BD" && diff './$(bindir)/'"$$BD" "$$D" 2>/dev/null >/dev/null ; then \
+	            echo "   DLL->bin       $$D : skip (already installed there)" 2>&1 ; \
+	            continue ; \
+	        fi ; \
 	        echo "   DLL->bin       $$D" 2>&1 ; \
 	        cp -pf "$$D" './$(bindir)/' ; \
 	    done ; \
 	 ) || exit ; \
 	 (  if test x"$(bindir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(sbindir)' || exit ; \
-	    GREP=$(GREP)' EGREP='$(EGREP)' \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->sbin      $$D" 2>&1 ; \
+	        echo "   DLL->sbin      $$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
 	 (  if test x"$(driverexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(driverexecdir)' || exit ; \
-	    GREP=$(GREP)' EGREP='$(EGREP)' \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->drv       $$D" 2>&1 ; \
+	        echo "   DLL->drv       $$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -1654,10 +1659,10 @@ install-win-bundle-thirdparty:
 	    if test x"$(cgiexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(cgiexecdir)' || exit ; \
-	    GREP=$(GREP)' EGREP='$(EGREP)' \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->cgi       $$D" 2>&1 ; \
+	        echo "   DLL->cgi       $$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -1666,10 +1671,10 @@ install-win-bundle-thirdparty:
 	    if test x"$(libexecdir)" = x"$(driverexecdir)" ; then exit 0 ; fi ; \
 	    if test x"$(libexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(libexecdir)' || exit ; \
-	    GREP=$(GREP)' EGREP='$(EGREP)' \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->libexec   $$D" 2>&1 ; \
+	        echo "   DLL->libexec   $$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit

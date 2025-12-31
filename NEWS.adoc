@@ -83,6 +83,9 @@ https://github.com/networkupstools/nut/milestone/12
    * Revised detection of (relative) paths to program and configuration files
      near the currently running program in NUT for Windows builds. [issues #3207,
      #3063, #3065, #3219]
+   * Fixed thread-safety of IP address printout in `libupsclient` method
+    `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
+    [issue #3234]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
@@ -97,6 +100,10 @@ https://github.com/networkupstools/nut/milestone/12
 
  - Introduced a new NUT driver named `meanwell_ntu` which provides support for
    the Mean Well NTU series hybrid inverter and UPS units. [PR #3206]
+
+ - Introduced a new NUT driver named `must_ep2000pro` which provides support
+   for the MUST EP2000Pro compatible, line-interactive UPS models which talk
+   serial-protocol modbus protocol. [PR #3228]
 
  - `nhs_ser` driver updates:
    * Driver source code includes a table to map baud rates (defined by the OS
@@ -354,6 +361,21 @@ several `FSD` notifications into one executed action. [PR #3097]
  - Default `PIDPATH` is now more strictly `/var/run`, unless building on a
    system conforming to FHS-3.0 standard where that location is absent or
    is a symlink, while `/run` exists and is a true directory. [#3099]
+
+ - Augmented `nut.exe` launcher with `status` and `restart` actions, and
+   general ability to debug-log the activities during service management
+   operations. (Re-)registration of the "Network UPS Tools" service should
+   now populate a nice description of it. The `-U` (uninstall) action should
+   now also try to stop the service first. [PR #3235]
+
+ - Fixed `LISTEN *` handling for `upsd.exe` in NUT for Windows builds. [PR #3237]
+
+ - Revised WIN32 `WSAStartup()` and registration of `atexit(WSACleanup)` to
+   only be done once per program (and cleanups to be always registered); this
+   impacts the C `libupsclient` and C++ `libnutclient` libraries (and so most
+   NUT clients and tools which use the former, and `nutconf` which uses the
+   latter), the `apcupsd` driver, `upsd` data server, and `nut-scanner` tool.
+   [PR #3237]
 
  - Revised CI and deliverable scripts, and Makefile recipes, to not use
    the verbatim `grep -E` (loudly preferred by newer systems, but may be

@@ -3,7 +3,7 @@
 
    Copyright (C)
 	2010	Frederic Bohe <fredericbohe@eaton.com>
-	2021-2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2021-2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,6 +40,10 @@ typedef struct conn_s {
 
 static DWORD			upsd_pid = 0;
 static DWORD			upsmon_pid = 0;
+static DWORD			upsdrvctl_pid = 0;
+static HANDLE			upsd_handle = INVALID_HANDLE_VALUE;
+static HANDLE			upsmon_handle = INVALID_HANDLE_VALUE;
+static HANDLE			upsdrvctl_handle = INVALID_HANDLE_VALUE;
 static BOOL			service_flag = TRUE;
 HANDLE				svc_stop = NULL;
 static SERVICE_STATUS		SvcStatus;
@@ -81,7 +85,6 @@ static void print_event(DWORD priority, const char * fmt, ...)
 				NULL);		/* no binary data */
 
 		DeregisterEventSource(EventSource);
-
 	}
 
 	if (buf)
@@ -89,7 +92,7 @@ static void print_event(DWORD priority, const char * fmt, ...)
 }
 
 /* returns PID of the newly created process or 0 on failure */
-static DWORD create_process(char * command)
+static DWORD create_process(char * command, HANDLE *pHandle)
 {
 	STARTUPINFO StartupInfo;
 	PROCESS_INFORMATION ProcessInformation;
@@ -100,6 +103,7 @@ static DWORD create_process(char * command)
 	StartupInfo.cb = sizeof(StartupInfo);
 	memset(&ProcessInformation, 0, sizeof(ProcessInformation));
 
+	upsdebugx(2, "%s: %s", __func__, NUT_STRARG(command));
 	res = CreateProcess(
 			NULL,
 			command,
@@ -115,10 +119,15 @@ static DWORD create_process(char * command)
 	LastError = GetLastError();
 
 	if (res == 0) {
+		upsdebug_with_errno(1, "%s: failed to create process '%s'", __func__, NUT_STRARG(command));
 		print_event(LOG_ERR, "Can't create process %s : %d", command, LastError);
 		return 0;
 	}
 
+	upsdebugx(3, "%s: %s returned PID: %" PRIiMAX, __func__,
+		NUT_STRARG(command), (intmax_t)(ProcessInformation.dwProcessId));
+	if (pHandle)
+		*pHandle = ProcessInformation.hProcess;
 	return  ProcessInformation.dwProcessId;
 }
 
@@ -156,7 +165,9 @@ static DWORD run_drivers(void)
 			path, makearg_debug());
 	}
 	free(path);
-	return create_process(command);
+
+	upsdrvctl_pid = create_process(command, &upsdrvctl_handle);
+	return upsdrvctl_pid;
 }
 
 /* return PID of created process or 0 on failure */
@@ -173,7 +184,7 @@ static DWORD stop_drivers(void)
 			path, makearg_debug());
 	}
 	free(path);
-	return create_process(command);
+	return create_process(command, NULL);
 }
 
 /* return PID of created process or 0 on failure */
@@ -188,11 +199,13 @@ static void run_upsd(void)
 		snprintfcat(command, sizeof(command), " %s", makearg_debug());
 	}
 	free(path);
-	upsd_pid = create_process(command);
+	upsd_pid = create_process(command, &upsd_handle);
 }
 
 static void stop_upsd(void)
 {
+	upsdebugx(3, "%s: using pipe '%s' to stop PID: %" PRIiMAX, __func__,
+		NUT_STRARG(UPSD_PIPE_NAME), (intmax_t)(upsd_pid));
 	if (sendsignal(UPSD_PIPE_NAME, COMMAND_STOP, 0)) {
 		print_event(LOG_ERR, "Error stopping upsd (%d)", GetLastError());
 	}
@@ -210,11 +223,13 @@ static void run_upsmon(void)
 		snprintfcat(command, sizeof(command), " %s", makearg_debug());
 	}
 	free(path);
-	upsmon_pid = create_process(command);
+	upsmon_pid = create_process(command, &upsmon_handle);
 }
 
 static void stop_upsmon(void)
 {
+	upsdebugx(3, "%s: using pipe '%s' to stop PID: %" PRIiMAX, __func__,
+		NUT_STRARG(UPSMON_PIPE_NAME), (intmax_t)(upsmon_pid));
 	if (sendsignal(UPSMON_PIPE_NAME, COMMAND_STOP, 0)) {
 		print_event(LOG_ERR, "Error stopping upsmon (%d)", GetLastError());
 	}
@@ -244,6 +259,7 @@ static DWORD test_powerdownflag(void)
 	StartupInfo.cb = sizeof(StartupInfo);
 	memset(&ProcessInformation, 0, sizeof(ProcessInformation));
 
+	upsdebugx(2, "%s: launch %s", __func__, command);
 	res = CreateProcess(
 			NULL,
 			command,
@@ -259,6 +275,7 @@ static DWORD test_powerdownflag(void)
 	LastError = GetLastError();
 
 	if (res == 0) {
+		upsdebug_with_errno(1, "%s: failed to create process '%s'", __func__, command);
 		print_event(LOG_ERR, "Can't create process %s : %d", command, LastError);
 		return 1;
 	}
@@ -267,6 +284,7 @@ static DWORD test_powerdownflag(void)
 		res = GetExitCodeProcess(ProcessInformation.hProcess, &status);
 		if (res != 0) {
 			if (status != STILL_ACTIVE) {
+				upsdebugx(1, "%s: powerdownflag check returned: %d", __func__, status);
 				return status;
 			}
 		}
@@ -274,6 +292,7 @@ static DWORD test_powerdownflag(void)
 		i--;
 	}
 
+	upsdebugx(1, "%s: powerdownflag check timed out", __func__);
 	return 1;
 }
 
@@ -290,7 +309,7 @@ static DWORD shutdown_ups(void)
 			path, makearg_debug());
 	}
 	free(path);
-	return create_process(command);
+	return create_process(command, NULL);
 }
 
 /* return 0 on failure */
@@ -310,11 +329,13 @@ static int parse_nutconf(BOOL start_flag)
 		return 0;
 	}
 
+	upsdebugx(1, "%s: parsing config file: %s", __func__, fn);
 	while (fgets(buf, sizeof(buf), nutf) != NULL) {
 		if (buf[0] != '#') {
 			if (strstr(buf, "standalone") != NULL
 			||  strstr(buf, "netserver") != NULL
 			) {
+				upsdebugx(2, "%s: saw 'standalone' or 'netserver' on a non-comment line, assuming this is MODE", __func__);
 				if (start_flag == NUT_START) {
 					print_event(LOG_INFO, "Starting drivers");
 					run_drivers();
@@ -346,6 +367,7 @@ static int parse_nutconf(BOOL start_flag)
 				}
 			}
 			if (strstr(buf, "netclient") != NULL) {
+				upsdebugx(2, "%s: saw 'netclient' on a non-comment line, assuming this is MODE", __func__);
 				if (start_flag == NUT_START) {
 					print_event(LOG_INFO, "Starting upsmon (client only)");
 					run_upsmon();
@@ -376,6 +398,7 @@ static int SvcInstall(const char * SvcName, const char * args)
 	TCHAR Path[NUT_PATH_MAX];
 
 	if (!GetModuleFileName(NULL, Path, NUT_PATH_MAX)) {
+		upsdebug_with_errno(1, "%s: Could not GetModuleFileName() of current program", __func__);
 		printf("Cannot install service (%d)\n", (int)GetLastError());
 		return EXIT_FAILURE;
 	}
@@ -390,6 +413,7 @@ static int SvcInstall(const char * SvcName, const char * args)
 			SC_MANAGER_ALL_ACCESS);	/* full access rights */
 
 	if (NULL == SCManager) {
+		upsdebug_with_errno(1, "%s: Could not OpenSCManager()", __func__);
 		upslogx(LOG_ERR, "OpenSCManager failed (%d)\n", (int)GetLastError());
 		return EXIT_FAILURE;
 	}
@@ -410,6 +434,7 @@ static int SvcInstall(const char * SvcName, const char * args)
 			NULL);				/* no password */
 
 	if (Service == NULL) {
+		upsdebug_with_errno(1, "%s: Could not CreateService()", __func__);
 		upslogx(LOG_ERR, "CreateService failed (%d)\n", (int)GetLastError());
 		CloseServiceHandle(SCManager);
 		return EXIT_FAILURE;
@@ -417,6 +442,20 @@ static int SvcInstall(const char * SvcName, const char * args)
 	else {
 		upslogx(LOG_INFO, "Service installed successfully\n");
 	}
+
+#ifdef SERVICE_CONFIG_DESCRIPTION
+	{ /* scope */
+		SERVICE_DESCRIPTIONA	descr;
+		descr.lpDescription = "The Network UPS Tools (NUT) project "
+                        "provides monitoring and management of "
+                        "Uninterruptible Power Sources (UPS) and similar hardware, "
+                        "allowing for multiple systems fed by an UPS to be "
+                        "safely shut down in case of a power outage. "
+                        "For more details please see " NUT_WEBSITE_BASE;
+
+		ChangeServiceConfig2A(Service, SERVICE_CONFIG_DESCRIPTION, &descr);
+	}
+#endif
 
 	CloseServiceHandle(Service);
 	CloseServiceHandle(SCManager);
@@ -440,7 +479,8 @@ static int SvcExists(const char * SvcName)
 			SC_MANAGER_ALL_ACCESS);	/* full access rights */
 
 	if (NULL == SCManager) {
-		upsdebugx(1, "OpenSCManager failed (%d)\n", (int)GetLastError());
+		upsdebug_with_errno(1, "%s: Could not OpenSCManager()", __func__);
+		upslogx(LOG_ERR, "OpenSCManager failed (%d)\n", (int)GetLastError());
 		return -2;
 	}
 
@@ -450,8 +490,9 @@ static int SvcExists(const char * SvcName)
 			DELETE);	/* need delete access */
 
 	if (Service == NULL) {
-		upsdebugx(1, "OpenService failed (%d) for \"%s\"\n",
-			(int)GetLastError(), SvcName);
+		upsdebug_with_errno(1, "%s: OpenService failed for '%s'",
+			__func__, SvcName);
+		upslogx(LOG_ERR, "OpenService failed (%d)\n", (int)GetLastError());
 		CloseServiceHandle(SCManager);
 		return -1;
 	}
@@ -459,7 +500,7 @@ static int SvcExists(const char * SvcName)
 	CloseServiceHandle(Service);
 	CloseServiceHandle(SCManager);
 
-	upsdebugx(1, "Service \"%s\" seems to exist", SvcName);
+	upsdebugx(1, "%s: Service '%s' seems to exist", __func__, SvcName);
 	return 1;
 }
 
@@ -474,6 +515,7 @@ static int SvcUninstall(const char * SvcName)
 			SC_MANAGER_ALL_ACCESS);	/* full access rights */
 
 	if (NULL == SCManager) {
+		upsdebug_with_errno(1, "%s: Could not OpenSCManager()", __func__);
 		upslogx(LOG_ERR, "OpenSCManager failed (%d)\n", (int)GetLastError());
 		return EXIT_FAILURE;
 	}
@@ -484,16 +526,19 @@ static int SvcUninstall(const char * SvcName)
 			DELETE);	/* need delete access */
 
 	if (Service == NULL) {
+		upsdebug_with_errno(1, "%s: OpenService failed for '%s'",
+			__func__, SvcName);
 		upslogx(LOG_ERR, "OpenService failed (%d)\n", (int)GetLastError());
 		CloseServiceHandle(SCManager);
 		return EXIT_FAILURE;
 	}
 
 	if (!DeleteService(Service))  {
+		upsdebug_with_errno(1, "%s: Could not DeleteService()", __func__);
 		upslogx(LOG_ERR, "DeleteService failed (%d)\n", (int)GetLastError());
 	}
 	else {
-		upslogx(LOG_ERR, "Service deleted successfully\n");
+		upslogx(LOG_INFO, "Service deleted successfully\n");
 	}
 
 	CloseServiceHandle(Service);
@@ -502,6 +547,9 @@ static int SvcUninstall(const char * SvcName)
 	return EXIT_SUCCESS;
 }
 
+/* Report the status of the service to the Windows SCM
+ * FIXME: Combine with common.c SMF/systemd/... notifier?
+ */
 static void ReportSvcStatus(
 		DWORD CurrentState,
 		DWORD Win32ExitCode,
@@ -512,6 +560,9 @@ static void ReportSvcStatus(
 	SvcStatus.dwCurrentState = CurrentState;
 	SvcStatus.dwWin32ExitCode = Win32ExitCode;
 	SvcStatus.dwWaitHint = WaitHint;
+
+	/* FIXME: Find a way to stringify? */
+	upsdebugx(2, "%s: reporting transition to status %d", __func__, CurrentState);
 
 	if (CurrentState == SERVICE_START_PENDING)
 		SvcStatus.dwControlsAccepted = 0;
@@ -536,9 +587,11 @@ static void WINAPI SvcCtrlHandler(DWORD Ctrl)
 	{
 		case SERVICE_CONTROL_STOP:
 		case SERVICE_CONTROL_SHUTDOWN:
+			upsdebugx(1, "%s: report SERVICE_STOP_PENDING", __func__);
 			ReportSvcStatus(SERVICE_STOP_PENDING, NO_ERROR, 0);
 
 			/* Signal the service to stop */
+			upsdebugx(1, "%s: report actual service stop/shutdown type...", __func__);
 			SetEvent(svc_stop);
 			ReportSvcStatus(SvcStatus.dwCurrentState, NO_ERROR, 0);
 
@@ -560,6 +613,8 @@ static void SvcStart(char * SvcName)
 			SvcCtrlHandler);
 
 	if (!SvcStatusHandle) {
+		upsdebug_with_errno(1, "%s: RegisterServiceCtrlHandler failed for '%s'",
+			__func__, SvcName);
 		upslogx(LOG_ERR, "RegisterServiceCtrlHandler\n");
 		return;
 	}
@@ -568,6 +623,7 @@ static void SvcStart(char * SvcName)
 	SvcStatus.dwServiceSpecificExitCode = 0;
 
 	/* Report initial status to the SCM */
+	upsdebugx(1, "%s: report SERVICE_START_PENDING", __func__);
 	ReportSvcStatus(SERVICE_START_PENDING, NO_ERROR, 3000);
 }
 
@@ -580,9 +636,12 @@ static void SvcReady(void)
 			NULL);	/* no name */
 
 	if (svc_stop == NULL) {
+		upsdebugx(1, "%s: report SERVICE_STOPPED", __func__);
 		ReportSvcStatus(SERVICE_STOPPED, NO_ERROR, 0);
 		return;
 	}
+
+	upsdebugx(1, "%s: report SERVICE_RUNNING", __func__);
 	ReportSvcStatus(SERVICE_RUNNING, NO_ERROR, 0);
 }
 
@@ -590,6 +649,7 @@ static void close_all(void)
 {
 	pipe_conn_t	*conn;
 
+	upsdebugx(3, "%s: closing all connections (if any)", __func__);
 	for (conn = pipe_connhead; conn; conn = conn->next) {
 		pipe_disconnect(conn);
 	}
@@ -599,8 +659,8 @@ static void close_all(void)
 static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 {
 	DWORD	ret;
-	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];
-	int	maxhandle = 0;
+	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];  /* 64 per current WinAPI sheaders */
+	size_t	maxhandle = 0;
 	pipe_conn_t	*conn;
 	DWORD	priority;
 	char	*buf;
@@ -609,6 +669,7 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 	NUT_UNUSED_VARIABLE(argv);
 
 	if (service_flag) {
+		upsdebugx(3, "%s: starting service...", __func__);
 		SvcStart(SVCNAME);
 	}
 
@@ -620,6 +681,7 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 	print_event(LOG_INFO, "Starting");
 
 	/* pipe for event log proxy */
+	upsdebugx(3, "%s: calling pipe_create()...", __func__);
 	pipe_create(EVENTLOG_PIPE_NAME);
 
 	/* parse nut.conf and start relevant processes */
@@ -641,11 +703,16 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 		/* Wait on the read IO of each connections */
 		for (conn = pipe_connhead; conn; conn = conn->next) {
+			/* Leave one or two for "new event" below */
+			if (maxhandle + 1 + (service_flag ? 1 : 0) >= sizeof(handles)) {
+				upsdebugx(1, "%s: skipping handle: too many connected already", __func__);
+				continue;
+			}
 			handles[maxhandle] = conn->overlapped.hEvent;
 			maxhandle++;
 		}
 
-		/* Add the new pipe connected event */
+		/* Add the "new pipe connected" event */
 		handles[maxhandle] = pipe_connection_overlapped.hEvent;
 		maxhandle++;
 
@@ -659,6 +726,7 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 		if (ret == WAIT_FAILED) {
 			print_event(LOG_ERR, "Wait failed");
+			upsdebug_with_errno(1, "%s: WaitForMultipleObjects", __func__);
 			return;
 		}
 
@@ -697,6 +765,61 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 				}
 			}
 		}
+
+		/* Check on each daemon: Was it supposed to run? Does it still? */
+		if (upsdrvctl_pid) {
+			DWORD	status = 0;
+			BOOL	res = FALSE;
+
+			res = GetExitCodeProcess(upsdrvctl_handle, &status);
+			if (res != 0) {
+				if (status != STILL_ACTIVE) {
+					upslog_with_errno(LOG_WARNING, "%s: GetExitCodeProcess(upsdrvctl): daemon died, restarting", __func__);
+					run_drivers();
+					Sleep(5000);
+				} else {
+					upsdebugx(2, "%s: upsdrvctl is still running as PID %" PRIuMAX, __func__, (uintmax_t)upsdrvctl_pid);
+				}
+			} else {
+				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsdrvctl)", __func__);
+			}
+		}
+
+		if (upsd_pid) {
+			DWORD	status = 0;
+			BOOL	res = FALSE;
+
+			res = GetExitCodeProcess(upsd_handle, &status);
+			if (res != 0) {
+				if (status != STILL_ACTIVE) {
+					upslog_with_errno(LOG_WARNING, "%s: GetExitCodeProcess(upsd): daemon died, restarting", __func__);
+					run_upsd();
+					Sleep(5000);
+				} else {
+					upsdebugx(2, "%s: upsd is still running as PID %" PRIuMAX, __func__, (uintmax_t)upsd_pid);
+				}
+			} else {
+				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsd)", __func__);
+			}
+		}
+
+		if (upsmon_pid) {
+			DWORD	status = 0;
+			BOOL	res = FALSE;
+
+			res = GetExitCodeProcess(upsmon_handle, &status);
+			if (res != 0) {
+				if (status != STILL_ACTIVE) {
+					upslog_with_errno(LOG_WARNING, "%s: GetExitCodeProcess(upsmon): daemon died, restarting", __func__);
+					run_upsmon();
+					Sleep(5000);
+				} else {
+					upsdebugx(2, "%s: upsmon is still running as PID %" PRIuMAX, __func__, (uintmax_t)upsmon_pid);
+				}
+			} else {
+				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsmon)", __func__);
+			}
+		}
 	}
 }
 
@@ -708,9 +831,11 @@ static void help(const char *arg_progname)
 	printf("including shutdown and power-off handling (where supported). All together they rely\n");
 	printf("on nut.conf and other files in %s\n", confpath());
 
-	printf("\nUsage: %s {start | stop}\n\n", arg_progname);
+	printf("\nUsage: %s {start | stop | status}\n\n", arg_progname);
 	printf("    start	Install as a service (%s) if not yet done, then `net start` it\n", SVCNAME);
 	printf("    stop	If the service (%s) is installed, command it to `net stop`\n", SVCNAME);
+	printf("    restart	'stop' (do not fail), then 'start' (register '%s' as needed)\n", SVCNAME);
+	printf("    status	Query system for current status of service '%s'\n", SVCNAME);
 	printf("Note you may have to run this in an elevated privilege command shell, or use `runas`\n");
 
 	printf("\nUsage: %s [OPTION]\n\n", arg_progname);
@@ -734,37 +859,6 @@ int main(int argc, char **argv)
 	int	i, default_opterr = opterr;
 	const char	*progname = xbasename(argc > 0 ? argv[0] : "nut.exe");
 
-	if (argc > 1) {
-		if (!strcmp(argv[1], "/?")) {
-			help(progname);
-			return EXIT_SUCCESS;
-		}
-
-		if (!strcmp(argv[1], "stop")) {
-			int ret;
-			if (SvcExists(SVCNAME) < 0)
-				fprintf(stderr, "WARNING: Can not access service \"%s\"", SVCNAME);
-
-			ret = system("net stop \"" SVCNAME "\"");
-			if (ret == 0)
-				return EXIT_SUCCESS;
-			fatalx(EXIT_FAILURE, "FAILED stopping %s: %i", SVCNAME, ret);
-		}
-
-		if (!strcmp(argv[1], "start")) {
-			int ret;
-			if (SvcExists(SVCNAME) < 0) {
-				fprintf(stderr, "WARNING: Can not access service \"%s\", registering first", SVCNAME);
-				SvcInstall(SVCNAME, NULL);
-			}
-
-			ret = system("net start \"" SVCNAME "\"");
-			if (ret == 0)
-				return EXIT_SUCCESS;
-			fatalx(EXIT_FAILURE, "FAILED starting %s: %i", SVCNAME, ret);
-		}
-	}
-
 	/* TODO: Do not warn about unknown args - pass them to SvcMain()
 	 * Currently neutered because that method ignores argc/argv de-facto.
 	 *    opterr = 0;
@@ -774,6 +868,14 @@ int main(int argc, char **argv)
 			case 'I':
 				return SvcInstall(SVCNAME, NULL);
 			case 'U':
+				{ /* scoping */
+					int	ret = 0;
+					upsdebugx(1, "exec: net stop \"" SVCNAME "\"");
+					ret = system("net stop \"" SVCNAME "\"");
+					upsdebugx(1, "exec: returned: %d", ret);
+					if (ret != 0)
+						upsdebugx(0, "FAILED stopping %s: %i", SVCNAME, ret);
+				}
 				return SvcUninstall(SVCNAME);
 			case 'N':
 				service_flag = FALSE;
@@ -797,10 +899,89 @@ int main(int argc, char **argv)
 				 * chars to '?' so we can not log what exactly was wrong.
 				 */
 				upsdebugx(1, "%s: unknown option ignored "
-					"(maybe SvcMain would use it later)",
-					progname);
+					"(maybe SvcMain would use it later): '%c'",
+					progname, i);
 				break;
 		}
+	}
+
+        /* Of short opts before this, primarily we might expect debug to be bumped */
+	if (argc > 1 && optind < argc) {
+		if (!strcmp(argv[optind], "/?")) {
+			help(progname);
+			return EXIT_SUCCESS;
+		}
+
+		if (!strcmp(argv[optind], "stop")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0)
+				fprintf(stderr, "WARNING: Can not access service \"%s\"\n", SVCNAME);
+
+			upsdebugx(1, "exec: net stop \"" SVCNAME "\"");
+			ret = system("net stop \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED stopping %s: %i", SVCNAME, ret);
+		}
+
+		if (!strcmp(argv[optind], "start")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0) {
+				fprintf(stderr, "WARNING: Can not access service \"%s\", registering first\n", SVCNAME);
+				SvcInstall(SVCNAME, NULL);
+			}
+
+			upsdebugx(1, "exec: net start \"" SVCNAME "\"");
+			ret = system("net start \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED starting %s: %i", SVCNAME, ret);
+		}
+
+		if (!strcmp(argv[optind], "restart")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0)
+				fprintf(stderr, "WARNING: Can not access service \"%s\"\n", SVCNAME);
+
+			upsdebugx(1, "exec: net stop \"" SVCNAME "\"");
+			ret = system("net stop \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret != 0)
+				fprintf(stderr, "WARNING: FAILED stopping %s: %i", SVCNAME, ret);
+
+			if (SvcExists(SVCNAME) < 0) {
+				fprintf(stderr, "WARNING: Can not access service \"%s\", registering first\n", SVCNAME);
+				SvcInstall(SVCNAME, NULL);
+			}
+
+			/* FIXME: Query service status if it is stopping */
+			Sleep(15000);
+
+			upsdebugx(1, "exec: net start \"" SVCNAME "\"");
+			ret = system("net start \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED starting %s: %i", SVCNAME, ret);
+		}
+
+		if (!strcmp(argv[optind], "status")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0) {
+				fprintf(stderr, "WARNING: Can not access service \"%s\"\n", SVCNAME);
+			}
+
+			upsdebugx(1, "exec: sc query \"" SVCNAME "\"");
+			ret = system("sc query \"" SVCNAME "\"");
+			upsdebugx(1, "exec: returned: %d", ret);
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED querying %s: %i", SVCNAME, ret);
+		}
+
+		fatalx(EXIT_FAILURE, "Unknown option: %s", argv[optind]);
 	}
 
 	optind = 0;
