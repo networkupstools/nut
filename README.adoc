@@ -937,7 +937,9 @@ endif::env-github[]
   after the Fosshost project went defunct.
 
 | image:images/ci/gandi-ar21.png[alt="Gandi.Net logo",width="120",height="60",link="https://www.gandi.net/"]
-| link:https://www.gandi.net/[Gandi.Net] took up the costs of NUT DNS hosting.
+| link:https://www.gandi.net/[Gandi.Net] ultimately took up the costs of
+  NUT DNS hosting, which they have provided commercially for years before
+  that.
 
 | image:images/ci/OC_logo_merged_140x26.png[alt="Open Collective logo",width="140",height="26",link="https://opencollective.com/"]
 | https://opencollective.com/networkupstools allows us to arrange monetary
