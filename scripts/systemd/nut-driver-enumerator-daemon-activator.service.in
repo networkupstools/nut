@@ -1,5 +1,5 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2025 by NUT contributors
+# Copyright (C) 2011-2026 by NUT contributors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
@@ -46,6 +46,11 @@ TimeoutStartSec=10s
 # see https://lists.freedesktop.org/archives/systemd-devel/2017-July/039255.html
 # for broader compatibility.
 StartLimitInterval=0
+EnvironmentFile=-@CONFPATH@/nut.conf
+# DO NOT actually start if MODE is known and is "netclient" or "none";
+# however do start (and maybe fail if not yet configured), for other
+# MODE values or if nut.conf file is absent:
+@SYSTEMD_AVAILABLE_EXEC_CONDITION@ExecCondition=/bin/sh -c '[ x"${MODE}" != x"netclient" -a x"${MODE}" != x"none" ]'
 ExecStart=/bin/systemctl reload-or-restart --no-block nut-driver-enumerator-daemon.service
 
 [Install]

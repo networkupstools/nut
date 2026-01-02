@@ -5121,6 +5121,36 @@ AC_MSG_RESULT(${with_libsystemd})
 
 AC_PATH_PROG([SYSTEMD_ANALYZE_PROGRAM], [systemd-analyze], [/usr/bin/systemd-analyze])
 
+dnl Relevant since 2018 (v243): https://github.com/systemd/systemd/pull/12933
+SYSTEMD_SUPPORTS_EXEC_CONDITION=no
+AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
+	AC_MSG_CHECKING([if your systemd version supports ExecCondition])
+	myFILE="`${MKTEMP} systemd-analyze-XXXXXX.service`"
+	cat > "$myFILE" << EOF
+@<:@Unit@:>@
+Description=temp
+@<:@Service@:>@
+ExecCondition=/bin/true
+ExecStart=/bin/true
+Type=simple
+EOF
+	if myOUT="`\"$SYSTEMD_ANALYZE_PROGRAM\" verify \"$myFILE\" 2>&1`" ; then
+		if (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") ; then
+			true
+		else
+			SYSTEMD_SUPPORTS_EXEC_CONDITION=yes
+		fi
+	fi
+	rm -f "$myFILE"
+	AC_MSG_RESULT([${SYSTEMD_SUPPORTS_EXEC_CONDITION}])
+	])
+AS_IF([test x"${SYSTEMD_SUPPORTS_EXEC_CONDITION}" = xyes], [
+	dnl No comment
+	SYSTEMD_AVAILABLE_EXEC_CONDITION=""
+], [
+	SYSTEMD_AVAILABLE_EXEC_CONDITION="### Since systemd v243 ### "
+])
+
 dnl Relevant since 2023: https://github.com/systemd/systemd/pull/25916
 SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=no
 AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
@@ -6115,6 +6145,7 @@ AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_TIMEOUT_STOP_UPSMON)
+AC_SUBST(SYSTEMD_AVAILABLE_EXEC_CONDITION)
 AC_SUBST(SYSTEMD_TMPFILES_PROGRAM)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
@@ -6840,6 +6871,7 @@ AC_CONFIG_FILES([
  scripts/systemd/nut-driver-enumerator-daemon.service
  scripts/systemd/nut-driver-enumerator-daemon-activator.service
  scripts/systemd/nut-driver-enumerator-daemon-activator.path
+ scripts/systemd/nut-udev-settle.service
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
  scripts/Solaris/nut-logger.xml

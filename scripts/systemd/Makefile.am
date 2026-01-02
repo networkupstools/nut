@@ -30,7 +30,7 @@ systemdsystempreset_DATA = \
         nut-systemd.preset
 
 # Add files not generated from .in templates
-EXTRA_DIST += nut-sleep.service nut-systemd.preset nut-udev-settle.service
+EXTRA_DIST += nut-sleep.service nut-systemd.preset
 
 systemdshutdown_SCRIPTS = nutshutdown
 
@@ -42,7 +42,7 @@ else !HAVE_SYSTEMD
 EXTRA_DIST += \
 	nut.target.in nut-systemd.preset \
 	nut-driver@.service.in nut-driver.target.in \
-	nut-server.service.in nut-udev-settle.service \
+	nut-server.service.in nut-udev-settle.service.in \
 	nut-logger.service.in nut-monitor.service.in \
 	nut-sleep.service nutshutdown.in \
 	nut-driver-enumerator.path.in nut-driver-enumerator.service.in \

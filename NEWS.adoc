@@ -80,6 +80,11 @@ https://github.com/networkupstools/nut/milestone/12
      systemd watchdog situation once, will not spam more about it" even if
      those "logged" messages were at an invisible verbosity level. [issue #3157,
      PR #3151]
+   * Systemd units for some daemons were revised to honour the `MODE` setting
+     from `nut.conf`, if available, to gracefully not-start when explicitly
+     not-requested (e.g. do not start `upsd` in `MODE=netclient`), even though
+     the unit is nominally enabled; this should make packaging and providing
+     service pre-sets more simple. [issue #837, PR #3233]
    * Revised detection of (relative) paths to program and configuration files
      near the currently running program in NUT for Windows builds. [issues #3207,
      #3063, #3065, #3219]
