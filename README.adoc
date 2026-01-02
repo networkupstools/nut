@@ -894,8 +894,12 @@ endif::env-github[]
   See more at link:https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/[Jenkins
   is the way to build multi-platform NUT] article.
 
-| image:images/ci/fosshost_org_Host_Light_38px.png[alt="Fosshost logo",width="112",height="38"]
-| Fosshost provided virtual machines where the multi-platform NUT CI farm with
+| image:images/ci/DO_Powered_by_Badge_blue_140pxW.png[alt="DigitalOcean logo",width="140",height="29",link="https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge"]
+| The link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean]
+  droplets allow us to host NUT CI farm Jenkins controller and the build agents
+  for multiple operating systems.
+
+  They are essentially virtual machines where the multi-platform NUT CI farm with
   a link:https://github.com/networkupstools/jenkins-dynamatrix/[jenkins-dynamatrix]
   link:https://github.com/networkupstools/nut/blob/master/Jenkinsfile-dynamatrix[setup]
   runs to arrange builds in numerous operating environments and a lot of toolkit
@@ -918,10 +922,11 @@ endif::env-github[]
   NUT pipeline] allows us to test NUT CI builds on Windows (and publish
   preview tarballs with binaries).
 
-| image:images/ci/DO_Powered_by_Badge_blue_140pxW.png[alt="DigitalOcean logo",width="140",height="29",link="https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge"]
-| The link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean]
-  droplets allow us to host NUT CI farm Jenkins controller and the build agents
-  for multiple operating systems.
+| image:images/ci/fosshost_org_Host_Light_38px.png[alt="Fosshost logo",width="112",height="38"]
+| Fosshost used to provide virtual machines where the multi-platform NUT CI farm
+  ran, following up from a take on multi-platform builds with Travis CI while it
+  was free for FOSS projects.  In turn, DigitalOcean helped us move on from there
+  after the Fosshost project went defunct.
 
 | image:images/ci/gandi-ar21.png[alt="Gandi.Net logo",width="120",height="60",link="https://www.gandi.net/"]
 | link:https://www.gandi.net/[Gandi.Net] took up the costs of NUT DNS hosting.
