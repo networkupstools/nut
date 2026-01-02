@@ -6871,6 +6871,7 @@ AC_CONFIG_FILES([
  scripts/systemd/nut-driver-enumerator-daemon.service
  scripts/systemd/nut-driver-enumerator-daemon-activator.service
  scripts/systemd/nut-driver-enumerator-daemon-activator.path
+ scripts/systemd/nut-udev-settle.service
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
  scripts/Solaris/nut-logger.xml

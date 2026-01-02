@@ -15,3 +15,4 @@
 /nut-driver-enumerator-daemon-activator.path
 /nut-driver-enumerator-daemon-activator.service
 /nut-driver-enumerator-daemon.service
+/nut-udev-settle.service
