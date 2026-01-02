@@ -54,10 +54,10 @@ Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 LimitNOFILE=1048576
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
-# DO NOT actually start if MODE is known and is "netclient"; however
-# do start (and maybe fail if not yet configured), for other MODE
-# values or if nut.conf file is absent:
-@SYSTEMD_AVAILABLE_EXEC_CONDITION@ExecCondition=/bin/sh -c '[ x"${MODE}" != x"netclient" ]'
+# DO NOT actually start if MODE is known and is "netclient" or "none";
+# however do start (and maybe fail if not yet configured), for other
+# MODE values or if nut.conf file is absent:
+@SYSTEMD_AVAILABLE_EXEC_CONDITION@ExecCondition=/bin/sh -c '[ x"${MODE}" != x"netclient" -a x"${MODE}" != x"none" ]'
 # This should be executed by the system, but better safe than sorry
 # (e.g. in custom rebuilds):
 ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf

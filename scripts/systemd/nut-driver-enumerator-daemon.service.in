@@ -36,10 +36,10 @@ Type=forking
 Restart=always
 EnvironmentFile=-@CONFPATH@/nut.conf
 Environment=REPORT_RESTART_42=no
-# DO NOT actually start if MODE is known and is "netclient"; however
-# do start (and maybe fail if not yet configured), for other MODE
-# values or if nut.conf file is absent:
-@SYSTEMD_AVAILABLE_EXEC_CONDITION@ExecCondition=/bin/sh -c '[ x"${MODE}" != x"netclient" ]'
+# DO NOT actually start if MODE is known and is "netclient" or "none";
+# however do start (and maybe fail if not yet configured), for other
+# MODE values or if nut.conf file is absent:
+@SYSTEMD_AVAILABLE_EXEC_CONDITION@ExecCondition=/bin/sh -c '[ x"${MODE}" != x"netclient" -a x"${MODE}" != x"none" ]'
 ExecStart=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon-after
 # Note: this is an async event, actual reconfiguration may take some time to
 # complete after this signal.

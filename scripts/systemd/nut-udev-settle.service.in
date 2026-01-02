@@ -45,8 +45,8 @@ TimeoutSec=180
 # for NUT to be applied. So we do not want it to remain "active".
 #RemainAfterExit=yes
 EnvironmentFile=-@CONFPATH@/nut.conf
-# DO NOT actually start if MODE is known and is "netclient"; however
-# do start (and maybe fail if not yet configured), for other MODE
-# values or if nut.conf file is absent:
-@SYSTEMD_AVAILABLE_EXEC_CONDITION@ExecCondition=/bin/sh -c '[ x"${MODE}" != x"netclient" ]'
+# DO NOT actually start if MODE is known and is "netclient" or "none";
+# however do start (and maybe fail if not yet configured), for other
+# MODE values or if nut.conf file is absent:
+@SYSTEMD_AVAILABLE_EXEC_CONDITION@ExecCondition=/bin/sh -c '[ x"${MODE}" != x"netclient" -a x"${MODE}" != x"none" ]'
 ExecStart=udevadm settle
