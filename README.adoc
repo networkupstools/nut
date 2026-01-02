@@ -912,13 +912,13 @@ endif::env-github[]
   of operating systems, compilers, script interpreters, tools and third-party
   dependencies.
 
-| image:images/ci/obs-logo.svg[alt="openSUSE Build Service logo",width="150",height="69",link="https://build.opensuse.org/"]
-| The several branches of
+| image:images/ci/obs-logo.png[alt="openSUSE Build Service logo",width="243",height="107",link="https://build.opensuse.org/"]
+| The several variants of
   link:https://build.opensuse.org/project/show/home:networkupstools[OBS NUT
   packaging project] hosted on the link:https://build.opensuse.org/[openSUSE
   Build Service (OBS)] allow us to propose reference packaging recipes for a
   number of Linux distributions, as well as to test NUT PR and stable branch
-  iterations on those across several CPU architectures.
+  iterations on those across several CPU architectures not available elsewhere.
 
 | image:images/ci/CircleCI_vertical_black_logo.png[alt="CircleCI logo",width="130",height="107",link="https://circleci.com/"]
 | The
