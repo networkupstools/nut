@@ -74,9 +74,9 @@ IMAGE_LOGO_FILES = \
 	images/ci/gandi-ar21.svg \
 	images/ci/GitHub-Mark-140pxW.png \
 	images/ci/GitHub-Mark-ea2971cee799.png \
-	docs/images/ci/obs-logo.png \
-	docs/images/ci/obs-logo.svg \
-	docs/images/ci/openSUSEBuildService.png \
+	images/ci/obs-logo.png \
+	images/ci/obs-logo.svg \
+	images/ci/openSUSEBuildService.png \
 	images/ci/OC_logotype.png \
 	images/ci/OC_logo-watercolor-256.png \
 	images/ci/OC_logo_merged_171x32.png \
