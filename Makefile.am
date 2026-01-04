@@ -1105,7 +1105,7 @@ distcheck-completeness: dist
 	  && cd "$$am__cwd" \
 	  && echo "  $@	diff $(distdir)-orig-$$$$ $(distdir)-derived-$$$$" \
 	  && diff $(distdir)-orig-$$$$ $(distdir)-derived-$$$$ ; \
-	  } || RES=$?? ;
+	  } || RES=$$? ; \
 	  rm -rf $(distdir)-orig-$$$$ $(distdir)-derived-$$$$ $(distdir) ; \
 	  exit $$RES
 	@echo "SUCCESS: $(distdir) archives are self-reproducing"
