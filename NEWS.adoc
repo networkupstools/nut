@@ -202,6 +202,12 @@ https://github.com/networkupstools/nut/milestone/12
    * `openups-hid` had `nobattery` definition inverted, causing alarms -- now
      fixed to use the same mapping helper as other subdrivers. [issue #3246]
 
+ - `nut-scanner` tool updates:
+   * Fixed `nut-scanner` search for "simulation devices" to not use only the
+     built-in NUT configuration path on all platforms, but to also consider
+     `NUT_CONFPATH` and other fallback locations, like other code does.
+     [PR #3249]
+
  - `upsd` data server updates:
    * Sometimes "Data for UPS [X] is stale" and "UPS [X] data is no longer
      stale" messages were logged in the same second, especially no busy
