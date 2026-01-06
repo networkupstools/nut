@@ -1207,8 +1207,20 @@ static void display_json(void)
 
 int main(int argc, char **argv)
 {
+	char *s;
+	int i;
 	NUT_UNUSED_VARIABLE(argc);
 	NUT_UNUSED_VARIABLE(argv);
+
+	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
+	 * and NUT methods called from it. This line aims to just initialize
+	 * the subsystem, and set initial timestamp. Debugging the client is
+	 * primarily of use to developers, so is not exposed via `-D` args.
+	 */
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+	}
 
 	extractcgiargs();
 
