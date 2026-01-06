@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3616 utf-8
+personal_ws-1.1 en 3620 utf-8
 AAC
 AAS
 ABI
@@ -535,6 +535,7 @@ IFBETWEEN
 IFF
 IFSUPP
 IGN
+IIS
 IMG
 INADDR
 INFOSIZE
@@ -556,6 +557,7 @@ IPs
 IPv
 IRC
 IRIX
+ISAPI
 ISOs
 ITEMP
 ITy
@@ -2290,6 +2292,7 @@ includePath
 includedir
 inductor
 inet
+inetpub
 influenceable
 infos
 infoval
@@ -3556,6 +3559,7 @@ writeinfo
 writepid
 writeups
 ws
+wwwroot
 xAAAA
 xCC
 xD

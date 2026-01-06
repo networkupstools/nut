@@ -40,6 +40,9 @@ a host on an internal network.  It doesn't know that the connection is
 actually initiated by someone further outside.  This is why you must
 secure it.
 
+Apache Web Server
+~~~~~~~~~~~~~~~~~
+
 On Apache, you can use the `.htaccess` file or put the directives in your
 `httpd.conf`.  It looks something like this, assuming the `.htaccess`
 method for older Apache releases:
@@ -64,6 +67,52 @@ Modern Apache enjoys a more detailed syntax, like this:
 	          Require ip aa.bb.cc.dd/nn
 	      </RequireAny>
 	</Directory>
+
+Microsoft IIS
+~~~~~~~~~~~~~
+
+With NUT for Windows builds, the Microsoft Internet Information Server (IIS)
+can be used as the platform's native web server to host the NUT CGI programs.
+
+WARNING: Like other aspects of NUT for Windows, this configuration should be
+considered experimental; feedback and pull requests to improve the code and
+documentation like this page are very welcome.
+
+One aspect that may simplify or complicate things is that these builds aim
+to be relocatable, so the archive (eventually package) can be unpacked into
+any directory of the end-user's choosing and "just work", and this relies
+on defaulting to use configuration and program location relative to the
+currently executed NUT program, rather than hard-coded paths as in POSIX
+builds tailored to a particular deployment or package.
+
+In IIS configuration, set the website root to the NUT installation location
+(the directory with `etc` and `cgi-bin` subdirectories, among other things).
+
+Explicitly enable the "cgi-exe" feature, as this is disabled by default in IIS.
+
+* Overall on the test system where this setup was investigated, IIS already had
+  the following features:
+  `Web-Common-Http,Web-Dir-Browsing,Web-Http-Errors,Web-Static-Content,Web-Http-Logging,Web-Log-Libraries`
+  and then more were installed during the experiment (needs review to make sure
+  they are actually) needed:
+  `Web-Windows-Auth,Web-Net-Ext45,Web-ASP,Web-CGI,Web-ISAPI-Ext,Web-ISAPI-Filter,Web-Filtering`
+
+NOTE: It may be more secure to copy the `cgi-bin` subdirectory into a separate
+location (e.g. under `c:\inetpub\wwwroot` or the non-default website root),
+and then either populate a dedicated `etc` directory with configuration files
+and templates for the CGI programs, or somehow export `NUT_CONFPATH` environment
+variable from the web server to point to a location not "near" the executable
+programs. Alternately, explore using "virtual directories" in IIS to reference
+just the `cgi-bin` in the NUT installation location and so minimize exposure
+of any other files.
+
+In the NUT configuration directory, update the linkman:hosts.conf[5] and
+`upsset.conf` files as appropriate, (optionally adapt) and rename the
+`upsstats.html.sample` and `upsstates-single.html.sample` files to not
+include the `.sample` extension.
+
+Completing the CGI setup
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 If this doesn't make sense, then stop reading and leave this program
 alone.  It's not something you absolutely need to have anyway.
