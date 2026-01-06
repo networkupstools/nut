@@ -85,26 +85,51 @@ on defaulting to use configuration and program location relative to the
 currently executed NUT program, rather than hard-coded paths as in POSIX
 builds tailored to a particular deployment or package.
 
-In IIS configuration, set the website root to the NUT installation location
-(the directory with `etc` and `cgi-bin` subdirectories, among other things).
+The click-through setup below was verified on a Windows 10 workstation.
+Names and layering of referenced concepts are known to be different in
+other releases of the operating system. For more details see docs like
+https://learn.microsoft.com/en-us/iis/configuration/system.webserver/cgi
+or blogs like
+https://dotnetblog.asphostportal.com/5-steps-to-run-cgi-program-on-your-iis/
 
-Explicitly enable the "cgi-exe" feature, as this is disabled by default in IIS.
+In Windows, open Control Panel and go to "Programs / Programs and Features",
+there to the "Turn Windows features on or off" section. Scroll down to the
+"Internet Information Services" and check its box to enable the default set
+of options (e.g. some services, some tools, no FTP). Then drill into its
+"World Wide Web Services / Application Development Features" and select
+"CGI" and "ISAPI Extensions". A reboot may be needed to install these.
 
-* Overall on the test system where this setup was investigated, IIS already had
-  the following features:
-  `Web-Common-Http,Web-Dir-Browsing,Web-Http-Errors,Web-Static-Content,Web-Http-Logging,Web-Log-Libraries`
-  and then more were installed during the experiment (needs review to make sure
-  they are actually) needed:
-  `Web-Windows-Auth,Web-Net-Ext45,Web-ASP,Web-CGI,Web-ISAPI-Ext,Web-ISAPI-Filter,Web-Filtering`
+NOTE: The IIS Manager application needs to be restarted if you add features
+later (after you start it), otherwise they do not show up in the UI to be
+configured.
+
+Open IIS Manager, check that the main panel includes icons for "CGI" and for
+"ISAPI and CGI Restrictions".
+
+In IIS configuration, you can edit the Default Web Site or create a new one
+(would need a host name to be known either in DNS or at least via local
+`%SystemRoot%\system32\drivers\etc\hosts` file), and set the website root
+to the NUT installation location (the directory with `etc` and `cgi-bin`
+subdirectories, among other things).
 
 NOTE: It may be more secure to copy the `cgi-bin` subdirectory into a separate
 location (e.g. under `c:\inetpub\wwwroot` or the non-default website root),
 and then either populate a dedicated `etc` directory with configuration files
 and templates for the CGI programs, or somehow export `NUT_CONFPATH` environment
 variable from the web server to point to a location not "near" the executable
-programs. Alternately, explore using "virtual directories" in IIS to reference
-just the `cgi-bin` in the NUT installation location and so minimize exposure
-of any other files.
+programs. Alternately, explore using an empty root and "virtual directories"
+in IIS to reference just the `cgi-bin` in the NUT installation location -- and
+so minimize exposure of any other files.
+
+Once you have a web-site defined one way or another, select its root in the
+"Connections" panel, and double-click the "ISAPI and CGI Restrictions" icon.
+There "Actions / Add" and specify full paths (3 times overall) to the
+`upsimage.cgi.exe`, `upsset.cgi.exe` and `upsstats.cgi.exe` programs,
+all with the checkbox to "Allow extension path to execute".
+
+Revise "Handler Mappings" for the `cgi-bin` subdirectory, that it includes
+"CGI-exe" with "Path `*.exe`" and "State Enabled" (if not, edit the entry,
+press "Request Restrictions", and tick "Access/Execute" there).
 
 In the NUT configuration directory, update the linkman:hosts.conf[5] and
 `upsset.conf` files as appropriate, (optionally adapt) and rename the
