@@ -112,14 +112,14 @@ In IIS configuration, you can edit the Default Web Site or create a new one
 to the NUT installation location (the directory with `etc` and `cgi-bin`
 subdirectories, among other things).
 
-NOTE: It may be more secure to copy the `cgi-bin` subdirectory into a separate
-location (e.g. under `c:\inetpub\wwwroot` or the non-default website root),
-and then either populate a dedicated `etc` directory with configuration files
-and templates for the CGI programs, or somehow export `NUT_CONFPATH` environment
-variable from the web server to point to a location not "near" the executable
-programs. Alternately, explore using an empty root and "virtual directories"
-in IIS to reference just the `cgi-bin` in the NUT installation location -- and
-so minimize exposure of any other files.
+NOTE: It may be more secure to copy the `cgi-bin` and `html` subdirectories
+into a separate location (e.g. under `c:\inetpub\wwwroot` or the non-default
+website root), and then either populate a dedicated `etc` directory with
+configuration files and templates for the CGI programs, or somehow export
+`NUT_CONFPATH` environment variable from the web server to point to a location
+not "near" the executable programs. Alternately, explore using an empty root
+and "virtual directories" in IIS to reference just the `cgi-bin` and `html` in
+the NUT installation location -- and so minimize exposure of any other files.
 
 Once you have a web-site defined one way or another, select its root in the
 "Connections" panel, and double-click the "ISAPI and CGI Restrictions" icon.
@@ -136,14 +136,26 @@ In the NUT configuration directory, update the linkman:hosts.conf[5] and
 `upsstats.html.sample` and `upsstates-single.html.sample` files to not
 include the `.sample` extension.
 
+Finally, assuming default website configuration, go to http://localhost/html/
+and you should be served with a two-panel page, with a NUT banner and links
+to the two tools on top, and tables of data in the bottom.  If you have device
+monitoring set up already, check the details pages: if they do not render,
+make sure the `upsstats.html` and `upsstats-single.html` files define
+`UPSSTATSPATH` and `UPSIMAGEPATH` program URI names with the `.exe` extension.
+
 Completing the CGI setup
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 If this doesn't make sense, then stop reading and leave this program
 alone.  It's not something you absolutely need to have anyway.
 
-Assuming you have all this done, and it actually works (test it!), then
-you may add the following directive to this file:
+Assuming you have all the above steps done, and it actually works (test it!),
+congratulations -- you have a read-only web server to report information from
+NUT in a convenient form.
+
+If you further want to manage the devices (and again, if you did set up
+appropriate security constraints), then you may add the following directive
+to this file and so unlock the potentially dangerous access through the server:
 
 	I_HAVE_SECURED_MY_CGI_DIRECTORY
 
