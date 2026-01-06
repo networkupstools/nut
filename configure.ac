@@ -6808,6 +6808,9 @@ AC_MSG_RESULT([C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}])
 dnl Only in the end, do you understand...
 AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
 
+AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
+AC_SUBST(EXEEXT)
+
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
  clients/Makefile

@@ -44,7 +44,7 @@ static char	*monhostdesc = NULL;
 
 static uint16_t	port;
 static char	*upsname, *hostname;
-static char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
+static char	*upsimgpath="upsimage.cgi" EXEEXT, *upsstatpath="upsstats.cgi" EXEEXT;
 static UPSCONN_t	ups;
 
 static FILE	*tf;

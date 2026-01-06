@@ -12,6 +12,8 @@
 
 <!-- change this to TEMPF if you don't like Celsius. -->
 
+<!-- Note: on Windows you may have to use the `*.cgi.exe` in PATHs below -->
+
 @TEMPC@
 @UPSSTATSPATH upsstats.cgi@
 @UPSIMAGEPATH upsimage.cgi@

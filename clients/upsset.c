@@ -202,7 +202,7 @@ static void do_pickups(const char *currfunc)
 
 	snprintf(hostfn, sizeof(hostfn), "%s/hosts.conf", confpath());
 
-	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 
 	printf("Select UPS and function:\n<BR>\n");
 
@@ -315,7 +315,7 @@ static void loginscreen(void)
 static void loginscreen(void)
 {
 	do_header("Login");
-	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	printf("<TR BGCOLOR=\"#60B0B0\">\n");
@@ -445,7 +445,7 @@ static void showcmds(void)
 			"This UPS doesn't support any instant commands.");
 
 	do_header("Instant commands");
-	printf("<FORM ACTION=\"upsset.cgi\" METHOD=\"POST\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	/* include the description from checkhost() if present */
@@ -873,7 +873,7 @@ static void showsettings(void)
 	}
 
 	do_header("Current settings");
-	printf("<FORM ACTION=\"upsset.cgi\" METHOD=\"POST\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	/* include the description from checkhost() if present */
