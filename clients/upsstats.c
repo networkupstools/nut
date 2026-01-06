@@ -975,7 +975,7 @@ static void load_hosts_conf(void)
 	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
-	snprintf(fn, sizeof(fn), "%s/hosts.conf", CONFPATH);
+	snprintf(fn, sizeof(fn), "%s/hosts.conf", confpath());
 
 	pconf_init(&ctx, upsstats_hosts_err);
 
