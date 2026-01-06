@@ -3302,6 +3302,21 @@ fi
 NUT_REPORT_PROGRAM([build CGI programs], [${nut_with_cgi}], [],
 					[WITH_CGI], [Define to enable CGI (HTTP) support])
 
+# Built into HTML via templates:
+NUT_ARG_WITH([cgi-uri], [default URI (under web-server root) where NUT CGI programs are exposed, typically /cgi-bin or /cgi-bin/nut], [auto])
+AS_CASE([${target_os}],
+	[*mingw*], [NUT_CGI_URI="/cgi-bin"],	dnl ### Let N4W build be easier to use out of the box (EXE tarball)
+		[NUT_CGI_URI="/cgi-bin/nut"]
+)
+AS_CASE([${nut_with_cgi_uri}],
+	[/*], [NUT_CGI_URI="${nut_with_cgi_uri}"],
+	[auto], [AC_MSG_NOTICE([--with-cgi-uri defaulted to '${NUT_CGI_URI}' for this platform])],
+		[AC_MSG_WARN([--with-cgi-uri must be a web server path starting with a slash; value '${nut_with_cgi_uri}' is invalid, defaulting to '${NUT_CGI_URI}'])]
+)
+AC_SUBST(NUT_CGI_URI)
+AS_IF([test x"${nut_with_cgi}" = xyes], [
+	NUT_REPORT([Default URI to NUT CGI programs], [${NUT_CGI_URI}])
+])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-pynut and --with-nut_monitor

@@ -89,6 +89,7 @@ https://github.com/networkupstools/nut/milestone/12
      near the currently running program in NUT for Windows builds. [issues #3207,
      #3063, #3065, #3219]
    * Documented setup of Microsoft IIS to host the NUT CGI programs. [#3207]
+   * Made default NUT CGI URI (used in HTML templates) configurable. [#3207]
    * Fixed thread-safety of IP address printout in `libupsclient` method
      `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
      [issue #3234]

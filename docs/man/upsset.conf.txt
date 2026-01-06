@@ -13,6 +13,14 @@ This file only does one job -- it lets you convince linkman:upsset.cgi[8]
 that your system's CGI directory is secure.  The program will not run
 until this file has been properly defined.
 
+NOTE: If you custom-build NUT for Windows, keep in mind the `--with-cgi-uri`
+configuration option.  It defaults to `/cgi-bin/nut` for POSIX builds and to
+plain `/cgi-nut` for Windows builds, to make them easier to integrate as
+part of existing web sites or as a dedicated web site, respectively.
+If there is a mismatch of this value for your particular deployment,
+check the `html/header.html` file to adjust the `a href` links to CGI
+programs to be opened in the bottom section (called `target=mainFrame`).
+
 IMPORTANT NOTES
 ---------------
 

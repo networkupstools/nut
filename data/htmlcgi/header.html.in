@@ -23,11 +23,11 @@ Network UPS Tools
 
 <tr ALIGN=CENTER>
 <td BGCOLOR="#00FFFF">
-<a href=/cgi-bin/nut/upsstats.cgi@EXEEXT@ target=mainFrame>Statistics</a>
+<a href="@NUT_CGI_URI@/upsstats.cgi@EXEEXT@" target=mainFrame>Statistics</a>
 </td>
 
 <td BGCOLOR="#00FFFF">
-<a href=/cgi-bin/nut/upsset.cgi@EXEEXT@ target=mainFrame>Settings</a>
+<a href="@NUT_CGI_URI@/upsset.cgi@EXEEXT@" target=mainFrame>Settings</a>
 </td>
 
 </tr>
