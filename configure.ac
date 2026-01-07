@@ -6826,6 +6826,13 @@ AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
 AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
 AC_SUBST(EXEEXT)
 
+dnl In CGI HTML templates we have a VERSION token parsed by upsstats.cgi
+dnl to provide the run-time binary version (with unmodified HTML template),
+dnl but now that with EXEEXT they became .in templates first, the autoconf
+dnl VERSION expansion wins first. So hacking around it to generate a @TOKEN@:
+ESCAPED_TEMPLATE_VERSION='@VERSION@'
+AC_SUBST(ESCAPED_TEMPLATE_VERSION)
+
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
  clients/Makefile
@@ -6833,6 +6840,8 @@ AC_CONFIG_FILES([
  conf/Makefile
  conf/upsmon.conf.sample
  conf/upssched.conf.sample
+ conf/upsstats.html.sample
+ conf/upsstats-single.html.sample
  data/htmlcgi/header.html
  data/htmlcgi/Makefile
  data/Makefile
