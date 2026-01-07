@@ -118,6 +118,21 @@ void extractpostargs(void)
 {
 	char	buf[SMALLBUF], *ptr, *cleanval;
 	int	ch;
+	fd_set	fds;
+	struct timeval	tv;
+	size_t	buflen;
+
+	/* First, see if there's anything waiting...
+	 * the server may not close STDIN properly */
+	FD_ZERO(&fds);
+	FD_SET(STDIN_FILENO, &fds);
+	tv.tv_sec = 0;
+	tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
+
+	if (select(STDIN_FILENO+1, &fds, 0, 0, &tv) <= 0) {
+		upsdebugx(1, "%s: no stdin is waiting", __func__);
+		return;
+	}
 
 	ch = fgetc(stdin);
 	buf[0] = '\0';
@@ -138,10 +153,27 @@ void extractpostargs(void)
 		else
 			snprintfcat(buf, sizeof(buf), "%c", ch);
 
+		/* Must re-init every time when looping (array is changed by select method) */
+		FD_ZERO(&fds);
+		FD_SET(STDIN_FILENO, &fds);
+		tv.tv_sec = 0;
+		tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
+
+		if (select(STDIN_FILENO+1, &fds, 0, 0, &tv) <= 0) {
+			/* We do not always get EOF, so assume the input stream stopped */
+			upsdebugx(1, "%s: timed out waiting for an stdin byte", __func__);
+			break;
+		}
+
 		ch = fgetc(stdin);
+		if (ch == EOF)
+			upsdebugx(1, "%s: got proper stdin EOF", __func__);
 	}
 
-	if (strlen(buf) != 0) {
+	buflen = strlen(buf);
+	if (buflen != 0) {
+		upsdebugx(1, "%s: collected %" PRIuSIZE " bytes on stdin: %s",
+			__func__, buflen, buf);
 		ptr = strchr(buf, '=');
 		if (!ptr)
 			parsearg(buf, "");
@@ -151,6 +183,8 @@ void extractpostargs(void)
 			parsearg(buf, cleanval);
 			free(cleanval);
 		}
+	} else {
+		upsdebugx(1, "%s: no stdin was collected", __func__);
 	}
 }
 

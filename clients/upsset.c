@@ -1124,31 +1124,7 @@ int main(int argc, char **argv)
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
-	/* see if there's anything waiting .. the server may not close STDIN properly */
-	if (1) {
-		fd_set fds;
-		struct timeval tv;
-
-		FD_ZERO(&fds);
-		FD_SET(STDIN_FILENO, &fds);
-		tv.tv_sec = 0;
-		tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
-
-		if ((select(STDIN_FILENO+1, &fds, 0, 0, &tv)) > 0) {
-			extractpostargs();
-		}
-#ifdef WIN32
-		else {
-			/* FIXME: Consider something similar with event loops?
-			 *  For now, just fall through to parse what we can.
-			 *  Assume the web server works correctly.
-			 */
-			upsdebugx(1, "%s: select(stdin) returned nothing, on WIN32 just retry anyway", __func__);
-			Sleep(250);
-			extractpostargs();
-		}
-#endif	/* WIN32 */
-	}
+	extractpostargs();
 
 	/* Nothing POSTed (or parsed correctly)? */
 	if ((!username) || (!password) || (!function))
