@@ -36,16 +36,21 @@ There is no rate limiting, as the program shuts down between every request.
 Such is the nature of CGI programs.
 
 Credentials are provided to `upsset.cgi` as part of your browsing session,
-so it is highly recommended to set up HTTPS on the web server; ways to do
-so are outside the scope of this document.
+so it is highly recommended to set up HTTPS on the web server.
+You may also want to generally use web-server based authentication (whether
+basic user name and password, or LDAP, or client certificate, etc.), or set
+up virtual host listeners with unpublished host names ("security by obscurity"),
+to restrict access to NUT CGI programs generally.
+Ways to do so are specific to your chosen web server implementation and are
+beyond the scope of this document.
 
-Normally, attackers would not be able to access your linkman:upsd[8] server
-directly, as it would be protected by the LISTEN directives in your
+Normally, attackers would not be able to access your linkman:upsd[8] NUT data
+server directly, as it would be protected by the `LISTEN` directives in your
 linkman:upsd.conf[5] file, tcp-wrappers (if available when NUT was built),
 and hopefully local firewall settings in your OS.
 
 *upsset* runs on your web server, so `upsd` will see it as a connection from
-a host on an internal network.  It doesn't know that the connection is
+a host on an internal network.  It does not know that the connection is
 actually initiated by someone further outside.  This is why you must
 secure it.
 
