@@ -117,7 +117,7 @@ void extractcgiargs(void)
 void extractpostargs(void)
 {
 	char	buf[SMALLBUF], *ptr, *cleanval;
-	int	ch;
+	int	ch, selret;
 	fd_set	fds;
 	struct timeval	tv;
 	size_t	buflen;
@@ -129,12 +129,14 @@ void extractpostargs(void)
 	tv.tv_sec = 0;
 	tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
 
-	if (select(STDIN_FILENO+1, &fds, 0, 0, &tv) <= 0) {
-		upsdebugx(1, "%s: no stdin is waiting", __func__);
+	selret = select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+	if (selret <= 0) {
+		upsdebug_with_errno(1, "%s: no stdin is waiting (%d)", __func__, selret);
 		return;
 	}
 
 	ch = fgetc(stdin);
+	upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)", __func__, ch, ch, ch);
 	buf[0] = '\0';
 
 	while (ch != EOF) {
@@ -159,13 +161,15 @@ void extractpostargs(void)
 		tv.tv_sec = 0;
 		tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
 
-		if (select(STDIN_FILENO+1, &fds, 0, 0, &tv) <= 0) {
+		selret = select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+		if (selret <= 0) {
 			/* We do not always get EOF, so assume the input stream stopped */
-			upsdebugx(1, "%s: timed out waiting for an stdin byte", __func__);
+			upsdebug_with_errno(1, "%s: timed out waiting for an stdin byte (%d)", __func__, selret);
 			break;
 		}
 
 		ch = fgetc(stdin);
+		upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)", __func__, ch, ch, ch);
 		if (ch == EOF)
 			upsdebugx(1, "%s: got proper stdin EOF", __func__);
 	}
