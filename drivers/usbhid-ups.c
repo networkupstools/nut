@@ -32,6 +32,7 @@
 #define DRIVER_VERSION	"0.71"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
+#define HU_VAR_EXPLOREHIDALL "explorehidall"
 
 #include "main.h"	/* Must be first, includes "config.h" */
 #include "nut_stdint.h"
@@ -142,6 +143,7 @@ bool_t use_interrupt_pipe = TRUE;
 bool_t use_interrupt_pipe = FALSE;
 #endif
 static size_t interrupt_pipe_EIO_count = 0; /* How many times we had I/O errors since last reconnect? */
+static int explorehidall = -1; /* Force all HID reports fetch on init (for some CPS devices); -1=unset, 0=off, 1=on */
 
 /**
  * How many times do we tolerate having "0 HID objects" in a row?
@@ -1317,6 +1319,9 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling (recommended for CPS devices)");
 
+	addvar(VAR_FLAG, HU_VAR_EXPLOREHIDALL,
+		"Fetch all HID reports during initialization (needed for some CPS devices)");
+
 	addvar(VAR_VALUE, "interrupt_pipe_no_events_tolerance", "How many times in a row do we tolerate \"Got 0 HID objects\" from USB interrupts?");
 
 	addvar(VAR_FLAG, "onlinedischarge",
@@ -1661,6 +1666,21 @@ void upsdrv_initinfo(void)
 		if (subdriver == &cps_subdriver) {
 			upslogx(LOG_WARNING, "You may want to set 'pollonly' "
 				"flag on CPS devices");
+		}
+#endif
+	}
+
+	/* fetch all HID reports on init (auto-enabled for some CPS models) */
+	if (testvar(HU_VAR_EXPLOREHIDALL)) {
+		explorehidall = 1;
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	} else {
+		/* auto-enable for CPS ProductID 0x0601 which needs this for stable communication
+		 * (CP1500AVRLCD3, CP1500PFCLCD, etc.) - see https://github.com/networkupstools/nut/issues/3116 */
+		if (subdriver == &cps_subdriver && curDevice.ProductID == 0x0601) {
+			explorehidall = 1;
+			upsdebugx(1, "Enabling '%s' for CPS device 0x%04x",
+				HU_VAR_EXPLOREHIDALL, curDevice.ProductID);
 		}
 #endif
 	}
@@ -2105,7 +2125,7 @@ static int callback(
 		"please note that a wrong subdriver could have been chosen above; "
 		"consider testing others with an explicit driver option",
 		__func__);
-	HIDDumpTree(udev, arghd, subdriver->utab);
+	HIDDumpTree(udev, arghd, subdriver->utab, explorehidall);
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	/* create a new matcher for later matching */

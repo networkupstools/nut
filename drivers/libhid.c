@@ -405,9 +405,10 @@ static struct {
  * since it's used to produce sub-drivers "stub" using
  * scripts/subdriver/gen-usbhid-subdriver.sh
  */
-void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
+void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab, int force_fetch)
 {
 	size_t	i;
+	int	should_output_debug = (nut_debug_level >= 1);
 #if (defined SHUT_MODE) && SHUT_MODE
 	NUT_UNUSED_VARIABLE(hd);
 #else	/* !SHUT_MODE => USB */
@@ -416,16 +417,18 @@ void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 	int productID = hd->ProductID;
 #endif	/* SHUT_MODE / USB */
 
-	/* Do not go further if we already know nothing will be displayed.
-	 * Some reports take a while before they timeout, so if these are
+	/* Some reports take a while before they timeout, so if these are
 	 * not used in the driver, they should only be fetched when we're
-	 * in debug mode
+	 * in debug mode OR when force_fetch is enabled (needed for some
+	 * devices like CPS 0x0601 to properly initialize report buffer cache).
 	 */
-	if (nut_debug_level < 1) {
+	if (!should_output_debug && !force_fetch) {
 		return;
 	}
 
-	upsdebugx(1, "%" PRIuSIZE " HID objects found", pDesc->nitems);
+	if (should_output_debug) {
+		upsdebugx(1, "%" PRIuSIZE " HID objects found", pDesc->nitems);
+	}
 
 	for (i = 0; i < pDesc->nitems; i++)
 	{
@@ -452,18 +455,24 @@ void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 		}
 #endif	/* SHUT_MODE / USB */
 
-		/* Get data value */
+		/* Get data value - always fetch to populate report buffer cache */
 		if (HIDGetDataValue(udev, pData, &value, MAX_TS) == 1) {
-			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
-				HIDGetDataItem(pData, utab), HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size, value);
+			if (should_output_debug) {
+				upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
+					HIDGetDataItem(pData, utab), HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size, value);
+			}
 			continue;
 		}
 
-		upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i",
-			HIDGetDataItem(pData, utab), HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size);
+		if (should_output_debug) {
+			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i",
+				HIDGetDataItem(pData, utab), HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size);
+		}
 	}
 
-	fflush(stdout);
+	if (should_output_debug) {
+		fflush(stdout);
+	}
 }
 
 /* Returns text string which can be used to display type of data

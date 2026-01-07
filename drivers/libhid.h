@@ -153,7 +153,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventlen);
 /*
  * Support functions
  * -------------------------------------------------------------------------- */
-void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab);
+void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab, int force_fetch);
 const char *HIDDataType(const HIDData_t *hiddata);
 
 void free_report_buffer(reportbuf_t *rbuf);
