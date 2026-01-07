@@ -117,13 +117,17 @@ void extractcgiargs(void)
 void extractpostargs(void)
 {
 	char	buf[SMALLBUF], *ptr, *cleanval;
-	int	ch, selret;
-	fd_set	fds;
-	struct timeval	tv;
+	int	ch;
 	size_t	buflen;
 
 	/* First, see if there's anything waiting...
-	 * the server may not close STDIN properly */
+	 * the server may not close STDIN properly
+	 * or somehow delay opening/populating it. */
+#ifndef WIN32
+	int	selret;
+	fd_set	fds;
+	struct timeval	tv;
+
 	FD_ZERO(&fds);
 	FD_SET(STDIN_FILENO, &fds);
 	tv.tv_sec = 0;
@@ -131,7 +135,12 @@ void extractpostargs(void)
 
 	selret = select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
 	if (selret <= 0) {
-		upsdebug_with_errno(1, "%s: no stdin is waiting (%d)", __func__, selret);
+#else
+	HANDLE	hSTDIN = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD	selret = WaitForSingleObject(hSTDIN, 250);
+	if (selret != WAIT_OBJECT_0) { /* or == WAIT_TIMEOUT ? */
+#endif	/* WIN32 */
+		upsdebug_with_errno(1, "%s: no stdin is waiting (%" PRIiMAX ")", __func__, (intmax_t)selret);
 		return;
 	}
 
@@ -155,6 +164,7 @@ void extractpostargs(void)
 		else
 			snprintfcat(buf, sizeof(buf), "%c", ch);
 
+#ifndef WIN32
 		/* Must re-init every time when looping (array is changed by select method) */
 		FD_ZERO(&fds);
 		FD_SET(STDIN_FILENO, &fds);
@@ -163,8 +173,12 @@ void extractpostargs(void)
 
 		selret = select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
 		if (selret <= 0) {
+#else
+		selret = WaitForSingleObject(hSTDIN, 250);
+		if (selret != WAIT_OBJECT_0) { /* or == WAIT_TIMEOUT ? */
+#endif
 			/* We do not always get EOF, so assume the input stream stopped */
-			upsdebug_with_errno(1, "%s: timed out waiting for an stdin byte (%d)", __func__, selret);
+			upsdebug_with_errno(1, "%s: timed out waiting for an stdin byte (%" PRIiMAX ")", __func__, (intmax_t)selret);
 			break;
 		}
 
