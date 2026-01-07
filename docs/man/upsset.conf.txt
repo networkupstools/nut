@@ -5,6 +5,7 @@ NAME
 ----
 
 upsset.conf - Configuration for Network UPS Tools upsset.cgi
+and general description of web server setup for NUT CGI programs
 
 DESCRIPTION
 -----------

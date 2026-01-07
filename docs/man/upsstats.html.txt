@@ -13,6 +13,9 @@ This file is used by linkman:upsstats.cgi[8] to generate status pages.
 Certain commands are recognized, and will be replaced with various
 status elements on the fly.
 
+For details about configuring some popular web servers to run NUT CGI
+programs, please see the linkman:upsset.conf[5] page.
+
 NOTE: This template file should be placed in the NUT configuration location.
 If you use a dedicated copy of that directory or one not discovered by
 the binaries relocated into your web server's `cgi-bin` locations (such

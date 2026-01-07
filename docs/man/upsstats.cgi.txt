@@ -18,7 +18,7 @@ unauthorized access or spew a bunch of HTML at you.
 DESCRIPTION
 -----------
 
-*upsstats.cgi*
+*upsstats.cgi* is a read-only NUT client which
 uses template files to build web pages containing status information
 from UPS hardware.  It can repeat sections of those template files to
 monitor several devices simultaneously, or focus on a single UPS.
@@ -26,6 +26,9 @@ monitor several devices simultaneously, or focus on a single UPS.
 These templates can also include references to linkman:upsimage.cgi[8]
 for graphical displays of battery charge levels, voltage readings, and
 the UPS load.
+
+For details about configuring some popular web servers to run NUT CGI
+programs, please see the linkman:upsset.conf[5] page.
 
 NOTE: On platforms with required program file name extensions, like Windows,
 you may have to use e.g. a `*.cgi.exe` extension for the programs in HTML
