@@ -617,6 +617,22 @@ int main(int argc, char **argv)
 	char	str[SMALLBUF], *s;
 	int	i, min, nom, max;
 	double	var = 0;
+
+#ifdef WIN32
+        /* Required ritual before calling any socket functions */
+        static WSADATA  WSAdata;
+        static int      WSA_Started = 0;
+        if (!WSA_Started) {
+                WSAStartup(2, &WSAdata);
+                atexit((void(*)(void))WSACleanup);
+                WSA_Started = 1;
+        }
+
+	/* Avoid binary output conversions, e.g.
+	 * mangling what looks like CRLF on WIN32 */
+	setmode(STDOUT_FILENO, O_BINARY);
+#endif
+
 	NUT_UNUSED_VARIABLE(argc);
 	NUT_UNUSED_VARIABLE(argv);
 
@@ -629,12 +645,6 @@ int main(int argc, char **argv)
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
 	}
-
-#ifdef WIN32
-	/* Avoid binary output conversions, e.g.
-	 * mangling what looks like CRLF on WIN32 */
-	setmode(STDOUT_FILENO, O_BINARY);
-#endif
 
 	extractcgiargs();
 
