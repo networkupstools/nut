@@ -1043,6 +1043,7 @@ static void check_conf(void)
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upsset.conf", confpath());
+	upsdebugx(1, "%s: considering configuration file %s", __func__, fn);
 
 	pconf_init(&ctx, upsset_conf_err);
 

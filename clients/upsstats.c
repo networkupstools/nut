@@ -976,6 +976,7 @@ static void load_hosts_conf(void)
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/hosts.conf", confpath());
+	upsdebugx(1, "%s: considering configuration file %s", __func__, fn);
 
 	pconf_init(&ctx, upsstats_hosts_err);
 
