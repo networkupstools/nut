@@ -9,8 +9,9 @@ upsstats.html - HTML template for web-based Network UPS Tools upsstats
 DESCRIPTION
 -----------
 
-This file is used by linkman:upsstats.cgi[8] to generate status pages.
-Certain commands are recognized, and will be replaced with various
+This file, and a similarly structured `upsstats-single.html` for certain
+use-cases, are used by linkman:upsstats.cgi[8] to generate NUT CGI status
+pages. Certain commands are recognized, and will be replaced with various
 status elements on the fly.
 
 For details about configuring some popular web servers to run NUT CGI
