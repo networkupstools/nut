@@ -953,7 +953,7 @@ char * getprocname(pid_t pid)
 		pathname[sizeof(pathname) - 1] = '\0';
 
 		if (ret) {
-			size_t	procname_offset = 0;
+			size_t	pathname_offset = 0;
 
 			/* length of the string copied to the buffer */
 			procnamelen = strlen(pathname);
@@ -977,10 +977,10 @@ char * getprocname(pid_t pid)
 				if (pathname[2] == '?' && pathname[3] == '\\'
 				 && ( (pathname[4] >= 'a' && pathname[4] <= 'z')
 				   || (pathname[4] >= 'A' && pathname[4] <= 'Z') )
-				 && pathname[5] == ':' ) {
+				 && pathname[5] == ':'
 				) {
 					/* Chop off `\\?\ part */
-					procname_offset = 4;
+					pathname_offset = 4;
 					procnamelen -= 4;
 					upsdebugx(3, "%s: GetModuleFileNameExA() returned '%s' which seems like localhost UNC path, chopping off the prefix to use just '%s'",
 						__func__, pathname, pathname + pathname_offset);
@@ -1805,7 +1805,7 @@ char * getfullpath(char * relative_path)
 		if (buf[2] == '?' && buf[3] == '\\'
 		 && ( (buf[4] >= 'a' && buf[4] <= 'z')
 		   || (buf[4] >= 'A' && buf[4] <= 'Z') )
-		 && buf[5] == ':' ) {
+		 && buf[5] == ':'
 		) {
 			/* Chop off `\\?\ part */
 			buf_offset = 4;
