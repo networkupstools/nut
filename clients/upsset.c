@@ -1099,6 +1099,12 @@ int main(int argc, char **argv)
 	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
+	/* Avoid binary output conversions, e.g.
+	 * mangling what looks like CRLF on WIN32 */
+	setmode(STDOUT_FILENO, O_BINARY);
+	/* Also do not break what we receive from HTTP POST queries */
+	setmode(STDIN_FILENO, O_BINARY);
+
 	printf("Content-type: text/html\n\n");
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc

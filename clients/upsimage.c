@@ -630,6 +630,10 @@ int main(int argc, char **argv)
 		nut_debug_level = i;
 	}
 
+	/* Avoid binary output conversions, e.g.
+	 * mangling what looks like CRLF on WIN32 */
+	setmode(STDOUT_FILENO, O_BINARY);
+
 	extractcgiargs();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
