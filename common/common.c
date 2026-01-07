@@ -953,6 +953,8 @@ char * getprocname(pid_t pid)
 		pathname[sizeof(pathname) - 1] = '\0';
 
 		if (ret) {
+			size_t	procname_offset = 0;
+
 			/* length of the string copied to the buffer */
 			procnamelen = strlen(pathname);
 
@@ -964,8 +966,32 @@ char * getprocname(pid_t pid)
 					__func__, (uintmax_t)ret, procnamelen);
 			}
 
+			/* At least when running under IIS, CGI programs were
+			 *  seen to use UNC filesystem paths like `\\?\c:\...`,
+			 *  which POSIX methods are not comfortable with.
+			 * TOTHINK: Do we want to check with fopen()/fstat()
+			 *  first? At least the current "program module" named
+			 *  file should exist, right?
+			 */
+			if (pathname[0] == '\\' && pathname[1] == '\\') {
+				if (pathname[2] == '?' && pathname[3] == '\\'
+				 && ( (pathname[4] >= 'a' && pathname[4] <= 'z')
+				   || (pathname[4] >= 'A' && pathname[4] <= 'Z') )
+				 && pathname[5] == ':' ) {
+				) {
+					/* Chop off `\\?\ part */
+					procname_offset = 4;
+					procnamelen -= 4;
+					upsdebugx(3, "%s: GetModuleFileNameExA() returned '%s' which seems like localhost UNC path, chopping off the prefix to use just '%s'",
+						__func__, pathname, pathname + pathname_offset);
+				} else {
+					upsdebugx(1, "%s: GetModuleFileNameExA() returned '%s' which seems like UNC path, these are not currently supported and later calls may fail due to this",
+						__func__, pathname);
+				}
+			}
+
 			if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
-				if (snprintf(procname, procnamelen + 1, "%s", pathname) < 1) {
+				if (snprintf(procname, procnamelen + 1, "%s", pathname + pathname_offset) < 1) {
 					upsdebug_with_errno(3, "%s: failed to snprintf procname: WIN32-like", __func__);
 				} else {
 					goto finish;
@@ -1745,8 +1771,13 @@ static void win_PREFIX_cleanup(void) {
 
 char * getfullpath(char * relative_path)
 {
+	/* NOTE: we keep the discovered bytes in buf[], and manipulate this
+	 *  string's ending below, but may also ignore some starting bytes
+	 *  using the (buf + buf_offset) formula. Finally we xstrdup() the
+	 *  useful contents returned to caller.
+	 */
 	char	buf[NUT_PATH_MAX + 1], *last_slash = NULL;
-	static size_t	len_PREFIX = 0;
+	static size_t	len_PREFIX = 0, buf_offset = 0;
 
 	if (!len_PREFIX) {
 		len_PREFIX = strlen(PREFIX);
@@ -1763,11 +1794,34 @@ char * getfullpath(char * relative_path)
 	upsdebugx(5, "%s: passed relative_path:\t'%s'", __func__, NUT_STRARG(relative_path));
 	upsdebugx(5, "%s: GetModuleFileName (buf):\t'%s'", __func__, buf);
 
-	/* remove trailing executable name and its preceeding slash */
-	last_slash = strrchr(buf, '\\');
+	/* At least when running under IIS, CGI programs were
+	 *  seen to use UNC filesystem paths like `\\?\c:\...`,
+	 *  which POSIX methods are not comfortable with.
+	 * TOTHINK: Do we want to check with fopen()/fstat()
+	 *  first? At least the current "program module" named
+	 *  file should exist, right?
+	 */
+	if (buf[0] == '\\' && buf[1] == '\\') {
+		if (buf[2] == '?' && buf[3] == '\\'
+		 && ( (buf[4] >= 'a' && buf[4] <= 'z')
+		   || (buf[4] >= 'A' && buf[4] <= 'Z') )
+		 && buf[5] == ':' ) {
+		) {
+			/* Chop off `\\?\ part */
+			buf_offset = 4;
+			upsdebugx(3, "%s: GetModuleFileName() returned '%s' which seems like localhost UNC path, chopping off the prefix to use just '%s'",
+				__func__, buf, buf + buf_offset);
+		} else {
+			upsdebugx(1, "%s: GetModuleFileName() returned '%s' which seems like UNC path, these are not currently supported and later calls may fail due to this",
+				__func__, buf);
+		}
+	}
+
+	/* remove trailing executable name and its preceding slash */
+	last_slash = strrchr(buf + buf_offset, '\\');
 	*last_slash = '\0';
 
-	upsdebugx(6, "%s: buf truncated to:\t'%s'", __func__, buf);
+	upsdebugx(6, "%s: buf truncated to:\t'%s'", __func__, buf + buf_offset);
 
 	/* no extra magic for hard-coded PATH_ETC and others, see config.h */
 	if (relative_path) {
@@ -1782,7 +1836,7 @@ char * getfullpath(char * relative_path)
 			) {
 				strncat(buf, "\\", sizeof(buf) - 1);
 				buf_strlen++;
-				upsdebugx(6, "%s: buf increased to:\t'%s'", __func__, buf);
+				upsdebugx(6, "%s: buf increased to:\t'%s'", __func__, buf + buf_offset);
 			}
 
 			/* Is this an absolute-looking Unix-ish path string
@@ -1793,7 +1847,7 @@ char * getfullpath(char * relative_path)
 			 && !strncmp(relative_path, PREFIX, len_PREFIX)
 			 && *(relative_path + len_PREFIX) == '/'
 			) {
-				char	*prefix_in_buf = strstr(buf, PREFIX);
+				char	*prefix_in_buf = strstr(buf + buf_offset, PREFIX);
 
 				if (win_PREFIX == NULL) {
 					win_PREFIX = xstrdup(PREFIX);
@@ -1808,7 +1862,7 @@ char * getfullpath(char * relative_path)
 				if (!prefix_in_buf && len_PREFIX > 1) {
 					/* Retry: Was this path Windows-ized,
 					 * and is PREFIX non-trivial? */
-					prefix_in_buf = strstr(buf, win_PREFIX);
+					prefix_in_buf = strstr(buf + buf_offset, win_PREFIX);
 				}
 
 				upsdebugx(6, "%s: prefix_in_buf:\t'%s'", __func__, NUT_STRARG(prefix_in_buf));
@@ -1840,7 +1894,7 @@ char * getfullpath(char * relative_path)
 					while (depth > 0) {
 						depth--;
 						strncat(buf, "..\\", sizeof(buf) - 1);
-						upsdebugx(6, "%s: remaining depth=%d, buf increased to:\t'%s'", __func__, depth, buf);
+						upsdebugx(6, "%s: remaining depth=%d, buf increased to:\t'%s'", __func__, depth, buf + buf_offset);
 					}
 				} else {
 					upsdebugx(6, "%s: did not find a non-trivial PREFIX followed by some slash in buf", __func__);
@@ -1848,7 +1902,7 @@ char * getfullpath(char * relative_path)
 					 * single layer of directories ending with "bin".
 					 */
 					if (len_PREFIX == 1 && buf_strlen > 2) {
-						for (last_slash = buf + buf_strlen - 2; last_slash != buf; last_slash --) {
+						for (last_slash = buf + buf_offset + buf_strlen - 2; last_slash != buf + buf_offset; last_slash --) {
 							if (*last_slash == '/' || *last_slash == '\\')
 								break;
 						}
@@ -1856,7 +1910,7 @@ char * getfullpath(char * relative_path)
 						if (last_slash && strstr(last_slash, "bin\\")) {
 							upsdebugx(6, "%s: buf ends with 'bin\\', assume a single layer under a trivial PREFIX", __func__);
 							strncat(buf, "..\\", sizeof(buf) - 1);
-							upsdebugx(6, "%s: remaining depth=0, buf increased to:\t'%s'", __func__, buf);
+							upsdebugx(6, "%s: remaining depth=0, buf increased to:\t'%s'", __func__, buf + buf_offset);
 						}
 					}
 				}
@@ -1871,14 +1925,14 @@ char * getfullpath(char * relative_path)
 			}
 		}
 
-		upsdebugx(6, "%s: concat '%s' and '%s'", __func__, buf, NUT_STRARG(relative_path));
+		upsdebugx(6, "%s: concat '%s' and '%s'", __func__, buf + buf_offset, NUT_STRARG(relative_path));
 		strncat(buf, relative_path, sizeof(buf) - 1);
 	}	/* else: relative_path == NULL */
 
-	upsdebugx(5, "%s: resulting buf:\t'%s'", __func__, buf);
+	upsdebugx(5, "%s: resulting buf:\t'%s'", __func__, buf + buf_offset);
 
 	/* Caller should free this eventually */
-	return(xstrdup(buf));
+	return(xstrdup(buf + buf_offset));
 }
 
 char * getfullpath2(char * cfg_path, char * fallback_path)
