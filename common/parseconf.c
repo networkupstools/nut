@@ -447,6 +447,26 @@ int pconf_file_begin(PCONF_CTX_t *ctx, const char *fn)
 
 	ctx->f = fopen(fn, "r");
 
+#ifdef WIN32
+        /* Running under IIS, CGI programs were seen to use UNC filesystem
+         * paths `\\?\c:\...`, which POSIX methods are not comfortable with:
+         */
+	if (!ctx->f) {
+		if (fn[0] == '\\' && fn[1] == '\\') {
+			char *s = strchr(fn + 2, '\\');
+			if (s && *s == '\\') s++;
+			if (s && *s && ( (*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z') ) && s[1] == ':' ) {
+				upsdebugx(3, "%s: failed to fopen() '%s', will retry with '%s'",
+					__func__, fn, s);
+				ctx->f = fopen(s, "r");
+			} else {
+				upsdebugx(1, "%s: failed to fopen() '%s' which seems like UNC path, these are not currently supported",
+					__func__, fn);
+			}
+		}
+	}
+#endif	/* WIN32 */
+
 	if (!ctx->f) {
 		snprintf(ctx->errmsg, PCONF_ERR_LEN, "Can't open %s: %s",
 			fn, strerror(errno));
