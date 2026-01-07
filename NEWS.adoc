@@ -423,8 +423,9 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - Source directory `data/html` was renamed to `data/htmlcgi` in order to
    better reflect its contents and purpose, compared to documentation-oriented
-   `html*` directories (and recipe variable names). This may impact some
-   packaging recipes which do not rely on `make install` alone. [#3049]
+   `html*` directories (and recipe variable names). The static HTML pages now
+   also suggest a NUT icon (installed from `docs/images`). This may impact some
+   packaging recipes which do not rely on `make install` alone. [#3049, #3249]
 
  - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
    to match the driver program name. Follow-up from slightly botched renaming
