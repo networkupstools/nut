@@ -1223,9 +1223,11 @@ int main(int argc, char **argv)
 		nut_debug_level = i;
 	}
 
+#ifdef WIN32
 	/* Avoid binary output conversions, e.g.
 	 * mangling what looks like CRLF on WIN32 */
 	setmode(STDOUT_FILENO, O_BINARY);
+#endif
 
 	extractcgiargs();
 

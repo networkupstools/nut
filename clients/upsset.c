@@ -1099,11 +1099,13 @@ int main(int argc, char **argv)
 	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
+#ifdef WIN32
 	/* Avoid binary output conversions, e.g.
 	 * mangling what looks like CRLF on WIN32 */
 	setmode(STDOUT_FILENO, O_BINARY);
 	/* Also do not break what we receive from HTTP POST queries */
 	setmode(STDIN_FILENO, O_BINARY);
+#endif
 
 	printf("Content-type: text/html\n\n");
 
