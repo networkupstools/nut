@@ -170,6 +170,14 @@ static void do_hidden(const char *next)
 			next);
 }
 
+static void do_hidden_sentinel(void)
+{
+	/* MS IIS tends to not close CGI STDIN and not serve the last byte(s)
+	 * but just hangs at fgets(), so we truncate the inputs in cgilib,
+	 * and add a dummy entry here that we can afford to lose in the end */
+	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"zzz\" VALUE=\"sentinel\">\n");
+}
+
 /* generate SELECT chooser from hosts.conf entries */
 static void upslist_arg(size_t numargs, char **arg)
 {
@@ -258,6 +266,8 @@ static void do_pickups(const char *currfunc)
 	do_hidden(NULL);
 
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"View\">\n");
+
+	do_hidden_sentinel();
 	printf("</FORM>\n");
 }
 
@@ -332,6 +342,7 @@ static void loginscreen(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"pickups\">\n");
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Login\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset fields\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR></TABLE>\n");
 	printf("</FORM>\n");
 	printf("</TD></TR></TABLE>\n");
@@ -483,6 +494,7 @@ static void showcmds(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Issue command\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR>\n");
 	printf("</TABLE>\n");
 	printf("</FORM>\n");
@@ -905,6 +917,7 @@ static void showsettings(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Save changes\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR>\n");
 	printf("</TABLE>\n");
 	printf("</FORM>\n");

@@ -116,8 +116,8 @@ void extractcgiargs(void)
 
 void extractpostargs(void)
 {
-	char	buf[SMALLBUF], *ptr, *cleanval;
-	int	ch;
+	char	buf[SMALLBUF], *ptr, *cleanval, *server_software = NULL;
+	int	ch, content_length = -1, bytes_seen = 0;
 	size_t	buflen;
 
 	/* First, see if there's anything waiting...
@@ -144,11 +144,39 @@ void extractpostargs(void)
 		return;
 	}
 
-	ch = fgetc(stdin);
-	upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)<br/>", __func__, ch, ch, (unsigned int)ch);
 	buf[0] = '\0';
 
-	while (ch != EOF) {
+	/* Does the web server tell us how much it sent
+	 * (and might keep the channel open... indefinitely)? */
+	ptr = getenv("CONTENT_LENGTH");
+	if (ptr) {
+		content_length = atoi(ptr);
+	}
+
+	ptr = getenv("SERVER_SOFTWARE");
+	if (ptr) {
+		server_software = ptr;
+	} else {
+		server_software = "";
+	}
+
+	if (content_length > 0 && strstr(server_software, "IIS")) {
+		/* Our POSTs end with a newline, and that one never arrives
+		 * (reads hang), possibly buffered output from IIS?
+		 * Our own setmode() in e.g. upsset.c does not help.
+		 * So upsset.c ends each FORM with do_hidden_sentinel()
+		 * to sacrifice a few bytes we would not use.
+		 */
+		upsdebugx(3, "%s: truncating expected content length on IIS<br/>", __func__);
+		content_length--;
+	}
+	upsdebugx(3, "%s: starting to read %d POSTed bytes on server '%s'<br/>", __func__, content_length, server_software);
+
+	ch = fgetc(stdin);
+	upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)<br/>", __func__, ch, ch, (unsigned int)ch);
+
+	while (ch != EOF && (content_length < 0 || bytes_seen < content_length)) {
+		bytes_seen++;
 		if (ch == '&') {
 			buflen = strlen(buf);
 			upsdebugx(1, "%s: collected a chunk of %" PRIuSIZE " bytes on stdin: %s<br/>",
@@ -192,7 +220,8 @@ void extractpostargs(void)
 		upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)<br/>", __func__, ch, ch, (unsigned int)ch);
 		if (ch == EOF)
 			upsdebugx(3, "%s: got proper stdin EOF<br/>", __func__);
-	}
+		upsdebugx(6, "%s: processed %d bytes with %d expected incoming content length on server '%s'<br/>", __func__, bytes_seen, content_length, server_software);
+	};
 
 	buflen = strlen(buf);
 	if (buflen != 0) {
@@ -211,6 +240,10 @@ void extractpostargs(void)
 		}
 	} else {
 		upsdebugx(1, "%s: no final stdin chunk was collected<br/>", __func__);
+	}
+
+	if (bytes_seen >= content_length) {
+		upsdebugx(6, "%s: processed %d bytes with %d incoming content length<br/>", __func__, bytes_seen, content_length);
 	}
 }
 
