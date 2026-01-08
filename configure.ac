@@ -4536,6 +4536,30 @@ AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
 NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}], [],
 					[WITH_DEV], [Define to enable development files support])
 
+dnl Since 2.7.x releases, NUT binaries have grown rather large on many
+dnl platforms. Maybe this is due to more and more libcommon* methods?
+dnl Tracked at https://github.com/networkupstools/nut/issues/2800
+dnl While we had never shared internal code this way (and probably need
+dnl to stress it is not a public API/ABI), most NUT binaries are already
+dnl dynamically linked wither with libupsclient or third-party code.
+AC_MSG_CHECKING(if requested shared internal libraries)
+NUT_ARG_ENABLE([shared-private-libs], [ENABLE_SHARED_PRIVATE_LIBS], [Dynamically link to NUT libcommon* libraries delivered once, instead of building used code into each program binary], [no])
+
+dnl For now basically cover yes/no/auto
+dnl FIXME: Somehow determine whether we can do this at all,
+dnl for proper failure on "yes" if we can't vs. not-failing
+dnl but rather switching to "no" for "auto"?
+AS_CASE([${nut_enable_shared_private_libs}],
+	[""|yes], [nut_enable_shared_private_libs="yes"],
+	[auto], [nut_enable_shared_private_libs="yes"],
+	[no], [],
+		[AC_MSG_ERROR([invalid option value --enable-shared-private-libs='${nut_enable_shared_private_libs}'])]
+)
+AC_MSG_RESULT([${nut_enable_shared_private_libs}])
+AM_CONDITIONAL(ENABLE_SHARED_PRIVATE_LIBS, test "${nut_enable_shared_private_libs}" = "yes"])
+NUT_REPORT_FEATURE([dynamically link to NUT common libraries instead of copying needed bits into each binary], [${nut_enable_shared_private_libs}], [],
+					[ENABLE_SHARED_PRIVATE_LIBS], [Define to dynamically link to NUT common libraries instead of copying needed bits into each binary])
+
 dnl ----------------------------------------------------------------------
 dnl checks related to MS Windows support (MingW)
 

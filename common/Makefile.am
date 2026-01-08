@@ -15,8 +15,23 @@ AM_LDFLAGS = -no-undefined
 EXTRA_DIST =
 CLEANFILES =
 
-noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
+# TOTHINK: Arch-dependent for multi-bitness builds?
+libexecdir = @libexecdir@
+private_libs = libparseconf.la libcommon.la libcommonclient.la
+
+noinst_LTLIBRARIES =
+# Odd, some googling says it exists, others (and tooling) say
+#   common/Makefile.am:23: error: 'libexecdir' is not a legitimate directory for 'LTLIBRARIES'
+#libexec_LTLIBRARIES =
 lib_LTLIBRARIES =
+
+if ENABLE_SHARED_PRIVATE_LIBS
+### Hopefully we can install this away from the public eye?..
+###libexec_LTLIBRARIES += $(private_libs)
+  lib_LTLIBRARIES += $(private_libs)
+else !ENABLE_SHARED_PRIVATE_LIBS
+  noinst_LTLIBRARIES += $(private_libs)
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # We define the recipe below in any case, but only activate it by default
 # if the build configuration tells us to:
@@ -77,18 +92,18 @@ libcommonclient_la_SOURCES = state.c str.c
 # several other Makefiles include the three helpers common.c common-nut_version.c str.c
 # (and perhaps some other string-related code), so we make them a library too;
 # note that LTLIBOBJS pulls in snprintf.c contents too.
-noinst_LTLIBRARIES += libcommonstr.la
+private_libs += libcommonstr.la
 libcommonstr_la_SOURCES = str.c
 libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 libcommonstr_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
 
 # Common methods for JSON outputs from NUT programs
-noinst_LTLIBRARIES += libcommonstrjson.la
+private_libs += libcommonstrjson.la
 libcommonstrjson_la_SOURCES = strjson.c
 
 # This one includes only version-related data and methods and should be
 # linked along with one of the other libcommon*.la for logging methods:
-noinst_LTLIBRARIES += libcommonversion.la
+private_libs += libcommonversion.la
 libcommonversion_la_SOURCES = common-nut_version.c
 #libcommonversion_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 #libcommonversion_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
@@ -152,7 +167,7 @@ if HAVE_WINDOWS
   # another NUT library and linked to the final NUT program/lib
   # (anyhow, avoid a link-time conflict with two definitions):
   libnutwincompat_la_CFLAGS = $(AM_CFLAGS) -DHAVE_SETENV=1
-  noinst_LTLIBRARIES += libnutwincompat.la
+  private_libs += libnutwincompat.la
 
   libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
   libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
@@ -223,3 +238,4 @@ clean-local:
 
 # Helper for only the enabled libs to get built:
 all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)
+# $(libexec_LTLIBRARIES)
