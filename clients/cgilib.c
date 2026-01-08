@@ -131,7 +131,7 @@ void extractpostargs(void)
 	FD_ZERO(&fds);
 	FD_SET(STDIN_FILENO, &fds);
 	tv.tv_sec = 0;
-	tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
+	tv.tv_usec = 250000; /* wait for up to 250ms for a POST query to come */
 
 	selret = select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
 	if (selret <= 0) {
@@ -140,22 +140,27 @@ void extractpostargs(void)
 	DWORD	selret = WaitForSingleObject(hSTDIN, 250);
 	if (selret != WAIT_OBJECT_0) { /* or == WAIT_TIMEOUT ? */
 #endif	/* WIN32 */
-		upsdebug_with_errno(1, "%s: no stdin is waiting (%" PRIiMAX ")", __func__, (intmax_t)selret);
+		upsdebug_with_errno(1, "%s: no stdin is waiting (%" PRIiMAX ")<br/>", __func__, (intmax_t)selret);
 		return;
 	}
 
 	ch = fgetc(stdin);
-	upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)", __func__, ch, ch, ch);
+	upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)<br/>", __func__, ch, ch, (unsigned int)ch);
 	buf[0] = '\0';
 
 	while (ch != EOF) {
 		if (ch == '&') {
+			buflen = strlen(buf);
+			upsdebugx(1, "%s: collected a chunk of %" PRIuSIZE " bytes on stdin: %s<br/>",
+				__func__, buflen, buf);
 			ptr = strchr(buf, '=');
-			if (!ptr)
+			if (!ptr) {
+				upsdebugx(3, "%s: parsearg('%s', '')<br/>", __func__, buf);
 				parsearg(buf, "");
-			else {
+			} else {
 				*ptr++ = '\0';
 				cleanval = unescape(ptr);
+				upsdebugx(3, "%s: parsearg('%s', '%s')<br/>", __func__, buf, cleanval);
 				parsearg(buf, cleanval);
 				free(cleanval);
 			}
@@ -178,31 +183,34 @@ void extractpostargs(void)
 		if (selret != WAIT_OBJECT_0) { /* or == WAIT_TIMEOUT ? */
 #endif
 			/* We do not always get EOF, so assume the input stream stopped */
-			upsdebug_with_errno(1, "%s: timed out waiting for an stdin byte (%" PRIiMAX ")", __func__, (intmax_t)selret);
+			upsdebug_with_errno(1, "%s: timed out waiting for an stdin byte (%" PRIiMAX ")<br/>", __func__, (intmax_t)selret);
 			break;
 		}
 
+		fflush(stderr);
 		ch = fgetc(stdin);
-		upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)", __func__, ch, ch, ch);
+		upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)<br/>", __func__, ch, ch, (unsigned int)ch);
 		if (ch == EOF)
-			upsdebugx(1, "%s: got proper stdin EOF", __func__);
+			upsdebugx(3, "%s: got proper stdin EOF<br/>", __func__);
 	}
 
 	buflen = strlen(buf);
 	if (buflen != 0) {
-		upsdebugx(1, "%s: collected %" PRIuSIZE " bytes on stdin: %s",
+		upsdebugx(1, "%s: collected a chunk of %" PRIuSIZE " bytes on stdin: %s<br/>",
 			__func__, buflen, buf);
 		ptr = strchr(buf, '=');
-		if (!ptr)
+		if (!ptr) {
+			upsdebugx(3, "%s: parsearg('%s', '')<br/>", __func__, buf);
 			parsearg(buf, "");
-		else {
+		} else {
 			*ptr++ = '\0';
 			cleanval = unescape(ptr);
+			upsdebugx(3, "%s: parsearg('%s', '%s')<br/>", __func__, buf, cleanval);
 			parsearg(buf, cleanval);
 			free(cleanval);
 		}
 	} else {
-		upsdebugx(1, "%s: no stdin was collected", __func__);
+		upsdebugx(1, "%s: no final stdin chunk was collected<br/>", __func__);
 	}
 }
 
