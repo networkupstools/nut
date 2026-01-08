@@ -184,7 +184,8 @@ th, td{padding:0.5ex;}
 </td>
 
 <td class="t2">
-@TREELINK@
+@TREELINK@<br/>
+@TREELINK_JSON@
 </td>
 </tr>
 
@@ -196,6 +197,7 @@ th, td{padding:0.5ex;}
 </table>
 
 <hr><div><small>
+<a href="?json" title="All devices as one JSON document">JSON</a>
 <a href="https://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"></a>
 <a href="https://validator.w3.org/check?uri=referer"><img style="float:right" src="https://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01 Strict" height="31" width="88"></a>
 </small></div>

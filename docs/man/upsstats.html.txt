@@ -142,6 +142,20 @@ Insert the host's description from linkman:hosts.conf[5].
 Insert a HTML link to linkman:upsstats.cgi[8] with the "host" variable
 set to the current UPS.  This is only useful within a FOREACHUPS block.
 
+*@TREELINK [Link text]@*::
+Insert a HTML link to linkman:upsstats.cgi[8] with the "host" variable
+set to the current UPS and "treemode" enabled to show all data points
+as an HTML page.  This is primarily useful within a FOREACHUPS block,
+but also as an `upsstats-single.html` footer. If some "Link text" is not
+provided, it defaults to "All data".
+
+*@TREELINK_JSON [Link text]@*::
+Insert a HTML link to linkman:upsstats.cgi[8] with the "host" variable
+set to the current UPS and "treemode" enabled to show all data points
+as a JSON document.  This is primarily useful within a FOREACHUPS block,
+but also as an `upsstats-single.html` footer. If some "Link text" is not
+provided, it defaults to "JSON".
+
 *@IMG* 'varname' ['extra']*@*::
 Insert an IMG SRC to linkman:upsimage.cgi[8] for one of these
 status variables:

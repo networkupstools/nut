@@ -260,8 +260,9 @@ several `FSD` notifications into one executed action. [PR #3097]
  - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
 
  - `upsstats` tool updates:
-   * Now has JSON output mode via `?json` (or `&json`) CGI query
-     parameter. [issue #2524, PR #3171]
+   * Now has JSON output mode via `?json` (or `&json`) CGI query parameter.
+     New `@TREELINK_JSON@` keyword added and HTML templates updated to expose
+     these JSON documents when browsing. [issue #2524, PRs #3171, #3249]
    * Handle `device.model` in addition to `ups.model` in upsstats HTML
      templates. [#3180]
 

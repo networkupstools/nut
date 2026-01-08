@@ -317,7 +317,8 @@ on @HOST@
 </tr>
 
 </table>
-<div><a href="https://jigsaw.w3.org/css-validator/check/referer"><img
+<div>@TREELINK_JSON Device data as JSON@ | @TREELINK Device data as HTML table@
+<a href="https://jigsaw.w3.org/css-validator/check/referer"><img
       style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss"
       alt="Valid CSS" title="Valid CSS" height="31" width="88"></a>
 <a href="https://validator.w3.org/check?uri=referer"><img

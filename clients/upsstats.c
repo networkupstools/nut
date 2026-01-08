@@ -431,13 +431,26 @@ static void do_hostlink(void)
 	printf("\">%s</a>", currups->desc);
 }
 
-static void do_treelink(void)
+static void do_treelink_json(const char *text)
 {
 	if (!currups) {
 		return;
 	}
 
-	printf("<a href=\"%s?host=%s&amp;treemode\">All data</a>", upsstatpath, currups->sys);
+	printf("<a href=\"%s?host=%s&amp;json\">%s</a>",
+		upsstatpath, currups->sys,
+		((text && *text) ? text : "JSON"));
+}
+
+static void do_treelink(const char *text)
+{
+	if (!currups) {
+		return;
+	}
+
+	printf("<a href=\"%s?host=%s&amp;treemode\">%s</a>",
+		upsstatpath, currups->sys,
+		((text && *text) ? text : "All data"));
 }
 
 /* see if the UPS supports this variable - skip to the next ENDIF if not */
@@ -760,8 +773,23 @@ static int do_command(char *cmd)
 		return 1;
 	}
 
+	if (!strncmp(cmd, "TREELINK_JSON ", 14)) {
+		do_treelink_json(&cmd[14]);
+		return 1;
+	}
+
+	if (!strcmp(cmd, "TREELINK_JSON")) {
+		do_treelink_json(NULL);
+		return 1;
+	}
+
+	if (!strncmp(cmd, "TREELINK ", 9)) {
+		do_treelink(&cmd[9]);
+		return 1;
+	}
+
 	if (!strcmp(cmd, "TREELINK")) {
-		do_treelink();
+		do_treelink(NULL);
 		return 1;
 	}
 
