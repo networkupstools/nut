@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3622 utf-8
+personal_ws-1.1 en 3625 utf-8
 AAC
 AAS
 ABI
@@ -493,6 +493,7 @@ HL
 HMAC
 HNX
 HOMEBREW
+HOSTDESC
 HOSTLINK
 HOSTSYNC
 HOWTO
@@ -911,6 +912,7 @@ Orvaldi
 Orzechowski
 OutletSystem
 OutputOverload
+PATHs
 PBT
 PBTn
 PBTnn
@@ -1794,6 +1796,7 @@ cgroupsv
 changelog
 chargetime
 charset
+checkbox
 checkprocnames
 checkruntime
 checksum
