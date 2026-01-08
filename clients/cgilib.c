@@ -175,9 +175,12 @@ void extractpostargs(void)
 	ch = fgetc(stdin);
 	upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)<br/>", __func__, ch, ch, (unsigned int)ch);
 
-	while (ch != EOF && (content_length < 0 || bytes_seen < content_length)) {
+	if (ch == EOF) {
 		bytes_seen++;
-		if (ch == '&') {
+		upsdebugx(3, "%s: got immediate EOF in stdin<br/>", __func__);
+	} else while(1) {
+		bytes_seen++;
+		if (ch == '&' || ch == EOF || (content_length >= 0 && bytes_seen >= content_length)) {
 			buflen = strlen(buf);
 			upsdebugx(1, "%s: collected a chunk of %" PRIuSIZE " bytes on stdin: %s<br/>",
 				__func__, buflen, buf);
@@ -193,6 +196,9 @@ void extractpostargs(void)
 				free(cleanval);
 			}
 			buf[0] = '\0';
+
+			if (ch == EOF || (content_length >= 0 && bytes_seen >= content_length))
+				break;	/* end the loop */
 		}
 		else
 			snprintfcat(buf, sizeof(buf), "%c", ch);
@@ -221,30 +227,9 @@ void extractpostargs(void)
 		if (ch == EOF)
 			upsdebugx(3, "%s: got proper stdin EOF<br/>", __func__);
 		upsdebugx(6, "%s: processed %d bytes with %d expected incoming content length on server '%s'<br/>", __func__, bytes_seen, content_length, server_software);
-	};
+	}	/* end of infinite loop */
 
-	buflen = strlen(buf);
-	if (buflen != 0) {
-		upsdebugx(1, "%s: collected a chunk of %" PRIuSIZE " bytes on stdin: %s<br/>",
-			__func__, buflen, buf);
-		ptr = strchr(buf, '=');
-		if (!ptr) {
-			upsdebugx(3, "%s: parsearg('%s', '')<br/>", __func__, buf);
-			parsearg(buf, "");
-		} else {
-			*ptr++ = '\0';
-			cleanval = unescape(ptr);
-			upsdebugx(3, "%s: parsearg('%s', '%s')<br/>", __func__, buf, cleanval);
-			parsearg(buf, cleanval);
-			free(cleanval);
-		}
-	} else {
-		upsdebugx(1, "%s: no final stdin chunk was collected<br/>", __func__);
-	}
-
-	if (bytes_seen >= content_length) {
-		upsdebugx(6, "%s: processed %d bytes with %d incoming content length<br/>", __func__, bytes_seen, content_length);
-	}
+	upsdebugx(3, "%s: processed %d bytes with %d incoming content length<br/>", __func__, bytes_seen, content_length);
 }
 
 /* called for fatal errors in parseconf like malloc failures */
