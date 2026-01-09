@@ -214,7 +214,7 @@ https://github.com/networkupstools/nut/milestone/12
 
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
-     of all known local devices to stdout. [#3083]
+     of all known local devices to stdout. [#3083, #2756]
 
  - `upsmon` client updates:
    * The `SHUTDOWNEXIT` option was not handled properly, and the requested
