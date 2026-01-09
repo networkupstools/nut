@@ -6,6 +6,15 @@ $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: FORCE
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libnutprivate-common-all.la \
+$(top_builddir)/common/libnutprivate-common-client.la: FORCE
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libnutprivate-common-all.la: $(top_builddir)/common/libcommon.la
+$(top_builddir)/common/libnutprivate-common-client.la: $(top_builddir)/common/libcommonclient.la
+endif
+
 EXTRA_DIST = \
 	winevent.mc				\
 	build-mingw-nut.sh			\

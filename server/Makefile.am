@@ -20,6 +20,15 @@ $(top_builddir)/common/libparseconf.la: dummy
 # (sub-makes are independent as far as trying to write into same files):
 $(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
 
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libnutprivate-common-all.la \
+$(top_builddir)/common/libnutprivate-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libnutprivate-common-all.la: $(top_builddir)/common/libcommon.la
+$(top_builddir)/common/libnutprivate-common-client.la: $(top_builddir)/common/libcommonclient.la
+endif
+
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.

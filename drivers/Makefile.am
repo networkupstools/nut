@@ -24,15 +24,46 @@ $(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
 # and that in turn libparseconf.la:
 $(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libparseconf.la
 
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libnutprivate-common-all.la \
+$(top_builddir)/common/libnutprivate-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libnutprivate-common-all.la: $(top_builddir)/common/libcommon.la
+$(top_builddir)/common/libnutprivate-common-client.la: $(top_builddir)/common/libcommonclient.la
+endif
+
+lib_LTLIBRARIES =
+
+if ENABLE_SHARED_PRIVATE_LIBS
+  lib_LTLIBRARIES += libnutprivate-drivers-common.la
+  libnutprivate_drivers_common_la_SOURCES =
+  libnutprivate_drivers_common_la_LIBADD = \
+	libdummy_upsdrvquery.la $(top_builddir)/common/libnutprivate-common-all.la \
+	libdummy_main.la
+
+  lib_LTLIBRARIES += libnutprivate-drivers-serial.la
+  libnutprivate_drivers_serial_la_SOURCES =
+  libnutprivate_drivers_serial_la_LIBADD = \
+	libdummy_serial.la $(SERLIBS)
+
+  LDADD_COMMON = \
+	$(top_builddir)/common/libnutprivate-common-all.la
+
+  LDADD_DRIVERS = libnutprivate-drivers-common.la $(LDADD_COMMON)
+
+  LDADD_DRIVERS_SERIAL = libnutprivate-drivers-serial.la $(LDADD_DRIVERS)
+else !ENABLE_SHARED_PRIVATE_LIBS
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
-LDADD_COMMON = \
+  LDADD_COMMON = \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la \
 	$(top_builddir)/common/libparseconf.la
-LDADD_DRIVERS = libdummy.la libdummy_upsdrvquery.la $(LDADD_COMMON)
-LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
+  LDADD_DRIVERS = libdummy_main.la libdummy_upsdrvquery.la $(LDADD_COMMON)
+  LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # most targets are serial drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
@@ -465,14 +496,17 @@ dist_noinst_HEADERS = \
 # because per-object CFLAGS can only be specified for libraries, not
 # for object files. This library is used during the build process,
 # and is not meant to be installed.
-EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
+EXTRA_LTLIBRARIES = libdummy_main.la libdummy_serial.la libdummy_upsdrvquery.la
 
-libdummy_la_SOURCES = main.c dstate.c
-libdummy_la_LDFLAGS = -no-undefined -static
+libdummy_main_la_SOURCES = main.c dstate.c
 libdummy_serial_la_SOURCES = serial.c
-libdummy_serial_la_LDFLAGS = -no-undefined -static
 libdummy_upsdrvquery_la_SOURCES = upsdrvquery.c
+
+if !ENABLE_SHARED_PRIVATE_LIBS
+libdummy_main_la_LDFLAGS = -no-undefined -static
+libdummy_serial_la_LDFLAGS = -no-undefined -static
 libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # The libdummy_mockdrv.la is used for unit-tests to mock a driver
 # with near-production codebase but without its standard main().

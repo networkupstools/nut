@@ -56,6 +56,15 @@ $(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommon.la
 $(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libcommonclient.la
 $(top_builddir)/clients/libnutclientstub.la: $(top_builddir)/clients/libnutclient.la
 
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libnutprivate-common-all.la \
+$(top_builddir)/common/libnutprivate-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libnutprivate-common-all.la: $(top_builddir)/common/libcommon.la
+$(top_builddir)/common/libnutprivate-common-client.la: $(top_builddir)/common/libcommonclient.la
+endif
+
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
 

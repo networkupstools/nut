@@ -221,6 +221,7 @@ all-libs-local/include:
 ###           (consume only one of these at a time!)
 ### Delivers: libcommonversion.la (only version methods)
 ### Delivers: libparseconf.la libnutconf.la libnutwincompat.la
+### May deliver: libnutprivate-common-all.la or libnutprivate-common-client.la for dynamic shared-object linking
 ### Requires-ext: include/nut_version.h
 ### Requires-int: libparseconf.la libcommonclient.la
 all-libs-local/common: all-libs-local/include
@@ -238,12 +239,12 @@ all-libs-local/clients: all-libs-local/common
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
-### Delivers: libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
+### Delivers: libdummy_main.la libdummy_serial.la libdummy_upsdrvquery.la
 ### Delivers: libdummy_mockdrv.la libserial-nutscan.la
 ### LIB-Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: clients/libupsclient.la (dummy-ups only)
-### Requires-int: libdummy.la libdummy_upsdrvquery.la
+### Requires-int: libdummy_main.la libdummy_upsdrvquery.la
 ### Requires-int: libdummy_serial.la
 all-libs-local/drivers: all-libs-local/common
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
@@ -357,7 +358,7 @@ all/clients: all/common all-libs-local/clients
 ### Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: common/libcommonversion.la
 ### Requires-ext: clients/libupsclient.la (dummy-ups only)
-### Requires-int: libdummy.la libdummy_upsdrvquery.la
+### Requires-int: libdummy_main.la libdummy_upsdrvquery.la
 ### Requires-int: libdummy_serial.la
 
 # TODO in the future: propagate the knowledge of whether we are building

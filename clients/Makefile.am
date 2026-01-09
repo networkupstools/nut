@@ -31,18 +31,40 @@ $(top_builddir)/common/libparseconf.la: dummy
 $(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
 
-LDADD_FULL = \
+LDADD_FULL =
+LDADD_CLIENT =
+
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libnutprivate-common-all.la \
+$(top_builddir)/common/libnutprivate-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libnutprivate-common-all.la: $(top_builddir)/common/libcommon.la
+$(top_builddir)/common/libnutprivate-common-client.la: $(top_builddir)/common/libcommonclient.la
+
+LDADD_FULL += \
+	$(top_builddir)/common/libnutprivate-common-all.la
+
+LDADD_CLIENT += \
+	$(top_builddir)/common/libnutprivate-common-client.la
+else
+LDADD_FULL += \
 	$(top_builddir)/common/libcommon.la \
-	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libcommonversion.la
+
+LDADD_CLIENT += \
+	$(top_builddir)/common/libcommonclient.la \
+	$(top_builddir)/common/libcommonversion.la
+endif
+
+LDADD_FULL += \
 	libupsclient.la \
 	$(NETLIBS)
 if WITH_SSL
   LDADD_FULL += $(LIBSSL_LIBS) $(LIBSSL_LDFLAGS_RPATH)
 endif WITH_SSL
 
-LDADD_CLIENT = \
-	$(top_builddir)/common/libcommonclient.la \
-	$(top_builddir)/common/libcommonversion.la \
+LDADD_CLIENT += \
 	libupsclient.la \
 	$(NETLIBS)
 if WITH_SSL
@@ -97,18 +119,12 @@ upsc_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
 upscmd_SOURCES = upscmd.c upsclient.h
 
 upsrw_SOURCES = upsrw.c upsclient.h
-if ENABLE_SHARED_PRIVATE_LIBS
-upsrw_LDADD = $(LDADD_FULL) $(top_builddir)/common/libparseconf.la
-endif ENABLE_SHARED_PRIVATE_LIBS
 
 upslog_SOURCES = upslog.c upsclient.h upslog.h
 upslog_LDADD = $(LDADD_FULL)
 
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 upsmon_LDADD = $(LDADD_FULL)
-if ENABLE_SHARED_PRIVATE_LIBS
-upsmon_LDADD += $(top_builddir)/common/libparseconf.la
-endif ENABLE_SHARED_PRIVATE_LIBS
 
 if HAVE_WINDOWS_SOCKETS
 message_SOURCES = message.c
@@ -123,21 +139,14 @@ upssched_LDADD = \
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
-if ENABLE_SHARED_PRIVATE_LIBS
-upsimage_cgi_LDADD += $(top_builddir)/common/libparseconf.la
-endif ENABLE_SHARED_PRIVATE_LIBS
 
 upsset_cgi_SOURCES = upsset.c upsclient.h cgilib.c cgilib.h
-if ENABLE_SHARED_PRIVATE_LIBS
-upsset_cgi_LDADD = $(LDADD_FULL) $(top_builddir)/common/libparseconf.la
-endif ENABLE_SHARED_PRIVATE_LIBS
 
 upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
 upsstats_cgi_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
-if ENABLE_SHARED_PRIVATE_LIBS
-upsstats_cgi_LDADD += $(top_builddir)/common/libparseconf.la
-endif ENABLE_SHARED_PRIVATE_LIBS
+
+################################## Plain C client library (libupsclient) :
 
 # not LDADD... why?
 libupsclient_la_SOURCES = upsclient.c upsclient.h
@@ -205,6 +214,8 @@ libupsclient-version.h: libupsclient.la
 	 || RES=$$?; \
 	 rm -f "$@.tmp.$$$$" ; \
 	 exit $$RES
+
+################################## C++ client library (libnutclient) :
 
 if HAVE_CXX11
 # libnutclient version information and build
