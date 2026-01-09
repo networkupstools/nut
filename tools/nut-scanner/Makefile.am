@@ -147,6 +147,12 @@ nut_scanner_CFLAGS = \
 			-I$(top_builddir)/include -I$(top_srcdir)/include
 nut_scanner_LDADD = libnutscan.la
 
+if ENABLE_SHARED_PRIVATE_LIBS
+# ensure the "fatal_with_errno" symbol, and others that libnutscan uses:
+nut_scanner_LDADD += $(top_builddir)/common/libcommon.la
+nut_scanner_LDADD += $(libnutscan_la_LIBADD)
+endif ENABLE_SHARED_PRIVATE_LIBS
+
 # Hack to allow correct RPATH/RUNPATH like /usr/lib/mps/64 (Mozilla NSS)
 # to be used on Solaris/illumos and similar platforms. For more details,
 # see https://github.com/networkupstools/nut/issues/2674 but in short -

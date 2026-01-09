@@ -2120,6 +2120,10 @@ int main(int argc, char **argv)
 #endif	/* WIN32 */
 		;
 
+#if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
+
 	/* init verbosity from default in common.c (0 probably) */
 	nut_debug_level_args = nut_debug_level;
 

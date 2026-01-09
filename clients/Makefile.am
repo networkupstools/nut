@@ -93,12 +93,23 @@ endif WITH_CGI
 
 upsc_SOURCES = upsc.c upsclient.h
 upsc_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
+
 upscmd_SOURCES = upscmd.c upsclient.h
+
 upsrw_SOURCES = upsrw.c upsclient.h
+if ENABLE_SHARED_PRIVATE_LIBS
+upsrw_LDADD = $(LDADD_FULL) $(top_builddir)/common/libparseconf.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+
 upslog_SOURCES = upslog.c upsclient.h upslog.h
 upslog_LDADD = $(LDADD_FULL)
+
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 upsmon_LDADD = $(LDADD_FULL)
+if ENABLE_SHARED_PRIVATE_LIBS
+upsmon_LDADD += $(top_builddir)/common/libparseconf.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+
 if HAVE_WINDOWS_SOCKETS
 message_SOURCES = message.c
 endif HAVE_WINDOWS_SOCKETS
@@ -112,11 +123,21 @@ upssched_LDADD = \
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
+if ENABLE_SHARED_PRIVATE_LIBS
+upsimage_cgi_LDADD += $(top_builddir)/common/libparseconf.la
+endif ENABLE_SHARED_PRIVATE_LIBS
 
 upsset_cgi_SOURCES = upsset.c upsclient.h cgilib.c cgilib.h
+if ENABLE_SHARED_PRIVATE_LIBS
+upsset_cgi_LDADD = $(LDADD_FULL) $(top_builddir)/common/libparseconf.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+
 upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
 upsstats_cgi_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
+if ENABLE_SHARED_PRIVATE_LIBS
+upsstats_cgi_LDADD += $(top_builddir)/common/libparseconf.la
+endif ENABLE_SHARED_PRIVATE_LIBS
 
 # not LDADD... why?
 libupsclient_la_SOURCES = upsclient.c upsclient.h

@@ -30,7 +30,9 @@ Changes from 2.8.4 to 2.8.5
   allows to deliver NUT common libraries as shared objects used by different
   NUT binaries, rather than linking just the used bits into each binary.
   This has some potential both for mayhem (so disabled by default) and
-  for significant reduction of installation footprint. [issue #2800]
+  for significant reduction of installation footprint. If enabled with
+  a NUT packaging build, note there would be several more NUT shared
+  library files to deliver with the packages. [issue #2800]
 
 - For ages, most recipes for building NUT had customized the `sysconfdir` to
   be `/etc/nut`, which is not exactly the *system* configuration directory.
