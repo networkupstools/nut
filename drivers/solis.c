@@ -711,7 +711,7 @@ static void get_base_info(void) {
 	isec = now->tm_sec;
 	weekn = now->tm_wday;
 
-	strncpy(seman, DaysOfWeek[weekn], sizeof(seman));
+	snprintf(seman, sizeof(seman), "%s", DaysOfWeek[weekn]);
 
 	if (testvar("battext"))
 		BattExtension = atoi(getval("battext"));
