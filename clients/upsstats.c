@@ -497,7 +497,7 @@ static void do_ifeq(const char *s)
 	char	*aa[MAX_PARSE_ARGS];
 	int	nargs;
 
-	strcpy(var, s);
+	strncpy(var, s, sizeof(var) - 1);
 
 	nargs = breakargs(var, aa);
 	if(nargs != 2) {
@@ -519,7 +519,7 @@ static void do_ifbetween(const char *s)
 	long	v1, v2, v3;
 	char	*isvalid=NULL;
 
-	strcpy(var, s);
+	strncpy(var, s, sizeof(var) - 1);
 
 	nargs = breakargs(var, aa);
 	if(nargs != 3) {
