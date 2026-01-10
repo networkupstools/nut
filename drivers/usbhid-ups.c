@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.71"
+#define DRIVER_VERSION	"0.72"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 #define HU_VAR_EXPLOREHIDALL "explorehidall"
@@ -1319,8 +1319,8 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling (recommended for CPS devices)");
 
-	addvar(VAR_FLAG, HU_VAR_EXPLOREHIDALL,
-		"Fetch all HID reports during initialization (needed for some CPS devices)");
+	addvar(VAR_VALUE, HU_VAR_EXPLOREHIDALL,
+		"Fetch all HID reports during initialization (0/1, needed for some CPS devices)");
 
 	addvar(VAR_VALUE, "interrupt_pipe_no_events_tolerance", "How many times in a row do we tolerate \"Got 0 HID objects\" from USB interrupts?");
 
@@ -1671,12 +1671,20 @@ void upsdrv_initinfo(void)
 	}
 
 	/* fetch all HID reports on init (auto-enabled for some CPS models) */
-	if (testvar(HU_VAR_EXPLOREHIDALL)) {
-		explorehidall = 1;
+	val = getval(HU_VAR_EXPLOREHIDALL);
+	if (val) {
+		explorehidall = atoi(val);
+	}
+
+	if (explorehidall < 0) {
+		/* handle default: disable (was never enabled until this toggle) */
+		explorehidall = 0;
+
 #if !((defined SHUT_MODE) && SHUT_MODE)
-	} else {
-		/* auto-enable for CPS ProductID 0x0601 which needs this for stable communication
-		 * (CP1500AVRLCD3, CP1500PFCLCD, etc.) - see https://github.com/networkupstools/nut/issues/3116 */
+		/* ...although auto-enable for CPS ProductID 0x0601 which needs
+		 * this for stable communication (CP1500AVRLCD3, CP1500PFCLCD, etc.) -
+		 * see https://github.com/networkupstools/nut/issues/3116
+		 */
 		if (subdriver == &cps_subdriver && curDevice.ProductID == 0x0601) {
 			explorehidall = 1;
 			upsdebugx(1, "Enabling '%s' for CPS device 0x%04x",
