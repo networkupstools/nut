@@ -182,6 +182,11 @@ https://github.com/networkupstools/nut/milestone/12
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
    * Improved support for Eaton 5S1500LCD and 5S1600LCD (US version). [#2380]
+   * Fixed `libhid::HIDDumpTree()` to optionally get more info at driver
+     start-up even if debug is not enabled, this was shown to help with
+     some devices like CP1500PFCLCDa. This is managed by new option
+     `explorehidall` which is enabled by default for certain CPS models.
+     [PR #3247]
    * The driver used to report `CHRG` status if the device was not "fully
      charged", however the latter status was only queried and reported by
      some (not all) subdrivers and probably not by all devices out in the

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3608 utf-8
+personal_ws-1.1 en 3617 utf-8
 AAC
 AAS
 ABI
@@ -486,6 +486,7 @@ HEADs
 HEHn
 HELn
 HFILE
+HIDDumpTree
 HIDIOCINITREPORT
 HIDRDD
 HITRANS
@@ -920,6 +921,7 @@ PDUs
 PDX
 PEX
 PFCLCD
+PFCLCDa
 PGFn
 PGP
 PHP
@@ -2080,6 +2082,7 @@ executables
 executeCommand
 execve
 expandsize
+explorehidall
 extapi
 extern
 externalConsole
