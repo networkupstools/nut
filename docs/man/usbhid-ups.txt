@@ -237,7 +237,19 @@ With this option, the driver will connect to any device, including
 ones that are not yet supported. This must always be combined with the
 "vendorid" option. In this mode, the driver will not do anything
 useful except for printing debugging information (typically used with
--DD).
+`-DD` or higher debugging level).
+
+*fetchallhid*='num'::
+With this option set to a positive value, the driver will pre-fetch
+all USB HID data values same as if debugging were enabled and HID
+dumping would have happened -- this helps certain devices (CPS) to
+work correctly.
++
+The option defaults to `0` (disabled, as it always was before NUT
+v2.8.5 release), except for certain device models known to be helped
+by it being `1` (conversely, if this breaks something -- you can use
+this option to explicitly set `0` back for your deployment, and please
+do report a bug to the NUT issue tracker in this case).
 
 *maxreport*::
 With this option, the driver activates a tweak to workaround buggy firmware
