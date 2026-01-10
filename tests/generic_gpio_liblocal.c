@@ -46,7 +46,7 @@ void gpiod_chip_close(struct gpiod_chip *chip) {
 #if WITH_LIBGPIO_VERSION < 0x00020000
 
 struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {
-	strncpy(chipName, name, sizeof(chipName));
+	snprintf(chipName, sizeof(chipName), "%s", name);
 	if (strcmp(name, "gpiochip1"))
 		return (struct gpiod_chip *)1;
 	else {
@@ -160,7 +160,7 @@ gpiod_chip_request_lines(struct gpiod_chip *chip,
 }
 
 struct gpiod_chip *gpiod_chip_open(const char *path) {
-	strncpy(chipName, path, sizeof(chipName));
+	snprintf(chipName, sizeof(chipName), "%s", path);
 	if (!strstr(path, "gpiochip1"))
 		return (struct gpiod_chip *)1;
 	else {
