@@ -53,6 +53,13 @@ if ENABLE_SHARED_PRIVATE_LIBS
   LDADD_DRIVERS = libnutprivate-drivers-common.la $(LDADD_COMMON)
 
   LDADD_DRIVERS_SERIAL = libnutprivate-drivers-serial.la $(LDADD_DRIVERS)
+
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutprivate_drivers_common_la_LDFLAGS = -no-undefined
+  libnutprivate_drivers_serial_la_LDFLAGS = -no-undefined
+endif HAVE_WINDOWS
+
 else !ENABLE_SHARED_PRIVATE_LIBS
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
