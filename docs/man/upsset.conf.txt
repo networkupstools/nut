@@ -149,10 +149,18 @@ If the (virtual) server is dedicated to NUT CGI programs, you may also want
 to visit the "CGI" icon, and change Behavior/Timeout to a few minutes or even
 seconds (and Apply the change), so in case of any breakage in the NUT CGI
 programs, you would not stare at a blank page and not know if the server
-is alive. This recommendation may change later if support for "tracking" of
-device-side completion of posted commands or settings would be implemented;
-currently the linkman:upsset[8] CGI client only gets and relays confirmation
-that the NUT data server linkman:upsd[8] received the request.
+is alive. The IIS default is 15 minutes.
+
+* You may want to allow for a series of NUT `upscli_tryconnect()` timeouts
+  (10 seconds each, by default), however, e.g. to get the error messages
+  when NUT data servers are down. While there may be one connection for
+  each run of `upsset` or `upsimage` CGI clients, there may be more for
+  `upsstats` depending on the number of devices you `MONITOR` in
+  linkman:hosts.conf[5].
+* This recommendation may change later if support for "tracking" of
+  device-side completion of posted commands or settings would be implemented;
+  currently the linkman:upsset[8] CGI client only gets and relays confirmation
+  that the NUT data server linkman:upsd[8] received the request.
 
 In the NUT configuration directory, update the linkman:hosts.conf[5] and
 `upsset.conf` files as appropriate, (optionally adapt) and rename the
