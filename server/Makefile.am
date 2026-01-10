@@ -33,10 +33,19 @@ endif
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
 AM_CFLAGS = -I$(top_srcdir)/include
-LDADD = \
+LDADD =
+
+if ENABLE_SHARED_PRIVATE_LIBS
+LDADD += \
+	$(top_builddir)/common/libnutprivate-common-all.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+LDADD += \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la \
-	$(top_builddir)/common/libparseconf.la \
+	$(top_builddir)/common/libparseconf.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+
+LDADD += \
 	$(NETLIBS)
 
 sbin_PROGRAMS = upsd

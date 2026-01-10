@@ -73,9 +73,17 @@ if HAVE_WINDOWS
 bin_PROGRAMS += nut halt
 
 nut_SOURCES = wininit.c
-nut_LDADD = \
+nut_LDADD =
+if ENABLE_SHARED_PRIVATE_LIBS
+nut_LDADD += \
+	$(top_builddir)/common/libnutprivate-common-all.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+nut_LDADD += \
 	$(top_builddir)/common/libcommon.la \
-	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libcommonversion.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+
+nut_LDADD += \
 	winevent.o
 
 halt_SOURCES = halt.c

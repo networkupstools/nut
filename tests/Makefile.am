@@ -63,10 +63,14 @@ $(top_builddir)/common/libnutprivate-common-client.la: dummy
 
 $(top_builddir)/common/libnutprivate-common-all.la: $(top_builddir)/common/libcommon.la
 $(top_builddir)/common/libnutprivate-common-client.la: $(top_builddir)/common/libcommonclient.la
-endif
+
+NUT_LIBCOMMON = $(top_builddir)/common/libnutprivate-common-all.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+NUT_LIBCOMMON = $(top_builddir)/common/libcommon.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 nutlogtest_SOURCES = nutlogtest.c
-nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
+nutlogtest_LDADD = $(NUT_LIBCOMMON)
 
 if REQUIRE_NUT_STRARG
 check_SCRIPTS += nutlogtest-nofail.sh
@@ -88,11 +92,11 @@ endif !REQUIRE_NUT_STRARG
 
 TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
-nuttimetest_LDADD = $(top_builddir)/common/libcommon.la
+nuttimetest_LDADD = $(NUT_LIBCOMMON)
 
 TESTS += nutbooltest
 nutbooltest_SOURCES = nutbooltest.c
-#nutbooltest_LDADD = $(top_builddir)/common/libcommon.la
+#nutbooltest_LDADD = $(NUT_LIBCOMMON)
 
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = hidparser.c
@@ -110,18 +114,18 @@ TESTS += getvaluetest getexponenttest-belkin-hid
 noinst_LTLIBRARIES += libdriverstubusb.la
 nodist_libdriverstubusb_la_SOURCES = driver-stub-usb.c
 libdriverstubusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-#libdriverstubusb_la_LIBADD = $(top_builddir)/common/libcommon.la
+#libdriverstubusb_la_LIBADD = $(NUT_LIBCOMMON)
 
 getexponenttest-belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
 getexponenttest_belkin_hid_SOURCES = getexponenttest-belkin-hid.c
 getexponenttest_belkin_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-getexponenttest_belkin_hid_LDADD = $(top_builddir)/common/libcommon.la libdriverstubusb.la
+getexponenttest_belkin_hid_LDADD = $(NUT_LIBCOMMON) libdriverstubusb.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
 # Pull the right include path for chosen libusb version:
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
+getvaluetest_LDADD = $(NUT_LIBCOMMON)
 else !WITH_USB
 EXTRA_DIST += getvaluetest.c hidparser.c
 endif !WITH_USB

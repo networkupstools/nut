@@ -47,7 +47,7 @@ LDADD_FULL += \
 
 LDADD_CLIENT += \
 	$(top_builddir)/common/libnutprivate-common-client.la
-else
+else !ENABLE_SHARED_PRIVATE_LIBS
 LDADD_FULL += \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la
@@ -55,7 +55,7 @@ LDADD_FULL += \
 LDADD_CLIENT += \
 	$(top_builddir)/common/libcommonclient.la \
 	$(top_builddir)/common/libcommonversion.la
-endif
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 LDADD_FULL += \
 	libupsclient.la \
