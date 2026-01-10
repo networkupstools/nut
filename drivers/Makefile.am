@@ -439,7 +439,11 @@ nutdrv_qx_LDADD = $(LDADD_DRIVERS) -lm
 nutdrv_qx_CFLAGS = $(AM_CFLAGS)
 if WITH_SERIAL
 nutdrv_qx_CFLAGS += -DQX_SERIAL
+if ENABLE_SHARED_PRIVATE_LIBS
+nutdrv_qx_LDADD += libnutprivate-drivers-serial.la
+else !ENABLE_SHARED_PRIVATE_LIBS
 nutdrv_qx_LDADD += libdummy_serial.la $(SERLIBS)
+endif !ENABLE_SHARED_PRIVATE_LIBS
 endif WITH_SERIAL
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
