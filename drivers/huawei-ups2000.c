@@ -55,7 +55,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -247,11 +247,6 @@ void upsdrv_initups(void)
 	if (r < 0) {
 		modbus_free(modbus_ctx);
 		fatalx(EXIT_FAILURE, "Invalid slave ID %d", MODBUS_SLAVE_ID);
-	}
-
-	if (modbus_connect(modbus_ctx) == -1) {
-		modbus_free(modbus_ctx);
-		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
 	}
 }
 
@@ -473,6 +468,7 @@ void upsdrv_initinfo(void)
 {
 	bool in_list = 0;
 	int i = 0;
+	int r;
 
 	upsdebugx(2, "upsdrv_initinfo");
 
@@ -515,6 +511,25 @@ void upsdrv_initinfo(void)
 	/* instant commands */
 	ups2000_init_instcmd();
 	upsh.instcmd = instcmd;
+
+	/*
+	 * The raw serial port is only used for device identification.
+	 * Close it before switching to libmodbus.
+	 */
+	r = ser_close(upsfd, device_path);
+	upsfd = ERROR_FD;  /* invalidate the closed upsfd */
+	if (r != 0) {
+		fatalx(EXIT_FAILURE, "ser_close() failed (%d, errno %d): %s",
+			r, errno, strerror(errno));
+	}
+
+	r = modbus_connect(modbus_ctx);
+	if (r != 0) {
+		modbus_free(modbus_ctx);
+		fatalx(EXIT_FAILURE, "modbus_connect() failed (%d, errno %d): %s",
+			r, errno, modbus_strerror(errno));
+	}
+	upslogx(LOG_INFO, "modbus_connect() succeeds");
 }
 
 
@@ -1861,7 +1876,9 @@ void upsdrv_cleanup(void)
 		modbus_close(modbus_ctx);
 		modbus_free(modbus_ctx);
 	}
-	ser_close(upsfd, device_path);
+	if (upsfd != ERROR_FD) {
+		ser_close(upsfd, device_path);
+	}
 }
 
 
