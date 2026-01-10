@@ -32,7 +32,7 @@
 #define DRIVER_VERSION	"0.72"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
-#define HU_VAR_EXPLOREHIDALL "explorehidall"
+#define HU_VAR_FETCHALLHID "fetchallhid"
 
 #include "main.h"	/* Must be first, includes "config.h" */
 #include "nut_stdint.h"
@@ -143,7 +143,7 @@ bool_t use_interrupt_pipe = TRUE;
 bool_t use_interrupt_pipe = FALSE;
 #endif
 static size_t interrupt_pipe_EIO_count = 0; /* How many times we had I/O errors since last reconnect? */
-static int explorehidall = -1; /* Force all HID reports fetch on init (for some CPS devices); -1=unset, 0=off, 1=on */
+static int fetchallhid = -1; /* Force all HID reports fetch on init (for some CPS devices); -1=unset, 0=off, 1=on */
 
 /**
  * How many times do we tolerate having "0 HID objects" in a row?
@@ -1319,7 +1319,7 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling (recommended for CPS devices)");
 
-	addvar(VAR_VALUE, HU_VAR_EXPLOREHIDALL,
+	addvar(VAR_VALUE, HU_VAR_FETCHALLHID,
 		"Fetch all HID reports during initialization (0/1, needed for some CPS devices)");
 
 	addvar(VAR_VALUE, "interrupt_pipe_no_events_tolerance", "How many times in a row do we tolerate \"Got 0 HID objects\" from USB interrupts?");
@@ -1671,14 +1671,14 @@ void upsdrv_initinfo(void)
 	}
 
 	/* fetch all HID reports on init (auto-enabled for some CPS models) */
-	val = getval(HU_VAR_EXPLOREHIDALL);
+	val = getval(HU_VAR_FETCHALLHID);
 	if (val) {
-		explorehidall = atoi(val);
+		fetchallhid = atoi(val);
 	}
 
-	if (explorehidall < 0) {
+	if (fetchallhid < 0) {
 		/* handle default: disable (was never enabled until this toggle) */
-		explorehidall = 0;
+		fetchallhid = 0;
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 		/* ...although auto-enable for CPS ProductID 0x0601 which needs
@@ -1686,9 +1686,9 @@ void upsdrv_initinfo(void)
 		 * see https://github.com/networkupstools/nut/issues/3116
 		 */
 		if (subdriver == &cps_subdriver && curDevice.ProductID == 0x0601) {
-			explorehidall = 1;
+			fetchallhid = 1;
 			upsdebugx(1, "Enabling '%s' for CPS device 0x%04x",
-				HU_VAR_EXPLOREHIDALL, curDevice.ProductID);
+				HU_VAR_FETCHALLHID, curDevice.ProductID);
 		}
 #endif
 	}
@@ -2133,7 +2133,7 @@ static int callback(
 		"please note that a wrong subdriver could have been chosen above; "
 		"consider testing others with an explicit driver option",
 		__func__);
-	HIDDumpTree(udev, arghd, subdriver->utab, explorehidall);
+	HIDDumpTree(udev, arghd, subdriver->utab, fetchallhid);
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	/* create a new matcher for later matching */
