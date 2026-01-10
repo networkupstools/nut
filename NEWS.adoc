@@ -64,6 +64,7 @@ https://github.com/networkupstools/nut/milestone/12
      other too. [issue #3136]
    * Improved high-verbosity debug tracing of NUT `libhid` and `usbhid-ups`
      to help make sense of data processing issues (HID paths, strings). [#3201]
+   * Further removal of unbounded `strcpy()` usage. [#3253]
    * For state tree methods, introduced `difftime_st_tree_timespec()` to
      abstract platform-dependent definitions of `st_tree_timespec_t`. [PR #3156]
    * Introduced global variables for last changed timestamp and value of
