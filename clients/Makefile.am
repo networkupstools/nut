@@ -131,10 +131,18 @@ message_SOURCES = message.c
 endif HAVE_WINDOWS_SOCKETS
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = \
+upssched_LDADD =
+if ENABLE_SHARED_PRIVATE_LIBS
+upssched_LDADD += \
+	$(top_builddir)/common/libnutprivate-common-client.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+upssched_LDADD += \
 	$(top_builddir)/common/libcommonclient.la \
 	$(top_builddir)/common/libcommonversion.la \
-	$(top_builddir)/common/libparseconf.la \
+	$(top_builddir)/common/libparseconf.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+
+upssched_LDADD += \
 	$(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
