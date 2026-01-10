@@ -1089,7 +1089,7 @@ static void display_template(const char *tfn)
 
 	snprintf(fn, sizeof(fn), "%s/%s", confpath(), tfn);
 
-	tf = fopen(fn, "r");
+	tf = fopen(fn, "rb");
 
 	if (!tf) {
 		fprintf(stderr, "upsstats: Can't open %s: %s\n", fn, strerror(errno));
