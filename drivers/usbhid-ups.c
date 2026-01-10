@@ -414,7 +414,8 @@ info_lkp_t calibration_info[] = {
 	{ 0, "!cal", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
-/* note: this value is reverted (0=set, 1=not set). We report "battery
+/* note: this value is reverted (0=set, 1=not set), often known as
+   "BatteryPresent" in the HID mapping tables. We report "battery
    not installed" rather than "battery installed", so that devices
    that don't implement this variable have a battery by default */
 info_lkp_t nobattery_info[] = {

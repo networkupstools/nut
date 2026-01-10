@@ -204,6 +204,8 @@ https://github.com/networkupstools/nut/milestone/12
      ignore any useful reports, and that we successfully use reasonably many
      of the existing mappings. Suggest how user can help improve the driver
      if too few data points were seen. [#3082, #3095]
+   * `openups-hid` had `nobattery` definition inverted, causing alarms -- now
+     fixed to use the same mapping helper as other subdrivers. [issue #3246]
 
  - `upsd` data server updates:
    * Sometimes "Data for UPS [X] is stale" and "UPS [X] data is no longer
@@ -218,7 +220,7 @@ https://github.com/networkupstools/nut/milestone/12
 
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
-     of all known local devices to stdout. [#3083]
+     of all known local devices to stdout. [#3083, #2756]
 
  - `upsmon` client updates:
    * The `SHUTDOWNEXIT` option was not handled properly, and the requested

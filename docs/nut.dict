@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3618 utf-8
+personal_ws-1.1 en 3620 utf-8
 AAC
 AAS
 ABI
@@ -2695,6 +2695,7 @@ nm
 nn
 nnn
 noAuthNoPriv
+nobattery
 nobody's
 nobreak
 nobt
@@ -2792,6 +2793,7 @@ openmp
 openpimi
 openssh
 openssl
+openups
 openwin
 oper
 optimizations

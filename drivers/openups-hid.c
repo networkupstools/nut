@@ -28,7 +28,7 @@
 #include "main.h"		/* for getval() */
 #include "usb-common.h"
 
-#define OPENUPS_HID_VERSION	"openUPS HID 0.5"
+#define OPENUPS_HID_VERSION	"openUPS HID 0.50"
 
 /* Minibox */
 #define OPENUPS_VENDORID	0x04d8
@@ -128,7 +128,6 @@ static const unsigned int therm_tbl_size = SIZEOF_ARRAY(therm_tbl);
 static const char *openups_charging_fun(double value);
 static const char *openups_discharging_fun(double value);
 static const char *openups_online_fun(double value);
-static const char *openups_nobattery_fun(double value);
 static const char *openups_off_fun(double value);
 
 static const char *openups_scale_vin_fun(double value);
@@ -148,10 +147,6 @@ static info_lkp_t openups_discharging_info[] = {
 
 static info_lkp_t openups_online_info[] = {
 	{0, NULL, openups_online_fun, NULL }
-};
-
-static info_lkp_t openups_nobattery_info[] = {
-	{0, NULL, openups_nobattery_fun, NULL }
 };
 
 static info_lkp_t openups_off_info[] = {
@@ -195,11 +190,6 @@ static const char *openups_discharging_fun(double value)
 static const char *openups_online_fun(double value)
 {
 	return value ? "online" : "!online";
-}
-
-static const char *openups_nobattery_fun(double value)
-{
-	return value ? "nobattery" : "!nobattery";
 }
 
 static const char *openups_off_fun(double value)
@@ -344,7 +334,7 @@ static hid_info_t openups_hid2nut[] = {
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, openups_discharging_info},
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info},
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, openups_online_info},
-	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, HU_FLAG_QUICK_POLL, openups_nobattery_info},
+	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, HU_FLAG_QUICK_POLL, nobattery_info},
 
 	/* end of structure. */
 	{NULL, 0, 0, NULL, NULL, NULL, 0, NULL}
