@@ -2869,7 +2869,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 {
 	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 
-	char	alarm[LARGEBUF]; /* can sprintf() SMALLBUF plus markup into here */
+	char	alarm[LARGEBUF]; /* can snprintf()/strncpy() SMALLBUF plus markup into here */
 
 	upslogx(LOG_INFO, "Checking for faults..");
 
