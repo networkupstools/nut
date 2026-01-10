@@ -3834,7 +3834,7 @@ static int	voltronic_axpert_status(item_t *item, char *value, const size_t value
 /* Warnings reported by the device */
 static int	voltronic_sunny_warning(item_t *item, char *value, const size_t valuelen)
 {
-	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[SMALLBUF] = "", warns[4096] = "";
+	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[4096] = "", warns[4096] = "";
 	int	i;
 
 	if (strspn(item->value, "01-") != strlen(item->value)) {

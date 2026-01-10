@@ -3234,7 +3234,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 /* Warnings reported by the UPS */
 static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 {
-	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[SMALLBUF] = "", warns[4096] = "";
+	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[4096] = "", warns[4096] = "";
 	int	i;
 
 	if (strspn(item->value, "01") != strlen(item->value)) {
