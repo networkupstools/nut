@@ -1036,7 +1036,13 @@ static int do_command(char *cmd)
 		return 1;
 	}
 
-	upsdebug_call_finished1(": unknown cmd");
+	if (!strncmp(cmd, "NUT_UPSSTATS_TEMPLATE ", 22) || !strcmp(cmd, "NUT_UPSSTATS_TEMPLATE")) {
+		upsdebugx(2, "%s: saw magic token, ignoring", __func__);
+		upsdebug_call_finished0();
+		return 1;
+	}
+
+	upsdebug_call_finished2(": unknown cmd: '%s'", cmd);
 	return 0;
 }
 
@@ -1097,6 +1103,27 @@ static void display_template(const char *tfn)
 		printf("Error: can't open template file (%s)\n", tfn);
 
 		upsdebug_call_finished1(": no template");
+		exit(EXIT_FAILURE);
+	}
+
+	if (!fgets(buf, sizeof(buf), tf)) {
+		fprintf(stderr, "upsstats: template file %s seems to be empty (fgets failed): %s\n", fn, strerror(errno));
+
+		printf("Error: template file %s seems to be empty\n", tfn);
+
+		upsdebug_call_finished1(": empty template");
+		exit(EXIT_FAILURE);
+	}
+
+	/* Test first line for a bit of expected magic */
+	if (!strncmp(buf, "@NUT_UPSSTATS_TEMPLATE", 22)) {
+		parse_line(buf);
+	} else {
+		fprintf(stderr, "upsstats: template file %s does not start with NUT_UPSSTATS_TEMPLATE command\n", fn);
+
+		printf("Error: template file %s does not start with NUT_UPSSTATS_TEMPLATE command\n", tfn);
+
+		upsdebug_call_finished1(": not a valid template");
 		exit(EXIT_FAILURE);
 	}
 

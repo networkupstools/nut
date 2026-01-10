@@ -14,6 +14,9 @@ use-cases, are used by linkman:upsstats.cgi[8] to generate NUT CGI status
 pages. Certain commands are recognized, and will be replaced with various
 status elements on the fly.
 
+As a bit of a safety check, the file must start with `@NUT_UPSSTATS_TEMPLATE@`
+command.
+
 For details about configuring some popular web servers to run NUT CGI
 programs, please see the linkman:upsset.conf[5] page.
 
@@ -104,6 +107,15 @@ example (more examples are available in upsstats.html).
 
 OTHER COMMANDS
 --------------
+
+*@NUT_UPSSTATS_TEMPLATE [args]@*::
+The template file MUST start exactly with `@NUT_UPSSTATS_TEMPLATE@` or
+`@NUT_UPSSTATS_TEMPLATE Some text@` so that linkman:upsstats.cgi[8] is
+not coerced into showing arbitrary files.
++
+Currently the command and its arguments are otherwise ignored; templates
+shipped with NUT use the argument values "default" and "single" effectively
+as a comment for debugging/troubleshooting.
 
 *@UPSSTATSPATH filename@*::
 URI to the linkman:upsstats.cgi[8] program placed into HTML references.

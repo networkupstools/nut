@@ -50,6 +50,12 @@ Changes from 2.8.4 to 2.8.5
   installed (and possibly customized) with the `*.html.sample` files delivered
   by the new build. [PR #3180]
 
+- Introduced a `@NUT_UPSSTATS_TEMPLATE@` command which the NUT CGI template
+  files now MUST start with (safety check that we are reading a template).
+  While the delivered `upsstats*.html.sample` files would include the change,
+  ultimate `upsstats*.html` templates deployed for end-users MUST be updated.
+  [issue #3252, PR #3249]
+
 - Dropped the `compile` script from Git sources. It originates from automake
   and is added to work area (if missing) during `autogen.sh` rituals anyway
   (as `make` says, `'automake --add-missing' can install 'compile'` when you

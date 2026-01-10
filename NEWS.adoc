@@ -265,6 +265,9 @@ several `FSD` notifications into one executed action. [PR #3097]
      these JSON documents when browsing. [issue #2524, PRs #3171, #3249]
    * Handle `device.model` in addition to `ups.model` in upsstats HTML
      templates. [#3180]
+   * Introduced a `@NUT_UPSSTATS_TEMPLATE@` command which the HTML template
+     files now MUST start with (safety check that we are reading a template).
+     [issue #3252, PR #3249]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
