@@ -48,7 +48,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.73"
+#define DRIVER_VERSION	"0.74"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -711,7 +711,7 @@ static void get_base_info(void) {
 	isec = now->tm_sec;
 	weekn = now->tm_wday;
 
-	strcpy(seman, DaysOfWeek[weekn]);
+	strncpy(seman, DaysOfWeek[weekn], sizeof(seman));
 
 	if (testvar("battext"))
 		BattExtension = atoi(getval("battext"));
