@@ -46,8 +46,8 @@ void gpiod_chip_close(struct gpiod_chip *chip) {
 #if WITH_LIBGPIO_VERSION < 0x00020000
 
 struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {
-	strcpy(chipName, name);
-	if(strcmp(name, "gpiochip1"))
+	strncpy(chipName, name, sizeof(chipName));
+	if (strcmp(name, "gpiochip1"))
 		return (struct gpiod_chip *)1;
 	else {
 		errno = EACCES;
@@ -57,14 +57,15 @@ struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {
 
 unsigned int gpiod_chip_num_lines(struct gpiod_chip *chip) {
 	NUT_UNUSED_VARIABLE(chip);
-	if(!strcmp(chipName, "gpiochip2"))
+	if (!strcmp(chipName, "gpiochip2"))
 		return 2;
 	return 32;
 }
 
 int gpiod_chip_get_lines(struct gpiod_chip *chip,
 			 unsigned int *offsets, unsigned int num_offsets,
-			 struct gpiod_line_bulk *bulk) {
+			 struct gpiod_line_bulk *bulk)
+{
 	NUT_UNUSED_VARIABLE(chip);
 	NUT_UNUSED_VARIABLE(offsets);
 	NUT_UNUSED_VARIABLE(bulk);
@@ -159,8 +160,8 @@ gpiod_chip_request_lines(struct gpiod_chip *chip,
 }
 
 struct gpiod_chip *gpiod_chip_open(const char *path) {
-	strcpy(chipName, path);
-	if(!strstr(path, "gpiochip1"))
+	strncpy(chipName, path, sizeof(chipName));
+	if (!strstr(path, "gpiochip1"))
 		return (struct gpiod_chip *)1;
 	else {
 		errno = EACCES;
