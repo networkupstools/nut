@@ -28,17 +28,23 @@ extern const char	*prognames[MAX_PROGNAMES];
 extern char	prognames_should_free[MAX_PROGNAMES];
 #define	progname	(prognames[0])
 
-/* functions & variables required in each driver */
+int drv_main(int argc, char **argv);
+
+/* functions & variables required in each driver
+ * See also: register_upsdrv_callbacks()
+ */
 void upsdrv_tweak_prognames(void);	/* optionally add aliases and/or set preferred name into [0] (for pipe name etc.); called just after populating prognames[0] and prognames_should_free[] entries */
 void upsdrv_initups(void);	/* open connection to UPS, fail if not found */
 void upsdrv_initinfo(void);	/* prep data, settings for UPS monitoring */
 void upsdrv_updateinfo(void);	/* update state data if possible */
 void upsdrv_shutdown(void);	/* make the UPS power off the load */
 void upsdrv_help(void);		/* tack on anything useful for the -h text */
-void upsdrv_banner(void);	/* print your version information */
 void upsdrv_cleanup(void);	/* free any resources before shutdown */
+void upsdrv_makevartable(void);	/* main calls this driver function - it needs to call addvar */
 
 void set_exit_flag(int sig);
+
+void upsdrv_banner(void);	/* print your version information - shared in main.c */
 
 /* --- details for the variable/value sharing --- */
 
@@ -78,9 +84,6 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn);
  * (returns STAT_SET_* state values per enum in upshandler.h)
  */
 int main_setvar(const char *varname, const char *val, conn_t *conn);
-
-/* main calls this driver function - it needs to call addvar */
-void upsdrv_makevartable(void);
 
 /* retrieve the value of variable <var> if possible */
 char *getval(const char *var);
@@ -155,7 +158,9 @@ typedef struct upsdrv_info_s {
 					 * pass */
 /* FIXME: complete with mfr support, and other interesting info */
 
-/* public driver information from the driver file */
+/* public driver information from the driver file
+ * See also: register_upsdrv_callbacks()
+ */
 extern upsdrv_info_t	upsdrv_info;
 
 /* functions and data possibly used via libdummy_mockdrv.la for unit-tests */
@@ -196,5 +201,40 @@ void setup_signals(void);
 # define SIGCMD_EXIT                    "driver.exit"
 # define SIGCMD_RELOAD_OR_ERROR         "driver.reload-or-error"	/* NUT_WIN32_INCOMPLETE */
 #endif	/* WIN32 */
+
+/* allow main.c code in both static and shared driver builds
+ * to see implementations defined by specific driver sources,
+ * called by main-stub.c where used:
+ */
+typedef struct upsdrv_callback_s {
+	void (*upsdrv_tweak_prognames)(void);	/* optionally add aliases and/or set preferred name into [0] (for pipe name etc.); called just after populating prognames[0] and prognames_should_free[] entries */
+	void (*upsdrv_initups)(void);	/* open connection to UPS, fail if not found */
+	void (*upsdrv_initinfo)(void);	/* prep data, settings for UPS monitoring */
+	void (*upsdrv_updateinfo)(void);	/* update state data if possible */
+	void (*upsdrv_shutdown)(void);	/* make the UPS power off the load */
+	void (*upsdrv_help)(void);		/* tack on anything useful for the -h text */
+	void (*upsdrv_cleanup)(void);	/* free any resources before shutdown */
+	void (*upsdrv_makevartable)(void);	/* main calls this driver function - it needs to call addvar */
+	upsdrv_info_t	upsdrv_info;	/* public driver information from the driver file */
+} upsdrv_callback_t;
+void register_upsdrv_callbacks(upsdrv_callback_t callbacks);
+
+/* simple call to register implementations named as dictated
+ * by this header, which (being a macro) can be called easily
+ * from both static and shared builds: */
+#define default_register_upsdrv_callbacks() do {			\
+	upsdrv_callback_t callbacksTmp;					\
+	memset(&callbacksTmp, 0, sizeof(callbacksTmp));			\
+	callbacksTmp.upsdrv_cleanup		= upsdrv_cleanup;	\
+	callbacksTmp.upsdrv_help		= upsdrv_help;		\
+	callbacksTmp.upsdrv_initups		= upsdrv_initups;	\
+	callbacksTmp.upsdrv_initinfo		= upsdrv_initinfo;	\
+	callbacksTmp.upsdrv_makevartable	= upsdrv_makevartable;	\
+	callbacksTmp.upsdrv_shutdown		= upsdrv_shutdown;	\
+	callbacksTmp.upsdrv_tweak_prognames	= upsdrv_tweak_prognames;	\
+	callbacksTmp.upsdrv_updateinfo		= upsdrv_updateinfo;	\
+	memcpy(&callbacksTmp.upsdrv_info, &upsdrv_info, sizeof(upsdrv_info));	\
+	register_upsdrv_callbacks(callbacksTmp);	\
+	} while (0)
 
 #endif /* NUT_MAIN_H_SEEN */

@@ -51,7 +51,7 @@ if ENABLE_SHARED_PRIVATE_LIBS
   LDADD_COMMON = \
 	$(top_builddir)/common/libnutprivate-common-all.la
 
-  LDADD_DRIVERS = libnutprivate-drivers-common.la $(LDADD_COMMON)
+  LDADD_DRIVERS = libdummy_main_stub.la libnutprivate-drivers-common.la $(LDADD_COMMON)
 
   LDADD_DRIVERS_SERIAL = libnutprivate-drivers-serial.la $(LDADD_DRIVERS)
 
@@ -508,14 +508,24 @@ dist_noinst_HEADERS = \
 # because per-object CFLAGS can only be specified for libraries, not
 # for object files. This library is used during the build process,
 # and is not meant to be installed.
-EXTRA_LTLIBRARIES = libdummy_main.la libdummy_serial.la libdummy_upsdrvquery.la
+EXTRA_LTLIBRARIES = libdummy_main.la libdummy_main_stub.la libdummy_serial.la libdummy_upsdrvquery.la
 
+# NOTE: main.c includes tons of shared logic and global variables
+# used by all NUT drivers, so is a prime candidate for being a
+# shared library if we ENABLE_SHARED_PRIVATE_LIBS. But then we
+# have a chicken-and-egg problem, that actual NUT driver program
+# sources, which declare upsdrv_*() methods and info, have no way
+# to make the shared library variant of main code to see them.
+# This is where the main-stub.c comes in, with a small bit of code
+# compiled and linked into each driver binary to marry the two worlds.
 libdummy_main_la_SOURCES = main.c dstate.c
+libdummy_main_stub_la_SOURCES = main-stub.c
 libdummy_serial_la_SOURCES = serial.c
 libdummy_upsdrvquery_la_SOURCES = upsdrvquery.c
 
 if !ENABLE_SHARED_PRIVATE_LIBS
 libdummy_main_la_LDFLAGS = -no-undefined -static
+libdummy_main_stub_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_LDFLAGS = -no-undefined -static
 libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
 endif !ENABLE_SHARED_PRIVATE_LIBS

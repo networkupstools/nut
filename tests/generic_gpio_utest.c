@@ -146,6 +146,10 @@ int main(int argc, char **argv) {
 	unsigned long version = WITH_LIBGPIO_VERSION;
 	printf("Tests running for libgpiod library version %lu\n", version);
 
+/* #if !(defined ENABLE_SHARED_PRIVATE_LIBS) || !ENABLE_SHARED_PRIVATE_LIBS */
+	default_register_upsdrv_callbacks();
+/* #endif */
+
 	test_with_exit=0;
 
 	if(argc==2) {
