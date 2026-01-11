@@ -1,10 +1,10 @@
-/* main.c - Network UPS Tools driver core
+/* main.c - Network UPS Tools driver core logic and global variables
 
    Copyright (C)
    1999			Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
    2017 		Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
-   2017 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+   2017 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -164,6 +164,15 @@ static int handle_reload_flag(void);
 /* Set in do_ups_confargs() for consumers like handle_reload_flag() */
 static int reload_requires_restart = -1;
 
+static upsdrv_callback_t upsdrv_callbacks = {0};
+void register_upsdrv_callbacks(upsdrv_callback_t callbacks) {
+	/*FIXME: mempcy of arbitrarily ordered list of function pointers
+	 * does not feel safe, better use named methods to initialize?
+	 * upsdrv_callbacks = callbacks;
+	 */
+	memcpy(&upsdrv_callbacks, &callbacks, sizeof(callbacks));
+}
+
 /* print the driver banner */
 void upsdrv_banner (void)
 {
@@ -171,23 +180,23 @@ void upsdrv_banner (void)
 
 	printf("Network UPS Tools %s - %s%s %s\n",
 		describe_NUT_VERSION_once(),
-		upsdrv_info.name,
-		strstr(upsdrv_info.name, "river") ? "" : " driver",
-		upsdrv_info.version);
+		upsdrv_callbacks.upsdrv_info.name,
+		strstr(upsdrv_callbacks.upsdrv_info.name, "river") ? "" : " driver",
+		upsdrv_callbacks.upsdrv_info.version);
 
 	/* process sub driver(s) information */
-	for (i = 0; upsdrv_info.subdrv_info[i]; i++) {
+	for (i = 0; upsdrv_callbacks.upsdrv_info.subdrv_info[i]; i++) {
 
-		if (!upsdrv_info.subdrv_info[i]->name) {
+		if (!upsdrv_callbacks.upsdrv_info.subdrv_info[i]->name) {
 			continue;
 		}
 
-		if (!upsdrv_info.subdrv_info[i]->version) {
+		if (!upsdrv_callbacks.upsdrv_info.subdrv_info[i]->version) {
 			continue;
 		}
 
-		printf("%s %s\n", upsdrv_info.subdrv_info[i]->name,
-			upsdrv_info.subdrv_info[i]->version);
+		printf("%s %s\n", upsdrv_callbacks.upsdrv_info.subdrv_info[i]->name,
+			upsdrv_callbacks.upsdrv_info.subdrv_info[i]->version);
 	}
 
 	fflush(stdout);
@@ -316,7 +325,7 @@ static void help_msg(void)
 		}
 	}
 
-	upsdrv_help();
+	upsdrv_callbacks.upsdrv_help();
 
 	printf("\n%s", suggest_doc_links(progname, "ups.conf"));
 }
@@ -858,7 +867,7 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 					sdcmds);
 				/* TOTHINK : These logs are handled in driver codes */
 				/* upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.default", NULL); */
-				upsdrv_shutdown();
+				upsdrv_callbacks.upsdrv_shutdown();
 				cmdret = STAT_INSTCMD_HANDLED;
 				/* commented below */
 				if (cmdused && !(*cmdused))
@@ -877,7 +886,7 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 			/* TOTHINK : These logs are handled in driver codes */
 			/* We are trying (if at all implemented), so "maybe"... */
 			/* upslog_INSTCMD_POWERSTATE_MAYBE(s, NULL); */
-			upsdrv_shutdown();
+			upsdrv_callbacks.upsdrv_shutdown();
 			cmdret = STAT_INSTCMD_HANDLED;
 		} else {
 			/* TOTHINK : These logs are handled in driver codes */
@@ -1029,7 +1038,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		 * called by default if none were passed (or this one
 		 * was passed explicitly).
 		 */
-		upsdrv_shutdown();
+		upsdrv_callbacks.upsdrv_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -1908,7 +1917,7 @@ void vartab_free(void)
 static void exit_upsdrv_cleanup(void)
 {
 	dstate_setinfo("driver.state", "cleanup.upsdrv");
-	upsdrv_cleanup();
+	upsdrv_callbacks.upsdrv_cleanup();
 }
 
 static void exit_cleanup(void)
@@ -2094,9 +2103,15 @@ void setup_signals(void)
 
 /* This source file is used in some unit tests to mock realistic driver
  * behavior - using a production driver skeleton, but their own main().
+ * It is called from main-stub.c in shared-mode builds.
  */
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
+# if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+int drv_main(int argc, char **argv)
+# else
+/* Used right away */
 int main(int argc, char **argv)
+# endif
 {
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
@@ -2122,6 +2137,9 @@ int main(int argc, char **argv)
 
 #if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
 	callback_upsconf_args = do_upsconf_args;
+#else
+	/* static build, symbols should be visible to main.c right away */
+	default_register_upsdrv_callbacks();
 #endif
 
 	/* init verbosity from default in common.c (0 probably) */
@@ -2218,7 +2236,7 @@ int main(int argc, char **argv)
 	}
 #endif	/* WIN32 */
 
-	upsdrv_tweak_prognames();
+	upsdrv_callbacks.upsdrv_tweak_prognames();
 
 	open_syslog(progname);
 
@@ -2226,13 +2244,13 @@ int main(int argc, char **argv)
 		upsdrv_banner();
 	}
 
-	if (upsdrv_info.status == DRV_EXPERIMENTAL) {
+	if (upsdrv_callbacks.upsdrv_info.status == DRV_EXPERIMENTAL) {
 		printf("Warning: This is an experimental driver.\n");
 		printf("Some features may not function correctly.\n\n");
 	}
 
 	/* build the driver's extra (-x) variable table */
-	upsdrv_makevartable();
+	upsdrv_callbacks.upsdrv_makevartable();
 
 	while ((i = getopt(argc, argv, optstring)) != -1) {
 		switch (i) {
@@ -2915,20 +2933,20 @@ int main(int argc, char **argv)
 	dstate_setinfo("device.type", "ups");
 
 	dstate_setinfo("driver.state", "init.device");
-	upsdrv_initups();
+	upsdrv_callbacks.upsdrv_initups();
 	dstate_setinfo("driver.state", "init.quiet");
 
 	/* UPS is detected now, cleanup upon exit */
 	atexit(exit_upsdrv_cleanup);
 
 	/* now see if things are very wrong out there */
-	if (upsdrv_info.status == DRV_BROKEN) {
+	if (upsdrv_callbacks.upsdrv_info.status == DRV_BROKEN) {
 		fatalx(EXIT_FAILURE, "Fatal error: broken driver. It probably needs to be converted.\n");
 	}
 
 	/* publish the top-level data: version numbers, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
-	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
+	dstate_setinfo("driver.version.internal", "%s", upsdrv_callbacks.upsdrv_info.version);
 	dstate_setinfo("driver.name", "%s", progname);
 
 	/*
@@ -2941,7 +2959,7 @@ int main(int argc, char **argv)
 
 	/* get the base data established before allowing connections */
 	dstate_setinfo("driver.state", "init.info");
-	upsdrv_initinfo();
+	upsdrv_callbacks.upsdrv_initinfo();
 
 	/* Register a way to call upsdrv_shutdown() among `sdcommands` */
 	dstate_addcmd("shutdown.default");
@@ -2954,7 +2972,7 @@ int main(int argc, char **argv)
 	/* Note: a few drivers also call their upsdrv_updateinfo() during
 	 * their upsdrv_initinfo(), possibly to impact the initialization */
 	dstate_setinfo("driver.state", "init.updateinfo");
-	upsdrv_updateinfo();
+	upsdrv_callbacks.upsdrv_updateinfo();
 	dstate_setinfo("driver.state", "init.quiet");
 
 	if (dstate_getinfo("driver.flag.ignorelb")) {
@@ -3195,7 +3213,7 @@ sockname_ownership_finished:
 		}
 
 		dstate_setinfo("driver.state", "updateinfo");
-		upsdrv_updateinfo();
+		upsdrv_callbacks.upsdrv_updateinfo();
 		dstate_setinfo("driver.state", "quiet");
 
 		/* Dump the data tree (in upsc-like format) to stdout and exit */

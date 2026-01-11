@@ -47,6 +47,12 @@ static char * pass_fail[2] = {"pass", "fail"};
 
 void upsdrv_cleanup(void) {}
 void upsdrv_shutdown(void) {}
+void upsdrv_initups(void) {}
+void upsdrv_initinfo(void) {}
+void upsdrv_makevartable(void) {}
+void upsdrv_tweak_prognames(void) {}
+void upsdrv_updateinfo(void) {}
+void upsdrv_help(void) {}
 
 static void report_pass(void) {
 	printf("%s", pass_fail[0]);
@@ -72,6 +78,10 @@ int main(int argc, char **argv) {
 
 	NUT_UNUSED_VARIABLE(argc);
 	NUT_UNUSED_VARIABLE(argv);
+
+/* #if !(defined ENABLE_SHARED_PRIVATE_LIBS) || !ENABLE_SHARED_PRIVATE_LIBS */
+	default_register_upsdrv_callbacks();
+/* #endif */
 
 	cases_passed = 0;
 	cases_failed = 0;
