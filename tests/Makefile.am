@@ -21,8 +21,8 @@ TESTS =
 noinst_LTLIBRARIES =
 CLEANFILES = *.trs *.log
 
-AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
-AM_CXXFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include -I$(top_srcdir)/drivers
+AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 
 # Compiler flags for cppunit tests
 CPPUNIT_NUT_CXXFLAGS = @CPPUNIT_NUT_CXXFLAGS@

@@ -1,6 +1,6 @@
 # Network UPS Tools: scripts/Windows
 
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: FORCE

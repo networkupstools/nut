@@ -32,7 +32,7 @@ endif
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD =
 
 if ENABLE_SHARED_PRIVATE_LIBS
