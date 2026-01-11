@@ -45,6 +45,7 @@ if ENABLE_SHARED_PRIVATE_LIBS
   lib_LTLIBRARIES += libnutprivate-drivers-serial.la
   libnutprivate_drivers_serial_la_SOURCES =
   libnutprivate_drivers_serial_la_LIBADD = \
+	libnutprivate-drivers-common.la \
 	libdummy_serial.la $(SERLIBS)
 
   LDADD_COMMON = \
