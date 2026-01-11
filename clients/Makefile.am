@@ -15,7 +15,7 @@ CLEANFILES =
 # nutclient.cpp for some legacy reason (maybe initial detached development?)
 # optionally includes "common.h" with the NUT build setup - and this option
 # was never triggered in fact, not until pushed through command line like this:
-AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
+AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_builddir)/include -I$(top_srcdir)/include
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
@@ -78,7 +78,7 @@ LDADD = $(LDADD_CLIENT)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL
