@@ -2868,6 +2868,7 @@ cross-windows-mingw*)
     SOURCEMODE="out-of-tree" \
     MAKEFLAGS="$PARMAKE_FLAGS" \
     KEEP_NUT_REPORT_FEATURE="true" \
+    ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG="true" \
     ./build-mingw-nut.sh $cmd
     ;;
 
