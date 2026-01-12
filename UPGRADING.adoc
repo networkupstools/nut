@@ -32,7 +32,8 @@ Changes from 2.8.4 to 2.8.5
   This has some potential both for mayhem (so disabled by default) and
   for significant reduction of installation footprint. If enabled with
   a NUT packaging build, note there would be several more NUT shared
-  library files to deliver with the packages. [issue #2800]
+  library files to deliver with the packages (formally versioned and
+  named by NUT release semantic version triplet). [issue #2800]
 
 - For ages, most recipes for building NUT had customized the `sysconfdir` to
   be `/etc/nut`, which is not exactly the *system* configuration directory.
