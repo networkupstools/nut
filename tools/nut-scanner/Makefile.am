@@ -72,12 +72,12 @@ $(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/common/libparsec
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
 if ENABLE_SHARED_PRIVATE_LIBS
-$(top_builddir)/common/libnutprivate-common-all.la \
-$(top_builddir)/common/libnutprivate-common-client.la: dummy
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-$(top_builddir)/common/libnutprivate-common-all.la: $(top_builddir)/common/libcommon.la
-$(top_builddir)/common/libnutprivate-common-client.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la
 endif
 
 # We optionally append values to this below
@@ -164,7 +164,7 @@ nut_scanner_LDADD = libnutscan.la
 
 if ENABLE_SHARED_PRIVATE_LIBS
 # ensure the "fatal_with_errno" symbol, and others that libnutscan uses:
-nut_scanner_LDADD += $(top_builddir)/common/libnutprivate-common-client.la
+nut_scanner_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
 #nut_scanner_LDADD += $(top_builddir)/common/libcommon.la
 #nut_scanner_LDADD += $(libnutscan_la_LIBADD)
 endif ENABLE_SHARED_PRIVATE_LIBS

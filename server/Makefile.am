@@ -21,12 +21,12 @@ $(top_builddir)/common/libparseconf.la: dummy
 $(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
 
 if ENABLE_SHARED_PRIVATE_LIBS
-$(top_builddir)/common/libnutprivate-common-all.la \
-$(top_builddir)/common/libnutprivate-common-client.la: dummy
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-$(top_builddir)/common/libnutprivate-common-all.la: $(top_builddir)/common/libcommon.la
-$(top_builddir)/common/libnutprivate-common-client.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la
 endif
 
 # Avoid per-target CFLAGS, because this will prevent re-use of object
@@ -37,7 +37,7 @@ LDADD =
 
 if ENABLE_SHARED_PRIVATE_LIBS
 LDADD += \
-	$(top_builddir)/common/libnutprivate-common-all.la
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 else !ENABLE_SHARED_PRIVATE_LIBS
 LDADD += \
 	$(top_builddir)/common/libcommon.la \

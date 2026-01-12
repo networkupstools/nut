@@ -74,6 +74,7 @@ dnl (e.g. a commit tagged as 2.8.3-rc5 can have its own NUT_VERSION based
 dnl on 2.8.2-something, but is assumed as a pre-release for 2.8.3 SEMVER).
 NUT_SOURCE_GITREV_SEMVER="`NUT_VERSION_QUERY=SEMVER \"${srcdir}/tools/gitlog2version.sh\" 2>/dev/null`"
 NUT_SOURCE_GITREV_SEMVER_COLONS="`echo \"${NUT_SOURCE_GITREV_SEMVER}\" | tr '.' ':'`"
+NUT_SOURCE_GITREV_SEMVER_UNDERSCORES="`echo \"${NUT_SOURCE_GITREV_SEMVER}\" | tr '.' '_'`"
 
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
 dnl # Example:   NUT_SOURCE_GITREV_NUMERIC='2.8.2.695.1.696'
@@ -82,6 +83,7 @@ dnl # Without the commit-count since tag (dash-separated part):
 dnl # Example:   NUT_SOURCE_GITREV_NUMERIC='2.8.2.695.1'
 NUT_SOURCE_GITREV_NUMERIC="`echo \"${NUT_SOURCE_GITREV}\" | sed -e 's/^v//' -e 's/@<:@+-@:>@g.*$//' -e 's/-@<:@0-9@:>@*$//'`"
 NUT_SOURCE_GITREV_NUMERIC_COLONS="`echo \"${NUT_SOURCE_GITREV_NUMERIC}\" | tr '.' ':'`"
+NUT_SOURCE_GITREV_NUMERIC_UNDERSCORES="`echo \"${NUT_SOURCE_GITREV_NUMERIC}\" | tr '.' '_'`"
 
 dnl Note: except for experiments, do not pass this into config.h - use
 dnl the NUT_VERSION_MACRO from nut_version.h instead. Developers may
@@ -6176,8 +6178,10 @@ AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_IS_PRERELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER_COLONS)
+AC_SUBST(NUT_SOURCE_GITREV_SEMVER_UNDERSCORES)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC_COLONS)
+AC_SUBST(NUT_SOURCE_GITREV_NUMERIC_UNDERSCORES)
 AC_SUBST(NUT_WEBSITE_BASE)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
