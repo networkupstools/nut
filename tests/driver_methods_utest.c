@@ -75,9 +75,16 @@ static int report_0_means_pass(int i) {
 
 int main(int argc, char **argv) {
 	const char	*valueStr = NULL;
+	char	*s;
+	int	i;
 
 	NUT_UNUSED_VARIABLE(argc);
 	NUT_UNUSED_VARIABLE(argv);
+
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+	}
 
 /* #if !(defined ENABLE_SHARED_PRIVATE_LIBS) || !ENABLE_SHARED_PRIVATE_LIBS */
 	default_register_upsdrv_callbacks();

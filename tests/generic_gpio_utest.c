@@ -137,14 +137,19 @@ void exit(int code)
 }
 
 int main(int argc, char **argv) {
-	int jmp_result;
+	int jmp_result, lvl;
 	char rules[128];
 	char testType[128];
 	char testDescFileNameBuf[LARGEBUF];
-	char *testDescFileName = "generic_gpio_test.txt";
+	char *testDescFileName = "generic_gpio_test.txt", *s;
 	unsigned int i;
 	unsigned long version = WITH_LIBGPIO_VERSION;
 	printf("Tests running for libgpiod library version %lu\n", version);
+
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &lvl, 10) && lvl > 0) {
+		nut_debug_level = lvl;
+	}
 
 /* #if !(defined ENABLE_SHARED_PRIVATE_LIBS) || !ENABLE_SHARED_PRIVATE_LIBS */
 	default_register_upsdrv_callbacks();
