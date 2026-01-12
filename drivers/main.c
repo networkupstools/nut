@@ -164,13 +164,11 @@ static int handle_reload_flag(void);
 /* Set in do_ups_confargs() for consumers like handle_reload_flag() */
 static int reload_requires_restart = -1;
 
-static upsdrv_callback_t upsdrv_callbacks = {0};
+static upsdrv_callback_t	upsdrv_callbacks = {0};
 void register_upsdrv_callbacks(upsdrv_callback_t callbacks) {
-	/*FIXME: mempcy of arbitrarily ordered list of function pointers
-	 * does not feel safe, better use named methods to initialize?
-	 * upsdrv_callbacks = callbacks;
-	 */
-	memcpy(&upsdrv_callbacks, &callbacks, sizeof(callbacks));
+	/* Plain memcpy of arbitrarily ordered list of function pointers
+	 * does not feel safe, so we use some means of input validation: */
+	safe_copy_upsdrv_callbacks(&callbacks, &upsdrv_callbacks);
 }
 
 /* print the driver banner */

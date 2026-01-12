@@ -206,22 +206,90 @@ void setup_signals(void);
  * to see implementations defined by specific driver sources,
  * called by main-stub.c where used:
  */
+#define UPSDRV_CALLBACK_MAGIC "NUT_UPSDrv_CB"
 typedef struct upsdrv_callback_s {
-       /* 01 */        upsdrv_info_t*  upsdrv_info;    /* public driver information from the driver file */
-	void (*upsdrv_tweak_prognames)(void);	/* optionally add aliases and/or set preferred name into [0] (for pipe name etc.); called just after populating prognames[0] and prognames_should_free[] entries */
-	void (*upsdrv_initups)(void);	/* open connection to UPS, fail if not found */
-	void (*upsdrv_initinfo)(void);	/* prep data, settings for UPS monitoring */
-	void (*upsdrv_updateinfo)(void);	/* update state data if possible */
-	void (*upsdrv_shutdown)(void);	/* make the UPS power off the load */
-	void (*upsdrv_help)(void);		/* tack on anything useful for the -h text */
-	void (*upsdrv_cleanup)(void);	/* free any resources before shutdown */
-	void (*upsdrv_makevartable)(void);	/* main calls this driver function - it needs to call addvar */
+	/* A few entries for sanity check, in case different
+	 * generations of NUT drivers try to link with the
+	 * main() logic shipped as a shared library aimed
+	 * at its particular release */
+	uint64_t	struct_version;	/* how to interpret what we see */
+	uint64_t	ptr_size;	/* be sure about bitness */
+	uint64_t	ptr_count;	/* amount of non-null pointers passed here */
+	char		struct_magic[16];
+	/* char		NUT_VERSION[32];	/ * Just have it built into each binary */
+
+	/* Do not change the order of these entries,
+	 * only add at the end of list (if needed).
+	 * All except sentinel must be not-NULL. */
+	/* 01 */	upsdrv_info_t*	upsdrv_info;	/* public driver information from the driver file */
+
+	/* 02 */	void (*upsdrv_tweak_prognames)(void);	/* optionally add aliases and/or set preferred name into [0] (for pipe name etc.); called just after populating prognames[0] and prognames_should_free[] entries */
+	/* 03 */	void (*upsdrv_initups)(void);	/* open connection to UPS, fail if not found */
+	/* 04 */	void (*upsdrv_initinfo)(void);	/* prep data, settings for UPS monitoring */
+	/* 05 */	void (*upsdrv_updateinfo)(void);	/* update state data if possible */
+	/* 06 */	void (*upsdrv_shutdown)(void);	/* make the UPS power off the load */
+	/* 07 */	void (*upsdrv_help)(void);		/* tack on anything useful for the -h text */
+	/* 08 */	void (*upsdrv_cleanup)(void);	/* free any resources before shutdown */
+	/* 09 */	void (*upsdrv_makevartable)(void);	/* main calls this driver function - it needs to call addvar */
+
+	void 	*sentinels[20];	/* must be initialized to NULL (whichever way the platform defines one)	*/
+				/* array size pads this structure to allow for some more entries (if we	*/
+				/* ever think of any) to be communicated later without buffer overflow.	*/
 } upsdrv_callback_t;
 void register_upsdrv_callbacks(upsdrv_callback_t callbacks);
 
 /* simple call to register implementations named as dictated
  * by this header, which (being a macro) can be called easily
  * from both static and shared builds: */
+#define init_register_upsdrv_callbacks(cbptr) do {			\
+	size_t	cbptr_counter = 0;					\
+	memset((cbptr), 0, sizeof(upsdrv_callback_t));			\
+	(cbptr)->struct_version = 1;					\
+	(cbptr)->ptr_size = sizeof(void*);				\
+	(cbptr)->ptr_count = 9;						\
+	for (cbptr_counter = 0; cbptr_counter < sizeof((cbptr)->sentinels); cbptr_counter++)	\
+		(cbptr)->sentinels[cbptr_counter] = NULL;		\
+	snprintf((cbptr)->struct_magic, sizeof((cbptr)->struct_magic), "%s", UPSDRV_CALLBACK_MAGIC);	\
+	} while (0)
+
+#define validate_upsdrv_callbacks(cbptr) do {				\
+	if ((cbptr) == NULL 						\
+	 || (cbptr)->struct_version != 1				\
+	 || (cbptr)->ptr_count != 9					\
+	) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure or unexpected contents");	\
+	if ((cbptr)->ptr_size != sizeof(void*))				\
+		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong structure bitness");	\
+	if (strcmp((cbptr)->struct_magic, UPSDRV_CALLBACK_MAGIC))	\
+		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong magic");	\
+	if ((cbptr)->sentinels[0] != NULL)		\
+		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong sentinels");	\
+	if ((cbptr)->upsdrv_info == NULL				\
+	 || (cbptr)->upsdrv_tweak_prognames == NULL			\
+	 || (cbptr)->upsdrv_initups == NULL				\
+	 || (cbptr)->upsdrv_initinfo == NULL				\
+	 || (cbptr)->upsdrv_updateinfo == NULL				\
+	 || (cbptr)->upsdrv_shutdown == NULL				\
+	 || (cbptr)->upsdrv_help == NULL				\
+	 || (cbptr)->upsdrv_cleanup == NULL				\
+	 || (cbptr)->upsdrv_makevartable == NULL			\
+	) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: some are not initialized");	\
+	} while (0)
+
+#define safe_copy_upsdrv_callbacks(cbptrDrv, cbptrLib) do {				\
+	validate_upsdrv_callbacks(cbptrDrv);						\
+	init_register_upsdrv_callbacks(cbptrLib);					\
+	validate_upsdrv_callbacks(cbptrLib);						\
+	(cbptrLib)->upsdrv_info			= (cbptrDrv)->upsdrv_info;		\
+	(cbptrLib)->upsdrv_tweak_prognames	= (cbptrDrv)->upsdrv_tweak_prognames;	\
+	(cbptrLib)->upsdrv_initups		= (cbptrDrv)->upsdrv_initups;		\
+	(cbptrLib)->upsdrv_initinfo		= (cbptrDrv)->upsdrv_initinfo;		\
+	(cbptrLib)->upsdrv_updateinfo		= (cbptrDrv)->upsdrv_updateinfo;	\
+	(cbptrLib)->upsdrv_shutdown		= (cbptrDrv)->upsdrv_shutdown;		\
+	(cbptrLib)->upsdrv_help			= (cbptrDrv)->upsdrv_help;		\
+	(cbptrLib)->upsdrv_cleanup		= (cbptrDrv)->upsdrv_cleanup;		\
+	(cbptrLib)->upsdrv_makevartable		= (cbptrDrv)->upsdrv_makevartable;	\
+	} while (0)
+
 #define default_register_upsdrv_callbacks() do {			\
 	upsdrv_callback_t callbacksTmp;					\
 	memset(&callbacksTmp, 0, sizeof(callbacksTmp));			\
