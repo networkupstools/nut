@@ -3246,29 +3246,46 @@ void	upsdrv_help(void)
 {
 #ifndef TESTING
 	size_t i;
+	size_t len = 0, maxlen_prot = 0;
+	char	subdrv_name[SMALLBUF], *p;
 
 # ifdef QX_USB
 	/* Subdrivers have special SOMETHING_command() handling and
 	 * are listed in usbsubdriver[] array (just above in this
 	 * source file).
 	 */
-	printf("\nAcceptable values for USB 'subdriver' via -x or ups.conf in this driver: ");
+	size_t maxlen_usb = 0;
+
+	printf("\nAcceptable values for USB 'subdriver' via -x or ups.conf in this driver:\n");
+
+	/* Calculate the longest USB subdriver name for print alignment */
 	for (i = 0; usbsubdriver[i].name != NULL; i++) {
-		if (i>0)
-			printf(", ");
-		printf("%s", usbsubdriver[i].name);
+		len = strlen(usbsubdriver[i].name);
+		if (len > maxlen_usb)
+			maxlen_usb = len;
 	}
-	printf("\n");
+
+	for (i = 0; usbsubdriver[i].name != NULL; i++) {
+		printf("  %*s\n", (int)maxlen_usb, usbsubdriver[i].name);
+	}
 # endif	/* QX_USB*/
 
 	/* Protocols are the first token from "name" field in
 	 * subdriver_t instances in files like nutdrv_qx_mecer.c
 	 */
-	printf("\nAcceptable values for 'protocol' via -x or ups.conf in this driver: ");
-	for (i = 0; subdriver_list[i] != NULL; i++) {
-		char	subdrv_name[SMALLBUF], *p;
+	printf("\nAcceptable values for 'protocol' via -x or ups.conf in this driver:\n");
 
-		/* Get rid of subdriver version */
+	/* Calculate the longest protocol name for print alignment */
+	for (i = 0; subdriver_list[i] != NULL; i++) {
+		snprintf(subdrv_name, sizeof(subdrv_name), "%.*s",
+			(int)strcspn(subdriver_list[i]->name, " "),
+			subdriver_list[i]->name);
+		len = strlen(subdrv_name);
+		if (len > maxlen_prot)
+			maxlen_prot = len;
+	}
+
+	for (i = 0; subdriver_list[i] != NULL; i++) {
 		snprintf(subdrv_name, sizeof(subdrv_name), "%.*s",
 			(int)strcspn(subdriver_list[i]->name, " "),
 			subdriver_list[i]->name);
@@ -3277,11 +3294,8 @@ void	upsdrv_help(void)
 		for (p = subdrv_name; *p; ++p)
 			*p = tolower((unsigned char)(*p));
 
-		if (i>0)
-			printf(", ");
-		printf("%s", subdrv_name);
+		printf("  %*s\n", (int)maxlen_prot, subdrv_name);
 	}
-	printf("\n");
 #endif	/* TESTING */
 }
 
