@@ -33,7 +33,7 @@
 
 extern struct gpioups_t *gpioupsfd;
 
-static int done=0;
+static int done=1;
 static int test_with_exit;
 static jmp_buf env_buffer;
 static FILE * testData;
@@ -150,6 +150,7 @@ int main(int argc, char **argv) {
 	default_register_upsdrv_callbacks();
 /* #endif */
 
+	done=0;
 	test_with_exit=0;
 
 	if(argc==2) {
