@@ -236,11 +236,13 @@ typedef struct upsdrv_callback_s {
 				/* array size pads this structure to allow for some more entries (if we	*/
 				/* ever think of any) to be communicated later without buffer overflow.	*/
 } upsdrv_callback_t;
-void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks);
+void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_struct_sz);
 
 /* simple call to register implementations named as dictated
  * by this header, which (being a macro) can be called easily
- * from both static and shared builds: */
+ * from both static and shared builds; keep in mind that builds
+ * using these macros for binaries that try to fit together may
+ * be years apart eventually: */
 #define init_register_upsdrv_callbacks(cbptr) do {			\
 	size_t	cbptr_counter = 0;					\
 	memset((cbptr), 0, sizeof(upsdrv_callback_t));			\
@@ -252,11 +254,12 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks);
 	snprintf((cbptr)->struct_magic, sizeof((cbptr)->struct_magic), "%s", UPSDRV_CALLBACK_MAGIC);	\
 	} while (0)
 
-#define validate_upsdrv_callbacks(cbptr) do {				\
-	if ((cbptr) == NULL 						\
-	 || (cbptr)->struct_version != 1				\
+#define validate_upsdrv_callbacks(cbptr, cbsz) do {			\
+	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure");	\
+	if ((cbsz) != sizeof(upsdrv_callback_t)) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure size");	\
+	if ((cbptr)->struct_version != 1				\
 	 || (cbptr)->ptr_count != 9					\
-	) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure or unexpected contents");	\
+	) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure contents");	\
 	if ((cbptr)->ptr_size != sizeof(void*))				\
 		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong structure bitness");	\
 	if (strcmp((cbptr)->struct_magic, UPSDRV_CALLBACK_MAGIC))	\
@@ -272,13 +275,13 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks);
 	 || (cbptr)->upsdrv_help == NULL				\
 	 || (cbptr)->upsdrv_cleanup == NULL				\
 	 || (cbptr)->upsdrv_makevartable == NULL			\
-	) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: some are not initialized");	\
+	) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: some pointers are not initialized");	\
 	} while (0)
 
-#define safe_copy_upsdrv_callbacks(cbptrDrv, cbptrLib) do {				\
-	validate_upsdrv_callbacks(cbptrDrv);						\
+#define safe_copy_upsdrv_callbacks(cbptrDrv, cbptrLib, cbszDrv) do {			\
+	validate_upsdrv_callbacks(cbptrDrv, cbszDrv);					\
 	init_register_upsdrv_callbacks(cbptrLib);					\
-	validate_upsdrv_callbacks(cbptrLib);						\
+	validate_upsdrv_callbacks(cbptrLib, sizeof(upsdrv_callback_t));			\
 	(cbptrLib)->upsdrv_info			= (cbptrDrv)->upsdrv_info;		\
 	(cbptrLib)->upsdrv_tweak_prognames	= (cbptrDrv)->upsdrv_tweak_prognames;	\
 	(cbptrLib)->upsdrv_initups		= (cbptrDrv)->upsdrv_initups;		\
@@ -290,19 +293,19 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks);
 	(cbptrLib)->upsdrv_makevartable		= (cbptrDrv)->upsdrv_makevartable;	\
 	} while (0)
 
-#define default_register_upsdrv_callbacks() do {			\
-	upsdrv_callback_t callbacksTmp;					\
-	memset(&callbacksTmp, 0, sizeof(callbacksTmp));			\
-	callbacksTmp.upsdrv_info		= &upsdrv_info;		\
+#define default_register_upsdrv_callbacks() do {				\
+	upsdrv_callback_t	callbacksTmp;					\
+	memset(&callbacksTmp, 0, sizeof(callbacksTmp));				\
+	callbacksTmp.upsdrv_info		= &upsdrv_info;			\
 	callbacksTmp.upsdrv_tweak_prognames	= upsdrv_tweak_prognames;	\
-	callbacksTmp.upsdrv_initups		= upsdrv_initups;	\
-	callbacksTmp.upsdrv_initinfo		= upsdrv_initinfo;	\
-	callbacksTmp.upsdrv_updateinfo		= upsdrv_updateinfo;	\
-	callbacksTmp.upsdrv_shutdown		= upsdrv_shutdown;	\
-	callbacksTmp.upsdrv_help		= upsdrv_help;		\
-	callbacksTmp.upsdrv_cleanup		= upsdrv_cleanup;	\
-	callbacksTmp.upsdrv_makevartable	= upsdrv_makevartable;	\
-	register_upsdrv_callbacks(&callbacksTmp);			\
+	callbacksTmp.upsdrv_initups		= upsdrv_initups;		\
+	callbacksTmp.upsdrv_initinfo		= upsdrv_initinfo;		\
+	callbacksTmp.upsdrv_updateinfo		= upsdrv_updateinfo;		\
+	callbacksTmp.upsdrv_shutdown		= upsdrv_shutdown;		\
+	callbacksTmp.upsdrv_help		= upsdrv_help;			\
+	callbacksTmp.upsdrv_cleanup		= upsdrv_cleanup;		\
+	callbacksTmp.upsdrv_makevartable	= upsdrv_makevartable;		\
+	register_upsdrv_callbacks(&callbacksTmp, sizeof(upsdrv_callback_t));	\
 	} while (0)
 
 #endif /* NUT_MAIN_H_SEEN */
