@@ -25,46 +25,47 @@ $(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libparseconf.la
 
 if ENABLE_SHARED_PRIVATE_LIBS
-$(top_builddir)/common/libnutprivate-common-all.la \
-$(top_builddir)/common/libnutprivate-common-client.la: dummy
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-$(top_builddir)/common/libnutprivate-common-all.la: $(top_builddir)/common/libcommon.la
-$(top_builddir)/common/libnutprivate-common-client.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la
 endif
 
 lib_LTLIBRARIES =
 
 if ENABLE_SHARED_PRIVATE_LIBS
-  lib_LTLIBRARIES += libnutprivate-drivers-common.la
-  libnutprivate_drivers_common_la_SOURCES =
-  libnutprivate_drivers_common_la_LIBADD = \
-	libdummy_upsdrvquery.la $(top_builddir)/common/libnutprivate-common-all.la \
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LIBADD = \
+	libdummy_upsdrvquery.la $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 	libdummy_main.la
 
-  lib_LTLIBRARIES += libnutprivate-drivers-serial.la
-  libnutprivate_drivers_serial_la_SOURCES =
-  libnutprivate_drivers_serial_la_LIBADD = \
-	libnutprivate-drivers-common.la \
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LIBADD = \
+	libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la \
 	libdummy_serial.la $(SERLIBS)
 
 ### Avoid unexpected linking across NUT generations
 ### far apart (e.g. custom rebuilds of new programs
-### tucked into an existing deployment)
-  libnutprivate_drivers_common_la_LDFLAGS = -version-info $(NUT_SOURCE_GITREV_SEMVER_COLONS)
-  libnutprivate_drivers_serial_la_LDFLAGS = -version-info $(NUT_SOURCE_GITREV_SEMVER_COLONS)
+### tucked into an existing deployment); see libtool
+### docs about current:revision:age interface numbering.
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LDFLAGS = -version-info 1:0:0
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LDFLAGS = -version-info 1:0:0
 
   LDADD_COMMON = \
-	$(top_builddir)/common/libnutprivate-common-all.la
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 
-  LDADD_DRIVERS = libdummy_main_stub.la libnutprivate-drivers-common.la $(LDADD_COMMON)
+  LDADD_DRIVERS = libdummy_main_stub.la libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la $(LDADD_COMMON)
 
-  LDADD_DRIVERS_SERIAL = libnutprivate-drivers-serial.la $(LDADD_DRIVERS)
+  LDADD_DRIVERS_SERIAL = libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la $(LDADD_DRIVERS)
 
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
-  libnutprivate_drivers_common_la_LDFLAGS += -no-undefined
-  libnutprivate_drivers_serial_la_LDFLAGS += -no-undefined
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LDFLAGS += -no-undefined
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
 
 else !ENABLE_SHARED_PRIVATE_LIBS
@@ -454,7 +455,7 @@ nutdrv_qx_CFLAGS = $(AM_CFLAGS)
 if WITH_SERIAL
 nutdrv_qx_CFLAGS += -DQX_SERIAL
 if ENABLE_SHARED_PRIVATE_LIBS
-nutdrv_qx_LDADD += libnutprivate-drivers-serial.la
+nutdrv_qx_LDADD += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la
 else !ENABLE_SHARED_PRIVATE_LIBS
 nutdrv_qx_LDADD += libdummy_serial.la $(SERLIBS)
 endif !ENABLE_SHARED_PRIVATE_LIBS

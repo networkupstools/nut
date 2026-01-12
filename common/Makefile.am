@@ -29,24 +29,25 @@ if ENABLE_SHARED_PRIVATE_LIBS
 ### We still do build static (noinst) libs to include
 ### them into shared library files that should remain
 ### compatible for existing consumers (in/out of tree).
-  lib_LTLIBRARIES += libnutprivate-common-all.la
-  libnutprivate_common_all_la_SOURCES =
-  libnutprivate_common_all_la_LIBADD = libcommon.la libcommonversion.la
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LIBADD = libcommon.la libcommonversion.la
 
-  lib_LTLIBRARIES += libnutprivate-common-client.la
-  libnutprivate_common_client_la_SOURCES =
-  libnutprivate_common_client_la_LIBADD = libcommonclient.la libcommonversion.la
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LIBADD = libcommonclient.la libcommonversion.la
 
 ### Avoid unexpected linking across NUT generations
 ### far apart (e.g. custom rebuilds of new programs
-### tucked into an existing deployment)
-  libnutprivate_common_all_la_LDFLAGS = -version-info $(NUT_SOURCE_GITREV_SEMVER_COLONS)
-  libnutprivate_common_client_la_LDFLAGS = -version-info $(NUT_SOURCE_GITREV_SEMVER_COLONS)
+### tucked into an existing deployment); see libtool
+### docs about current:revision:age interface numbering.
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LDFLAGS = -version-info 1:0:0
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LDFLAGS = -version-info 1:0:0
 
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
-  libnutprivate_common_all_la_LDFLAGS += -no-undefined
-  libnutprivate_common_client_la_LDFLAGS += -no-undefined
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LDFLAGS += -no-undefined
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
 endif ENABLE_SHARED_PRIVATE_LIBS
 
