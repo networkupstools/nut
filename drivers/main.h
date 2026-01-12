@@ -236,7 +236,7 @@ typedef struct upsdrv_callback_s {
 				/* array size pads this structure to allow for some more entries (if we	*/
 				/* ever think of any) to be communicated later without buffer overflow.	*/
 } upsdrv_callback_t;
-void register_upsdrv_callbacks(upsdrv_callback_t callbacks);
+void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks);
 
 /* simple call to register implementations named as dictated
  * by this header, which (being a macro) can be called easily
@@ -302,7 +302,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t callbacks);
 	callbacksTmp.upsdrv_help		= upsdrv_help;		\
 	callbacksTmp.upsdrv_cleanup		= upsdrv_cleanup;	\
 	callbacksTmp.upsdrv_makevartable	= upsdrv_makevartable;	\
-	register_upsdrv_callbacks(callbacksTmp);	\
+	register_upsdrv_callbacks(&callbacksTmp);			\
 	} while (0)
 
 #endif /* NUT_MAIN_H_SEEN */
