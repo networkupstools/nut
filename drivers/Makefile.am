@@ -48,6 +48,12 @@ if ENABLE_SHARED_PRIVATE_LIBS
 	libnutprivate-drivers-common.la \
 	libdummy_serial.la $(SERLIBS)
 
+### Avoid unexpected linking across NUT generations
+### far apart (e.g. custom rebuilds of new programs
+### tucked into an existing deployment)
+  libnutprivate_drivers_common_la_LDFLAGS = -version-info $(NUT_SOURCE_GITREV_SEMVER_COLONS)
+  libnutprivate_drivers_serial_la_LDFLAGS = -version-info $(NUT_SOURCE_GITREV_SEMVER_COLONS)
+
   LDADD_COMMON = \
 	$(top_builddir)/common/libnutprivate-common-all.la
 
@@ -57,8 +63,8 @@ if ENABLE_SHARED_PRIVATE_LIBS
 
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
-  libnutprivate_drivers_common_la_LDFLAGS = -no-undefined
-  libnutprivate_drivers_serial_la_LDFLAGS = -no-undefined
+  libnutprivate_drivers_common_la_LDFLAGS += -no-undefined
+  libnutprivate_drivers_serial_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
 
 else !ENABLE_SHARED_PRIVATE_LIBS
