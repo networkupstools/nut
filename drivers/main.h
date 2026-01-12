@@ -248,8 +248,10 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
  * from both static and shared builds; keep in mind that builds
  * using these macros for binaries that try to fit together may
  * be years apart eventually: */
-#define init_register_upsdrv_callbacks(cbptr) do {			\
+#define init_upsdrv_callbacks(cbptr, cbsz) do {		\
 	size_t	cbptr_counter = 0;					\
+	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not init callbacks for shared driver code: null structure pointer");	\
+	if ((cbsz) != sizeof(upsdrv_callback_t)) fatalx(EXIT_FAILURE, "Could not init callbacks for shared driver code: unexpected structure size");	\
 	memset((cbptr), 0, sizeof(upsdrv_callback_t));			\
 	(cbptr)->struct_version = 1;					\
 	(cbptr)->ptr_size = sizeof(void*);				\
@@ -261,7 +263,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	} while (0)
 
 #define validate_upsdrv_callbacks(cbptr, cbsz) do {			\
-	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure");	\
+	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure pointer");	\
 	if ((cbsz) != sizeof(upsdrv_callback_t)) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure size");	\
 	if ((cbptr)->struct_version != 1				\
 	 || (cbptr)->ptr_count != 9					\
@@ -286,7 +288,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 
 #define safe_copy_upsdrv_callbacks(cbptrDrv, cbptrLib, cbszDrv) do {			\
 	validate_upsdrv_callbacks(cbptrDrv, cbszDrv);					\
-	init_register_upsdrv_callbacks(cbptrLib);					\
+	init_upsdrv_callbacks(cbptrLib, sizeof(upsdrv_callback_t));			\
 	validate_upsdrv_callbacks(cbptrLib, sizeof(upsdrv_callback_t));			\
 	(cbptrLib)->upsdrv_info			= (cbptrDrv)->upsdrv_info;		\
 	(cbptrLib)->upsdrv_tweak_prognames	= (cbptrDrv)->upsdrv_tweak_prognames;	\
@@ -301,7 +303,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 
 #define default_register_upsdrv_callbacks() do {				\
 	upsdrv_callback_t	callbacksTmp;					\
-	memset(&callbacksTmp, 0, sizeof(callbacksTmp));				\
+	init_upsdrv_callbacks(&callbacksTmp, sizeof(callbacksTmp));		\
 	callbacksTmp.upsdrv_info		= &upsdrv_info;			\
 	callbacksTmp.upsdrv_tweak_prognames	= upsdrv_tweak_prognames;	\
 	callbacksTmp.upsdrv_initups		= upsdrv_initups;		\
