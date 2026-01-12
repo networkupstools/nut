@@ -165,10 +165,10 @@ static int handle_reload_flag(void);
 static int reload_requires_restart = -1;
 
 static upsdrv_callback_t	upsdrv_callbacks = {0};
-void register_upsdrv_callbacks(upsdrv_callback_t callbacks) {
+void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks) {
 	/* Plain memcpy of arbitrarily ordered list of function pointers
 	 * does not feel safe, so we use some means of input validation: */
-	safe_copy_upsdrv_callbacks(&callbacks, &upsdrv_callbacks);
+	safe_copy_upsdrv_callbacks(runtime_callbacks, &upsdrv_callbacks);
 }
 
 /* print the driver banner */
