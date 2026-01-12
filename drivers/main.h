@@ -207,6 +207,7 @@ void setup_signals(void);
  * called by main-stub.c where used:
  */
 typedef struct upsdrv_callback_s {
+       /* 01 */        upsdrv_info_t*  upsdrv_info;    /* public driver information from the driver file */
 	void (*upsdrv_tweak_prognames)(void);	/* optionally add aliases and/or set preferred name into [0] (for pipe name etc.); called just after populating prognames[0] and prognames_should_free[] entries */
 	void (*upsdrv_initups)(void);	/* open connection to UPS, fail if not found */
 	void (*upsdrv_initinfo)(void);	/* prep data, settings for UPS monitoring */
@@ -215,7 +216,6 @@ typedef struct upsdrv_callback_s {
 	void (*upsdrv_help)(void);		/* tack on anything useful for the -h text */
 	void (*upsdrv_cleanup)(void);	/* free any resources before shutdown */
 	void (*upsdrv_makevartable)(void);	/* main calls this driver function - it needs to call addvar */
-	upsdrv_info_t	upsdrv_info;	/* public driver information from the driver file */
 } upsdrv_callback_t;
 void register_upsdrv_callbacks(upsdrv_callback_t callbacks);
 
@@ -225,15 +225,15 @@ void register_upsdrv_callbacks(upsdrv_callback_t callbacks);
 #define default_register_upsdrv_callbacks() do {			\
 	upsdrv_callback_t callbacksTmp;					\
 	memset(&callbacksTmp, 0, sizeof(callbacksTmp));			\
-	callbacksTmp.upsdrv_cleanup		= upsdrv_cleanup;	\
-	callbacksTmp.upsdrv_help		= upsdrv_help;		\
+	callbacksTmp.upsdrv_info		= &upsdrv_info;		\
+	callbacksTmp.upsdrv_tweak_prognames	= upsdrv_tweak_prognames;	\
 	callbacksTmp.upsdrv_initups		= upsdrv_initups;	\
 	callbacksTmp.upsdrv_initinfo		= upsdrv_initinfo;	\
-	callbacksTmp.upsdrv_makevartable	= upsdrv_makevartable;	\
-	callbacksTmp.upsdrv_shutdown		= upsdrv_shutdown;	\
-	callbacksTmp.upsdrv_tweak_prognames	= upsdrv_tweak_prognames;	\
 	callbacksTmp.upsdrv_updateinfo		= upsdrv_updateinfo;	\
-	memcpy(&callbacksTmp.upsdrv_info, &upsdrv_info, sizeof(upsdrv_info));	\
+	callbacksTmp.upsdrv_shutdown		= upsdrv_shutdown;	\
+	callbacksTmp.upsdrv_help		= upsdrv_help;		\
+	callbacksTmp.upsdrv_cleanup		= upsdrv_cleanup;	\
+	callbacksTmp.upsdrv_makevartable	= upsdrv_makevartable;	\
 	register_upsdrv_callbacks(callbacksTmp);	\
 	} while (0)
 

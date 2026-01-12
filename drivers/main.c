@@ -180,23 +180,23 @@ void upsdrv_banner (void)
 
 	printf("Network UPS Tools %s - %s%s %s\n",
 		describe_NUT_VERSION_once(),
-		upsdrv_callbacks.upsdrv_info.name,
-		strstr(upsdrv_callbacks.upsdrv_info.name, "river") ? "" : " driver",
-		upsdrv_callbacks.upsdrv_info.version);
+		upsdrv_callbacks.upsdrv_info->name,
+		strstr(upsdrv_callbacks.upsdrv_info->name, "river") ? "" : " driver",
+		upsdrv_callbacks.upsdrv_info->version);
 
 	/* process sub driver(s) information */
-	for (i = 0; upsdrv_callbacks.upsdrv_info.subdrv_info[i]; i++) {
+	for (i = 0; upsdrv_callbacks.upsdrv_info->subdrv_info[i]; i++) {
 
-		if (!upsdrv_callbacks.upsdrv_info.subdrv_info[i]->name) {
+		if (!upsdrv_callbacks.upsdrv_info->subdrv_info[i]->name) {
 			continue;
 		}
 
-		if (!upsdrv_callbacks.upsdrv_info.subdrv_info[i]->version) {
+		if (!upsdrv_callbacks.upsdrv_info->subdrv_info[i]->version) {
 			continue;
 		}
 
-		printf("%s %s\n", upsdrv_callbacks.upsdrv_info.subdrv_info[i]->name,
-			upsdrv_callbacks.upsdrv_info.subdrv_info[i]->version);
+		printf("%s %s\n", upsdrv_callbacks.upsdrv_info->subdrv_info[i]->name,
+			upsdrv_callbacks.upsdrv_info->subdrv_info[i]->version);
 	}
 
 	fflush(stdout);
@@ -2244,7 +2244,7 @@ int main(int argc, char **argv)
 		upsdrv_banner();
 	}
 
-	if (upsdrv_callbacks.upsdrv_info.status == DRV_EXPERIMENTAL) {
+	if (upsdrv_callbacks.upsdrv_info->status == DRV_EXPERIMENTAL) {
 		printf("Warning: This is an experimental driver.\n");
 		printf("Some features may not function correctly.\n\n");
 	}
@@ -2940,13 +2940,13 @@ int main(int argc, char **argv)
 	atexit(exit_upsdrv_cleanup);
 
 	/* now see if things are very wrong out there */
-	if (upsdrv_callbacks.upsdrv_info.status == DRV_BROKEN) {
+	if (upsdrv_callbacks.upsdrv_info->status == DRV_BROKEN) {
 		fatalx(EXIT_FAILURE, "Fatal error: broken driver. It probably needs to be converted.\n");
 	}
 
 	/* publish the top-level data: version numbers, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
-	dstate_setinfo("driver.version.internal", "%s", upsdrv_callbacks.upsdrv_info.version);
+	dstate_setinfo("driver.version.internal", "%s", upsdrv_callbacks.upsdrv_info->version);
 	dstate_setinfo("driver.name", "%s", progname);
 
 	/*
