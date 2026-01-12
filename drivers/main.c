@@ -290,16 +290,28 @@ static void help_msg(void)
 	printf("                 - example: -x cable=940-0095B\n\n");
 
 	if (vartab_h) {
+		size_t len = 0;
+		size_t maxlen = 0;
+		vartab_t *tmp_len;
 		tmp = vartab_h;
+
+		/* Calculate the longest variable name for print alignment */
+		tmp_len = vartab_h;
+		while (tmp_len) {
+			len = strlen(tmp_len->var);
+			if (len > maxlen)
+				maxlen = len;
+			tmp_len = tmp_len->next;
+		}
 
 		printf("Acceptable values for -x or ups.conf in this driver:\n\n");
 
 		while (tmp) {
 			if (tmp->vartype == VAR_VALUE)
-				printf("%40s : -x %s=<value>\n",
-					tmp->desc, tmp->var);
+				printf("  %*s=<value>\t%s\n",
+					(int)(maxlen), tmp->var, tmp->desc);
 			else
-				printf("%40s : -x %s\n", tmp->desc, tmp->var);
+				printf("  %*s        \t%s\n", (int)maxlen, tmp->var, tmp->desc);
 			tmp = tmp->next;
 		}
 	}
