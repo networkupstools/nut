@@ -207,6 +207,12 @@ void setup_signals(void);
  * called by main-stub.c where used:
  */
 #define UPSDRV_CALLBACK_MAGIC "NUT_UPSDrv_CB"
+
+/* An array in the end pads this structure to allow for some more entries
+ * (if we ever think of any) to be communicated later without some easily
+ * triggered overflow during binary-to-library calls, years down the road.
+ */
+#define UPSDRV_CALLBACK_PADDING 22
 typedef struct upsdrv_callback_s {
 	/* A few entries for sanity check, in case different
 	 * generations of NUT drivers try to link with the
@@ -232,9 +238,8 @@ typedef struct upsdrv_callback_s {
 	/* 08 */	void (*upsdrv_cleanup)(void);	/* free any resources before shutdown */
 	/* 09 */	void (*upsdrv_makevartable)(void);	/* main calls this driver function - it needs to call addvar */
 
-	void 	*sentinels[20];	/* must be initialized to NULL (whichever way the platform defines one)	*/
-				/* array size pads this structure to allow for some more entries (if we	*/
-				/* ever think of any) to be communicated later without buffer overflow.	*/
+	/* 10 */	void	*sentinel;	/* must be initialized to NULL (whichever way the platform defines one)	*/
+	/* 11..31 */	void	*padding[UPSDRV_CALLBACK_PADDING];	/* commented near the macro above */
 } upsdrv_callback_t;
 void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_struct_sz);
 
@@ -249,8 +254,9 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	(cbptr)->struct_version = 1;					\
 	(cbptr)->ptr_size = sizeof(void*);				\
 	(cbptr)->ptr_count = 9;						\
-	for (cbptr_counter = 0; cbptr_counter < sizeof((cbptr)->sentinels); cbptr_counter++)	\
-		(cbptr)->sentinels[cbptr_counter] = NULL;		\
+	(cbptr)->sentinel = NULL;					\
+	for (cbptr_counter = 0; cbptr_counter < UPSDRV_CALLBACK_PADDING; cbptr_counter++)	\
+		(cbptr)->padding[cbptr_counter] = NULL;			\
 	snprintf((cbptr)->struct_magic, sizeof((cbptr)->struct_magic), "%s", UPSDRV_CALLBACK_MAGIC);	\
 	} while (0)
 
@@ -264,7 +270,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong structure bitness");	\
 	if (strcmp((cbptr)->struct_magic, UPSDRV_CALLBACK_MAGIC))	\
 		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong magic");	\
-	if ((cbptr)->sentinels[0] != NULL)		\
+	if ((cbptr)->sentinel != NULL)					\
 		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong sentinels");	\
 	if ((cbptr)->upsdrv_info == NULL				\
 	 || (cbptr)->upsdrv_tweak_prognames == NULL			\
