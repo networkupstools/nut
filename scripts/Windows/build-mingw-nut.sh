@@ -138,6 +138,11 @@ do_build_mingw_nut() {
 		KEEP_NUT_REPORT_FEATURE_FLAG="--enable-keep_nut_report_feature"
 	fi
 
+	ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG=""
+	if [ x"${ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG-}" = xtrue ]; then
+		ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG="--enable-shared-private-libs"
+	fi
+
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
 	# WIN32 builds resolve PREFIX'ed paths relative to each current binary
@@ -150,6 +155,7 @@ do_build_mingw_nut() {
 	RES_CFG=0
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
+	    $ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
 	    --with-all=auto \
 	    --with-doc="man=auto html-single=auto html-chunked=skip pdf=skip" \
