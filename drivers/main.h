@@ -262,7 +262,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	snprintf((cbptr)->struct_magic, sizeof((cbptr)->struct_magic), "%s", UPSDRV_CALLBACK_MAGIC);	\
 	} while (0)
 
-#define validate_upsdrv_callbacks(cbptr, cbsz) do {			\
+#define validate_upsdrv_callbacks(cbptr, cbsz, isnew) do {		\
 	upsdebugx(5, "validate_upsdrv_callbacks: cbsz=%" PRIu64, cbsz);	\
 	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure pointer");	\
 	if ((cbsz) != sizeof(upsdrv_callback_t)) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure size");	\
@@ -296,13 +296,14 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	 || (cbptr)->upsdrv_help == NULL				\
 	 || (cbptr)->upsdrv_cleanup == NULL				\
 	 || (cbptr)->upsdrv_makevartable == NULL			\
-	) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: some pointers are not initialized");	\
+	) if (!isnew) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: some pointers are not initialized");	\
+	if (isnew) upsdebugx(5, "validate_upsdrv_callbacks: this is a newly created structure, so some/all NULL references are okay");	\
 	} while (0)
 
 #define safe_copy_upsdrv_callbacks(cbptrDrv, cbptrLib, cbszDrv) do {			\
-	validate_upsdrv_callbacks(cbptrDrv, cbszDrv);					\
+	validate_upsdrv_callbacks(cbptrDrv, cbszDrv, 0);				\
 	init_upsdrv_callbacks(cbptrLib, sizeof(upsdrv_callback_t));			\
-	validate_upsdrv_callbacks(cbptrLib, sizeof(upsdrv_callback_t));			\
+	validate_upsdrv_callbacks(cbptrLib, sizeof(upsdrv_callback_t), 1);		\
 	(cbptrLib)->upsdrv_info			= (cbptrDrv)->upsdrv_info;		\
 	(cbptrLib)->upsdrv_tweak_prognames	= (cbptrDrv)->upsdrv_tweak_prognames;	\
 	(cbptrLib)->upsdrv_initups		= (cbptrDrv)->upsdrv_initups;		\
