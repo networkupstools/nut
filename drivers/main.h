@@ -263,17 +263,30 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	} while (0)
 
 #define validate_upsdrv_callbacks(cbptr, cbsz) do {			\
+	upsdebugx(5, "validate_upsdrv_callbacks: cbsz=%" PRIu64, cbsz);	\
 	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure pointer");	\
 	if ((cbsz) != sizeof(upsdrv_callback_t)) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure size");	\
+	upsdebugx(5, "validate_upsdrv_callbacks: ver=%" PRIu64 " ptr_count=%" PRIu64, (cbptr)->struct_version, (cbptr)->ptr_count);	\
 	if ((cbptr)->struct_version != 1				\
 	 || (cbptr)->ptr_count != 9					\
 	) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure contents");	\
+	upsdebugx(5, "validate_upsdrv_callbacks: ptr_size: passed=%" PRIu64 " expected=%" PRIuSIZE, (cbptr)->ptr_size, sizeof(void*));	\
 	if ((cbptr)->ptr_size != sizeof(void*))				\
 		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong structure bitness");	\
 	if (strcmp((cbptr)->struct_magic, UPSDRV_CALLBACK_MAGIC))	\
 		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong magic");	\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: sentinel: %s", (cbptr)->sentinel == NULL ? "Y" : "N");	\
 	if ((cbptr)->sentinel != NULL)					\
 		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong sentinels");	\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_info: %s", (cbptr)->upsdrv_info == NULL ? "Y" : "N");				\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_tweak_prognames: %s", (cbptr)->upsdrv_tweak_prognames == NULL ? "Y" : "N");		\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_initups: %s", (cbptr)->upsdrv_initups == NULL ? "Y" : "N");				\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_initinfo: %s", (cbptr)->upsdrv_initinfo == NULL ? "Y" : "N");			\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_updateinfo: %s", (cbptr)->upsdrv_updateinfo == NULL ? "Y" : "N");			\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_shutdown: %s", (cbptr)->upsdrv_shutdown == NULL ? "Y" : "N");			\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_help: %s", (cbptr)->upsdrv_help == NULL ? "Y" : "N");				\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_cleanup: %s", (cbptr)->upsdrv_cleanup == NULL ? "Y" : "N");				\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_makevartable: %s", (cbptr)->upsdrv_makevartable == NULL ? "Y" : "N");		\
 	if ((cbptr)->upsdrv_info == NULL				\
 	 || (cbptr)->upsdrv_tweak_prognames == NULL			\
 	 || (cbptr)->upsdrv_initups == NULL				\
