@@ -72,6 +72,7 @@ $(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/common/libparsec
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
 if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
@@ -163,8 +164,9 @@ nut_scanner_CFLAGS = \
 nut_scanner_LDADD = libnutscan.la
 
 if ENABLE_SHARED_PRIVATE_LIBS
-# ensure the "fatal_with_errno" symbol, and others that libnutscan uses:
-nut_scanner_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+# ensure the "fatal_with_errno" symbol, and others that libnutscan uses
+# TODO: Check if common-client suffices (or do we need whatever more "all" brings?)
+nut_scanner_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 endif ENABLE_SHARED_PRIVATE_LIBS
 
 # Hack to allow correct RPATH/RUNPATH like /usr/lib/mps/64 (Mozilla NSS)
