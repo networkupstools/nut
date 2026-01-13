@@ -178,7 +178,19 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	 * as defined in main.h macros this code (potentially a NUT private
 	 * shared library, years apart from a driver that tries to use it)
 	 * was built against: */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS
+# pragma GCC diagnostic ignored "-Waddress"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 	safe_copy_upsdrv_callbacks(runtime_callbacks, &upsdrv_callbacks, cb_struct_sz);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic pop
+#endif
 }
 
 /* print the driver banner */
@@ -2147,7 +2159,19 @@ int main(int argc, char **argv)
 	callback_upsconf_args = do_upsconf_args;
 #else
 	/* static build, symbols should be visible to main.c right away */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS
+# pragma GCC diagnostic ignored "-Waddress"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 	default_register_upsdrv_callbacks();
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic pop
+#endif
 #endif
 
 	/* init verbosity from default in common.c (0 probably) */
