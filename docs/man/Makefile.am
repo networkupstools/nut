@@ -1596,6 +1596,10 @@ endif !WITH_HTML_SINGLE
 #  (sockdebug), or platform-specific progs (nut.exe)
 LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.txt linkman-docbuildmode-note.txt
 LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt nut.txt
+# Files that linkman-driver-names.txt would consider from LINKMAN_PAGES_DRIVERS
+# that are only included snippets but not standalone driver pages:
+LINKMAN_EXCLUDE_NONDRIVER = '^(nutupsdrv|blazer-common|nut_usb_addvars)\.txt$$'
+
 CLEANFILES = linkman-*.txt.tmp*
 
 # Note we can have a pre-built file from the tarball, sort of useful when
@@ -1606,7 +1610,7 @@ linkman-driver-names.txt: Makefile
 	@echo "  GENERATE-LINKMAN	$@"
 	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERS) ; do echo "$$F" ; done \
-	    | $(EGREP) -v '^nutupsdrv\.txt$$' \
+	    | $(EGREP) -v $(LINKMAN_EXCLUDE_NONDRIVER) \
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[$(MAN_SECTION_CMD_SYS)],' ; \
 	 ) > "$(builddir)/$(@F).tmp.$$$$" || exit ; \
