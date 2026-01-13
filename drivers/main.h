@@ -268,7 +268,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	} while (0)
 
 #define validate_upsdrv_callbacks(cbptr, cbsz, isnew) do {		\
-	upsdebugx(5, "validate_upsdrv_callbacks: cbsz=%" PRIu64, cbsz);	\
+	upsdebugx(5, "validate_upsdrv_callbacks: cbsz=%" PRIuMAX, (uintmax_t)cbsz);	\
 	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure pointer");	\
 	if ((cbsz) != sizeof(upsdrv_callback_t)) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure size");	\
 	upsdebugx(5, "validate_upsdrv_callbacks: ver=%" PRIu64 " ptr_count=%" PRIu64, (cbptr)->struct_version, (cbptr)->ptr_count);	\
