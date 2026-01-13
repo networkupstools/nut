@@ -151,9 +151,21 @@ int main(int argc, char **argv) {
 		nut_debug_level = lvl;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS
+# pragma GCC diagnostic ignored "-Waddress"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 /* #if !(defined ENABLE_SHARED_PRIVATE_LIBS) || !ENABLE_SHARED_PRIVATE_LIBS */
 	default_register_upsdrv_callbacks();
 /* #endif */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic pop
+#endif
 
 	done=0;
 	test_with_exit=0;

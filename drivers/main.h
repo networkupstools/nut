@@ -247,7 +247,12 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
  * by this header, which (being a macro) can be called easily
  * from both static and shared builds; keep in mind that builds
  * using these macros for binaries that try to fit together may
- * be years apart eventually: */
+ * be years apart eventually. Note that consumers may have to
+ * use HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS and/or
+ * some of HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE*
+ * pragmas around these macros, for builds to succeed under
+ * stricter compiler settings (see examples in existing code).
+ */
 #define init_upsdrv_callbacks(cbptr, cbsz) do {		\
 	size_t	cbptr_counter = 0;					\
 	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not init callbacks for shared driver code: null structure pointer");	\
