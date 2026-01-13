@@ -1596,8 +1596,9 @@ endif !WITH_HTML_SINGLE
 LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.txt linkman-docbuildmode-note.txt
 LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt nut.txt
 # Files that linkman-driver-names.txt would consider from LINKMAN_PAGES_DRIVERS
-# that are only included snippets but not standalone driver pages:
-LINKMAN_EXCLUDE_NONDRIVER = '^(nutupsdrv|blazer-common|nut_usb_addvars)\.txt$$'
+# that are only included snippets but not standalone driver pages.
+# TOTHINK: Parse sources for `include::` hits dynamically to build (parts of) this regex?
+LINKMAN_EXCLUDE_NONDRIVER = '^(nutupsdrv|blazer-common|nut_usb_addvars|networked_hostnames)\.txt$$'
 
 CLEANFILES = linkman-*.txt.tmp*
 
