@@ -164,7 +164,14 @@ static int handle_reload_flag(void);
 /* Set in do_ups_confargs() for consumers like handle_reload_flag() */
 static int reload_requires_restart = -1;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
 static upsdrv_callback_t	upsdrv_callbacks = {0};
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC)
+# pragma GCC diagnostic pop
+#endif
 void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_struct_sz) {
 	/* Plain memcpy of arbitrarily ordered list of function pointers
 	 * does not feel safe, so we use some means of input validation
