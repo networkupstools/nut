@@ -1520,8 +1520,7 @@ SRC_ALL_PAGES += \
 	$(SRC_CGI_PAGES) \
 	$(SRC_DEV_PAGES) \
 	$(SRC_DRIVERS_PAGES) \
-	networked_hostnames.txt \
-	index.txt
+	networked_hostnames.txt
 
 # DIST_ALL_PAGES: Make sure pages are built for the archive (or
 # inherited from earlier tarball this release is being built from);
