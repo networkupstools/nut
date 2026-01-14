@@ -2381,7 +2381,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			 * all polls fail and safety check below triggers reconnect. */
 			upsdebugx(3, "Got LIBUSB_ERROR_IO on item '%s' ReportID=0x%02x - skipping",
 				item->info_type ? item->info_type : "(null)",
-				item->hiddata ? item->hiddata->ReportID : 0xFF);
+				item->hiddata ? item->hiddata->ReportID : 0xFFU);
 			interrupt_pipe_EIO_count++;
 			continue;
 
