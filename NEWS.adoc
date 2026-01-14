@@ -303,6 +303,10 @@ several `FSD` notifications into one executed action. [PR #3097]
      Default settings were changed from plain `auto` (allowing for multiple
      `python*` interpreters and `site-package` locations to be used), to
      prefer a `python3` if available, else `python2`, else `python`. [#1792]
+   * Added a `--with-systemdsysusersdir=PATH` option to have systemd pre-create
+     the user and group accounts for NUT, before packaging or manually executed
+     commands do (this is particularly important for immutable-image operating
+     environments). [PR #3262]
    * Streamlined handling of `--with-*` and `--enable-*` options using NUT 'm4'
      macros; fixed reporting help for options whose defaults are evaluated.
      [issue #3049, PR #3140]
