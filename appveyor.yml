@@ -106,7 +106,7 @@ build_script:
         set MSYSTEM=MINGW64
         REM Note: currently we save job time and do not install asciidoc/a2x
         REM  # --with-docs="man=auto html-single=auto html-chunked=no pdf=no"
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh --with-docs=no'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes WITH_LIBNUTPRIVATE=true ./ci_build.sh --with-docs=no'
 
 
 after_build:
