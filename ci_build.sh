@@ -2155,7 +2155,16 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
                         NUT_LIBNUTPRIVATE_VARIANTS+=("no") ;;
                     *)
-                        NUT_LIBNUTPRIVATE_VARIANTS+=("yes" "no") ;;
+                        case "`echo \"$CI_OS_NAME\" | $TOLOWER`" in
+                            *darwin*|*macos*|*osx*)
+                                # Randomly forgets to link version data into binaries,
+                                # e.g. drivers, and then they fail to run with:
+                                #   dyld[41780]: symbol not found in flat namespace (_UPS_VERSION)
+                                # Fixes are welcome, but let's not break default
+                                # NUT CI runs until they do land. [#2800]
+                                NUT_LIBNUTPRIVATE_VARIANTS+=("no") ;;
+                            *)  NUT_LIBNUTPRIVATE_VARIANTS+=("yes" "no") ;;
+                        esac ;;
                 esac
             else
                 TMP="$NUT_LIBNUTPRIVATE_VARIANTS"
