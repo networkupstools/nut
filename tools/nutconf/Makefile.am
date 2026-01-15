@@ -12,6 +12,7 @@
 all: $(bin_PROGRAMS)
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommon.la \
@@ -23,9 +24,24 @@ $(top_builddir)/tools/nut-scanner/libnutscan.la: dummy
 # Builds from root dir arrange stuff decently. Make sure parallel builds
 # started from scratch right in this dir get dependencies in proper order
 # (sub-makes are independent as far as trying to write into same files):
-$(top_builddir)/tools/nut-scanner/libnutscan.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libcommonclient.la
 $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
+
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+
+$(top_builddir)/tools/nut-scanner/libnutscan.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/tools/nut-scanner/libnutscan.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libcommonclient.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 bin_PROGRAMS =
 
@@ -35,8 +51,15 @@ if WITH_NUTCONF
 bin_PROGRAMS += nutconf
 nutconf_SOURCES = nutconf-cli.cpp
 nutconf_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+if ENABLE_SHARED_PRIVATE_LIBS
 nutconf_LDADD = \
-	$(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+nutconf_LDADD = \
+	$(top_builddir)/common/libcommon.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+
+nutconf_LDADD += \
 	$(top_builddir)/common/libcommonversion.la \
 	$(top_builddir)/common/libnutconf.la
 

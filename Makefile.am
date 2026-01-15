@@ -221,7 +221,7 @@ all-libs-local/include:
 ###           (consume only one of these at a time!)
 ### Delivers: libcommonversion.la (only version methods)
 ### Delivers: libparseconf.la libnutconf.la libnutwincompat.la
-### May deliver: libnutprivate-$(SEMVER)-common-all.la and libnutprivate-$(SEMVER)-common-client.la for dynamic shared-object linking
+### May deliver: libnutprivate-$(SEMVER)-common-all.la and libnutprivate-$(SEMVER)-common-client.la for dynamic shared-object linking, libcommonversion-private.la (dependency for the above)
 ### Requires-ext: include/nut_version.h
 ### Requires-int: libparseconf.la libcommonclient.la
 all-libs-local/common: all-libs-local/include

@@ -18,6 +18,7 @@ CLEANFILES =
 AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_builddir)/include -I$(top_srcdir)/include
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommonversion.la \
@@ -30,23 +31,28 @@ $(top_builddir)/common/libparseconf.la: dummy
 # (sub-makes are independent as far as trying to write into same files):
 $(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
 
 LDADD_FULL =
 LDADD_CLIENT =
 
 if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion.la
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
 
 LDADD_FULL += \
-	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+	$(top_builddir)/common/libcommonversion.la
 
 LDADD_CLIENT += \
-	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la \
+	$(top_builddir)/common/libcommonversion.la
 else !ENABLE_SHARED_PRIVATE_LIBS
 LDADD_FULL += \
 	$(top_builddir)/common/libcommon.la \
@@ -134,6 +140,7 @@ upssched_SOURCES = upssched.c upssched.h
 upssched_LDADD =
 if ENABLE_SHARED_PRIVATE_LIBS
 upssched_LDADD += \
+	$(top_builddir)/common/libcommonversion.la \
 	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
 else !ENABLE_SHARED_PRIVATE_LIBS
 upssched_LDADD += \
