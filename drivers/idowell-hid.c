@@ -30,9 +30,9 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define IDOWELL_HID_VERSION	"iDowell HID 0.3"
+#define IDOWELL_HID_VERSION	"iDowell HID 0.20"
 /* FIXME: experimental flag to be put in upsdrv_info */
-/* v0.3 Goldenmate also uses the same vendorID and productID so added additional HID2NUT lookup values */
+/* v0.20 Goldenmate also uses the same vendorID and productID so added additional HID2NUT lookup values */
 
 /* iDowell, Goldenmate */
 #define IDOWELL_VENDORID	0x075d
