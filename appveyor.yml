@@ -115,7 +115,7 @@ build_script:
         REM to find "nearby" program or configuration files (see common.c
         REM for current implementation). Hard-coded fallback strings may
         REM end up getting used in those cases.
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh --with-docs=no'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes WITH_LIBNUTPRIVATE=true ./ci_build.sh --with-docs=no'
 
 
 after_build:
