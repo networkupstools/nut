@@ -31,11 +31,11 @@ if ENABLE_SHARED_PRIVATE_LIBS
 ### compatible for existing consumers (in/out of tree).
   lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_SOURCES =
-  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LIBADD = libcommon.la libcommonversion.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LIBADD = libcommon.la libcommonversion-private.la
 
   lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_SOURCES =
-  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LIBADD = libcommonclient.la libcommonversion.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LIBADD = libcommonclient.la libcommonversion-private.la
 
 ### Avoid unexpected linking across NUT generations
 ### far apart (e.g. custom rebuilds of new programs
@@ -125,6 +125,14 @@ noinst_LTLIBRARIES += libcommonversion.la
 libcommonversion_la_SOURCES = common-nut_version.c
 #libcommonversion_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 #libcommonversion_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
+
+if ENABLE_SHARED_PRIVATE_LIBS
+# A special build of the above for linking into shared private libs,
+# so they also know about the NUT version they were built from
+  noinst_LTLIBRARIES += libcommonversion-private.la
+  libcommonversion_private_la_SOURCES = common-nut_version.c
+  libcommonversion_private_la_CFLAGS = $(AM_CFLAGS) -DBUILD_FOR_SHARED_PRIVATE_LIBS=1
+endif
 
 # Eventually we expect more sources as the big common.c source gets split
 # into smaller better-focused files.

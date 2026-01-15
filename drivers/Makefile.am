@@ -10,6 +10,7 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libparseconf.la \
@@ -23,15 +24,18 @@ $(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
 # Internally (clients/Makefile.am) libupsclient.la requires libcommonclient.la
 # and that in turn libparseconf.la:
 $(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
 
 if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion.la
-endif
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+endif ENABLE_SHARED_PRIVATE_LIBS
 
 lib_LTLIBRARIES =
 
@@ -56,6 +60,7 @@ if ENABLE_SHARED_PRIVATE_LIBS
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LDFLAGS = -version-info 1:0:0
 
   LDADD_COMMON = \
+	$(top_builddir)/common/libcommonversion.la \
 	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 
   LDADD_DRIVERS = libdummy_main_stub.la libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la $(LDADD_COMMON)
