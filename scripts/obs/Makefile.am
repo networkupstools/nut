@@ -47,7 +47,6 @@ EXTRA_DIST += \
 	debian.nut-common.install \
 	debian.nut-common.postinst.in \
 	debian.nut-common.prerm.in \
-	debian.nut-common.tmpfiles.in \
 	debian.nut-doc.doc-base.nut-developer-guide \
 	debian.nut-doc.doc-base.nut-faq \
 	debian.nut-doc.doc-base.nut-packager-guide \
