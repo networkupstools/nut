@@ -1975,7 +1975,7 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL
 		&& info_value[0] != 0)
 	{
-		char alarm_info_value_more[SU_LARGEBUF + 32]; /* can sprintf() SU_LARGEBUF plus markup into here */
+		char alarm_info_value_more[SU_LARGEBUF + 32]; /* can snprintf() SU_LARGEBUF plus markup into here */
 
 		/* Special handling for outlet & outlet groups alarms */
 		if ((su_info_p->flags & SU_OUTLET)
@@ -2467,12 +2467,12 @@ void set_delays(void)
 		offdelay = -1;
 
 	if (ondelay >= 0) {
-		sprintf(su_scratch_buf, "%d", ondelay);
+		snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%d", ondelay);
 		su_setvar("ups.delay.start", su_scratch_buf);
 	}
 
 	if (offdelay >= 0) {
-		sprintf(su_scratch_buf, "%d", offdelay);
+		snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%d", offdelay);
 		su_setvar("ups.delay.shutdown", su_scratch_buf);
 	}
 }

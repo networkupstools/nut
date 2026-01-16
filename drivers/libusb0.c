@@ -38,7 +38,7 @@
 #endif	/* WIN32 */
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.51"
+#define USB_DRIVER_VERSION	"0.52"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -408,7 +408,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
 			upsdebugx(2, "%s: NOTE: BusPort is always zero with libusb0", __func__);
-			sprintf(curDevice->BusPort, "%03d", 0);
+			snprintf(curDevice->BusPort, 4, "%03d", 0);
 #endif
 
 			if (dev->descriptor.iManufacturer) {

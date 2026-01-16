@@ -633,7 +633,7 @@ static void do_ifeq(const char *s)
 
 	upsdebug_call_starting_for_str1(s);
 
-	strcpy(var, s);
+	strncpy(var, s, sizeof(var) - 1);
 
 	nargs = breakargs(var, aa);
 	if(nargs != 2) {
@@ -659,7 +659,7 @@ static void do_ifbetween(const char *s)
 
 	upsdebug_call_starting_for_str1(s);
 
-	strcpy(var, s);
+	strncpy(var, s, sizeof(var) - 1);
 
 	nargs = breakargs(var, aa);
 	if (nargs != 3) {

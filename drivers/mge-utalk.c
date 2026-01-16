@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.101"
+#define DRIVER_VERSION	"0.102"
 
 
 /* driver description structure */
@@ -688,9 +688,17 @@ int setvar(const char *varname, const char *val)
 
 	if(info_variable_ok(varname))
 	{
+		char	*qmark = NULL;
+
 		/* format command */
 		snprintf(cmd, sizeof(cmd), "%s", info_variable_cmd(varname));
-		sprintf(strchr(cmd, '?'), "%s", val);
+		qmark = strchr(cmd, '?');
+		if (qmark) {
+			snprintf(qmark, sizeof(cmd) - (qmark - cmd), "%s", val);
+		} else {
+			upsdebugx(1, "%s: expected command pattern to include a question mark for us to replace with value", __func__);
+			/* TOTHINK: fail? for now fall through with verbatim command attempt */
+		}
 
 		/* Execute command */
 		mge_command(temp, sizeof(temp), cmd);

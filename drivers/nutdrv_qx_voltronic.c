@@ -25,7 +25,7 @@
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.12"
+#define VOLTRONIC_VERSION "Voltronic 0.13"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -2869,7 +2869,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 {
 	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 
-	char	alarm[LARGEBUF]; /* can sprintf() SMALLBUF plus markup into here */
+	char	alarm[LARGEBUF]; /* can snprintf()/strncpy() SMALLBUF plus markup into here */
 
 	upslogx(LOG_INFO, "Checking for faults..");
 
@@ -2897,98 +2897,98 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 			{
 			case 1:
 
-				strcpy(alarm, "Fan failure.");
+				strncpy(alarm, "Fan failure.", sizeof(alarm));
 				break;
 
 			case 2:
 
-				strcpy(alarm, "Over temperature fault.");
+				strncpy(alarm, "Over temperature fault.", sizeof(alarm));
 				break;
 
 			case 3:
 
-				strcpy(alarm, "Battery voltage is too high.");
+				strncpy(alarm, "Battery voltage is too high.", sizeof(alarm));
 				break;
 
 			case 4:
 
-				strcpy(alarm, "Battery voltage too low.");
+				strncpy(alarm, "Battery voltage too low.", sizeof(alarm));
 				break;
 
 			case 5:
 
-				strcpy(alarm, "Inverter relay short-circuited.");
+				strncpy(alarm, "Inverter relay short-circuited.", sizeof(alarm));
 				break;
 
 			case 6:
 
-				strcpy(alarm, "Inverter voltage over maximum value.");
+				strncpy(alarm, "Inverter voltage over maximum value.", sizeof(alarm));
 				break;
 
 			case 7:
 
-				strcpy(alarm, "Overload fault.");
+				strncpy(alarm, "Overload fault.", sizeof(alarm));
 				update_status("OVER");
 				break;
 
 			case 8:
 
-				strcpy(alarm, "Bus voltage exceeds its upper limit.");
+				strncpy(alarm, "Bus voltage exceeds its upper limit.", sizeof(alarm));
 				break;
 
 			case 9:
 
-				strcpy(alarm, "Bus soft start fail.");
+				strncpy(alarm, "Bus soft start fail.", sizeof(alarm));
 				break;
 
 			case 10:
 
-				strcpy(alarm, "Unknown fault [Fault code: 10]");
+				strncpy(alarm, "Unknown fault [Fault code: 10]", sizeof(alarm));
 				break;
 
 			case 51:
 
-				strcpy(alarm, "Over current fault.");
+				strncpy(alarm, "Over current fault.", sizeof(alarm));
 				break;
 
 			case 52:
 
-				strcpy(alarm, "Bus voltage below its under limit.");
+				strncpy(alarm, "Bus voltage below its under limit.", sizeof(alarm));
 				break;
 
 			case 53:
 
-				strcpy(alarm, "Inverter soft start fail.");
+				strncpy(alarm, "Inverter soft start fail.", sizeof(alarm));
 				break;
 
 			case 54:
 
-				strcpy(alarm, "Self test fail.");
+				strncpy(alarm, "Self test fail.", sizeof(alarm));
 				break;
 
 			case 55:
 
-				strcpy(alarm, "Output DC voltage exceeds its upper limit.");
+				strncpy(alarm, "Output DC voltage exceeds its upper limit.", sizeof(alarm));
 				break;
 
 			case 56:
 
-				strcpy(alarm, "Battery open fault.");
+				strncpy(alarm, "Battery open fault.", sizeof(alarm));
 				break;
 
 			case 57:
 
-				strcpy(alarm, "Current sensor fault.");
+				strncpy(alarm, "Current sensor fault.", sizeof(alarm));
 				break;
 
 			case 58:
 
-				strcpy(alarm, "Battery short.");
+				strncpy(alarm, "Battery short.", sizeof(alarm));
 				break;
 
 			case 59:
 
-				strcpy(alarm, "Inverter voltage below its lower limit.");
+				strncpy(alarm, "Inverter voltage below its lower limit.", sizeof(alarm));
 				break;
 
 			default:
@@ -3011,22 +3011,22 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 			{
 			case 'A':
 
-				strcpy(alarm, "L1 inverter negative power out of acceptable range.");
+				strncpy(alarm, "L1 inverter negative power out of acceptable range.", sizeof(alarm));
 				break;
 
 			case 'B':
 
-				strcpy(alarm, "L2 inverter negative power out of acceptable range.");
+				strncpy(alarm, "L2 inverter negative power out of acceptable range.", sizeof(alarm));
 				break;
 
 			case 'C':
 
-				strcpy(alarm, "L3 inverter negative power out of acceptable range.");
+				strncpy(alarm, "L3 inverter negative power out of acceptable range.", sizeof(alarm));
 				break;
 
 			default:
 
-				strcpy(alarm, "Bus voltage not within default setting.");
+				strncpy(alarm, "Bus voltage not within default setting.", sizeof(alarm));
 				break;
 
 			}
@@ -3035,183 +3035,183 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 
 		case 2:
 
-			strcpy(alarm, "Bus voltage over maximum value.");
+			strncpy(alarm, "Bus voltage over maximum value.", sizeof(alarm));
 			break;
 
 		case 3:
 
-			strcpy(alarm, "Bus voltage below minimum value.");
+			strncpy(alarm, "Bus voltage below minimum value.", sizeof(alarm));
 			break;
 
 		case 4:
 
-			strcpy(alarm, "Bus voltage differences out of acceptable range.");
+			strncpy(alarm, "Bus voltage differences out of acceptable range.", sizeof(alarm));
 			break;
 
 		case 5:
 
-			strcpy(alarm, "Bus voltage of slope rate drops too fast.");
+			strncpy(alarm, "Bus voltage of slope rate drops too fast.", sizeof(alarm));
 			break;
 
 		case 6:
 
-			strcpy(alarm, "Over current in PFC input inductor.");
+			strncpy(alarm, "Over current in PFC input inductor.", sizeof(alarm));
 			break;
 
 		case 11:
 
-			strcpy(alarm, "Inverter voltage not within default setting.");
+			strncpy(alarm, "Inverter voltage not within default setting.", sizeof(alarm));
 			break;
 
 		case 12:
 
-			strcpy(alarm, "Inverter voltage over maximum value.");
+			strncpy(alarm, "Inverter voltage over maximum value.", sizeof(alarm));
 			break;
 
 		case 13:
 
-			strcpy(alarm, "Inverter voltage below minimum value.");
+			strncpy(alarm, "Inverter voltage below minimum value.", sizeof(alarm));
 			break;
 
 		case 14:
 
-			strcpy(alarm, "Inverter short-circuited.");
+			strncpy(alarm, "Inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 15:
 
-			strcpy(alarm, "L2 phase inverter short-circuited.");
+			strncpy(alarm, "L2 phase inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 16:
 
-			strcpy(alarm, "L3 phase inverter short-circuited.");
+			strncpy(alarm, "L3 phase inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 17:
 
-			strcpy(alarm, "L1L2 inverter short-circuited.");
+			strncpy(alarm, "L1L2 inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 18:
 
-			strcpy(alarm, "L2L3 inverter short-circuited.");
+			strncpy(alarm, "L2L3 inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 19:
 
-			strcpy(alarm, "L3L1 inverter short-circuited.");
+			strncpy(alarm, "L3L1 inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 21:
 
-			strcpy(alarm, "Battery SCR short-circuited.");
+			strncpy(alarm, "Battery SCR short-circuited.", sizeof(alarm));
 			break;
 
 		case 22:
 
-			strcpy(alarm, "Line SCR short-circuited.");
+			strncpy(alarm, "Line SCR short-circuited.", sizeof(alarm));
 			break;
 
 		case 23:
 
-			strcpy(alarm, "Inverter relay open fault.");
+			strncpy(alarm, "Inverter relay open fault.", sizeof(alarm));
 			break;
 
 		case 24:
 
-			strcpy(alarm, "Inverter relay short-circuited.");
+			strncpy(alarm, "Inverter relay short-circuited.", sizeof(alarm));
 			break;
 
 		case 25:
 
-			strcpy(alarm, "Input and output wires oppositely connected.");
+			strncpy(alarm, "Input and output wires oppositely connected.", sizeof(alarm));
 			break;
 
 		case 26:
 
-			strcpy(alarm, "Battery oppositely connected.");
+			strncpy(alarm, "Battery oppositely connected.", sizeof(alarm));
 			break;
 
 		case 27:
 
-			strcpy(alarm, "Battery voltage is too high.");
+			strncpy(alarm, "Battery voltage is too high.", sizeof(alarm));
 			break;
 
 		case 28:
 
-			strcpy(alarm, "Battery voltage too low.");
+			strncpy(alarm, "Battery voltage too low.", sizeof(alarm));
 			break;
 
 		case 29:
 
-			strcpy(alarm, "Failure for battery fuse being open-circuited.");
+			strncpy(alarm, "Failure for battery fuse being open-circuited.", sizeof(alarm));
 			break;
 
 		case 31:
 
-			strcpy(alarm, "CAN-bus communication fault.");
+			strncpy(alarm, "CAN-bus communication fault.", sizeof(alarm));
 			break;
 
 		case 32:
 
-			strcpy(alarm, "Host signal circuit fault.");
+			strncpy(alarm, "Host signal circuit fault.", sizeof(alarm));
 			break;
 
 		case 33:
 
-			strcpy(alarm, "Synchronous signal circuit fault.");
+			strncpy(alarm, "Synchronous signal circuit fault.", sizeof(alarm));
 			break;
 
 		case 34:
 
-			strcpy(alarm, "Synchronous pulse signal circuit fault.");
+			strncpy(alarm, "Synchronous pulse signal circuit fault.", sizeof(alarm));
 			break;
 
 		case 35:
 
-			strcpy(alarm, "Parallel cable disconnected.");
+			strncpy(alarm, "Parallel cable disconnected.", sizeof(alarm));
 			break;
 
 		case 36:
 
-			strcpy(alarm, "Load unbalanced.");
+			strncpy(alarm, "Load unbalanced.", sizeof(alarm));
 			break;
 
 		case 41:
 
-			strcpy(alarm, "Over temperature fault.");
+			strncpy(alarm, "Over temperature fault.", sizeof(alarm));
 			break;
 
 		case 42:
 
-			strcpy(alarm, "Communication failure between CPUs in control board.");
+			strncpy(alarm, "Communication failure between CPUs in control board.", sizeof(alarm));
 			break;
 
 		case 43:
 
-			strcpy(alarm, "Overload fault.");
+			strncpy(alarm, "Overload fault.", sizeof(alarm));
 			update_status("OVER");
 			break;
 
 		case 44:
 
-			strcpy(alarm, "Fan failure.");
+			strncpy(alarm, "Fan failure.", sizeof(alarm));
 			break;
 
 		case 45:
 
-			strcpy(alarm, "Charger failure.");
+			strncpy(alarm, "Charger failure.", sizeof(alarm));
 			break;
 
 		case 46:
 
-			strcpy(alarm, "Model fault.");
+			strncpy(alarm, "Model fault.", sizeof(alarm));
 			break;
 
 		case 47:
 
-			strcpy(alarm, "MCU communication fault.");
+			strncpy(alarm, "MCU communication fault.", sizeof(alarm));
 			break;
 
 		default:
@@ -3234,7 +3234,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 /* Warnings reported by the UPS */
 static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 {
-	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[SMALLBUF] = "", warns[4096] = "";
+	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[4096] = "", warns[4096] = "";
 	int	i;
 
 	if (strspn(item->value, "01") != strlen(item->value)) {
@@ -3259,300 +3259,300 @@ static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 			{
 			case 0:
 
-				strcpy(warn, "Battery disconnected.");
+				strncpy(warn, "Battery disconnected.", sizeof(warn));
 				break;
 
 			case 1:
 
-				strcpy(warn, "Neutral not connected.");
+				strncpy(warn, "Neutral not connected.", sizeof(warn));
 				break;
 
 			case 2:
 
-				strcpy(warn, "Site fault.");
+				strncpy(warn, "Site fault.", sizeof(warn));
 				break;
 
 			case 3:
 
-				strcpy(warn, "Phase sequence incorrect.");
+				strncpy(warn, "Phase sequence incorrect.", sizeof(warn));
 				break;
 
 			case 4:
 
-				strcpy(warn, "Phase sequence incorrect in bypass.");
+				strncpy(warn, "Phase sequence incorrect in bypass.", sizeof(warn));
 				break;
 
 			case 5:
 
-				strcpy(warn, "Input frequency unstable in bypass.");
+				strncpy(warn, "Input frequency unstable in bypass.", sizeof(warn));
 				break;
 
 			case 6:
 
-				strcpy(warn, "Battery overcharged.");
+				strncpy(warn, "Battery overcharged.", sizeof(warn));
 				break;
 
 			case 7:
 
-				strcpy(warn, "Low battery.");
+				strncpy(warn, "Low battery.", sizeof(warn));
 				update_status("LB");
 				break;
 
 			case 8:
 
-				strcpy(warn, "Overload alarm.");
+				strncpy(warn, "Overload alarm.", sizeof(warn));
 				update_status("OVER");
 				break;
 
 			case 9:
 
-				strcpy(warn, "Fan alarm.");
+				strncpy(warn, "Fan alarm.", sizeof(warn));
 				break;
 
 			case 10:
 
-				strcpy(warn, "EPO enabled.");
+				strncpy(warn, "EPO enabled.", sizeof(warn));
 				break;
 
 			case 11:
 
-				strcpy(warn, "Unable to turn on UPS.");
+				strncpy(warn, "Unable to turn on UPS.", sizeof(warn));
 				break;
 
 			case 12:
 
-				strcpy(warn, "Over temperature alarm.");
+				strncpy(warn, "Over temperature alarm.", sizeof(warn));
 				break;
 
 			case 13:
 
-				strcpy(warn, "Charger alarm.");
+				strncpy(warn, "Charger alarm.", sizeof(warn));
 				break;
 
 			case 14:
 
-				strcpy(warn, "Remote auto shutdown.");
+				strncpy(warn, "Remote auto shutdown.", sizeof(warn));
 				break;
 
 			case 15:
 
-				strcpy(warn, "L1 input fuse not working.");
+				strncpy(warn, "L1 input fuse not working.", sizeof(warn));
 				break;
 
 			case 16:
 
-				strcpy(warn, "L2 input fuse not working.");
+				strncpy(warn, "L2 input fuse not working.", sizeof(warn));
 				break;
 
 			case 17:
 
-				strcpy(warn, "L3 input fuse not working.");
+				strncpy(warn, "L3 input fuse not working.", sizeof(warn));
 				break;
 
 			case 18:
 
-				strcpy(warn, "Positive PFC abnormal in L1.");
+				strncpy(warn, "Positive PFC abnormal in L1.", sizeof(warn));
 				break;
 
 			case 19:
 
-				strcpy(warn, "Negative PFC abnormal in L1.");
+				strncpy(warn, "Negative PFC abnormal in L1.", sizeof(warn));
 				break;
 
 			case 20:
 
-				strcpy(warn, "Positive PFC abnormal in L2.");
+				strncpy(warn, "Positive PFC abnormal in L2.", sizeof(warn));
 				break;
 
 			case 21:
 
-				strcpy(warn, "Negative PFC abnormal in L2.");
+				strncpy(warn, "Negative PFC abnormal in L2.", sizeof(warn));
 				break;
 
 			case 22:
 
-				strcpy(warn, "Positive PFC abnormal in L3.");
+				strncpy(warn, "Positive PFC abnormal in L3.", sizeof(warn));
 				break;
 
 			case 23:
 
-				strcpy(warn, "Negative PFC abnormal in L3.");
+				strncpy(warn, "Negative PFC abnormal in L3.", sizeof(warn));
 				break;
 
 			case 24:
 
-				strcpy(warn, "Abnormal in CAN-bus communication.");
+				strncpy(warn, "Abnormal in CAN-bus communication.", sizeof(warn));
 				break;
 
 			case 25:
 
-				strcpy(warn, "Abnormal in synchronous signal circuit.");
+				strncpy(warn, "Abnormal in synchronous signal circuit.", sizeof(warn));
 				break;
 
 			case 26:
 
-				strcpy(warn, "Abnormal in synchronous pulse signal circuit.");
+				strncpy(warn, "Abnormal in synchronous pulse signal circuit.", sizeof(warn));
 				break;
 
 			case 27:
 
-				strcpy(warn, "Abnormal in host signal circuit.");
+				strncpy(warn, "Abnormal in host signal circuit.", sizeof(warn));
 				break;
 
 			case 28:
 
-				strcpy(warn, "Male connector of parallel cable not connected well.");
+				strncpy(warn, "Male connector of parallel cable not connected well.", sizeof(warn));
 				break;
 
 			case 29:
 
-				strcpy(warn, "Female connector of parallel cable not connected well.");
+				strncpy(warn, "Female connector of parallel cable not connected well.", sizeof(warn));
 				break;
 
 			case 30:
 
-				strcpy(warn, "Parallel cable not connected well.");
+				strncpy(warn, "Parallel cable not connected well.", sizeof(warn));
 				break;
 
 			case 31:
 
-				strcpy(warn, "Battery connection not consistent in parallel systems.");
+				strncpy(warn, "Battery connection not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 32:
 
-				strcpy(warn, "AC connection not consistent in parallel systems.");
+				strncpy(warn, "AC connection not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 33:
 
-				strcpy(warn, "Bypass connection not consistent in parallel systems.");
+				strncpy(warn, "Bypass connection not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 34:
 
-				strcpy(warn, "UPS model types not consistent in parallel systems.");
+				strncpy(warn, "UPS model types not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 35:
 
-				strcpy(warn, "Capacity of UPSes not consistent in parallel systems.");
+				strncpy(warn, "Capacity of UPSes not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 36:
 
-				strcpy(warn, "Auto restart setting not consistent in parallel systems.");
+				strncpy(warn, "Auto restart setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 37:
 
-				strcpy(warn, "Battery cell over charge.");
+				strncpy(warn, "Battery cell over charge.", sizeof(warn));
 				break;
 
 			case 38:
 
-				strcpy(warn, "Battery protection setting not consistent in parallel systems.");
+				strncpy(warn, "Battery protection setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 39:
 
-				strcpy(warn, "Battery detection setting not consistent in parallel systems.");
+				strncpy(warn, "Battery detection setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 40:
 
-				strcpy(warn, "Bypass not allowed setting not consistent in parallel systems.");
+				strncpy(warn, "Bypass not allowed setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 41:
 
-				strcpy(warn, "Converter setting not consistent in parallel systems.");
+				strncpy(warn, "Converter setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 42:
 
-				strcpy(warn, "High loss point for frequency in bypass mode not consistent in parallel systems.");
+				strncpy(warn, "High loss point for frequency in bypass mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 43:
 
-				strcpy(warn, "Low loss point for frequency in bypass mode not consistent in parallel systems.");
+				strncpy(warn, "Low loss point for frequency in bypass mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 44:
 
-				strcpy(warn, "High loss point for voltage in bypass mode not consistent in parallel systems.");
+				strncpy(warn, "High loss point for voltage in bypass mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 45:
 
-				strcpy(warn, "Low loss point for voltage in bypass mode not consistent in parallel systems.");
+				strncpy(warn, "Low loss point for voltage in bypass mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 46:
 
-				strcpy(warn, "High loss point for frequency in AC mode not consistent in parallel systems.");
+				strncpy(warn, "High loss point for frequency in AC mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 47:
 
-				strcpy(warn, "Low loss point for frequency in AC mode not consistent in parallel systems.");
+				strncpy(warn, "Low loss point for frequency in AC mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 48:
 
-				strcpy(warn, "High loss point for voltage in AC mode not consistent in parallel systems.");
+				strncpy(warn, "High loss point for voltage in AC mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 49:
 
-				strcpy(warn, "Low loss point for voltage in AC mode not consistent in parallel systems.");
+				strncpy(warn, "Low loss point for voltage in AC mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 50:
 
-				strcpy(warn, "Warning for locking in bypass mode after 3 consecutive overloads within 30 min.");
+				strncpy(warn, "Warning for locking in bypass mode after 3 consecutive overloads within 30 min.", sizeof(warn));
 				break;
 
 			case 51:
 
-				strcpy(warn, "Warning for three-phase AC input current unbalance.");
+				strncpy(warn, "Warning for three-phase AC input current unbalance.", sizeof(warn));
 				break;
 
 			case 52:
 
-				strcpy(warn, "Warning for a three-phase input current unbalance detected in battery mode.");
+				strncpy(warn, "Warning for a three-phase input current unbalance detected in battery mode.", sizeof(warn));
 				break;
 
 			case 53:
 
-				strcpy(warn, "Warning for Inverter inter-current unbalance.");
+				strncpy(warn, "Warning for Inverter inter-current unbalance.", sizeof(warn));
 				break;
 
 			case 54:
 
-				strcpy(warn, "Programmable outlets cut off pre-alarm.");
+				strncpy(warn, "Programmable outlets cut off pre-alarm.", sizeof(warn));
 				break;
 
 			case 55:
 
-				strcpy(warn, "Warning for Battery replace.");
+				strncpy(warn, "Warning for Battery replace.", sizeof(warn));
 				update_status("RB");
 				break;
 
 			case 56:
 
-				strcpy(warn, "Abnormal warning on input phase angle.");
+				strncpy(warn, "Abnormal warning on input phase angle.", sizeof(warn));
 				break;
 
 			case 57:
 
-				strcpy(warn, "Warning!! Cover of maintain switch is open.");
+				strncpy(warn, "Warning!! Cover of maintain switch is open.", sizeof(warn));
 				break;
 
 			case 61:
 
-				strcpy(warn, "EEPROM operation error.");
+				strncpy(warn, "EEPROM operation error.", sizeof(warn));
 				break;
 
 			default:
@@ -3614,7 +3614,7 @@ static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 
 		/* Removing leading comma from unk */
 		snprintf(warns, sizeof(warns), "Unknown warnings [bit:%s]", unk+1);
-		strcpy(bitwarns, warns);
+		strncpy(bitwarns, warns, sizeof(bitwarns));
 
 	} else {
 
