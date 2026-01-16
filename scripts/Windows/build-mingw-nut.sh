@@ -133,13 +133,14 @@ do_build_mingw_nut() {
 	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
 	export LDFLAGS+=" -L${ARCH_PREFIX}/lib/"
 
+	# envvar toggles below may be passed from NUT ci_build.sh or other callers:
 	KEEP_NUT_REPORT_FEATURE_FLAG=""
 	if [ x"${KEEP_NUT_REPORT_FEATURE-}" = xtrue ]; then
 		KEEP_NUT_REPORT_FEATURE_FLAG="--enable-keep_nut_report_feature"
 	fi
 
 	ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG=""
-	if [ x"${ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG-}" = xtrue ]; then
+	if [ x"${WITH_LIBNUTPRIVATE-}" = xtrue ]; then
 		ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG="--enable-shared-private-libs"
 	fi
 
