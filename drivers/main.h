@@ -212,7 +212,7 @@ void setup_signals(void);
  * (if we ever think of any) to be communicated later without some easily
  * triggered overflow during binary-to-library calls, years down the road.
  */
-#define UPSDRV_CALLBACK_PADDING 22
+#define UPSDRV_CALLBACK_PADDING 14
 typedef struct upsdrv_callback_s {
 	/* A few entries for sanity check, in case different
 	 * generations of NUT drivers try to link with the
@@ -238,8 +238,23 @@ typedef struct upsdrv_callback_s {
 	/* 08 */	void (*upsdrv_cleanup)(void);	/* free any resources before shutdown */
 	/* 09 */	void (*upsdrv_makevartable)(void);	/* main calls this driver function - it needs to call addvar */
 
-	/* 10 */	void	*sentinel;	/* must be initialized to NULL (whichever way the platform defines one)	*/
-	/* 11..31 */	void	*padding[UPSDRV_CALLBACK_PADDING];	/* commented near the macro above */
+	/* A few values from common_nut-version.c which we link into
+	 * the binaries to know *their* relevant NUT build, not the
+	 * library's, so the libnutprivate-*drivers* shared object
+	 * and its use of libdummy_main.la gets confused with direct
+	 * links to those symbols on some platforms. Not truly upsdrv
+	 * stuff, but similar in problem and solution, so here goes:
+	 */
+	/* 10 */	const char*	UPS_VERSION;	/* usually equals NUT_VERSION_MACRO */
+	/* 11 */	int		(*banner_is_disabled)(void);
+	/* 12 */	const char*	(*describe_NUT_VERSION_once)(void);
+	/* 13 */	int		(*print_banner_once)(const char *arg_prog, int arg_even_if_disabled);	/* not CURRENTLY referenced from main.c */
+	/* 14 */	void		(*nut_report_config_flags)(void);
+	/* 15 */	const char*	(*suggest_doc_links)(const char *arg_progname, const char *arg_progconf);
+	/* 16 */	void		(*suggest_NDE_conflict)(void);	/* not CURRENTLY referenced from main.c */
+
+	/* 17 */	void	*sentinel;	/* must be initialized to NULL (whichever way the platform defines one)	*/
+	/* 18..31 */	void	*padding[UPSDRV_CALLBACK_PADDING];	/* commented near the macro above */
 } upsdrv_callback_t;
 void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_struct_sz);
 
@@ -292,6 +307,13 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_help: %s", (cbptr)->upsdrv_help == NULL ? "Y" : "N");				\
 	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_cleanup: %s", (cbptr)->upsdrv_cleanup == NULL ? "Y" : "N");				\
 	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: upsdrv_makevartable: %s", (cbptr)->upsdrv_makevartable == NULL ? "Y" : "N");		\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: UPS_VERSION: %s", (cbptr)->UPS_VERSION == NULL ? "Y" : "N");		\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: banner_is_disabled: %s", (cbptr)->banner_is_disabled == NULL ? "Y" : "N");		\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: describe_NUT_VERSION_once: %s", (cbptr)->describe_NUT_VERSION_once == NULL ? "Y" : "N");		\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: print_banner_once: %s", (cbptr)->print_banner_once == NULL ? "Y" : "N");		\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: nut_report_config_flags: %s", (cbptr)->nut_report_config_flags == NULL ? "Y" : "N");		\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: suggest_doc_links: %s", (cbptr)->suggest_doc_links == NULL ? "Y" : "N");		\
+	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: suggest_NDE_conflict: %s", (cbptr)->suggest_NDE_conflict == NULL ? "Y" : "N");		\
 	if ((cbptr)->upsdrv_info == NULL				\
 	 || (cbptr)->upsdrv_tweak_prognames == NULL			\
 	 || (cbptr)->upsdrv_initups == NULL				\
@@ -301,6 +323,13 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	 || (cbptr)->upsdrv_help == NULL				\
 	 || (cbptr)->upsdrv_cleanup == NULL				\
 	 || (cbptr)->upsdrv_makevartable == NULL			\
+	 || (cbptr)->UPS_VERSION == NULL				\
+	 || (cbptr)->banner_is_disabled == NULL				\
+	 || (cbptr)->describe_NUT_VERSION_once == NULL			\
+	 || (cbptr)->print_banner_once == NULL				\
+	 || (cbptr)->nut_report_config_flags == NULL			\
+	 || (cbptr)->suggest_doc_links == NULL				\
+	 || (cbptr)->suggest_NDE_conflict == NULL			\
 	) if (!isnew) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: some pointers are not initialized");	\
 	if (isnew) upsdebugx(5, "validate_upsdrv_callbacks: this is a newly created structure, so some/all NULL references are okay");	\
 	} while (0)
@@ -318,6 +347,13 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	(cbptrLib)->upsdrv_help			= (cbptrDrv)->upsdrv_help;		\
 	(cbptrLib)->upsdrv_cleanup		= (cbptrDrv)->upsdrv_cleanup;		\
 	(cbptrLib)->upsdrv_makevartable		= (cbptrDrv)->upsdrv_makevartable;	\
+	(cbptrLib)->UPS_VERSION			= (cbptrDrv)->UPS_VERSION;		\
+	(cbptrLib)->banner_is_disabled		= (cbptrDrv)->banner_is_disabled;	\
+	(cbptrLib)->describe_NUT_VERSION_once	=(cbptrDrv)->describe_NUT_VERSION_once;	\
+	(cbptrLib)->print_banner_once		= (cbptrDrv)->print_banner_once;	\
+	(cbptrLib)->nut_report_config_flags	= (cbptrDrv)->nut_report_config_flags;	\
+	(cbptrLib)->suggest_doc_links		= (cbptrDrv)->suggest_doc_links;	\
+	(cbptrLib)->suggest_NDE_conflict	= (cbptrDrv)->suggest_NDE_conflict;	\
 	} while (0)
 
 #define default_register_upsdrv_callbacks() do {				\
@@ -332,6 +368,13 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	callbacksTmp.upsdrv_help		= upsdrv_help;			\
 	callbacksTmp.upsdrv_cleanup		= upsdrv_cleanup;		\
 	callbacksTmp.upsdrv_makevartable	= upsdrv_makevartable;		\
+	callbacksTmp.UPS_VERSION		= UPS_VERSION;			\
+	callbacksTmp.banner_is_disabled		= banner_is_disabled;		\
+	callbacksTmp.describe_NUT_VERSION_once	= describe_NUT_VERSION_once;	\
+	callbacksTmp.print_banner_once		= print_banner_once;		\
+	callbacksTmp.nut_report_config_flags	= nut_report_config_flags;	\
+	callbacksTmp.suggest_doc_links		= suggest_doc_links;		\
+	callbacksTmp.suggest_NDE_conflict	= suggest_NDE_conflict;		\
 	register_upsdrv_callbacks(&callbacksTmp, sizeof(upsdrv_callback_t));	\
 	} while (0)
 

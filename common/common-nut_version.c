@@ -2,6 +2,14 @@
                    (extracted from common.c to minimize the compilation unit
                    impacted by git metadata changes during development)
 
+   WARNING: Be conservative about ABI/API changes here, the method
+   signatures are specified in drivers/main.h, so that shared driver
+   core code may be loaded as a dynamic library and use these data
+   and methods built into a driver binary via callbacks - they must
+   fit! While it is not feasible to satisfy all possible scenarios
+   of third-party fork builds like this, we don't want to make life
+   hard needlessly either.
+
    Copyright (C) 2021-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
