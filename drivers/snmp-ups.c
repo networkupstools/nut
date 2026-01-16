@@ -2934,9 +2934,11 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 				if (daisychain_enabled == TRUE) {
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
 					if ((devices_count > 1) && (current_device_number > 0)) {
+						/* Prepare a new formatting string with literal '.%i.' in it */
 						memset(&tmp_buf[0], 0, sizeof(tmp_buf));	/* SU_INFOSIZE */
-						strncat(&tmp_buf[0], "device.%i.", sizeof(tmp_buf));
-						strncat(&tmp_buf[0], su_info_p->info_type, sizeof(tmp_buf));
+						snprintf(tmp_buf, sizeof(tmp_buf), "device.%%i.%s", su_info_p->info_type);
+						/* strncat(&tmp_buf[0], "device.%i.", sizeof(tmp_buf));
+						strncat(&tmp_buf[0], su_info_p->info_type, sizeof(tmp_buf)); */
 
 						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
 						snprintf_dynamic((char*)cur_info_p.info_type, SU_INFOSIZE,
@@ -2971,9 +2973,11 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
 					if ((devices_count > 1) && (current_device_number > 0)) {
+						/* Prepare a new formatting string with literal '.%i.' in it */
 						memset(&tmp_buf[0], 0, sizeof(tmp_buf));	/* SU_INFOSIZE */
-						strncat(&tmp_buf[0], "device.%i.", sizeof(tmp_buf));
-						strncat(&tmp_buf[0], su_info_p->info_type, sizeof(tmp_buf));
+						snprintf(tmp_buf, sizeof(tmp_buf), "device.%%i.%s", su_info_p->info_type);
+						/* strncat(&tmp_buf[0], "device.%i.", sizeof(tmp_buf));
+						strncat(&tmp_buf[0], su_info_p->info_type, sizeof(tmp_buf)); */
 
 						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
 							snprintf_dynamic((char*)cur_info_p.info_type, SU_INFOSIZE,
