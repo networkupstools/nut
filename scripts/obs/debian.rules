@@ -36,6 +36,7 @@ systemdsystemunitdir := $(shell OUT="`pkg-config --variable=systemdsystemunitdir
 systemdsystemdutildir := $(shell OUT="`pkg-config --variable=systemdutildir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdutildir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /lib/systemd)
 systemdshutdowndir := $(shell OUT="`pkg-config --variable=systemdshutdowndir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdshutdowndir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /lib/systemd/system-shutdown)
 systemdtmpfilesdir := $(shell OUT="`pkg-config --variable=systemdtmpfilesdir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdtmpfilesdir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /usr/lib/tmpfiles.d)
+systemdsysusersdir := $(shell OUT="`pkg-config --variable=systemdsysusersdir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdsysusersdir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /usr/lib/sysusers.d)
 
 # Does this NUT branch have DMF feature code?
 NUTPKG_WITH_DMF := $(shell test -d scripts/DMF && echo 1 || echo 0)
@@ -95,6 +96,7 @@ ifeq (linux,$(DEB_HOST_ARCH_OS))
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir=$(systemdsystemunitdir)
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdshutdowndir=$(systemdshutdowndir)
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdtmpfilesdir=$(systemdtmpfilesdir)
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsysusersdir=$(systemdsysusersdir)
 endif
 
 # only build documentation if asciidoc is installed
@@ -132,7 +134,7 @@ pre-build:: patch-recipe-dmf debian/compat configure
 common-install-arch::
 	# prepare debian packaging files
 	mkdir -p $(CURDIR)/debian
-	for F in nut-client.init nut-common.postinst nut-common.prerm nut-server.init nut-server.prerm nut-common.tmpfiles ; do \
+	for F in nut-client.init nut-common.postinst nut-common.prerm nut-server.init nut-server.prerm nut-common-tmpfiles.conf nut-common-sysusers.conf ; do \
 		echo "  SED    $$F.in => $$F" ; \
 		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/scripts/obs/debian.$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
 	done
@@ -201,8 +203,12 @@ common-install-arch::
 	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/ups-monitor.service
 
 	# Install tmpfiles config file to create /run/nut directory
-	install -m 644 -D $(CURDIR)/debian/nut-common.tmpfiles \
-		$(CURDIR)/debian/nut-common$(systemdtmpfilesdir)/nut-common.conf
+	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdtmpfilesdir)/nut-common-tmpfiles.conf \
+		$(CURDIR)/debian/nut-common/$(systemdtmpfilesdir)/nut-common-tmpfiles.conf
+
+	# Install sysusers config file to create user accounts
+	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdsysusersdir)/nut-common-sysusers.conf \
+		$(CURDIR)/debian/nut-common/$(systemdsysusersdir)/nut-common-sysusers.conf
 
 	# Install gen-snmp-subdriver.sh for nut-snmp
 	install -m 755 -D $(CURDIR)/scripts/subdriver/gen-snmp-subdriver.sh \
