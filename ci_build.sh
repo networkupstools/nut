@@ -2848,9 +2848,6 @@ bindings)
     fi
 
     if [ x"${WITH_LIBNUTPRIVATE-}" = xtrue ] ; then
-        # This is assumed for non-production builds to avoid confusion
-        # for end-users (not dev/testers).
-        # See above for defaulting of this vs. inplace builds.
         CONFIG_OPTS+=("--enable-shared-private-libs")
     fi
 
@@ -2992,10 +2989,16 @@ cross-windows-mingw*)
             ;;
     esac
 
+    if [ x"${WITH_LIBNUTPRIVATE-}" = x ] ; then
+        # For Windows we want compact builds
+        # (they reach into gigabytes anyway):
+        WITH_LIBNUTPRIVATE=true
+    fi	# else we have some value from caller
+    export WITH_LIBNUTPRIVATE
+
     SOURCEMODE="out-of-tree" \
     MAKEFLAGS="$PARMAKE_FLAGS" \
     KEEP_NUT_REPORT_FEATURE="true" \
-    ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG="true" \
     ./build-mingw-nut.sh $cmd
     ;;
 
