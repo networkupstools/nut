@@ -106,6 +106,15 @@ build_script:
         set MSYSTEM=MINGW64
         REM Note: currently we save job time and do not install asciidoc/a2x
         REM  # --with-docs="man=auto html-single=auto html-chunked=no pdf=no"
+        REM The resulting configuration defaults to --prefix=/mingw{32,64}
+        REM as appropriate for the platform, which ends up as a subdirectory
+        REM under DESTDIR when we `make install` later, and in our 7z archive.
+        REM The builds are relocatable however, so end-users can extract to
+        REM e.g. "C:\Program Files\NUT" and forfeit "mingwXX" part, probably,
+        REM but this can complicate automatic relative directory resolution
+        REM to find "nearby" program or configuration files (see common.c
+        REM for current implementation). Hard-coded fallback strings may
+        REM end up getting used in those cases.
         C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh --with-docs=no'
 
 

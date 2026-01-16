@@ -4350,7 +4350,7 @@ void read_mibconf(char *mib)
 
 	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, mib);
 
-	snprintf(fn, sizeof(fn), "%s/snmp/%s.conf", CONFPATH, mib);
+	snprintf(fn, sizeof(fn), "%s/snmp/%s.conf", confpath(), mib);
 
 	pconf_init(&ctx, mibconf_err);
 

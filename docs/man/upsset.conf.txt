@@ -5,6 +5,7 @@ NAME
 ----
 
 upsset.conf - Configuration for Network UPS Tools upsset.cgi
+and general description of web server setup for NUT CGI programs
 
 DESCRIPTION
 -----------
@@ -12,6 +13,14 @@ DESCRIPTION
 This file only does one job -- it lets you convince linkman:upsset.cgi[8]
 that your system's CGI directory is secure.  The program will not run
 until this file has been properly defined.
+
+NOTE: If you custom-build NUT for Windows, keep in mind the `--with-cgi-uri`
+configuration option.  It defaults to `/cgi-bin/nut` for POSIX builds and to
+plain `/cgi-nut` for Windows builds, to make them easier to integrate as
+part of existing web sites or as a dedicated web site, respectively.
+If there is a mismatch of this value for your particular deployment,
+check the `html/header.html` file to adjust the `a href` links to CGI
+programs to be opened in the bottom section (called `target=mainFrame`).
 
 IMPORTANT NOTES
 ---------------
@@ -27,18 +36,26 @@ There is no rate limiting, as the program shuts down between every request.
 Such is the nature of CGI programs.
 
 Credentials are provided to `upsset.cgi` as part of your browsing session,
-so it is highly recommended to set up HTTPS on the web server; ways to do
-so are outside the scope of this document.
+so it is highly recommended to set up HTTPS on the web server.
+You may also want to generally use web-server based authentication (whether
+basic user name and password, or LDAP, or client certificate, etc.), or set
+up virtual host listeners with unpublished host names ("security by obscurity"),
+to restrict access to NUT CGI programs generally.
+Ways to do so are specific to your chosen web server implementation and are
+beyond the scope of this document.
 
-Normally, attackers would not be able to access your linkman:upsd[8] server
-directly, as it would be protected by the LISTEN directives in your
+Normally, attackers would not be able to access your linkman:upsd[8] NUT data
+server directly, as it would be protected by the `LISTEN` directives in your
 linkman:upsd.conf[5] file, tcp-wrappers (if available when NUT was built),
 and hopefully local firewall settings in your OS.
 
 *upsset* runs on your web server, so `upsd` will see it as a connection from
-a host on an internal network.  It doesn't know that the connection is
+a host on an internal network.  It does not know that the connection is
 actually initiated by someone further outside.  This is why you must
 secure it.
+
+Apache Web Server
+~~~~~~~~~~~~~~~~~
 
 On Apache, you can use the `.htaccess` file or put the directives in your
 `httpd.conf`.  It looks something like this, assuming the `.htaccess`
@@ -65,11 +82,111 @@ Modern Apache enjoys a more detailed syntax, like this:
 	      </RequireAny>
 	</Directory>
 
+Microsoft IIS
+~~~~~~~~~~~~~
+
+With NUT for Windows builds, the Microsoft Internet Information Server (IIS)
+can be used as the platform's native web server to host the NUT CGI programs.
+
+WARNING: Like other aspects of NUT for Windows, this configuration should be
+considered experimental; feedback and pull requests to improve the code and
+documentation like this page are very welcome.
+
+One aspect that may simplify or complicate things is that these builds aim
+to be relocatable, so the archive (eventually package) can be unpacked into
+any directory of the end-user's choosing and "just work", and this relies
+on defaulting to use configuration and program location relative to the
+currently executed NUT program, rather than hard-coded paths as in POSIX
+builds tailored to a particular deployment or package.
+
+The click-through setup below was verified on a Windows 10 workstation.
+Names and layering of referenced concepts are known to be different in
+other releases of the operating system. For more details see docs like
+https://learn.microsoft.com/en-us/iis/configuration/system.webserver/cgi
+or blogs like
+https://dotnetblog.asphostportal.com/5-steps-to-run-cgi-program-on-your-iis/
+
+In Windows, open Control Panel and go to "Programs / Programs and Features",
+there to the "Turn Windows features on or off" section. Scroll down to the
+"Internet Information Services" and check its box to enable the default set
+of options (e.g. some services, some tools, no FTP). Then drill into its
+"World Wide Web Services / Application Development Features" and select
+"CGI" and "ISAPI Extensions". A reboot may be needed to install these.
+
+NOTE: The IIS Manager application needs to be restarted if you add features
+later (after you start it), otherwise they do not show up in the UI to be
+configured.
+
+Open IIS Manager, check that the main panel includes icons for "CGI" and for
+"ISAPI and CGI Restrictions".
+
+In IIS configuration, you can edit the Default Web Site or create a new one
+(would need a host name to be known either in DNS or at least via local
+`%SystemRoot%\system32\drivers\etc\hosts` file), and set the website root
+to the NUT installation location (the directory with `etc` and `cgi-bin`
+subdirectories, among other things).
+
+NOTE: It may be more secure to copy the `cgi-bin` and `html` subdirectories
+into a separate location (e.g. under `c:\inetpub\wwwroot` or the non-default
+website root), and then either populate a dedicated `etc` directory with
+configuration files and templates for the CGI programs, or somehow export
+`NUT_CONFPATH` environment variable from the web server to point to a location
+not "near" the executable programs. Alternately, explore using an empty root
+and "virtual directories" in IIS to reference just the `cgi-bin` and `html` in
+the NUT installation location -- and so minimize exposure of any other files.
+
+Once you have a web-site defined one way or another, select its root in the
+"Connections" panel, and double-click the "ISAPI and CGI Restrictions" icon.
+There "Actions / Add" and specify full paths (3 times overall) to the
+`upsimage.cgi.exe`, `upsset.cgi.exe` and `upsstats.cgi.exe` programs,
+all with the checkbox to "Allow extension path to execute".
+
+Revise "Handler Mappings" for the `cgi-bin` subdirectory, that it includes
+"CGI-exe" with "Path `*.exe`" and "State Enabled" (if not, edit the entry,
+press "Request Restrictions", and tick "Access/Execute" there).
+
+If the (virtual) server is dedicated to NUT CGI programs, you may also want
+to visit the "CGI" icon, and change Behavior/Timeout to a few minutes or even
+seconds (and Apply the change), so in case of any breakage in the NUT CGI
+programs, you would not stare at a blank page and not know if the server
+is alive. The IIS default is 15 minutes.
+
+* You may want to allow for a series of NUT `upscli_tryconnect()` timeouts
+  (10 seconds each, by default), however, e.g. to get the error messages
+  when NUT data servers are down. While there may be one connection for
+  each run of `upsset` or `upsimage` CGI clients, there may be more for
+  `upsstats` depending on the number of devices you `MONITOR` in
+  linkman:hosts.conf[5].
+* This recommendation may change later if support for "tracking" of
+  device-side completion of posted commands or settings would be implemented;
+  currently the linkman:upsset[8] CGI client only gets and relays confirmation
+  that the NUT data server linkman:upsd[8] received the request.
+
+In the NUT configuration directory, update the linkman:hosts.conf[5] and
+`upsset.conf` files as appropriate, (optionally adapt) and rename the
+`upsstats.html.sample` and `upsstates-single.html.sample` files to not
+include the `.sample` extension.
+
+Finally, assuming default website configuration, go to http://localhost/html/
+and you should be served with a two-panel page, with a NUT banner and links
+to the two tools on top, and tables of data in the bottom.  If you have device
+monitoring set up already, check the details pages: if they do not render,
+make sure the `upsstats.html` and `upsstats-single.html` files define
+`UPSSTATSPATH` and `UPSIMAGEPATH` program URI names with the `.exe` extension.
+
+Completing the CGI setup
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 If this doesn't make sense, then stop reading and leave this program
 alone.  It's not something you absolutely need to have anyway.
 
-Assuming you have all this done, and it actually works (test it!), then
-you may add the following directive to this file:
+Assuming you have all the above steps done, and it actually works (test it!),
+congratulations -- you have a read-only web server to report information from
+NUT in a convenient form.
+
+If you further want to manage the devices (and again, if you did set up
+appropriate security constraints), then you may add the following directive
+to this file and so unlock the potentially dangerous access through the server:
 
 	I_HAVE_SECURED_MY_CGI_DIRECTORY
 
