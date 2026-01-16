@@ -1019,9 +1019,16 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 	HANDLE event = NULL;
 	unsigned long argp;
 
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 #endif	/* WIN32 */
+
 	if (!ups) {
 		return -1;
 	}
@@ -1164,9 +1171,11 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			    ups->upserror == UPSCLI_ERR_CONNFAILURE &&
 			    ups->syserrno == ETIMEDOUT
 			) {
-				const char	*addrstr = inet_ntopAI(ai);
+				const char	*addrstr = xinet_ntopAI(ai);
 				upslogx(LOG_WARNING, "%s: Connection to host timed out: '%s'",
 					__func__, (addrstr && *addrstr) ? addrstr : NUT_STRARG(host));
+				if (addrstr)
+					free((char*)addrstr);
 				break;
 			}
 			continue;
@@ -1694,7 +1703,7 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t 
 			return -1;
 		}
 
-		*port = PORT;
+		*port = NUT_PORT;
 		return 0;
 	}
 
@@ -1750,7 +1759,7 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 
 		/* no port specified, use default */
 		if (((s = strtok_r(NULL, "\0", &last)) == NULL) || (*s != ':')) {
-			*port = PORT;
+			*port = NUT_PORT;
 			return 0;
 		}
 	} else {
@@ -1763,7 +1772,7 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 
 		/* no port specified, use default */
 		if (s == NULL) {
-			*port = PORT;
+			*port = NUT_PORT;
 			return 0;
 		}
 	}

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3652 utf-8
+personal_ws-1.1 en 3659 utf-8
 AAC
 AAS
 ABI
@@ -132,6 +132,7 @@ Berge
 Berzonis
 Bieringer
 BigServers
+Bineos
 BlaXwan
 BlackOut
 BladeUPS
@@ -691,6 +692,7 @@ LowBatt
 Loyer
 Lua
 Luca
+Luxeon
 Lygre
 Lynge
 MANPATH
@@ -765,6 +767,7 @@ MinGW
 MiniCOL
 MiniGuard
 Minislot
+Mironov
 Moar
 Modbus
 ModemManager
@@ -1480,6 +1483,8 @@ WIP
 WIPO
 WMNut
 WS
+WSACleanup
+WSAStartup
 WSDIR
 WSE
 WSL
@@ -1636,6 +1641,7 @@ aspell
 ast
 async
 atcl
+atexit
 ats
 aug
 augeas
@@ -3080,6 +3086,7 @@ safenet
 salicru
 sbin
 sbindir
+sc
 scanopts
 scd
 sched

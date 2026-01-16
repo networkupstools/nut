@@ -30,23 +30,25 @@ Windows system as applicable.
 Beside launching or stopping a set of the NUT programs in certain cases,
 this helper program also allows to register (or un-register) itself as a
 Windows service. To actually manage the service from command line you can
-execute the Windows `net` command, e.g.:
+execute the Windows `net` or `sc` commands, e.g.:
 
 ----
 net stop "Network UPS Tools"
 net start "Network UPS Tools"
+sc query "Network UPS Tools"
 ----
 
 You can also execute `nut start` to automatically register the service
 (if not yet registered) and start it, and `nut stop` to stop the service
-(if registered and running).
+(if registered and running), and `nut status` to check on it (if registered).
 
 Note that for a Windows machine to act as a NUT data server for further
 clients, you may have to add Windows Firewall rules to allow incoming
 connections (by default to port `3493/tcp`), e.g. using PowerShell to
 elevate (alternately right-click a "Command Prompt" shortcut and select
 "Run as administrator"), and execute `netsh` to actually configure the
-needed "Advanced Firewall" rule:
+needed "Advanced Firewall" rule (align the path to binary with your
+installation):
 
 ----
 REM Elevate to administrator status then run netsh to add firewall rule.
@@ -90,10 +92,10 @@ The non-trivial debug level would be passed down to launched NUT programs.
 Primarily useful for troubleshooting with the non-service mode.
 
 *-I*::
-Install as a Windows service called "Network UPS Tools".
+Install as a Windows service called "Network UPS Tools". Does not start it.
 
 *-U*::
-Uninstall the Windows service.
+(Try to stop and) Uninstall the Windows service called "Network UPS Tools".
 
 *-N*::
 Run once in non-service mode (for troubleshooting).
@@ -104,6 +106,13 @@ and try to start this service.
 
 *stop*::
 Try to stop a Windows service called "Network UPS Tools".
+
+*restart*::
+Try to stop a Windows service called "Network UPS Tools" (do not fail if
+we can not), then try to install it (if not yet done) and start it.
+
+*status*::
+Try to query status of a Windows service called "Network UPS Tools".
 
 DIAGNOSTICS
 -----------
@@ -116,7 +125,13 @@ initialization while not running in a service context.
 Most of normal logging from *nut.exe* goes to the Windows Event Log.
 
 Launched NUT programs may emit messages of their own; their fate when no
-console is attached is questionable.
+console is attached is questionable. The service may be cheerfully "running"
+(as long as `MODE=...` is set in `nut.conf`), but specific daemons under it
+might refuse to start. For example, it may be troublesome to see (without
+perusing the Windows Event Log, Applications section) whether they are missing
+some configuration file or entry. You may have to launch respective daemons
+manually to check what they complain about, or use *nut.exe -N* mode,
+all with raised NUT debug verbosity settings.
 
 SEE ALSO
 --------

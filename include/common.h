@@ -117,6 +117,13 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+#ifndef MAX
+# define	MAX(p,q)	(((p) >= (q)) ? (p) : (q))
+#endif
+#ifndef MIN
+# define	MIN(p,q)	(((p) <= (q)) ? (p) : (q))
+#endif
+
 /* POSIX requires these, and most but not all systems use same
  * magical numbers for the file descriptors... yep, not all do!
  */
@@ -138,7 +145,7 @@ extern "C" {
  * including pipes for driver-upsd communications: */
 # define TYPE_FD int
 # define ERROR_FD (-1)
-# define VALID_FD(a) (a>=0)
+# define VALID_FD(a) ((a)>=0)
 
 /* Type of what NUT serial/SHUT methods juggle: */
 # define TYPE_FD_SER TYPE_FD
@@ -158,15 +165,20 @@ extern "C" {
  */
 # define TYPE_FD HANDLE
 # define ERROR_FD (INVALID_HANDLE_VALUE)
-# define VALID_FD(a) (a!=INVALID_HANDLE_VALUE)
+# define VALID_FD(a) ((a)!=INVALID_HANDLE_VALUE)
 
 # ifndef INVALID_SOCKET
-#  define INVALID_SOCKET -1
+#  define INVALID_SOCKET ((SOCKET)(-1))
 # endif
 
+/* Bitness-dependent "pointer-sized unsigned integer" (usually 32 or 64 bits) */
 # define TYPE_FD_SOCK SOCKET
 # define ERROR_FD_SOCK INVALID_SOCKET
-# define VALID_FD_SOCK(a) (a!=INVALID_SOCKET)
+/* Valid range for SOCKET is 0..(INVALID_SOCKET-1) and there is no special
+ * check for "-1" (may be or not be coincidental by casting and/or definition
+ * in existing headers) nor generally negative values, as in Unix socket API.
+ */
+# define VALID_FD_SOCK(a) ((a)!=INVALID_SOCKET)
 
 typedef struct serial_handler_s {
 	HANDLE handle;
@@ -181,7 +193,7 @@ typedef struct serial_handler_s {
 
 # define TYPE_FD_SER serial_handler_t *
 # define ERROR_FD_SER (NULL)
-# define VALID_FD_SER(a) (a!=NULL)
+# define VALID_FD_SER(a) ((a)!=NULL)
 
 /* difftime returns erroneous value so we use this macro */
 # undef difftime
@@ -451,11 +463,17 @@ const char * rootpidpath(void);
 void check_unix_socket_filename(const char *fn);
 
 #ifdef NUT_WANT_INET_NTOP_XX
-/* NOT THREAD SAFE!
- * Helpers to convert one IP address to string from different structure types
- * Return pointer to internal buffer, or NULL and errno upon errors */
-const char *inet_ntopSS(struct sockaddr_storage *s);
-const char *inet_ntopAI(struct addrinfo *ai);
+/* Helpers to convert one IP address to string from different structure types
+ * Return pointer to internal buffer (in NOT THREAD SAFE! methods named as such)
+ * or caller-provided buffer or an allocated buffer that caller must free (in
+ * the "x" methods), or NULL and errno upon errors */
+const char *inet_ntopSS(struct sockaddr_storage *s, char *addrstr, size_t addrstrsz);
+const char *inet_ntopSS_thread_unsafe(struct sockaddr_storage *s);
+const char *xinet_ntopSS(struct sockaddr_storage *s);
+
+const char *inet_ntopAI(struct addrinfo *ai, char *addrstr, size_t addrstrsz);
+const char *inet_ntopAI_thread_unsafe(struct addrinfo *ai);
+const char *xinet_ntopAI(struct addrinfo *ai);
 #endif	/* NUT_WANT_INET_NTOP_XX */
 
 /* Provide integration for systemd inhibitor interface (where available,

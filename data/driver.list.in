@@ -963,6 +963,8 @@
 
 "Minibox"	"ups"	"5"	"openUPS Intelligent UPS"	"USB port"	"usbhid-ups"
 
+"Must"	"ups"	"4"	"EP2000Pro"	""	"must_ep2000pro"
+
 "Mustek"	"ups"	"2"	"Powermust"	"400VA Plus"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"600VA Plus"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"800VA Pro"	"blazer_ser"

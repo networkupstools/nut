@@ -396,9 +396,14 @@ void upsdrv_initups(void)
 	int	v;
 
 #ifdef WIN32
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 #endif	/* WIN32 */
 
 	/* NOTE: in case of errors below we set "port" to 0,
@@ -484,7 +489,7 @@ void upsdrv_initups(void)
 
 		upslogx(LOG_INFO, "Will poll apcupsd at IPv%s address %s port %" PRIu16,
 			(host->ai_family == AF_INET ? "4" : (host->ai_family == AF_INET6 ? "6" : "?")),
-			NUT_STRARG(inet_ntopAI(host)), port);
+			NUT_STRARG(inet_ntopAI_thread_unsafe(host)), port);
 	} else if(res) {
 		freeaddrinfo(res);
 	}
