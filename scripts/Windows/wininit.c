@@ -154,7 +154,7 @@ static const char * makearg_debug(void)
 /* return PID of created process or 0 on failure */
 static DWORD run_drivers(void)
 {
-	char command[NUT_PATH_MAX];
+	char command[NUT_PATH_MAX + 1];
 	char *path;
 
 	path = getfullpath2(SBINDIR, PATH_SBIN);
@@ -173,7 +173,7 @@ static DWORD run_drivers(void)
 /* return PID of created process or 0 on failure */
 static DWORD stop_drivers(void)
 {
-	char command[NUT_PATH_MAX];
+	char command[NUT_PATH_MAX + 1];
 	char *path;
 
 	path = getfullpath2(SBINDIR, PATH_SBIN);
@@ -190,7 +190,7 @@ static DWORD stop_drivers(void)
 /* return PID of created process or 0 on failure */
 static void run_upsd(void)
 {
-	char command[NUT_PATH_MAX];
+	char command[NUT_PATH_MAX + 1];
 	char *path;
 
 	path = getfullpath2(SBINDIR, PATH_SBIN);
@@ -214,7 +214,7 @@ static void stop_upsd(void)
 /* return PID of created process or 0 on failure */
 static void run_upsmon(void)
 {
-	char command[NUT_PATH_MAX];
+	char command[NUT_PATH_MAX + 1];
 	char *path;
 
 	path = getfullpath2(SBINDIR, PATH_SBIN);
@@ -238,7 +238,7 @@ static void stop_upsmon(void)
 /* Return 0 if powerdown flag is set */
 static DWORD test_powerdownflag(void)
 {
-	char command[NUT_PATH_MAX];
+	char command[NUT_PATH_MAX + 1];
 	char *path;
 	STARTUPINFO StartupInfo;
 	PROCESS_INFORMATION ProcessInformation;
@@ -298,7 +298,7 @@ static DWORD test_powerdownflag(void)
 
 static DWORD shutdown_ups(void)
 {
-	char command[NUT_PATH_MAX];
+	char command[NUT_PATH_MAX + 1];
 	char *path;
 
 	path = getfullpath2(SBINDIR, PATH_SBIN);
@@ -315,10 +315,10 @@ static DWORD shutdown_ups(void)
 /* return 0 on failure */
 static int parse_nutconf(BOOL start_flag)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	FILE	*nutf;
 	char	buf[SMALLBUF];
-	char	fullname[NUT_PATH_MAX];
+	char	fullname[NUT_PATH_MAX + 1];
 
 	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
 
@@ -395,7 +395,7 @@ static int SvcInstall(const char * SvcName, const char * args)
 {
 	SC_HANDLE SCManager;
 	SC_HANDLE Service;
-	TCHAR Path[NUT_PATH_MAX];
+	TCHAR Path[NUT_PATH_MAX + 1];
 
 	if (!GetModuleFileName(NULL, Path, NUT_PATH_MAX)) {
 		upsdebug_with_errno(1, "%s: Could not GetModuleFileName() of current program", __func__);
