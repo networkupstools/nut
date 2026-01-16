@@ -3456,19 +3456,22 @@ int publish_Lua_dstate(lua_State *L) {
 int lua_C_gateway(lua_State *L);
 int lua_C_gateway(lua_State *L) {
 	/* get number of arguments */
-	const char *lua_info_type = lua_tostring(L, 1);
-	int lua_current_device_number = lua_tointeger(L, 2);
-	const char *value;
-	char *buf = (char *) malloc((strlen(lua_info_type)+12) * sizeof(char));
+	const char	*lua_info_type = lua_tostring(L, 1);
+	int	lua_current_device_number = lua_tointeger(L, 2);
+	const char	*value = NULL;
+	size_t	bufsz = (strlen(lua_info_type) + 12) * sizeof(char);
+	char	*buf = (char *) malloc(bufsz);
+
 	if (!buf) {
 		upsdebugx(1, "%s: failed to allocate a buffer", __func__);
 		return -1;
 	}
 
-	if (lua_current_device_number > 0)
-		sprintf(buf, "device.%d.%s", lua_current_device_number, lua_info_type);
-	else
-		sprintf(buf, "device.%s", lua_info_type);
+	if (lua_current_device_number > 0) {
+		snprintf(buf, bufsz, "device.%d.%s", lua_current_device_number, lua_info_type);
+	} else {
+		snprintf(buf, bufsz, "device.%s", lua_info_type);
+	}
 
 	value = dstate_getinfo(buf);
 
@@ -3543,14 +3546,14 @@ bool_t snmp_ups_walk(int mode)
 		for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++) {
 #if WITH_DMF_FUNCTIONS
 			if(su_info_p->flags & SU_FLAG_FUNCTION){
-				if(su_info_p->function_code) {
+				if (su_info_p->function_code) {
 					if( (su_info_p->function_language==NULL)
 					    || (su_info_p->function_language[0]=='\0')
 					    || (strcmp("lua-5.1", su_info_p->function_language)==0)
 					    || (strcmp("lua", su_info_p->function_language)==0)
 					) {
 # if WITH_DMF_LUA
-						if (su_info_p->luaContext){
+						if (su_info_p->luaContext) {
 							char *result = NULL, *funcname;
 
 							lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
@@ -3566,15 +3569,18 @@ bool_t snmp_ups_walk(int mode)
 							upsdebugx(4, "Executing LUA for SNMP_INFO: %s\n\nResult: %s\n", funcname, result);
 							free(funcname);
 
-							if(result){
-								char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
-								int i = 0;
+							if (result) {
+								size_t	bufsz = (strlen(su_info_p->info_type) + 3) * sizeof(char);
+								char	*buf = (char *) malloc(bufsz);
+								int	i = 0;
+
 								while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
 
-								if(current_device_number > 0)
-									sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
-								else
-									sprintf(buf, "%s", su_info_p->info_type);
+								if(current_device_number > 0) {
+									snprintf(buf, bufsz, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
+								} else {
+									snprintf(buf, bufsz, "%s", su_info_p->info_type);
+								}
 
 								dstate_setinfo(buf, "%s", result);
 								free(buf);
