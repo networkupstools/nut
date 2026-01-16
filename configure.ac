@@ -6653,13 +6653,14 @@ dnl When building ON Windows (mingw/MSYS2, cygwin, etc.) fudge these
 dnl path strings back to what native OS methods would recognize.
 AS_CASE([${target_os}],
     [*mingw*], [
-        AC_MSG_NOTICE([Will try to resolve Windows paths to ABS_TOP_SRCDIR and ABS_TOP_BUILDDIR with cygpath or mingw/msys pwd -W tool (would fail if not a native build)])
+        AC_MSG_NOTICE([Will try to resolve Windows paths to ABS_TOP_SRCDIR and ABS_TOP_BUILDDIR with 'cygpath -ma' or mingw/msys 'pwd -W' tool (would fail if not a native build)])
 
-        dnl Cygwin path resolver
+        dnl Cygwin path resolver; note it may have already been found
+        dnl by autotools core code earlier in the generated script:
         AC_CHECK_TOOL([CYGPATH], [cygpath], [none])
-        AS_IF([test "x${CYGPATH}" != "xnone" && test x"`${CYGPATH}`" != x], [
-            tmp="`${CYGPATH} -m \"${ABS_TOP_BUILDDIR}\" | sed -e 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
-            tmp="`${CYGPATH} -m \"${ABS_TOP_SRCDIR}\" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+        AS_IF([test "x${CYGPATH}" != "xnone" && test x"`${CYGPATH} -m -a .`" != x], [
+            tmp="`${CYGPATH} -m -a \"${ABS_TOP_BUILDDIR}\" | sed -e 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+            tmp="`${CYGPATH} -m -a \"${ABS_TOP_SRCDIR}\" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
         ],[
             dnl MSYS pwd with -W option to resolve
             AC_CHECK_TOOL([PWDTOOL], [pwd], [none])
