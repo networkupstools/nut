@@ -5114,6 +5114,46 @@ dnl What pathname would we embed into unit files ExecStartPre?
 dnl TODO? Any need to make it a --with-... argument?
 AC_PATH_PROG([SYSTEMD_TMPFILES_PROGRAM], [systemd-tmpfiles], [/usr/bin/systemd-tmpfiles])
 
+dnl Note: same as (systemd-)tmpfiles
+AC_MSG_CHECKING([whether to install sysusers.d files])
+NUT_ARG_WITH([systemdsysusersdir], [(DIRPATH|yes|no|auto)], [Directory for systemd sysusers.d scripts], [auto])
+systemdsysusersdir="${nut_with_systemdsysusersdir}"
+
+case "${systemdsysusersdir}" in
+	yes|auto|"")
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[def_systemdsysusersdir="`$PKG_CONFIG --variable=sysusersdir systemd 2>/dev/null`" && test -n "$def_systemdsysusersdir" || \
+			 def_systemdsysusersdir="`$PKG_CONFIG --variable=sysusersdir libsystemd 2>/dev/null`" || def_systemdsysusersdir=""],
+			[def_systemdsysusersdir=""])
+
+		AS_IF([test x"${def_systemdsysusersdir}" = x], [
+			AS_IF([test "${systemdsysusersdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdsysusersdir=${systemdsysusersdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			systemdsysusersdir=""
+			], [systemdsysusersdir="${def_systemdsysusersdir}"])
+
+		unset def_systemdsysusersdir
+		;;
+	no)
+		systemdsysusersdir=""
+		;;
+	*)
+		AS_IF([test -d "${systemdsysusersdir}"], [],
+			[AC_MSG_WARN([--with-systemdsysusersdir='${systemdsysusersdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
+		;;
+esac
+if test "${systemdsysusersdir}" = "auto" ; then systemdsysusersdir=""; fi
+if test -n "${systemdsysusersdir}"; then
+	AC_MSG_RESULT(using ${systemdsysusersdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Systemd-sysusers configs], [${systemdsysusersdir}])
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL([WITH_SYSTEMD_SYSUSERS], [test x"${systemdsysusersdir}" != "x"])
+dnl What pathname would we embed into unit files ExecStartPre?
+dnl TODO? Any need to make it a --with-... argument?
+AC_PATH_PROG([SYSTEMD_SYSUSERS_PROGRAM], [systemd-sysusers], [/usr/bin/systemd-sysusers])
+
 
 dnl Note: we may want binaries with sd_notify and similar features regardless
 dnl of building and delivering unit files (which may be crafted separately).
@@ -6207,6 +6247,7 @@ AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdsystempresetdir)
 AC_SUBST(systemdshutdowndir)
 AC_SUBST(systemdtmpfilesdir)
+AC_SUBST(systemdsysusersdir)
 AC_SUBST(auglensdir)
 AC_SUBST(auglenstestsdir)
 AC_SUBST(hotplugdir)
@@ -6685,6 +6726,39 @@ EOF])
 ])
 AC_MSG_RESULT([done])
 
+dnl ---------------------------------------------------------------------
+AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-sysusers.conf.in for this system])
+AS_IF([test -n "$systemdsysusersdir"],
+    [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
+     cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+# Network UPS Tools (NUT) systemd integration
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+EOF
+    AS_IF([test -n "${RUN_AS_USER}" && test x"${RUN_AS_USER}" != xnobody && test x"${RUN_AS_USER}" != xroot],
+        dnl Locked users ('!') are supported since v257
+        AS_IF([test x"$have_PKG_CONFIG" = xyes && $PKG_CONFIG --atleast-version=257 systemd 2>/dev/null], [
+            cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+u! @RUN_AS_USER@ - - @STATEPATH@
+EOF
+        ], [
+            cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+u @RUN_AS_USER@ - - @STATEPATH@
+EOF
+        ])
+    )
+    AS_IF([test -n "${RUN_AS_GROUP}" && test x"${RUN_AS_GROUP}" != xnobody && test x"${RUN_AS_GROUP}" != xnogroup && test x"${RUN_AS_GROUP}" != xroot],
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+g @RUN_AS_GROUP@
+EOF])
+    AS_IF([test -n "${RUN_AS_USER}" && test x"${RUN_AS_USER}" != xnobody && test x"${RUN_AS_USER}" != xroot && test -n "${RUN_AS_GROUP}" && test x"${RUN_AS_GROUP}" != xnobody && test x"${RUN_AS_GROUP}" != xnogroup && test x"${RUN_AS_GROUP}" != xroot],
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+m @RUN_AS_USER@ @RUN_AS_GROUP@
+EOF])
+])
+AC_MSG_RESULT([done])
+
 dnl # ccache versions 4.5 and newer support namespacing of the objects
 dnl # to facilitate more targeted eviction with --evict-namespace and
 dnl # perhaps --evict-older-than options. Here we bolt a namespace with
@@ -6888,6 +6962,7 @@ AC_CONFIG_FILES([
  scripts/systemd/Makefile
  scripts/systemd/nut.target
  scripts/systemd/nut-common-tmpfiles.conf
+ scripts/systemd/nut-common-sysusers.conf
  scripts/systemd/nut-driver.target
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-logger.service

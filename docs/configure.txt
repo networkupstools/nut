@@ -1123,11 +1123,13 @@ Use `--with-systemdshutdowndir` to detect the settings using pkg-config.
 Use `--with-systemdshutdowndir=no` to disable this feature altogether.
 
 	--with-systemdtmpfilesdir=PATH
+	--with-systemdsysusersdir=PATH
 
-Where to install Linux systemd configuration for tmpfiles handling (the
-automatically created locations for PID, state and similar run-time files).
-Useless and harmless on other OSes, including Linux distributions
-without systemd, just adding a little noise to configure script output.
+Where to install Linux systemd configuration for tmpfiles and sysusers
+handling (the automatically created locations for user/group, PID,
+state and similar run-time files). Useless and harmless on other OSes,
+including Linux distributions without systemd, just adding a little
+noise to configure script output.
 
 Use `--with-systemdtmpfilesdir` to detect the settings using pkg-config.
 

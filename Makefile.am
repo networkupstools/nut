@@ -496,6 +496,7 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystempresetdir='$${prefix}/usr/lib/systemd/system-preset' \
  --with-systemdshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
  --with-systemdtmpfilesdir='$${prefix}/usr/lib/tmpfiles.d' \
+ --with-systemdsysusersdir='$${prefix}/usr/lib/sysusers.d' \
  --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'			\
@@ -1262,6 +1263,12 @@ else !WITH_SYSTEMD_TMPFILES
 WITH_SYSTEMD_TMPFILES = false
 endif !WITH_SYSTEMD_TMPFILES
 
+if WITH_SYSTEMD_SYSUSERS
+WITH_SYSTEMD_SYSUSERS = true
+else !WITH_SYSTEMD_SYSUSERS
+WITH_SYSTEMD_SYSUSERS = false
+endif !WITH_SYSTEMD_SYSUSERS
+
 if WITH_SYSTEMD_PRESET
 WITH_SYSTEMD_PRESET = true
 else !WITH_SYSTEMD_PRESET
@@ -1412,6 +1419,10 @@ install-as-root:
 			if $(WITH_SYSTEMD_TMPFILES) ; then \
 				echo "$@: Apply systemd-tmpfiles presets" >&2 ; \
 				$(SYSTEMD_TMPFILES_PROGRAM) --create || exit ; \
+			fi ; \
+			if $(WITH_SYSTEMD_SYSUSERS) ; then \
+				echo "$@: Apply systemd-sysusers presets" >&2 ; \
+				$(SYSTEMD_SYSUSERS_PROGRAM) || exit ; \
 			fi ; \
 			echo "$@: Learn systemd definition changes" >&2 ; \
 			$(SYSTEMD_SYSTEMCTL_PROGRAM) daemon-reload || exit ; \

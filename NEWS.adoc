@@ -338,6 +338,10 @@ several `FSD` notifications into one executed action. [PR #3097]
      prefer a `python3` if available, else `python2`, else `python`. [#1792]
    * The `configure` script should now try harder to report specifically
      the "purelib" location as `PYTHON*_SITE_PACKAGES`. [#1209]
+   * Added a `--with-systemdsysusersdir=PATH` option to have systemd pre-create
+     the user and group accounts for NUT, before packaging or manually executed
+     commands do (this is particularly important for immutable-image operating
+     environments). [PR #3262]
    * Streamlined handling of `--with-*` and `--enable-*` options using NUT 'm4'
      macros; fixed reporting help for options whose defaults are evaluated.
      [issue #3049, PR #3140]

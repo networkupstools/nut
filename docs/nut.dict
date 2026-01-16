@@ -3284,8 +3284,10 @@ systemd
 systemdshutdowndir
 systemdsystempresetdir
 systemdsystemunitdir
+systemdsysusersdir
 systemdtmpfilesdir
 systemtest
+sysusers
 sysutils
 sysvinit
 tagname
