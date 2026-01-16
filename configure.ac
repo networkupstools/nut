@@ -3302,6 +3302,21 @@ fi
 NUT_REPORT_PROGRAM([build CGI programs], [${nut_with_cgi}], [],
 					[WITH_CGI], [Define to enable CGI (HTTP) support])
 
+# Built into HTML via templates:
+NUT_ARG_WITH([cgi-uri], [default URI (under web-server root) where NUT CGI programs are exposed, typically /cgi-bin or /cgi-bin/nut], [auto])
+AS_CASE([${target_os}],
+	[*mingw*], [NUT_CGI_URI="/cgi-bin"],	dnl ### Let N4W build be easier to use out of the box (EXE tarball)
+		[NUT_CGI_URI="/cgi-bin/nut"]
+)
+AS_CASE([${nut_with_cgi_uri}],
+	[/*], [NUT_CGI_URI="${nut_with_cgi_uri}"],
+	[auto], [AC_MSG_NOTICE([--with-cgi-uri defaulted to '${NUT_CGI_URI}' for this platform])],
+		[AC_MSG_WARN([--with-cgi-uri must be a web server path starting with a slash; value '${nut_with_cgi_uri}' is invalid, defaulting to '${NUT_CGI_URI}'])]
+)
+AC_SUBST(NUT_CGI_URI)
+AS_IF([test x"${nut_with_cgi}" = xyes], [
+	NUT_REPORT([Default URI to NUT CGI programs], [${NUT_CGI_URI}])
+])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-pynut and --with-nut_monitor
@@ -6808,6 +6823,16 @@ AC_MSG_RESULT([C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}])
 dnl Only in the end, do you understand...
 AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
 
+AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
+AC_SUBST(EXEEXT)
+
+dnl In CGI HTML templates we have a VERSION token parsed by upsstats.cgi
+dnl to provide the run-time binary version (with unmodified HTML template),
+dnl but now that with EXEEXT they became .in templates first, the autoconf
+dnl VERSION expansion wins first. So hacking around it to generate a @TOKEN@:
+ESCAPED_TEMPLATE_VERSION='@VERSION@'
+AC_SUBST(ESCAPED_TEMPLATE_VERSION)
+
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
  clients/Makefile
@@ -6815,6 +6840,8 @@ AC_CONFIG_FILES([
  conf/Makefile
  conf/upsmon.conf.sample
  conf/upssched.conf.sample
+ conf/upsstats.html.sample
+ conf/upsstats-single.html.sample
  data/htmlcgi/header.html
  data/htmlcgi/Makefile
  data/Makefile
