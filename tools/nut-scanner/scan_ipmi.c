@@ -617,13 +617,13 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 			nut_dev->type = TYPE_IPMI;
 			nut_dev->driver = strdup(NUT_IPMI_DRV_NAME);
 			if (IPaddr == NULL) {
-				sprintf(port_id, "id%x", (unsigned int)ipmi_id);
+				snprintf(port_id, sizeof(port_id), "id%x", (unsigned int)ipmi_id);
 			}
 			else {
 				/* FIXME: also check against "localhost" and its IPv{4,6} */
 				/* FIXME: Should the IPv6 address here be bracketed?
 				 *  Does our driver support the notation? */
-				sprintf(port_id, "id%x@%s", (unsigned int)ipmi_id, IPaddr);
+				snprintf(port_id, sizeof(port_id), "id%x@%s", (unsigned int)ipmi_id, IPaddr);
 			}
 			nut_dev->port = strdup(port_id);
 			/* FIXME: also dump device.serial?

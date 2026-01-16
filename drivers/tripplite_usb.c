@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.43"
+#define DRIVER_VERSION	"0.44"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -494,14 +494,14 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 	buf[0] = 0;
 
 	/* Dump each byte in hex: */
-	for(i=0; i<len && end-bufp>=3; i++) {
-		bufp += sprintf((char *)bufp, "%02x ", msg[i]);
+	for (i=0; i<len && (end-bufp) >= 3; i++) {
+		bufp += sprintf((char *)bufp, "%02x ", msg[i]);	/* length-checked */
 	}
 
 	/* Dump single-quoted string with printable version of each byte: */
 	if (end-bufp > 0) *bufp++ = '\'';
 
-	for(i=0; i<len && end-bufp>0; i++) {
+	for (i=0; i<len && (end-bufp) > 0; i++) {
 		*bufp++ = (unsigned char)toprint(msg[i]);
 	}
 	if (end-bufp > 0) *bufp++ = '\'';
@@ -800,7 +800,7 @@ static void debug_message(const char *msg, size_t len)
 
 	ret = send_cmd((const unsigned char *)msg, len, tmp_value, sizeof(tmp_value));
 	if(ret <= 0) {
-		sprintf(err_msg, "Error reading '%c' value", *msg);
+		snprintf(err_msg, sizeof(err_msg), "Error reading '%c' value", *msg);
 		usb_comm_fail(ret, err_msg);
 		return;
 	}

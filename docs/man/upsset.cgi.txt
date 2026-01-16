@@ -18,10 +18,13 @@ give it input resembling a POST request.
 DESCRIPTION
 -----------
 
-*upsset.cgi*
+*upsset.cgi* is a read-write NUT client which
 lets you access many administrative functions within the UPS software
 from your web browser.  You can change settings and invoke instant
 commands where available.
+
+For details about configuring some popular web servers to run NUT CGI
+programs, please see the linkman:upsset.conf[5] page.
 
 CHANGING SETTINGS
 -----------------

@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.31"
+#define DRIVER_VERSION	"0.32"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -336,9 +336,9 @@ static void query3( char *buf )
  ********************************************************************/
 static void parseWH( char *buf )
 {
-	strncpy( name, buf + 16, 30 );
+	strncpy( name, buf + 16, sizeof(name) );	/* 30 */
 	name[30] = '\0';
-	strncpy( firmware, buf + 4, 5 );
+	strncpy( firmware, buf + 4, sizeof(firmware) );	/*  5 */
 	firmware[5] = '\0';
 	if( DEBUG )
 		printf( "Name = %s, Firmware Version = %s\n", name, firmware );
@@ -353,9 +353,9 @@ static void parseWH( char *buf )
  ********************************************************************/
 static void parseOldWH( char *buf )
 {
-	strncpy( name, buf + 4, 12 );
+	strncpy( name, buf + 4, sizeof(name) );	/* 12 */
 	name[12] = '\0';
-	strncpy( firmware, buf, 4 );
+	strncpy( firmware, buf, sizeof(firmware) );	/*  4 */
 	firmware[4] = '\0';
 	if( DEBUG )
 		printf( "Name = %s, Firmware Version = %s\n", name, firmware );
@@ -368,8 +368,8 @@ static void parseOldWH( char *buf )
  ********************************************************************/
 static void fakeWH(void)
 {
-	strcpy( name, "GenericUPS" );
-	strcpy( firmware, "unkn" );
+	strncpy(name, "GenericUPS", sizeof(name));
+	strncpy(firmware, "unkn", sizeof(firmware));
 	if( DEBUG )
 		printf( "Name = %s, Firmware Version = %s\n", name, firmware );
 }

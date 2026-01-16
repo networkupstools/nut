@@ -565,8 +565,8 @@ void PvarCommon_Initinfo (void)
 		}
 	}
 
-	sprintf (Msg, "Found a Powervar '%s' UPS with serial number: '%s'", UpsFamily, SubBuff);
-	upsdebugx (2, "%s", Msg);
+	snprintf(Msg, sizeof(Msg), "Found a Powervar '%s' UPS with serial number: '%s'", UpsFamily, SubBuff);
+	upsdebugx(2, "%s", Msg);
 	upslogx(LOG_INFO, "%s", Msg);
 
 	/* Get BAT format and populate needed data string positions... */
@@ -1115,7 +1115,7 @@ static void HandleBeeper (char* chS)
 	char chBuff[18];
 
 	memset(chBuff, 0, sizeof(chBuff));
-	sprintf(chBuff, "%s%s", SET_AUDIBL_REQ, chS);
+	snprintf(chBuff, sizeof(chBuff), "%s%s", SET_AUDIBL_REQ, chS);
 
 	SendCommand (chBuff);
 }
@@ -1132,7 +1132,7 @@ static void HandleOffDelay (void)
 		delay++;		/* Make it '1' */
 	}
 
-	sprintf(chOutBuff, "%s%d", SET_OFFDLY_REQ, delay);
+	snprintf(chOutBuff, sizeof(chOutBuff), "%s%d", SET_OFFDLY_REQ, delay);
 
 	SendCommand (chOutBuff);
 }
@@ -1145,11 +1145,11 @@ static void HandleOnDelay (void)
 
 	if (dstate_getinfo("ups.delay.start") == NULL)
 	{
-		sprintf(chBuff, "%s1", SET_SRTDLY_REQ);
+		snprintf(chBuff, sizeof(chBuff), "%s1", SET_SRTDLY_REQ);
 	}
 	else
 	{
-		sprintf(chBuff, "%s%s", SET_SRTDLY_REQ, dstate_getinfo("ups.delay.start"));
+		snprintf(chBuff, sizeof(chBuff), "%s%s", SET_SRTDLY_REQ, dstate_getinfo("ups.delay.start"));
 	}
 
 	SendCommand (chBuff);
@@ -1308,7 +1308,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 		memset(chBuff, 0, sizeof(chBuff));
 
-		sprintf(chBuff, "%s%d", TST_DISP_REQ, ShowTime);
+		snprintf(chBuff, sizeof(chBuff), "%s%d", TST_DISP_REQ, ShowTime);
 		SendCommand (chBuff);
 	}
 

@@ -31,7 +31,7 @@
 #define ENDCHAR '\r'
 
 #define DRIVER_NAME	"SMS Brazil UPS driver"
-#define DRIVER_VERSION	"1.04"
+#define DRIVER_VERSION	"1.05"
 
 #define QUERY_SIZE 7
 #define BUFFER_SIZE 18
@@ -101,43 +101,43 @@ void sms_parse_results(uint8_t *rawvalues, SmsData *results) {
     double h;
 
     memset(buf, 0, BUFFER_SIZE);
-    sprintf(buf, "0x%02x%02x", (unsigned char)rawvalues[1], (unsigned char)rawvalues[2]);
+    snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[1], (unsigned char)rawvalues[2]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
     h = v / 10;
     results->lastinputVac = h;
 
     memset(buf, 0, BUFFER_SIZE);
-    sprintf(buf, "0x%02x%02x", (unsigned char)rawvalues[3], (unsigned char)rawvalues[4]);
+    snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[3], (unsigned char)rawvalues[4]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
     h = v / 10;
     results->inputVac = h;
 
     memset(buf, 0, BUFFER_SIZE);
-    sprintf(buf, "0x%02x%02x", (unsigned char)rawvalues[5], (unsigned char)rawvalues[6]);
+    snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[5], (unsigned char)rawvalues[6]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
     h = v / 10;
     results->outputVac = h;
 
     memset(buf, 0, BUFFER_SIZE);
-    sprintf(buf, "0x%02x%02x", (unsigned char)rawvalues[7], (unsigned char)rawvalues[8]);
+    snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[7], (unsigned char)rawvalues[8]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
     h = v / 10;
     results->outputpower = h;
 
     memset(buf, 0, BUFFER_SIZE);
-    sprintf(buf, "0x%02x%02x", (unsigned char)rawvalues[9], (unsigned char)rawvalues[10]);
+    snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[9], (unsigned char)rawvalues[10]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
     h = v / 10;
     results->outputHz = h;
 
     memset(buf, 0, BUFFER_SIZE);
-    sprintf(buf, "0x%02x%02x", (unsigned char)rawvalues[11], (unsigned char)rawvalues[12]);
+    snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[11], (unsigned char)rawvalues[12]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
     h = v / 10;
     results->batterylevel = h;
 
     memset(buf, 0, BUFFER_SIZE);
-    sprintf(buf, "0x%02x%02x", (unsigned char)rawvalues[13], (unsigned char)rawvalues[14]);
+    snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[13], (unsigned char)rawvalues[14]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
     h = v / 10;
     results->temperatureC = h;

@@ -9,9 +9,27 @@ upsstats.html - HTML template for web-based Network UPS Tools upsstats
 DESCRIPTION
 -----------
 
-This file is used by linkman:upsstats.cgi[8] to generate status pages.
-Certain commands are recognized, and will be replaced with various
+This file, and a similarly structured `upsstats-single.html` for certain
+use-cases, are used by linkman:upsstats.cgi[8] to generate NUT CGI status
+pages. Certain commands are recognized, and will be replaced with various
 status elements on the fly.
+
+As a bit of a safety check, the file must start with `@NUT_UPSSTATS_TEMPLATE@`
+command.
+
+For details about configuring some popular web servers to run NUT CGI
+programs, please see the linkman:upsset.conf[5] page.
+
+NOTE: This template file should be placed in the NUT configuration location.
+If you use a dedicated copy of that directory or one not discovered by
+the binaries relocated into your web server's `cgi-bin` locations (such
+as with NUT for Windows builds, defaulting to seek in locations relative
+to each binary), consider exporting the `NUT_CONFPATH` environment variable
+from the web server.
+
+NOTE: On platforms with required program file name extensions, like Windows,
+you may have to use e.g. a `*.cgi.exe` extension for the programs in HTML
+template files (`UPSSTATSPATH`, `UPSIMAGEPATH`).
 
 FORMATTING
 ----------
@@ -90,6 +108,31 @@ example (more examples are available in upsstats.html).
 OTHER COMMANDS
 --------------
 
+*@NUT_UPSSTATS_TEMPLATE [args]@*::
+The template file MUST start exactly with `@NUT_UPSSTATS_TEMPLATE@` or
+`@NUT_UPSSTATS_TEMPLATE Some text@` so that linkman:upsstats.cgi[8] is
+not coerced into showing arbitrary files.
++
+Currently the command and its arguments are otherwise ignored; templates
+shipped with NUT use the argument values "default" and "single" effectively
+as a comment for debugging/troubleshooting.
+
+*@UPSSTATSPATH filename@*::
+URI to the linkman:upsstats.cgi[8] program placed into HTML references.
+Default is the program's name, making it a link relative to the currently
+displayed page in the browser.
++
+May have to include the platform-specific program file name extension,
+like `@UPSSTATSPATH upsstats.cgi.exe@`
+
+*@UPSIMAGEPATH filename@*::
+URI to the linkman:upsimage.cgi[8] program placed into HTML references.
+Default is the program's name, making it a link relative to the currently
+displayed page in the browser.
++
+May have to include the platform-specific program file name extension,
+like `@UPSIMAGEPATH upsimage.cgi.exe@`
+
 *@AMBTEMP@*::
 Insert the ambient temperature in the current temperature scale.
 
@@ -108,8 +151,22 @@ Insert the designation of the host being monitored, like `myups@localhost`.
 Insert the host's description from linkman:hosts.conf[5].
 
 *@HOSTLINK@*::
-Insert a link to upsstats.cgi with the "host" variable set to the
-current UPS.  This is only useful within a FOREACHUPS block.
+Insert a HTML link to linkman:upsstats.cgi[8] with the "host" variable
+set to the current UPS.  This is only useful within a FOREACHUPS block.
+
+*@TREELINK [Link text]@*::
+Insert a HTML link to linkman:upsstats.cgi[8] with the "host" variable
+set to the current UPS and "treemode" enabled to show all data points
+as an HTML page.  This is primarily useful within a FOREACHUPS block,
+but also as an `upsstats-single.html` footer. If some "Link text" is not
+provided, it defaults to "All data".
+
+*@TREELINK_JSON [Link text]@*::
+Insert a HTML link to linkman:upsstats.cgi[8] with the "host" variable
+set to the current UPS and "treemode" enabled to show all data points
+as a JSON document.  This is primarily useful within a FOREACHUPS block,
+but also as an `upsstats-single.html` footer. If some "Link text" is not
+provided, it defaults to "JSON".
 
 *@IMG* 'varname' ['extra']*@*::
 Insert an IMG SRC to linkman:upsimage.cgi[8] for one of these

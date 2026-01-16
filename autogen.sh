@@ -150,6 +150,12 @@ if [ ! -f scripts/systemd/nut-common-tmpfiles.conf.in ]; then
 	) > scripts/systemd/nut-common-tmpfiles.conf.in
 fi
 
+if [ ! -f scripts/systemd/nut-common-sysusers.conf.in ]; then
+	( echo '# autoconf requires this file exists before generating configure script;'
+	  echo '# it will be overwritten by running configure during an actual build'
+	) > scripts/systemd/nut-common-sysusers.conf.in
+fi
+
 # now we can safely call autoreconf
 if ( command -v dos2unix ) 2>/dev/null >/dev/null ; then
 	if ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; then

@@ -1433,6 +1433,7 @@ static int	hunnox_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 		{ "I\r",	0x0c, },	/* Vendor infos */
 		{ "Q\r",	0x07, },	/* Beeper toggle */
 		{ "C\r",	0x0a, },	/* Cancel shutdown/Load on [0x(0..F)A]*/
+		{ "BL\r",	0xf3, },	/* Battery charge */
 		{ NULL, 0 }
 	};
 	int	i, ret, index = 0;

@@ -173,6 +173,18 @@ http://www.net-snmp.org/ before building this driver.
 
 SNMP v3 also requires OpenSSL support from http://www.openssl.org.
 
+///////////////////////
+Before the DMF effort, there was a partially implemented provision for
+additional MIB Configuration files with lines of mapping information:
+
+------
+<info type> <info flags> <info len> <OID name> <default value> <value lookup>
+------
+
+...which could be stored under common NUT configuration location, with
+this naming pattern: `${NUT_CONFPATH}/snmp/${MIB}.conf`.
+///////////////////////
+
 LIMITATIONS
 -----------
 

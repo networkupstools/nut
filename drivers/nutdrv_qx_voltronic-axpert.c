@@ -29,7 +29,7 @@
 
 #include "nut_float.h"
 
-#define VOLTRONIC_AXPERT_VERSION	"Voltronic-Axpert 0.01"
+#define VOLTRONIC_AXPERT_VERSION	"Voltronic-Axpert 0.02"
 
 /* For dev-testing: known ways to get data points, need mapping into NUT variables */
 #if WITH_UNMAPPED_DATA_POINTS
@@ -3834,7 +3834,7 @@ static int	voltronic_axpert_status(item_t *item, char *value, const size_t value
 /* Warnings reported by the device */
 static int	voltronic_sunny_warning(item_t *item, char *value, const size_t valuelen)
 {
-	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[SMALLBUF] = "", warns[4096] = "";
+	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[4096] = "", warns[4096] = "";
 	int	i;
 
 	if (strspn(item->value, "01-") != strlen(item->value)) {
@@ -3880,81 +3880,81 @@ static int	voltronic_sunny_warning(item_t *item, char *value, const size_t value
 				}
 			}
 
-			strcpy(warn, "Device has fault.");
+			strncpy(warn, "Device has fault.", sizeof(warn));
 			break;
 		case 1:
-			strcpy(warn, "CPU is performing the auto-correction of AD signals.");
+			strncpy(warn, "CPU is performing the auto-correction of AD signals.", sizeof(warn));
 			break;
 		case 2:
-			strcpy(warn, "An external Flash device failed.");
+			strncpy(warn, "An external Flash device failed.", sizeof(warn));
 			break;
 		case 3:
-			strcpy(warn, "Input PV is found lost.");
+			strncpy(warn, "Input PV is found lost.", sizeof(warn));
 			pv_loss = 1;
 			break;
 		case 4:
-			strcpy(warn, "PV input voltage reads low.");
+			strncpy(warn, "PV input voltage reads low.", sizeof(warn));
 			break;
 		case 5:
-			strcpy(warn, "Power island.");
+			strncpy(warn, "Power island.", sizeof(warn));
 			break;
 		case 6:
-			strcpy(warn, "An Error occurred in the CPU initialization.");
+			strncpy(warn, "An Error occurred in the CPU initialization.", sizeof(warn));
 			break;
 		case 7:
-			strcpy(warn, "Power grid voltage exceeds the upper threshold.");
+			strncpy(warn, "Power grid voltage exceeds the upper threshold.", sizeof(warn));
 			line_loss = 1;
 			break;
 		case 8:
-			strcpy(warn, "Power grid voltage falls below the lower threshold.");
+			strncpy(warn, "Power grid voltage falls below the lower threshold.", sizeof(warn));
 			line_loss = 1;
 			break;
 		case 9:
-			strcpy(warn, "Power grid frequency exceeds the upper threshold.");
+			strncpy(warn, "Power grid frequency exceeds the upper threshold.", sizeof(warn));
 			line_loss = 1;
 			break;
 		case 10:
-			strcpy(warn, "Power grid frequency falls below the lower threshold.");
+			strncpy(warn, "Power grid frequency falls below the lower threshold.", sizeof(warn));
 			line_loss = 1;
 			break;
 		case 11:
-			strcpy(warn, "Power grid-connected average voltage exceeds the maximum threshold.");
+			strncpy(warn, "Power grid-connected average voltage exceeds the maximum threshold.", sizeof(warn));
 			line_loss = 1;
 			break;
 		case 12:
-			strcpy(warn, "Require power from the power grid.");
+			strncpy(warn, "Require power from the power grid.", sizeof(warn));
 			break;
 		case 13:
-			strcpy(warn, "Emergent grid disconnection.");
+			strncpy(warn, "Emergent grid disconnection.", sizeof(warn));
 			break;
 		case 14:
-			strcpy(warn, "Battery voltage is too low.");
+			strncpy(warn, "Battery voltage is too low.", sizeof(warn));
 			break;
 		case 15:
-			strcpy(warn, "Low battery.");
+			strncpy(warn, "Low battery.", sizeof(warn));
 			update_status("LB");
 			break;
 		case 16:
-			strcpy(warn, "Battery disconnected.");
+			strncpy(warn, "Battery disconnected.", sizeof(warn));
 			break;
 		case 17:
-			strcpy(warn, "End of battery discharge.");
+			strncpy(warn, "End of battery discharge.", sizeof(warn));
 			break;
 		case 18:
-			strcpy(warn, "Overload.");
+			strncpy(warn, "Overload.", sizeof(warn));
 			update_status("OVER");
 			break;
 		case 19:
-			strcpy(warn, "EPO active.");
+			strncpy(warn, "EPO active.", sizeof(warn));
 			break;
 		case 22:
-			strcpy(warn, "Over temperature alarm.");
+			strncpy(warn, "Over temperature alarm.", sizeof(warn));
 			break;
 		case 23:
-			strcpy(warn, "No electrical ground.");
+			strncpy(warn, "No electrical ground.", sizeof(warn));
 			break;
 		case 24:
-			strcpy(warn, "Fan fault.");
+			strncpy(warn, "Fan fault.", sizeof(warn));
 			break;
 		default:
 			snprintf(warn, sizeof(warn), "Unknown warning from device [bit: #%02d]", i + 1);
@@ -4011,7 +4011,7 @@ static int	voltronic_sunny_warning(item_t *item, char *value, const size_t value
 
 		/* Removing leading comma from unk */
 		snprintf(warns, sizeof(warns), "Unknown warnings [bit:%s]", unk+1);
-		strcpy(bitwarns, warns);
+		strncpy(bitwarns, warns, sizeof(bitwarns));
 
 	} else {
 
@@ -4115,98 +4115,98 @@ static int	voltronic_sunny_fault(item_t *item, char *value, const size_t valuele
 		switch (strtol(item->value, NULL, 10))
 		{
 		case 1:
-			strcpy(alarm, "DC bus voltage exceeds the upper threshold.");
+			strncpy(alarm, "DC bus voltage exceeds the upper threshold.", sizeof(alarm));
 			break;
 		case 2:
-			strcpy(alarm, "DC bus voltage falls below the lower threshold.");
+			strncpy(alarm, "DC bus voltage falls below the lower threshold.", sizeof(alarm));
 			break;
 		case 3:
-			strcpy(alarm, "DC bus voltage soft-start is time-out.");
+			strncpy(alarm, "DC bus voltage soft-start is time-out.", sizeof(alarm));
 			break;
 		case 4:
-			strcpy(alarm, "Inverter soft-start is time-out.");
+			strncpy(alarm, "Inverter soft-start is time-out.", sizeof(alarm));
 			break;
 		case 5:
-			strcpy(alarm, "An Inverter overcurrent event is detected.");
+			strncpy(alarm, "An Inverter overcurrent event is detected.", sizeof(alarm));
 			break;
 		case 6:
-			strcpy(alarm, "Over temperature fault.");
+			strncpy(alarm, "Over temperature fault.", sizeof(alarm));
 			break;
 		case 7:
-			strcpy(alarm, "An relay failure event is detected.");
+			strncpy(alarm, "An relay failure event is detected.", sizeof(alarm));
 			break;
 		case 8:
-			strcpy(alarm, "DC component in the output current exceeds the upper threshold.");
+			strncpy(alarm, "DC component in the output current exceeds the upper threshold.", sizeof(alarm));
 			break;
 		case 9:
-			strcpy(alarm, "PV input voltage exceeds the upper threshold.");
+			strncpy(alarm, "PV input voltage exceeds the upper threshold.", sizeof(alarm));
 			break;
 		case 10:
-			strcpy(alarm, "Auxiliary power failed.");
+			strncpy(alarm, "Auxiliary power failed.", sizeof(alarm));
 			break;
 		case 11:
-			strcpy(alarm, "An PV input overcurrent event is detected.");
+			strncpy(alarm, "An PV input overcurrent event is detected.", sizeof(alarm));
 			break;
 		case 12:
-			strcpy(alarm, "Leakage current exceeds the allowable range.");
+			strncpy(alarm, "Leakage current exceeds the allowable range.", sizeof(alarm));
 			break;
 		case 13:
-			strcpy(alarm, "PV insulation resistance is too low.");
+			strncpy(alarm, "PV insulation resistance is too low.", sizeof(alarm));
 			break;
 		case 14:
-			strcpy(alarm, "Inverter DC component exceeds the allowable range.");
+			strncpy(alarm, "Inverter DC component exceeds the allowable range.", sizeof(alarm));
 			break;
 		case 15:
-			strcpy(alarm, "A difference occurred in the readings from the main and secondary controllers.");
+			strncpy(alarm, "A difference occurred in the readings from the main and secondary controllers.", sizeof(alarm));
 			break;
 		case 16:
-			strcpy(alarm, "Leakage current CT failed.");
+			strncpy(alarm, "Leakage current CT failed.", sizeof(alarm));
 			break;
 		case 17:
-			strcpy(alarm, "Communication with the main and secondary controllers is interrupted.");
+			strncpy(alarm, "Communication with the main and secondary controllers is interrupted.", sizeof(alarm));
 			break;
 		case 18:
-			strcpy(alarm, "A communicating error occurred in the handshake between MCU and DSP.");
+			strncpy(alarm, "A communicating error occurred in the handshake between MCU and DSP.", sizeof(alarm));
 			break;
 		case 19:
-			strcpy(alarm, "No electrical ground.");
+			strncpy(alarm, "No electrical ground.", sizeof(alarm));
 			break;
 		case 20:
-			strcpy(alarm, "Discharge circuit fault.");
+			strncpy(alarm, "Discharge circuit fault.", sizeof(alarm));
 			break;
 		case 21:
-			strcpy(alarm, "Soft start in battery discharge fails.");
+			strncpy(alarm, "Soft start in battery discharge fails.", sizeof(alarm));
 			break;
 		case 22:
-			strcpy(alarm, "Charging voltage is too high.");
+			strncpy(alarm, "Charging voltage is too high.", sizeof(alarm));
 			break;
 		case 23:
-			strcpy(alarm, "Overload fault.");
+			strncpy(alarm, "Overload fault.", sizeof(alarm));
 			update_status("OVER");
 			break;
 		case 24:
-			strcpy(alarm, "Battery disconnected.");
+			strncpy(alarm, "Battery disconnected.", sizeof(alarm));
 			break;
 		case 25:
-			strcpy(alarm, "Inverter current is too high for a long time.");
+			strncpy(alarm, "Inverter current is too high for a long time.", sizeof(alarm));
 			break;
 		case 26:
-			strcpy(alarm, "Short circuited on inverter output.");
+			strncpy(alarm, "Short circuited on inverter output.", sizeof(alarm));
 			break;
 		case 27:
-			strcpy(alarm, "Fan fault.");
+			strncpy(alarm, "Fan fault.", sizeof(alarm));
 			break;
 		case 28:
-			strcpy(alarm, "OP Current Sensor fault.");
+			strncpy(alarm, "OP Current Sensor fault.", sizeof(alarm));
 			break;
 		case 29:
-			strcpy(alarm, "Charger failure.");
+			strncpy(alarm, "Charger failure.", sizeof(alarm));
 			break;
 		case 30:
-			strcpy(alarm, "Version mismatch between controller board and power board.");
+			strncpy(alarm, "Version mismatch between controller board and power board.", sizeof(alarm));
 			break;
 		case 31:
-			strcpy(alarm, "Reverse connection of input and output wires.");
+			strncpy(alarm, "Reverse connection of input and output wires.", sizeof(alarm));
 			break;
 		default:
 			snprintf(alarm, sizeof(alarm), "Unknown fault [%s]", item->value);
