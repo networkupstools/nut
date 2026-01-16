@@ -199,7 +199,7 @@ void upsdrv_banner (void)
 	int i;
 
 	printf("Network UPS Tools %s - %s%s %s\n",
-		describe_NUT_VERSION_once(),
+		upsdrv_callbacks.describe_NUT_VERSION_once(),
 		upsdrv_callbacks.upsdrv_info->name,
 		strstr(upsdrv_callbacks.upsdrv_info->name, "river") ? "" : " driver",
 		upsdrv_callbacks.upsdrv_info->version);
@@ -251,12 +251,12 @@ static void help_msg(void)
 {
 	vartab_t	*tmp;
 
-	if (banner_is_disabled()) {
+	if (upsdrv_callbacks.banner_is_disabled()) {
 		/* Was not printed at start of main() */
 		upsdrv_banner();
 	}
 
-	nut_report_config_flags();
+	upsdrv_callbacks.nut_report_config_flags();
 
 	printf("\nusage: %s (-a <id>|-s <id>) [OPTIONS]\n", progname);
 
@@ -347,7 +347,7 @@ static void help_msg(void)
 
 	upsdrv_callbacks.upsdrv_help();
 
-	printf("\n%s", suggest_doc_links(progname, "ups.conf"));
+	printf("\n%s", upsdrv_callbacks.suggest_doc_links(progname, "ups.conf"));
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
@@ -2272,7 +2272,7 @@ int main(int argc, char **argv)
 
 	open_syslog(progname);
 
-	if (!banner_is_disabled()) {
+	if (!upsdrv_callbacks.banner_is_disabled()) {
 		upsdrv_banner();
 	}
 
@@ -2450,11 +2450,11 @@ int main(int argc, char **argv)
 
 				/* just show the version and optional
 				 * CONFIG_FLAGS banner if available */
-				if (banner_is_disabled()) {
+				if (upsdrv_callbacks.banner_is_disabled()) {
 					/* Was not printed at start of main() */
 					upsdrv_banner();
 				}
-				nut_report_config_flags();
+				upsdrv_callbacks.nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'x':
 				splitxarg(optarg);
@@ -2476,7 +2476,7 @@ int main(int argc, char **argv)
 	 * Reference code for such message is in common/common.c prints to log
 	 * and/or syslog when any debug level is enabled.
 	 */
-	nut_report_config_flags();
+	upsdrv_callbacks.nut_report_config_flags();
 
 	argc -= optind;
 	argv += optind;
@@ -2977,7 +2977,7 @@ int main(int argc, char **argv)
 	}
 
 	/* publish the top-level data: version numbers, driver name */
-	dstate_setinfo("driver.version", "%s", UPS_VERSION);
+	dstate_setinfo("driver.version", "%s", upsdrv_callbacks.UPS_VERSION);
 	dstate_setinfo("driver.version.internal", "%s", upsdrv_callbacks.upsdrv_info->version);
 	dstate_setinfo("driver.name", "%s", progname);
 
