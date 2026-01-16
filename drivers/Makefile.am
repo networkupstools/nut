@@ -548,11 +548,17 @@ endif !ENABLE_SHARED_PRIVATE_LIBS
 EXTRA_LTLIBRARIES += libdummy_mockdrv.la
 libdummy_mockdrv_la_SOURCES = main.c dstate.c
 libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
+if ENABLE_SHARED_PRIVATE_LIBS
+# tests code will link with libnutprivate*-common-all.la too
+libdummy_mockdrv_la_LIBADD = $(LDADD_COMMON)
+libdummy_mockdrv_la_LDFLAGS =
+else !ENABLE_SHARED_PRIVATE_LIBS
 libdummy_mockdrv_la_LIBADD = \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la \
 	$(top_builddir)/common/libparseconf.la
 libdummy_mockdrv_la_LDFLAGS = -static
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # Also define a library with serial-port UPS routines needed for nut-scanner
 noinst_LTLIBRARIES = libserial-nutscan.la

@@ -148,7 +148,7 @@ generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
 
 gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
 nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
-gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBGPIO_LDFLAGS)
+gpiotest_LDADD = $(top_builddir)/common/libcommonversion.la $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBGPIO_LDFLAGS)
 if ENABLE_SHARED_PRIVATE_LIBS
 gpiotest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 endif ENABLE_SHARED_PRIVATE_LIBS
@@ -162,7 +162,7 @@ EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 
 TESTS += driver_methods_utest
 driver_methods_utest_SOURCES = driver_methods_utest.c
-driver_methods_utest_LDADD =
+driver_methods_utest_LDADD = $(top_builddir)/common/libcommonversion.la
 if ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 endif ENABLE_SHARED_PRIVATE_LIBS
