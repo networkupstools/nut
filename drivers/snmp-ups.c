@@ -6,7 +6,7 @@
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2022	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
- *	2022 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+ *	2022 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -1975,7 +1975,7 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL
 		&& info_value[0] != 0)
 	{
-		char alarm_info_value_more[SU_LARGEBUF + 32]; /* can sprintf() SU_LARGEBUF plus markup into here */
+		char alarm_info_value_more[SU_LARGEBUF + 32]; /* can snprintf() SU_LARGEBUF plus markup into here */
 
 		/* Special handling for outlet & outlet groups alarms */
 		if ((su_info_p->flags & SU_OUTLET)
@@ -2467,12 +2467,12 @@ void set_delays(void)
 		offdelay = -1;
 
 	if (ondelay >= 0) {
-		sprintf(su_scratch_buf, "%d", ondelay);
+		snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%d", ondelay);
 		su_setvar("ups.delay.start", su_scratch_buf);
 	}
 
 	if (offdelay >= 0) {
-		sprintf(su_scratch_buf, "%d", offdelay);
+		snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%d", offdelay);
 		su_setvar("ups.delay.shutdown", su_scratch_buf);
 	}
 }
@@ -2797,9 +2797,9 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 				if (daisychain_enabled == TRUE) {
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
 					if ((devices_count > 1) && (current_device_number > 0)) {
-						memset(&tmp_buf[0], 0, SU_INFOSIZE);
-						strcat(&tmp_buf[0], "device.%i.");
-						strcat(&tmp_buf[0], su_info_p->info_type);
+						memset(&tmp_buf[0], 0, sizeof(tmp_buf));	/* SU_INFOSIZE */
+						strncat(&tmp_buf[0], "device.%i.", sizeof(tmp_buf));
+						strncat(&tmp_buf[0], su_info_p->info_type, sizeof(tmp_buf));
 
 						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
 						snprintf_dynamic((char*)cur_info_p.info_type, SU_INFOSIZE,
@@ -2834,9 +2834,9 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
 					if ((devices_count > 1) && (current_device_number > 0)) {
-						memset(&tmp_buf[0], 0, SU_INFOSIZE);
-						strcat(&tmp_buf[0], "device.%i.");
-						strcat(&tmp_buf[0], su_info_p->info_type);
+						memset(&tmp_buf[0], 0, sizeof(tmp_buf));	/* SU_INFOSIZE */
+						strncat(&tmp_buf[0], "device.%i.", sizeof(tmp_buf));
+						strncat(&tmp_buf[0], su_info_p->info_type, sizeof(tmp_buf));
 
 						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
 							snprintf_dynamic((char*)cur_info_p.info_type, SU_INFOSIZE,
@@ -4350,7 +4350,7 @@ void read_mibconf(char *mib)
 
 	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, mib);
 
-	snprintf(fn, sizeof(fn), "%s/snmp/%s.conf", CONFPATH, mib);
+	snprintf(fn, sizeof(fn), "%s/snmp/%s.conf", confpath(), mib);
 
 	pconf_init(&ctx, mibconf_err);
 

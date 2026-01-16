@@ -94,7 +94,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Belkin 'Universal UPS' driver"
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.14"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -759,7 +759,7 @@ static void updatestatus(int smode, const char *fmt, ...) {
 	if (strcmp(oldbuf, buf)==0) {
 		return;
 	}
-	strcpy(oldbuf, buf);
+	strncpy(oldbuf, buf, sizeof(oldbuf));
 
 	if (smode==2) {
 		/* "dumbterm" version just prints a new line each time */

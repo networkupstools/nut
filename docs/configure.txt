@@ -279,6 +279,13 @@ CGI configuration files. This is not enabled by default, as they
 are only useful on web servers. See link:data/htmlcgi/README[] for
 additional information on how to set up CGI programs.
 
+	--with-cgi-uri=/cgi-bin/nut
+
+If CGI feature is enabled, the path where NUT programs are expected
+to be exposed by the web server (e.g. if predictable by packaging
+integration) can be provided here and built into the `header.html`
+resource file, so it would be useful out of the box.
+
 NUT Scanner tool
 ~~~~~~~~~~~~~~~~
 
@@ -1116,11 +1123,13 @@ Use `--with-systemdshutdowndir` to detect the settings using pkg-config.
 Use `--with-systemdshutdowndir=no` to disable this feature altogether.
 
 	--with-systemdtmpfilesdir=PATH
+	--with-systemdsysusersdir=PATH
 
-Where to install Linux systemd configuration for tmpfiles handling (the
-automatically created locations for PID, state and similar run-time files).
-Useless and harmless on other OSes, including Linux distributions
-without systemd, just adding a little noise to configure script output.
+Where to install Linux systemd configuration for tmpfiles and sysusers
+handling (the automatically created locations for user/group, PID,
+state and similar run-time files). Useless and harmless on other OSes,
+including Linux distributions without systemd, just adding a little
+noise to configure script output.
 
 Use `--with-systemdtmpfilesdir` to detect the settings using pkg-config.
 

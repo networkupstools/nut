@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT Generic Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -1069,7 +1069,7 @@ modbus_t *modbus_new(const char *port)
 		}
 	} else if ((sp = strchr(port, ':')) != NULL) {
 		char *tcp_port = xmalloc(sizeof(sp));
-		strcpy(tcp_port, sp + 1);
+		strncpy(tcp_port, sp + 1, sizeof(sp));
 		*sp = '\0';
 		mb = modbus_new_tcp(port, (int)strtoul(tcp_port, NULL, 10));
 		if (mb == NULL) {
