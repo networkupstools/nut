@@ -34,7 +34,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT ADELSYSTEM DC-UPS CB/CBI driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -951,8 +951,9 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		case LVDC:					/* "output.voltage" */
 		case LCUR:					/* "output.current" */
 			if (reg_val != 0) {
-				char	*fval_s;
 				double	fval;
+				char	*fval_s;
+				size_t	fval_sz;
 
 				state->reg.val.ui16 = reg_val;
 				fval = reg_val / 1000.00; /* convert mV to V, mA to A */
@@ -960,9 +961,10 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_sz = sizeof(char) * (n + 1);
+				fval_s = (char *)xmalloc(fval_sz);
 				ptr = fval_s;
-				sprintf(fval_s, "%.2f", fval);
+				snprintf(fval_s, fval_sz, "%.2f", fval);
 				state->reg.strval = fval_s;
 			} else {
 				state->reg.val.ui16 = 0;
@@ -976,15 +978,17 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		case VAC:					/* "input.voltage" */
 			if (reg_val != 0) {
 				char	*reg_val_s;
+				size_t	reg_val_sz;
 
 				state->reg.val.ui16 = reg_val;
 				n = snprintf(NULL, 0, "%u", reg_val);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				reg_val_sz = sizeof(char) * (n + 1);
+				reg_val_s = (char *)xmalloc(reg_val_sz);
 				ptr = reg_val_s;
-				sprintf(reg_val_s, "%u", reg_val);
+				snprintf(reg_val_s, reg_val_sz, "%u", reg_val);
 				state->reg.strval = reg_val_s;
 			} else {
 				state->reg.val.ui16 = 0;
@@ -996,6 +1000,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			if (reg_val != 0) {
 				double	fval;
 				char	*fval_s;
+				size_t	fval_sz;
 
 				state->reg.val.ui16 = reg_val;
 				fval = (double )reg_val * regs[BSOC].scale;
@@ -1003,9 +1008,10 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_sz = sizeof(char) * (n + 1);
+				fval_s = (char *)xmalloc(fval_sz);
 				ptr = fval_s;
-				sprintf(fval_s, "%.2f", fval);
+				snprintf(fval_s, fval_sz, "%.2f", fval);
 				state->reg.strval = fval_s;
 			} else {
 				state->reg.val.ui16 = 0;
@@ -1018,16 +1024,18 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			{ /* scoping */
 				double	fval;
 				char	*fval_s;
+				size_t	fval_sz;
 
 				state->reg.val.ui16 = reg_val;
 				fval = reg_val - 273.15;
 				n = snprintf(NULL, 0, "%.2f", fval);
-				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_sz = sizeof(char) * (n + 1);
+				fval_s = (char *)xmalloc(fval_sz);
 				if (ptr != NULL) {
 					free(ptr);
 				}
 				ptr = fval_s;
-				sprintf(fval_s, "%.2f", fval);
+				snprintf(fval_s, fval_sz, "%.2f", fval);
 				state->reg.strval = fval_s;
 			}
 			upsdebugx(3, "get_dev_state: variable: %s", state->reg.strval);
@@ -1221,14 +1229,17 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		default:
 			{ /* scoping */
 				char	*reg_val_s;
+				size_t	reg_val_sz;
+
 				state->reg.val.ui16 = reg_val;
 				n = snprintf(NULL, 0, "%u", reg_val);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				reg_val_sz = sizeof(char) * (n + 1);
+				reg_val_s = (char *)xmalloc(reg_val_sz);
 				ptr = reg_val_s;
-				sprintf(reg_val_s, "%u", reg_val);
+				snprintf(reg_val_s, reg_val_sz, "%u", reg_val);
 				state->reg.strval = reg_val_s;
 			}
 			break;
@@ -1326,7 +1337,7 @@ modbus_t *modbus_new(const char *port)
 		}
 	} else if ((sp = strchr(port, ':')) != NULL) {
 		char *tcp_port = xmalloc(sizeof(sp));
-		strcpy(tcp_port, sp + 1);
+		strncpy(tcp_port, sp + 1, sizeof(sp));
 		*sp = '\0';
 		mb = modbus_new_tcp(port, (int)strtoul(tcp_port, NULL, 10));
 		if (mb == NULL) {

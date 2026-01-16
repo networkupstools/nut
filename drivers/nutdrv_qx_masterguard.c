@@ -328,13 +328,13 @@ static int masterguard_beeper_status(item_t *item, char *value, const size_t val
 	switch (item->value[0]) {
 		case '0':
 			if (valuelen >= 9)
-				strcpy(value, "disabled");
+				strcpy(value, "disabled");	/* length limit was checked */
 			else
 				*value = '\0';
 			break;
 		case '1':
 			if (valuelen >= 8)
-				strcpy(value, "enabled");
+				strcpy(value, "enabled");	/* length limit was checked */
 			else
 				*value = '\0';
 			break;
@@ -573,7 +573,7 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 			case 's':
 				/* copy to s to avoid snprintf()ing value to itself */
 				if (strlen(value) >= sizeof s) goto ill;
-				strcpy(s, value);
+				strcpy(s, value);	/* length limit was checked */
 				break;
 			default:
 				upsdebugx(2, "setvar: unknown dfl %c", item->dfl[0]);
