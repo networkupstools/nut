@@ -209,6 +209,12 @@ https://github.com/networkupstools/nut/milestone/12
      if too few data points were seen. [#3082, #3095]
    * `openups-hid` had `nobattery` definition inverted, causing alarms -- now
      fixed to use the same mapping helper as other subdrivers. [issue #3246]
+   * Improved handling of transient `LIBUSB_ERROR_IO` failures during polling.
+     Some devices (CyberPower, etc.) have firmware bugs causing random I/O
+     errors on certain HID reports. The driver now skips failing reports and
+     continues polling rather than triggering expensive reconnection attempts.
+     True disconnections are still detected via other error codes or when all
+     polls fail. [issue #3116]
 
  - `nut-scanner` tool updates:
    * Fixed `nut-scanner` search for "simulation devices" to not use only the
