@@ -3331,6 +3331,21 @@ fi
 NUT_REPORT_PROGRAM([build CGI programs], [${nut_with_cgi}], [],
 					[WITH_CGI], [Define to enable CGI (HTTP) support])
 
+# Built into HTML via templates:
+NUT_ARG_WITH([cgi-uri], [default URI (under web-server root) where NUT CGI programs are exposed, typically /cgi-bin or /cgi-bin/nut], [auto])
+AS_CASE([${target_os}],
+	[*mingw*], [NUT_CGI_URI="/cgi-bin"],	dnl ### Let N4W build be easier to use out of the box (EXE tarball)
+		[NUT_CGI_URI="/cgi-bin/nut"]
+)
+AS_CASE([${nut_with_cgi_uri}],
+	[/*], [NUT_CGI_URI="${nut_with_cgi_uri}"],
+	[auto], [AC_MSG_NOTICE([--with-cgi-uri defaulted to '${NUT_CGI_URI}' for this platform])],
+		[AC_MSG_WARN([--with-cgi-uri must be a web server path starting with a slash; value '${nut_with_cgi_uri}' is invalid, defaulting to '${NUT_CGI_URI}'])]
+)
+AC_SUBST(NUT_CGI_URI)
+AS_IF([test x"${nut_with_cgi}" = xyes], [
+	NUT_REPORT([Default URI to NUT CGI programs], [${NUT_CGI_URI}])
+])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-pynut and --with-nut_monitor
@@ -5133,6 +5148,46 @@ dnl What pathname would we embed into unit files ExecStartPre?
 dnl TODO? Any need to make it a --with-... argument?
 AC_PATH_PROG([SYSTEMD_TMPFILES_PROGRAM], [systemd-tmpfiles], [/usr/bin/systemd-tmpfiles])
 
+dnl Note: same as (systemd-)tmpfiles
+AC_MSG_CHECKING([whether to install sysusers.d files])
+NUT_ARG_WITH([systemdsysusersdir], [(DIRPATH|yes|no|auto)], [Directory for systemd sysusers.d scripts], [auto])
+systemdsysusersdir="${nut_with_systemdsysusersdir}"
+
+case "${systemdsysusersdir}" in
+	yes|auto|"")
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[def_systemdsysusersdir="`$PKG_CONFIG --variable=sysusersdir systemd 2>/dev/null`" && test -n "$def_systemdsysusersdir" || \
+			 def_systemdsysusersdir="`$PKG_CONFIG --variable=sysusersdir libsystemd 2>/dev/null`" || def_systemdsysusersdir=""],
+			[def_systemdsysusersdir=""])
+
+		AS_IF([test x"${def_systemdsysusersdir}" = x], [
+			AS_IF([test "${systemdsysusersdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdsysusersdir=${systemdsysusersdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			systemdsysusersdir=""
+			], [systemdsysusersdir="${def_systemdsysusersdir}"])
+
+		unset def_systemdsysusersdir
+		;;
+	no)
+		systemdsysusersdir=""
+		;;
+	*)
+		AS_IF([test -d "${systemdsysusersdir}"], [],
+			[AC_MSG_WARN([--with-systemdsysusersdir='${systemdsysusersdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
+		;;
+esac
+if test "${systemdsysusersdir}" = "auto" ; then systemdsysusersdir=""; fi
+if test -n "${systemdsysusersdir}"; then
+	AC_MSG_RESULT(using ${systemdsysusersdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Systemd-sysusers configs], [${systemdsysusersdir}])
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL([WITH_SYSTEMD_SYSUSERS], [test x"${systemdsysusersdir}" != "x"])
+dnl What pathname would we embed into unit files ExecStartPre?
+dnl TODO? Any need to make it a --with-... argument?
+AC_PATH_PROG([SYSTEMD_SYSUSERS_PROGRAM], [systemd-sysusers], [/usr/bin/systemd-sysusers])
+
 
 dnl Note: we may want binaries with sd_notify and similar features regardless
 dnl of building and delivering unit files (which may be crafted separately).
@@ -5154,6 +5209,36 @@ AS_CASE(["${nut_with_libsystemd}"],
 AC_MSG_RESULT(${with_libsystemd})
 
 AC_PATH_PROG([SYSTEMD_ANALYZE_PROGRAM], [systemd-analyze], [/usr/bin/systemd-analyze])
+
+dnl Relevant since 2018 (v243): https://github.com/systemd/systemd/pull/12933
+SYSTEMD_SUPPORTS_EXEC_CONDITION=no
+AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
+	AC_MSG_CHECKING([if your systemd version supports ExecCondition])
+	myFILE="`${MKTEMP} systemd-analyze-XXXXXX.service`"
+	cat > "$myFILE" << EOF
+@<:@Unit@:>@
+Description=temp
+@<:@Service@:>@
+ExecCondition=/bin/true
+ExecStart=/bin/true
+Type=simple
+EOF
+	if myOUT="`\"$SYSTEMD_ANALYZE_PROGRAM\" verify \"$myFILE\" 2>&1`" ; then
+		if (echo "$myOUT" | ${GREP} "Failed to parse service type, ignoring") ; then
+			true
+		else
+			SYSTEMD_SUPPORTS_EXEC_CONDITION=yes
+		fi
+	fi
+	rm -f "$myFILE"
+	AC_MSG_RESULT([${SYSTEMD_SUPPORTS_EXEC_CONDITION}])
+	])
+AS_IF([test x"${SYSTEMD_SUPPORTS_EXEC_CONDITION}" = xyes], [
+	dnl No comment
+	SYSTEMD_AVAILABLE_EXEC_CONDITION=""
+], [
+	SYSTEMD_AVAILABLE_EXEC_CONDITION="### Since systemd v243 ### "
+])
 
 dnl Relevant since 2023: https://github.com/systemd/systemd/pull/25916
 SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=no
@@ -6721,6 +6806,7 @@ AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_TIMEOUT_STOP_UPSMON)
+AC_SUBST(SYSTEMD_AVAILABLE_EXEC_CONDITION)
 AC_SUBST(SYSTEMD_TMPFILES_PROGRAM)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
@@ -6767,6 +6853,7 @@ AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdsystempresetdir)
 AC_SUBST(systemdshutdowndir)
 AC_SUBST(systemdtmpfilesdir)
+AC_SUBST(systemdsysusersdir)
 AC_SUBST(dmfsnmpresdir)
 AC_SUBST(dmfnutscanresdir)
 AC_SUBST(dmfsnmpdir)
@@ -7249,6 +7336,39 @@ EOF])
 ])
 AC_MSG_RESULT([done])
 
+dnl ---------------------------------------------------------------------
+AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-sysusers.conf.in for this system])
+AS_IF([test -n "$systemdsysusersdir"],
+    [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
+     cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+# Network UPS Tools (NUT) systemd integration
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+EOF
+    AS_IF([test -n "${RUN_AS_USER}" && test x"${RUN_AS_USER}" != xnobody && test x"${RUN_AS_USER}" != xroot],
+        dnl Locked users ('!') are supported since v257
+        AS_IF([test x"$have_PKG_CONFIG" = xyes && $PKG_CONFIG --atleast-version=257 systemd 2>/dev/null], [
+            cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+u! @RUN_AS_USER@ - - @STATEPATH@
+EOF
+        ], [
+            cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+u @RUN_AS_USER@ - - @STATEPATH@
+EOF
+        ])
+    )
+    AS_IF([test -n "${RUN_AS_GROUP}" && test x"${RUN_AS_GROUP}" != xnobody && test x"${RUN_AS_GROUP}" != xnogroup && test x"${RUN_AS_GROUP}" != xroot],
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+g @RUN_AS_GROUP@
+EOF])
+    AS_IF([test -n "${RUN_AS_USER}" && test x"${RUN_AS_USER}" != xnobody && test x"${RUN_AS_USER}" != xroot && test -n "${RUN_AS_GROUP}" && test x"${RUN_AS_GROUP}" != xnobody && test x"${RUN_AS_GROUP}" != xnogroup && test x"${RUN_AS_GROUP}" != xroot],
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-sysusers.conf.in << EOF
+m @RUN_AS_USER@ @RUN_AS_GROUP@
+EOF])
+])
+AC_MSG_RESULT([done])
+
 dnl # ccache versions 4.5 and newer support namespacing of the objects
 dnl # to facilitate more targeted eviction with --evict-namespace and
 dnl # perhaps --evict-older-than options. Here we bolt a namespace with
@@ -7393,6 +7513,16 @@ AC_MSG_RESULT([C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}])
 dnl Only in the end, do you understand...
 AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
 
+AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
+AC_SUBST(EXEEXT)
+
+dnl In CGI HTML templates we have a VERSION token parsed by upsstats.cgi
+dnl to provide the run-time binary version (with unmodified HTML template),
+dnl but now that with EXEEXT they became .in templates first, the autoconf
+dnl VERSION expansion wins first. So hacking around it to generate a @TOKEN@:
+ESCAPED_TEMPLATE_VERSION='@VERSION@'
+AC_SUBST(ESCAPED_TEMPLATE_VERSION)
+
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
  clients/Makefile
@@ -7400,6 +7530,8 @@ AC_CONFIG_FILES([
  conf/Makefile
  conf/upsmon.conf.sample
  conf/upssched.conf.sample
+ conf/upsstats.html.sample
+ conf/upsstats-single.html.sample
  data/htmlcgi/header.html
  data/htmlcgi/Makefile
  data/Makefile
@@ -7446,6 +7578,7 @@ AC_CONFIG_FILES([
  scripts/systemd/Makefile
  scripts/systemd/nut.target
  scripts/systemd/nut-common-tmpfiles.conf
+ scripts/systemd/nut-common-sysusers.conf
  scripts/systemd/nut-driver.target
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-logger.service
@@ -7456,6 +7589,7 @@ AC_CONFIG_FILES([
  scripts/systemd/nut-driver-enumerator-daemon.service
  scripts/systemd/nut-driver-enumerator-daemon-activator.service
  scripts/systemd/nut-driver-enumerator-daemon-activator.path
+ scripts/systemd/nut-udev-settle.service
  scripts/DMF/Makefile
  scripts/DMF/legacy-mibfiles-list.mk
  scripts/Solaris/nut-driver-enumerator.xml

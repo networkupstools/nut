@@ -1,5 +1,5 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2025 by NUT contributors
+# Copyright (C) 2011-2026 by NUT contributors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
@@ -16,6 +16,8 @@ Documentation=man:nut-driver-enumerator(@MAN_SECTION_CMD_SYS@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/nut-driver-enumerator.html
 Documentation=man:ups.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 Documentation=man:upsdrvsvcctl(@MAN_SECTION_CMD_SYS@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html
 Documentation=man:nut.conf(@MAN_SECTION_CFG@)
@@ -23,6 +25,8 @@ Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 
 [Path]
 PathModified=@CONFPATH@/ups.conf
+# MODE setting is important for systemd too:
+PathModified=@CONFPATH@/nut.conf
 
 [Install]
 WantedBy=nut.target

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3659 utf-8
+personal_ws-1.1 en 3675 utf-8
 AAC
 AAS
 ABI
@@ -495,6 +495,7 @@ HL
 HMAC
 HNX
 HOMEBREW
+HOSTDESC
 HOSTLINK
 HOSTSYNC
 HOWTO
@@ -537,6 +538,7 @@ IFBETWEEN
 IFF
 IFSUPP
 IGN
+IIS
 IMG
 INADDR
 INFOSIZE
@@ -558,6 +560,7 @@ IPs
 IPv
 IRC
 IRIX
+ISAPI
 ISOs
 ITEMP
 ITy
@@ -914,6 +917,7 @@ Orvaldi
 Orzechowski
 OutletSystem
 OutputOverload
+PATHs
 PBT
 PBTn
 PBTnn
@@ -1385,6 +1389,7 @@ UI
 UID
 UIDA
 UINT
+UNC
 UNKCOMMAND
 UNSTASH
 UNV
@@ -1803,6 +1808,7 @@ cgroupsv
 changelog
 chargetime
 charset
+checkbox
 checkprocnames
 checkruntime
 checksum
@@ -2316,6 +2322,7 @@ includePath
 includedir
 inductor
 inet
+inetpub
 influenceable
 infos
 infoval
@@ -2722,6 +2729,7 @@ nm
 nn
 nnn
 noAuthNoPriv
+nobattery
 nobody's
 nobreak
 nobt
@@ -2811,6 +2819,7 @@ ont
 onwards
 ooce
 openSUSE
+openSUSEBuildService
 opencollective
 openfiles
 openipmi
@@ -2820,6 +2829,7 @@ openmp
 openpimi
 openssh
 openssl
+openups
 openwin
 oper
 optimizations
@@ -3212,6 +3222,7 @@ spellcheck
 spellchecked
 splitaddr
 splitname
+sprintf
 squasher
 sr
 src
@@ -3313,8 +3324,10 @@ systemd
 systemdshutdowndir
 systemdsystempresetdir
 systemdsystemunitdir
+systemdsysusersdir
 systemdtmpfilesdir
 systemtest
+sysusers
 sysutils
 sysvinit
 tagname
@@ -3363,6 +3376,7 @@ topFrame
 topbot
 tport
 transactional
+treemode
 tripplite
 tripplitesu
 troff
@@ -3488,6 +3502,7 @@ upsuser
 upswired
 uptime
 urb
+uri
 url
 urpmi
 usb
@@ -3595,6 +3610,7 @@ writeinfo
 writepid
 writeups
 ws
+wwwroot
 xAAAA
 xCC
 xD

@@ -7,7 +7,7 @@
 #
 # Copyright (C)
 #	2015-2016	Arnaud Quette <arnaud.quette@free.fr>
-#	2025		Jim Klimov <jimklimov+nut@gmail.com>
+#	2025-2026	Jim Klimov <jimklimov+nut@gmail.com>
 #
 ################################################################################
 
@@ -86,7 +86,7 @@ do
 			# the fields may be empty (just two double-quotes).
 			BADLINES="`$EGREP -v \"${VALID_LINE}\" < \"${TMPBUILD_PATH}/${drvfile}.tabbed\"`"
 			if [ x"${BADLINES}" != x ] ; then
-				echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: some lines are not exactly 6 fields (and optional comment)" >&2
+				echo "$0: ERROR: markup of '${DRVLIST_PATH}/${drvfile}' needs to be fixed: some lines are not exactly 6 fields wrapped in quotes (and optional comment) and separated by TAB characters" >&2
 				echo "$BADLINES" | head -5
 				RES=1
 				false

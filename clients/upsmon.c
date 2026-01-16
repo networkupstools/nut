@@ -233,19 +233,21 @@ static void wall(const char *text)
 	pclose(wf);
 #else	/* WIN32 */
 #	define MESSAGE_CMD "message.exe"
-	char * command;
+	char	*command;
 
 	/* first +1 is for the space between message and text
 	   second +1 is for trailing 0
 	   +2 is for "" */
-	command = malloc (strlen(MESSAGE_CMD) + 1 + 2 + strlen(text) + 1);
-	if( command == NULL ) {
+	size_t	commandsz = strlen(MESSAGE_CMD) + 1 + 2 + strlen(text) + 1;
+
+	command = malloc (commandsz);
+	if (command == NULL) {
 		upslog_with_errno(LOG_NOTICE, "Not enough memory for wall");
 		return;
 	}
 
-	sprintf(command,"%s \"%s\"",MESSAGE_CMD,text);
-	if ( system(command) != 0 ) {
+	snprintf(command, commandsz, "%s \"%s\"", MESSAGE_CMD, text);
+	if (system(command) != 0) {
 		upslog_with_errno(LOG_NOTICE, "Can't invoke wall");
 	}
 	free(command);
