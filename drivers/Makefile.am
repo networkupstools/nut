@@ -535,7 +535,9 @@ libdummy_main_stub_la_SOURCES = main-stub.c
 libdummy_serial_la_SOURCES = serial.c
 libdummy_upsdrvquery_la_SOURCES = upsdrvquery.c
 
-if !ENABLE_SHARED_PRIVATE_LIBS
+if ENABLE_SHARED_PRIVATE_LIBS
+libdummy_serial_la_LIBADD = $(LDADD_COMMON)
+else !ENABLE_SHARED_PRIVATE_LIBS
 libdummy_main_la_LDFLAGS = -no-undefined -static
 libdummy_main_stub_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_LDFLAGS = -no-undefined -static
