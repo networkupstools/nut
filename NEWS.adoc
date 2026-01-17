@@ -192,6 +192,9 @@ https://github.com/networkupstools/nut/milestone/12
  - `usbhid-ups` driver updates:
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
+   * Extended iDowell subdriver with data points for GoldenMate UPS using
+     LiFePO4 batteries (tested with GoldenMate LIPO 1500VA/1000W).
+     [issue #3015, PR #3265]
    * Improved support for Eaton 5S1500LCD and 5S1600LCD (US version). [#2380]
    * The driver used to report `CHRG` status if the device was not "fully
      charged", however the latter status was only queried and reported by

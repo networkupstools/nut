@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3627 utf-8
+personal_ws-1.1 en 3631 utf-8
 AAC
 AAS
 ABI
@@ -438,6 +438,7 @@ GITREV
 GND
 GNUmakefile
 GObject
+GoldenMate
 GPIO
 GPL
 GPLv
@@ -677,6 +678,7 @@ Legrand
 Lennart
 Lepple
 Levente
+LiFePO
 LibGD
 LibLTDL
 LibUSB
