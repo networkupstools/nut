@@ -1274,14 +1274,11 @@ void upsdrv_help(void)
 	size_t i;
 	printf("\nAcceptable values for 'subdriver' via -x or ups.conf "
 		"in this driver (exact names here, case-insensitive "
-		"sub-strings may be used, as well as regular expressions): ");
+		"sub-strings may be used, as well as regular expressions):\n");
 
 	for (i = 0; subdriver_list[i] != NULL; i++) {
-		if (i>0)
-			printf(", ");
-		printf("\"%s\"", subdriver_list[i]->name);
+		printf("\t\"%s\"\n", subdriver_list[i]->name);
 	}
-	printf("\n");
 }
 
 /* optionally tweak prognames[] entries */
