@@ -1,10 +1,24 @@
 # Network UPS Tools: scripts/Windows
 
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommon.la: FORCE
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
+
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: FORCE
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+endif ENABLE_SHARED_PRIVATE_LIBS
 
 EXTRA_DIST = \
 	winevent.mc				\
@@ -64,9 +78,18 @@ if HAVE_WINDOWS
 bin_PROGRAMS += nut halt
 
 nut_SOURCES = wininit.c
-nut_LDADD = \
-	$(top_builddir)/common/libcommon.la \
+nut_LDADD =
+if ENABLE_SHARED_PRIVATE_LIBS
+nut_LDADD += \
 	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+nut_LDADD += \
+	$(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libcommonversion.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+
+nut_LDADD += \
 	winevent.o
 
 halt_SOURCES = halt.c

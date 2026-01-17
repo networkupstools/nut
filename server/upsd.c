@@ -2160,6 +2160,10 @@ int main(int argc, char **argv)
 
 	progname = xbasename(argv[0]);
 
+#if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
+
 	/* yes, xstrdup - the conf handlers call free on this later */
 	statepath = xstrdup(dflt_statepath());
 #ifndef WIN32

@@ -3,7 +3,7 @@
    Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
 	2005	Arnaud Quette <arnaud.quette@free.fr>
 	2013	Emilien Kia <kiae.dev@gmail.com>
-	2020	Jim Klimov <jimklimov@gmail.com>
+	2020-2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,6 +31,11 @@ extern "C" {
 
 /* callback function from read_upsconf */
 void do_upsconf_args(char *upsname, char *var, char *val);
+
+/* pointer to it that dynamically-linked private NUT libraries can also call;
+ * might be a bit of an overkill with legacy static linking.
+ */
+extern void (*callback_upsconf_args)(char *upsname, char *var, char *val);
 
 /* open the ups.conf, parse it, and call back do_upsconf_args()
  * returns -1 (or aborts the program) in case of errors;

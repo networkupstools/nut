@@ -15,9 +15,10 @@ CLEANFILES =
 # nutclient.cpp for some legacy reason (maybe initial detached development?)
 # optionally includes "common.h" with the NUT build setup - and this option
 # was never triggered in fact, not until pushed through command line like this:
-AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
+AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_builddir)/include -I$(top_srcdir)/include
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommonversion.la \
@@ -30,19 +31,46 @@ $(top_builddir)/common/libparseconf.la: dummy
 # (sub-makes are independent as far as trying to write into same files):
 $(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
 
-LDADD_FULL = \
-	$(top_builddir)/common/libcommon.la \
+LDADD_FULL =
+LDADD_CLIENT =
+
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+
+LDADD_FULL += \
 	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+
+LDADD_CLIENT += \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+LDADD_FULL += \
+	$(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libcommonversion.la
+
+LDADD_CLIENT += \
+	$(top_builddir)/common/libcommonclient.la \
+	$(top_builddir)/common/libcommonversion.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+
+LDADD_FULL += \
 	libupsclient.la \
 	$(NETLIBS)
 if WITH_SSL
   LDADD_FULL += $(LIBSSL_LIBS) $(LIBSSL_LDFLAGS_RPATH)
 endif WITH_SSL
 
-LDADD_CLIENT = \
-	$(top_builddir)/common/libcommonclient.la \
-	$(top_builddir)/common/libcommonversion.la \
+LDADD_CLIENT += \
 	libupsclient.la \
 	$(NETLIBS)
 if WITH_SSL
@@ -56,7 +84,7 @@ LDADD = $(LDADD_CLIENT)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL
@@ -93,30 +121,47 @@ endif WITH_CGI
 
 upsc_SOURCES = upsc.c upsclient.h
 upsc_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
+
 upscmd_SOURCES = upscmd.c upsclient.h
+
 upsrw_SOURCES = upsrw.c upsclient.h
+
 upslog_SOURCES = upslog.c upsclient.h upslog.h
 upslog_LDADD = $(LDADD_FULL)
+
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 upsmon_LDADD = $(LDADD_FULL)
+
 if HAVE_WINDOWS_SOCKETS
 message_SOURCES = message.c
 endif HAVE_WINDOWS_SOCKETS
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = \
+upssched_LDADD =
+if ENABLE_SHARED_PRIVATE_LIBS
+upssched_LDADD += \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+upssched_LDADD += \
 	$(top_builddir)/common/libcommonclient.la \
 	$(top_builddir)/common/libcommonversion.la \
-	$(top_builddir)/common/libparseconf.la \
+	$(top_builddir)/common/libparseconf.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+
+upssched_LDADD += \
 	$(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
 
 upsset_cgi_SOURCES = upsset.c upsclient.h cgilib.c cgilib.h
+
 upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
 upsstats_cgi_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
+
+################################## Plain C client library (libupsclient) :
 
 # not LDADD... why?
 libupsclient_la_SOURCES = upsclient.c upsclient.h
@@ -184,6 +229,8 @@ libupsclient-version.h: libupsclient.la
 	 || RES=$$?; \
 	 rm -f "$@.tmp.$$$$" ; \
 	 exit $$RES
+
+################################## C++ client library (libnutclient) :
 
 if HAVE_CXX11
 # libnutclient version information and build

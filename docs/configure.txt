@@ -716,6 +716,14 @@ cases -- even though those seem to be false positives.
 Cause the `configure` script run to report some internal values of variables as
 it goes through making of choices, to help recipe developers troubleshoot it.
 
+	--enable-shared-private-libs (default: no)
+
+Deliver NUT common libraries as shared objects used by different NUT binaries,
+rather than linking just the used bits into each binary.
+
+This has some potential both for mayhem (so disabled by default) and for
+significant reduction of installation footprint.
+
 I want it all!
 ~~~~~~~~~~~~~~
 

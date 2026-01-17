@@ -10,6 +10,7 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libparseconf.la \
@@ -23,16 +24,66 @@ $(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
 # Internally (clients/Makefile.am) libupsclient.la requires libcommonclient.la
 # and that in turn libparseconf.la:
 $(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
 
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+
+lib_LTLIBRARIES =
+
+if ENABLE_SHARED_PRIVATE_LIBS
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LIBADD = \
+	libdummy_upsdrvquery.la $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+	libdummy_main.la
+
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LIBADD = \
+	libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la \
+	libdummy_serial.la $(SERLIBS)
+
+### Avoid unexpected linking across NUT generations
+### far apart (e.g. custom rebuilds of new programs
+### tucked into an existing deployment); see libtool
+### docs about current:revision:age interface numbering.
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LDFLAGS = -version-info 1:0:0
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LDFLAGS = -version-info 1:0:0
+
+  LDADD_COMMON = \
+	$(top_builddir)/common/libcommonversion.la \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+
+  LDADD_DRIVERS = libdummy_main_stub.la libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la $(LDADD_COMMON)
+
+  LDADD_DRIVERS_SERIAL = libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la $(LDADD_DRIVERS)
+
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LDFLAGS += -no-undefined
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LDFLAGS += -no-undefined
+endif HAVE_WINDOWS
+
+else !ENABLE_SHARED_PRIVATE_LIBS
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
-LDADD_COMMON = \
+  LDADD_COMMON = \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la \
 	$(top_builddir)/common/libparseconf.la
-LDADD_DRIVERS = libdummy.la libdummy_upsdrvquery.la $(LDADD_COMMON)
-LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
+  LDADD_DRIVERS = libdummy_main.la libdummy_upsdrvquery.la $(LDADD_COMMON)
+  LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # most targets are serial drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
@@ -40,7 +91,7 @@ LDADD = $(LDADD_DRIVERS_SERIAL)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 if WITH_USB
   AM_CFLAGS += $(LIBUSB_CFLAGS)
 endif WITH_USB
@@ -408,7 +459,11 @@ nutdrv_qx_LDADD = $(LDADD_DRIVERS) -lm
 nutdrv_qx_CFLAGS = $(AM_CFLAGS)
 if WITH_SERIAL
 nutdrv_qx_CFLAGS += -DQX_SERIAL
+if ENABLE_SHARED_PRIVATE_LIBS
+nutdrv_qx_LDADD += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la
+else !ENABLE_SHARED_PRIVATE_LIBS
 nutdrv_qx_LDADD += libdummy_serial.la $(SERLIBS)
+endif !ENABLE_SHARED_PRIVATE_LIBS
 endif WITH_SERIAL
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
@@ -465,14 +520,29 @@ dist_noinst_HEADERS = \
 # because per-object CFLAGS can only be specified for libraries, not
 # for object files. This library is used during the build process,
 # and is not meant to be installed.
-EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
+EXTRA_LTLIBRARIES = libdummy_main.la libdummy_main_stub.la libdummy_serial.la libdummy_upsdrvquery.la
 
-libdummy_la_SOURCES = main.c dstate.c
-libdummy_la_LDFLAGS = -no-undefined -static
+# NOTE: main.c includes tons of shared logic and global variables
+# used by all NUT drivers, so is a prime candidate for being a
+# shared library if we ENABLE_SHARED_PRIVATE_LIBS. But then we
+# have a chicken-and-egg problem, that actual NUT driver program
+# sources, which declare upsdrv_*() methods and info, have no way
+# to make the shared library variant of main code to see them.
+# This is where the main-stub.c comes in, with a small bit of code
+# compiled and linked into each driver binary to marry the two worlds.
+libdummy_main_la_SOURCES = main.c dstate.c
+libdummy_main_stub_la_SOURCES = main-stub.c
 libdummy_serial_la_SOURCES = serial.c
-libdummy_serial_la_LDFLAGS = -no-undefined -static
 libdummy_upsdrvquery_la_SOURCES = upsdrvquery.c
+
+if ENABLE_SHARED_PRIVATE_LIBS
+libdummy_serial_la_LIBADD = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+libdummy_main_la_LDFLAGS = -no-undefined -static
+libdummy_main_stub_la_LDFLAGS = -no-undefined -static
+libdummy_serial_la_LDFLAGS = -no-undefined -static
 libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # The libdummy_mockdrv.la is used for unit-tests to mock a driver
 # with near-production codebase but without its standard main().
@@ -480,11 +550,17 @@ libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
 EXTRA_LTLIBRARIES += libdummy_mockdrv.la
 libdummy_mockdrv_la_SOURCES = main.c dstate.c
 libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
+if ENABLE_SHARED_PRIVATE_LIBS
+# tests code will link with libnutprivate*-common-all.la too
+libdummy_mockdrv_la_LIBADD = $(LDADD_COMMON)
+libdummy_mockdrv_la_LDFLAGS =
+else !ENABLE_SHARED_PRIVATE_LIBS
 libdummy_mockdrv_la_LIBADD = \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la \
 	$(top_builddir)/common/libparseconf.la
 libdummy_mockdrv_la_LDFLAGS = -static
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # Also define a library with serial-port UPS routines needed for nut-scanner
 noinst_LTLIBRARIES = libserial-nutscan.la
