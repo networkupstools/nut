@@ -25,7 +25,6 @@ from __future__ import print_function
 import sys
 import re
 import glob
-import codecs
 
 # Return a sorted list of unique entries, based on the input 'list'
 def sortUnique(list):
@@ -80,7 +79,7 @@ if __name__ == '__main__':
 	for filename in glob.glob('../../drivers/*.c'):
 		# 1.2/ Exclude main.c, which defines addvar() and skel.c (example driver)
 		if filename not in Exceptionlist:
-			fd = codecs.open(filename, encoding='utf-8')
+			fd = open(filename, encoding='utf-8')
 			# 1.3/ Grep for the "addvar(..." pattern
 			matchResults = grep (r'.*addvar[\ ]*\(.*(VAR_FLAG|VAR_VALUE)*,.*', fd)
 
@@ -95,7 +94,7 @@ if __name__ == '__main__':
 					# Let's grep in .ch related files
 					if (row[1].find('"') == -1):
 						for defFilename in glob.glob(filename.replace('.c', '.[ch]')):
-							defFd = codecs.open(defFilename, encoding='utf-8')
+							defFd = open(defFilename, encoding='utf-8')
 							matchString = '^#define.*' + row[1].replace('"', '').lstrip() + '.*'
 							matchResult = grep (matchString, defFd)
 							for varDefine in matchResult:
@@ -115,12 +114,12 @@ if __name__ == '__main__':
 		specificVars += "                 | \"%s\"\n" %(name)
 
 	# 2/ Load the template lens
-	tplFd = codecs.open(dirPrefix + templateFilename, encoding='utf-8')
+	tplFd = open(dirPrefix + templateFilename, encoding='utf-8')
 
 	# 2.1/ Search for the pattern to replace
 	outputText = tplFd.read()
 	outputText = outputText.replace('@SPECIFIC_DRV_VARS@', specificVars)
 
 	# 3/ Output final lens
-	outFd = codecs.open(outputFilename, mode='w', encoding='utf-8')
+	outFd = open(outputFilename, mode='w', encoding='utf-8')
 	outFd.write(outputText)
