@@ -215,6 +215,8 @@ https://github.com/networkupstools/nut/milestone/12
    * `cps-hid` updated with Replace Battery information. [PR #3268]
    * `openups-hid` had `nobattery` definition inverted, causing alarms -- now
      fixed to use the same mapping helper as other subdrivers. [issue #3246]
+   * `powercom-hid` subdriver improved with a `powercom_hack_voltage_lkp` to
+     query `battery.voltage`. [issue #2766]
    * Improved handling of transient `LIBUSB_ERROR_IO` failures during polling.
      Some devices (CyberPower, etc.) have firmware bugs causing random I/O
      errors on certain HID reports. The driver now skips failing reports and
