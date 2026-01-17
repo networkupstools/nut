@@ -1,3 +1,4 @@
+@NUT_UPSSTATS_TEMPLATE default@
 <!-- upsstats template file -->
 
 <!--
@@ -13,8 +14,11 @@
 <!-- change this to TEMPF if you don't like Celsius. -->
 
 @TEMPC@
-@UPSSTATSPATH upsstats.cgi@
-@UPSIMAGEPATH upsimage.cgi@
+
+<!-- Note: on Windows you may have to use the `*.cgi.exe` in PATHs below -->
+
+@UPSSTATSPATH upsstats.cgi@EXEEXT@@
+@UPSIMAGEPATH upsimage.cgi@EXEEXT@@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
             "http://www.w3.org/TR/html4/strict.dtd">
@@ -25,7 +29,7 @@
 @REFRESH@
 <title>
 Network UPS Tools upsstats
-@VERSION@
+@ESCAPED_TEMPLATE_VERSION@
 : UPS Status
 </title>
 <style type="text/css">
@@ -49,7 +53,7 @@ th, td{padding:0.5ex;}
 <th COLSPAN="10" style="background:#60B0B0;">
 
 <span style="font-size:1.5em">Network UPS Tools upsstats
-@VERSION@
+@ESCAPED_TEMPLATE_VERSION@
 </span>
 
 <br>
@@ -181,7 +185,8 @@ th, td{padding:0.5ex;}
 </td>
 
 <td class="t2">
-@TREELINK@
+@TREELINK@<br/>
+@TREELINK_JSON@
 </td>
 </tr>
 
@@ -193,6 +198,7 @@ th, td{padding:0.5ex;}
 </table>
 
 <hr><div><small>
+<a href="?json" title="All devices as one JSON document">JSON</a>
 <a href="https://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"></a>
 <a href="https://validator.w3.org/check?uri=referer"><img style="float:right" src="https://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01 Strict" height="31" width="88"></a>
 </small></div>

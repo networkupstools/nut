@@ -1,3 +1,4 @@
+@NUT_UPSSTATS_TEMPLATE single@
 <!-- upsstats template file -->
 
 <!--
@@ -14,8 +15,11 @@
 <!-- change this to TEMPF if you don't like Celsius. -->
 
 @TEMPC@
-@UPSSTATSPATH upsstats.cgi@
-@UPSIMAGEPATH upsimage.cgi@
+
+<!-- Note: on Windows you may have to use the `*.cgi.exe` in PATHs below -->
+
+@UPSSTATSPATH upsstats.cgi@EXEEXT@@
+@UPSIMAGEPATH upsimage.cgi@EXEEXT@@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
             "http://www.w3.org/TR/html4/strict.dtd">
@@ -47,7 +51,7 @@ table{background:#000;}
 
 <tr>
 <th COLSPAN="20">
-Network UPS Tools upsstats @VERSION@ - @HOSTDESC@ -
+Network UPS Tools upsstats @ESCAPED_TEMPLATE_VERSION@ - @HOSTDESC@ -
 @IFSUPP device.model@
 @VAR device.model@
 @ELSE@
@@ -314,7 +318,8 @@ on @HOST@
 </tr>
 
 </table>
-<div><a href="https://jigsaw.w3.org/css-validator/check/referer"><img
+<div>@TREELINK_JSON Device data as JSON@ | @TREELINK Device data as HTML table@
+<a href="https://jigsaw.w3.org/css-validator/check/referer"><img
       style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss"
       alt="Valid CSS" title="Valid CSS" height="31" width="88"></a>
 <a href="https://validator.w3.org/check?uri=referer"><img

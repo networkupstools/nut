@@ -43,7 +43,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.89"
+#define SHUT_DRIVER_VERSION	"0.90"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -508,7 +508,7 @@ static int libshut_open(
 		fatal_with_errno(EXIT_FAILURE, "Out of memory");
 	}
 	upsdebugx(2, "%s: NOTE: BusPort is always zero with libshut", __func__);
-	sprintf(curDevice->BusPort, "%03d", 0);
+	snprintf(curDevice->BusPort, 4, "%03d", 0);
 #endif
 
 	curDevice->bcdDevice = dev_descriptor->bcdDevice;

@@ -601,16 +601,21 @@ static const struct subdriver_t {
 void upsdrv_help(void)
 {
 #ifndef TESTING
-	size_t i;
+	size_t i, len = 0, maxlen = 0;
 
-	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver:\n");
+
+	/* Calculate the longest subdriver name for print alignment */
+	for (i = 0; subdriver[i].name != NULL; i++) {
+		len = strlen(subdriver[i].name);
+		if (len > maxlen)
+			maxlen = len;
+	}
 
 	for (i = 0; subdriver[i].name != NULL; i++) {
-		if (i>0)
-			printf(", ");
-		printf("%s", subdriver[i].name);
+		printf("  %*s\n", (int)maxlen, subdriver[i].name);
 	}
-	printf("\n\n");
+	printf("\n");
 #endif	/* TESTING */
 }
 

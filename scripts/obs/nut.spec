@@ -81,6 +81,7 @@
 %define systemdsystemunitdir %(pkg-config --variable=systemdsystemunitdir systemd)
 %define systemdsystempresetdir %(pkg-config --variable=systemdsystempresetdir systemd || pkg-config --variable=systemdsystempresetdir libsystemd)
 %define systemdtmpfilesdir %(pkg-config --variable=tmpfilesdir systemd || pkg-config --variable=tmpfilesdir libsystemd)
+%define systemdsysusersdir %(pkg-config --variable=sysusersdir systemd || pkg-config --variable=sysusersdir libsystemd)
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
 %define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
 
@@ -549,9 +550,15 @@ done
 %fdupes -s %{buildroot}/%{_mandir}/man8
 
 %pre
+%if "x%{?systemdsysusersdir}" == "x"
+# Create user/group the old way
 usr/sbin/groupadd -r -g %{NUT_GROUP} 2>/dev/null || :
 usr/sbin/useradd -r -g %{NUT_GROUP} -s /bin/false \
   -c "UPS daemon" -d /sbin %{NUT_USER} 2>/dev/null || :
+%else
+# No-op per https://rpm-software-management.github.io/rpm/manual/users_and_groups.html :
+# Packagers will only need to package a sysusers.d file for their custom users and groups in /usr/lib/sysusers.d and rpm will take care of the rest.
+%endif
 %if "x%{?systemdsystemunitdir}" == "x"
 %else
 %service_add_pre %{NUT_SYSTEMD_UNITS_SERVICE_TARGET} %{NUT_SYSTEMD_UNITS_UNCOMMON_NDE}
@@ -651,6 +658,10 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %else
 %dir %{systemdtmpfilesdir}
 %endif
+%if "x%{?systemdsysusersdir}" == "x"
+%else
+%dir %{systemdsysusersdir}
+%endif
 %if "x%{?systemdshutdowndir}" == "x"
 %else
 %dir %{systemdshutdowndir}
@@ -707,6 +718,10 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 %if "x%{?systemdtmpfilesdir}" == "x"
 %else
 %{systemdtmpfilesdir}/*
+%endif
+%if "x%{?systemdsysusersdir}" == "x"
+%else
+%{systemdsysusersdir}/*
 %endif
 %if "x%{?systemdshutdowndir}" == "x"
 %else

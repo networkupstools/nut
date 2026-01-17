@@ -1,5 +1,5 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2025 by NUT contributors
+# Copyright (C) 2011-2026 by NUT contributors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
@@ -40,6 +40,8 @@ ConditionPathExists=@CONFPATH@/upslog.conf
 EnvironmentFile=-@CONFPATH@/nut.conf
 EnvironmentFile=@CONFPATH@/upslog.conf
 SyslogIdentifier=%N
+# This should be executed by the system, but better safe than sorry
+# (e.g. in custom rebuilds):
 ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
 ExecStartPre=/bin/test -n "${UPSLOG_ARGS}"
 ExecStart=@BINDIR@/upslog @SYSTEMD_DAEMON_ARGS_UPSLOG@ $UPSLOG_ARGS

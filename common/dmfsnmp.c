@@ -8,7 +8,7 @@
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
  * Copyright (C) 2019 Arnaud Quette <ArnaudQuette@Eaton.com>
- * Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ * Copyright (C) 2024-2026 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1518,14 +1518,18 @@ mibdmf_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 		{
 			if(!function_text)
 			{
-				function_text = (char*) calloc(len + 2, sizeof(char));
-				sprintf(function_text, "%.*s\n", (int) len, cdata);
+				size_t	fun_bufsz = (len + 2) * sizeof(char);
+
+				function_text = (char*) calloc(fun_bufsz, 1);
+				snprintf(function_text, fun_bufsz, "%.*s\n", (int) len, cdata);
 			} else {
-				char *aux_str;
-				function_text = (char*) realloc(function_text, (strlen(function_text) + len + 2) * sizeof(char));
-				aux_str = (char*) calloc(len + 2, sizeof(char));
-				sprintf(aux_str, "%.*s\n", (int) len, cdata);
-				strcat(function_text, aux_str);
+				size_t	aux_bufsz = len + 2, fun_bufsz = (strlen(function_text) + len + 2) * sizeof(char);
+				char	*aux_str;
+
+				function_text = (char*) realloc(function_text, fun_bufsz);
+				aux_str = (char*) calloc(aux_bufsz, sizeof(char));
+				snprintf(aux_str, aux_bufsz, "%.*s\n", (int) len, cdata);
+				strncat(function_text, aux_str, fun_bufsz);
 				free(aux_str);
 			}
 		}

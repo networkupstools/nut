@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.51"
+#define USB_DRIVER_VERSION	"0.52"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -359,7 +359,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		sprintf(curDevice->Bus, "%03d", bus_num);
+		snprintf(curDevice->Bus, 4, "%03d", bus_num);
 
 		device_addr = libusb_get_device_address(device);
 		curDevice->Device = (char *)malloc(4);
@@ -369,7 +369,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 		if (device_addr > 0) {
 			/* 0 means not available, e.g. lack of platform support */
-			sprintf(curDevice->Device, "%03d", device_addr);
+			snprintf(curDevice->Device, 4, "%03d", device_addr);
 		} else {
 			if (devnum <= 999) {
 				/* Log visibly so users know their number discovered
@@ -377,7 +377,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				upsdebugx(0, "%s: invalid libusb device address %" PRIu8 ", "
 					"falling back to enumeration order counter %" PRIuSIZE,
 					__func__, device_addr, devnum);
-				sprintf(curDevice->Device, "%03d", (int)devnum);
+				snprintf(curDevice->Device, 4, "%03d", (int)devnum);
 			} else {
 				upsdebugx(1, "%s: invalid libusb device address %" PRIu8,
 					__func__, device_addr);
@@ -394,7 +394,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
 		if (bus_port > 0) {
-			sprintf(curDevice->BusPort, "%03d", bus_port);
+			snprintf(curDevice->BusPort, 4, "%03d", bus_port);
 		} else {
 			upsdebugx(1, "%s: invalid libusb bus number %i",
 				__func__, bus_port);

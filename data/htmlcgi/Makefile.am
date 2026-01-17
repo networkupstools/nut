@@ -5,7 +5,8 @@ EXTRA_DIST = README.adoc
 # install these only if configured --with-cgi
 if WITH_CGI
  dist_htmlcgi_DATA = index.html bottom.html nut-banner.png
- nodist_htmlcgi_DATA = header.html
+ # Note: logo is not really generated, just nodist for THIS directory:
+ nodist_htmlcgi_DATA = header.html $(top_srcdir)/docs/images/nut-logo.png
 else
  EXTRA_DIST += index.html bottom.html nut-banner.png header.html.in
 endif

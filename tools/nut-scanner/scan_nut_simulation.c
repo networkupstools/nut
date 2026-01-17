@@ -40,18 +40,19 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 	DIR *dp;
 	struct dirent *dirp;
 	nutscan_device_t * dev = NULL;
+	const char *dirname = confpath();
 
 #if HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
 #endif /* HAVE_PTHREAD */
 
-	upsdebugx(1, "Scanning: %s", CONFPATH);
+	upsdebugx(1, "Scanning: %s", dirname);
 
-	if ((dp = opendir(CONFPATH)) == NULL) {
+	if ((dp = opendir(dirname)) == NULL) {
 		upsdebug_with_errno(1, "%s: Failed to open %s",
-			__func__, CONFPATH);
+			__func__, dirname);
 		upsdebugx(0, "Failed to open %s, skip NUT simulation scan",
-			CONFPATH);
+			dirname);
 		return NULL;
 	}
 

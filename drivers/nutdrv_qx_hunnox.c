@@ -26,7 +26,29 @@
 
 #include "nutdrv_qx_hunnox.h"
 
-#define HUNNOX_VERSION "Hunnox 0.02"
+#define HUNNOX_VERSION "Hunnox 0.03"
+
+/* Parse BL response: BL100, BL50, BL0, etc. */
+static int hunnox_battery_charge(item_t *item, char *value, const size_t valuelen)
+{
+    char *response = item->answer;
+    int percent;
+
+    if (strncmp(response, "BL", 2) != 0) {
+        upsdebugx(2, "%s: invalid response [%s]", __func__, response);
+        return -1;
+    }
+
+    percent = atoi(response + 2);
+
+    if (percent < 0 || percent > 100) {
+        upsdebugx(2, "%s: invalid percentage [%d]", __func__, percent);
+        return -1;
+    }
+
+    snprintf(value, valuelen, "%d", percent);
+    return 0;
+}
 
 /* qx2nut lookup table */
 static item_t	hunnox_qx2nut[] = {
@@ -77,6 +99,14 @@ static item_t	hunnox_qx2nut[] = {
 	{ "device.model",		0,	NULL,	"FW?\r",	"",	39,	'#',	"",	17,	26,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },
 	{ "ups.firmware",		0,	NULL,	"FW?\r",	"",	39,	'#',	"",	28,	37,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },
 
+	/*
+     * > [BL\r]
+     * < [BL100\r]
+     *    01234
+     *    0
+     */
+    { "battery.charge", 0, NULL, "BL\r", "", 6, 'B', "", 0, 0, "%.0f", QX_FLAG_QUICK_POLL, NULL, NULL, hunnox_battery_charge },
+
 	/* Instant commands */
 	{ "beeper.toggle",		0,	NULL,	"Q\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
 	{ "load.off",			0,	NULL,	"S00R0000\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
@@ -112,6 +142,7 @@ static testing_t	hunnox_testing[] = {
 	{ "TL\r",	"",	-1 },
 	{ "T\r",	"",	-1 },
 	{ "CT\r",	"",	-1 },
+	{ "BL\r",	"BL100\r",	-1 },
 	{ NULL }
 };
 #endif	/* TESTING */

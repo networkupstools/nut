@@ -218,6 +218,8 @@ static void help(const char *prog)
 	printf("		  and it would not imply foregrounding\n");
 	printf("		- Unlike one '-s ups -l file' spec, you can specify many tuples\n");
 	printf("		- Example: -m '*,-' to view updates of all known local devices\n");
+	printf("		- Example: -m '*@1.2.3.4,-' to view updates of all known remote\n");
+	printf("		  devices served by NUT data server with IP address 1.2.3.4\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
