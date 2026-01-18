@@ -78,7 +78,8 @@ endif WITH_USB
 
   LDADD_DRIVERS_SERIAL = libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la $(LDADD_DRIVERS)
 
-  LDADD_DRIVERS_LIBUSB = libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-libusb.la $(LDADD_DRIVERS) -lm
+# Note: unlike SERLIBS that are usually part of the system one way or another, LIBUSB_LIBS are typically shared:
+  LDADD_DRIVERS_LIBUSB = libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-libusb.la $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
@@ -559,17 +560,25 @@ libdummy_main_la_SOURCES = main.c dstate.c
 libdummy_main_stub_la_SOURCES = main-stub.c
 libdummy_serial_la_SOURCES = serial.c
 libdummy_upsdrvquery_la_SOURCES = upsdrvquery.c
-# Note: no libhid/hidparser hwre!
+# Note: no libhid/hidparser here!
 libdummy_libusb_la_SOURCES = $(LIBUSB_IMPL) usb-common.c
 
 if ENABLE_SHARED_PRIVATE_LIBS
 libdummy_serial_la_LIBADD = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+
+# Note: unlike SERLIBS that are usually part of the system one way or another, LIBUSB_LIBS are typically shared:
 libdummy_libusb_la_LIBADD = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la $(LIBUSB_LIBS)
+libdummy_libusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+
 else !ENABLE_SHARED_PRIVATE_LIBS
+
 libdummy_main_la_LDFLAGS = -no-undefined -static
 libdummy_main_stub_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_LDFLAGS = -no-undefined -static
 libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
+
+libdummy_libusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+libdummy_libusb_la_LDFLAGS = -no-undefined -static
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # The libdummy_mockdrv.la is used for unit-tests to mock a driver
