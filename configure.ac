@@ -2808,7 +2808,7 @@ NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
 
-NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
+NUT_ARG_WITH([serial], [build and install serial-only drivers], [yes])
 
 dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
