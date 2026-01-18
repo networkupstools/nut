@@ -54,12 +54,21 @@ endif WITH_SERIAL
 	libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la \
 	libdummy_serial.la $(SERLIBS)
 
+if WITH_USB
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-libusb.la
+endif WITH_USB
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_libusb_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_libusb_la_LIBADD = \
+	libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la \
+	libdummy_libusb.la $(LIBUSB_LIBS)
+
 ### Avoid unexpected linking across NUT generations
 ### far apart (e.g. custom rebuilds of new programs
 ### tucked into an existing deployment); see libtool
 ### docs about current:revision:age interface numbering.
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LDFLAGS = -version-info 1:0:0
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LDFLAGS = -version-info 1:0:0
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_libusb_la_LDFLAGS = -version-info 1:0:0
 
   LDADD_COMMON = \
 	$(top_builddir)/common/libcommonversion.la \
@@ -69,10 +78,13 @@ endif WITH_SERIAL
 
   LDADD_DRIVERS_SERIAL = libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la $(LDADD_DRIVERS)
 
+  LDADD_DRIVERS_LIBUSB = libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-libusb.la $(LDADD_DRIVERS) -lm
+
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LDFLAGS += -no-undefined
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LDFLAGS += -no-undefined
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_libusb_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
 
 else !ENABLE_SHARED_PRIVATE_LIBS
@@ -84,6 +96,7 @@ else !ENABLE_SHARED_PRIVATE_LIBS
 	$(top_builddir)/common/libparseconf.la
   LDADD_DRIVERS = libdummy_main.la libdummy_upsdrvquery.la $(LDADD_COMMON)
   LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
+  LDADD_DRIVERS_LIBUSB = libdummy_libusb.la $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
 if WITH_SERIAL
@@ -319,35 +332,34 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-h
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
  openups-hid.c powervar-hid.c delta_ups-hid.c ecoflow-hid.c ever-hid.c \
  legrand-hid.c salicru-hid.c
-usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
- usb-common.c $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+usbhid_ups_SOURCES = usbhid-ups.c libhid.c hidparser.c $(USBHID_UPS_SUBDRIVERS)
+usbhid_ups_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
-powervar_cx_usb_SOURCES = powervar_cx_usb.c powervar_cx.c $(LIBUSB_IMPL) usb-common.c
+powervar_cx_usb_SOURCES = powervar_cx_usb.c powervar_cx.c
 powervar_cx_usb_CFLAGS = $(AM_CFLAGS) -DPVAR_USB=1
-powervar_cx_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+powervar_cx_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
-tripplite_usb_SOURCES = tripplite_usb.c $(LIBUSB_IMPL) usb-common.c
-tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+tripplite_usb_SOURCES = tripplite_usb.c
+tripplite_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
-bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
-bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c
+bcmxcp_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
-blazer_usb_SOURCES = blazer.c blazer_usb.c $(LIBUSB_IMPL) usb-common.c
-blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+blazer_usb_SOURCES = blazer.c blazer_usb.c
+blazer_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
-nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
-nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c
+nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
-richcomm_usb_SOURCES = richcomm_usb.c $(LIBUSB_IMPL) usb-common.c
-richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+richcomm_usb_SOURCES = richcomm_usb.c
+richcomm_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
-riello_usb_SOURCES = riello.c riello_usb.c $(LIBUSB_IMPL) usb-common.c
-riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+riello_usb_SOURCES = riello.c riello_usb.c
+riello_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
-# per-target CFLAGS are necessary here
+# per-target CFLAGS are necessary here, so no shared lib for HID parsing
 mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE=1
 mge_shut_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 
@@ -429,8 +441,8 @@ adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 apc_modbus_SOURCES = apc_modbus.c
 apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 if WITH_MODBUS_USB
-  apc_modbus_SOURCES += $(LIBUSB_IMPL) hidparser.c usb-common.c
-  apc_modbus_LDADD += $(LIBUSB_LIBS)
+  apc_modbus_SOURCES += hidparser.c
+  apc_modbus_LDADD += $(LDADD_DRIVERS_LIBUSB)
 endif WITH_MODBUS_USB
 
 # Huawei UPS2000 driver
@@ -474,8 +486,7 @@ endif !ENABLE_SHARED_PRIVATE_LIBS
 endif WITH_SERIAL
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
-nutdrv_qx_SOURCES += $(LIBUSB_IMPL) usb-common.c
-nutdrv_qx_LDADD += $(LIBUSB_LIBS)
+nutdrv_qx_LDADD += $(LDADD_DRIVERS_LIBUSB)
 endif WITH_USB
 NUTDRV_QX_SUBDRIVERS =	\
  nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
@@ -532,6 +543,9 @@ EXTRA_LTLIBRARIES = libdummy_main.la libdummy_main_stub.la libdummy_upsdrvquery.
 if WITH_SERIAL
 EXTRA_LTLIBRARIES += libdummy_serial.la
 endif WITH_SERIAL
+if WITH_USB
+EXTRA_LTLIBRARIES += libdummy_libusb.la
+endif WITH_USB
 
 # NOTE: main.c includes tons of shared logic and global variables
 # used by all NUT drivers, so is a prime candidate for being a
@@ -545,9 +559,12 @@ libdummy_main_la_SOURCES = main.c dstate.c
 libdummy_main_stub_la_SOURCES = main-stub.c
 libdummy_serial_la_SOURCES = serial.c
 libdummy_upsdrvquery_la_SOURCES = upsdrvquery.c
+# Note: no libhid/hidparser hwre!
+libdummy_libusb_la_SOURCES = $(LIBUSB_IMPL) usb-common.c
 
 if ENABLE_SHARED_PRIVATE_LIBS
 libdummy_serial_la_LIBADD = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+libdummy_libusb_la_LIBADD = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la $(LIBUSB_LIBS)
 else !ENABLE_SHARED_PRIVATE_LIBS
 libdummy_main_la_LDFLAGS = -no-undefined -static
 libdummy_main_stub_la_LDFLAGS = -no-undefined -static

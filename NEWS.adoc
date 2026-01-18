@@ -421,7 +421,9 @@ several `FSD` notifications into one executed action. [PR #3097]
      (an older revision of) the POSIX standard here, and some use-cases
      misbehaved with our older script spelling. [issue #3196]
    * Revised `drivers/Makefile.am` to not always build `libdummy_serial.la`,
-     but only if it is needed by serial-only or modbus drivers.
+     but only if it is needed by serial-only or modbus drivers. Introduced
+     a `libdummy_usb.la` to only build USB layer sources once and share the
+     results between several USB-capable drivers. [#2800]
    * Revised `tools/gitlog2version.sh` helper script (logic added into
      a new `tools/semver-compare.sh`) with a mode to expand NUT SEMVER
      components into wide zero-padded numbers, so it is easier to
