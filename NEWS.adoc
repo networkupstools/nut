@@ -465,6 +465,9 @@ several `FSD` notifications into one executed action. [PR #3097]
    so the names would be better exposed in generated `udev.rules` and similar
    files. [PR #3139]
 
+ - Introduced `ci_build.sh` settings and respective CI workflow settings
+   to optionally re-use a `config.cache` file from older runs. [#3108]
+
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3
 ----------------------------------------------------

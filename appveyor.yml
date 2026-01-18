@@ -27,6 +27,8 @@ environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
   APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma -mx=6
   CCACHE_DIR: /home/appveyor/.ccache
+  DO_CLEAN_AUTOCONF_CACHE: no
+  DO_USE_AUTOCONF_CACHE: yes
 
 # https://github.com/networkupstools/nut/blob/Windows-v2.8.0-1/docs/config-prereqs.txt#L951
 # or look for the chapter in nearby lines in later (current) revisions.
@@ -172,6 +174,7 @@ artifacts:
 # Example optional cache (depends on file change):
 # - C:\msys64 -> appveyor.yml
 cache:
+  - C:\projects\nut\config.cache
   - C:\msys64\home\appveyor\nut-win-deps
   - C:\msys64\home\appveyor\.ccache
   - C:\msys64\home\appveyor\ccache # likely missing, no problem - but the name is reported in ccache status
