@@ -46,7 +46,9 @@ if ENABLE_SHARED_PRIVATE_LIBS
 	libdummy_upsdrvquery.la $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 	libdummy_main.la
 
+if WITH_SERIAL
   lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la
+endif WITH_SERIAL
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_SOURCES =
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LIBADD = \
 	libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la \
@@ -76,7 +78,6 @@ endif HAVE_WINDOWS
 else !ENABLE_SHARED_PRIVATE_LIBS
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
-#FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
   LDADD_COMMON = \
 	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libcommonversion.la \
@@ -85,8 +86,14 @@ else !ENABLE_SHARED_PRIVATE_LIBS
   LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
+if WITH_SERIAL
 # most targets are serial drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
+else !WITH_SERIAL
+# avoid building libdummy_serial.la we won't use (well technically, if we also
+# don't build modbus drivers - they talk serial, TCP, and occasionally USB):
+LDADD = $(LDADD_DRIVERS)
+endif !WITH_SERIAL
 
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
@@ -208,10 +215,10 @@ upsdrvctl_LDADD = libdummy_upsdrvquery.la $(LDADD_COMMON)
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
 apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
-apcsmart_LDADD = $(LDADD) $(LIBREGEX_LIBS)
+apcsmart_LDADD = $(LDADD_DRIVERS_SERIAL) $(LIBREGEX_LIBS)
 apcsmart_old_SOURCES = apcsmart-old.c
 bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c
-bcmxcp_LDADD = $(LDADD) -lm
+bcmxcp_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 belkin_SOURCES = belkin.c
 belkinunv_SOURCES = belkinunv.c
 bestfcom_SOURCES = bestfcom.c
@@ -219,56 +226,56 @@ bestfortress_SOURCES = bestfortress.c
 bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
 blazer_ser_SOURCES = blazer.c blazer_ser.c
-blazer_ser_LDADD = $(LDADD) -lm
+blazer_ser_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 etapro_SOURCES = etapro.c
 everups_SOURCES = everups.c
 gamatronic_SOURCES = gamatronic.c
 genericups_SOURCES = genericups.c
 isbmex_SOURCES = isbmex.c
-isbmex_LDADD = $(LDADD) -lm
+isbmex_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 ivtscd_SOURCES = ivtscd.c
 liebert_SOURCES = liebert.c
 liebert_esp2_SOURCES = liebert-esp2.c
 liebert_gxe_SOURCES = liebert-gxe.c
 masterguard_SOURCES = masterguard.c
 metasys_SOURCES = metasys.c
-metasys_LDADD = $(LDADD) -lm
+metasys_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 mge_utalk_SOURCES = mge-utalk.c
 microdowell_SOURCES = microdowell.c
 microsol_apc_SOURCES = microsol-apc.c microsol-common.c
-microsol_apc_LDADD = $(LDADD) -lm
+microsol_apc_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 nhs_ser_SOURCES = nhs_ser.c
-nhs_ser_LDADD = $(LDADD) -lm
+nhs_ser_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 nutdrv_hashx_SOURCES = nutdrv_hashx.c
-nutdrv_hashx_LDADD = $(LDADD) -lm
+nutdrv_hashx_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
-powercom_LDADD = $(LDADD) -lm
+powercom_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
-powerpanel_LDADD = $(LDADD) -lm
+powerpanel_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 powervar_cx_ser_SOURCES = powervar_cx_ser.c powervar_cx.c
 powervar_cx_ser_CFLAGS = $(AM_CFLAGS) -DPVAR_SERIAL=1
 rhino_SOURCES = rhino.c
-rhino_LDADD = $(LDADD) -lm
+rhino_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 safenet_SOURCES = safenet.c
 nutdrv_siemens_sitop_SOURCES = nutdrv_siemens_sitop.c
 solis_SOURCES = solis.c
-solis_LDADD = $(LDADD) -lm
+solis_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 tripplite_SOURCES = tripplite.c
-tripplite_LDADD = $(LDADD) -lm
+tripplite_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 tripplitesu_SOURCES = tripplitesu.c
 upscode2_SOURCES = upscode2.c
-upscode2_LDADD = $(LDADD) -lm
+upscode2_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 victronups_SOURCES = victronups.c
 riello_ser_SOURCES = riello.c riello_ser.c
-riello_ser_LDADD = $(LDADD) -lm
+riello_ser_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 sms_ser_SOURCES = sms_ser.c
-sms_ser_LDADD = $(LDADD) -lm
+sms_ser_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 bicker_ser_SOURCES = bicker_ser.c
-bicker_ser_LDADD = $(LDADD) -lm
+bicker_ser_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 ve_direct_SOURCES = ve-direct.c
-ve_direct_LDADD = $(LDADD) -lm
+ve_direct_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 meanwell_ntu_SOURCES = meanwell_ntu.c
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
@@ -342,7 +349,7 @@ riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
 mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE=1
-mge_shut_LDADD = $(LDADD) -lm
+mge_shut_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 
 # SNMP
 # Please keep the MIB table below sorted roughly alphabetically (incidentally
@@ -391,7 +398,7 @@ endif WITH_SSL
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
-powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
+powerman_pdu_LDADD = $(LDADD_DRIVERS) $(LIBPOWERMAN_LIBS)
 
 # IPMI PSU
 nut_ipmipsu_SOURCES = nut-ipmipsu.c
@@ -401,7 +408,7 @@ endif WITH_FREEIPMI
 # FIXME: Hacky hot-fix for build agents of varying OS generations:
 # Different versions of IPMI libs requested 'unsigned int *' or 'int *' args:
 #nut_ipmipsu_CFLAGS = $(AM_CFLAGS) -Wno-pointer-sign
-nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
+nut_ipmipsu_LDADD = $(LDADD_DRIVERS) $(LIBIPMI_LIBS)
 
 # Mac OS X metadriver
 macosx_ups_LDADD = $(LDADD_DRIVERS)
@@ -514,13 +521,17 @@ dist_noinst_HEADERS = \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h eaton-ups-pwnm2-mib.h eaton-ups-pxg-mib.h legrand-hid.h \
  hpe-pdu-mib.h hpe-pdu3-cis-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h eaton-pdu-nlogic-mib.h ydn23.h
 
-# Define a dummy library so that Automake builds rules for the
+# Origin: Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
 # as a final product. It was necessary for Automake-technical reasons,
 # because per-object CFLAGS can only be specified for libraries, not
 # for object files. This library is used during the build process,
 # and is not meant to be installed.
-EXTRA_LTLIBRARIES = libdummy_main.la libdummy_main_stub.la libdummy_serial.la libdummy_upsdrvquery.la
+# Update: this idea is more prominent when we ENABLE_SHARED_PRIVATE_LIBS!
+EXTRA_LTLIBRARIES = libdummy_main.la libdummy_main_stub.la libdummy_upsdrvquery.la
+if WITH_SERIAL
+EXTRA_LTLIBRARIES += libdummy_serial.la
+endif WITH_SERIAL
 
 # NOTE: main.c includes tons of shared logic and global variables
 # used by all NUT drivers, so is a prime candidate for being a
@@ -563,6 +574,8 @@ libdummy_mockdrv_la_LDFLAGS = -static
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # Also define a library with serial-port UPS routines needed for nut-scanner
+# Note: not covering in WITH_SERIAL because that toggle is about building
+# drivers, not an (in-)ability to use serial comms - so far all platforms can.
 noinst_LTLIBRARIES = libserial-nutscan.la
 
 libserial_nutscan_la_SOURCES = serial.c bcmxcp_ser.c
