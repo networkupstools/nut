@@ -568,7 +568,7 @@ libdummy_serial_la_LIBADD = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GIT
 
 # Note: unlike SERLIBS that are usually part of the system one way or another, LIBUSB_LIBS are typically shared:
 libdummy_libusb_la_LIBADD = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la $(LIBUSB_LIBS)
-libdummy_libusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+libdummy_libusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DBUILD_FOR_SHARED_PRIVATE_LIBS=1
 
 else !ENABLE_SHARED_PRIVATE_LIBS
 
