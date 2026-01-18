@@ -26,7 +26,9 @@
 #include "powercom-hid.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.72"
+#include <ctype.h>	/* isdigit() */
+
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.73"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -382,6 +384,78 @@ static info_lkp_t powercom_overload_conversion[] = {
 	{ 0, NULL, powercom_overload_conversion_fun, NULL }
 };
 
+/* FAIL-SAFE HACK (proper solution welcome) as proposed in
+ *   https://github.com/networkupstools/nut/issues/2766#issuecomment-3751553822 :
+ * Use global udev handle from usbhid-ups.h for a custom conversion function
+ * that reads Report 0xa4 directly via generic USB call. Formally this is
+ * now triggered by a read of ACPresent which is always served, and ends
+ * up requesting another report instead.
+ */
+static const char *powercom_hack_voltage(double value)
+{
+	static char	buf[32];
+	static char	last_valid[32] = "0.0";	/* Cache last valid reading */
+	usb_ctrl_char	data[8];
+	int	ret, retry, max_retries = 1;
+
+	/* We do not care for ACPresent reading received here */
+	NUT_UNUSED_VARIABLE(value);
+
+	/* Global 'udev' is defined in usbhid-ups.h and initialized by main driver */
+	if (!udev)
+		return last_valid;
+
+	/* If we don't have a valid value yet (driver startup), try harder to get one */
+	if (!strcmp(last_valid, "0.0")) {
+		/* Retry up to 5 times (approx 0.5s) */
+		max_retries = 5;
+	}
+
+	for (retry = 0; retry < max_retries; retry++) {
+		/* Portable read of Report 0xa4 (Feature) using NUT's wrapper */
+		/* 0xA1: Dir=IN, Type=Class, Recp=Interface */
+		ret = usb_control_msg(udev, 0xA1, 0x01, (0x03 << 8) | 0xa4, 0, data, sizeof(data), 1000);
+
+		if (ret > 0) {
+			char	msg[32], *start, *end;
+			int	len = (ret > 8) ? 8 : ret;
+			int	j = 0, i;
+
+			/* Skip byte 0 (Report ID) */
+			for (i=1; i<len; i++) {
+				msg[j++] = (char)data[i];
+			}
+			msg[j] = '\0';
+
+			/* Parse " 13.7 2" -> "13.7" */
+			start = msg;
+			while (*start && !isdigit((unsigned char)(*start)) && *start != '.') {
+				start++;
+			}
+			end = start;
+			while (*end && (isdigit((unsigned char)(*end)) || *end == '.')) {
+				end++;
+			}
+			*end = '\0';
+
+			/* VALIDATION */
+			if (strlen(start) > 0 && strchr(start, '.') != NULL) {
+				snprintf(buf, sizeof(buf), "%s", start);
+				snprintf(last_valid, sizeof(last_valid), "%s", start);
+				return buf;
+			}
+		}
+		if (max_retries > 1) {
+			usleep(100000);
+		}
+	}
+	return last_valid;
+}
+
+static info_lkp_t powercom_hack_voltage_lkp[] = {
+	{ 0, NULL, powercom_hack_voltage, NULL }
+};
+
 /* --------------------------------------------------------------- */
 /* Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -465,6 +539,13 @@ static hid_info_t powercom_hid2nut[] = {
  *	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
  *	{ "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
  */
+	/* HACK (proper fix welcome): Formally we map battery.voltage
+	 * to *ACPresent* (Report 0x0a) which is always present.
+	 * But then we use our HACK conversion function to ignore the
+	 * passed value, and read and interpret Report 0xa4 instead!
+	 */
+	{ "battery.voltage", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%s", 0, powercom_hack_voltage_lkp },
+
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge", 0, 0, "UPS.Battery.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", 0, NULL },

@@ -1433,6 +1433,7 @@
 "Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"blazer_ser"
 "Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	"USB"	"blazer_usb langid_fix=0x409"
 "Tecnoware"	"ups"	"2"	"UPS ERA PLUS 1100"	"USB"	"blazer_usb"	# https://www.tecnoware.com/Prodotti/FGCERAPL1100/ups-era-plus-1100.aspx https://github.com/networkupstools/nut/issues/747
+"Tecnoware"	"ups"	"2"	"UPS ERA PLUS 2000"	"USB"	"blazer_usb"
 
 "Tescom"	"ups"	"2"	"LEO Plus LCD 1500A"	"USB"	"blazer_usb langid_fix=0x4095 subdriver=krauler"	# https://github.com/networkupstools/nut/issues/981
 
