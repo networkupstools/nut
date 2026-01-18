@@ -212,8 +212,11 @@ https://github.com/networkupstools/nut/milestone/12
      ignore any useful reports, and that we successfully use reasonably many
      of the existing mappings. Suggest how user can help improve the driver
      if too few data points were seen. [#3082, #3095]
+   * `cps-hid` updated with Replace Battery information. [PR #3268]
    * `openups-hid` had `nobattery` definition inverted, causing alarms -- now
      fixed to use the same mapping helper as other subdrivers. [issue #3246]
+   * `powercom-hid` subdriver improved with a `powercom_hack_voltage_lkp` to
+     query `battery.voltage`. [issue #2766]
    * Improved handling of transient `LIBUSB_ERROR_IO` failures during polling.
      Some devices (CyberPower, etc.) have firmware bugs causing random I/O
      errors on certain HID reports. The driver now skips failing reports and
@@ -377,16 +380,18 @@ several `FSD` notifications into one executed action. [PR #3097]
      include the source distribution (was posted for NUT v2.8.1 and v2.8.2
      tagged releases, but absent for v2.8.3 and v2.8.4). [#3056]
    * Updated `make spellcheck` to help avoid asciidoc admonition blocks with
-     visually invalid sentences (after rendering as a box in HTML or PDF). [#3077]
-   * Added a `make dist-docs` goal to generate, collect and tarball all document
-     types (`man`, `html-single`, `html-chunked`, `pdf`) that we may have enabled
-     for the current build configuration and available tooling. [#1400]
+     visually invalid sentences (after rendering as a box in HTML or PDF).
+     [#3077]
+   * Added a `make dist-docs` goal to generate, collect and tarball all
+     document types (`man`, `html-single`, `html-chunked`, `pdf`) that we
+     may have enabled for the current build configuration and available
+     tooling. [#1400]
    * Further developer workflow speedup with `make spellcheck-interactive-quick`
      which should now not re-check source texts that were okay with the previous
      dictionary contents, in case some new terms have to be added. [PRs #3186,
      #2871]
-   * Introduced `make distcheck-completeness` goal to verify that our distribution
-     archives can exactly reproduce themselves. [#2829]
+   * Introduced `make distcheck-completeness` goal to verify that our
+     distribution archives can exactly reproduce themselves. [#2829]
    * Added a GitHub Actions CI job to generate, upload and recycle `make dist`
      and `make dist-docs` tarballs so they are easier to obtain for people and
      other CI systems (which might not want to follow a Git repository). Links

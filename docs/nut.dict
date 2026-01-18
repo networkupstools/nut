@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3631 utf-8
+personal_ws-1.1 en 3632 utf-8
 AAC
 AAS
 ABI
@@ -438,7 +438,6 @@ GITREV
 GND
 GNUmakefile
 GObject
-GoldenMate
 GPIO
 GPL
 GPLv
@@ -472,6 +471,7 @@ GitHub's
 Gnomovision
 GnuTLS
 Goebl
+GoldenMate
 Gomes
 Goncalves
 Gordeev
@@ -2496,6 +2496,7 @@ listsnapshots
 littleguy
 livedata
 lk
+lkp
 lldb
 llvm
 lm

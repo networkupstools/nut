@@ -93,10 +93,10 @@ usb:v06DApFFFF*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=Phoenixtec Power Co., Ltd
 
-# iDowell
+# iDowell, Goldenmate
 usb:v075Dp0300*
  UPOWER_BATTERY_TYPE=ups
- UPOWER_VENDOR=iDowell
+ UPOWER_VENDOR=iDowell, Goldenmate
 
 # Cyber Power Systems
 usb:v0764p0005*
