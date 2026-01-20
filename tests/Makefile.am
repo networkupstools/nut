@@ -21,8 +21,8 @@ TESTS =
 noinst_LTLIBRARIES =
 CLEANFILES = *.trs *.log
 
-AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
-AM_CXXFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include -I$(top_srcdir)/drivers
+AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 
 # Compiler flags for cppunit tests
 CPPUNIT_NUT_CXXFLAGS = @CPPUNIT_NUT_CXXFLAGS@
@@ -37,6 +37,8 @@ check-NIT check-NIT-devel:
 # Make sure out-of-dir dependencies exist (especially when dev-building
 # only some parts of NUT; note libnutclient* are for C++ but would not
 # be referenced unless that build ability is detected and enabled):
+$(top_builddir)/include/nut_version.h \
+$(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/drivers/libdummy_mockdrv.la \
 $(top_builddir)/common/libnutconf.la \
 $(top_builddir)/common/libcommonclient.la \
@@ -51,13 +53,28 @@ $(top_builddir)/clients/libnutclientstub.la: dummy
 # (sub-makes are independent as far as trying to write into same files):
 $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
-$(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommon.la
-#... $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libparseconf.la
+$(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libparseconf.la
 $(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libcommonclient.la
 $(top_builddir)/clients/libnutclientstub.la: $(top_builddir)/clients/libnutclient.la
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
+
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+
+NUT_LIBCOMMON = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+NUT_LIBCOMMON = $(top_builddir)/common/libcommon.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 nutlogtest_SOURCES = nutlogtest.c
-nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
+nutlogtest_LDADD = $(NUT_LIBCOMMON)
 
 if REQUIRE_NUT_STRARG
 check_SCRIPTS += nutlogtest-nofail.sh
@@ -79,11 +96,11 @@ endif !REQUIRE_NUT_STRARG
 
 TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
-nuttimetest_LDADD = $(top_builddir)/common/libcommon.la
+nuttimetest_LDADD = $(NUT_LIBCOMMON)
 
 TESTS += nutbooltest
 nutbooltest_SOURCES = nutbooltest.c
-#nutbooltest_LDADD = $(top_builddir)/common/libcommon.la
+#nutbooltest_LDADD = $(NUT_LIBCOMMON)
 
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = hidparser.c
@@ -101,18 +118,18 @@ TESTS += getvaluetest getexponenttest-belkin-hid
 noinst_LTLIBRARIES += libdriverstubusb.la
 nodist_libdriverstubusb_la_SOURCES = driver-stub-usb.c
 libdriverstubusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-#libdriverstubusb_la_LIBADD = $(top_builddir)/common/libcommon.la
+#libdriverstubusb_la_LIBADD = $(NUT_LIBCOMMON)
 
 getexponenttest-belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
 getexponenttest_belkin_hid_SOURCES = getexponenttest-belkin-hid.c
 getexponenttest_belkin_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-getexponenttest_belkin_hid_LDADD = $(top_builddir)/common/libcommon.la libdriverstubusb.la
+getexponenttest_belkin_hid_LDADD = $(NUT_LIBCOMMON) libdriverstubusb.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
 # Pull the right include path for chosen libusb version:
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
+getvaluetest_LDADD = $(NUT_LIBCOMMON)
 else !WITH_USB
 EXTRA_DIST += getvaluetest.c hidparser.c
 endif !WITH_USB
@@ -131,7 +148,10 @@ generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
 
 gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
 nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
-gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBGPIO_LDFLAGS)
+gpiotest_LDADD = $(top_builddir)/common/libcommonversion.la $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBGPIO_LDFLAGS)
+if ENABLE_SHARED_PRIVATE_LIBS
+gpiotest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
 gpiotest_CFLAGS = $(LIBGPIO_CFLAGS) $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 else !WITH_GPIO
 EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
@@ -142,7 +162,11 @@ EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 
 TESTS += driver_methods_utest
 driver_methods_utest_SOURCES = driver_methods_utest.c
-driver_methods_utest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
+driver_methods_utest_LDADD = $(top_builddir)/common/libcommonversion.la
+if ENABLE_SHARED_PRIVATE_LIBS
+driver_methods_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
 ### Optional tests which can not be built everywhere

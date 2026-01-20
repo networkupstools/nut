@@ -894,6 +894,35 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wstrict-prototypes" (outside functions)])
   ])
 
+  dnl Older GCC and CLANG complain about later-standardized `something={0}`
+  dnl syntax of initialization which zeroes out (struct) bytes:
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wmissing-field-initializers"],
+    [ax_cv__pragma__gcc__diags_ignored_missing_field_initializers],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_missing_field_initializers=yes],
+      [ax_cv__pragma__gcc__diags_ignored_missing_field_initializers=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_missing_field_initializers" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wmissing-field-initializers"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wmissing-field-initializers" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_missing_field_initializers_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wmissing-field-initializers"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_missing_field_initializers_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_missing_field_initializers_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_missing_field_initializers_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wmissing-field-initializers" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wassign-enum"],
     [ax_cv__pragma__gcc__diags_ignored_assign_enum],
     [AC_COMPILE_IFELSE(
