@@ -117,6 +117,18 @@ Serial drivers
 
 	--with-serial
 
+Note this means drivers where serial port is the only supported connection
+(most of the NUT drivers), and half the ability of linkman:nutdrv_qx[8]
+(which can be built to use serial or USB or both types of media links).
+
+This toggle is currently unrelated to modbus drivers which normally use
+Serial RTU, but some can use TCP RTU and USB RTU. This might be or not be
+revised in future NUT releases.
+
+It also does not impact the build of `libnutscan` for link:nut-scanner[8],
+link:nutconf[8], and possibly other (third-party) consumers, which as a
+library aims to support all communications media it can.
+
 USB drivers
 ~~~~~~~~~~~
 
@@ -237,6 +249,10 @@ Modbus drivers
 Build and install modbus (Serial, TCP) drivers (default: auto-detect)
 
 Note that you need to install libmodbus development package or files.
+
+For most drivers, the ability to use serial port (and build code for that)
+is implicitly required, and currently independent from `--with-serial`
+option.
 
 	--with-modbus+usb
 
@@ -732,6 +748,14 @@ cases -- even though those seem to be false positives.
 
 Cause the `configure` script run to report some internal values of variables as
 it goes through making of choices, to help recipe developers troubleshoot it.
+
+	--enable-shared-private-libs (default: no)
+
+Deliver NUT common libraries as shared objects used by different NUT binaries,
+rather than linking just the used bits into each binary.
+
+This has some potential both for mayhem (so disabled by default) and for
+significant reduction of installation footprint.
 
 I want it all!
 ~~~~~~~~~~~~~~

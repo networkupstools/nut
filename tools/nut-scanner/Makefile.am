@@ -74,6 +74,18 @@ $(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/common/libparsec
 #  Notably this pops up in `configure && make dist(check)` rituals.
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+
 # We optionally append values to this below
 bin_PROGRAMS =
 lib_LTLIBRARIES =
@@ -209,6 +221,14 @@ nut_scanner_CFLAGS = \
 			-I$(top_builddir)/include -I$(top_srcdir)/include
 nut_scanner_LDADD = libnutscan.la
 #FTY-old# nut_scanner_LDADD = $(top_builddir)/common/libcommon.la libnutscan.la $(top_builddir)/common/libcommonstr.la
+
+if ENABLE_SHARED_PRIVATE_LIBS
+# ensure the "fatal_with_errno" symbol, and others that libnutscan uses
+# TODO: Check if common-client suffices (or do we need whatever more "all" brings?)
+nut_scanner_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+# get LIBNUTPRIVATE_UPS_VERSION seen for the library code itself
+libnutscan_la_LIBADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
 
 # Hack to allow correct RPATH/RUNPATH like /usr/lib/mps/64 (Mozilla NSS)
 # to be used on Solaris/illumos and similar platforms. For more details,

@@ -73,6 +73,8 @@ dnl for a pre-release it may differ from even the base NUT_VERSION numbers
 dnl (e.g. a commit tagged as 2.8.3-rc5 can have its own NUT_VERSION based
 dnl on 2.8.2-something, but is assumed as a pre-release for 2.8.3 SEMVER).
 NUT_SOURCE_GITREV_SEMVER="`NUT_VERSION_QUERY=SEMVER \"${srcdir}/tools/gitlog2version.sh\" 2>/dev/null`"
+NUT_SOURCE_GITREV_SEMVER_COLONS="`echo \"${NUT_SOURCE_GITREV_SEMVER}\" | tr '.' ':'`"
+NUT_SOURCE_GITREV_SEMVER_UNDERSCORES="`echo \"${NUT_SOURCE_GITREV_SEMVER}\" | tr '.' '_'`"
 
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
 dnl # Example:   NUT_SOURCE_GITREV_NUMERIC='2.8.2.695.1.696'
@@ -80,6 +82,8 @@ dnl #   NUT_SOURCE_GITREV_NUMERIC="`echo \"${NUT_SOURCE_GITREV}\" | sed -e 's/^v
 dnl # Without the commit-count since tag (dash-separated part):
 dnl # Example:   NUT_SOURCE_GITREV_NUMERIC='2.8.2.695.1'
 NUT_SOURCE_GITREV_NUMERIC="`echo \"${NUT_SOURCE_GITREV}\" | sed -e 's/^v//' -e 's/@<:@+-@:>@g.*$//' -e 's/-@<:@0-9@:>@*$//'`"
+NUT_SOURCE_GITREV_NUMERIC_COLONS="`echo \"${NUT_SOURCE_GITREV_NUMERIC}\" | tr '.' ':'`"
+NUT_SOURCE_GITREV_NUMERIC_UNDERSCORES="`echo \"${NUT_SOURCE_GITREV_NUMERIC}\" | tr '.' '_'`"
 
 dnl Note: except for experiments, do not pass this into config.h - use
 dnl the NUT_VERSION_MACRO from nut_version.h instead. Developers may
@@ -2833,7 +2837,7 @@ NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
 
-NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
+NUT_ARG_WITH([serial], [build and install serial-only drivers], [yes])
 
 dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
@@ -4569,6 +4573,30 @@ fi
 AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
 NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}], [],
 					[WITH_DEV], [Define to enable development files support])
+
+dnl Since 2.7.x releases, NUT binaries have grown rather large on many
+dnl platforms. Maybe this is due to more and more libcommon* methods?
+dnl Tracked at https://github.com/networkupstools/nut/issues/2800
+dnl While we had never shared internal code this way (and probably need
+dnl to stress it is not a public API/ABI), most NUT binaries are already
+dnl dynamically linked wither with libupsclient or third-party code.
+AC_MSG_CHECKING(if requested shared internal libraries)
+NUT_ARG_ENABLE([shared-private-libs], [ENABLE_SHARED_PRIVATE_LIBS], [Dynamically link to NUT libcommon* libraries delivered once, instead of building used code into each program binary], [no])
+
+dnl For now basically cover yes/no/auto
+dnl FIXME: Somehow determine whether we can do this at all,
+dnl for proper failure on "yes" if we can't vs. not-failing
+dnl but rather switching to "no" for "auto"?
+AS_CASE([${nut_enable_shared_private_libs}],
+	[""|yes], [nut_enable_shared_private_libs="yes"],
+	[auto], [nut_enable_shared_private_libs="yes"],
+	[no], [],
+		[AC_MSG_ERROR([invalid option value --enable-shared-private-libs='${nut_enable_shared_private_libs}'])]
+)
+AC_MSG_RESULT([${nut_enable_shared_private_libs}])
+AM_CONDITIONAL(ENABLE_SHARED_PRIVATE_LIBS, test "${nut_enable_shared_private_libs}" = "yes"])
+NUT_REPORT_FEATURE([dynamically link to NUT common libraries instead of copying needed bits into each binary], [${nut_enable_shared_private_libs}], [],
+					[ENABLE_SHARED_PRIVATE_LIBS], [Define to dynamically link to NUT common libraries instead of copying needed bits into each binary])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to MS Windows support (MingW)
@@ -6753,7 +6781,11 @@ AC_SUBST(NUT_SOURCE_GITREV)
 AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_IS_PRERELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER)
+AC_SUBST(NUT_SOURCE_GITREV_SEMVER_COLONS)
+AC_SUBST(NUT_SOURCE_GITREV_SEMVER_UNDERSCORES)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
+AC_SUBST(NUT_SOURCE_GITREV_NUMERIC_COLONS)
+AC_SUBST(NUT_SOURCE_GITREV_NUMERIC_UNDERSCORES)
 AC_SUBST(NUT_WEBSITE_BASE)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
@@ -7231,13 +7263,14 @@ dnl When building ON Windows (mingw/MSYS2, cygwin, etc.) fudge these
 dnl path strings back to what native OS methods would recognize.
 AS_CASE([${target_os}],
     [*mingw*], [
-        AC_MSG_NOTICE([Will try to resolve Windows paths to ABS_TOP_SRCDIR and ABS_TOP_BUILDDIR with cygpath or mingw/msys pwd -W tool (would fail if not a native build)])
+        AC_MSG_NOTICE([Will try to resolve Windows paths to ABS_TOP_SRCDIR and ABS_TOP_BUILDDIR with 'cygpath -ma' or mingw/msys 'pwd -W' tool (would fail if not a native build)])
 
-        dnl Cygwin path resolver
+        dnl Cygwin path resolver; note it may have already been found
+        dnl by autotools core code earlier in the generated script:
         AC_CHECK_TOOL([CYGPATH], [cygpath], [none])
-        AS_IF([test "x${CYGPATH}" != "xnone" && test x"`${CYGPATH}`" != x], [
-            tmp="`${CYGPATH} -m \"${ABS_TOP_BUILDDIR}\" | sed -e 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
-            tmp="`${CYGPATH} -m \"${ABS_TOP_SRCDIR}\" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+        AS_IF([test "x${CYGPATH}" != "xnone" && test x"`${CYGPATH} -m -a .`" != x], [
+            tmp="`${CYGPATH} -m -a \"${ABS_TOP_BUILDDIR}\" | sed -e 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+            tmp="`${CYGPATH} -m -a \"${ABS_TOP_SRCDIR}\" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
         ],[
             dnl MSYS pwd with -W option to resolve
             AC_CHECK_TOOL([PWDTOOL], [pwd], [none])

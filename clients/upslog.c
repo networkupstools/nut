@@ -520,6 +520,10 @@ int main(int argc, char **argv)
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
 
+#if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
+
 	print_banner_once(prog, 0);
 
 	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:W:")) != -1) {
@@ -1027,6 +1031,6 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
-        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */
