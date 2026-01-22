@@ -111,7 +111,8 @@ USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
 DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt macros.txt new-clients.txt	\
  new-drivers.txt net-protocol.txt nutdrv_qx-subdrivers.txt	\
- nut-versioning.adoc snmp-subdrivers.txt sock-protocol.txt nut-dmf.txt
+ nut-dmf.txt	\
+ nut-versioning.adoc snmp-subdrivers.txt sock-protocol.txt
 
 # See also conversions included via FULL_QA_GUIDE_DEPS
 QA_GUIDE_DEPS =  nut-qa.txt config-prereqs.txt ci-farm-do-setup.adoc	\
