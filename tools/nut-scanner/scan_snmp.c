@@ -283,7 +283,7 @@ int nutscan_unload_snmp_library(void)
 #if ! WITH_DMFMIB
 /* Not shown by header, so make it non-static here */
 void uninit_snmp_device_table(void);
-#endif
+#endif	/* !WITH_DMFMIB */
 
 void uninit_snmp_device_table(void) {
 #if WITH_DMFMIB
@@ -293,9 +293,9 @@ void uninit_snmp_device_table(void) {
 		mibdmf_parser_destroy(&dmfnutscan_snmp_dmp);
 	snmp_device_table_dmf = NULL;
 	dmfnutscan_snmp_dmp = NULL;
-#else
+#else	/* !WITH_DMFMIB */
 	upsdebugx(1, "%s: not implemented in this build (without DMF support)", __func__);
-#endif /* if WITH_DMFMIB */
+#endif	/* !WITH_DMFMIB */
 
 }
 
@@ -756,9 +756,9 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	if (dev->driver == NULL) {
 		dev->driver = strdup("snmp-ups");
 	}
-#else
+#else	/* !WITH_DMFMIB */
 	dev->driver = strdup("snmp-ups");
-#endif /* if WITH_DMFMIB */
+#endif	/* !WITH_DMFMIB */
 	/* FIXME: Should the IPv6 address here be bracketed?
 	 *  Does our driver support the notation? */
 	dev->port = strdup(session->peername);
