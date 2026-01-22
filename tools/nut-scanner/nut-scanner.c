@@ -124,7 +124,10 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-/* TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load */
+/* NOTE: we define `zZ:` options to set up path(s) to the DMFs to load
+ *  regardless of WITH_DMFMIB value in the current build; we just handle
+ *  them differently.
+ */
 static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QnNPqIVaDzZ:";
 
 #ifdef HAVE_GETOPT_LONG
