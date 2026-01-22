@@ -310,14 +310,17 @@ dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
- include_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
+ include_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
+ include_HEADERS += nutscan-snmp.h
 else !WITH_DEV
- dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
+ dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
+ dist_noinst_HEADERS += nutscan-snmp.h
 endif !WITH_DEV
 
 dummy:
 
-CLEANFILES += *-spellchecked README nut-scanner-reindex-dmfsnmp dmf-reindex
+CLEANFILES += *-spellchecked README
+CLEANFILES += nut-scanner-reindex-dmfsnmp dmf-reindex
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
