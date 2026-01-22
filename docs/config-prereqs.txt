@@ -2063,6 +2063,7 @@ directory (not plain `/usr/lib/ccache` as elsewhere).
 After you successfully build NUT (perhaps using `ci_build.sh`), if you
 install it into a prototype area by `make DESTDIR=... install` then you should
 add the third-party shared libraries involved, for that file set to be usable.
+
 Something along these lines:
 ------
 :; find "$DESTDIR" -name '*.exe' -type f  | while read F ; do ldd "$F" \
