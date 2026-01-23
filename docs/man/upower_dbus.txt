@@ -1,0 +1,71 @@
+UPOWER_DBUS(8)
+==============
+
+NAME
+----
+upower_dbus - Driver for UPower devices via D-Bus
+
+SYNOPSIS
+--------
+*upower_dbus* -h
+
+*upower_dbus* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the
+*upower_dbus* driver. For information about the core driver, see
+linkman:nutupsdrv[8].
+
+DESCRIPTION
+-----------
+This driver allows the monitoring of power devices (UPS, batteries) that are
+managed by the UPower daemon via the D-Bus system bus.
+
+It maps UPower properties (state, percentage, voltage, etc.) to standard NUT
+variables, allowing NUT clients to monitor devices that are natively supported
+by the OS desktop environment but not directly by other NUT drivers.
+
+EXTRA ARGUMENTS
+---------------
+This driver supports the following optional settings in linkman:ups.conf[5]:
+
+*port*::
+The UPower Object Path of the device to monitor.
+
+If set to `auto` (the default), the driver will scan for the first UPower device
+whose object path contains the string "ups_".
+
+If set to a specific path (e.g., `/org/freedesktop/UPower/devices/ups_hiddev0`),
+the driver will attempt to monitor that specific device.
+
+*lowbatt*::
+The battery percentage threshold below which the `LB` (Low Battery) status
+flag is set. The default value is 20.0.
+
+INSTALLATION
+------------
+To use this driver, add a section to your *ups.conf*:
+
+----
+[myups]
+    driver = upower_dbus
+    port = auto
+    lowbatt = 20
+    desc = "Laptop Battery or generic UPS via UPower"
+----
+
+REQUIREMENTS
+------------
+This driver requires the `upower` daemon to be running and accessible via the
+D-Bus system bus. It also requires GLib 2.0 and GIO libraries.
+
+AUTHOR
+------
+Tim Niemueller <tim@niemueller.de>
+
+SEE ALSO
+--------
+linkman:ups.conf[5], linkman:nutupsdrv[8], linkman:upsc[8]
+
+Internet Resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

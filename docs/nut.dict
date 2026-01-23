@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3632 utf-8
+personal_ws-1.1 en 3638 utf-8
 AAC
 AAS
 ABI
@@ -241,6 +241,7 @@ Cygwin
 DATACABLE
 DATAPATH
 DBCF
+DBUS
 DCE
 DCF
 DCO
@@ -434,7 +435,9 @@ GES
 GETADDRINFO
 GETPID
 GID
+GIO
 GITREV
+GLib
 GND
 GNUmakefile
 GObject
@@ -850,6 +853,7 @@ Netman
 NetworkUPSTools
 Neus
 Niels
+Niemueller
 Niklas
 Niro
 NixOS
@@ -1925,6 +1929,7 @@ datasheet
 datasize
 datastale
 dblatex
+dbus
 dcd
 dcn
 ddk
@@ -2133,6 +2138,7 @@ formatstring
 fosshost
 fp
 freebsd
+freedesktop
 freeipmi
 freetype
 frob

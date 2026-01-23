@@ -2316,6 +2316,7 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_powerman}"; then with_powerman="yes"; fi
 		if test -z "${with_modbus}"; then with_modbus="yes"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="yes"; fi
+		if test -z "${with_upower}"; then with_upower="yes"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
 		if test -z "${with_gpio}"; then
@@ -2353,6 +2354,7 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_upower}"; then with_upower="${withval}"; fi
 		if test -z "${with_gpio}"; then with_gpio="${withval}"; fi
 		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
 		if test -z "${with_macosx_ups}"; then with_macosx_ups="${withval}"; fi
@@ -2369,7 +2371,8 @@ AC_ARG_WITH(drivers,
 				SERIAL_DRIVERLIST USB_LIBUSB_DRIVERLIST SERIAL_USB_DRIVERLIST
 				SNMP_DRIVERLIST NEONXML_DRIVERLIST
 				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
-				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST"
+				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST
+				UPOWER_DRIVERLIST"
 
 			dnl Gets ONE Makefile assignment value
 			get_drivers_makefile_value() (
@@ -2520,6 +2523,11 @@ AC_ARG_WITH(drivers,
 										[AC_MSG_NOTICE([Requiring --with-gpio=yes for driver "$DRV"])
 										with_gpio=yes]
 									)],
+								[UPOWER_DRIVERLIST], [
+									AS_IF([test -z "${with_upower}"],
+										[AC_MSG_NOTICE([Requiring --with-upower=yes for driver "$DRV"])
+										with_upower=yes]
+									)],
 
 								[AC_MSG_WARN([Unhandled DRVLIST_NAME=$DRVLIST_NAME])]
 							)
@@ -2553,7 +2561,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, dev-libnutconf, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), upower, macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, dev-libnutconf, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -2567,6 +2575,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_upower}"; then with_upower="${withval}"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
 		if test -z "${with_gpio}"; then
@@ -2845,6 +2854,7 @@ dnl Platform-dependent drivers, currently their detection code is directly
 dnl spelled out in configure.ac
 NUT_ARG_WITH([macosx_ups], [build and install Mac OS X Power Sources meta-driver], [auto])
 NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
+NUT_ARG_WITH([upower], [build and install UPower driver (requires GLib/GIO)], [auto])
 
 dnl A Python GUI client application for the sysadmin desktop
 dnl (not necessarily on the NUT server itself):
@@ -5431,6 +5441,34 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
         have_cppunit=no]
 )
 AC_MSG_RESULT(${have_cppunit})
+
+dnl ----------------------------------------------------------------------
+dnl Check for GLib / GIO (Required for UPower driver)
+dnl ----------------------------------------------------------------------
+
+have_glib=no
+
+if test "${with_upower}" != "no"; then
+AS_IF([test x"$have_PKG_CONFIG" = xyes],
+    [ifdef([PKG_CHECK_MODULES],
+        [PKG_CHECK_MODULES(GLIB, [glib-2.0 gio-2.0], [have_glib=yes], [have_glib=no])],
+        [have_glib=no])
+    ],
+    [AC_MSG_WARN([pkg-config not found, cannot look properly for glib-2.0/gio-2.0])]
+)
+fi
+
+if test "${have_glib}" = "yes"; then
+    AC_DEFINE(HAVE_GLIB, 1, [Define to 1 if GLib and GIO are available])
+else
+    if test "${with_upower}" = "yes"; then
+        AC_MSG_ERROR([GLib/GIO not found but requested via --with-upower])
+    fi
+    AC_MSG_WARN([GLib/GIO not found. The 'upower' driver will not be built.])
+fi
+
+AM_CONDITIONAL(HAVE_GLIB, test "${have_glib}" = "yes")
+AC_MSG_RESULT(${have_glib})
 
 dnl On some systems, CppUnit inexplicably fails with trivial assertions
 dnl so it should not be enabled with those environments, corrupting the
