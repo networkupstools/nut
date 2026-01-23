@@ -457,17 +457,28 @@ static void stop_driver(const ups_t *ups)
 				tv.tv_sec = 15;
 				tv.tv_usec = 0;
 				udq_ret = upsdrvquery_oneshot_conn(udq_pipe, "INSTCMD driver.exit\n", buf, sizeof(buf), &tv);
-				upsdebugx(1, "%s: upsdrvquery_oneshot_conn() replied to 'exit': '%s'", __func__, buf);
+				upsdebugx(1, "%s: upsdrvquery_oneshot_conn() replied to 'exit' (%" PRIiSIZE "): '%s'", __func__, udq_ret, buf);
+
+				if (udq_ret >= 0) {
+					upsdrvquery_write(udq_pipe, "NOBROADCAST");
+					while (upsdrvquery_ping(udq_pipe, &tv, 1000) > 0) {
+						/* 0 = no reply, -1 = socket error; either way driver deemed dead? */
+						upsdebugx(1, "%s: keep waiting for driver exit", __func__);
+						sleep(1);
+					}
+					upsdebugx(1, "%s: final PING did not PONG back", __func__);
+				}
 			}
-			upsdrvquery_close(udq_pipe);
 
 			upslogx(LOG_ERR, "%s to %s the 'exit' command to the driver socket",
-				udq_ret < 0 ? "Failed" : "Succeeded",
+				(udq_ret < 0) ? "Failed" : "Succeeded",
 				testmode ? "emulate" : "send");
 
 			if (udq_ret < 0) {
 				exec_error++;
 			}
+
+			upsdrvquery_close(udq_pipe);
 
 			return;
 		}
