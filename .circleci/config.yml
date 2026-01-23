@@ -95,7 +95,8 @@ jobs:
                 pkg-config aspell asciidoc docbook-xsl cppunit gd \
                 libusb neon net-snmp \
                 nss openssl \
-                libmodbus freeipmi powerman $BREW_MORE
+                libmodbus freeipmi powerman \
+                $BREW_MORE
             #brew reinstall openssl@3
             if ps -ef | grep -v grep | grep sshd ; then
                 brew install mc
