@@ -455,35 +455,29 @@ socket_error:
 	return -1;
 }
 
-ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
-	struct timeval	start, now;
+/* Return 1 if we had a reply, 0 if not, -1 on socket errors */
+ssize_t upsdrvquery_ping(udq_pipe_conn_t *conn, struct timeval *ptv, useconds_t read_interval) {
+	struct timeval	start, now, tv;
 
-	if (!conn || INVALID_FD(conn->sockfd))
-		return -1;
-
-	/* Avoid noise */
-	if (upsdrvquery_write(conn, "NOBROADCAST\n") < 0)
-		goto socket_error;
-
-	if (tv.tv_sec < 1 && tv.tv_usec < 1) {
-		upsdebugx(5, "%s: proclaiming readiness for tracked commands without flush of server messages", __func__);
-		return 1;
+	if (!ptv) {
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+		ptv = &tv;
 	}
 
-	/* flush incoming, if any */
 	gettimeofday(&start, NULL);
 
 	if (upsdrvquery_write(conn, "PING\n") < 0)
-		goto socket_error;
+		return -1;
 
-	upsdebugx(5, "%s: waiting for a while to flush server messages", __func__);
 	while (1) {
-		char *buf;
-		upsdrvquery_read_timeout(conn, tv);
+		char	*buf;
+
+		upsdrvquery_read_timeout(conn, *ptv);
 		gettimeofday(&now, NULL);
-		if (difftimeval(now, start) > ((double)(tv.tv_sec) + 0.000001 * (double)(tv.tv_usec))) {
+		if (difftimeval(now, start) > ((double)(ptv->tv_sec) + 0.000001 * (double)(ptv->tv_usec))) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
-			break;
+			return 0;
 		}
 
 		/* Await a PONG for quick confirmation of achieved quietness
@@ -498,7 +492,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		while (buf && *buf) {
 			if (!strncmp(buf, "PONG\n", 5)) {
 				upsdebugx(5, "%s: got expected PONG", __func__);
-				goto finish;
+				return 1;
 			}
 			buf = strchr(buf, '\n');
 			if (buf) {
@@ -511,15 +505,41 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		}
 
 		/* Diminishing timeouts for read() */
-		tv.tv_usec -= (suseconds_t)(difftimeval(now, start));
-		while (tv.tv_usec < 0) {
-			tv.tv_sec--;
-			tv.tv_usec = 1000000 + tv.tv_usec;	/* Note it is negative */
+		ptv->tv_usec -= (suseconds_t)(difftimeval(now, start));
+		while (ptv->tv_usec < 0) {
+			ptv->tv_sec--;
+			ptv->tv_usec = 1000000 + ptv->tv_usec;	/* Note it is negative */
 		}
-		if (tv.tv_sec <= 0 && tv.tv_usec <= 0) {
+		if (ptv->tv_sec <= 0 && ptv->tv_usec <= 0) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
-			break;
+			return 0;
 		}
+
+		if (read_interval)
+			usleep(read_interval);
+	}
+}
+
+ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	/* Avoid noise */
+	if (upsdrvquery_write(conn, "NOBROADCAST\n") < 0)
+		goto socket_error;
+
+	if (tv.tv_sec < 1 && tv.tv_usec < 1) {
+		upsdebugx(5, "%s: proclaiming readiness for tracked commands without flush of server messages", __func__);
+		return 1;
+	}
+
+	/* flush incoming, if any */
+	upsdebugx(5, "%s: waiting for a while to flush server messages - posting a PING, waiting for PONG", __func__);
+	switch (upsdrvquery_ping(conn, &tv, 1000)) {
+		case -1:	goto socket_error;
+		case  0:	goto finish;	/* No reply - maybe handle somehow? */
+		case  1:	break;	/* Got PONG */
+		default:	break;
 	}
 
 	/* Check that we can have a civilized dialog --

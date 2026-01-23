@@ -42,6 +42,9 @@ void upsdrvquery_close(udq_pipe_conn_t *conn);
 ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv);
 ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf);
 
+/* Return 1 if we had a reply within timeout specified by *ptv (5 sec if NULL),
+ * 0 if not, -1 on socket errors */
+ssize_t upsdrvquery_ping(udq_pipe_conn_t *conn, struct timeval *ptv, useconds_t read_interval);
 ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv);
 ssize_t upsdrvquery_request(udq_pipe_conn_t *conn, struct timeval tv, const char *query);
 ssize_t upsdrvquery_restore_broadcast(udq_pipe_conn_t *conn);
