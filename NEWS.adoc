@@ -246,6 +246,8 @@ https://github.com/networkupstools/nut/milestone/12
  - `upsdrvctl` tool updates:
    * Make use of `setproctag()` and `getproctag()` to report parent/child
      process names. [#3084]
+   * The global-level `debug_min` setting in `ups.conf` now also applies
+     to bumping the debug verbosity of `upsdrvctl` tool. [#3276]
 
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
