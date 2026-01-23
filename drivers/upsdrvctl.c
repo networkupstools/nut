@@ -437,8 +437,38 @@ static void stop_driver(const ups_t *ups)
 		}
 
 		if (ret != 0) {
+			ssize_t	udq_ret;
+			udq_pipe_conn_t *udq_pipe;
+
 			upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
-			exec_error++;
+
+			udq_pipe = upsdrvquery_connect_drvname_upsname(ups->driver, ups->upsname);
+			if (udq_pipe)
+				upslogx(LOG_ERR, "At least could open the driver socket");
+			if (testmode) {
+				udq_ret = (udq_pipe == NULL ? -1 : 0);
+			} else {
+				char	buf[LARGEBUF];
+				struct timeval	tv;
+
+				memset(buf, 0, sizeof(buf));
+				/* Post the query and wait for reply */
+				/* FIXME: coordinate with pollfreq? */
+				tv.tv_sec = 15;
+				tv.tv_usec = 0;
+				udq_ret = upsdrvquery_oneshot_conn(udq_pipe, "INSTCMD driver.exit\n", buf, sizeof(buf), &tv);
+				upsdebugx(1, "%s: upsdrvquery_oneshot_conn() replied to 'exit': '%s'", __func__, buf);
+			}
+			upsdrvquery_close(udq_pipe);
+
+			upslogx(LOG_ERR, "%s to %s the 'exit' command to the driver socket",
+				udq_ret < 0 ? "Failed" : "Succeeded",
+				testmode ? "emulate" : "send");
+
+			if (udq_ret < 0) {
+				exec_error++;
+			}
+
 			return;
 		}
 	} else {

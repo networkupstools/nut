@@ -248,6 +248,8 @@ https://github.com/networkupstools/nut/milestone/12
      process names. [#3084]
    * The global-level `debug_min` setting in `ups.conf` now also applies
      to bumping the debug verbosity of `upsdrvctl` tool. [#3276]
+   * If we fail to stop a driver by signal (e.g. PID file was not saved),
+     retry to `INSTCMD driver.exit` it by socket protocol. [#3277]
 
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
