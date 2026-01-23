@@ -187,8 +187,39 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 	if (VALID_FD(conn->sockfd)) {
 		int	nudl = nut_upsdrvquery_debug_level;
 		ssize_t ret;
+
+		/* The connection may be closed on the other side,
+		 * so send() can issue SIGPIPE and by default the
+		 * process crashes. Try to work around that here.
+		 * https://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
+		 * TODO: Consider mixing send() and MSG_NOSIGNAL
+		 *  where available.
+		 */
+#ifndef WIN32
+		sigset_t	old_state, set;
+
+		/* get the current state */
+		sigprocmask(SIG_BLOCK, NULL, &old_state);
+
+		/* add signal_to_block to that existing state */
+		set = old_state;
+		sigaddset(&set, SIGPIPE);
+
+		/* block that signal also */
+		sigprocmask(SIG_BLOCK, &set, NULL);
+# ifdef SO_NOSIGPIPE
+		setsockopt(conn->sockfd, SO_NOSIGPIPE);
+# endif	/* SO_NOSIGPIPE */
+#endif	/* !WIN32 */
+
 		upsdebugx(5, "%s: closing driver socket, try to say goodbye", __func__);
+
 		ret = upsdrvquery_write(conn, "LOGOUT\n");
+
+#ifndef WIN32
+		sigprocmask(SIG_BLOCK, &old_state, NULL);
+#endif	/* !WIN32 */
+
 		if (7 <= ret) {
 			upsdebugx(5, "%s: okay", __func__);
 #ifdef WIN32
