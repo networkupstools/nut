@@ -469,21 +469,46 @@ static void stop_driver(const ups_t *ups)
 				memset(buf, 0, sizeof(buf));
 				/* Post the query and wait for reply */
 				/* FIXME: coordinate with pollfreq? */
-				tv.tv_sec = 15;
+
+				/* Below we poke reads inside ping every 0.1s,
+				 * which is not too often but responsive enough.
+				 * Sometimes we do get into being able to send
+				 * "PING" but as the channel is closing, the
+				 * reads return 0 and errno=Success infinitely.
+				 * So we first ping with a 1-second timeout,
+				 * then retry (and maybe fail instantly but
+				 * definitely with EPIPE) with a 3-sec backoff,
+				 * and then again with a longer common countdown
+				 * (tv = 15.0s caried over remaining retries).
+				 */
+				tv.tv_sec = 1;
 				tv.tv_usec = 0;
 				udq_ret = upsdrvquery_oneshot_conn(udq_pipe, "INSTCMD driver.exit\n", buf, sizeof(buf), &tv);
 				upsdebugx(1, "%s: upsdrvquery_oneshot_conn() replied to 'exit' (%" PRIiSIZE "): '%s'", __func__, udq_ret, buf);
 
 				if (udq_ret >= 0) {
+					int	n = 0;
+
 					upsdrvquery_write(udq_pipe, "NOBROADCAST");
-					/* Poke reads inside ping every 0.1s, not too often but responsive enough
-					 * Sometimes we do get into being able to send PING but as the channel
-					 * is closing, the reads return 0 and errno=Success infinitely.
-					 */
-					while (upsdrvquery_ping(udq_pipe, &tv, 100000) > 0) {
+					while (upsdrvquery_ping(udq_pipe, &tv, 100000) > (n == 0 ? -1 : 0)) {
 						/* 0 = no reply, -1 = socket error; either way driver deemed dead? */
 						upsdebugx(1, "%s: keep waiting for driver exit", __func__);
 						sleep(1);
+						n++;
+						switch (n) {
+						case 1:
+							/* New TO for longer backoff, once */
+							tv.tv_sec = 3;
+							tv.tv_usec = 0;
+							break;
+						case 2:
+							/* New TO overall, set once */
+							tv.tv_sec = 15;
+							tv.tv_usec = 0;
+							break;
+						default:
+							break;
+						}
 					}
 					upsdebug_with_errno(1, "%s: final PING did not PONG back", __func__);
 					/* Let the driver's exit() finish */
