@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3646 utf-8
+personal_ws-1.1 en 3648 utf-8
 AAC
 AAS
 ABI
@@ -434,6 +434,7 @@ FullLoad
 Fuß
 GC
 GCCVER
+GDBus
 GES
 GETADDRINFO
 GETPID
@@ -2446,6 +2447,7 @@ libexecdir
 libexpat
 libfreeipmi
 libgd
+libgio
 libglib
 libgpgme
 libgpiod

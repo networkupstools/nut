@@ -208,6 +208,8 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
 
+nutscan_device_t * nutscan_scan_upower(void);
+
 #ifdef HAVE_PTHREAD
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 /* Expose shared libnutscan semaphore for overall thread count

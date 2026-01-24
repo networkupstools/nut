@@ -2855,6 +2855,7 @@ dnl spelled out in configure.ac
 NUT_ARG_WITH([macosx_ups], [build and install Mac OS X Power Sources meta-driver], [auto])
 NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
 NUT_ARG_WITH([upower], [build and install UPower driver (requires GLib/GIO)], [auto])
+NUT_CHECK_LIBGLIB
 
 dnl A Python GUI client application for the sysadmin desktop
 dnl (not necessarily on the NUT server itself):
@@ -3002,6 +3003,21 @@ fi
 
 NUT_REPORT_FEATURE([enable Avahi support], [${nut_with_avahi}], [],
 					[WITH_AVAHI], [Define to enable Avahi support])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-upower
+
+dnl ${nut_with_upower}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_upower}" = "yes" -a "${nut_have_libglib}" != "yes"; then
+   AC_MSG_ERROR([GLib/GIO libraries not found, required for UPower support])
+fi
+
+if test "${nut_with_upower}" != "no"; then
+   nut_with_upower="${nut_have_libglib}"
+fi
+
+NUT_REPORT_FEATURE([enable UPower support], [${nut_with_upower}], [],
+					[WITH_UPOWER], [Define to enable UPower support])
 
 dnl ----------------------------------------------------------------------
 

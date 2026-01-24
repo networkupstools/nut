@@ -97,7 +97,8 @@ endif WITH_NUT_SCANNER
 libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
-			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
+			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
+			scan_upower.c
 libnutscan_la_LIBADD = $(NETLIBS)
 libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
 
@@ -215,6 +216,9 @@ endif WITH_AVAHI
 if WITH_IPMI
   libnutscan_la_CFLAGS += $(LIBIPMI_CFLAGS)
 endif WITH_IPMI
+if WITH_UPOWER
+  libnutscan_la_CFLAGS += $(LIBGLIB_CFLAGS)
+endif WITH_UPOWER
 
 # C is not a header, but there is no dist_noinst_SOURCES
 dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
