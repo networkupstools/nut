@@ -192,7 +192,7 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 		 * so send() can issue SIGPIPE and by default the
 		 * process crashes. Try to work around that here.
 		 * https://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
-		 * TODO: Consider mixing send() and MSG_NOSIGNAL
+		 * NOTE: in upsdrvquery_write() we use MSG_NOSIGNAL
 		 *  where available.
 		 */
 #ifndef WIN32
@@ -430,7 +430,12 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 	}
 
 #ifndef WIN32
+# ifdef MSG_NOSIGNAL
+	ret = send(conn->sockfd, buf, buflen, MSG_NOSIGNAL);
+# else
+	/* Per docs, same as send() with zero flags value */
 	ret = write(conn->sockfd, buf, buflen);
+# endif
 
 	if (ret < 0 || ret != (int)buflen) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
