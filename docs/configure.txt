@@ -209,6 +209,20 @@ This allows to monitor numerous Power Supply Units (PSU) found on servers.
 Note that you need to install freeipmi (0.8.5 or higher, for nut-scanner;
 and 1.0.1 or higher, for nut-ipmipsu) development package or files.
 
+UPower/D-Bus drivers
+~~~~~~~~~~~~~~~~~~~~
+
+	--with-upower (default: auto-detect)
+
+Build and install the `upower_dbus` driver.
+
+This allows to monitor UPS and battery devices managed by the UPower daemon
+via D-Bus. This introduces a new category of drivers that talk to operating
+system services to obtain power state information.
+
+Note that you need to install `glib-2.0` and `gio-2.0` development packages
+or files.
+
 I2C bus drivers
 ~~~~~~~~~~~~~~~
 

@@ -15,7 +15,7 @@
 #include <string.h>
 
 #define DRIVER_NAME	"UPower D-Bus Driver"
-#define DRIVER_VERSION	"0.1"
+#define DRIVER_VERSION	"0.01"
 
 /* UPower Constants */
 #define UPOWER_BUS	"org.freedesktop.UPower"
@@ -203,7 +203,7 @@ void upsdrv_help(void)
 /* -------------------------------------------------------------------------- */
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "lowbatt", "Low battery threshold (default: 20%)");
+	addvar(VAR_VALUE, "lowbatt", "Low battery threshold, in percent (default: 20)");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -250,6 +250,12 @@ void upsdrv_updateinfo(void)
 	GVariantIter iter;
 	gchar *key;
 	GVariant *value;
+	gdouble voltage = 0.0, percentage = 0.0;
+	gint64 time_empty = 0;
+	guint state = 0;
+	const gchar *model = "Unknown";
+	const gchar *vendor = "Unknown";
+	const gchar *serial = "Unknown";
 
 	/* Fetch All Properties */
 	result = g_dbus_connection_call_sync(
@@ -274,13 +280,6 @@ void upsdrv_updateinfo(void)
 	/* Parse Dictionary */
 	props = g_variant_get_child_value(result, 0);
 	g_variant_iter_init(&iter, props);
-
-	gdouble voltage = 0.0, percentage = 0.0;
-	gint64 time_empty = 0;
-	guint state = 0;
-	const gchar *model = "Unknown";
-	const gchar *vendor = "Unknown";
-	const gchar *serial = "Unknown";
 
 	while (g_variant_iter_loop(&iter, "{sv}", &key, &value)) {
 		if (g_strcmp0(key, "Voltage") == 0) {
