@@ -1,18 +1,18 @@
-UPOWER_DBUS(8)
-==============
+NUT-UPOWER(8)
+=============
 
 NAME
 ----
-upower_dbus - Driver for UPower devices via D-Bus
+nut-upower - Driver for UPower devices via D-Bus
 
 SYNOPSIS
 --------
-*upower_dbus* -h
+*nut-upower* -h
 
-*upower_dbus* -a 'UPS_NAME' ['OPTIONS']
+*nut-upower* -a 'UPS_NAME' ['OPTIONS']
 
 NOTE: This man page only documents the specific features of the
-*upower_dbus* driver. For information about the core driver, see
+*nut-upower* driver. For information about the core driver, see
 linkman:nutupsdrv[8].
 
 DESCRIPTION
@@ -47,7 +47,7 @@ To use this driver, add a section to your *ups.conf*:
 
 ----
 [myups]
-    driver = upower_dbus
+    driver = nut-upower
     port = auto
     lowbatt = 20
     desc = "Laptop Battery or generic UPS via UPower"

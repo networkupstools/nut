@@ -120,7 +120,7 @@ Changes from 2.8.4 to 2.8.5
   or to not-deliver files no longer installed into the prototype area. [#1792]
 
 - Introduced a new driver category for interaction with OS-reported UPS
-  devices via D-Bus, with the `upower_dbus` driver as the first implementation.
+  devices via D-Bus, with the `nut-upower` driver as the first implementation.
   This driver requires `glib-2.0` and `gio-2.0` development libraries to be
   available at build time. For packagers, this adds new dependencies if the
   build should include this driver.

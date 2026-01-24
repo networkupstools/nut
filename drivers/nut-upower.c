@@ -1,4 +1,4 @@
-/* drivers/upower_dbus.c - Driver for UPower via D-Bus
+/* drivers/nut-upower.c - Driver for UPower via D-Bus
  *
  * Copyright (C) 2026 Tim Niemueller <tim@niemueller.de>
  *

@@ -189,7 +189,7 @@ https://github.com/networkupstools/nut/milestone/12
    * Fixed default `unit_id`, apparently broken by changes in NUT v2.8.1.
      [issue #3191, PR #3192]
 
- - Introduced a new NUT driver named `upower_dbus` which provides support
+ - Introduced a new NUT driver named `nut-upower` which provides support
    for monitoring UPS and battery devices managed by the UPower daemon
    via D-Bus. This also introduces a new category of drivers that talk to
    operating system services to obtain power state information.

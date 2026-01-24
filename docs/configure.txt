@@ -214,7 +214,7 @@ UPower/D-Bus drivers
 
 	--with-upower (default: auto-detect)
 
-Build and install the `upower_dbus` driver.
+Build and install the `nut-upower` driver.
 
 This allows to monitor UPS and battery devices managed by the UPower daemon
 via D-Bus. This introduces a new category of drivers that talk to operating

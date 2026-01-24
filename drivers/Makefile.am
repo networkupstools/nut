@@ -167,7 +167,7 @@ LINUX_I2C_DRIVERLIST = asem pijuice hwmon_ina219
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
 GPIO_DRIVERLIST = generic_gpio_libgpiod
-UPOWER_DRIVERLIST = upower_dbus
+UPOWER_DRIVERLIST = nut-upower
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
@@ -371,9 +371,9 @@ if HAVE_GLIB
   # Only build upower if GLib was found
   driverexec_PROGRAMS += $(UPOWER_DRIVERLIST)
     
-  upower_dbus_SOURCES = upower_dbus.c
-  upower_dbus_LDADD = $(LDADD_DRIVERS) $(GLIB_LIBS)
-  upower_dbus_CFLAGS = $(AM_CFLAGS) $(GLIB_CFLAGS)
+  nut_upower_SOURCES = nut-upower.c
+  nut_upower_LDADD = $(LDADD_DRIVERS) $(GLIB_LIBS)
+  nut_upower_CFLAGS = $(AM_CFLAGS) $(GLIB_CFLAGS)
 endif
 
 # SNMP
