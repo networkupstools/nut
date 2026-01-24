@@ -461,7 +461,11 @@ static void stop_driver(const ups_t *ups)
 
 				if (udq_ret >= 0) {
 					upsdrvquery_write(udq_pipe, "NOBROADCAST");
-					while (upsdrvquery_ping(udq_pipe, &tv, 1000) > 0) {
+					/* Poke reads inside ping every 0.1s, not too often but responsive enough
+					 * Sometimes we do get into being able to send PING but as the channel
+					 * is closing, the reads return 0 and errno=Success infinitely.
+					 */
+					while (upsdrvquery_ping(udq_pipe, &tv, 100000) > 0) {
 						/* 0 = no reply, -1 = socket error; either way driver deemed dead? */
 						upsdebugx(1, "%s: keep waiting for driver exit", __func__);
 						sleep(1);

@@ -501,25 +501,39 @@ socket_error:
 
 /* Return 1 if we had a reply, 0 if not, -1 on socket errors */
 ssize_t upsdrvquery_ping(udq_pipe_conn_t *conn, struct timeval *ptv, useconds_t read_interval) {
-	struct timeval	start, now, tv;
+	struct timeval	start, now, last, tv;
+	double	maxdiff;
 
 	if (!ptv) {
 		tv.tv_sec = 5;
 		tv.tv_usec = 0;
 		ptv = &tv;
 	}
+	maxdiff = (double)(ptv->tv_sec) + 0.000001 * (double)(ptv->tv_usec);
 
 	gettimeofday(&start, NULL);
 
 	if (upsdrvquery_write(conn, "PING\n") < 0)
 		return -1;
 
+	last = start;
 	while (1) {
 		char	*buf;
+		ssize_t	read_ret;
+		double	delta;
 
-		upsdrvquery_read_timeout(conn, *ptv);
+		errno = 0;
+		read_ret = upsdrvquery_read_timeout(conn, *ptv);
+
+		if (errno == EPIPE) {
+			upsdebug_with_errno(5, "%s: upsdrvquery_read_timeout() connection was closed: %" PRIiSIZE, __func__, read_ret);
+			return -1;
+		}
+
+		upsdebug_with_errno(5, "%s: upsdrvquery_read_timeout() returned %" PRIiSIZE, __func__, read_ret);
+
 		gettimeofday(&now, NULL);
-		if (difftimeval(now, start) > ((double)(ptv->tv_sec) + 0.000001 * (double)(ptv->tv_usec))) {
+		if (difftimeval(now, start) > maxdiff) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
 			return 0;
 		}
@@ -548,19 +562,46 @@ ssize_t upsdrvquery_ping(udq_pipe_conn_t *conn, struct timeval *ptv, useconds_t 
 			}
 		}
 
-		/* Diminishing timeouts for read() */
-		ptv->tv_usec -= (suseconds_t)(difftimeval(now, start));
+		if (read_interval) {
+			upsdebugx(5, "%s: sleep %" PRIuMAX "usec", __func__, (uintmax_t)read_interval);
+			usleep(read_interval);
+		}
+
+		/* Diminishing timeouts for read() and later processing */
+		last = now;
+		gettimeofday(&now, NULL);
+		delta = difftimeval(now, last);
+		upsdebugx(7, "%s: start   tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}",
+			__func__, (intmax_t)start.tv_sec, (intmax_t)start.tv_usec);
+		upsdebugx(7, "%s: last    tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}",
+			__func__, (intmax_t)last.tv_sec, (intmax_t)last.tv_usec);
+		upsdebugx(7, "%s: now     tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}",
+			__func__, (intmax_t)now.tv_sec, (intmax_t)now.tv_usec);
+		upsdebugx(6, "%s: initial tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}; applying delta %g",
+			__func__, (intmax_t)ptv->tv_sec, (intmax_t)ptv->tv_usec,
+			delta);
+
+		/* Note: delta is in whole seconds and fractional useconds */
+		while (delta > 1) {
+			delta -= 1;
+			ptv->tv_sec--;
+		}
+
+		/* Fractional remainder */
+		ptv->tv_usec -= (suseconds_t)(delta * 1000000);
+		upsdebugx(7, "%s: semiupd tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "} (1e6*delta = %" PRIiMAX ")",
+			__func__, (intmax_t)ptv->tv_sec, (intmax_t)ptv->tv_usec,
+			(intmax_t)(delta * 1000000));
 		while (ptv->tv_usec < 0) {
 			ptv->tv_sec--;
 			ptv->tv_usec = 1000000 + ptv->tv_usec;	/* Note it is negative */
 		}
-		if (ptv->tv_sec <= 0 && ptv->tv_usec <= 0) {
+		upsdebugx(6, "%s: updated tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}",
+			__func__, (intmax_t)ptv->tv_sec, (intmax_t)ptv->tv_usec);
+		if (ptv->tv_sec < 0) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
 			return 0;
 		}
-
-		if (read_interval)
-			usleep(read_interval);
 	}
 }
 
