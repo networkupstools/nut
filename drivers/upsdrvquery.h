@@ -63,4 +63,12 @@ extern int nut_upsdrvquery_debug_level;
 #define NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT	5
 #define NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG	4
 
+/* Do our best to disable SIGPIPE in failed write()/send() attempts?
+ * Note errno=EPIPE should still be raised in case of failure, just
+ * the process using this code would not crash. Feature is enabled
+ * by default, but consumers which handle their signals specially
+ * can disable it by setting upsdrvquery_NOSIGPIPE=0
+ */
+extern int upsdrvquery_NOSIGPIPE;
+
 #endif	/* NUT_UPSDRVQUERY_H_SEEN */

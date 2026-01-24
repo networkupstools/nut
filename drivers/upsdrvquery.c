@@ -52,6 +52,14 @@
  */
 int nut_upsdrvquery_debug_level = NUT_UPSDRVQUERY_DEBUG_LEVEL_DEFAULT;
 
+/* Do our best to disable SIGPIPE in failed write()/send() attempts?
+ * Note errno=EPIPE should still be raised in case of failure, just
+ * the process using this code would not crash. Feature is enabled
+ * by default, but consumers which handle their signals specially
+ * can disable it by setting upsdrvquery_NOSIGPIPE=0
+ */
+int upsdrvquery_NOSIGPIPE = 1;
+
 udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	udq_pipe_conn_t	*conn = (udq_pipe_conn_t*)xcalloc(1, sizeof(udq_pipe_conn_t));
 
@@ -200,7 +208,8 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 #  ifdef SO_NOSIGPIPE
 		/* Just for this one socket (and gonna be gone soon): */
 		int	set = 1;
-		setsockopt(conn->sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+		if (upsdrvquery_NOSIGPIPE)
+			setsockopt(conn->sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
 #  else	/* !SO_NOSIGPIPE */
 		/* Not thread-safe, but we do not aim for this here, hopefully
 		 * (any nut-scanner users, though?) and this is a last-resort
@@ -211,15 +220,17 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 		 */
 		sigset_t	old_state, set;
 
-		/* get the current state */
-		sigprocmask(SIG_BLOCK, NULL, &old_state);
+		if (upsdrvquery_NOSIGPIPE) {
+			/* get the current state */
+			sigprocmask(SIG_BLOCK, NULL, &old_state);
 
-		/* add signal_to_block to that existing state */
-		set = old_state;
-		sigaddset(&set, SIGPIPE);
+			/* add signal_to_block to that existing state */
+			set = old_state;
+			sigaddset(&set, SIGPIPE);
 
-		/* block that signal also */
-		sigprocmask(SIG_BLOCK, &set, NULL);
+			/* block that signal also */
+			sigprocmask(SIG_BLOCK, &set, NULL);
+		}
 #  endif	/* !SO_NOSIGPIPE */
 # endif		/* !MSG_NOSIGNAL */
 #endif	/* !WIN32 */
@@ -231,7 +242,8 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 #ifndef WIN32
 # ifndef MSG_NOSIGNAL
 #  ifndef SO_NOSIGPIPE
-		sigprocmask(SIG_BLOCK, &old_state, NULL);
+		if (upsdrvquery_NOSIGPIPE)
+			sigprocmask(SIG_BLOCK, &old_state, NULL);
 #  endif	/* !SO_NOSIGPIPE */
 # endif		/* !MSG_NOSIGNAL */
 #endif	/* !WIN32 */
@@ -455,7 +467,10 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 
 #ifndef WIN32
 # ifdef MSG_NOSIGNAL
-	ret = send(conn->sockfd, buf, buflen, MSG_NOSIGNAL);
+	if (upsdrvquery_NOSIGPIPE)
+		ret = send(conn->sockfd, buf, buflen, MSG_NOSIGNAL);
+	else
+		ret = write(conn->sockfd, buf, buflen);
 # else
 	/* Per docs, same as send() with zero flags value */
 	ret = write(conn->sockfd, buf, buflen);
