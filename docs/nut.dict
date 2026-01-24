@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3639 utf-8
+personal_ws-1.1 en 3641 utf-8
 AAC
 AAS
 ABI
@@ -1315,6 +1315,7 @@ SyntaxWarning
 Sysgration
 SyslogIdentifier
 SystemIO
+SystemRoot
 Systeme
 Syu
 Szady
@@ -2190,13 +2191,13 @@ getval
 getvar
 gh
 gif
+gio
 gitcache
 github
 gitignore
 gitk
 gitlab
 gitlog
-gio
 gmail
 gmake
 gmtime
@@ -2440,6 +2441,7 @@ libexecdir
 libexpat
 libfreeipmi
 libgd
+libglib
 libgpgme
 libgpiod
 libhid
