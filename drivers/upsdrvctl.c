@@ -466,7 +466,9 @@ static void stop_driver(const ups_t *ups)
 						upsdebugx(1, "%s: keep waiting for driver exit", __func__);
 						sleep(1);
 					}
-					upsdebugx(1, "%s: final PING did not PONG back", __func__);
+					upsdebug_with_errno(1, "%s: final PING did not PONG back", __func__);
+					/* Let the driver's exit() finish */
+					usleep(1000000);
 				}
 			}
 
