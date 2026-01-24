@@ -336,25 +336,30 @@ static void libfreeipmi_cleanup(void)
 	if (fru_ctx) {
 		ipmi_fru_close_device_id (fru_ctx);
 		ipmi_fru_ctx_destroy (fru_ctx);
+		fru_ctx = NULL;
 	}
 
 	if (sdr_ctx) {
 		ipmi_sdr_ctx_destroy (sdr_ctx);
+		sdr_ctx = NULL;
 	}
 
 #ifndef HAVE_FREEIPMI_11X_12X
 	if (sdr_parse_ctx) {
 		ipmi_sdr_parse_ctx_destroy (sdr_parse_ctx);
+		sdr_parse_ctx = NULL;
 	}
 #endif
 
 	if (ipmi_ctx) {
 		ipmi_ctx_close (ipmi_ctx);
 		ipmi_ctx_destroy (ipmi_ctx);
+		ipmi_ctx = NULL;
 	}
 
 	if (mon_ctx) {
 		ipmi_monitoring_ctx_destroy (mon_ctx);
+		mon_ctx = NULL;
 	}
 }
 
@@ -808,11 +813,13 @@ cleanup:
 	/* Cleanup */
 	if (sdr_ctx) {
 		ipmi_sdr_ctx_destroy (sdr_ctx);
+		sdr_ctx = NULL;
 	}
 
 #ifndef HAVE_FREEIPMI_11X_12X
 	if (sdr_parse_ctx) {
 		ipmi_sdr_parse_ctx_destroy (sdr_parse_ctx);
+		sdr_parse_ctx = NULL;
 	}
 #endif /* HAVE_FREEIPMI_11X_12X */
 

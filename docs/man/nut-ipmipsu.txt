@@ -105,16 +105,6 @@ Here is an example output for a Dell r610 server:
 KNOWN ISSUES
 ------------
 
-According to the research in https://github.com/networkupstools/nut/issues/3193
-the driver (or technically the libfreeipmi used in it) may have troubles if it
-changes the run-time user account, which NUT drivers usually do when started as
-`root` by init scripts -- by default they drop privileges to the configured
-user account such as `nut`, `ups` or `nobody`.  If your driver fails to start,
-possibly with a segmentation fault reported, try either changing the context
-to the unprivileged user in init scripts (using `su` or `sudo`) or systemd unit
-(using a drop-in file to set `User=...` in `[Service]` section) before starting
-the actual driver program, or try setting `user=root` in its `ups.conf` section.
-
 include::networked_hostnames.txt[]
 
 AUTHOR
