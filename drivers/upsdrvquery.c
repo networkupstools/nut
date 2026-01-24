@@ -193,9 +193,22 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 		 * process crashes. Try to work around that here.
 		 * https://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
 		 * NOTE: in upsdrvquery_write() we use MSG_NOSIGNAL
-		 *  where available.
+		 *  where available instead of plain write().
 		 */
 #ifndef WIN32
+# ifndef MSG_NOSIGNAL
+#  ifdef SO_NOSIGPIPE
+		/* Just for this one socket (and gonna be gone soon): */
+		int	set = 1;
+		setsockopt(conn->sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+#  else	/* !SO_NOSIGPIPE */
+		/* Not thread-safe, but we do not aim for this here, hopefully
+		 * (any nut-scanner users, though?) and this is a last-resort
+		 * variant during build. Probably plain signal(SIGPIPE, SIG_IGN)
+		 * would be as good (used all over NUT code base) -- but we do
+		 * not know whether a random API consumer handles or ignores
+		 * the signal?..
+		 */
 		sigset_t	old_state, set;
 
 		/* get the current state */
@@ -207,9 +220,8 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 
 		/* block that signal also */
 		sigprocmask(SIG_BLOCK, &set, NULL);
-# ifdef SO_NOSIGPIPE
-		setsockopt(conn->sockfd, SO_NOSIGPIPE);
-# endif	/* SO_NOSIGPIPE */
+#  endif	/* !SO_NOSIGPIPE */
+# endif		/* !MSG_NOSIGNAL */
 #endif	/* !WIN32 */
 
 		upsdebugx(5, "%s: closing driver socket, try to say goodbye", __func__);
@@ -217,7 +229,11 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 		ret = upsdrvquery_write(conn, "LOGOUT\n");
 
 #ifndef WIN32
+# ifndef MSG_NOSIGNAL
+#  ifndef SO_NOSIGPIPE
 		sigprocmask(SIG_BLOCK, &old_state, NULL);
+#  endif	/* !SO_NOSIGPIPE */
+# endif		/* !MSG_NOSIGNAL */
 #endif	/* !WIN32 */
 
 		if (7 <= ret) {
@@ -227,7 +243,15 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 #endif  /* WIN32 */
 			usleep(1000000);
 		} else {
-			upsdebugx(5, "%s: must have been closed on the other side", __func__);
+			if (errno == EPIPE) {
+				upsdebug_with_errno(5, "%s: write failed, socket must have been closed on the other side - okay for goodbye", __func__);
+#ifdef WIN32
+				loggedOut = 1;
+#endif  /* WIN32 */
+				usleep(1000000);
+			} else {
+				upsdebug_with_errno(5, "%s: write failed", __func__);
+			}
 		}
 		nut_upsdrvquery_debug_level = nudl;
 	}
