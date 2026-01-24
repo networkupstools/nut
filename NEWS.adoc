@@ -127,6 +127,10 @@ https://github.com/networkupstools/nut/milestone/12
      referenced by this table, so now several higher speeds would be compiled
      conditionally. [issue #3163]
 
+ - `nut-ipmipsu` driver updates:
+   * Fixed an issue where multiple calls to clean-up crashed the program.
+     Special thanks to maintainer of libfreeipmi for helping catch it. [#3193]
+
  - `nutdrv_qx` driver updates:
    * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together
