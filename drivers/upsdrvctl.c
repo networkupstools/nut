@@ -438,13 +438,28 @@ static void stop_driver(const ups_t *ups)
 
 		if (ret != 0) {
 			ssize_t	udq_ret;
-			udq_pipe_conn_t *udq_pipe;
+			udq_pipe_conn_t	*udq_pipe;
 
 			upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
 
 			udq_pipe = upsdrvquery_connect_drvname_upsname(ups->driver, ups->upsname);
-			if (udq_pipe)
+			if (udq_pipe) {
 				upslogx(LOG_ERR, "At least could open the driver socket");
+			} else {
+				/* There IS a chance that the driver is still
+				 * starting and not listening on the socket yet.
+				 * FIXME: Could align with ups->maxstartdelay...
+				 *  but if it is just not running -- this may
+				 *  mean minutes of fruitless sleep.
+				 */
+				upsdebugx(1, "%s: initial driver socket connection failed, retrying shortly", __func__);
+				sleep(5);
+				udq_pipe = upsdrvquery_connect_drvname_upsname(ups->driver, ups->upsname);
+				if (udq_pipe) {
+					upslogx(LOG_ERR, "At least could open the driver socket");
+				}
+			}
+
 			if (testmode) {
 				udq_ret = (udq_pipe == NULL ? -1 : 0);
 			} else {
@@ -481,6 +496,8 @@ static void stop_driver(const ups_t *ups)
 				testmode ? "emulate" : "send");
 
 			if (udq_ret < 0) {
+				upslogx(LOG_ERR, "Failed to stop the driver %s for %s, it may be not running or not fully started yet",
+					ups->driver, ups->upsname);
 				exec_error++;
 			}
 
