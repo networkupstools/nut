@@ -74,6 +74,18 @@ $(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/common/libparsec
 #  Notably this pops up in `configure && make dist(check)` rituals.
 nutscan-init.c: $(top_builddir)/clients/libupsclient-version.h
 
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+
 # We optionally append values to this below
 bin_PROGRAMS =
 lib_LTLIBRARIES =
@@ -172,10 +184,12 @@ libnutscan_la_LDFLAGS += -version-info 4:0:0
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
 if WITH_DMF
-libnutscan_la_LDFLAGS += -export-symbols-regex '^((dmf)?nutscan_|uninit_snmp_device_table|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|snprintf_dynamic|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
+export_symbols_DMF=(dmf)?nutscan_|uninit_snmp_device_table
 else !WITH_DMF
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|snprintf_dynamic|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
+export_symbols_DMF=nutscan_
 endif !WITH_DMF
+
+libnutscan_la_LDFLAGS += -export-symbols-regex '^($(export_symbols_DMF)|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|snprintf_dynamic|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
 
 libnutscan_la_CFLAGS = \
 			-I$(top_builddir)/clients -I$(top_srcdir)/clients \
@@ -209,6 +223,14 @@ nut_scanner_CFLAGS = \
 			-I$(top_builddir)/include -I$(top_srcdir)/include
 nut_scanner_LDADD = libnutscan.la
 #FTY-old# nut_scanner_LDADD = $(top_builddir)/common/libcommon.la libnutscan.la $(top_builddir)/common/libcommonstr.la
+
+if ENABLE_SHARED_PRIVATE_LIBS
+# ensure the "fatal_with_errno" symbol, and others that libnutscan uses
+# TODO: Check if common-client suffices (or do we need whatever more "all" brings?)
+nut_scanner_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+# get LIBNUTPRIVATE_UPS_VERSION seen for the library code itself
+libnutscan_la_LIBADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
 
 # Hack to allow correct RPATH/RUNPATH like /usr/lib/mps/64 (Mozilla NSS)
 # to be used on Solaris/illumos and similar platforms. For more details,
@@ -288,14 +310,17 @@ dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
- include_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
+ include_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
+ include_HEADERS += nutscan-snmp.h
 else !WITH_DEV
- dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
+ dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
+ dist_noinst_HEADERS += nutscan-snmp.h
 endif !WITH_DEV
 
 dummy:
 
-CLEANFILES += *-spellchecked README nut-scanner-reindex-dmfsnmp dmf-reindex
+CLEANFILES += *-spellchecked README
+CLEANFILES += nut-scanner-reindex-dmfsnmp dmf-reindex
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,

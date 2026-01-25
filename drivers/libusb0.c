@@ -30,6 +30,15 @@
  * -------------------------------------------------------------------------- */
 
 #include "config.h" /* for HAVE_USB_DETACH_KERNEL_DRIVER_NP flag */
+
+#if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+# if (defined BUILD_FOR_SHARED_PRIVATE_LIBS) && BUILD_FOR_SHARED_PRIVATE_LIBS
+#  define suggest_NDE_conflict          LIBNUTPRIVATE_suggest_NDE_conflict
+/* else: would need to pass method pointer like in main.c, too much
+ * hassle for a mixed-dynamicity build that might never happen */
+# endif
+#endif
+
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "nut_libusb.h"
@@ -38,7 +47,7 @@
 #endif	/* WIN32 */
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.51"
+#define USB_DRIVER_VERSION	"0.53"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -408,7 +417,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
 			upsdebugx(2, "%s: NOTE: BusPort is always zero with libusb0", __func__);
-			sprintf(curDevice->BusPort, "%03d", 0);
+			snprintf(curDevice->BusPort, 4, "%03d", 0);
 #endif
 
 			if (dev->descriptor.iManufacturer) {

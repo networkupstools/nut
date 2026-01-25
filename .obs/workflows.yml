@@ -15,8 +15,7 @@ rebuild_master:
         project: home:networkupstools:nut-stable
         package: "%{SCM_REPOSITORY_NAME}"
   filters:
-    event:
-      - push
+    event: push
     branches:
       only:
         - master
@@ -28,5 +27,4 @@ release_tag:
         source_package: "%{SCM_REPOSITORY_NAME}"
         target_project: home:networkupstools:nut-releases
   filters:
-    event:
-      - tag_push
+    event: tag_push

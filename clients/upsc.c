@@ -397,6 +397,10 @@ int main(int argc, char **argv)
 	}
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
+#if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
+
 	while ((i = getopt(argc, argv, "+hlLcVW:j")) != -1) {
 
 		switch (i)
@@ -492,6 +496,6 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
-        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */

@@ -412,7 +412,8 @@ info_lkp_t calibration_info[] = {
 	{ 0, "!cal", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
-/* note: this value is reverted (0=set, 1=not set). We report "battery
+/* note: this value is reverted (0=set, 1=not set), often known as
+   "BatteryPresent" in the HID mapping tables. We report "battery
    not installed" rather than "battery installed", so that devices
    that don't implement this variable have a battery by default */
 info_lkp_t nobattery_info[] = {
@@ -1273,14 +1274,11 @@ void upsdrv_help(void)
 	size_t i;
 	printf("\nAcceptable values for 'subdriver' via -x or ups.conf "
 		"in this driver (exact names here, case-insensitive "
-		"sub-strings may be used, as well as regular expressions): ");
+		"sub-strings may be used, as well as regular expressions):\n");
 
 	for (i = 0; subdriver_list[i] != NULL; i++) {
-		if (i>0)
-			printf(", ");
-		printf("\"%s\"", subdriver_list[i]->name);
+		printf("\t\"%s\"\n", subdriver_list[i]->name);
 	}
-	printf("\n");
 }
 
 /* optionally tweak prognames[] entries */
@@ -2182,6 +2180,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	hid_info_t	*item;
 	double		value;
 	int		retcode;
+	int		items_succeeded = 0; /* Track successful polls to detect total failure */
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	/* extract the VendorId for further testing */
@@ -2372,13 +2371,19 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			return FALSE;
 
 		case LIBUSB_ERROR_IO:        /* I/O error */
-			/* Uh oh, got to reconnect, with a special suggestion! */
-			dstate_setinfo("driver.state", "reconnect.trying");
+			/* Some devices have firmware bugs causing transient I/O errors
+			 * on specific HID reports. Rather than triggering expensive
+			 * reconnects, skip the failing report and continue. If device
+			 * is truly disconnected, other error codes will catch it, or
+			 * all polls fail and safety check below triggers reconnect. */
+			upsdebugx(3, "Got LIBUSB_ERROR_IO on item '%s' ReportID=0x%02x - skipping",
+				item->info_type ? item->info_type : "(null)",
+				item->hiddata ? item->hiddata->ReportID : 0xFFU);
 			interrupt_pipe_EIO_count++;
-			hd = NULL;
-			return FALSE;
+			continue;
 
 		case 1:
+			items_succeeded++; /* Count successful data retrieval */
 			break;	/* Found! */
 
 		case 0:
@@ -2446,6 +2451,16 @@ static bool_t hid_ups_walk(walkmode_t mode)
 				}
 			}
 		}
+	}
+
+	/* Safety check: if we got zero successful polls during update,
+	 * device may be truly disconnected (not just transient errors).
+	 * Skip this check during INIT mode where failures are expected. */
+	if (items_succeeded == 0 && (mode == HU_WALKMODE_QUICK_UPDATE || mode == HU_WALKMODE_FULL_UPDATE)) {
+		upsdebugx(1, "Got zero successful data polls - device may be disconnected");
+		dstate_setinfo("driver.state", "reconnect.trying");
+		hd = NULL;
+		return FALSE;
 	}
 
 	return TRUE;

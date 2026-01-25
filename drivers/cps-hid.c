@@ -32,7 +32,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.84"
+#define CPS_HID_VERSION      "CyberPower HID 0.85"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID	0x0764
@@ -398,6 +398,7 @@ static hid_info_t cps_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, NULL, 0, fullycharged_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, NULL, 0, timelimitexpired_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
   { "BOOL", 0, 0, "UPS.Output.Boost", NULL, NULL, 0, boost_info },
   { "BOOL", 0, 0, "UPS.Output.Overload", NULL, NULL, 0, overload_info },
 

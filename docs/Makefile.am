@@ -74,6 +74,9 @@ IMAGE_LOGO_FILES = \
 	images/ci/gandi-ar21.svg \
 	images/ci/GitHub-Mark-140pxW.png \
 	images/ci/GitHub-Mark-ea2971cee799.png \
+	images/ci/obs-logo.png \
+	images/ci/obs-logo.svg \
+	images/ci/openSUSEBuildService.png \
 	images/ci/OC_logotype.png \
 	images/ci/OC_logo-watercolor-256.png \
 	images/ci/OC_logo_merged_171x32.png \
@@ -108,7 +111,8 @@ USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
 DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt macros.txt new-clients.txt	\
  new-drivers.txt net-protocol.txt nutdrv_qx-subdrivers.txt	\
- nut-versioning.adoc snmp-subdrivers.txt sock-protocol.txt nut-dmf.txt
+ nut-dmf.txt	\
+ nut-versioning.adoc snmp-subdrivers.txt sock-protocol.txt
 
 # See also conversions included via FULL_QA_GUIDE_DEPS
 QA_GUIDE_DEPS =  nut-qa.txt config-prereqs.txt ci-farm-do-setup.adoc	\

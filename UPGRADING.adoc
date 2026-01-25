@@ -26,6 +26,15 @@ Changes from 2.8.4 to 2.8.5
 
 - PLANNED: Keep track of any further API clean-up?
 
+- Added a `configure` script option to `--enable-shared-private-libs` which
+  allows to deliver NUT common libraries as shared objects used by different
+  NUT binaries, rather than linking just the used bits into each binary.
+  This has some potential both for mayhem (so disabled by default) and
+  for significant reduction of installation footprint. If enabled with
+  a NUT packaging build, note there would be several more NUT shared
+  library files to deliver with the packages (formally versioned and
+  named by NUT release semantic version triplet). [issue #2800]
+
 - For ages, most recipes for building NUT had customized the `sysconfdir` to
   be `/etc/nut`, which is not exactly the *system* configuration directory.
   This is finally deprecated, with new `--with-confdir` configuration option
@@ -49,6 +58,12 @@ Changes from 2.8.4 to 2.8.5
   useful for NUT deployments being upgraded to compare the files they have
   installed (and possibly customized) with the `*.html.sample` files delivered
   by the new build. [PR #3180]
+
+- Introduced a `@NUT_UPSSTATS_TEMPLATE@` command which the NUT CGI template
+  files now MUST start with (safety check that we are reading a template).
+  While the delivered `upsstats*.html.sample` files would include the change,
+  ultimate `upsstats*.html` templates deployed for end-users MUST be updated.
+  [issue #3252, PR #3249]
 
 - Dropped the `compile` script from Git sources. It originates from automake
   and is added to work area (if missing) during `autogen.sh` rituals anyway

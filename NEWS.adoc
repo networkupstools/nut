@@ -40,12 +40,6 @@ https://github.com/networkupstools/nut/milestone/12
    to patterns defined in link:docs/nut-names.txt[]
 
  - common code:
-   * Generally improved shell script portability (including `Makefile.am`
-     embedded recipes) when mixing back-quotes and double-quotes. Namely,
-     the classic Solaris `ksh` implementation (also used in current versions
-     of Solaris and illumos based distributions) was strict about following
-     (an older revision of) the POSIX standard here, and some use-cases
-     misbehaved with our older script spelling. [issue #3196]
    * Introduced `setproctag()` and `getproctag()` (see examples in `upsmon`)
      to help track the log messages from massively-forking NUT daemons. [#3084]
    * Extended with plural `checkprocnames()` and `compareprocnames()`,
@@ -64,6 +58,7 @@ https://github.com/networkupstools/nut/milestone/12
      other too. [issue #3136]
    * Improved high-verbosity debug tracing of NUT `libhid` and `usbhid-ups`
      to help make sense of data processing issues (HID paths, strings). [#3201]
+   * Further removal of unbounded `strcpy()` and `sprintf()` usage. [#3253]
    * For state tree methods, introduced `difftime_st_tree_timespec()` to
      abstract platform-dependent definitions of `st_tree_timespec_t`. [PR #3156]
    * Introduced global variables for last changed timestamp and value of
@@ -80,12 +75,32 @@ https://github.com/networkupstools/nut/milestone/12
      systemd watchdog situation once, will not spam more about it" even if
      those "logged" messages were at an invisible verbosity level. [issue #3157,
      PR #3151]
-   * Revised detection of (relative) paths to program and configuration files
-     near the currently running program in NUT for Windows builds. [issues #3207,
-     #3063, #3065, #3219]
+   * Systemd units for some daemons were revised to honour the `MODE` setting
+     from `nut.conf`, if available, to gracefully not-start when explicitly
+     not-requested (e.g. do not start `upsd` in `MODE=netclient`), even though
+     the unit is nominally enabled; this should make packaging and providing
+     service pre-sets more simple. [issue #837, PR #3233]
    * Fixed thread-safety of IP address printout in `libupsclient` method
-    `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
-    [issue #3234]
+     `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
+     [issue #3234]
+
+ - NUT for Windows specific updates:
+   * Revised detection of (relative) paths to program and configuration files
+     near the currently running program in NUT for Windows builds, including
+     limited support for UNC paths (ignoring a localhost `\\?\` prefix).
+     [issues #3207, #3063, #3065, #3219]
+   * Augmented WIN32 `nut.exe` launcher with `status` and `restart` actions,
+     and general ability to debug-log the activities during service management
+     operations. (Re-)registration of the "Network UPS Tools" service should
+     now populate a nice description of it. The `-U` (uninstall) action should
+     now also try to stop the service first. [PR #3235]
+   * Revised WIN32 `WSAStartup()` and registration of `atexit(WSACleanup)` to
+     only be done once per program (and cleanups to be always registered); this
+     impacts the C `libupsclient` and C++ `libnutclient` libraries (and so most
+     NUT clients and tools which use the former, and `nutconf` which uses the
+     latter), the `apcupsd` driver, `upsd` data server, and `nut-scanner` tool.
+     [PR #3237]
+   * Documented setup of Microsoft IIS to host the NUT CGI programs. [#3207]
 
  - `asem`, `bestfortress`, `bestuferrups`, `bicker_ser`, `everups`, `metasys`,
    `masterguard`, `mge-utalk`, `oneac`, `phoenixcontact_modbus`, `pijuice`,
@@ -142,6 +157,7 @@ https://github.com/networkupstools/nut/milestone/12
      Tested on A1000 and A2000 units. [#3181]
    * Hides QX_FLAG_NONUT variables from syslog unless the debug level
      is raised. [issue #3190, PR #3198]
+   * Added support for battery.charge in hunnox subdriver. [#3254]
 
  - `powerp-bin` and `powerp-txt` driver updates:
    * Their `upsdrv_initinfo()` methods did not explicitly reference the
@@ -176,6 +192,9 @@ https://github.com/networkupstools/nut/milestone/12
  - `usbhid-ups` driver updates:
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
+   * Extended iDowell subdriver with data points for GoldenMate UPS using
+     LiFePO4 batteries (tested with GoldenMate LIPO 1500VA/1000W).
+     [issue #3015, PR #3265]
    * Improved support for Eaton 5S1500LCD and 5S1600LCD (US version). [#2380]
    * The driver used to report `CHRG` status if the device was not "fully
      charged", however the latter status was only queried and reported by
@@ -193,6 +212,23 @@ https://github.com/networkupstools/nut/milestone/12
      ignore any useful reports, and that we successfully use reasonably many
      of the existing mappings. Suggest how user can help improve the driver
      if too few data points were seen. [#3082, #3095]
+   * `cps-hid` updated with Replace Battery information. [PR #3268]
+   * `openups-hid` had `nobattery` definition inverted, causing alarms -- now
+     fixed to use the same mapping helper as other subdrivers. [issue #3246]
+   * `powercom-hid` subdriver improved with a `powercom_hack_voltage_lkp` to
+     query `battery.voltage`. [issue #2766]
+   * Improved handling of transient `LIBUSB_ERROR_IO` failures during polling.
+     Some devices (CyberPower, etc.) have firmware bugs causing random I/O
+     errors on certain HID reports. The driver now skips failing reports and
+     continues polling rather than triggering expensive reconnection attempts.
+     True disconnections are still detected via other error codes or when all
+     polls fail. [issue #3116]
+
+ - `nut-scanner` tool updates:
+   * Fixed `nut-scanner` search for "simulation devices" to not use only the
+     built-in NUT configuration path on all platforms, but to also consider
+     `NUT_CONFPATH` and other fallback locations, like other code does.
+     [PR #3249]
 
  - `upsd` data server updates:
    * Sometimes "Data for UPS [X] is stale" and "UPS [X] data is no longer
@@ -200,6 +236,8 @@ https://github.com/networkupstools/nut/milestone/12
      systems. Now we allow one more second on top of `MAXAGE` setting to
      declare the device dead, just in case fractional/whole second rounding
      comes into play and breaks things. [issue #661]
+   * Fixed `LISTEN *` handling for `upsd.exe` in NUT for Windows builds.
+     [PR #3237]
 
  - `upsdrvctl` tool updates:
    * Make use of `setproctag()` and `getproctag()` to report parent/child
@@ -207,7 +245,7 @@ https://github.com/networkupstools/nut/milestone/12
 
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
-     of all known local devices to stdout. [#3083]
+     of all known local devices to stdout. [#3083, #2756]
 
  - `upsmon` client updates:
    * The `SHUTDOWNEXIT` option was not handled properly, and the requested
@@ -236,10 +274,14 @@ several `FSD` notifications into one executed action. [PR #3097]
  - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
 
  - `upsstats` tool updates:
-   * Now has JSON output mode via `?json` (or `&json`) CGI query
-     parameter. [issue #2524, PR #3171]
+   * Now has JSON output mode via `?json` (or `&json`) CGI query parameter.
+     New `@TREELINK_JSON@` keyword added and HTML templates updated to expose
+     these JSON documents when browsing. [issue #2524, PRs #3171, #3249]
    * Handle `device.model` in addition to `ups.model` in upsstats HTML
      templates. [#3180]
+   * Introduced a `@NUT_UPSSTATS_TEMPLATE@` command which the HTML template
+     files now MUST start with (safety check that we are reading a template).
+     [issue #3252, PR #3249]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
@@ -268,7 +310,12 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Revised info/error/warning/debug message emission so they go to `stderr`
      and have a consistent look. Revised some typos along the way. [issue #3194]
 
- - `configure` script options:
+ - `configure` script updates:
+   * Added an option to `--enable-shared-private-libs` to deliver NUT common
+     libraries as shared objects used by different NUT binaries, rather than
+     linking just the used bits into each binary. This has some potential
+     both for mayhem (so disabled by default) and for significant reduction
+     of installation footprint. [issue #2800]
    * For ages, most recipes for building NUT had customized the `sysconfdir` to
      be `/etc/nut`, which is not exactly the *system* configuration directory.
      This is finally deprecated, with new `--with-confdir` configuration option
@@ -282,6 +329,18 @@ several `FSD` notifications into one executed action. [PR #3097]
      most cases. A `--with-confdir-examples` option was also introduced, to
      help distributions that place `*.conf.sample` files into docs or other
      locations. [#3131]
+   * The `configure` script would now probe (if it can) the operating systems
+     for more user and group account names, such as `upsmon`, `nutmon`, `ups`,
+     `nut` (last hit wins, separately for user and groups accounts) settling
+     on one of those if detected instead of `nobody` (and optionally `nogroup`).
+     It would also warn if `nobody` or `nogroup` end up being used for a build.
+     [#3173]
+   * Default `PIDPATH` is now more strictly `/var/run`, unless building on a
+     system conforming to FHS-3.0 standard where that location is absent or
+     is a symlink, while `/run` exists and is a true directory. [#3099]
+   * Made default NUT CGI URI (used in HTML templates, which may be edited
+     later on a NUT deployment to customize for specific web server setup)
+     configurable `--with-cgi-uri`. [#3207]
    * Introduced `--with-python{,2,3}-modules-dir` to specify PyNUT(Client)
      module installation location (for module-named dir to be created under
      it), if not bundling with NUT-Monitor UI app. By default the respective
@@ -296,6 +355,12 @@ several `FSD` notifications into one executed action. [PR #3097]
      Default settings were changed from plain `auto` (allowing for multiple
      `python*` interpreters and `site-package` locations to be used), to
      prefer a `python3` if available, else `python2`, else `python`. [#1792]
+   * The `configure` script should now try harder to report specifically
+     the "purelib" location as `PYTHON*_SITE_PACKAGES`. [#1209]
+   * Added a `--with-systemdsysusersdir=PATH` option to have systemd pre-create
+     the user and group accounts for NUT, before packaging or manually executed
+     commands do (this is particularly important for immutable-image operating
+     environments). [PR #3262]
    * Streamlined handling of `--with-*` and `--enable-*` options using NUT 'm4'
      macros; fixed reporting help for options whose defaults are evaluated.
      [issue #3049, PR #3140]
@@ -308,116 +373,73 @@ several `FSD` notifications into one executed action. [PR #3097]
      updated many help messages. The `configure` script logs should now clarify
      where CFLAGS/LIBS/LDFLAGS values come from ('pkg-config', 'default', user
      provided 'confargs' etc.) [#3140]
-   * Added configure script options for 'libregex' tuning, just so it is on par
-     with our other optional dependencies. [#3140]
+   * Added `configure` script options for 'libregex' tuning, just so that one
+     is on par with our other optional dependencies. [#3140]
    * Changed `--enable-extapi-enphase` to not default to `auto` and then get
      installed on every system capable of using it; this is a niche capability
      for users of specific devices via a cloud portal. [follow-up to PR #2813
      for issue #2807]
 
- - Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
-   include the source distribution (was posted for NUT v2.8.1 and v2.8.2
-   tagged releases, but absent for v2.8.3 and v2.8.4). [#3056]
-
- - The `configure` script would now probe (if it can) the operating systems for
-   more user and group account names, such as `upsmon`, `nutmon`, `ups`, `nut`
-   (last hit wins, separately for user and groups accounts) settling on one of
-   those if detected instead of `nobody` (and optionally `nogroup`). It would
-   also warn if `nobody` or `nogroup` end up being used for a build. [#3173]
-
- - Updated `make spellcheck` to help avoid asciidoc admonition blocks with
-   visually invalid sentences (after rendering as a box in HTML or PDF). [#3077]
-
- - Updated `docs/*.txt`: add asciidoc comments with links to nut-website
-   rendered contents of most interesting pages. [#3095]
-
- - HTML renditions of NUT man pages and books (or chunked chapters thereof)
-   now include the AnchorJS script to provide permalinks to sections. [#3185]
-
- - Added a `make dist-docs` goal to generate, collect and tarball all document
-   types (man, html-single, html-chunked, pdf) that we may have enabled for the
-   current build configuration and available tooling. [#1400]
-
- - Further developer workflow speedup with `make spellcheck-interactive-quick`
-   which should now not re-check source texts that were okay with the previous
-   dictionary contents, in case some new terms have to be added. [PRs #3186, #2871]
-
- - Added a GitHub Actions CI job to generate, upload and recycle `make dist`
-   and `make dist-docs` tarballs so they are easier to obtain for people and
-   other CI systems (which might not want to follow a Git repository). Links
-   to these artifacts can be seen in workflow page (or its logs), and added
-   as a line in GitHub Checks list associated with a commit. Note that the
-   GitHub Action storage keeps artifacts for at most 90 days. [#1400, #2829]
-
- - Source directory `data/html` was renamed to `data/htmlcgi` in order to
-   better reflect its contents and purpose, compared to documentation-oriented
-   `html*` directories (and recipe variable names). This may impact some
-   packaging recipes which do not rely on `make install` alone. [#3049]
-
- - Dropped the `compile` script from Git sources. It originates from automake
-   and is added to work area (if missing) during `autogen.sh` rituals anyway.
-   It is still distributed as part of `make dist` tarball. [#1209]
-
- - Default `PIDPATH` is now more strictly `/var/run`, unless building on a
-   system conforming to FHS-3.0 standard where that location is absent or
-   is a symlink, while `/run` exists and is a true directory. [#3099]
-
- - Augmented `nut.exe` launcher with `status` and `restart` actions, and
-   general ability to debug-log the activities during service management
-   operations. (Re-)registration of the "Network UPS Tools" service should
-   now populate a nice description of it. The `-U` (uninstall) action should
-   now also try to stop the service first. [PR #3235]
-
- - Fixed `LISTEN *` handling for `upsd.exe` in NUT for Windows builds. [PR #3237]
-
- - Revised WIN32 `WSAStartup()` and registration of `atexit(WSACleanup)` to
-   only be done once per program (and cleanups to be always registered); this
-   impacts the C `libupsclient` and C++ `libnutclient` libraries (and so most
-   NUT clients and tools which use the former, and `nutconf` which uses the
-   latter), the `apcupsd` driver, `upsd` data server, and `nut-scanner` tool.
-   [PR #3237]
-
- - Revised CI and deliverable scripts, and Makefile recipes, to not use
-   the verbatim `grep -E` (loudly preferred by newer systems, but may be
-   absent on older ones) after all, nor use `egrep` (loudly disliked by
-   newer systems). Instead, use what `configure` script detected for the
-   generated files (or ones made from templates), and use a similar
-   detection in standalone scripts. Also revised the use of `grep -q`,
-   `id -u`, `diff -u`, etc. which are not ubiquitous, and of `test -e`
-   which is not only absent in some older shells, but can cause them to
-   abort processing the script immediately. Also the `if ! condition`
-   syntax is not supported everywhere (or the `!` operator generally).
-   [#3099, #1660]
-
- - Revised `tools/gitlog2version.sh` helper script (logic added into
-   a new `tools/semver-compare.sh`) with a mode to expand NUT SEMVER
-   components into wide zero-padded numbers, so it is easier to
-   alphanumerically compare different releases regardless of version
-   component lengths in digits (and differences in their amounts). You can
-   request an inverse operation with `NUT_VERSION_STRIP_LEADING_ZEROES=true`.
-   Added tests to cover different shell interpreter platforms (piggy-back
-   on the `tests/nut-driver-enumerator-test.sh` script), and made sure
-   that outputs of legacy-mode processing (with `NUT_VERSION_DEFAULT`
-   string provided by caller or saved in a tarball) are consistent with
-   git-mode. The new `tools/semver-compare.sh` helper can be used directly
-   to expand and strip version strings, sort and compare multiple versions
-   as one simple operation. [issue #3055, PRs #3213, #3217]
-
- - The NUT Integration Testing suite (NIT) script, if started as `root`,
-   can now consult its run-time situation vs. `BUILTIN_RUN_AS_USER` and
-   `BUILTIN_RUN_AS_GROUP` environment variables, and if those accounts
-   do not exist (e.g. running in a packaging build root), a different
-   value like "nobody" or "nogroup" would be defaulted for tests. [#1209]
-
- - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
-   to match the driver program name. Follow-up from slightly botched renaming
-   in original contribution. [PR #545]
-
- - The `configure` script should now try harder to report specifically
-   the "purelib" location as `PYTHON*_SITE_PACKAGES`. [#1209]
-
- - Introduce `make distcheck-completeness` goal to verify that our distribution
-   archives can exactly reproduce themselves. [#2829]
+ - Recipes, CI and helper script updates not classified above:
+   * Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
+     include the source distribution (was posted for NUT v2.8.1 and v2.8.2
+     tagged releases, but absent for v2.8.3 and v2.8.4). [#3056]
+   * Updated `make spellcheck` to help avoid asciidoc admonition blocks with
+     visually invalid sentences (after rendering as a box in HTML or PDF).
+     [#3077]
+   * Added a `make dist-docs` goal to generate, collect and tarball all
+     document types (`man`, `html-single`, `html-chunked`, `pdf`) that we
+     may have enabled for the current build configuration and available
+     tooling. [#1400]
+   * Further developer workflow speedup with `make spellcheck-interactive-quick`
+     which should now not re-check source texts that were okay with the previous
+     dictionary contents, in case some new terms have to be added. [PRs #3186,
+     #2871]
+   * Introduced `make distcheck-completeness` goal to verify that our
+     distribution archives can exactly reproduce themselves. [#2829]
+   * Added a GitHub Actions CI job to generate, upload and recycle `make dist`
+     and `make dist-docs` tarballs so they are easier to obtain for people and
+     other CI systems (which might not want to follow a Git repository). Links
+     to these artifacts can be seen in workflow page (or its logs), and added
+     as a line in GitHub Checks list associated with a commit. Note that the
+     GitHub Action storage keeps artifacts for at most 90 days. [#1400, #2829]
+   * Revised CI and deliverable scripts, and Makefile recipes, to not use
+     the verbatim `grep -E` (loudly preferred by newer systems, but may be
+     absent on older ones) after all, nor use `egrep` (loudly disliked by
+     newer systems). Instead, use what `configure` script detected for the
+     generated files (or ones made from templates), and use a similar
+     detection in standalone scripts. Also revised the use of `grep -q`,
+     `id -u`, `diff -u`, etc. which are not ubiquitous, and of `test -e`
+     which is not only absent in some older shells, but can cause them to
+     abort processing the script immediately. Also the `if ! condition`
+     syntax is not supported everywhere (or the `!` operator generally).
+     [#3099, #1660]
+   * Generally improved shell script portability (including `Makefile.am`
+     embedded recipes) when mixing back-quotes and double-quotes. Namely,
+     the classic Solaris `ksh` implementation (also used in current versions
+     of Solaris and illumos based distributions) was strict about following
+     (an older revision of) the POSIX standard here, and some use-cases
+     misbehaved with our older script spelling. [issue #3196]
+   * Revised `drivers/Makefile.am` to not always build `libdummy_serial.la`,
+     but only if it is needed by serial-only or modbus drivers. Introduced
+     a `libdummy_usb.la` to only build USB layer sources once and share the
+     results between several USB-capable drivers. [#2800]
+   * Revised `tools/gitlog2version.sh` helper script (logic added into
+     a new `tools/semver-compare.sh`) with a mode to expand NUT SEMVER
+     components into wide zero-padded numbers, so it is easier to
+     alphanumerically compare different releases regardless of version
+     component lengths in digits (and differences in their amounts). You can
+     request an inverse operation with `NUT_VERSION_STRIP_LEADING_ZEROES=true`.
+     Added tests to cover different shell interpreter platforms (piggy-back
+     on the `tests/nut-driver-enumerator-test.sh` script), and made sure
+     that outputs of legacy-mode processing (with `NUT_VERSION_DEFAULT`
+     string provided by caller or saved in a tarball) are consistent with
+     git-mode. The new `tools/semver-compare.sh` helper can be used directly
+     to expand and strip version strings, sort and compare multiple versions
+     as one simple operation. [issue #3055, PRs #3213, #3217]
+   * Dropped the `compile` script from Git sources. It originates from automake
+     and is added to work area (if missing) during `autogen.sh` rituals anyway.
+     It is still distributed as part of `make dist` tarball. [#1209]
 
  - Upstreamed reference packaging recipes (DEB, RPM) from the 42ITy project
    which can be used with OBS (Open Build Service by SUSE), both to support
@@ -425,6 +447,28 @@ several `FSD` notifications into one executed action. [PR #3097]
    player with a distinct opinion on code quality. Many of the changes listed
    above happened thanks to this effort, and due to concerns raised by OBS
    build agents with various Linux distributions. [#1209, #1316, #3144]
+
+ - Updated `docs/*.txt`: add asciidoc comments with links to nut-website
+   rendered contents of most interesting pages. [#3095]
+
+ - HTML renditions of NUT man pages and books (or chunked chapters thereof)
+   now include the AnchorJS script to provide permalinks to sections. [#3185]
+
+ - Source directory `data/html` was renamed to `data/htmlcgi` in order to
+   better reflect its contents and purpose, compared to documentation-oriented
+   `html*` directories (and recipe variable names). The static HTML pages now
+   also suggest a NUT icon (installed from `docs/images`). This may impact some
+   packaging recipes which do not rely on `make install` alone. [#3049, #3249]
+
+ - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
+   to match the driver program name. Follow-up from slightly botched renaming
+   in original contribution. [PR #545]
+
+ - The NUT Integration Testing suite (NIT) script, if started as `root`,
+   can now consult its run-time situation vs. `BUILTIN_RUN_AS_USER` and
+   `BUILTIN_RUN_AS_GROUP` environment variables, and if those accounts
+   do not exist (e.g. running in a packaging build root), a different
+   value like "nobody" or "nogroup" would be defaulted for tests. [#1209]
 
  - Revised use of NUT macros for USB Vendor IDs listed in different drivers,
    so the names would be better exposed in generated `udev.rules` and similar

@@ -405,7 +405,7 @@ typedef struct {
 #define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 
 #if WITH_DMF_FUNCTIONS
-#define SU_FLAG_FUNCTION	(1UL << 27)	/* TODO Pending to check if this flag have any incompatibility */
+#define SU_FLAG_FUNCTION	(1UL << 27)	/* TODO Pending to check if this flag has any incompatibility */
 #endif
 
 /* status string components

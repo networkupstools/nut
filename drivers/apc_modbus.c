@@ -79,7 +79,14 @@ static const HIDNode_t modbus_rtu_usb_usage_tx = 0xff8600fd;
 /* Variables */
 static modbus_t *modbus_ctx = NULL;
 #if defined NUT_MODBUS_HAS_USB
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
 static USBDevice_t usbdevice = {0};
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC)
+# pragma GCC diagnostic pop
+#endif
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
 static USBDeviceMatcher_t *best_matcher = NULL;

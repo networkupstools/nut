@@ -106,7 +106,16 @@ build_script:
         set MSYSTEM=MINGW64
         REM Note: currently we save job time and do not install asciidoc/a2x
         REM  # --with-docs="man=auto html-single=auto html-chunked=no pdf=no"
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes ./ci_build.sh --with-docs=no'
+        REM The resulting configuration defaults to --prefix=/mingw{32,64}
+        REM as appropriate for the platform, which ends up as a subdirectory
+        REM under DESTDIR when we `make install` later, and in our 7z archive.
+        REM The builds are relocatable however, so end-users can extract to
+        REM e.g. "C:\Program Files\NUT" and forfeit "mingwXX" part, probably,
+        REM but this can complicate automatic relative directory resolution
+        REM to find "nearby" program or configuration files (see common.c
+        REM for current implementation). Hard-coded fallback strings may
+        REM end up getting used in those cases.
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes WITH_LIBNUTPRIVATE=true ./ci_build.sh --with-docs=no'
 
 
 after_build:
@@ -138,7 +147,9 @@ after_test:
         set MSYSTEM=MINGW64
         REM Oh the joys of shell scripting with strings passed through CMD:
         REM Note: currently Python installation path with MSYS is buggy [#1584]
-        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s -j 8 install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; rm -rf ./.inst/NUT-for-Windows-x86_64-SNAPSHOT || true ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; ) ; date -u'
+        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" make -s -j 8 install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%"'
+        C:\msys64\usr\bin\bash -lc 'date -u; set -e ; rm -rf ./.inst/NUT-for-Windows-x86_64-SNAPSHOT || true ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; )'
+        C:\msys64\usr\bin\bash -lc 'date -u'
         cd .inst
         7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
   - cmd: |

@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.27"
+#define SUBDRIVER_VERSION "0.28"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -448,7 +448,7 @@ static usb_dev_handle *open_powerware_usb(void)
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		sprintf(curDevice.Bus, "%03d", bus_num);
+		snprintf(curDevice.Bus, 4, "%03d", bus_num);
 
 		/* FIXME: we should also retrieve
 		 * dev->descriptor.iManufacturer

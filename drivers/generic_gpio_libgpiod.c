@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"GPIO UPS driver (API " WITH_LIBGPIO_VERSION_STR ")"
-#define DRIVER_VERSION	"1.05"
+#define DRIVER_VERSION	"1.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -128,9 +128,10 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 	libgpiod_data->gpioChipHandle = gpiod_chip_open_by_name(gpioupsfdlocal->chipName);
 #else	/* #if WITH_LIBGPIO_VERSION >= 0x00020000 */
 	if(!strchr(gpioupsfdlocal->chipName, '/')) {
-		char *pathName = xcalloc(strlen(gpioupsfdlocal->chipName)+6, sizeof(char));
-		strcpy(pathName, "/dev/");
-		strcat(pathName, gpioupsfdlocal->chipName);
+		size_t	pathNameLen = strlen(gpioupsfdlocal->chipName)+6;
+		char	*pathName = xcalloc(pathNameLen, sizeof(char));
+		strncpy(pathName, "/dev/", pathNameLen);
+		strncat(pathName, gpioupsfdlocal->chipName, pathNameLen);
 		libgpiod_data->gpioChipHandle = gpiod_chip_open(pathName);
 		free(pathName);
 	} else {

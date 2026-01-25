@@ -56,8 +56,8 @@ MODE=none
 # default flag that can be set in `upsd.conf`. If you want a data server always
 # running, even if it initially has nothing to serve (may be live-reloaded
 # later, when devices become configured), this option is for you.
-ALLOW_NO_DEVICE=true
-export ALLOW_NO_DEVICE
+#ALLOW_NO_DEVICE=true
+#export ALLOW_NO_DEVICE
 
 # Uncomment this to allow starting the `upsd` data server even if not all
 # `LISTEN` directives can be honoured at the moment. This environment variable
