@@ -93,6 +93,12 @@ Changes from 2.8.4 to 2.8.5
   of this new facility to keep working under both old and new file names.
   [#3101]
 
+- The `upsdrvquery*` semi-internal API for talking on the driver socket was
+  updated with default handling for SIGPIPE. If your consumer wants to catch
+  it themselves, instead of using `errno=EPIPE` after a failed call, you can
+  use `upsdrvquery_NOSIGPIPE=0` to disable neutering of the signal inside
+  the API itself. [PR #3277]
+
 - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
   to match the driver program name. Packaging recipes may have to be updated.
   Follow-up from slightly botched renaming in original contribution. [PR #545]

@@ -83,6 +83,12 @@ https://github.com/networkupstools/nut/milestone/12
    * Fixed thread-safety of IP address printout in `libupsclient` method
      `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
      [issue #3234]
+   * The `upsdrvquery` code base was revised to handle SIGPIPE without crashing
+     (if the consumers did not neuter the signal themselves), although this
+     behavior is optional by `upsdrvquery_NOSIGPIPE`.
+     Separated an `upsdrvquery_ping()` operation from earlier code, so it can
+     be directly used by consumers (in-tree this is drivers and `upsdrvctl`).
+     [issue #3276, PR #3277]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -251,6 +257,10 @@ https://github.com/networkupstools/nut/milestone/12
  - `upsdrvctl` tool updates:
    * Make use of `setproctag()` and `getproctag()` to report parent/child
      process names. [#3084]
+   * The global-level `debug_min` setting in `ups.conf` now also applies
+     to bumping the debug verbosity of `upsdrvctl` tool. [#3276]
+   * If we fail to stop a driver by signal (e.g. PID file was not saved),
+     retry to `INSTCMD driver.exit` it by socket protocol. [#3277]
 
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
