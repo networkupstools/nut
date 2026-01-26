@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.48"
+#define DRIVER_VERSION	"0.49"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -3643,7 +3643,7 @@ void	upsdrv_initups(void)
 		ser_set_rts(upsfd, cablepower[i].rts);
 
 		/* Allow some time to settle for the cablepower */
-		usleep(100000);
+		usleep(1100000);
 
 #	endif	/* TESTING */
 
