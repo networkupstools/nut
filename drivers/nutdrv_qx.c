@@ -3445,6 +3445,8 @@ void	upsdrv_updateinfo(void)
 	retry = 0;
 
 	dstate_dataok();
+
+	upsdebugx(1, "%s finished", __func__);
 }
 
 /* Initialise data from UPS */
@@ -3516,8 +3518,14 @@ void	upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 
 	/* Subdriver initinfo */
-	if (subdriver->initinfo != NULL)
+	if (subdriver->initinfo != NULL) {
+		upsdebugx(2, "%s calling subdriver-specific initinfo()...", __func__);
 		subdriver->initinfo();
+	} else {
+		upsdebugx(2, "%s there is no subdriver-specific initinfo() to call", __func__);
+	}
+
+	upsdebugx(1, "%s finished", __func__);
 }
 
 /* Open the port and the like and choose the subdriver */
@@ -3797,8 +3805,14 @@ void	upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "Device not supported!");
 
 	/* Subdriver initups */
-	if (subdriver->initups != NULL)
+	if (subdriver->initups != NULL) {
+		upsdebugx(2, "%s calling subdriver-specific initups()...", __func__);
 		subdriver->initups();
+	} else {
+		upsdebugx(2, "%s there is no subdriver-specific initups() to call", __func__);
+	}
+
+	upsdebugx(1, "%s finished", __func__);
 }
 
 /* Close the ports and the like */
@@ -3844,6 +3858,7 @@ void	upsdrv_cleanup(void)
 
 #endif	/* TESTING */
 
+	upsdebugx(1, "%s finished", __func__);
 }
 
 
