@@ -38,20 +38,10 @@ linkman:ups.conf[5].
 The number of seconds that the UPS should wait between receiving the
 shutdown command and actually shutting off.
 
-NOTE: This driver does not currently support USB-matching settings common
-to other drivers, such as *vendor*, *vendorid*, *product*, *productid*,
-*serial*, *device* or *bus*.
-
-////////
-The note above may be addressed by
-https://github.com/networkupstools/nut/issues/1764
-When that happens, replace it by the following lines:
-
 USB INTERFACE ONLY
 ~~~~~~~~~~~~~~~~~~
 
 include::nut_usb_addvars.txt[]
-////////
 
 DEFAULT VALUES FOR THE EXTRA ARGUMENTS
 --------------------------------------

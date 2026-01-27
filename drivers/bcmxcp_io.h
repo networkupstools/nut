@@ -17,6 +17,6 @@ void upsdrv_cleanup(void);
 void upsdrv_reconnect(void);
 void upsdrv_comm_good(void);
 
-extern upsdrv_info_t comm_upsdrv_info;
+extern upsdrv_info_t bcmxcp_comm_upsdrv_info;
 
 #endif  /* BCMXCP_IO__ */
