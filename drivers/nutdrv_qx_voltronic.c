@@ -1720,12 +1720,12 @@ static int	voltronic_claim(void)
 	if ((query_result = qx_process(item, NULL))) {
 		upsdebug_with_errno(4, "%s: failed (%d) to get 'ups.firmware.aux'", __func__, query_result);
 
-		if (errno == EINVAL) {
+		/*if (errno == EINVAL) {*/
 			upsdebugx(2, "%s: Sometimes the device is laggy, and we could have posted many queries and the buffer is full of replies to them; try to flush it and ask again", __func__);
 			usleep(5000000);	/* arbitrary 5s delay for the device to maybe produce answers to earlier voltage requests */
 			upsdebugx(2, "%s: Buffers flushed, retry the query", __func__);
 			query_result = qx_process(item, NULL);
-		}
+		/*}*/
 
 		if (query_result) {
 			dstate_delinfo("input.voltage");
