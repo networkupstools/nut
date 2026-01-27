@@ -106,9 +106,6 @@ bcmxcp.c: $(top_srcdir)/drivers/bcmxcp.c
 CLEANFILES += $(LINKED_SOURCE_FILES)
 BUILT_SOURCES += $(LINKED_SOURCE_FILES)
 
-$(top_builddir)/include/nut_version.h:
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
-
 # Note: we only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_NUT_SCANNER
  bin_PROGRAMS += nut-scanner
