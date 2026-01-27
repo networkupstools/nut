@@ -1569,6 +1569,7 @@
 "Tripp Lite"	"ups"	"3"	"SU3000XLCD"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=744&txtModelID=5342
 "Tripp Lite"	"ups"	"3"	"SUINT1000RTXL2UA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3983
 "Tripp Lite"	"ups"	"3"	"SUINT1500RTXL2UA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=2720
+"Tripp Lite"	"ups"	"3"	"SUINT1500RTXL2UA"	"Serial"	"tripplitesu"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=2720
 "Tripp Lite"	"ups"	"3"	"SUINT2200RTXL2UA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=3970
 "Tripp Lite"	"ups"	"3"	"SUINT3000RTXL2U"	"USB (protocol 4005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4523
 
