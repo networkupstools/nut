@@ -368,9 +368,9 @@ mge_shut_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 
 # UPower
 if HAVE_GLIB
-  # Only build upower if GLib was found
+# Only build nut-upower if the set of libGLib/libGIO was found
   driverexec_PROGRAMS += $(UPOWER_DRIVERLIST)
-    
+
   nut_upower_SOURCES = nut-upower.c
   nut_upower_LDADD = $(LDADD_DRIVERS) $(GLIB_LIBS)
   nut_upower_CFLAGS = $(AM_CFLAGS) $(GLIB_CFLAGS)
