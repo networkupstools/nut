@@ -413,6 +413,8 @@ static void pw_comm_setup(const char *port)
 void upsdrv_makevartable(void)
 {
 	bcmxcp_makevartable();
+
+	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }
 
 void upsdrv_initups(void)
