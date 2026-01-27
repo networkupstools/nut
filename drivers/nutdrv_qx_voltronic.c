@@ -25,7 +25,7 @@
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.13"
+#define VOLTRONIC_VERSION "Voltronic 0.14"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -1690,7 +1690,7 @@ static int	voltronic_claim(void)
 
 	item_t	*item = find_nut_info("input.voltage", 0, 0);
 
-	/* Don't know what happened */
+	/* Don't know what happened - should have looked up in the mapping table here! */
 	if (!item)
 		return 0;
 
@@ -1713,8 +1713,19 @@ static int	voltronic_claim(void)
 
 	/* No reply/Unable to get value */
 	if (qx_process(item, NULL)) {
-		dstate_delinfo("input.voltage");
-		return 0;
+		int	query_failed = -1;
+
+		if (errno == EINVAL) {
+			upsdebugx(2, "%s: Sometimes the device is laggy, and we could have posted many queries and the buffer is full of replies to them; try to flush it and ask again", __func__);
+			usleep(5000000);	/* arbitrary 5s delay for the device to maybe produce answers to earlier voltage requests */
+			upsdebugx(2, "%s: Buffers flushed, retry the query", __func__);
+			query_failed = qx_process(item, NULL);
+		}
+
+		if (query_failed) {
+			dstate_delinfo("input.voltage");
+			return 0;
+		}
 	}
 
 	/* Unable to process value/Protocol out of range */
