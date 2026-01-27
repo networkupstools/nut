@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.28"
+#define SUBDRIVER_VERSION "0.29"
 
 /* communication driver description structure
  * NOTE: Renamed from comm_upsdrv_info to avoid conflict

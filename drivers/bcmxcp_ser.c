@@ -6,7 +6,7 @@
 #include "nut_stdint.h"
 
 #define SUBDRIVER_NAME    "RS-232 communication subdriver"
-#define SUBDRIVER_VERSION "0.22"
+#define SUBDRIVER_VERSION "0.23"
 
 /* communication driver description structure */
 upsdrv_info_t bcmxcp_comm_upsdrv_info = {
