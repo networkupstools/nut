@@ -4111,6 +4111,8 @@ static int	subdriver_matcher(void)
 	const char	*protocol = getval("protocol");
 	int		i;
 
+	upsdebugx(2, "%s...", __func__);
+
 	/* Select the subdriver for this device */
 	for (i = 0; subdriver_list[i] != NULL; i++) {
 
@@ -4139,10 +4141,13 @@ static int	subdriver_matcher(void)
 
 			subdriver = subdriver_list[i];
 
+			upsdebugx(2, "%s: Trying protocol %s...", __func__, subdriver->name);
 			if (subdriver->claim()) {
+				upsdebugx(1, "%s: Trying protocol %s: claim succeeded", __func__, subdriver->name);
 				break;
 			}
 
+			upsdebugx(2, "%s: Trying protocol %s: claim failed", __func__, subdriver->name);
 			subdriver = NULL;
 
 		}
@@ -4154,10 +4159,13 @@ static int	subdriver_matcher(void)
 
 	if (!subdriver) {
 		upslogx(LOG_ERR, "Device not supported!");
+		upsdebugx(2, "%s finished", __func__);
 		return 0;
 	}
 
 	upslogx(LOG_INFO, "Using protocol: %s", subdriver->name);
+
+	upsdebugx(2, "%s finished", __func__);
 
 	return 1;
 }
