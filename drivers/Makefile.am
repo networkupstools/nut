@@ -167,6 +167,7 @@ LINUX_I2C_DRIVERLIST = asem pijuice hwmon_ina219
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
 GPIO_DRIVERLIST = generic_gpio_libgpiod
+UPOWER_DRIVERLIST = nut-upower
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
@@ -174,6 +175,7 @@ EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
 EXTRA_PROGRAMS += $(NUTSW_DRIVERLIST)
 EXTRA_PROGRAMS += $(GPIO_DRIVERLIST)
+EXTRA_PROGRAMS += $(UPOWER_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -363,6 +365,16 @@ mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here, so no shared lib for HID parsing
 mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE=1
 mge_shut_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
+
+# UPower
+if HAVE_GLIB
+# Only build nut-upower if the set of libGLib/libGIO was found
+  driverexec_PROGRAMS += $(UPOWER_DRIVERLIST)
+
+  nut_upower_SOURCES = nut-upower.c
+  nut_upower_LDADD = $(LDADD_DRIVERS) $(GLIB_LIBS)
+  nut_upower_CFLAGS = $(AM_CFLAGS) $(GLIB_CFLAGS)
+endif
 
 # SNMP
 # Please keep the MIB table below sorted roughly alphabetically (incidentally
