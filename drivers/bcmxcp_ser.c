@@ -9,7 +9,7 @@
 #define SUBDRIVER_VERSION "0.22"
 
 /* communication driver description structure */
-upsdrv_info_t comm_upsdrv_info = {
+upsdrv_info_t bcmxcp_comm_upsdrv_info = {
 	SUBDRIVER_NAME,
 	SUBDRIVER_VERSION,
 	NULL,

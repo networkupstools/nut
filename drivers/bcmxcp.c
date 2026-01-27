@@ -135,7 +135,7 @@ upsdrv_info_t upsdrv_info = {
 	"Alf Høgemark <alf@i100>\n" \
 	"Gavrilov Igor",
 	DRV_STABLE,
-	{ &comm_upsdrv_info, NULL }
+	{ &bcmxcp_comm_upsdrv_info, NULL }
 };
 
 static uint16_t get_word(const unsigned char*);

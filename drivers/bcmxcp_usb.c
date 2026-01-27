@@ -14,8 +14,11 @@
 #define SUBDRIVER_NAME    "USB communication subdriver"
 #define SUBDRIVER_VERSION "0.28"
 
-/* communication driver description structure */
-upsdrv_info_t comm_upsdrv_info = {
+/* communication driver description structure
+ * NOTE: Renamed from comm_upsdrv_info to avoid conflict
+ *  with that defined in libusb{0,1}.c
+ */
+upsdrv_info_t bcmxcp_comm_upsdrv_info = {
 	SUBDRIVER_NAME,
 	SUBDRIVER_VERSION,
 	NULL,
