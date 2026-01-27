@@ -26,26 +26,39 @@ int is_usb_device_supported(usb_device_id_t *usb_device_id_list, USBDevice_t *de
 	int retval = NOT_SUPPORTED;
 	usb_device_id_t *usbdev;
 
+	upsdebugx(3, "%s: checking if this driver can support USB device VID:PID 0x%04X:0x%04X",
+		__func__, (unsigned int)device->VendorID, (unsigned int)device->ProductID);
+
 	for (usbdev = usb_device_id_list;
 	     (usbdev->vendorID != 0 || usbdev->productID != 0 || usbdev->fun != NULL);
 	     usbdev++
 	) {
+		upsdebugx(4, "%s: checking table entry for VID:PID 0x%04X:0x%04X "
+			"(custom init handler is%s available)",
+			__func__, (unsigned int)usbdev->vendorID,
+			(unsigned int)usbdev->productID,
+			(usbdev->fun == NULL ? " NOT" : ""));
+
 		if (usbdev->vendorID != device->VendorID) {
+			upsdebugx(4, "%s: NOT_SUPPORTED: vendor ID mismatch", __func__);
 			continue;
 		}
 
 		/* flag as possibly supported if we see a known vendor */
 		retval = POSSIBLY_SUPPORTED;
 
+		upsdebugx(4, "%s: POSSIBLY_SUPPORTED: known vendor ID at least", __func__);
 		if (usbdev->productID != device->ProductID) {
 			continue;
 		}
 
 		/* call the specific handler, if it exists */
 		if (usbdev->fun != NULL) {
+			upsdebugx(4, "%s: call the custom init handler", __func__);
 			(*usbdev->fun)(device);
 		}
 
+		upsdebugx(4, "%s: SUPPORTED: known vendor and product IDs", __func__);
 		return SUPPORTED;
 	}
 
