@@ -3801,6 +3801,20 @@ void	upsdrv_initups(void)
 #endif	/* QX_USB */
 
 	/* Choose subdriver */
+#if defined(QX_SERIAL) && defined(QX_USB)
+	upsdebugx(1, "%s: trying to match the handler for %s device", __func__, is_usb ? "USB" : "Serial");
+#else
+# ifdef QX_SERIAL
+	upsdebugx(1, "%s: trying to match the handler for Serial device", __func__);
+# endif
+# ifdef QX_USB
+	upsdebugx(1, "%s: trying to match the handler for USB device", __func__);
+# endif
+# if !(defined(QX_SERIAL)) && !(defined(QX_USB))
+	/* Should not get here... so it is even more interesting to see this */
+	upsdebugx(1, "%s: trying to match the handler for a device (weird build of the driver does not discern Serial/USB)", __func__);
+# endif
+#endif
 	if (!subdriver_matcher())
 		fatalx(EXIT_FAILURE, "Device not supported!");
 
