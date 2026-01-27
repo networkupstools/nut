@@ -4,6 +4,12 @@ NUT daisychain support notes
 ============================
 endif::external_title[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/daisychain.html
+// and subsequent pages (next-next-next...)
+//////////////////////////////////////////////////////////////////////////////
+
 NUT supports daisychained devices for any kind of device that proposes
 it. This chapter introduces:
 
@@ -155,7 +161,7 @@ daisychain index. For example, if you have the following entry:
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0", ... },
 +
-And if the last "0" of the the 4th field represents the index of the device
+And if the last "0" of the 4th field represents the index of the device
 in the daisychain, then you would have to adapt it the following way:
 +
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE,

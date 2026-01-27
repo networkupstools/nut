@@ -21,10 +21,144 @@ be beneficial to add `--enable-option-checking=fatal` to the `./configure`
 command line, in order to quickly pick up any other removed option flags.
 ======
 
-Changes from 2.8.3 to 2.8.4
+Changes from 2.8.4 to 2.8.5
 ---------------------------
 
 - PLANNED: Keep track of any further API clean-up?
+
+- Added a `configure` script option to `--enable-shared-private-libs` which
+  allows to deliver NUT common libraries as shared objects used by different
+  NUT binaries, rather than linking just the used bits into each binary.
+  This has some potential both for mayhem (so disabled by default) and
+  for significant reduction of installation footprint. If enabled with
+  a NUT packaging build, note there would be several more NUT shared
+  library files to deliver with the packages (formally versioned and
+  named by NUT release semantic version triplet). [issue #2800]
+
+- For ages, most recipes for building NUT had customized the `sysconfdir` to
+  be `/etc/nut`, which is not exactly the *system* configuration directory.
+  This is finally deprecated, with new `--with-confdir` configuration option
+  taking over the role of a full path to configuration files (by default
+  `${sysconfdir}${confdir_suffix}`), and new `--with-confdir-suffix` allowing
+  to specify just `/nut` or `/ups` that would be tacked onto the default
+  `${sysconfdir}` to resolve the `${confdir}`. Default behavior should be
+  same as with previous builds: if `sysconfdir` is customized (or `prefix`
+  is kept at built-in default), the `confdir_suffix` will default to empty;
+  otherwise it assumes the value of `/${PACKAGE_NAME}` to become `/nut` in
+  most cases. A `--with-confdir-examples` option was also introduced, to
+  help distributions that place `*.conf.sample` files into docs or other
+  locations. [#3131]
+
+- Source directory `data/html` was renamed to `data/htmlcgi` in order to better
+  reflect its contents and purpose, compared to documentation-oriented `html*`
+  directories (and recipe variable names). This may impact some packaging
+  recipes which do not rely on `make install` alone. [#3049]
+
+- Some fixes were applied to HTML templates for NUT CGI clients. It can be
+  useful for NUT deployments being upgraded to compare the files they have
+  installed (and possibly customized) with the `*.html.sample` files delivered
+  by the new build. [PR #3180]
+
+- Introduced a `@NUT_UPSSTATS_TEMPLATE@` command which the NUT CGI template
+  files now MUST start with (safety check that we are reading a template).
+  While the delivered `upsstats*.html.sample` files would include the change,
+  ultimate `upsstats*.html` templates deployed for end-users MUST be updated.
+  [issue #3252, PR #3249]
+
+- Dropped the `compile` script from Git sources. It originates from automake
+  and is added to work area (if missing) during `autogen.sh` rituals anyway
+  (as `make` says, `'automake --add-missing' can install 'compile'` when you
+  run without it). It is still distributed as part of `make dist` tarball.
+  We are open to any feedback whether this removal impacts NUT rebuilds on
+  any systems. [#1209]
+
+- Default `PIDPATH` is now more strictly `/var/run`, unless building on a
+  system conforming to FHS-3.0 standard where that location is absent or
+  is a symlink, while `/run` exists and is a true directory. Package recipes
+  usually override `--with-pidpath` anyway to provide a dedicated location
+  for NUT `root`-owned daemon PID files. [#3099]
+
+- The autoconf managed macro for `--with-port` option was renamed from plain
+  `PORT` to less ambiguous `NUT_PORT` to avoid potential conflicts with any
+  third-party code.  If anyone did use this macro in their custom builds or
+  integrations, some renaming (or stubbed definitions to the effect of
+  `PORT=NUT_PORT`) may be needed. [#3238]
+
+- In drivers using the common `main.c` and `main.h` framework, introduced
+  a `void upsdrv_tweak_prognames(void)` required method (may be no-op) to
+  optionally tweak `prognames[]` entries now that there is certain support
+  to accept program name aliases, not just one hard-coded string value.
+  Any third-party drivers may require rebuilding to extend with this method.
+  Any drivers that would undergo promotion with renaming can take advantage
+  of this new facility to keep working under both old and new file names.
+  [#3101]
+
+- The `upsdrvquery*` semi-internal API for talking on the driver socket was
+  updated with default handling for SIGPIPE. If your consumer wants to catch
+  it themselves, instead of using `errno=EPIPE` after a failed call, you can
+  use `upsdrvquery_NOSIGPIPE=0` to disable neutering of the signal inside
+  the API itself. [PR #3277]
+
+- Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
+  to match the driver program name. Packaging recipes may have to be updated.
+  Follow-up from slightly botched renaming in original contribution. [PR #545]
+
+- The `configure` script would now probe (if it can) the operating systems for
+  more user and group account names, such as `upsmon`, `nutmon`, `ups`, `nut`
+  (last hit wins, separately for user and groups accounts) settling on one of
+  those if detected instead of `nobody` (and optionally `nogroup`). It would
+  also warn if `nobody` or `nogroup` end up being used for a build. This is
+  not likely to affect package builds (which usually define the accounts to
+  use), but may (hopefully positively) affect rebuilds of NUT on systems where
+  an older version is already deployed. [#3173]
+
+- The `configure` script should now try harder to report specifically
+  the "purelib" location as `PYTHON*_SITE_PACKAGES`. Packaging recipes
+  may have to be updated. [#1209]
+
+- New supported values were introduced for `--with-python{,2,3}=auto-prio=NUM`:
+  this allows to auto-prioritize some *one* available Python interpreter.
+  Default settings were changed from plain `auto` (allowing for multiple
+  `python*` interpreters and `site-package` locations to be used), to
+  prefer a `python3` if available, else `python2`, else `python`, and
+  forget about others even if discovered. Packaging recipes may have to be
+  updated, either to explicitly package the binding for several versions,
+  or to not-deliver files no longer installed into the prototype area. [#1792]
+
+
+Changes from 2.8.3 to 2.8.4
+---------------------------
+
+- Introduced handling (possibly rewriting) for man page section "Overviews,
+  conventions, and miscellaneous" (commonly number 7), to deliver support
+  for `man nut` queries (NUT overview manual page also created).
+  A new `configure --with-docs-man-dir-as-base` option was introduced so that
+  directories for man page sections can now be automatically named as either
+  "base" number of the section (e.g. `man1`) or by full section name (`man1m`),
+  as different OS distributions have different preferences in this regard.
+  As a packager, you may have to update the recipes accordingly (especially
+  if your platform rewrites section numbers). [#2945, #2950]
+
+- Introduced `powervar-cs` (Serial) and `powervar-cu` (USB) drivers which share
+  a `powervar-cx` manual page, rendered once, with pages named after the driver
+  aliased to it in post-processing. This may impact packaging, depending on its
+  technology. Feel free to deliver file copies, symbolic or hard links as seems
+  right for your platform. [#2988]
+
+- Option to `configure --enable-docs-man-for-progs-built-only` was added,
+  to differentiate NUT builds that deliver man pages for only built programs
+  (legacy default) or for all of them (as needed for docs sites). [#2976]
+
+- Added APC BVKxxxM2 to list of devices where `lbrb_log_delay_sec=N` may be
+  necessary to address spurious LOWBATT and REPLACEBATT events. [issue #2942]
+
+- In `nutdrv_qx`, updated `megatec` protocol subdriver for more detailed
+  responses to `I` query which may return `ups.serial` (after a shorter
+  `device.mfr`) and the `battery.runtime` (after a shorter `device.model`).
+  Note that the expected response is shorter than in other dialects (38 vs.
+  39 bytes), so if this change breaks anything for your UPS that reported
+  the values above correctly (e.g. the `ups.firmware` version becomes shorter
+  or none of these are reported), please let NUT developers know. [#2980]
 
 Changes from 2.8.2 to 2.8.3
 ---------------------------

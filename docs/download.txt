@@ -3,6 +3,33 @@ Download information
 
 This section presents the different methods to download NUT.
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/download.html
+//////////////////////////////////////////////////////////////////////////////
+
+Building from source code
+-------------------------
+
+To build from Git sources, you will need a number of tools such as `autoconf`,
+`automake` and `libtool` to use these checkouts or snapshots to generate the
+`configure` script and some other files.  The distribution archives already
+include the `configure` script (as well as other files) and do not require
+auto* tools to prepare the sources for a build.
+
+A more complete list of build prerequisites for different platforms can be seen in
+link:https://networkupstools.org/docs/qa-guide.chunked/_prerequisites_for_building_nut_on_different_oses.html[Prerequisites
+for building NUT on different OSes] chapter in the
+link:https://networkupstools.org/docs/qa-guide.chunked/[NUT QA Guide],
+and reading about
+link:https://networkupstools.org/docs/user-manual.chunked/Configure_options.html[`configure`
+script options] can also help.
+
+After you `configure` the source workspace, a `make dist-hash` recipe would
+create the snapshot tarballs which do not require the `auto*` tools, and their
+checksum files, such as those available on the NUT website and attached to
+link:https://github.com/networkupstools/nut/releases[GitHub Releases page].
+
 Source code
 -----------
 
@@ -39,6 +66,23 @@ You can also browse the link:https://www.networkupstools.org/source/{tree_versio
 Development tree:
 ~~~~~~~~~~~~~~~~~
 
+To get the newest fixes or features, you may want to build code that is
+even newer than the most-recent NUT release (and likely much newer than
+whatever your OS distribution has packaged).  This bleeding-edge approach
+usually involves building NUT either from the `master` branch, or even
+from feature branches which are sources of a pull request being reviewed
+and discussed before it gets merged into the main development trunk.
+
+As such, it is highly recommended to build from Git sources rather than
+"distribution tarball" archives (so you can more easily update your build
+workspace to try subsequent iterations), although the latter are now also
+available for development iterations.
+
+See the live Wiki article on
+https://github.com/networkupstools/nut/wiki/Building-NUT-for-in%E2%80%90place-upgrades-or-non%E2%80%90disruptive-tests
+for latest suggestions for building, testing and installing the latest
+NUT code base.
+
 Code repository
 ^^^^^^^^^^^^^^^
 
@@ -61,7 +105,7 @@ following script in the directory you just checked out:
 
 	:; ./autogen.sh
 
-NOTE: it is optionally recommended to have Python 2.x or 3.x, and Perl, to
+NOTE: It is optionally recommended to have Python 2.x or 3.x, and Perl, to
 generate some files included into the `configure` script, presence is checked
 by autotools when it is generated. Neutered files can be just "touched" to
 pass the `autogen.sh` if these interpreters are not available, and effectively
@@ -94,25 +138,20 @@ sources of operating system distributions, as listed below.
 Snapshots
 ^^^^^^^^^
 
-GitHub has several download links for repository snapshots (for particular tags
-or branches), but you will need a number of tools such as autoconf, automake
-and libtool to use these snapshots to generate the `configure` script and some
-other files.
+For pull requests and eventual merges into the master branch, a NUT CI job
+prepares correct "dist tarballs" with a snapshot of source code, as well as
+an archive with rendered documentation files (PDF, HTML, man pages).
 
-After you `configure` the source workspace, a `make dist-hash` recipe would
-create the snapshot tarballs which do not require the auto* tools, and their
-checksum files, such as those available on the NUT website and attached to
-link:https://github.com/networkupstools/nut/releases[GitHub Releases page].
+Links to these "Dist and Docs" archives can be seen on GitHub in the list of
+GitHub Checks associated with merge commits and pull requests. Keep in mind
+that artifacts like these are stored for up to 90 days, and can be rotated
+away earlier.
 
-/////////
-TODO: #1400 to replace this with a NUT CI farm service to publish the tarballs
-
-If our Buildbot instance is behaving, you can download a snapshot which does
-not require auto* tools from this
-link:http://buildbot.networkupstools.org/snapshots[builder].  Look for the
-latest *[tarball]* link towards the top of the page, and be sure to check the
-'Build ##' link to verify the branch name.
-/////////
+NOTE: GitHub has several download links for repository snapshots (made for
+particular tags or branches), but the ability to build NUT seamlessly from
+ZIP or `tar.gz` snapshots prepared by GitHub automatically (as a simple
+`git archive` of a checked-out workspace) is not regularly checked nor
+"supported" by the Network UPS Tools project. YMMV.
 
 Older versions
 ~~~~~~~~~~~~~~
@@ -123,13 +162,29 @@ link:https://www.networkupstools.org/source/[Browse source directory]
 Binary packages
 ---------------
 
-NOTE: The only official releases from this project are source code.
+[NOTE]
+======
+The only official releases from this project are source code "tarballs",
+prepared by `make dist-files` from the tagged release commits on main trunk of
+the development code base (for more details see NUT Maintainer Guide in source).
+
+Best-effort packages or archives of installation prototype workspaces, prepared
+by regular CI builds, are planned to ease evaluation of the latest development
+for some platforms (currently serving only NUT for Windows).
+======
 
 NUT is already available in the following operating systems (and
 link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging-recipes-and-repository-sections[likely more]):
 
-- link:https://repology.org/project/nut/versions[Repology report on NUT]
-  lists 745 entries about NUT, as of this writing
+- link:https://repology.org/project/network-ups-tools/versions[Repology report
+  on "network-ups-tools"] lists 239 entries about NUT, as of 2025-09-06
+
+    * Older listing at link:https://repology.org/project/nut/versions[Repology
+      report on "nut"] listed 745 entries about NUT, as of 2022-04-26 -- that
+      name was not tracked since 2024 probably due to ambiguity with some other
+      projects that used "nut" in their name;
+      see link:https://repology.org/project/nut/history[Repology history of
+      "nut"] for more details
 
 - Linux:
 
@@ -162,8 +217,9 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
       link:http://doc.freenas.org/9.3/freenas_services.html#ups[FreeNAS 9.3 docs on UPS integration]
       and link:https://www.ixsystems.com/documentation/freenas/11.3-U5/services.html#ups[FreeNAS 11.3-U5 docs on UPS integration]
 
-- Mac OS X:
+- macOS 11+ and Mac OS X:
 
+    * link:https://formulae.brew.sh/formula/nut[Homebrew formula]
     * link:https://github.com/fink/fink-distributions/blob/master/10.9-libcxx/stable/main/finkinfo/net/nut.info[Fink recipe]
       and link:http://pdb.finkproject.org/pdb/package.php/nut[Fink package overview]
     * link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts recipe]
@@ -180,6 +236,10 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
       CI] -- but it may be difficult to locate specifically the master-branch builds.
       See link:https://github.com/networkupstools/nut/wiki/NUT-for-Windows[NUT
       for Windows wiki article] for these details, and more.
++
+The latest release's automated build archive is available here:
+      link:https://www.networkupstools.org/package/windows/NUT-for-Windows-x86_64-RELEASE-{revision}.7z[NUT-for-Windows-x86_64-RELEASE-{revision}.7z]
+
     * link:https://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-6.msi[(OBSOLETE) Windows MSI installer 2.6.5-6]
 
 

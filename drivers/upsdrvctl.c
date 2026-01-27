@@ -92,6 +92,17 @@ static char	*pt_root = NULL, *pt_user = NULL, *pt_cmd = NULL;
 static int	nut_debug_level_passthrough = 0;
 static int	nut_foreground_passthrough = -1;
 
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the ups.conf
+ * can define a debug_min value in the global or device
+ * section, to set the minimal debug level (CLI provided
+ * value less than that would not have effect, can only
+ * have more). Finally, it can also be set over socket
+ * protocol, taking precedence over other inputs.
+ */
+static int	nut_debug_level_args = -1;
+static int	nut_debug_level_global = -1;
+
 /* Keep track of requested operation (function pointer) */
 static void	(*command)(const ups_t *) = NULL;
 
@@ -106,6 +117,28 @@ static int	signal_flag = 0;
 #else	/* WIN32 */
 static char	*signal_flag = NULL;
 #endif	/* WIN32 */
+
+/* Reduced version of code from drivers/main.c */
+static void assign_debug_level(void) {
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in ups.conf, and for upsdrvctl tool we care about the global
+	 * value (not any specified for a driver config section).
+	 * Note that a non-zero debug_min does not impact foreground
+	 * running mode.
+	 */
+
+	/* At minimum, use the verbosity we started with - via CLI
+	 * arguments; but maybe a greater debug_min is set in current
+	 * config file.
+	 */
+	nut_debug_level = nut_debug_level_args;
+	if (nut_debug_level_global > nut_debug_level) {
+		/* Applying debug_min=%d from ups.conf global section */
+		nut_debug_level = nut_debug_level_global;
+	}
+
+	upsdebugx(1, "debug level for upsdrvctl is '%d'", nut_debug_level);
+}
 
 void do_upsconf_args(char *arg_upsname, char *var, char *val)
 {
@@ -139,6 +172,22 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 			} else {
 				waitfordrivers = 0;
 			}
+		}
+
+		/* Allow to specify its minimal debugging level for all drivers -
+		 * or the upsdrvctl tool here - and admins can set more with
+		 * command-line args, but can't set less without changing config.
+		 * Should help debug of services.
+		 */
+		if (!strcasecmp(var, "debug_min")) {
+			int lvl = -1; /* typeof common/common.c: int nut_debug_level */
+			if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
+					nut_debug_level_global = lvl;
+			} else {
+					upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf global settings");
+			}
+
+			return;
 		}
 
 		/* ignore anything else - it's probably for main */
@@ -388,8 +437,97 @@ static void stop_driver(const ups_t *ups)
 		}
 
 		if (ret != 0) {
+			ssize_t	udq_ret;
+			udq_pipe_conn_t	*udq_pipe;
+
 			upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
-			exec_error++;
+
+			udq_pipe = upsdrvquery_connect_drvname_upsname(ups->driver, ups->upsname);
+			if (udq_pipe) {
+				upslogx(LOG_ERR, "At least could open the driver socket");
+			} else {
+				/* There IS a chance that the driver is still
+				 * starting and not listening on the socket yet.
+				 * FIXME: Could align with ups->maxstartdelay...
+				 *  but if it is just not running -- this may
+				 *  mean minutes of fruitless sleep.
+				 */
+				upsdebugx(1, "%s: initial driver socket connection failed, retrying shortly", __func__);
+				sleep(5);
+				udq_pipe = upsdrvquery_connect_drvname_upsname(ups->driver, ups->upsname);
+				if (udq_pipe) {
+					upslogx(LOG_ERR, "At least could open the driver socket");
+				}
+			}
+
+			if (testmode) {
+				udq_ret = (udq_pipe == NULL ? -1 : 0);
+			} else {
+				char	buf[LARGEBUF];
+				struct timeval	tv;
+
+				memset(buf, 0, sizeof(buf));
+				/* Post the query and wait for reply */
+				/* FIXME: coordinate with pollfreq? */
+
+				/* Below we poke reads inside ping every 0.1s,
+				 * which is not too often but responsive enough.
+				 * Sometimes we do get into being able to send
+				 * "PING" but as the channel is closing, the
+				 * reads return 0 and errno=Success infinitely.
+				 * So we first ping with a 1-second timeout,
+				 * then retry (and maybe fail instantly but
+				 * definitely with EPIPE) with a 3-sec backoff,
+				 * and then again with a longer common countdown
+				 * (tv = 15.0s caried over remaining retries).
+				 */
+				tv.tv_sec = 1;
+				tv.tv_usec = 0;
+				udq_ret = upsdrvquery_oneshot_conn(udq_pipe, "INSTCMD driver.exit\n", buf, sizeof(buf), &tv);
+				upsdebugx(1, "%s: upsdrvquery_oneshot_conn() replied to 'exit' (%" PRIiSIZE "): '%s'", __func__, udq_ret, buf);
+
+				if (udq_ret >= 0) {
+					int	n = 0;
+
+					upsdrvquery_write(udq_pipe, "NOBROADCAST");
+					while (upsdrvquery_ping(udq_pipe, &tv, 100000) > (n == 0 ? -1 : 0)) {
+						/* 0 = no reply, -1 = socket error; either way driver deemed dead? */
+						upsdebugx(1, "%s: keep waiting for driver exit", __func__);
+						sleep(1);
+						n++;
+						switch (n) {
+						case 1:
+							/* New TO for longer backoff, once */
+							tv.tv_sec = 3;
+							tv.tv_usec = 0;
+							break;
+						case 2:
+							/* New TO overall, set once */
+							tv.tv_sec = 15;
+							tv.tv_usec = 0;
+							break;
+						default:
+							break;
+						}
+					}
+					upsdebug_with_errno(1, "%s: final PING did not PONG back", __func__);
+					/* Let the driver's exit() finish */
+					usleep(1000000);
+				}
+			}
+
+			upslogx(LOG_ERR, "%s to %s the 'exit' command to the driver socket",
+				(udq_ret < 0) ? "Failed" : "Succeeded",
+				testmode ? "emulate" : "send");
+
+			if (udq_ret < 0) {
+				upslogx(LOG_ERR, "Failed to stop the driver %s for %s, it may be not running or not fully started yet",
+					ups->driver, ups->upsname);
+				exec_error++;
+			}
+
+			upsdrvquery_close(udq_pipe);
+
 			return;
 		}
 	} else {
@@ -687,12 +825,23 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		if (pid != 0) {			/* parent */
 			int	wstat;
 			struct sigaction	sa;
+			const char	*oldTag = getproctag();
 
 			/* work around const for this one... */
 			int *pupid = (int *)&(ups->pid);
 			int *puexectimeout = (int *)&(ups->exceeded_timeout);
 			*pupid = pid;
 			*puexectimeout = 0;
+
+			if (oldTag) {
+				if (!strstr(oldTag, "parent")) {
+					char	tag[SMALLBUF];
+					snprintf(tag, sizeof(tag), "%s-parent", getproctag());
+					setproctag(tag);
+				}
+			} else {
+				setproctag("parent");
+			}
 
 			/* Handle "parallel" drivers startup */
 			if (waitfordrivers == 0) {
@@ -770,10 +919,21 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 			return;
 		}
+
+		if (getproctag()) {
+			char	tag[SMALLBUF];
+			snprintf(tag, sizeof(tag), "%s-child", getproctag());
+			setproctag(tag);
+		} else {
+			setproctag("child");
+		}
 	}
 
-	/* child or foreground mode (no fork) */
+	/* child or foreground mode (no fork, e.g. single driver operation)
+	 * execute the specified binary and args into current process
+	 */
 
+	upsdebugx(1, "%s: calling execv(%s, ...)", __func__, argv[0]);
 	ret = execv(argv[0], argv);
 
 	/* shouldn't get here normally */
@@ -875,7 +1035,8 @@ static void status_driver(const ups_t *ups)
 #ifndef WIN32
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(), ups->driver, ups->upsname);
 	pidFromFile = parsepidfile(pidfn);
-	if (pidFromFile >= 0) {                                                                                                                                                                                                                       /* this method actively reports errors, if any */
+	if (pidFromFile >= 0) {
+		/* this method actively reports errors, if any */
 		cmdret = sendsignalpid(pidFromFile, 0, ups->driver, 1);
 		/* returns zero for a successfully sent signal */
 		if (cmdret == 0)
@@ -1210,7 +1371,7 @@ static void start_driver(const ups_t *ups)
 	}
 }
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
 static void help(const char *arg_progname)
@@ -1487,7 +1648,9 @@ int main(int argc, char **argv)
 				exit(EXIT_SUCCESS);
 
 			case 'D':
-				nut_debug_level++;
+				if (nut_debug_level_args < 0)
+					nut_debug_level_args = 0;
+				nut_debug_level_args++;
 				break;
 
 			case 'd':
@@ -1585,13 +1748,15 @@ int main(int argc, char **argv)
 		char *s = getenv("NUT_DEBUG_LEVEL");
 		int l;
 		if (s && str_to_int(s, &l, 10)) {
-			if (l > 0 && nut_debug_level < 1) {
+			if (l > 0 && nut_debug_level_args < 1) {
 				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
 					"since none was requested by command-line options", l);
-				nut_debug_level = l;
+				nut_debug_level_args = l;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
 	}
+
+	setproctag("init");
 
 	argc -= optind;
 	argv += optind;
@@ -1636,6 +1801,18 @@ int main(int argc, char **argv)
 	if (!command)
 		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
 
+#ifndef WIN32
+	driverpath = xstrdup(DRVPATH);	/* set default */
+#else	/* WIN32 */
+	driverpath = getfullpath2(DRVPATH, PATH_BIN); /* Can get converted to relative path in WIN32 */
+#endif	/* WIN32 */
+
+	atexit(exit_cleanup);
+
+	read_upsconf(1);
+
+	assign_debug_level();
+
 	if (nut_debug_level_passthrough == 0 && (command == &start_driver || command == &shutdown_driver)) {
 		upsdebugx(2, "\n"
 			"If you're not a NUT core developer, chances are that you're told to enable debugging\n"
@@ -1649,18 +1826,10 @@ int main(int argc, char **argv)
 			"pass its current debug level to the launched driver, and '-B' keeps it backgrounded.\n");
 	}
 
-#ifndef WIN32
-	driverpath = xstrdup(DRVPATH);	/* set default */
-#else	/* WIN32 */
-	driverpath = getfullpath(NULL); /* Relative path in WIN32 */
-#endif	/* WIN32 */
-
-	atexit(exit_cleanup);
-
-	read_upsconf(1);
-
 	if (argc == lastarg) {
 		ups_t	*tmp = upstable;
+		char	tag[SMALLBUF];
+
 		upscount = 0;
 
 		while (tmp) {
@@ -1670,12 +1839,27 @@ int main(int argc, char **argv)
 
 		upsdebugx(1, "upsdrvctl commanding all drivers (%d found): %s",
 			upscount, (pt_cmd ? pt_cmd : NUT_STRARG(command_name)));
+
+		snprintf(tag, sizeof(tag), "%s-all",
+			pt_cmd ? pt_cmd : (command_name ? command_name : "unknown-command"));
+		if (command_name || pt_cmd)
+			setproctag(tag);
+
 		send_all_drivers(command);
 	} else
 	if (argc == (lastarg + 1)) {
+		char	tag[SMALLBUF];
+
 		upscount = 1;
 		upsdebugx(1, "upsdrvctl commanding one driver (%s): %s",
 			argv[lastarg], (pt_cmd ? pt_cmd : NUT_STRARG(command_name)));
+
+		snprintf(tag, sizeof(tag), "%s-%s",
+			pt_cmd ? pt_cmd : (command_name ? command_name : "unknown-command"),
+			argv[lastarg]);
+		if (command_name || pt_cmd)
+			setproctag(tag);
+
 		send_one_driver(command, argv[lastarg]);
 	} else {
 		fatalx(EXIT_FAILURE, "Error: extra arguments left on command line\n"

@@ -30,8 +30,10 @@
 
 #define LEGRAND_HID_VERSION	"Legrand HID 0.2"
 
-/* Legrand VendorID and ProductID */
-#define LEGRAND_VID	0x1cb0	/* Legrand */
+/* Legrand */
+#define LEGRAND_VENDORID	0x1cb0
+
+/* Legrand ProductIDs */
 #define LEGRAND_PID_PDU	0x0038	/* Keor PDU model (800VA) */
 #define LEGRAND_PID_SP	0x0032	/* Keor SP model (600, 800, 1000, 1500, 2000VA version) */
 
@@ -48,8 +50,8 @@ static void *disable_interrupt_pipe(USBDevice_t *device)
 
 /* USB IDs device table */
 static usb_device_id_t legrand_usb_device_table[] = {
-	{ USB_DEVICE(LEGRAND_VID, LEGRAND_PID_PDU),	disable_interrupt_pipe },	/* Legrand Keor PDU */
-	{ USB_DEVICE(LEGRAND_VID, LEGRAND_PID_SP),	disable_interrupt_pipe },	/* Legrand Keor SP */
+	{ USB_DEVICE(LEGRAND_VENDORID, LEGRAND_PID_PDU),	disable_interrupt_pipe },	/* Legrand Keor PDU */
+	{ USB_DEVICE(LEGRAND_VENDORID, LEGRAND_PID_SP) ,	disable_interrupt_pipe },	/* Legrand Keor SP */
 
 	/* Terminating entry */
 	{ 0, 0, NULL }

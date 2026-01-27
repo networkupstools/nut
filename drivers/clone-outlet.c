@@ -31,7 +31,7 @@
 #endif	/* !WIN32 */
 
 #define DRIVER_NAME	"Clone outlet UPS driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -303,7 +303,9 @@ static TYPE_FD sstate_connect(void)
 	dumpdone = 0;
 
 	/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
-	dstate_setinfo("ups.status", "WAIT");
+	status_init();
+	status_set("WAIT");
+	status_commit();
 
 	upslogx(LOG_INFO, "Connected to UPS [%s]", device_path);
 	return fd;
@@ -491,20 +493,20 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
+	status_init();
+
 	if (outlet.status == 0) {
 		upsdebugx(2, "OFF flag set (%s: switched off)", prefix.status);
-		dstate_setinfo("ups.status", "%s OFF", ups.status);
-		return;
+		status_set("OFF");
 	}
 
 	if ((outlet.timer.shutdown > -1) && (outlet.timer.shutdown <= outlet.delay.shutdown)) {
 		upsdebugx(2, "FSD flag set (%s: -1 < [%ld] <= %ld)", prefix.timer.shutdown, outlet.timer.shutdown, outlet.delay.shutdown);
-		dstate_setinfo("ups.status", "FSD %s", ups.status);
-		return;
+		status_set("FSD");
 	}
 
-	upsdebugx(3, "%s: power state not critical", getval("prefix"));
-	dstate_setinfo("ups.status", "%s", ups.status);
+	status_set(ups.status); /* FIXME: Split token words? */
+	status_commit();
 
 	last_poll = now;
 }
@@ -523,6 +525,12 @@ void upsdrv_shutdown(void)
 
 
 void upsdrv_help(void)
+{
+}
+
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

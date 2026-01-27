@@ -1,0 +1,260 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/autotools.mk
+-include /usr/share/cdbs/1/class/python-module.mk
+
+-include /usr/share/cdbs/1/rules/autoreconf.mk
+
+# CDBS has some issues detecting something other than dh_python2
+# which is absent on Debian 12+ and Ubuntu 25.04 for example.
+# This hack is broken for Debian Next in Oct 2025, as CDBS sheds
+# a lot of older scripts and the helpers seem to get implemented
+# somehow differently.
+ifeq  (,$(shell command -v dh_python2 || which dh_python2 || dh_python2 --help 2>/dev/null))
+ifneq (,$(shell command -v dh_python3 || which dh_python3 || dh_python3 --help 2>/dev/null))
+ifneq (,$(shell command -v python3 || which python3 || python3 --help 2>/dev/null))
+cdbs_curpythonsystems := python3
+endif
+endif
+endif
+
+export DH_OPTIONS
+
+# This is the debhelper compatibility version to use.
+# JIM: 10+ enables parallel builds by default
+export DH_COMPAT=10
+
+# We cannot call autoreconf -f -i as it updates INSTALL which is used for doc
+# generation
+DEB_DH_AUTORECONF_ARGS = --as-needed
+
+DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
+
+# echoed fallbacks are for Ubuntu primarily
+systemdsystemunitdir := $(shell OUT="`pkg-config --variable=systemdsystemunitdir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdsystemunitdir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /lib/systemd/system)
+systemdsystemdutildir := $(shell OUT="`pkg-config --variable=systemdutildir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdutildir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /lib/systemd)
+systemdshutdowndir := $(shell OUT="`pkg-config --variable=systemdshutdowndir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdshutdowndir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /lib/systemd/system-shutdown)
+systemdtmpfilesdir := $(shell OUT="`pkg-config --variable=systemdtmpfilesdir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdtmpfilesdir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /usr/lib/tmpfiles.d)
+systemdsysusersdir := $(shell OUT="`pkg-config --variable=systemdsysusersdir libsystemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || OUT="`pkg-config --variable=systemdsysusersdir systemd`" && [ -n "$$OUT" ] && { echo "$$OUT" ; exit; } || echo /usr/lib/sysusers.d)
+
+# Does this NUT branch have DMF feature code?
+NUTPKG_WITH_DMF := $(shell test -d scripts/DMF && echo 1 || echo 0)
+
+# Newer systems have just /run (and yet newer systemd noisily suggests it)
+runbasedir := $(shell test -d /run && echo /run || echo /var/run)
+
+# FIXME: Find a smarter way to set those from main codebase recipes...
+# Something like `git grep 'version-info' '*.am'` ?
+SO_MAJOR_LIBUPSCLIENT=7
+SO_MAJOR_LIBNUTCLIENT=2
+SO_MAJOR_LIBNUTCLIENTSTUB=1
+SO_MAJOR_LIBNUTSCAN=4
+SO_MAJOR_LIBNUTCONF=0
+
+ifneq (,$(shell ls -1 /usr/share/cdbs/1/rules/utils.mk 2>/dev/null))
+# List any files which are not installed
+include /usr/share/cdbs/1/rules/utils.mk
+common-binary-post-install-arch:: list-missing
+endif
+
+DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,defs -Wl,-O1 -Wl,--as-needed
+include /usr/share/dpkg/buildflags.mk
+
+DEB_CONFIGURE_PREFIX      :=
+DEB_CONFIGURE_SYSCONFDIR  := /etc/nut
+DEB_CONFIGURE_INCLUDEDIR  := /usr/include
+DEB_CONFIGURE_MANDIR      := /usr/share/man
+DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
+			     --with-ssl --with-openssl --with-libltdl=yes \
+			     --with-cgi=auto --with-powerman=auto \
+			     --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
+			     --with-dev --with-dev-libnutconf \
+			     --disable-static \
+			     --with-statepath=$(runbasedir)/nut \
+			     --with-altpidpath=$(runbasedir)/nut \
+			     --with-drvpath=/lib/nut \
+			     --with-cgipath=/usr/lib/cgi-bin/nut \
+			     --with-htmlpath=/usr/share/nut/www \
+			     --with-pidpath=$(runbasedir)/nut \
+			     --datadir=/usr/share/nut \
+			     --with-pkgconfig-dir=/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig \
+			     --with-user=nut --with-group=nut\
+			     --enable-strip\
+			     --enable-keep_nut_report_feature --enable-check-NIT
+
+ifeq (1,$(NUTPKG_WITH_DMF))
+DEB_CONFIGURE_EXTRA_FLAGS += \
+			     --with-snmp_dmf_lua=yes \
+			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
+endif
+
+ifeq (linux,$(DEB_HOST_ARCH_OS))
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-udev-dir=/lib/udev
+###  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir
+###  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir=/lib/systemd/system
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir=$(systemdsystemunitdir)
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdshutdowndir=$(systemdshutdowndir)
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdtmpfilesdir=$(systemdtmpfilesdir)
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsysusersdir=$(systemdsysusersdir)
+endif
+
+# only build documentation if asciidoc is installed
+#ifneq ($(shell which asciidoc),)
+#  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=html-chunked,pdf
+#else
+#  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=skip
+#endif
+
+# Try to use dist'ed docs if available, fall back to auto in other cases
+DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man=dist-auto
+
+configure: configure.ac
+	###Part of normal build now### (cd tools; python nut-snmpinfo.py)
+	sh autogen.sh
+	echo "PKG_CONFIG_PATH default:" ; pkg-config --variable pc_path pkg-config || true
+
+ifeq (0,$(NUTPKG_WITH_DMF))
+# hide
+patch-recipe-dmf:
+	for F in debian.*.install debian/*.install ; do [ -s "$$F" ] || continue ; sed 's,^\([^#].*dmf.*\)$$,#\1,' -i "$$F" || exit ; done
+else
+# expose
+patch-recipe-dmf:
+	for F in debian.*.install debian/*.install ; do [ -s "$$F" ] || continue ; sed 's,^#\(.*dmf.*\)$$,\1,' -i "$$F" || exit ; done
+endif
+
+pre-build:: patch-recipe-dmf debian/compat configure
+
+# FIXME : The recipe below is a crime scene regarding hardcoded paths that
+# are more or less relevant for a particular OS distribution and version,
+# and for certain nearby packages that are impacted by this, as was relevant
+# at the time this recipe was written. Maybe more proper make macros can be
+# used to rectify paths below and allow better manageable per-distro builds.
+common-install-arch::
+	# prepare debian packaging files
+	mkdir -p $(CURDIR)/debian
+
+	# NOTE: These are files provided with this packaging recipe, not with main NUT sources
+	for F in nut-client.init nut-common.postinst nut-common.prerm nut-server.init nut-server.prerm ; do \
+		echo "  SED    $$F.in => $$F" ; \
+		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/scripts/obs/debian.$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
+	done
+
+	# install the bash completion script
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/bash-completion/completions/
+	cp $(CURDIR)/scripts/misc/nut.bash_completion \
+		$(CURDIR)/debian/tmp/usr/share/bash-completion/completions/nut
+
+	# install the avahi service file
+	mkdir -p $(CURDIR)/debian/tmp/etc/avahi/services
+	cp $(CURDIR)/scripts/avahi/nut.service \
+		$(CURDIR)/debian/tmp/etc/avahi/services
+
+	# install Augeas lenses
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/augeas/lenses/dist/tests
+	cp $(CURDIR)/scripts/augeas/*.aug \
+		$(CURDIR)/debian/tmp/usr/share/augeas/lenses/dist/
+	cp $(CURDIR)/scripts/augeas/tests/test_nut.aug \
+		$(CURDIR)/debian/tmp/usr/share/augeas/lenses/dist/tests/
+
+	# install the default configuration
+	for f in $(CURDIR)/debian/tmp/etc/nut/*; do           \
+		nf=`basename $${f} | sed 's/\(.*\).sample/\1/'`;  \
+		mv $${f} $(CURDIR)/debian/tmp/etc/nut/$${nf};  \
+	done
+
+	# Move -dev file to /usr; make sure wanted SONAMES exist (numbers unchanged)
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so.$(SO_MAJOR_LIBUPSCLIENT) && \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libupsclient.so.$(SO_MAJOR_LIBUPSCLIENT) \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so.$(SO_MAJOR_LIBNUTCLIENT) && \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutclient.so.$(SO_MAJOR_LIBNUTCLIENT) \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclientstub.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclientstub.so.$(SO_MAJOR_LIBNUTCLIENTSTUB) && \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutclientstub.so.$(SO_MAJOR_LIBNUTCLIENTSTUB) \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutclientstub.so
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) && \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutconf.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutconf.so.$(SO_MAJOR_LIBNUTCONF) && \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutconf.so.$(SO_MAJOR_LIBNUTCONF) \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutconf.so
+
+	# Install systemd files only on systems where it's supported
+	### Package files for nut-client:
+	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-monitor.service \
+		$(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/nut-monitor.service
+	### Package files for nut-server:
+	install -D $(CURDIR)/debian/tmp/$(systemdshutdowndir)/nutshutdown \
+		$(CURDIR)/debian/nut-server/$(systemdshutdowndir)/nutshutdown
+	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-server.service \
+		$(CURDIR)/debian/nut-server/$(systemdsystemunitdir)/nut-server.service
+	# This should cover nut-driver.target, nut-driver@.service,
+	# nut-driver-enumerator.path, nut-driver-enumerator.service
+	install -m 644 -t $(CURDIR)/debian/nut-server/$(systemdsystemunitdir) \
+		$(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-driver*
+
+	# Add a symlink to mask the LSB initscript for nut-client:
+	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/nut-client.service
+	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/ups-monitor.service
+
+	# Install tmpfiles config file to create /run/nut directory
+	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdtmpfilesdir)/nut-common-tmpfiles.conf \
+		$(CURDIR)/debian/nut-common/$(systemdtmpfilesdir)/nut-common-tmpfiles.conf
+
+	# Install sysusers config file to create user accounts
+	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdsysusersdir)/nut-common-sysusers.conf \
+		$(CURDIR)/debian/nut-common/$(systemdsysusersdir)/nut-common-sysusers.conf
+
+	# Install gen-snmp-subdriver.sh for nut-snmp
+	install -m 755 -D $(CURDIR)/scripts/subdriver/gen-snmp-subdriver.sh \
+		$(CURDIR)/debian/tmp/usr/sbin/gen-snmp-subdriver.sh
+
+extradocs-install:
+	#install documentation
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/pdf
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/html
+	cp $(CURDIR)/docs/*.pdf $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/pdf
+	cp $(CURDIR)/docs/FAQ.html $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/html
+
+	for f in $(CURDIR)/docs/*.chunked/; do \
+		nf=`basename $${f} | sed 's/\(.*\)\.chunked/\1/'`; \
+		cp -a $${f} $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/html/$${nf}/; \
+	done
+
+#common-install-indep:: extradocs-install
+common-install-indep::
+	# Make sure this exists for packaging to be consistent
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/nut-doc
+
+binary-install/nut-monitor::
+	if (command -v dh_python2) ; then \
+		dh_python2 -pnut-monitor ; \
+	else if (command -v dh_python3) ; then \
+		dh_python3 -pnut-monitor ; \
+	else if (command -v dh_python) ; then \
+		dh_python -pnut-monitor ; \
+	else echo "$@: no implementation of dh_python was found!" >&2 ; exit 1 ; \
+	fi; fi; fi
+
+DEB_DH_INSTALLINIT_ARGS_nut-server := --init-script=nut-server --restart-after-upgrade
+DEB_DH_INSTALLINIT_ARGS_nut-client := --init-script=nut-client --restart-after-upgrade
+DEB_DH_SYSTEMD_START_ARGS_nut-server := --restart-after-upgrade
+DEB_DH_SYSTEMD_START_ARGS_nut-client := --restart-after-upgrade
+DEB_DH_COMPRESS_ARGS_nut-doc := -X.pdf
+
+ifeq (linux,$(DEB_HOST_ARCH_OS))
+# for Debian
+  DEB_DH_GENCONTROL_ARGS := -- -Vudev="udev (>= 0.124-1)"
+# for Ubuntu
+# DEB_DH_GENCONTROL_ARGS := -- -Vudev="udev (>= 136-1)"
+endif
+
+all check dist distcheck install:
+	dh $@ --parallel

@@ -17,8 +17,11 @@ if test -z "${nut_have_libnss_seen}"; then
 	LIBS=""
 	REQUIRES=""
 	depCFLAGS=""
+	depCFLAGS_SOURCE=""
 	depLIBS=""
+	depLIBS_SOURCE=""
 	depREQUIRES=""
+	depREQUIRES_SOURCE=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING(for Mozilla NSS version via pkg-config)
@@ -37,43 +40,37 @@ if test -z "${nut_have_libnss_seen}"; then
 		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags nss 2>/dev/null`"
 		 depLIBS="`$PKG_CONFIG --silence-errors --libs nss 2>/dev/null`"
 		 depREQUIRES="nss"
+		 depCFLAGS_SOURCE="pkg-config"
+		 depLIBS_SOURCE="pkg-config"
+		 depREQUIRES_SOURCE="default(pkg-config)"
 		],
 		[depCFLAGS=""
 		 depLIBS="-lnss3 -lnssutil3 -lsmime3 -lssl3 -lplds4 -lplc4 -lnspr4"
 		 depREQUIRES="nss"
+		 depCFLAGS_SOURCE="default"
+		 depLIBS_SOURCE="default"
+		 depREQUIRES_SOURCE="default"
 		]
 	)
 
 	dnl allow overriding NSS settings if the user knows best
 	AC_MSG_CHECKING(for Mozilla NSS cflags)
-	AC_ARG_WITH(nss-includes,
-		AS_HELP_STRING([@<:@--with-nss-includes=CFLAGS@:>@], [include flags for the Mozilla NSS library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-nss-includes - see docs/configure.txt)
-			;;
-		*)
-			depCFLAGS="${withval}"
-			;;
-		esac
-	], [])
-	AC_MSG_RESULT([${depCFLAGS}])
+	NUT_ARG_WITH_LIBOPTS_INCLUDES([nss], [auto], [Mozilla NSS])
+	AS_CASE([${nut_with_nss_includes}],
+		[auto], [],	dnl Keep what we had found above
+			[depCFLAGS="${nut_with_nss_includes}"
+			 depCFLAGS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depCFLAGS} (source: ${depCFLAGS_SOURCE})])
 
 	AC_MSG_CHECKING(for Mozilla NSS ldflags)
-	AC_ARG_WITH(nss-libs,
-		AS_HELP_STRING([@<:@--with-nss-libs=LIBS@:>@], [linker flags for the Mozilla NSS library]),
-	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-nss-libs - see docs/configure.txt)
-			;;
-		*)
-			depLIBS="${withval}"
-			;;
-		esac
-	], [])
-	AC_MSG_RESULT([${depLIBS}])
+	NUT_ARG_WITH_LIBOPTS_LIBS([nss], [auto], [Mozilla NSS])
+	AS_CASE([${nut_with_nss_libs}],
+		[auto], [],	dnl Keep what we had found above
+			[depLIBS="${nut_with_nss_libs}"
+			 depLIBS_SOURCE="confarg"]
+	)
+	AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
 	dnl check if NSS is usable: we need both the runtime and headers
 	dnl NOTE that caller may have to specify PKG_CONFIG_PATH including
@@ -92,6 +89,29 @@ if test -z "${nut_have_libnss_seen}"; then
 		nut_ssl_lib="(Mozilla NSS)"
 		AC_DEFINE(WITH_SSL, 1, [Define to enable SSL support])
 		AC_DEFINE(WITH_NSS, 1, [Define to enable SSL support using Mozilla NSS])
+
+		dnl # Repeat some tricks from nut_compiler_family.m4
+		AS_IF([test "x$cross_compiling" != xyes], [
+			AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
+				dnl # CLANG dislikes MPS headers for use of reserved
+				dnl # identifiers (starting with underscores, some
+				dnl # with upper-case letters afterwards - oh, the
+				dnl # blasphemers!)
+				addCFLAGS=""
+				for TOKEN in ${depCFLAGS} ; do
+					case "${TOKEN}" in
+						-I*)	TOKENDIR="`echo \"$TOKEN\" | sed 's,^-I,,'`"
+							case " ${CFLAGS} ${addCFLAGS} " in
+								*" -isystem $TOKENDIR "*) ;;
+								*) addCFLAGS="${addCFLAGS} -isystem $TOKENDIR" ;;
+							esac ;;
+					esac
+				done
+				test -z "${addCFLAGS}" || depCFLAGS="${depCFLAGS} ${addCFLAGS}"
+				unset addCFLAGS
+			])
+		])
+
 		LIBSSL_CFLAGS="${depCFLAGS}"
 		LIBSSL_LIBS="${depLIBS}"
 		LIBSSL_REQUIRES="${depREQUIRES}"
@@ -111,11 +131,15 @@ if test -z "${nut_have_libnss_seen}"; then
 dnl		if test x"$LIBSSL_LDFLAGS_RPATH" != x ; then
 dnl			LIBSSL_LDFLAGS_RPATH="--enable-new-dtags $LIBSSL_LDFLAGS_RPATH"
 dnl		fi
+
 	fi
 
 	unset depCFLAGS
 	unset depLIBS
 	unset depREQUIRES
+	unset depCFLAGS_SOURCE
+	unset depLIBS_SOURCE
+	unset depREQUIRES_SOURCE
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

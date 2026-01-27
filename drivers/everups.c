@@ -21,7 +21,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Ever UPS driver (serial)"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -87,6 +87,8 @@ static const char *GetTypeUpsName(void)
 
 void upsdrv_initinfo(void)
 {
+	InitUpsType();
+
 	dstate_setinfo("ups.mfr", "Ever");
 	dstate_setinfo("ups.model", "%s", GetTypeUpsName());
 
@@ -177,7 +179,9 @@ void upsdrv_updateinfo(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* FIXME: Which one is this - "load.off",
 	 * "shutdown.stayoff" or "shutdown.return"? */
@@ -185,14 +189,15 @@ int instcmd(const char *cmdname, const char *extra)
 	/* Shutdown UPS */
 	if (!strcasecmp(cmdname, "load.off"))
 	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (!Code(2)) {
-			upslog_with_errno(LOG_INFO, "Code failed");
+			upslog_with_errno(LOG_INSTCMD_UNKNOWN, "Code failed");
 			return STAT_INSTCMD_UNKNOWN;
 		}
 		ser_send_char(upsfd, 28);
 		ser_send_char(upsfd, 1);  /* 1.28 sec */
 		if (!Code(1)) {
-			upslog_with_errno(LOG_INFO, "Code failed");
+			upslog_with_errno(LOG_INSTCMD_UNKNOWN, "Code failed");
 			return STAT_INSTCMD_UNKNOWN;
 		}
 		ser_send_char(upsfd, 13);
@@ -201,7 +206,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -219,6 +224,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
@@ -230,7 +240,6 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, B300);
 
 	init_serial();
-	InitUpsType();
 }
 
 void upsdrv_cleanup(void)

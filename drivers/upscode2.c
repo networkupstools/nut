@@ -43,7 +43,7 @@
 #include "nut_float.h"
 
 #define DRIVER_NAME	"UPScode II UPS driver"
-#define DRIVER_VERSION	"0.93"
+#define DRIVER_VERSION	"0.96"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -447,7 +447,7 @@ static void upsc_getbaseinfo(void);
 static int upsc_commandlist(void);
 static int upsc_getparams(const char *cmd, const simple_t *table);
 static int upsc_getvalue(const char *cmd, const char *param,
-	const char *resp, const char *var, char *ret);
+	const char *resp, const char *var, char *ret, size_t retsz);
 static ssize_t upscsend(const char *cmd);
 static ssize_t upscrecv(char *buf);
 static int upsc_simple(const simple_t *sp, const char *var, const char *val);
@@ -460,6 +460,10 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
 
 void upsdrv_initups(void)
 {
@@ -550,7 +554,7 @@ void upsdrv_initinfo(void)
 		upscsend("UPDA");
 	}
 	if (can_upid) {
-		upsc_getvalue("UPID", NULL, "ACID", "ups.id", NULL);
+		upsc_getvalue("UPID", NULL, "ACID", "ups.id", NULL, 0);
 	}
 	if (can_uppm) {
 		check_uppm();
@@ -809,13 +813,13 @@ void upsdrv_updateinfo(void)
 	/* TODO/FIXME: Set UPS date/time on startup and daily if needed */
 	if (can_updt) {
 		char dtbuf[UPSC_BUFLEN];
-		if (upsc_getvalue("UPDT", "0", "ACDT", NULL, dtbuf)) {
+		if (upsc_getvalue("UPDT", "0", "ACDT", NULL, dtbuf, sizeof(dtbuf))) {
 			dstate_setinfo("ups.date", "%s", dtbuf);
 		}
 	}
 	if (can_uptm) {
 		char tmbuf[UPSC_BUFLEN];
-		if (upsc_getvalue("UPTM", "0", "ACTM", NULL, tmbuf)) {
+		if (upsc_getvalue("UPTM", "0", "ACTM", NULL, tmbuf, sizeof(tmbuf))) {
 			dstate_setinfo("ups.time", "%s", tmbuf);
 		}
 	}
@@ -907,12 +911,15 @@ static int instcmd (const char *auxcmd, const char *data)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "Instcmd: %s %s", auxcmd, data ? data : "\"\"");
+	upsdebug_INSTCMD_STARTING(auxcmd, (data ? data : "\"\""));
 
 	for (cp = commands; cp->cmd; cp++) {
 		if (strcasecmp(cp->cmd, auxcmd)) {
 			continue;
 		}
+
+		upslog_INSTCMD_POWERSTATE_CHECKED(auxcmd, data);
+
 		upscsend(cp->upsc);
 		if (cp->upsp) {
 			upscsend(cp->upsp);
@@ -922,7 +929,7 @@ static int instcmd (const char *auxcmd, const char *data)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_INFO, "instcmd: unknown command %s", auxcmd);
+	upslog_INSTCMD_UNKNOWN(auxcmd, data);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -931,17 +938,18 @@ static int setvar (const char *var, const char *data)
 {
 	cmd_t *cp;
 
-	upsdebugx(1, "Setvar: %s %s", var, data);
+	upsdebug_SET_STARTING(var, data);
 
 	for (cp = variables; cp->cmd; cp++) {
 		if (strcasecmp(cp->cmd, var)) {
 			continue;
 		}
-		upsc_getvalue(cp->upsc, data, cp->upsp, cp->cmd, NULL);
+		upsc_getvalue(cp->upsc, data, cp->upsp, cp->cmd, NULL, 0);
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_INFO, "Setvar: unsettable variable %s", var);
+	upslogx(LOG_SET_UNKNOWN, "%s: unsettable variable %s",
+		__func__, NUT_STRARG(var));
 	return STAT_SET_UNKNOWN;
 }
 
@@ -1116,7 +1124,7 @@ static int upsc_commandlist(void)
 				upsdebugx(1, "instcmd: %s %s", cp->cmd, cp->upsc);
 				dstate_addcmd(cp->cmd);
 				cp->enabled = 1;
-	            break;
+				break;
 			}
 		}
 
@@ -1134,7 +1142,7 @@ static int upsc_commandlist(void)
 
 	for (cp = variables; cp->cmd; cp++) {
 		if (cp->enabled) {
-			upsc_getvalue(cp->upsc, "0000", cp->upsp, cp->cmd, NULL);
+			upsc_getvalue(cp->upsc, "0000", cp->upsp, cp->cmd, NULL, 0);
 			dstate_setflags(cp->cmd, ST_FLAG_RW | ST_FLAG_STRING);
 			dstate_setaux(cp->cmd, 7);
 		}
@@ -1227,7 +1235,8 @@ static void check_uppm(void)
 
 
 static int upsc_getvalue(const char *cmd, const char *param,
-			const char *resp, const char *nutvar, char *ret)
+			const char *resp, const char *nutvar,
+			char *ret, size_t retsz)
 {
 	char var[UPSC_BUFLEN];
 	char val[UPSC_BUFLEN];
@@ -1248,7 +1257,7 @@ static int upsc_getvalue(const char *cmd, const char *param,
 		if (nutvar)
 			dstate_setinfo(nutvar, "%s", val);
 		if (ret)
-			strcpy(ret, val);
+			strncpy(ret, val, retsz);
 	}
 	return 1;
 }
@@ -1261,9 +1270,9 @@ static void upsc_getbaseinfo(void)
 	dstate_setinfo("ups.mfr", "%s",
 		((buf = getval("manufacturer")) != NULL) ? buf : "unknown");
 
-	if (!upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL))
-		upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL);
-	upsc_getvalue("UPSN", "0", "ACSN", "ups.serial", NULL);
+	if (!upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL, 0))
+		upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL, 0);
+	upsc_getvalue("UPSN", "0", "ACSN", "ups.serial", NULL, 0);
 }
 
 

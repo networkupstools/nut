@@ -2,7 +2,15 @@
                    (extracted from common.c to minimize the compilation unit
                    impacted by git metadata changes during development)
 
-   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
+   WARNING: Be conservative about ABI/API changes here, the method
+   signatures are specified in drivers/main.h, so that shared driver
+   core code may be loaded as a dynamic library and use these data
+   and methods built into a driver binary via callbacks - they must
+   fit! While it is not feasible to satisfy all possible scenarios
+   of third-party fork builds like this, we don't want to make life
+   hard needlessly either.
+
+   Copyright (C) 2021-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +26,26 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#include "config.h"
+
+#if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+# if (defined BUILD_FOR_SHARED_PRIVATE_LIBS) && BUILD_FOR_SHARED_PRIVATE_LIBS
+/* Special build that can be included into a libnutprivate* shared object,
+ * so it carries strings to identify the build separate from a program
+ * binary, while avoiding a naming conflict between the two at run-time.
+ */
+#  define UPS_VERSION			LIBNUTPRIVATE_UPS_VERSION
+#  define banner_is_disabled		LIBNUTPRIVATE_banner_is_disabled
+#  define describe_NUT_VERSION_once	LIBNUTPRIVATE_describe_NUT_VERSION_once
+#  define print_banner_once		LIBNUTPRIVATE_print_banner_once
+#  define nut_report_config_flags	LIBNUTPRIVATE_nut_report_config_flags
+#  define suggest_doc_links		LIBNUTPRIVATE_suggest_doc_links
+#  define suggest_NDE_conflict		LIBNUTPRIVATE_suggest_NDE_conflict
+# else	/* !BUILD_FOR_SHARED_PRIVATE_LIBS => for leaf binary */
+   extern const char *LIBNUTPRIVATE_UPS_VERSION;
+# endif	/* !BUILD_FOR_SHARED_PRIVATE_LIBS */
+#endif
 
 #include "common.h"
 #include <stdio.h>
@@ -87,6 +115,7 @@ const char *describe_NUT_VERSION_once(void)
 {
 	static char	buf[LARGEBUF];
 	static const char	*printed = NULL;
+	int	ret;
 
 	if (printed)
 		return printed;
@@ -107,7 +136,7 @@ const char *describe_NUT_VERSION_once(void)
 	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
 	 * a particular build. So we pragmatically handwave this away.
 	 */
-	if (1 < snprintf(buf, sizeof(buf),
+	ret = snprintf(buf, sizeof(buf),
 		"%s %s%s%s",
 		NUT_VERSION_MACRO,
 		NUT_VERSION_IS_RELEASE ? "release" :
@@ -116,12 +145,41 @@ const char *describe_NUT_VERSION_once(void)
 			 : "(development iteration after "),
 		NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
 		NUT_VERSION_IS_RELEASE ? "" : ")"
-	)) {
+	);
+
+	/* Depending on LIBC variant, truncation can be seen as either a
+	 * negative ret, or longer than the buffer (would have written X);
+	 * with our formatting string we expect at least 8 charsof text,
+	 * plus the actual version string.
+	 */
+	if (ret > 8 && (size_t)ret < sizeof(buf)) {
+#if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS && ( !(defined BUILD_FOR_SHARED_PRIVATE_LIBS) || !BUILD_FOR_SHARED_PRIVATE_LIBS)
+		/* "Leaf" program using a dynamically linked libnutprivate core */
+		size_t	len1 = (size_t)ret;	/* Number of printed chars without '\0' */
+		int	samever = !strcmp(UPS_VERSION, LIBNUTPRIVATE_UPS_VERSION);
+
+		ret = snprintf(buf + len1, sizeof(buf) - len1,
+			" using a dynamic libnutprivate*%s%s",
+			samever ? "" : " version ",
+			samever ? "" : LIBNUTPRIVATE_UPS_VERSION
+		);
+
+		if (ret < 10 || (size_t)ret > (sizeof(buf) - len1)) {
+			/* Too long? forget it... */
+			upsdebugx(1, "%s: could not report about a dynamic libnutprivate", __func__);
+			buf[len1 + 1] = '\0';
+		}
+#endif
+
 		printed = buf;
-	} else {
+	}
+
+	if (!printed) {
 		upslogx(LOG_WARNING, "%s: failed to report detailed NUT version", __func__);
+		/* Just pass on the built-in const string */
 		printed = UPS_VERSION;
 	}
+
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
@@ -313,4 +371,21 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 			progconf);
 
 	return buf;
+}
+
+/* Define this in one spot, to change conditions or wording easily */
+void suggest_NDE_conflict(void) {
+#if (defined(WITH_SOLARIS_SMF) && WITH_SOLARIS_SMF) || (defined(HAVE_SYSTEMD) && HAVE_SYSTEMD)
+	upsdebugx(0, "Please check if you are not trying to both "
+		"start a NUT driver program manually (directly "
+		"or via upsdrvctl), and as a service at the same "
+		"time. Please see 'man nut-driver-enumerator' or "
+		"%s/docs/man/nut-driver-enumerator.html for details",
+		NUT_WEBSITE_BASE);
+	/* FIXME: Wiki names are inherently volatile;
+	 * maybe keep a more persistent copy in the
+	 * NUT-website with some knowledge-base ID? */
+	upsdebugx(1, "Also try NUT GitHub Wiki, seek a page named like "
+		"https://github.com/networkupstools/nut/wiki/nut%%E2%%80%%90driver%%E2%%80%%90enumerator-(NDE)");
+#endif	/* WITH_SOLARIS_SMF || HAVE_SYSTEMD */
 }

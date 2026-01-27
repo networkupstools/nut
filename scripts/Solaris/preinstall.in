@@ -17,7 +17,7 @@ if [ "$?" != 0 ]; then
 	/usr/sbin/useradd -c "Network UPS Tools" -g "@RUN_AS_GROUP@" -G root -d "@STATEPATH@" -s /bin/false "@RUN_AS_USER@"
 fi
 
-res="`groups "@RUN_AS_GROUP@" | grep -w "@RUN_AS_USER@"`" || res=""
+res="`groups \"@RUN_AS_GROUP@\" | grep -w \"@RUN_AS_USER@\"`" || res=""
 if [ -z "$res" ]; then
 	/usr/sbin/usermod -g "@RUN_AS_GROUP@" -G root "@RUN_AS_USER@"
 fi

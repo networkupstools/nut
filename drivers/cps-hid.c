@@ -32,10 +32,10 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.83"
+#define CPS_HID_VERSION      "CyberPower HID 0.85"
 
 /* Cyber Power Systems */
-#define CPS_VENDORID 0x0764
+#define CPS_VENDORID	0x0764
 
 /* ST Microelectronics */
 #define STMICRO_VENDORID	0x0483
@@ -49,6 +49,9 @@
  */
 #define CPS_VOLTAGE_LOGMIN 0
 #define CPS_VOLTAGE_LOGMAX 511 /* Includes safety margin. */
+
+/* Should be a realistic max value covering most affected UPS. */
+#define CPS_NOMINALPWR_LOGMAX 2048
 
 /*! Battery voltage scale factor.
  * For some devices, the reported battery voltage is off by factor
@@ -395,6 +398,7 @@ static hid_info_t cps_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, NULL, 0, fullycharged_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, NULL, 0, timelimitexpired_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
   { "BOOL", 0, 0, "UPS.Output.Boost", NULL, NULL, 0, boost_info },
   { "BOOL", 0, 0, "UPS.Output.Overload", NULL, NULL, 0, overload_info },
 
@@ -663,6 +667,31 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 					retval = 1;
 				}
 			}
+		}
+	}
+
+	/* Fix for nominal power reporting getting clipped by a too restrictive LogMax. */
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 24 /* 0x18 */, USAGE_POW_CONFIG_ACTIVE_POWER))) {
+		long power_logmax = pData->LogMax;
+
+		upsdebugx(4, "Original Report Descriptor: ConfigActivePower "
+			"LogMin: %ld LogMax: %ld",
+			pData->LogMin, power_logmax);
+
+		if (power_logmax < CPS_NOMINALPWR_LOGMAX) {
+			/* Set a generous maximum value that will not restrict UPS reporting.
+			*
+			* Current findings suggest that the values sent by the UPS are
+			* accurate, but then get clipped by a too strict LogMax threshold:
+			* https://github.com/networkupstools/nut/issues/2917#issuecomment-2832243477
+			*/
+			pData->LogMax = CPS_NOMINALPWR_LOGMAX;
+
+			upsdebugx(3, "Fixing Report Descriptor: "
+				"set ConfigActivePower LogMax = %ld",
+				pData->LogMax);
+
+			retval = 1;
 		}
 	}
 

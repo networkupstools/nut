@@ -21,8 +21,8 @@ TESTS =
 noinst_LTLIBRARIES =
 CLEANFILES = *.trs *.log
 
-AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
-AM_CXXFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include -I$(top_srcdir)/drivers
+AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 
 # Compiler flags for cppunit tests
 CPPUNIT_NUT_CXXFLAGS = @CPPUNIT_NUT_CXXFLAGS@
@@ -34,21 +34,60 @@ check_SCRIPTS =
 check-NIT check-NIT-devel:
 	+cd "$(builddir)/NIT" && $(MAKE) $(AM_MAKEFLAGS) $@
 
+# Make sure out-of-dir dependencies exist (especially when dev-building
+# only some parts of NUT; note libnutclient* are for C++ but would not
+# be referenced unless that build ability is detected and enabled):
+$(top_builddir)/include/nut_version.h \
+$(top_builddir)/common/libcommonversion.la \
+$(top_builddir)/drivers/libdummy_mockdrv.la \
+$(top_builddir)/common/libnutconf.la \
+$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libparseconf.la \
+$(top_builddir)/clients/libnutclient.la \
+$(top_builddir)/clients/libnutclientstub.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+# Builds from root dir arrange stuff decently. Make sure parallel builds
+# started from scratch right in this dir get dependencies in proper order
+# (sub-makes are independent as far as trying to write into same files):
+$(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libparseconf.la
+$(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/clients/libnutclientstub.la: $(top_builddir)/clients/libnutclient.la
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
+
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+
+NUT_LIBCOMMON = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+NUT_LIBCOMMON = $(top_builddir)/common/libcommon.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+
 nutlogtest_SOURCES = nutlogtest.c
-nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
+nutlogtest_LDADD = $(NUT_LIBCOMMON)
 
 if REQUIRE_NUT_STRARG
 check_SCRIPTS += nutlogtest-nofail.sh
 CLEANFILES += nutlogtest-nofail.sh nutlogtest$(EXEEXT) nutlogtest
 
 nutlogtest-nofail.sh: nutlogtest$(EXEEXT)
-	@echo '#!/bin/sh' > $@
-	@echo 'echo "WARNING: Your C library requires workarounds to print NULL values!" >&2' >> $@
-	@echo 'echo "If nutlogtest below, or generally some NUT program, crashes with" >&2' >> $@
-	@echo 'echo "a segmentation fault (especially during verbose debug) - that may be why" >&2' >> $@
-	@echo 'SCRIPT_DIR="`dirname "$$0"`"' >> $@
-	@echo '"$${SCRIPT_DIR}/nutlogtest" "$$@" || echo "nutlogtest FAILED but it was expected"' >> $@
-	@chmod +x $@
+	@echo '#!/bin/sh' > '$@'
+	@echo 'echo "WARNING: Your C library requires workarounds to print NULL values!" >&2' >> '$@'
+	@echo 'echo "If nutlogtest below, or generally some NUT program, crashes with" >&2' >> '$@'
+	@echo 'echo "a segmentation fault (especially during verbose debug) - that may be why" >&2' >> '$@'
+	@echo 'SCRIPT_DIR="`dirname \"$$0\"`"' >> '$@'
+	@echo '"$${SCRIPT_DIR}/nutlogtest" "$$@" || echo "nutlogtest FAILED but it was expected"' >> '$@'
+	@chmod +x '$@'
 
 # NOTE: Keep the line above empty!
 else !REQUIRE_NUT_STRARG
@@ -57,11 +96,11 @@ endif !REQUIRE_NUT_STRARG
 
 TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
-nuttimetest_LDADD = $(top_builddir)/common/libcommon.la
+nuttimetest_LDADD = $(NUT_LIBCOMMON)
 
 TESTS += nutbooltest
 nutbooltest_SOURCES = nutbooltest.c
-#nutbooltest_LDADD = $(top_builddir)/common/libcommon.la
+#nutbooltest_LDADD = $(NUT_LIBCOMMON)
 
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = hidparser.c
@@ -69,7 +108,7 @@ LINKED_SOURCE_FILES = hidparser.c
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 hidparser.c: $(top_srcdir)/drivers/hidparser.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/hidparser.c" "$@"
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/hidparser.c" '$@'
 
 if WITH_USB
 TESTS += getvaluetest getexponenttest-belkin-hid
@@ -79,18 +118,18 @@ TESTS += getvaluetest getexponenttest-belkin-hid
 noinst_LTLIBRARIES += libdriverstubusb.la
 nodist_libdriverstubusb_la_SOURCES = driver-stub-usb.c
 libdriverstubusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-#libdriverstubusb_la_LIBADD = $(top_builddir)/common/libcommon.la
+#libdriverstubusb_la_LIBADD = $(NUT_LIBCOMMON)
 
 getexponenttest-belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
 getexponenttest_belkin_hid_SOURCES = getexponenttest-belkin-hid.c
 getexponenttest_belkin_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-getexponenttest_belkin_hid_LDADD = $(top_builddir)/common/libcommon.la libdriverstubusb.la
+getexponenttest_belkin_hid_LDADD = $(NUT_LIBCOMMON) libdriverstubusb.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
 # Pull the right include path for chosen libusb version:
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
+getvaluetest_LDADD = $(NUT_LIBCOMMON)
 else !WITH_USB
 EXTRA_DIST += getvaluetest.c hidparser.c
 endif !WITH_USB
@@ -102,14 +141,17 @@ TESTS += gpiotest
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 generic_gpio_libgpiod.c: $(top_srcdir)/drivers/generic_gpio_libgpiod.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_libgpiod.c" "$@"
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/generic_gpio_libgpiod.c" '$@'
 
 generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_common.c" "$@"
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/generic_gpio_common.c" '$@'
 
 gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
 nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
-gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBGPIO_LDFLAGS)
+gpiotest_LDADD = $(top_builddir)/common/libcommonversion.la $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBGPIO_LDFLAGS)
+if ENABLE_SHARED_PRIVATE_LIBS
+gpiotest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
 gpiotest_CFLAGS = $(LIBGPIO_CFLAGS) $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 else !WITH_GPIO
 EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
@@ -120,15 +162,12 @@ EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 
 TESTS += driver_methods_utest
 driver_methods_utest_SOURCES = driver_methods_utest.c
-driver_methods_utest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
+driver_methods_utest_LDADD = $(top_builddir)/common/libcommonversion.la
+if ENABLE_SHARED_PRIVATE_LIBS
+driver_methods_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
-
-# Make sure out-of-dir dependencies exist (especially when dev-building parts):
-$(top_builddir)/drivers/libdummy_mockdrv.la \
-$(top_builddir)/common/libnutconf.la \
-$(top_builddir)/common/libcommonclient.la \
-$(top_builddir)/common/libcommon.la: dummy
-	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
@@ -152,11 +191,12 @@ TESTS += $(TESTS_CXX11)
 # Note: we only build it, but do not run directly (NIT prepares the sandbox)
 check_PROGRAMS += cppnit
 
+# NOTE: libnutclientstub includes libnutclient and adds nutclientmem
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 ###cppunittest_CXXFLAGS += -I$(top_srcdir)/include -DTOP_SRCDIR="\"$(top_srcdir)\""
 cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
-cppunittest_LDADD  = $(top_builddir)/clients/libnutclient.la
-cppunittest_LDADD += $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD   = $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD  += $(top_builddir)/clients/libnutclient.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 # Currently nutconf and related codebase causes woes for static analysis
@@ -168,14 +208,10 @@ endif WITH_LIBNUTCONF
 
 cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
-cppnit_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
+cppnit_LDADD   = $(top_builddir)/clients/libnutclientstub.la
+cppnit_LDADD  += $(top_builddir)/clients/libnutclient.la
 cppnit_SOURCES = $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
 
-# Make sure out-of-dir C++ dependencies exist (especially when dev-building
-# only some parts of NUT):
-$(top_builddir)/clients/libnutclient.la \
-$(top_builddir)/clients/libnutclientstub.la: dummy
-	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 else !HAVE_CPPUNIT
 # Just redistribute test source into tarball if not building tests

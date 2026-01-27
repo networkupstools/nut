@@ -1,6 +1,11 @@
 Features
 ========
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/features.html
+//////////////////////////////////////////////////////////////////////////////
+
 NUT provides many features, and is always improving.
 Thus this list may lag behind the current code.
 

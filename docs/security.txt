@@ -1,6 +1,11 @@
 Notes on securing NUT
 =====================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/user-manual.chunked/NUT_Security.html
+//////////////////////////////////////////////////////////////////////////////
+
 The NUT Team is very interested in providing the highest security level to its
 users.
 
@@ -287,7 +292,7 @@ into the server.
 
 	upsd : ALL
 
-Further details are described in hosts_access(5).
+Further details are described in linkmanext:hosts_access[5].
 
 
 Configuring SSL

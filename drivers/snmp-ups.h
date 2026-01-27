@@ -276,7 +276,7 @@ typedef struct {
 #define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
 										 * internal to snmp driver */
 #define SU_FLAG_STATIC		(1UL << 1)	/* retrieve info only once. */
-#define SU_FLAG_ABSENT		(1UL << 2)	/* data is absent in the device,
+#define SU_FLAG_ABSENT		(1UL << 2)	/* data is known to be absent in the device,
 										 * use default value. */
 #define SU_FLAG_STALE		(1UL << 3)	/* data stale, don't try too often -
 										 * internal to snmp driver */
@@ -284,7 +284,7 @@ typedef struct {
 #define SU_FLAG_UNIQUE		(1UL << 5)	/* There can be only be one
 						 				 * provider of this info,
 						 				 * disable the other providers */
-/* Note: older releases defined the following flag, but removed it by 2.7.5:
+/* Note: older releases defined the following flag, but removed it by 2.8.0:
  * #define SU_FLAG_SETINT	(1UL << 6)*/	/* save value */
 #define SU_FLAG_ZEROINVALID	(1UL << 6)	/* Invalid if "0" value */
 #define SU_FLAG_NAINVALID	(1UL << 7)	/* Invalid if "N/A" value */
@@ -301,7 +301,7 @@ typedef struct {
  *   a valid OID) in order to detect the base SNMP index (0 or 1)
  */
 
-/* "flags" bit 10 */
+/* "flags" bits 10..11 */
 #define SU_OUTLET_GROUP		(1UL << 10)	/* outlet group template definition */
 #define SU_OUTLET			(1UL << 11)	/* outlet template definition */
 
@@ -342,7 +342,8 @@ typedef struct {
 /* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2 */
 #define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)	/* Only valid for daisychain master (device.1) */
 
-/* Free slot: (1UL << 25) */
+/* "flags" bit 25 */
+#define SU_FLAG_MAPPING_HANDLED	(1UL << 25)	/* raised internally if any (sub)driver handling loop care about this report; if not, may be a point for improvement... */
 
 #define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 

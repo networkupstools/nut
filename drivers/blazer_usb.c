@@ -37,7 +37,7 @@
 #endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.22"
+#define DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -48,6 +48,39 @@ upsdrv_info_t upsdrv_info = {
 	DRV_BETA,
 	{ NULL }
 };
+
+/* Unregistered vendor 0x0001 (commonly identified as Fry's Electronics) */
+#define NONAME0001_VENDORID	0x0001
+
+/* Unregistered vendor 0xFFFF */
+#define NONAMEFFFF_VENDORID	0xffff
+
+/* ST Microelectronics */
+#define STMICRO_VENDORID	0x0483
+
+/* Sysgration Ltd. */
+#define SYSGRATION_VENDORID	0x05b8
+
+/* Cypress Semiconductor */
+#define CYPRESS_VENDORID	0x0665
+
+/* Phoenixtec Power Co., Ltd */
+#define PHOENIXTEC_VENDORID	0x06da
+
+/* Lakeview Research */
+#define LAKEVIEW_VENDORID	0x0925
+
+/* Unitek UPS Systems */
+#define UNITEK_VENDORID	0x0f03
+
+/* GE */
+#define GE_VENDORID	0x14f0
+
+/* QinHeng Electronics */
+#define QINHENG_VENDORID	0x1a86
+
+/* Legrand */
+#define LEGRAND_VENDORID	0x1cb0
 
 #ifndef TESTING
 
@@ -390,18 +423,18 @@ static void *phoenix_subdriver(USBDevice_t *device)
 
 
 static usb_device_id_t blazer_usb_id[] = {
-	{ USB_DEVICE(0x05b8, 0x0000), &cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
-	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
-	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
-	{ USB_DEVICE(0x06da, 0x0002), &cypress_subdriver },	/* Online Yunto YQ450 */
-	{ USB_DEVICE(0x06da, 0x0003), &ippon_subdriver },	/* Mustek Powermust */
-	{ USB_DEVICE(0x06da, 0x0004), &cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
-	{ USB_DEVICE(0x06da, 0x0005), &cypress_subdriver },	/* Phoenixtec Innova RT */
-	{ USB_DEVICE(0x06da, 0x0201), &cypress_subdriver },	/* Phoenixtec Innova T */
-	{ USB_DEVICE(0x06da, 0x0601), &phoenix_subdriver },	/* Online Zinto A */
-	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
-	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */
+	{ USB_DEVICE(SYSGRATION_VENDORID,	0x0000), &cypress_subdriver },	/* Agiler UPS */
+	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
+	{ USB_DEVICE(NONAMEFFFF_VENDORID,	0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(CYPRESS_VENDORID,	0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002), &cypress_subdriver },	/* Online Yunto YQ450 */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0003), &ippon_subdriver },	/* Mustek Powermust */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0004), &cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0005), &cypress_subdriver },	/* Phoenixtec Innova RT */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0201), &cypress_subdriver },	/* Phoenixtec Innova T */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0601), &phoenix_subdriver },	/* Online Zinto A */
+	{ USB_DEVICE(UNITEK_VENDORID,	0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
+	{ USB_DEVICE(GE_VENDORID,	0x00c9), &phoenix_subdriver },	/* GE EP series */
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -568,17 +601,28 @@ static const struct subdriver_t {
 void upsdrv_help(void)
 {
 #ifndef TESTING
-	size_t i;
+	size_t i, len = 0, maxlen = 0;
 
-	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver:\n");
+
+	/* Calculate the longest subdriver name for print alignment */
+	for (i = 0; subdriver[i].name != NULL; i++) {
+		len = strlen(subdriver[i].name);
+		if (len > maxlen)
+			maxlen = len;
+	}
 
 	for (i = 0; subdriver[i].name != NULL; i++) {
-		if (i>0)
-			printf(", ");
-		printf("%s", subdriver[i].name);
+		printf("  %*s\n", (int)maxlen, subdriver[i].name);
 	}
-	printf("\n\n");
+	printf("\n");
 #endif	/* TESTING */
+}
+
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 

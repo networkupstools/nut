@@ -30,7 +30,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.17"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -54,9 +54,12 @@ upsdrv_info_t upsdrv_info = {
 #define USB_ERR_LIMIT	10	/* start limiting after 10 in a row */
 #define USB_ERR_RATE	10	/* then only print every 10th error */
 
+/* Lakeview Research */
+#define LAKEVIEW_VENDORID	0x0925
+
 static usb_device_id_t richcomm_usb_id[] = {
 	/* Sweex 1000VA */
-	{ USB_DEVICE(0x0925, 0x1234),  NULL },
+	{ USB_DEVICE(LAKEVIEW_VENDORID, 0x1234),  NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -407,7 +410,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				libusb_free_device_list(devlist, 1);
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
-			sprintf(device->Bus, "%03d", bus_num);
+			snprintf(device->Bus, 4, "%03d", bus_num);
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
 			iSerialNumber = dev_desc.iSerialNumber;
@@ -716,7 +719,9 @@ void upsdrv_updateinfo(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* Shutdown UPS */
 	if (!strcasecmp(cmdname, "shutdown.return"))
@@ -759,6 +764,7 @@ int instcmd(const char *cmdname, const char *extra)
 		char	restart[QUERY_PACKETSIZE] = { 0x02, 0x01, 0x00, 0x00 };
 		char	reply[REPLY_PACKETSIZE];
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		execute_and_retrieve_query(prepare, reply);
 
 		/*
@@ -773,7 +779,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -791,6 +797,11 @@ void upsdrv_shutdown(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

@@ -741,12 +741,12 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 				 && strncmp(driver_name, "richcomm_usb", 12)
 				 && strncmp(driver_name, "nutdrv_atcl_usb", 15)
 				) {
-					sprintf(string, "%04X", VendorID);
+					snprintf(string, sizeof(string), "%04X", VendorID);
 					nutscan_add_option_to_device(nut_dev,
 						"vendorid",
 						string);
 
-					sprintf(string, "%04X", ProductID);
+					snprintf(string, sizeof(string), "%04X", ProductID);
 					nutscan_add_option_to_device(nut_dev,
 						"productid",
 						string);
@@ -767,13 +767,13 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 						serialnumber = NULL;
 					}
 				} else {
-					sprintf(string, "%04X", VendorID);
+					snprintf(string, sizeof(string), "%04X", VendorID);
 					nutscan_add_commented_option_to_device(nut_dev,
 						"vendorid",
 						string,
 						"");
 
-					sprintf(string, "%04X", ProductID);
+					snprintf(string, sizeof(string), "%04X", ProductID);
 					nutscan_add_commented_option_to_device(nut_dev,
 						"productid",
 						string,
@@ -843,7 +843,7 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 				if (scanopts->report_bcdDevice) {
 					/* Not currently matched by drivers, hence commented
 					 * for now even if requested via scanopts */
-					sprintf(string, "%04X", bcdDevice);
+					snprintf(string, sizeof(string), "%04X", bcdDevice);
 					nutscan_add_commented_option_to_device(nut_dev,
 						"bcdDevice",
 						string,

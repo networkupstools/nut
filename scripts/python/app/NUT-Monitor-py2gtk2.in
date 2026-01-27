@@ -69,9 +69,26 @@ except Exception as ignored:
 	# ModuleNotFoundError, path/parsing, et al
 	# Try our chances with the default path:
 	sys.path = sys_path_orig
-	### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
-	import PyNUT
 
+	try:
+		# This path is for "default python interpreter", possibly customized
+		# and MIGHT be dist-packages or site-packages for a different python
+		# version. Keep it at lowest priority!
+		mod_path = "%s" % "@PYTHON_SITE_PACKAGES@"
+		if mod_path != "" and os.path.isdir(mod_path) and mod_path not in sys.path:
+			sys.path.append(mod_path)
+
+		mod_path = "%s" % "@PYTHON2_SITE_PACKAGES@"
+		if mod_path != "" and os.path.isdir(mod_path) and mod_path not in sys.path:
+			sys.path.insert(1, mod_path)
+
+		### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
+		import PyNUT
+
+	except Exception as ignored:
+		sys.path = sys_path_orig
+		### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
+		import PyNUT
 
 # We would seek locale files relative to script dir
 os.chdir(os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
@@ -844,6 +861,7 @@ class gui_updater( threading.Thread ) :
 
     __parent_class = None
     __stop_thread  = False
+    was_online = True
 
     def __init__( self, parent_class ) :
         threading.Thread.__init__( self )
@@ -852,7 +870,6 @@ class gui_updater( threading.Thread ) :
     def run( self ) :
 
         ups    = self.__parent_class._interface__current_ups
-        was_online = True
 
         # Define a dict containing different UPS status
         status_mapper = { "LB"     : "<span color=\"#BB0000\"><b>%s</b></span>" % _("Low batteries"),
@@ -881,16 +898,16 @@ class gui_updater( threading.Thread ) :
 
                 if ( vars.get("ups.status").find("OL") != -1 ) :
                     text_right += "<span color=\"#009000\"><b>%s</b></span>" % _("Online")
-                    if not was_online :
+                    if not self.was_online :
                         self.__parent_class.change_status_icon( "on_line", blink=False )
-                        was_online = True
+                        self.was_online = True
 
                 if ( vars.get("ups.status").find("OB") != -1 ) :
                     text_right += "<span color=\"#900000\"><b>%s</b></span>" % _("On batteries")
-                    if was_online :
+                    if self.was_online :
                         self.__parent_class.change_status_icon( "on_battery", blink=True )
                         self.__parent_class.gui_status_notification( _("Device is running on batteries"), "on_battery.png" )
-                        was_online = False
+                        self.was_online = False
 
                 # Check for additionnal information
                 for k,v in status_mapper.iteritems() :

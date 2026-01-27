@@ -108,7 +108,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Bicker serial protocol"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.06"
 
 #define BICKER_SOH	0x01
 #define BICKER_EOT	0x04
@@ -646,7 +646,7 @@ static ssize_t bicker_delayed_shutdown(uint8_t seconds)
 
 	ret = bicker_receive_known(0x03, 0x32, &response, 1);
 	if (ret >= 0) {
-		upslogx(LOG_INFO, "Shutting down in %d seconds: response = 0x%02X",
+		upslogx(LOG_INSTCMD_POWERSTATE, "Shutting down in %d seconds: response = 0x%02X",
 			seconds, (unsigned)response);
 	}
 
@@ -671,13 +671,17 @@ static ssize_t bicker_shutdown(void)
 
 static int bicker_instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		bicker_shutdown();
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		if (bicker_shutdown() >= 0)
+			return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -686,6 +690,8 @@ static int bicker_setvar(const char *varname, const char *val)
 	const BickerMapping *mapping;
 	unsigned i;
 	BickerParameter parameter;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* This should not be needed because when `bicker_write()` is
 	 * successful the `parameter` struct is populated but gcc seems
@@ -718,13 +724,42 @@ static int bicker_setvar(const char *varname, const char *val)
 		}
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
 void upsdrv_initinfo(void)
 {
 	char string[BICKER_MAXDATA + 1];
+	BickerParameter parameter;
+	const BickerMapping *mapping;
+	unsigned i;
+
+	if (bicker_read_string(0x01, 0x63, string) >= 0) {
+		dstate_setinfo("ups.firmware", "%s", string);
+	}
+
+	if (bicker_read_string(0x01, 0x64, string) >= 0) {
+		dstate_setinfo("battery.type", "%s", string);
+	}
+
+	/* Not implemented on all UPSes */
+	if (bicker_read_string(0x01, 0x65, string) >= 0) {
+		dstate_setinfo("ups.firmware.aux", "%s", string);
+	}
+
+	/* Initialize mapped parameters */
+	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
+		mapping = &bicker_mappings[i];
+		if (bicker_get(mapping->bicker_id, &parameter) >= 0) {
+			bicker_new(&parameter, mapping);
+		}
+	}
+
+	/* Ensure "battery.charge.low" variable is defined */
+	if (dstate_getinfo("battery.charge.low") == NULL) {
+		dstate_setinfo("battery.charge.low", "%d", 20);
+	}
 
 	dstate_setinfo("device.type", "ups");
 
@@ -882,46 +917,20 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 void upsdrv_makevartable(void)
 {
 }
 
 void upsdrv_initups(void)
 {
-	char string[BICKER_MAXDATA + 1];
-	BickerParameter parameter;
-	const BickerMapping *mapping;
-	unsigned i;
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B38400);
 	ser_set_dtr(upsfd, 1);
-
-	if (bicker_read_string(0x01, 0x63, string) >= 0) {
-		dstate_setinfo("ups.firmware", "%s", string);
-	}
-
-	if (bicker_read_string(0x01, 0x64, string) >= 0) {
-		dstate_setinfo("battery.type", "%s", string);
-	}
-
-	/* Not implemented on all UPSes */
-	if (bicker_read_string(0x01, 0x65, string) >= 0) {
-		dstate_setinfo("ups.firmware.aux", "%s", string);
-	}
-
-	/* Initialize mapped parameters */
-	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
-		mapping = &bicker_mappings[i];
-		if (bicker_get(mapping->bicker_id, &parameter) >= 0) {
-			bicker_new(&parameter, mapping);
-		}
-	}
-
-	/* Ensure "battery.charge.low" variable is defined */
-	if (dstate_getinfo("battery.charge.low") == NULL) {
-		dstate_setinfo("battery.charge.low", "%d", 20);
-	}
 }
 
 void upsdrv_cleanup(void)

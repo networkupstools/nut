@@ -1,4 +1,4 @@
-snmp-ups(8)
+SNMP-UPS(8)
 ===========
 
 NAME
@@ -173,6 +173,18 @@ http://www.net-snmp.org/ before building this driver.
 
 SNMP v3 also requires OpenSSL support from http://www.openssl.org.
 
+///////////////////////
+Before the DMF effort, there was a partially implemented provision for
+additional MIB Configuration files with lines of mapping information:
+
+------
+<info type> <info flags> <info len> <OID name> <default value> <value lookup>
+------
+
+...which could be stored under common NUT configuration location, with
+this naming pattern: `${NUT_CONFPATH}/snmp/${MIB}.conf`.
+///////////////////////
+
 LIMITATIONS
 -----------
 
@@ -185,6 +197,8 @@ have been torn down by the time the driver is invoked to send the shutdown
 command. The driver attempts to send +shutdown.return+, +shutdown.reboot+,
 and +load.off.delay+ commands to the UPS in sequence, stopping after the first
 supported command.
+
+include::networked_hostnames.txt[]
 
 INSTALLATION
 ------------

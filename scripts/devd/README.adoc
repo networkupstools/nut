@@ -5,7 +5,9 @@ On FreeBSD, the `devd` subsystem has a similar role to `udev` on Linux.
 
 NOTE: Some FreeBSD based systems rely on "quirks" instead.
 
-The `devd.conf` file defines actions to perform when devices are plugged in.
+The `(/etc/)devd.conf` file defines actions to perform when devices are plugged
+in, and usually refers to directories like `/etc/devd` and `/usr/local/etc/devd`
+where additional configuration files can be placed.
 
 The `tools/nut-usbinfo.pl` script (under NUT source tree root) generates
 the `nut-usb.conf.in` here by processing USB macros in all of the drivers.

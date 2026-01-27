@@ -73,6 +73,8 @@ In the current NUT version as of this writing (2.4.1), `ups.status` is still
 exposed, with the value "WAIT". Some other values from the `ups` collection
 are also exposed.
 
+include::networked_hostnames.txt[]
+
 AUTHOR
 ------
 

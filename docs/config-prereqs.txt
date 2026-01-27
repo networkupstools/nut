@@ -3,6 +3,11 @@ Prerequisites for building NUT on different OSes
 ================================================
 endif::website[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/qa-guide.chunked/_prerequisites_for_building_nut_on_different_oses.html
+//////////////////////////////////////////////////////////////////////////////
+
 This chapter aims to list packages with the tools needed on a freshly minimally
 deployed worker to build as many targets of NUT recipes as possible, mainly
 the diverse driver and documentation types.
@@ -16,6 +21,12 @@ of new releases.
 
 * For Linux systems, we have notes on linkdoc:qa-guide[Custom NUT CI farm
   build agents: LXC multi-arch containers,CI_LXC,docs/ci-farm-lxc-setup.txt]
+* After installing the build prerequisites needed on your platform as listed
+  below, you might want to follow up with
+  linkdoc:user-manual[Building NUT for in-place upgrades or non-disruptive tests,Installing_inplace,INSTALL.nut.adoc,_installation_instructions]
+//////////////////////////////////////////////////////////////////////////////
+// https://networkupstools.org/docs/user-manual.chunked/_installation_instructions.html#5-2-building-nut-for-in-place-upgrades-or-non-disruptive-tests
+//////////////////////////////////////////////////////////////////////////////
 
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
 or SSL implementations (OpenSSL vs. Mozilla NSS) -- no problem installing
@@ -106,8 +117,14 @@ recommended for build agents with immutable system areas, etc.
 Build prerequisites to make NUT from scratch on various Operating Systems
 -------------------------------------------------------------------------
 
-Debian 10/11/12/13
-~~~~~~~~~~~~~~~~~~
+Debian, Ubuntu and derivatives
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE: Documented according to NUT CI farm build agents and development
+workstation running Debian 10/11/12/13 (should at least partially apply
+as far back as Debian 7/8), Ubuntu 14.x-25.x, and Termux revisions circa
+2023-2025. This section generally covers a very wide family of APT-based
+Debian-derived Linux operating system distributions.
 
 Being a popular baseline among Linux distributions, Debian is an
 important build target. Related common operating systems include
@@ -200,11 +217,15 @@ metadata about recently published package revisions:
 # To install the Python NUT-Monitor app, you may need some modules.
 # Ideally, they would be packaged, named according to major Python version:
 #   :; apt-get install python3-pyqt5
+# or on newer (2025+) releases,
+#   :; apt-get install python3-pyqt6 pyqt6-dev-tools
 #
 # If not packaged for your distro:
 #   :; apt-get install pip
 # For Python3:
 #   :; python3 -m pip install PyQt5 configparser
+# or
+#   :; python3 -m pip install PyQt6 configparser
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; apt-get install \
@@ -223,7 +244,8 @@ metadata about recently published package revisions:
 # service unit files in a separate development package; earlier distro
 # releases did not seem to require it explicitly:
 :; apt-get install \
-    systemd-dev
+    systemd-dev \
+    || true
 
 # Optionally for sd_notify integration:
 :; apt-get install \
@@ -285,7 +307,8 @@ complete environments):
     qemu-user-static
 ------
 
-NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`.
+NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`
+(or `apt-get install openjdk-17-jdk-headless` on Debian 12 and older).
 You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 
@@ -699,6 +722,7 @@ For NUT dependencies and build tools:
 # More on Python (for NUT-Monitor UI):
 :; slackpkg-install \
     python-pip qt5 gettext-tools gettext
+# FIXME: Consider qt6 since 2025
 
 # For CGI graph generation - massive packages (X11):
 :; slackpkg-install \
@@ -932,15 +956,39 @@ To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
 base installation. It is not required for "legacy" builds arranged by just
 `autogen.sh` and `configure` scripts.
 
-NOTE: The OpenBSD 6.5 `install65.iso` installation includes a set of packages
+[NOTE]
+=====
+The OpenBSD 6.5 `install65.iso` installation includes a set of packages
 that seems to exceed whatever is available on network mirrors; for example,
 the CD image included `clang` program while it is not available to `pkg_add`,
 at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.5/packages/amd64/
 mirror. The `gcc` version on CD image differed notably from that in the
 networked repository (4.2.x vs. 4.9.x).
+
 You may have to echo a working base URL (part before "6.5/..." into the
 `/etc/installurl` file, since the old distribution is no longer served by
 default site.
+======
+
+Verify that the unprivileged account used for builds (e.g. `abuild`) has
+sufficient resource permissions, especially for "open files" and "max user
+processes", by running `ulimit -a`.  You can ensure larger values if needed
+via `/etc/login.conf` e.g. add this new login class per example below
+(see https://man.openbsd.org/login.conf.5 and
+https://wiki.ircnow.org/index.php?n=Openbsd.Loginconf for more details),
+assign the login class to your CI and/or personal account with
+`usermod -L abuild $USER`, and run `cap_mkdb /etc/login.conf`
+and re-login that account to check that the change got applied:
+
+------
+abuild:\
+	:maxproc=infinity:\
+	:datasize=infinity:\
+	:openfiles=infinity:\
+	:stacksize-cur=8M
+------
+
+Finally, as `root` add the packages:
 
 ------
 # Optionally, make the environment comfortable, e.g.:
@@ -1160,6 +1208,7 @@ but can be created in `/etc/` and is honoured by `pkgin`:
 #   :; pkgin install py27-gtk2
 # For Python3:
 #   :; pkgin install py312-qt5 py313-qt5
+# FIXME: Consider qt6 since 2025
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pkgin install \
@@ -1688,7 +1737,7 @@ Currently known dependencies for basic build include:
 :; brew install curl wget midnight-commander
 ----
 
-NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
+NOTE: For `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
 the location of packaged resources (`${HOMEBREW_PREFIX}/etc/xml/catalog`).
 On one test system, man page builds spewed warnings like
 `<unknown>:1: SyntaxWarning: invalid escape sequence '\S'`
@@ -1899,6 +1948,11 @@ export PATH
 :; pacman -S --needed \
     mingw-w64-x86_64-cppunit \
     mingw-w64-clang-x86_64-cppunit
+
+# More on Python (for NUT-Monitor UI):
+:; pacman -S --needed \
+    mingw-w64-x86_64-python-pyqt5
+# FIXME: Consider qt6 since 2025
 ----
 
 

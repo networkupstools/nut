@@ -197,7 +197,16 @@ This varies from driver to driver -- see their specific man pages
 for more information.
 +
 This is like setting 'var'='val' in linkman:ups.conf[5], but
-*-x* overrides any settings from that file.
+*-x* on command line overrides any settings from that file.
++
+Note that for fallback values of NUT variables poorly supported by a specific
+device and/or its NUT driver, you can specify `default.var.name=val` to set a
+default value (may be replaced at run-time by a reading from the device, if
+one does arrive), or `override.var.name=val` to hard-code a value and ignore
+its readings from the device even if they are served. For example, this is
+often used with `override.battery.voltage.nominal` when the device reports a
+single cell in 2V range, and you are interested in a standard battery package
+in 12V range, for PbAc.
 
 DIAGNOSTICS
 -----------

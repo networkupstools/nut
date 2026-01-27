@@ -5,6 +5,7 @@ exit
 #       ipp-shutdown-daemon
 #
 #       Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#       Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #       A shell script to detect shutdown from NMC cards IPP - Unix (NUT)
 #       It needs ipp.conf file.
@@ -36,6 +37,6 @@ fi
 
 # Convert to parsing of "ipp-status -p" which reports all needed details
 for dev in `$NUT_UPSC -l 2>/dev/null`; do
-	shutdown="`$NUT_UPSC "$dev"@localhost ups.timer.shutdown 2>/dev/null`"
-	reboot="`$NUT_UPSC "$dev"@localhost ups.timer.reboot 2>/dev/null`"
+	shutdown="`\"$NUT_UPSC\" \"$dev\"@localhost ups.timer.shutdown 2>/dev/null`"
+	reboot="`\"$NUT_UPSC\" \"$dev\"@localhost ups.timer.reboot 2>/dev/null`"
 done

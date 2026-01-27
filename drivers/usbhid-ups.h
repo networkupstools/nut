@@ -4,6 +4,7 @@
  *  2003-2009 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
  *  2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *  2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2017-2025 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -138,6 +139,7 @@ extern info_lkp_t kelvin_celsius_conversion[];
 
 typedef enum {
 	ONLINE = 0,	/* on line */
+	OFFLINE,	/* explicitly known as offline */
 	DISCHRG,	/* discharging */
 	CHRG,		/* charging */
 	LOWBATT,	/* low battery */
@@ -156,7 +158,8 @@ typedef enum {
 	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
 	DEPLETED,	/* battery depleted; Belkin */
 	TIMELIMITEXP,	/* time limit expired; APC */
-	FULLYCHARGED,	/* battery full; CyberPower */
+	FULLYCHARGED,	/* battery full; CyberPower and others */
+	NOTFULLYCHARGED,	/* battery reported as not full; CyberPower and others */
 	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
 	FANFAIL,	/* fan failure; MGE */
 	NOBATTERY,	/* battery missing; MGE */
@@ -174,16 +177,16 @@ typedef enum {
 
 typedef struct {
 	const char	*info_type;		/* NUT variable name */
-	int	info_flags;		/* NUT flags (to set in addinfo) */
-	int	info_len;		/* if ST_FLAG_STRING: length of the string */
-					/* if HU_TYPE_CMD: command value */
+	int		info_flags;		/* NUT flags (to set in addinfo) */
+	int		info_len;		/* if ST_FLAG_STRING: length of the string */
+						/* if HU_TYPE_CMD: command value */
 	const char	*hidpath;		/* Full HID Object path (or NULL for server side vars) */
-	HIDData_t *hiddata;		/* Full HID Object data (for caching purpose, filled at runtime) */
+	HIDData_t	*hiddata;		/* Full HID Object data (for caching purpose, filled at runtime) */
 	const char	*dfl;			/* if HU_FLAG_ABSENT: default value ; format otherwise */
-	unsigned long hidflags;		/* driver's own flags */
-	info_lkp_t *hid2info;		/* lookup table between HID and NUT values */
-								/* if HU_FLAG_ENUM is set, hid2info is also used
-								 * as enumerated values (dstate_addenum()) */
+	unsigned long	hidflags;		/* driver's own flags */
+	info_lkp_t	*hid2info;		/* lookup table between HID and NUT values */
+						/* if HU_FLAG_ENUM is set, hid2info is also used
+						 * as enumerated values (dstate_addenum()) */
 
 /*	char *info_HID_format;	*//* FFE: HID format for complex values */
 /*	interpreter interpret;	*//* FFE: interpreter fct, NULL if not needed  */
@@ -192,15 +195,20 @@ typedef struct {
 
 /* TODO: rework flags */
 #define HU_FLAG_STATIC			2		/* retrieve info only once. */
-#define HU_FLAG_SEMI_STATIC		4		/* retrieve info smartly */
+#define HU_FLAG_SEMI_STATIC		4		/* retrieve info smartly. */
 #define HU_FLAG_ABSENT			8		/* data is absent in the device, */
-							/* use default value. */
-#define HU_FLAG_QUICK_POLL		16		/* Mandatory vars	*/
+							/* so we use default value. */
+#define HU_FLAG_QUICK_POLL		16		/* Mandatory vars. */
 #define HU_FLAG_STALE			32		/* data stale, don't try too often. */
-#define HU_FLAG_ENUM			128		/* enum values exist */
+/* see 64 below */
+#define HU_FLAG_ENUM			128		/* enum values exist. */
+#define HU_FLAG_PARAM_REQUIRED		256		/* require during setvar() or
+							 * instcmd() that a non-trivial
+							 * value parameter is passed. */
 
 /* hints for su_ups_set, applicable only to rw vars */
-#define HU_TYPE_CMD				64		/* instant command */
+#define HU_TYPE_CMD			64		/* instant command */
+#define HU_TYPE_CMD_PARAM_REQUIRED	(HU_TYPE_CMD | HU_FLAG_PARAM_REQUIRED)	/* Shortcut for setting in the mapping tables */
 
 #define HU_CMD_MASK		0x2000
 

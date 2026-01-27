@@ -1,6 +1,11 @@
 Creating new client
 ===================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/new-clients.html
+//////////////////////////////////////////////////////////////////////////////
+
 NUT provides bindings for several common languages that are
 presented below. All these are released under the same license as
 NUT (the GNU General Public License).
@@ -146,8 +151,9 @@ Python
 
 The PyNUT module, contributed by David Goncalves, can be used for connecting a
 Python script to `upsd`. Note that this code (and the accompanying NUT-Monitor
-application, later separated into NUT-Monitor-py2gtk2 and NUT-Monitor-py3qt5,
-suitable for two generations of Python ecosystem) is licensed under the GPL v3.
+application, later separated into NUT-Monitor-py2gtk2, NUT-Monitor-py3qt5 and
+NUT-Monitor-py3qt6, suitable for two generations of the Python ecosystem) is
+licensed under the GPL v3.
 
 The `PyNUTClient` class abstracts the connection to the server. In order to
 list the status variables for `ups1` on the local `upsd`, the following

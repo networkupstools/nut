@@ -36,6 +36,8 @@
 # include <psapi.h>
 #endif	/* WIN32 */
 
+#include "nut_platform.h"
+
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>	/* readlink */
 #endif
@@ -448,6 +450,15 @@ static int upsnotify_reported_disabled_systemd = 0;
 /* Similarly for only reporting once if the notification subsystem is not built-in */
 static int upsnotify_reported_disabled_notech = 0;
 static int upsnotify_report_verbosity = -1;
+
+/* Exposed to code consumers (NUT daemons) for NOTIFY_STATE_EXTEND_TIMEOUT */
+uint64_t	upsnotify_extend_timeout_usec_default = 600 * 1000000,
+	/* By default upsnotify_extend_timeout_usec == 0 so the
+	 * upsnotify() method would fall back to current WATCHDOG_USEC
+	 * if available, or to upsnotify_extend_timeout_usec_default.
+	 * Whatever value gets applied, it should exceed the relevant
+	 * loop cycle duration at that point in daemon life time. */
+	upsnotify_extend_timeout_usec = 0;
 
 #include <stdio.h>
 
@@ -874,6 +885,40 @@ void chroot_start(const char *path)
 #endif	/* !WIN32 */
 }
 
+/* In forking, assume process name does not change (PID might); cache it */
+static char	*myProcName = NULL;
+static const char	*myProcBaseName = NULL;
+static void procname_cleanup(void) {
+	if (myProcBaseName) {
+		/* points to inside of myProcName */
+		myProcBaseName = NULL;
+	}
+	if (myProcName) {
+		free(myProcName);
+		myProcName = NULL;
+	}
+}
+
+static const char * getmyprocname(void)
+{
+	if (myProcName)
+		return (const char *)myProcName;
+
+	myProcName = getprocname(getpid());	/* no xstrdup, we own and free this later */
+	if (myProcName) {
+		myProcBaseName = xbasename(myProcName);	/* substring inside myProcName */
+		atexit(procname_cleanup);
+	}
+
+	return (const char *)myProcName;
+}
+
+static const char * getmyprocbasename(void)
+{
+	getmyprocname();
+	return myProcBaseName;
+}
+
 char * getprocname(pid_t pid)
 {
 	/* Try to identify process (program) name for the given PID,
@@ -908,6 +953,8 @@ char * getprocname(pid_t pid)
 		pathname[sizeof(pathname) - 1] = '\0';
 
 		if (ret) {
+			size_t	pathname_offset = 0;
+
 			/* length of the string copied to the buffer */
 			procnamelen = strlen(pathname);
 
@@ -919,8 +966,32 @@ char * getprocname(pid_t pid)
 					__func__, (uintmax_t)ret, procnamelen);
 			}
 
+			/* At least when running under IIS, CGI programs were
+			 *  seen to use UNC filesystem paths like `\\?\c:\...`,
+			 *  which POSIX methods are not comfortable with.
+			 * TOTHINK: Do we want to check with fopen()/fstat()
+			 *  first? At least the current "program module" named
+			 *  file should exist, right?
+			 */
+			if (pathname[0] == '\\' && pathname[1] == '\\') {
+				if (pathname[2] == '?' && pathname[3] == '\\'
+				 && ( (pathname[4] >= 'a' && pathname[4] <= 'z')
+				   || (pathname[4] >= 'A' && pathname[4] <= 'Z') )
+				 && pathname[5] == ':'
+				) {
+					/* Chop off `\\?\ part */
+					pathname_offset = 4;
+					procnamelen -= 4;
+					upsdebugx(3, "%s: GetModuleFileNameExA() returned '%s' which seems like localhost UNC path, chopping off the prefix to use just '%s'",
+						__func__, pathname, pathname + pathname_offset);
+				} else {
+					upsdebugx(1, "%s: GetModuleFileNameExA() returned '%s' which seems like UNC path, these are not currently supported and later calls may fail due to this",
+						__func__, pathname);
+				}
+			}
+
 			if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
-				if (snprintf(procname, procnamelen + 1, "%s", pathname) < 1) {
+				if (snprintf(procname, procnamelen + 1, "%s", pathname + pathname_offset) < 1) {
 					upsdebug_with_errno(3, "%s: failed to snprintf procname: WIN32-like", __func__);
 				} else {
 					goto finish;
@@ -933,22 +1004,8 @@ char * getprocname(pid_t pid)
 
 			/* Fall through to try /proc etc. if available */
 		} else {
-			LPVOID WinBuf;
-			DWORD WinErr = GetLastError();
-			FormatMessage(
-				FORMAT_MESSAGE_MAX_WIDTH_MASK |
-				FORMAT_MESSAGE_ALLOCATE_BUFFER |
-				FORMAT_MESSAGE_FROM_SYSTEM |
-				FORMAT_MESSAGE_IGNORE_INSERTS,
-				NULL,
-				WinErr,
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-				(LPTSTR) &WinBuf,
-				0, NULL );
-
-			upsdebugx(3, "%s: failed to get WIN32 process info: %s",
-				__func__, (char *)WinBuf);
-			LocalFree(WinBuf);
+			upsdebug_with_errno(3,
+				"%s: failed to get WIN32 process info", __func__);
 		}
 	}
 #endif	/* WIN32 */
@@ -1325,8 +1382,21 @@ int checkprocname_ignored(const char *caller)
 
 int compareprocname(pid_t pid, const char *procname, const char *progname)
 {
+	/* See comments for compareprocnames(), below */
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return compareprocnames(pid, procname, arr);
+}
+
+int compareprocnames(pid_t pid, const char *procname, const char **prognames)
+{
 	/* Given the binary path name of (presumably) a running process,
-	 * check if it matches the assumed name of the current program.
+	 * check if it matches the assumed name of the current program,
+	 * possibly one of several expected aliases (for "old"/"new" name
+	 * migrations, etc.)
 	 * The "pid" value is used in log reporting.
 	 * Returns:
 	 *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
@@ -1341,67 +1411,174 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	 */
 
 	int	ret = -127;
-	size_t	procbasenamelen = 0, progbasenamelen = 0;
+	size_t	procbasenamelen = 0, *progbasenamelen = NULL;
 	/* Track where the last dot is in the basename; 0 means none */
-	size_t	procbasenamedot = 0, progbasenamedot = 0;
-	char	procbasename[NUT_PATH_MAX + 1], progbasename[NUT_PATH_MAX + 1];
+	size_t	procbasenamedot = 0, *progbasenamedot = NULL;
+	char	procbasename[NUT_PATH_MAX + 1], **progbasenames = NULL;
+	/* Best-effort (size-wise) for logging in the end: */
+	char	all_prognames[LARGEBUF], all_progbasenames[LARGEBUF];
+#ifdef NUT_PLATFORM_LINUX
+	char	*s = NULL;
+#endif
+	const char	**pprogname = NULL;
+	size_t	total_prognames = 0, i = 0;
 
 	if (checkprocname_ignored(__func__)) {
 		ret = -3;
 		goto finish;
 	}
 
-	if (!procname || !progname) {
+	if (!procname || !prognames || !(*prognames)) {
 		ret = -1;
 		goto finish;
 	}
 
+	/* Prepare the (potentially) long string listing the names for logging.
+	 * Also count the prognames[] array length to allocate progbasenames[].
+	 */
+	memset(all_prognames, 0, sizeof(all_prognames));
+	for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+		upsdebugx(5, "%s: appending progname [%s] to [%s]",
+			__func__, NUT_STRARG(*pprogname), all_prognames);
+		snprintfcat(all_prognames, sizeof(all_prognames), "%s'%s'",
+			all_prognames[0] ? "/" : "",
+			*pprogname);
+		total_prognames++;
+	}
+	/* include the NULL sentinel */
+	total_prognames++;
+	upsdebugx(4, "%s: total_prognames=%" PRIuSIZE " (with NULL sentinel); got [%s]",
+		__func__, total_prognames, all_prognames);
+
 	/* First quickly try for an exact hit (possible dir names included) */
-	if (!strcmp(procname, progname)) {
-		ret = 1;
-		goto finish;
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (!strcmp(procname, prognames[i])) {
+			ret = 1;
+			goto finish;
+		}
 	}
 
-	/* Parse the basenames apart */
-	if (!parseprogbasename(progbasename, sizeof(progbasename), progname, &progbasenamelen, &progbasenamedot)
-	||  !parseprogbasename(procbasename, sizeof(procbasename), procname, &procbasenamelen, &procbasenamedot)
-	) {
+	/* Parse the basenames apart, or fail trying */
+	if (!parseprogbasename(procbasename, sizeof(procbasename), procname, &procbasenamelen, &procbasenamedot)) {
 		ret = -2;
 		goto finish;
 	}
 
-	/* First quickly try for an exact hit of base names */
-	if (progbasenamelen == procbasenamelen && progbasenamedot == procbasenamedot && !strcmp(procbasename, progbasename)) {
-		ret = 2;
+	progbasenames = xcalloc(total_prognames, sizeof(char*));
+	if (!progbasenames) {
+		ret = -2;
 		goto finish;
+	}
+	progbasenamelen = xcalloc(total_prognames, sizeof(size_t));
+	if (!progbasenamelen) {
+		ret = -2;
+		goto finish;
+	}
+	progbasenamedot = xcalloc(total_prognames, sizeof(size_t));
+	if (!progbasenamedot) {
+		ret = -2;
+		goto finish;
+	}
+	memset(all_progbasenames, 0, sizeof(all_progbasenames));
+
+	for (i = 0; i < total_prognames - 1; i++) {
+		progbasenames[i] = xcalloc(NUT_PATH_MAX + 1, sizeof(char));
+
+		if (!progbasenames[i]) {
+			ret = -2;
+			goto finish;
+		}
+
+		if (!parseprogbasename(
+			progbasenames[i], NUT_PATH_MAX + 1,
+			prognames[i],
+			&(progbasenamelen[i]), &(progbasenamedot[i]))
+		) {
+			ret = -2;
+			goto finish;
+		}
+
+		upsdebugx(5, "%s: appending progbasename [%s] to [%s]",
+			__func__, NUT_STRARG(progbasenames[i]), all_progbasenames);
+		snprintfcat(all_progbasenames, sizeof(all_progbasenames), "%s'%s'",
+			all_progbasenames[0] ? "/" : "",
+			progbasenames[i]);
+	}
+
+	/* First quickly try for an exact hit of base names */
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (progbasenamelen[i] == procbasenamelen
+		 && progbasenamedot[i] == procbasenamedot
+		 && !strcmp(procbasename, progbasenames[i])
+		) {
+			ret = 2;
+			goto finish;
+		}
 	}
 
 	/* Check for executable program filename extensions and/or case-insensitive
 	 * matching on some platforms */
 #ifdef WIN32
-	if (!strcasecmp(procname, progname)) {
-		ret = 3;
-		goto finish;
-	}
-
-	if (!strcasecmp(procbasename, progbasename)) {
-		ret = 4;
-		goto finish;
-	}
-
-	if (progbasenamedot == procbasenamedot || !progbasenamedot || !procbasenamedot) {
-		/* Same base name before ext, maybe different casing or absence of ext in one of them */
-		size_t	dot = progbasenamedot ? progbasenamedot : procbasenamedot;
-
-		if (!strncasecmp(progbasename, procbasename, dot - 1) &&
-		     (  (progbasenamedot && !strcasecmp(progbasename + progbasenamedot, ".exe"))
-		     || (procbasenamedot && !strcasecmp(procbasename + procbasenamedot, ".exe")) )
-		) {
-			ret = 5;
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (!strcasecmp(procname, prognames[i])) {
+			ret = 3;
 			goto finish;
 		}
 	}
+
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (!strcasecmp(procbasename, progbasenames[i])) {
+			ret = 4;
+			goto finish;
+		}
+	}
+
+	for (i = 0; i < total_prognames - 1; i++) {
+		if (progbasenamedot[i] == procbasenamedot
+		 || !progbasenamedot[i]
+		 || !procbasenamedot
+		) {
+			/* Same base name before ext, maybe different casing or absence of ext in one of them */
+			size_t	dot = progbasenamedot[i] ? progbasenamedot[i] : procbasenamedot;
+
+			/* Optimize away procbasename comparisons beyond first */
+			if (!strncasecmp(progbasenames[i], procbasename, dot - 1) &&
+			     (  (progbasenamedot[i] && !strcasecmp(progbasenames[i] + progbasenamedot[i], ".exe"))
+			     || (i == 0 && procbasenamedot && !strcasecmp(procbasename + procbasenamedot, ".exe")) )
+			) {
+				ret = 5;
+				goto finish;
+			}
+		}
+	}
 #endif	/* WIN32 */
+
+#ifdef NUT_PLATFORM_LINUX
+	/* According to https://stackoverflow.com/a/58105245/4715872
+	 * the Linux kernel function d_path() (convert a dentry into
+	 * an ASCII path name) can report if the original file was
+	 * deleted since the process started.
+	 */
+	if ((s = strstr(procname, " (deleted)")) != NULL && s[10] == '\0') {
+		char	pntmp[NUT_PATH_MAX + 1];
+		int	restmp;
+
+		strncpy(pntmp, procname, sizeof(pntmp) - 1);
+		pntmp[s - procname] = '\0';
+
+		upsdebugx(2, "%s: re-evaluate the substring without a special tail: '%s'=>'%s'",
+			__func__, procname, pntmp);
+
+		for (i = 0; i < total_prognames - 1; i++) {
+			restmp = compareprocname(pid, pntmp, prognames[i]);
+			if (restmp <= 0)
+				return restmp;
+		}
+
+		ret = 6;
+		goto finish;
+	}
+#endif	/* LINUX */
 
 	/* TOTHINK: Developer builds wrapped with libtool may be prefixed
 	 * by "lt-" in the filename. Should we re-enter (or wrap around)
@@ -1414,57 +1591,66 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 
 finish:
 	switch (ret) {
+		case 6:
+			upsdebugx(1,
+				"%s: original program file of running "
+				"PID %" PRIuMAX " named '%s' was removed "
+				"or replaced, but matches our %s",
+				__func__, (uintmax_t)pid,
+				procname, all_prognames);
+			break;
+
 		case 5:
 			upsdebugx(1,
 				"%s: case-insensitive base name hit with "
 				"an executable program extension involved for "
 				"PID %" PRIuMAX " of '%s'=>'%s' and checked "
-				"'%s'=>'%s'",
+				"%s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case 4:
 			upsdebugx(1,
 				"%s: case-insensitive base name hit for PID %"
-				PRIuMAX " of '%s'=>'%s' and checked '%s'=>'%s'",
+				PRIuMAX " of '%s'=>'%s' and checked %s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case 3:
 			upsdebugx(1,
 				"%s: case-insensitive full name hit for PID %"
-				PRIuMAX " of '%s' and checked '%s'",
-				__func__, (uintmax_t)pid, procname, progname);
+				PRIuMAX " of '%s' and checked %s",
+				__func__, (uintmax_t)pid, procname, all_prognames);
 			break;
 
 		case 2:
 			upsdebugx(1,
 				"%s: case-sensitive base name hit for PID %"
-				PRIuMAX " of '%s'=>'%s' and checked '%s'=>'%s'",
+				PRIuMAX " of '%s'=>'%s' and checked %s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case 1:
 			upsdebugx(1,
 				"%s: exact case-sensitive full name hit for PID %"
-				PRIuMAX " of '%s' and checked '%s'",
-				__func__, (uintmax_t)pid, procname, progname);
+				PRIuMAX " of '%s' and checked %s",
+				__func__, (uintmax_t)pid, procname, all_prognames);
 			break;
 
 		case 0:
 			upsdebugx(1,
 				"%s: did not find any match of program names "
 				"for PID %" PRIuMAX " of '%s'=>'%s' and checked "
-				"'%s'=>'%s'",
+				"%s=>%s",
 				__func__, (uintmax_t)pid,
 				procname, procbasename,
-				progname, progbasename);
+				all_prognames, all_progbasenames);
 			break;
 
 		case -1:
@@ -1490,13 +1676,44 @@ finish:
 			break;
 	}
 
+	if (progbasenames) {
+		/* In case of error, we might not have the complete
+		 * array's worth allocated here, so iterate until NULL
+		 * and not by counter.
+		 */
+		char **pprogbasename = NULL;
+		for (pprogbasename = progbasenames; *pprogbasename != NULL; pprogbasename++) {
+			free(*pprogbasename);
+		}
+		free(progbasenames);
+	}
+
+	if (progbasenamelen)
+		free(progbasenamelen);
+
+	if (progbasenamedot)
+		free(progbasenamedot);
+
 	return ret;
 }
 
 int checkprocname(pid_t pid, const char *progname)
 {
+	/* See comments for checkprocnames(), below */
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return checkprocnames(pid, arr);
+}
+
+int checkprocnames(pid_t pid, const char **prognames)
+{
 	/* If we can determine the binary path name of the specified "pid",
-	 * check if it matches the assumed name of the current program.
+	 * check if it matches the assumed name of the current program,
+	 * possibly one of several expected aliases (for "old"/"new" name
+	 * migrations, etc.)
 	 * Returns: same as compareprocname()
 	 * Generally speaking, if (checkprocname(...)) then ok to proceed
 	 */
@@ -1509,18 +1726,24 @@ int checkprocname(pid_t pid, const char *progname)
 		goto finish;
 	}
 
-	if (!progname) {
+	if (!prognames || !(*prognames)) {
 		ret = -1;
 		goto finish;
 	}
 
-	procname = getprocname(pid);
+	if (pid == getpid()) {
+		/* use (or seed) the cached value if we can */
+		procname = xstrdup(getmyprocname());
+	}
+	if (!procname) {
+		procname = getprocname(pid);
+	}
 	if (!procname) {
 		ret = -1;
 		goto finish;
 	}
 
-	ret = compareprocname(pid, procname, progname);
+	ret = compareprocnames(pid, procname, prognames);
 
 finish:
 	if (procname)
@@ -1531,25 +1754,208 @@ finish:
 
 #ifdef WIN32
 /* In WIN32 all non binaries files (namely configuration and PID files)
-   are retrieved relative to the path of the binary itself.
-   So this function fill "dest" with the full path to "relative_path"
-   depending on the .exe path */
+ * are retrieved relative to the path of the binary itself.
+ * So this function fills dest "buf" with the full path to "relative_path"
+ * depending on the .exe path. If the "relative_path" seems absolute (e.g.
+ * passing DRVPATH="/mingw64/bin" where PREFIX="/mingw64" we might want to
+ * relativize it a bit).
+ */
+static char	*win_PREFIX = NULL;
+
+static void win_PREFIX_cleanup(void) {
+	if (win_PREFIX) {
+		free(win_PREFIX);
+		win_PREFIX = NULL;
+	}
+}
+
 char * getfullpath(char * relative_path)
 {
-	char buf[NUT_PATH_MAX + 1];
-	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
+	/* NOTE: we keep the discovered bytes in buf[], and manipulate this
+	 *  string's ending below, but may also ignore some starting bytes
+	 *  using the (buf + buf_offset) formula. Finally we xstrdup() the
+	 *  useful contents returned to caller.
+	 */
+	char	buf[NUT_PATH_MAX + 1], *last_slash = NULL;
+	static size_t	len_PREFIX = 0, buf_offset = 0;
+
+	if (!len_PREFIX) {
+		len_PREFIX = strlen(PREFIX);
+		upsdebugx(6, "%s: built-in PREFIX (len=%" PRIuSIZE"):\t'%s'", __func__, len_PREFIX, PREFIX);
+	}
+
+	if (GetModuleFileName(NULL, buf, sizeof(buf)) == 0) {
+		upsdebug_with_errno(3,
+			"%s: failed to get WIN32 process info "
+			"with GetModuleFileName() of current program", __func__);
 		return NULL;
 	}
 
-	/* remove trailing executable name and its preceeding slash */
-	char * last_slash = strrchr(buf, '\\');
-	*last_slash = '\0';
+	upsdebugx(5, "%s: passed relative_path:\t'%s'", __func__, NUT_STRARG(relative_path));
+	upsdebugx(5, "%s: GetModuleFileName (buf):\t'%s'", __func__, buf);
 
-	if( relative_path ) {
-		strncat(buf, relative_path, sizeof(buf) - 1);
+	/* At least when running under IIS, CGI programs were
+	 *  seen to use UNC filesystem paths like `\\?\c:\...`,
+	 *  which POSIX methods are not comfortable with.
+	 * TOTHINK: Do we want to check with fopen()/fstat()
+	 *  first? At least the current "program module" named
+	 *  file should exist, right?
+	 */
+	if (buf[0] == '\\' && buf[1] == '\\') {
+		if (buf[2] == '?' && buf[3] == '\\'
+		 && ( (buf[4] >= 'a' && buf[4] <= 'z')
+		   || (buf[4] >= 'A' && buf[4] <= 'Z') )
+		 && buf[5] == ':'
+		) {
+			/* Chop off `\\?\ part */
+			buf_offset = 4;
+			upsdebugx(3, "%s: GetModuleFileName() returned '%s' which seems like localhost UNC path, chopping off the prefix to use just '%s'",
+				__func__, buf, buf + buf_offset);
+		} else {
+			upsdebugx(1, "%s: GetModuleFileName() returned '%s' which seems like UNC path, these are not currently supported and later calls may fail due to this",
+				__func__, buf);
+		}
 	}
 
-	return(xstrdup(buf));
+	/* remove trailing executable name and its preceding slash */
+	last_slash = strrchr(buf + buf_offset, '\\');
+	*last_slash = '\0';
+
+	upsdebugx(6, "%s: buf truncated to:\t'%s'", __func__, buf + buf_offset);
+
+	/* no extra magic for hard-coded PATH_ETC and others, see config.h */
+	if (relative_path) {
+		if (!strncmp(relative_path, "\\..\\", 4)) {
+			upsdebugx(6, "%s: no magic needed for this relative_path", __func__);
+		} else {
+			size_t	buf_strlen = strlen(buf), relpath_strlen = strlen(relative_path);
+
+			/* Avoid "DIRNAME../etc" kind of bugs - should be "DIRNAME/../etc" */
+			if (buf_strlen > 0
+			 && buf[buf_strlen] != '\\' && buf[buf_strlen] != '/'
+			) {
+				strncat(buf, "\\", sizeof(buf) - 1);
+				buf_strlen++;
+				upsdebugx(6, "%s: buf increased to:\t'%s'", __func__, buf + buf_offset);
+			}
+
+			/* Is this an absolute-looking Unix-ish path string
+			 * likely generated by NUT build, starting with PREFIX
+			 * followed by a Unix-ish slash?
+			 */
+			if (relpath_strlen > len_PREFIX
+			 && !strncmp(relative_path, PREFIX, len_PREFIX)
+			 && *(relative_path + len_PREFIX) == '/'
+			) {
+				char	*prefix_in_buf = strstr(buf + buf_offset, PREFIX);
+
+				if (win_PREFIX == NULL) {
+					win_PREFIX = xstrdup(PREFIX);
+					atexit(win_PREFIX_cleanup);
+					last_slash = win_PREFIX;
+					while ( (last_slash = strchr(last_slash, '/')) ) {
+						*last_slash = '\\';
+					}
+					upsdebugx(6, "%s: win_PREFIX variant initialized:\t'%s'", __func__, win_PREFIX);
+				}
+
+				if (!prefix_in_buf && len_PREFIX > 1) {
+					/* Retry: Was this path Windows-ized,
+					 * and is PREFIX non-trivial? */
+					prefix_in_buf = strstr(buf + buf_offset, win_PREFIX);
+				}
+
+				upsdebugx(6, "%s: prefix_in_buf:\t'%s'", __func__, NUT_STRARG(prefix_in_buf));
+
+				/* Did we find the prefix and is it followed by some slash? */
+				if (prefix_in_buf &&
+				    (   *(prefix_in_buf + len_PREFIX) == '/'
+				     || *(prefix_in_buf + len_PREFIX) == '\\')
+				) {
+					/* Make the path relative
+					 * TOTHINK: a less clean looking alternative
+					 *  is to just chop off the tail and tack on
+					 *  the de-prefixed relative_path?
+					 */
+					int	depth = 0;
+
+					for (last_slash = prefix_in_buf + len_PREFIX; *last_slash; last_slash++) {
+						if ( (*last_slash == '/' || *last_slash == '\\')
+						 &&  (*(last_slash+1) != '\0')
+						 &&  (*(last_slash+1) != '\\')
+						 &&  (*(last_slash+1) != '/')
+						) {
+							/* Current char is a slash, followed by a path component */
+							depth++;
+						}
+					}
+
+					upsdebugx(6, "%s: depth under installation location and PREFIX:\t%d", __func__, depth);
+					while (depth > 0) {
+						depth--;
+						strncat(buf, "..\\", sizeof(buf) - 1);
+						upsdebugx(6, "%s: remaining depth=%d, buf increased to:\t'%s'", __func__, depth, buf + buf_offset);
+					}
+				} else {
+					upsdebugx(6, "%s: did not find a non-trivial PREFIX followed by some slash in buf", __func__);
+					/* Ugly hack for typical NUT binary naming and delivery:
+					 * single layer of directories ending with "bin".
+					 */
+					if (len_PREFIX == 1 && buf_strlen > 2) {
+						for (last_slash = buf + buf_offset + buf_strlen - 2; last_slash != buf + buf_offset; last_slash --) {
+							if (*last_slash == '/' || *last_slash == '\\')
+								break;
+						}
+						upsdebugx(6, "%s: buf end after last_slash:\t'%s'", __func__, last_slash);
+						if (last_slash && strstr(last_slash, "bin\\")) {
+							upsdebugx(6, "%s: buf ends with 'bin\\', assume a single layer under a trivial PREFIX", __func__);
+							strncat(buf, "..\\", sizeof(buf) - 1);
+							upsdebugx(6, "%s: remaining depth=0, buf increased to:\t'%s'", __func__, buf + buf_offset);
+						}
+					}
+				}
+
+				/* Scroll the pointer to look into relative_path at just
+				 * after the common PREFIX (and following slash) */
+				upsdebugx(6, "%s: relative_path with PREFIX and slash was:\t'%s'", __func__, relative_path);
+				relative_path += len_PREFIX + 1;
+				upsdebugx(6, "%s: relative_path became:\t'%s'", __func__, relative_path);
+			} else {
+				upsdebugx(6, "%s: relative_path did not start with PREFIX and slash", __func__);
+			}
+		}
+
+		upsdebugx(6, "%s: concat '%s' and '%s'", __func__, buf + buf_offset, NUT_STRARG(relative_path));
+		strncat(buf, relative_path, sizeof(buf) - 1);
+	}	/* else: relative_path == NULL */
+
+	upsdebugx(5, "%s: resulting buf:\t'%s'", __func__, buf + buf_offset);
+
+	/* Caller should free this eventually */
+	return(xstrdup(buf + buf_offset));
+}
+
+char * getfullpath2(char * cfg_path, char * fallback_path)
+{
+	/* First try configured (run-time or built-in */
+	char	*path = getfullpath(cfg_path);
+
+	if (path && *path) {
+		struct stat	statbuf;
+		if ( (stat(path, &statbuf) != 0)
+		 || !(S_ISDIR(statbuf.st_mode))
+		) {
+			free(path);
+			path = NULL;
+		}
+	}
+
+	if (!path || !(*path)) {
+		/* Fall back to fixed built-in pathname relative to binary/workdir */
+		path = getfullpath(fallback_path);
+	}
+
+	return path;
 }
 #endif	/* WIN32 */
 
@@ -1596,9 +2002,22 @@ void writepid(const char *name)
  */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname)
 {
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return sendsignalpidaliases(pid, sig, arr, check_current_progname);
+}
+
+int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_current_progname)
+{
 #ifndef WIN32
 	int	ret, cpn1 = -10, cpn2 = -10;
-	char	*current_progname = NULL, *procname = NULL;
+	char	*procname = NULL;	/* free this one after use */
+	const char	*current_progname = NULL;	/* do not free this one! */
+	char	all_prognames[LARGEBUF];  /* for nicer logging */
+	size_t	total_prognames = 0;
 
 	/* TOTHINK: What about containers where a NUT daemon *is* the only process
 	 * and is the PID=1 of the container (recycle if dead)? */
@@ -1611,30 +2030,48 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 
 	ret = 0;
-	if (!checkprocname_ignored(__func__))
-		procname = getprocname(pid);
-
-	if (procname && progname) {
-		/* Check against some expected (often built-in) name */
-		if (!(cpn1 = compareprocname(pid, procname, progname))) {
-			/* Did not match expected (often built-in) name */
-			ret = -1;
-		} else {
-			if (cpn1 > 0) {
-				/* Matched expected name, ok to proceed */
-				ret = 1;
-			}
-			/* ...else could not determine name of PID; think later */
+	if (!checkprocname_ignored(__func__)) {
+		if (pid == getpid()) {
+			/* use (or seed) the cached value if we can */
+			procname = xstrdup(getmyprocname());
+		}
+		if (!procname) {
+			procname = getprocname(pid);
 		}
 	}
+
+	memset(all_prognames, 0, sizeof(all_prognames));
+	if (procname && prognames && *(prognames)) {
+		/* Check against some expected (often built-in) name
+		 * Also build a list of those names (from parameter)
+		 */
+		const char	**pprogname;
+		for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+			snprintfcat(all_prognames, sizeof(all_prognames), "%s'%s'",
+				all_prognames[0] ? "/" : "", *pprogname);
+			if (!(cpn1 = compareprocname(pid, procname, *pprogname))) {
+				/* Did not match expected (often built-in) name */
+				ret = -1;
+			} else {
+				if (cpn1 > 0) {
+					/* Matched expected name, ok to proceed */
+					ret = 1;
+				}
+				/* ...else could not determine name of PID; think later */
+			}
+			total_prognames++;
+		}
+		/* NULL sentinel of the non-NULL prognames[] array */
+		total_prognames++;
+
+		upsdebugx(4, "%s: collected %" PRIuSIZE " aliases (with NULL sentinel): %s",
+			__func__, total_prognames, all_prognames);
+	}
+
 	/* if (cpn1 == -3) => NUT_IGNORE_CHECKPROCNAME=true */
 	/* if (cpn1 == -1) => could not determine name of PID... retry just in case? */
 	if (procname && ret <= 0 && check_current_progname && cpn1 != -3) {
-		/* NOTE: This could be optimized a bit by pre-finding the procname
-		 * of "pid" and re-using it, but this is not a hot enough code path
-		 * to bother much.
-		 */
-		current_progname = getprocname(getpid());
+		current_progname = getmyprocname();
 		if (current_progname && (cpn2 = compareprocname(pid, procname, current_progname))) {
 			if (cpn2 > 0) {
 				/* Matched current process as asked, ok to proceed */
@@ -1663,10 +2100,10 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 			"failed to match: "
 			"found procname='%s', "
 			"expected progname='%s' (res=%d%s), "
-			"current progname='%s' (res=%d%s)",
+			"current progname=%s (res=%d%s)",
 			__func__, (uintmax_t)pid,
 			NUT_STRARG(procname),
-			NUT_STRARG(progname), cpn1,
+			all_prognames[0] ? all_prognames : "(null)", cpn1,
 			(cpn1 == -10 ? ": did not check" : ""),
 			NUT_STRARG(current_progname), cpn2,
 			(cpn2 == -10 ? ": did not check" : ""));
@@ -1676,32 +2113,32 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 				case -1:
 					upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 						" which exists but is not of"
-						" expected program '%s'; not asked"
+						" expected program %s; not asked"
 						" to cross-check current PID's name",
-						(uintmax_t)pid, progname);
+						(uintmax_t)pid, all_prognames);
 					break;
 
 				/* Maybe we tried both data sources, maybe just current_progname */
 				case -2:
 				/*case -3:*/
-					if (progname && current_progname) {
+					if (all_prognames[0] && current_progname) {
 						/* Tried both, downgraded verdict further */
 						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 							" which exists but is not of expected"
-							" program '%s' nor current '%s'",
-							(uintmax_t)pid, progname, current_progname);
+							" program %s nor current '%s'",
+							(uintmax_t)pid, all_prognames, current_progname);
 					} else if (current_progname) {
-						/* Not asked for progname==NULL */
+						/* Not asked for prognames==NULL nor prognames[0]==NULL */
 						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 							" which exists but is not of"
 							" current program '%s'",
 							(uintmax_t)pid, current_progname);
-					} else if (progname) {
+					} else if (all_prognames[0]) {
 						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
 							" which exists but is not of"
-							" expected program '%s'; could not"
+							" expected program %s; could not"
 							" cross-check current PID's name",
-							(uintmax_t)pid, progname);
+							(uintmax_t)pid, all_prognames);
 					} else {
 						/* Both NULL; one not asked, another not detected;
 						 * should not actually get here (wannabe `ret==-3`)
@@ -1718,11 +2155,6 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 			}
 		}
 
-		if (current_progname) {
-			free(current_progname);
-			current_progname = NULL;
-		}
-
 		if (procname) {
 			free(procname);
 			procname = NULL;
@@ -1730,11 +2162,6 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 
 		/* Logged or not, sanity-check was requested and failed */
 		return -1;
-	}
-
-	if (current_progname) {
-		free(current_progname);
-		current_progname = NULL;
 	}
 
 	if (procname) {
@@ -1767,7 +2194,7 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 #else	/* WIN32 */
 	NUT_UNUSED_VARIABLE(pid);
 	NUT_UNUSED_VARIABLE(sig);
-	NUT_UNUSED_VARIABLE(progname);
+	NUT_UNUSED_VARIABLE(prognames);
 	NUT_UNUSED_VARIABLE(check_current_progname);
 	/* Windows builds use named pipes, not signals per se */
 	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
@@ -1861,12 +2288,22 @@ pid_t parsepidfile(const char *pidfn)
 #ifndef WIN32
 int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname)
 {
+	const char	*arr[2];
+
+	arr[0] = progname;
+	arr[1] = NULL;
+
+	return sendsignalfnaliases(pidfn, sig, arr, check_current_progname);
+}
+
+int sendsignalfnaliases(const char *pidfn, int sig, const char **prognames, int check_current_progname)
+{
 	int	ret = -1;
 	pid_t	pid = parsepidfile(pidfn);
 
 	if (pid >= 0) {
 		/* this method actively reports errors, if any */
-		ret = sendsignalpid(pid, sig, progname, check_current_progname);
+		ret = sendsignalpidaliases(pid, sig, prognames, check_current_progname);
 	}
 
 	return ret;
@@ -1876,8 +2313,18 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_cur
 
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored)
 {
+	const char	*arr[2];
+
+	arr[0] = progname_ignored;
+	arr[1] = NULL;
+
+	return sendsignalfnaliases(pidfn, sig, arr, check_current_progname_ignored);
+}
+
+int sendsignalfnaliases(const char *pidfn, const char * sig, const char **prognames_ignored, int check_current_progname_ignored)
+{
 	BOOL	ret;
-	NUT_UNUSED_VARIABLE(progname_ignored);
+	NUT_UNUSED_VARIABLE(prognames_ignored);
 	NUT_UNUSED_VARIABLE(check_current_progname_ignored);
 
 	ret = send_to_named_pipe(pidfn, sig);
@@ -2290,6 +2737,11 @@ const char *str_upsnotify_state(upsnotify_state_t state) {
 		case NOTIFY_STATE_WATCHDOG:
 			/* Ping the framework that we are still alive */
 			return "NOTIFY_STATE_WATCHDOG";
+		case NOTIFY_STATE_EXTEND_TIMEOUT:
+			/* Ping the framework that we are still alive
+			 * when starting/stopping
+			 */
+			return "NOTIFY_STATE_EXTEND_TIMEOUT";
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -2501,6 +2953,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 		switch (state) {
 			case NOTIFY_STATE_READY:
+				/* In systemd: since forever? (unspec) */
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen,
 					"%sREADY=1%s",
 					msglen ? "\n" : "",
@@ -2508,6 +2961,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_READY_WITH_PID:
+				/* In systemd: since forever? (unspec) */
 				if (1) { /* scoping */
 					char pidbuf[SMALLBUF];
 					if (snprintf(pidbuf, sizeof(pidbuf), "%lu", (unsigned long) getpid())) {
@@ -2542,6 +2996,13 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_RELOADING:
+				/* Tells the service manager that the service
+				 * is beginning to reload its configuration...
+				 * Note that a service that sends this notification
+				 * must also send a "READY=1" notification when
+				 * it completed reloading its configuration.
+				 * In systemd: since v217
+				 */
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s%s",
 					msglen ? "\n" : "",
 					"RELOADING=1",
@@ -2549,13 +3010,22 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_STOPPING:
+				/* Tells the service manager that the service
+				 * is beginning its shutdown. This is useful
+				 * to allow the service manager to track the
+				 * service's internal state, and present it
+				 * to the user.
+				 * In systemd: since v217
+				 */
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
 					msglen ? "\n" : "",
 					"STOPPING=1");
 				break;
 
 			case NOTIFY_STATE_STATUS:
-				/* Only send a text message per "fmt" */
+				/* Only send a text message per "fmt"
+				 * In systemd: since v233
+				 */
 				if (!msglen) {
 					upsdebugx(6, "%s: failed to notify about status: none provided", __func__);
 					ret = -1;
@@ -2565,7 +3035,13 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_WATCHDOG:
-				/* Ping the framework that we are still alive */
+				/* Ping the framework that we are still alive
+				 * In systemd: since v209 (and if enabled by unit file)
+				 *  per https://www.freedesktop.org/software/systemd/man/latest/sd_watchdog_enabled.html
+				 * NOTE: per https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html
+				 *  since v233 a service can also request a different
+				 *  value of WATCHDOG_USEC=... during run-time.
+				 */
 				if (1) {	/* scoping */
 					int	postit = 0;
 
@@ -2596,7 +3072,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #    if ! DEBUG_SYSTEMD_WATCHDOG
 						if (!upsnotify_reported_watchdog_systemd)
 #    endif
-							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, s);
+							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, NUT_STRARG(s));
 						if (s && *s) {
 							long l = strtol(s, (char **)NULL, 10);
 							if (l > 0) {
@@ -2647,6 +3123,61 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				}
 				break;
 
+			case NOTIFY_STATE_EXTEND_TIMEOUT:
+				/* Ping the framework that we are still alive
+				 * after we have reported that we are stopping
+				 * (or starting but not yet ready) so its timeout
+				 * for stuck services does not kill us. Value
+				 * can be pre-set by the caller, or inherited
+				 * from WATCHDOG_USEC if available.
+				 *
+				 * Tells the service manager to extend the startup,
+				 * runtime or shutdown service timeout corresponding
+				 * the current state. The value specified is a time
+				 * in microseconds during which the service must
+				 * send a new message. A service timeout will occur
+				 * if the message isn't received, but only if the
+				 * runtime of the current state is beyond the
+				 * original maximum times of TimeoutStartSec=,
+				 * RuntimeMaxSec=, and TimeoutStopSec=.
+				 * See systemd.service(5) for effects on the
+				 * service timeouts.
+				 *
+				 * In systemd: since v236
+				 */
+				if (1) {	/* scoping */
+					uint64_t	to_usec = upsnotify_extend_timeout_usec;
+
+					if (to_usec < 1) {
+						char *s = getenv("WATCHDOG_USEC");
+
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd)
+#    endif
+							upsdebugx(6, "%s: WATCHDOG_USEC=%s (for EXTEND_TIMEOUT_USEC)", __func__, NUT_STRARG(s));
+						if (s && *s) {
+							long l = strtol(s, (char **)NULL, 10);
+							if (l > 0) {
+								to_usec = l;
+							}
+						}
+					}
+
+					if (to_usec < 1) {
+						to_usec = upsnotify_extend_timeout_usec_default;
+					}
+
+					if (to_usec > 0) {
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%sEXTEND_TIMEOUT_USEC=%" PRIu64,
+							msglen ? "\n" : "",
+							to_usec);
+					} else {
+						upsdebugx(6, "%s: requested to NOTIFY_STATE_EXTEND_TIMEOUT but did not provide any value", __func__);
+						ret = -126;
+					}
+				}
+				break;
+
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -2684,7 +3215,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 		if ((ret < 0) || (ret >= (int) sizeof(buf))) {
 			/* Refusal to send the watchdog ping is not an error to report */
-			if ( !(ret == -126 && (state == NOTIFY_STATE_WATCHDOG)) ) {
+			if ( !(ret == -126 && (state == NOTIFY_STATE_WATCHDOG || state == NOTIFY_STATE_EXTEND_TIMEOUT)) ) {
 				if (syslog_is_disabled()) {
 					fprintf(stderr,
 						"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
@@ -2775,9 +3306,10 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
 # if ! DEBUG_SYSTEMD_WATCHDOG
 	if (state == NOTIFY_STATE_WATCHDOG && !upsnotify_reported_watchdog_systemd) {
-		upsdebugx(upsnotify_report_verbosity,
-			"%s: logged the systemd watchdog situation once, "
-			"will not spam more about it", __func__);
+		if (nut_debug_level >= 6)	/* level of upsdebugx() above telling watchdog details */
+			upsdebugx(upsnotify_report_verbosity,
+				"%s: logged the systemd watchdog situation once, "
+				"will not spam more about it", __func__);
 		upsnotify_reported_watchdog_systemd = 1;
 		upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 	}
@@ -2801,7 +3333,8 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 	 * WARNING: Does not try to be a pedantically correct printf
 	 * style parser and allows foolishness like "%llhhG" which
 	 * the real methods would reject (and which would fail any
-	 * conparison with e.g. "%G" proper).
+	 * comparison with e.g. "%G" proper).
+	 * See also: https://en.cppreference.com/w/c/io/fprintf.html
 	 */
 	const char	*p;
 	char	*b, inEscape;
@@ -2839,24 +3372,30 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 			 * by our "nut_stdint.h".
 			 */
 			switch (*p) {
-				/* We care about integer/pointer type size "width" modifiers, e.g.: */
+				/* Here we care about integer/pointer type size "length"
+				 * modifiers (byte size of corresponding vararg on stack): */
 				case 'l':	/* long (long) int */
 				case 'L':	/* long double */
 				case 'h':	/* short int/char */
 #if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) || (defined _STDC_C99) || (defined __C99FEATURES__) /* C99+ build mode */ || (defined PRIiMAX && defined PRIiSIZE)
-				/* Technically, double "ll" and "hh" are also new */
-				case 'z':	/* size_t */
+				/* Technically, double "ll" and "hh" are also new
+				 * but are covered above already.
+				 */
+				case 'z':	/* (s)size_t */
 				case 'j':	/* intmax_t */
 				case 't':	/* ptrdiff_t */
 #endif
-				/* and here field length will be in another vararg on the stack: */
+				/* ...and here field length and/or precison will each
+				 * be in another vararg (an "int") on the stack: */
 				case '*':
 					*b++ = *p;
 					i++;
 					continue;
 
 				/* Known conversion characters, collapse some numeric format
-				 * specifiers to unambiguous basic type for later comparisons */
+				 * specifiers to unambiguous basic type for later comparisons: */
+
+				/* - Equivalents of "signed int": */
 				case 'd':
 				case 'i':
 					inEscape = 0;
@@ -2864,6 +3403,7 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 					i++;
 					continue;
 
+				/* - Equivalents of "unsigned int": */
 				case 'u':
 				case 'o':
 				case 'x':
@@ -2873,6 +3413,8 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 					i++;
 					continue;
 
+				/* - Equivalents of "double" (note there is no "float"
+				 *   support, printf/scanf varargs expand them to double): */
 				case 'f':
 				case 'e':
 				case 'E':
@@ -2888,14 +3430,55 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 					i++;
 					continue;
 
+				/* - Basic types (char, string, pointer)... */
 				case 'c':
 				case 's':
 				case 'p':
-				case 'n':
 					inEscape = 0;
 					*b++ = *p;
 					i++;
 					continue;
+
+				/* ...and a (s)size_t target (signed when %zn) for
+				 *   printf to write the count of chars printed so
+				 *   far into:
+				 */
+				case 'n':
+					upsdebugx(4, "%s: WARNING: escape sequence %%n is deprecated "
+						"on some systems due to security concerns", __func__);
+					inEscape = 0;
+					*b++ = *p;
+					i++;
+					continue;
+
+				/* Non-functional characters as far as vararg
+				 * stack size is concerned: always-signed,
+				 * left/right alignment, padding, minimal width,
+				 * floating-point precision (note: asterisk is
+				 * special, not skipped - handled above)... */
+				case '+':
+				case '-':
+				case '.':
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					/* Skip as irrelevant to memory access;
+					 * log just in case of deep troubleshooting,
+					 * but do not be noisy. In fact, most NUT
+					 * blogs and other instructions suggest at
+					 * most -DDDDDD 6 levels of debug verbosity,
+					 * so we hide this one deeper :)
+					 */
+					upsdebugx(7, "%s: in-escape: assuming a cosmetic formatting char: '%c'", __func__, *p);
+					break;
+
 				default:
 					upsdebugx(1, "%s: in-escape: unexpected formatting char: '%c'", __func__, *p);
 			}
@@ -3206,9 +3789,25 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	 * or the calling methods should check it against their
 	 * "fmt_dynamic" expectations). */
 	do {
+#ifdef HAVE_VA_COPY_VARIANT
+		va_list	va_snprintf;
+
+		/* va_copy() to avoid mangling on re-use (see issue #2948),
+		 * this lets us retry safely vsnprintf() with the VA copies */
+		va_copy(va_snprintf, va);
+		ret = vsnprintf(buf, bufsize, fmt, va_snprintf);
+		va_end(va_snprintf);
+#else
+		/* Without va_copy(), we cannot safely retry vsnprintf()
+		 * and will accept truncation if the buffer is too small */
 		ret = vsnprintf(buf, bufsize, fmt, va);
+#endif
 
 		if ((ret < 0) || ((uintmax_t)ret >= (uintmax_t)bufsize)) {
+			/* Not building the below block on systems without va_copy(),
+			 * otherwise consumed VAs would get re-used & mangled on retries.
+			 * Instead, we want fall-through directly to the truncation message. */
+#ifdef HAVE_VA_COPY_VARIANT
 			/* Try to adjust bufsize until we can print the
 			 * whole message. Note that standards only require
 			 * up to 4095 bytes to be manageable in printf-like
@@ -3261,6 +3860,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		/* Arbitrary limit, gotta stop somewhere */
 		if (bufsize > LARGEBUF * 64) {
 vupslog_too_long:
+#endif
 			if (syslog_is_disabled()) {
 				fprintf(stderr, "vupslog: vsnprintf needed "
 					"more than %" PRIuSIZE " bytes; logged "
@@ -3358,9 +3958,9 @@ const char * confpath(void)
 	path = getenv("NUT_CONFPATH");
 
 #ifdef WIN32
+	/* FIXME: getfullpath() returns an xstrdup'ed string that we should free */
 	if (path == NULL) {
-		/* fall back to built-in pathname relative to binary/workdir */
-		path = getfullpath(PATH_ETC);
+		path = getfullpath2(CONFPATH, PATH_ETC);
 	}
 #endif	/* WIN32 */
 
@@ -3386,7 +3986,7 @@ const char * dflt_statepath(void)
 #ifdef WIN32
 	if (path == NULL) {
 		/* fall back to built-in pathname relative to binary/workdir */
-		path = getfullpath(PATH_VAR_RUN);
+		path = getfullpath2(STATEPATH, PATH_VAR_RUN);
 	}
 #endif	/* WIN32 */
 
@@ -3419,7 +4019,11 @@ const char * altpidpath(void)
 #ifdef WIN32
 		if (path == NULL) {
 			/* fall back to built-in pathname relative to binary/workdir */
+# ifdef ALTPIDPATH
+			path = getfullpath2(ALTPIDPATH, PATH_VAR_RUN);
+# else
 			path = getfullpath(PATH_VAR_RUN);
+# endif
 		}
 #endif	/* WIN32 */
 	}
@@ -3454,8 +4058,12 @@ const char * rootpidpath(void)
 
 #ifdef WIN32
 	if (path == NULL) {
-		/* fall back to built-in pathname relative to binary/workdir */
-		path = getfullpath(PATH_ETC);
+		/* fall back to built-in pathname relative to binary/workdir
+		 * Note we may not have a run dir, but should have a config location
+		 */
+		path = getfullpath2(PIDPATH, CONFPATH);
+		if (path == NULL || *path == '\0')
+			path = getfullpath(PATH_ETC);
 	}
 #endif	/* WIN32 */
 
@@ -3548,6 +4156,61 @@ void upslogx(int priority, const char *fmt, ...)
 	va_end(va);
 }
 
+/* also keep a buffer with prefixed colon for debug printouts */
+static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
+	proctag_cleanup_registered = 0;
+
+static void proctag_cleanup(void)
+{
+	if (proctag) {
+		upsdebugx(2, "a %s sub-process (%s) is exiting now",
+			NUT_STRARG(getmyprocbasename()), getproctag());
+	}
+	setproctag(NULL);
+}
+
+const char *getproctag(void)
+{
+	return (const char *)proctag;
+}
+
+void setproctag(const char *tag)
+{
+	size_t	proctag_for_upsdebug_buflen = 0;
+	if (proctag) {
+		free(proctag);
+		proctag = NULL;
+	}
+
+	if (proctag_for_upsdebug) {
+		free(proctag_for_upsdebug);
+		proctag_for_upsdebug = NULL;
+	}
+
+	if (!tag) {
+		/* wipe */
+		return;
+	}
+
+	if (!proctag_cleanup_registered) {
+		/* We would use this anyway in exit handler (probably many times
+		 * for forked children), so better get it over with quickly */
+		getmyprocname();
+
+		atexit(proctag_cleanup);
+		proctag_cleanup_registered = 1;
+	}
+
+	/* let the caller's copy be freed */
+	proctag = xstrdup(tag);
+
+	proctag_for_upsdebug_buflen = strlen(tag) + 2;
+	proctag_for_upsdebug = xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
+	if (proctag_for_upsdebug) {
+		snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s", tag);
+	}
+}
+
 void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
@@ -3576,9 +4239,15 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 		if (NUT_DEBUG_PID) {
 			/* Note that we re-request PID every time as it can
 			 * change during the run-time (forking etc.) */
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
+				level, (intmax_t)getpid(),
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		} else {
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
+				level,
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		}
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
 			if (syslog_is_disabled()) {
@@ -3634,9 +4303,15 @@ void s_upsdebugx(int level, const char *fmt, ...)
 		if (NUT_DEBUG_PID) {
 			/* Note that we re-request PID every time as it can
 			 * change during the run-time (forking etc.) */
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
+				level, (intmax_t)getpid(),
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		} else {
-			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
+				level,
+				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				fmt);
 		}
 
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
@@ -4716,66 +5391,209 @@ int match_regex_hex(const regex_t *preg, const int n)
 }
 #endif	/* HAVE_LIBREGEX */
 
-/* NOT THREAD SAFE!
+/* NOT THREAD-SAFE WHERE MARKED!
  * Helpers to convert one IP address to string from different structure types
- * Return pointer to internal buffer, or NULL and errno upon errors */
-const char *inet_ntopSS(struct sockaddr_storage *s)
-{
-	static char str[40];
+ * Return pointer to provided (or internal, or allocated) buffer, or NULL and
+ * errno upon errors.
+ * WARNING: Do not fence this compilation with NUT_WANT_INET_NTOP_XX macro as
+ * used in header (although maybe consider moving it to another libcommon*?)
+ */
 
+/* https://stackoverflow.com/a/29147085/4715872
+ * obviously INET6_ADDRSTRLEN is expected to be larger
+ * than INET_ADDRSTRLEN, but this may be required in case
+ * if for some unexpected reason IPv6 is not supported, and
+ * INET6_ADDRSTRLEN is defined as 0
+ * but this is not very likely and I am aware of no cases of
+ * this in practice (editor)
+ */
+#define INETADDRBUF_SIZE	(MAX(40, MAX(INET6_ADDRSTRLEN, INET_ADDRSTRLEN) + 1))
+
+const char *inet_ntopSS(struct sockaddr_storage *s, char *addrstr, size_t addrstrsz)
+{
 	if (!s) {
 		errno = EINVAL;
 		return NULL;
 	}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	switch (s->ss_family)
 	{
 	case AF_INET:
-		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), str, 16);
+		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), addrstr, MIN(16, addrstrsz));
 	case AF_INET6:
-		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), str, 40);
+		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), addrstr, MIN(40, addrstrsz));
 	default:
 		errno = EAFNOSUPPORT;
 		return NULL;
 	}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 }
 
-const char *inet_ntopAI(struct addrinfo *ai)
+const char *inet_ntopSS_thread_unsafe(struct sockaddr_storage *s)
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	static char addrstr[INETADDRBUF_SIZE];
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	return inet_ntopSS(s, addrstr, sizeof(addrstr));
+}
+
+const char *xinet_ntopSS(struct sockaddr_storage *s)
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	const char	*ret;
+
+	if (!addrstr)
+		return NULL;
+	ret = inet_ntopSS(s, addrstr, INETADDRBUF_SIZE);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	if (ret) /* non-null pointer to our buffer */
+		return addrstr;
+
+	/* if error */
+	free(addrstr);
+	return NULL;
+}
+
+const char *inet_ntopAI(struct addrinfo *ai, char *addrstr, size_t addrstrsz)
 {
 	/* Note: below we manipulate copies of ai - cannot cast into
 	 * specific structure type pointers right away because:
 	 *   error: cast from 'struct sockaddr *' to 'struct sockaddr_storage *'
 	 *          increases required alignment from 2 to 8
 	 */
-	/* https://stackoverflow.com/a/29147085/4715872
-	 * obviously INET6_ADDRSTRLEN is expected to be larger
-	 * than INET_ADDRSTRLEN, but this may be required in case
-	 * if for some unexpected reason IPv6 is not supported, and
-	 * INET6_ADDRSTRLEN is defined as 0
-	 * but this is not very likely and I am aware of no cases of
-	 * this in practice (editor)
-	 */
-	static char	addrstr[(INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1];
-
 	if (!ai || !ai->ai_addr) {
 		errno = EINVAL;
 		return NULL;
 	}
 
 	addrstr[0] = '\0';
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	switch (ai->ai_family) {
 		case AF_INET: {
 			struct sockaddr_in	addr_in;
 			memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
-			return inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, INET_ADDRSTRLEN);
+			return inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, MIN(INET_ADDRSTRLEN, addrstrsz));
 		}
 		case AF_INET6: {
 			struct sockaddr_in6	addr_in6;
 			memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
-			return inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, INET6_ADDRSTRLEN);
+			return inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, MIN(INET6_ADDRSTRLEN, addrstrsz));
 		}
 		default:
 			errno = EAFNOSUPPORT;
 			return NULL;
 	}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+}
+
+const char *inet_ntopAI_thread_unsafe(struct addrinfo *ai)
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	static char	addrstr[INETADDRBUF_SIZE];
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	return inet_ntopAI(ai, addrstr, sizeof(addrstr));
+}
+
+const char *xinet_ntopAI(struct addrinfo *ai)
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	const char	*ret;
+
+	if (!addrstr)
+		return NULL;
+	ret = inet_ntopAI(ai, addrstr, INETADDRBUF_SIZE);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	if (ret) /* non-null pointer to our buffer */
+		return addrstr;
+
+	/* if error */
+	free(addrstr);
+	return NULL;
 }

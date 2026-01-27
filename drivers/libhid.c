@@ -228,6 +228,8 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 # pragma GCC diagnostic pop
 #endif
 
+	upsdebugx(5, "%s: investigating path: %s",
+		__func__, HIDGetDataItem(pData, NULL));
 	ret = comm_driver->get_report(udev, id,
 		(usb_ctrl_charbuf)rbuf->data[id],
 		(usb_ctrl_charbufsize)r);
@@ -557,6 +559,7 @@ int HIDGetItemValue(hid_dev_handle_t udev, const char *hidpath, double *Value, u
 char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_t buflen)
 {
 	usb_ctrl_strindex	idx;
+	int	ret;
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
 # pragma GCC diagnostic push
@@ -624,8 +627,15 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 # pragma GCC diagnostic pop
 #endif
 
-	if (comm_driver->get_string(udev, idx, buf, (usb_ctrl_charbufsize)buflen) < 1)
+	ret = comm_driver->get_string(udev, idx, buf, (usb_ctrl_charbufsize)buflen);
+	upsdebugx(6, "%s: get_string() at index %d returned %d %s",
+		__func__, Index, ret,
+		ret < 0 ? "error code" : "useful bytes");
+	if (ret < 1)
 		buf[0] = '\0';
+	else
+		upsdebug_hex(6, "...into data buffer", buf,
+			((size_t)ret < buflen ? (size_t)ret : buflen));
 
 	return str_rtrim(buf, '\n');
 }
@@ -987,7 +997,9 @@ badvalue:
 	return i;
 }
 
-/* translate HID numeric path to string path and return path depth */
+/* translate HID numeric path to string path and return path depth
+ * can pass utab=NULL to leave it a chain of HEX strings
+ */
 static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab)
 {
 	int	i;
@@ -1001,7 +1013,7 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 			snprintfcat(string, size, ".");
 
 		/* lookup tables first (to override defaults) */
-		if ((p = hid_lookup_path(path->Node[i], utab)) != NULL)
+		if (utab != NULL && ((p = hid_lookup_path(path->Node[i], utab)) != NULL))
 		{
 			snprintfcat(string, size, "%s", p);
 			continue;

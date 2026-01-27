@@ -1,23 +1,37 @@
 # Network UPS Tools: conf
+# (annotated sample configuration files)
 
+# FIXME: Make use of this for SECFILES installation (hook?)
 INSTALL_0600 = $(INSTALL) -m 0600
 
-SECFILES = upsd.conf.sample upsd.users.sample
-PUBFILES = nut.conf.sample ups.conf.sample
-CGIPUB = hosts.conf.sample upsset.conf.sample upsstats.html.sample	\
- upsstats-single.html.sample
+# Note: ups.conf is a secured file, because for networked devices
+# it can contain SNMP, NetXML, IPMI or similar credentials
+SECFILES_STATIC = upsd.conf.sample upsd.users.sample ups.conf.sample
+SECFILES_GENERATED = upsmon.conf.sample
+PUBFILES_STATIC = nut.conf.sample
+PUBFILES_GENERATED = upssched.conf.sample
+CGIPUB_STATIC = hosts.conf.sample upsset.conf.sample
+CGIPUB_GENERATED = upsstats.html.sample upsstats-single.html.sample
+
+SECFILES = $(SECFILES_STATIC) $(SECFILES_GENERATED)
 
 if WITH_CGI
- CGI_INSTALL = $(CGIPUB)
+ CGI_INSTALL_STATIC = $(CGIPUB_STATIC)
+ CGI_INSTALL_GENERATED = $(CGIPUB_GENERATED)
 else
  CGI_INSTALL = 
+ CGI_INSTALL_GENERATED = 
 endif
 
-dist_sysconf_DATA = $(SECFILES) $(PUBFILES) $(CGI_INSTALL)
-nodist_sysconf_DATA = upssched.conf.sample upsmon.conf.sample
+conf_examplesdir = @CONFPATH_EXAMPLES@
+
+dist_conf_examples_DATA = $(SECFILES_STATIC) $(PUBFILES_STATIC) $(CGI_INSTALL_STATIC)
+nodist_conf_examples_DATA = $(SECFILES_GENERATED) $(PUBFILES_GENERATED) \
+ $(CGI_INSTALL_GENERATED)
 
 SPELLCHECK_SRC = $(dist_sysconf_DATA) \
- upssched.conf.sample.in upsmon.conf.sample.in
+ upssched.conf.sample.in upsmon.conf.sample.in \
+ upsstats.html.sample.in upsstats-single.html.sample.in
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative

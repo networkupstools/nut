@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.98"
+#define DRIVER_VERSION	"0.102"
 
 
 /* driver description structure */
@@ -166,7 +166,6 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	char buf[BUFFLEN];
 #ifndef WIN32
 	int RTS = TIOCM_RTS;
 #endif	/* !WIN32 */
@@ -179,6 +178,11 @@ void upsdrv_initups(void)
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
 
+	/* TOTHINK: This looks like comms with the device and may belong in
+	 * upsdrv_initinfo(). But in upsdrv_cleanup() we have disable_ups_comm()
+	 * at least, which gets registered and might get called before initinfo.
+	 */
+
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
 #else	/* WIN32 */
@@ -190,6 +194,28 @@ void upsdrv_initups(void)
 	}
 #endif	/* WIN32 */
 	enable_ups_comm();
+}
+
+/* --------------------------------------------------------------- */
+
+void upsdrv_initinfo(void)
+{
+	char buf[BUFFLEN];
+	const char *model = NULL;
+	char *firmware = NULL;
+	char *p;
+	char *v = NULL;  /* for parsing Si output, get Version ID */
+	int  table;
+	int  tries;
+	int  status_ok = 0;
+	ssize_t  bytes_rcvd;
+	int  si_data1 = 0;
+	int  si_data2 = 0;
+	mge_info_item_t *item;
+	models_name_t *model_info;
+	mge_model_info_t *legacy_model;
+	char infostr[32];
+	ssize_t  chars_rcvd;
 
 	/* Try to set "Low Battery Level" (if supported and given) */
 	if (getval ("lowbatt"))
@@ -226,28 +252,6 @@ void upsdrv_initups(void)
 		else
 			upsdebugx(1, "initups: OffDelay unavailable");
 	}
-}
-
-/* --------------------------------------------------------------- */
-
-void upsdrv_initinfo(void)
-{
-	char buf[BUFFLEN];
-	const char *model = NULL;
-	char *firmware = NULL;
-	char *p;
-	char *v = NULL;  /* for parsing Si output, get Version ID */
-	int  table;
-	int  tries;
-	int  status_ok = 0;
-	ssize_t  bytes_rcvd;
-	int  si_data1 = 0;
-	int  si_data2 = 0;
-	mge_info_item_t *item;
-	models_name_t *model_info;
-	mge_model_info_t *legacy_model;
-	char infostr[32];
-	ssize_t  chars_rcvd;
 
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
@@ -534,6 +538,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* --------------------------------------------------------------- */
 /*                      Internal Functions                         */
 /* --------------------------------------------------------------- */
@@ -543,9 +552,15 @@ int instcmd(const char *cmdname, const char *extra)
 {
 	char temp[BUFFLEN];
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	/* Start battery test */
 	if (!strcasecmp(cmdname, "test.battery.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		mge_command(temp, sizeof(temp), "Bx 1");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 
@@ -571,18 +586,22 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		sdtype = SD_STAYOFF;
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		upsdrv_shutdown();
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
 		sdtype = SD_RETURN;
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		upsdrv_shutdown();
 	}
 
 	/* Power Off [all] plugs */
 	if (!strcasecmp(cmdname, "load.off"))
 	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* TODO: Powershare (per plug) control */
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
@@ -603,6 +622,8 @@ int instcmd(const char *cmdname, const char *extra)
 	/* Power On all plugs */
 	if (!strcasecmp(cmdname, "load.on"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* TODO: add per plug control */
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
@@ -622,10 +643,11 @@ int instcmd(const char *cmdname, const char *extra)
 
 	/* Switch on/off Maintenance Bypass */
 	if ((!strcasecmp(cmdname, "bypass.start"))
-		|| (!strcasecmp(cmdname, "bypass.stop")))
+	 || (!strcasecmp(cmdname, "bypass.stop")))
 	{
 		/* TODO: add control on bypass value */
 		/* read maintenance bypass status */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if(mge_command(temp, sizeof(temp), "Ps") > 0)
 		{
 			if (temp[0] == '1')
@@ -648,7 +670,7 @@ int instcmd(const char *cmdname, const char *extra)
 		}
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -660,20 +682,32 @@ int setvar(const char *varname, const char *val)
 	char temp[BUFFLEN];
 	char cmd[15];
 
+	upsdebug_SET_STARTING(varname, val);
+
 	/* TODO : add some controls */
 
 	if(info_variable_ok(varname))
 	{
+		char	*qmark = NULL;
+
 		/* format command */
 		snprintf(cmd, sizeof(cmd), "%s", info_variable_cmd(varname));
-		sprintf(strchr(cmd, '?'), "%s", val);
+		qmark = strchr(cmd, '?');
+		if (qmark) {
+			snprintf(qmark, sizeof(cmd) - (qmark - cmd), "%s", val);
+		} else {
+			upsdebugx(1, "%s: expected command pattern to include a question mark for us to replace with value", __func__);
+			/* TOTHINK: fail? for now fall through with verbatim command attempt */
+		}
 
 		/* Execute command */
 		mge_command(temp, sizeof(temp), cmd);
 		upslogx(LOG_INFO, "setvar: UPS response to Set %s to %s was %s", varname, val, temp);
-	} else
-		upsdebugx(1, "setvar: Variable %s not supported by UPS", varname);
+		return STAT_SET_HANDLED;
+	}
 
+	upsdebugx(1, "setvar: Variable %s not supported by UPS", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 

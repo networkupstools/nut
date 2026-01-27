@@ -37,7 +37,7 @@
 #define BATTERY_CHARGE_LOW                  15
 
 #define DRIVER_NAME                         "hwmon-INA219 UPS driver"
-#define DRIVER_VERSION                      "0.03"
+#define DRIVER_VERSION                      "0.04"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -455,7 +455,7 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("battery.charge", "%u", charge);
 
 	if (charge <= battery_charge_low && current > 0)
-		dstate_setinfo("battery.runtime", "%d", 60); // 1 minute
+		dstate_setinfo("battery.runtime", "%d", 60);	/* 1 minute */
 
 	status_commit();
 	dstate_dataok();
@@ -475,6 +475,11 @@ void upsdrv_shutdown(void)
 void upsdrv_help(void)
 {
 	/* No special options in this driver (vars/flags are auto-documented) */
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_cleanup(void)

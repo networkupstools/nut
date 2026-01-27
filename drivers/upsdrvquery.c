@@ -52,6 +52,14 @@
  */
 int nut_upsdrvquery_debug_level = NUT_UPSDRVQUERY_DEBUG_LEVEL_DEFAULT;
 
+/* Do our best to disable SIGPIPE in failed write()/send() attempts?
+ * Note errno=EPIPE should still be raised in case of failure, just
+ * the process using this code would not crash. Feature is enabled
+ * by default, but consumers which handle their signals specially
+ * can disable it by setting upsdrvquery_NOSIGPIPE=0
+ */
+int upsdrvquery_NOSIGPIPE = 1;
+
 udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	udq_pipe_conn_t	*conn = (udq_pipe_conn_t*)xcalloc(1, sizeof(udq_pipe_conn_t));
 
@@ -102,7 +110,7 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 
 	if (result == FALSE) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
-			upslog_with_errno(LOG_ERR, "WaitNamedPipe : %d\n", GetLastError());
+			upslog_with_errno(LOG_ERR, "WaitNamedPipe (%s): %d", sockfn, GetLastError());
 		return NULL;
 	}
 
@@ -187,8 +195,59 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 	if (VALID_FD(conn->sockfd)) {
 		int	nudl = nut_upsdrvquery_debug_level;
 		ssize_t ret;
+
+		/* The connection may be closed on the other side,
+		 * so send() can issue SIGPIPE and by default the
+		 * process crashes. Try to work around that here.
+		 * https://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
+		 * NOTE: in upsdrvquery_write() we use MSG_NOSIGNAL
+		 *  where available instead of plain write().
+		 */
+#ifndef WIN32
+# ifndef MSG_NOSIGNAL
+#  ifdef SO_NOSIGPIPE
+		/* Just for this one socket (and gonna be gone soon): */
+		int	set = 1;
+		if (upsdrvquery_NOSIGPIPE)
+			setsockopt(conn->sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+#  else	/* !SO_NOSIGPIPE */
+		/* Not thread-safe, but we do not aim for this here, hopefully
+		 * (any nut-scanner users, though?) and this is a last-resort
+		 * variant during build. Probably plain signal(SIGPIPE, SIG_IGN)
+		 * would be as good (used all over NUT code base) -- but we do
+		 * not know whether a random API consumer handles or ignores
+		 * the signal?..
+		 */
+		sigset_t	old_state, set;
+
+		if (upsdrvquery_NOSIGPIPE) {
+			/* get the current state */
+			sigprocmask(SIG_BLOCK, NULL, &old_state);
+
+			/* add signal_to_block to that existing state */
+			set = old_state;
+			sigaddset(&set, SIGPIPE);
+
+			/* block that signal also */
+			sigprocmask(SIG_BLOCK, &set, NULL);
+		}
+#  endif	/* !SO_NOSIGPIPE */
+# endif		/* !MSG_NOSIGNAL */
+#endif	/* !WIN32 */
+
 		upsdebugx(5, "%s: closing driver socket, try to say goodbye", __func__);
+
 		ret = upsdrvquery_write(conn, "LOGOUT\n");
+
+#ifndef WIN32
+# ifndef MSG_NOSIGNAL
+#  ifndef SO_NOSIGPIPE
+		if (upsdrvquery_NOSIGPIPE)
+			sigprocmask(SIG_BLOCK, &old_state, NULL);
+#  endif	/* !SO_NOSIGPIPE */
+# endif		/* !MSG_NOSIGNAL */
+#endif	/* !WIN32 */
+
 		if (7 <= ret) {
 			upsdebugx(5, "%s: okay", __func__);
 #ifdef WIN32
@@ -196,7 +255,15 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 #endif  /* WIN32 */
 			usleep(1000000);
 		} else {
-			upsdebugx(5, "%s: must have been closed on the other side", __func__);
+			if (errno == EPIPE) {
+				upsdebug_with_errno(5, "%s: write failed, socket must have been closed on the other side - okay for goodbye", __func__);
+#ifdef WIN32
+				loggedOut = 1;
+#endif  /* WIN32 */
+				usleep(1000000);
+			} else {
+				upsdebug_with_errno(5, "%s: write failed", __func__);
+			}
 		}
 		nut_upsdrvquery_debug_level = nudl;
 	}
@@ -363,12 +430,21 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		ret = -1;
 #endif  /* WIN32 */
 
-	upsdebugx(ret > 0 ? 5 : 6,
-		"%s: received %" PRIiMAX " bytes from driver socket: %s",
-		__func__, (intmax_t)ret, (ret > 0 ? conn->buf : "<null>"));
-	if (ret > 0 && conn->buf[0] == '\0')
-		upsdebug_hex(5, "payload starts with zero byte: ",
-			conn->buf, ((size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret));
+	if (ret > 0) {
+		size_t len = (size_t)ret > sizeof(conn->buf) ? sizeof(conn->buf) : (size_t)ret;
+
+		upsdebugx(5, "%s: received %" PRIiMAX " bytes from driver socket: %.*s",
+			__func__, (intmax_t)ret, (int)len, conn->buf);
+
+		if (conn->buf[0] == '\0') {
+			upsdebug_hex(5, "payload starts with zero byte: ",
+				conn->buf, len);
+		}
+	} else {
+		upsdebugx(6, "%s: received %" PRIiMAX " bytes from driver socket: <null>",
+			__func__, (intmax_t)ret);
+	}
+
 	return ret;
 }
 
@@ -390,7 +466,15 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 	}
 
 #ifndef WIN32
+# ifdef MSG_NOSIGNAL
+	if (upsdrvquery_NOSIGPIPE)
+		ret = send(conn->sockfd, buf, buflen, MSG_NOSIGNAL);
+	else
+		ret = write(conn->sockfd, buf, buflen);
+# else
+	/* Per docs, same as send() with zero flags value */
 	ret = write(conn->sockfd, buf, buflen);
+# endif
 
 	if (ret < 0 || ret != (int)buflen) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
@@ -415,32 +499,43 @@ socket_error:
 	return -1;
 }
 
-ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
-	struct timeval	start, now;
+/* Return 1 if we had a reply, 0 if not, -1 on socket errors */
+ssize_t upsdrvquery_ping(udq_pipe_conn_t *conn, struct timeval *ptv, useconds_t read_interval) {
+	struct timeval	start, now, last, tv;
+	double	maxdiff;
 
-	/* Avoid noise */
-	if (upsdrvquery_write(conn, "NOBROADCAST\n") < 0)
-		goto socket_error;
-
-	if (tv.tv_sec < 1 && tv.tv_usec < 1) {
-		upsdebugx(5, "%s: proclaiming readiness for tracked commands without flush of server messages", __func__);
-		return 1;
+	if (!ptv) {
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+		ptv = &tv;
 	}
+	maxdiff = (double)(ptv->tv_sec) + 0.000001 * (double)(ptv->tv_usec);
 
-	/* flush incoming, if any */
 	gettimeofday(&start, NULL);
 
 	if (upsdrvquery_write(conn, "PING\n") < 0)
-		goto socket_error;
+		return -1;
 
-	upsdebugx(5, "%s: waiting for a while to flush server messages", __func__);
+	last = start;
 	while (1) {
-		char *buf;
-		upsdrvquery_read_timeout(conn, tv);
+		char	*buf;
+		ssize_t	read_ret;
+		double	delta;
+
+		errno = 0;
+		read_ret = upsdrvquery_read_timeout(conn, *ptv);
+
+		if (errno == EPIPE) {
+			upsdebug_with_errno(5, "%s: upsdrvquery_read_timeout() connection was closed: %" PRIiSIZE, __func__, read_ret);
+			return -1;
+		}
+
+		upsdebug_with_errno(5, "%s: upsdrvquery_read_timeout() returned %" PRIiSIZE, __func__, read_ret);
+
 		gettimeofday(&now, NULL);
-		if (difftimeval(now, start) > ((double)(tv.tv_sec) + 0.000001 * (double)(tv.tv_usec))) {
+		if (difftimeval(now, start) > maxdiff) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
-			break;
+			return 0;
 		}
 
 		/* Await a PONG for quick confirmation of achieved quietness
@@ -455,7 +550,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		while (buf && *buf) {
 			if (!strncmp(buf, "PONG\n", 5)) {
 				upsdebugx(5, "%s: got expected PONG", __func__);
-				goto finish;
+				return 1;
 			}
 			buf = strchr(buf, '\n');
 			if (buf) {
@@ -467,20 +562,77 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 			}
 		}
 
-		/* Diminishing timeouts for read() */
-		tv.tv_usec -= (suseconds_t)(difftimeval(now, start));
-		while (tv.tv_usec < 0) {
-			tv.tv_sec--;
-			tv.tv_usec = 1000000 + tv.tv_usec;	/* Note it is negative */
+		if (read_interval) {
+			upsdebugx(5, "%s: sleep %" PRIuMAX "usec", __func__, (uintmax_t)read_interval);
+			usleep(read_interval);
 		}
-		if (tv.tv_sec <= 0 && tv.tv_usec <= 0) {
+
+		/* Diminishing timeouts for read() and later processing */
+		last = now;
+		gettimeofday(&now, NULL);
+		delta = difftimeval(now, last);
+		upsdebugx(7, "%s: start   tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}",
+			__func__, (intmax_t)start.tv_sec, (intmax_t)start.tv_usec);
+		upsdebugx(7, "%s: last    tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}",
+			__func__, (intmax_t)last.tv_sec, (intmax_t)last.tv_usec);
+		upsdebugx(7, "%s: now     tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}",
+			__func__, (intmax_t)now.tv_sec, (intmax_t)now.tv_usec);
+		upsdebugx(6, "%s: initial tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}; applying delta %g",
+			__func__, (intmax_t)ptv->tv_sec, (intmax_t)ptv->tv_usec,
+			delta);
+
+		/* Note: delta is in whole seconds and fractional useconds */
+		while (delta > 1) {
+			delta -= 1;
+			ptv->tv_sec--;
+		}
+
+		/* Fractional remainder */
+		ptv->tv_usec -= (suseconds_t)(delta * 1000000);
+		upsdebugx(7, "%s: semiupd tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "} (1e6*delta = %" PRIiMAX ")",
+			__func__, (intmax_t)ptv->tv_sec, (intmax_t)ptv->tv_usec,
+			(intmax_t)(delta * 1000000));
+		while (ptv->tv_usec < 0) {
+			ptv->tv_sec--;
+			ptv->tv_usec = 1000000 + ptv->tv_usec;	/* Note it is negative */
+		}
+		upsdebugx(6, "%s: updated tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}",
+			__func__, (intmax_t)ptv->tv_sec, (intmax_t)ptv->tv_usec);
+		if (ptv->tv_sec < 0) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
-			break;
+			return 0;
 		}
+	}
+}
+
+ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	/* Avoid noise */
+	if (upsdrvquery_write(conn, "NOBROADCAST\n") < 0)
+		goto socket_error;
+
+	if (tv.tv_sec < 1 && tv.tv_usec < 1) {
+		upsdebugx(5, "%s: proclaiming readiness for tracked commands without flush of server messages", __func__);
+		return 1;
+	}
+
+	/* flush incoming, if any */
+	upsdebugx(5, "%s: waiting for a while to flush server messages - posting a PING, waiting for PONG", __func__);
+	switch (upsdrvquery_ping(conn, &tv, 1000)) {
+		case -1:	goto socket_error;
+		case  0:	goto finish;	/* No reply - maybe handle somehow? */
+		case  1:	break;	/* Got PONG */
+		default:	break;
 	}
 
 	/* Check that we can have a civilized dialog --
-	 * nope, this one is for network protocol */
+	 * nope, this one is for network protocol
+	 *
+	 * FIXME: strcmp(conn->buf, "ON") -> buf is NOT null terminated!
+	 * The above FIXME is not the reason this block is/was commented out.
+	 */
 /*
 	if (upsdrvquery_write(conn, "GET TRACKING\n") < 0)
 		goto socket_error;
@@ -498,8 +650,28 @@ finish:
 	return 1;
 
 socket_error:
-	upsdrvquery_close(conn);
+	/* upsdrvquery_close(conn); */
 	return -1;
+}
+
+ssize_t upsdrvquery_restore_broadcast(udq_pipe_conn_t *conn)
+{
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	if (upsdrvquery_write(conn, "BROADCAST 1\n") < 0) {
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG) {
+			upslog_with_errno(LOG_ERR, "%s: could not restore broadcast, write to socket [%d] failed",
+				__func__, conn->sockfd);
+		}
+
+		return -1;
+	}
+
+	upsdebugx(5, "%s: restored broadcast for connection on socket [%d]",
+		__func__, conn->sockfd);
+
+	return 1;
 }
 
 /* UUID v4 basic implementation
@@ -538,6 +710,9 @@ ssize_t upsdrvquery_request(
 	size_t	qlen;
 	char	tracking_id[UUID4_LEN];
 	struct timeval	start, now;
+
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
 
 	if (snprintf(qbuf, sizeof(qbuf), "%s", query) < 0)
 		goto socket_error;
@@ -626,7 +801,7 @@ ssize_t upsdrvquery_request(
 	}
 
 socket_error:
-	upsdrvquery_close(conn);
+	/* upsdrvquery_close(conn); */
 	return -1;
 }
 
@@ -636,9 +811,49 @@ ssize_t upsdrvquery_oneshot(
 	char *buf, const size_t bufsz,
 	struct timeval *ptv
 ) {
+	udq_pipe_conn_t	*conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
+	ssize_t	ret;
+
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	ret = upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+
+	upsdrvquery_close(conn);
+	free(conn);
+
+	return ret;
+}
+
+ssize_t upsdrvquery_oneshot_sockfn(
+	const char *sockfn,
+	const char *query,
+	char *buf, const size_t bufsz,
+	struct timeval *ptv
+) {
+	udq_pipe_conn_t	*conn = upsdrvquery_connect(sockfn);
+	ssize_t	ret;
+
+	if (!conn || INVALID_FD(conn->sockfd))
+		return -1;
+
+	ret = upsdrvquery_oneshot_conn(conn, query, buf, bufsz, ptv);
+
+	upsdrvquery_close(conn);
+	free(conn);
+
+	return ret;
+}
+
+/* One-shot using an existing connection (caller must close + free connection) */
+ssize_t upsdrvquery_oneshot_conn(
+	udq_pipe_conn_t *conn,
+	const char *query,
+	char *buf, const size_t bufsz,
+	struct timeval *ptv
+) {
 	struct timeval	tv;
 	ssize_t	ret;
-	udq_pipe_conn_t	*conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
 
 	if (!conn || INVALID_FD(conn->sockfd))
 		return -1;
@@ -679,10 +894,11 @@ ssize_t upsdrvquery_oneshot(
 	}
 
 	if (buf) {
-		snprintf(buf, bufsz, "%s", conn->buf);
+		size_t len = strnlen(conn->buf, sizeof(conn->buf));
+		snprintf(buf, bufsz, "%.*s", (int)len, conn->buf);
 	}
+
 finish:
-	upsdrvquery_close(conn);
-	free(conn);
+	upsdrvquery_restore_broadcast(conn); /* best effort */
 	return ret;
 }

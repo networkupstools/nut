@@ -1,12 +1,17 @@
 #!/bin/sh
 
-# Network UPS Tools (NUT) systemd-shutdown integration handler.
+# Network UPS Tools (NUT) systemd-shutdown integration handler for UPS power
+# cycling (or power-off) and power-race avoidance.
 #
 # NOTE: This script requires both nut-server package (or more specifically,
 # the drivers for your device, which may be in further packages grouped
 # by media/protocol and third-party dependencies), nut-client (upsmon),
 # and their configuration files to be present locally and on still-mounted
 # filesystems (may be read-only).
+#
+# It is typically installed as /usr/lib/systemd/system-shutdown/nutshutdown
+# but other OSes and service management frameworks may also use an adapted
+# variant of this script.
 #
 # Copyright (C) 2011-2025 by NUT contributors
 # Michal Hlavinka, Laurent Bigonville, Arnaud Quette, Jim Klimov et al.
@@ -32,6 +37,17 @@ if [ -s "@CONFPATH@/nut.conf" ]; then
     . "@CONFPATH@/nut.conf" || true
 fi
 
+if [ x"${MODE}" = xnone ]; then
+    # Per https://github.com/networkupstools/nut/issues/2935
+    # it is possible that NUT gets administratively disabled
+    # some time after a POWERDOWNFLAG file is created, and
+    # before it is deleted. In this case it never got deleted,
+    # and if that was in a persistent location - then every OS
+    # shutdown or reboot got treated as FSD with UPS power-off.
+    echo "$@: MODE=none so quetly exiting" >&2
+    exit 0
+fi
+
 [ x"${POWEROFF_QUIET-}" = xtrue ] \
 || POWEROFF_QUIET="false"
 
@@ -45,6 +61,8 @@ fi
     $POWEROFF_QUIET || echo "$0: WARNING: could not locate '@SBINDIR@/upsdrvctl' - will not command any UPS devices to shut down" >&2
 }
 
+# This depends on POWERDOWNFLAG being configured in upsmon.conf
+# and can happen on both NUT servers and pure client machines:
 if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
     if [ -x "@SBINDIR@/upsdrvctl" ] ; then
         $POWEROFF_QUIET || {

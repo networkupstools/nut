@@ -666,6 +666,10 @@ int main(int argc, char **argv)
 	}
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
+#if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
+
 	while ((i = getopt(argc, argv, "+hls:p:t:u:wVW:")) != -1) {
 		switch (i)
 		{

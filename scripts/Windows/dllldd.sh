@@ -6,7 +6,11 @@
 # for Windows, bundled with open-source dependencies.
 #
 # Copyright (C)
-#   2022  Jim Klimov <jimklimov+nut@gmail.com>
+#   2022-2025  Jim Klimov <jimklimov+nut@gmail.com>
+
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
 
 REGEX_WS="`printf '[\t ]'`"
 REGEX_NOT_WS="`printf '[^\t ]'`"
@@ -26,24 +30,24 @@ dllldd() (
 		for OD in objdump "$ARCH-objdump" ; do
 			(command -v "$OD" >/dev/null 2>/dev/null) || continue
 
-			ODOUT="`$OD -x "$@" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | sort | uniq | grep -vEi '^(|/.*/)(msvcrt|userenv|bcrypt|rpcrt4|usp10|(advapi|kernel|user|wsock|ws2_|gdi|ole||shell)(32|64))\.dll$'`" \
+			ODOUT="`$OD -x \"$@\" 2>/dev/null | ${EGREP} -i \"DLL Name:\" | awk '{print $NF}' | sort | uniq | ${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|rpcrt4|usp10|(advapi|kernel|user|wsock|ws2_|gdi|ole||shell)(32|64))\.dll$'`" \
 			&& [ -n "$ODOUT" ] || continue
 
 			for F in $ODOUT ; do
 				if [ -n "$DESTDIR" -a -d "${DESTDIR}" ] ; then
-					OUT="`find "$DESTDIR" -type f -name "$F" \! -size 0 2>/dev/null | head -1`" \
+					OUT="`find \"$DESTDIR\" -type f -name \"$F\" \! -size 0 2>/dev/null | head -1`" \
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
 				if [ -n "$ARCH" -a -d "/usr/${ARCH}" ] ; then
-					OUT="`ls -1 "/usr/${ARCH}/bin/$F" "/usr/${ARCH}/lib/$F" 2>/dev/null || true`" \
+					OUT="`ls -1 \"/usr/${ARCH}/bin/$F\" \"/usr/${ARCH}/lib/$F\" 2>/dev/null || true`" \
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
 				if [ -n "$MSYSTEM_PREFIX" -a -d "$MSYSTEM_PREFIX" ] ; then
-					OUT="`ls -1 "${MSYSTEM_PREFIX}/bin/$F" "${MSYSTEM_PREFIX}/lib/$F" 2>/dev/null || true`" \
+					OUT="`ls -1 \"${MSYSTEM_PREFIX}/bin/$F\" \"${MSYSTEM_PREFIX}/lib/$F\" 2>/dev/null || true`" \
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
 				if [ -n "$MINGW_PREFIX" -a "$MINGW_PREFIX" != "$MSYSTEM_PREFIX" -a -d "$MINGW_PREFIX" ] ; then
-					OUT="`ls -1 "${MINGW_PREFIX}/bin/$F" "${MINGW_PREFIX}/lib/$F" 2>/dev/null || true`" \
+					OUT="`ls -1 \"${MINGW_PREFIX}/bin/$F\" \"${MINGW_PREFIX}/lib/$F\" 2>/dev/null || true`" \
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
 
@@ -62,26 +66,26 @@ dllldd() (
 				COMPILER_PATHS=""
 				if [ -n "$CC" ] ; then
 					# gcc and clang support this option:
-					COMPILER_PATHS="`$CC --print-search-dirs | grep libraries: | sed 's,^libraries: *=/,/,'`"
+					COMPILER_PATHS="`$CC --print-search-dirs | ${GREP} libraries: | sed 's,^libraries: *=/,/,'`"
 				else
 					# FIXME: Try to look up in config.log first?
 					if [ -n "$ARCH" ] && (command -v "${ARCH}-gcc") 2>/dev/null >/dev/null ; then
-						COMPILER_PATHS="`"${ARCH}-gcc" --print-search-dirs | grep libraries: | sed 's,^libraries: *=/,/,'`"
+						COMPILER_PATHS="`\"${ARCH}-gcc\" --print-search-dirs | ${GREP} libraries: | sed 's,^libraries: *=/,/,'`"
 					fi
 				fi
 				if [ -n "$CXX" ] ; then
 					# g++ and clang support this option:
-					COMPILER_PATHS="`$CXX --print-search-dirs | grep libraries: | sed 's,^libraries: *=/,/,'`:${COMPILER_PATHS}"
+					COMPILER_PATHS="`$CXX --print-search-dirs | ${GREP} libraries: | sed 's,^libraries: *=/,/,'`:${COMPILER_PATHS}"
 				else
 					# FIXME: Try to look up in config.log first?
 					if [ -n "$ARCH" ] && (command -v "${ARCH}-g++") 2>/dev/null >/dev/null ; then
-						COMPILER_PATHS="`"${ARCH}-g++" --print-search-dirs | grep libraries: | sed 's,^libraries: *=/,/,'`"
+						COMPILER_PATHS="`\"${ARCH}-g++\" --print-search-dirs | ${GREP} libraries: | sed 's,^libraries: *=/,/,'`"
 					fi
 				fi
 				if [ -n "$COMPILER_PATHS" ] ; then
-					COMPILER_PATHS="`echo "$COMPILER_PATHS" | tr ':' '\n'`"
+					COMPILER_PATHS="`echo \"$COMPILER_PATHS\" | tr ':' '\n'`"
 					for P in $COMPILER_PATHS ; do
-						OUT="`ls -1 "${P}/$F" 2>/dev/null || true`" \
+						OUT="`ls -1 \"${P}/$F\" 2>/dev/null || true`" \
 						&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue 2 ; }
 					done
 				fi
@@ -98,7 +102,7 @@ dllldd() (
 	#         libiconv-2.dll => /mingw64/bin/libiconv-2.dll (0x7ffd26c90000)
 	# but it tends to say "not a dynamic executable"
 	# or that file type is not supported
-	OUT="`ldd "$@" 2>/dev/null | grep -Ei '\.dll' | grep -E '/(bin|lib)/' | sed "s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2," | sort | uniq | grep -Ei '\.dll$'`" \
+	OUT="`ldd \"$@\" 2>/dev/null | ${EGREP} -i '\.dll' | ${EGREP} '/(bin|lib)/' | sed \"s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,\" | sort | uniq | ${EGREP} -i '\.dll$'`" \
 	&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 
 	return 1
@@ -116,7 +120,7 @@ dlllddrec() (
 # even if hidden by conditionals or separate method like this (might
 # optionally source it from another file though?)
 #diffvars_bash() {
-#	diff -bu <(echo "$1") <(echo "$2") | grep -E '^\+[^+]' | sed 's,^\+,,'
+#	diff -bu <(echo "$1") <(echo "$2") | ${EGREP} '^\+[^+]' | sed 's,^\+,,'
 #}
 
 dllldddir() (
@@ -128,7 +132,7 @@ dllldddir() (
 	fi
 
 	# Assume no whitespace in built/MSYS/MinGW paths...
-	ORIGFILES="`find "$@" -type f | grep -Ei '\.(exe|dll)$'`" || return
+	ORIGFILES="`find \"$@\" -type f | ${EGREP} -i '\.(exe|dll)$'`" || return
 
 	# Quick OK, nothing here?
 	[ -n "$ORIGFILES" ] || return 0
@@ -149,15 +153,15 @@ dllldddir() (
 
 		# Next iteration we drill into those we have not seen yet
 		#if [ -n "$BASH_VERSION" ] ; then
-		#	NEXTDLLS="`diffvars_bash "$SEENDLLS" "$MOREDLLS"`"
+		#	NEXTDLLS="`diffvars_bash \"$SEENDLLS\" \"$MOREDLLS\"`"
 		#else
 			echo "$SEENDLLS" > "$TMP1"
 			echo "$MOREDLLS" > "$TMP2"
-			NEXTDLLS="`diff -bu "$TMP1" "$TMP2" | grep -E '^\+[^+]' | sed 's,^\+,,'`"
+			NEXTDLLS="`diff -bu \"$TMP1\" \"$TMP2\" | ${EGREP} '^\+[^+]' | sed 's,^\+,,'`"
 		#fi
 
 		if [ -n "$NEXTDLLS" ] ; then
-			SEENDLLS="`( echo "$SEENDLLS" ; echo "$NEXTDLLS" ) | sort | uniq`"
+			SEENDLLS="`( echo \"$SEENDLLS\" ; echo \"$NEXTDLLS\" ) | sort | uniq`"
 		fi
 	done
 
@@ -182,7 +186,7 @@ dllldddir_pedantic() (
 	# Two passes: one finds direct dependencies of all EXE/DLL under the
 	# specified location(s); then trims this list to be unique, and then
 	# the second pass recurses those libraries for their dependencies:
-	find "$@" -type f | grep -Ei '\.(exe|dll)$' \
+	find "$@" -type f | ${EGREP} -i '\.(exe|dll)$' \
 	| while read E ; do dllldd "$E" ; done | sort | uniq \
 	| while read D ; do echo "$D"; dlllddrec "$D" ; done | sort | uniq
 )

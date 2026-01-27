@@ -238,7 +238,7 @@ static void * list_nut_devices_thready(void * arg)
 		 * around the host name:
 		 */
 		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1 + 1 + 1;
-		if (port != PORT) {
+		if (port != NUT_PORT) {
 			/* colon and up to 5 digits */
 			buf_size += 6;
 		}
@@ -254,7 +254,7 @@ static void * list_nut_devices_thready(void * arg)
 			if (*hostname == '[')
 				hostname_colon = NULL;
 
-			if (port != PORT) {
+			if (port != NUT_PORT) {
 				if (hostname_colon) {
 					snprintf(dev->port, buf_size, "%s@[%s]:%" PRIu16,
 						answer[1], hostname, port);

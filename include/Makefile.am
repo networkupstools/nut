@@ -12,7 +12,7 @@
 include_HEADERS =
 dist_noinst_HEADERS = \
     attribute.h common.h extstate.h proto.h			\
-    state.h str.h timehead.h upsconf.h				\
+    state.h str.h strjson.h timehead.h upsconf.h		\
     nut_bool.h nut_float.h nut_stdint.h nut_platform.h		\
     wincompat.h
 
@@ -34,14 +34,31 @@ BUILT_SOURCES = nut_version.h
 CLEANFILES = nut_version.h nut_version.h.tmp*
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
+# Can be set by higher-level "make" in a recursive build to avoid re-runs
+# of the logic via dependency tracking when this is generally forced (via
+# configure script options) for each build attempt; DO NOT pre-define here:
+###NUT_VERSION_H_GENERATED = false
+
 # magic to include Git version information in NUT version string
 # (for builds not made from the tagged commit in a Git workspace)
 # NOTE: For pre-releases, SEMVER may differ from NUT_VERSION base
 # (e.g. a commit tagged as 2.8.3-rc5 can have its own NUT_VERSION based
 # on 2.8.2-something, but is assumed as a pre-release for 2.8.3 SEMVER)
 nut_version.h: @FORCE_NUT_VERSION@
-	@echo "  GENERATE-HEADER	$@" ; \
+	@if [ -s '$@' ] && ( [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ) ; then \
+	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	        echo "=== SKIP (include) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \
+	    fi ; \
+	    exit 0 ; \
+	 fi ; \
+	 if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	    echo "  GENERATE-HEADER	$@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})"; \
+	 else \
+	    echo "  GENERATE-HEADER	$@"; \
+	 fi ; \
 	 RES=0; \
+	 GREP="$(GREP)"; EGREP="$(EGREP)"; \
+	 export GREP; export EGREP; \
 	 GITREV="`$(top_srcdir)/tools/gitlog2version.sh`" || GITREV=""; \
 	 GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE $(top_srcdir)/tools/gitlog2version.sh 2>/dev/null`" || GITREV_IS_RELEASE="false"; \
 	 GITREV_IS_PRERELEASE="`NUT_VERSION_QUERY=IS_PRERELEASE $(top_srcdir)/tools/gitlog2version.sh 2>/dev/null`" || GITREV_IS_PRERELEASE="false"; \

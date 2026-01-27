@@ -120,6 +120,9 @@ Set polling frequency for full updates, in seconds. Compared to the quick
 updates performed every "pollinterval" (the latter option is described in
 linkman:ups.conf[5]), the "pollfreq" interval is for polling the less-critical
 variables.  The default value is 30 (in seconds), or 12 sec for CPS devices.
++
+NOTE: This setting is different from a `POLLFREQ` supported by linkman:upsmon[8]
+(for details see its linkman:upsmon.conf[5]).
 
 *pollonly*::
 If this flag is set, the driver will not use Interrupt In transfers during the
@@ -185,12 +188,14 @@ the `OL+DISCHRG` message logging is not triggered by variations of the charge.
 Set to delay status-setting (and log messages) about device entering `LB` or
 `LB+RB` state.
 +
-Some APC BXnnnnMI device models or firmware versions (reportedly 2023-2024)
-frequently report low battery, replace battery, and all ok within a couple
-of seconds, sometimes but not always preceded by OL+DISCHRG (presumably
-calibration). This setting lets the driver ignore short-lived states and
-only pay attention if they persist longer than this setting (and the device
-power state is `OL`).
+Some APC BXnnnnMI device models or firmware versions (reportedly 2023-2024),
+or APC BVKnnnnM2 device models, or APC BKnnnnM2-CH (a China-market-only model),
+frequently report "low battery", "replace battery", and "all ok" states
+changing rapidly within a couple of seconds, sometimes (but not always)
+preceded by `OL+DISCHRG` (presumably calibration).
++
+This setting lets the driver ignore short-lived states and only pay attention
+if they persist longer than this setting (and the device power state is `OL`).
 
 *lbrb_log_delay_without_calibrating*::
 Set to apply `lbrb_log_delay_sec` even if device is not calibrating.
@@ -218,6 +223,15 @@ firmwares out there with opposite behaviors, we provide this toggle to use
 old behavior in a particular deployment.  Maybe it was just a bug and nobody
 needs this fall-back...
 
+*powercom_sdcmd_discrete_delay*::
+Some devices (Raptor and Smart KING Pro series) follow the protocol
+where we can not set arbitrary value of shutdown delay in seconds
+(like in other powercom UPSes), but must use values only from the
+"Table of possible delays for Shutdown commands" specified in the
+protocol document. This option causes the driver to convert delays
+between seconds (in standard NUT variables) and nearest indexed
+entry from that table.
+
 *explore*::
 With this option, the driver will connect to any device, including
 ones that are not yet supported. This must always be combined with the
@@ -243,7 +257,7 @@ The driver automatically tries to reconnect to the UPS on unexpected error.
 This parameter (in seconds) allows it to wait before attempting the reconnection.
 The default value is 0.
 +
-NOTE: for instance, it was found that Eaton MGE Ellipse Max 1500 FR UPS firmware
+NOTE: For instance, it was found that Eaton MGE Ellipse Max 1500 FR UPS firmware
 stops responding every few hours, which causes usbhid-ups driver to detect an
 libusb insufficient memory error; in this case, when the usbhid-ups driver tries
 to reconnect too early, the activity sometimes led the UPS firmware to crash and

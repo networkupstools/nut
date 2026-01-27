@@ -170,6 +170,14 @@ static void do_hidden(const char *next)
 			next);
 }
 
+static void do_hidden_sentinel(void)
+{
+	/* MS IIS tends to not close CGI STDIN and not serve the last byte(s)
+	 * but just hangs at fgets(), so we truncate the inputs in cgilib,
+	 * and add a dummy entry here that we can afford to lose in the end */
+	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"zzz\" VALUE=\"sentinel\">\n");
+}
+
 /* generate SELECT chooser from hosts.conf entries */
 static void upslist_arg(size_t numargs, char **arg)
 {
@@ -202,7 +210,7 @@ static void do_pickups(const char *currfunc)
 
 	snprintf(hostfn, sizeof(hostfn), "%s/hosts.conf", confpath());
 
-	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 
 	printf("Select UPS and function:\n<BR>\n");
 
@@ -258,6 +266,8 @@ static void do_pickups(const char *currfunc)
 	do_hidden(NULL);
 
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"View\">\n");
+
+	do_hidden_sentinel();
 	printf("</FORM>\n");
 }
 
@@ -315,7 +325,7 @@ static void loginscreen(void)
 static void loginscreen(void)
 {
 	do_header("Login");
-	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	printf("<TR BGCOLOR=\"#60B0B0\">\n");
@@ -332,6 +342,7 @@ static void loginscreen(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"pickups\">\n");
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Login\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset fields\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR></TABLE>\n");
 	printf("</FORM>\n");
 	printf("</TD></TR></TABLE>\n");
@@ -445,7 +456,7 @@ static void showcmds(void)
 			"This UPS doesn't support any instant commands.");
 
 	do_header("Instant commands");
-	printf("<FORM ACTION=\"upsset.cgi\" METHOD=\"POST\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	/* include the description from checkhost() if present */
@@ -483,6 +494,7 @@ static void showcmds(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Issue command\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR>\n");
 	printf("</TABLE>\n");
 	printf("</FORM>\n");
@@ -770,6 +782,19 @@ static void do_type(const char *varname)
 			return;
 		}
 
+		if (!strcasecmp(answer[i], "NUMBER")) {
+			/* 20 is a reasonable default size for the text box */
+			do_string(varname, 20);
+			return;
+		}
+
+		/* RANGE is usually paired with NUMBER.
+		   We can ignore 'RANGE' and let the 'NUMBER'
+		   case (which should come next) handle it. */
+		if (!strcasecmp(answer[i], "RANGE")) {
+			continue;
+		}
+
 		/* ignore this one */
 		if (!strcasecmp(answer[i], "RW"))
 			continue;
@@ -860,7 +885,7 @@ static void showsettings(void)
 	}
 
 	do_header("Current settings");
-	printf("<FORM ACTION=\"upsset.cgi\" METHOD=\"POST\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	/* include the description from checkhost() if present */
@@ -892,6 +917,7 @@ static void showsettings(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Save changes\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR>\n");
 	printf("</TABLE>\n");
 	printf("</FORM>\n");
@@ -1030,6 +1056,7 @@ static void check_conf(void)
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upsset.conf", confpath());
+	upsdebugx(1, "%s: considering configuration file %s", __func__, fn);
 
 	pconf_init(&ctx, upsset_conf_err);
 
@@ -1079,30 +1106,50 @@ static void check_conf(void)
 
 int main(int argc, char **argv)
 {
+	char *s;
+	int i;
+
+#ifdef WIN32
+        /* Required ritual before calling any socket functions */
+        static WSADATA  WSAdata;
+        static int      WSA_Started = 0;
+        if (!WSA_Started) {
+                WSAStartup(2, &WSAdata);
+                atexit((void(*)(void))WSACleanup);
+                WSA_Started = 1;
+        }
+
+	/* Avoid binary output conversions, e.g.
+	 * mangling what looks like CRLF on WIN32 */
+	setmode(STDOUT_FILENO, O_BINARY);
+	/* Also do not break what we receive from HTTP POST queries */
+	setmode(STDIN_FILENO, O_BINARY);
+#endif
+
 	NUT_UNUSED_VARIABLE(argc);
 	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
 	printf("Content-type: text/html\n\n");
 
+	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
+	 * and NUT methods called from it. This line aims to just initialize
+	 * the subsystem, and set initial timestamp. Debugging the client is
+	 * primarily of use to developers, so is not exposed via `-D` args.
+	 */
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+	}
+
 	/* see if the magic string is present in the config file */
 	check_conf();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
-	/* see if there's anything waiting .. the server my not close STDIN properly */
-	if (1) {
-		fd_set fds;
-		struct timeval tv;
+	extractpostargs();
 
-		FD_ZERO(&fds);
-		FD_SET(STDIN_FILENO, &fds);
-		tv.tv_sec = 0;
-		tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
-
-		if ((select(STDIN_FILENO+1, &fds, 0, 0, &tv)) > 0)
-			extractpostargs();
-	}
+	/* Nothing POSTed (or parsed correctly)? */
 	if ((!username) || (!password) || (!function))
 		loginscreen();
 

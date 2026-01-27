@@ -3,6 +3,12 @@ NUT variable names and instant commands
 =======================================
 endif::external_title[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/nut-names.html
+// and subsequent pages (next-next-next...)
+//////////////////////////////////////////////////////////////////////////////
+
 [NOTE]
 .RFC 9271 Recording Document
 ====
@@ -1024,6 +1030,7 @@ Instant commands
 | test.failure.stop        | Stop simulating a power failure
 | test.battery.start       | Start a battery test
 | test.battery.start.quick | Start a "quick" battery test
+| test.battery.start.low   | Start a battery test until battery low
 | test.battery.start.deep  | Start a "deep" battery test
 | test.battery.stop        | Stop the battery test
 | test.system.start        | Start a system test
@@ -1055,18 +1062,30 @@ to last as part of NUT standard protocol in the long run.
 [options="header"]
 |========================================================================
 | Name                              | Driver/Devices        | Description
-| experimental.ecomode.enable       | usbhid-ups => mge-hid (Eaton/MGE)
+| experimental.ecomode.start       | usbhid-ups => mge-hid (Eaton/MGE)
     | Put UPS in High Efficiency (aka ECO) mode
-| experimental.ecomode.disable      | usbhid-ups => mge-hid (Eaton/MGE)
+| experimental.ecomode.stop      | usbhid-ups => mge-hid (Eaton/MGE)
     | Take the UPS out of High Efficiency (aka ECO) mode
-| experimental.ecomode.start.auto   | usbhid-ups => mge-hid (Eaton/MGE)
+| experimental.bypass.ecomode.start   | usbhid-ups => mge-hid (Eaton/MGE)
     | Put UPS in Bypass mode then High Efficiency (aka ECO) mode
-| experimental.ecomode.stop.auto   | usbhid-ups => mge-hid (Eaton/MGE)
+| experimental.bypass.ecomode.stop   | usbhid-ups => mge-hid (Eaton/MGE)
     | Take the UPS out of High Efficiency (aka ECO) mode after exiting Bypass mode
-| experimental.essmode.enable       | usbhid-ups => mge-hid (Eaton/MGE)
+| experimental.essmode.start       | usbhid-ups => mge-hid (Eaton/MGE)
     | Put UPS in Energy Saver System (aka ESS) mode
-| experimental.essmode.disable      | usbhid-ups => mge-hid (Eaton/MGE)
+| experimental.essmode.stop      | usbhid-ups => mge-hid (Eaton/MGE)
     | Take the UPS out of Energy Saver System (aka ESS) mode
+|========================================================================
+
+.Vendor-dependent instant commands
+[options="header"]
+|========================================================================
+| Name                              | Driver/Devices        | Description
+| clear.fault.record                | nutdrv_qx_masterguard => Masterguard
+    | Clear fault/error record
+| experimental.test.beeper.start    | nutdrv_hashx => Atlantis Land
+    | Start testing the UPS beeper
+| experimental.test.beeper.stop     | nutdrv_hashx => Atlantis Land
+    | Stop a UPS beeper test
 |========================================================================
 
 Currently the commands above are present in one subdriver and are specific

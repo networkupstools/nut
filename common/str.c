@@ -615,6 +615,8 @@ int	str_to_double_strict(const char *string, double *number, const int base)
 	return 1;
 }
 
+/* Probably derived from https://stackoverflow.com/a/68816055/4715872
+ * or a similar suggestion */
 int str_ends_with(const char *s, const char *suff) {
 	size_t slen;
 	size_t sufflen;

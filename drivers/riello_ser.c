@@ -6,6 +6,7 @@
  * and "https://www.networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
+ * Copyright (C) 2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +49,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.17"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -291,6 +292,63 @@ static int get_ups_status(void)
 	return 0;
 }
 
+static int parse_ups_status(int doQuery) {
+	if (doQuery) {
+		int	stat = get_ups_status();
+
+		upsdebugx(1, "get_ups_status() %d",stat );
+
+		if (stat < 0) {
+			return -1;
+		}
+	}
+
+	status_init();
+
+	/* AC Fail */
+	if (riello_test_bit(&DevData.StatusCode[0], 1))
+		status_set("OB");
+	else
+		status_set("OL");
+
+	/* LowBatt */
+	if ((riello_test_bit(&DevData.StatusCode[0], 1)) &&
+		(riello_test_bit(&DevData.StatusCode[0], 0)))
+		status_set("LB");
+
+	/* Standby */
+	if (!riello_test_bit(&DevData.StatusCode[0], 3))
+		status_set("OFF");
+
+	/* On Bypass */
+	if (riello_test_bit(&DevData.StatusCode[1], 3))
+		status_set("BYPASS");
+
+	/* Overload */
+	if (riello_test_bit(&DevData.StatusCode[4], 2))
+		status_set("OVER");
+
+	/* Buck */
+	if (riello_test_bit(&DevData.StatusCode[1], 0))
+		status_set("TRIM");
+
+	/* Boost */
+	if (riello_test_bit(&DevData.StatusCode[1], 1))
+		status_set("BOOST");
+
+	/* Replace battery */
+	if (riello_test_bit(&DevData.StatusCode[2], 0))
+		status_set("RB");
+
+	/* Charging battery */
+	if (riello_test_bit(&DevData.StatusCode[2], 2))
+		status_set("CHRG");
+
+	status_commit();
+
+	return 0;
+}
+
 static int get_ups_extended(void)
 {
 	uint8_t length;
@@ -407,8 +465,32 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	uint16_t delay;
 	const char	*delay_char;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (!strncasecmp(cmdname, "load.", 5) || !strncasecmp(cmdname, "shutdown.", 9)) {
+		if (DevData.StatusCode[0] == 0 && handling_upsdrv_shutdown > 0) {
+			/* With a quick init, we may have skipped the
+			 * long device data walk. At least query current
+			 * state to check that we can contact it. */
+			if (parse_ups_status(1) < 0)
+				upsdebugx(1, "%s: failed to query and parse ups.status", __func__);
+		}
+
+		upslogx(LOG_INFO, "Processing command '%s' while ups.status is '%s'",
+			cmdname, NUT_STRARG(dstate_getinfo("ups.status")));
+	}
+
+#ifdef RIELLO_SHUTDOWN_DEPENDS_ON_POWERSTATE
+	/* NOTE: Historically, this code allowed either "load.*" commands
+	 *  when we are "OL" or "shutdown.return" when we are "OB", but
+	 *  we found no requirement for that in the protocol docs. */
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
+#endif
 		if (!strcasecmp(cmdname, "load.off")) {
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay = 0;
 			riello_init_serial();
 
@@ -439,6 +521,9 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
 			int	ipv;
+
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.shutdown");
 			ipv = atoi(delay_char);
 			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
@@ -471,6 +556,8 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on")) {
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 			delay = 0;
 			riello_init_serial();
 
@@ -520,6 +607,9 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
 			int	ipv;
+
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.reboot");
 			ipv = atoi(delay_char);
 			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
@@ -570,10 +660,15 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 			upsdebugx (3, "Command load.on delay Ok");
 			return STAT_INSTCMD_HANDLED;
 		}
+#ifdef RIELLO_SHUTDOWN_DEPENDS_ON_POWERSTATE
 	}
 	else {
+#endif
 		if (!strcasecmp(cmdname, "shutdown.return")) {
 			int	ipv;
+
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.shutdown");
 			ipv = atoi(delay_char);
 			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
@@ -605,9 +700,13 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 			upsdebugx (3, "Command shutdown.return Ok");
 			return STAT_INSTCMD_HANDLED;
 		}
+#ifdef RIELLO_SHUTDOWN_DEPENDS_ON_POWERSTATE
 	}
+#endif
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		riello_init_serial();
 
 		if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -660,6 +759,8 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		riello_init_serial();
 		if (typeRielloProtocol == DEV_RIELLOGPSER)
 			length = riello_prepare_tb(bufOut, gpser_error_control);
@@ -686,7 +787,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -731,8 +832,70 @@ static int start_ups_comm(void)
 	}
 
 	upsdebugx (3, "Get identif Ok: received byte %u", buf_ptr_length);
-	return 0;
 
+	return 0;
+}
+
+void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
+/* list flags and values that you want to receive via -x */
+void upsdrv_makevartable(void)
+{
+	/* allow '-x xyzzy' */
+	/* addvar(VAR_FLAG, "xyzzy", "Enable xyzzy mode"); */
+
+	/* allow '-x foo=<some value>' */
+	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
+
+	addvar(VAR_FLAG, "localcalculation", "Calculate battery charge and runtime locally");
+}
+
+void upsdrv_initups(void)
+{
+	upsdebugx(2, "entering upsdrv_initups()");
+
+	upsfd = ser_open(device_path);
+
+	riello_comm_setup(device_path);
+
+	/* probe ups type */
+
+	/* to get variables and flags from the command line, use this:
+	 *
+	 * first populate with upsdrv_buildvartable above, then...
+	 *
+	 *	  				set flag foo : /bin/driver -x foo
+	 * set variable 'cable' to '1234' : /bin/driver -x cable=1234
+	 *
+	 * to test flag foo in your code:
+	 *
+	 * 	if (testvar("foo"))
+	 * 		do_something();
+	 *
+	 * to show the value of cable:
+	 *
+	 *	if ((cable = getval("cable")))
+	 *		printf("cable is set to %s\n", cable);
+	 *	else
+	 *		printf("cable is not set!\n");
+	 *
+	 * don't use NULL pointers - test the return result first!
+	 */
+
+	/* the upsh handlers can't be done here, as they get initialized
+	 * shortly after upsdrv_initups returns to main.
+	 */
+
+	/* don't try to detect the UPS here */
+
+	/* initialise communication */
 }
 
 void upsdrv_initinfo(void)
@@ -939,6 +1102,50 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = riello_instcmd;
 }
 
+void upsdrv_shutdown(void)
+{
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
+	int	retry;
+
+	/* maybe try to detect the UPS here, but try a shutdown even if
+		it doesn't respond at first if possible */
+
+	/* replace with a proper shutdown function */
+
+
+	/* you may have to check the line status since the commands
+		for toggling power are frequently different for OL vs. OB */
+
+	/* OL: this must power cycle the load if possible */
+
+	/* OB: the load must remain off until the power returns */
+	upsdebugx(2, "upsdrv Shutdown execute");
+
+	for (retry = 1; retry <= MAXTRIES; retry++) {
+		/* By default, abort a previously requested shutdown
+		 * (if any) and schedule a new one from this moment. */
+		if (riello_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
+			continue;
+		}
+
+		if (riello_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
+			continue;
+		}
+
+		upslogx(LOG_ERR, "Shutting down");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
+		return;
+	}
+
+	upslogx(LOG_ERR, "Shutdown failed!");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
+}
+
 void upsdrv_updateinfo(void)
 {
 	uint8_t getextendedOK;
@@ -1091,48 +1298,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("ups.load", "%u", (unsigned int)(DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
 	}
 
-	status_init();
-
-	/* AC Fail */
-	if (riello_test_bit(&DevData.StatusCode[0], 1))
-		status_set("OB");
-	else
-		status_set("OL");
-
-	/* LowBatt */
-	if ((riello_test_bit(&DevData.StatusCode[0], 1)) &&
-		(riello_test_bit(&DevData.StatusCode[0], 0)))
-		status_set("LB");
-
-	/* Standby */
-	if (!riello_test_bit(&DevData.StatusCode[0], 3))
-		status_set("OFF");
-
-	/* On Bypass */
-	if (riello_test_bit(&DevData.StatusCode[1], 3))
-		status_set("BYPASS");
-
-	/* Overload */
-	if (riello_test_bit(&DevData.StatusCode[4], 2))
-		status_set("OVER");
-
-	/* Buck */
-	if (riello_test_bit(&DevData.StatusCode[1], 0))
-		status_set("TRIM");
-
-	/* Boost */
-	if (riello_test_bit(&DevData.StatusCode[1], 1))
-		status_set("BOOST");
-
-	/* Replace battery */
-	if (riello_test_bit(&DevData.StatusCode[2], 0))
-		status_set("RB");
-
-	/* Charging battery */
-	if (riello_test_bit(&DevData.StatusCode[2], 2))
-		status_set("CHRG");
-
-	status_commit();
+	parse_ups_status(0);
 
 	dstate_dataok();
 
@@ -1151,6 +1317,7 @@ void upsdrv_updateinfo(void)
 	poll_interval = 2;
 
 	countlost = 0;
+
 /*	if (get_ups_statuscode() != 0)
 		upsdebugx(2, "Communication is lost");
 	else {
@@ -1161,120 +1328,20 @@ void upsdrv_updateinfo(void)
 	 */
 }
 
-void upsdrv_shutdown(void)
-{
-	/* Only implement "shutdown.default"; do not invoke
-	 * general handling of other `sdcommands` here */
-
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-	int	retry;
-
-	/* maybe try to detect the UPS here, but try a shutdown even if
-		it doesn't respond at first if possible */
-
-	/* replace with a proper shutdown function */
-
-
-	/* you may have to check the line status since the commands
-		for toggling power are frequently different for OL vs. OB */
-
-	/* OL: this must power cycle the load if possible */
-
-	/* OB: the load must remain off until the power returns */
-	upsdebugx(2, "upsdrv Shutdown execute");
-
-	for (retry = 1; retry <= MAXTRIES; retry++) {
-		/* By default, abort a previously requested shutdown
-		 * (if any) and schedule a new one from this moment. */
-		if (riello_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
-			continue;
-		}
-
-		if (riello_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
-			continue;
-		}
-
-		upslogx(LOG_ERR, "Shutting down");
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(EF_EXIT_SUCCESS);
-		return;
-	}
-
-	upslogx(LOG_ERR, "Shutdown failed!");
-	if (handling_upsdrv_shutdown > 0)
-		set_exit_flag(EF_EXIT_FAILURE);
-}
-
-
 /*
 static int setvar(const char *varname, const char *val)
 {
-	if (!strcasecmp(varname, "ups.test.interval")) {
+	upsdebug_SET_STARTING(varname, val);
+
+ 	if (!strcasecmp(varname, "ups.test.interval")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 */
-
-void upsdrv_help(void)
-{
-}
-
-/* list flags and values that you want to receive via -x */
-void upsdrv_makevartable(void)
-{
-	/* allow '-x xyzzy' */
-	/* addvar(VAR_FLAG, "xyzzy", "Enable xyzzy mode"); */
-
-	/* allow '-x foo=<some value>' */
-	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
-
-	addvar(VAR_FLAG, "localcalculation", "Calculate battery charge and runtime locally");
-}
-
-void upsdrv_initups(void)
-{
-	upsdebugx(2, "entering upsdrv_initups()");
-
-	upsfd = ser_open(device_path);
-
-	riello_comm_setup(device_path);
-
-	/* probe ups type */
-
-	/* to get variables and flags from the command line, use this:
-	 *
-	 * first populate with upsdrv_buildvartable above, then...
-	 *
-	 *	  				set flag foo : /bin/driver -x foo
-	 * set variable 'cable' to '1234' : /bin/driver -x cable=1234
-	 *
-	 * to test flag foo in your code:
-	 *
-	 * 	if (testvar("foo"))
-	 * 		do_something();
-	 *
-	 * to show the value of cable:
-	 *
-	 *	if ((cable = getval("cable")))
-	 *		printf("cable is set to %s\n", cable);
-	 *	else
-	 *		printf("cable is not set!\n");
-	 *
-	 * don't use NULL pointers - test the return result first!
-	 */
-
-	/* the upsh handlers can't be done here, as they get initialized
-	 * shortly after upsdrv_initups returns to main.
-	 */
-
-	/* don't try to detect the UPS here */
-
-	/* initialise communication */
-}
 
 void upsdrv_cleanup(void)
 {

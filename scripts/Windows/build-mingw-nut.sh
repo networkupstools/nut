@@ -7,14 +7,14 @@
 
 #set -x
 
-SCRIPTDIR="`dirname "$0"`"
-SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
+SCRIPTDIR="`dirname \"$0\"`"
+SCRIPTDIR="`cd \"$SCRIPTDIR\" && pwd`"
 
 DLLLDD_SOURCED=true . "${SCRIPTDIR}/dllldd.sh"
 
 # This should match the tarball and directory name,
 # if a stable version is used:
-[ -n "$VER_OPT" ] || VER_OPT=2.8.3
+[ -n "$VER_OPT" ] || VER_OPT=2.8.4
 DEBUG=true
 
 # default to 32bits build
@@ -69,7 +69,7 @@ case "$SOURCEMODE" in
 stable)
 # FIXME
 # Stable version (download the latest stable archive)
-	VER_OPT_SHORT="`echo "$VER_OPT" | awk -F. '{print $1"."$2}'`"
+	VER_OPT_SHORT="`echo \"$VER_OPT\" | awk -F. '{print $1\".\"$2}'`"
 	if [ ! -s "nut-$VER_OPT.tar.gz" ] ; then
 		wget "https://www.networkupstools.org/source/$VER_OPT_SHORT/nut-$VER_OPT.tar.gz"
 	fi
@@ -133,17 +133,30 @@ do_build_mingw_nut() {
 	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
 	export LDFLAGS+=" -L${ARCH_PREFIX}/lib/"
 
+	# envvar toggles below may be passed from NUT ci_build.sh or other callers:
 	KEEP_NUT_REPORT_FEATURE_FLAG=""
 	if [ x"${KEEP_NUT_REPORT_FEATURE-}" = xtrue ]; then
 		KEEP_NUT_REPORT_FEATURE_FLAG="--enable-keep_nut_report_feature"
 	fi
 
+	ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG=""
+	if [ x"${WITH_LIBNUTPRIVATE-}" = xtrue ]; then
+		ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG="--enable-shared-private-libs"
+	fi
+
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
-	# FIXME: Implement support for --without-pkg-config in m4 and use it
+	# WIN32 builds resolve PREFIX'ed paths relative to each current binary
+	# so the build can be installed (tarball unpacked) to any location.
+	# NUT config files are under just "PREFIX/etc", no layers like "/etc/nut";
+	# note the PREFIX string should exist there for getfullpath() to find it.
+	# FIXME: Implement support for --without-pkg-config in m4 and use it.
+	# Currently "/run" location is not relevant (writepid() is a stub)
+	# and "/var/state/ups" is utterly unused (Windows named pipes instead).
 	RES_CFG=0
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
+	    $ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
 	    --with-all=auto \
 	    --with-doc="man=auto html-single=auto html-chunked=skip pdf=skip" \
@@ -151,6 +164,7 @@ do_build_mingw_nut() {
 	    --with-pynut=app \
 	    --with-augeas-lenses-dir=/augeas-lenses \
 	    --enable-Werror \
+	    --with-confdir='${prefix}/etc' \
 	|| RES_CFG=$?
 	echo "$0: configure phase complete ($RES_CFG)" >&2
 	[ x"$RES_CFG" = x0 ] || exit $RES_CFG
@@ -209,10 +223,10 @@ do_build_mingw_nut() {
 		(cd "$INSTALL_DIR" && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
 
 		# Hardlink libraries for sbin (alternative: all bins in one dir):
-		(cd "$INSTALL_DIR/sbin" && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+		(cd "$INSTALL_DIR/sbin" && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename \"$D\"`" ./ ; done ; } ) || true
 
 		# Hardlink libraries for cgi-bin if present:
-		(cd "$INSTALL_DIR/cgi-bin" 2>/dev/null && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) \
+		(cd "$INSTALL_DIR/cgi-bin" 2>/dev/null && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename \"$D\"`" ./ ; done ; } ) \
 		|| echo "NOTE: FAILED to process OPTIONAL cgi-bin directory; was NUT CGI enabled?" >&2
 	fi
 

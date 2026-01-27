@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.19"
+#define DRIVER_VERSION	"1.23"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -53,9 +53,12 @@ upsdrv_info_t upsdrv_info = {
 
 #define USB_VENDOR_STRING "ATCL FOR UPS"
 
+/* Unregistered vendor 0x0001 (commonly identified as Fry's Electronics) */
+#define NONAME0001_VENDORID	0x0001
+
 static usb_device_id_t atcl_usb_id[] = {
 	/* ATCL FOR UPS */
-	{ USB_DEVICE(0x0001, 0x0000),  NULL },
+	{ USB_DEVICE(NONAME0001_VENDORID, 0x0000),  NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -357,7 +360,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				libusb_free_device_list(devlist, 1);
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
-			sprintf(device->Bus, "%03d", bus_num);
+			snprintf(device->Bus, 4, "%03d", bus_num);
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
 			iSerialNumber = dev_desc.iSerialNumber;
@@ -559,11 +562,14 @@ void upsdrv_initups(void)
 			"Unable to find ATCL FOR UPS\n\n"
 
 			"Things to try:\n"
-			" - Connect UPS device to USB bus\n"
+			" - Connect UPS device to USB bus.\n"
 			" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n"
-			"   See upsdrvctl(8) and ups.conf(5).\n\n"
+			"   See upsdrvctl(%s) and ups.conf(%s).\n"
+			" - Check with nutdrv_qx(%s) or blazer_usb(%s) driver instead.\n"
 
-			"Fatal error: unusable configuration");
+			"\nFatal error: unusable configuration",
+			MAN_SECTION_CMD_SYS, MAN_SECTION_CFG,
+			MAN_SECTION_CMD_SYS, MAN_SECTION_CMD_SYS);
 	}
 
 }
@@ -661,7 +667,9 @@ void upsdrv_updateinfo(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* FIXME: Which one is this - "load.off",
 	 * "shutdown.stayoff" or "shutdown.return"? */
@@ -681,6 +689,7 @@ int instcmd(const char *cmdname, const char *extra)
 			"%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)",
 			__func__);
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		ret = usb_interrupt_write(udev,
 			SHUTDOWN_ENDPOINT, (usb_ctrl_charbuf)shutdown_packet,
 			SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
@@ -711,7 +720,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -729,6 +738,11 @@ void upsdrv_shutdown(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

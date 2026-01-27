@@ -38,8 +38,9 @@ ACLOCAL_AMFLAGS = -I m4
 #
 # List of source subdirectories to build and distribute, used to spawn automake
 # (alas sequential) target recipes. The order matters, as several subdirectories
-# depend on stuff in "common" or tools being built first!
-SUBDIRS = include common clients conf data drivers tools \
+# depend on stuff in "common" or tools being built first! Also "data" depends
+# (during "dist" time) on scripts in "tools".
+SUBDIRS = include common clients conf drivers tools data \
   lib scripts server tests docs/man docs
 
 # Note: not generated from SUBDIRS, because not all are recursive:
@@ -82,6 +83,11 @@ SUBDIRS_ALL_LIBS_LOCAL = \
 # (which used to cause us a lot of headache, building same things twice at
 # the same time).
 
+# For the intents and purposes of recursive-make calls, we have built
+# or updated include/nut_version.h before other targets in all-recursive
+### MAINTAINER_GENERATE_HEADER_DEBUG = yes
+### export NUT_VERSION_H_GENERATED = true
+
 #all all-recursive all-am-local all-local: all-fanout-maybe
 all-recursive: all-fanout-maybe
 
@@ -103,7 +109,10 @@ all-fanout-maybe:
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 				echo "  SUBDIR-MAKE	$@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
 			fi ; \
-			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs ;; \
+			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs || exit ; \
+			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
+				echo "  SUBDIR-MAKE	$@: optimization for parallel make as 'make all-fanout-subdirs' finished; now automake rules can follow up with default implementation of 'all-recursive' and/or 'all' (may try to regenerate some files again; should keep existing results though)" ; \
+			fi ;; \
 		*) \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 				echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
@@ -121,10 +130,10 @@ all-fanout-maybe:
 # FIXME: Alas, we still tend to step on our toes when making everything at
 # once from scratch, so still do benefit from pre-making the libraries:
 all-fanout-staged:
-	+$(MAKE) $(AM_MAKEFLAGS) all/include
-	+$(MAKE) $(AM_MAKEFLAGS) all/common
-	+$(MAKE) $(AM_MAKEFLAGS) all-fanout-libs
-	+$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false all/include
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=true all/common
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=true all-fanout-libs
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=true all-fanout-subdirs
 
 all-fanout-subdirs: $(SUBDIRS_ALL_RECURSIVE)
 
@@ -156,12 +165,24 @@ EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 LICENSE-DCO MAINTAINERS
 # Since the renaming of documentation to `*.adoc` extension to help IDE
 # and GitHub UIs to render the source files in a pretty fashion, we need
 # to list them:
-EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc ci_build.adoc
+EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc
+
+# The document is now part of qa-guide; the script might be a bit git-oriented,
+# but can be useful in builds from tarball, probably. Anyhow, having the doc
+# without the tool which it documents is odd.
+EXTRA_DIST += ci_build.sh ci_build.adoc \
+	builds/nut-driver-enumerator-test/ci_build.sh
 
 # Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
 # but lack NUT magic logic to recreate the `configure` script if someone would
 # want to adapt it to their autotools or locally fix a tarball-based build.
 EXTRA_DIST += autogen.sh
+
+# Help also the tarball users contribute properly:
+EXTRA_DIST += .editorconfig
+
+# automake xompilation wrapper
+EXTRA_DIST += compile
 
 if KEEP_NUT_REPORT
 nodist_data_DATA = config.nut_report_feature.log
@@ -176,12 +197,12 @@ SUBDIR_TGT_RULE = ( \
 	[ x"$${TGT-}" != x ] || TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
 	[ x"$${DIR-}" != x ] || DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
 	if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-		echo "  SUBDIR-MAKE	STARTING: 'make $$TGT' in $$DIR ..." ; \
+		echo "  SUBDIR-MAKE	STARTING $@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR ..." ; \
 	fi ; \
 	cd "$(abs_builddir)/$${DIR}" && \
 	$(MAKE) $(AM_MAKEFLAGS) $${SUBDIR_TGT_MAKEFLAGS-} "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE	FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
 	if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-		echo "  SUBDIR-MAKE	SUCCESS: 'make $$TGT' in $$DIR" ; \
+		echo "  SUBDIR-MAKE	SUCCESS  $@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR" ; \
 	fi ; \
 	)
 
@@ -193,16 +214,19 @@ SUBDIR_TGT_RULE = ( \
 
 ### Delivers: nut_version.h
 all-libs-local/include:
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=false; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
-### Delivers: libcommon.la libcommonclient.la libcommonstr.la
+### Delivers: libcommon.la libcommonclient.la libcommonstr.la libcommonstrjson.la
 ###           (consume only one of these at a time!)
 ### Delivers: libcommonversion.la (only version methods)
 ### Delivers: libparseconf.la libnutconf.la libnutwincompat.la
+### May deliver: libnutprivate-$(SEMVER)-common-all.la and libnutprivate-$(SEMVER)-common-client.la for dynamic shared-object linking, libcommonversion-private.la (dependency for the above)
 ### Requires-ext: include/nut_version.h
 ### Requires-int: libparseconf.la libcommonclient.la
 all-libs-local/common: all-libs-local/include
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Delivers: libupsclient.la libnutclient.la libnutclientstub.la
 ### Delivers: libupsclient-version.h
@@ -210,19 +234,24 @@ all-libs-local/common: all-libs-local/include
 ### Requires-ext: common/libcommon.la common/libcommonclient.la
 ### Requires-ext: common/libcommonversion.la
 ### Requires-ext: common/libparseconf.la
+### For dynamic builds, alternately LIB-Requires-ext and Requires-ext: libnutprivate-$(SEMVER)-common*.la
 ### Requires-int: libupsclient.la
 all-libs-local/clients: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
-### Delivers: libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
+### Delivers: libdummy_main.la libdummy_serial.la libdummy_upsdrvquery.la
 ### Delivers: libdummy_mockdrv.la libserial-nutscan.la
 ### LIB-Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: clients/libupsclient.la (dummy-ups only)
-### Requires-int: libdummy.la libdummy_upsdrvquery.la
+### Requires-int: libdummy_main.la libdummy_upsdrvquery.la
 ### Requires-int: libdummy_serial.la
+### For dynamic builds, alternately LIB-Requires-ext and Requires-ext: libnutprivate-$(SEMVER)-common*.la
+### and may deliver: libnutprivate-$(SEMVER)-drivers-common.la and libnutprivate-$(SEMVER)-drivers-serial.la
 all-libs-local/drivers: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Delivers: libdriverstubusb.la
 ### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
@@ -231,7 +260,8 @@ all-libs-local/drivers: all-libs-local/common
 ### Requires-ext: drivers/libdummy_mockdrv.la
 ### Requires-int: libdriverstubusb.la
 all-libs-local/tests: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Delivers: generated sources and/or headers for nut-scanner
 ### No dependencies: actually runs as part of autogen.sh but may be
@@ -243,6 +273,7 @@ all-libs-local/tools:
 ### LIB-Requires-ext: drivers/libserial-nutscan.la
 ### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
 ### LIB-Requires-ext: common/libcommonversion.la
+### For dynamic builds, alternately LIB-Requires-ext and Requires-ext: libnutprivate-$(SEMVER)-common*.la
 ### HDR-Requires-ext: clients/libupsclient-version.h
 ### HDR-Requires-ext: nut-scanner/nutscan-snmp.h nut-scanner/nutscan-usb.h
 ###       (generated by nut-scanner-deps/tools aliased as all-libs-local/tools)
@@ -251,7 +282,8 @@ all-libs-local/tools:
 ###       however does directly use libupsclient-version.h
 ###       for hints to find it at run-time
 all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/common all-libs-local/clients all-libs-local/tools
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # Handle all SUBDIRS_ALL_RECURSIVE in a way that dependencies can be specified,
 # and portably to different make program implementations. Note we may revisit
@@ -268,13 +300,16 @@ all-recursive/data:
 	+@$(SUBDIR_TGT_RULE)
 
 all/include: all-libs-local/include
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 prep-src-docs/docs/man:
-	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3'; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
+	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3'; export SUBDIR_TGT_MAKEFLAGS; \
+	  $(SUBDIR_TGT_RULE)
 
 prep-src-docs/docs:
-	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
+	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; \
+	  $(SUBDIR_TGT_RULE)
 
 all/docs/man: prep-src-docs/docs/man
 	+@$(SUBDIR_TGT_RULE)
@@ -311,20 +346,23 @@ all-recursive/docs: all/docs all/docs/man
 
 ### Requires-int: libparseconf.la libcommonclient.la
 all/common: all/include all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Requires-ext: common/libcommon.la common/libcommonclient.la
 ### Requires-ext: common/libparseconf.la
 ### Requires-ext: common/libcommonversion.la
+### Requires-ext: common/libcommonstrjson.la
 ### Requires-int: libupsclient.la
 all/clients: all/common all-libs-local/clients
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### Summary of drivers/ subdir dependencies:
 ### Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: common/libcommonversion.la
 ### Requires-ext: clients/libupsclient.la (dummy-ups only)
-### Requires-int: libdummy.la libdummy_upsdrvquery.la
+### Requires-int: libdummy_main.la libdummy_upsdrvquery.la
 ### Requires-int: libdummy_serial.la
 
 # TODO in the future: propagate the knowledge of whether we are building
@@ -341,7 +379,8 @@ if SOME_DRIVERS
 # in the default list - FIXME: configure.ac could tell us, so
 # we could provide it for tests/NIT anyway...)
 all/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 all-drivers: all/drivers
 else !SOME_DRIVERS
@@ -353,10 +392,13 @@ else !SOME_DRIVERS
 # should depend on both "dummy-ups" and the rest in so constrained
 # "all/drivers". This allows to ultimately not order one after another.
 dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 all/drivers: all/common all-libs-local/drivers
-	+@SUBDIR_TGT_MAKEFLAGS='NUTSW_DRIVERLIST_DUMMY_UPS=dummy'; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  SUBDIR_TGT_MAKEFLAGS='NUTSW_DRIVERLIST_DUMMY_UPS=dummy'; export SUBDIR_TGT_MAKEFLAGS; \
+	  $(SUBDIR_TGT_RULE)
 
 all-drivers: dummy-ups$(EXEEXT)/drivers all/drivers
 endif !SOME_DRIVERS
@@ -364,7 +406,8 @@ endif !SOME_DRIVERS
 ### Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: common/libcommonversion.la
 all/server: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### LIB-Requires-ext: drivers/libserial-nutscan.la
 ### LIB-Requires-ext: common/libnutwincompat.la common/libcommonstr.la
@@ -374,7 +417,8 @@ all/server: all-libs-local/common
 all/tools/nut-scanner: all-libs-local/include all-libs-local/common \
 	all-libs-local/drivers all-libs-local/clients \
 	all-libs-local/tools/nut-scanner
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # only libnutscan is needed for nutconf,
 # but we do wholesale subdir all-libs-local at the moment...
@@ -382,10 +426,12 @@ all/tools/nut-scanner: all-libs-local/include all-libs-local/common \
 ### Requires-ext: common/libcommonversion.la
 ### Requires-ext: tools/nut-scanner/libnutscan.la
 all/tools/nutconf: all-libs-local/tools/nut-scanner all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # Prereqs for NIT are runnable upsd, upsc, upsmon, dummy-ups, sample configs...
 # For the actual "make check-NIT" runs - also python scripts and/or compiled
@@ -395,7 +441,8 @@ all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
 # But then we should also consider what is enabled by configure and what is not.
 # Maybe we are doing a quick build not to be tested at all? :-/
 all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recursive/data
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 ### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
 ### Requires-ext: common/libcommon.la common/libnutconf.la
@@ -403,28 +450,34 @@ all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recurs
 ### Requires-ext: drivers/libdummy_mockdrv.la
 ### Requires-int: libdriverstubusb.la
 all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 all-recursive/tests: all/tests/NIT all/tests
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 if HAVE_MINGW_RESGEN
 if HAVE_WINDOWS
 ### Requires-ext: common/libcommon.la
 ### Requires-ext: common/libcommonversion.la
 all/scripts/Windows: all-libs-local/common
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 else !HAVE_WINDOWS
 all/scripts/Windows:
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 endif !HAVE_WINDOWS
 else !HAVE_MINGW_RESGEN
 all/scripts/Windows:
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 endif !HAVE_MINGW_RESGEN
 
 all-recursive/scripts: all/scripts/Windows
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
@@ -436,9 +489,9 @@ all-recursive/scripts: all/scripts/Windows
 # tweak paths not using ${prefix} so `make distcheck` fails for it as
 # it does not play with a `DESTDIR` either.
 
-DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
-DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
-DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
+DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
+DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
+DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
 DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='@NUT_CONFIG_CXXFLAGS@ -g' CFLAGS='@NUT_CONFIG_CFLAGS@ -g' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@' --with-pynut=app --with-nut_monitor=force
 
 # Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time
@@ -448,6 +501,7 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystempresetdir='$${prefix}/usr/lib/systemd/system-preset' \
  --with-systemdshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
  --with-systemdtmpfilesdir='$${prefix}/usr/lib/tmpfiles.d' \
+ --with-systemdsysusersdir='$${prefix}/usr/lib/sysusers.d' \
  --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'			\
@@ -629,7 +683,7 @@ SPELLCHECK_DIRS_MOST = \
 	spellcheck/docs/man \
 	spellcheck/conf \
 	spellcheck/data \
-	spellcheck/data/html \
+	spellcheck/data/htmlcgi \
 	spellcheck/scripts \
 	spellcheck/scripts/Solaris \
 	spellcheck/scripts/Windows \
@@ -637,6 +691,7 @@ SPELLCHECK_DIRS_MOST = \
 	spellcheck/scripts/external_apis \
 	spellcheck/scripts/hotplug \
 	spellcheck/scripts/installer \
+	spellcheck/scripts/obs \
 	spellcheck/scripts/python \
 	spellcheck/scripts/systemd \
 	spellcheck/scripts/udev \
@@ -671,11 +726,11 @@ spellcheck spellcheck-interactive:
 		(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -k -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
 		(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -k -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
 		for D in $(SPELLCHECK_DIRS_MOST) ; do \
-			D="`echo "$$D" | sed 's,^spellcheck/,,'`" ; \
+			D="`echo \"$$D\" | sed 's,^spellcheck/,,'`" ; \
 			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $@) || RES=$$? ; \
 		done ; \
 		for D in $(SPELLCHECK_DIRS_LAST) ; do \
-			D="`echo "$$D" | sed 's,^spellcheck/,,'`" ; \
+			D="`echo \"$$D\" | sed 's,^spellcheck/,,'`" ; \
 			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -k -s $@) || RES=$$? ; \
 		done ; \
 		exit $$RES ; \
@@ -685,22 +740,31 @@ spellcheck spellcheck-interactive:
 		SUBDIR_MAKE_VERBOSE=0 ; \
 	  fi ; \
 	  export SUBDIR_MAKE_VERBOSE ; \
-	  $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_TGT='$@' SUBDIR_MAKE_VERBOSE="$${SUBDIR_MAKE_VERBOSE}" -k -s $(SPELLCHECK_DIRS) && exit ; \
+	  ( $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_TGT='$@' SUBDIR_MAKE_VERBOSE="$${SUBDIR_MAKE_VERBOSE}" -k -s $(SPELLCHECK_DIRS) && exit ; \
 	  echo "WARNING: FAILED fanned-out attempt in $@, retrying with NUT_MAKE_SKIP_FANOUT" >&2 ; \
-	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SPELLCHECK_TGT='$@' -k -s $(SPELLCHECK_DIRS)
+	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SPELLCHECK_TGT='$@' -k -s $(SPELLCHECK_DIRS) ) || exit ; \
+	  if [ x'$@' = xspellcheck-interactive ] ; then \
+		echo "SUCCESS: $@: follow up with spellcheck-quick to revise and update timestamps"; \
+		$(MAKE) $(AM_MAKEFLAGS) spellcheck-quick ; \
+	  fi
 
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
-spellcheck-quick:
-	+@case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
-		*"j"*) $(MAKE) $(AM_MAKEFLAGS) -k -s spellcheck && exit ;; \
+SET_PARMAKES_OPT = \
+	+@PARMAKES_OPT=""; \
+	  case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+		*"j"*) ;; \
 		*) \
-			if ! [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
-				MAXPARMAKES=8 ; \
+			if [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
+				true ; else MAXPARMAKES=8 ; \
 			fi ; \
-			$(MAKE) $(AM_MAKEFLAGS) -k -s -j $${MAXPARMAKES} spellcheck \
-			&& exit ;; \
+			PARMAKES_OPT="-j $${MAXPARMAKES}" ; \
+		;; \
 	  esac
+
+spellcheck-quick:
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s ${PARMAKES_OPT} spellcheck
 
 # Run auto-parallel recipe, and if something fails - re-run interactively:
 spellcheck-interactive-quick:
@@ -709,7 +773,7 @@ spellcheck-interactive-quick:
 	  if [ x"$(SUBDIR_MAKE_VERBOSE)" = xdefault ] ; then \
 		SUBDIR_MAKE_VERBOSE=1 ; export SUBDIR_MAKE_VERBOSE ; \
 	  fi ; \
-	  $(MAKE) $(AM_MAKEFLAGS) -k -s spellcheck-interactive
+	  $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_QUICK=true -k -s spellcheck-interactive
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
 # found by `configure` script (and so avoided by conventional recipes)
@@ -752,7 +816,7 @@ maintainer-asciidocs:
 	 find . -name '*.adoc' -or -name '*.txt' | ( \
 	  FILES=""; \
 	  while read F ; do \
-	    grep -E '^//+GH_MARKUP_1095_INCLUDE_(BEGIN|END)' "$$F" >/dev/null \
+	    $(EGREP) '^//+GH_MARKUP_1095_INCLUDE_(BEGIN|END)' "$$F" >/dev/null \
 	    || { echo "$@: SKIP: no GH_MARKUP_1095_INCLUDE_* tags: $$F"; continue ; } ; \
 	    rm -f "$${F}"*.tmp || exit ; \
 	    EXT="1.tmp"; \
@@ -763,7 +827,7 @@ maintainer-asciidocs:
 	        esac ; \
 	        printf '%s\n' "$${LINE}" >> "$${F}.$${EXT}" || exit ; \
 	    done < "$$F" || { echo "$@: FAILED injection for $${F}" >&2; exit 1; } ; \
-	    if test -s "$${F}.2.tmp" && test -z "`diff "$${F}.2.tmp" docs/asciidoc-vars.conf | tr -d '\n'`" ; then \
+	    if test -s "$${F}.2.tmp" && test -z "`diff \"$${F}.2.tmp\" docs/asciidoc-vars.conf | tr -d '\n'`" ; then \
 	        rm -f "$${F}"*.tmp ; \
 	        echo "$@: SKIP: no changes: $$F"; continue ; \
 	    fi; \
@@ -800,10 +864,13 @@ EXTRA_DIST += VERSION_DEFAULT
 
 # Best-effort delivery for (overly?) customized distros, e.g. via
 #   echo NUT_VERSION_FORCED_SEMVER=1.1.1 > VERSION_FORCED_SEMVER
+# ONLY populated into dist tarball if present in the build area!
+# (Note we do tarball the VERSION_DEFAULT generated just above)
 dist-hook:
 	for D in "$(abs_top_srcdir)" "$(abs_top_builddir)" ; do \
 	    for F in VERSION_FORCED VERSION_FORCED_SEMVER ; do \
 	        if [ -s "$$D/$$F" ] ; then \
+	            echo "  DIST	$$D/$$F => $(top_distdir)/$$F"; \
 	            cat "$$D/$$F" > "$(top_distdir)/$$F" || true ; \
 	        fi ; \
 	    done ; \
@@ -823,9 +890,9 @@ dist-hook:
 ###
 check-scripts-syntax:
 	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
-	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | grep -E '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
+	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | $(EGREP) '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
 	 for F in `git ls-files || find . -type f` ; do \
-	    case "`file "$$F"`" in \
+	    case "`file \"$$F\"`" in \
 	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
 	        *"POSIX shell script"*|*"shell script"*) ( set -x ; /bin/sh -n "$$F" ; ) ;; \
 	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
@@ -842,7 +909,11 @@ shellcheck-disclaimer:
 # Note: currently not part of shellcheck target, because the script below
 # can test the logic with numerous SHELL_PROGS in a CI setting, and because
 # check-scripts-syntax probably has checked the basic syntax above already.
-shellcheck-nde:
+nut-driver-enumerator.sh/scripts/upsdrvsvcctl:
+	+@$(SUBDIR_TGT_RULE)
+
+shellcheck-nde: nut-driver-enumerator.sh/scripts/upsdrvsvcctl
+	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
 	cd $(srcdir)/tests && SERVICE_FRAMEWORK="selftest" ./nut-driver-enumerator-test.sh
 
 shellcheck: shellcheck-disclaimer check-scripts-syntax
@@ -893,7 +964,10 @@ MAINTAINERCLEANFILES += config.nut_report_feature.log*
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...
 # See gitrevisions for more information on specifying ranges
-GITLOG_START_POINT=v2.6.0
+#GITLOG_START_POINT=v2.6.0
+#GITLOG_END_POINT=HEAD
+GITLOG_START_POINT=@GITLOG_START_POINT@
+GITLOG_END_POINT=@GITLOG_END_POINT@
 
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
@@ -929,43 +1003,43 @@ endif !WITH_PDF_NONASCII_TITLES
 CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR = true
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
-	    if test -e .git ; then \
-	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`grep -E '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
-	        if test -s "$@" -a -d "$${NUT_GITDIR}" && test -z "`find "$${NUT_GITDIR}" -newer "$@" 2>/dev/null`" ; then \
+	    if ( test -e .git ) 2>/dev/null || test -d .git || test -f .git || test -h .git ; then \
+	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`$(EGREP) '^gitdir:' \"$${NUT_GITDIR}\" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
+	        if test -s '$@' -a -d "$${NUT_GITDIR}" && test -z "`find \"$${NUT_GITDIR}\" -newer '$@' 2>/dev/null`" ; then \
 	            echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
 	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
 	        else \
-	            if test -s "$@" ; then \
+	            if test -s '$@' ; then \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : RE-GENERATE (older than Git workspace metadata) ..." ; \
 	            else \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : GENERATE (currently absent) ..." ; \
 	            fi ; \
-	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
+	            CHANGELOG_FILE='$@' $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
 	            CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR="$(CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR)" \
-	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) \
+	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) $(GITLOG_END_POINT) \
 	              && { echo "  DOC-CHANGELOG-GENERATE	$@ : SUCCESS"; } \
 	              || { \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : FAILED (non-fatal)" >&2 ; \
-	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > '$@' ; \
 	            } ; \
 	        fi ; \
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
 	            echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
-	            if ! diff ./ChangeLog "$@" >/dev/null 2>/dev/null ; then \
-	                echo "Using distributed ChangeLog file from sources (and builddir is not srcdir)" >&2 ; \
-	                rm -f "$@" || true ; \
-	                cp -pf ./ChangeLog "$@" || { cat ./ChangeLog > "$@" ; touch -r ./ChangeLog "$@" || true ; } ; \
-	            else \
+	            if diff ./ChangeLog '$@' >/dev/null 2>/dev/null ; then \
 	                echo "Using distributed ChangeLog file from sources (and builddir already has content identical to one in srcdir)" >&2 ; \
+	            else \
+	                echo "Using distributed ChangeLog file from sources (and builddir is not srcdir)" >&2 ; \
+	                rm -f '$@' || true ; \
+	                cp -pf ./ChangeLog '$@' || { cat ./ChangeLog > '$@' ; touch -r ./ChangeLog '$@' || true ; } ; \
 	            fi ; \
 	        else \
-	            if test -s "$@" ; then \
+	            if test -s '$@' ; then \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : SKIP (keep existing)" ; \
 	                echo "Using distributed ChangeLog file from sources (and builddir is srcdir)" >&2 ; \
 	            else \
 	                echo "  DOC-CHANGELOG-GENERATE	$@ : FAILED (non-fatal)" >&2 ; \
-	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > '$@' ; \
 	            fi ; \
 	        fi ; \
 	    fi
@@ -983,6 +1057,65 @@ libupsclient-version.h clients/libupsclient-version.h:
 tools/gitlog2changelog.py: tools/gitlog2changelog.py.in
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) -s $(@F)
 
+# Partially snatched from automake generated code
+distcheck-completeness: dist
+	@chmod -R +w $(distdir) $(distdir)-orig-* $(distdir)-derived-* || true
+	@rm -rf $(distdir) $(distdir)-orig-* $(distdir)-derived-* || true
+	@case '$(DIST_ARCHIVES)' in \
+	*.tar.gz*) \
+	  eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).tar.gz | $(am__untar) ;;\
+	*.tar.bz2*) \
+	  bzip2 -dc $(distdir).tar.bz2 | $(am__untar) ;;\
+	*.tar.lz*) \
+	  lzip -dc $(distdir).tar.lz | $(am__untar) ;;\
+	*.tar.xz*) \
+	  xz -dc $(distdir).tar.xz | $(am__untar) ;;\
+	*.tar.Z*) \
+	  uncompress -c $(distdir).tar.Z | $(am__untar) ;;\
+	*.shar.gz*) \
+	  eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).shar.gz | unshar ;;\
+	*.zip*) \
+	  unzip $(distdir).zip ;;\
+	*.tar.zst*) \
+	  zstd -dc $(distdir).tar.zst | $(am__untar) ;;\
+	esac
+	+@RES=0 ; \
+	{ cp -rf $(distdir) $(distdir)-orig-$$$$ \
+	  && am__cwd="`pwd`" \
+	  && $(am__cd) $(distdir) \
+	  && ./configure \
+	      $(AM_DISTCHECK_CONFIGURE_FLAGS) \
+	      $(DISTCHECK_CONFIGURE_FLAGS) \
+	      --prefix="`pwd`/.inst" \
+	  && $(MAKE) $(AM_MAKEFLAGS) dist \
+	  && case '$(DIST_ARCHIVES)' in \
+	      *.tar.gz*) \
+	        eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).tar.gz | $(am__untar) ;;\
+	      *.tar.bz2*) \
+	        bzip2 -dc $(distdir).tar.bz2 | $(am__untar) ;;\
+	      *.tar.lz*) \
+	        lzip -dc $(distdir).tar.lz | $(am__untar) ;;\
+	      *.tar.xz*) \
+	        xz -dc $(distdir).tar.xz | $(am__untar) ;;\
+	      *.tar.Z*) \
+	        uncompress -c $(distdir).tar.Z | $(am__untar) ;;\
+	      *.shar.gz*) \
+	        eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).shar.gz | unshar ;;\
+	      *.zip*) \
+	        unzip $(distdir).zip ;;\
+	      *.tar.zst*) \
+	        zstd -dc $(distdir).tar.zst | $(am__untar) ;;\
+	      esac \
+	  && mv $(distdir) ../$(distdir)-derived-$$$$ \
+	  && $(MAKE) $(AM_MAKEFLAGS) maintainer-clean \
+	  && cd "$$am__cwd" \
+	  && echo "  $@	diff $(distdir)-orig-$$$$ $(distdir)-derived-$$$$" \
+	  && diff $(distdir)-orig-$$$$ $(distdir)-derived-$$$$ ; \
+	  } || RES=$$? ; \
+	  rm -rf $(distdir)-orig-$$$$ $(distdir)-derived-$$$$ $(distdir) ; \
+	  exit $$RES
+	@echo "SUCCESS: $(distdir) archives are self-reproducing"
+
 # ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes
 # Assume tools are available (and maintainer GPG keys)
@@ -992,6 +1125,9 @@ nut-@PACKAGE_VERSION@.tar.gz: dist
 nut-@PACKAGE_VERSION@.tar.gz.sig: dist-sig
 nut-@PACKAGE_VERSION@.tar.gz.md5 nut-@PACKAGE_VERSION@.tar.gz.sha256: dist-hash
 
+# Bonus feature, results depend on configure script options and available tools
+nut-@PACKAGE_VERSION@-docs.tar.gz: dist-docs
+
 dist-sig: nut-@PACKAGE_VERSION@.tar.gz
 	rm -f nut-@PACKAGE_VERSION@.tar.gz.sig
 	gpg --detach-sign nut-@PACKAGE_VERSION@.tar.gz
@@ -999,6 +1135,51 @@ dist-sig: nut-@PACKAGE_VERSION@.tar.gz
 dist-hash: nut-@PACKAGE_VERSION@.tar.gz
 	md5sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.md5
 	sha256sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.sha256
+
+# Helper to have all built docs (config-dependent) neatly aligned
+# NOT part of standard tarball, though
+EXTRA_DIST_DOCS = VERSION_* *.adoc-parsed
+
+if WITH_CHANGELOG_TEXT
+EXTRA_DIST_DOCS += ChangeLog
+endif WITH_CHANGELOG_TEXT
+
+if WITH_CHANGELOG_ADOC
+EXTRA_DIST_DOCS += ChangeLog.adoc
+endif WITH_CHANGELOG_ADOC
+
+if KEEP_NUT_REPORT
+EXTRA_DIST_DOCS += config.nut_report_feature.log
+endif KEEP_NUT_REPORT
+
+if WITH_HTML_SINGLE
+EXTRA_DIST_DOCS += docs/man/*.html docs/*.html
+endif WITH_HTML_SINGLE
+
+if WITH_HTML_CHUNKED
+EXTRA_DIST_DOCS += docs/*.chunked
+endif WITH_HTML_CHUNKED
+
+if WITH_PDFS
+EXTRA_DIST_DOCS += docs/*.pdf
+endif WITH_PDFS
+
+if WITH_MANS
+if !KNOWN_UNABLE_MANS
+EXTRA_DIST_DOCS += \
+	docs/man/*.@MAN_SECTION_API_BASE@ \
+	docs/man/*.@MAN_SECTION_CFG_BASE@ \
+	docs/man/*.@MAN_SECTION_CMD_SYS_BASE@ \
+	docs/man/*.@MAN_SECTION_CMD_USR_BASE@ \
+	docs/man/*.@MAN_SECTION_MISC_BASE@
+endif !KNOWN_UNABLE_MANS
+endif WITH_MANS
+
+# Modeled after automake generated mesh of rules for "distdir" handling with "am__tar"
+dist-docs: all-docs
+	$${TAR-tar} cf - $(EXTRA_DIST_DOCS) | eval GZIP= gzip $(GZIP_ENV) -c > $(distdir)-docs.tar.gz
+	ls -la $(distdir)-docs.tar.gz
+	$${TAR-tar} tzvf $(distdir)-docs.tar.gz || true
 
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
@@ -1068,7 +1249,7 @@ install-data-hook:
 	@case "@target_os@" in *mingw*) exit 0;; esac ; \
 	 if [ x"@host_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
 	 if [ x"@target_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
-	 if (command -v id) && [ x"`id -u`" = x0 ] && [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
+	 if (command -v id) && ( [ x"`id -u 2>/dev/null`" = x0 ] || [ x"`id | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" = x0 ] ) && [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
 		echo "================================================================================" >&2 ; \
 		echo "| NUT data files have been installed into the system, now consider running     |" >&2 ; \
 		echo "| '(sudo) make install-as-root' to apply permissions and service state changes |" >&2 ; \
@@ -1086,6 +1267,12 @@ WITH_SYSTEMD_TMPFILES = true
 else !WITH_SYSTEMD_TMPFILES
 WITH_SYSTEMD_TMPFILES = false
 endif !WITH_SYSTEMD_TMPFILES
+
+if WITH_SYSTEMD_SYSUSERS
+WITH_SYSTEMD_SYSUSERS = true
+else !WITH_SYSTEMD_SYSUSERS
+WITH_SYSTEMD_SYSUSERS = false
+endif !WITH_SYSTEMD_SYSUSERS
 
 if WITH_SYSTEMD_PRESET
 WITH_SYSTEMD_PRESET = true
@@ -1117,24 +1304,24 @@ endif !WITH_SOLARIS_INIT
 # distros that do not follow current naming in NUT code base.
 install-as-root:
 	@+echo "$@: starting (no-op if not root)" >&2 ; \
-	 case "@target_os@" in *mingw*) echo "$@: SKIP: not supported for this target_os='@target_os@'" >&2 ; exit 0;; esac ; \
-	 if [ x"@host_os@" != x"@build_os@" ]; then echo "$@: SKIP: build_os='@build_os@' is not host_os='@host_os@'" >&2 ; exit 0 ; fi ; \
-	 if [ x"@target_os@" != x"@build_os@" ]; then echo "$@: SKIP: build_os='@build_os@' is not target_os='@target_os@'" >&2 ; exit 0 ; fi ; \
-	 if (command -v id) && [ x"`id -u`" = x0 ] ; then \
+	 case "$(target_os)" in *mingw*) echo "$@: SKIP: not supported for this target_os='$(target_os)'" >&2 ; exit 0;; esac ; \
+	 if [ x"$(host_os)" != x"$(build_os)" ]; then echo "$@: SKIP: build_os='$(build_os)' is not host_os='$(host_os)'" >&2 ; exit 0 ; fi ; \
+	 if [ x"$(target_os)" != x"$(build_os)" ]; then echo "$@: SKIP: build_os='$(build_os)' is not target_os='$(target_os)'" >&2 ; exit 0 ; fi ; \
+	 if (command -v id) && ( [ x"`id -u 2>/dev/null`" = x0 ] || [ x"`id | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" = x0 ] ) ; then \
 		echo "$@: we seem to be root, PROCEEDING" >&2 ; \
 	 else \
 		echo "$@: SKIP: we seem to NOT be root" >&2 ; \
 		exit 0 ; \
 	 fi ; \
-	 prefix="@prefix@"; \
+	 prefix="$(prefix)"; \
 	 if [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
 		if $(HAVE_SYSTEMD) ; then \
 			echo "$@: Stop NUT services, if any" >&2 ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-monitor.service nut-server.service || true ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-driver.service || true ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-driver.target || true ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-udev-settle.service || true ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut.target || true ; \
+			$(SYSTEMD_SYSTEMCTL_PROGRAM) stop nut-monitor.service nut-server.service || true ; \
+			$(SYSTEMD_SYSTEMCTL_PROGRAM) stop nut-driver.service || true ; \
+			$(SYSTEMD_SYSTEMCTL_PROGRAM) stop nut-driver.target || true ; \
+			$(SYSTEMD_SYSTEMCTL_PROGRAM) stop nut-udev-settle.service || true ; \
+			$(SYSTEMD_SYSTEMCTL_PROGRAM) stop nut.target || true ; \
 		fi ; \
 		if $(WITH_SOLARIS_SMF) || $(WITH_SOLARIS_INIT) ; then \
 			if $(WITH_SOLARIS_SMF) ; then \
@@ -1156,9 +1343,9 @@ install-as-root:
 			exit ; \
 		fi ; \
 	 fi ; \
-	 echo "  MKDIR	$(DESTDIR)/@STATEPATH@ $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
-	 $(MKDIR_P) "$(DESTDIR)/@STATEPATH@/upssched" && \
-	 for D in "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" "@CONFPATH@" ; do \
+	 echo "  MKDIR	$(DESTDIR)/$(STATEPATH) $(DESTDIR)/$(STATEPATH)/upssched" >&2 ; \
+	 $(MKDIR_P) "$(DESTDIR)/$(STATEPATH)/upssched" && \
+	 for D in "$(PIDPATH)" "$(ALTPIDPATH)" "$(ALTSTATEPATH)" "$(CONFPATH)" ; do \
 		case x"$$D" in \
 		x|x@*) ;; \
 		*)	echo "  MKDIR	$(DESTDIR)/$$D" >&2 ; \
@@ -1167,10 +1354,10 @@ install-as-root:
 		esac ; \
 	 done ; \
 	 if (command -v chmod) ; then \
-		echo "  CHMOD(0770)	$(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
-		chmod 0770 "$(DESTDIR)/@STATEPATH@/upssched" \
+		echo "  CHMOD(0770)	$(DESTDIR)/$(STATEPATH)/upssched" >&2 ; \
+		chmod 0770 "$(DESTDIR)/$(STATEPATH)/upssched" \
 		|| exit ; \
-		for D in "@STATEPATH@" "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
+		for D in "$(STATEPATH)" "$(PIDPATH)" "$(ALTPIDPATH)" "$(ALTSTATEPATH)" ; do \
 			case x"$$D" in \
 			x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
 			*)	echo "  CHMOD(0770)	$(DESTDIR)/$$D" >&2 ; \
@@ -1178,53 +1365,53 @@ install-as-root:
 				|| exit ;; \
 			esac ; \
 		done ; \
-		case x"@CONFPATH@" in \
+		case x"$(CONFPATH)" in \
 			x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
-			*)	echo "  CHMOD(0751)	$(DESTDIR)/@CONFPATH@" >&2 ; \
-				chmod 0751 "$(DESTDIR)/@CONFPATH@" \
+			*)	echo "  CHMOD(0751)	$(DESTDIR)/$(CONFPATH)" >&2 ; \
+				chmod 0751 "$(DESTDIR)/$(CONFPATH)" \
 				|| exit ;; \
 		esac ; \
 		for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
-			echo "  CHMOD(0644)	CGI: $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
-			chmod 0644 "$(DESTDIR)/@CONFPATH@/$$F" \
+			echo "  CHMOD(0644)	CGI: $(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" >&2 ; \
+			chmod 0644 "$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" \
 			|| { if $(WITH_CGI) ; then exit 1 ; else true ; fi ; } ; \
 		done ; \
 		for F in nut.conf.sample ups.conf.sample upsd.conf.sample upsd.users.sample upsmon.conf.sample upssched.conf.sample ; do \
-			echo "  CHMOD(0640)	$(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
-			chmod 0640 "$(DESTDIR)/@CONFPATH@/$$F" \
+			echo "  CHMOD(0640)	$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" >&2 ; \
+			chmod 0640 "$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" \
 			|| exit ; \
 		done ; \
 	 else \
 		echo "$@: WARNING: Can not CHMOD created locations!" >&2 ; \
 	 fi ; \
-	 if (command -v chown) && test 0 -lt "`id -u '@RUN_AS_USER@'`" \
-	 && ( test 0 -lt "`getent group '@RUN_AS_GROUP@' | awk -F: '{print $$3}'`" || test 0 -lt "`id -g '@RUN_AS_GROUP@'`" ) \
+	 if (command -v chown) && ( test 0 -lt "`id -u '$(RUN_AS_USER)' 2>/dev/null`" || test 0 -lt "`id '$(RUN_AS_USER)' | sed -e 's,(.*$$,,' -e 's,^.*uid=,,'`" ] ) \
+	 && ( test 0 -lt "`getent group '$(RUN_AS_GROUP)' | awk -F: '{print $$3}'`" || test 0 -lt "`id -g '$(RUN_AS_GROUP)'`" ) \
 	 ; then \
-		echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)	$(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
-		chown "@RUN_AS_USER@:@RUN_AS_GROUP@" "$(DESTDIR)/@STATEPATH@/upssched" \
+		echo "  CHOWN($(RUN_AS_USER):$(RUN_AS_GROUP))	$(DESTDIR)/$(STATEPATH)/upssched" >&2 ; \
+		chown "$(RUN_AS_USER):$(RUN_AS_GROUP)" "$(DESTDIR)/$(STATEPATH)/upssched" \
 		|| exit ; \
-		for D in "@STATEPATH@" "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
+		for D in "$(STATEPATH)" "$(PIDPATH)" "$(ALTPIDPATH)" "$(ALTSTATEPATH)" ; do \
 			case x"$$D" in \
 			x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
-			*)	echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)	$(DESTDIR)/$$D" >&2 ; \
-				chown "@RUN_AS_USER@:@RUN_AS_GROUP@" "$(DESTDIR)/$$D" \
+			*)	echo "  CHOWN($(RUN_AS_USER):$(RUN_AS_GROUP))	$(DESTDIR)/$$D" >&2 ; \
+				chown "$(RUN_AS_USER):$(RUN_AS_GROUP)" "$(DESTDIR)/$$D" \
 				|| exit ;; \
 			esac ; \
 		done ; \
-		case x"@CONFPATH@" in \
+		case x"$(CONFPATH)" in \
 			x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
-			*)	echo "  CHOWN(root:@RUN_AS_GROUP@)	$(DESTDIR)/@CONFPATH@" >&2 ; \
-				chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@" \
+			*)	echo "  CHOWN(root:$(RUN_AS_GROUP))	$(DESTDIR)/$(CONFPATH)" >&2 ; \
+				chown "root:$(RUN_AS_GROUP)" "$(DESTDIR)/$(CONFPATH)" \
 				|| exit ;; \
 		esac ; \
 		for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
-			echo "  CHOWN(root:@RUN_AS_GROUP@)	CGI: $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
-			chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@/$$F" \
+			echo "  CHOWN(root:$(RUN_AS_GROUP))	CGI: $(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" >&2 ; \
+			chown "root:$(RUN_AS_GROUP)" "$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" \
 			|| { if $(WITH_CGI) ; then exit 1 ; else true ; fi ; } ; \
 		done ; \
 		for F in nut.conf.sample ups.conf.sample upsd.conf.sample upsd.users.sample upsmon.conf.sample upssched.conf.sample ; do \
-			echo "  CHOWN(root:@RUN_AS_GROUP@)	$(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
-			chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@/$$F" \
+			echo "  CHOWN(root:$(RUN_AS_GROUP))	$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" >&2 ; \
+			chown "root:$(RUN_AS_GROUP)" "$(DESTDIR)/$(CONFPATH_EXAMPLES)/$$F" \
 			|| exit ; \
 		done ; \
 	 else \
@@ -1236,40 +1423,52 @@ install-as-root:
 			echo "$@: Activate default systemd layout, restart services:" >&2 ; \
 			if $(WITH_SYSTEMD_TMPFILES) ; then \
 				echo "$@: Apply systemd-tmpfiles presets" >&2 ; \
-				@SYSTEMD_TMPFILES_PROGRAM@ --create || exit ; \
+				$(SYSTEMD_TMPFILES_PROGRAM) --create || exit ; \
+			fi ; \
+			if $(WITH_SYSTEMD_SYSUSERS) ; then \
+				echo "$@: Apply systemd-sysusers presets" >&2 ; \
+				$(SYSTEMD_SYSUSERS_PROGRAM) || exit ; \
 			fi ; \
 			echo "$@: Learn systemd definition changes" >&2 ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ daemon-reload || exit ; \
+			$(SYSTEMD_SYSTEMCTL_PROGRAM) daemon-reload || exit ; \
+			APPLIED_SYSTEMD_PRESET=false ; \
 			if $(WITH_SYSTEMD_PRESET) ; then \
 				echo "$@: Apply systemd enabled/disabled service presets" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all || exit ; \
-			else \
-				echo "$@: Apply systemd enabled/disabled service defaults" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ disable nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
+				$(SYSTEMD_SYSTEMCTL_PROGRAM) preset-all && APPLIED_SYSTEMD_PRESET=true || APPLIED_SYSTEMD_PRESET=false ; \
 			fi ; \
-			echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart udev && applied_udev=true || true ; \
-			$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
+			if [ x"$${APPLIED_SYSTEMD_PRESET}" = x"false" ] ; then \
+				echo "$@: Apply systemd enabled/disabled service defaults in a legacy manner" >&2 ; \
+				$(SYSTEMD_SYSTEMCTL_PROGRAM) disable nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
+				$(SYSTEMD_SYSTEMCTL_PROGRAM) enable  nut.target nut-driver.target nut-udev-settle.service nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
+			fi ; \
+			$(SYSTEMD_SYSTEMCTL_PROGRAM) restart udev && applied_udev=true || true ; \
+			if [ -s '$(CONFPATH)/ups.conf' ] ; then \
+				echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
+				$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
+			fi; \
 			echo "$@: Restart NUT services" >&2 ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart nut-driver-enumerator.service nut-monitor.service nut-server.service || exit ; \
+			$(SYSTEMD_SYSTEMCTL_PROGRAM) restart nut-driver-enumerator.service nut-monitor.service nut-server.service \
+			|| if [ -s '$(CONFPATH)/ups.conf' -a -s '$(CONFPATH)/upsd.conf' -a -s '$(CONFPATH)/upsd.users' -a -s '$(CONFPATH)/upsmon.conf' ] ; then exit 1 ; \
+			else echo "$@: some configs are missing, assuming new NUT installation" >&2; fi; \
 		fi ; \
-		if ! $${applied_udev} && (command -v udevadm); then \
+		if $${applied_udev} && (command -v udevadm); then \
+			true ; \
+		else \
 			udevadm control --reload-rules && udevadm trigger && applied_udev=true || true ; \
 		fi ; \
 	 fi ; \
-	 echo "$@: finished SUCCESSFULLY" >&2
+	 echo "$@: Finished SUCCESSFULLY" >&2
 
 # Clean the dist tarball and packages
 MAINTAINERCLEANFILES_DISTBALL = nut-*.tar.gz
 # HP-UX:
-MAINTAINERCLEANFILES_PACKAGES = NUT_HPUX_package@PACKAGE_VERSION@.depot NUT_HPUX_package-@PACKAGE_VERSION@.depot
+MAINTAINERCLEANFILES_PACKAGES = NUT_HPUX_package$(PACKAGE_VERSION).depot NUT_HPUX_package-$(PACKAGE_VERSION).depot
 # AIX as below, and RedHat-compatible (cover binary and source packages):
 MAINTAINERCLEANFILES_PACKAGES += nut*rpm
 # Debian-compatible (cover binary and source packages):
 MAINTAINERCLEANFILES_PACKAGES += nut*deb
 # Solaris SVR4 package archives:
-MAINTAINERCLEANFILES_PACKAGES += NUT_solaris_*_package@PACKAGE_VERSION@.local.gz NUT_solaris_*_package-@PACKAGE_VERSION@.local.gz
+MAINTAINERCLEANFILES_PACKAGES += NUT_solaris_*_package$(PACKAGE_VERSION).local.gz NUT_solaris_*_package-$(PACKAGE_VERSION).local.gz
 # Newer Solaris IPS (aka "pkg(5)" format archives)
 MAINTAINERCLEANFILES_PACKAGES += *.p5p
 
@@ -1283,7 +1482,7 @@ package: dist
 	"HP-UX") \
 		( cd scripts/HP-UX && \
 		  $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package && \
-		  mv NUT_HPUX_package.depot $(abs_top_builddir)/NUT_HPUX_package-@PACKAGE_VERSION@.depot ) ;; \
+		  mv NUT_HPUX_package.depot $(abs_top_builddir)/NUT_HPUX_package-$(PACKAGE_VERSION).depot ) ;; \
 	"SunOS") \
 		$(MAKE) $(AM_MAKEFLAGS) && \
 		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" install && \
@@ -1297,7 +1496,7 @@ package: dist
 		if test -d /usr/src/packages/SOURCES -a -w /usr/src/packages/SOURCES ; then : ; else echo "Can not write to /usr/src/packages/SOURCES" >&2 ; exit 1; fi ; \
 		$(MAKE) $(AM_MAKEFLAGS) dist && \
 		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS && \
-		cp scripts/Aix/nut.init nut-@PACKAGE_VERSION@.tar.gz /usr/src/packages/SOURCES && \
+		cp scripts/Aix/nut.init nut-$(PACKAGE_VERSION).tar.gz /usr/src/packages/SOURCES && \
 		rpm -ba /usr/src/packages/SPECS/nut-aix.spec && \
 		mv /usr/src/packages/RPMS/nut*rpm $(abs_top_builddir)/ ;; \
 	*)	echo "Unsupported OS for 'make $@' (no recipe bound)" >&2; exit 1;; \
@@ -1334,27 +1533,35 @@ install-win-bundle-thirdparty:
 	 if test -n "$$ARCH" ; then export ARCH ; fi ; \
 	 DESTDIR='$(DESTDIR)' ; export DESTDIR ; \
 	 (  cd '$(DESTDIR)' || exit ; \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    DESTDIR="" '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
+	        BD="`basename \"$$D\"`" ; \
+	        if test -e './$(bindir)/'"$$BD" && diff './$(bindir)/'"$$BD" "$$D" 2>/dev/null >/dev/null ; then \
+	            echo "   DLL->bin       $$D : skip (already installed there)" 2>&1 ; \
+	            continue ; \
+	        fi ; \
 	        echo "   DLL->bin       $$D" 2>&1 ; \
 	        cp -pf "$$D" './$(bindir)/' ; \
 	    done ; \
 	 ) || exit ; \
 	 (  if test x"$(bindir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(sbindir)' || exit ; \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->sbin      $$D" 2>&1 ; \
-	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        echo "   DLL->sbin      $$D (symlink from bindir)" 2>&1 ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
 	 (  if test x"$(driverexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(driverexecdir)' || exit ; \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->drv       $$D" 2>&1 ; \
-	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        echo "   DLL->drv       $$D (symlink from bindir)" 2>&1 ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
 	 (  if test -z "$(cgiexecdir)" -o ! -d "$(DESTDIR)/$(cgiexecdir)" ; then exit 0 ; fi ; \
@@ -1362,10 +1569,11 @@ install-win-bundle-thirdparty:
 	    if test x"$(cgiexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(cgiexecdir)' || exit ; \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->cgi       $$D" 2>&1 ; \
-	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        echo "   DLL->cgi       $$D (symlink from bindir)" 2>&1 ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
 	 (  if test x"$(libexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
@@ -1373,10 +1581,11 @@ install-win-bundle-thirdparty:
 	    if test x"$(libexecdir)" = x"$(driverexecdir)" ; then exit 0 ; fi ; \
 	    if test x"$(libexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(libexecdir)' || exit ; \
+	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->libexec   $$D" 2>&1 ; \
-	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        echo "   DLL->libexec   $$D (symlink from bindir)" 2>&1 ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit
 	@echo "CHECKING if any executable files were installed to locations other than those covered by this recipe, so might not have needed DLLs bundled near them" >&2 ; \
@@ -1386,8 +1595,8 @@ install-win-bundle-thirdparty:
 	 relcgiexecdir="`echo './$(cgiexecdir)/' | sed 's,//*,/,g'`" ; \
 	 rellibexecdir="`echo './$(libexecdir)/' | sed 's,//*,/,g'`" ; \
 	 cd '$(DESTDIR)' || exit ; \
-	 find . -type f | grep -Ei '\.(exe|dll)$$' \
-	 | grep -vE "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir}|$${rellibexecdir})" \
+	 find . -type f | $(EGREP) -i '\.(exe|dll)$$' \
+	 | $(EGREP) -v "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir}|$${rellibexecdir})" \
 	 | ( RES=0 ; while IFS= read LINE ; do echo "$$LINE" ; RES=1; done; exit $$RES )
 
 else !HAVE_WINDOWS
@@ -1406,7 +1615,7 @@ print-DISTCLEANFILES:
 
 # TODO: Recursive mode to consider patterns defined in sub-dir makefiles
 git-realclean-check:
-	@if test -e .git && (command -v git); then \
+	@if ( ( test -e .git ) 2>/dev/null || test -d .git || test -f .git || test -h .git ) && (command -v git); then \
 		git status --ignored || while read F ; do \
 			for P in $(MAINTAINERCLEANFILES) ; do \
 				case "$$F" in \
@@ -1420,7 +1629,48 @@ git-realclean-check:
 # quickly handled by external tools, to group (in life and log) various checks
 # separately from the probably slower/louder stages for test programs like
 # check-NIT:
-check-files-quick: spellcheck-quick check-man
+CHECK_FILES_QUICK_TARGETS = check-man
+if WITH_SPELLCHECK
+CHECK_FILES_QUICK_TARGETS += spellcheck-quick
+endif WITH_SPELLCHECK
+check-files-quick: $(CHECK_FILES_QUICK_TARGETS)
 
 # Autotools hook: run the quick checks before recursing for defaults:
 check-recursive: check-files-quick
+
+# Caller can set this to "false" to not regenerate below
+# (e.g. in CI vs. developer iterations):
+CHECK_PARALLEL_BUILDS_REGEN = true
+
+# Not pulled in directly so far, can be used by developers to verify that build
+# rules (inlcuding dependencies pulled from other directories) make sense and
+# do not cause conflict by writing into same file names. Something that builds
+# from root directory arrange nicely, but needs careful balancing on a tightrope
+# if developers build pieces of code right in the directory of their interest.
+# It is recommended to have "ccache" (or similar) setup working, to minimize the
+# time cost and workload of compilations involved in these looped build retries.
+# Oddly, the NetBSD 9.2 `bmake` faced with out-of-tree (subdir) builds does
+# find itself work to do even if called in the root dir (with no `Makefile`
+# generated there -- it detects a build to do under e.g. `obj/` in CI tests),
+# but also tends to have that directory as current at the time we try to call
+# the `./config.status` line -- and fails there. Hence the `cd top_builddir`.
+# Auto-parallel recipe (if current 'make' implementation supports the "-j N"
+# syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
+check-parallel-builds:
+	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then cd '$(top_srcdir)' && $(AUTOMAKE) -f ; fi
+	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then cd '$(top_builddir)' && ./config.status ; fi
+	+@$(SET_PARMAKES_OPT); \
+	  DIRS=""; \
+	  cd '$(abs_top_builddir)' || exit ; \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make pre-clean before checking subdirs for sources" >&2; exit $$RES; } ; \
+	  for D in `cd '$(top_srcdir)' && find . -name '*.c' -o -name '*.cpp' | sed 's,/[^/]*\.cp*$$,,' | uniq` ; do \
+		( ( [ -e "$(top_srcdir)/$$D/Makefile.am" ] ) 2>/dev/null || [ -f "$(top_srcdir)/$$D/Makefile.am" ] || [ -h "$(top_srcdir)/$$D/Makefile.am" ] ) && [ -s "$$D/Makefile" ] || continue ; \
+		$(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} clean || { RES=$$?; echo "$@: FAILED: make clean before going to $$D" >&2; exit $$RES; } ; \
+		echo "  $@	in $${D}" ; \
+		( cd "$$D" && $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} ) || { RES=$$?; echo "$@: FAILED: parallel make in $$D" >&2; \
+		  echo "To investigate, try:  (MAKEFLAGS='$(MAKEFLAGS)' ; export MAKEFLAGS; $(MAKE) $(AM_MAKEFLAGS) $${PARMAKES_OPT} clean ; automake -f && ./config.status && clear && (cd $${D}/ && $(MAKE) $(AM_MAKEFLAGS) V=1 $${PARMAKES_OPT} 2>&1 ; echo $$?) | tee /tmp/make.log ; RES=$$? ; $(EGREP) '(\] Error|No rule to)' /tmp/make.log && less /tmp/make.log ; exit $$RES )"; \
+		  echo "If builds were interrupted before, you may also have to re-initialize the build area completely, e.g.:  git clean -fdX ; ./ci_build.sh && $(MAKE) $(MAKEFLAGS) $(AM_MAKEFLAGS) $@" ; \
+		  exit $$RES; } ; \
+		DIRS="$${DIRS} $${D}" ; \
+	  done ; \
+	  echo "$@: SUCCESS in all checked directories:$${DIRS}" >&2

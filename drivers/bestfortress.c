@@ -35,7 +35,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.12"
+#define DRIVER_VERSION  "0.15"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -119,6 +119,9 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("battery.runtime.low", "%s", "");
 	dstate_setflags("battery.runtime.low", ST_FLAG_STRING | ST_FLAG_RW);
 	dstate_setaux("battery.runtime.low", 3);
+
+	/* Set early so that it is in place for shutdown. */
+	dstate_setinfo("ups.delay.shutdown", "%s", shutdown_delay);
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = upsdrv_setvar;
@@ -461,7 +464,10 @@ static void autorestart (int restart)
 static int upsdrv_setvar (const char *var, const char * data) {
 	int parameter;
 	size_t len = strlen(data);
-	upsdebugx(1, "%s: %s %s (%" PRIuSIZE " bytes)", __func__, var, data, len);
+
+	upsdebug_SET_STARTING(var, data);
+	upsdebugx(1, "%s: (%" PRIuSIZE " bytes)", __func__, len);
+
 	if (strcmp("input.transfer.low", var) == 0) {
 		parameter = 7;
 	}
@@ -478,15 +484,17 @@ static int upsdrv_setvar (const char *var, const char * data) {
 		 * exist.  If the former, change to LOG_ERR and if the
 		 * latter change to LOG_DEBUG.
 		 */
-		upslogx(LOG_INFO, "%s: unsettable variable %s", __func__, var);
+		upslog_SET_UNKNOWN(var, data);
 		return STAT_SET_UNKNOWN;
 	}
+
 	ups_setsuper (1);
 	assert (len < INT_MAX);
 	if (setparam (parameter, (int)len, data)) {
 		dstate_setinfo (var, "%*s", (int)len, data);
 	}
 	ups_setsuper (0);
+
 	return STAT_SET_HANDLED;
 }
 
@@ -521,8 +529,13 @@ void upsdrv_shutdown(void)
 
 static int instcmd (const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "load.off")) {
-		upslogx(LOG_CRIT, "%s: %s: OFF/stayoff in 1s",
+		/* upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra); */
+		upslogx(LOG_INSTCMD_POWERSTATE, "%s: %s: OFF/stayoff in 1s",
 			__func__, cmdname);
 		autorestart (0);
 		upssend ("OFF1\r");
@@ -540,7 +553,9 @@ static int instcmd (const char *cmdname, const char *extra)
 			grace = "30";
 		}
 
-		upslogx(LOG_CRIT, "%s: OFF/restart in %s seconds", __func__, grace);
+		/* upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra); */
+		upslogx(LOG_INSTCMD_POWERSTATE, "%s: OFF/restart in %s seconds",
+			__func__, grace);
 
 		/* Start again, overriding front panel setting. */
 		autorestart (1);
@@ -551,13 +566,18 @@ static int instcmd (const char *cmdname, const char *extra)
 		upsdebugx(2, "%s: %s: end", __func__, cmdname);
 		return STAT_INSTCMD_HANDLED;
 	}
+
 	/* \todo Software error or user error? */
-	upslogx(LOG_ERR, "%s: unknown command [%s] [%s]",
-		__func__, cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -614,9 +634,6 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "%s: opened %s speed %s upsfd %d",
 		  __func__, device_path, speed_val ? speed_val : "DEFAULT", upsfd);
-
-	/* Set early so that it is in place for shutdown. */
-	dstate_setinfo("ups.delay.shutdown", "%s", shutdown_delay);
 
 	upsdebugx(1, "%s: end", __func__);
 }

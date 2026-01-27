@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.39"
+#define DRIVER_VERSION	"0.44"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -203,7 +203,8 @@ static enum tl_model_t {
 	TRIPP_LITE_OMNIVS_2001,
 	TRIPP_LITE_SMARTPRO,
 	TRIPP_LITE_SMART_0004,
-	TRIPP_LITE_SMART_3005
+	TRIPP_LITE_SMART_3005,
+	TRIPP_LITE_SMART_3017
 } tl_model = TRIPP_LITE_UNKNOWN;
 
 /*! Are the values encoded in ASCII or binary?
@@ -218,6 +219,7 @@ static int is_binary_protocol(void)
 		case TRIPP_LITE_SMART_0004:
 		case TRIPP_LITE_OMNIVS:
 		case TRIPP_LITE_OMNIVS_2001:
+		case TRIPP_LITE_SMART_3017:
 		case TRIPP_LITE_UNKNOWN:
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
@@ -244,6 +246,7 @@ static int is_smart_protocol(void)
 		case TRIPP_LITE_SMARTPRO:
 		case TRIPP_LITE_SMART_0004:
 		case TRIPP_LITE_SMART_3005:
+		case TRIPP_LITE_SMART_3017:
 			return 1;
 		case TRIPP_LITE_OMNIVS:
 		case TRIPP_LITE_OMNIVS_2001:
@@ -312,7 +315,7 @@ static long battery_voltage_nominal = 12,
 	/* input_voltage_maximum = -1,
 	   input_voltage_minimum = -1, */
 	   switchable_load_banks = 0,
-	   unit_id = -1; /*!< range: 1-65535, most likely */
+	   unit_id = DEFAULT_UPSID; /*!< range: 1-65535, most likely */
 
 /*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
@@ -491,14 +494,14 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 	buf[0] = 0;
 
 	/* Dump each byte in hex: */
-	for(i=0; i<len && end-bufp>=3; i++) {
-		bufp += sprintf((char *)bufp, "%02x ", msg[i]);
+	for (i=0; i<len && (end-bufp) >= 3; i++) {
+		bufp += sprintf((char *)bufp, "%02x ", msg[i]);	/* length-checked */
 	}
 
 	/* Dump single-quoted string with printable version of each byte: */
 	if (end-bufp > 0) *bufp++ = '\'';
 
-	for(i=0; i<len && end-bufp>0; i++) {
+	for (i=0; i<len && (end-bufp) > 0; i++) {
 		*bufp++ = (unsigned char)toprint(msg[i]);
 	}
 	if (end-bufp > 0) *bufp++ = '\'';
@@ -513,24 +516,27 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 
 static enum tl_model_t decode_protocol(unsigned int proto)
 {
-	switch(proto) {
+	switch (proto) {
 		case 0x0004:
-			upslogx(3, "Using older SMART protocol (%04x)", proto);
+			upslogx(LOG_INFO, "Using older SMART protocol (%04x)", proto);
 			return TRIPP_LITE_SMART_0004;
 		case 0x1001:
-			upslogx(3, "Using OMNIVS protocol (%x)", proto);
+			upslogx(LOG_INFO, "Using OMNIVS protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS;
 		case 0x2001:
-			upslogx(3, "Using OMNIVS 2001 protocol (%x)", proto);
+			upslogx(LOG_INFO, "Using OMNIVS 2001 protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS_2001;
 		case 0x3003:
-			upslogx(3, "Using SMARTPRO protocol (%x)", proto);
+			upslogx(LOG_INFO, "Using SMARTPRO protocol (%x)", proto);
 			return TRIPP_LITE_SMARTPRO;
 		case 0x3005:
-			upslogx(3, "Using binary SMART protocol (%x)", proto);
+			upslogx(LOG_INFO, "Using binary SMART protocol (%x)", proto);
 			return TRIPP_LITE_SMART_3005;
+		case 0x3017:
+			upslogx(LOG_INFO, "Using (mostly) ASCII SMART protocol (%x)", proto);
+			return TRIPP_LITE_SMART_3017;
 		default:
-			printf("Unknown protocol (%04x)", proto);
+			upslogx(LOG_INFO, "Unknown protocol (%04x)", proto);
 			break;
 	}
 
@@ -553,31 +559,83 @@ static void decode_v(const unsigned char *value)
  	ivn = value[1];
 	lb = value[4];
 
-	switch(ivn) {
-		case '0': input_voltage_nominal =
-			  input_voltage_scaled  = 100;
-			  break;
+	if( is_smart_protocol() && (tl_model != TRIPP_LITE_SMART_3017) ) {
+		switch(ivn) {
+			case 0:
+			case '0': input_voltage_nominal =
+				  input_voltage_scaled  = 100;
+				  break;
 
-		case 2: /* protocol 3005 */
-		case '1': input_voltage_nominal =
-			  input_voltage_scaled  = 120;
-			  break;
+			case 1:
+			case '1': input_voltage_nominal =
+				  input_voltage_scaled  = 110;
+				  break;
 
-		case '2': input_voltage_nominal =
-			  input_voltage_scaled  = 230;
-			  break;
+			case 2: /* protocol 3005 */
+			case '2': input_voltage_nominal =
+				  input_voltage_scaled  = 120;
+				  break;
 
-		case '3': input_voltage_nominal = 208;
-			  input_voltage_scaled  = 230;
-			  break;
+			case 3:
+			case '3': input_voltage_nominal =
+				  input_voltage_scaled  = 127;
+				  break;
 
-		case 6: input_voltage_nominal =
-			  input_voltage_scaled  = 230;
-			  break;
+			case 4:
+			case '4': input_voltage_nominal =
+				  input_voltage_scaled  = 208;
+				  break;
 
-		default:
-			  upslogx(2, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
-			  break;
+			case 5:
+			case '5': input_voltage_nominal =
+				  input_voltage_scaled  = 220;
+				  break;
+
+			case 6:
+			case '6': input_voltage_nominal =
+				  input_voltage_scaled  = 230;
+				  break;
+
+			case 7:
+			case '7': input_voltage_nominal =
+				  input_voltage_scaled  = 240;
+				  break;
+
+			default:
+				  upslogx(LOG_WARNING, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
+				  break;
+		}
+	} else {
+		/* Lots of odd cases here; maybe some of the SMART protocols got mixed in, too: */
+		switch(ivn) {
+			case '0': input_voltage_nominal =
+				  input_voltage_scaled  = 100;
+				  break;
+
+			case '1': input_voltage_nominal =
+				  input_voltage_scaled  = 120;
+				  break;
+
+			/* UK SMX1200XLHG protocol 3017 confirmed: */
+			case '2': input_voltage_nominal =
+				  input_voltage_scaled  = 230;
+				  break;
+
+			case '3': input_voltage_nominal = 208;
+				  input_voltage_scaled  = 230;
+				  break;
+
+			case 6: input_voltage_nominal =
+				input_voltage_scaled  = 230;
+				break;
+
+			default:
+				upslogx(LOG_WARNING, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
+				break;
+		}
+
+		upslogx(LOG_WARNING, "Regard the input voltage range with skepticism (nominal = %ld, scaled = %ld; V[0] = 0x%02x)",
+				input_voltage_nominal, input_voltage_scaled, (unsigned int)ivn);
 	}
 
 	if( (lb >= '0') && (lb <= '9') ) {
@@ -587,7 +645,7 @@ static void decode_v(const unsigned char *value)
 			switchable_load_banks = lb;
 		} else {
 			if( lb != 'X' ) {
-				upslogx(2, "Unknown number of switchable load banks: 0x%02x",
+				upslogx(LOG_WARNING, "Unknown number of switchable load banks: 0x%02x",
 					(unsigned int)lb);
 			}
 		}
@@ -689,7 +747,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 			(usb_ctrl_charbufsize)sizeof(buffer_out));
 
 		if(ret != sizeof(buffer_out)) {
-			upslogx(1, "libusb_set_report() returned %d instead of %" PRIuSIZE,
+			upsdebugx(3, "libusb_set_report() returned %d instead of %" PRIuSIZE,
 				ret, sizeof(buffer_out));
 			return ret;
 		}
@@ -705,7 +763,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 				(usb_ctrl_charbufsize)sizeof(buffer_out),
 				RECV_WAIT_MSEC);
 			if(ret != sizeof(buffer_out)) {
-				upslogx(1, "libusb_get_interrupt() returned %d instead of %u while sending %s",
+				upsdebugx(3, "libusb_get_interrupt() returned %d instead of %u while sending %s",
 					ret, (unsigned)(sizeof(buffer_out)),
 					hexascdump(buffer_out, sizeof(buffer_out)));
 			}
@@ -742,7 +800,7 @@ static void debug_message(const char *msg, size_t len)
 
 	ret = send_cmd((const unsigned char *)msg, len, tmp_value, sizeof(tmp_value));
 	if(ret <= 0) {
-		sprintf(err_msg, "Error reading '%c' value", *msg);
+		snprintf(err_msg, sizeof(err_msg), "Error reading '%c' value", *msg);
 		usb_comm_fail(ret, err_msg);
 		return;
 	}
@@ -780,8 +838,12 @@ static int soft_shutdown(void)
 	int ret;
 	unsigned char buf[256], cmd_N[]="N\0x", cmd_G[] = "G";
 
+	/* TODO: find size/format of ASCII delay command */
+	if( !is_binary_protocol() ) {
+		upslogx(LOG_WARNING, "Other commands for this UPS are binary, but the format of the shutdown delay command has not been confirmed.");
+	}
+
 	/* Already binary: */
-	/* FIXME: Assumes memory layout / endianness? */
 	cmd_N[2] = (unsigned char)(offdelay & 0x00FF);
 	cmd_N[1] = (unsigned char)(offdelay >> 8);
 	upsdebugx(3, "soft_shutdown(offdelay=%u): N", offdelay);
@@ -896,6 +958,7 @@ static int control_outlet(int outlet_id, int state)
 
 		case TRIPP_LITE_OMNIVS:
 		case TRIPP_LITE_OMNIVS_2001:
+		case TRIPP_LITE_SMART_3017:
 		case TRIPP_LITE_UNKNOWN:
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
@@ -920,49 +983,62 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char buf[10];
 
-	if(is_smart_protocol()) {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (is_smart_protocol()) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 			send_cmd((const unsigned char *)"A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		if(!strcasecmp(cmdname, "reset.input.minmax")) {
+		if (!strcasecmp(cmdname, "reset.input.minmax")) {
 			return (send_cmd((const unsigned char *)"Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 	}
 
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		return control_outlet(0, 0) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		return control_outlet(0, 1) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 	}
 	/* code for individual outlets is in setvar() */
 #if 0
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		hard_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 #endif
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		soft_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
 		int ival = atoi(val);
 		if (ival >= 0) {
@@ -970,7 +1046,7 @@ static int setvar(const char *varname, const char *val)
 			dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 			return STAT_SET_HANDLED;
 		} else {
-			upslogx(LOG_NOTICE, "FAILED to set '%s' to %d", varname, ival);
+			upslogx(LOG_SET_UNKNOWN, "FAILED to set '%s' to %d", varname, ival);
 			return STAT_SET_UNKNOWN;
 		}
 	}
@@ -986,7 +1062,7 @@ static int setvar(const char *varname, const char *val)
 		ret = send_cmd(J_msg, sizeof(J_msg), buf, sizeof(buf));
 
 		if(ret <= 0) {
-			upslogx(LOG_NOTICE, "Could not set Unit ID (return code: %d).", ret);
+			upslogx(LOG_SET_UNKNOWN, "Could not set Unit ID (return code: %d).", ret);
 			return STAT_SET_UNKNOWN;
 		}
 
@@ -1003,13 +1079,15 @@ static int setvar(const char *varname, const char *val)
 		first_dot = strstr(varname, ".");
 		next_dot = strstr(first_dot + 1, ".");
 		if (!next_dot) {
-			upslogx(LOG_NOTICE, "FAILED to get outlet index from '%s' (no second dot)", varname);
+			upslogx(LOG_SET_UNKNOWN, "FAILED to get outlet index from '%s' (no second dot)", varname);
 			return STAT_SET_UNKNOWN;
 		}
 		index_chars = next_dot - (first_dot + 1);
 
-		if(index_chars > 9 || index_chars < 0) return STAT_SET_UNKNOWN;
-		if(strcmp(next_dot, ".switch")) return STAT_SET_UNKNOWN;
+		if (index_chars > 9 || index_chars < 0)
+			return STAT_SET_UNKNOWN;
+		if (strcmp(next_dot, ".switch"))
+			return STAT_SET_UNKNOWN;
 
 		strncpy(index_str, first_dot + 1, (size_t)index_chars);
 		index_str[index_chars] = 0;
@@ -1048,6 +1126,8 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 #endif
+
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -1088,7 +1168,7 @@ void upsdrv_initinfo(void)
 				fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
 						"see if usbhid-ups(8) works with this UPS.");
 			} else {
-				upslogx(3, "Could not reset watchdog. Please send model "
+				upslogx(LOG_ERR, "Could not reset watchdog. Please send model "
 						"information to nut-upsdev mailing list");
 			}
 		}
@@ -1487,7 +1567,7 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		if( tl_model == TRIPP_LITE_SMARTPRO ) {
+		if( (tl_model == TRIPP_LITE_SMARTPRO) || (tl_model == TRIPP_LITE_SMART_3017) ) {
 			freq = hex2d(t_value + 3, 3);
 			dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
 
@@ -1521,7 +1601,7 @@ void upsdrv_updateinfo(void)
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ||
-	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 || tl_model == TRIPP_LITE_SMART_3005) {
+	    is_smart_protocol() ) {
 		/* dq ~= sqrt(dV) is a reasonable approximation
 		 * Results fit well against the discrete function used in the Tripp Lite
 		 * source, but give a continuous result. */
@@ -1552,6 +1632,7 @@ void upsdrv_updateinfo(void)
 				hex2d(l_value+1, 4)/240.0*input_voltage_scaled);
 			break;
 		case TRIPP_LITE_SMARTPRO:
+		case TRIPP_LITE_SMART_3017:
 			dstate_setinfo("ups.load", "%ld", hex2d(l_value+1, 2));
 			break;
 		case TRIPP_LITE_SMART_3005:
@@ -1597,6 +1678,11 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -1677,7 +1763,7 @@ void upsdrv_initups(void)
 
 	hd = &curDevice;
 
-	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
+	upslogx(LOG_INFO, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
 	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
 	dstate_setinfo("ups.productid", "%04x", hd->ProductID);

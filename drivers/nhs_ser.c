@@ -43,7 +43,7 @@
 #include <math.h>
 
 #define DRIVER_NAME	"NHS Nobreak Drivers"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.04"
 #define MANUFACTURER	"NHS Sistemas Eletronicos LTDA"
 
 #define DEFAULTBAUD	2400
@@ -96,10 +96,22 @@ static baud_rate_t baud_rates[] = {
 	{ B921600,	921600,	"921600 bps" },
 	{ B1500000,	1500000,	"1.5 Mbps" },
 	{ B2000000,	2000000,	"2 Mbps" },
+/* NOTE: Per https://github.com/networkupstools/nut/issues/3163
+ * not all platforms offer all baud rates, so we wrap some into
+ * conditional uses.
+ */
+#ifdef B2500000
 	{ B2500000,	2500000,	"2.5 Mbps" },
+#endif
+#ifdef B3000000
 	{ B3000000,	3000000,	"3 Mbps" },
+#endif
+#ifdef B3500000
 	{ B3500000,	3500000,	"3.5 Mbps" },
+#endif
+#ifdef B4000000
 	{ B4000000,	4000000,	"4 Mbps" },
+#endif
 };
 #define NUM_BAUD_RATES (sizeof(baud_rates) / sizeof(baud_rates[0]))
 
@@ -1735,7 +1747,7 @@ static int reconnect_ups_if_needed(void) {
 static void interpret_pkt_hwinfo(void) {
 	/* TOTHINK: Consider passing in the packet struct as parameter? */
 	upsinfo	ups;
-	char	alarm[1024];	/* Also used as a general string buffer  */
+	char	hw_scratch_buf[1024];	/* General-purpose string buffer */
 
 	if (!lastpktdata.checksum_ok) {
 		upslogx(LOG_WARNING, "%s: bad lastpkthwinfo.checksum",
@@ -1797,8 +1809,8 @@ static void interpret_pkt_hwinfo(void) {
 		dstate_setinfo("experimental.nhs.hw.configuration", "%u", lastpkthwinfo.configuration);
 		for (i = 0; i < 5; i++) {
 			/* Reusing variable */
-			snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.configuration_array_p%u", i);
-			dstate_setinfo(alarm, "%u", lastpkthwinfo.configuration_array[i]);
+			snprintf(hw_scratch_buf, sizeof(hw_scratch_buf), "experimental.nhs.hw.configuration_array_p%u", i);
+			dstate_setinfo(hw_scratch_buf, "%u", lastpkthwinfo.configuration_array[i]);
 		}
 		dstate_setinfo("experimental.nhs.hw.c_oem_mode", "%s", lastpkthwinfo.c_oem_mode ? "true" : "false");
 		dstate_setinfo("experimental.nhs.hw.c_buzzer_disable", "%s", lastpkthwinfo.c_buzzer_disable ? "true" : "false");
@@ -1815,8 +1827,8 @@ static void interpret_pkt_hwinfo(void) {
 		dstate_setinfo("experimental.nhs.hw.statusval", "%u", lastpkthwinfo.statusval);
 		for (i = 0; i < 6; i++) {
 			/* Reusing variable */
-			snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.status_p%u", i);
-			dstate_setinfo(alarm, "%u", lastpkthwinfo.status[i]);
+			snprintf(hw_scratch_buf, sizeof(hw_scratch_buf), "experimental.nhs.hw.status_p%u", i);
+			dstate_setinfo(hw_scratch_buf, "%u", lastpkthwinfo.status[i]);
 		}
 		dstate_setinfo("experimental.nhs.hw.s_220V_in", "%s", lastpkthwinfo.s_220V_in ? "true" : "false");
 		dstate_setinfo("experimental.nhs.hw.s_220V_out", "%s", lastpkthwinfo.s_220V_out ? "true" : "false");
@@ -1859,7 +1871,7 @@ static void interpret_pkt_data(void) {
 	static float	pf = 0;
 
 	int	got_hwinfo = (lastpkthwinfo.checksum_ok && lastpkthwinfo.size > 0);
-	char	alarm[1024];	/* Also used as a general string buffer  */
+	char	data_scratch_buf[1024];	/* General-purpose string buffer */
 	unsigned int	vin_underv = 0;
 	unsigned int	vin_overv = 0;
 	unsigned int	perc = 0;
@@ -1930,14 +1942,17 @@ static void interpret_pkt_data(void) {
 		}
 	}
 
+	/* No ups.status changes above this line */
+	status_init();
+
 	if (lastpktdata.s_battery_mode) {
 		/* ON BATTERY */
 		upsdebugx(4, "UPS is on Battery Mode");
-		dstate_setinfo("ups.status", "%s", "OB");
+		status_set("OB");
 		if (lastpktdata.s_battery_low) {
 			/* If battery is LOW, warn user! */
 			upsdebugx(4, "UPS is on Battery Mode and in Low Battery State");
-			dstate_setinfo("ups.status", "%s", "LB");
+			status_set("LB");
 		}	/* end if */
 	}	/* end if */
 	else {
@@ -1950,7 +1965,7 @@ static void interpret_pkt_data(void) {
 				lastpktdata.vacinrms,
 				min_input_power,
 				lastpktdata.s_network_failure);
-			dstate_setinfo("ups.status", "%s", "DISCHRG");
+			status_set("DISCHRG");
 		}	/* end if */
 		else {
 			/* MAINS is present. We need to check some situations.
@@ -1962,16 +1977,16 @@ static void interpret_pkt_data(void) {
 				upsdebugx(4, "UPS is on MAINS");
 				if (lastpktdata.s_charger_on) {
 					upsdebugx(4, "UPS Charging...");
-					dstate_setinfo("ups.status", "%s", "CHRG");
+					status_set("CHRG");
 				}
 				else {
 					if ((lastpktdata.s_network_failure) || (lastpktdata.s_fast_network_failure)) {
 						upsdebugx(4, "UPS is on battery mode because network failure or fast network failure");
-						dstate_setinfo("ups.status", "%s", "OB");
+						status_set("OB");
 					}	/* end if */
 					else {
 						upsdebugx(4, "All is OK. UPS is on ONLINE!");
-						dstate_setinfo("ups.status", "%s", "OL");
+						status_set("OL");
 					}	/* end else */
 				}	/* end else */
 			}	/* end if */
@@ -1979,10 +1994,10 @@ static void interpret_pkt_data(void) {
 				/* Energy is below limit.
 				* Nobreak is probably in battery mode... */
 				if (lastpktdata.s_battery_low)
-					dstate_setinfo("ups.status", "%s", "LB");
+					status_set("LB");
 				else {
 					/* ...or network failure */
-					dstate_setinfo("ups.status", "%s", "OB");
+					status_set("OB");
 				}	/* end else */
 			}	/* end else */
 		}	/* end else */
@@ -2010,35 +2025,27 @@ static void interpret_pkt_data(void) {
 			upsdebugx(4, "Number of batteries is set to %u", numbat);
 	}
 
-	/* Set all alarms possible */
-	alarm[0] = '\0';
-	if (lastpktdata.s_battery_mode)
-		snprintf(alarm, sizeof(alarm), "%s", "|UPS IN BATTERY MODE|");
+	/* No ups.alarm changes above this line */
+	alarm_init();
+
 	if (lastpktdata.s_battery_low)
-		snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-			"|UPS IN BATTERY MODE|");
-	if (lastpktdata.s_network_failure)
-		snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-			"|NETWORK FAILURE|");
-
-	/* FIXME: Really same criteria in these 3? */
-	if (lastpktdata.s_fast_network_failure)
-		snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-			"|FAST NETWORK FAILURE|");
-	if (lastpktdata.s_fast_network_failure)
-		snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-			"|220v IN|");
-	if (lastpktdata.s_fast_network_failure)
-		snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-			"|220v OUT|");
-
+		alarm_set("[LOW BATTERY]");
 	if (lastpktdata.s_bypass_on)
-		snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-			"|BYPASS ON|");
-	if (lastpktdata.s_charger_on)
-		snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-			"|CHARGER ON|");
-	dstate_setinfo("ups.alarm", "%s", alarm);
+		alarm_set("[ON BYPASS]");
+
+	if (lastpktdata.s_network_failure)
+		alarm_set("[NETWORK FAILURE]");
+	if (lastpktdata.s_fast_network_failure)
+		alarm_set("[FAST NETWORK FAILURE]");
+
+	if (lastpktdata.s_220_in)
+		alarm_set("[220V IN]");
+	if (lastpktdata.s_220_out)
+		alarm_set("[220V OUT]");
+
+	/* Commit alarm and status information */
+	alarm_commit(); /* alarm first */
+	status_commit();
 
 	dstate_setinfo("ups.temperature", "%0.2f", lastpktdata.tempmed_real);
 	dstate_setinfo("ups.load", "%u", lastpktdata.potrms);
@@ -2192,8 +2199,8 @@ static void interpret_pkt_data(void) {
 		dstate_setinfo("experimental.nhs.data.statusval", "%u", lastpktdata.statusval);
 		for (i = 0; i < 8; i++) {
 			/* Reusing variable */
-			snprintf(alarm, sizeof(alarm), "experimental.nhs.data.status_p%u", i);
-			dstate_setinfo(alarm, "%u", lastpktdata.status[i]);
+			snprintf(data_scratch_buf, sizeof(data_scratch_buf), "experimental.nhs.data.status_p%u", i);
+			dstate_setinfo(data_scratch_buf, "%u", lastpktdata.status[i]);
 		}
 		dstate_setinfo("experimental.nhs.data.nominaltension", "%u", lastpktdata.nominaltension);
 		dstate_setinfo("experimental.nhs.data.timeremain", "%0.2f", lastpktdata.timeremain);
@@ -2475,4 +2482,9 @@ void upsdrv_makevartable(void) {
 }
 
 void upsdrv_help(void) {
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }

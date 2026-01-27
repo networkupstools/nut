@@ -33,7 +33,15 @@
 
 /* See include/common.h for details behind this */
 #ifndef NUT_UNUSED_VARIABLE
-#define NUT_UNUSED_VARIABLE(x) (void)(x)
+# define NUT_UNUSED_VARIABLE(x) (void)(x)
+#endif
+
+/* Should be defined via autoconf in include/config.h -
+ * if that is included earlier by the program code.
+ * If not - got a fallback here:
+ */
+#ifndef NUT_PORT
+# define NUT_PORT 3493
 #endif
 
 namespace nut
@@ -389,7 +397,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	TcpClient(const std::string& host, uint16_t port = 3493);
+	TcpClient(const std::string& host, uint16_t port = NUT_PORT);
 	~TcpClient() override;
 
 	/**
@@ -397,7 +405,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	void connect(const std::string& host, uint16_t port = 3493);
+	void connect(const std::string& host, uint16_t port = NUT_PORT);
 
 	/**
 	 * Connect to the server.

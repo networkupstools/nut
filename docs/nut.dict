@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3467 utf-8
+personal_ws-1.1 en 3634 utf-8
 AAC
 AAS
 ABI
@@ -55,6 +55,7 @@ Alexey
 AllowOverride
 Alm
 Amplon
+AnchorJS
 Andreas
 Andreassen
 Andrzej
@@ -80,6 +81,7 @@ Autobook
 Autoconfigure
 Avocent
 Axel
+Axpert
 Axxium
 BATGNn
 BATNn
@@ -92,6 +94,8 @@ BCD
 BCHARGE
 BCM
 BD
+BKnnnnM
+BKxxxM
 BMC
 BNT
 BOH
@@ -102,7 +106,10 @@ BTEST
 BTS
 BTV
 BUFRD
+BUILTIN
 BUZ
+BVKnnnnM
+BVKxxxM
 BXnnnnMI
 BYP
 BZ
@@ -125,6 +132,7 @@ Berge
 Berzonis
 Bieringer
 BigServers
+Bineos
 BlaXwan
 BlackOut
 BladeUPS
@@ -142,6 +150,7 @@ Breiland
 Brownell
 Bs
 BuildBot
+BuildRequires
 Buildbot
 Bxx
 ByPass
@@ -191,6 +200,7 @@ CSN
 CSS
 CTB
 CUDA
+CUSPP
 CVE
 CXR
 CXX
@@ -230,9 +240,11 @@ CygWin
 Cygwin
 DATACABLE
 DATAPATH
+DBCF
 DCE
 DCF
 DCO
+DDA
 DDD
 DDDDD
 DDDDDD
@@ -254,6 +266,7 @@ DEXP
 DF
 DHEA
 DIGYS
+DIRNAME
 DISCHRG
 DLDIR
 DLLs
@@ -312,6 +325,7 @@ Dsystemtap
 Dynamix
 Dynex
 EAGAIN
+EB
 EE
 EEPROM
 EFI
@@ -330,6 +344,7 @@ EOLed
 EPEL
 EPERM
 EPFCLCD
+EPIPE
 EPO
 EPS
 ESC
@@ -358,6 +373,7 @@ Emilien
 Energia
 EnergySaving
 Enphase's
+Epyc
 Erikson
 Eriksson
 Evgeny
@@ -365,7 +381,10 @@ Exar
 ExecCGI
 ExecStart
 ExecStartPre
+FAILOVER
+FBCA
 FD
+FDE
 FEMEA
 FFF
 FH
@@ -426,6 +445,7 @@ GPLv
 GPSER
 GRs
 GTK
+GTS
 GUESSTIMATION
 GUID
 GUIs
@@ -452,6 +472,7 @@ GitHub's
 Gnomovision
 GnuTLS
 Goebl
+GoldenMate
 Gomes
 Goncalves
 Gordeev
@@ -474,12 +495,14 @@ HL
 HMAC
 HNX
 HOMEBREW
+HOSTDESC
 HOSTLINK
 HOSTSYNC
 HOWTO
 HPE
 HPUX
 HREF
+HU
 HUPCL
 HUZKVEIkHnC
 HV
@@ -489,11 +512,13 @@ HWMON
 Hajduch
 Hanno
 Harnhammar
+Hasangarayev
 Havard
 Heavner
 Hessenflow
 HiBox
 Hirschler
+Hite
 Hlavinka
 Holger
 Homebrew
@@ -513,6 +538,7 @@ IFBETWEEN
 IFF
 IFSUPP
 IGN
+IIS
 IMG
 INADDR
 INFOSIZE
@@ -534,6 +560,7 @@ IPs
 IPv
 IRC
 IRIX
+ISAPI
 ISOs
 ITEMP
 ITy
@@ -596,13 +623,16 @@ Korte
 Kralewski
 Kroll
 Krpec
+Kubanek
 Kubernetes
+Kuttnig
 Kx
 LASTXFER
 LCDRM
 LCDRT
 LCDRTXL
 LDADD
+LDAP
 LDFLAGS
 LDLC
 LDRIVER
@@ -646,8 +676,10 @@ Lansafecable
 Laventhol
 Lce
 Legrand
+Lennart
 Lepple
 Levente
+LiFePO
 LibGD
 LibLTDL
 LibUSB
@@ -662,6 +694,7 @@ LogMin
 LowBatt
 Loyer
 Luca
+Luxeon
 Lygre
 Lynge
 MANPATH
@@ -673,6 +706,7 @@ MBATTCHG
 MBR
 MCU
 MDigest
+MEANWELL
 MEC
 MERCHANTABILITY
 MF
@@ -735,6 +769,7 @@ MinGW
 MiniCOL
 MiniGuard
 Minislot
+Mironov
 Moar
 Modbus
 ModemManager
@@ -776,6 +811,7 @@ NONBLOCK
 NONUT
 NOP
 NOPARENT
+NOSIGPIPE
 NOTALARM
 NOTBOOST
 NOTBYPASS
@@ -791,6 +827,8 @@ NOTOVER
 NOTTRIM
 NQA
 NTP
+NTU
+NTU's
 NUT's
 NUTCI
 NUTCONF
@@ -816,6 +854,7 @@ Neus
 Niels
 Niklas
 Niro
+NixOS
 Nobreak
 Nobreaks
 Nom
@@ -877,6 +916,7 @@ Orvaldi
 Orzechowski
 OutletSystem
 OutputOverload
+PATHs
 PBT
 PBTn
 PBTnn
@@ -943,6 +983,7 @@ Pavel
 Pawe
 PbAc
 Perriault
+Petr
 Petri
 Petter
 Pezzini
@@ -955,6 +996,7 @@ PiJuice
 PiNUT
 Plesser
 PnP
+Poettering
 Pohle
 PointBre
 Pos
@@ -964,10 +1006,12 @@ PowerAlert
 PowerCOM
 PowerCom
 PowerES
+PowerGuide
 PowerKinetics
 PowerMac
 PowerMan
 PowerManagerII
+PowerMaster
 PowerMust
 PowerNet
 PowerOff
@@ -987,8 +1031,10 @@ PowerWare
 Powerchute
 Powercool
 Powervar
+Powervar's
 Powerwell
 Prachi
+Preinstall
 Prereqs
 PresentStatus
 Priv
@@ -1020,6 +1066,7 @@ QLDL
 QMD
 QMF
 QMOD
+QOL
 QP
 QPAR
 QPD
@@ -1030,6 +1077,7 @@ QVFW
 QWS
 QinHeng
 Quette
+RBAC
 RBWARNTIME
 RDLCK
 RDNT
@@ -1059,6 +1107,7 @@ RRR
 RSA
 RSM
 RST
+RTC
 RTU
 RTXL
 RUPS
@@ -1267,6 +1316,7 @@ SystemIO
 Systeme
 Syu
 Szady
+TAE
 TBD
 TBR
 TCIFLUSH
@@ -1291,6 +1341,7 @@ TSR
 TST
 TT
 TTT
+TUD
 TXF
 TXG
 TXV
@@ -1316,6 +1367,8 @@ TopGuard
 Toth
 TrackingID
 TrackingResult
+Trevisan
+Treviño
 Tripp
 TrippLite
 Tru
@@ -1332,6 +1385,7 @@ UI
 UID
 UIDA
 UINT
+UNC
 UNKCOMMAND
 UNSTASH
 UNV
@@ -1374,10 +1428,12 @@ UUUU
 UX
 Ubuntu
 Ulf
+Ulfat
 Uncomment
 Unices
 Unitek
 Upsonic
+Upstreamed
 Ut
 V'ger
 VALIGN
@@ -1427,6 +1483,8 @@ WIP
 WIPO
 WMNut
 WS
+WSACleanup
+WSAStartup
 WSDIR
 WSE
 WSL
@@ -1510,6 +1568,7 @@ additionalSOLibSearchPath
 addons
 addr
 addrange
+addvar
 addvars
 adelsystem
 adkorte
@@ -1523,6 +1582,7 @@ ae
 aec
 af
 afeb
+ageing
 aggregator
 ai
 aix
@@ -1579,6 +1639,7 @@ aspell
 ast
 async
 atcl
+atexit
 ats
 aug
 augeas
@@ -1614,6 +1675,7 @@ avahi
 avr
 awd
 awk
+axpert
 b'some
 b'string
 bAlternateSetting
@@ -1670,6 +1732,7 @@ bmake
 bn
 bool
 boolean
+booleans
 bootable
 bootenv
 bootfs
@@ -1734,8 +1797,12 @@ cgi
 cgipath
 cgroup
 cgroupsv
+changelog
 chargetime
 charset
+checkbox
+checkprocnames
+checkruntime
 checksum
 checksums
 chgrp
@@ -1778,9 +1845,12 @@ command's
 commandlen
 committer
 comms
+compareprocnames
 compat
 compilerPath
 conf
+confargs
+confdir
 config
 configparser
 configs
@@ -1788,8 +1858,11 @@ configurationProvider
 configureaz
 configureaza
 confpath
+conn
 const
 contrib
+cooldown
+coolofftime
 copyrightable
 coreutils
 cout
@@ -1851,6 +1924,7 @@ datarootdir
 dataset
 datasets
 datasheet
+datasize
 datastale
 dblatex
 dcd
@@ -1859,6 +1933,7 @@ ddk
 ddl
 de
 deUNV
+deadtime
 debian
 debootstrap
 debouncing
@@ -1882,23 +1957,27 @@ desc
 deschis
 descr
 desde
+desertwitch
 designator
 dev
 devclient
 devctl
 devd
 devel
+devfs
 deviceGetClients
 devicename
 devscan
 dfl
 dhcp
 dialout
+difftime
 diffutils
 dir
 disassembly
 discardable
 disp
+disptesttime
 distcheck
 distclean
 distro
@@ -1913,11 +1992,13 @@ dnf
 dnl
 dnsmasq
 docbook
+docbuildmode
 docdir
 docinfo
 docs
 dod
 domxml
+doshutdown
 dotnet
 downloadable
 dpkg
@@ -1932,6 +2013,7 @@ drvpath
 drwxr
 drwxrwx
 ds
+dsc
 dsi
 dsr
 dsssl
@@ -2016,6 +2098,7 @@ faa
 fabula
 facto
 failmode
+failover
 fallthrough
 fasttrack
 fatalx
@@ -2030,6 +2113,7 @@ fe
 featureReport
 fenton
 fentonups
+ffee
 fffdddxxx
 ffff
 fi
@@ -2056,7 +2140,9 @@ freetype
 frob
 frontends
 fs
+fsck
 fsd
+fsdmode
 fsr
 fstab
 ftdi
@@ -2064,6 +2150,7 @@ fuji
 func
 gamatronic
 gandi
+gc
 gcc
 gcpp
 gd
@@ -2086,12 +2173,16 @@ getDevicesVariableValues
 getTrackingResult
 getValue
 getVariable
+getaddrinfo
 getconf
 getent
 getenv
+gethostbyname
 getopt
+getproctag
 gettext
 gettextize
+getval
 getvar
 gh
 gif
@@ -2132,6 +2223,7 @@ gzip
 hal
 hardcoded
 hasFeature
+hashx
 hb
 hcd
 hcl
@@ -2158,6 +2250,7 @@ href
 htaccess
 htm
 html
+htmlcgi
 htmlpath
 http
 httpd
@@ -2207,8 +2300,11 @@ includePath
 includedir
 inductor
 inet
+inetpub
+influenceable
 infos
 infoval
+ing
 inh
 init
 init's
@@ -2216,12 +2312,15 @@ initctl
 initializer
 initializers
 initinfo
+initrd
 initscripts
+inittime
 initups
 inline
 inlined
 innotech
 innovart
+innovatae
 inode
 inplace
 installable
@@ -2242,6 +2341,7 @@ interruptonly
 interruptsize
 intltool
 inverter
+inverters
 invmode
 io
 ioLogik
@@ -2278,6 +2378,7 @@ jdk
 jenkins
 jessie
 jimklimov
+jour
 journalctl
 jpeg
 jpg
@@ -2308,6 +2409,7 @@ labcd
 lan
 langid
 lasaine
+launchd
 lbrb
 ld
 ldd
@@ -2396,6 +2498,7 @@ listsnapshots
 littleguy
 livedata
 lk
+lkp
 lldb
 llvm
 lm
@@ -2440,6 +2543,7 @@ lz
 mA
 mDNS
 mS
+macOS
 macaddr
 macosx
 mailo
@@ -2455,8 +2559,10 @@ manpage
 manpages
 masterguard
 matcher
+maxconnfails
 maxd
 maxlength
+maxproc
 maxreport
 maxretry
 maxstartdelay
@@ -2470,6 +2576,7 @@ mcview
 md
 mdadm
 mdutil
+meanwell
 mecer
 megatec
 memset
@@ -2500,6 +2607,8 @@ mips
 mirrorlist
 mis
 misconfigured
+mk
+mkdb
 mkdir
 mkstr
 mmZ
@@ -2553,6 +2662,7 @@ nSHUTDOWNCMD
 nabcd
 nameserver
 namespace
+namespaces
 nano
 nanosleep
 nashkaminski
@@ -2564,6 +2674,7 @@ nc
 nd
 nde
 nds
+ne
 netcat
 netclient
 netmask
@@ -2579,6 +2690,7 @@ newmge
 newvictronups
 nf
 ng
+nginx
 nhnl
 nhs
 nielchiano
@@ -2591,6 +2703,7 @@ nm
 nn
 nnn
 noAuthNoPriv
+nobattery
 nobody's
 nobreak
 nobt
@@ -2608,12 +2721,14 @@ nombattvolt
 noncommercially
 noout
 nooutstats
+noprimarytime
 norating
 noro
 noscanlangid
 nosnap
 nosuid
 notAfter
+nothave
 notifyflags
 notifyme
 notifymsg
@@ -2628,6 +2743,8 @@ nss
 ntopAI
 ntopSS
 ntopW
+ntu
+nuf
 nuget
 num
 numOfBytesFromUPS
@@ -2667,13 +2784,16 @@ onbattery
 onbattwarn
 ondelay
 oneac
+oneshot
 online
 onlinedischarge
 ont
 onwards
 ooce
 openSUSE
+openSUSEBuildService
 opencollective
+openfiles
 openipmi
 openjdk
 openlog
@@ -2681,17 +2801,20 @@ openmp
 openpimi
 openssh
 openssl
+openups
 openwin
 oper
 optimizations
 optiups
 oq
 os
+osc
 ostream
 other's
 otheruser
 ouGDQn
 outliers
+overtemp
 ovmf
 pF
 pacman
@@ -2721,12 +2844,14 @@ peername
 pem
 perc
 perl
+permalinks
 pfSense
 pfexec
 pfy
 ph
 phoenixcontact
 phoenixtec
+photovoltaic
 picocom
 pid
 pidpath
@@ -2769,11 +2894,13 @@ powermand
 powermust
 powernet
 poweroff
+powerp
 powerpal
 powerpanel
 powershell
 powerup
 powervalue
+powervar
 powerware
 ppc
 pprint
@@ -2782,6 +2909,7 @@ pragma
 pragmas
 pre
 preLaunchTask
+preinstallimage
 prepend
 prepended
 preprocess
@@ -2792,15 +2920,21 @@ prereqs
 pretentiousVariableNamingSchemes
 prgshut
 printf
+prio
 priv
 privPassword
 privProtocol
+prjconf
 problemMatcher
 probu
 proc
 productid
 prog
 progname
+prognames
+progs
+promille
+proxied
 prtconf
 ps
 psu
@@ -2810,6 +2944,8 @@ pts
 ptv
 pty
 pulizzi
+purelib
+pv
 pw
 pwd
 pwmib
@@ -2856,11 +2992,14 @@ reentrancy
 refactored
 refactoring
 refreservation
+refsect
 regex
 regtype
 relatime
 releasekeyring
 relicensing
+reloadable
+relogtime
 remoteip
 renderer
 renderers
@@ -2872,6 +3011,7 @@ reposurgeon
 repotec
 req
 resetter
+resizing
 resolv
 restoreconf
 resync
@@ -2923,6 +3063,7 @@ safenet
 salicru
 sbin
 sbindir
+sc
 scanopts
 scd
 sched
@@ -2956,7 +3097,9 @@ sendline
 sendmail
 sendsignal
 sendsignalfn
+sendsignalfnaliases
 sendsignalpid
+sendsignalpidaliases
 senoidal
 sequentialized
 ser
@@ -2967,9 +3110,11 @@ servicebypass
 setFeature
 setaux
 setflags
+setfsd
 setgid
 setinfo
 setpci
+setproctag
 setq
 setuid
 setupCommands
@@ -3001,6 +3146,7 @@ ske
 skel
 sl
 slackpkg
+slaveaddr
 slaveid
 slavesync
 slibtool
@@ -3019,7 +3165,9 @@ snr
 socat
 sockdebug
 socketname
+sockfn
 socomec
+soh
 solari
 solaris
 solcmn
@@ -3029,6 +3177,7 @@ solis
 somename
 somepass
 something's
+sortable
 sortdict
 sp
 spanish
@@ -3039,6 +3188,7 @@ spellcheck
 spellchecked
 splitaddr
 splitname
+sprintf
 squasher
 sr
 src
@@ -3051,6 +3201,7 @@ sshd
 ssize
 ssl
 sstate
+stacksize
 stan
 startIP
 startdelay
@@ -3076,6 +3227,7 @@ strcpy
 strdup
 strerror
 strftime
+strictfiltering
 stringify
 strlen
 strncpy
@@ -3106,6 +3258,7 @@ subnet
 subnets
 subtree
 sudo
+sudoers
 suggestsrcdoc
 suid
 suppressions
@@ -3137,8 +3290,10 @@ systemd
 systemdshutdowndir
 systemdsystempresetdir
 systemdsystemunitdir
+systemdsysusersdir
 systemdtmpfilesdir
 systemtest
+sysusers
 sysutils
 sysvinit
 tagname
@@ -3159,6 +3314,7 @@ termios
 testime
 testtime
 testuser
+testvar
 textproc
 tgcware
 tgt
@@ -3184,6 +3340,8 @@ toolset
 topFrame
 topbot
 tport
+transactional
+treemode
 tripplite
 tripplitesu
 troff
@@ -3225,6 +3383,7 @@ ucd
 ucrt
 udev
 udevadm
+udq
 ufw
 ugen
 ui
@@ -3232,6 +3391,9 @@ uid
 uint
 ukUNV
 ul
+ulimit
+ulink
+umount
 un
 uname
 uncomment
@@ -3305,6 +3467,7 @@ upsuser
 upswired
 uptime
 urb
+uri
 url
 urpmi
 usb
@@ -3325,6 +3488,7 @@ useradd
 userid
 userland
 usermap
+usermod
 username
 usernames
 userspace
@@ -3355,6 +3519,7 @@ vbat
 vbatt
 vc
 vda
+ve
 vendorid
 ver
 verifySourceSig
@@ -3372,6 +3537,7 @@ virtinst
 virtualization
 virtualized
 vivo
+vla
 vo
 volsize
 voltronic
@@ -3407,6 +3573,7 @@ writeinfo
 writepid
 writeups
 ws
+wwwroot
 xAAAA
 xCC
 xD

@@ -2,7 +2,7 @@ NUT Packager and Integrators Guide
 ==================================
 Arnaud Quette <arnaud.quette@free.fr>
 
-WARNING: this is a Work In Progress document.
+WARNING: This is a Work In Progress document.
 
 Abstract
 --------
@@ -111,7 +111,7 @@ The following packagers are working on this subject:
   Jim Klimov <jimklimov@gmail.com>
 - MacOS: Charles Lepple
 
-NOTE: the people below should be contacted to (re)launch discussions!
+NOTE: The people below should be contacted to (re)launch discussions!
 
 The following packagers should be interested in working on this subject:
 
@@ -168,6 +168,7 @@ Overview of the package tree
 FIXME: make a dependency graph
 
 - <<pkg-nut,nut>>
+- <<pkg-nut-common,nut-common>>
 - <<pkg-libupsclient1,libupsclient1>>
 - <<pkg-libupsclient1-dev,libupsclient1-dev>>
 - <<pkg-nut-cgi,nut-cgi>>
@@ -212,6 +213,16 @@ name may vary across the various systems.
 discussion.
 ========================================================================
 
+[[pkg-nut-common]]
+nut
+^^^
+- Desc:
+- Files: install scripts to register user/group accounts in the OS;
+  shared data and configuration files (e.g. systemd-tmpfiles, maybe
+  systemd-presets, in case of Linux packaging)
+- Size:
+- Deps:
+
 [[pkg-nut]]
 nut
 ^^^
@@ -236,7 +247,7 @@ libupsclient1-dev
 - Size:
 - Deps:
 
-NOTE: the "-dev" suffix is to be replaced by "-devel" on RPM based platforms.
+NOTE: The "-dev" suffix is to be replaced by "-devel" on RPM based platforms.
 
 [[pkg-nut-cgi]]
 nut-cgi
@@ -254,7 +265,7 @@ nut-scanner
 - Size:
 - Deps:
 
-NOTE: hard third-party dependency on `libltdl`; recommends `libsnmp`, `libneon`,
+NOTE: Hard third-party dependency on `libltdl`; recommends `libsnmp`, `libneon`,
 and the `libusb` variant (0.1 or 1.0) it was built against.
 
 [[pkg-nut-powerman-pdu]]
@@ -416,7 +427,7 @@ Example:
 name= "ups" or "nut"
 ./configure \
             --prefix=/ \
-            --sysconfdir=/etc/$name \
+            --with-confdir=/etc/$name \
             --mandir=/usr/share/man \
             --libdir=/usr/lib \
             --includedir=/usr/include \
@@ -438,5 +449,10 @@ explicitly for items not supported on your platform, so you do not miss
 out on new NUT features as they come with new releases. Some may require
 that you update your build environment with new third-party dependencies,
 so a broken build of a new NUT release would let you know how to act.
+
+NOTE: For eons, the way to specify the directory for NUT configuration
+files was to use `--sysconfdir=/etc/$name`. Since NUT v2.8.5 new options
+are available to customize this location and keep the default `sysconfdir`
+value intact (maybe unused).
 
 ------------------------------------------------------------------------

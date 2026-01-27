@@ -33,7 +33,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best Ferrups Series ME/RE/MD driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -77,12 +77,103 @@ static struct {
 
 
 /* Forward decls */
+static ssize_t execute(const char *cmd, char *result, size_t resultsize);
 static int instcmd(const char *cmdname, const char *extra);
+static void sync_serial(void);
+static void ups_sync(void);
 
 /* Set up all the funky shared memory stuff used to communicate with upsd */
 void upsdrv_initinfo (void)
 {
+	char	temp[256], fcstring[512];
+
 	/* now set up room for all future variables that are supported */
+	sync_serial();
+	ups_sync();
+
+	fc.model = UNKNOWN;
+	/* Obtain Model */
+	if (execute("id\r", fcstring, sizeof(fcstring)) < 1) {
+		fatalx(EXIT_FAILURE, "Failed execute in ups_ident()");
+	}
+
+	/* response is a one-line packed string starting with $ */
+	if (memcmp(fcstring, "Unit", 4)) {
+		fatalx(EXIT_FAILURE,
+			"Bad response from formatconfig command in ups_ident()\n"
+			"id: %s\n", fcstring
+		);
+	}
+
+	/* FIXME: upsdebugx() */
+	if (debugging)
+		fprintf(stderr, "id: %s\n", fcstring);
+
+	/* chars 4:2 are a two-digit ascii hex enumerated model code */
+	memcpy(temp, fcstring+9, 2);
+	temp[2] = '\0';
+
+	if (memcmp(temp, "ME", 2) == 0) {
+		fc.model = ME3100;
+	} else if ((memcmp(temp, "RE", 2) == 0)) {
+		fc.model = RE1800;
+	} else if (memcmp(temp, "C1", 2) == 0) {
+		/* Better way to identify unit is using "d 15\r", which results in
+		   "15 M#    MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
+		fc.model = MD1KVA;
+	}
+
+	switch(fc.model) {
+		case ME3100:
+			fc.va = 3100;
+			fc.watts = 2200;
+			/* determine shutdown battery voltage */
+			if (execute("d 29\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "29 LowBat   %f", &fc.emptyvolts);
+			}
+			/* determine fully charged battery voltage */
+			if (execute("d 31\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "31 HiBatt   %f", &fc.fullvolts);
+			}
+			fc.fullvolts = 54.20;
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		case RE1800:
+			fc.va = 1800;
+			fc.watts = 1200;
+			/* determine shutdown battery voltage */
+			if (execute("d 29\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "29 LowBat   %f", &fc.emptyvolts);
+			}
+			/* determine fully charged battery voltage */
+			if (execute("d 31\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "31 HiBatt   %f", &fc.fullvolts);
+			}
+			fc.fullvolts = 54.20;
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		case MD1KVA:
+			fc.va = 1100;
+			fc.watts = 770; /* Approximate, based on 0.7 power factor */
+			/* determine shutdown battery voltage */
+			if (execute("d 27\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "27 LowBatt  %f", &fc.emptyvolts);
+			}
+			/* determine fully charged battery voltage */
+			if (execute("d 28\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "28 Hi Batt  %f", &fc.fullvolts);
+			}
+			fc.fullvolts = 13.70;
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "Unknown model %s in ups_ident()", temp);
+	}
+
+	fc.valid = 1;
 
 	dstate_setinfo("ups.mfr", "%s", "Best Power");
 	switch(fc.model)
@@ -372,9 +463,13 @@ static void ups_sync(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
 	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* NB: hard-wired password */
 		ser_send(upsfd, "pw377\r");
 		/* power off in 1 second and restart when line power returns */
@@ -383,7 +478,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -404,6 +499,11 @@ void upsdrv_makevartable(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -444,104 +544,14 @@ static void setup_serial(void)
 	if (tcsetattr(upsfd, TCSANOW, &tio) == -1)
 		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
 /* end code stolen from bestups.c */
-
-	sync_serial();
 }
 
 
 void upsdrv_initups (void)
 {
-	char	temp[256], fcstring[512];
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B1200);
 	setup_serial();
-	ups_sync();
-
-	fc.model = UNKNOWN;
-	/* Obtain Model */
-	if (execute("id\r", fcstring, sizeof(fcstring)) < 1) {
-		fatalx(EXIT_FAILURE, "Failed execute in ups_ident()");
-	}
-
-	/* response is a one-line packed string starting with $ */
-	if (memcmp(fcstring, "Unit", 4)) {
-		fatalx(EXIT_FAILURE,
-			"Bad response from formatconfig command in ups_ident()\n"
-			"id: %s\n", fcstring
-		);
-	}
-
-	/* FIXME: upsdebugx() */
-	if (debugging)
-		fprintf(stderr, "id: %s\n", fcstring);
-
-	/* chars 4:2 are a two-digit ascii hex enumerated model code */
-	memcpy(temp, fcstring+9, 2);
-	temp[2] = '\0';
-
-	if (memcmp(temp, "ME", 2) == 0) {
-		fc.model = ME3100;
-	} else if ((memcmp(temp, "RE", 2) == 0)) {
-		fc.model = RE1800;
-	} else if (memcmp(temp, "C1", 2) == 0) {
-		/* Better way to identify unit is using "d 15\r", which results in
-		   "15 M#    MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
-		fc.model = MD1KVA;
-	}
-
-	switch(fc.model) {
-		case ME3100:
-			fc.va = 3100;
-			fc.watts = 2200;
-			/* determine shutdown battery voltage */
-			if (execute("d 29\r", fcstring, sizeof(fcstring)) > 0) {
-				sscanf(fcstring, "29 LowBat   %f", &fc.emptyvolts);
-			}
-			/* determine fully charged battery voltage */
-			if (execute("d 31\r", fcstring, sizeof(fcstring)) > 0) {
-				sscanf(fcstring, "31 HiBatt   %f", &fc.fullvolts);
-			}
-			fc.fullvolts = 54.20;
-			/* determine "ideal" voltage by a guess */
-			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-			break;
-		case RE1800:
-			fc.va = 1800;
-			fc.watts = 1200;
-			/* determine shutdown battery voltage */
-			if (execute("d 29\r", fcstring, sizeof(fcstring)) > 0) {
-				sscanf(fcstring, "29 LowBat   %f", &fc.emptyvolts);
-			}
-			/* determine fully charged battery voltage */
-			if (execute("d 31\r", fcstring, sizeof(fcstring)) > 0) {
-				sscanf(fcstring, "31 HiBatt   %f", &fc.fullvolts);
-			}
-			fc.fullvolts = 54.20;
-			/* determine "ideal" voltage by a guess */
-			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-			break;
-		case MD1KVA:
-			fc.va = 1100;
-			fc.watts = 770; /* Approximate, based on 0.7 power factor */
-			/* determine shutdown battery voltage */
-			if (execute("d 27\r", fcstring, sizeof(fcstring)) > 0) {
-				sscanf(fcstring, "27 LowBatt  %f", &fc.emptyvolts);
-			}
-			/* determine fully charged battery voltage */
-			if (execute("d 28\r", fcstring, sizeof(fcstring)) > 0) {
-				sscanf(fcstring, "28 Hi Batt  %f", &fc.fullvolts);
-			}
-			fc.fullvolts = 13.70;
-			/* determine "ideal" voltage by a guess */
-			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-			break;
-		default:
-			fatalx(EXIT_FAILURE, "Unknown model %s in ups_ident()", temp);
-	}
-
-	fc.valid = 1;
-	return;
 }
 
 void upsdrv_cleanup(void)

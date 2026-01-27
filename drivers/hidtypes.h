@@ -6,6 +6,7 @@
  * Copyright (C)
  *	1998-2003	MGE UPS SYSTEMS, Luc Descotils
  *	2015		Eaton, Arnaud Quette (Update MAX_REPORT)
+ *	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -315,6 +316,8 @@ typedef struct {
 	long		PhyMax;				/* Physical Max			*/
 	int8_t		have_PhyMin;			/* Physical Min defined?		*/
 	int8_t		have_PhyMax;			/* Physical Max defined?		*/
+
+	bool		mapping_handled;		/* Did any (sub)driver handling loop care about this report? If not, may be a point for improvement... */
 } HIDData_t;
 
 /*

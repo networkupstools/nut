@@ -86,7 +86,7 @@ Escaping special characters and quoting multiple-word elements is all
 handled by the state machine.  Using the same code for all config files
 avoids code duplication.
 
-NOTE: this does not apply to drivers.  Driver authors should use the
+NOTE: This does not apply to drivers.  Driver authors should use the
 `upsdrv_makevartable()` scheme to pick up values from 'ups.conf' file.
 Drivers should not have their own config files.
 
@@ -130,6 +130,21 @@ There are still older systems out there that don't do C++ style comments.
 /* Comments look like this. */
 // Not like this.
 --------------------------------------
+
+Complete method signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a method has intentionally no arguments, this should be explicit by
+specifying a `void` argument list in both declarations (header or top
+of a C source file for `static` methods) and implementations:
+
+-------------------------------------------------------------------------------
+/* Like this: */
+void good_stuff(void);
+
+/* NOT like this: */
+void bad_stuff();
+-------------------------------------------------------------------------------
 
 Variable declarations go on top
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -185,6 +200,38 @@ function do_stuff(void)
 	for (int i = 10; i < 15; ++i) { ... }
 }
 --------------------------------------------------------------------------------
+
+Variable length arrays
+~~~~~~~~~~~~~~~~~~~~~~
+
+We also avoid initialization of arrays using a variable (e.g. a method
+argument) as poorly portable to older compilers, and prefer explicitly
+allocated and freed buffers, if variable size is needed.
+
+This should be avoided:
+--------------------------------------------------------------------------------
+function avoid_vla(int len)
+{
+	char	*buf[len];
+...
+}
+--------------------------------------------------------------------------------
+
+This should be used instead (preferably with `size_t` arguments right away),
+be sure to `free()` anywhere you `return` from the function:
+--------------------------------------------------------------------------------
+int use_xcalloc(size_t len)
+{
+	char	*buf = xcalloc(len, sizeof(char));
+
+	if (!buf)
+		return -1;
+...
+	free(buf);
+	return 1;
+}
+--------------------------------------------------------------------------------
+
 
 Other hints
 ~~~~~~~~~~~
@@ -1172,7 +1219,7 @@ you can limit the depth of the clone:
 
 OPTIONALLY you can then fetch known git tags, so semantic versions look
 better (based off a recent release, see
-linkdoc:developer-guide[NUT Versioning,versioning,docs/nut-versioning.adoc]
+linkdoc:developer-guide[NUT Semantic Versioning,versioning,docs/nut-versioning.adoc]
 for more details):
 
 	:; cd nut

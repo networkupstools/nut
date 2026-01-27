@@ -15,8 +15,41 @@ AM_LDFLAGS = -no-undefined
 EXTRA_DIST =
 CLEANFILES =
 
+# Track unique NUT implementation-detail libraries that are commonly
+# used in different programs, and may get bundled into a shared lib.
+# Note that for rebuild-time optimization with static libraries, we
+# have historically used a number of source-file selections which may
+# overlap (e.g. libcommon includes libcommonclient and some more).
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 lib_LTLIBRARIES =
+
+if ENABLE_SHARED_PRIVATE_LIBS
+### Hopefully we can bundle this code together and
+### install this somewhat away from the public eye?..
+### We still do build static (noinst) libs to include
+### them into shared library files that should remain
+### compatible for existing consumers (in/out of tree).
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LIBADD = libcommon.la libcommonversion-private.la
+
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LIBADD = libcommonclient.la libcommonversion-private.la
+
+### Avoid unexpected linking across NUT generations
+### far apart (e.g. custom rebuilds of new programs
+### tucked into an existing deployment); see libtool
+### docs about current:revision:age interface numbering.
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LDFLAGS = -version-info 1:0:0
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LDFLAGS = -version-info 1:0:0
+
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LDFLAGS += -no-undefined
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LDFLAGS += -no-undefined
+endif HAVE_WINDOWS
+endif ENABLE_SHARED_PRIVATE_LIBS
 
 # We define the recipe below in any case, but only activate it by default
 # if the build configuration tells us to:
@@ -60,7 +93,13 @@ else !BUILDING_IN_TREE
 endif !BUILDING_IN_TREE
 
 $(top_builddir)/include/nut_version.h:
-	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@if [ -s '$@' ] && ( [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ) ; then \
+	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	        echo "=== SKIP (common) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \
+	    fi; \
+	    exit 0 ; \
+	  fi ; \
+	  cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # FIXME: If we maintain some of those helper libs as subsets of the others
 # (strictly), maybe build the lowest common denominator only and link the
@@ -76,12 +115,24 @@ libcommonstr_la_SOURCES = str.c
 libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 libcommonstr_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
 
+# Common methods for JSON outputs from NUT programs
+noinst_LTLIBRARIES += libcommonstrjson.la
+libcommonstrjson_la_SOURCES = strjson.c
+
 # This one includes only version-related data and methods and should be
 # linked along with one of the other libcommon*.la for logging methods:
 noinst_LTLIBRARIES += libcommonversion.la
 libcommonversion_la_SOURCES = common-nut_version.c
 #libcommonversion_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 #libcommonversion_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
+
+if ENABLE_SHARED_PRIVATE_LIBS
+# A special build of the above for linking into shared private libs,
+# so they also know about the NUT version they were built from
+  noinst_LTLIBRARIES += libcommonversion-private.la
+  libcommonversion_private_la_SOURCES = common-nut_version.c
+  libcommonversion_private_la_CFLAGS = $(AM_CFLAGS) -DBUILD_FOR_SHARED_PRIVATE_LIBS=1
+endif
 
 # Eventually we expect more sources as the big common.c source gets split
 # into smaller better-focused files.

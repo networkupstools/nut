@@ -2,6 +2,7 @@
 #   ipp-wrapper
 #
 #   Copyright (c) 2017, by Eaton (R) Corporation. All rights reserved.
+#   Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #   A shell script to manipulate the environment variables needed for
 #   IPP-Unix programs to dynamically link with their bundled libraries.
@@ -14,7 +15,7 @@ NUT_BIN_DIR="$NUT_DIR/bin"
 NUT_SBIN_DIR="$NUT_DIR/sbin"
 NUT_LIB_DIR="$NUT_DIR/lib"
 
-PROGNAME="`basename $0`"
+PROGNAME="`basename \"$0\"`"
 
 if [ "$PROGNAME" = "ipp-wrapper" ]; then
     echo "This is a wrapper to call other programs; do not call it directly!" >&2

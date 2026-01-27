@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -346,8 +346,13 @@ void upsdrv_shutdown(void)
 static
 int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -358,6 +363,7 @@ int instcmd(const char *cmdname, const char *extra)
 		char msgbuf[SMALLBUF];
 
 		msglen = snprintf(msgbuf, sizeof(msgbuf), "-1");
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
 
 		msglen = snprintf(msgbuf, sizeof(msgbuf), "1");
@@ -372,11 +378,16 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -423,7 +434,7 @@ void upsdrv_initups(void)
 	/* upsfd = ser_open(device_path); */
 	/* ser_set_speed(upsfd, device_path, B1200); */
 
-	/* probe ups type */
+	/* probe ups type later, in upsdrv_initinfo() */
 
 	/* to get variables and flags from the command line, use this:
 	 *
@@ -448,7 +459,8 @@ void upsdrv_initups(void)
 	 */
 
 	/* the upsh handlers can't be done here, as they get initialized
-	 * shortly after upsdrv_initups returns to main.
+	 * shortly after upsdrv_initups() returns to main, and goes back
+	 * to upsdrv_initinfo().
 	 */
 }
 

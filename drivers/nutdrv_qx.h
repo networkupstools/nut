@@ -98,7 +98,7 @@ typedef struct item_t {
 	int		(*preprocess_command)(struct item_t *item, char *command, const size_t commandlen);
 						/* Last chance to preprocess the command to be sent to the UPS (e.g. to add CRC, ...).
 						 * This function is given the currently processed item (item), the command to be sent to the UPS (command) and its size_t (commandlen).
-						 * Return -1 in case of errors, else 0.
+						 * Return -1 in case of errors, else 0 if a NUL terminated string, else the length of the command in bytes.
 						 * command must be filled with the actual command to be sent to the UPS. */
 
 	int		(*preprocess_answer)(struct item_t *item, const int len);
@@ -128,6 +128,7 @@ typedef struct item_t {
 #define QX_FLAG_RANGE		512UL	/* Ranges for this var available and are stored in info_rw. */
 #define QX_FLAG_NONUT		1024UL	/* This var doesn't have a corresponding var in NUT. */
 #define QX_FLAG_SKIP		2048UL	/* Skip this var: this item won't be processed. */
+#define QX_FLAG_MAPPING_HANDLED		4096UL	/* raised internally if any (sub)driver handling loop care about this report; if not, may be a point for improvement... */
 
 #define MAXTRIES		3	/* Max number of retries */
 

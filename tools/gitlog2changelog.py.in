@@ -1,4 +1,4 @@
-#!@PYTHON@
+#!@PYTHON_DEFAULT@
 # Copyright 2008 Marcus D. Hanwell <marcus@cryos.org>
 # Minor changes for NUT by Charles Lepple
 # Subsequent maintenance for NUT by Jim Klimov (since 2021)
@@ -28,15 +28,21 @@ try:
 except:
     pass
 
-rev_range = "HEAD"
+if len(sys.argv) > 2:
+    rev_range = sys.argv[2]
+else:
+    rev_range = "HEAD"
 
 if len(sys.argv) > 1:
     base = sys.argv[1]
-    rev_range = "%s..HEAD" % base
+    if ".." in base:
+        rev_range = base
+    else:
+        rev_range = "%s..%s" % (base, rev_range)
 
 # Execute git log with the desired command line options.
 # Support Python2 and Python3 (esp. 3.6 and earlier) semantics
-# with regard to utf-8 content support (avois ascii decoding in Py3)
+# with regard to utf-8 content support (avoids ascii decoding in Py3)
 fin_mode = 0
 # Remove trailing end of line? spitlines() in py3 variant takes care of them
 fin_chop = 0
@@ -71,6 +77,99 @@ except TypeError:
     )
     fin_mode = 2
     fin_chop = 1
+
+if ".." in rev_range:
+    rev_range_end = rev_range.split('..', 1)[1]
+    rev_range_start = rev_range.split('..', 1)[0]
+else:
+    rev_range_end = rev_range
+    rev_range_start = None
+
+try:
+    pEnd = subprocess.Popen(
+        [
+            "git",
+            "log",
+            "--format=%h",
+            "-1",
+            ("%s" % rev_range_end),
+        ],
+        encoding="utf-8",
+        close_fds=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    finEnd, ferrEnd = pEnd.communicate()
+    if pEnd.wait() != 0:
+        print("ERROR getting git commit info")
+        sys.exit(1)
+    finEnd = finEnd.splitlines()
+    finEnd_mode = 3
+except TypeError:
+    finEnd = os.popen(
+        "git log --format=%%h -1 %s"
+        % rev_range_end,
+        "r",
+    )
+    finEnd_mode = 2
+    finEnd_chop = 1
+
+rev_range_end_hash = None
+for line in finEnd:
+    if rev_range_end_hash is None and line != "":
+        rev_range_end_hash = line
+        break
+
+if finEnd_mode == 3:
+    pEnd.stdout.close()
+    pEnd.stderr.close()
+else:
+    finEnd.close()
+
+if rev_range_start is None:
+    rev_range_start_hash = None
+else:
+    try:
+        pStart = subprocess.Popen(
+            [
+                "git",
+                "log",
+                "--format=%h",
+                "-1",
+                ("%s" % rev_range_start),
+            ],
+            encoding="utf-8",
+            close_fds=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        finStart, ferrStart = pStart.communicate()
+        if pStart.wait() != 0:
+            print("ERROR getting git commit info")
+            sys.exit(1)
+        finStart = finStart.splitlines()
+        finStart_mode = 3
+    except TypeError:
+        finStart = os.popen(
+            "git log --format=%%h -1 %s"
+            % rev_range_start,
+            "r",
+        )
+        finStart_mode = 2
+        finStart_chop = 1
+
+    rev_range_start_hash = None
+    for line in finStart:
+        if rev_range_start_hash is None and line != "":
+            rev_range_start_hash = line
+            break
+
+    if finStart_mode == 3:
+        pStart.stdout.close()
+        pStart.stderr.close()
+    else:
+        finStart.close()
+
 
 # Create a ChangeLog file in the current directory by default.
 CHANGELOG_FILE = "ChangeLog"
@@ -134,6 +233,15 @@ elif authorMustBeASCII_inverse_setting in ["NO", "FALSE"]:
 
 # See also: https://github.com/python/cpython/blob/main/Lib/textwrap.py
 wrapper = TextWrapper(initial_indent="\t", subsequent_indent="\t  ", break_on_hyphens=False, break_long_words=False)
+
+if rev_range_start is None:
+    rev_range_text = "NOTE: This change log section represents git commits from start of time until '%s' (commit '%s').\n\n" % (rev_range, rev_range_end_hash)
+else:
+    rev_range_text = "NOTE: This change log section represents git commits in range '%s' (commits '%s..%s').\n\n" % (rev_range, rev_range_start_hash, rev_range_end_hash)
+
+fout.write(rev_range_text)
+#DEBUG# sys.stderr.write(rev_range_text)
+#DEBUG# sys.stderr.flush()
 
 # The main part of the loop
 for line in fin:

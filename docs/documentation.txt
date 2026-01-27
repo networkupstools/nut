@@ -3,11 +3,16 @@ Documentation
 =============
 endif::website[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/documentation.html
+//////////////////////////////////////////////////////////////////////////////
 
 User Documentation
 ------------------
 
 ifdef::website[]
+- link:docs/man/nut.html[NUT Overview (manual page)]
 - FAQ - Frequently Asked Questions (link:docs/FAQ.html[online]) (link:docs/FAQ.pdf[PDF])
 - NUT User Manual (link:docs/user-manual.chunked/index.html[online]) (link:docs/user-manual.pdf[PDF])
 - Cables information (link:cables.html[online]) (link:docs/cables.pdf[PDF])
@@ -16,6 +21,7 @@ ifdef::website[]
 - link:docs/solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
 ifndef::website[]
+- link:../man/nut.html[NUT Overview (manual page)]
 - link:../FAQ.html[FAQ - Frequently Asked Questions]
 - linkdoc:user-manual[NUT user manual]
 - <<Cables_information,Cables information>>

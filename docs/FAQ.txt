@@ -359,8 +359,103 @@ sources for a more streamlined and modern variant):
 	halt -p
 ------
 
+For more details and a better integrated example, please see
+https://github.com/networkupstools/nut/blob/master/scripts/systemd/nutshutdown.in
+(a copy tailored for your OS distribution may be or not be included
+in NUT packages, if you installed from those).
+
 The other solution is to change your BIOS setting to "always power
 on" instead of "last state", assuming that's possible.
+
+== My operating system has no shutdown scripts, how can I tell the UPS to go down and/or avoid power races?
+
+Modern operating systems offer service management frameworks, like
+the Solaris 10/11 and illumos SMF, or Linux systemd.  These frameworks
+drive the life cycle of the operating system and enforce their opinions
+on the shutdown end-game in particular.  For example, any "user-land"
+processes which remain alive after a certain (configurable or hard-coded)
+timeout would be killed off to not block the shutdown or reboot request.
+
+While systemd has a concept of shutdown hooks, so the logic above can be
+placed as a script into a special directory `/usr/lib/systemd/system-shutdown`
+and called after all the service daemons have been killed off, the SMF does
+not commonly offer such a facility.
+
+Instead, the question is turned around: "What would break in your system
+if it is suddenly turned off (not only due to power, but also kernel panic,
+hardware failure, etc.?)" and the suggested solutions follow up from there.
+
+The copy-on-write filesystems, like ZFS extensively used in Solaris/illumos as
+well as other operating systems (including some *BSD and Linux distributions),
+do not care about sudden reboots (assuming the storage hardware does not lie
+about honouring orderly metadata flushes). At worst, an incomplete transaction
+would be lost, but the filesystem structure itself remains valid and does not
+need any lengthy `fsck` after a reboot.
+
+It may be or not be similar with databases (depending on how yours would log
+incoming write transactions), mail systems, etc.
+
+Chances are, with a complete stack of well-engineered software for which
+hardware failure is always an option (considered in design), you do not
+even need to shut down anything in case of reported power failure and the
+UPS going on battery.
+
+In practice, if you are not after maximizing the service uptime but rather want
+some peace of mind that your application data is not corrupted, you can script
+your `NOTIFYCMD` implementation to stop just those services (containers, VMs...),
+maybe `umount` non-transactional file systems (FAT EFI partition, USB storage),
+and revive them when/if the UPS becomes "on-line" again and this box is still
+alive. Or it just boots up if the power did get lost (whether you requested
+the UPS to power-off or power-cycle or not, whether it honoured such request
+or not). Probably `upssched` as the notification handler can help implement
+this logic consistently, so it would react to different events. Using service
+grouping or milestones as a way to consistently start/stop "fragile" services
+should also help (in this case the framework ensures the action only happens
+once, regardless of how many times your scripts requested it).
+
+Notably, with this approach you DO NOT tell the OS to actually shut down,
+and so suffer any forced kill of user-land processes after any timeouts.
+You choose which services might be hurt by the outage and should go down,
+and which can run as long as they can (or in which mode, e.g. turning your
+mail, DNS or LDAP server read-only just in case until the storm passes).
+The still-running stub of your OS is the environment which talks to the UPS
+and takes care of eventually restarting the services or the whole box, as
+you deem fit.
+
+
+== My operating system uses (immutable) images, how can I tell the UPS to go down and/or avoid power races?
+
+One approach was proposed in discussion with Lennart Poettering of systemd
+fame, that operating system concepts constructed with (immutable) run-time
+images are actually layered like onions, with code in another file system
+(usually an initrd) picking the run-time image to use and `chroot`'ing into
+it... and possibly regaining control when the run-time operating environment
+exits.  Sort of like containers, where the operating system which you interact
+with is the inside of the container, and you do not directly see its hypervisor.
+
+The problem is that while NUT services can run as part of the run-time image
+and decide to power-off or power-cycle the UPS in case of trouble, there is
+no space for classic NUT approach to do this in the end-game of that run-time
+image (calling `upsmon -K` to detect the `POWERDOWNFLAG` file, and launching
+some new instance of the driver to talk to the UPS itself) "after the filesystem
+was remounted read-only", because that life-cycle concept has no such spot in
+the state machine of the run-time image -- its storage is to be completely
+unmounted.
+
+Instead, the proposed idea was to have a build of NUT included also into that
+"managing" initrd image, with perhaps a `/run` (or similar) location passed
+(bind-mounted?) from the initial environment into the launched run-time system.
+Into such a location both the `POWERDOWNFLAG` file can be written and, as part
+of `NOTIFYCMD` handling, the most-recent copies of NUT configuration files
+which may be managed in the interactively accessible operating environment.
+
+When the run-time image exits and the logic in initrd image which launched it
+regains control, it can check for existence of the `POWERDOWNFLAG` file and
+call *its own* copies of NUT drivers to talk to the UPS, and/or implement the
+long sleep and reboot to avoid a power race condition, if needed.
+
+See also: https://github.com/networkupstools/nut/issues/2836
+
 
 == My system has an ATX power supply.  It will power off just fine, but it doesn't turn back on.  What can I do to fix this?
 

@@ -1,6 +1,11 @@
 Network protocol information
 ============================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/net-protocol.html
+//////////////////////////////////////////////////////////////////////////////
+
 Since May 2002, this protocol has an official port number from IANA,
 which is *3493*.  The old number (3305) was a relic of the original code's
 ancestry, and conflicted with other services.  Version 0.50.0 and up
@@ -10,8 +15,17 @@ This protocol runs over TCP.  UDP support was dropped in July 2003.  It
 had been deprecated for some time and was only capable of the simplest
 query commands as authentication is impossible over a UDP socket.
 
-A library, named libupsclient, that implement this protocol is provided
-in both static and shared version to help the client application development.
+A C library, named `libupsclient`, that implements this protocol, is provided
+in both static and shared version to help the client application development,
+and is extensively used by client programs delivered by the Network UPS Tools
+project.
+
+Other bindings maintained in the NUT code base or in its orbit, such as the
+C++ library `libnutclient`, a Python `PyNUTClient` module, a PERL `UPS::Nut`
+module, and a Java `jNut` client, are also available (but may lag behind in
+completeness of the protocol support).  Numerous third-party implementations
+for other languages also exist, with some related projects listed on the
+link:https://networkupstools.org/projects.html[NUT web site pages].
 
 
 Old command removal notice
@@ -85,6 +99,8 @@ This is used by the upsmon in primary mode to determine how many clients are
 still connected when starting the shutdown process.
 
 This replaces the old "REQ NUMLOGINS" command.
+
+See also `LIST CLIENT <upsname>` to get the actual list of connected clients.
 
 
 UPSDESC
@@ -405,6 +421,8 @@ Response:
 	CLIENT ups1 192.168.1.2
 	END LIST CLIENT ups1
 
+
+See also `GET NUMLOGINS <upsname>` to get just the count of connected clients.
 
 SET
 ---
@@ -791,6 +809,25 @@ The LIST commands may be given the ability to handle options some day.
 For example, `LIST VARS <ups> +DESC` would return the current value
 like now, but it would also append the description of that variable.
 
+
+Logout pending
+~~~~~~~~~~~~~~
+
+Add a way for logged-in clients such as linkman:upsmon[8] to tell the
+data server that they began their shutdown routine, so eventual loss
+of connection would be quickly interpreted as a `LOGOUT` (without any
+wait for further timeouts, as a usual disconnection may be treated).
+
+This is useful in context of
+link:https://github.com/networkupstools/nut/pull/3086[PR #3086]
+where clients can configure `SHUTDOWNEXIT` behavior to NOT end the
+program (and log out) as soon as they tell the OS to shut down, but
+rather stay in a heart-beat loop to tell the data server that they
+are still alive (for specified time or indefinitely, until the OS
+cuts power or networking maybe before it ends the client process),
+as a way to delay the primary client proceeding with its shutdown
+and cutting the UPS power until some important secondary clients are
+actually safely "parked".
 
 Get collection
 ~~~~~~~~~~~~~~

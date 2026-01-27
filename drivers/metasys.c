@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.14"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -61,6 +61,7 @@ static int nominal_power = 0;
 #define UPS_SET_BATTERY_TEST		0x0e
 
 static int instcmd(const char *cmdname, const char *extra);
+static void send_zeros(void);
 
 /*
 	Metasystem UPS data transfer are made with packet of the format:
@@ -113,7 +114,6 @@ static void send_zeros(void) {				/* send 100 times the value 0x00.....it seems 
 
 	memset(buf, '\0', sizeof(buf));
 	ser_send_buf(upsfd, buf, sizeof(buf));
-	return;
 }
 
 
@@ -288,6 +288,9 @@ void upsdrv_initinfo(void)
 	unsigned char my_answer[255];
 	char serial[13];
 	int res, i;
+
+	/* Reset comms */
+	send_zeros();
 
 	/* Initial setup of variables */
 #ifdef EXTRADATA
@@ -612,8 +615,8 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("beeper.mute");
 	dstate_addcmd("beeper.on");
 	dstate_addcmd("beeper.off");
+
 	upsh.instcmd = instcmd;
-	return;
 }
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
 # pragma GCC diagnostic pop
@@ -933,7 +936,13 @@ static int instcmd(const char *cmdname, const char *extra)
 		return instcmd("beeper.enable", NULL);
 	}
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* Same stuff as upsdrv_shutdown() */
 		if (! autorestart) {
 			command[0]=UPS_SET_TIMES_ON_BATTERY;
@@ -960,6 +969,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 		/* schedule a shutdown in 30 seconds with no restart (-1) */
 		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0x1e;					/* remaining  */
@@ -976,6 +987,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* set shutdown and restart time to -1 (no shutdown, no restart) */
 		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0xff;					/* remaining  */
@@ -992,6 +1005,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* force ups on battery power */
 		command[0]=UPS_SET_BATTERY_TEST;
 		command[1]=0x01;
@@ -1003,6 +1018,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* restore standard mode (mains power) */
 		command[0]=UPS_SET_BATTERY_TEST;
 		command[1]=0x02;
@@ -1014,6 +1031,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		/* launch battery test */
 		command[0]=UPS_SET_BATTERY_TEST;
 		command[1]=0x00;
@@ -1077,12 +1096,17 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -1101,7 +1125,6 @@ void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
-	send_zeros();
 }
 
 void upsdrv_cleanup(void)

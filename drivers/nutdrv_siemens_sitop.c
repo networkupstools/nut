@@ -56,7 +56,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Siemens SITOP UPS500 series driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.08"
 
 #define RX_BUFFER_SIZE 100
 
@@ -160,6 +160,10 @@ static int check_for_new_data(void) {
 
 
 static int instcmd(const char *cmdname, const char *extra) {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	/* Note: the UPS does not really like to receive data.
 	 * For example, sending an "R" without \n hangs the serial port.
 	 * In that situation, the UPS will no longer send any status updates.
@@ -168,19 +172,21 @@ static int instcmd(const char *cmdname, const char *extra) {
 	 * lost as well.
 	 */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		upslogx(LOG_NOTICE, "instcmd: sending command R");
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		upsdebugx(1, "instcmd: sending command R");
 		ser_send_pace(upsfd, 200000, "\n\nR\n\n");
 		ser_send_pace(upsfd, 200000, "R\n\n");
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		upslogx(LOG_NOTICE, "instcmd: sending command S");
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		upsdebugx(1, "instcmd: sending command S");
 		ser_send_pace(upsfd, 200000, "\n\nS\n\n");
 		ser_send_pace(upsfd, 200000, "S\n\n");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -260,6 +266,11 @@ void upsdrv_shutdown(void) {
 
 
 void upsdrv_help(void) {
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* list flags and values that you want to receive via -x */

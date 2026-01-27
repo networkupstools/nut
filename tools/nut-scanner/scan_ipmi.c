@@ -306,22 +306,26 @@ static void nut_freeipmi_cleanup(ipmi_fru_parse_ctx_t fru_parse_ctx,
 	if (fru_parse_ctx) {
 		(*nut_ipmi_fru_close_device_id) (fru_parse_ctx);
 		(*nut_ipmi_fru_ctx_destroy) (fru_parse_ctx);
+		fru_parse_ctx = NULL;
 	}
 
 #ifdef HAVE_FREEIPMI_11X_12X
 
 	if (sdr_ctx) {
 		(*nut_ipmi_sdr_ctx_destroy) (sdr_ctx);
+		sdr_ctx = NULL;
 	}
 
 #else /* HAVE_FREEIPMI_11X_12X */
 
 	if (sdr_cache_ctx) {
 		(*nut_ipmi_sdr_cache_ctx_destroy) (sdr_cache_ctx);
+		sdr_cache_ctx = NULL;
 	}
 
 	if (sdr_parse_ctx) {
 		(*nut_ipmi_sdr_parse_ctx_destroy) (sdr_parse_ctx);
+		sdr_parse_ctx = NULL;
 	}
 
 #endif /* HAVE_FREEIPMI_11X_12X */
@@ -617,13 +621,13 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 			nut_dev->type = TYPE_IPMI;
 			nut_dev->driver = strdup(NUT_IPMI_DRV_NAME);
 			if (IPaddr == NULL) {
-				sprintf(port_id, "id%x", (unsigned int)ipmi_id);
+				snprintf(port_id, sizeof(port_id), "id%x", (unsigned int)ipmi_id);
 			}
 			else {
 				/* FIXME: also check against "localhost" and its IPv{4,6} */
 				/* FIXME: Should the IPv6 address here be bracketed?
 				 *  Does our driver support the notation? */
-				sprintf(port_id, "id%x@%s", (unsigned int)ipmi_id, IPaddr);
+				snprintf(port_id, sizeof(port_id), "id%x@%s", (unsigned int)ipmi_id, IPaddr);
 			}
 			nut_dev->port = strdup(port_id);
 			/* FIXME: also dump device.serial?
@@ -641,6 +645,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 	if (ipmi_ctx) {
 		(*nut_ipmi_ctx_close) (ipmi_ctx);
 		(*nut_ipmi_ctx_destroy) (ipmi_ctx);
+		ipmi_ctx = NULL;
 	}
 
 	return current_nut_dev;

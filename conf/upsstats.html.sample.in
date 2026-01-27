@@ -1,0 +1,206 @@
+@NUT_UPSSTATS_TEMPLATE default@
+<!-- upsstats template file -->
+
+<!--
+	This (upsstats.html) is the default template file which is used
+	when upsstats.cgi is loaded with no arguments.
+
+	It usually contains a FOREACHUPS block to iterate through every
+	UPS in the hosts.conf.
+
+	See upsstats.html(5) for more information on template files.
+-->
+
+<!-- change this to TEMPF if you don't like Celsius. -->
+
+@TEMPC@
+
+<!-- Note: on Windows you may have to use the `*.cgi.exe` in PATHs below -->
+
+@UPSSTATSPATH upsstats.cgi@EXEEXT@@
+@UPSIMAGEPATH upsimage.cgi@EXEEXT@@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+@REFRESH@
+<title>
+Network UPS Tools upsstats
+@ESCAPED_TEMPLATE_VERSION@
+: UPS Status
+</title>
+<style type="text/css">
+body{font-family:"Times New Roman", Times, serif;}
+a:link{color:#00e;}
+a:visited{color:#551a8b;}
+th, td{padding:0.5ex;}
+.t1{background:#0ff;}
+.t2{background:#0f0;}
+</style>
+<!-- link rel="stylesheet" type="text/css" href="nut.css" / -->
+@REFRESH@
+</head>
+<body>
+
+<table style="margin:auto; background:#50A0A0; text-align:center;">
+<tr><td>
+
+<table>
+<tr>
+<th COLSPAN="10" style="background:#60B0B0;">
+
+<span style="font-size:1.5em">Network UPS Tools upsstats
+@ESCAPED_TEMPLATE_VERSION@
+</span>
+
+<br>
+@DATE %a %b %d %X %Z %Y@
+</th>
+
+</tr>
+
+<tr style="background:#60B0B0;">
+<th COLSPAN="1">System</th>
+<th COLSPAN="1">Model</th>
+<th COLSPAN="1">Status</th>
+<th COLSPAN="1">Battery</th>
+<th COLSPAN="1">Input (VAC)</th>
+<th COLSPAN="1">Output (VAC)</th>
+<th COLSPAN="1">Load (%)</th>
+<th COLSPAN="1">UPS<br>Temp</th>
+<th COLSPAN="1">Battery<br>Runtime</th>
+<th COLSPAN="1">Data<br>Tree</th>
+</tr>
+
+@FOREACHUPS@
+
+<tr>
+<td class="t1">
+@HOSTLINK@
+</td>
+
+<td class="t1">
+@IFSUPP device.model@
+@VAR device.model@
+@ELSE@
+@VAR ups.model@
+@ENDIF@
+</td>
+
+<td style="background:@STATUSCOLOR@">
+@STATUS@
+</td>
+
+<td class="t2">
+@IFSUPP battery.charge@
+@VAR battery.charge@
+%
+@ENDIF@
+</td>
+
+@IFSUPP input.L2-L3.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L1-L2.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L2-L3.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L3-L1.voltage@
+<td class="t2">
+@ELSE@
+@IFSUPP input.L2-N.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L1-N.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L2-N.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L3-N.voltage@
+<td class="t2">
+@ELSE@
+@IFBETWEEN input.transfer.low input.transfer.high input.voltage@
+<td class="t2">
+@ELSE@
+<td style="background:red;">
+@ENDIF@
+
+@IFSUPP input.L2-L3.voltage@
+@VAR input.L1-L2.voltage@
+@VAR input.L2-L3.voltage@
+@VAR input.L3-L1.voltage@
+@ELSE@
+@IFSUPP input.L2-N.voltage@
+@VAR input.L1-N.voltage@
+@VAR input.L2-N.voltage@
+@VAR input.L3-N.voltage@
+@ELSE@
+@IFSUPP input.voltage@
+@VAR input.voltage@
+@ENDIF@
+</td>
+
+<td class="t2">
+@IFSUPP output.L2-L3.voltage@
+@VAR output.L1-L2.voltage@
+@VAR output.L2-L3.voltage@
+@VAR output.L3-L1.voltage@
+@ELSE@
+@IFSUPP output.L2-N.voltage@
+@VAR output.L1-N.voltage@
+@VAR output.L2-N.voltage@
+@VAR output.L3-N.voltage@
+@ELSE@
+@IFSUPP output.voltage@
+@VAR output.voltage@
+@ENDIF@
+</td>
+
+<td class="t2">
+@IFSUPP output.L2.power.percent@
+@VAR output.L1.power.percent@
+@VAR output.L2.power.percent@
+@VAR output.L3.power.percent@
+@ELSE@
+@IFSUPP output.L2.realpower.percent@
+@VAR output.L1.realpower.percent@
+@VAR output.L2.realpower.percent@
+@VAR output.L3.realpower.percent@
+@ELSE@
+@IFSUPP ups.load@
+@VAR ups.load@
+%
+@ENDIF@
+</td>
+
+<td class="t2">
+@IFSUPP ups.temperature@
+@UPSTEMP@
+@DEGREES@
+@ELSE@
+@IFSUPP battery.temperature@
+@BATTTEMP@
+@DEGREES@
+@ENDIF@
+</td>
+
+<td class="t2">
+@IFSUPP battery.runtime@
+@RUNTIME@
+@ENDIF@
+</td>
+
+<td class="t2">
+@TREELINK@<br/>
+@TREELINK_JSON@
+</td>
+</tr>
+
+@ENDFOR@
+
+</table>
+
+</td></tr>
+</table>
+
+<hr><div><small>
+<a href="?json" title="All devices as one JSON document">JSON</a>
+<a href="https://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"></a>
+<a href="https://validator.w3.org/check?uri=referer"><img style="float:right" src="https://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01 Strict" height="31" width="88"></a>
+</small></div>
+
+</body></html>
