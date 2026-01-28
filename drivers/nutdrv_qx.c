@@ -4432,6 +4432,7 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 				previous_item.answer);
 
 			/* Process the answer */
+			errno = 0;
 			retcode = qx_process_answer(item, strlen(item->answer));
 
 		/* ..otherwise: execute command to get answer from the UPS */
@@ -4663,11 +4664,15 @@ item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsig
 /* Process the answer we got back from the UPS
  * Return -1 on errors, 0 on success
  * Can set errno, note that EINVAL means unsupported
- * parameter value here!
+ * parameter value here, and ETIMEDOUT can be passed
+ * from previous context for short reads, or set
+ * unilaterally for zero-length reads!
  */
 static int	qx_process_answer(item_t *item, const size_t len)
 {
-	errno = 0;
+	/* Initial errno inherited from caller, e.g. may be qx_command()
+	 * in qx_process(), but may be from other memset() etc. after it
+	 */
 
 	/* Query rejected by the UPS */
 	if (subdriver->rejected && !strcasecmp(item->answer, subdriver->rejected)) {
@@ -4679,11 +4684,18 @@ static int	qx_process_answer(item_t *item, const size_t len)
 
 	/* Short reply */
 	if (item->answer_len && len < item->answer_len) {
-		upsdebugx(2, "%s: short reply (%s) %" PRIuSIZE "<%" PRIuSIZE,
+		upsdebug_with_errno(2, "%s: short reply (%s) %" PRIuSIZE "<%" PRIuSIZE,
 			__func__, item->info_type, len, item->answer_len);
-		errno = EINVAL;
+		if (len == 0 || errno == ETIMEDOUT) {
+			errno = ETIMEDOUT;
+		} else {
+			errno = EINVAL;
+		}
 		return -1;
 	}
+
+	/* Not a systemic error by default */
+	errno = 0;
 
 	/* Wrong leading character */
 	if (item->leading && item->answer[0] != item->leading) {
@@ -4711,6 +4723,7 @@ static int	qx_process_answer(item_t *item, const size_t len)
 		snprintf(item->value, sizeof(item->value), "%s", "");
 	}
 
+	/* Reset the common error level, if some method above raised it */
 	errno = 0;
 	return 0;
 }
