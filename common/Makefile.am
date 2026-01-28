@@ -220,6 +220,7 @@ endif HAVE_WINDOWS
 endif WITH_DEV_LIBNUTCONF
   libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
   # NOTE: No @LTLIBOBJS@ here, because libcommonclient.la includes them (if any)
+  # NOTE: C++ code currently links private common libs only statically [ENABLE_SHARED_PRIVATE_LIBS support TBD per #2584]
   libnutconf_la_LIBADD = @NETLIBS@ libcommonclient.la
   libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp \
 	../include/nutconf.hpp ../include/nutipc.hpp \
