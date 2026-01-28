@@ -97,11 +97,21 @@ static const char *powercom_startup_fun(double value)
 static double powercom_startup_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.start");
+	const char	*cfg = getval("ondelay");
 	uint32_t	val, command;
 	int iv;
 
-	/* Start with seconds "as is" - convert into whole minutes */
-	iv = atoi(value ? value : s) / 60;	/* minutes */
+	/* Priority: 1) command value, 2) config ondelay, 3) UPS current, 4) default */
+	if (value && *value) {
+		iv = atoi(value) / 60;
+	} else if (cfg && *cfg) {
+		iv = atoi(cfg) / 60;
+	} else if (s && *s) {
+		iv = atoi(s) / 60;
+	} else {
+		iv = 2; /* Default: 2 minutes (120 seconds) */
+	}
+
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic push
 #endif
@@ -165,10 +175,21 @@ static const char *powercom_shutdown_fun(double value)
 static double powercom_shutdown_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
+	const char	*cfg = getval("offdelay");
 	uint16_t	val, command;
 	int iv;
 
-	iv = atoi(value ? value : s);	/* seconds */
+	/* Priority: 1) command value, 2) config offdelay, 3) UPS current, 4) default */
+	if (value && *value) {
+		iv = atoi(value);
+	} else if (cfg && *cfg) {
+		iv = atoi(cfg);
+	} else if (s && *s) {
+		iv = atoi(s);
+	} else {
+		iv = 60; /* Default: 60 seconds */
+	}
+
 	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
 		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
 		return 0;
@@ -219,11 +240,21 @@ static info_lkp_t powercom_shutdown_info[] = {
 static double powercom_stayoff_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
+	const char	*cfg = getval("offdelay");
 	uint16_t	val, command;
 	int iv;
 
-	/* FIXME: Anything for powercom_sdcmd_discrete_delay? */
-	iv = atoi(value ? value : s);
+	/* Priority: 1) command value, 2) config offdelay, 3) UPS current, 4) default */
+	if (value && *value) {
+		iv = atoi(value);
+	} else if (cfg && *cfg) {
+		iv = atoi(cfg);
+	} else if (s && *s) {
+		iv = atoi(s);
+	} else {
+		iv = 60; /* Default: 60 seconds */
+	}
+
 	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
 		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
 		return 0;
