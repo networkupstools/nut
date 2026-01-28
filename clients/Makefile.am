@@ -238,8 +238,16 @@ libnutclient_la_SOURCES = nutclient.h nutclient.cpp
 libnutclient_la_LDFLAGS = -version-info 2:2:0
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
+if ENABLE_SHARED_PRIVATE_LIBS
+libnutclient_la_LIBADD = \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+if HAVE_WINDOWS
+  libnutclient_la_LIBADD += $(NETLIBS)
+endif HAVE_WINDOWS
+else !ENABLE_SHARED_PRIVATE_LIBS
 libnutclient_la_LIBADD = \
 	$(top_builddir)/common/libcommonclient.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutclient_la_LDFLAGS += -no-undefined
