@@ -10,6 +10,18 @@
     <!-- Chop off the minus from "-rc1" if present -->
     <param name="versionrewrite-pattern">v([^-]*)-*(.*)</param>
     <param name="versionrewrite-replacement">\1\2</param>
+    <!-- Corresponds to the VERY LIMITED GLOB SUPPORT in `git describe __tags __abbrev=0 __match='...'`
+         Notably we can not use curly braces to specify "one or two digits" here, at least not portably
+         and even "digits" as [0-9] are a problem, gotta be [0123456789]...
+            https://github.com/openSUSE/obs-service-tar_scm/blob/60f291a75fdb5e95a93ee356865f2661bcff8cd1/TarSCM/scm/git.py#L315
+         Keep a lookout for https://github.com/openSUSE/obs-service-tar_scm/pull/357 to get merged and chop off RC patterns from `v*`
+      -->
+    <param name="match-tag">v?.?.?</param>
+<!-- FOR nut-stable-rc pattern, instead of the above:
+    // Chop off the minus from "-rc1" if present and replace with a tilde (RPM-friendly to make it "less than" the ultimate release)
+    <param name="versionrewrite-replacement">\1~\2</param>
+    <param name="match-tag">v*</param>
+  -->
     <param name="exclude">.git</param>
     <param name="filename">nut</param>
     <!-- Extract the base recipe files -->
