@@ -28,7 +28,7 @@
 
 #include <ctype.h>	/* isdigit() */
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.73"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.74"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -101,7 +101,9 @@ static double powercom_startup_nuf(const char *value)
 	uint32_t	val, command;
 	int iv;
 
-	/* Priority: 1) command value, 2) config ondelay, 3) UPS current, 4) default */
+	/* Priority: 1) command value, 2) config ondelay, 3) UPS current, 4) default
+	 * Note we start with seconds "as is" - convert into whole minutes for the device protocol
+	 */
 	if (value && *value) {
 		iv = atoi(value) / 60;
 	} else if (cfg && *cfg) {
@@ -179,7 +181,9 @@ static double powercom_shutdown_nuf(const char *value)
 	uint16_t	val, command;
 	int iv;
 
-	/* Priority: 1) command value, 2) config offdelay, 3) UPS current, 4) default */
+	/* Priority: 1) command value, 2) config offdelay, 3) UPS current, 4) default
+	 * Note we start with seconds "as is" - convert into magic numbers for the device protocol below
+	 */
 	if (value && *value) {
 		iv = atoi(value);
 	} else if (cfg && *cfg) {
@@ -244,7 +248,10 @@ static double powercom_stayoff_nuf(const char *value)
 	uint16_t	val, command;
 	int iv;
 
-	/* Priority: 1) command value, 2) config offdelay, 3) UPS current, 4) default */
+	/* FIXME: Anything for powercom_sdcmd_discrete_delay? */
+	/* Priority: 1) command value, 2) config offdelay, 3) UPS current, 4) default
+	 * Note we start with seconds "as is" - convert into magic numbers for the device protocol below
+	 */
 	if (value && *value) {
 		iv = atoi(value);
 	} else if (cfg && *cfg) {
