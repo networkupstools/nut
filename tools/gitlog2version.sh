@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2016-2025 by Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2016-2026 by Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -157,7 +157,7 @@ if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_srcdir}/VERSION_DEFAULT" ] ; 
 fi
 
 # Fallback default, to be updated only during release cycle
-[ -n "${NUT_VERSION_DEFAULT-}" ] || NUT_VERSION_DEFAULT='2.8.4.1'
+[ -n "${NUT_VERSION_DEFAULT-}" ] || NUT_VERSION_DEFAULT='2.8.5'
 
 # Default website paths, extended for historic sub-sites for a release
 [ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://www.networkupstools.org/"
