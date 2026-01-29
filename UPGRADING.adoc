@@ -24,8 +24,6 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.4 to 2.8.5
 ---------------------------
 
-- PLANNED: Keep track of any further API clean-up?
-
 - Added a `configure` script option to `--enable-shared-private-libs` which
   allows to deliver NUT common libraries as shared objects used by different
   NUT binaries, rather than linking just the used bits into each binary.
