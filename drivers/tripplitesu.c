@@ -66,6 +66,7 @@
 
    The following parameters (ups.conf) are supported:
 	lowbatt
+	command_delay
 
    The following variables are supported (RW = read/write):
 	ambient.humidity (1)
@@ -163,6 +164,8 @@ static struct {
 	unsigned long commands_available;
 } ups;
 
+static long command_delay = 0; /* delay in milliseconds before each command, 0 = no delay by default */
+
 /* bits in commands_available */
 #define WDG_AVAILABLE            (1UL <<  1)
 
@@ -222,8 +225,12 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 	size_t	count;
 	ssize_t	ret;
 
-	usleep(1E6);
 	ser_flush_io(upsfd);
+
+	/* Apply configurable delay if enabled (> 0) to prevent communication timeouts */
+	if (command_delay > 0) {
+		usleep((useconds_t)command_delay*1000);
+	}
 
 	if (response) {
 		*response = '\0';
@@ -891,12 +898,35 @@ void upsdrv_tweak_prognames(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "lowbatt", "Set low battery level, in percent");
+	addvar(VAR_VALUE, "command_delay", 
+		"Delay in milliseconds before each command (default: 0 = no delay; "
+		"set to 1000ms if experiencing communication timeouts)");
 }
 
 void upsdrv_initups(void)
 {
+	const char *val;
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
+
+	/* Initialize command_delay from configuration */
+	val = getval("command_delay");
+	if (val) {
+		long temp = atol(val);
+		/* 0 (no delay) or positive values */
+		if (temp < 0) {
+			fatalx(EXIT_FAILURE, "Invalid command_delay parameter: %s (must be >= 0)", val);
+		}
+		command_delay = temp;
+		if (command_delay == 0) {
+			upsdebugx(2, "command_delay is explicitly set to 0 (no delay)");
+		} else {
+			upsdebugx(2, "Setting command_delay to %ld milliseconds", command_delay);
+		}
+	} else {
+		upsdebugx(2, "Using default command_delay of %ld (no delay)", command_delay);
+	}
 }
 
 void upsdrv_cleanup(void)

@@ -204,6 +204,10 @@ https://github.com/networkupstools/nut/milestone/12
      PR #3093]
    * Fixed default `unit_id`, apparently broken by changes in NUT v2.8.1.
      [issue #3191, PR #3192]
+  
+ - `tripplitesu` driver updates:
+   * Added configurable command delay to prevent read timeouts
+     [PR #3273]
 
  - Introduced a new NUT driver named `nut-upower` which provides support
    for monitoring UPS and battery devices managed by the UPower daemon
