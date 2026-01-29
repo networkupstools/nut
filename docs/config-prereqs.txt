@@ -259,6 +259,7 @@ metadata about recently published package revisions:
     libssl-dev libnss3-dev \
     augeas-tools libaugeas-dev augeas-lenses \
     libusb-dev libusb-1.0-0-dev \
+    libglib2.0-dev \
     libi2c-dev \
     libmodbus-dev \
     libsnmp-dev \
@@ -459,6 +460,7 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
     openssl-devel nss-devel \
     augeas augeas-devel \
     libusb-devel libusbx-devel \
+    glib2-devel \
     i2c-tools \
     libmodbus-devel \
     net-snmp-devel \
@@ -561,6 +563,7 @@ Install tools and prerequisites for NUT:
     openssl nss \
     augeas \
     libusb \
+    glib2 \
     neon \
     net-snmp \
     freeipmi \
@@ -732,6 +735,7 @@ For NUT dependencies and build tools:
 :; slackpkg-install \
     openssl openssl-solibs mozilla-nss \
     libusb \
+    glib2 \
     net-snmp \
     neon
 
@@ -870,6 +874,8 @@ below.
     cppunit \
     nss \
     augeas \
+    libusb \
+    glib \
     libmodbus \
     neon \
     net-snmp \
@@ -1041,6 +1047,7 @@ Finally, as `root` add the packages:
     openssl nss \
     augeas \
     libusb1 \
+    glib2 \
     net-snmp \
     avahi
 
@@ -1232,6 +1239,7 @@ but can be created in `/etc/` and is honoured by `pkgin`:
     openssl nss \
     augeas \
     libusb libusb1 \
+    glib2 \
     neon \
     net-snmp \
     avahi
@@ -1366,6 +1374,7 @@ Typical tooling would include:
     library/augeas python/augeas \
     libusb-1 libusbugen system/library/usb/libusb \
     system/header/header-usb driver/usb/ugen \
+    glib2 \
     libmodbus \
     library/neon \
     system/management/snmp/net-snmp \
@@ -1508,6 +1517,7 @@ site for setup details.
     developer/build/libtool library/libtool/libltdl \
     build-essential ccache git developer/pkg-config \
     runtime/perl \
+    glib \
     asciidoc \
     libgd
 
@@ -1725,7 +1735,7 @@ Currently known dependencies for basic build include:
 # Required:
 :; brew install ccache bash libtool binutils autoconf automake git m4 \
         pkg-config aspell asciidoc docbook-xsl cppunit gd \
-        libusb neon net-snmp \
+        libusb glib neon net-snmp \
         nss openssl \
         libmodbus freeipmi powerman
 
@@ -1935,7 +1945,8 @@ export PATH
 
 # This also pulls *-devel of several other projects:
 :; pacman -S --needed \
-    mingw-w64-x86_64-neon libneon-devel
+    mingw-w64-x86_64-neon libneon-devel \
+    mingw-w64-x86_64-glib2
 
 # Other dependencies:
 :; pacman -S --needed \

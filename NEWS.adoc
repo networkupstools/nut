@@ -143,6 +143,12 @@ https://github.com/networkupstools/nut/milestone/12
      well -- namely, that we successfully use reasonably many of the existing
      mappings. Suggest how user can help improve the driver if too few data
      points were seen. [PR #3095]
+   * The `qx_process_answer()` method was extended to raise `errno=ETIMEDOUT`
+     (rather than `EINVAL`) for short reads that are zero length (and/or that
+     `errno` value was set in caller's context already). This was used to make
+     `Voltronic` protocol initial connections more reliable when the device
+     controller lags upon first contact (is booting itself?) [issue #3276,
+     PR #3283]
    * New `nutdrv_qx_innovatae` adds support for Ippon INNOVA TAE series which
      are similar to Q1 except in reporting of nominal `voltage`, `current`,
      `frequency` data (that along with `battery_voltage_reports_one_pack` and
@@ -199,6 +205,11 @@ https://github.com/networkupstools/nut/milestone/12
    * Fixed default `unit_id`, apparently broken by changes in NUT v2.8.1.
      [issue #3191, PR #3192]
 
+ - Introduced a new NUT driver named `nut-upower` which provides support
+   for monitoring UPS and battery devices managed by the UPower daemon
+   via D-Bus. This also introduces a new category of drivers that talk to
+   operating system services to obtain power state information. [PR #3279]
+
  - `usbhid-ups` driver updates:
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
@@ -227,6 +238,11 @@ https://github.com/networkupstools/nut/milestone/12
      fixed to use the same mapping helper as other subdrivers. [issue #3246]
    * `powercom-hid` subdriver improved with a `powercom_hack_voltage_lkp` to
      query `battery.voltage`. [issue #2766]
+   * `powercom-hid` subdriver now honours configured `offdelay` and `ondelay`
+     driver options in `ups.conf`, and prefers them (if present) over the
+     values received from the UPS itself (like `ups.delay.shutdown` and
+     `ups.delay.start`), to fix implementations of shutdown/stayoff/startup
+     instant commands. [PR #3288]
    * Improved handling of transient `LIBUSB_ERROR_IO` failures during polling.
      Some devices (CyberPower, etc.) have firmware bugs causing random I/O
      errors on certain HID reports. The driver now skips failing reports and
