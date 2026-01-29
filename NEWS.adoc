@@ -22,8 +22,6 @@ https://github.com/networkupstools/nut/milestone/12
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly (porting from 42ITy project)
 
- - (expected) Porting of reference packaging from 42ITy project
-
  - (expected) Porting of patches suggested by different distribution packages
 
  - (expected) C code clean-up/consistency (string format security, work with
