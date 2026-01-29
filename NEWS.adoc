@@ -249,6 +249,8 @@ https://github.com/networkupstools/nut/milestone/12
      continues polling rather than triggering expensive reconnection attempts.
      True disconnections are still detected via other error codes or when all
      polls fail. [issue #3116]
+  * `arduino-hid` subdriver enhanced with `ups.load`, `input.voltage` and
+    `output.voltage` readings where supported (e.g. Ugreen US3000). [#3281]
 
  - `nut-scanner` tool updates:
    * Fixed `nut-scanner` search for "simulation devices" to not use only the
