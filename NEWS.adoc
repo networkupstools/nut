@@ -143,6 +143,12 @@ https://github.com/networkupstools/nut/milestone/12
      well -- namely, that we successfully use reasonably many of the existing
      mappings. Suggest how user can help improve the driver if too few data
      points were seen. [PR #3095]
+   * The `qx_process_answer()` method was extended to raise `errno=ETIMEDOUT`
+     (rather than `EINVAL`) for short reads that are zero length (and/or that
+     `errno` value was set in caller's context already). This was used to make
+     `Voltronic` protocol initial connections more reliable when the device
+     controller lags upon first contact (is booting itself?) [issue #3276,
+     PR #3283]
    * New `nutdrv_qx_innovatae` adds support for Ippon INNOVA TAE series which
      are similar to Q1 except in reporting of nominal `voltage`, `current`,
      `frequency` data (that along with `battery_voltage_reports_one_pack` and
