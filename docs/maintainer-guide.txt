@@ -178,6 +178,8 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
 :; git tag v2.8.3-rc7
 
 :; NUT_VERSION_QUERY="UPDATE_FILE_GIT_RELEASE" ./tools/gitlog2version.sh
+
+# Output sample wrapped for readability:
 SEMVER=2.8.3; TRUNK='upstream/master'; BASE='735451f1f21556f2a7b8443053e8962c2184239f';
 DESC='v2.8.2-2881+gbdade6241' => TAG='v2.8.2' + SUFFIX='-2881+gbdade6241+v2.8.3+rc7'
  => VER5='2.8.2.2878.3' => DESC5='2.8.2.2878.3-2881+gbdade6241+v2.8.3+rc7'
