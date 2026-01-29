@@ -52,13 +52,11 @@ $(top_builddir)/clients/libnutclientstub.la: dummy
 # started from scratch right in this dir get dependencies in proper order
 # (sub-makes are independent as far as trying to write into same files):
 $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
-$(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
-$(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libparseconf.la
-$(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libcommonclient.la
-$(top_builddir)/clients/libnutclientstub.la: $(top_builddir)/clients/libnutclient.la
 $(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/clients/libnutclientstub.la: $(top_builddir)/clients/libnutclient.la
 
 if ENABLE_SHARED_PRIVATE_LIBS
+
 $(top_builddir)/common/libcommonversion-private.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
@@ -68,9 +66,20 @@ $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
 
+$(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+$(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+$(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+
 NUT_LIBCOMMON = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+
 else !ENABLE_SHARED_PRIVATE_LIBS
+
+$(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libcommonclient.la
+
 NUT_LIBCOMMON = $(top_builddir)/common/libcommon.la
+
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
 nutlogtest_SOURCES = nutlogtest.c
