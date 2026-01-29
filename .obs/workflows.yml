@@ -28,3 +28,22 @@ release_tag:
         target_project: home:networkupstools:nut-releases
   filters:
     event: tag_push
+    tags:
+      only:
+        - "v[0-9]+.[0-9]+.[0-9]+"
+      ignore:
+        # v1.2.3-rc1, these need a different regex in _service of template project
+        - "*-*"
+
+release_candidate_tag:
+  steps:
+    - branch_package:
+        source_project: home:networkupstools:nut-stable-rc
+        source_package: "%{SCM_REPOSITORY_NAME}"
+        target_project: home:networkupstools:nut-releases
+  filters:
+    event: tag_push
+    tags:
+      only:
+        # v1.2.3-rc1, these need a different regex in _service of template project
+        - "v[0-9]+.[0-9]+.[0-9]+-.*"
