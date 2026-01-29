@@ -3,7 +3,7 @@
 #
 # Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
 # Copyright (c) 2016-2018 Eaton EEIC.
-# Copyright (c) 2025 by Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (c) 2025-2026 by Jim Klimov <jimklimov+nut@gmail.com>
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -118,7 +118,7 @@
 
 Name:           nut
 # NOTE: OBS should rewrite this:
-Version:        2.8.4
+Version:        2.8.5
 Release:        1
 Summary:        Network UPS Tools Core (Uninterruptible Power Supply Monitoring)
 License:        GPL-2.0+

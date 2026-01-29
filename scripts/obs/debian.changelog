@@ -1,8 +1,14 @@
+nut (2.8.5-1) UNRELEASED; urgency=high
+
+  * Revising recipes for OBS builds
+
+ -- Jim Klimov <jimklimov+nut@gmail.com>  Thu, 29 Jan 2026 12:34:56 +0200
+
 nut (2.8.4-1) UNRELEASED; urgency=high
 
   * Revising recipes for OBS builds
 
- -- Jim Klimov <EvgenyKlimov@Eaton.com>  Sun, 5 Oct 2025 14:00:00 +0200
+ -- Jim Klimov <jimklimov+nut@gmail.com>  Sun, 5 Oct 2025 14:00:00 +0200
 
 nut (2.7.4-14) UNRELEASED; urgency=high
 
