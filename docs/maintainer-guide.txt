@@ -167,6 +167,9 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
 ** revise `.github/workflows/PyNUTClient.yml` for fallback `TAG_NAME` naming
 ** revise `appveyor.yml` for branch naming
 ** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
+** revise `scripts/obs/debian.changelog` (at least a dummy entry)
+** revise `scripts/obs/nut.dsc` and `scripts/obs/nut.spec` for their `Version`
+   fields
 ** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
    <exact incremented version> (ex: `2.8.0`)
 *** DOUBLE-CHECK that the `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh`
