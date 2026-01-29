@@ -164,7 +164,7 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
 
 * bump the release identification (consider committing as one commit later on):
 ** see `docs/nut-versioning.adoc` for details about NUT SEMVER spec and practice
-** revise `.github/workflows/PyNUTClient.yml` for fallback `TAG_NAME` naming
+** revise `.github/workflows/08-PyNUTClient.yml` for fallback `TAG_NAME` naming
 ** revise `appveyor.yml` for branch naming
 ** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
 ** revise `scripts/obs/debian.changelog` (at least a dummy entry)
