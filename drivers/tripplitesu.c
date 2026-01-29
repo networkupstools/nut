@@ -126,7 +126,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -222,6 +222,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 	size_t	count;
 	ssize_t	ret;
 
+	usleep(1E6);
 	ser_flush_io(upsfd);
 
 	if (response) {
