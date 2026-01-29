@@ -34,6 +34,21 @@
   </revision>
 
   <revision>
+    <revnumber>2.8.5</revnumber>
+    <date>2026-01-29</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Some changes to docs and recipes, especially for parallel builds;
+        introduced a way to build with private shared libraries to save space.
+        Updated NUT SEMVER definition some more, added a normalization and
+        comparison script.
+        Some rounds of code-hardening project.
+        Added reference RPM/DEB recipes to test NUT iterations on OBS.
+        Numerous driver updates, some new ones introduced.
+    </revremark>
+  </revision>
+
+  <revision>
     <revnumber>2.8.3</revnumber>
     <date>2025-04-07</date>
     <authorinitials>JK</authorinitials>
