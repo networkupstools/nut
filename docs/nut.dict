@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3634 utf-8
+personal_ws-1.1 en 3643 utf-8
 AAC
 AAS
 ABI
@@ -241,6 +241,7 @@ Cygwin
 DATACABLE
 DATAPATH
 DBCF
+DBUS
 DCE
 DCF
 DCO
@@ -435,7 +436,9 @@ GES
 GETADDRINFO
 GETPID
 GID
+GIO
 GITREV
+GLib
 GND
 GNUmakefile
 GObject
@@ -852,6 +855,7 @@ Netman
 NetworkUPSTools
 Neus
 Niels
+Niemueller
 Niklas
 Niro
 NixOS
@@ -1313,6 +1317,7 @@ SyntaxWarning
 Sysgration
 SyslogIdentifier
 SystemIO
+SystemRoot
 Systeme
 Syu
 Szady
@@ -1927,6 +1932,7 @@ datasheet
 datasize
 datastale
 dblatex
+dbus
 dcd
 dcn
 ddk
@@ -2135,6 +2141,7 @@ formatstring
 fosshost
 fp
 freebsd
+freedesktop
 freeipmi
 freetype
 frob
@@ -2186,6 +2193,7 @@ getval
 getvar
 gh
 gif
+gio
 gitcache
 github
 gitignore
@@ -2435,6 +2443,7 @@ libexecdir
 libexpat
 libfreeipmi
 libgd
+libglib
 libgpgme
 libgpiod
 libhid
