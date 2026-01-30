@@ -52,6 +52,8 @@ EXTRA_DIST += \
 	debian.nut-doc.doc-base.nut-packager-guide \
 	debian.nut-doc.doc-base.nut-user-manual \
 	debian.nut-doc.install \
+	debian.nut-gpio.install \
+	debian.nut-gpio.manpages \
 	debian.nut-ipmi.install \
 	debian.nut-ipmi.manpages \
 	debian.nut-linux-i2c.install \
@@ -74,6 +76,8 @@ EXTRA_DIST += \
 	debian.nut-snmp.docs \
 	debian.nut-snmp.install \
 	debian.nut-snmp.manpages \
+	debian.nut-upower.install \
+	debian.nut-upower.manpages \
 	debian.nut-xml.install \
 	debian.nut-xml.manpages \
 	debian.nut.README.Debian \
