@@ -127,6 +127,14 @@ unsigned char calc_checksum(const unsigned char *buf)
 	return c;
 }
 
+void addvar(int vartype, const char *name, const char *desc) {
+	NUT_UNUSED_VARIABLE(vartype);
+	NUT_UNUSED_VARIABLE(name);
+	NUT_UNUSED_VARIABLE(desc);
+}
+
+void bcmxcp_makevartable(void) {}
+
 /*******************************************************************************
  * SHUT functions (MGE legacy, but Eaton path forward)
  ******************************************************************************/

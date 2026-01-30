@@ -89,6 +89,23 @@ lib_LTLIBRARIES =
 include_HEADERS =
 dist_noinst_HEADERS =
 
+# Separate the .deps of other dirs from this one
+# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
+# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
+LINKED_SOURCE_FILES = serial.c
+serial.c: $(top_srcdir)/drivers/serial.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
+
+LINKED_SOURCE_FILES += bcmxcp_ser.c bcmxcp.c
+bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
+
+bcmxcp.c: $(top_srcdir)/drivers/bcmxcp.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp.c" "$@"
+
+CLEANFILES += $(LINKED_SOURCE_FILES)
+BUILT_SOURCES += $(LINKED_SOURCE_FILES)
+
 # Note: we only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_NUT_SCANNER
  bin_PROGRAMS += nut-scanner

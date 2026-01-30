@@ -2,6 +2,7 @@
 #include "bcmxcp.h"
 #include "bcmxcp_io.h"
 #include "common.h"
+#include "nut_libusb.h"
 #include "usb-common.h"
 #include "timehead.h"
 #include "nut_stdint.h" /* for uint16_t */
@@ -11,10 +12,13 @@
 #include <unistd.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.28"
+#define SUBDRIVER_VERSION "0.29"
 
-/* communication driver description structure */
-upsdrv_info_t comm_upsdrv_info = {
+/* communication driver description structure
+ * NOTE: Renamed from comm_upsdrv_info to avoid conflict
+ *  with that defined in libusb{0,1}.c
+ */
+upsdrv_info_t bcmxcp_comm_upsdrv_info = {
 	SUBDRIVER_NAME,
 	SUBDRIVER_VERSION,
 	NULL,
@@ -365,6 +369,14 @@ ssize_t command_write_sequence(unsigned char *command, size_t command_length, un
 void upsdrv_comm_good(void)
 {
 	nutusb_comm_good();
+}
+
+void upsdrv_makevartable(void)
+{
+	bcmxcp_makevartable();
+
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	nut_usb_addvars();
 }
 
 void upsdrv_initups(void)

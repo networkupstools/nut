@@ -6,10 +6,10 @@
 #include "nut_stdint.h"
 
 #define SUBDRIVER_NAME    "RS-232 communication subdriver"
-#define SUBDRIVER_VERSION "0.22"
+#define SUBDRIVER_VERSION "0.23"
 
 /* communication driver description structure */
-upsdrv_info_t comm_upsdrv_info = {
+upsdrv_info_t bcmxcp_comm_upsdrv_info = {
 	SUBDRIVER_NAME,
 	SUBDRIVER_VERSION,
 	NULL,
@@ -409,6 +409,13 @@ static void pw_comm_setup(const char *port)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
 # pragma GCC diagnostic pop
 #endif
+
+void upsdrv_makevartable(void)
+{
+	bcmxcp_makevartable();
+
+	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
+}
 
 void upsdrv_initups(void)
 {

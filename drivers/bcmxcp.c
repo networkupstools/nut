@@ -116,7 +116,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.39"
+#define DRIVER_VERSION	"0.40"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -135,7 +135,7 @@ upsdrv_info_t upsdrv_info = {
 	"Alf Høgemark <alf@i100>\n" \
 	"Gavrilov Igor",
 	DRV_STABLE,
-	{ &comm_upsdrv_info, NULL }
+	{ &bcmxcp_comm_upsdrv_info, NULL }
 };
 
 static uint16_t get_word(const unsigned char*);
@@ -2226,15 +2226,16 @@ void upsdrv_tweak_prognames(void)
 {
 }
 
-/* list flags and values that you want to receive via -x */
-void upsdrv_makevartable(void)
+/* list flags and values that you want to receive via -x
+ * or ups.conf to all bcmxcp* family of drivers
+ */
+void bcmxcp_makevartable(void)
 {
 	/* NOTE: The USB variant of this driver currently does not
 	 * involve nut_usb_addvars() method like others do. When
 	 * fixing, see also tools/nut-scanner/scan_usb.c "exceptions".
 	 */
 	addvar(VAR_VALUE, "shutdown_delay", "Specify shutdown delay (seconds)");
-	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }
 
 int setvar (const char *varname, const char *val)
