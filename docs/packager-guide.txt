@@ -316,6 +316,14 @@ nut-gpio
 - Size:
 - Deps:
 
+[[pkg-nut-upower]]
+nut-upower
+^^^^^^^^^^
+- Desc: (may be platform-dependent); maybe better `nut-dbus`?
+- Files:
+- Size:
+- Deps:
+
 [[pkg-nut-linux-i2c]]
 nut-linux-i2c
 ^^^^^^^^^^^^^
