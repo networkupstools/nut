@@ -1622,6 +1622,10 @@ int main(int argc, char **argv)
 
 	prog = argv[0];
 
+#if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
+
 	/* Historically special banner*/
 	snprintf(progdesc, sizeof(progdesc), "%s - UPS driver controller", xbasename(prog));
 	print_banner_once(progdesc, 0);
