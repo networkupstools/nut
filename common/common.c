@@ -5480,7 +5480,7 @@ const char *xinet_ntopSS(struct sockaddr_storage *s)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	char	*addrstr = (char*)xcalloc(INETADDRBUF_SIZE, sizeof(char*));
 	const char	*ret;
 
 	if (!addrstr)
@@ -5580,7 +5580,7 @@ const char *xinet_ntopAI(struct addrinfo *ai)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	char	*addrstr = (char*)xcalloc(INETADDRBUF_SIZE, sizeof(char*));
 	const char	*ret;
 
 	if (!addrstr)
