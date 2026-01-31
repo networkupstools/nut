@@ -162,6 +162,7 @@ nutscan_device_t * nutscan_scan_upower(void)
 	GDBusConnection *connection;
 	GDBusProxy *proxy_upower = NULL;
 	GVariant *result = NULL;
+	GVariant *child = NULL;
 	GVariantIter iter;
 	gchar *object_path;
 	nutscan_device_t * dev_ret = NULL;
@@ -210,7 +211,7 @@ nutscan_device_t * nutscan_scan_upower(void)
 	}
 
 	/* Result is (ao) - array of object paths */
-	GVariant *child = (*nut_g_variant_get_child_value)(result, 0);
+	child = (*nut_g_variant_get_child_value)(result, 0);
 	(*nut_g_variant_iter_init)(&iter, child);
 
 	while ((*nut_g_variant_iter_next)(&iter, "o", &object_path)) {
