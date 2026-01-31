@@ -221,6 +221,8 @@ https://github.com/networkupstools/nut/milestone/12
    via D-Bus. This also introduces a new category of drivers that talk to
    operating system services to obtain power state information. [PR #3279]
 
+ - Introduced a nut-scanner support for new `nut-upower` driver. [PR #3293]
+
  - `usbhid-ups` driver updates:
    * Declared support for APC with USB ID `051d:0005` (details may evolve
      as the devices become better known). [issue #3047, PR #3081]
