@@ -217,7 +217,7 @@ if WITH_IPMI
   libnutscan_la_CFLAGS += $(LIBIPMI_CFLAGS)
 endif WITH_IPMI
 if WITH_UPOWER
-  libnutscan_la_CFLAGS += $(LIBGLIB_CFLAGS)
+  libnutscan_la_CFLAGS += $(LIBGIO_CFLAGS)
 endif WITH_UPOWER
 
 # C is not a header, but there is no dist_noinst_SOURCES

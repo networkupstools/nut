@@ -3163,70 +3163,27 @@ NUT_REPORT_DRIVER([build Mac OS X meta-driver],
 			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
 
 dnl ----------------------------------------------------------------------
-dnl Check for libGLib / libGIO (Required for UPower driver)
+dnl Check if we have detected libGLib / libGIO above (Required for UPower driver)
 dnl NOTE: Do not confuse libglib{2} (GNOME) with glibc (part of compiler)
 dnl ----------------------------------------------------------------------
 
-have_glib=no
-
-AS_IF([test "${with_upower}" != "no"], [
-    AS_IF([test x"$have_PKG_CONFIG" = xyes],
-        [ifdef([PKG_CHECK_MODULES],
-            [PKG_CHECK_MODULES(GLIB, [glib-2.0 gio-2.0], [have_glib=yes], [have_glib=no])],
-            [have_glib=no])
-        ],
-        [AC_MSG_WARN([pkg-config not found, cannot look properly for glib-2.0/gio-2.0])]
-    )
-])
-
-AS_IF([test "${have_glib}" = "yes"], [
-    AC_DEFINE(HAVE_GLIB, 1, [Define to 1 if GLib and GIO are available])
-
-    dnl GLib headers seem incorrect and offensive to many compilers
-    dnl (starting names with underscores and capital characters,
-    dnl varying support for attributes, method pointer mismatches).
-    dnl There is nothing NUT can do about it, except telling the
-    dnl compiler that we take these headers from the system as they
-    dnl are, so strict checks should not apply to them.
-    dnl On newer releases (2025+) the headers and CLANG seem to work
-    dnl together out of the box, but during the decade before this is
-    dnl troublesome.
-    AS_IF([test "${CLANGCC}" = "yes" || test "${GCC}" = "yes"], [
-        myGLIB_CFLAGS=""
-        for TOKEN in ${GLIB_CFLAGS} ; do
-            AS_CASE(["${TOKEN}"],
-                [-I/*], [
-                    _IDIR="`echo \"${TOKEN}\" | sed 's/^-I//'`"
-                    AS_IF([echo " ${GLIB_CFLAGS}" | ${EGREP} " -isystem *${_IDIR}" >/dev/null],
-                        [myGLIB_CFLAGS="${myGLIB_CFLAGS} ${TOKEN}"],
-                        [myGLIB_CFLAGS="${myGLIB_CFLAGS} -isystem ${_IDIR} ${TOKEN}"]
-                    )],
-                    [myGLIB_CFLAGS="${myGLIB_CFLAGS} ${TOKEN}"]
-            )
-        done
-        unset TOKEN
-        unset _IDIR
-        myGLIB_CFLAGS="`echo \"${myGLIB_CFLAGS}\" | sed 's/^ *//'`"
-
-        AS_IF([test x"${GLIB_CFLAGS}" != x -a x"${GLIB_CFLAGS}" != x"${myGLIB_CFLAGS}"], [
-            AC_MSG_NOTICE([Patched libglib/libgio CFLAGS to declare -isystem])
-            AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
-                AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) old: ${GLIB_CFLAGS}])
-                AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) new: ${myGLIB_CFLAGS}])
-            ])
-            GLIB_CFLAGS="${myGLIB_CFLAGS}"
-        ])
-        unset myGLIB_CFLAGS
-    ])
+AC_MSG_CHECKING([whether to build nut-upower driver])
+nut_with_upower=no
+AS_IF([test "${nut_have_libglib}${nut_have_libgio}" = "yesyes"], [
+	AS_CASE(["${with_upower}"],
+		[yes|auto], [nut_with_upower=yes]
+	)
 ], [
-    AS_CASE(["${with_upower}"],
-        [yes], [AC_MSG_ERROR([GLib/GIO not found but requested via --with-upower])],
-        [auto],[AC_MSG_WARN([GLib/GIO not found. The 'upower' driver will not be built.])]
-    )
+	AS_CASE(["${with_upower}"],
+		[yes], [AC_MSG_ERROR([GLib/GIO not found but requested via --with-upower])],
+		[auto],[AC_MSG_WARN([GLib/GIO not found. The 'upower' driver will not be built.])]
+	)
 ])
 
-AM_CONDITIONAL(HAVE_GLIB, test "${have_glib}" = "yes")
-AC_MSG_RESULT(${have_glib})
+AC_MSG_RESULT(${nut_with_upower})
+NUT_REPORT_DRIVER([build UPower driver],
+			[${nut_with_upower}], [],
+			[WITH_UPOWER], [Define to build UPower driver])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with_linux_i2c

@@ -536,19 +536,19 @@ void nutscan_init(void)
 #endif	/* WITH_AVAHI */
 
 #if (defined WITH_UPOWER) && WITH_UPOWER
-# ifdef SOFILE_LIBGLIB
+# ifdef SOFILE_LIBGIO
 	if (!libname) {
-		libname = get_libname(SOFILE_LIBGLIB);
+		libname = get_libname(SOFILE_LIBGIO);
 	}
-# endif	/* SOFILE_LIBGLIB */
+# endif	/* SOFILE_LIBGIO */
 	if (!libname) {
 		libname = get_libname("libgio-2.0" SOEXT);
 	}
-# ifdef SOPATH_LIBGLIB
+# ifdef SOPATH_LIBGIO
 	if (!libname) {
-		libname = get_libname(SOPATH_LIBGLIB);
+		libname = get_libname(SOPATH_LIBGIO);
 	}
-# endif	/* SOPATH_LIBGLIB */
+# endif	/* SOPATH_LIBGIO */
 
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
@@ -561,19 +561,19 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibGIO");
-# ifdef SOFILE_LIBGLIB
+# ifdef SOFILE_LIBGIO
 		if (!nutscan_avail_upower) {
-			nutscan_avail_upower = nutscan_load_upower_library(SOFILE_LIBGLIB);
+			nutscan_avail_upower = nutscan_load_upower_library(SOFILE_LIBGIO);
 		}
-# endif	/* SOFILE_LIBGLIB */
+# endif	/* SOFILE_LIBGIO */
 		if (!nutscan_avail_upower) {
 			nutscan_avail_upower = nutscan_load_upower_library("libgio-2.0" SOEXT);
 		}
-# ifdef SOPATH_LIBGLIB
+# ifdef SOPATH_LIBGIO
 		if (!nutscan_avail_upower) {
-			nutscan_avail_upower = nutscan_load_upower_library(SOPATH_LIBGLIB);
+			nutscan_avail_upower = nutscan_load_upower_library(SOPATH_LIBGIO);
 		}
-# endif	/* SOPATH_LIBGLIB */
+# endif	/* SOPATH_LIBGIO */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_upower ? "succeeded" : "failed", "LibGIO");
