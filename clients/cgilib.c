@@ -32,6 +32,9 @@ static char *unescape(char *buf)
 
 	buflen = strlen(buf) + 2;
 	newbuf = (char *)xmalloc(buflen);
+	if (newbuf == NULL) {
+	  return NULL;
+	}
 	*newbuf = '\0';
 
 	fflush(stdout);

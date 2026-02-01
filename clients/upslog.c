@@ -812,6 +812,12 @@ int main(int argc, char **argv)
 				upsdebugx(1, "FOUND: %s: %s", answer[1], answer[2]);
 
 				mu = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
+				if (mu == NULL) {
+					upslogx(LOG_ERR, "Failed to get memory for monitoring host structure. Not adding %s@%s:%" PRIu16,
+					        answer[1], monhost_ups_current->hostname, monhost_ups_current->port);
+					continue;
+				}
+
 				snprintf(buf, sizeof(buf), "%s@%s:%" PRIu16,
 					answer[1],
 					monhost_ups_current->hostname,

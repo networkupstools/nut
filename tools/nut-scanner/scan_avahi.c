@@ -599,7 +599,7 @@ static AvahiClient* wrap_nut_avahi_client_new(int *error)
 	 * but lacks a value in that enum for lack of flags (unconstrained
 	 * lookup). So we have to silence a warning here...
 	 */
-	return (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), (AvahiLookupFlags)0, client_callback, NULL, error);
+	return (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), (AvahiClientFlags)0, client_callback, NULL, error);
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
