@@ -3445,7 +3445,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     PYTHON2_TEST_MODULES="re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser"
     PYTHON3_TEST_MODULES_QT5="re,glob,codecs,PyQt5.uic,configparser"
     PYTHON3_TEST_MODULES_QT6="re,glob,codecs,PyQt6.uic,configparser"
-    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
+    if test -n "${PYTHON2_VERSION_INFO_REPORT}" -a -n "${PYTHON2}" ; then
         AC_MSG_CHECKING([if we have Python2 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
@@ -3499,7 +3499,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         fi
     fi
 
-    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" -a -n "${PYTHON3}" ; then
         AC_MSG_CHECKING([if we have Python3 Qt5 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES_QT5}" 1>&5 2>&5 \
         ; then
@@ -3515,7 +3515,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         fi
     fi
 
-    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" -a -n "${PYTHON3}" ; then
         AC_MSG_CHECKING([if we have Python3 Qt6 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES_QT6}" 1>&5 2>&5 \
         ; then
@@ -3533,7 +3533,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
 
     dnl Fall back to default interpreter
     if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}${nut_with_nut_monitor_py3qt6}" \
-    && test -n "${PYTHON_VERSION_INFO_REPORT}" \
+    && test -n "${PYTHON_VERSION_INFO_REPORT}" -a -n "${PYTHON}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
     ; then
