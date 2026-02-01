@@ -154,7 +154,7 @@ err:
 	upsdebugx(0,
 		"Cannot load NUT library (%s) : %s. NUT search disabled.",
 		libname_path, dl_error);
-	dl_handle = (void *)1;
+	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
 		free(dl_saved_libname);
@@ -179,7 +179,7 @@ static void * list_nut_devices_thready(void * arg)
 	const char *query[4];
 	char **answer = NULL;
 	char *hostname = NULL;
-	UPSCONN_t *ups = xcalloc(1, sizeof(*ups));
+	UPSCONN_t *ups = (UPSCONN_t*)xcalloc(1, sizeof(*ups));
 	nutscan_device_t * dev = NULL;
 	size_t buf_size;
 
@@ -243,7 +243,7 @@ static void * list_nut_devices_thready(void * arg)
 			buf_size += 6;
 		}
 
-		dev->port = malloc(buf_size);
+		dev->port = (char*)malloc(buf_size);
 
 		if (dev->port) {
 			/* Check if IPv6 and needs brackets */
@@ -463,7 +463,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			 */
 			int	stwST = sem_trywait(semaphore_scantype);
 			int	stwS  = sem_trywait(semaphore);
-			pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
+			pass = (((max_threads_scantype == 0) || (stwST == 0)) && (stwS == 0)) ? TRUE : FALSE;
 			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 				" curr_threads=%" PRIuSIZE
 				" thread_count=%" PRIuSIZE
@@ -565,7 +565,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 				ip_dest = strdup(ip_str);
 			}
 
-			if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
+			if ((nut_arg = (struct scan_nut_arg*)malloc(sizeof(struct scan_nut_arg))) == NULL) {
 				upsdebugx(0, "%s: Memory allocation error", __func__);
 				free(ip_dest);
 				break;
@@ -583,7 +583,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 				thread_count++;
-				new_thread_array = realloc(thread_array,
+				new_thread_array = (nutscan_thread_t*)realloc(thread_array,
 					thread_count * sizeof(nutscan_thread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread array", __func__);

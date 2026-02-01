@@ -1104,7 +1104,7 @@ static void doshutdown(void)
 
 			/* Contact the data server(s) regularly so this
 			 * client is not assumed dead while looping */
-			for (ups = firstups; ups != NULL && !exit_flag; ups = ups->next) {
+			for (ups = firstups; ups != NULL && !exit_flag; ups = (utype_t *)ups->next) {
 				set_alarm();
 
 				if (get_var(ups, "numlogins", temp, sizeof(temp)) >= 0) {
@@ -1337,7 +1337,7 @@ static void sync_secondaries(void)
 
 		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
-		for (ups = firstups; ups != NULL; ups = ups->next) {
+		for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
 
 			/* only check login count on devices we are the primary for */
 			if (!flag_isset(ups->status, ST_PRIMARY))
@@ -1404,7 +1404,7 @@ static void forceshutdown(void)
 		userfsd, exit_flag, use_pipe);
 
 	/* set FSD on any "primary" UPS entries (forced shutdown in progress) */
-	for (ups = firstups; ups != NULL; ups = ups->next)
+	for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next)
 		if (flag_isset(ups->status, ST_PRIMARY)) {
 			isaprimary = 1;
 			upsdebugx(2, "%s: tell data server to setfsd(%s@%s)",
@@ -1723,7 +1723,7 @@ static void recalc(void)
 		else
 			val_ol += ups->pv;
 
-		ups = ups->next;
+		ups = (utype_t *)ups->next;
 	}
 
 	upsdebugx(3, "Current power value: %u", val_ol);
@@ -2130,10 +2130,10 @@ static void addups(int reloading, const char *sys, const char *pvs,
 			return;
 		}
 
-		tmp = tmp->next;
+		tmp = (utype_t *)tmp->next;
 	}
 
-	tmp = xcalloc(1, sizeof(utype_t));
+	tmp = (utype_t *)xcalloc(1, sizeof(utype_t));
 	/* TOTHINK: init (UPSCONN_t)tmp->conn struct fields too? */
 	tmp->sys = xstrdup(sys);
 	tmp->pv = pv;
@@ -2620,7 +2620,7 @@ static void loadconfig(void)
 			while (ups) {
 				ups->pollfail_log_throttle_count = -1;
 				ups->pollfail_log_throttle_state = UPSCLI_ERR_NONE;
-				ups = ups->next;
+				ups = (utype_t *)ups->next;
 			}
 		}
 	}
@@ -2740,7 +2740,7 @@ static void upsmon_cleanup(void)
 	utmp = firstups;
 
 	while (utmp) {
-		unext = utmp->next;
+		unext = (utype_t *)utmp->next;
 
 		drop_connection(utmp);
 		ups_free(utmp);
@@ -3625,7 +3625,7 @@ static void delete_ups(utype_t *target)
 
 			/* about to delete the first ups? */
 			if (ptr == last)
-				firstups = ptr->next;
+				firstups = (utype_t *)ptr->next;
 			else
 				last->next = ptr->next;
 
@@ -3637,7 +3637,7 @@ static void delete_ups(utype_t *target)
 		}
 
 		last = ptr;
-		ptr = ptr->next;
+		ptr = (utype_t *)ptr->next;
 	}
 
 	/* shouldn't happen */
@@ -3677,7 +3677,7 @@ static void reload_conf(void)
 
 	while (tmp) {
 		tmp->retain = 0;
-		tmp = tmp->next;
+		tmp = (utype_t *)tmp->next;
 	}
 
 	/* reset paranoia checker */
@@ -3687,17 +3687,16 @@ static void reload_conf(void)
 	loadconfig();
 
 	/* go through the utype_t struct again */
-	tmp = firstups;
+		tmp = firstups;
+		while (tmp) {
+			next = (utype_t *)tmp->next;
 
-	while (tmp) {
-		next = tmp->next;
+			/* !retain means it wasn't in the .conf this time around */
+			if (tmp->retain == 0)
+				delete_ups(tmp);
 
-		/* !retain means it wasn't in the .conf this time around */
-		if (tmp->retain == 0)
-			delete_ups(tmp);
-
-		tmp = next;
-	}
+			tmp = next;
+		}
 
 	/* see if the user just blew off a foot */
 	if (totalpv < minsupplies) {
@@ -3816,9 +3815,14 @@ int main(int argc, char *argv[])
 	print_banner_once(prog, 0);
 
 	/* if no configuration file is specified on the command line, use default */
-	configfile = xmalloc(SMALLBUF);
-	snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
-	configfile = xrealloc(configfile, strlen(configfile) + 1);
+	/* get the real filename */
+	if (configfile) {
+		configfile = (char *)xrealloc(configfile, strlen(configfile) + 1);
+	} else {
+		configfile = (char *)xmalloc(SMALLBUF);
+		snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
+		configfile = (char *)xrealloc(configfile, strlen(configfile) + 1);
+	}
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
@@ -4258,7 +4262,7 @@ int main(int argc, char *argv[])
 
 				gettimeofday(&now, NULL);
 				time(&ttNow);
-				for (ups = firstups; ups != NULL; ups = ups->next) {
+				for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
 					ups->status = 0;
 					ups->lastpoll = ttNow;
 				}
@@ -4280,7 +4284,7 @@ int main(int argc, char *argv[])
 		/* Reset the value, regardless of support */
 		sleep_inhibitor_status = -2;
 
-		for (ups = firstups; ups != NULL; ups = ups->next) {
+		for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
 			if (isPreparingForSleepSupported() && (sleep_inhibitor_status = isPreparingForSleep()) >= 0) {
 				upsdebugx(2, "Aborting UPS polling sub-loop because OS is preparing for sleep or just woke up");
 				goto end_loop_cycle;

@@ -662,7 +662,7 @@ void upsdrv_initinfo(void);
  */
 static void usb_comm_fail(int res, const char *msg)
 {
-	static int try = 0;
+	static int try_num = 0;
 
 	switch(res) {
 		case LIBUSB_ERROR_BUSY:
@@ -679,18 +679,18 @@ static void usb_comm_fail(int res, const char *msg)
 				"%s: Device detached? (error %d: %s)",
 				msg, res, nut_usb_strerror(res));
 
-			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
+			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try_num);
 			hd = NULL;
 			reconnect_ups();
 
 			if(hd) {
 				upslogx(LOG_NOTICE, "Successfully reconnected");
-				try = 0;
+				try_num = 0;
 				dstate_setinfo("driver.state", "reconnect.updateinfo");
 				upsdrv_initinfo();
 				dstate_setinfo("driver.state", "quiet");
 			} else {
-				if(try > MAX_RECONNECT_TRIES) {
+				if(try_num > MAX_RECONNECT_TRIES) {
 					fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");
 				}
 			}

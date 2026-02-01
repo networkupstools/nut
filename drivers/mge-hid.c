@@ -1971,7 +1971,7 @@ static models_name_t mge_model_names [] =
 	{ "GALAXY", "3000_30", MGE_DEFAULT, "Galaxy 3000 30 kVA" },
 
 	/* end of structure. */
-	{ NULL, NULL, 0, NULL }
+	{ NULL, NULL, MGE_DEFAULT_OFFLINE, NULL }
 };
 
 

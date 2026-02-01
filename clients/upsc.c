@@ -463,7 +463,7 @@ int main(int argc, char **argv)
 	upsdebugx(1, "upsname='%s' hostname='%s' port='%" PRIu16 "'",
 		NUT_STRARG(upsname), NUT_STRARG(hostname), port);
 
-	ups = xmalloc(sizeof(*ups));
+	ups = (UPSCONN_t *)xmalloc(sizeof(*ups));
 
 	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx_error_json_simple(0, upscli_strerror(ups));

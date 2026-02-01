@@ -31,7 +31,7 @@ static char *unescape(char *buf)
 	char	ch, *newbuf, hex[8];
 
 	buflen = strlen(buf) + 2;
-	newbuf = xmalloc(buflen);
+	newbuf = (char *)xmalloc(buflen);
 	*newbuf = '\0';
 
 	fflush(stdout);

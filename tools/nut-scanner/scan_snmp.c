@@ -493,7 +493,7 @@ err:
 	upsdebugx(0,
 		"Cannot load SNMP library (%s) : %s. SNMP search disabled.",
 		libname_path, dl_error);
-	dl_handle = (void *)1;
+	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
 		free(dl_saved_libname);
@@ -522,7 +522,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	 *  Does our driver support the notation? */
 	dev->port = strdup(session->peername);
 	if (response != NULL) {
-		buf = malloc (response->variables->val_len + 1);
+	  buf = (char*)malloc (response->variables->val_len + 1);
 		if (buf) {
 			memcpy(buf, response->variables->val.string,
 				response->variables->val_len);
@@ -562,7 +562,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 		}
 	}
 	else {
-		buf = malloc (session->community_len + 1);
+	  buf = (char*)malloc(session->community_len + 1);
 		if (buf) {
 			memcpy(buf, session->community,
 				session->community_len);
@@ -1323,7 +1323,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 #endif   /* HAVE_PTHREAD */
 
 		if (pass) {
-			tmp_sec = malloc(sizeof(nutscan_snmp_t));
+		  tmp_sec = (nutscan_snmp_t*)malloc(sizeof(nutscan_snmp_t));
 			if (tmp_sec == NULL) {
 				upsdebugx(0, "%s: Memory allocation error", __func__);
 				break;
@@ -1341,7 +1341,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 				thread_count++;
-				new_thread_array = realloc(thread_array,
+				new_thread_array = (nutscan_thread_t*)realloc(thread_array,
 					thread_count * sizeof(nutscan_thread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread array", __func__);

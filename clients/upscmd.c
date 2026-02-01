@@ -135,7 +135,7 @@ static void listcmds(void)
 		/* we must first read the entire list of commands,
 		 * before we can start reading the descriptions */
 
-		ltmp = xcalloc(1, sizeof(*ltmp));
+		ltmp = (struct list_t *)xcalloc(1, sizeof(*ltmp));
 		ltmp->name = xstrdup(answer[2]);
 
 		if (llast) {
@@ -377,7 +377,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
 
-	ups = xcalloc(1, sizeof(*ups));
+	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
 	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));

@@ -99,7 +99,7 @@ static struct logtarget_t *add_logfile(const char *logfn_arg)
 	if (!logfn_arg || !(*logfn_arg))
 		return p;
 
-	p = xcalloc(1, sizeof(struct monhost_ups_t));
+	p = (struct logtarget_t *)xcalloc(1, sizeof(struct logtarget_t));
 	p->logfn = xstrdup(logfn_arg);
 	p->logfile = NULL;
 
@@ -374,7 +374,7 @@ static void add_call(void (*fptr)(const char *arg, const struct monhost_ups_t *m
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(flist_t));
+	tmp = (flist_t *)xmalloc(sizeof(flist_t));
 
 	tmp->fptr = fptr;
 
@@ -543,7 +543,7 @@ int main(int argc, char **argv)
 					char *m_arg, *s;
 
 					monhost_ups_prev = monhost_ups_current;
-					monhost_ups_current = xmalloc(sizeof(struct monhost_ups_t));
+					monhost_ups_current = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
 					if (monhost_ups_anchor == NULL)
 						monhost_ups_anchor = monhost_ups_current;
 					else
@@ -685,7 +685,7 @@ int main(int argc, char **argv)
 	if (argc >= 4) {
 		/* read out the remaining argv entries to the format string */
 
-		logformat = xmalloc(LARGEBUF);
+		logformat = (char *)xmalloc(LARGEBUF);
 		memset(logformat, '\0', LARGEBUF);
 		logformat_allocated = 1;
 
@@ -703,7 +703,7 @@ int main(int argc, char **argv)
 
 		/* May be or not be NULL here: */
 		monhost_ups_prev = monhost_ups_current;
-		monhost_ups_current = xmalloc(sizeof(struct monhost_ups_t));
+		monhost_ups_current = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
 		if (monhost_ups_anchor == NULL) {
 			/* Become the single-entry list */
 			monhost_ups_anchor = monhost_ups_current;
@@ -731,7 +731,7 @@ int main(int argc, char **argv)
 		char	*s = xstrdup(logformat);
 		if (s) {
 			if (!logformat_allocated) {
-				logformat = xmalloc(LARGEBUF);
+				logformat = (char *)xmalloc(LARGEBUF);
 				if (!logformat)
 					fatalx(EXIT_FAILURE, "Failed re-allocation to prepend UPSHOST to formatting string");
 				memset(logformat, '\0', LARGEBUF);
@@ -783,7 +783,7 @@ int main(int argc, char **argv)
 				monhost_ups_current->port
 			);
 
-			conn = xmalloc(sizeof(*conn));
+			conn = (UPSCONN_t *)xmalloc(sizeof(*conn));
 
 			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0) {
 				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
@@ -811,7 +811,7 @@ int main(int argc, char **argv)
 				found++;
 				upsdebugx(1, "FOUND: %s: %s", answer[1], answer[2]);
 
-				mu = xmalloc(sizeof(struct monhost_ups_t));
+				mu = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
 				snprintf(buf, sizeof(buf), "%s@%s:%" PRIu16,
 					answer[1],
 					monhost_ups_current->hostname,
@@ -897,7 +897,7 @@ int main(int argc, char **argv)
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		}
 
-		monhost_ups_current->ups = xmalloc(sizeof(UPSCONN_t));
+		monhost_ups_current->ups = (UPSCONN_t *)xmalloc(sizeof(UPSCONN_t));
 
 		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",

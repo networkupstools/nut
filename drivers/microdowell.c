@@ -270,7 +270,7 @@ static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned 
 			if (ups.ErrCount > 100)
 			ups.ErrCount = 100 ;
 		}
-	return(NULL) ;	/* There have been errors in the reading of the data */
+	return((unsigned char *)NULL) ;	/* There have been errors in the reading of the data */
 }
 
 static int detect_hardware(void)

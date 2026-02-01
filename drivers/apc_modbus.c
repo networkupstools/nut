@@ -834,46 +834,46 @@ typedef struct {
 
 /* Values that only need to be updated once on startup */
 static apc_modbus_register_t apc_modbus_register_map_inventory[] = {
-	{ "ups.firmware",                   516,    8,  APC_VT_STRING,   0,         NULL,                                           "%s",       0,  NULL    },
-	{ "ups.model",                      532,    16, APC_VT_STRING,   0,         NULL,                                           "%s",       0,  NULL    }, /* also device.model, filled automatically */
-	{ "ups.serial",                     564,    8,  APC_VT_STRING,   0,         NULL,                                           "%s",       0,  NULL    }, /* also device.serial, filled automatically */
-	{ "ups.power.nominal",              588,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.0f",     0,  &power_nominal      },
-	{ "ups.realpower.nominal",          589,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.0f",     0,  &realpower_nominal  },
-	{ "ups.mfr.date",                   591,    1,  APC_VT_UINT,     0,         &_apc_modbus_date_conversion,                   NULL,       0,  NULL    },
-	{ "battery.date",                   595,    1,  APC_VT_UINT,     APC_VF_RW, &_apc_modbus_date_conversion,                   NULL,       0,  NULL    },
-	{ "ups.id",                         596,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
-	{ "outlet.group.0.name",            604,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
-	{ "outlet.group.1.name",            612,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
-	{ "outlet.group.2.name",            620,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
-	{ "outlet.group.3.name",            628,    8,  APC_VT_STRING,   APC_VF_RW, NULL,                                           "%s",       0,  NULL    },
-	{ NULL, 0, 0, 0, 0, NULL, NULL, 0.0f, NULL }
+	{ "ups.firmware",                   516,    8,  APC_VT_STRING,   APC_VF_NONE, NULL,                                           "%s",       0,  NULL    },
+	{ "ups.model",                      532,    16, APC_VT_STRING,   APC_VF_NONE, NULL,                                           "%s",       0,  NULL    }, /* also device.model, filled automatically */
+	{ "ups.serial",                     564,    8,  APC_VT_STRING,   APC_VF_NONE, NULL,                                           "%s",       0,  NULL    }, /* also device.serial, filled automatically */
+	{ "ups.power.nominal",              588,    1,  APC_VT_UINT,     APC_VF_NONE, &_apc_modbus_double_conversion,                 "%.0f",     0,  &power_nominal      },
+	{ "ups.realpower.nominal",          589,    1,  APC_VT_UINT,     APC_VF_NONE, &_apc_modbus_double_conversion,                 "%.0f",     0,  &realpower_nominal  },
+	{ "ups.mfr.date",                   591,    1,  APC_VT_UINT,     APC_VF_NONE, &_apc_modbus_date_conversion,                   NULL,       0,  NULL    },
+	{ "battery.date",                   595,    1,  APC_VT_UINT,     APC_VF_RW,   &_apc_modbus_date_conversion,                   NULL,       0,  NULL    },
+	{ "ups.id",                         596,    8,  APC_VT_STRING,   APC_VF_RW,   NULL,                                           "%s",       0,  NULL    },
+	{ "outlet.group.0.name",            604,    8,  APC_VT_STRING,   APC_VF_RW,   NULL,                                           "%s",       0,  NULL    },
+	{ "outlet.group.1.name",            612,    8,  APC_VT_STRING,   APC_VF_RW,   NULL,                                           "%s",       0,  NULL    },
+	{ "outlet.group.2.name",            620,    8,  APC_VT_STRING,   APC_VF_RW,   NULL,                                           "%s",       0,  NULL    },
+	{ "outlet.group.3.name",            628,    8,  APC_VT_STRING,   APC_VF_RW,   NULL,                                           "%s",       0,  NULL    },
+	{ NULL, 0, 0, APC_VT_INT, APC_VF_NONE, NULL, NULL, 0.0f, NULL }
 };
 
 static apc_modbus_register_t apc_modbus_register_map_status[] = {
-	{ "input.transfer.reason",          2,      1,  APC_VT_UINT,     0,         &_apc_modbus_status_change_cause_conversion,    NULL,       0,  NULL    },
-	{ "ups.test.result",                23,     1,  APC_VT_UINT,     0,         &_apc_modbus_battery_test_status_conversion,    NULL,       0,  NULL    },
-	{ NULL, 0, 0, 0, 0, NULL, NULL, 0.0f, NULL }
+	{ "input.transfer.reason",          2,      1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_status_change_cause_conversion,    NULL,       0,  NULL    },
+	{ "ups.test.result",                23,     1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_battery_test_status_conversion,    NULL,       0,  NULL    },
+	{ NULL, 0, 0, APC_VT_INT, APC_VF_NONE, NULL, NULL, 0.0f, NULL }
 };
 
 static apc_modbus_register_t apc_modbus_register_map_dynamic[] = {
-	{ "battery.runtime",                128,    2,  APC_VT_UINT,     0,         NULL,                                           "%" PRIu64, 0,  NULL    },
-	{ "battery.charge",                 130,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     9,  NULL    },
-	{ "battery.voltage",                131,    1,  APC_VT_INT,      0,         &_apc_modbus_double_conversion,                 "%.2f",     5,  NULL    },
-	{ "battery.date.maintenance",       133,    1,  APC_VT_UINT,     0,         &_apc_modbus_date_conversion,                   NULL,       0,  NULL    },
-	{ "battery.temperature",            135,    1,  APC_VT_INT,      0,         &_apc_modbus_double_conversion,                 "%.2f",     7,  NULL    },
-	{ "ups.load",                       136,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     8,  NULL    },
-	{ "ups.realpower",                  136,    1,  APC_VT_UINT,     0,         &_apc_modbus_power_conversion,                  "%.2f",     8,  &realpower_nominal  },
-	{ "ups.power",                      138,    1,  APC_VT_UINT,     0,         &_apc_modbus_power_conversion,                  "%.2f",     8,  &power_nominal      },
-	{ "output.current",                 140,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     5,  NULL    },
-	{ "output.voltage",                 142,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     6,  NULL    },
-	{ "output.frequency",               144,    1,  APC_VT_UINT,     0,         &_apc_modbus_double_conversion,                 "%.2f",     7,  NULL    },
-	{ "experimental.output.energy",     145,    2,  APC_VT_UINT,     0,         NULL,                                           "%" PRIu64, 0,  NULL    },
-	{ "input.voltage",                  151,    1,  APC_VT_UINT,     0,         &_apc_modbus_voltage_conversion,                "%.2f",     6,  NULL    },
-	{ "ups.efficiency",                 154,    1,  APC_VT_INT,      0,         &_apc_modbus_efficiency_conversion,             "%.1f",     7,  NULL    },
-	{ "ups.timer.shutdown",             155,    1,  APC_VT_INT,      0,         NULL,                                           "%" PRIi64, 0,  NULL    },
-	{ "ups.timer.start",                156,    1,  APC_VT_INT,      0,         NULL,                                           "%" PRIi64, 0,  NULL    },
-	{ "ups.timer.reboot",               157,    2,  APC_VT_INT,      0,         NULL,                                           "%" PRIi64, 0,  NULL    },
-	{ NULL, 0, 0, 0, 0, NULL, NULL, 0.0f, NULL }
+	{ "battery.runtime",                128,    2,  APC_VT_UINT,     APC_VF_NONE,         NULL,                                   "%" PRIu64, 0,  NULL    },
+	{ "battery.charge",                 130,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_double_conversion,         "%.2f",     9,  NULL    },
+	{ "battery.voltage",                131,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_double_conversion,         "%.2f",     5,  NULL    },
+	{ "battery.date.maintenance",       133,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_date_conversion,           NULL,       0,  NULL    },
+	{ "battery.temperature",            135,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_double_conversion,         "%.2f",     7,  NULL    },
+	{ "ups.load",                       136,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_double_conversion,         "%.2f",     8,  NULL    },
+	{ "ups.realpower",                  136,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_power_conversion,          "%.2f",     8,  &realpower_nominal  },
+	{ "ups.power",                      138,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_power_conversion,          "%.2f",     8,  &power_nominal      },
+	{ "output.current",                 140,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_double_conversion,         "%.2f",     5,  NULL    },
+	{ "output.voltage",                 142,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_double_conversion,         "%.2f",     6,  NULL    },
+	{ "output.frequency",               144,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_double_conversion,         "%.2f",     7,  NULL    },
+	{ "experimental.output.energy",     145,    2,  APC_VT_UINT,     APC_VF_NONE,         NULL,                                   "%" PRIu64, 0,  NULL    },
+	{ "input.voltage",                  151,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_voltage_conversion,        "%.2f",     6,  NULL    },
+	{ "ups.efficiency",                 154,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_efficiency_conversion,     "%.1f",     7,  NULL    },
+	{ "ups.timer.shutdown",             155,    1,  APC_VT_INT,      APC_VF_NONE,         NULL,                                   "%" PRIi64, 0,  NULL    },
+	{ "ups.timer.start",                156,    1,  APC_VT_INT,      APC_VF_NONE,         NULL,                                   "%" PRIi64, 0,  NULL    },
+	{ "ups.timer.reboot",               157,    2,  APC_VT_INT,      APC_VF_NONE,         NULL,                                   "%" PRIi64, 0,  NULL    },
+	{ NULL, 0, 0, APC_VT_INT, APC_VF_NONE, NULL, NULL, 0.0f, NULL }
 };
 
 static apc_modbus_register_t apc_modbus_register_map_static[] = {
@@ -894,7 +894,7 @@ static apc_modbus_register_t apc_modbus_register_map_static[] = {
 	{ "outlet.group.3.delay.shutdown",  1044,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
 	{ "outlet.group.3.delay.start",     1045,   1,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
 	{ "outlet.group.3.delay.reboot",    1046,   2,  APC_VT_INT,      APC_VF_RW, NULL,                                           "%" PRIi64, 0,  NULL    },
-	{ NULL, 0, 0, 0, 0, NULL, NULL, 0.0f, NULL }
+	{ NULL, 0, 0, APC_VT_INT, APC_VF_NONE, NULL, NULL, 0.0f, NULL }
 };
 
 static apc_modbus_register_t* apc_modbus_register_maps[] = {

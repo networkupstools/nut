@@ -876,7 +876,7 @@ int shut_synchronise(usb_dev_handle arg_upsfd)
 {
 	int retCode = 0;
 	unsigned char c = SHUT_SYNC_OFF, reply;
-	int try;
+	int attempt;
 
 	upsdebugx (2, "entering shut_synchronise()");
 	reply = '\0';
@@ -898,9 +898,9 @@ int shut_synchronise(usb_dev_handle arg_upsfd)
 	*/
 
 	/* Sync with the UPS according to notification */
-	for (try = 0; try < MAX_TRY; try++)
+	for (attempt = 0; attempt < MAX_TRY; attempt++)
 	{
-		upsdebugx (3, "Syncing communication (try %i)", try);
+		upsdebugx (3, "Syncing communication (try %i)", attempt);
 
 		if ((ser_send_char(arg_upsfd, c)) == -1)
 		{
@@ -1157,7 +1157,7 @@ static int shut_get_descriptor(
 		type, size);
 
 	return shut_control_msg(arg_upsfd, USB_ENDPOINT_IN+(type>=USB_DT_HID?1:0),
-				 USB_REQ_GET_DESCRIPTOR, (type << 8) + index, 0, buf, size, SHUT_TIMEOUT);
+				 USB_REQ_GET_DESCRIPTOR, (type << 8) + index, 0, (usb_ctrl_charbuf)buf, size, SHUT_TIMEOUT);
 }
 
 /* Take care of a SHUT transfer (sending and receiving data) */

@@ -283,7 +283,7 @@ err:
 	upsdebugx(0,
 		"Cannot load IPMI library (%s) : %s. IPMI search disabled.",
 		libname_path, dl_error);
-	dl_handle = (void *)1;
+	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
 		free(dl_saved_libname);
@@ -846,7 +846,7 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 				 */
 				int	stwST = sem_trywait(semaphore_scantype);
 				int	stwS  = sem_trywait(semaphore);
-				pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
+				pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0) ? TRUE : FALSE;
 				upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 					" curr_threads=%" PRIuSIZE
 					" thread_count=%" PRIuSIZE
@@ -934,7 +934,7 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 #endif   /* HAVE_PTHREAD */
 
 			if (pass) {
-				tmp_sec = malloc(sizeof(nutscan_ipmi_t));
+			  tmp_sec = (nutscan_ipmi_t*)malloc(sizeof(nutscan_ipmi_t));
 				if (tmp_sec == NULL) {
 					upsdebugx(0, "%s: Memory allocation error", __func__);
 					break;
@@ -952,7 +952,7 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 					thread_count++;
-					new_thread_array = realloc(thread_array,
+					new_thread_array = (nutscan_thread_t*)realloc(thread_array,
 						thread_count * sizeof(nutscan_thread_t));
 					if (new_thread_array == NULL) {
 						upsdebugx(1, "%s: Failed to realloc thread array", __func__);

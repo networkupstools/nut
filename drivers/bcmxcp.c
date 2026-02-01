@@ -1419,7 +1419,7 @@ void upsdrv_initinfo(void)
 
 	/* No overflow checks, len value is byte-sized here */
 	buf = len * 11;
-	pTmp = xmalloc(buf+1);
+	pTmp = (char *)xmalloc(buf+1);
 
 	pTmp[0] = 0;
 	/* If there is one or more CPU number, get it */
@@ -1471,7 +1471,7 @@ void upsdrv_initinfo(void)
 	len = answer[iIndex++];
 
 	/* Extract and reformat the model string */
-	pTmp = xmalloc(len+15);
+	pTmp = (char *)xmalloc(len+15);
 	snprintf(pTmp, len + 1, "%s", answer + iIndex);
 	pTmp[len+1] = 0;
 	iIndex += len;

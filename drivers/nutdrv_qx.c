@@ -333,7 +333,7 @@ static void analyze_mapping_usage(void) {
 		return;
 	}
 
-	unused_names = xcalloc(unused_bufsize, sizeof(char));
+	unused_names = (char *)xcalloc(unused_bufsize, sizeof(char));
 
 	for (item = subdriver->qx2nut; item->info_type != NULL; item++) {
 		if (!item)
@@ -385,7 +385,7 @@ static void analyze_mapping_usage(void) {
 					if (*pBufSize < SIZE_MAX - LARGEBUF) {
 						*pBufSize = *pBufSize + LARGEBUF;
 						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
-							*pNames = realloc(*pNames, *pBufSize);
+							*pNames = (char *)realloc(*pNames, *pBufSize);
 
 						if (!*pNames) {
 							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
@@ -1798,7 +1798,7 @@ static int	phoenixtec_command(const char *cmd, size_t cmdlen, char *buf, size_t 
 			*buf = '\0';
 			return ret;
 		}
-		if ((e = memchr(p, '\r', (size_t)ret)) != NULL) break;
+		if ((e = (char *)memchr(p, '\r', (size_t)ret)) != NULL) break;
 	}
 	if (e != NULL && ++e < buf + buflen) {
 		*e = '\0';
@@ -2252,12 +2252,12 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 
 #if WITH_LIBUSB_1_0
 	/* Be conservative and do not break old Armac UPSes */
-	use_interrupt = armac_endpoint_cache.ok
+	use_interrupt = (bool_t)(armac_endpoint_cache.ok
 		&& armac_endpoint_cache.in_endpoint_address == 0x82
 		&& armac_endpoint_cache.in_bmAttributes & LIBUSB_TRANSFER_TYPE_INTERRUPT
 		&& armac_endpoint_cache.out_endpoint_address == 0x02
 		&& armac_endpoint_cache.out_bmAttributes & LIBUSB_TRANSFER_TYPE_INTERRUPT
-		&& armac_endpoint_cache.in_wMaxPacketSize == 64;
+		&& armac_endpoint_cache.in_wMaxPacketSize == 64);
 #endif /* WITH_LIBUSB_1_0 */
 
 	if (use_interrupt && cmddatalen < armac_endpoint_cache.in_wMaxPacketSize) {
@@ -4739,8 +4739,11 @@ int	qx_process(item_t *item, const char *command)
 	size_t	cmdsz = (sizeof(char) * cmdlen); /* in bytes, to be pedantic */
 	int	cmd_len;
 
-	if ( !(cmd = xmalloc(cmdsz)) ) {
-		upslogx(LOG_ERR, "qx_process() failed to allocate buffer");
+	/*
+	 * (see comments in `mecer.c` and `blazer.c` / `blazer_ser.c`).
+	 */
+	if ( !(cmd = (char *)xmalloc(cmdsz)) ) {
+		upslogx(LOG_ERR, "blazer_ser_command() failed to allocate buffer");
 		return -1;
 	}
 

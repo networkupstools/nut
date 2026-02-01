@@ -617,7 +617,7 @@ static void print_rwlist(void)
 
 		/* sock this entry away for later */
 
-		ltmp = xmalloc(sizeof(struct list_t));
+		ltmp = (struct list_t *)xmalloc(sizeof(struct list_t));
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
@@ -731,7 +731,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
 
-	ups = xcalloc(1, sizeof(*ups));
+	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
 	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));

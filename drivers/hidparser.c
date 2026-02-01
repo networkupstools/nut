@@ -677,7 +677,7 @@ HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_ch
 	HIDDesc_t	*pDesc_var;
 	HIDParser_t	*parser;
 
-	pDesc_var = calloc(1, sizeof(*pDesc_var));
+	pDesc_var = (HIDDesc_t *)calloc(1, sizeof(*pDesc_var));
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -712,13 +712,13 @@ HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_ch
 # pragma GCC diagnostic pop
 #endif
 
-	pDesc_var->item = calloc(MAX_REPORT, sizeof(*pDesc_var->item));
+	pDesc_var->item = (HIDData_t *)calloc(MAX_REPORT, sizeof(*pDesc_var->item));
 	if (!pDesc_var->item) {
 		Free_ReportDesc(pDesc_var);
 		return NULL;
 	}
 
-	parser = calloc(1, sizeof(*parser));
+	parser = (HIDParser_t *)calloc(1, sizeof(*parser));
 	if (!parser) {
 		Free_ReportDesc(pDesc_var);
 		return NULL;
@@ -762,7 +762,7 @@ HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_ch
 		return NULL;
 	}
 
-	pDesc_var->item = realloc(pDesc_var->item, pDesc_var->nitems * sizeof(*pDesc_var->item));
+	pDesc_var->item = (HIDData_t *)realloc(pDesc_var->item, pDesc_var->nitems * sizeof(*pDesc_var->item));
 
 	return pDesc_var;
 }

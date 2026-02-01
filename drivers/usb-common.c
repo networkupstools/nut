@@ -141,12 +141,12 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 	USBDeviceMatcher_t	*m;
 	USBDevice_t		*data;
 
-	m = malloc(sizeof(*m));
+	m = (USBDeviceMatcher_t*)malloc(sizeof(*m));
 	if (!m) {
 		return -1;
 	}
 
-	data = calloc(1, sizeof(*data));
+	data = (USBDevice_t*)calloc(1, sizeof(*data));
 	if (!data) {
 		free(m);
 		return -1;
@@ -329,12 +329,12 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 	USBDeviceMatcher_t	*m;
 	regex_matcher_data_t	*data;
 
-	m = malloc(sizeof(*m));
+	m = (USBDeviceMatcher_t*)malloc(sizeof(*m));
 	if (!m) {
 		return -1;
 	}
 
-	data = calloc(1, sizeof(*data));
+	data = (regex_matcher_data_t*)calloc(1, sizeof(*data));
 	if (!data) {
 		free(m);
 		return -1;

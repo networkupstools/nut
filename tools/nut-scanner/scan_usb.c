@@ -274,7 +274,7 @@ err:
 	upsdebugx(0,
 		"Cannot load USB library (%s) : %s. USB search disabled.",
 		libname_path, dl_error);
-	dl_handle = (void *)1;
+	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
 		free(dl_saved_libname);
@@ -594,7 +594,7 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 						"bus/port '%s', skipping: %s",
 						__func__, busname,
 						device_port, bus_port,
-						(*nut_usb_strerror)(ret));
+						  (*nut_usb_strerror)((enum libusb_error)ret));
 
 					/* Note: closing is not applicable
 					 * it seems, and can even segfault

@@ -158,7 +158,7 @@ size_t nutscan_add_ip_range(nutscan_ip_range_list_t *irl, char * start_ip, char 
 		end_ip = start_ip;
 	}
 
-	p = xcalloc(1, sizeof(nutscan_ip_range_t));
+	p = (nutscan_ip_range_t*)xcalloc(1, sizeof(nutscan_ip_range_t));
 
 	if (start_ip == end_ip || strcmp(start_ip, end_ip) <= 0) {
 		p->start_ip = start_ip;

@@ -232,10 +232,10 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 			return;
 		}
 
-		tmp = tmp->next;
+		tmp = (ups_t*)tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(ups_t));
+	tmp = (ups_t*)xmalloc(sizeof(ups_t));
 	tmp->upsname = xstrdup(arg_upsname);
 	tmp->driver = NULL;
 	tmp->port = NULL;
@@ -1504,7 +1504,7 @@ static void send_one_driver(void (*command_func)(const ups_t *), const char *arg
 			return;
 		}
 
-		ups = ups->next;
+		ups = (ups_t*)ups->next;
 	}
 
 	fatalx(EXIT_FAILURE, "UPS %s not found in ups.conf", arg_upsname);
@@ -1525,7 +1525,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 	if (command_func == &list_driver || command_func == &status_driver) {
 		while (ups) {
 			command_func(ups);
-			ups = ups->next;
+			ups = (ups_t*)ups->next;
 		}
 
 		fflush(stdout);
@@ -1559,7 +1559,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 		while (ups) {
 			command_func(ups);
 
-			ups = ups->next;
+			ups = (ups_t*)ups->next;
 		}
 
 		return;
@@ -1571,7 +1571,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 			if (ups->sdorder == i)
 				command_func(ups);
 
-			ups = ups->next;
+			ups = (ups_t*)ups->next;
 		}
 	}
 }
@@ -1590,7 +1590,7 @@ static void exit_cleanup(void)
 	) {
 		/* First stop the drivers, if any are running */
 		while (tmp) {
-			next = tmp->next;
+			next = (ups_t*)tmp->next;
 			if (tmp->pid != -1) {
 				stop_driver(tmp);
 			}
@@ -1600,7 +1600,7 @@ static void exit_cleanup(void)
 
 	tmp = upstable;
 	while (tmp) {
-		next = tmp->next;
+		next = (ups_t*)tmp->next;
 
 		free(tmp->driver);
 		free(tmp->port);
@@ -1837,7 +1837,7 @@ int main(int argc, char **argv)
 		upscount = 0;
 
 		while (tmp) {
-			tmp = tmp->next;
+		  tmp = (ups_t*)tmp->next;
 			upscount++;
 		}
 
@@ -1979,7 +1979,7 @@ int main(int argc, char **argv)
 				}
 			}
 
-			tmp = tmp->next;
+			tmp = (ups_t*)tmp->next;
 		}
 #else	/* WIN32 */
 		/* TOTHINK: Is there something we can do on the platform? */
@@ -2013,7 +2013,7 @@ int main(int argc, char **argv)
 			 * and exit the tool - with error if applicable.
 			 */
 			while (tmp) {
-				next = tmp->next;
+				next = (ups_t*)tmp->next;
 				if (tmp->pid != -1) {
 					int	status;
 					if (waitpid(tmp->pid, &status, WNOHANG) == tmp->pid) {
@@ -2075,7 +2075,7 @@ int main(int argc, char **argv)
 
 				tmp = upstable;
 				while (tmp) {
-					next = tmp->next;
+					next = (ups_t*)tmp->next;
 					signal_driver(tmp);
 					tmp = next;
 				}

@@ -118,7 +118,7 @@ static raw_data_t raw_xmalloc(size_t size)
 {
 	raw_data_t data;
 
-	data.buf	= xmalloc(size);
+	data.buf	= (byte_t *)xmalloc(size);
 	data.buf_size	= size;
 
 	data.begin	= data.buf;

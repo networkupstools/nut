@@ -259,7 +259,7 @@ static void analyze_mapping_usage(void) {
 		return;
 	}
 
-	unused_names = xcalloc(unused_bufsize, sizeof(char));
+	unused_names = (char*)xcalloc(unused_bufsize, sizeof(char));
 
 	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
 	{
@@ -312,7 +312,7 @@ static void analyze_mapping_usage(void) {
 					if (*pBufSize < SIZE_MAX - LARGEBUF) {
 						*pBufSize = *pBufSize + LARGEBUF;
 						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
-							*pNames = realloc(*pNames, *pBufSize);
+							*pNames = (char*)realloc(*pNames, *pBufSize);
 
 						if (!*pNames) {
 							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
@@ -1397,7 +1397,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 		nb_iteration++;
 		/* +1 is for the terminating NULL */
-		new_ret_array = realloc(
+		new_ret_array = (struct snmp_pdu**)realloc(
 			ret_array,
 			sizeof(struct snmp_pdu*) * ((size_t)nb_iteration+1)
 			);
@@ -1618,7 +1618,7 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 	switch (pdu->variables->type) {
 	case ASN_OCTET_STR:
 	case ASN_OPAQUE:
-		buf = xmalloc(pdu->variables->val_len + 1);
+		buf = (char*)xmalloc(pdu->variables->val_len + 1);
 		memcpy(buf, pdu->variables->val.string, pdu->variables->val_len);
 		buf[pdu->variables->val_len] = '\0';
 		value = strtol(buf, NULL, 0);
