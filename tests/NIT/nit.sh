@@ -1001,7 +1001,7 @@ generatecfg_ups_trivial() {
     # Populate the configs for the run
     (   echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
         if [ x"${TOP_BUILDDIR}" != x ]; then
-            echo "driverpath = \"${TOP_BUILDDIR}/drivers\"" >> "$NUT_CONFPATH/ups.conf" || exit
+            echo "driverpath = \"${TOP_BUILDDIR}/drivers\"" | sed 's,\\,\\\\,g' >> "$NUT_CONFPATH/ups.conf" || exit
         fi
         if [ -n "${NUT_DEBUG_MIN-}" ] ; then
             echo "debug_min = ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/ups.conf" || exit
