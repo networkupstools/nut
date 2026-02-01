@@ -180,37 +180,47 @@ if test -z "${nut_have_libglib_seen}"; then
 	AC_CHECK_HEADERS(gio/gio.h, [nut_have_libgio=yes], [nut_have_libgio=no], [AC_INCLUDES_DEFAULT])
 	dnl AC_CHECK_FUNCS(g_bus_get_sync, [], [nut_have_libgio=no])
 
-	if test "${nut_have_libgio}" = "yes"; then
-		LIBGIO_CFLAGS="${depCFLAGS}"
-		LIBGIO_LIBS="${depLIBS}"
+	if test "${nut_have_libglib}" = "yes"; then
 
+		dnl GLib headers seem incorrect and offensive to many compilers
+		dnl (starting names with underscores and capital characters,
+		dnl varying support for attributes, method pointer mismatches).
+		dnl There is nothing NUT can do about it, except telling the
+		dnl compiler that we take these headers from the system as they
+		dnl are, so strict checks should not apply to them.
+		dnl On newer releases (2025+) the headers and CLANG seem to work
+		dnl together out of the box, but during the decade before this is
+		dnl troublesome.
 		AS_IF([test "${CLANGCC}" = "yes" || test "${GCC}" = "yes"], [
-			myGIO_CFLAGS=""
-			for TOKEN in ${LIBGIO_CFLAGS} ; do
+			myGLIB_CFLAGS=""
+			for TOKEN in ${depCFLAGS} ; do
 				AS_CASE(["${TOKEN}"],
 					[-I/*], [
 						_IDIR="`echo \"${TOKEN}\" | sed 's/^-I//'`"
-						AS_IF([echo " ${LIBGIO_CFLAGS}" | ${EGREP} " -isystem *${_IDIR}" >/dev/null],
-							[myGIO_CFLAGS="${myGIO_CFLAGS} ${TOKEN}"],
-							[myGIO_CFLAGS="${myGIO_CFLAGS} -isystem ${_IDIR} ${TOKEN}"]
+						AS_IF([echo " ${depCFLAGS}" | ${EGREP} " -isystem *${_IDIR}" >/dev/null],
+							[myGLIB_CFLAGS="${myGLIB_CFLAGS} ${TOKEN}"],
+							[myGLIB_CFLAGS="${myGLIB_CFLAGS} -isystem ${_IDIR} ${TOKEN}"]
 						)],
-						[myGIO_CFLAGS="${myGIO_CFLAGS} ${TOKEN}"]
+						[myGLIB_CFLAGS="${myGLIB_CFLAGS} ${TOKEN}"]
 				)
 			done
 			unset TOKEN
 			unset _IDIR
-			myGIO_CFLAGS="`echo \"${myGIO_CFLAGS}\" | sed 's/^ *//'`"
+			myGLIB_CFLAGS="`echo \"${myGLIB_CFLAGS}\" | sed 's/^ *//'`"
 
-			AS_IF([test x"${LIBGIO_CFLAGS}" != x -a x"${LIBGIO_CFLAGS}" != x"${myGIO_CFLAGS}"], [
-				AC_MSG_NOTICE([Patched libgio CFLAGS to declare -isystem])
+			AS_IF([test x"${depCFLAGS}" != x -a x"${depCFLAGS}" != x"${myGLIB_CFLAGS}"], [
+				AC_MSG_NOTICE([Patched libglib/libgio CFLAGS to declare -isystem])
 				AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
-					AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) old: ${LIBGIO_CFLAGS}])
-					AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) new: ${myGIO_CFLAGS}])
+					AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) old: ${depCFLAGS}])
+					AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) new: ${myGLIB_CFLAGS}])
 				])
-				LIBGIO_CFLAGS="${myGIO_CFLAGS}"
+				depCFLAGS="${myGLIB_CFLAGS}"
 			])
-			unset myGIO_CFLAGS
+			unset myGLIB_CFLAGS
 		])
+
+		LIBGLIB_CFLAGS="${depCFLAGS}"
+		LIBGLIB_LIBS="${depLIBS}"
 
 		dnl Help ltdl if we can (nut-scanner etc.)
 		for TOKEN in $depLIBS ; do
