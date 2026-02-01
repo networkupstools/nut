@@ -1000,8 +1000,12 @@ generatecfg_upsmon_secondary() {
 generatecfg_ups_trivial() {
     # Populate the configs for the run
     (   echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
-        if [ x"${TOP_BUILDDIR}" != x ]; then
-            echo "driverpath = \"${TOP_BUILDDIR}/drivers\"" | sed 's,\\,\\\\,g' >> "$NUT_CONFPATH/ups.conf" || exit
+        if [ x"${ABS_TOP_BUILDDIR}" != x ]; then
+            echo "driverpath = \"${ABS_TOP_BUILDDIR}/drivers\"" | sed 's,\\,\\\\,g' >> "$NUT_CONFPATH/ups.conf" || exit
+        else
+            if [ x"${TOP_BUILDDIR}" != x ]; then
+                echo "driverpath = \"${TOP_BUILDDIR}/drivers\"" | sed 's,\\,\\\\,g' >> "$NUT_CONFPATH/ups.conf" || exit
+            fi
         fi
         if [ -n "${NUT_DEBUG_MIN-}" ] ; then
             echo "debug_min = ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/ups.conf" || exit

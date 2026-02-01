@@ -30,8 +30,8 @@ check-NIT: $(abs_srcdir)/nit.sh
 	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
 	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	abs_srcdir='$(abs_srcdir)' abs_builddir='$(abs_builddir)' \
-	abs_top_srcdir_orig='$(abs_top_srcdir)' abs_top_builddir_orig='$(abs_top_builddir)' \
-	abs_top_srcdir='$(ABS_TOP_SRCDIR)' abs_top_builddir='$(ABS_TOP_BUILDDIR)' \
+	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
+	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
 	EXEEXT='$(EXEEXT)' \
 	"$(abs_srcdir)/nit.sh"
 
@@ -54,8 +54,8 @@ check-NIT-sandbox: $(abs_srcdir)/nit.sh
 	NUT_PORT=$(NUT_PORT) NIT_CASE="$(NIT_CASE)" NUT_FOREGROUND_WITH_PID=true \
 	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	abs_srcdir='$(abs_srcdir)' abs_builddir='$(abs_builddir)' \
-	abs_top_srcdir_orig='$(abs_top_srcdir)' abs_top_builddir_orig='$(abs_top_builddir)' \
-	abs_top_srcdir='$(ABS_TOP_SRCDIR)' abs_top_builddir='$(ABS_TOP_BUILDDIR)' \
+	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
+	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
 	EXEEXT='$(EXEEXT)' \
 	"$(abs_srcdir)/nit.sh"
 
