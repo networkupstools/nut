@@ -181,9 +181,9 @@ struct ups_handler
 			strstr(cmdname, "shutdown.") == cmdname ||		\
 			strstr(cmdname, "load.off") == cmdname ||		\
 			strstr(cmdname, "load.cycle") == cmdname ||		\
-			( strstr(cmdname, "outlet.") == cmdname && (		\
-			  strstr(cmdname, "shutdown.") ||			\
-			  strstr(cmdname, "load")				\
+			( strstr(cmdname, "outlet.") == cmdname &&		\
+			  (    strstr(cmdname, "shutdown.")			\
+			    || strstr(cmdname, "load")				\
 			) )							\
 		) {								\
 			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra) ;	\

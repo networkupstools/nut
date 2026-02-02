@@ -908,7 +908,7 @@ void upsdrv_initinfo(void)
 	if (detect_hardware() == -1)
 		{
 		fatalx(EXIT_FAILURE,
-		       "Unable to detect a Microdowell's  Enterprise UPS on port %s\nCheck the cable, port name and try again", device_path);
+			"Unable to detect a Microdowell's Enterprise UPS on port %s\nCheck the cable, port name and try again", device_path);
 		}
 
 	/* I set the corresponding UPS variables

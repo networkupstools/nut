@@ -295,12 +295,14 @@ err:
 
 /* Cleanup IPMI contexts */
 #ifdef HAVE_FREEIPMI_11X_12X
-static void nut_freeipmi_cleanup(ipmi_fru_parse_ctx_t fru_parse_ctx,
-								 ipmi_sdr_ctx_t sdr_ctx)
+static void nut_freeipmi_cleanup(
+	ipmi_fru_parse_ctx_t fru_parse_ctx,
+	ipmi_sdr_ctx_t sdr_ctx)
 #else /* HAVE_FREEIPMI_11X_12X */
-static void nut_freeipmi_cleanup(ipmi_fru_parse_ctx_t fru_parse_ctx,
-								 ipmi_sdr_cache_ctx_t sdr_cache_ctx,
-								 ipmi_sdr_parse_ctx_t sdr_parse_ctx)
+static void nut_freeipmi_cleanup(
+	ipmi_fru_parse_ctx_t fru_parse_ctx,
+	ipmi_sdr_cache_ctx_t sdr_cache_ctx,
+	ipmi_sdr_parse_ctx_t sdr_parse_ctx)
 #endif /* HAVE_FREEIPMI_11X_12X */
 {
 	if (fru_parse_ctx) {
@@ -934,7 +936,7 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 #endif   /* HAVE_PTHREAD */
 
 			if (pass) {
-			  tmp_sec = (nutscan_ipmi_t*)malloc(sizeof(nutscan_ipmi_t));
+				tmp_sec = (nutscan_ipmi_t*)malloc(sizeof(nutscan_ipmi_t));
 				if (tmp_sec == NULL) {
 					upsdebugx(0, "%s: Memory allocation error", __func__);
 					break;

@@ -790,9 +790,10 @@ void upsdrv_initups(void)
 	if (!strcmp(mibs, "--list")) {
 		int i;
 
-		printf("The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
-		       "and for 'mibs=auto' these mappings will be tried in the following order until\n"
-		       "the first one matches your device\n\n", mibs);
+		printf(
+			"The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
+			"and for 'mibs=auto' these mappings will be tried in the following order until\n"
+			"the first one matches your device\n\n", mibs);
 		printf("%7s\t%-23s\t%-7s\t%-31s\t%-s\n",
 			"NUMBER", "MAPPING NAME", "VERSION",
 			"ENTRY POINT OID", "AUTO CHECK OID");
@@ -882,7 +883,7 @@ void upsdrv_initups(void)
 
 	if (status == TRUE)
 		upslogx(LOG_INFO, "Detected %s on host %s (mib: %s %s)",
-			 model, device_path, mibname, mibvers);
+			model, device_path, mibname, mibvers);
 	else
 		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);
 		/* FIXME: "No supported device detected" */
@@ -1926,13 +1927,13 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 				info_lkp != NULL && info_lkp->info_value != NULL;
 				info_lkp++
 			) {
-					dstate_addenum(info_type, "%s", info_lkp->info_value);
+				dstate_addenum(info_type, "%s", info_lkp->info_value);
 			}
 		}
 
 		/* Commit the current value, to avoid staleness with huge
 		 * data collections on slow devices */
-		 dstate_dataok();
+		dstate_dataok();
 	}
 }
 
@@ -2346,7 +2347,7 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 
 		if (!(strcmp(info_lkp->info_value, value))) {
 			upsdebugx(1, "%s: found %s (value: %s)",
-					__func__, info_lkp->info_value, value);
+				__func__, info_lkp->info_value, value);
 
 			errno = 0;
 			return info_lkp->oid_value;
@@ -2421,7 +2422,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 	) {
 		if (info_lkp->oid_value == value) {
 			upsdebugx(1, "%s: found %s (value: %ld)",
-					__func__, info_lkp->info_value, value);
+				__func__, info_lkp->info_value, value);
 
 			errno = 0;
 			return info_lkp->info_value;
@@ -3432,7 +3433,8 @@ bool_t snmp_ups_walk(int mode)
 			/* skip instcmd, not linked to outlets */
 			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
 				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
+				&& !(su_info_p->flags & SU_OUTLET_GROUP)
+			) {
 				upsdebugx(1, "SU_CMD_MASK => %s", su_info_p->OID);
 				continue;
 			}

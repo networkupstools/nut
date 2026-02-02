@@ -2083,9 +2083,11 @@ static int instcmd(const char *cmd, const char *ext)
 	}
 
 	if (!(ct->flags & APC_PRESENT)) {
-		upslogx(LOG_INSTCMD_INVALID, "%s: command [%s %s] recognized, but"
-		       " not supported by your UPS model", __func__, cmd,
-				ext ? ext : "\b");
+		upslogx(LOG_INSTCMD_INVALID,
+			"%s: command [%s %s] recognized, but"
+			" not supported by your UPS model",
+			__func__, cmd,
+			ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
 	}
 

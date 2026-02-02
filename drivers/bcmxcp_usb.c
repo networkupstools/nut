@@ -302,7 +302,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		tail = (ssize_t)bytes_read;
 		tail -= (ssize_t)(length + PW_HEADER_SIZE);
 		if (tail > 0)
-		  my_buf = (unsigned char*)memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
+			my_buf = (unsigned char*)memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
 		else if (tail == 0)
 			my_buf = &buf[0];
 		else { /* if (tail < 0) */

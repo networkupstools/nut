@@ -475,7 +475,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 
 	/* if not listed, create a new entry and prepend it to the list */
 	if (temp == NULL) {
-	  temp = (ups_t*)xcalloc(1, sizeof(*temp));
+		temp = (ups_t*)xcalloc(1, sizeof(*temp));
 		temp->upsname = xstrdup(upsname);
 		temp->next = upstable;
 		upstable = temp;

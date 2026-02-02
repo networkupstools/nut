@@ -338,9 +338,9 @@ recurse:
 			 * point to calculate a real value, so just check the
 			 * range for now.
 			 */
-			 bp = conv_num(bp, &i, 0, 53);
-			 LEGAL_ALT(ALT_O);
-			 continue;
+			bp = conv_num(bp, &i, 0, 53);
+			LEGAL_ALT(ALT_O);
+			continue;
 
 		case 'w':	/* The day of week, beginning on sunday. */
 			bp = conv_num(bp, &tm->tm_wday, 0, 6);

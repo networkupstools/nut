@@ -522,7 +522,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	 *  Does our driver support the notation? */
 	dev->port = strdup(session->peername);
 	if (response != NULL) {
-	  buf = (char*)malloc (response->variables->val_len + 1);
+		buf = (char*)malloc (response->variables->val_len + 1);
 		if (buf) {
 			memcpy(buf, response->variables->val.string,
 				response->variables->val_len);
@@ -562,7 +562,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 		}
 	}
 	else {
-	  buf = (char*)malloc(session->community_len + 1);
+		buf = (char*)malloc(session->community_len + 1);
 		if (buf) {
 			memcpy(buf, session->community,
 				session->community_len);
@@ -617,8 +617,8 @@ static struct snmp_pdu * scan_snmp_get_oid(char* oid_str, void* handle)
 	 || response->variables == NULL
 	 || response->variables->name == NULL
 	 || ((*nut_snmp_oid_compare)(response->variables->name,
-	        response->variables->name_length,
-	        name, name_len) != 0)
+		response->variables->name_length,
+		name, name_len) != 0)
 	 || response->variables->val.string == NULL
 	) {
 		(*nut_snmp_free_pdu)(response);
@@ -1323,7 +1323,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 #endif   /* HAVE_PTHREAD */
 
 		if (pass) {
-		  tmp_sec = (nutscan_snmp_t*)malloc(sizeof(nutscan_snmp_t));
+			tmp_sec = (nutscan_snmp_t*)malloc(sizeof(nutscan_snmp_t));
 			if (tmp_sec == NULL) {
 				upsdebugx(0, "%s: Memory allocation error", __func__);
 				break;

@@ -121,10 +121,11 @@ static void sock_fail(const char *fn)
 	case EADDRINUSE:
 	case EADDRNOTAVAIL:
 		printf("\nThings to try:\n\n");
+		/* NOTE: Do not reformat indentation with TABs, to keep lines aligned for consistent editing */
 		printf(" - ps -ef | grep '%s'\t(Linux, GNU userland)\n"
 		       " - ps -xawwu | grep '%s'\t(BSD, Solaris, embedded)\n"
 		       "   To check if another copy of the driver is running; if not:\n\n",
-		       progname, progname);
+			progname, progname);
 		printf(" - ls -la %s\n   To check if a (non-socket) filesystem object already exists there\n\n", fn);
 		printf(" - rm -rf %s\n   To remove any offending files (a new driver instance creates its own)\n", fn);
 		break;
@@ -2229,13 +2230,14 @@ int dstate_detect_phasecount(
 		 * tables should take care of this with converion routine and numeric
 		 * data type flags. */
 #define dstate_getinfo_nonzero(var, suffix) \
-		do { strncpy(bufrw_ptr, suffix, bufrw_max); \
-		  if ( (var = dstate_getinfo(buf)) ) { \
-		    if ( (var[0] == '0' && var[1] == '\0') || \
-		         (var[0] == '\0') ) { \
-		      var = NULL; \
-		    } \
-		  } \
+		do { \
+			strncpy(bufrw_ptr, suffix, bufrw_max); \
+			if ( (var = dstate_getinfo(buf)) ) { \
+				if ( (var[0] == '0' && var[1] == '\0') \
+				||   (var[0] == '\0') ) { \
+					var = NULL; \
+				} \
+			} \
 		} while(0)
 
 		dstate_getinfo_nonzero(v1,  "L1.voltage");

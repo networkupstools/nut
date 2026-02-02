@@ -2465,9 +2465,12 @@ repeat:
  * checking for uniqueness and going to add a newly seen token.
  * If such callback returns 0, abort the addition of token.
  */
-int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
-			    int (*callback_always)(char *, size_t, const char *),
-			    int (*callback_unique)(char *, size_t, const char *)
+int	str_add_unique_token(
+	char *tgt,
+	size_t tgtsize,
+	const char *token,
+	int (*callback_always)(char *, size_t, const char *),
+	int (*callback_unique)(char *, size_t, const char *)
 )
 {
 	size_t	toklen = 0, tgtlen = 0;

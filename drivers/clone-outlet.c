@@ -455,7 +455,7 @@ static int sstate_dead(int maxage)
 
 	if (elapsed > maxage) {
 		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
-			   device_path, elapsed, maxage);
+			device_path, elapsed, maxage);
 		return -1;	/* dead */
 	}
 

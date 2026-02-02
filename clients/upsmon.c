@@ -1594,7 +1594,7 @@ static int is_ups_critical(utype_t *ups)
 	if (flag_isset(ups->status, ST_CAL)) {
 		upslogx(LOG_WARNING, "%s: seems that UPS [%s] is OB+LB now, but "
 			"it is also calibrating - not declaring a critical state",
-			  __func__, ups->upsname);
+			__func__, ups->upsname);
 		return 0;
 	}
 
@@ -3442,7 +3442,7 @@ static void help(const char *arg_progname)
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
-	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();

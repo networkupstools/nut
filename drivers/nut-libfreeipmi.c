@@ -637,15 +637,16 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 	if (ipmi_sdr_ctx_errnum (sdr_ctx) == IPMI_SDR_ERR_CACHE_READ_CACHE_DOES_NOT_EXIST)
 	{
-		if (ipmi_sdr_cache_create (sdr_ctx,
-				 ipmi_ctx, CACHE_LOCATION,
-				 NUT_IPMI_SDR_CACHE_DEFAULTS,
-				 NULL, NULL) < 0)
+		if (ipmi_sdr_cache_create (
+			sdr_ctx, ipmi_ctx, CACHE_LOCATION,
+			NUT_IPMI_SDR_CACHE_DEFAULTS,
+			NULL, NULL) < 0)
 		{
 			libfreeipmi_cleanup();
 			fatal_with_errno(EXIT_FAILURE, "ipmi_sdr_cache_create: %s",
 				ipmi_sdr_ctx_errormsg (sdr_ctx));
 		}
+
 		if (ipmi_sdr_cache_open (sdr_ctx, ipmi_ctx, CACHE_LOCATION) < 0)
 		{
 			if (ipmi_sdr_ctx_errnum (sdr_ctx) != IPMI_SDR_ERR_CACHE_READ_CACHE_DOES_NOT_EXIST)

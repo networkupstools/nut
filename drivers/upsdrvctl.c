@@ -1837,7 +1837,7 @@ int main(int argc, char **argv)
 		upscount = 0;
 
 		while (tmp) {
-		  tmp = (ups_t*)tmp->next;
+			tmp = (ups_t*)tmp->next;
 			upscount++;
 		}
 

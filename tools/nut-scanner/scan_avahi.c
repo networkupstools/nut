@@ -488,7 +488,7 @@ static void browse_callback(
 		void* userdata)
 {
 
-  AvahiClient *c = (AvahiClient*)userdata;
+	AvahiClient *c = (AvahiClient*)userdata;
 	assert(b);
 
 	NUT_UNUSED_VARIABLE(flags);
@@ -521,7 +521,7 @@ static void browse_callback(
 			 * but lacks a value in that enum for lack of flags (unconstrained
 			 * lookup). So we have to silence a warning here...
 			 */
-		  if (!((*nut_avahi_service_resolver_new)(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, (AvahiLookupFlags)0, resolve_callback, c)))
+			if (!((*nut_avahi_service_resolver_new)(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, (AvahiLookupFlags)0, resolve_callback, c)))
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
@@ -646,7 +646,8 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 	/* See comments about flags just a bit above */
 	if (!(sb = (*nut_avahi_service_browser_new)(
 		client, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-		"_upsd._tcp", NULL, (AvahiLookupFlags)0, browse_callback, client))
+		"_upsd._tcp", NULL, (AvahiLookupFlags)0,
+		browse_callback, client))
 	) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop

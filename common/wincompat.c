@@ -1301,9 +1301,9 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	}
 
 	/*
-	   if (t->c_cflag & CRTSXOFF)
-	   state.fRtsControl = RTS_CONTROL_HANDSHAKE;
-	 */
+	if (t->c_cflag & CRTSXOFF)
+		state.fRtsControl = RTS_CONTROL_HANDSHAKE;
+	*/
 
 	/* -------------- DTR ------------------ */
 	/* Assert DTR on device open */
@@ -1578,9 +1578,9 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 			(state.fOutxCtsFlow == TRUE))
 		t->c_cflag |= CRTSCTS;
 	/*
-	   if (state.fRtsControl == RTS_CONTROL_HANDSHAKE)
-	   t->c_cflag |= CRTSXOFF;
-	 */
+	if (state.fRtsControl == RTS_CONTROL_HANDSHAKE)
+		t->c_cflag |= CRTSXOFF;
+	*/
 
 	/* -------------- CLOCAL --------------- */
 	/* DSR is only lead toggled only by CLOCAL.  Check it to see if

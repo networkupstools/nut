@@ -71,8 +71,8 @@ void parsearg(char *var, char *value)
 	static	int upsvc = 0;
 
 	if (var == NULL || value == NULL) {
-	  upslogx(LOG_ERR, "parsearg() called with var null or value null");
-	  return;
+		upslogx(LOG_ERR, "parsearg() called with var null or value null");
+		return;
 	}
 
 	/* store variables from a SET command for the later commit */

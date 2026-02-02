@@ -280,8 +280,9 @@ static inline int ydn23_frame_send(TYPE_FD_SER fd, struct ydn23_frame *frame)
 		}
 	}
 
-	ret = ser_send_buf(fd, frame->CHKSUM,
-			   ((char *) &frame->infolen) - frame->CHKSUM);
+	ret = ser_send_buf(
+		fd, frame->CHKSUM,
+		((char *) &frame->infolen) - frame->CHKSUM);
 	if (ret <= 0) {
 		upslogx(LOG_WARNING, "ydn23_frame_send: %s", ret ? strerror(errno) : "timeout");
 		return ret;

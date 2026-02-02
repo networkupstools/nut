@@ -1087,67 +1087,79 @@ void init_ext_vars(void)
 	length = command_write_sequence(cbuf, 4, answer);
 	if (length <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
-	if (length < 4)  /* UPS doesn't have configurable vars */
+	if (length < 4)	/* UPS doesn't have configurable vars */
 		return;
+
 	for (index=3; index < length; index++) {
 		switch(answer[index]) {
-			case PW_CONF_LOW_DEV_LIMIT:  dstate_setinfo("input.transfer.boost.high", "%d", 0);
-						     dstate_setflags("input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING);
-						     dstate_setaux("input.transfer.boost.high", 3);
-						     break;
+			case PW_CONF_LOW_DEV_LIMIT:
+				dstate_setinfo("input.transfer.boost.high", "%d", 0);
+				dstate_setflags("input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("input.transfer.boost.high", 3);
+				break;
 
-			case PW_CONF_HIGH_DEV_LIMIT:  dstate_setinfo("input.transfer.trim.low", "%d", 0);
-						      dstate_setflags("input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING);
-						      dstate_setaux("input.transfer.trim.low", 3);
-						      break;
+			case PW_CONF_HIGH_DEV_LIMIT:
+				dstate_setinfo("input.transfer.trim.low", "%d", 0);
+				dstate_setflags("input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("input.transfer.trim.low", 3);
+				break;
 
-			case PW_CONF_LOW_BATT:  dstate_setinfo("battery.runtime.low", "%d", 0);
-						dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.runtime.low", 2);
-						break;
+			case PW_CONF_LOW_BATT:
+				dstate_setinfo("battery.runtime.low", "%d", 0);
+				dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("battery.runtime.low", 2);
+				break;
 
-			case PW_CONF_BEEPER:	dstate_addcmd("beeper.disable");
-						dstate_addcmd("beeper.enable");
-						dstate_addcmd("beeper.mute");
-						break;
+			case PW_CONF_BEEPER:
+				dstate_addcmd("beeper.disable");
+				dstate_addcmd("beeper.enable");
+				dstate_addcmd("beeper.mute");
+				break;
 
-			case PW_CONF_RETURN_DELAY: dstate_setinfo("input.transfer.delay", "%d", 0);
-						dstate_setflags("input.transfer.delay", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("input.transfer.delay", 5);
-						break;
+			case PW_CONF_RETURN_DELAY:
+				dstate_setinfo("input.transfer.delay", "%d", 0);
+				dstate_setflags("input.transfer.delay", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("input.transfer.delay", 5);
+				break;
 
-			case PW_CONF_RETURN_CAP: dstate_setinfo("battery.charge.restart", "%d", 0);
-						dstate_setflags("battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.charge.restart", 3);
-						break;
+			case PW_CONF_RETURN_CAP:
+				dstate_setinfo("battery.charge.restart", "%d", 0);
+				dstate_setflags("battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("battery.charge.restart", 3);
+				break;
 
-			case PW_CONF_MAX_TEMP:  dstate_setinfo("ambient.temperature.high", "%d", 0);
-						dstate_setflags("ambient.temperature.high", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("ambient.temperature.high", 3);
-						break;
+			case PW_CONF_MAX_TEMP:
+				dstate_setinfo("ambient.temperature.high", "%d", 0);
+				dstate_setflags("ambient.temperature.high", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("ambient.temperature.high", 3);
+				break;
 
-			case PW_CONF_NOMINAL_OUT_VOLTAGE: dstate_setinfo("output.voltage.nominal", "%d", 0);
-						dstate_setflags("output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("output.voltage.nominal", 3);
-						break;
+			case PW_CONF_NOMINAL_OUT_VOLTAGE:
+				dstate_setinfo("output.voltage.nominal", "%d", 0);
+				dstate_setflags("output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("output.voltage.nominal", 3);
+				break;
 
-			case PW_CONF_SLEEP_TH_LOAD:	dstate_setinfo("battery.energysave.load", "%d", 0);
-						dstate_setflags("battery.energysave.load", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.energysave.load", 3);
-						break;
+			case PW_CONF_SLEEP_TH_LOAD:
+				dstate_setinfo("battery.energysave.load", "%d", 0);
+				dstate_setflags("battery.energysave.load", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("battery.energysave.load", 3);
+				break;
 
-			case PW_CONF_SLEEP_DELAY: dstate_setinfo("battery.energysave.delay", "%d", 0);
-						dstate_setflags("battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.energysave.delay", 3);
-						break;
+			case PW_CONF_SLEEP_DELAY:
+				dstate_setinfo("battery.energysave.delay", "%d", 0);
+				dstate_setflags("battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("battery.energysave.delay", 3);
+				break;
 
-			case PW_CONF_BATT_STRINGS: dstate_setinfo("battery.packs", "%d", 0);
-						dstate_setflags("battery.packs", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.packs", 1);
-						break;
+			case PW_CONF_BATT_STRINGS:
+				dstate_setinfo("battery.packs", "%d", 0);
+				dstate_setflags("battery.packs", ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux("battery.packs", 1);
+				break;
 
 			default:
-						break;
+				break;
 		}
 	}
 }
@@ -1583,7 +1595,8 @@ void upsdrv_initinfo(void)
 	if (bcmxcp_command_map[PW_INIT_SYS_TEST].command_byte > 0) {
 		init_system_test_capabilities();
 	}
-   	/* Get information about configurable external variables*/
+
+	/* Get information about configurable external variables*/
 	init_ext_vars();
 
 	upsh.instcmd = instcmd;
@@ -1615,8 +1628,10 @@ void upsdrv_updateinfo(void)
 	/* Loop thru meter map, get all data UPS is willing to offer */
 	for (iIndex = 0; iIndex < BCMXCP_METER_MAP_MAX; iIndex++) {
 		if (bcmxcp_meter_map[iIndex].format != 0 && bcmxcp_meter_map[iIndex].nut_entity != NULL) {
-			decode_meter_map_entry(answer + bcmxcp_meter_map[iIndex].meter_block_index,
-						 bcmxcp_meter_map[iIndex].format, sValue);
+			decode_meter_map_entry(
+				answer + bcmxcp_meter_map[iIndex].meter_block_index,
+				bcmxcp_meter_map[iIndex].format,
+				sValue);
 
 			/* Set result */
 			dstate_setinfo(bcmxcp_meter_map[iIndex].nut_entity, "%s", sValue);
@@ -1913,20 +1928,20 @@ float calculate_ups_load(const unsigned char *answer)
 			bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format != 0) /* Max output VA */
 	{
 		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format, sValue);
+					bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format, sValue);
 		output = atof(sValue);
 		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format, sValue);
+					bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format, sValue);
 		max_output = atof(sValue);
 	}
 	else if (bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format != 0 &&                 /* Output A */
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format != 0) /* Max output A */
+					bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format != 0) /* Max output A */
 	{
 		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format, sValue);
+					bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format, sValue);
 		output = atof(sValue);
 		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format, sValue);
+					bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format, sValue);
 		max_output = atof(sValue);
 	}
 	if (max_output > 0.0)
@@ -2073,7 +2088,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing panel now");
 	}
 
-	 if (!strcasecmp(cmdname, "beeper.disable") || !strcasecmp(cmdname, "beeper.enable") || !strcasecmp(cmdname, "beeper.mute")) {
+	if (!strcasecmp(cmdname, "beeper.disable") || !strcasecmp(cmdname, "beeper.enable") || !strcasecmp(cmdname, "beeper.mute")) {
 		send_write_command(AUTHOR, 4);
 
 		sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
@@ -2387,7 +2402,7 @@ int setvar (const char *varname, const char *val)
 
 	}
 
-	 if (!strcasecmp(varname, "output.voltage.nominal")) {
+	if (!strcasecmp(varname, "output.voltage.nominal")) {
 
 		send_write_command(AUTHOR, 4);
 		sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */

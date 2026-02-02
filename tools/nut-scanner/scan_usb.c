@@ -594,7 +594,7 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 						"bus/port '%s', skipping: %s",
 						__func__, busname,
 						device_port, bus_port,
-						  (*nut_usb_strerror)((enum libusb_error)ret));
+						(*nut_usb_strerror)((enum libusb_error)ret));
 
 					/* Note: closing is not applicable
 					 * it seems, and can even segfault

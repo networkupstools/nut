@@ -129,8 +129,8 @@ static void reopen_log(void)
 		}
 
 		if ((p->logfile = freopen(
-		    p->logfn, "a",
-		    p->logfile)) == NULL
+			p->logfn, "a",
+			p->logfile)) == NULL
 		) {
 			fatal_with_errno(EXIT_FAILURE,
 				"could not reopen logfile %s", p->logfn);
@@ -225,7 +225,7 @@ static void help(const char *prog)
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
-	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 	printf("\n");
 	printf("Some valid format string escapes:\n");
@@ -814,7 +814,7 @@ int main(int argc, char **argv)
 				mu = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
 				if (mu == NULL) {
 					upslogx(LOG_ERR, "Failed to get memory for monitoring host structure. Not adding %s@%s:%" PRIu16,
-					        answer[1], monhost_ups_current->hostname, monhost_ups_current->port);
+						answer[1], monhost_ups_current->hostname, monhost_ups_current->port);
 					continue;
 				}
 

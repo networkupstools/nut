@@ -70,7 +70,7 @@ static void usage(const char *prog)
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
-	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();

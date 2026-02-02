@@ -3326,7 +3326,7 @@ void	upsdrv_makevartable(void)
 
 	snprintf(temp, sizeof(temp),
 		"Set polling frequency, in seconds, to reduce data flow (default=%d)",
-			 DEFAULT_POLLFREQ);
+		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, QX_VAR_POLLFREQ, temp);
 
 	addvar(VAR_VALUE, "protocol",
@@ -3733,7 +3733,7 @@ void	upsdrv_initups(void)
 		default:
 			fatalx(EXIT_FAILURE,
 				"Invalid regular expression: %s",
-				 regex_array[ret]);
+				regex_array[ret]);
 		}
 
 		/* Link the matchers */

@@ -751,7 +751,7 @@ static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 	 && (nut_debug_level > 9 || strcmp(arg[0], "PASSWORD"))	/* Do not log credentials by default */
 	) {
 		/* Not xcalloc() here, not too fatal if we fail */
-	  char *s = (char*)calloc(LARGEBUF, sizeof(char));
+		char *s = (char*)calloc(LARGEBUF, sizeof(char));
 		if (s) {
 			size_t	i;
 

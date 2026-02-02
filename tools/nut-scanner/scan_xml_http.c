@@ -698,7 +698,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 #endif   /* HAVE_PTHREAD */
 
 			if (pass) {
-			  tmp_sec = (nutscan_xml_t*)malloc(sizeof(nutscan_xml_t));
+				tmp_sec = (nutscan_xml_t*)malloc(sizeof(nutscan_xml_t));
 				if (tmp_sec == NULL) {
 					upsdebugx(0, "%s: Memory allocation error", __func__);
 					break;

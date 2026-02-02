@@ -703,13 +703,13 @@ void upsdrv_updateinfo(void)
 	status_init();
 
 	if (online) {
-	    status_set("OL");
+		status_set("OL");
 	} else {
-	    status_set("OB");
+		status_set("OB");
 	}
 
 	if (!battery_normal) {
-	    status_set("LB");
+		status_set("LB");
 	}
 
 	status_commit();

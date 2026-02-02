@@ -855,7 +855,7 @@ void get_config_vars(void)
 
 	/* check if OL register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OL_regtype")) {
-	  sigar[OL_T].type = (regtype_t)(unsigned int)strtol(getval("OL_regtype"), NULL, 10);
+		sigar[OL_T].type = (regtype_t)(unsigned int)strtol(getval("OL_regtype"), NULL, 10);
 		if (sigar[OL_T].type < COIL || sigar[OL_T].type > HOLDING) {
 			sigar[OL_T].type = INPUT_B;
 		}
@@ -1068,7 +1068,7 @@ modbus_t *modbus_new(const char *port)
 			upslogx(LOG_ERR, "modbus_new_rtu: Unable to open serial port context\n");
 		}
 	} else if ((sp = strchr(port, ':')) != NULL) {
-	  char *tcp_port = (char*)xmalloc(sizeof(sp));
+		char 	*tcp_port = (char*)xmalloc(sizeof(sp));
 		strncpy(tcp_port, sp + 1, sizeof(sp));
 		*sp = '\0';
 		mb = modbus_new_tcp(port, (int)strtoul(tcp_port, NULL, 10));

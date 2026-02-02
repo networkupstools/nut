@@ -255,8 +255,9 @@
 			"usb_interrupt_read() args out of range for libusb_interrupt_transfer() implementation");
 	}
 
-	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
-			size, &size, (unsigned int)timeout);
+	ret = libusb_interrupt_transfer(
+		dev, (unsigned char)ep, (unsigned char *) bytes,
+		size, &size, (unsigned int)timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
@@ -274,8 +275,9 @@
 			"usb_interrupt_write() args out of range for libusb_interrupt_transfer() implementation");
 	}
 
-	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
-			size, &size, (unsigned int)timeout);
+	ret = libusb_interrupt_transfer(
+		dev, (unsigned char)ep, (unsigned char *) bytes,
+		size, &size, (unsigned int)timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
@@ -293,8 +295,9 @@
 			"usb_bulk_read() args out of range for libusb_interrupt_transfer() implementation");
 	}
 
-	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
-			size, &size, (unsigned int)timeout);
+	ret = libusb_interrupt_transfer(
+		dev, (unsigned char)ep, (unsigned char *) bytes,
+		size, &size, (unsigned int)timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
@@ -312,8 +315,9 @@
 			"usb_bulk_write() args out of range for libusb_interrupt_transfer() implementation");
 	}
 
-	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
-			size, &size, (unsigned int)timeout);
+	ret = libusb_interrupt_transfer(
+		dev, (unsigned char)ep, (unsigned char *) bytes,
+		size, &size, (unsigned int)timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
