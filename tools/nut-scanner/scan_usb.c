@@ -43,15 +43,17 @@ static const char *dl_error = NULL;
 static char *dl_saved_libname = NULL;
 
 static int (*nut_usb_close)(libusb_device_handle *dev);
-static int (*nut_usb_control_transfer)(libusb_device_handle *dev,
-		uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
-		unsigned char *data, uint16_t wLength, unsigned int timeout);
-static int (*nut_usb_get_string_with_langid)(libusb_device_handle *dev, int index, int langid,
-		char *buf, size_t buflen);
+static int (*nut_usb_control_transfer)(
+	libusb_device_handle *dev,
+	uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
+	unsigned char *data, uint16_t wLength, unsigned int timeout);
+static int (*nut_usb_get_string_with_langid)(
+	libusb_device_handle *dev, int index, int langid,
+	char *buf, size_t buflen);
 /* Fallback implem if the above is not a library symbol */
 static int nut_usb_get_string_with_langid_control_transfer(
-		libusb_device_handle *dev, int index, int langid,
-		char *buf, size_t buflen);
+	libusb_device_handle *dev, int index, int langid,
+	char *buf, size_t buflen);
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
 #if WITH_LIBUSB_1_0
@@ -68,7 +70,8 @@ static int nut_usb_get_string_with_langid_control_transfer(
  static uint8_t (*nut_usb_get_bus_number)(libusb_device *dev);
  static uint8_t (*nut_usb_get_device_address)(libusb_device *dev);
  static uint8_t (*nut_usb_get_port_number)(libusb_device *dev);
- static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
+ static int (*nut_usb_get_device_descriptor)(
+	libusb_device *dev,
 	struct libusb_device_descriptor *desc);
 # define USB_DT_STRING	LIBUSB_DT_STRING
 # define USB_ENDPOINT_IN	LIBUSB_ENDPOINT_IN
@@ -104,12 +107,12 @@ int nutscan_load_usb_library(const char *libname_path);
 int nutscan_load_usb_library(const char *libname_path)
 {
 	if (dl_handle != NULL) {
-			/* if previous init failed */
-			if (dl_handle == (lt_dlhandle)1) {
-					return 0;
-			}
-			/* init has already been done */
-			return 1;
+		/* if previous init failed */
+		if (dl_handle == (lt_dlhandle)1) {
+			return 0;
+		}
+		/* init has already been done */
+		return 1;
 	}
 
 	if (libname_path == NULL) {
@@ -124,8 +127,8 @@ int nutscan_load_usb_library(const char *libname_path)
 
 	dl_handle = lt_dlopen(libname_path);
 	if (!dl_handle) {
-			dl_error = lt_dlerror();
-			goto err;
+		dl_error = lt_dlerror();
+		goto err;
 	}
 
 	/* Clear any existing error */
@@ -133,46 +136,46 @@ int nutscan_load_usb_library(const char *libname_path)
 
 	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle, USB_INIT_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_open) = lt_dlsym(dl_handle, USB_OPEN_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_close) = lt_dlsym(dl_handle, USB_CLOSE_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle, USB_STRERROR_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 #if WITH_LIBUSB_1_0
 	*(void **) (&nut_usb_exit) = lt_dlsym(dl_handle, "libusb_exit");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_get_device_list) = lt_dlsym(dl_handle,
-					"libusb_get_device_list");
+		"libusb_get_device_list");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_free_device_list) = lt_dlsym(dl_handle,
-					"libusb_free_device_list");
+		"libusb_free_device_list");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_get_bus_number) = lt_dlsym(dl_handle,
-					"libusb_get_bus_number");
+		"libusb_get_bus_number");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	/* Note: per https://nxmnpg.lemoda.net/3/libusb_get_device_address there
@@ -180,9 +183,9 @@ int nutscan_load_usb_library(const char *libname_path)
 	 * not for too long (libusb-1.0.12...1.0.16) and now it is deprecated.
 	 */
 	*(void **) (&nut_usb_get_device_address) = lt_dlsym(dl_handle,
-					"libusb_get_device_address");
+		"libusb_get_device_address");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	/* This method may be absent in some libusb versions, and we should
@@ -190,78 +193,78 @@ int nutscan_load_usb_library(const char *libname_path)
 	 *   #if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	 */
 	*(void **) (&nut_usb_get_port_number) = lt_dlsym(dl_handle,
-					"libusb_get_port_number");
+		"libusb_get_port_number");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			upsdebugx(0, "WARNING: %s: "
-				"While loading USB library (%s), failed to find libusb_get_port_number() : %s. "
-				"The \"busport\" USB matching option will be disabled.",
-				__func__, libname_path, dl_error);
-			nut_usb_get_port_number = NULL;
+		upsdebugx(0, "WARNING: %s: "
+			"While loading USB library (%s), failed to find libusb_get_port_number() : %s. "
+			"The \"busport\" USB matching option will be disabled.",
+			__func__, libname_path, dl_error);
+		nut_usb_get_port_number = NULL;
 	}
 
 	*(void **) (&nut_usb_get_device_descriptor) = lt_dlsym(dl_handle,
-					"libusb_get_device_descriptor");
+		"libusb_get_device_descriptor");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_control_transfer) = lt_dlsym(dl_handle,
-					"libusb_control_transfer");
+		"libusb_control_transfer");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_get_string_with_langid) = lt_dlsym(dl_handle,
-					"libusb_get_string_descriptor");
+		"libusb_get_string_descriptor");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			/* This one may be only defined in a header as an inline method;
-			 * then we are adapting it via nut_usb_control_transfer().
-			 */
-			nut_usb_get_string_with_langid = NULL;
+		/* This one may be only defined in a header as an inline method;
+		 * then we are adapting it via nut_usb_control_transfer().
+		 */
+		nut_usb_get_string_with_langid = NULL;
 	}
 #else /* for libusb 0.1 */
 	*(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle,
-					"usb_find_busses");
+		"usb_find_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 # ifndef WIN32
 	*(void **) (&nut_usb_busses) = lt_dlsym(dl_handle,
-					"usb_busses");
+		"usb_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 # else
 	*(void **) (&nut_usb_get_busses) = lt_dlsym(dl_handle,
-					"usb_get_busses");
+		"usb_get_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 # endif	/* WIN32 */
 
 	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle,
-					"usb_find_devices");
+		"usb_find_devices");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_control_transfer) = lt_dlsym(dl_handle,
-					"usb_control_msg");
+		"usb_control_msg");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_usb_get_string_with_langid) = lt_dlsym(dl_handle,
-					"usb_get_string");
+		"usb_get_string");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			/* See comment above */
-			nut_usb_get_string_with_langid = NULL;
+		/* See comment above */
+		nut_usb_get_string_with_langid = NULL;
 	}
 #endif /* not WITH_LIBUSB_1_0 => for libusb 0.1 */
 
 	if (nut_usb_get_string_with_langid == NULL) {
-			nut_usb_get_string_with_langid = nut_usb_get_string_with_langid_control_transfer;
+		nut_usb_get_string_with_langid = nut_usb_get_string_with_langid_control_transfer;
 	}
 
 	if (dl_saved_libname)
@@ -284,8 +287,9 @@ err:
 }
 /* end of dynamic link library stuff */
 
-static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
-					int dev_VendorID, int dev_ProductID, char **alt)
+static char* is_usb_device_supported(
+	usb_device_id_t *usb_device_id_list,
+	int dev_VendorID, int dev_ProductID, char **alt)
 {
 	usb_device_id_t *usbdev;
 
@@ -307,8 +311,8 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
  * https://github.com/libusb/libusb-compat-0.1/blob/eaed7b8f11badaf07a91e07538f6e8842f59eaab/libusb/libusb-dload.h#L165-L171
  */
 static int nut_usb_get_string_with_langid_control_transfer(
-		libusb_device_handle *dev, int index, int langid,
-		char *buf, size_t buflen)
+	libusb_device_handle *dev, int index, int langid,
+	char *buf, size_t buflen)
 {
 	return (*nut_usb_control_transfer)(
 		dev, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR,

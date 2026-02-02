@@ -89,7 +89,7 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	if (dl_handle != NULL) {
 		/* if previous init failed */
 		if (dl_handle == (lt_dlhandle)1) {
-				return 0;
+			return 0;
 		}
 		/* init has already been done */
 		return 1;
@@ -115,33 +115,33 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	lt_dlerror();
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
-						"upscli_splitaddr");
+		"upscli_splitaddr");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
-						"upscli_tryconnect");
+		"upscli_tryconnect");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
-						"upscli_list_start");
+		"upscli_list_start");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
-						"upscli_list_next");
+		"upscli_list_next");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
-						"upscli_disconnect");
+		"upscli_disconnect");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	if (dl_saved_libname)
