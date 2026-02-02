@@ -4,7 +4,7 @@
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
  *           (C) 2011+ Michal Soltys <soltys@ziu.info>
- *           (C) 2024  Jim Klimov <jimklimov+nut@gmail.com>
+ *           (C) 2024-2026  Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.37"
+#define DRIVER_VERSION	"3.38"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -2164,11 +2164,6 @@ void upsdrv_tweak_prognames(void)
 
 void upsdrv_help(void)
 {
-	printf(
-		"\nFor detailed information, please refer to:\n"
-		  " - apcsmart(8)\n"
-		  " - https://www.networkupstools.org/docs/man/apcsmart.html\n"
-	      );
 }
 
 void upsdrv_initups(void)
