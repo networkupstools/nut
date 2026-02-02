@@ -629,6 +629,7 @@ Release notes for NUT 2.8.4 - what's new since 2.8.3
    * The time stamp and inter-frame delay accounting was fixed, alleviating
      one of the problems reported in issue #2609. [PR #2982]
    * Fix missing variables due to mismatching format string. [PR #3013]
+   * Add CHRG and DISCHRG status. [PR #3014]
 
  - `bcmxcp` driver updates:
    * The latching on to a previous replace battery status was fixed, with its
