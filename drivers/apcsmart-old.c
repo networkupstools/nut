@@ -665,6 +665,8 @@ static void getbaseinfo(void)
 		return;
 	}
 
+	upsdebugx(1, "APC - Parsing out command set");
+	/* We have the version.alert.cmdchars string
 	 * NB the alert chars are normally in IGNCHARS
 	 * so will have been pretty much edited out.
 	 * You will need to change the ser_get_line above if
