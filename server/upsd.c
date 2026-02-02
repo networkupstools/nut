@@ -156,6 +156,7 @@ static tracking_t	*tracking_list = NULL;
 #define FTS_T HANDLE
 static HANDLE		mutex = INVALID_HANDLE_VALUE;
 #endif	/* WIN32 */
+/* Dynamic array of file descriptors (or WIN32 handles) that we poll */
 static FTS_T	*fds = NULL;
 static handler_t	*handler = NULL;
 
