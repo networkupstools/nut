@@ -72,7 +72,7 @@ int nutscan_load_upower_library(const char *libname_path)
 {
 	if (dl_handle != NULL) {
 		/* if previous init failed */
-		if (dl_handle == (void *)1) {
+		if (dl_handle == (lt_dlhandle)1) {
 			return 0;
 		}
 		/* init has already been done */
@@ -147,7 +147,7 @@ err:
 	upsdebugx(0,
 		"Cannot load GIO library (%s) : %s. UPower search disabled.",
 		libname_path, dl_error);
-	dl_handle = (void *)1;
+	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
 		free(dl_saved_libname);
