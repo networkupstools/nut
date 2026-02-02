@@ -138,7 +138,7 @@ size_t max_threads_ipmi = 0;	/* limits not yet known */
 #endif /* HAVE_PTHREAD */
 
 #ifdef WIN32
-/* Stub for libupsclient */
+/* Stub for libupsclient, no need to register a callback for ENABLE_SHARED_PRIVATE_LIBS builds */
 void do_upsconf_args(char *confupsname, char *var, char *val) {
 	NUT_UNUSED_VARIABLE(confupsname);
 	NUT_UNUSED_VARIABLE(var);
