@@ -294,7 +294,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 #else	/* not WITH_SNMP_STATIC */
 	if (dl_handle != NULL) {
 		/* if previous init failed */
-		if (dl_handle == (void *)1) {
+		if (dl_handle == (lt_dlhandle)1) {
 			return 0;
 		}
 		/* init has already been done */
