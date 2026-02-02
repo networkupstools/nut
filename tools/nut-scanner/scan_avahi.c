@@ -30,7 +30,7 @@
 /* externally visible to nutscan-init */
 int nutscan_unload_avahi_library(void);
 
-#ifdef WITH_AVAHI
+#if (defined WITH_AVAHI) && WITH_AVAHI
 
 #include <stdio.h>
 #include <assert.h>

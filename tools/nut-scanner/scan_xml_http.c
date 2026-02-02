@@ -33,7 +33,7 @@
 /* externally visible to nutscan-init */
 int nutscan_unload_neon_library(void);
 
-#ifdef WITH_NEON
+#if (defined WITH_NEON) && WITH_NEON
 
 #ifndef WIN32
 # include <sys/types.h>

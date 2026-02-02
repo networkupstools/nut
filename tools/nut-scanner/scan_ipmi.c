@@ -31,7 +31,7 @@
 /* externally visible to nutscan-init */
 int nutscan_unload_ipmi_library(void);
 
-#ifdef WITH_IPMI
+#if (defined WITH_IPMI) && WITH_IPMI
 
 #include <freeipmi/freeipmi.h>
 #include <string.h>

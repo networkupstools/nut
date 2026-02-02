@@ -63,8 +63,8 @@
 #include "nutscan-device.h"
 #include "nutscan-ip.h"
 
-#ifdef WITH_IPMI
-#include <freeipmi/freeipmi.h>
+#if (defined WITH_IPMI) && WITH_IPMI
+# include <freeipmi/freeipmi.h>
 #endif
 
 #ifdef HAVE_PTHREAD

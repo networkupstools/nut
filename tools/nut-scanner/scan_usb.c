@@ -29,7 +29,7 @@
 /* externally visible to nutscan-init */
 int nutscan_unload_usb_library(void);
 
-#ifdef WITH_USB
+#if (defined WITH_USB) && WITH_USB
 
 #include "upsclient.h"
 #include "nutscan-usb.h"

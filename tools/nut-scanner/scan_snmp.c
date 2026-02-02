@@ -33,7 +33,7 @@
 /* externally visible to nutscan-init */
 int nutscan_unload_snmp_library(void);
 
-#ifdef WITH_SNMP
+#if (defined WITH_SNMP) && WITH_SNMP
 
 #ifndef WIN32
 # include <sys/socket.h>
@@ -195,7 +195,7 @@ int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
 #endif
 int nutscan_unload_snmp_library(void)
 {
-#ifdef WITH_SNMP_STATIC
+#if (defined WITH_SNMP_STATIC) && WITH_SNMP_STATIC
 	return 0;
 #else
 	nut_initialized_snmp = 0;
@@ -207,7 +207,7 @@ int nutscan_unload_snmp_library(void)
 int nutscan_load_snmp_library(const char *libname_path);
 int nutscan_load_snmp_library(const char *libname_path)
 {
-#ifdef WITH_SNMP_STATIC
+#if (defined WITH_SNMP_STATIC) && WITH_SNMP_STATIC
 	/* With MinGW, the netsnmp library may be linked statically (no dll) */
 	NUT_UNUSED_VARIABLE(libname_path);
 

@@ -239,7 +239,7 @@ void nutscan_init(void)
 	 * known-compatible SOFILE_LIB<X> first.
 	 */
 
-#ifdef WITH_USB
+#if (defined WITH_USB) && WITH_USB
 # if WITH_LIBUSB_1_0
 
 #  ifdef SOFILE_LIBUSB1
@@ -347,8 +347,8 @@ void nutscan_init(void)
 		__func__, "LibUSB");
 #endif	/* WITH_USB */
 
-#ifdef WITH_SNMP
-# ifdef WITH_SNMP_STATIC
+#if (defined WITH_SNMP) && WITH_SNMP
+# if (defined WITH_SNMP_STATIC) && WITH_SNMP_STATIC
 	/* This is a rare situation, reserved for platforms where libnetsnmp or
 	 * equivalent (some other ucd-snmp descendants) was not packaged, and
 	 * thus was custom-built for NUT (so linked statically to avoid potential
@@ -416,7 +416,7 @@ void nutscan_init(void)
 		__func__, "LibSNMP");
 #endif	/* WITH_SNMP */
 
-#ifdef WITH_NEON
+#if (defined WITH_NEON) && WITH_NEON
 # ifdef SOFILE_LIBNEON
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBNEON);
@@ -485,7 +485,7 @@ void nutscan_init(void)
 		__func__, "LibNeon");
 #endif	/* WITH_NEON */
 
-#ifdef WITH_AVAHI
+#if (defined WITH_AVAHI) && WITH_AVAHI
 # ifdef SOFILE_LIBAVAHI
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBAVAHI);
@@ -532,7 +532,7 @@ void nutscan_init(void)
 		__func__, "LibAvahi");
 #endif	/* WITH_AVAHI */
 
-#ifdef WITH_FREEIPMI
+#if (defined WITH_FREEIPMI) && WITH_FREEIPMI
 # ifdef SOFILE_LIBFREEIPMI
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBFREEIPMI);
