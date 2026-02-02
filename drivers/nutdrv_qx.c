@@ -4739,11 +4739,8 @@ int	qx_process(item_t *item, const char *command)
 	size_t	cmdsz = (sizeof(char) * cmdlen); /* in bytes, to be pedantic */
 	int	cmd_len;
 
-	/*
-	 * (see comments in `mecer.c` and `blazer.c` / `blazer_ser.c`).
-	 */
 	if ( !(cmd = (char *)xmalloc(cmdsz)) ) {
-		upslogx(LOG_ERR, "blazer_ser_command() failed to allocate buffer");
+		upslogx(LOG_ERR, "qx_process() failed to allocate buffer");
 		return -1;
 	}
 
