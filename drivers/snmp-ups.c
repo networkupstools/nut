@@ -72,6 +72,7 @@
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
 #include "hpe-pdu3-cis-mib.h"
+#include "vertiv-psi5-mib.h"
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
@@ -128,6 +129,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&netvision,			/* This struct comes from : netvision-mib.c */
 	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
 	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
+	&vertiv_psi5_subdriver,	/* This struct comes from : vertiv-psi5-mib.c */
 	&xppc,				/* This struct comes from : xppc-mib.c */
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
