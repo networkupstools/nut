@@ -4,6 +4,7 @@
 # Unambiguous preference if "Requires: (A or B)" offered both hits:
 Prefer: libusbx-devel
 Prefer: libusb-1.0-dev
+Prefer: libselinux-dev
 Prefer: neon-devel
 Prefer: util-linux
 
