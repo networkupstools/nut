@@ -3815,14 +3815,9 @@ int main(int argc, char *argv[])
 	print_banner_once(prog, 0);
 
 	/* if no configuration file is specified on the command line, use default */
-	/* get the real filename */
-	if (configfile) {
-		configfile = (char *)xrealloc(configfile, strlen(configfile) + 1);
-	} else {
-		configfile = (char *)xmalloc(SMALLBUF);
-		snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
-		configfile = (char *)xrealloc(configfile, strlen(configfile) + 1);
-	}
+	configfile = (char *)xmalloc(SMALLBUF);
+	snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
+	configfile = (char *)xrealloc(configfile, strlen(configfile) + 1);
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
