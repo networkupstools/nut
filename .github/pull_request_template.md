@@ -13,6 +13,11 @@
   to look out for. PRs to update this template are also welcome :)
 
 * Local build iterations can be augmented with the ci_build.sh script.
+  Note that if your system has both GCC and CLANG, they can expose different
+  kinds of issues in their static analysis warnings, so incantations like
+  `CC=clang CXX=clang++ ./ci_build.sh` or `BUILD_TYPE=fightwarn ./ci_build.sh`
+  (to iterate a matrix of some build dependency combos and compilers) can
+  be useful.
 -->
 
 ## General points
@@ -97,6 +102,10 @@ Also note below, a point about PR posting for NUT DDL
   `make distcheck` target passes.
 
 ## General documentation updates
+
+- [ ] Added a bullet point into `NEWS.adoc`, possibly also `UPGRADING.adoc`
+  if there is something packagers or custom-build users should take into
+  account (new driver categories, configuration options, dependencies...)
 
 - [ ] Updated `docs/acknowledgements.txt` (for vendor-backed device support)
 
