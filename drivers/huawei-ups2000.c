@@ -983,7 +983,7 @@ static int ups2000_update_alarm(void)
 
 			alarm_count++;
 
-			gotlen = snprintf(alarm_buf, 128, "(ID %02d/%02d): %s!",
+			gotlen = snprintf(alarm_buf, sizeof(alarm_buf), "(ID %02d/%02d): %s!",
 				ups2000_alarm[i].alarm_id,
 				ups2000_alarm[i].alarm_cause_id,
 				ups2000_alarm[i].alarm_name);
@@ -1073,7 +1073,7 @@ static int ups2000_update_alarm(void)
 
 	if (alarm_count > 0) {
 		/* append this to the alarm string as a friendly reminder */
-		int gotlen = snprintf(alarm_buf, 128, "Check log for details!");
+		int gotlen = snprintf(alarm_buf, sizeof(alarm_buf), "Check log for details!");
 
 		if (gotlen < 0 || (uintmax_t)gotlen > SIZE_MAX) {
 			fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!");
@@ -1085,8 +1085,9 @@ static int ups2000_update_alarm(void)
 		/* if the alarm string is too long, replace it with this */
 		if (all_alarms_len + 1 > ST_MAX_VALUE_LEN) {
 			alarm_init();  /* discard all original alarms */
-			snprintf(alarm_buf, 128, "UPS has %d alarms in effect, "
-						 "check log for details!", alarm_count);
+			snprintf(alarm_buf, sizeof(alarm_buf),
+				"UPS has %d alarms in effect, "
+				"check log for details!", alarm_count);
 			alarm_set(alarm_buf);
 		}
 
