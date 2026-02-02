@@ -590,21 +590,24 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 						IPMI_FLAGS_DEFAULT
 						)) < 0)
 		{
-			/* No IPMI device detected on this host!
-			if ((*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_USERNAME_INVALID
+			if ( (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_USERNAME_INVALID
 			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_PASSWORD_INVALID
 			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_PRIVILEGE_LEVEL_INSUFFICIENT
 			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_PRIVILEGE_LEVEL_CANNOT_BE_OBTAINED
 			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_AUTHENTICATION_TYPE_UNAVAILABLE
 			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_PASSWORD_VERIFICATION_TIMEOUT
 			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_HOSTNAME_INVALID
-			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_CONNECTION_TIMEOUT) { */
+			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_CONNECTION_TIMEOUT
+			) {
+				upsdebugx(3, "nut_ipmi_ctx_open_outofband (%s): "
+					"No IPMI device detected on this host!",
+					IPaddr);
+			}
 
-				/* FIXME: don't log timeout errors */
-				upsdebugx(2, "nut_ipmi_ctx_open_outofband (%s): %s",
-					IPaddr, (*nut_ipmi_ctx_errormsg) (ipmi_ctx));
-				return NULL;
-			/*}*/
+			/* FIXME: don't log timeout errors */
+			upsdebugx(2, "nut_ipmi_ctx_open_outofband (%s): %s",
+				IPaddr, (*nut_ipmi_ctx_errormsg) (ipmi_ctx));
+			return NULL;
 		}
 	}
 
