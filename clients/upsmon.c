@@ -3687,16 +3687,16 @@ static void reload_conf(void)
 	loadconfig();
 
 	/* go through the utype_t struct again */
-		tmp = firstups;
-		while (tmp) {
-			next = (utype_t *)tmp->next;
+	tmp = firstups;
+	while (tmp) {
+		next = (utype_t *)tmp->next;
 
-			/* !retain means it wasn't in the .conf this time around */
-			if (tmp->retain == 0)
-				delete_ups(tmp);
+		/* !retain means it wasn't in the .conf this time around */
+		if (tmp->retain == 0)
+			delete_ups(tmp);
 
-			tmp = next;
-		}
+		tmp = next;
+	}
 
 	/* see if the user just blew off a foot */
 	if (totalpv < minsupplies) {
