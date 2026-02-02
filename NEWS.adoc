@@ -89,6 +89,14 @@ https://github.com/networkupstools/nut/milestone/12
      Separated an `upsdrvquery_ping()` operation from earlier code, so it can
      be directly used by consumers (in-tree this is drivers and `upsdrvctl`).
      [issue #3276, PR #3277]
+   * Revised `void*` pointer casting into specific types for values returned
+     by `xmalloc()` and friends, or iterated in loops via `something->next`,
+     as `clang-21` now warns about not-casting void pointers (formally valid,
+     practically uncertain if that code matches the developer's intention),
+     and (better safe than sorry) added `NULL`-return checks although we should
+     not normally get into those code paths with the `x*()` methods which
+     should bail out and abort the program with a common error message when
+     an allocation fails. [#3293]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
