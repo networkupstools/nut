@@ -27,6 +27,12 @@
   of "real" changes in the other commits. Similarly for typo fixes in
   comments or text documents.
 
+- [ ] Use of coding helper tools and AI should be disclosed in the commit
+  or PR comments (it is interesting to know which ones do a decent job).
+  As with other contributions, a human is responsible and thanked for the
+  quality and content of the change, and is presumed to have the right to
+  post that code to be published further under the project's license terms.
+
 - [ ] Please star NUT on GitHub, this helps with sponsorships! ;)
 
 ## Frequent "underwater rocks" for driver addition/update PRs
