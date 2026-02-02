@@ -1,7 +1,26 @@
 #!/usr/bin/make -f
 
 include /usr/share/cdbs/1/rules/debhelper.mk
--include /usr/share/cdbs/1/class/autotools.mk
+
+ifneq  (,$(shell ls -1 /usr/share/cdbs/1/class/autotools.mk || true))
+include /usr/share/cdbs/1/class/autotools.mk
+else
+# In 2026, Debian obsoletes and removes CDBS and its scripts
+# Stashing https://salsa.debian.org/debian/cdbs/-/blob/a110afb99997b94de6acb1e0758210cdfd8ec3dd/1/class/autotools.mk.in
+# and neighbors
+ifneq  (,$(shell ls -1 debian/cdbs-autotools.mk || true))
+include debian/cdbs-autotools.mk
+else
+ifneq  (,$(shell ls -1 debian.cdbs-autotools.mk || true))
+include debian.cdbs-autotools.mk
+else
+ifneq  (,$(shell ls -1 cdbs-autotools.mk || true))
+include cdbs-autotools.mk
+endif
+endif
+endif
+endif
+
 -include /usr/share/cdbs/1/class/python-module.mk
 
 -include /usr/share/cdbs/1/rules/autoreconf.mk
