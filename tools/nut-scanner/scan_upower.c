@@ -29,7 +29,7 @@ int nutscan_unload_upower_library(void);
 /* externally visible to nut-scanner */
 nutscan_device_t * nutscan_scan_upower(void);
 
-#ifdef WITH_UPOWER
+#if (defined WITH_UPOWER) && WITH_UPOWER
 
 #include <stdio.h>
 #include <assert.h>
