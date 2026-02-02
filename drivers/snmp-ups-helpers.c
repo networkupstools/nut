@@ -60,7 +60,7 @@ const char *su_usdate_to_isodate_info_fun(void *raw_date)
 
 	/* Try to convert from US date string to time */
 	/* Note strptime returns NULL upon failure, and a ptr to the last
-	   null char of the string upon success. Just try blindly the conversion! */
+	 * null char of the string upon success. Just try blindly the conversion! */
 	strptime(usdate, "%m/%d/%Y", &tm);
 	if (strftime(su_scratch_buf, 254, "%F", &tm) != 0) {
 		upsdebugx(3, "%s: successfully reformated: %s", __func__, su_scratch_buf);

@@ -101,9 +101,11 @@ enum {
 typedef struct ezfill_s {
 	const char *cmd;
 	const char *var;
-	const float scale;  /*  if 0, no conversion is done and the string
-	                        is passed to dstate as is, otherwise a float
-	                        conversion with single decimal is applied */
+
+	/* if scale is 0, no conversion is done and the
+	 * string is passed to dstate as is; otherwise a
+	 * float conversion with single decimal is applied */
+	const float scale;
 } ezfill_t;
 
 /* These can be polled right into a string usable by NUT.

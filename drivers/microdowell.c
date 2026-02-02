@@ -246,8 +246,8 @@ static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned 
 			{
 			/* FramePointer to valid data! */
 			p = InpBuff + ups.FramePointer ;
-			/* p now point to valid data.
-			 check if it is a error code. */
+			/* p now points to valid data.
+			 * check if it is a error code. */
 			ErrCode = CheckErrCode(p) ;
 			if (!ErrCode)
 				{
@@ -911,9 +911,9 @@ void upsdrv_initinfo(void)
 		       "Unable to detect a Microdowell's  Enterprise UPS on port %s\nCheck the cable, port name and try again", device_path);
 		}
 
-	/* I set the correspondig UPS variables
-	   They were read in 'detect_hardware()'
-	   some other variables were set in 'detect_hardware()' */
+	/* I set the corresponding UPS variables
+	 * They were read in 'detect_hardware()'
+	 * some other variables were set in 'detect_hardware()' */
 	dstate_setinfo("ups.model", "Enterprise N%s", ups.UpsModel+3) ;
 	dstate_setinfo("ups.power.nominal", "%d", atoi(ups.UpsModel+3) * 100) ;
 	dstate_setinfo("ups.realpower.nominal", "%d", atoi(ups.UpsModel+3) * 60) ;
@@ -1056,7 +1056,7 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, B19200) ;
 
 	/* need to clear RTS and DTR: otherwise with default cable, communication will be problematic
-	   It is the same as removing pin7 from cable (pin 7 is needed for Plug&Play compatibility) */
+	 * It is the same as removing pin7 from cable (pin 7 is needed for Plug&Play compatibility) */
 	ser_set_dtr(upsfd, 0);
 	ser_set_rts(upsfd, 0);
 

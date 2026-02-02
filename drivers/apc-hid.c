@@ -42,7 +42,7 @@ static char * tweak_max_report[] = {
 	/* Back-UPS ES 700 does NOT overflow. */
 	/* Back-UPS ES 725 does NOT overflow. */
 	/* Back-UPS ES 525 overflows on ReportID 0x0c
-	   (UPS.PowerSummary.RemainingCapacity). */
+	 * (UPS.PowerSummary.RemainingCapacity). */
 	"Back-UPS ES 525",
 	/* Back-UPS CS 650 overflows on ReportID 0x46 */
 	"Back-UPS CS",

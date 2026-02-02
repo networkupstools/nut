@@ -763,8 +763,8 @@ struct passwd *get_user_pwent(const char *name)
 		return r;
 
 	/* POSIX does not specify that "user not found" is an error, so
-	   some implementations of getpwnam() do not set errno when this
-	   happens. */
+	 * some implementations of getpwnam() do not set errno when this
+	 * happens. */
 	if (errno == 0)
 		fatalx(EXIT_FAILURE, "OS user %s not found", name);
 	else

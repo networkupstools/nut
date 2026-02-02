@@ -423,13 +423,13 @@ void upsdrv_shutdown(void) {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
-	   it doesn't respond at first if possible */
+	 * it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
 	/* fatalx(EXIT_FAILURE, "shutdown not supported"); */
 
 	/* you may have to check the line status since the commands
-	   for toggling power are frequently different for OL vs. OB */
+	 * for toggling power are frequently different for OL vs. OB */
 
 	/* OL: this must power cycle the load if possible */
 
@@ -840,7 +840,7 @@ static int netxml_alarm_subscribe(const char *page)
 	ne_request_destroy(request);
 
 	/* due to different formats used by the various NMCs, we need to\
-	   break up the reply in lines and parse each one separately */
+	 * break up the reply in lines and parse each one separately */
 	for (s = strtok(resp_buf, "\r\n"); s != NULL; s = strtok(NULL, "\r\n")) {
 		long long int	tmp_port = -1, tmp_secret = -1;
 		upsdebugx(2, "%s: parsing %s", __func__, s);

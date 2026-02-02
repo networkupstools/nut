@@ -351,7 +351,7 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 		 *  man page section for "System Management Programs".
 		 *  If this ever changes (e.g. clients like `upsc` can be
 		 *  a "User Program" just as well), we may need an extra
-		    method argument here.
+		 *  method argument here.
 		 */
 		snprintfcat(buf, sizeof(buf),
 			"Read The Fine Manual ('man %s %s') and/or ",

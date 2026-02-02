@@ -465,7 +465,7 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 			return NULL;
 		}
 		/* increment the address (need to pass address in host
-		   byte order, then pass back in network byte order */
+		 * byte order, then pass back in network byte order */
 		ip->start.s_addr = htonl((ntohl(ip->start.s_addr) + 1));
 
 		if (ntop(&ip->start, host, sizeof(host)) != 0) {

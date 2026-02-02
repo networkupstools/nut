@@ -310,9 +310,9 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		upsdebugx(3, "do_command: %" PRIiSIZE " bytes read [%s]", ret, response);
 
 		/* Tripp Lite pads their string responses with spaces.
-		   I don't like that, so I remove them.  This is safe to
-		   do with all responses for this protocol, so I just
-		   do that here. */
+		 * I don't like that, so I remove them.  This is safe to
+		 * do with all responses for this protocol, so I just
+		 * do that here. */
 		str_rtrim(response, ' ');
 
 		return ret;
@@ -878,7 +878,7 @@ void upsdrv_shutdown(void)
 		printf("Status failed.  Assuming it's on battery and trying a shutdown anyway.\n");
 	auto_reboot(1);
 	/* in case the power is on, tell it to automatically reboot.  if
-	   it is off, this has no effect. */
+	 * it is off, this has no effect. */
 	snprintf(parm, sizeof(parm), "%d", 1); /* delay before reboot, in minutes */
 	do_command(SET, TSU_SHUTDOWN_RESTART, parm, NULL);
 	snprintf(parm, sizeof(parm), "%d", 5); /* delay before shutdown, in seconds */

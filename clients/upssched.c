@@ -945,7 +945,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	conn_t	*conn, *tmp, *last;
 
 	/* We have detected a connection on the opened pipe. So we start
-	   by saving its handle  and create a new pipe for future connection */
+	 * by saving its handle and creating a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sockfd;
 
@@ -983,9 +983,11 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	ConnectNamedPipe(acc,&connect_overlapped);
 
 	/* A new pipe waiting for new client connection has been created.
-	   We could manage the current connection now */
-	/* Start a read operation on the newly connected pipe so we could wait
-	   on the event associated to this IO */
+	 * We could manage the current connection now.
+	 */
+
+	/* Start a read operation on the newly connected pipe so we could
+	 * wait on the event associated to this IO */
 	memset(&conn->read_overlapped,0,sizeof(conn->read_overlapped));
 	memset(conn->buf,0,sizeof(conn->buf));
 	conn->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/

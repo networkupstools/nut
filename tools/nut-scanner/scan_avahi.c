@@ -508,9 +508,9 @@ static void browse_callback(
 /*			upsdebugx(1, "%s: "(Browser) NEW: service '%s' of type '%s' in domain '%s'", __func__, name, type, domain); */
 
 			/* We ignore the returned resolver object. In the callback
-			   function we free it. If the server is terminated before
-			   the callback function is called the server will free
-			   the resolver for us. */
+			 * function we free it. If the server is terminated before
+			 * the callback function is called the server will free
+			 * the resolver for us. */
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic push

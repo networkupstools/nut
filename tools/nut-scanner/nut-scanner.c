@@ -1610,8 +1610,8 @@ display_help:
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
-	   We need to destroy it before re-init. We currently can't change "sem value"
-	   on lib (need to be thread safe). */
+	 * We need to destroy it before re-init. We currently can't change "sem value"
+	 * on lib (need to be thread safe). */
 	current_sem = nutscan_semaphore();
 #  ifdef HAVE_SEMAPHORE_UNNAMED
 	sem_destroy(current_sem);

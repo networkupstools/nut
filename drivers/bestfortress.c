@@ -93,21 +93,21 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("output.voltamps", "0");
 
 	/* tunable via front panel: (european voltage level)
-	   parameter        factory default  range
-	   INFO_LOWXFER     196 V   p7=nnn   160-210
-	   INFO_HIGHXFER    254 V   p8=nnn   215-274
-	   INFO_LOBATTIME   2 min   p2=n     1-5
-
-	   comm mode    p6=0 dumb DONT USE (will lose access to parameter setting!)
-	        p6=1 B1200
-	        p6=2 B2400
-	        P6=3 B4800
-	        p6=4 B9600
-	   maybe cycle through speeds to autodetect?
-
-	   echo off     e0
-	   echo on      e1
-	*/
+	 * parameter        factory default  range
+	 * INFO_LOWXFER     196 V   p7=nnn   160-210
+	 * INFO_HIGHXFER    254 V   p8=nnn   215-274
+	 * INFO_LOBATTIME   2 min   p2=n     1-5
+	 *
+	 * comm mode    p6=0 dumb DONT USE (will lose access to parameter setting!)
+	 *      p6=1 B1200
+	 *      p6=2 B2400
+	 *      P6=3 B4800
+	 *      p6=4 B9600
+	 * maybe cycle through speeds to autodetect?
+	 *
+	 * echo off     e0
+	 * echo on      e1
+	 */
 	dstate_setinfo("input.transfer.low", "%s", "");
 	dstate_setflags("input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW);
 	dstate_setaux("input.transfer.low", 3);
@@ -314,16 +314,16 @@ void upsdrv_updateinfo(void)
 
 		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */
 		/* status example:
-		   000000000001000000000000012201210000001200014500000280600000990025000000000301BE
-		   000000000001000000000000012401230000001200014800000280600000990025000000000301B7
-		   |Vi||Vo|    |Io||Psou|    |Vb||f| |tr||Ti|            CS
-		   000000000001000000000000023802370000000200004700000267500000990030000000000301BD
-		   1    1    2    2    3    3    4    4    5    5    6    6    7    7   78
-		   0    5    0    5    0    5    0    5    0    5    0    5    0    5    0    5   90
+		 * 000000000001000000000000012201210000001200014500000280600000990025000000000301BE
+		 * 000000000001000000000000012401230000001200014800000280600000990025000000000301B7
+		 * |Vi||Vo|    |Io||Psou|    |Vb||f| |tr||Ti|            CS
+		 * 000000000001000000000000023802370000000200004700000267500000990030000000000301BD
+		 * 1    1    2    2    3    3    4    4    5    5    6    6    7    7   78
+		 * 0    5    0    5    0    5    0    5    0    5    0    5    0    5    0    5   90
 		 */
 
 		/* last bytes are a checksum:
-		   interpret response as hex string, sum of all bytes must be zero
+		 * interpret response as hex string, sum of all bytes must be zero
 		 */
 		checksum_ok = ( (checksum (temp+2) & 0xff) == 0 );
 		/* setinfo (INFO_, ""); */
@@ -339,8 +339,8 @@ void upsdrv_updateinfo(void)
 
 
 		/* I can't figure out why this is missing the first two chars.
-		   But the first two chars are not used, so just set them to zero
-		   when missing. */
+		 * But the first two chars are not used, so just set them to zero
+		 * when missing. */
 		len = strlen(temp+2);
 		temp[0] = '0';
 		temp[1] = '0';
@@ -389,9 +389,9 @@ void upsdrv_updateinfo(void)
 	low_batt = fromhex(p[21]) & 8 || fromhex(p[20]) & 1;
 	is_off = p[11] == '0';
 	trimming = p[33] == '1';
-	boosting = 0; /* FIXME, don't know which bit gets set
-			 (brownouts are very rare here and I can't
-			 simulate one) */
+	boosting = 0;	/* FIXME, don't know which bit gets set
+			 * (brownouts are very rare here and
+			 * I can't simulate one) */
 
 	status_init();
 	if (low_batt)

@@ -1779,7 +1779,7 @@ void upsdrv_initups(void)
 	}
 
 	/* Search for the first supported UPS matching the
-	   regular expression (USB) or device_path (SHUT) */
+	 * regular expression (USB) or device_path (SHUT) */
 	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, &callback);
 	if (ret < 1)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");

@@ -236,8 +236,9 @@ static void wall(const char *text)
 	char	*command;
 
 	/* first +1 is for the space between message and text
-	   second +1 is for trailing 0
-	   +2 is for "" */
+	 * second +1 is for trailing 0
+	 * +2 is for ""
+	 */
 	size_t	commandsz = strlen(MESSAGE_CMD) + 1 + 2 + strlen(text) + 1;
 
 	command = malloc (commandsz);

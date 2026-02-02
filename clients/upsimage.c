@@ -359,9 +359,9 @@ static void noimage(const char *fmt, ...)
 }
 
 /* draws bar indicator when minimum, nominal or maximum values for the given
-   UPS variable can be determined.
-   deviation < 0 means that values below nom should be grey instead of
-   green */
+ * UPS variable can be determined.
+ * deviation < 0 means that values below nom should be grey instead of green
+ */
 static void drawgeneralbar(double var, int min, int nom, int max,
 		int deviation, 	const char *format)
 	__attribute__((noreturn));
@@ -388,7 +388,7 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 			max = nom + 3*deviation;
 	} else {
 		/* if nominal value isn't available, assume, it's the
-		   average between min and max */
+		 * average between min and max */
 		nom = (min + max) / 2;
 	}
 
@@ -678,7 +678,7 @@ int main(int argc, char **argv)
 		if (!strcmp(cmd, imgvar[i].name)) {
 
 			/* sanity check whether we have draw function
-			   registered with this variable */
+			 * registered with this variable */
 			if (!imgvar[i].drawfunc) {
 				noimage("Draw function N/A");
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -700,9 +700,10 @@ int main(int argc, char **argv)
 			}
 
 			/* when getting minimum, nominal and maximum values,
-			   we first look if the marginal value is supported
-			   by the UPS driver, if not, we look it up in the
-			   imgarg table under the SAME name */
+			 * we first look if the marginal value is supported
+			 * by the UPS driver, if not, we look it up in the
+			 * imgarg table under the SAME name
+			 */
 
 			/* get the minimum value */
 			if (imgvar[i].minimum) {

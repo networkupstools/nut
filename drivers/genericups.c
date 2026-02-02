@@ -194,7 +194,7 @@ void upsdrv_initinfo(void)
 	}
 
 	/*
-	 User wants to override the input signal definitions. See also upsdrv_initups().
+	 * User wants to override the input signal definitions. See also upsdrv_initups().
 	 */
 	if ((v = getval("OL")) != NULL) {
 		parse_input_signals(v, &upstab[upstype].line_ol, &upstab[upstype].val_ol);
@@ -449,10 +449,10 @@ void upsdrv_initups(void)
 	}
 
 	/*
-	 See if the user wants to override the output signal definitions?
-	 This must be done here, since we might go to upsdrv_shutdown()
-	 immediately. Input signal definition override is handled in
-	 upsdrv_initinfo()
+	 * See if the user wants to override the output signal definitions?
+	 * This must be done here, since we might go to upsdrv_shutdown()
+	 * immediately. Input signal definition override is handled in
+	 * upsdrv_initinfo()
 	 */
 	if ((v = getval("CP")) != NULL) {
 		parse_output_signals(v, &upstab[upstype].line_norm);

@@ -877,9 +877,9 @@ void upsdrv_shutdown(void)
 	unsigned char	command[10], answer[10];
 
 	/* Ensure that the ups is configured for automatically
-	   restart after a complete battery discharge
-	   and when the power comes back after a shutdown.
-	   Similar code to "shutdown.restart" but different timeouts.
+	 * restart after a complete battery discharge
+	 * and when the power comes back after a shutdown.
+	 * Similar code to "shutdown.restart" but different timeouts.
 	 */
 	if (! autorestart) {
 		command[0]=UPS_SET_TIMES_ON_BATTERY;
@@ -909,7 +909,7 @@ void upsdrv_shutdown(void)
 	command_write_sequence(command, 9, answer);
 
 	/* you may have to check the line status since the commands
-	   for toggling power are frequently different for OL vs. OB */
+	 * for toggling power are frequently different for OL vs. OB */
 
 	/* OL: this must power cycle the load if possible */
 
@@ -1011,8 +1011,9 @@ static int instcmd(const char *cmdname, const char *extra)
 		command[0]=UPS_SET_BATTERY_TEST;
 		command[1]=0x01;
 		/* 0 = perform battery test
-		   1 = force UPS on battery power
-		   2 = restore standard mode (mains power) */
+		 * 1 = force UPS on battery power
+		 * 2 = restore standard mode (mains power)
+		 */
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -1024,8 +1025,9 @@ static int instcmd(const char *cmdname, const char *extra)
 		command[0]=UPS_SET_BATTERY_TEST;
 		command[1]=0x02;
 		/* 0 = perform battery test
-		   1 = force UPS on battery power
-		   2 = restore standard mode (mains power) */
+		 * 1 = force UPS on battery power
+		 * 2 = restore standard mode (mains power)
+		 */
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -1037,8 +1039,9 @@ static int instcmd(const char *cmdname, const char *extra)
 		command[0]=UPS_SET_BATTERY_TEST;
 		command[1]=0x00;
 		/* 0 = perform battery test
-		   1 = force UPS on battery power
-		   2 = restore standard mode (mains power) */
+		 * 1 = force UPS on battery power
+		 * 2 = restore standard mode (mains power)
+		 */
 		send_write_command(command, 2);
 		sleep(15);
 		res = get_answer(answer);
@@ -1079,8 +1082,9 @@ static int instcmd(const char *cmdname, const char *extra)
 		command[0]=UPS_SET_BUZZER_MUTE;
 		command[1]=0x00;
 		/* 0 = not muted
-		   1 = muted
-		   2 = read current status */
+		 * 1 = muted
+		 * 2 = read current status
+		 */
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -1090,8 +1094,9 @@ static int instcmd(const char *cmdname, const char *extra)
 		command[0]=UPS_SET_BUZZER_MUTE;
 		command[1]=0x01;
 		/* 0 = not muted
-		   1 = muted
-		   2 = read current status */
+		 * 1 = muted
+		 * 2 = read current status
+		 */
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}

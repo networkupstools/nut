@@ -133,7 +133,7 @@ static void listcmds(void)
 		}
 
 		/* we must first read the entire list of commands,
-		   before we can start reading the descriptions */
+		 * before we can start reading the descriptions */
 
 		ltmp = xcalloc(1, sizeof(*ltmp));
 		ltmp->name = xstrdup(answer[2]);
@@ -429,7 +429,7 @@ int main(int argc, char **argv)
 	/* getpass leaks slightly - use -p when testing in valgrind */
 	if (!have_pw) {
 		/* using getpass or getpass_r might not be a
-		   good idea here (marked obsolete in POSIX) */
+		 * good idea here (marked obsolete in POSIX) */
 		char	*pwtmp = GETPASS("Password: ");
 
 		if (!pwtmp) {

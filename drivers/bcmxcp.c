@@ -1077,7 +1077,7 @@ void init_ext_vars(void)
 
 	send_write_command(AUTHOR, 4);
 
-	sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
+	sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 	cbuf[0] = PW_SET_CONF_COMMAND;
 	cbuf[1] = PW_CONF_REQ;
@@ -2040,10 +2040,10 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing battery now");
 		/* Get test info from UPS ?
-			 Should we wait for 50 sec and get the
-			 answer from the test.
-			 Or return, as we may lose line power
-			 and need to do a shutdown.*/
+		 * Should we wait for 50 sec and get the
+		 * answer from the test.
+		 * Or return, as we may lose line power
+		 * and need to do a shutdown.*/
 	}
 
 	if (!strcasecmp(cmdname, "test.system.start")) {

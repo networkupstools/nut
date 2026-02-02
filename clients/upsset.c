@@ -789,8 +789,9 @@ static void do_type(const char *varname)
 		}
 
 		/* RANGE is usually paired with NUMBER.
-		   We can ignore 'RANGE' and let the 'NUMBER'
-		   case (which should come next) handle it. */
+		 *  We can ignore 'RANGE' and let the 'NUMBER'
+		 *  case (which should come next) handle it.
+		 */
 		if (!strcasecmp(answer[i], "RANGE")) {
 			continue;
 		}
