@@ -536,6 +536,9 @@ void nutscan_init(void)
 #endif	/* WITH_AVAHI */
 
 #if (defined WITH_UPOWER) && WITH_UPOWER
+/* NOTE: There may be a stack of libraries involved (libgio, libglib2,
+ *  libmount...) in driver programs, but one entry point suffices
+ *  (and/or dynamically pulls in the others) for just the scan itself */
 # ifdef SOFILE_LIBGIO
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBGIO);
