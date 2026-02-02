@@ -178,14 +178,15 @@ nutscan_device_t * nutscan_scan_upower(void)
 		return NULL;
 	}
 
-	proxy_upower = (*nut_g_dbus_proxy_new_sync)(connection,
-						G_DBUS_PROXY_FLAGS_NONE,
-						NULL,
-						"org.freedesktop.UPower",
-						"/org/freedesktop/UPower",
-						"org.freedesktop.UPower",
-						NULL,
-						&error);
+	proxy_upower = (*nut_g_dbus_proxy_new_sync)(
+		connection,
+		G_DBUS_PROXY_FLAGS_NONE,
+		NULL,
+		"org.freedesktop.UPower",
+		"/org/freedesktop/UPower",
+		"org.freedesktop.UPower",
+		NULL,
+		&error);
 
 	if (proxy_upower == NULL) {
 		upsdebugx(1, "Error creating UPower proxy: %s", error->message);
@@ -194,13 +195,14 @@ nutscan_device_t * nutscan_scan_upower(void)
 		return NULL;
 	}
 
-	result = (*nut_g_dbus_proxy_call_sync)(proxy_upower,
-					"EnumerateDevices",
-					NULL,
-					G_DBUS_CALL_FLAGS_NONE,
-					-1,
-					NULL,
-					&error);
+	result = (*nut_g_dbus_proxy_call_sync)(
+		proxy_upower,
+		"EnumerateDevices",
+		NULL,
+		G_DBUS_CALL_FLAGS_NONE,
+		-1,
+		NULL,
+		&error);
 
 	if (result == NULL) {
 		upsdebugx(1, "Error enumerating devices: %s", error->message);
@@ -219,14 +221,15 @@ nutscan_device_t * nutscan_scan_upower(void)
 		GVariant *v_type, *v_model, *v_vendor, *v_serial, *v_native_path;
 		nutscan_device_t * dev;
 
-		proxy_device = (*nut_g_dbus_proxy_new_sync)(connection,
-							G_DBUS_PROXY_FLAGS_NONE,
-							NULL,
-							"org.freedesktop.UPower",
-							object_path,
-							"org.freedesktop.UPower.Device",
-							NULL,
-							&error);
+		proxy_device = (*nut_g_dbus_proxy_new_sync)(
+			connection,
+			G_DBUS_PROXY_FLAGS_NONE,
+			NULL,
+			"org.freedesktop.UPower",
+			object_path,
+			"org.freedesktop.UPower.Device",
+			NULL,
+			&error);
 
 		if (proxy_device == NULL) {
 			upsdebugx(1, "Error creating device proxy for %s: %s", object_path, error->message);
