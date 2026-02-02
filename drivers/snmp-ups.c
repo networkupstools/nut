@@ -1380,9 +1380,10 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			 * SNMPv1). This allows to proceed interpreting large
 			 * responses when one entry in the middle is rejectable.
 			 */
-			if (response->variables->type == SNMP_NOSUCHOBJECT ||
-			    response->variables->type == SNMP_NOSUCHINSTANCE ||
-			    response->variables->type == SNMP_ENDOFMIBVIEW) {
+			if (response->variables->type == SNMP_NOSUCHOBJECT
+			 || response->variables->type == SNMP_NOSUCHINSTANCE
+			 || response->variables->type == SNMP_ENDOFMIBVIEW
+			) {
 				upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
 						upsname?upsname:device_name, OID);
 				snmp_free_pdu(response);
@@ -2411,9 +2412,13 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 #endif /* WITH_SNMP_LKP_FUN */
 
 	/* Otherwise, use the simple values mapping */
-	for (info_lkp = oid2info; (info_lkp != NULL) &&
-		 (info_lkp->info_value != NULL) && (strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
-
+	for (
+		info_lkp = oid2info;
+		(info_lkp != NULL)
+		&& (info_lkp->info_value != NULL)
+		&& (strcmp(info_lkp->info_value, "NULL"));
+		info_lkp++
+	) {
 		if (info_lkp->oid_value == value) {
 			upsdebugx(1, "%s: found %s (value: %ld)",
 					__func__, info_lkp->info_value, value);
@@ -3451,11 +3456,10 @@ bool_t snmp_ups_walk(int mode)
 			/* Set default value if we cannot fetch it
 			 * and set static flag on this element.
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
-			if (
-				    (su_info_p->flags & SU_FLAG_ABSENT)
-				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)
-				&& !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
+			if ( (su_info_p->flags & SU_FLAG_ABSENT)
+			 && !(su_info_p->flags & SU_OUTLET)
+			 && !(su_info_p->flags & SU_OUTLET_GROUP)
+			 && !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
 			{
 				if (mode == SU_WALKMODE_INIT)
 				{

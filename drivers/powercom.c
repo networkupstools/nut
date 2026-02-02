@@ -378,12 +378,12 @@ static int validate_raw_data (void)
 	num_of_tests =
 		sizeof types[0].validation / sizeof types[0].validation[0];
 
-	for (i = 0;
-		 i < num_of_tests  &&
-		   raw_data[
-		        types[type].validation[i].index_of_byte] ==
-		        types[type].validation[i].required_value;
-		 i++)  ;
+	for (
+		i = 0;
+		i < num_of_tests
+		&& raw_data[types[type].validation[i].index_of_byte]
+		         == types[type].validation[i].required_value;
+		i++) ;
 	return (i < num_of_tests) ? 1 : 0;
 }
 
@@ -882,9 +882,10 @@ void upsdrv_initups(void)
 
 	/* get and check type */
 	if (testvar("type")) {
-		for (i = 0;
-			 i < NUM_OF_SUBTYPES  &&  strcmp(types[i].name, getval("type"));
-			 i++) ;
+		for (
+			i = 0;
+			i < NUM_OF_SUBTYPES  &&  strcmp(types[i].name, getval("type"));
+			i++) ;
 		if (i >= NUM_OF_SUBTYPES) {
 			printf("Given UPS type '%s' isn't valid!\n", getval("type"));
 			exit (1);

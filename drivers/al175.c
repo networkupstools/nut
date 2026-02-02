@@ -1003,9 +1003,11 @@ static int al175_read(byte_t *dst, size_t addr, size_t count)
 	if (err==-1)
 		return -1;
 
-	if ((rx_data.end - rx_data.begin) < 0 ||
-	    (size_t)(rx_data.end - rx_data.begin) != count)
+	if ((rx_data.end - rx_data.begin) < 0
+	 || (size_t)(rx_data.end - rx_data.begin) != count
+	) {
 		return -1;
+	}
 
 	if ( (io.addr != addr) || (io.len != count) ) {
 		upsdebugx(3, "%s: io_head mismatch\t(%" PRIxSIZE ",%" PRIxSIZE " != %" PRIxSIZE ",%" PRIxSIZE ")",

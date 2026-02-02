@@ -284,10 +284,12 @@ void upsdrv_initinfo(void)
 	if ((transferred = ser_send(upsfd, COMMAND_GET_SESSION_HASH"%c", ENDCHAR)) != 4) {
 		fatalx(EXIT_FAILURE, "%s: Failed to get session hash", __func__);
 	}
-	if ((transferred = hashx_recv(buf, sizeof(buf))) != strlen(SESSION_HASH) + 1 ||
-	    (transferred > 0 && strncmp(buf, "#"SESSION_HASH, sizeof(buf)) != 0)) {
-		fatalx(EXIT_FAILURE, "%s: unexpected hash protocol response: %s",
-		       __func__, buf);
+	if ((transferred = hashx_recv(buf, sizeof(buf))) != strlen(SESSION_HASH) + 1
+	 || (transferred > 0 && strncmp(buf, "#"SESSION_HASH, sizeof(buf)) != 0)
+	) {
+		fatalx(EXIT_FAILURE,
+			"%s: unexpected hash protocol response: %s",
+			__func__, buf);
 	}
 
 	/* XXX: Maybe now repeat the same with a random value, without checking

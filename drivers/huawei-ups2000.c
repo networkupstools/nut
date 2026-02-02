@@ -748,8 +748,8 @@ static int ups2000_update_status(void)
 			 * if the register is equal to the "val" we are looking
 			 * for, or if register has its n-th "bit" set...
 			 */
-			if ((flag[j].val != -1 && flag[j].val == val) ||
-			    (flag[j].bit != -1 && CHECK_BIT(val, flag[j].bit))
+			if ((flag[j].val != -1 && flag[j].val == val)
+			 || (flag[j].bit != -1 && CHECK_BIT(val, flag[j].bit))
 			) {
 				/* if it has a corresponding status flag */
 				if (strlen(flag[j].status_name) != 0)
@@ -1002,8 +1002,8 @@ static int ups2000_update_alarm(void)
 			 * Log the warning only if it's a new alarm, or if a long time
 			 * has paseed since we first warned it.
 			 */
-			if (!ups2000_alarm[i].active ||
-			    difftime(now, alarm_logged_since) >= UPS2000_LOG_INTERVAL
+			if (!ups2000_alarm[i].active
+			 || difftime(now, alarm_logged_since) >= UPS2000_LOG_INTERVAL
 			) {
 				int loglevel;
 				const char *alarm_word;
@@ -2019,8 +2019,9 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 		 * this register returns invalid values. This is a known problem
 		 * and it's not fatal, so we use LOG_INFO.
 		 */
-		if (retry_status == RETRY_ENABLE &&
-		    addr == 12002 && (dest[0] < 2 || dest[0] > 5)
+		if (retry_status == RETRY_ENABLE
+		 && addr == 12002
+		 && (dest[0] < 2 || dest[0] > 5)
 		) {
 			upslogx(LOG_INFO, "Battery status has a non-fatal read failure, it's usually harmless. Retrying... ");
 			sleep(1);

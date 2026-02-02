@@ -29,9 +29,10 @@ int is_usb_device_supported(usb_device_id_t *usb_device_id_list, USBDevice_t *de
 	upsdebugx(3, "%s: checking if this driver can support USB device VID:PID 0x%04X:0x%04X",
 		__func__, (unsigned int)device->VendorID, (unsigned int)device->ProductID);
 
-	for (usbdev = usb_device_id_list;
-	     (usbdev->vendorID != 0 || usbdev->productID != 0 || usbdev->fun != NULL);
-	     usbdev++
+	for (
+		usbdev = usb_device_id_list;
+		(usbdev->vendorID != 0 || usbdev->productID != 0 || usbdev->fun != NULL);
+		usbdev++
 	) {
 		upsdebugx(4, "%s: checking table entry for VID:PID 0x%04X:0x%04X "
 			"(custom init handler is%s available)",

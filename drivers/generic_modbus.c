@@ -582,8 +582,8 @@ int upscmd(const char *cmd, const char *arg)
 
 	if (!strcasecmp(cmd, "load.off")) {
 		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, arg);
-		if (sigar[FSD_T].addr != NOTUSED &&
-		    (sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)
+		if (sigar[FSD_T].addr != NOTUSED
+		 && (sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)
 		) {
 			data = 1 ^ sigar[FSD_T].noro;
 			rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);

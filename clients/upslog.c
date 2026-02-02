@@ -114,9 +114,10 @@ static void reopen_log(void)
 {
 	struct	logtarget_t	*p;
 
-	for (p = logfile_anchor;
-	     p != NULL;
-	     p = p->next
+	for (
+		p = logfile_anchor;
+		p != NULL;
+		p = p->next
 	) {
 		/* Never opened, e.g. removed asterisk entry */
 		if (!p->logfile)
@@ -748,9 +749,10 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
 	/* Split the system specs in a common fashion for tuples and legacy args */
-	for (monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	for (
+		monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
+		monhost_ups_current != NULL;
+		monhost_ups_current = monhost_ups_current->next
 	) {
 		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
@@ -880,9 +882,10 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
 	/* Report the logged systems, open the log files as needed */
-	for (monhost_ups_current = monhost_ups_anchor;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	for (
+		monhost_ups_current = monhost_ups_anchor;
+		monhost_ups_current != NULL;
+		monhost_ups_current = monhost_ups_current->next
 	) {
 		printf("logging status of %s to %s (%is intervals)\n",
 			monhost_ups_current->monhost,
@@ -969,9 +972,10 @@ int main(int argc, char **argv)
 			upsnotify(NOTIFY_STATE_READY, NULL);
 		}
 
-		for (monhost_ups_current = monhost_ups_anchor;
-		     monhost_ups_current != NULL;
-		     monhost_ups_current = monhost_ups_current->next
+		for (
+			monhost_ups_current = monhost_ups_anchor;
+			monhost_ups_current != NULL;
+			monhost_ups_current = monhost_ups_current->next
 		) {
 			/* reconnect if necessary */
 			if (upscli_fd(monhost_ups_current->ups) < 0) {
@@ -1003,9 +1007,10 @@ int main(int argc, char **argv)
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 
-	for (monhost_ups_current = monhost_ups_anchor;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	for (
+		monhost_ups_current = monhost_ups_anchor;
+		monhost_ups_current != NULL;
+		monhost_ups_current = monhost_ups_current->next
 	) {
 		/* we might have several systems logged into same file;
 		 * take care to not close stdout though */

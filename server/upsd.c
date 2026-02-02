@@ -1085,8 +1085,8 @@ void server_load(void)
 		return;
 
 	/* check for edge cases we can let slide */
-	if ( (listenersTotal - listenersValid) ==
-	     (listenersTotalLocalhost - listenersValidLocalhost)
+	if ( (listenersTotal - listenersValid)
+	  == (listenersTotalLocalhost - listenersValidLocalhost)
 	) {
 		/* Note that we can also get into this situation
 		 * when "dual-stack" IPv6 listener also handles

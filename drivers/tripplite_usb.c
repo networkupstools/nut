@@ -1600,8 +1600,10 @@ void upsdrv_updateinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ||
-	    is_smart_protocol() ) {
+	if (tl_model == TRIPP_LITE_OMNIVS
+	 || tl_model == TRIPP_LITE_OMNIVS_2001
+	 || is_smart_protocol()
+	) {
 		/* dq ~= sqrt(dV) is a reasonable approximation
 		 * Results fit well against the discrete function used in the Tripp Lite
 		 * source, but give a continuous result. */

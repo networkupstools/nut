@@ -1542,8 +1542,8 @@ int compareprocnames(pid_t pid, const char *procname, const char **prognames)
 			size_t	dot = progbasenamedot[i] ? progbasenamedot[i] : procbasenamedot;
 
 			/* Optimize away procbasename comparisons beyond first */
-			if (!strncasecmp(progbasenames[i], procbasename, dot - 1) &&
-			     (  (progbasenamedot[i] && !strcasecmp(progbasenames[i] + progbasenamedot[i], ".exe"))
+			if (!strncasecmp(progbasenames[i], procbasename, dot - 1)
+			  && (  (progbasenamedot[i] && !strcasecmp(progbasenames[i] + progbasenamedot[i], ".exe"))
 			     || (i == 0 && procbasenamedot && !strcasecmp(procbasename + procbasenamedot, ".exe")) )
 			) {
 				ret = 5;
@@ -1868,8 +1868,8 @@ char * getfullpath(char * relative_path)
 				upsdebugx(6, "%s: prefix_in_buf:\t'%s'", __func__, NUT_STRARG(prefix_in_buf));
 
 				/* Did we find the prefix and is it followed by some slash? */
-				if (prefix_in_buf &&
-				    (   *(prefix_in_buf + len_PREFIX) == '/'
+				if (prefix_in_buf
+				 && (   *(prefix_in_buf + len_PREFIX) == '/'
 				     || *(prefix_in_buf + len_PREFIX) == '\\')
 				) {
 					/* Make the path relative
@@ -2253,9 +2253,11 @@ pid_t parsepidfile(const char *pidfn)
 		 * for the first time and no opponent PID file exists,
 		 * so the cut-off verbosity is higher.
 		 */
-		if (nut_debug_level > 0 ||
-		    nut_sendsignal_debug_level >= NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE)
+		if (nut_debug_level > 0
+		 || nut_sendsignal_debug_level >= NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE
+		) {
 			upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
+		}
 		return -3;
 	}
 
@@ -3278,8 +3280,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 					char	*s = getenv("NUT_QUIET_INIT_UPSNOTIFY");
 
 					/* FIXME: Make an INVERTED server/conf.c::parse_boolean() reusable */
-					if (s && *s &&
-					    ( (!strcasecmp(s, "false")) || (!strcasecmp(s, "off")) || (!strcasecmp(s, "no")) || (!strcasecmp(s, "0")))
+					if (s && *s
+					 && ( (!strcasecmp(s, "false")) || (!strcasecmp(s, "off")) || (!strcasecmp(s, "no")) || (!strcasecmp(s, "0")) )
 					) {
 						upsdebugx(1, "Caller WANTS to see all these messages: NUT_QUIET_INIT_UPSNOTIFY=%s", NUT_STRARG(s));
 					} else {

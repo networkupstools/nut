@@ -794,9 +794,13 @@ void upsdrv_updateinfo(void)
 	if (ptr) {
 		dstate_setinfo("battery.charge", "%d", atoi(ptr));
 		ptr2 = getval("lowbatt");
-		if (ptr2 && atoi(ptr2) > 0 && atoi(ptr2) <= 99 &&
-		    atoi(ptr) <= atoi(ptr2))
+		if (ptr2
+		 && atoi(ptr2) > 0
+		 && atoi(ptr2) <= 99
+		 && atoi(ptr) <= atoi(ptr2)
+		) {
 			low_battery = 1;
+		}
 	}
 	ptr = field(response, 6);
 	if (ptr)

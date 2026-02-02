@@ -95,10 +95,13 @@ static apc_vartab_t *vt_lookup_char(char cmdchar)
 {
 	int	i;
 
-	for (i = 0; apc_vartab[i].name != NULL; i++)
-		if ((apc_vartab[i].flags & APC_PRESENT) &&
-		    apc_vartab[i].cmd == cmdchar)
+	for (i = 0; apc_vartab[i].name != NULL; i++) {
+		if ((apc_vartab[i].flags & APC_PRESENT)
+		 && apc_vartab[i].cmd == cmdchar
+		) {
 			return &apc_vartab[i];
+		}
+	}
 
 	return NULL;
 }

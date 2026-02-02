@@ -410,9 +410,9 @@ static void get_status(void)
 			upsdebugx(1, "Power Input 5v: UNKNOWN");
 	}
 
-	if ( batteryStatus == BATT_NORMAL ||
-	     batteryStatus == BATT_CHARGING_FROM_IN ||
-	     batteryStatus == BATT_CHARGING_FROM_5V )
+	if ( batteryStatus == BATT_NORMAL
+	 ||  batteryStatus == BATT_CHARGING_FROM_IN
+	 ||  batteryStatus == BATT_CHARGING_FROM_5V )
 	{
 		get_charge_level_hi_res();
 
@@ -432,12 +432,12 @@ static void get_status(void)
 		status_set("RB");
 	}
 
-	if ( batteryStatus  <= BATT_NOT_PRESENT &&
-	     powerInput     <= POWER_PRESENT &&
-	     powerInput5vIo <= POWER_PRESENT )
+	if ( batteryStatus  <= BATT_NOT_PRESENT
+	 &&  powerInput     <= POWER_PRESENT
+	 &&  powerInput5vIo <= POWER_PRESENT )
 	{
-		if ( powerInput       == POWER_NOT_PRESENT &&
-		     ( powerInput5vIo != POWER_NOT_PRESENT ))
+		if ( powerInput       == POWER_NOT_PRESENT
+		 &&  ( powerInput5vIo != POWER_NOT_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 0 )
 			{
@@ -461,9 +461,9 @@ static void get_status(void)
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
 		}
-		else if ( powerInput5vIo == POWER_NOT_PRESENT &&
-		      ( powerInput   != POWER_NOT_PRESENT &&
-		        powerInput   <= POWER_PRESENT ))
+		else if ( powerInput5vIo == POWER_NOT_PRESENT
+		      &&  powerInput     != POWER_NOT_PRESENT
+		      &&  powerInput     <= POWER_PRESENT )
 		{
 			if ( gpio_power != 1 || usb_power != 0 )
 			{
@@ -487,8 +487,8 @@ static void get_status(void)
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
 		}
-		else if ( ( powerInput     != POWER_NOT_PRESENT && powerInput     <= POWER_PRESENT ) &&
-		          ( powerInput5vIo != POWER_NOT_PRESENT && powerInput5vIo <= POWER_PRESENT ))
+		else if ( ( powerInput     != POWER_NOT_PRESENT && powerInput     <= POWER_PRESENT )
+		       && ( powerInput5vIo != POWER_NOT_PRESENT && powerInput5vIo <= POWER_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 1 )
 			{

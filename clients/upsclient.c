@@ -1167,9 +1167,9 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			close(sock_fd);
 			/* if timeout, break out so client can continue */
 			/* match Linux behavior that updates timeout struct */
-			if (timeout != NULL &&
-			    ups->upserror == UPSCLI_ERR_CONNFAILURE &&
-			    ups->syserrno == ETIMEDOUT
+			if (timeout != NULL
+			 && ups->upserror == UPSCLI_ERR_CONNFAILURE
+			 && ups->syserrno == ETIMEDOUT
 			) {
 				const char	*addrstr = xinet_ntopAI(ai);
 				upslogx(LOG_WARNING, "%s: Connection to host timed out: '%s'",

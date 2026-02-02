@@ -2254,37 +2254,40 @@ int dstate_detect_phasecount(
 		dstate_getinfo_nonzero(v0,  "voltage");
 		dstate_getinfo_nonzero(c0,  "current");
 
-		if ( (v1 && v2 && !v3) ||
-		     (v1n && v2n && !v3n) ||
-		     (c1 && c2 && !c3) ||
-		     (v12 && !v23 && !v31) ) {
+		if ( (v1 && v2 && !v3)
+		 ||  (v1n && v2n && !v3n)
+		 ||  (c1 && c2 && !c3)
+		 ||  (v12 && !v23 && !v31)
+		) {
 			upsdebugx(5, "%s(): determined a 2-phase case", __func__);
 			*num_phases = 2;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;
-		} else if ( (v1 && v2 && v3) ||
-		     (v1n && v2n && v3n) ||
-		     (c1 && (c2 || c3)) ||
-		     (c2 && (c1 || c3)) ||
-		     (c3 && (c1 || c2)) ||
-		     v12 || v23 || v31 ) {
+		} else if ( (v1 && v2 && v3)
+		 ||  (v1n && v2n && v3n)
+		 ||  (c1 && (c2 || c3))
+		 ||  (c2 && (c1 || c3))
+		 ||  (c3 && (c1 || c2))
+		 ||  v12 || v23 || v31
+		) {
 			upsdebugx(5, "%s(): determined a 3-phase case", __func__);
 			*num_phases = 3;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;
 		} else if ( /* We definitely have only one non-zero line */
-		     !v12 && !v23 && !v31 && (
-		     (c0 && !c1 && !c2 && !c3) ||
-		     (v0 && !v1 && !v2 && !v3) ||
-		     (c1 && !c2 && !c3) ||
-		     (!c1 && c2 && !c3) ||
-		     (!c1 && !c2 && c3) ||
-		     (v1 && !v2 && !v3) ||
-		     (!v1 && v2 && !v3) ||
-		     (!v1 && !v2 && v3) ||
-		     (v1n && !v2n && !v3n) ||
-		     (!v1n && v2n && !v3n) ||
-		     (!v1n && !v2n && v3n) ) ) {
+		     !v12 && !v23 && !v31
+		 && (   (c0 && !c1 && !c2 && !c3)
+		     || (v0 && !v1 && !v2 && !v3)
+		     || (c1 && !c2 && !c3)
+		     || (!c1 && c2 && !c3)
+		     || (!c1 && !c2 && c3)
+		     || (v1 && !v2 && !v3)
+		     || (!v1 && v2 && !v3)
+		     || (!v1 && !v2 && v3)
+		     || (v1n && !v2n && !v3n)
+		     || (!v1n && v2n && !v3n)
+		     || (!v1n && !v2n && v3n) )
+		) {
 			*num_phases = 1;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;
