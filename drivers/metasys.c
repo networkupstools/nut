@@ -127,7 +127,7 @@ static void dump_buffer(unsigned char *buffer, int buf_len) {
 }
 
 /* send a read command to the UPS, it retries 5 times before give up
-   it's a 4 byte request (STX, LENGTH, COMMAND and CHECKSUM) */
+ * it's a 4 byte request (STX, LENGTH, COMMAND and CHECKSUM) */
 static void send_read_command(unsigned char command) {
 	int retry;
 	ssize_t sent;
@@ -147,8 +147,8 @@ static void send_read_command(unsigned char command) {
 }
 
 /* send a write command to the UPS, the write command and the value to be written are passed
-   with a char* buffer
-   it retries 5 times before give up */
+ * with a char* buffer
+ * it retries 5 times before give up */
 static void send_write_command(unsigned char *command, size_t command_length) {
 	int retry, checksum;
 	ssize_t sent;
@@ -215,8 +215,8 @@ static int get_answer(unsigned char *data) {
 	}
 
 	/* now we have the whole answer from the ups, we can checksum it
-	   checksum byte is equal to the sum modulus 256 of all the data bytes + packet_length
-	   (no STX no checksum byte itself) */
+	 * checksum byte is equal to the sum modulus 256 of all the data bytes + packet_length
+	 * (no STX no checksum byte itself) */
 	checksum = packet_length;
 	for (i = 0; i < (packet_length - 1); i++) checksum += my_buf[i];
 	checksum = checksum % 256;
@@ -231,8 +231,8 @@ static int get_answer(unsigned char *data) {
 }
 
 /* send a read command and try get the answer, if something fails, it retries (5 times max)
-   if it is on the 4th or 5th retry, it will flush the serial before sending commands
-   it returns the length of the received answer or -1 in case of failure */
+ * if it is on the 4th or 5th retry, it will flush the serial before sending commands
+ * it returns the length of the received answer or -1 in case of failure */
 static int command_read_sequence(unsigned char command, unsigned char *data) {
 	int bytes_read = 0;
 	int retry = 0;
@@ -253,8 +253,8 @@ static int command_read_sequence(unsigned char command, unsigned char *data) {
 }
 
 /* send a write command and try get the answer, if something fails, it retries (5 times max)
-   if it is on the 4th or 5th retry, it will flush the serial before sending commands
-   it returns the length of the received answer or -1 in case of failure */
+ * if it is on the 4th or 5th retry, it will flush the serial before sending commands
+ * it returns the length of the received answer or -1 in case of failure */
 static int command_write_sequence(unsigned char *command, size_t command_length, unsigned char *answer) {
 	int bytes_read = 0;
 	int retry = 0;
