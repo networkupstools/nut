@@ -177,7 +177,7 @@ AC_DEFUN([AX_REALPATH_LIB],
             unset D
         ])
 
-        AS_IF([test -z "${myLIBPATH}" && test x"${LD}" != x -a x"${LD}" != xfalse], [
+        AS_IF([test -z "${myLIBPATH}" && test x"${LD}" != x -a x"${LD}" != xfalse && test -n "${myLIBNAME_LD}"], [
             AS_CASE(["${target_os}"],
                 [*darwin*], [
                     dnl Try MacOS-style LD as fallback; expecting strings like
@@ -196,8 +196,36 @@ AC_DEFUN([AX_REALPATH_LIB],
                     fi
                     rm -f a.out 2>/dev/null || true
                     unset my_uname_m
+                ], [
+                    dnl Try our luck with any linker that would complain in
+                    dnl a way that we recognize (e.g. listing some path name
+                    dnl including the expected name as a base part of longer
+                    dnl filename)?
+                    myLDFLAGS=""
+                    if test -n "${myLIBRARY_PATH}" ; then
+                        myLDFLAGS="`echo -L\"${myLIBRARY_PATH}\" | sed 's/:/ -L/g'`"
+                    fi
+                    dnl NOTE: We should not get more than one hit here;
+                    dnl but if we do -- it is probably safer to fail
+                    dnl existence checks below and bail out...
+                    myLIBPATH="`LIBRARY_PATH=\"${myLIBRARY_PATH}\" ${LD} -r $myLDFLAGS \"${myLIBNAME_LD}\" -o a.out 2>&1 | tr ' ' '\n' | ${EGREP} \"@<:@/\\@:>@${myLIBNAME}\"`"
+                    if test -n "${myLIBPATH}" && test -s "${myLIBPATH}" ; then : ; else myLIBPATH="" ; fi
+                    rm -f a.out
+                    unset myLDFLAGS
                 ]
             )
+        ])
+
+        AS_IF([test -z "${myLIBPATH}" && test x"${CC}" != x -a x"${CC}" != xfalse && test -n "${myLIBNAME_LD}"], [
+            dnl Like above, but try CC instead of LD
+            myLDFLAGS=""
+            if test -n "${myLIBRARY_PATH}" ; then
+                myLDFLAGS="`echo -L\"${myLIBRARY_PATH}\" | sed 's/:/ -L/g'`"
+            fi
+            myLIBPATH="`LIBRARY_PATH=\"${myLIBRARY_PATH}\" ${CC} -r $myLDFLAGS \"${myLIBNAME_LD}\" -o a.out 2>&1 | tr ' ' '\n' | ${EGREP} \"@<:@/\\@:>@${myLIBNAME}\"`"
+            if test -n "${myLIBPATH}" && test -s "${myLIBPATH}" ; then : ; else myLIBPATH="" ; fi
+            rm -f a.out
+            unset myLDFLAGS
         ])
 
         AS_IF([test -n "${myLIBPATH}" && test -s "${myLIBPATH}"], [
