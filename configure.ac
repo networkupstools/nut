@@ -2854,7 +2854,7 @@ dnl Platform-dependent drivers, currently their detection code is directly
 dnl spelled out in configure.ac
 NUT_ARG_WITH([macosx_ups], [build and install Mac OS X Power Sources meta-driver], [auto])
 NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
-NUT_ARG_WITH([upower], [build and install UPower driver (requires GLib/GIO)], [auto])
+NUT_ARG_WITH([upower], [build and install UPower driver and nut-scanner support (requires GLib/GIO)], [auto])
 NUT_CHECK_LIBGLIB
 
 dnl A Python GUI client application for the sysadmin desktop
@@ -3005,22 +3005,6 @@ NUT_REPORT_FEATURE([enable Avahi support], [${nut_with_avahi}], [],
 					[WITH_AVAHI], [Define to enable Avahi support])
 
 dnl ----------------------------------------------------------------------
-dnl checks related to --with-upower
-
-dnl ${nut_with_upower}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_upower}" = "yes" -a "${nut_have_libglib}" != "yes"; then
-   AC_MSG_ERROR([GLib/GIO libraries not found, required for UPower support])
-fi
-
-if test "${nut_with_upower}" != "no"; then
-   nut_with_upower="${nut_have_libglib}"
-fi
-
-NUT_REPORT_FEATURE([enable UPower support], [${nut_with_upower}], [],
-					[WITH_UPOWER], [Define to enable UPower support])
-
-dnl ----------------------------------------------------------------------
-
 dnl checks related to --with-powerman
 
 dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto".
@@ -3163,27 +3147,29 @@ NUT_REPORT_DRIVER([build Mac OS X meta-driver],
 			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
 
 dnl ----------------------------------------------------------------------
-dnl Check if we have detected libGLib / libGIO above (Required for UPower driver)
+dnl checks related to --with-upower
+dnl Check if we have detected libGLib / libGIO above (Required for the
+dnl nut-upower driver and/or nut-scanner UPower support)
 dnl NOTE: Do not confuse libglib{2} (GNOME) with glibc (part of compiler)
 dnl ----------------------------------------------------------------------
 
-AC_MSG_CHECKING([whether to build nut-upower driver])
-nut_with_upower=no
+AC_MSG_CHECKING([whether to build nut-upower driver and nut-scanner support])
 AS_IF([test "${nut_have_libglib}${nut_have_libgio}" = "yesyes"], [
-	AS_CASE(["${with_upower}"],
+	AS_CASE(["${nut_with_upower}"],
 		[yes|auto], [nut_with_upower=yes]
 	)
 ], [
-	AS_CASE(["${with_upower}"],
+	AS_CASE(["${nut_with_upower}"],
 		[yes], [AC_MSG_ERROR([GLib/GIO not found but requested via --with-upower])],
-		[auto],[AC_MSG_WARN([GLib/GIO not found. The 'upower' driver will not be built.])]
+		[auto],[AC_MSG_WARN([GLib/GIO not found. The 'nut-upower' driver will not be built.])]
 	)
+	nut_with_upower=no
 ])
 
 AC_MSG_RESULT(${nut_with_upower})
-NUT_REPORT_DRIVER([build UPower driver],
+NUT_REPORT_DRIVER([build UPower driver and nut-scanner support],
 			[${nut_with_upower}], [],
-			[WITH_UPOWER], [Define to build UPower driver])
+			[WITH_UPOWER], [Define to build UPower driver and nut-scanner support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with_linux_i2c
