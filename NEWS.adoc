@@ -198,6 +198,7 @@ https://github.com/networkupstools/nut/milestone/12
      mappings. Suggest how user can help improve the driver if too few data
      points were seen, or if the `mibs=auto` detection only found the fallback
      IETF mapping. [PR #3095]
+   * Added new vendor extension mappings for Vertiv Liebert PSI5 UPS. [#3299]
 
  - `tripplite_usb` driver updates:
    * Added support for Tripplite protocol 3017 (mostly ASCII). [issue #2258,
