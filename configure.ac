@@ -317,7 +317,7 @@ NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir-examples], [DIRPATH], [Com
 
 dnl ---------------------------------------------------------------------
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
-AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
+AC_MSG_CHECKING([whether this make implementation supports 'export VAR=VAL' syntax])
 dnl # using printf formatting for some funniner shells out there
 nut_am_output="`printf 'export VAR=VAL\ntest:\n\t@echo \"VAR=%s%sVAR%s\"\n' '\$' '(' ')' | ${MAKE-make} -f - test`"
 nut_am_result="$?"
@@ -330,6 +330,24 @@ AS_IF([test x"${nut_am_result}" = x0 -a x"${nut_am_output}" = x"VAR=VAL"], [
 ])
 AC_SUBST(NUT_AM_MAKE_CAN_EXPORT)
 
+dnl ---------------------------------------------------------------------
+dnl Some versions of BSD make (e.g. in NetBSD 11) may require this syntax
+dnl in lieu of the more standard "+" prefix, but at least GNU make exploded
+dnl with it, so we can not use it everywhere:
+AC_MSG_CHECKING([whether this make implementation supports a .MAKE special source (pseudo-goal for sub-makes)])
+dnl # using printf formatting for some funniner shells out there
+nut_am_output="`printf 'sub: .MAKE\n\t@printf \\\"test:\\\\n\\\\t@echo %s\\\\n\\\" | $(MAKE) -f - test\n' '\\\\\\\"Hello world\\\\\\\"' | ${MAKE-make} -f - sub`"
+nut_am_result="$?"
+AS_IF([test x"${nut_am_result}" = x0 -a x"${nut_am_output}" = x"Hello world"], [
+	dotMAKE=".MAKE"
+	AC_MSG_RESULT(yes)
+], [
+	dotMAKE=""
+	AC_MSG_RESULT(no: got '${nut_am_output}')
+])
+AC_SUBST(dotMAKE)
+
+dnl ---------------------------------------------------------------------
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
 NUT_CHECK_PKGCONFIG
 
@@ -7210,4 +7228,7 @@ AS_IF([test x"${theMAKE}" = x], [theMAKE="make"])
 AC_MSG_NOTICE([==========================================================])
 AC_MSG_NOTICE([Configuration complete: Run '$theMAKE' to build ${NUT_SOURCE_VERSION_REPORT} now.])
 AC_MSG_NOTICE([You may use parallelism if supported by your hardware and 'make' implementation, e.g. '$theMAKE -j 8'])
+AS_IF([test x"${dotMAKE}" = x.MAKE], [
+AC_MSG_NOTICE([WARNING: do not use (parallel) GNU make with this build configuration!])
+])
 AC_MSG_NOTICE([==========================================================])

@@ -97,7 +97,7 @@ SUBDIR_MAKE_VERBOSE = default
 
 # Run the standard build if going sequential (or with unknown MAKEFLAGS),
 # or fanout if parallel (presuming GNU/BSD/Sun make at least):
-all-fanout-maybe:
+all-fanout-maybe: @dotMAKE@
 	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 			echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
@@ -129,7 +129,7 @@ all-fanout-maybe:
 
 # FIXME: Alas, we still tend to step on our toes when making everything at
 # once from scratch, so still do benefit from pre-making the libraries:
-all-fanout-staged:
+all-fanout-staged: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false all/include
 	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=true all/common
 	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=true all-fanout-libs
@@ -139,7 +139,7 @@ all-fanout-subdirs: $(SUBDIRS_ALL_RECURSIVE)
 
 all-fanout-libs all-libs-local: $(SUBDIRS_ALL_LIBS_LOCAL)
 
-#all all-am-local all-local:
+#all all-am-local all-local: @dotMAKE@
 #	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
 #	+@$(MAKE) $(AM_MAKEFLAGS) all-recursive
 #	+@$(MAKE) $(AM_MAKEFLAGS) doc
@@ -213,7 +213,7 @@ SUBDIR_TGT_RULE = ( \
 #   git grep -E '(LTLIBRARIES|\.la([ :'"`printf '\t'`"']|$))' '*.am'
 
 ### Delivers: nut_version.h
-all-libs-local/include:
+all-libs-local/include: @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=false; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -224,7 +224,7 @@ all-libs-local/include:
 ### May deliver: libnutprivate-$(SEMVER)-common-all.la and libnutprivate-$(SEMVER)-common-client.la for dynamic shared-object linking, libcommonversion-private.la (dependency for the above)
 ### Requires-ext: include/nut_version.h
 ### Requires-int: libparseconf.la libcommonclient.la
-all-libs-local/common: all-libs-local/include
+all-libs-local/common: all-libs-local/include @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -236,7 +236,7 @@ all-libs-local/common: all-libs-local/include
 ### Requires-ext: common/libparseconf.la
 ### For dynamic builds, alternately LIB-Requires-ext and Requires-ext: libnutprivate-$(SEMVER)-common*.la
 ### Requires-int: libupsclient.la
-all-libs-local/clients: all-libs-local/common
+all-libs-local/clients: all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -249,7 +249,7 @@ all-libs-local/clients: all-libs-local/common
 ### Requires-int: libdummy_serial.la
 ### For dynamic builds, alternately LIB-Requires-ext and Requires-ext: libnutprivate-$(SEMVER)-common*.la
 ### and may deliver: libnutprivate-$(SEMVER)-drivers-common.la and libnutprivate-$(SEMVER)-drivers-serial.la
-all-libs-local/drivers: all-libs-local/common
+all-libs-local/drivers: all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -259,14 +259,14 @@ all-libs-local/drivers: all-libs-local/common
 ### Requires-ext: clients/libnutclient.la clients/libnutclientstub.la
 ### Requires-ext: drivers/libdummy_mockdrv.la
 ### Requires-int: libdriverstubusb.la
-all-libs-local/tests: all-libs-local/common
+all-libs-local/tests: all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
 ### Delivers: generated sources and/or headers for nut-scanner
 ### No dependencies: actually runs as part of autogen.sh but may be
 ### re-run during development when USB or SNMP driver sources change.
-all-libs-local/tools:
+all-libs-local/tools: @dotMAKE@
 	+@$(SUBDIR_TGT_RULE)
 
 ### Delivers: libnutscan.la
@@ -281,7 +281,7 @@ all-libs-local/tools:
 ### Note: indirectly (ltdl) may use installed libupsclient.so
 ###       however does directly use libupsclient-version.h
 ###       for hints to find it at run-time
-all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/common all-libs-local/clients all-libs-local/tools
+all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/common all-libs-local/clients all-libs-local/tools @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -296,22 +296,22 @@ all/conf \
 all/lib \
 .ChangeLog.adoc-parsed.latest/docs \
 ChangeLog.adoc-parsed/docs \
-all-recursive/data:
+all-recursive/data: @dotMAKE@
 	+@$(SUBDIR_TGT_RULE)
 
-all/include: all-libs-local/include
+all/include: all-libs-local/include @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
-prep-src-docs/docs/man:
+prep-src-docs/docs/man: @dotMAKE@
 	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3'; export SUBDIR_TGT_MAKEFLAGS; \
 	  $(SUBDIR_TGT_RULE)
 
-prep-src-docs/docs:
+prep-src-docs/docs: @dotMAKE@
 	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; \
 	  $(SUBDIR_TGT_RULE)
 
-all/docs/man: prep-src-docs/docs/man
+all/docs/man: prep-src-docs/docs/man @dotMAKE@
 	+@$(SUBDIR_TGT_RULE)
 
 # Note: we optionally sort of depend on ChangeLog.adoc so it is pre-made and
@@ -320,7 +320,7 @@ all/docs/man: prep-src-docs/docs/man
 # BUT we do not want to (re-)build ChangeLog if no (relevant) DOC_BUILD_LIST
 # types are enabled.
 MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 0
-all/docs: prep-src-docs/docs/man
+all/docs: prep-src-docs/docs/man @dotMAKE@
 	+@case "@DOC_BUILD_LIST@" in \
 		*pdf*|*html-single*|*html-chunked*) \
 			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ ..." ; \
@@ -334,7 +334,7 @@ all/docs: prep-src-docs/docs/man
 	+@$(MAKE) $(AM_MAKEFLAGS) prep-src-docs/docs
 	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
 
-all-recursive/docs: all/docs all/docs/man
+all-recursive/docs: all/docs all/docs/man @dotMAKE@
 	+@$(SUBDIR_TGT_RULE)
 
 # Dependencies below are dictated by who needs whose library from another dir
@@ -345,7 +345,7 @@ all-recursive/docs: all/docs all/docs/man
 # that the top-level make completes needed (all-libs*) targets before drilling.
 
 ### Requires-int: libparseconf.la libcommonclient.la
-all/common: all/include all-libs-local/common
+all/common: all/include all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -354,7 +354,7 @@ all/common: all/include all-libs-local/common
 ### Requires-ext: common/libcommonversion.la
 ### Requires-ext: common/libcommonstrjson.la
 ### Requires-int: libupsclient.la
-all/clients: all/common all-libs-local/clients
+all/clients: all/common all-libs-local/clients @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -378,7 +378,7 @@ if SOME_DRIVERS
 # build whichever drivers are enabled (no idea if dummy-ups is
 # in the default list - FIXME: configure.ac could tell us, so
 # we could provide it for tests/NIT anyway...)
-all/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
+all/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -391,21 +391,21 @@ else !SOME_DRIVERS
 # separate target with separate dependency trail, then "all-drivers"
 # should depend on both "dummy-ups" and the rest in so constrained
 # "all/drivers". This allows to ultimately not order one after another.
-dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
+dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
-all/drivers: all/common all-libs-local/drivers
+all/drivers: all/common all-libs-local/drivers @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  SUBDIR_TGT_MAKEFLAGS='NUTSW_DRIVERLIST_DUMMY_UPS=dummy'; export SUBDIR_TGT_MAKEFLAGS; \
 	  $(SUBDIR_TGT_RULE)
 
-all-drivers: dummy-ups$(EXEEXT)/drivers all/drivers
+all-drivers: dummy-ups$(EXEEXT)/drivers all/drivers @dotMAKE@
 endif !SOME_DRIVERS
 
 ### Requires-ext: common/libcommon.la common/libparseconf.la
 ### Requires-ext: common/libcommonversion.la
-all/server: all-libs-local/common
+all/server: all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -416,7 +416,7 @@ all/server: all-libs-local/common
 ### Requires-int: libnutscan.la
 all/tools/nut-scanner: all-libs-local/include all-libs-local/common \
 	all-libs-local/drivers all-libs-local/clients \
-	all-libs-local/tools/nut-scanner
+	all-libs-local/tools/nut-scanner @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -425,11 +425,11 @@ all/tools/nut-scanner: all-libs-local/include all-libs-local/common \
 ### Requires-ext: common/libcommon.la common/libnutconf.la
 ### Requires-ext: common/libcommonversion.la
 ### Requires-ext: tools/nut-scanner/libnutscan.la
-all/tools/nutconf: all-libs-local/tools/nut-scanner all-libs-local/common
+all/tools/nutconf: all-libs-local/tools/nut-scanner all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
-all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
+all-recursive/tools: all/tools/nutconf all/tools/nut-scanner @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -440,7 +440,7 @@ all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
 # if it is not enabled among SOME_DRIVERS, things can get funny...
 # But then we should also consider what is enabled by configure and what is not.
 # Maybe we are doing a quick build not to be tested at all? :-/
-all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recursive/data
+all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recursive/data @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -449,11 +449,11 @@ all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recurs
 ### Requires-ext: clients/libnutclient.la clients/libnutclientstub.la
 ### Requires-ext: drivers/libdummy_mockdrv.la
 ### Requires-int: libdriverstubusb.la
-all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients
+all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
-all-recursive/tests: all/tests/NIT all/tests
+all-recursive/tests: all/tests/NIT all/tests @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -461,21 +461,21 @@ if HAVE_MINGW_RESGEN
 if HAVE_WINDOWS
 ### Requires-ext: common/libcommon.la
 ### Requires-ext: common/libcommonversion.la
-all/scripts/Windows: all-libs-local/common
+all/scripts/Windows: all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 else !HAVE_WINDOWS
-all/scripts/Windows:
+all/scripts/Windows: @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 endif !HAVE_WINDOWS
 else !HAVE_MINGW_RESGEN
-all/scripts/Windows:
+all/scripts/Windows: @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 endif !HAVE_MINGW_RESGEN
 
-all-recursive/scripts: all/scripts/Windows
+all-recursive/scripts: all/scripts/Windows @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
@@ -548,7 +548,7 @@ endif !KNOWN_UNABLE_MANS
 # Helper for a number of recipes below that explicitly agree to not require
 # always real man pages (but require them to dist => distcheck-something)
 # for CI or developer iterations on environments with incomplete tool kits:
-distcheck-light-DIST_ALL_PAGES:
+distcheck-light-DIST_ALL_PAGES: @dotMAKE@
 	@echo "Starting $@" >&2
 	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) all
 	+@cd "$(abs_builddir)/docs/man" && $(MAKE) $(AM_MAKEFLAGS) distcheck-light-DIST_ALL_PAGES
@@ -557,7 +557,7 @@ distcheck-light-DIST_ALL_PAGES:
 # In some recipes we `configure --with-docs=skip`, so "make dist" should not
 # hiccup on lack of the page files (nor try to make them); not using simple
 # distcheck-light-DIST_ALL_PAGES step due to custom logic!
-distcheck-light-DIST_ALL_PAGES-docs-skipped:
+distcheck-light-DIST_ALL_PAGES-docs-skipped: @dotMAKE@
 	@echo "Starting $@" >&2
 	+@cd $(abs_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) prep-src-docs
 	+@cd $(abs_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) FAKE_PAGES_BUMP_SRC=false distcheck-light-DIST_ALL_PAGES
@@ -566,7 +566,7 @@ distcheck-light-DIST_ALL_PAGES-docs-skipped:
 # Here we generate man pages (if absent) or fake them
 # Require other dependencies as usual distcheck does;
 # be sure to pass through caller's DISTCHECK_FLAGS (if any)
-distcheck-fake-man: distcheck-light-DIST_ALL_PAGES
+distcheck-fake-man: distcheck-light-DIST_ALL_PAGES @dotMAKE@
 	@echo "Starting $@" >&2
 	+prefix='$${prefix}'; if test x"$(DISTCHECK_FLAGS)" = x ; then \
 		$(MAKE) $(AM_MAKEFLAGS) distcheck ; \
@@ -575,7 +575,7 @@ distcheck-fake-man: distcheck-light-DIST_ALL_PAGES
 	 fi
 	@echo "Completed $@: strict distcheck, but with possibly faked pre-built man pages" >&2
 
-dist-fake-man: distcheck-light-DIST_ALL_PAGES
+dist-fake-man: distcheck-light-DIST_ALL_PAGES @dotMAKE@
 	@echo "Starting $@" >&2
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) dist
 	@echo "Completed $@: strict dist, but with possibly faked pre-built man pages" >&2
@@ -583,21 +583,21 @@ dist-fake-man: distcheck-light-DIST_ALL_PAGES
 # Here we allow to skip docs if tools are absent, so "make dist"
 # should not hiccup on lack of the page files (but MAY make them
 # if it can); be relaxed toward other dependencies.
-distcheck-light: distcheck-light-DIST_ALL_PAGES
+distcheck-light: distcheck-light-DIST_ALL_PAGES @dotMAKE@
 	@echo "Starting $@" >&2
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 	@echo "Completed $@: relaxed distcheck, with possibly faked pre-built man pages" >&2
 
 # Require man pages to be built (or fail trying), but not other docs;
 # be relaxed toward other dependencies.
-distcheck-light-man:
+distcheck-light-man: @dotMAKE@
 	@echo "Starting $@" >&2
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
 	@echo "Completed $@: relaxed distcheck, with real man pages" >&2
 
 if HAVE_VALGRIND
 # Make the check in current build, if possible
-memcheck:
+memcheck: @dotMAKE@
 	@echo "Starting $@" >&2
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
 	+@cd $(builddir)/tests && $(MAKE) $(AM_MAKEFLAGS) -s $@
@@ -606,7 +606,7 @@ memcheck:
 # Here we skip docs so "make dist" should not hiccup on lack of the page files
 # (nor try to make them); not using simple distcheck-light-DIST_ALL_PAGES step
 # due to custom logic!
-distcheck-valgrind: distcheck-light-DIST_ALL_PAGES-docs-skipped
+distcheck-valgrind: distcheck-light-DIST_ALL_PAGES-docs-skipped @dotMAKE@
 	@echo "Starting $@" >&2
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
@@ -663,7 +663,7 @@ maintainer-clean-local:
 # are included by generated Makefiles from other subdirectories, so they
 # should be available during their clean-up). Just in case, we make sure
 # here that their sub-distcleans complete first.
-distclean-local:
+distclean-local: @dotMAKE@
 	+@for DIR in $(SUBDIRS) ; do \
 		if test -f "$${DIR}/Makefile" ; then \
 			echo "  DISTCLEAN	in $${DIR}" >&2 ; \
@@ -702,10 +702,10 @@ SPELLCHECK_DIRS_LAST = spellcheck/tests/NIT
 
 SPELLCHECK_DIRS = $(SPELLCHECK_DIRS_MOST) $(SPELLCHECK_DIRS_LAST)
 
-$(SPELLCHECK_DIRS_MOST): prep-src-docs/docs/man prep-src-docs/docs
+$(SPELLCHECK_DIRS_MOST): prep-src-docs/docs/man prep-src-docs/docs @dotMAKE@
 	+@TGT="$(SPELLCHECK_TGT)"; export TGT; $(SUBDIR_TGT_RULE)
 
-$(SPELLCHECK_DIRS_LAST): prep-src-docs/docs/man prep-src-docs/docs $(SPELLCHECK_DIRS_MOST)
+$(SPELLCHECK_DIRS_LAST): prep-src-docs/docs/man prep-src-docs/docs $(SPELLCHECK_DIRS_MOST) @dotMAKE@
 	+@SUBDIR_TGT_MAKEFLAGS="SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes"; \
 	  export SUBDIR_TGT_MAKEFLAGS; \
 	  TGT="$(SPELLCHECK_TGT)"; export TGT; \
@@ -716,7 +716,7 @@ $(SPELLCHECK_DIRS_LAST): prep-src-docs/docs/man prep-src-docs/docs $(SPELLCHECK_
 # but using the correct make target for this goal:
 # FIXME: fanned-out recipes tend to fail early despite "make -ks", so for
 #  now we retry with a not-fanned-out attempt to cover most touch-files
-spellcheck spellcheck-interactive:
+spellcheck spellcheck-interactive: @dotMAKE@
 	+@SUBDIR_TGT_MAKEFLAGS="$${SUBDIR_TGT_MAKEFLAGS-} -k -s " ; export SUBDIR_TGT_MAKEFLAGS ; \
 	  if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		RES=0 ; \
@@ -762,12 +762,12 @@ SET_PARMAKES_OPT = \
 		;; \
 	esac
 
-spellcheck-quick:
+spellcheck-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s ${PARMAKES_OPT} spellcheck
 
 # Run auto-parallel recipe, and if something fails - re-run interactively:
-spellcheck-interactive-quick:
+spellcheck-interactive-quick: @dotMAKE@
 	+@$(MAKE) $(AM_MAKEFLAGS) -k -s spellcheck-quick && exit ; \
 	  echo "WARNING: in $@: make spellcheck-quick failed, retrying with spellcheck-interactive" >&2 ; \
 	  if [ x"$(SUBDIR_MAKE_VERBOSE)" = xdefault ] ; then \
@@ -782,12 +782,12 @@ spellcheck-interactive-quick:
 # texts, man pages and HTML rendering of man pages, as enabled by tools.
 doc spellcheck-sortdict spellcheck-report-dict-usage \
 all-docs check-docs \
-man all-man man-man check-man check-man-man html-man all-html:
+man all-man man-man check-man check-man-man html-man all-html: @dotMAKE@
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs
 	+cd $(abs_top_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@
 
-INSTALL.nut UPGRADING NEWS README:
+INSTALL.nut UPGRADING NEWS README: @dotMAKE@
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
 
 # Workarounds for https://github.com/github/markup/issues/1095
@@ -850,7 +850,7 @@ maintainer-asciidocs:
 	  fi; \
 	 )
 
-check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel:
+check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
 	+cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) $@
 
 VERSION_DEFAULT: dummy-stamp
@@ -909,7 +909,7 @@ shellcheck-disclaimer:
 # Note: currently not part of shellcheck target, because the script below
 # can test the logic with numerous SHELL_PROGS in a CI setting, and because
 # check-scripts-syntax probably has checked the basic syntax above already.
-nut-driver-enumerator.sh/scripts/upsdrvsvcctl:
+nut-driver-enumerator.sh/scripts/upsdrvsvcctl: @dotMAKE@
 	+@$(SUBDIR_TGT_RULE)
 
 shellcheck-nde: nut-driver-enumerator.sh/scripts/upsdrvsvcctl
@@ -951,7 +951,7 @@ cppcheck:
 	@echo "CPPCHECK analysis not available since 'cppcheck' was not found."
 endif !HAVE_CPPCHECK
 
-sockdebug:
+sockdebug: @dotMAKE@
 	+cd $(builddir)/server && $(MAKE) $(AM_MAKEFLAGS) sockdebug$(EXEEXT)
 
 # ----------------------------------------------------------------------
@@ -975,7 +975,7 @@ GITLOG_END_POINT=@GITLOG_END_POINT@
 # the current dir, and defaults to generate a "ChangeLog" in the current dir.
 # The script itself is generated from a template, so resides in builddir.
 dummy-stamp:
-ChangeLog: dummy-stamp
+ChangeLog: dummy-stamp @dotMAKE@
 	+@$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/ChangeLog
 
 if WITH_PDF_NONASCII_TITLES
@@ -1044,21 +1044,21 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	        fi ; \
 	    fi
 
-ChangeLog.adoc: ChangeLog
+ChangeLog.adoc: ChangeLog @dotMAKE@
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../ChangeLog.adoc
 
-nut_version.h include/nut_version.h:
+nut_version.h include/nut_version.h: @dotMAKE@
 	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) nut_version.h
 
 # May involve (re-)build of libupsclient.la
-libupsclient-version.h clients/libupsclient-version.h:
+libupsclient-version.h clients/libupsclient-version.h: @dotMAKE@
 	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
 
-tools/gitlog2changelog.py: tools/gitlog2changelog.py.in
+tools/gitlog2changelog.py: tools/gitlog2changelog.py.in @dotMAKE@
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) -s $(@F)
 
 # Partially snatched from automake generated code
-distcheck-completeness: dist
+distcheck-completeness: dist @dotMAKE@
 	@chmod -R +w $(distdir) $(distdir)-orig-* $(distdir)-derived-* || true
 	@rm -rf $(distdir) $(distdir)-orig-* $(distdir)-derived-* || true
 	@case '$(DIST_ARCHIVES)' in \
@@ -1187,12 +1187,12 @@ dist-docs: all-docs
 
 WARN="----------------------------------------------------------------------"
 
-build:
+build: @dotMAKE@
 	@echo $(WARN)
 	@echo "Warning: 'make build' is deprecated. Use 'make all' instead."
 	@echo $(WARN)
 	+$(MAKE) $(AM_MAKEFLAGS) all
-install-bin:
+install-bin: @dotMAKE@
 	@echo $(WARN)
 	@echo "Warning: 'make install-bin' is deprecated." 
 	@echo "Use 'make install-exec' instead for a similar effect."
@@ -1201,20 +1201,20 @@ install-bin:
 	+cd drivers; $(MAKE) $(AM_MAKEFLAGS) install
 	+cd server;  $(MAKE) $(AM_MAKEFLAGS) install
 	+cd clients; $(MAKE) $(AM_MAKEFLAGS) install
-install-man: install-data-recursive
+install-man: install-data-recursive @dotMAKE@
 	@echo $(WARN)
 	@echo "Warning: 'make install-man' is deprecated."
 	@echo "Use 'cd docs/man; make install' instead."
 	@echo $(WARN)
 	+cd docs/man; $(MAKE) $(AM_MAKEFLAGS) install
-install-conf:
+install-conf: @dotMAKE@
 	@echo $(WARN)
 	@echo "Warning: 'make install-conf' is deprecated."
 	@echo "Use 'cd conf; make install' instead."
 	@echo $(WARN)
 	+cd conf; $(MAKE) $(AM_MAKEFLAGS) install
 # The target install-data already has a standardized meaning under automake
-install-dirs:
+install-dirs: @dotMAKE@
 	@echo $(WARN)
 	@echo "Warning: 'make install-dirs' is deprecated."
 	@echo "Use 'make installdirs' instead."
@@ -1302,7 +1302,7 @@ endif !WITH_SOLARIS_INIT
 # using OS-specific `useradd`/`groupadd`, etc.
 # Note that as we stop services, we may be dealing with (older)
 # distros that do not follow current naming in NUT code base.
-install-as-root:
+install-as-root: @dotMAKE@
 	@+echo "$@: starting (no-op if not root)" >&2 ; \
 	 case "$(target_os)" in *mingw*) echo "$@: SKIP: not supported for this target_os='$(target_os)'" >&2 ; exit 0;; esac ; \
 	 if [ x"$(host_os)" != x"$(build_os)" ]; then echo "$@: SKIP: build_os='$(build_os)' is not host_os='$(host_os)'" >&2 ; exit 0 ; fi ; \
@@ -1475,7 +1475,7 @@ MAINTAINERCLEANFILES_PACKAGES += *.p5p
 MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_DISTBALL)
 MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_PACKAGES)
 
-package: all
+package: all @dotMAKE@
 	+DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
 	rm -rf "$$DESTDIR"; \
 	case "`uname -s`" in \
@@ -1515,12 +1515,12 @@ if HAVE_WINDOWS
 # some NUT build without drivers/tools/daemons). Subject to change if needed.
 # Currently this is handled by a CHECKING... step that should fail if it hits
 # anything.
-install-win-bundle: all
+install-win-bundle: all @dotMAKE@
 	@if test -z "$(DESTDIR)" ; then echo "ERROR: '$@': Bundle may only be installed to some DESTDIR prototype area'" >&2 ; exit 1; fi
 	+$(MAKE) $(AM_MAKEFLAGS) DESTDIR='$(DESTDIR)' install
 	+$(MAKE) $(AM_MAKEFLAGS) DESTDIR='$(DESTDIR)' install-win-bundle-thirdparty
 
-install-win-bundle-thirdparty:
+install-win-bundle-thirdparty: @dotMAKE@
 	@if test -z "$(DESTDIR)" ; then echo "ERROR: '$@': Bundle may only be installed to some DESTDIR prototype area'" >&2 ; exit 1; fi
 	@echo "Searching which DLLs need to be bundled with NUT for Windows..." >&2
 	@if test -z "$$ARCH" ; then \
@@ -1656,7 +1656,7 @@ CHECK_PARALLEL_BUILDS_REGEN = true
 # the `./config.status` line -- and fails there. Hence the `cd top_builddir`.
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
-check-parallel-builds:
+check-parallel-builds: @dotMAKE@
 	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then cd '$(top_srcdir)' && $(AUTOMAKE) -f ; fi
 	if [ x"$(CHECK_PARALLEL_BUILDS_REGEN)" = xtrue ] ; then cd '$(top_builddir)' && ./config.status ; fi
 	+@$(SET_PARMAKES_OPT); \

@@ -60,7 +60,7 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp .pypi-tools*
 PyNUTClient: .pypi-src
 
 # Tagged releases should only have three blocks of digits separated by dots
-upload publish:
+upload publish: @dotMAKE@
 	+@echo "  PYPI	Checking upload type for module version '$(NUT_SOURCE_GITREV_NUMERIC)'" ; \
 	 case x"`echo '$(NUT_SOURCE_GITREV_NUMERIC)' | tr -d '[0-9]'`" in \
 		x..) echo "  PYPI	...release"; $(MAKE) $(AM_MAKEFLAGS) upload-pypi ;; \
@@ -122,7 +122,7 @@ upload publish:
 	@touch '$@'
 
 # Using pypa/setuptools
-.pypi-dist: .pypi-src
+.pypi-dist: .pypi-src @dotMAKE@
 	+@$(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-build || \
 	  $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-obsolete || \
 	  $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-wheel

@@ -29,7 +29,7 @@ nutscan-usb.h: nutscan-snmp.h
 
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
-$(NUT_SCANNER_DEPS): dummy
+$(NUT_SCANNER_DEPS): dummy @dotMAKE@
 	+@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
@@ -39,10 +39,10 @@ $(top_builddir)/common/libnutwincompat.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommonversion.la \
-$(top_builddir)/common/libcommon.la: dummy
+$(top_builddir)/common/libcommon.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-$(top_builddir)/include/nut_version.h:
+$(top_builddir)/include/nut_version.h: @dotMAKE@
 	+@if [ -s '$@' ] && ( [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ) ; then \
 	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
 	        echo "=== SKIP (nut-scanner) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \
@@ -75,7 +75,7 @@ if ENABLE_SHARED_PRIVATE_LIBS
 $(top_builddir)/common/libcommonversion-private.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h

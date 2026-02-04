@@ -431,6 +431,14 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
      include the source distribution (was posted for NUT v2.8.1 and v2.8.2
      tagged releases, but absent for v2.8.3 and v2.8.4). [#3056]
+   * A new version of BSD `make` in NetBSD 11 (Beta) aka `bmake` in some other
+     operating systems, complains about some of our sub-`$(MAKE)` calls despite
+     the explicit `+` prefix in corresponding lines, possibly because that call
+     happens not directly in a rule definition, but in a substituted shell code
+     snippet. The recommended workaround was to add a "Special Source" called
+     `.MAKE` to let the tool know that we expect sub-makes in that recipe.
+     However, *other* `make` implementations do not know about this token,
+     so its support is tried and detected at `configure` time. [PR #3300]
    * Updated `make spellcheck` to help avoid asciidoc admonition blocks with
      visually invalid sentences (after rendering as a box in HTML or PDF).
      [#3077]
