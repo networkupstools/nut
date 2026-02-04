@@ -35,6 +35,20 @@
 #define VERTIV_VAL_OID        VERTIV_BASEOID ".3.9.30.1.20.1.2.1"
 #define VERTIV_ALM_OID        VERTIV_BASEOID ".3.9.20.1.10.1.2.100"
 #define VERTIV_PWRSTATUS_OID  VERTIV_BASEOID ".3.5.3"
+#define VERTIV_BEEPER_OID     VERTIV_VAL_OID ".6188"
+
+static info_lkp_t ietf_beeper_status_info[] = {
+	info_lkp_default(1, "disabled"),
+	info_lkp_default(2, "enabled"),
+	info_lkp_default(3, "muted"),
+	info_lkp_sentinel
+};
+
+static info_lkp_t vertiv_beeper_status_info[] = {
+	info_lkp_default(1, "enabled"),
+	info_lkp_default(2, "disabled"),
+	info_lkp_sentinel
+};
 
 static snmp_info_t vertiv_mib[] = {
 	/* standard MIB items */
@@ -64,12 +78,23 @@ static snmp_info_t vertiv_mib[] = {
 	snmp_info_default("output.current",  0, 0.1, VERTIV_VAL_OID ".4204", "", SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL),
 	snmp_info_default("output.power",    0, 1.0, VERTIV_VAL_OID ".4208", "", SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL),
 
-	/* UPS Status & Beeper */
+	/* UPS Status */
 	/* Output Source: 3=Normal(OL), 4/5=Battery(OB) */
 	snmp_info_default("ups.status",      0, 1.0, VERTIV_VAL_OID ".4872", "", SU_FLAG_OK, NULL),
 
-	/* Beeper: 1=Enabled, 2=Disabled. ST_FLAG_RW makes it settable via upsrw */
-	snmp_info_default("ups.beeper.status", ST_FLAG_RW, 1.0, VERTIV_VAL_OID ".6188", "", SU_FLAG_OK, NULL),
+	/* Beeper status and commands */
+	snmp_info_default("ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, VERTIV_BEEPER_OID, "", SU_FLAG_UNIQUE, vertiv_beeper_status_info),
+
+	snmp_info_default("beeper.disable", 0, 1, VERTIV_BEEPER_OID, "2", SU_TYPE_CMD, NULL),
+	snmp_info_default("beeper.enable",  0, 1, VERTIV_BEEPER_OID, "1", SU_TYPE_CMD, NULL),
+
+	/* IETF MIB fallback */
+	snmp_info_default("ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.9.8.0", "", SU_FLAG_UNIQUE, ietf_beeper_status_info),
+#if 0
+	snmp_info_default("beeper.disable", 0, 1, "1.3.6.1.2.1.33.1.9.8.0", "1", SU_TYPE_CMD, NULL),
+	snmp_info_default("beeper.enable",  0, 1, "1.3.6.1.2.1.33.1.9.8.0", "2", SU_TYPE_CMD, NULL),
+#endif
+	snmp_info_default("beeper.mute",    0, 1, "1.3.6.1.2.1.33.1.9.8.0", "3", SU_TYPE_CMD, NULL),
 
 	/* Shutdown / Restart Control
 	 * NOTE: Other sources suggest
