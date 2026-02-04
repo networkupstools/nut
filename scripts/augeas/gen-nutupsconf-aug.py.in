@@ -1,7 +1,7 @@
 #!@PYTHON_DEFAULT@
 #   Copyright (C)
 #     2010 -        Arnaud Quette <arnaud.quette@gmail.com>
-#     2020 - 2024   Jim Klimov <jimklimov+nut@gmail.com>
+#     2020 - 2026   Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -23,9 +23,29 @@
 from __future__ import print_function
 
 import sys
+import os
 import re
 import glob
-import codecs
+
+try:
+	# NOTE: Deprecated as of python3.14
+	import codecs
+	HAVE_CODECS = True
+	fd = None
+	try:
+		# Open self to test that it works
+		fd = codecs.open(os.path.abspath(__file__), mode="r", encoding='utf-8')
+		USE_CODECS = True
+		# sys.stderr.write("INFO: import codecs went well, and codecs.open() did not raise exceptions\n")
+	except DeprecationWarning as x:
+		USE_CODECS = False
+		# sys.stderr.write("WARNING: import codecs went well, but codecs.open() failed: %s\n" % str(x))
+	if fd is not None:
+		fd.close()
+except Exception as x:
+	# sys.stderr.write("WARNING: import codecs failed: %s\n" % str(x))
+	HAVE_CODECS = False
+	USE_CODECS = False
 
 # Return a sorted list of unique entries, based on the input 'list'
 def sortUnique(list):
@@ -80,7 +100,10 @@ if __name__ == '__main__':
 	for filename in glob.glob('../../drivers/*.c'):
 		# 1.2/ Exclude main.c, which defines addvar() and skel.c (example driver)
 		if filename not in Exceptionlist:
-			fd = codecs.open(filename, encoding='utf-8')
+			if USE_CODECS:
+				fd = codecs.open(filename, encoding='utf-8')
+			else:
+				fd = open(filename, encoding='utf-8')
 			# 1.3/ Grep for the "addvar(..." pattern
 			matchResults = grep (r'.*addvar[\ ]*\(.*(VAR_FLAG|VAR_VALUE)*,.*', fd)
 
@@ -95,7 +118,10 @@ if __name__ == '__main__':
 					# Let's grep in .ch related files
 					if (row[1].find('"') == -1):
 						for defFilename in glob.glob(filename.replace('.c', '.[ch]')):
-							defFd = codecs.open(defFilename, encoding='utf-8')
+							if USE_CODECS:
+								defFd = codecs.open(defFilename, encoding='utf-8')
+							else:
+								defFd = open(defFilename, encoding='utf-8')
 							matchString = '^#define.*' + row[1].replace('"', '').lstrip() + '.*'
 							matchResult = grep (matchString, defFd)
 							for varDefine in matchResult:
@@ -115,12 +141,18 @@ if __name__ == '__main__':
 		specificVars += "                 | \"%s\"\n" %(name)
 
 	# 2/ Load the template lens
-	tplFd = codecs.open(dirPrefix + templateFilename, encoding='utf-8')
+	if USE_CODECS:
+		tplFd = codecs.open(dirPrefix + templateFilename, encoding='utf-8')
+	else:
+		tplFd = open(dirPrefix + templateFilename, encoding='utf-8')
 
 	# 2.1/ Search for the pattern to replace
 	outputText = tplFd.read()
 	outputText = outputText.replace('@SPECIFIC_DRV_VARS@', specificVars)
 
 	# 3/ Output final lens
-	outFd = codecs.open(outputFilename, mode='w', encoding='utf-8')
+	if USE_CODECS:
+		outFd = codecs.open(outputFilename, mode='w', encoding='utf-8')
+	else:
+		outFd = open(outputFilename, mode='w', encoding='utf-8')
 	outFd.write(outputText)
