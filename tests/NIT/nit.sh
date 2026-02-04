@@ -1001,12 +1001,23 @@ generatecfg_ups_trivial() {
     # Populate the configs for the run
     (   echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
         if [ x"${ABS_TOP_BUILDDIR}" != x ]; then
-            echo "driverpath = \"${ABS_TOP_BUILDDIR}/drivers\"" | sed 's,\\,\\\\,g' >> "$NUT_CONFPATH/ups.conf" || exit
+            # NOTE: Windows backslashes are pre-escaped in the configure-generated value
+            case "${ABS_TOP_BUILDDIR}" in
+                ?":\\"*) PATHSEP='\\' ;;
+                *) PATHSEP="/" ;;
+            esac
+            echo "driverpath = \"${ABS_TOP_BUILDDIR}${PATHSEP}drivers\"" >> "$NUT_CONFPATH/ups.conf" || exit
         else
+            # NOTE: Escaping presumed needed below, so for PATHSEP too
             if [ x"${TOP_BUILDDIR}" != x ]; then
-                echo "driverpath = \"${TOP_BUILDDIR}/drivers\"" | sed 's,\\,\\\\,g' >> "$NUT_CONFPATH/ups.conf" || exit
+                case "${TOP_BUILDDIR}" in
+                    ?":\\"*) PATHSEP='\' ;;
+                    *) PATHSEP="/" ;;
+                esac
+                echo "driverpath = \"${TOP_BUILDDIR}${PATHSEP}drivers\"" | sed 's,\\,\\\\,g' >> "$NUT_CONFPATH/ups.conf" || exit
             fi
         fi
+        unset PATHSEP
         if [ -n "${NUT_DEBUG_MIN-}" ] ; then
             echo "debug_min = ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/ups.conf" || exit
         fi
