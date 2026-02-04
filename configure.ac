@@ -3122,8 +3122,14 @@ if test "${nut_with_gpio}" != "no"; then
 fi
 
 dnl NOTE: m4 scriptlet also defines WITH_LIBGPIO_VERSION like 0x00020000 in config.h
-NUT_REPORT_DRIVER([build GPIO driver (library v${GPIO_VERSION})], [${nut_with_gpio}], [${nut_gpio_lib}],
+AS_IF([test x"${GPIO_VERSION}" = xnone], [
+	REPORT_GPIO_VERSION="library version not detected"
+],[
+	REPORT_GPIO_VERSION="library v${GPIO_VERSION}"
+])
+NUT_REPORT_DRIVER([build GPIO driver (${REPORT_GPIO_VERSION})], [${nut_with_gpio}], [${nut_gpio_lib}],
 					[WITH_GPIO], [Define to enable GPIO support])
+unset REPORT_GPIO_VERSION
 
 dnl ----------------------------------------------------------------------
 dnl The Mac OS X meta-driver looks at IOKit Power Sources keys managed by
