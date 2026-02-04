@@ -435,7 +435,7 @@ static int get_sensitivity(void) {
 	for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++) {
 		if (sensitivity[i].code == atoi(response)) {
 			dstate_setinfo("input.sensitivity", "%s",
-			               sensitivity[i].name);
+				sensitivity[i].name);
 			return 1;
 		}
 	}
@@ -614,7 +614,7 @@ void upsdrv_initinfo(void)
 
 	if (!init_comm())
 		fatalx(EXIT_FAILURE, "Unable to detect Tripp Lite SmartOnline UPS on port %s\n",
-		        device_path);
+			device_path);
 	min_low_transfer = max_low_transfer = 0;
 	min_high_transfer = max_high_transfer = 0;
 
@@ -629,16 +629,16 @@ void upsdrv_initinfo(void)
 		ptr = field(response, 0);
 		if (ptr)
 			dstate_setinfo("input.voltage.nominal", "%d",
-			               atoi(ptr));
+				atoi(ptr));
 		ptr = field(response, 2);
 		if (ptr) {
 			dstate_setinfo("output.voltage.nominal", "%d",
-			               atoi(ptr));
+				atoi(ptr));
 		}
 		ptr = field(response, 14);
 		if (ptr)
 			dstate_setinfo("battery.voltage.nominal", "%d",
-			               atoi(ptr));
+				atoi(ptr));
 		ptr = field(response, 10);
 		if (ptr) {
 			int ipv = atoi(ptr);
@@ -685,7 +685,7 @@ void upsdrv_initinfo(void)
 		dstate_setflags("input.sensitivity", ST_FLAG_RW);
 		for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++)
 			dstate_addenum("input.sensitivity", "%s",
-			               sensitivity[i].name);
+				sensitivity[i].name);
 	}
 	if (ups.outlet_banks) {
 		dstate_addcmd("load.off");
@@ -707,8 +707,10 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
 
-	printf("Detected %s %s on %s\n", dstate_getinfo("ups.mfr"),
-	       dstate_getinfo("ups.model"), device_path);
+	printf("Detected %s %s on %s\n",
+		dstate_getinfo("ups.mfr"),
+		dstate_getinfo("ups.model"),
+		device_path);
 }
 
 void upsdrv_updateinfo(void)
@@ -766,15 +768,15 @@ void upsdrv_updateinfo(void)
 	ptr = field(response, 3);
 	if (ptr)
 		dstate_setinfo("output.voltage", "%03.1f",
-		               (double) (atoi(ptr)) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 1);
 	if (ptr)
 		dstate_setinfo("output.frequency", "%03.1f",
-		               (double) (atoi(ptr)) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 4);
 	if (ptr)
 		dstate_setinfo("output.current", "%03.1f",
-		               (double) (atoi(ptr)) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 
 	low_battery = 0;
 	if (do_command(POLL, STATUS_BATTERY, "", response) <= 0) {
@@ -805,11 +807,11 @@ void upsdrv_updateinfo(void)
 	ptr = field(response, 6);
 	if (ptr)
 		dstate_setinfo("battery.voltage", "%03.1f",
-		               (double) (atoi(ptr)) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 7);
 	if (ptr)
 		dstate_setinfo("battery.current", "%03.1f",
-		               (double) (atoi(ptr)) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 	if (low_battery)
 		status_set("LB");
 
@@ -825,11 +827,11 @@ void upsdrv_updateinfo(void)
 		ptr = field(response, 2);
 		if (ptr)
 			dstate_setinfo("input.voltage", "%03.1f",
-			               (double) (atoi(ptr)) / 10.0);
+				(double) (atoi(ptr)) / 10.0);
 		ptr = field(response, 1);
 		if (ptr)
 			dstate_setinfo("input.frequency", "%03.1f",
-			               (double) (atoi(ptr)) / 10.0);
+				(double) (atoi(ptr)) / 10.0);
 	}
 
 	if (do_command(POLL, TEST_RESULT, "", response) > 0) {

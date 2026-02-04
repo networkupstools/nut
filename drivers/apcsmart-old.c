@@ -1016,11 +1016,12 @@ static void upsdrv_shutdown_simple(long status)
 static void upsdrv_shutdown_advanced(long status)
 {
 	const char *strval;
-	const char deforder[] = {48 + SDIDX_S,
-				 48 + SDIDX_AT3N,
-				 48 + SDIDX_K,
-				 48 + SDIDX_Z,
-				  0};
+	const char deforder[] = {
+		48 + SDIDX_S,
+		48 + SDIDX_AT3N,
+		48 + SDIDX_K,
+		48 + SDIDX_Z,
+		0};
 	size_t i;
 	long n;
 

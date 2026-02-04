@@ -162,9 +162,9 @@ void upsdrv_updateinfo(void)
 
 	fVal=((double)acuV-95.0)*100.0;
 	if (standby)
-	  fVal/=(135.5-95.0);
+		fVal/=(135.5-95.0);
 	else
-	  fVal/=(124.5-95.0);
+		fVal/=(124.5-95.0);
 	if (fVal>100)
 		fVal=100;
 	else if (fVal<0)

@@ -247,7 +247,7 @@ static char	*product_page = NULL;
 /* Support functions */
 static void netxml_alarm_set(void);
 static void netxml_status_set(void);
-static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password);
+static int netxml_authenticate(void *userdata, const char *realm, int try_num, char *username, char *password);
 static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser);
 static int netxml_get_page(const char *page);
 
@@ -974,12 +974,12 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 }
 
 /* Supply the 'login' and 'password' when authentication is required */
-static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
+static int netxml_authenticate(void *userdata, const char *realm, int try_num, char *username, char *password)
 {
 	char	*val;
 	NUT_UNUSED_VARIABLE(userdata);
 
-	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, attempt);
+	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, try_num);
 
 	val = getval("login");
 	snprintf(username, NE_ABUFSIZ, "%s", val ? val : "");
@@ -987,7 +987,7 @@ static int netxml_authenticate(void *userdata, const char *realm, int attempt, c
 	val = getval("password");
 	snprintf(password, NE_ABUFSIZ, "%s", val ? val : "");
 
-	return attempt;
+	return try_num;
 }
 
 /* Convert the local status information to NUT format and set NUT

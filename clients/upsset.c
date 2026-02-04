@@ -70,6 +70,11 @@ void parsearg(char *var, char *value)
 	uvtype_t	*last, *tmp = NULL;
 	static	int upsvc = 0;
 
+	if (var == NULL || value == NULL) {
+		upslogx(LOG_ERR, "parsearg() called with var null or value null");
+		return;
+	}
+
 	/* store variables from a SET command for the later commit */
 	if (!strncmp(var, "UPSVAR_", 7)) {
 
@@ -91,10 +96,10 @@ void parsearg(char *var, char *value)
 		tmp = last = firstuv;
 		while (tmp) {
 			last = tmp;
-			tmp = tmp->next;
+			tmp = (uvtype_t *)tmp->next;
 		}
 
-		tmp = xmalloc(sizeof(uvtype_t));
+		tmp = (uvtype_t *)xmalloc(sizeof(uvtype_t));
 		tmp->var = xstrdup(ptr);
 		tmp->value = xstrdup(value);
 		tmp->next = NULL;
@@ -437,7 +442,7 @@ static void showcmds(void)
 			return;
 		}
 
-		ltmp = xmalloc(sizeof(struct list_t));
+		ltmp = (struct list_t *)xmalloc(sizeof(struct list_t));
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
@@ -871,7 +876,7 @@ static void showsettings(void)
 
 		/* sock this entry away for later */
 
-		ltmp = xmalloc(sizeof(struct list_t));
+		ltmp = (struct list_t *)xmalloc(sizeof(struct list_t));
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
@@ -1002,7 +1007,7 @@ static void savesettings(void)
 
 	while (upsvar) {
 		changed += setvar(upsvar->var, upsvar->value);
-		upsvar = upsvar->next;
+		upsvar = (uvtype_t *)upsvar->next;
 	}
 
 	if (changed == 0)

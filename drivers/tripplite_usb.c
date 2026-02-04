@@ -309,13 +309,16 @@ static usb_communication_subdriver_t	*comm_driver = &usb_subdriver;
 /* Interval notation for Q% = 10% <= [minV, maxV] <= 100%  */
 static double V_interval[2] = {MIN_VOLT, MAX_VOLT};
 
-static long battery_voltage_nominal = 12,
-	   input_voltage_nominal = 120,
-	   input_voltage_scaled = 120,
-	/* input_voltage_maximum = -1,
-	   input_voltage_minimum = -1, */
-	   switchable_load_banks = 0,
-	   unit_id = DEFAULT_UPSID; /*!< range: 1-65535, most likely */
+static long
+	battery_voltage_nominal = 12,
+	input_voltage_nominal = 120,
+	input_voltage_scaled = 120,
+	/*
+	input_voltage_maximum = -1,
+	input_voltage_minimum = -1,
+	*/
+	switchable_load_banks = 0,
+	unit_id = DEFAULT_UPSID;	/*!< range: 1-65535, most likely */
 
 /*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
@@ -556,74 +559,86 @@ static void decode_v(const unsigned char *value)
 		battery_voltage_nominal = bv * 6;
 	}
 
- 	ivn = value[1];
+	ivn = value[1];
 	lb = value[4];
 
 	if( is_smart_protocol() && (tl_model != TRIPP_LITE_SMART_3017) ) {
 		switch(ivn) {
 			case 0:
-			case '0': input_voltage_nominal =
-				  input_voltage_scaled  = 100;
-				  break;
+			case '0':
+				input_voltage_nominal =
+				input_voltage_scaled  = 100;
+				break;
 
 			case 1:
-			case '1': input_voltage_nominal =
-				  input_voltage_scaled  = 110;
-				  break;
+			case '1':
+				input_voltage_nominal =
+				input_voltage_scaled  = 110;
+				break;
 
 			case 2: /* protocol 3005 */
-			case '2': input_voltage_nominal =
-				  input_voltage_scaled  = 120;
-				  break;
+			case '2':
+				input_voltage_nominal =
+				input_voltage_scaled  = 120;
+				break;
 
 			case 3:
-			case '3': input_voltage_nominal =
-				  input_voltage_scaled  = 127;
-				  break;
+			case '3':
+				input_voltage_nominal =
+				input_voltage_scaled  = 127;
+				break;
 
 			case 4:
-			case '4': input_voltage_nominal =
-				  input_voltage_scaled  = 208;
-				  break;
+			case '4':
+				input_voltage_nominal =
+				input_voltage_scaled  = 208;
+				break;
 
 			case 5:
-			case '5': input_voltage_nominal =
-				  input_voltage_scaled  = 220;
-				  break;
+			case '5':
+				input_voltage_nominal =
+				input_voltage_scaled  = 220;
+				break;
 
 			case 6:
-			case '6': input_voltage_nominal =
-				  input_voltage_scaled  = 230;
-				  break;
+			case '6':
+				input_voltage_nominal =
+				input_voltage_scaled  = 230;
+				break;
 
 			case 7:
-			case '7': input_voltage_nominal =
-				  input_voltage_scaled  = 240;
-				  break;
+			case '7':
+				input_voltage_nominal =
+				input_voltage_scaled  = 240;
+				break;
 
 			default:
-				  upslogx(LOG_WARNING, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
-				  break;
+				upslogx(LOG_WARNING, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
+				break;
 		}
 	} else {
 		/* Lots of odd cases here; maybe some of the SMART protocols got mixed in, too: */
 		switch(ivn) {
-			case '0': input_voltage_nominal =
-				  input_voltage_scaled  = 100;
-				  break;
+			case '0':
+				input_voltage_nominal =
+				input_voltage_scaled  = 100;
+				break;
 
-			case '1': input_voltage_nominal =
-				  input_voltage_scaled  = 120;
-				  break;
+			case '1':
+				input_voltage_nominal =
+				input_voltage_scaled  = 120;
+				break;
 
 			/* UK SMX1200XLHG protocol 3017 confirmed: */
-			case '2': input_voltage_nominal =
-				  input_voltage_scaled  = 230;
-				  break;
+			case '2':
+				input_voltage_nominal =
+				input_voltage_scaled  = 230;
+				break;
 
-			case '3': input_voltage_nominal = 208;
-				  input_voltage_scaled  = 230;
-				  break;
+			case '3':
+				input_voltage_nominal = 208;
+				input_voltage_scaled  = 230;
+				break;
 
 			case 6: input_voltage_nominal =
 				input_voltage_scaled  = 230;
@@ -662,7 +677,7 @@ void upsdrv_initinfo(void);
  */
 static void usb_comm_fail(int res, const char *msg)
 {
-	static int try = 0;
+	static int try_num = 0;
 
 	switch(res) {
 		case LIBUSB_ERROR_BUSY:
@@ -679,18 +694,18 @@ static void usb_comm_fail(int res, const char *msg)
 				"%s: Device detached? (error %d: %s)",
 				msg, res, nut_usb_strerror(res));
 
-			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
+			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try_num);
 			hd = NULL;
 			reconnect_ups();
 
 			if(hd) {
 				upslogx(LOG_NOTICE, "Successfully reconnected");
-				try = 0;
+				try_num = 0;
 				dstate_setinfo("driver.state", "reconnect.updateinfo");
 				upsdrv_initinfo();
 				dstate_setinfo("driver.state", "quiet");
 			} else {
-				if(try > MAX_RECONNECT_TRIES) {
+				if(try_num > MAX_RECONNECT_TRIES) {
 					fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");
 				}
 			}
@@ -1137,7 +1152,7 @@ void upsdrv_initinfo(void)
 		s_msg[] = "S", u_msg[] = "U", v_msg[] = "V", w_msg[] = "W\0";
 	char *model, *model_end;
 	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9],
-	     u_value[9], v_value[9], w_value[9];
+		u_value[9], v_value[9], w_value[9];
 	long va;
 	ssize_t ret;
 	unsigned int proto_number = 0;
@@ -1148,8 +1163,9 @@ void upsdrv_initinfo(void)
 		fatalx(EXIT_FAILURE, "Error reading protocol");
 	}
 
-	proto_number = ((unsigned)(proto_value[1]) << 8)
-	              | (unsigned)(proto_value[2]);
+	proto_number =
+		( (unsigned)(proto_value[1]) << 8 )
+		| (unsigned)(proto_value[2]);
 	tl_model = decode_protocol(proto_number);
 
 	if(tl_model == TRIPP_LITE_UNKNOWN)

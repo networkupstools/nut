@@ -688,7 +688,7 @@ int get_signal_state(devstate_t state)
 {
 	int rval = -1;
 	int reg_val;
-	regtype_t rtype = 0;    /* register type */
+	regtype_t rtype = (regtype_t)0;    /* register type */
 	int addr = -1;          /* register address */
 
 	/* assign register address and type  */
@@ -855,7 +855,7 @@ void get_config_vars(void)
 
 	/* check if OL register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OL_regtype")) {
-		sigar[OL_T].type = (unsigned int)strtol(getval("OL_regtype"), NULL, 10);
+		sigar[OL_T].type = (regtype_t)(unsigned int)strtol(getval("OL_regtype"), NULL, 10);
 		if (sigar[OL_T].type < COIL || sigar[OL_T].type > HOLDING) {
 			sigar[OL_T].type = INPUT_B;
 		}
@@ -876,7 +876,7 @@ void get_config_vars(void)
 
 	/* check if OB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OB_regtype")) {
-		sigar[OB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
+		sigar[OB_T].type = (regtype_t)(unsigned int)strtol(getval("OB_regtype"), NULL, 10);
 		if (sigar[OB_T].type < COIL || sigar[OB_T].type > HOLDING) {
 			sigar[OB_T].type = INPUT_B;
 		}
@@ -897,7 +897,7 @@ void get_config_vars(void)
 
 	/* check if LB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("LB_regtype")) {
-		sigar[LB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
+		sigar[LB_T].type = (regtype_t)(unsigned int)strtol(getval("OB_regtype"), NULL, 10);
 		if (sigar[LB_T].type < COIL || sigar[LB_T].type > HOLDING) {
 			sigar[LB_T].type = INPUT_B;
 		}
@@ -918,7 +918,7 @@ void get_config_vars(void)
 
 	/* check if HB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("HB_regtype")) {
-		sigar[HB_T].type = (unsigned int)strtol(getval("HB_regtype"), NULL, 10);
+		sigar[HB_T].type = (regtype_t)(unsigned int)strtol(getval("HB_regtype"), NULL, 10);
 		if (sigar[HB_T].type < COIL || sigar[HB_T].type > HOLDING) {
 			sigar[HB_T].type = INPUT_B;
 		}
@@ -939,7 +939,7 @@ void get_config_vars(void)
 
 	/* check if RB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("RB_regtype")) {
-		sigar[RB_T].type = (unsigned int)strtol(getval("RB_regtype"), NULL, 10);
+		sigar[RB_T].type = (regtype_t)(unsigned int)strtol(getval("RB_regtype"), NULL, 10);
 		if (sigar[RB_T].type < COIL || sigar[RB_T].type > HOLDING) {
 			sigar[RB_T].type = INPUT_B;
 		}
@@ -960,7 +960,7 @@ void get_config_vars(void)
 
 	/* check if CHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("CHRG_regtype")) {
-		sigar[CHRG_T].type = (unsigned int)strtol(getval("CHRG_regtype"), NULL, 10);
+		sigar[CHRG_T].type = (regtype_t)(unsigned int)strtol(getval("CHRG_regtype"), NULL, 10);
 		if (sigar[CHRG_T].type < COIL || sigar[CHRG_T].type > HOLDING) {
 			sigar[CHRG_T].type = INPUT_B;
 		}
@@ -981,7 +981,7 @@ void get_config_vars(void)
 
 	/* check if DISCHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("DISCHRG_regtype")) {
-		sigar[DISCHRG_T].type = (unsigned int)strtol(getval("DISCHRG_regtype"), NULL, 10);
+		sigar[DISCHRG_T].type = (regtype_t)(unsigned int)strtol(getval("DISCHRG_regtype"), NULL, 10);
 		if (sigar[DISCHRG_T].type < COIL || sigar[DISCHRG_T].type > HOLDING) {
 			sigar[DISCHRG_T].type = INPUT_B;
 		}
@@ -1002,7 +1002,7 @@ void get_config_vars(void)
 
 	/* check if FSD register type is set and get the value otherwise set to COIL */
 	if (testvar("FSD_regtype")) {
-		sigar[FSD_T].type = (unsigned int)strtol(getval("FSD_regtype"), NULL, 10);
+		sigar[FSD_T].type = (regtype_t)(unsigned int)strtol(getval("FSD_regtype"), NULL, 10);
 		if (sigar[FSD_T].type < COIL || sigar[FSD_T].type > HOLDING) {
 			sigar[FSD_T].type = COIL;
 		}
@@ -1068,7 +1068,7 @@ modbus_t *modbus_new(const char *port)
 			upslogx(LOG_ERR, "modbus_new_rtu: Unable to open serial port context\n");
 		}
 	} else if ((sp = strchr(port, ':')) != NULL) {
-		char *tcp_port = xmalloc(sizeof(sp));
+		char 	*tcp_port = (char*)xmalloc(sizeof(sp));
 		strncpy(tcp_port, sp + 1, sizeof(sp));
 		*sp = '\0';
 		mb = modbus_new_tcp(port, (int)strtoul(tcp_port, NULL, 10));

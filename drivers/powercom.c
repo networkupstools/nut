@@ -595,13 +595,13 @@ static float output_voltage(void)
 			/* FIXME: may miss a last processing with ErrorVal = 5 | 10 */
 		}
 	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
-		tmp=raw_data[OUTPUT_VOLTAGE]*2.0;
+		tmp = raw_data[OUTPUT_VOLTAGE]*2.0;
 	} else {
-		tmp= linevoltage >= 220 ?
-			types[type].voltage[0] * raw_data[OUTPUT_VOLTAGE] +
-			                                types[type].voltage[1] :
-			types[type].voltage[2] * raw_data[OUTPUT_VOLTAGE] +
-			                                types[type].voltage[3];
+		tmp = linevoltage >= 220
+			? types[type].voltage[0] * raw_data[OUTPUT_VOLTAGE]
+			  + types[type].voltage[1]
+			: types[type].voltage[2] * raw_data[OUTPUT_VOLTAGE]
+			  + types[type].voltage[3];
 	}
 	if (tmp<0) tmp=0.0;
 	return tmp;
@@ -781,37 +781,37 @@ void upsdrv_updateinfo(void)
 
 	/* input.frequency */
 	upsdebugx(3, "input.frequency   (raw data): [raw: %u]",
-	                            raw_data[INPUT_FREQUENCY]);
+		raw_data[INPUT_FREQUENCY]);
 	dstate_setinfo("input.frequency", "%02.2f", input_freq());
 	upsdebugx(2, "input.frequency: %s", dstate_getinfo("input.frequency"));
 
 	/* output.frequency */
 	upsdebugx(3, "output.frequency   (raw data): [raw: %u]",
-	                            raw_data[OUTPUT_FREQUENCY]);
+		raw_data[OUTPUT_FREQUENCY]);
 	dstate_setinfo("output.frequency", "%02.2f", output_freq());
 	upsdebugx(2, "output.frequency: %s", dstate_getinfo("output.frequency"));
 
 	/* ups.load */
 	upsdebugx(3, "ups.load  (raw data): [raw: %u]",
-	                            raw_data[UPS_LOAD]);
+		raw_data[UPS_LOAD]);
 	dstate_setinfo("ups.load", "%03.1f", load_level());
 	upsdebugx(2, "ups.load: %s", dstate_getinfo("ups.load"));
 
 	/* battery.charge */
 	upsdebugx(3, "battery.charge (raw data): [raw: %u]",
-	                            raw_data[BATTERY_CHARGE]);
+		raw_data[BATTERY_CHARGE]);
 	dstate_setinfo("battery.charge", "%03.1f", batt_level());
 	upsdebugx(2, "battery.charge: %s", dstate_getinfo("battery.charge"));
 
 	/* input.voltage */
 	upsdebugx(3, "input.voltage (raw data): [raw: %u]",
-	                            raw_data[INPUT_VOLTAGE]);
+		raw_data[INPUT_VOLTAGE]);
 	dstate_setinfo("input.voltage", "%03.1f",input_voltage());
 	upsdebugx(2, "input.voltage: %s", dstate_getinfo("input.voltage"));
 
 	/* output.voltage */
 	upsdebugx(3, "output.voltage (raw data): [raw: %u]",
-	                            raw_data[OUTPUT_VOLTAGE]);
+		raw_data[OUTPUT_VOLTAGE]);
 	dstate_setinfo("output.voltage", "%03.1f",output_voltage());
 	upsdebugx(2, "output.voltage: %s", dstate_getinfo("output.voltage"));
 
@@ -907,95 +907,100 @@ void upsdrv_initups(void)
 		tmp = atoi(getval("numOfBytesFromUPS"));
 		if (! (tmp > 0 && tmp <= MAX_NUM_OF_BYTES_FROM_UPS) ) {
 			printf("Given numOfBytesFromUPS '%d' is out of range (1 to %d)\n",
-			       tmp, MAX_NUM_OF_BYTES_FROM_UPS);
+				tmp, MAX_NUM_OF_BYTES_FROM_UPS);
 			exit (1);
 		}
 		types[type].num_of_bytes_from_ups = (unsigned char) tmp;
 	}
 
 	if (testvar("methodOfFlowControl")) {
-		for (i = 0;
-			 i < NUM_OF_SUBTYPES  &&
-					strcmp(types[i].flowControl.name,
-							getval("methodOfFlowControl"));
-			 i++) ;
+		for (
+			i = 0;
+			i < NUM_OF_SUBTYPES
+			&& strcmp(types[i].flowControl.name, getval("methodOfFlowControl"));
+			i++) ;
 		if (i >= NUM_OF_SUBTYPES) {
 			printf("Given methodOfFlowControl '%s' isn't valid!\n",
-					getval("methodOfFlowControl"));
+				getval("methodOfFlowControl"));
 			exit (1);
 		}
 		types[type].flowControl = types[i].flowControl;
 	}
 
-	if (testvar("validationSequence")  &&
-	    sscanf(getval("validationSequence"),
-			        "{{%u,%x},{%u,%x},{%u,%x}}",
-			                &types[type].validation[0].index_of_byte,
-			                &types[type].validation[0].required_value,
-			                &types[type].validation[1].index_of_byte,
-			                &types[type].validation[1].required_value,
-			                &types[type].validation[2].index_of_byte,
-			                &types[type].validation[2].required_value
-			      ) < 6
-	   ) {
+	if (testvar("validationSequence")
+	 && sscanf(getval("validationSequence"),
+		"{{%u,%x},{%u,%x},{%u,%x}}",
+		&types[type].validation[0].index_of_byte,
+		&types[type].validation[0].required_value,
+		&types[type].validation[1].index_of_byte,
+		&types[type].validation[1].required_value,
+		&types[type].validation[2].index_of_byte,
+		&types[type].validation[2].required_value
+		) < 6
+	) {
 		printf("Given validationSequence '%s' isn't valid!\n",
-								         getval("validationSequence"));
+			getval("validationSequence"));
 		exit (1);
 	}
 
 	/* NOTE: %hhu is not supported before C99; that would need reading
 	 * arguments into an uint as %u, checking range and casting */
-	if (testvar("shutdownArguments")  &&
-	    sscanf(getval("shutdownArguments"), "{{%hhu,%hhu},%c}",
-	                &types[type].shutdown_arguments.delay[0],
-	                &types[type].shutdown_arguments.delay[1],
-	                &types[type].shutdown_arguments.minutesShouldBeUsed
-	          ) < 3
-	   ) {
-	    printf("Given shutdownArguments '%s' isn't valid!\n",
-								         getval("shutdownArguments"));
+	if (testvar("shutdownArguments")
+	 && sscanf(getval("shutdownArguments"),
+		"{{%hhu,%hhu},%c}",
+		&types[type].shutdown_arguments.delay[0],
+		&types[type].shutdown_arguments.delay[1],
+		&types[type].shutdown_arguments.minutesShouldBeUsed
+		) < 3
+	) {
+		printf("Given shutdownArguments '%s' isn't valid!\n",
+			getval("shutdownArguments"));
 		exit (1);
 	}
 
-	if (testvar("frequency")  &&
-	        sscanf(getval("frequency"), "{%f,%f}",
-	                &types[type].freq[0], &types[type].freq[1]
-	              ) < 2
-	   ) {
+	if (testvar("frequency")
+	 && sscanf(getval("frequency"),
+		"{%f,%f}",
+		&types[type].freq[0], &types[type].freq[1]
+		) < 2
+	) {
 		printf("Given frequency '%s' isn't valid!\n",
-										getval("frequency"));
+			getval("frequency"));
 		exit (1);
 	}
 
-	if (testvar("loadPercentage")  &&
-	        sscanf(getval("loadPercentage"), "{%f,%f,%f,%f}",
-	            &types[type].loadpct[0], &types[type].loadpct[1],
-	            &types[type].loadpct[2], &types[type].loadpct[3]
-	              ) < 4
-	   ) {
+	if (testvar("loadPercentage")
+	 && sscanf(getval("loadPercentage"),
+		"{%f,%f,%f,%f}",
+		&types[type].loadpct[0], &types[type].loadpct[1],
+		&types[type].loadpct[2], &types[type].loadpct[3]
+		) < 4
+	) {
 		printf("Given loadPercentage '%s' isn't valid!\n",
-								         getval("loadPercentage"));
+			getval("loadPercentage"));
 		exit (1);
 	}
 
-	if (testvar("batteryPercentage")  &&
-	        sscanf(getval("batteryPercentage"), "{%f,%f,%f,%f,%f}",
-	                &types[type].battpct[0], &types[type].battpct[1],
-	                &types[type].battpct[2], &types[type].battpct[3],
-	                &types[type].battpct[4]
-	              ) < 5
-	   ) {
+	if (testvar("batteryPercentage")
+	 && sscanf(getval("batteryPercentage"),
+		"{%f,%f,%f,%f,%f}",
+		&types[type].battpct[0], &types[type].battpct[1],
+		&types[type].battpct[2], &types[type].battpct[3],
+		&types[type].battpct[4]
+		) < 5
+	) {
 		printf("Given batteryPercentage '%s' isn't valid!\n",
-								         getval("batteryPercentage"));
+			getval("batteryPercentage"));
 		exit (1);
 	}
 
-	if (testvar("voltage")  &&
-	        sscanf(getval("voltage"), "{%f,%f,%f,%f}",
-	            &types[type].voltage[0], &types[type].voltage[1],
-	            &types[type].voltage[2], &types[type].voltage[3]
-				  ) < 4
-	   ) {
+	if (testvar("voltage")
+	 && sscanf(getval("voltage"),
+		"{%f,%f,%f,%f}",
+		&types[type].voltage[0], &types[type].voltage[1],
+		&types[type].voltage[2], &types[type].voltage[3]
+		) < 4
+	) {
 		printf("Given voltage '%s' isn't valid!\n", getval("voltage"));
 		exit (1);
 	}
@@ -1144,34 +1149,34 @@ void upsdrv_initinfo(void)
 	upsdebugx(1, " line voltage            : '%u'", linevoltage);
 	upsdebugx(1, " type                    : '%s'", types[type].name);
 	upsdebugx(1, " number of bytes from UPS: '%u'",
-	            types[type].num_of_bytes_from_ups);
+		types[type].num_of_bytes_from_ups);
 	upsdebugx(1, " method of flow control  : '%s'",
-	            types[type].flowControl.name);
+		types[type].flowControl.name);
 	upsdebugx(1, " validation sequence: '{{%u,%#x},{%u,%#x},{%u,%#x}}'",
-	            types[type].validation[0].index_of_byte,
-	            types[type].validation[0].required_value,
-	            types[type].validation[1].index_of_byte,
-	            types[type].validation[1].required_value,
-	            types[type].validation[2].index_of_byte,
-	            types[type].validation[2].required_value);
+		types[type].validation[0].index_of_byte,
+		types[type].validation[0].required_value,
+		types[type].validation[1].index_of_byte,
+		types[type].validation[1].required_value,
+		types[type].validation[2].index_of_byte,
+		types[type].validation[2].required_value);
 	upsdebugx(1, " shutdown arguments: '{{%u,%u},%c}'",
-	            types[type].shutdown_arguments.delay[0],
-	            types[type].shutdown_arguments.delay[1],
-	            types[type].shutdown_arguments.minutesShouldBeUsed);
+		types[type].shutdown_arguments.delay[0],
+		types[type].shutdown_arguments.delay[1],
+		types[type].shutdown_arguments.minutesShouldBeUsed);
 	if ( strcmp(types[type].name, "KIN") && strcmp(types[type].name, "BNT") && strcmp(types[type].name, "IMP")) {
 		upsdebugx(1, " frequency calculation coefficients: '{%f,%f}'",
-		        types[type].freq[0], types[type].freq[1]);
+			types[type].freq[0], types[type].freq[1]);
 		upsdebugx(1, " load percentage calculation coefficients: "
-		        "'{%f,%f,%f,%f}'",
-		        types[type].loadpct[0], types[type].loadpct[1],
-		        types[type].loadpct[2], types[type].loadpct[3]);
+			"'{%f,%f,%f,%f}'",
+			types[type].loadpct[0], types[type].loadpct[1],
+			types[type].loadpct[2], types[type].loadpct[3]);
 		upsdebugx(1, " battery percentage calculation coefficients: "
-		        "'{%f,%f,%f,%f,%f}'",
-		        types[type].battpct[0], types[type].battpct[1],
-		        types[type].battpct[2], types[type].battpct[3],
-		        types[type].battpct[4]);
+			"'{%f,%f,%f,%f,%f}'",
+			types[type].battpct[0], types[type].battpct[1],
+			types[type].battpct[2], types[type].battpct[3],
+			types[type].battpct[4]);
 		upsdebugx(1, " voltage calculation coefficients: '{%f,%f}'",
-		        types[type].voltage[2], types[type].voltage[3]);
+			types[type].voltage[2], types[type].voltage[3]);
 	}
 
 	/* write constant data for this model */

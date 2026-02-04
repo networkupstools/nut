@@ -270,7 +270,7 @@ static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned 
 			if (ups.ErrCount > 100)
 			ups.ErrCount = 100 ;
 		}
-	return(NULL) ;	/* There have been errors in the reading of the data */
+	return((unsigned char *)NULL) ;	/* There have been errors in the reading of the data */
 }
 
 static int detect_hardware(void)
@@ -908,7 +908,7 @@ void upsdrv_initinfo(void)
 	if (detect_hardware() == -1)
 		{
 		fatalx(EXIT_FAILURE,
-		       "Unable to detect a Microdowell's  Enterprise UPS on port %s\nCheck the cable, port name and try again", device_path);
+			"Unable to detect a Microdowell's Enterprise UPS on port %s\nCheck the cable, port name and try again", device_path);
 		}
 
 	/* I set the corresponding UPS variables

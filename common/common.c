@@ -1464,17 +1464,17 @@ int compareprocnames(pid_t pid, const char *procname, const char **prognames)
 		goto finish;
 	}
 
-	progbasenames = xcalloc(total_prognames, sizeof(char*));
+	progbasenames = (char **)xcalloc(total_prognames, sizeof(char*));
 	if (!progbasenames) {
 		ret = -2;
 		goto finish;
 	}
-	progbasenamelen = xcalloc(total_prognames, sizeof(size_t));
+	progbasenamelen = (size_t *)xcalloc(total_prognames, sizeof(size_t));
 	if (!progbasenamelen) {
 		ret = -2;
 		goto finish;
 	}
-	progbasenamedot = xcalloc(total_prognames, sizeof(size_t));
+	progbasenamedot = (size_t *)xcalloc(total_prognames, sizeof(size_t));
 	if (!progbasenamedot) {
 		ret = -2;
 		goto finish;
@@ -1482,7 +1482,7 @@ int compareprocnames(pid_t pid, const char *procname, const char **prognames)
 	memset(all_progbasenames, 0, sizeof(all_progbasenames));
 
 	for (i = 0; i < total_prognames - 1; i++) {
-		progbasenames[i] = xcalloc(NUT_PATH_MAX + 1, sizeof(char));
+		progbasenames[i] = (char *)xcalloc(NUT_PATH_MAX + 1, sizeof(char));
 
 		if (!progbasenames[i]) {
 			ret = -2;
@@ -2465,9 +2465,12 @@ repeat:
  * checking for uniqueness and going to add a newly seen token.
  * If such callback returns 0, abort the addition of token.
  */
-int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
-			    int (*callback_always)(char *, size_t, const char *),
-			    int (*callback_unique)(char *, size_t, const char *)
+int	str_add_unique_token(
+	char *tgt,
+	size_t tgtsize,
+	const char *token,
+	int (*callback_always)(char *, size_t, const char *),
+	int (*callback_unique)(char *, size_t, const char *)
 )
 {
 	size_t	toklen = 0, tgtlen = 0;
@@ -3550,7 +3553,7 @@ int validate_formatting_string(const char *fmt_dynamic, const char *fmt_referenc
 		 */
 		size_t lenD = strlen(fmt_dynamic) + 1;
 		size_t lenR = strlen(fmt_reference) + 1;
-		char *bufD = xcalloc(lenD, sizeof(char)), *bufR = xcalloc(lenR, sizeof(char));
+		char *bufD = (char *)xcalloc(lenD, sizeof(char)), *bufR = (char *)xcalloc(lenR, sizeof(char));
 		size_t lenBufD;
 
 		if (!bufD || !bufR) {
@@ -3765,7 +3768,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret, errno_orig = errno;
 	size_t	bufsize = LARGEBUF;
-	char	*buf = xcalloc(bufsize, sizeof(char));
+	char	*buf = (char *)xcalloc(bufsize, sizeof(char));
 
 	/* Be pedantic about our limitations */
 	bufsize *= sizeof(char);
@@ -3844,7 +3847,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 						newbufsize);
 				}
 				bufsize = newbufsize;
-				buf = xrealloc(buf, bufsize);
+				buf = (char *)xrealloc(buf, bufsize);
 				continue;
 			}
 		} else {
@@ -4207,7 +4210,7 @@ void setproctag(const char *tag)
 	proctag = xstrdup(tag);
 
 	proctag_for_upsdebug_buflen = strlen(tag) + 2;
-	proctag_for_upsdebug = xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
+	proctag_for_upsdebug = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
 	if (proctag_for_upsdebug) {
 		snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s", tag);
 	}
@@ -4823,7 +4826,7 @@ void nut_prepare_search_paths(void) {
 	count_builtin = i + 1;	/* +1 for the NULL */
 
 	/* Bytes inside should all be zeroed... */
-	filtered_search_paths = xcalloc(count_builtin, sizeof(const char *));
+	filtered_search_paths = (const char **)xcalloc(count_builtin, sizeof(const char *));
 
 	/* FIXME: here "count_builtin" means size of filtered_search_paths[]
 	 * and may later be more, if we would consider other data sources */
@@ -5317,7 +5320,7 @@ int compile_regex(regex_t **compiled, const char *regex, const int cflags)
 		return 0;
 	}
 
-	preg = malloc(sizeof(*preg));
+	preg = (regex_t *)malloc(sizeof(*preg));
 	if (!preg) {
 		return -1;
 	}
@@ -5480,7 +5483,7 @@ const char *xinet_ntopSS(struct sockaddr_storage *s)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	char	*addrstr = (char*)xcalloc(INETADDRBUF_SIZE, sizeof(char*));
 	const char	*ret;
 
 	if (!addrstr)
@@ -5580,7 +5583,7 @@ const char *xinet_ntopAI(struct addrinfo *ai)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	char	*addrstr = (char*)xcalloc(INETADDRBUF_SIZE, sizeof(char*));
 	const char	*ret;
 
 	if (!addrstr)

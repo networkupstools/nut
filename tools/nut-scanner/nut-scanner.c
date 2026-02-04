@@ -476,13 +476,13 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 		pAddresses = (IP_ADAPTER_ADDRESSES *) xcalloc(1, outBufLen);
 
 		dwRetVal =
-		    GetAdaptersAddresses(family, flags, NULL, pAddresses, &outBufLen);
+			GetAdaptersAddresses(family, flags, NULL, pAddresses, &outBufLen);
 
 		if (dwRetVal == ERROR_BUFFER_OVERFLOW) {
-		    free(pAddresses);
-		    pAddresses = NULL;
+			free(pAddresses);
+			pAddresses = NULL;
 		} else {
-		    break;
+			break;
 		}
 
 		Iterations++;

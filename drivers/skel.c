@@ -153,7 +153,7 @@ static int setvar(const char *varname, const char *val)
 {
 	upsdebug_SET_STARTING(varname, val);
 
- 	if (!strcasecmp(varname, "ups.test.interval")) {
+	if (!strcasecmp(varname, "ups.test.interval")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_SET_HANDLED;
 	}

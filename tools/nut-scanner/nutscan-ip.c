@@ -149,16 +149,16 @@ size_t nutscan_add_ip_range(nutscan_ip_range_list_t *irl, char * start_ip, char 
 
 	if (start_ip == NULL) {
 		upsdebugx(5, "%s: only end address was provided, setting start to same: %s",
-			 __func__, end_ip);
+			__func__, end_ip);
 		start_ip = end_ip;
 	}
 	if (end_ip == NULL) {
 		upsdebugx(5, "%s: only start address was provided, setting end to same: %s",
-			 __func__, start_ip);
+			__func__, start_ip);
 		end_ip = start_ip;
 	}
 
-	p = xcalloc(1, sizeof(nutscan_ip_range_t));
+	p = (nutscan_ip_range_t*)xcalloc(1, sizeof(nutscan_ip_range_t));
 
 	if (start_ip == end_ip || strcmp(start_ip, end_ip) <= 0) {
 		p->start_ip = start_ip;

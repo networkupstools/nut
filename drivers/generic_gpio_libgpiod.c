@@ -197,8 +197,9 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 		if(gpioRc) {
 			fatal_with_errno(LOG_ERR, "Failed to set lines to GPIOD_LINE_EDGE_BOTH");
 		}
-		gpioRc = gpiod_line_config_add_line_settings(libgpiod_data->lineConfig, (unsigned int *)gpioupsfdlocal->upsLines,
-							  gpioupsfdlocal->upsLinesCount, lineSettings);
+		gpioRc = gpiod_line_config_add_line_settings(
+			libgpiod_data->lineConfig, (unsigned int *)gpioupsfdlocal->upsLines,
+			gpioupsfdlocal->upsLinesCount, lineSettings);
 		if(gpioRc) {
 			fatalx(LOG_ERR,	"Failed to attach line settings to line configuration");
 		}

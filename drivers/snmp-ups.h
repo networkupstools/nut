@@ -290,9 +290,10 @@ typedef struct {
 #define SU_FLAG_NAINVALID	(1UL << 7)	/* Invalid if "N/A" value */
 #define SU_CMD_OFFSET		(1UL << 8)	/* Add +1 to the OID index */
 
-#define SU_FLAG_SEMI_STATIC	(1UL << 9)	/* Refresh this entry once in several walks
-                                      	 * (for R/W values user can set on device,
-                                      	 * like descriptions or contacts) */
+#define SU_FLAG_SEMI_STATIC	(1UL << 9)
+	/* Refresh this entry once in several walks
+	 * (for R/W values user can set on device,
+	 * like descriptions or contacts) */
 
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template

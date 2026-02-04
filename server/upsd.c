@@ -151,11 +151,13 @@ static tracking_t	*tracking_list = NULL;
 
 #ifndef WIN32
 	/* pollfd  */
-static struct pollfd	*fds = NULL;
+#define FTS_T struct pollfd
 #else	/* WIN32 */
-static HANDLE		*fds = NULL;
+#define FTS_T HANDLE
 static HANDLE		mutex = INVALID_HANDLE_VALUE;
 #endif	/* WIN32 */
+/* Dynamic array of file descriptors (or WIN32 handles) that we poll */
+static FTS_T	*fds = NULL;
 static handler_t	*handler = NULL;
 
 	/* pid file */
@@ -230,7 +232,7 @@ void listen_add(const char *addr, const char *port)
 	}
 
 	/* grab some memory and add the info */
-	server = xcalloc(1, sizeof(*server));
+	server = (stype_t*)xcalloc(1, sizeof(*server));
 	server->addr = xstrdup(addr);
 	server->port = xstrdup(port);
 	server->sock_fd = ERROR_FD_SOCK;
@@ -326,7 +328,7 @@ static void setuptcp(stype_t *server)
 			/* Not constrained to IPv6 */
 			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv4 any-address support",
 				__func__, server->port);
-			serverAnyV4 = xcalloc(1, sizeof(*serverAnyV4));
+			serverAnyV4 = (stype_t*)xcalloc(1, sizeof(*serverAnyV4));
 			serverAnyV4->addr = xstrdup("0.0.0.0");
 			serverAnyV4->port = xstrdup(server->port);
 			serverAnyV4->sock_fd = ERROR_FD_SOCK;
@@ -337,7 +339,7 @@ static void setuptcp(stype_t *server)
 			/* Not constrained to IPv4 */
 			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv6 any-address support",
 				__func__, server->port);
-			serverAnyV6 = xcalloc(1, sizeof(*serverAnyV6));
+			serverAnyV6 = (stype_t*)xcalloc(1, sizeof(*serverAnyV6));
 			serverAnyV6->addr = xstrdup("::0");
 			serverAnyV6->port = xstrdup(server->port);
 			serverAnyV6->sock_fd = ERROR_FD_SOCK;
@@ -750,7 +752,7 @@ static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 	 && (nut_debug_level > 9 || strcmp(arg[0], "PASSWORD"))	/* Do not log credentials by default */
 	) {
 		/* Not xcalloc() here, not too fatal if we fail */
-		char *s = calloc(LARGEBUF, sizeof(char));
+		char *s = (char*)calloc(LARGEBUF, sizeof(char));
 		if (s) {
 			size_t	i;
 
@@ -856,7 +858,7 @@ static void client_connect(stype_t *server)
 		return;
 	}
 
-	client = xcalloc(1, sizeof(*client));
+	client = (nut_ctype_t*)xcalloc(1, sizeof(*client));
 
 	client->sock_fd = fd;
 
@@ -1256,8 +1258,8 @@ static void poll_reload(void)
 	upsdebugx(1, "%s: (p)re-allocate %" PRIuMAX
 		" entries for polling FDs and handlers",
 		__func__, (uintmax_t)maxconn);
-	fds = xrealloc(fds, (size_t)maxconn * sizeof(*fds));
-	handler = xrealloc(handler, (size_t)maxconn * sizeof(*handler));
+	fds = (FTS_T*)xrealloc(fds, (size_t)maxconn * sizeof(*fds));
+	handler = (handler_t*)xrealloc(handler, (size_t)maxconn * sizeof(*handler));
 }
 
 /* instant command and setvar status tracking */
@@ -1270,7 +1272,7 @@ int tracking_add(const char *id)
 	if ((!tracking_enabled) || (!id))
 		return 0;
 
-	item = xcalloc(1, sizeof(*item));
+	item = (tracking_t*)xcalloc(1, sizeof(*item));
 
 	item->id = xstrdup(id);
 	item->status = STAT_PENDING;

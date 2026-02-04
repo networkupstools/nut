@@ -662,7 +662,7 @@ int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath)
 	}
 
 	/* if previous init failed */
-	if (*pdl_handle == (void *)1) {
+	if (*pdl_handle == (lt_dlhandle)1) {
 		goto end;
 	}
 

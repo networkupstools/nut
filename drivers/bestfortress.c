@@ -264,8 +264,9 @@ static ssize_t upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 {
 	ssize_t nread;
 
-	nread = ser_get_line(upsfd, buf, bufsize - 1, ec, ic,
-			     SER_WAIT_SEC, SER_WAIT_USEC);
+	nread = ser_get_line(
+		upsfd, buf, bufsize - 1, ec, ic,
+		SER_WAIT_SEC, SER_WAIT_USEC);
 
 	/* \todo is buf null terminated? */
 	upsdebugx(4, "%s: read %" PRIiSIZE " <%s>", __func__, nread, buf);
@@ -302,7 +303,7 @@ void upsdrv_updateinfo(void)
 		do {
 			if ((recv = upsrecv (temp+2, sizeof temp - 2, ENDCHAR, IGNCHARS)) <= 0) {
 				upsdebugx(1, "%s: upsrecv failed, "
-					  "retrying without counting", __func__);
+					"retrying without counting", __func__);
 				upsflushin (0, 0, "\r ");
 				upssend ("f\r");
 				while (ser_get_char(upsfd, &ch, 0, UPSDELAY) > 0 && ch != '\n'); /* response starts with \r\n */
@@ -310,7 +311,7 @@ void upsdrv_updateinfo(void)
 		} while (temp[2] == 0);
 
 		upsdebugx(3, "%s: received %" PRIiSIZE " bytes (try %i)",
-			  __func__, recv, retry);
+			__func__, recv, retry);
 
 		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */
 		/* status example:
@@ -330,11 +331,11 @@ void upsdrv_updateinfo(void)
 
 		if (!checksum_ok) {
 			upsdebug_hex(5, "upsdrv_updateinfo: "
-				     "checksum failure buffer hex",
-				     temp, (size_t)recv);
+				"checksum failure buffer hex",
+				temp, (size_t)recv);
 			upsdebug_ascii(5, "upsdrv_updateinfo: "
-				       "checksum failure buffer ascii",
-				       temp, (size_t)recv);
+				"checksum failure buffer ascii",
+				temp, (size_t)recv);
 		}
 
 
@@ -352,7 +353,7 @@ void upsdrv_updateinfo(void)
 		if (checksum_ok) break;
 
 		upsdebugx(1, "%s: failed to read status try %d",
-			  __func__, retry);
+			__func__, retry);
 		sleep(SER_WAIT_SEC);
 	}
 
@@ -633,7 +634,7 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, speed);
 
 	upsdebugx(1, "%s: opened %s speed %s upsfd %d",
-		  __func__, device_path, speed_val ? speed_val : "DEFAULT", upsfd);
+		__func__, device_path, speed_val ? speed_val : "DEFAULT", upsfd);
 
 	upsdebugx(1, "%s: end", __func__);
 }

@@ -708,7 +708,7 @@ static void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 		return;
 	}
 
-	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+	if ( !(name = (char *)xmalloc(sizeof(char) * vt->nlen0)) ) {
 		upslogx(LOG_ERR, "apc_dstate_delinfo() failed to allocate buffer");
 		return;
 	}
@@ -740,12 +740,12 @@ static void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 		return;
 	}
 
-	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+	if ( !(name = (char *)xmalloc(sizeof(char) * vt->nlen0)) ) {
 		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
 		return;
 	}
 
-	if ( !(temp = xmalloc(sizeof(char) * (upsvallen + 2))) ) {
+	if ( !(temp = (char *)xmalloc(sizeof(char) * (upsvallen + 2))) ) {
 		/* +2 seems like an overkill, but helps hush compiler warnings */
 		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
 		free(name);
@@ -1586,7 +1586,7 @@ static int sdcmd_AT(const void *str)
 {
 	ssize_t ret;
 	size_t cnt, padto, i;
-	const char *awd = str;
+	const char *awd = (const char *)str;
 	char temp[APC_SBUF], *ptr;
 
 	memset(temp, '\0', sizeof(temp));
@@ -2083,9 +2083,11 @@ static int instcmd(const char *cmd, const char *ext)
 	}
 
 	if (!(ct->flags & APC_PRESENT)) {
-		upslogx(LOG_INSTCMD_INVALID, "%s: command [%s %s] recognized, but"
-		       " not supported by your UPS model", __func__, cmd,
-				ext ? ext : "\b");
+		upslogx(LOG_INSTCMD_INVALID,
+			"%s: command [%s %s] recognized, but"
+			" not supported by your UPS model",
+			__func__, cmd,
+			ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
 	}
 

@@ -156,7 +156,7 @@ void upsdrv_initinfo(void)
 				fatalx(EXIT_FAILURE, "Error: invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
 			}
 			/* Connect to the target */
-			ups = xmalloc(sizeof(*ups));
+			ups = (UPSCONN_t *)xmalloc(sizeof(*ups));
 			if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 			{
 				if(repeater_disable_strict_start == 1)

@@ -134,8 +134,8 @@ static ezfill_t opti_pollv_zinto[] = {
  * test with a PS-1440RM at 230V the change is only applied to PowerSeries models.
  */
 static ezfill_t opti_pollv_ps[] = {
- 	{ "OL", "ups.load", 1.0 },
- 	{ "FF", "input.frequency", 0.1 },
+	{ "OL", "ups.load", 1.0 },
+	{ "FF", "input.frequency", 0.1 },
 	{ "BT", "ups.temperature", 0 },
 };
 

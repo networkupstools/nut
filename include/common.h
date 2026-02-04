@@ -396,9 +396,12 @@ int	str_contains_token(const char *string, const char *token);
  * checking for uniqueness and going to add a newly seen token.
  * If such callback returns 0, abort the addition of token and return -3.
  */
-int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
-			    int (*callback_always)(char *, size_t, const char *),
-			    int (*callback_unique)(char *, size_t, const char *)
+int	str_add_unique_token(
+	char *tgt,
+	size_t tgtsize,
+	const char *token,
+	int (*callback_always)(char *, size_t, const char *),
+	int (*callback_unique)(char *, size_t, const char *)
 );
 
 /* Report maximum platform value for the pid_t */

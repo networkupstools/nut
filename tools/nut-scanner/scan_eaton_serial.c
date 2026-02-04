@@ -135,7 +135,7 @@ unsigned char calc_checksum(const unsigned char *buf)
  * return 1 if OK, 0 otherwise */
 static int shut_synchronise(TYPE_FD_SER arg_upsfd)
 {
-	int try;
+	int try_num;
 	unsigned char reply = '\0';
 	/* FIXME? Should we save "arg_upsfd" into global "upsfd" variable?
 	 * This was previously shadowed by function argument named "upsfd"...
@@ -143,7 +143,7 @@ static int shut_synchronise(TYPE_FD_SER arg_upsfd)
 	/* upsfd = arg_upsfd; */
 
 	/* Sync with the UPS according to notification */
-	for (try = 0; try < MAX_TRY; try++) {
+	for (try_num = 0; try_num < MAX_TRY; try_num++) {
 		if ((ser_send_char(arg_upsfd, SHUT_SYNC)) == -1) {
 			continue;
 		}
@@ -477,7 +477,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			sem_wait(semaphore);
 			pass = TRUE;
 		} else {
-			pass = (sem_trywait(semaphore) == 0);
+			pass = (sem_trywait(semaphore) == 0) ? TRUE : FALSE;
 		}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
@@ -562,7 +562,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 				thread_count++;
-				new_thread_array = realloc(thread_array,
+				new_thread_array = (nutscan_thread_t*)realloc(thread_array,
 					thread_count * sizeof(nutscan_thread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread array", __func__);

@@ -319,7 +319,7 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_ERR, "No upstype set - see help text / man page!");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
-	        return;
+		return;
 	}
 
 	flags = upstab[upstype].line_sd;
@@ -328,7 +328,7 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_ERR, "No shutdown command defined for this model!");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
-	        return;
+		return;
 	}
 
 	if (flags == TIOCM_ST) {
@@ -338,7 +338,7 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_ERR, "Need to send a BREAK, but don't have tcsendbreak!");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
-	        return;
+		return;
 # endif
 #else	/* WIN32 */
 		NUT_WIN32_INCOMPLETE_DETAILED("Need to send a BREAK at this point, but not addressed for WIN32 yet");
@@ -365,7 +365,7 @@ void upsdrv_shutdown(void)
 		upslog_with_errno(LOG_ERR, "ioctl TIOCMSET");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
-	        return;
+		return;
 	}
 
 	if (getval("sdtime")) {

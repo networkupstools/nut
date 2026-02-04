@@ -1365,11 +1365,12 @@ static void ups2000_delay_get(void)
 			if (cmdline) {
 				r = ups2000_delay_set(delay->name, cmdline);
 				if (r != STAT_SET_HANDLED) {
-					upslogx(LOG_ERR, "servar: %s is invalid. "
-							 "Reverting to default %s %d seconds",
-							 delay->varname_cmdline,
-							 delay->varname_cmdline,
-							 delay->dfault);
+					upslogx(LOG_ERR,
+						"servar: %s is invalid. "
+						"Reverting to default %s %d seconds",
+						delay->varname_cmdline,
+						delay->varname_cmdline,
+						delay->dfault);
 					*delay->global_var = delay->dfault;
 				}
 			}
@@ -1591,15 +1592,17 @@ static int ups2000_instcmd_load_on(const uint16_t reg)
 		 * normal/bypass status. Also log an error and suggest "bypass.stop".
 		 */
 		/* FIXME: ..._INVALID ? */
-		upslogx(LOG_INSTCMD_FAILED, "load.on error: UPS is already on, and is in bypass mode. "
-				 "To enter normal mode, use bypass.stop");
+		upslogx(LOG_INSTCMD_FAILED,
+			"load.on error: UPS is already on, and is in bypass mode. "
+			"To enter normal mode, use bypass.stop");
 		return STAT_INSTCMD_FAILED;
 	}
 	else {
 		/* unreachable, see comments for r != 0 at the beginning */
 		/* FIXME: ..._INVALID ? */
-		upslogx(LOG_INSTCMD_FAILED, "load.on error: invalid ups.status (%s) detected. "
-				 "Please file a bug report!", status);
+		upslogx(LOG_INSTCMD_FAILED,
+			"load.on error: invalid ups.status (%s) detected. "
+			"Please file a bug report!", status);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1987,8 +1990,9 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 	int r = -1;
 
 	if (addr < 10000)
-		upslogx(LOG_ERR, "Invalid register read from %04d detected. "
-				 "Please file a bug report!", addr);
+		upslogx(LOG_ERR,
+			"Invalid register read from %04d detected. "
+			"Please file a bug report!", addr);
 
 	for (i = 0; i < 3; i++) {
 		/*
@@ -2048,8 +2052,9 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 	int r = -1;
 
 	if (addr < 10000)
-		upslogx(LOG_ERR, "Invalid register write to %04d detected. "
-				 "Please file a bug report!", addr);
+		upslogx(LOG_ERR,
+			"Invalid register write to %04d detected. "
+			"Please file a bug report!", addr);
 
 	for (i = 0; i < 3; i++) {
 		r = modbus_write_registers(ctx, addr, nb, src);

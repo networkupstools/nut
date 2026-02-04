@@ -35,17 +35,20 @@ static unsigned int num_lines=0;
 static int gStatus = 0;
 static int errReqFor_line_get_value_bulk=0;
 
-void setNextLinesReadToFail(void) {
+void setNextLinesReadToFail(void)
+{
 	errReqFor_line_get_value_bulk=1;
 }
 
-void gpiod_chip_close(struct gpiod_chip *chip) {
+void gpiod_chip_close(struct gpiod_chip *chip)
+{
 	NUT_UNUSED_VARIABLE(chip);
 }
 
 #if WITH_LIBGPIO_VERSION < 0x00020000
 
-struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {
+struct gpiod_chip *gpiod_chip_open_by_name(const char *name)
+{
 	snprintf(chipName, sizeof(chipName), "%s", name);
 	if (strcmp(name, "gpiochip1"))
 		return (struct gpiod_chip *)1;
@@ -55,16 +58,18 @@ struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {
 	}
 }
 
-unsigned int gpiod_chip_num_lines(struct gpiod_chip *chip) {
+unsigned int gpiod_chip_num_lines(struct gpiod_chip *chip)
+{
 	NUT_UNUSED_VARIABLE(chip);
 	if (!strcmp(chipName, "gpiochip2"))
 		return 2;
 	return 32;
 }
 
-int gpiod_chip_get_lines(struct gpiod_chip *chip,
-			 unsigned int *offsets, unsigned int num_offsets,
-			 struct gpiod_line_bulk *bulk)
+int gpiod_chip_get_lines(
+	struct gpiod_chip *chip,
+	unsigned int *offsets, unsigned int num_offsets,
+	struct gpiod_line_bulk *bulk)
 {
 	NUT_UNUSED_VARIABLE(chip);
 	NUT_UNUSED_VARIABLE(offsets);
@@ -73,9 +78,10 @@ int gpiod_chip_get_lines(struct gpiod_chip *chip,
 	return 0;
 }
 
-int gpiod_line_request_bulk(struct gpiod_line_bulk *bulk,
-			    const struct gpiod_line_request_config *config,
-			    const int *default_vals)
+int gpiod_line_request_bulk(
+	struct gpiod_line_bulk *bulk,
+	const struct gpiod_line_request_config *config,
+	const int *default_vals)
 {
 	NUT_UNUSED_VARIABLE(bulk);
 	NUT_UNUSED_VARIABLE(config);
@@ -83,8 +89,9 @@ int gpiod_line_request_bulk(struct gpiod_line_bulk *bulk,
 	return 0;
 }
 
-int gpiod_line_get_value_bulk(struct gpiod_line_bulk *bulk,
-			      int *values)
+int gpiod_line_get_value_bulk(
+	struct gpiod_line_bulk *bulk,
+	int *values)
 {
 	unsigned int	i;
 	int	pinPos = 1;
@@ -104,9 +111,10 @@ int gpiod_line_get_value_bulk(struct gpiod_line_bulk *bulk,
 	return 0;
 }
 
-int gpiod_line_event_wait_bulk(struct gpiod_line_bulk *bulk,
-			       const struct timespec *timeout,
-			       struct gpiod_line_bulk *event_bulk)
+int gpiod_line_event_wait_bulk(
+	struct gpiod_line_bulk *bulk,
+	const struct timespec *timeout,
+	struct gpiod_line_bulk *event_bulk)
 {
 	NUT_UNUSED_VARIABLE(bulk);
 	NUT_UNUSED_VARIABLE(timeout);
@@ -131,35 +139,42 @@ int gpiod_line_event_wait_bulk(struct gpiod_line_bulk *bulk,
 	return 0;
 }
 
-int gpiod_line_event_read(struct gpiod_line *line,
-			  struct gpiod_line_event *event) {
+int gpiod_line_event_read(
+	struct gpiod_line *line,
+	struct gpiod_line_event *event)
+{
 	NUT_UNUSED_VARIABLE(line);
 	NUT_UNUSED_VARIABLE(event);
 	return 0;
 }
 
-unsigned int gpiod_line_offset(struct gpiod_line *line) {
+unsigned int gpiod_line_offset(struct gpiod_line *line)
+{
 	NUT_UNUSED_VARIABLE(line);
 	return 0;
 }
 
-void gpiod_line_release_bulk(struct gpiod_line_bulk *bulk) {
+void gpiod_line_release_bulk(struct gpiod_line_bulk *bulk)
+{
 	NUT_UNUSED_VARIABLE(bulk);
 }
 
 #else	/* #if WITH_LIBGPIO_VERSION >= 0x00020000 */
 
 struct gpiod_line_request *
-gpiod_chip_request_lines(struct gpiod_chip *chip,
-			 struct gpiod_request_config *req_cfg,
-			 struct gpiod_line_config *line_cfg) {
+gpiod_chip_request_lines(
+	struct gpiod_chip *chip,
+	struct gpiod_request_config *req_cfg,
+	struct gpiod_line_config *line_cfg)
+{
 	NUT_UNUSED_VARIABLE(chip);
 	NUT_UNUSED_VARIABLE(req_cfg);
 	NUT_UNUSED_VARIABLE(line_cfg);
 	return (struct gpiod_line_request *)1;
 }
 
-struct gpiod_chip *gpiod_chip_open(const char *path) {
+struct gpiod_chip *gpiod_chip_open(const char *path)
+{
 	snprintf(chipName, sizeof(chipName), "%s", path);
 	if (!strstr(path, "gpiochip1"))
 		return (struct gpiod_chip *)1;
@@ -169,48 +184,59 @@ struct gpiod_chip *gpiod_chip_open(const char *path) {
 	}
 }
 
-struct gpiod_chip_info *gpiod_chip_get_info(struct gpiod_chip *chip) {
+struct gpiod_chip_info *gpiod_chip_get_info(struct gpiod_chip *chip)
+{
 	NUT_UNUSED_VARIABLE(chip);
 	return (struct gpiod_chip_info *)1;
 }
 
-size_t gpiod_chip_info_get_num_lines(struct gpiod_chip_info *info) {
+size_t gpiod_chip_info_get_num_lines(struct gpiod_chip_info *info)
+{
 	NUT_UNUSED_VARIABLE(info);
 	if(strstr(chipName, "gpiochip2"))
 		return 2;
 	return 32;
 }
 
-void gpiod_chip_info_free(struct gpiod_chip_info *info) {
+void gpiod_chip_info_free(struct gpiod_chip_info *info)
+{
 	NUT_UNUSED_VARIABLE(info);
 }
 
-struct gpiod_line_settings *gpiod_line_settings_new(void) {
+struct gpiod_line_settings *gpiod_line_settings_new(void)
+{
 	return (struct gpiod_line_settings *)1;
 }
 
-int gpiod_line_settings_set_direction(struct gpiod_line_settings *settings,
-				      enum gpiod_line_direction direction) {
+int gpiod_line_settings_set_direction(
+	struct gpiod_line_settings *settings,
+	enum gpiod_line_direction direction)
+{
 	NUT_UNUSED_VARIABLE(settings);
 	NUT_UNUSED_VARIABLE(direction);
 	return 0;
 }
 
-int gpiod_line_settings_set_edge_detection(struct gpiod_line_settings *settings,
-					   enum gpiod_line_edge edge) {
+int gpiod_line_settings_set_edge_detection(
+	struct gpiod_line_settings *settings,
+	enum gpiod_line_edge edge)
+{
 	NUT_UNUSED_VARIABLE(settings);
 	NUT_UNUSED_VARIABLE(edge);
 	return 0;
 }
 
-struct gpiod_line_config *gpiod_line_config_new(void) {
+struct gpiod_line_config *gpiod_line_config_new(void)
+{
 	return (struct gpiod_line_config *)1;
 }
 
-int gpiod_line_config_add_line_settings(struct gpiod_line_config *config,
-					const unsigned int *offsets,
-					size_t num_offsets,
-					struct gpiod_line_settings *settings) {
+int gpiod_line_config_add_line_settings(
+	struct gpiod_line_config *config,
+	const unsigned int *offsets,
+	size_t num_offsets,
+	struct gpiod_line_settings *settings)
+{
 	NUT_UNUSED_VARIABLE(config);
 	NUT_UNUSED_VARIABLE(offsets);
 	NUT_UNUSED_VARIABLE(num_offsets);
@@ -218,18 +244,23 @@ int gpiod_line_config_add_line_settings(struct gpiod_line_config *config,
 	return 0;
 }
 
-struct gpiod_request_config *gpiod_request_config_new(void) {
+struct gpiod_request_config *gpiod_request_config_new(void)
+{
 	return (struct gpiod_request_config *)1;
 }
 
-void gpiod_request_config_set_consumer(struct gpiod_request_config *config,
-				       const char *consumer) {
+void gpiod_request_config_set_consumer(
+	struct gpiod_request_config *config,
+	const char *consumer)
+{
 	NUT_UNUSED_VARIABLE(config);
 	NUT_UNUSED_VARIABLE(consumer);
 }
 
-int gpiod_line_request_get_values(struct gpiod_line_request *request,
-				  enum gpiod_line_value *values) {
+int gpiod_line_request_get_values(
+	struct gpiod_line_request *request,
+	enum gpiod_line_value *values)
+{
 	unsigned int	i;
 	int	pinPos = 1;
 	NUT_UNUSED_VARIABLE(request);
@@ -248,20 +279,25 @@ int gpiod_line_request_get_values(struct gpiod_line_request *request,
 	return 0;
 }
 
-void gpiod_line_settings_free(struct gpiod_line_settings *settings) {
+void gpiod_line_settings_free(struct gpiod_line_settings *settings)
+{
 	NUT_UNUSED_VARIABLE(settings);
 }
 
-void gpiod_line_config_free(struct gpiod_line_config *config) {
+void gpiod_line_config_free(struct gpiod_line_config *config)
+{
 	NUT_UNUSED_VARIABLE(config);
 }
 
-void gpiod_request_config_free(struct gpiod_request_config *config) {
+void gpiod_request_config_free(struct gpiod_request_config *config)
+{
 	NUT_UNUSED_VARIABLE(config);
 }
 
-int gpiod_line_request_wait_edge_events(struct gpiod_line_request *request,
-					int64_t timeout_ns) {
+int gpiod_line_request_wait_edge_events(
+	struct gpiod_line_request *request,
+	int64_t timeout_ns)
+{
 	NUT_UNUSED_VARIABLE(request);
 	NUT_UNUSED_VARIABLE(timeout_ns);
 	switch(gStatus%3) {
@@ -284,7 +320,8 @@ int gpiod_line_request_wait_edge_events(struct gpiod_line_request *request,
 	return 0;
 }
 
-void gpiod_line_request_release(struct gpiod_line_request *request) {
+void gpiod_line_request_release(struct gpiod_line_request *request)
+{
 	NUT_UNUSED_VARIABLE(request);
 }
 #endif	/* WITH_LIBGPIO_VERSION */
