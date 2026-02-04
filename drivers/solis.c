@@ -194,10 +194,10 @@ static void send_shutdown( void ) {
 	int i;
 
 	for (i = 0; i < 10; i++)
-	  ser_send_char(upsfd, CMD_SHUT );
+		ser_send_char(upsfd, CMD_SHUT);
 
-	upslogx(LOG_NOTICE, "Ups shutdown command sent");
-	printf("Ups shutdown command sent\n");
+	upslogx(LOG_NOTICE, "UPS shutdown command sent");
+	printf("UPS shutdown command sent\n");
 }
 
 /* save config ups */
@@ -447,7 +447,7 @@ static void scan_received_pack(void) {
 
 	/* Specific for STAY1200_USB */
 	if (SolisModel == 16) {
-		 InFreq = ((float)(0.37 * (257 - (aux >> 8))));
+		InFreq = ((float)(0.37 * (257 - (aux >> 8))));
 	} else
 		InFreq = 0;
 

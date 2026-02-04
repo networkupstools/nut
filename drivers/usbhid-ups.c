@@ -699,8 +699,8 @@ static void analyze_mapping_usage(void) {
 		return;
 	}
 
-	unused_names = xcalloc(unused_bufsize, sizeof(char));
-	halfused_names = xcalloc(halfused_bufsize, sizeof(char));
+	unused_names = (char *)xcalloc(unused_bufsize, sizeof(char));
+	halfused_names = (char *)xcalloc(halfused_bufsize, sizeof(char));
 
 	for (d = 0; d < pDesc->nitems; d++) {
 		HIDData_t	*pData = &pDesc->item[d];
@@ -770,7 +770,7 @@ static void analyze_mapping_usage(void) {
 					if (*pBufSize < SIZE_MAX - LARGEBUF) {
 						*pBufSize = *pBufSize + LARGEBUF;
 						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
-							*pNames = realloc(*pNames, *pBufSize);
+							*pNames = (char *)realloc(*pNames, *pBufSize);
 
 						if (!*pNames) {
 							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);

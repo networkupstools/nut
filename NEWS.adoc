@@ -89,6 +89,14 @@ https://github.com/networkupstools/nut/milestone/12
      Separated an `upsdrvquery_ping()` operation from earlier code, so it can
      be directly used by consumers (in-tree this is drivers and `upsdrvctl`).
      [issue #3276, PR #3277]
+   * Revised `void*` pointer casting into specific types for values returned
+     by `xmalloc()` and friends, or iterated in loops via `something->next`,
+     as `clang-21` now warns about not-casting void pointers (formally valid,
+     practically uncertain if that code matches the developer's intention),
+     and (better safe than sorry) added `NULL`-return checks although we should
+     not normally get into those code paths with the `x*()` methods which
+     should bail out and abort the program with a common error message when
+     an allocation fails. [#3293]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -261,6 +269,7 @@ https://github.com/networkupstools/nut/milestone/12
      built-in NUT configuration path on all platforms, but to also consider
      `NUT_CONFPATH` and other fallback locations, like other code does.
      [PR #3249]
+   * Introduced `nut-scanner` support for new `nut-upower` driver. [PR #3293]
 
  - `upsd` data server updates:
    * Sometimes "Data for UPS [X] is stale" and "UPS [X] data is no longer
@@ -415,6 +424,9 @@ several `FSD` notifications into one executed action. [PR #3097]
      installed on every system capable of using it; this is a niche capability
      for users of specific devices via a cloud portal. [follow-up to PR #2813
      for issue #2807]
+   * Fixed `m4/ax_realpath_lib.m4` up with more ways to try and gauge the
+     build-time library name from linker/compiler, to improve the chances
+     that `nut-scanner` would find them. [#3293]
 
  - Recipes, CI and helper script updates not classified above:
    * Fixed CI recipes for PyPI publication of PyNUT(Client) module to also

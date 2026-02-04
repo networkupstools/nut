@@ -595,10 +595,10 @@ static void parse_port_argument(void)
 			continue;
 		}
 
-		new_ups = xcalloc(1, sizeof(**ups_list));
+		new_ups = (ups_device_t *)xcalloc(1, sizeof(**ups_list));
 		new_ups->socketname = xstrdup(token);
 
-		ups_list = xrealloc(ups_list, sizeof(*ups_list) * (ups_count + 1));
+		ups_list = (ups_device_t **)xrealloc(ups_list, sizeof(*ups_list) * (ups_count + 1));
 		ups_list[ups_count] = new_ups;
 		ups_count++;
 
@@ -1428,7 +1428,7 @@ static ups_device_t *get_primary_candidate(void)
 				__func__, ups->socketname, priority, rt, rt_low);
 		}
 
-		ups->priority = priority;
+		ups->priority = (ups_priority_t)priority;
 	}
 
 	ups_primary_count = primaries;
@@ -1707,12 +1707,12 @@ static int ups_add_cmd(ups_device_t *ups, const char *val)
 	}
 
 	if (ups->cmd_count >= ups->cmd_allocs) {
-		ups->cmd_list = xrealloc(ups->cmd_list, sizeof(*ups->cmd_list) * (ups->cmd_allocs + CMD_ALLOC_BATCH));
+		ups->cmd_list = (ups_cmd_t **)xrealloc(ups->cmd_list, sizeof(*ups->cmd_list) * (ups->cmd_allocs + CMD_ALLOC_BATCH));
 		memset(ups->cmd_list + ups->cmd_allocs, 0, sizeof(*ups->cmd_list) * CMD_ALLOC_BATCH);
 		ups->cmd_allocs = ups->cmd_allocs + CMD_ALLOC_BATCH;
 	}
 
-	new_cmd = xcalloc(1, sizeof(**ups->cmd_list));
+	new_cmd = (ups_cmd_t *)xcalloc(1, sizeof(**ups->cmd_list));
 	new_cmd->value = xstrdup(val);
 	new_cmd->needs_export = 1;
 
@@ -1756,7 +1756,7 @@ static int ups_del_cmd(ups_device_t *ups, const char *val)
 			ups->cmd_allocs = 0;
 		}
 		else if (ups->cmd_count % CMD_ALLOC_BATCH == 0) {
-			ups->cmd_list = xrealloc(ups->cmd_list, sizeof(*ups->cmd_list) * ups->cmd_count);
+			ups->cmd_list = (ups_cmd_t **)xrealloc(ups->cmd_list, sizeof(*ups->cmd_list) * ups->cmd_count);
 			ups->cmd_allocs = ups->cmd_count;
 		}
 
@@ -1811,12 +1811,12 @@ static int ups_set_var(ups_device_t *ups, const char *key, const char *value)
 	}
 
 	if (ups->var_count >= ups->var_allocs) {
-		ups->var_list = xrealloc(ups->var_list, sizeof(*ups->var_list) * (ups->var_allocs + VAR_ALLOC_BATCH));
+		ups->var_list = (ups_var_t **)xrealloc(ups->var_list, sizeof(*ups->var_list) * (ups->var_allocs + VAR_ALLOC_BATCH));
 		memset(ups->var_list + ups->var_allocs, 0, sizeof(*ups->var_list) * VAR_ALLOC_BATCH);
 		ups->var_allocs = ups->var_allocs + VAR_ALLOC_BATCH;
 	}
 
-	new_var = xcalloc(1, sizeof(**ups->var_list));
+	new_var = (ups_var_t *)xcalloc(1, sizeof(**ups->var_list));
 	new_var->key = xstrdup(key);
 	new_var->value = xstrdup(value);
 	new_var->needs_export = 1;
@@ -1877,7 +1877,7 @@ static int ups_del_var(ups_device_t *ups, const char *key)
 			ups->var_allocs = 0;
 		}
 		else if (ups->var_count % VAR_ALLOC_BATCH == 0) {
-			ups->var_list = xrealloc(ups->var_list, sizeof(*ups->var_list) * ups->var_count);
+			ups->var_list = (ups_var_t **)xrealloc(ups->var_list, sizeof(*ups->var_list) * ups->var_count);
 			ups->var_allocs = ups->var_count;
 		}
 
@@ -1970,12 +1970,12 @@ static int ups_add_range(ups_device_t *ups, const char *key, const int min, cons
 		}
 
 		if (var->range_count >= var->range_allocs) {
-			var->range_list = xrealloc(var->range_list, sizeof(*var->range_list) * (var->range_allocs + SUBVAR_ALLOC_BATCH));
+			var->range_list = (var_range_t **)xrealloc(var->range_list, sizeof(*var->range_list) * (var->range_allocs + SUBVAR_ALLOC_BATCH));
 			memset(var->range_list + var->range_allocs, 0, sizeof(*var->range_list) * SUBVAR_ALLOC_BATCH);
 			var->range_allocs = var->range_allocs + SUBVAR_ALLOC_BATCH;
 		}
 
-		new_range = xcalloc(1, sizeof(**var->range_list));
+		new_range = (var_range_t *)xcalloc(1, sizeof(**var->range_list));
 		new_range->min = min;
 		new_range->max = max;
 
@@ -2029,7 +2029,7 @@ static int ups_del_range(ups_device_t *ups, const char *key, const int min, cons
 					var->range_allocs = 0;
 				}
 				else if (var->range_count % SUBVAR_ALLOC_BATCH == 0) {
-					var->range_list = xrealloc(var->range_list, sizeof(*var->range_list) * var->range_count);
+					var->range_list = (var_range_t **)xrealloc(var->range_list, sizeof(*var->range_list) * var->range_count);
 					var->range_allocs = var->range_count;
 				}
 
@@ -2062,7 +2062,7 @@ static int ups_add_enum(ups_device_t *ups, const char *key, const char *val)
 		}
 
 		if (var->enum_count >= var->enum_allocs) {
-			var->enum_list = xrealloc(var->enum_list, sizeof(*var->enum_list) * (var->enum_allocs + SUBVAR_ALLOC_BATCH));
+			var->enum_list = (char **)xrealloc(var->enum_list, sizeof(*var->enum_list) * (var->enum_allocs + SUBVAR_ALLOC_BATCH));
 			memset(var->enum_list + var->enum_allocs, 0, sizeof(*var->enum_list) * SUBVAR_ALLOC_BATCH);
 			var->enum_allocs = var->enum_allocs + SUBVAR_ALLOC_BATCH;
 		}
@@ -2118,7 +2118,7 @@ static int ups_del_enum(ups_device_t *ups, const char *key, const char *val)
 					var->enum_allocs = 0;
 				}
 				else if (var->enum_count % SUBVAR_ALLOC_BATCH == 0) {
-					var->enum_list = xrealloc(var->enum_list, sizeof(*var->enum_list) * var->enum_count);
+					var->enum_list = (char **)xrealloc(var->enum_list, sizeof(*var->enum_list) * var->enum_count);
 					var->enum_allocs = var->enum_count;
 				}
 
@@ -2346,7 +2346,7 @@ static ssize_t csv_arg_to_array(const char *arg, const char *argcsv, char ***arr
 
 		str = xstrdup(token);
 
-		*array = xrealloc(*array, sizeof(**array) * (*countvar + 1));
+		*array = (char **)xrealloc(*array, sizeof(**array) * (*countvar + 1));
 		(*array)[*countvar] = str;
 		(*countvar)++;
 

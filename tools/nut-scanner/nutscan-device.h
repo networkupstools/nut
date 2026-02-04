@@ -55,6 +55,7 @@ typedef enum nutscan_device_type {
 	TYPE_IPMI,
 	TYPE_AVAHI,
 	TYPE_EATON_SERIAL,
+	TYPE_UPOWER,
 	TYPE_END	/* Sentinel; numeric value serves as array size at compile time */
 } nutscan_device_type_t;
 

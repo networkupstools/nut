@@ -529,8 +529,8 @@ static int tripplite_claim(HIDDevice_t *hd) {
 			if (hd->ProductID == 0x0001) {
 				/* e.g. SMART550USB, SMART3000RM2U */
 				upsdebugx(0, "This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
-						 "Please use the tripplite_usb driver instead.\n",
-						 hd->VendorID, hd->ProductID);
+					"Please use the tripplite_usb driver instead.\n",
+					hd->VendorID, hd->ProductID);
 				return 0;
 			}
 

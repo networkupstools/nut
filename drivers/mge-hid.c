@@ -121,6 +121,8 @@ static usb_device_id_t mge_usb_device_table[] = {
 #endif	/* !SHUT_MODE => USB */
 
 typedef enum {
+	/* See note in the sentinel (last) entry of the mapping table
+	 * if you ever want to change this name to a different number */
 	MGE_DEFAULT_OFFLINE = 0,
 	MGE_PEGASUS = 0x100,
 	MGE_3S = 0x110,
@@ -1971,7 +1973,12 @@ static models_name_t mge_model_names [] =
 	{ "GALAXY", "3000_30", MGE_DEFAULT, "Galaxy 3000 30 kVA" },
 
 	/* end of structure. */
-	{ NULL, NULL, 0, NULL }
+	/* NOTE: Compilers want a named enum value here;
+	 *  table-iteration code may care about it being
+	 *  exactly zero to act as a sentinel. If you ever
+	 *  need to redefine MGE_DEFAULT_OFFLINE to another
+	 *  number, provide a name that resolves to zero here. */
+	{ NULL, NULL, MGE_DEFAULT_OFFLINE, NULL }
 };
 
 

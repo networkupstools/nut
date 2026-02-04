@@ -940,7 +940,7 @@ static int do_command(char *cmd)
 
 		upsdebugx(2, "%s: ENDFOR: done with UPS [%s] [%s]", __func__, NUT_STRARG(currups->sys), NUT_STRARG(currups->desc));
 		upsdebugx(2, "%s: current skip_clause=%d skip_block=%d", __func__, skip_clause, skip_block);
-		currups = currups->next;
+		currups = (ulist_t *)currups->next;
 
 		if (currups) {
 			upsdebugx(2, "%s: ENDFOR: proceed with next UPS [%s]", __func__, NUT_STRARG(currups->desc));
@@ -1216,10 +1216,10 @@ static void add_ups(char *sys, char *desc)
 
 	while (tmp) {
 		last = tmp;
-		tmp = tmp->next;
+		tmp = (ulist_t *)tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(ulist_t));
+	tmp = (ulist_t *)xmalloc(sizeof(ulist_t));
 
 	tmp->sys = xstrdup(sys);
 	tmp->desc = xstrdup(desc);
@@ -1387,7 +1387,7 @@ static void display_json(void)
 	}
 
 	/* Loop through all devices (in single-host mode, this is just one) */
-	for (currups = ulhead; currups != NULL; currups = currups->next) {
+	for (currups = ulhead; currups != NULL; currups = (ulist_t *)currups->next) {
 		ups_connect();
 
 		if (!is_first_ups) printf(",\n");
@@ -1533,7 +1533,7 @@ int main(int argc, char **argv)
 		/* Clean up memory */
 		free(monhost);
 		while (ulhead) {
-			currups = ulhead->next;
+			currups = (ulist_t *)ulhead->next;
 			free(ulhead->sys);
 			free(ulhead->desc);
 			free(ulhead);
@@ -1567,7 +1567,7 @@ int main(int argc, char **argv)
 	free(upsname);
 	free(hostname);
 	while (ulhead) {
-		currups = ulhead->next;
+		currups = (ulist_t *)ulhead->next;
 		free(ulhead->sys);
 		free(ulhead->desc);
 		free(ulhead);

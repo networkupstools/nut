@@ -1390,7 +1390,7 @@ void upsdrv_initups(void)
 	/* If '-x wait' or '-x wait=<level>' option given, branch into
 	 * standalone behavior. */
 	if (getval("wait") || dstate_getinfo("driver.flag.wait")) {
-	  exit(belkin_wait());
+		exit(belkin_wait());
 	}
 
 	belkin_nut_open_tty();

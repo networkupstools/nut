@@ -117,12 +117,12 @@ static int find_ups_device(void)
 
 		/* Check if we are looking for a specific path */
 		if (device_path && strcmp(device_path, "auto") != 0 && *device_path != '\0') {
-			 if (strstr(obj_path, device_path)) {
-				 upsdebugx(1, "Match found for specific path '%s': %s", device_path, obj_path);
-				 ups_object_path = strdup(obj_path);
-				 found = 1;
-				 break;
-			 }
+			if (strstr(obj_path, device_path)) {
+				upsdebugx(1, "Match found for specific path '%s': %s", device_path, obj_path);
+				ups_object_path = strdup(obj_path);
+				found = 1;
+				break;
+			}
 		} else {
 			/* Auto-detection: Check for substring "ups_" */
 			if (strstr(obj_path, "ups_")) {

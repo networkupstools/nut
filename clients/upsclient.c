@@ -1972,7 +1972,7 @@ int upscli_init_default_connect_timeout(const char *cli_secs, const char *config
 	}
 
 	upsdebugx(1, "%s: upscli_default_connect_timeout=%" PRIiMAX
-		 ".%06" PRIiMAX " sec assigned from: %s",
+		".%06" PRIiMAX " sec assigned from: %s",
 		__func__, (intmax_t)upscli_default_connect_timeout.tv_sec,
 		(intmax_t)upscli_default_connect_timeout.tv_usec, cause);
 

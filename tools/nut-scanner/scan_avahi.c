@@ -110,7 +110,7 @@ int nutscan_load_avahi_library(const char *libname_path)
 {
 	if (dl_handle != NULL) {
 		/* if previous init failed */
-		if (dl_handle == (void *)1) {
+		if (dl_handle == (lt_dlhandle)1) {
 			return 0;
 		}
 		/* init has already been done */
@@ -236,7 +236,7 @@ err:
 	upsdebugx(0,
 		"Cannot load AVAHI library (%s) : %s. AVAHI search disabled.",
 		libname_path, dl_error);
-	dl_handle = (void *)1;
+	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
 		free(dl_saved_libname);
@@ -312,7 +312,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 				buf_size = strlen(device) +
 					strlen(host_name) +
 					5 + 1 + 1 + 1;
-				dev->port = malloc(buf_size);
+				dev->port = (char*)malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
 						device, host_name, port);
@@ -321,7 +321,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			else {
 				/*+1+1 is for '@' character and terminating 0 */
 				buf_size = strlen(device) + strlen(host_name) + 1 + 1;
-				dev->port = malloc(buf_size);
+				dev->port = (char*)malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s@%s",
 						device, host_name);
@@ -363,7 +363,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 				/*+1+1 is for ':' character and terminating 0 */
 				/*buf is the string containing the port number*/
 				buf_size = strlen(host_name) + strlen(buf) + 1 + 1;
-				dev->port = malloc(buf_size);
+				dev->port = (char*)malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s:%s",
 						host_name, buf);
@@ -488,7 +488,7 @@ static void browse_callback(
 		void* userdata)
 {
 
-	AvahiClient *c = userdata;
+	AvahiClient *c = (AvahiClient*)userdata;
 	assert(b);
 
 	NUT_UNUSED_VARIABLE(flags);
@@ -521,7 +521,7 @@ static void browse_callback(
 			 * but lacks a value in that enum for lack of flags (unconstrained
 			 * lookup). So we have to silence a warning here...
 			 */
-			if (!((*nut_avahi_service_resolver_new)(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, c)))
+			if (!((*nut_avahi_service_resolver_new)(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, (AvahiLookupFlags)0, resolve_callback, c)))
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
@@ -599,7 +599,7 @@ static AvahiClient* wrap_nut_avahi_client_new(int *error)
 	 * but lacks a value in that enum for lack of flags (unconstrained
 	 * lookup). So we have to silence a warning here...
 	 */
-	return (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), 0, client_callback, NULL, error);
+	return (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), (AvahiClientFlags)0, client_callback, NULL, error);
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
@@ -646,7 +646,8 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 	/* See comments about flags just a bit above */
 	if (!(sb = (*nut_avahi_service_browser_new)(
 		client, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-		"_upsd._tcp", NULL, 0, browse_callback, client))
+		"_upsd._tcp", NULL, (AvahiLookupFlags)0,
+		browse_callback, client))
 	) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop

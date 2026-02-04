@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3647 utf-8
+personal_ws-1.1 en 3650 utf-8
 AAC
 AAS
 ABI
@@ -434,6 +434,7 @@ FullLoad
 Fuß
 GC
 GCCVER
+GDBus
 GES
 GETADDRINFO
 GETPID
@@ -2447,6 +2448,7 @@ libexecdir
 libexpat
 libfreeipmi
 libgd
+libgio
 libglib
 libgpgme
 libgpiod
@@ -2989,6 +2991,7 @@ rc
 rcctl
 readline
 readonly
+realpath
 realpower
 realups
 rebase
