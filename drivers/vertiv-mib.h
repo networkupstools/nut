@@ -25,6 +25,6 @@
 #include "main.h"
 #include "snmp-ups.h"
 
-extern mib2nut_info_t	vertiv_psi5_subdriver;
+extern mib2nut_info_t	vertiv;
 
 #endif /* VERTIV_PSI5_MIB_H */

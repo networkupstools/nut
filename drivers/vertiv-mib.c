@@ -1,4 +1,4 @@
-/*	vertiv-psi5-mib.h - Driver for Vertiv Liebert PSI5 UPS (maybe other Vertiv too)
+/*	vertiv-mib.h - Driver for Vertiv Liebert PSI5 UPS (maybe other Vertiv too)
  *
  *	Copyright (C)
  *		2026       jawz101 <jawz101@users.noreply.github.com> + Gemini
@@ -25,9 +25,9 @@
  * - Beeper Control
  */
 
-#include "vertiv-psi5-mib.h"
+#include "vertiv-mib.h"
 
-#define VERTIV_PSI5_MIB_VERSION "0.01"
+#define VERTIV_MIB_VERSION "0.01"
 
 /* Base OIDs from IS-UNITY-DP Card */
 #define VERTIV_BASEOID        ".1.3.6.1.4.1.476.1.42"
@@ -36,7 +36,7 @@
 #define VERTIV_ALM_OID        VERTIV_BASEOID ".3.9.20.1.10.1.2.100"
 #define VERTIV_PWRSTATUS_OID  VERTIV_BASEOID ".3.5.3"
 
-static snmp_info_t vertiv_psi5_mib[] = {
+static snmp_info_t vertiv_mib[] = {
 	/* standard MIB items */
 	snmp_info_default("device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK | SU_FLAG_SEMI_STATIC, NULL),
 	snmp_info_default("device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK | SU_FLAG_SEMI_STATIC, NULL),
@@ -83,7 +83,7 @@ static snmp_info_t vertiv_psi5_mib[] = {
 	snmp_info_sentinel
 };
 
-static alarms_info_t vertiv_psi5_alarms[] = {
+static alarms_info_t vertiv_alarms[] = {
 	/* Event Branch Monitoring */
 	{ VERTIV_ALM_OID ".4168", "OB",   "Battery Discharging" },
 	{ VERTIV_ALM_OID ".4162", "LB",   "Battery Low" },
@@ -95,12 +95,12 @@ static alarms_info_t vertiv_psi5_alarms[] = {
 	{ NULL, NULL, NULL }
 };
 
-mib2nut_info_t vertiv_psi5_subdriver = {
-	"vertiv-psi5",
-	VERTIV_PSI5_MIB_VERSION,
+mib2nut_info_t vertiv = {
+	"vertiv",
+	VERTIV_MIB_VERSION,
 	VERTIV_PWRSTATUS_OID,/* Optional Power Status OID */
 	VERTIV_ID_OID,      /* Model Name OID */
-	vertiv_psi5_mib,
+	vertiv_mib,
 	VERTIV_BASEOID,     /* SysOID fingerprint */
-	vertiv_psi5_alarms
+	vertiv_alarms
 };
