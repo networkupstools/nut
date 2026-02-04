@@ -367,14 +367,14 @@ mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE=1
 mge_shut_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 
 # UPower
-if HAVE_GLIB
+if WITH_UPOWER
 # Only build nut-upower if the set of libGLib/libGIO was found
   driverexec_PROGRAMS += $(UPOWER_DRIVERLIST)
 
   nut_upower_SOURCES = nut-upower.c
-  nut_upower_LDADD = $(LDADD_DRIVERS) $(GLIB_LIBS)
-  nut_upower_CFLAGS = $(AM_CFLAGS) $(GLIB_CFLAGS)
-endif
+  nut_upower_LDADD = $(LDADD_DRIVERS) $(LIBGLIB_LIBS) $(LIBGIO_LIBS)
+  nut_upower_CFLAGS = $(AM_CFLAGS) $(LIBGLIB_CFLAGS) $(LIBGIO_CFLAGS)
+endif WITH_UPOWER
 
 # SNMP
 # Please keep the MIB table below sorted roughly alphabetically (incidentally

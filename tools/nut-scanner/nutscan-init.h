@@ -39,6 +39,7 @@ extern int nutscan_avail_nut_simulation;
 extern int nutscan_avail_snmp;
 extern int nutscan_avail_usb;
 extern int nutscan_avail_xml_http;
+extern int nutscan_avail_upower;
 
 void nutscan_init(void);
 void nutscan_free(void);
