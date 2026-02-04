@@ -18,76 +18,80 @@
  *	along with this program; if not, write to the Free Software
  *	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
+ * Includes support for:
+ * - Basic Monitoring (Voltage, Load, Temperature)
+ * - Battery Management (Charge, Runtime)
+ * - Alarms (Replace Battery, Overload, etc.)
+ * - Beeper Control
  */
 
+#include "main.h"
+#include "snmp-ups.h"
 #include "vertiv-psi5-mib.h"
 
-#define VERTIV_PSI5_MIB_VERSION "0.01"
+#define VERTIV_PSI5_MIB_VERSION "0.20"
 
-/* SysOID for Vertiv/Liebert */
-#define VERTIV_BASEOID	".1.3.6.1.4.1.476.1.42"
-#define VERTIV_PSI5_SYSOID	VERTIV_BASEOID
-#define VERTIV_PSI5_OID_MODEL	VERTIV_BASEOID ".2.1.4.1"
-#define VERTIV_PSI5_OID_PWR	VERTIV_BASEOID ".3.5.3"
-
-/* Vertiv PSI5-750MT120 Mapping
- * Monitoring: Based on integer branch at .1.3.6.1.4.1.476.1.42.3.9.30...
- * Control: Based on standard Liebert Environmental MIB at .1.3.6.1.4.1.476.1.42.3.3.5...
- */
+/* Base OIDs from IS-UNITY-DP Card */
+#define VERTIV_BASEOID        ".1.3.6.1.4.1.476.1.42"
+#define VERTIV_ID_OID         VERTIV_BASEOID ".2.4.2.1.4.1" 
+#define VERTIV_VAL_OID        VERTIV_BASEOID ".3.9.30.1.20.1.2.1"
+#define VERTIV_ALM_OID        VERTIV_BASEOID ".3.9.20.1.10.1.2.100"
 
 static snmp_info_t vertiv_psi5_mib[] = {
-	/* standard MIB items */
-	snmp_info_default("device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL),
+	/* Device Identification */
+	snmp_info_default("device.mfr",    0, 1.0, VERTIV_BASEOID ".2.1.1.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.model",  0, 1.0, VERTIV_ID_OID, NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.serial", 0, 1.0, VERTIV_BASEOID ".2.4.2.1.7.1", NULL, SU_FLAG_OK, NULL),
 
-	/* Load and Temperature */
-	snmp_info_default("ups.load", 0, 1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.5861", "", SU_OUTPUT_1, NULL),
-	snmp_info_default("ups.temperature", 0, 0.1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.10.1.2.1.4291", NULL, 0, NULL),
+	/* UPS Measurements - Scaling verified via Audit */
+	snmp_info_default("ups.load",        0, 1.0, VERTIV_VAL_OID ".5861", "", SU_FLAG_OK, NULL),
+	snmp_info_default("ups.temperature", 0, 1.0, VERTIV_BASEOID ".3.9.30.1.10.1.2.1.4291", NULL, 0, NULL),
 
-	/* Battery */
-	snmp_info_default("battery.charge", 0, 0.1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4153", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL),
-	snmp_info_default("battery.runtime", 0, 1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4150", "", SU_FLAG_OK, NULL),
-	snmp_info_default("battery.voltage", 0, 0.1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4148", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL),
+	/* Battery Data */
+	snmp_info_default("battery.charge",  0, 1.0, VERTIV_VAL_OID ".4153", "", SU_FLAG_OK, NULL),
+	/* Multiplier 60.0 converts UPS minutes to NUT seconds */
+	snmp_info_default("battery.runtime", 0, 60.0, VERTIV_VAL_OID ".4150", "", SU_FLAG_OK, NULL),
+	snmp_info_default("battery.voltage", 0, 1.0, VERTIV_VAL_OID ".4148", "", SU_FLAG_OK, NULL),
 
-	/* Input */
-	snmp_info_default("input.voltage", 0, 0.1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4096", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL),
-	snmp_info_default("input.frequency", 0, 0.1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4105", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL),
+	/* Power Quality - 0.1 multiplier for tenths of Volts/Hz */
+	snmp_info_default("input.voltage",   0, 0.1, VERTIV_VAL_OID ".4096", "", SU_FLAG_OK, NULL),
+	snmp_info_default("input.frequency", 0, 0.1, VERTIV_VAL_OID ".4105", "", SU_FLAG_OK, NULL),
+	snmp_info_default("output.voltage",  0, 0.1, VERTIV_VAL_OID ".4385", "", SU_FLAG_OK, NULL),
+	snmp_info_default("output.current",  0, 0.1, VERTIV_VAL_OID ".4204", "", SU_FLAG_OK, NULL),
+	snmp_info_default("output.power",    0, 1.0, VERTIV_VAL_OID ".4208", "", SU_FLAG_OK, NULL),
 
-	/* Output */
-	snmp_info_default("output.voltage", 0, 0.1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4385", "", SU_FLAG_OK|SU_FLAG_UNIQUE, NULL),
-	snmp_info_default("output.current", 0, 0.1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4204", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL),
-	snmp_info_default("output.power", 0, 1, ".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4208", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL),
+	/* UPS Status & Beeper */
+	/* Output Source: 3=Normal(OL), 4/5=Battery(OB) */
+	snmp_info_default("ups.status",      0, 1.0, VERTIV_VAL_OID ".4872", "", SU_FLAG_OK, NULL),
+	/* Beeper: 1=Enabled, 2=Disabled. ST_FLAG_RW makes it settable via upsrw */
+	snmp_info_default("ups.beeper.status", ST_FLAG_RW, 1.0, VERTIV_VAL_OID ".6188", "", SU_FLAG_OK, NULL),
 
-	/* Shutdown / Restart Control
-	 * Derived from lgpEnvControl (LIEBERT-GP-ENVIRONMENTAL-MIB)
-	 */
-	snmp_info_default("ups.delay.shutdown", ST_FLAG_RW, 3, ".1.3.6.1.4.1.476.1.42.3.3.5.1.0", "", SU_TYPE_TIME | SU_FLAG_OK, NULL),
-	snmp_info_default("ups.delay.start", ST_FLAG_RW, 3, ".1.3.6.1.4.1.476.1.42.3.3.5.2.0", "", SU_TYPE_TIME | SU_FLAG_OK, NULL),
+	/* Shutdown / Restart Control */
+	snmp_info_default("ups.delay.shutdown", ST_FLAG_RW, 1.0, VERTIV_VAL_OID ".5814", "", SU_TYPE_TIME | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.delay.start",    ST_FLAG_RW, 1.0, VERTIV_VAL_OID ".5816", "", SU_TYPE_TIME | SU_FLAG_OK, NULL),
 
-	/* Status Flags: TBD */
-
-	/* end of structure. */
+	/* End of monitoring structure */
 	snmp_info_sentinel
 };
 
 static alarms_info_t vertiv_psi5_alarms[] = {
-	/* Replace Battery */
-	{ ".1.3.6.1.4.1.476.1.42.3.9.20.1.20.1.2.100.6182", "RB", "Replace Battery" },
-	/* Inverter Failure */
-	{ ".1.3.6.1.4.1.476.1.42.3.9.20.1.20.1.2.100.4233", NULL, "Inverter failure!" },
-	/* Overload */
-	{ ".1.3.6.1.4.1.476.1.42.3.9.20.1.20.1.2.100.5806", "OVER", "Output overload!" },
+	/* Event Branch Monitoring */
+	{ VERTIV_ALM_OID ".4168", "OB",   "Battery Discharging" },
+	{ VERTIV_ALM_OID ".4162", "LB",   "Battery Low" },
+	{ VERTIV_ALM_OID ".5806", "OVER", "Output Overload" },
+	{ VERTIV_ALM_OID ".6182", "RB",   "Replace Battery" },
+	{ VERTIV_ALM_OID ".4233", "FAULT", "Inverter Failure" },
+	{ VERTIV_ALM_OID ".4310", "OT",   "Over Temperature" },
+	{ VERTIV_ALM_OID ".4215", "OFF",  "UPS Output Off" },
+	{ NULL, NULL, NULL }
 };
-
-/* SysOID for Vertiv/Liebert */
 
 mib2nut_info_t vertiv_psi5_subdriver = {
 	"vertiv-psi5",
 	VERTIV_PSI5_MIB_VERSION,
-	VERTIV_PSI5_OID_PWR,
-	VERTIV_PSI5_OID_MODEL,
+	NULL,               /* Optional Power OID */
+	VERTIV_ID_OID,      /* Model Name OID */
 	vertiv_psi5_mib,
-	VERTIV_PSI5_SYSOID,
+	VERTIV_BASEOID,     /* SysOID fingerprint */
 	vertiv_psi5_alarms
 };
