@@ -751,8 +751,8 @@ spellcheck spellcheck-interactive:
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
 SET_PARMAKES_OPT = \
-	+@PARMAKES_OPT=""; \
-	  case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+	PARMAKES_OPT=""; \
+	case " $(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
 		*"j"*) ;; \
 		*) \
 			if [ "$${MAXPARMAKES-}" -gt 1 ] 2>/dev/null ; then \
@@ -760,7 +760,7 @@ SET_PARMAKES_OPT = \
 			fi ; \
 			PARMAKES_OPT="-j $${MAXPARMAKES}" ; \
 		;; \
-	  esac
+	esac
 
 spellcheck-quick:
 	+@$(SET_PARMAKES_OPT); \
