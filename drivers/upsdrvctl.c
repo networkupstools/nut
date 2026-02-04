@@ -1237,7 +1237,10 @@ static void start_driver(const ups_t *ups)
 #ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
 #else	/* WIN32 */
-	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+	if (driverpath && *driverpath == '/')
+		snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+	else	/* Assume windows-style path with backslashes */
+		snprintf(dfn, sizeof(dfn), "%s\\%s.exe", driverpath, ups->driver);
 #endif	/* WIN32 */
 	ret = stat(dfn, &fs);
 
