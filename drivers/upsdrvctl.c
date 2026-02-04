@@ -943,7 +943,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	BOOL	ret;
 	DWORD	res;
 	DWORD	exit_code = 0;
-	char	commandline[SMALLBUF];
+	char	commandline[LARGEBUF];
 	STARTUPINFO	StartupInfo;
 	PROCESS_INFORMATION	ProcessInformation;
 	int	i = 1;
@@ -951,15 +951,30 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	memset(&StartupInfo, 0, sizeof(STARTUPINFO));
 
 	/* the command line is made of the driver name followed by args */
-	snprintf(commandline, sizeof(commandline), "%s", ups->driver);
+	if (strstr(argv[0], ups->driver)) {
+		/* We already know whom to call (got a pointer to needle in the haystack) */
+		snprintf(commandline, sizeof(commandline), "%s", argv[0]);
+	} else {
+		/* Hope for the PATH based resolution to work, perhaps the
+		 * driver program is located nearby (depends on configure
+		 * options). Note that for builds tested in the workspace
+		 * this may be misleading ("nearby" is under ".libs/" and
+		 * fails to run directly without the tweaks of libtool
+		 * wrapper provided in the directory just above).
+		 */
+		snprintf(commandline, sizeof(commandline), "%s%s", ups->driver, EXEEXT);
+	}
+
 	while (argv[i] != NULL) {
 		snprintfcat(commandline, sizeof(commandline), " %s", argv[i]);
 		i++;
 	}
 
+	upsdebugx(1, "%s[WIN32]: CreateProcess(argv0='%s' cmdline='%s')...",
+		__func__, argv[0], commandline);
 	ret = CreateProcess(
-			argv[0],
-			commandline,
+			argv[0],	/* Application/Module name, often the program to run */
+			commandline,	/* Full command line including the program to run and its args */
 			NULL,
 			NULL,
 			FALSE,
