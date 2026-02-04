@@ -1475,7 +1475,7 @@ MAINTAINERCLEANFILES_PACKAGES += *.p5p
 MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_DISTBALL)
 MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_PACKAGES)
 
-package: dist
+package: all
 	+DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
 	rm -rf "$$DESTDIR"; \
 	case "`uname -s`" in \
