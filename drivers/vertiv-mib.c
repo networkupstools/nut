@@ -50,6 +50,30 @@ static info_lkp_t vertiv_beeper_status_info[] = {
 	info_lkp_sentinel
 };
 
+/* FIXME: the below may introduce status redundancy, that needs to be
+ * addressed by the driver, as for usbhid-ups! */
+/*
+ *  DESCRIPTION
+ *      The present source of output power.  The enumeration
+ *      none(2) indicates that there is no source of output
+ *      power (and therefore no output power), for example,
+ *      the system has opened the output breaker.
+ *
+ *      NOTE: In a single-module system, this point
+ *      is intended to have the same behavior as
+ *      the RFC1628 point upsOutputSource."
+ */
+static info_lkp_t vertiv_power_source_info[] = {
+	info_lkp_default(1, ""),	/* other */
+	info_lkp_default(2, "OFF"),	/* none */
+	info_lkp_default(3, "OL"),	/* normal */
+	info_lkp_default(4, "BYPASS"),	/* bypass */
+	info_lkp_default(5, "OB"),	/* battery */
+	info_lkp_default(6, "BOOST"),	/* booster */
+	info_lkp_default(7, "TRIM"),	/* reducer */
+	info_lkp_sentinel
+};
+
 static snmp_info_t vertiv_mib[] = {
 	/* standard MIB items */
 	snmp_info_default("device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK | SU_FLAG_SEMI_STATIC, NULL),
@@ -79,8 +103,8 @@ static snmp_info_t vertiv_mib[] = {
 	snmp_info_default("output.power",    0, 1.0, VERTIV_VAL_OID ".4208", "", SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL),
 
 	/* UPS Status */
-	/* Output Source: 3=Normal(OL), 4/5=Battery(OB) */
-	snmp_info_default("ups.status",      0, 1.0, VERTIV_VAL_OID ".4872", "", SU_FLAG_OK, NULL),
+	/* Output Source: 3=Normal(OL), 4/5=Battery(OB) et al */
+	snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, VERTIV_VAL_OID ".4872", "", SU_STATUS_PWR | SU_FLAG_OK, vertiv_power_source_info),
 
 	/* Beeper status and commands */
 	snmp_info_default("ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, VERTIV_BEEPER_OID, "", SU_FLAG_UNIQUE, vertiv_beeper_status_info),
