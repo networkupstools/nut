@@ -124,8 +124,8 @@ upload publish:
 # Using pypa/setuptools
 .pypi-dist: .pypi-src
 	+@$(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-build || \
-	 $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-obsolete || \
-	 $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-wheel
+	  $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-obsolete || \
+	  $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-wheel
 	@touch '$@'
 
 # The most modern approach as of 2023
