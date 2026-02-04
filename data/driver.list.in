@@ -742,6 +742,7 @@
 "Liebert"	"ups"	"3"	"PowerSure PSA500MT3-230U"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/601
 "Liebert"	"ups"	"3"	"PowerSure PSI 1440"	"USB"	"usbhid-ups"	# http://www.emersonnetworkpower.com/en-US/Products/ACPower/Pages/LiebertPowerSurePSILineInteractiveUPS10003000VA.aspx
 "Liebert"	"ups"	"3"	"PSI5-800RT120"	"USB"	"usbhid-ups"	# https://www.vertiv.com/en-us/products-catalog/critical-power/uninterruptible-power-supplies-ups/psi5-800rt120/
+"Liebert"	"ups"	"3"	"PSI5-750MT120 (with IS-UNITY-DP SNMP card)"	""	"snmp-ups"	# https://github.com/networkupstools/nut/pull/3299
 
 "LNXI"	"pdu"	"1"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
 
