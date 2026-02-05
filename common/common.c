@@ -4822,7 +4822,9 @@ void nut_prepare_search_paths(void) {
 
 	/* As a starting point, allow at least as many items as before */
 	/* TODO: somehow extend (xrealloc?) if we mix other paths later */
-	for (i = 0; search_paths_builtin[i] != NULL; i++) {}
+	for (i = 0; search_paths_builtin[i] != NULL; i++) {
+		upsdebugx(7, "counting search_paths_builtin[%d] : %s", i, search_paths_builtin[i]);
+	}
 	count_builtin = i + 1;	/* +1 for the NULL */
 
 	/* Bytes inside should all be zeroed... */
@@ -4834,6 +4836,8 @@ void nut_prepare_search_paths(void) {
 		int dupe = 0;
 		const char *dirname = search_paths_builtin[i];
 
+		upsdebugx(7, "%s: checking search_paths_builtin[%" PRIuSIZE " of %" PRIuSIZE "] : %s",
+			__func__, i, count_builtin - 1, NUT_STRARG(dirname));
 		if ((dp = opendir(dirname)) == NULL) {
 			upsdebugx(5, "%s: SKIP "
 				"unreachable directory #%" PRIuSIZE " : %s",
@@ -4844,12 +4848,16 @@ void nut_prepare_search_paths(void) {
 
 #if HAVE_DECL_REALPATH
 		/* allocates the buffer we free() later */
+		upsdebugx(7, "%s: call realpath()", __func__);
 		dirname = (const char *)realpath(dirname, NULL);
+		upsdebug_with_errno(7, "%s: realpath() returned: %s", __func__, NUT_STRARG(dirname));
 #endif
 
 		/* Revise for duplicates */
 		/* Note: (count_filtered == 0) means first existing dir seen, no hassle */
 		for (j = 0; j < count_filtered; j++) {
+			upsdebugx(7, "%s: check for duplicates filtered_search_paths[%" PRIuSIZE " of %" PRIuSIZE "] : %s",
+				__func__, j, count_filtered, NUT_STRARG(filtered_search_paths[j]));
 			if (!strcmp(filtered_search_paths[j], dirname)) {
 #if HAVE_DECL_REALPATH
 				if (strcmp(search_paths_builtin[i], dirname)) {
