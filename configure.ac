@@ -411,8 +411,8 @@ test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
 
 AS_CASE([x"${nut_with_confdir}"],
-	[yes], [AC_MSG_ERROR([--with-confdir should specify a path name or expansible expression])],
-	[/*|?:\*|?:/*|*/*|*'\'*], [
+	[xyes], [AC_MSG_ERROR([--with-confdir should specify a path name or expansible expression])],
+	[x/*|x?":\\"*|x?:/*|x*/*|x*'\'*], [
 		AC_MSG_NOTICE([A non-trivial --with-confdir path was specified (${nut_with_confdir}); any --with-confdir-suffix (${nut_with_confdir_suffix}) or --sysconfdir (${sysconfdir}) values are disregarded])
 	], [
 		RESULT_COMMENT=""
