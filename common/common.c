@@ -5003,7 +5003,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	char current_test_path[NUT_PATH_MAX + 1];
 
 	upsdebugx(3, "%s('%s', %" PRIuSIZE ", '%s', %i): Entering method...",
-		__func__, base_libname, base_libname_length, dirname, index);
+		__func__, NUT_STRARG(base_libname), base_libname_length, NUT_STRARG(dirname), index);
 
 	memset(current_test_path, 0, sizeof(current_test_path));
 
@@ -5136,7 +5136,7 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 	/* First call to tokenization passes the string, others pass NULL */
 	pathset_tmp = xstrdup(pathset);
 	upsdebugx(4, "%s: Looking for lib %s in a colon-separated path set",
-		__func__, base_libname);
+		__func__, NUT_STRARG(base_libname));
 	while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ":" ))) {
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 		if (libname_path != NULL)
@@ -5172,7 +5172,7 @@ char * get_libname(const char* base_libname)
 	size_t base_libname_length = strlen(base_libname);
 	struct stat	st;
 
-	upsdebugx(3, "%s('%s'): Entering method...", __func__, base_libname);
+	upsdebugx(3, "%s('%s'): Entering method...", __func__, NUT_STRARG(base_libname));
 
 	/* First, check for an exact hit by absolute/relative path
 	 * if `base_libname` includes path separator character(s) */
