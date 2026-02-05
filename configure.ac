@@ -1318,9 +1318,13 @@ AC_CHECK_HEADER([poll.h],
         [Define to 1 if you have <poll.h>.])])
 
 SEMLIBS=""
+nut_have_semaphore_h=no
+nut_have_semaphore_unnamed=no
+nut_have_semaphore_named=no
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
+     nut_have_semaphore_h=yes
 
      AC_LANG_PUSH([C])
      myLIBS="${LIBS}"
@@ -1331,11 +1335,11 @@ AC_CHECK_HEADER([semaphore.h],
      dnl   sem_init   nut_scanner-nut-scanner.o
      dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
      AC_SEARCH_LIBS([sem_init], [pthread], [], [
-	unset ac_cv_search_sem_init
-	AC_SEARCH_LIBS([sem_init], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+        unset ac_cv_search_sem_init
+        AC_SEARCH_LIBS([sem_init], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
      AC_SEARCH_LIBS([sem_open], [pthread], [], [
-	unset ac_cv_search_sem_open
-	AC_SEARCH_LIBS([sem_open], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+        unset ac_cv_search_sem_open
+        AC_SEARCH_LIBS([sem_open], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
 
      AS_CASE([${ac_cv_search_sem_init}], [no*], [], [SEMLIBS="${ac_cv_search_sem_init}"])
      AS_CASE([${ac_cv_search_sem_open}], [no*], [], ["${SEMLIBS}"], [], [SEMLIBS="${ac_cv_search_sem_open}"])
@@ -1357,6 +1361,7 @@ sem_destroy(&semaphore);
         [AC_DEFINE([HAVE_SEMAPHORE_UNNAMED], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_init() and sem_destroy() for unnamed semaphores.])
          AC_MSG_RESULT([ok])
+         nut_have_semaphore_unnamed=yes
         ],
         [AC_MSG_RESULT([no])]
      )
@@ -1381,6 +1386,7 @@ if (semaphore != SEM_FAILED)
         [AC_DEFINE([HAVE_SEMAPHORE_NAMED], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_open() and sem_close() for named semaphores.])
          AC_MSG_RESULT([ok])
+         nut_have_semaphore_named=yes
         ],
         [AC_MSG_RESULT([no])]
      )
@@ -1389,7 +1395,8 @@ if (semaphore != SEM_FAILED)
      AC_LANG_POP([C])
     ]
 )
-AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, test -n "${SEMLIBS}")
+AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, [test -n "${SEMLIBS}"])
+AM_CONDITIONAL(HAVE_SEMAPHORE_ABILITY, [test -n "${SEMLIBS}" -o x"${nut_have_semaphore_h}" = xyes -o x"${nut_have_semaphore_unnamed}" = xyes -o x"${nut_have_semaphore_named}" = xyes])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-threading request
@@ -1400,8 +1407,8 @@ NUT_ARG_WITH([threading],
 
 AC_MSG_CHECKING([Whether to enable support for parallelization of some tools])
 AS_CASE(["${nut_with_threading}"],
-    [""|yes], [AM_COND_IF([HAVE_SEMAPHORE_LIBS], [], [AC_MSG_ERROR([pthread support was required but libraries not detected])])],
-    [auto],[AM_COND_IF([HAVE_SEMAPHORE_LIBS], [nut_with_threading=yes], [nut_with_threading=no])],
+    [""|yes], [AM_COND_IF([HAVE_SEMAPHORE_ABILITY], [], [AC_MSG_ERROR([pthread support was required but libraries not detected])])],
+    [auto],[AM_COND_IF([HAVE_SEMAPHORE_ABILITY], [nut_with_threading=yes], [nut_with_threading=no])],
     [no], [],
         [AC_MSG_ERROR([Unsupported value for --with-threading option: "${nut_with_threading}"])]
 )
