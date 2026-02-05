@@ -4833,7 +4833,8 @@ void nut_prepare_search_paths(void) {
 	/* As a starting point, allow at least as many items as before */
 	/* TODO: somehow extend (xrealloc?) if we mix other paths later */
 	for (i = 0; search_paths_builtin[i] != NULL; i++) {
-		upsdebugx(7, "counting search_paths_builtin[%d] : %s", i, search_paths_builtin[i]);
+		/* Different way of printing with minimal crash-ability on older systems */
+		upsdebugx(7, "counting search_paths_builtin[%d] : %s", (int)i, NUT_STRARG(search_paths_builtin[i]));
 	}
 	count_builtin = i + 1;	/* +1 for the NULL */
 
