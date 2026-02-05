@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3649 utf-8
+personal_ws-1.1 en 3654 utf-8
 AAC
 AAS
 ABI
@@ -959,6 +959,7 @@ PPDnnn
 PPP
 PR
 PR'ed
+PRIuSIZE
 PROGRA
 PROGS
 PROTVER
@@ -2474,6 +2475,7 @@ libnutscan
 libpcre
 libpng
 libpowerman
+libpthread
 libre
 libregex
 libs
@@ -2834,6 +2836,7 @@ pF
 pacman
 pacstrap
 parallelizable
+parallelize
 parallelized
 param
 parsable
@@ -3224,6 +3227,7 @@ startup
 statepath
 stayoff
 stderr
+stdint
 stdlib
 stdout
 stdupsv
@@ -3643,6 +3647,7 @@ znapzendzetup
 zpool
 zroot
 zsh
+zu
 zw
 zwfa
 zzz
