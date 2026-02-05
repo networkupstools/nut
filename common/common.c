@@ -3767,7 +3767,13 @@ char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret, errno_orig = errno;
+#ifdef HAVE_VA_COPY_VARIANT
+	size_t	bufsize = 128;
+#else
+	/* err on the safe(r) side, as re-runs can truncate
+	 * the output when varargs are re-used */
 	size_t	bufsize = LARGEBUF;
+#endif
 	char	*buf = (char *)xcalloc(bufsize, sizeof(char));
 
 	/* Be pedantic about our limitations */
@@ -3827,7 +3833,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 			 * Based on https://stackoverflow.com/a/72981237/4715872
 			 */
 			if (bufsize < SIZE_MAX/2) {
-				size_t	newbufsize = bufsize*2;
+				size_t	newbufsize = bufsize < LARGEBUF ? LARGEBUF : bufsize*2;
 				if (ret > 0) {
 					/* Be generous, we snprintfcat() some
 					 * suffixes, prefix a timestamp, etc. */
