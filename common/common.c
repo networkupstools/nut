@@ -4819,6 +4819,10 @@ void nut_prepare_search_paths(void) {
 	size_t	count_builtin = 0, count_filtered = 0, i, j, index = 0;
 	const char ** filtered_search_paths;
 	DIR *dp;
+#if HAVE_DECL_REALPATH
+	/* Per docs, buffer must be at least PATH_MAX bytes */
+	char	realpath_buf[NUT_PATH_MAX + 1] = {0}, *realpath_dirname = NULL;
+#endif
 
 	/* As a starting point, allow at least as many items as before */
 	/* TODO: somehow extend (xrealloc?) if we mix other paths later */
@@ -4850,8 +4854,14 @@ void nut_prepare_search_paths(void) {
 #if HAVE_DECL_REALPATH
 		/* allocates the buffer we free() later */
 		upsdebugx(7, "%s: call realpath()", __func__);
-		dirname = (const char *)realpath(dirname, NULL);
-		upsdebug_with_errno(7, "%s: realpath() returned: %s", __func__, NUT_STRARG(dirname));
+		errno = 0;
+		realpath_dirname = realpath(dirname, realpath_buf);
+		if (errno || !realpath_dirname)
+			upsdebug_with_errno(7, "%s: realpath() failed and returned: %s", __func__, NUT_STRARG(realpath_dirname));
+		else
+			upsdebugx(7, "%s: realpath() returned: %s", __func__, NUT_STRARG(realpath_dirname));
+		if (realpath_dirname)
+			dirname = (const char *)realpath_dirname;
 #endif
 
 		/* Revise for duplicates */
