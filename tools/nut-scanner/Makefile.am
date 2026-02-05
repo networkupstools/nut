@@ -110,10 +110,12 @@ if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif WITH_LIBLTDL
 
+if WITH_THREADING
 if HAVE_SEMAPHORE_LIBS
 # Are additional libraries needed for semaphore support?
 libnutscan_la_LIBADD += $(SEMLIBS)
 endif HAVE_SEMAPHORE_LIBS
+endif WITH_THREADING
 
 libnutscan_la_LIBADD += $(SERLIBS)
 

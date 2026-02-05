@@ -1391,6 +1391,25 @@ if (semaphore != SEM_FAILED)
 )
 AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, test -n "${SEMLIBS}")
 
+dnl ----------------------------------------------------------------------
+dnl Check for --with-threading request
+
+NUT_ARG_WITH([threading],
+    [If it is possible to parallelize some tools (e.g. nut-scanner), do so?],
+    [auto])
+
+AC_MSG_CHECKING([Whether to enable support for parallelization of some tools])
+AS_CASE(["${nut_with_threading}"],
+    [""|yes], [AM_COND_IF([HAVE_SEMAPHORE_LIBS], [], [AC_MSG_ERROR([pthread support was required but libraries not detected])])],
+    [auto],[AM_COND_IF([HAVE_SEMAPHORE_LIBS], [nut_with_threading=yes], [nut_with_threading=no])],
+    [no], [],
+        [AC_MSG_ERROR([Unsupported value for --with-threading option: "${nut_with_threading}"])]
+)
+AC_MSG_RESULT([${nut_with_threading}])
+NUT_REPORT_FEATURE([Enable support for parallelization of some tools], [${nut_with_threading}], [${SEMLIBS}],
+					[WITH_THREADING], [Define to enable build with threading support])
+
+dnl ----------------------------------------------------------------------
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit setlogmask)

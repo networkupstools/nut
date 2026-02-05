@@ -417,6 +417,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	char *current_port_name = NULL;
 	char **serial_ports_list;
 	int  current_port_nb;
+	size_t	i;
 
 #ifdef HAVE_PTHREAD
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
@@ -428,7 +429,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
-	size_t thread_count = 0, i;
+	size_t thread_count = 0;
 
 	pthread_mutex_init(&dev_mutex, NULL);
 #endif /* HAVE_PTHREAD */

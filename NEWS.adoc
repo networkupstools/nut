@@ -426,6 +426,9 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Fixed `m4/ax_realpath_lib.m4` up with more ways to try and gauge the
      build-time library name from linker/compiler, to improve the chances
      that `nut-scanner` would find them. [#3293]
+   * Added an option to (primarily) `--disable-threading` for systems with
+     detected but broken `libpthread` support, or to test alternate code
+     paths during development or in CI. [#3300]
 
  - Recipes, CI and helper script updates not classified above:
    * Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
