@@ -97,6 +97,12 @@ https://github.com/networkupstools/nut/milestone/12
      not normally get into those code paths with the `x*()` methods which
      should bail out and abort the program with a common error message when
      an allocation fails. [#3293]
+   * We have long abstracted `(s)size_t` value printing in debug logs etc.
+     using `PRIuSIZE` and similar macros. They fell back to `"%zu"` when not
+     provided otherwise, but not all platforms actually deliver these format
+     characters. Now it is evaluated at `configure` time (to check that the
+     characters may be used), and if not -- during `nut_stdint.h` parsing to
+     fit known `int`/`long`/`long long` types. [#3300]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files

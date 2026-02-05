@@ -1655,6 +1655,24 @@ AS_IF([test x"${ac_cv_func_strdup}" = xyes],
     [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
+AC_CACHE_CHECK([for %zu as PRIuSIZE],
+    [ac_cv_printfmt_zu],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdlib.h>
+],
+            [[size_t n = 123;
+char buf[64];
+snprintf(buf, sizeof(buf), "%zu", n);
+return !strcmp(buf, "123");
+]])],
+        [ac_cv_printfmt_zu=yes], [ac_cv_printfmt_zu=no]
+    )])
+AS_IF([test x"${ac_cv_printfmt_zu}" = xyes],
+    [AC_DEFINE([HAVE_PRINTF_ZU], 1, [defined if standard library has, and C standard allows, the printf("%zu", size_t) support])],
+    [AC_MSG_WARN([Desired C library support for printf("%zu", size_t) not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
 AC_CACHE_CHECK([for va_copy(dest,src)],
   [ac_cv_have_va_copy],
   [
