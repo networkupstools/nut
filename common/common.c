@@ -4841,7 +4841,8 @@ void nut_prepare_search_paths(void) {
 		if ((dp = opendir(dirname)) == NULL) {
 			upsdebugx(5, "%s: SKIP "
 				"unreachable directory #%" PRIuSIZE " : %s",
-				__func__, index++, dirname);
+				__func__, index, NUT_STRARG(dirname));
+                        index++;
 			continue;
 		}
 		index++;
