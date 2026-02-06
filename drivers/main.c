@@ -446,12 +446,11 @@ void storeval(const char *var, char *val)
 		tmp = tmp->next;
 	}
 
-	/* try to help them out */
-	printf("\nFatal error: '%s' is not a valid %s for this driver.\n", var,
-		val ? "variable name" : "flag");
-	printf("\n");
-	printf("Look in the man page or call this driver with -h for a list of\n");
-	printf("valid variable names and flags.\n");
+	/* log a warning for unrecognized parameter and continue */
+	upslogx(LOG_WARNING, "Ignoring unrecognized %s '%s' for this driver.\n"
+		"Consult the man page or call this driver with -h for a list of valid %s.",
+		val ? "variable name" : "flag", var,
+		val ? "variable names" : "flags");
 
 	/* FIXME: find a way to separate this logic from main.c */
 	for (pprogname = prognames; *pprogname != NULL; pprogname++) {
@@ -477,17 +476,18 @@ void storeval(const char *var, char *val)
 			||  !strcmp(var, "langid_fix")
 			||  !strcmp(var, "noscanlangid")
 			) {
-				printf("\nNOTE: for driver '%s', options like '%s' are only available\n"
-					"if it was built with USB support. If you are running a custom build of NUT,\n"
-					"please check results of the `configure` checks, and consider an explicit\n"
-					"`--with-usb` option. Also make sure that both libusb library and headers\n"
-					"are installed in your build environment.\n\n", progname, var);
+				upslogx(LOG_INFO, "NOTE: for driver '%s', options like '%s' are only available "
+					"if it was built with USB support. If you are running a custom build of NUT, "
+					"please check results of the `configure` checks, and consider an explicit "
+					"`--with-usb` option. Also make sure that both libusb library and headers "
+					"are installed in your build environment.", progname, var);
 				break;
 			}
 		}
 	}
 
-	exit(EXIT_SUCCESS);
+	/* simply return and continue, parameter is ignored */
+	return;
 }
 
 /* retrieve the value of variable <var> if possible */
