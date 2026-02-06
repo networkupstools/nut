@@ -286,6 +286,9 @@ https://github.com/networkupstools/nut/milestone/12
      to bumping the debug verbosity of `upsdrvctl` tool. [#3276]
    * If we fail to stop a driver by signal (e.g. PID file was not saved),
      retry to `INSTCMD driver.exit` it by socket protocol. [#3277]
+   * The NUT Integration Testing suite now also involves `upsdrvctl` to
+     run one driver instance indirectly, helping make check-NIT` catch
+     portability issues with different builds of the tool. [#2800, #3292]
 
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging

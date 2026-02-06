@@ -53,7 +53,7 @@
 #   different value like "nobody" or "nogroup" would be defaulted for test.
 #
 # Copyright
-#	2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
+#	2022-2026 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
 
@@ -427,7 +427,7 @@ else
 fi
 
 log_info "Locating NUT programs to test:"
-for PROG in upsd upsc dummy-ups upsmon upslog upssched ; do
+for PROG in upsd upsc dummy-ups upsdrvctl upsmon upslog upssched ; do
     (command -v ${PROG}) || (command -v ${PROG}${EXEEXT-}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
 done
 
@@ -1000,9 +1000,24 @@ generatecfg_upsmon_secondary() {
 generatecfg_ups_trivial() {
     # Populate the configs for the run
     (   echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
-        if [ x"${TOP_BUILDDIR}" != x ]; then
-            echo "driverpath = \"${TOP_BUILDDIR}/drivers\"" >> "$NUT_CONFPATH/ups.conf" || exit
+        if [ x"${ABS_TOP_BUILDDIR}" != x ]; then
+            # NOTE: Windows backslashes are pre-escaped in the configure-generated value
+            case "${ABS_TOP_BUILDDIR}" in
+                ?":\\"*) PATHSEP='\\' ;;
+                *) PATHSEP="/" ;;
+            esac
+            echo "driverpath = \"${ABS_TOP_BUILDDIR}${PATHSEP}drivers\"" >> "$NUT_CONFPATH/ups.conf" || exit
+        else
+            # NOTE: Escaping presumed needed below, so for PATHSEP too
+            if [ x"${TOP_BUILDDIR}" != x ]; then
+                case "${TOP_BUILDDIR}" in
+                    ?":\\"*) PATHSEP='\' ;;
+                    *) PATHSEP="/" ;;
+                esac
+                echo "driverpath = \"${TOP_BUILDDIR}${PATHSEP}drivers\"" | sed 's,\\,\\\\,g' >> "$NUT_CONFPATH/ups.conf" || exit
+            fi
         fi
+        unset PATHSEP
         if [ -n "${NUT_DEBUG_MIN-}" ] ; then
             echo "debug_min = ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/ups.conf" || exit
         fi
@@ -1359,8 +1374,9 @@ sandbox_start_drivers() {
     if [ -n "${NUT_DEBUG_LEVEL_DRIVERS-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_DRIVERS}"
     fi
-    #execcmd upsdrvctl ${ARG_FG} ${ARG_USER} start dummy &
-    execcmd dummy-ups -a dummy ${ARG_USER} ${ARG_FG} &
+    # Run one driver instance indirectly, to test the upsdrvctl tool too:
+    execcmd upsdrvctl ${ARG_FG} ${ARG_USER} start dummy &
+    #execcmd dummy-ups -a dummy ${ARG_USER} ${ARG_FG} &
     PID_DUMMYUPS="$!"
     log_debug "Tried to start dummy-ups driver for 'dummy' as PID $PID_DUMMYUPS"
 

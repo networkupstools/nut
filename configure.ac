@@ -6708,9 +6708,12 @@ AS_CASE([${target_os}],
         AC_MSG_NOTICE([FWIW, assuming ABS_TOP_SRCDIR="$ABS_TOP_SRCDIR" and ABS_TOP_BUILDDIR="$ABS_TOP_BUILDDIR"])
 ])
 
-dnl Use these at best for tests (e.g. nutconf), not production code:
+dnl Use these at best for tests (e.g. nutconf, NIT), not production code:
 AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
 AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
+
+AC_SUBST(ABS_TOP_SRCDIR)
+AC_SUBST(ABS_TOP_BUILDDIR)
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING([whether to install External API integration script: Enphase Monitor])

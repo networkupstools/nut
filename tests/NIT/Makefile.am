@@ -13,10 +13,16 @@ EXTRA_DIST = nit.sh README.adoc
 
 if WITH_CHECK_NIT
 check: check-NIT
-else
+else !WITH_CHECK_NIT
 check:
 	@echo "NO-OP: $@ in `pwd` is inactive by default. Run 'configure --enable-check-NIT' or 'make check-NIT' explicitly" >&2
-endif
+endif !WITH_CHECK_NIT
+
+# Paths possibly different from what automake provides (POSIXish)
+# when building on/for e.g. Windows. Matters where system() is used,
+# such as NIT suite using/testing upsdrvctl:
+ABS_TOP_SRCDIR = @ABS_TOP_SRCDIR@
+ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
 
 # Run in builddir, use script from srcdir
 # Avoid running "$<" - not all make implementations handle that
@@ -25,6 +31,7 @@ check-NIT: $(abs_srcdir)/nit.sh
 	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	abs_srcdir='$(abs_srcdir)' abs_builddir='$(abs_builddir)' \
 	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
+	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
 	EXEEXT='$(EXEEXT)' \
 	"$(abs_srcdir)/nit.sh"
 
@@ -48,6 +55,7 @@ check-NIT-sandbox: $(abs_srcdir)/nit.sh
 	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	abs_srcdir='$(abs_srcdir)' abs_builddir='$(abs_builddir)' \
 	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
+	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
 	EXEEXT='$(EXEEXT)' \
 	"$(abs_srcdir)/nit.sh"
 
