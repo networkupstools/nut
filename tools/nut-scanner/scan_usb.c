@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2011-2016 - EATON
- *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
+ *  Copyright (C) 2020-2026 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ static int nut_usb_get_string_with_langid_control_transfer(
  static int (*nut_usb_get_device_descriptor)(
 	libusb_device *dev,
 	struct libusb_device_descriptor *desc);
+ static const struct libusb_version * (*nut_usb_get_version)(void);
 # define USB_DT_STRING	LIBUSB_DT_STRING
 # define USB_ENDPOINT_IN	LIBUSB_ENDPOINT_IN
 # define USB_REQ_GET_DESCRIPTOR	LIBUSB_REQUEST_GET_DESCRIPTOR
@@ -156,6 +157,11 @@ int nutscan_load_usb_library(const char *libname_path)
 
 #if WITH_LIBUSB_1_0
 	*(void **) (&nut_usb_exit) = lt_dlsym(dl_handle, "libusb_exit");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+
+	*(void **) (&nut_usb_get_version) = lt_dlsym(dl_handle, "libusb_get_version");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -488,7 +494,15 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 	/* Initialize Libusb */
 #if WITH_LIBUSB_1_0
 	if ((*nut_usb_init)(NULL) < 0) {
-		(*nut_usb_exit)(NULL);
+		/* Per https://github.com/libusb/libusb/issues/511 fixed since
+		 * 1.0.24 by https://github.com/libusb/libusb/commit/a5624b22267ec0e146825d3fe94d9e4b2f5ae503
+		 * libusb_exit() should not be called unless libusb_init()
+		 * succeeded for same context.
+		 */
+		const struct libusb_version	*ver = (*nut_usb_get_version)();
+
+		if (ver && (ver->major > 1 || (ver->major == 1 && ver->minor >= 24)))
+			(*nut_usb_exit)(NULL);
 		upsdebug_with_errno(0, "Failed to init libusb 1.0");
 		/* nutscan_avail_usb = 0; */
 		return NULL;
