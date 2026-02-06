@@ -1396,7 +1396,9 @@ if (semaphore != SEM_FAILED)
     ]
 )
 AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, [test -n "${SEMLIBS}"])
-AM_CONDITIONAL(HAVE_SEMAPHORE_ABILITY, [test -n "${SEMLIBS}" -o x"${nut_have_semaphore_h}" = xyes -o x"${nut_have_semaphore_unnamed}" = xyes -o x"${nut_have_semaphore_named}" = xyes])
+AS_IF([test -n "${SEMLIBS}" -o x"${nut_have_semaphore_h}" = xyes -o x"${nut_have_semaphore_unnamed}" = xyes -o x"${nut_have_semaphore_named}" = xyes],
+    [nut_have_semaphore_ability=yes],
+    [nut_have_semaphore_ability=no])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-threading request
@@ -1406,8 +1408,8 @@ NUT_ARG_WITH([threading],
     [auto])
 
 AS_CASE(["${nut_with_threading}"],
-    [""|yes], [AM_COND_IF([HAVE_SEMAPHORE_ABILITY], [], [AC_MSG_ERROR([pthread support was required but libraries not detected])])],
-    [auto],[AM_COND_IF([HAVE_SEMAPHORE_ABILITY], [nut_with_threading=yes], [nut_with_threading=no])],
+    [""|yes], [AS_IF([test x"${nut_have_semaphore_ability}" = xyes], [], [AC_MSG_ERROR([pthread support was required but libraries not detected])])],
+    [auto],[AS_IF([test x"${nut_have_semaphore_ability}" = xyes], [nut_with_threading=yes], [nut_with_threading=no])],
     [no], [],
         [AC_MSG_ERROR([Unsupported value for --with-threading option: "${nut_with_threading}"])]
 )
