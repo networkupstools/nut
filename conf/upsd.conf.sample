@@ -121,6 +121,11 @@
 # LISTEN address and each client count as one connection.  If the server
 # runs out of connections, it will no longer accept new incoming client
 # connections.  Only set this if you know exactly what you're doing.
+# Note that on some platforms there may be a smaller amount of file descriptors
+# or handles that can be polled in one operation, the server would then poll
+# several smaller groups until it handles all the connections it tracks.
+# With a large amount of connections this may however impact the delays between
+# processing loops, and time before an incoming message is seen and processed.
 
 # =======================================================================
 # CERTFILE <certificate file>

@@ -12,7 +12,6 @@ For a complete and more detailed list of changes, please refer to the
 ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
-
 PLANNED: Release notes for NUT 2.8.5 - what's new since 2.8.4
 -------------------------------------------------------------
 
@@ -287,6 +286,9 @@ https://github.com/networkupstools/nut/milestone/12
      comes into play and breaks things. [issue #661]
    * Fixed `LISTEN *` handling for `upsd.exe` in NUT for Windows builds.
      [PR #3237]
+   * Extended processing of `MAXCONN` setting to allow larger values than the
+     operating system allows, by only waiting for that amount of Unix sockets
+     or Windows `HANDLE`'s at a time, and moving on to another chunk. [#3302]
 
  - `upsdrvctl` tool updates:
    * Make use of `setproctag()` and `getproctag()` to report parent/child
