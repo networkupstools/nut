@@ -331,6 +331,16 @@ Many of the features depend on third-party libraries that are loosely linked
 at run-time using libltdl, and due to that, the build, delivery and use of the
 tool does not depend on *all* of them being available in the final deployment.
 
+	--with-threading (default: auto)
+
+Currently limited to linkman:nut-scanner[8] tool: require/allow build with
+pthreads and/or semaphore support to parallelize the network and local port
+scans, and scans of different media types.
+
+Some older systems' implementation of threading may be broken, so while we
+can detect support, builds using it can fail in practice -- so this toggle
+allows to keep building sequential-only code.
+
 NUT Configuration tool
 ~~~~~~~~~~~~~~~~~~~~~~
 

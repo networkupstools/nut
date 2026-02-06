@@ -31,7 +31,7 @@ EXTRA_DIST =
 # generated once (can take a looong while), settled into place, and only then
 # we revisit them for html/pdf rendering (another long while) without randomly
 # confusing the system with new timestamps and needless regenerations later on.
-all:
+all: @dotMAKE@
 	@echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make doc' to ensure complex document types"
 	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
@@ -218,7 +218,7 @@ CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
 if WITH_SPELLCHECK
 CHECK_LOCAL_TARGETS += spellcheck
 endif WITH_SPELLCHECK
-check-local: $(CHECK_LOCAL_TARGETS)
+check-local: $(CHECK_LOCAL_TARGETS) @dotMAKE@
 	+@cd $(builddir)/man && $(MAKE) $(AM_MAKEFLAGS) check
 
 # Make sure sources are there for out-of-tree builds:
@@ -226,7 +226,7 @@ all-local all-am-local \
 $(DOC_BUILD_CHANGELOG_TEXT) $(DOC_BUILD_CHANGELOG_ADOC) \
 @DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(abs_top_builddir)/docs/.prep-src-docs
 
-all-local:
+all-local: @dotMAKE@
 	+@cd $(builddir)/man && $(MAKE) $(AM_MAKEFLAGS) all-optional
 
 # This list is defined by configure script choices and options:
@@ -371,7 +371,7 @@ ChangeLog.html-contentchecked:
 	 exit 1
 
 check-html-single: .check-html-single
-.check-html-single: $(ASCIIDOC_HTML_SINGLE) Makefile
+.check-html-single: $(ASCIIDOC_HTML_SINGLE) Makefile @dotMAKE@
 	+@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for F in $(ASCIIDOC_HTML_SINGLE) ; do \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
@@ -408,11 +408,11 @@ check-html-chunked: .check-html-chunked
 # NOTE; we rig it up with a DOCS_NO_MAN option to simplify parallel work
 # from top-level Makefile, while allowing legacy "cd docs && make" to
 # still do the right thing by default :)
-check-man check-man-man all-man man-man all-html html-man:
+check-man check-man-man all-man man-man all-html html-man: @dotMAKE@
 	+@if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOC-NOT-MAN	SKIP: $@ called in docs/Makefile" ; exit 0 ; fi ; \
 	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
-man:
+man: @dotMAKE@
 	+@if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOC-NOT-MAN	SKIP: $@ called in docs/Makefile" ; exit 0 ; fi ; \
 	  cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
@@ -434,7 +434,7 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 # Work around some documents that have originally included
 # the asciidoc markup (use double-hash to avoid conversion).
 # The $< is okay here, it is used in a suffix rule below
-.adoc.adoc-parsed:
+.adoc.adoc-parsed: @dotMAKE@
 	+@if [ ! -s '$<' ] ; then \
 		echo "  DOC-ASCIIDOC-GITHUB-LINKS	STRANGE: input $< does not exist or is empty" >&2 ; \
 		$(MAKE) $(AM_MAKEFLAGS) '$<' ; \
@@ -478,7 +478,7 @@ $(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
 CLEANFILES += .ChangeLog.adoc-parsed.latest
 
 dummy:
-$(top_builddir)/ChangeLog: dummy
+$(top_builddir)/ChangeLog: dummy @dotMAKE@
 	@+echo "  DOC-CHANGELOG-GENERATE-WRAPPER	$@ : call parent Makefile to decide if (re-)generation is needed" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -581,7 +581,7 @@ solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.c
 # to look at is cause to run a recipe always). We define recipes outside
 # the suffix-based handling and require *them* for default target builds.
 ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt .ChangeLog.adoc-parsed.latest asciidoc.conf
-$(top_builddir)/docs/ChangeLog.html $(top_builddir)/docs/ChangeLog.chunked $(top_builddir)/docs/ChangeLog.pdf: ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf
+$(top_builddir)/docs/ChangeLog.html $(top_builddir)/docs/ChangeLog.chunked $(top_builddir)/docs/ChangeLog.pdf: ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf @dotMAKE@
 	@+if [ -s '$(@F)' ] && [ x"`find '$(@F)' -newer '$(top_builddir)/ChangeLog.adoc-parsed'`" != x ] ; then \
 		echo "  DOC-CHANGELOG-RENDER-WRAPPER	SKIP: `pwd`/$(@F) already exists and is newer than ChangeLog.adoc-parsed" ; \
 		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
@@ -766,9 +766,9 @@ GENERATE_HTML_SINGLE = ( \
 )
 
 *.html: common.xsl xhtml.xsl
-.txt-prepped.html:
+.txt-prepped.html: @dotMAKE@
 	+@$(GENERATE_HTML_SINGLE)
-.adoc-prepped.html:
+.adoc-prepped.html: @dotMAKE@
 	+@$(GENERATE_HTML_SINGLE)
 
 # Note: extra age check here because *.chunked is a directory and not all
@@ -965,22 +965,22 @@ SPELLCHECK_AUTO_ONE = ( \
 	|| { RES=$$? ; touch '$@'.failed; exit $$RES; } \
 )
 
-.txt.txt-spellchecked-auto:
+.txt.txt-spellchecked-auto: @dotMAKE@
 	+@$(SPELLCHECK_AUTO_ONE)
 
-.adoc.adoc-spellchecked-auto:
+.adoc.adoc-spellchecked-auto: @dotMAKE@
 	+@$(SPELLCHECK_AUTO_ONE)
 
-.in.in-spellchecked-auto:
+.in.in-spellchecked-auto: @dotMAKE@
 	+@$(SPELLCHECK_AUTO_ONE)
 
-.sample.sample-spellchecked-auto:
+.sample.sample-spellchecked-auto: @dotMAKE@
 	+@$(SPELLCHECK_AUTO_ONE)
 
-.conf.conf-spellchecked-auto:
+.conf.conf-spellchecked-auto: @dotMAKE@
 	+@$(SPELLCHECK_AUTO_ONE)
 
-spellcheck:
+spellcheck: @dotMAKE@
 	@if test "$(SPELLCHECK_ENV_DEBUG)" = detailed ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
@@ -1069,7 +1069,7 @@ DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting $(NUT_SPELL_DICT).bak-pre-in
 # that their dictionary was updated and may need a Git recommit - either
 # if it did change, or if caller's SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes.
 SPELLCHECK_REPORT_MAYBE_UPDATED_DICT = no
-spellcheck-interactive:
+spellcheck-interactive: @dotMAKE@
 	@rm -f $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive || true
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive
 	+@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \

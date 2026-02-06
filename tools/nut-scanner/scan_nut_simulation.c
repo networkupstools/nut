@@ -42,7 +42,7 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 	nutscan_device_t * dev = NULL;
 	const char *dirname = confpath();
 
-#if HAVE_PTHREAD
+#ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
 #endif /* HAVE_PTHREAD */
 
@@ -85,7 +85,7 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 	}
 	closedir(dp);
 
-#if HAVE_PTHREAD
+#ifdef HAVE_PTHREAD
 	pthread_mutex_destroy(&dev_mutex);
 #endif /* HAVE_PTHREAD */
 

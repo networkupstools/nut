@@ -57,7 +57,11 @@
 #define SSIZE_MAX ((ssize_t)(-1LL))
 #endif
 
-/* Printing format for size_t and ssize_t */
+/* Printing format for size_t and ssize_t
+ * FIXME? Historically we essentially hard-coded it for MINGW builds
+ *  but should we, now that we detect support for printf("%zu", size_t)
+ *  in the configure script?..
+ */
 #ifndef PRIuSIZE
 # ifdef PRIsize
 #  define PRIuSIZE PRIsize
@@ -65,17 +69,53 @@
 #  if defined(__MINGW32__) || defined (WIN32)
 #   define PRIuSIZE "llu"
 #  else
-#   define PRIuSIZE "zu"
+#   if (defined HAVE_PRINTF_ZU) && HAVE_PRINTF_ZU
+#    define PRIuSIZE "zu"
+#   else
+#    if (SIZE_MAX - 0 == UINT_MAX - 0)
+#     define PRIuSIZE "u"
+#    else
+#     if (SIZE_MAX - 0 == ULONG_MAX - 0)
+#      define PRIuSIZE "lu"
+#     else
+#      if (SIZE_MAX - 0 == ULLONG_MAX - 0)
+#       define PRIuSIZE "llu"
+#      else
+/* Code may fail on systems where this feature is lacking
+ * and not considered a format string part, but hopefully
+ * we do not get here */
+#       define PRIuSIZE "zu"
+#      endif
+#     endif
+#    endif
+#   endif
 #  endif
 # endif
 #endif
 
 #ifndef PRIxSIZE
-#  if defined(__MINGW32__) || defined (WIN32)
-#   define PRIxSIZE "llx"
-#  else
+# if defined(__MINGW32__) || defined (WIN32)
+#  define PRIxSIZE "llx"
+# else
+#  if (defined HAVE_PRINTF_ZU) && HAVE_PRINTF_ZU
 #   define PRIxSIZE "zx"
+#  else
+#   if (SIZE_MAX - 0 == UINT_MAX - 0)
+#    define PRIxSIZE "x"
+#   else
+#    if (SIZE_MAX - 0 == ULONG_MAX - 0)
+#     define PRIxSIZE "lx"
+#    else
+#     if (SIZE_MAX - 0 == ULLONG_MAX - 0)
+#      define PRIxSIZE "llx"
+#     else
+/* See warning comment above */
+#      define PRIxSIZE "zx"
+#     endif
+#    endif
+#   endif
 #  endif
+# endif
 #endif
 
 /* Note: Windows headers are known to define at least "d" values,
@@ -90,7 +130,24 @@
 #   if defined(__MINGW32__) || defined (WIN32)
 #    define PRIiSIZE "lld"
 #   else
-#    define PRIiSIZE "zd"
+#    if (defined HAVE_PRINTF_ZU) && HAVE_PRINTF_ZU
+#     define PRIiSIZE "zd"
+#    else
+#     if (SIZE_MAX - 0 == UINT_MAX - 0)
+#      define PRIiSIZE "d"
+#     else
+#      if (SIZE_MAX - 0 == ULONG_MAX - 0)
+#       define PRIiSIZE "ld"
+#      else
+#       if (SIZE_MAX - 0 == ULLONG_MAX - 0)
+#        define PRIiSIZE "lld"
+#       else
+/* See warning comment above */
+#        define PRIiSIZE "zd"
+#       endif
+#      endif
+#     endif
+#    endif
 #   endif
 #   define PRIdSIZE PRIiSIZE
 #  endif

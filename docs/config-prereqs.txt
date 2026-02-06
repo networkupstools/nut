@@ -1118,8 +1118,8 @@ or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT
 Note the lack of `pkg-config` also precludes `libcppunit` tests, although
 they also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
 
-NetBSD 9.2
-~~~~~~~~~~
+NetBSD 9.2, 11.0 (Beta)
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Instructions below assume that `pkgin` tool (pkg-src component to
 "install binary packages") is present on the system. Text below
@@ -1171,6 +1171,11 @@ using the older tooling:
 :; pkg_add pkgin
 ----
 
+If you are using a test version that identifies like `11.0_BETA`, the
+`PKG_PATH` definition above may include that but the package repository
+might not serve the URL spelled as such. Trim it down to `11.0` manually
+then.
+
 For more details, see https://www.pkgsrc.org/#index1h1 and
 https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 (the latter also provides a nice cheat-sheet about `pkgin` operations).
@@ -1178,7 +1183,7 @@ https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 
 [NOTE]
 ======
-On NetBSD 9.2 the `openpimi` and `net-snmp` packages complain that
+On NetBSD 9.2 and 11 the `openpimi` and `net-snmp` packages complain that
 they require either OS ABI 9.0, or that `CHECK_OSABI=no` is set in
 a `pkg_install.conf`. Such file was not found in the test system,
 but can be created in `/etc/` and is honoured by `pkgin`:
@@ -1189,6 +1194,10 @@ but can be created in `/etc/` and is honoured by `pkgin`:
 ----
 ======
 
+Some packages include the software version in the name (so several
+variants may be installed side by side), so instructions below vary
+slightly depending on the OS distribution version:
+
 ------
 :; pkgin install \
     git perl curl \
@@ -1196,11 +1205,25 @@ but can be created in `/etc/` and is honoured by `pkgin`:
     bmake gmake autoconf automake libltdl libtool \
     cppcheck \
     pkgconf \
-    gcc7 gcc14 clang
+    clang
+
+# NOTE: ccache is installed and links configured for it below
+
+# NetBSD 9.2:
+:; pkgin install \
+    gcc7 gcc14
+
+# NetBSD 11:
+:; pkgin install \
+    gcc15
 
 # See comments below, python version and package naming depends on distro
+# NetBSD 9.2:
 :; pkgin install \
     python27 python39 python312 python313
+
+# NetBSD 11 (to cover the max testing scope with both python generations):
+:; pkgin install python27 python314
 
 :; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.13 python3 ) )
 # You can find a list of what is (pre-)installed with:
@@ -1214,8 +1237,10 @@ but can be created in `/etc/` and is honoured by `pkgin`:
 # For Python2:
 #   :; pkgin install py27-gtk2
 # For Python3:
+# * NetBSD 9.2:
 #   :; pkgin install py312-qt5 py313-qt5
-# FIXME: Consider qt6 since 2025
+# * NetBSD 11:
+#   :; pkgin install py314-qt6
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pkgin install \
@@ -1269,21 +1294,22 @@ It still seems to not work for NUT's expectations of FreeIPMI
 Recommended: For compatibility with common setups on other operating
 systems, can add dash-number suffixed symlinks to compiler tools (e.g.
 `gcc-7` beside the `gcc` installed by package) near the original
-binaries and into `/usr/lib/ccache`:
+binaries and into `/usr/lib/ccache`; use the numbers according to
+what you do have installed:
 ------
 :; ( cd /usr/pkg/bin && for TOOL in cpp gcc g++ ; do \
         for VER in "7" "14" ; do \
-            ln -fs "../gcc$VER/bin/$TOOL" "${TOOL}-${VER}" ; \
+            ln -fs "../gcc${VER}/bin/${TOOL}" "${TOOL}-${VER}" ; \
         done ; \
      done )
 
 # Note that the one delivered binary is `clang-13` (in originally described
-# installation; `clang-18` after an update in 2025 which auto-removed the
-# older version) and many (unnumbered) symlinks to it. For NUT CI style of
+# NetBSD 9.x installation; `clang-18` after an update in 2025 which auto-removed
+# the older version) and many (unnumbered) symlinks to it. For NUT CI style of
 # support for builds with many compilers, complete the known numbers:
 :; ( cd /usr/pkg/bin && for TOOL in clang-cpp clang++ ; do \
         for VER in "-18" ; do \
-            ln -s clang-18 "$TOOL$VER" ; \
+            ln -s clang"${VER}" "${TOOL}${VER}" ; \
         done ; \
      done )
 
@@ -1291,12 +1317,12 @@ binaries and into `/usr/lib/ccache`:
 :; ( mkdir -p /usr/lib/ccache && cd /usr/lib/ccache && \
         for TOOL in cpp gcc g++ clang ; do \
             for VER in "" "-7" "-14" ; do \
-                ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
+                ln -s ../../pkg/bin/ccache "${TOOL}${VER}" ; \
             done ; \
         done ; \
         for TOOL in clang clang++ clang-cpp ; do \
             for VER in "" "-18" ; do \
-                ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
+                ln -s ../../pkg/bin/ccache "${TOOL}${VER}" ; \
             done ; \
         done ; \
    )

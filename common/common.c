@@ -3767,7 +3767,13 @@ char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret, errno_orig = errno;
+#ifdef HAVE_VA_COPY_VARIANT
+	size_t	bufsize = 128;
+#else
+	/* err on the safe(r) side, as re-runs can truncate
+	 * the output when varargs are re-used */
 	size_t	bufsize = LARGEBUF;
+#endif
 	char	*buf = (char *)xcalloc(bufsize, sizeof(char));
 
 	/* Be pedantic about our limitations */
@@ -3827,7 +3833,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 			 * Based on https://stackoverflow.com/a/72981237/4715872
 			 */
 			if (bufsize < SIZE_MAX/2) {
-				size_t	newbufsize = bufsize*2;
+				size_t	newbufsize = bufsize < LARGEBUF ? LARGEBUF : bufsize*2;
 				if (ret > 0) {
 					/* Be generous, we snprintfcat() some
 					 * suffixes, prefix a timestamp, etc. */
@@ -4794,10 +4800,14 @@ static void nut_free_search_paths(void) {
 	}
 
 	if (search_paths != search_paths_builtin) {
+#if HAVE_DECL_REALPATH
 		size_t i;
 		for (i = 0; search_paths[i] != NULL; i++) {
+			upsdebugx(7, "%s: freeing search_paths[%" PRIuSIZE "]: '%s'",
+				__func__, i, NUT_STRARG(search_paths[i]));
 			free((char *)search_paths[i]);
 		}
+#endif	/* else: curated selection of pointers to some of the built-in strings */
 		free(search_paths);
 		search_paths = search_paths_builtin;
 	}
@@ -4819,10 +4829,17 @@ void nut_prepare_search_paths(void) {
 	size_t	count_builtin = 0, count_filtered = 0, i, j, index = 0;
 	const char ** filtered_search_paths;
 	DIR *dp;
+#if HAVE_DECL_REALPATH
+	/* Per docs, buffer must be at least PATH_MAX bytes */
+	char	realpath_buf[NUT_PATH_MAX + 1] = {0}, *realpath_dirname = NULL;
+#endif
 
 	/* As a starting point, allow at least as many items as before */
 	/* TODO: somehow extend (xrealloc?) if we mix other paths later */
-	for (i = 0; search_paths_builtin[i] != NULL; i++) {}
+	for (i = 0; search_paths_builtin[i] != NULL; i++) {
+		/* Different way of printing with minimal crash-ability on older systems */
+		upsdebugx(7, "counting search_paths_builtin[%d] : %s", (int)i, NUT_STRARG(search_paths_builtin[i]));
+	}
 	count_builtin = i + 1;	/* +1 for the NULL */
 
 	/* Bytes inside should all be zeroed... */
@@ -4834,22 +4851,35 @@ void nut_prepare_search_paths(void) {
 		int dupe = 0;
 		const char *dirname = search_paths_builtin[i];
 
+		upsdebugx(7, "%s: checking search_paths_builtin[%" PRIuSIZE " of %" PRIuSIZE "] : %s",
+			__func__, i, count_builtin - 1, NUT_STRARG(dirname));
 		if ((dp = opendir(dirname)) == NULL) {
 			upsdebugx(5, "%s: SKIP "
 				"unreachable directory #%" PRIuSIZE " : %s",
-				__func__, index++, dirname);
+				__func__, index, NUT_STRARG(dirname));
+                        index++;
 			continue;
 		}
 		index++;
 
 #if HAVE_DECL_REALPATH
 		/* allocates the buffer we free() later */
-		dirname = (const char *)realpath(dirname, NULL);
+		upsdebugx(7, "%s: call realpath()", __func__);
+		errno = 0;
+		realpath_dirname = realpath(dirname, realpath_buf);
+		if (errno || !realpath_dirname)
+			upsdebug_with_errno(7, "%s: realpath() failed and returned: %s", __func__, NUT_STRARG(realpath_dirname));
+		else
+			upsdebugx(7, "%s: realpath() returned: %s", __func__, NUT_STRARG(realpath_dirname));
+		if (realpath_dirname)
+			dirname = (const char *)realpath_dirname;
 #endif
 
 		/* Revise for duplicates */
 		/* Note: (count_filtered == 0) means first existing dir seen, no hassle */
 		for (j = 0; j < count_filtered; j++) {
+			upsdebugx(7, "%s: check for duplicates filtered_search_paths[%" PRIuSIZE " of %" PRIuSIZE "] : %s",
+				__func__, j, count_filtered, NUT_STRARG(filtered_search_paths[j]));
 			if (!strcmp(filtered_search_paths[j], dirname)) {
 #if HAVE_DECL_REALPATH
 				if (strcmp(search_paths_builtin[i], dirname)) {
@@ -4866,7 +4896,6 @@ void nut_prepare_search_paths(void) {
 
 				dupe = 1;
 #if HAVE_DECL_REALPATH
-				free((char *)dirname);
 				/* Have some valid value, for kicks (likely
 				 * to be ignored in the code path below) */
 				dirname = search_paths_builtin[i];
@@ -4879,9 +4908,10 @@ void nut_prepare_search_paths(void) {
 			upsdebugx(5, "%s: ADD[#%" PRIuSIZE "] "
 				"existing unique directory: %s",
 				__func__, count_filtered, dirname);
-#if !HAVE_DECL_REALPATH
-			/* Make a copy of table entry, else we have
-			 * a dynamic result of realpath() made above.
+#if HAVE_DECL_REALPATH
+			/* Make a copy of table entry, or the buffer
+			 * with a result of realpath() made above,
+			 * to eventually conststently free().
 			 */
 			dirname = (const char *)xstrdup(dirname);
 #endif
@@ -4984,7 +5014,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	char current_test_path[NUT_PATH_MAX + 1];
 
 	upsdebugx(3, "%s('%s', %" PRIuSIZE ", '%s', %i): Entering method...",
-		__func__, base_libname, base_libname_length, dirname, index);
+		__func__, NUT_STRARG(base_libname), base_libname_length, NUT_STRARG(dirname), index);
 
 	memset(current_test_path, 0, sizeof(current_test_path));
 
@@ -5117,7 +5147,7 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 	/* First call to tokenization passes the string, others pass NULL */
 	pathset_tmp = xstrdup(pathset);
 	upsdebugx(4, "%s: Looking for lib %s in a colon-separated path set",
-		__func__, base_libname);
+		__func__, NUT_STRARG(base_libname));
 	while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ":" ))) {
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 		if (libname_path != NULL)
@@ -5153,7 +5183,7 @@ char * get_libname(const char* base_libname)
 	size_t base_libname_length = strlen(base_libname);
 	struct stat	st;
 
-	upsdebugx(3, "%s('%s'): Entering method...", __func__, base_libname);
+	upsdebugx(3, "%s('%s'): Entering method...", __func__, NUT_STRARG(base_libname));
 
 	/* First, check for an exact hit by absolute/relative path
 	 * if `base_libname` includes path separator character(s) */
