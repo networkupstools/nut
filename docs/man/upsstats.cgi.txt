@@ -48,9 +48,14 @@ The web page that is displayed is actually a template containing
 commands to `upsstats` which are replaced by status information.
 
 The default file used for the overview of devices is `upsstats.html`.
+An alternate template may be provided by `&template_list=...` CGI query option.
 
 When monitoring a single UPS, the file displayed is
 `upsstats-single.html`.
+An alternate template may be provided by `&template_single=...` CGI query option.
+
+Alternate templates must be structured similarly to default ones, located in the
+same directory, and contain `.htm` in the file name.
 
 The format of these files, including the possible commands, is
 documented in linkman:upsstats.html[5].
