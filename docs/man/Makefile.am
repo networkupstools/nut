@@ -113,7 +113,7 @@ BUILT_SOURCES = $(abs_top_builddir)/docs/man/.prep-src-docs all-optional
 # been provided by automake, since we want to do nothing in certain cases.
 # Ideally it would refuse "make all" in certain cases, but we can't override
 # the automake-generated rules in each make implementation we care for.
-all-optional: $(abs_top_builddir)/docs/man/.prep-src-docs
+all-optional: $(abs_top_builddir)/docs/man/.prep-src-docs @dotMAKE@
 	+@case "$(ALL_TGT)" in \
 	  ""|" "|"  "|"   ") echo "  DOCS_NO_MAN	SKIP: $@ called in docs/man/Makefile: No format of man page rendering is enabled" ; exit 0 ;; \
 	  *all-*) \
@@ -2051,16 +2051,16 @@ endif !HAVE_ASCIIDOC
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
 # via expanded $(top_builddir)/install-sh):
-#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT) @dotMAKE@
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
 # by a wildcard target in case the make implementation can put the two together.
 *.txt-spellchecked: Makefile.am $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-.txt.txt-spellchecked:
+.txt.txt-spellchecked: @dotMAKE@
 	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-spellcheck spellcheck-interactive spellcheck-sortdict:
+spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # When building out-of-tree, be sure to have all asciidoc resources

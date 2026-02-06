@@ -149,6 +149,7 @@ static nutscan_ip_range_list_t ip_ranges_list;
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
+#endif  /* HAVE_PTHREAD */
 
 static void * run_usb(void *arg)
 {
@@ -203,7 +204,6 @@ static void * run_usb(void *arg)
 	dev[TYPE_USB] = nutscan_scan_usb(scanopts_ptr);
 	return NULL;
 }
-#endif	/* HAVE_PTHREAD */
 
 static void * run_snmp(void * arg)
 {
@@ -1732,8 +1732,7 @@ display_help:
 		}
 #else
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
-		/* Not calling run_usb() here, as it re-processes the arg */
-		dev[TYPE_USB] = nutscan_scan_usb(&cli_link_detail_level);
+		dev[TYPE_USB] = run_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "USB SCAN: not requested or supported, SKIPPED");
@@ -1780,7 +1779,6 @@ display_help:
 		upsdebugx(1, "XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
 		/* dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec); */
 		run_xml(&xml_sec);
-		}
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "XML/HTTP SCAN: not requested or supported, SKIPPED");

@@ -92,7 +92,7 @@ else !BUILDING_IN_TREE
   BUILT_SOURCES = common-nut_version.c
 endif !BUILDING_IN_TREE
 
-$(top_builddir)/include/nut_version.h:
+$(top_builddir)/include/nut_version.h: @dotMAKE@
 	+@if [ -s '$@' ] && ( [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ) ; then \
 	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
 	        echo "=== SKIP (common) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \

@@ -97,6 +97,12 @@ https://github.com/networkupstools/nut/milestone/12
      not normally get into those code paths with the `x*()` methods which
      should bail out and abort the program with a common error message when
      an allocation fails. [#3293]
+   * We have long abstracted `(s)size_t` value printing in debug logs etc.
+     using `PRIuSIZE` and similar macros. They fell back to `"%zu"` when not
+     provided otherwise, but not all platforms actually deliver these format
+     characters. Now it is evaluated at `configure` time (to check that the
+     characters may be used), and if not -- during `nut_stdint.h` parsing to
+     fit known `int`/`long`/`long long` types. [#3300]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -429,11 +435,22 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Fixed `m4/ax_realpath_lib.m4` up with more ways to try and gauge the
      build-time library name from linker/compiler, to improve the chances
      that `nut-scanner` would find them. [#3293]
+   * Added an option to (primarily) `--disable-threading` for systems with
+     detected but broken `libpthread` support, or to test alternate code
+     paths during development or in CI. [#3300]
 
  - Recipes, CI and helper script updates not classified above:
    * Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
      include the source distribution (was posted for NUT v2.8.1 and v2.8.2
      tagged releases, but absent for v2.8.3 and v2.8.4). [#3056]
+   * A new version of BSD `make` in NetBSD 11 (Beta) aka `bmake` in some other
+     operating systems, complains about some of our sub-`$(MAKE)` calls despite
+     the explicit `+` prefix in corresponding lines, possibly because that call
+     happens not directly in a rule definition, but in a substituted shell code
+     snippet. The recommended workaround was to add a "Special Source" called
+     `.MAKE` to let the tool know that we expect sub-makes in that recipe.
+     However, *other* `make` implementations do not know about this token,
+     so its support is tried and detected at `configure` time. [PR #3300]
    * Updated `make spellcheck` to help avoid asciidoc admonition blocks with
      visually invalid sentences (after rendering as a box in HTML or PDF).
      [#3077]

@@ -36,7 +36,7 @@ check-NIT: $(abs_srcdir)/nit.sh
 	"$(abs_srcdir)/nit.sh"
 
 # Make sure pre-requisites for NIT are fresh as we iterate
-check-NIT-devel: $(abs_srcdir)/nit.sh
+check-NIT-devel: $(abs_srcdir)/nit.sh @dotMAKE@
 	+@cd .. && ( $(MAKE) $(AM_MAKEFLAGS) -s cppnit$(EXEEXT) || echo "OPTIONAL C++ test client test will be skipped" )
 	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upscmd$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT)
 	+@cd "$(top_builddir)/server" && $(MAKE) $(AM_MAKEFLAGS) -s upsd$(EXEEXT) sockdebug$(EXEEXT)
@@ -59,7 +59,7 @@ check-NIT-sandbox: $(abs_srcdir)/nit.sh
 	EXEEXT='$(EXEEXT)' \
 	"$(abs_srcdir)/nit.sh"
 
-check-NIT-sandbox-devel: $(abs_srcdir)/nit.sh
+check-NIT-sandbox-devel: $(abs_srcdir)/nit.sh @dotMAKE@
 	+[ -n "$${DEBUG_SLEEP-}" ] && [ "$${DEBUG_SLEEP-}" -gt 0 ] || DEBUG_SLEEP=600 ; export DEBUG_SLEEP ; \
 	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
 	LANG=C LC_ALL=C TZ=UTC \
@@ -73,20 +73,20 @@ SPELLCHECK_SRC = README.adoc
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
 # via expanded $(top_builddir)/install-sh):
-#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT) @dotMAKE@
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
 # by a wildcard target in case the make implementation can put the two together.
 *-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 
-.sample.sample-spellchecked:
+.sample.sample-spellchecked: @dotMAKE@
 	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-.in.in-spellchecked:
+.in.in-spellchecked: @dotMAKE@
 	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-spellcheck spellcheck-interactive spellcheck-sortdict:
+spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 CLEANFILES = *-spellchecked

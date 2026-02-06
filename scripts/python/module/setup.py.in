@@ -5,14 +5,38 @@ The setup.py file for PyNUTClient
 # See also .github/workflows/PyNUTClient.yml for active packaging steps
 
 from setuptools import setup, find_packages
-import codecs
 import os
+import sys
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+try:
+    # NOTE: Deprecated as of python3.14
+    import codecs
+    HAVE_CODECS = True
+    fd = None
+    try:
+        # Open self to test that it works
+        fd = codecs.open(os.path.abspath(__file__), mode="r", encoding='utf-8')
+        USE_CODECS = True
+        # sys.stderr.write("INFO: import codecs went well, and codecs.open() did not raise exceptions\n")
+    except DeprecationWarning as x:
+        USE_CODECS = False
+        # sys.stderr.write("WARNING: import codecs went well, but codecs.open() failed: %s\n" % str(x))
+    if fd is not None:
+        fd.close()
+except Exception as x:
+    # sys.stderr.write("WARNING: import codecs failed: %s\n" % str(x))
+    HAVE_CODECS = False
+    USE_CODECS = False
+
 # README.txt appears from README.adoc during package or CI build
-with codecs.open(os.path.join(here, "README.txt"), encoding="utf-8") as fh:
-    long_description = "\n" + fh.read()
+if USE_CODECS:
+    with codecs.open(os.path.join(here, "README.txt"), encoding="utf-8") as fh:
+        long_description = "\n" + fh.read()
+else:
+    with open(os.path.join(here, "README.txt"), encoding="utf-8") as fh:
+        long_description = "\n" + fh.read()
 
 setup(
     name =	"pynutclient",	### "PyNUTClient" lower-cased due to PEP-0625

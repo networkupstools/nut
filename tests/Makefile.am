@@ -31,7 +31,7 @@ check_PROGRAMS = $(TESTS)
 check_SCRIPTS =
 
 # NUT Integration Testing suite
-check-NIT check-NIT-devel:
+check-NIT check-NIT-devel: @dotMAKE@
 	+cd "$(builddir)/NIT" && $(MAKE) $(AM_MAKEFLAGS) $@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building
@@ -45,7 +45,7 @@ $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libnutclient.la \
-$(top_builddir)/clients/libnutclientstub.la: dummy
+$(top_builddir)/clients/libnutclientstub.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Builds from root dir arrange stuff decently. Make sure parallel builds
@@ -59,7 +59,7 @@ if ENABLE_SHARED_PRIVATE_LIBS
 
 $(top_builddir)/common/libcommonversion-private.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h

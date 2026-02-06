@@ -193,6 +193,7 @@ static void * list_nut_devices_thready(void * arg)
 
 	if ((*nut_upscli_splitaddr)(target_hostname, &hostname, &port) != 0) {
 		/* Avoid disconnect from not connected ups */
+		upsdebugx(4, "%s: upscli_splitaddr() failed", __func__);
 		if (ups) {
 			if (ups->host)
 				free(ups->host);
@@ -204,6 +205,7 @@ static void * list_nut_devices_thready(void * arg)
 
 	if ((*nut_upscli_tryconnect)(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
 		/* Avoid disconnect from not connected ups */
+		upsdebugx(4, "%s: upscli_tryconnect() failed", __func__);
 		if (ups) {
 			if (ups->host)
 				free(ups->host);
@@ -214,12 +216,14 @@ static void * list_nut_devices_thready(void * arg)
 	}
 
 	if ((*nut_upscli_list_start)(ups, numq, query) < 0) {
+		upsdebugx(4, "%s: upscli_list_start() failed", __func__);
 		goto end;
 	}
 
 	while ((*nut_upscli_list_next)(ups, numq, query, &numa, &answer) == 1) {
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
+			upsdebugx(4, "%s: upscli_list_next() failed", __func__);
 			goto end;
 		}
 

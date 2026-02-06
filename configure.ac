@@ -317,7 +317,7 @@ NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir-examples], [DIRPATH], [Com
 
 dnl ---------------------------------------------------------------------
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
-AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
+AC_MSG_CHECKING([whether this make implementation supports 'export VAR=VAL' syntax])
 dnl # using printf formatting for some funniner shells out there
 nut_am_output="`printf 'export VAR=VAL\ntest:\n\t@echo \"VAR=%s%sVAR%s\"\n' '\$' '(' ')' | ${MAKE-make} -f - test`"
 nut_am_result="$?"
@@ -330,6 +330,24 @@ AS_IF([test x"${nut_am_result}" = x0 -a x"${nut_am_output}" = x"VAR=VAL"], [
 ])
 AC_SUBST(NUT_AM_MAKE_CAN_EXPORT)
 
+dnl ---------------------------------------------------------------------
+dnl Some versions of BSD make (e.g. in NetBSD 11) may require this syntax
+dnl in lieu of the more standard "+" prefix, but at least GNU make exploded
+dnl with it, so we can not use it everywhere:
+AC_MSG_CHECKING([whether this make implementation supports a .MAKE special source (pseudo-goal for sub-makes)])
+dnl # using printf formatting for some funniner shells out there
+nut_am_output="`printf 'sub: .MAKE\n\t@printf \\\"test:\\\\n\\\\t@echo %s\\\\n\\\" | $(MAKE) -f - test\n' '\\\\\\\"Hello world\\\\\\\"' | ${MAKE-make} -f - sub`"
+nut_am_result="$?"
+AS_IF([test x"${nut_am_result}" = x0 -a x"${nut_am_output}" = x"Hello world"], [
+	dotMAKE=".MAKE"
+	AC_MSG_RESULT(yes)
+], [
+	dotMAKE=""
+	AC_MSG_RESULT(no: got '${nut_am_output}')
+])
+AC_SUBST(dotMAKE)
+
+dnl ---------------------------------------------------------------------
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
 NUT_CHECK_PKGCONFIG
 
@@ -393,8 +411,8 @@ test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
 
 AS_CASE([x"${nut_with_confdir}"],
-	[yes], [AC_MSG_ERROR([--with-confdir should specify a path name or expansible expression])],
-	[/*|?:\*|?:/*|*/*|*'\'*], [
+	[xyes], [AC_MSG_ERROR([--with-confdir should specify a path name or expansible expression])],
+	[x/*|x?":\\"*|x?:/*|x*/*|x*'\'*], [
 		AC_MSG_NOTICE([A non-trivial --with-confdir path was specified (${nut_with_confdir}); any --with-confdir-suffix (${nut_with_confdir_suffix}) or --sysconfdir (${sysconfdir}) values are disregarded])
 	], [
 		RESULT_COMMENT=""
@@ -1300,9 +1318,13 @@ AC_CHECK_HEADER([poll.h],
         [Define to 1 if you have <poll.h>.])])
 
 SEMLIBS=""
+nut_have_semaphore_h=no
+nut_have_semaphore_unnamed=no
+nut_have_semaphore_named=no
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
+     nut_have_semaphore_h=yes
 
      AC_LANG_PUSH([C])
      myLIBS="${LIBS}"
@@ -1313,11 +1335,11 @@ AC_CHECK_HEADER([semaphore.h],
      dnl   sem_init   nut_scanner-nut-scanner.o
      dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
      AC_SEARCH_LIBS([sem_init], [pthread], [], [
-	unset ac_cv_search_sem_init
-	AC_SEARCH_LIBS([sem_init], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+        unset ac_cv_search_sem_init
+        AC_SEARCH_LIBS([sem_init], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
      AC_SEARCH_LIBS([sem_open], [pthread], [], [
-	unset ac_cv_search_sem_open
-	AC_SEARCH_LIBS([sem_open], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+        unset ac_cv_search_sem_open
+        AC_SEARCH_LIBS([sem_open], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
 
      AS_CASE([${ac_cv_search_sem_init}], [no*], [], [SEMLIBS="${ac_cv_search_sem_init}"])
      AS_CASE([${ac_cv_search_sem_open}], [no*], [], ["${SEMLIBS}"], [], [SEMLIBS="${ac_cv_search_sem_open}"])
@@ -1339,6 +1361,7 @@ sem_destroy(&semaphore);
         [AC_DEFINE([HAVE_SEMAPHORE_UNNAMED], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_init() and sem_destroy() for unnamed semaphores.])
          AC_MSG_RESULT([ok])
+         nut_have_semaphore_unnamed=yes
         ],
         [AC_MSG_RESULT([no])]
      )
@@ -1363,6 +1386,7 @@ if (semaphore != SEM_FAILED)
         [AC_DEFINE([HAVE_SEMAPHORE_NAMED], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_open() and sem_close() for named semaphores.])
          AC_MSG_RESULT([ok])
+         nut_have_semaphore_named=yes
         ],
         [AC_MSG_RESULT([no])]
      )
@@ -1371,8 +1395,28 @@ if (semaphore != SEM_FAILED)
      AC_LANG_POP([C])
     ]
 )
-AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, test -n "${SEMLIBS}")
+AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, [test -n "${SEMLIBS}"])
+AS_IF([test -n "${SEMLIBS}" -o x"${nut_have_semaphore_h}" = xyes -o x"${nut_have_semaphore_unnamed}" = xyes -o x"${nut_have_semaphore_named}" = xyes],
+    [nut_have_semaphore_ability=yes],
+    [nut_have_semaphore_ability=no])
 
+dnl ----------------------------------------------------------------------
+dnl Check for --with-threading request
+
+NUT_ARG_WITH([threading],
+    [If it is possible to parallelize some tools (e.g. nut-scanner), do so?],
+    [auto])
+
+AS_CASE(["${nut_with_threading}"],
+    [""|yes], [AS_IF([test x"${nut_have_semaphore_ability}" = xyes], [], [AC_MSG_ERROR([pthread support was required but libraries not detected])])],
+    [auto],[AS_IF([test x"${nut_have_semaphore_ability}" = xyes], [nut_with_threading=yes], [nut_with_threading=no])],
+    [no], [],
+        [AC_MSG_ERROR([Unsupported value for --with-threading option: "${nut_with_threading}"])]
+)
+NUT_REPORT_FEATURE([Enable support for parallelization of some tools], [${nut_with_threading}], [${SEMLIBS}],
+					[WITH_THREADING], [Define to enable build with threading support])
+
+dnl ----------------------------------------------------------------------
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit setlogmask)
@@ -1616,6 +1660,24 @@ if (res != 0) return res
 AS_IF([test x"${ac_cv_func_strdup}" = xyes],
     [AC_DEFINE([HAVE_STRDUP], 1, [defined if standard library has, and C standard allows, the strdup(s) method])],
     [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+AC_CACHE_CHECK([for %zu as PRIuSIZE],
+    [ac_cv_printfmt_zu],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdlib.h>
+],
+            [[size_t n = 123;
+char buf[64];
+snprintf(buf, sizeof(buf), "%zu", n);
+return !strcmp(buf, "123");
+]])],
+        [ac_cv_printfmt_zu=yes], [ac_cv_printfmt_zu=no]
+    )])
+AS_IF([test x"${ac_cv_printfmt_zu}" = xyes],
+    [AC_DEFINE([HAVE_PRINTF_ZU], 1, [defined if standard library has, and C standard allows, the printf("%zu", size_t) support])],
+    [AC_MSG_WARN([Desired C library support for printf("%zu", size_t) not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
 AC_CACHE_CHECK([for va_copy(dest,src)],
@@ -3122,8 +3184,14 @@ if test "${nut_with_gpio}" != "no"; then
 fi
 
 dnl NOTE: m4 scriptlet also defines WITH_LIBGPIO_VERSION like 0x00020000 in config.h
-NUT_REPORT_DRIVER([build GPIO driver (library v${GPIO_VERSION})], [${nut_with_gpio}], [${nut_gpio_lib}],
+AS_IF([test x"${GPIO_VERSION}" = xnone], [
+	REPORT_GPIO_VERSION="library version not detected"
+],[
+	REPORT_GPIO_VERSION="library v${GPIO_VERSION}"
+])
+NUT_REPORT_DRIVER([build GPIO driver (${REPORT_GPIO_VERSION})], [${nut_with_gpio}], [${nut_gpio_lib}],
 					[WITH_GPIO], [Define to enable GPIO support])
+unset REPORT_GPIO_VERSION
 
 dnl ----------------------------------------------------------------------
 dnl The Mac OS X meta-driver looks at IOKit Power Sources keys managed by
@@ -7207,4 +7275,7 @@ AS_IF([test x"${theMAKE}" = x], [theMAKE="make"])
 AC_MSG_NOTICE([==========================================================])
 AC_MSG_NOTICE([Configuration complete: Run '$theMAKE' to build ${NUT_SOURCE_VERSION_REPORT} now.])
 AC_MSG_NOTICE([You may use parallelism if supported by your hardware and 'make' implementation, e.g. '$theMAKE -j 8'])
+AS_IF([test x"${dotMAKE}" = x.MAKE], [
+AC_MSG_NOTICE([WARNING: do not use (parallel) GNU make with this build configuration!])
+])
 AC_MSG_NOTICE([==========================================================])
