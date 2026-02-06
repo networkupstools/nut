@@ -1,6 +1,7 @@
 /* upsset - CGI program to manage read/write variables
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2020-2026 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1116,14 +1117,14 @@ int main(int argc, char **argv)
 	int i;
 
 #ifdef WIN32
-        /* Required ritual before calling any socket functions */
-        static WSADATA  WSAdata;
-        static int      WSA_Started = 0;
-        if (!WSA_Started) {
-                WSAStartup(2, &WSAdata);
-                atexit((void(*)(void))WSACleanup);
-                WSA_Started = 1;
-        }
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 
 	/* Avoid binary output conversions, e.g.
 	 * mangling what looks like CRLF on WIN32 */
