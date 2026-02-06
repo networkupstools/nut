@@ -4800,10 +4800,14 @@ static void nut_free_search_paths(void) {
 	}
 
 	if (search_paths != search_paths_builtin) {
+#if HAVE_DECL_REALPATH
 		size_t i;
 		for (i = 0; search_paths[i] != NULL; i++) {
+			upsdebugx(7, "%s: freeing search_paths[%" PRIuSIZE "]: '%s'",
+				__func__, i, NUT_STRARG(search_paths[i]));
 			free((char *)search_paths[i]);
 		}
+#endif	/* else: curated selection of pointers to some of the built-in strings */
 		free(search_paths);
 		search_paths = search_paths_builtin;
 	}
@@ -4892,7 +4896,6 @@ void nut_prepare_search_paths(void) {
 
 				dupe = 1;
 #if HAVE_DECL_REALPATH
-				free((char *)dirname);
 				/* Have some valid value, for kicks (likely
 				 * to be ignored in the code path below) */
 				dirname = search_paths_builtin[i];
@@ -4905,9 +4908,10 @@ void nut_prepare_search_paths(void) {
 			upsdebugx(5, "%s: ADD[#%" PRIuSIZE "] "
 				"existing unique directory: %s",
 				__func__, count_filtered, dirname);
-#if !HAVE_DECL_REALPATH
-			/* Make a copy of table entry, else we have
-			 * a dynamic result of realpath() made above.
+#if HAVE_DECL_REALPATH
+			/* Make a copy of table entry, or the buffer
+			 * with a result of realpath() made above,
+			 * to eventually conststently free().
 			 */
 			dirname = (const char *)xstrdup(dirname);
 #endif
