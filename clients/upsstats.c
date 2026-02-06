@@ -63,7 +63,9 @@ static char	*monhostdesc = NULL;
 
 static uint16_t	port;
 static char	*upsname, *hostname;
-static char	*upsimgpath="upsimage.cgi" EXEEXT, *upsstatpath="upsstats.cgi" EXEEXT;
+static char	*upsimgpath="upsimage.cgi" EXEEXT, *upsstatpath="upsstats.cgi" EXEEXT,
+	*template_single = "upsstats-single.html",
+	*template_list = "upsstats.html";
 static UPSCONN_t	ups;
 
 static FILE	*tf;
@@ -1327,7 +1329,7 @@ static void display_single(void)
 	if (treemode)
 		display_tree(1);
 	else
-		display_template("upsstats-single.html");
+		display_template(template_single);
 
 	upscli_disconnect(&ups);
 	upsdebug_call_finished0();
@@ -1559,7 +1561,7 @@ int main(int argc, char **argv)
 		/* default: multimon replacement mode */
 		load_hosts_conf();
 		currups = ulhead;
-		display_template("upsstats.html");
+		display_template(template_list);
 	}
 
 	/* Clean up memory */
