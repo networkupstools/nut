@@ -63,9 +63,8 @@ static char	*monhostdesc = NULL;
 
 static uint16_t	port;
 static char	*upsname, *hostname;
-static char	*upsimgpath="upsimage.cgi" EXEEXT, *upsstatpath="upsstats.cgi" EXEEXT,
-	*template_single = "upsstats-single.html",
-	*template_list = "upsstats.html";
+static char	*upsimgpath = "upsimage.cgi" EXEEXT, *upsstatpath = "upsstats.cgi" EXEEXT,
+	*template_single = NULL, *template_list = NULL;
 static UPSCONN_t	ups;
 
 static FILE	*tf;
@@ -100,6 +99,18 @@ void parsearg(char *var, char *value)
 
 	if (!strcmp(var, "json")) {
 		output_json = 1;
+	}
+
+	if (!strcmp(var, "template_single")) {
+		/* Error-checking in display_template(), when we have all options in place */
+		free(template_single);
+		template_single = xstrdup(value);
+	}
+
+	if (!strcmp(var, "template_list")) {
+		/* Error-checking in display_template(), when we have all options in place */
+		free(template_list);
+		template_list = xstrdup(value);
 	}
 
 	upsdebug_call_finished0();
@@ -529,6 +540,14 @@ static void do_hostlink(void)
 
 	printf("<a href=\"%s?host=%s", upsstatpath, currups->sys);
 
+	if (strcmp(template_single, "upsstats-single.html")) {
+		printf("&amp;template_single=%s", template_single);
+	}
+
+	if (strcmp(template_list, "upsstats.html")) {
+		printf("&amp;template_list=%s", template_list);
+	}
+
 	if (refreshdelay > 0) {
 		printf("&amp;refresh=%d", refreshdelay);
 	}
@@ -546,8 +565,22 @@ static void do_treelink_json(const char *text)
 		return;
 	}
 
-	printf("<a href=\"%s?host=%s&amp;json\">%s</a>",
-		upsstatpath, currups->sys,
+	printf("<a href=\"%s?host=%s&amp;json",
+		upsstatpath, currups->sys);
+
+	if (strcmp(template_single, "upsstats-single.html")) {
+		printf("&amp;template_single=%s", template_single);
+	}
+
+	if (strcmp(template_list, "upsstats.html")) {
+		printf("&amp;template_list=%s", template_list);
+	}
+
+	if (refreshdelay > 0) {
+		printf("&amp;refresh=%d", refreshdelay);
+	}
+
+	printf("\">%s</a>",
 		((text && *text) ? text : "JSON"));
 
 	upsdebug_call_finished0();
@@ -562,8 +595,22 @@ static void do_treelink(const char *text)
 		return;
 	}
 
-	printf("<a href=\"%s?host=%s&amp;treemode\">%s</a>",
-		upsstatpath, currups->sys,
+	printf("<a href=\"%s?host=%s&amp;treemode",
+		upsstatpath, currups->sys);
+
+	if (strcmp(template_single, "upsstats-single.html")) {
+		printf("&amp;template_single=%s", template_single);
+	}
+
+	if (strcmp(template_list, "upsstats.html")) {
+		printf("&amp;template_list=%s", template_list);
+	}
+
+	if (refreshdelay > 0) {
+		printf("&amp;refresh=%d", refreshdelay);
+	}
+
+	printf("\">%s</a>",
 		((text && *text) ? text : "All data"));
 
 	upsdebug_call_finished0();
@@ -1096,6 +1143,16 @@ static void display_template(const char *tfn)
 
 	upsdebug_call_starting_for_str1(tfn);
 
+	if (!tfn || !*tfn || strstr(tfn, "/") || strstr(tfn, "\\") || !strstr(tfn, ".htm")) {
+		/* We only allow pre-configured templates in one managed location, with ".htm" in the name */
+		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look not exactly in the managed location\n", fn, strerror(errno));
+
+		printf("Error: can't open template file (%s): asked to look not exactly in the managed location\n", tfn);
+
+		upsdebug_call_finished1(": subdir in template");
+		exit(EXIT_FAILURE);
+	}
+
 	snprintf(fn, sizeof(fn), "%s/%s", confpath(), tfn);
 
 	tf = fopen(fn, "rb");
@@ -1519,6 +1576,10 @@ int main(int argc, char **argv)
 		nut_debug_level = i;
 	}
 
+	/* Built-in defaults */
+	template_single = xstrdup("upsstats-single.html");
+	template_list = xstrdup("upsstats.html");
+
 	extractcgiargs();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
@@ -1544,6 +1605,8 @@ int main(int argc, char **argv)
 		}
 		free(upsname);
 		free(hostname);
+		free(template_single);
+		free(template_list);
 
 		exit(EXIT_SUCCESS);
 	}
@@ -1576,6 +1639,8 @@ int main(int argc, char **argv)
 		free(ulhead);
 		ulhead = currups;
 	}
+	free(template_single);
+	free(template_list);
 
 	return 0;
 }
