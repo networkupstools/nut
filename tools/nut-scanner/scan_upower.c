@@ -47,7 +47,6 @@ static GDBusConnection * (*nut_g_bus_get_sync)(GBusType bus_type, GCancellable *
 static GDBusProxy * (*nut_g_dbus_proxy_new_sync)(GDBusConnection *connection, GDBusProxyFlags flags, GDBusInterfaceInfo *info, const gchar *name, const gchar *object_path, const gchar *interface_name, GCancellable *cancellable, GError **error);
 static GVariant * (*nut_g_dbus_proxy_call_sync)(GDBusProxy *proxy, const gchar *method_name, GVariant *parameters, GDBusCallFlags flags, gint timeout_msec, GCancellable *cancellable, GError **error);
 static GVariant * (*nut_g_dbus_proxy_get_cached_property)(GDBusProxy *proxy, const gchar *property_name);
-static void (*nut_g_variant_get)(GVariant *value, const gchar *format_string, ...);
 static void (*nut_g_variant_unref)(GVariant *value);
 static void (*nut_g_object_unref)(gpointer object);
 static void (*nut_g_error_free)(GError *error);
@@ -108,9 +107,6 @@ int nutscan_load_upower_library(const char *libname_path)
 	if ((dl_error = lt_dlerror()) != NULL) goto err;
 
 	*(void **) (&nut_g_dbus_proxy_get_cached_property) = lt_dlsym(dl_handle, "g_dbus_proxy_get_cached_property");
-	if ((dl_error = lt_dlerror()) != NULL) goto err;
-
-	*(void **) (&nut_g_variant_get) = lt_dlsym(dl_handle, "g_variant_get");
 	if ((dl_error = lt_dlerror()) != NULL) goto err;
 
 	*(void **) (&nut_g_variant_unref) = lt_dlsym(dl_handle, "g_variant_unref");
