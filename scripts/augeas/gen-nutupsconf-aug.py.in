@@ -27,6 +27,15 @@ import os
 import re
 import glob
 
+HAVE_WARNINGS = False
+try:
+	import warnings
+	warnings.filterwarnings("error")
+	HAVE_WARNINGS = True
+except Exception as x:
+	# sys.stderr.write("WARNING: failed to import warnings or configure them: %s" % str(x))
+	pass
+
 try:
 	# NOTE: Deprecated as of python3.14
 	import codecs
@@ -46,6 +55,9 @@ except Exception as x:
 	# sys.stderr.write("WARNING: import codecs failed: %s\n" % str(x))
 	HAVE_CODECS = False
 	USE_CODECS = False
+
+if HAVE_WARNINGS:
+	warnings.resetwarnings()
 
 # Return a sorted list of unique entries, based on the input 'list'
 def sortUnique(list):
