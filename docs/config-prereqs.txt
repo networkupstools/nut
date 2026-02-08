@@ -313,16 +313,21 @@ NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`
 You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 
-CentOS 6 and 7
-~~~~~~~~~~~~~~
+CentOS 6 and 7, Fedora 43
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 CentOS is another popular baseline among Linux distributions, being a free
 derivative of the RedHat Linux, upon which many other distros are based as
 well. These systems typically use the RPM package manager, using directly
 `rpm` command, or `yum` or `dnf` front-ends depending on their generation.
 
+In fact, most of the instructions directly apply to much newer distributions
+like Fedora 43.
+
 For CI farm container setup, prepared root filesystem archives from
 http://download.proxmox.com/images/system/ worked sufficiently well.
+For Fedora, https://images.linuxcontainers.org/images/fedora/43/amd64/default
+nightly image was used.
 
 Prepare CentOS repository mirrors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -388,6 +393,7 @@ enable it:
 :; yum install \
     openssh-server openssh-clients
 
+# On CentOS 6/7:
 :; chkconfig sshd on
 :; service sshd start
 
@@ -400,8 +406,8 @@ NOTE: Below we request to install generic `python` per system defaults.
 You may request specifically `python2` or `python3` (or both): current
 NUT should be compatible with both (2.7+ at least).
 
-NOTE: On CentOS, `libusb` means 0.1.x and `libusbx` means 1.x.x API version
-(latter is not available for CentOS 6).
+NOTE: On CentOS, `libusb` means 0.1.x (not available on modern Fedora),
+and `libusbx` means 1.x.x API version (latter is not available for CentOS 6).
 
 NOTE: On CentOS, it seems that development against libi2c/smbus is not
 supported. Neither the suitable devel packages were found, nor i2c-based
@@ -435,6 +441,8 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 # You can find a list of what is (pre-)installed with:
 #   :; rpm -qa | grep -Ei 'perl|python'
 # Note that CentOS 6 includes python-2.6.x and does not serve newer versions
+# For Fedora 43, further packages can be installed to test more:
+#   :; yum install python3-qt5 python3-setuptools
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; yum install \
@@ -445,6 +453,10 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 :; yum install \
     asciidoc source-highlight python-pygments dblatex
 
+# For PDF generation, you may need explicitly (at least on Fedora 43):
+:; yum install \
+    texlive 'tex(upquote.sty)'
+
 # For CGI graph generation - massive packages (X11):
 :; yum install \
     gd-devel
@@ -454,26 +466,41 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
     systemd-devel
 
 # NOTE: "libusbx" is the CentOS way of naming "libusb-1.0" (not in CentOS 6)
-# vs. the older "libusb" as the package with "libusb-0.1"
+# vs. the older "libusb" as the package with "libusb-0.1" (not in recent Fedora)
+:; yum install \
+    libusb-devel
+
+:; yum install \
+    libusbx-devel
+
 :; yum install \
     cppunit-devel \
     openssl-devel nss-devel \
     augeas augeas-devel \
-    libusb-devel libusbx-devel \
     glib2-devel \
     i2c-tools \
     libmodbus-devel \
     net-snmp-devel \
-    powerman-devel \
     freeipmi-devel \
     avahi-devel \
     neon-devel
+
+# Not in recent Fedora releases:
+:; yum install \
+    powerman-devel
+
+# Not in CentOS, some present in Fedora:
 #?# is python-augeas needed? exists at least...
 #?# no (lib)i2c-devel ...
 #?# no (lib)ipmimonitoring-devel ... would "freeipmi-ipmidetectd"
 #?#     cut it at least for run-time?
 #?# no (lib)gpio(d)-devel - starts with CentOS 8 (or extra repositories
 #?#     for later minor releases of CentOS 7)
+
+# In Fedora:
+:; yum install \
+    libi2c-devel \
+    libgpiod-devel
 
 # Some NUT code related to lua may be currently limited to lua-5.1
 # or possibly 5.2; the former is default in CentOS 7 releases...
@@ -482,6 +509,14 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 
 :; yum install \
     bash dash ksh
+
+# If available:
+:; yum install \
+    bash-completion
+
+# In Fedora:
+:; yum install \
+    busybox
 ------
 
 NOTE: `busybox` is not packaged for CentOS 7 release; a static binary can
@@ -499,8 +534,15 @@ other described environments by adding a symlink `/usr/lib/ccache`:
 ======
 For Jenkins agents, also need to install JDK 17 or newer, which is not
 available for CentOS 6 nor 7 directly (in distribution packaging).
-Alternative packaging, such as Temurin from the Adoptium project, is possible
-(checked for at least CentOS 7), see
+
+In Fedora e.g.:
+------
+:; yum install \
+    java-21-openjdk-headless
+------
+
+Alternative packaging for older distros, such as Temurin from the Adoptium
+project, is possible (checked for at least CentOS 7), see
 link:https://adoptium.net/installation/linux/#_centosrhelfedora_instructions[their
 instructions] for specific details. This may require updated library package
 versions as dependencies from the OS distribution, so you may also have to make
