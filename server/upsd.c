@@ -1700,6 +1700,11 @@ static void mainloop(void)
 		if (poll_TO < 10)
 			poll_TO = 10;
 
+		upsdebugx(4, "%s: chunked filedescriptor polling via %" PRIuSIZE
+			" chunks, last one sized %" PRIuSIZE
+			", with timeout of %d msec per chunk",
+			__func__, chunks, last_chunk, poll_TO);
+
 		ret = 0;
 		for (chunk = 0; chunk < chunks; chunk++) {
 			upsdebugx(5,
@@ -2036,6 +2041,11 @@ static void mainloop(void)
 
 		if (poll_TO < 10)
 			poll_TO = 10;
+
+		upsdebugx(4, "%s: chunked filedescriptor polling via %" PRIuSIZE
+			" chunks, last one sized %" PRIuSIZE
+			", with timeout of %" PRIi64 " msec per chunk",
+			__func__, chunks, last_chunk, poll_TO);
 
 		ret = WAIT_TIMEOUT;
 		for (chunk = 0; chunk < chunks; chunk++) {
