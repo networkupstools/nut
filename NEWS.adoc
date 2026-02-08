@@ -277,6 +277,10 @@ https://github.com/networkupstools/nut/milestone/12
      built-in NUT configuration path on all platforms, but to also consider
      `NUT_CONFPATH` and other fallback locations, like other code does.
      [PR #3249]
+   * Enhance debug-logging of dynamic library loading with information about
+     any missing method in the library discovered at run-time, if lack of such
+     prevents us from using that library, and blocks scanning of corresponding
+     protocol and/or media to discover possibly supported devices. [PR #3310]
    * Introduced `nut-scanner` support for new `nut-upower` driver. [PR #3293]
 
  - `upsd` data server updates:
