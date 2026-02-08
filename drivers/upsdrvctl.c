@@ -952,8 +952,11 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 	/* the command line is made of the driver name followed by args */
 	if (strstr(argv[0], ups->driver)) {
-		/* We already know whom to call (got a pointer to needle in the haystack) */
-		snprintf(commandline, sizeof(commandline), "%s", argv[0]);
+		/* We already know whom to call (got a pointer
+		 * to needle in the haystack); that path may
+		 * have spaces ("Program Files") so quoted.
+		 */
+		snprintf(commandline, sizeof(commandline), "\"%s\"", argv[0]);
 	} else {
 		/* Hope for the PATH based resolution to work, perhaps the
 		 * driver program is located nearby (depends on configure
@@ -966,6 +969,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	}
 
 	while (argv[i] != NULL) {
+		/* TOTHINK: No known toxic spaces to quote here... */
 		snprintfcat(commandline, sizeof(commandline), " %s", argv[i]);
 		i++;
 	}
