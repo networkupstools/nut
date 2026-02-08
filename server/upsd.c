@@ -1678,7 +1678,7 @@ static void mainloop(void)
 		__func__, (intmax_t)nfds, (intmax_t)nfds_considered,
 		(intmax_t)nfds_wanted, (intmax_t)maxconn, (intmax_t)sysmaxconn);
 
-	if (nfds_wanted != nfds || nfds_wanted >= maxconn) {
+	if (nfds_wanted != nfds || nfds_wanted > maxconn) {
 		upslogx(LOG_ERR, "upsd polling %" PRIdMAX " filedescriptors,"
 			" but wanted to poll %" PRIdMAX
 			" and was constrained by maxconn=%" PRIdMAX
@@ -2016,7 +2016,7 @@ static void mainloop(void)
 		__func__, (intmax_t)nfds, (intmax_t)nfds_considered,
 		(intmax_t)nfds_wanted, (intmax_t)maxconn, (intmax_t)sysmaxconn);
 
-	if (nfds_wanted != nfds || nfds_wanted >= maxconn) {
+	if (nfds_wanted != nfds || nfds_wanted > maxconn) {
 		upslogx(LOG_ERR, "upsd polling %" PRIuMAX " filedescriptors,"
 			" but wanted to poll %" PRIuMAX
 			" and was constrained by maxconn=%" PRIuMAX
