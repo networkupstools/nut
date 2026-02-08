@@ -1225,6 +1225,7 @@ static void upsd_cleanup(void)
 static void update_sysmaxconn(void)
 {
 	long	l;
+	char	*s = getenv("NUT_SYSMAXCONN_LIMIT");
 
 #ifndef WIN32
 	/* default to system limit (may be overridden in upsd.conf) */
@@ -1245,12 +1246,29 @@ static void update_sysmaxconn(void)
 			l);
 	}
 
-	/* TOTHINK: envvar for NIT or similar tests?
-	 *  Still do not exceed what the OS said.
-	 *  Note this historically also serves as
-	 *  the initial/default MAXCONN setting.
+	/* Note this historically also serves as
+	 * the initial/default MAXCONN setting
+	 * (so site/platform-dependent).
 	 */
 	sysmaxconn = (nfds_t)l;
+	if (maxconn < 1) {
+		upsdebugx(1, "%s: defaulting maxconn to sysmaxconn: %ld",
+			__func__, l);
+		maxconn = sysmaxconn;
+	}
+
+	/* Support envvar for NIT or similar tests.
+	 * Still do not exceed what the OS said.
+	 */
+	if (s && str_to_long(s, &l, 10)) {
+		if (l > 0 && (nfds_t)l < sysmaxconn) {
+			upslogx(LOG_INFO, "Adjusting sysmaxconn according to NUT_SYSMAXCONN_LIMIT envvar: %ld", l);
+			sysmaxconn  = (nfds_t)l;
+		} else {
+			upslogx(LOG_WARNING, "Adjusting sysmaxconn according to NUT_SYSMAXCONN_LIMIT envvar failed: %ld is out of range. Keeping OS-provided %ld.",
+			l, (long)sysmaxconn);
+		}
+	}	/* else nothing to bother about */
 }
 
 static void poll_reload(void)
@@ -2552,8 +2570,8 @@ int main(int argc, char **argv)
 		chroot_start(chroot_path);
 	}
 
+	/* Also initializes maxconn to what the OS says */
 	update_sysmaxconn();
-	maxconn = sysmaxconn;
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */

@@ -288,7 +288,9 @@ https://github.com/networkupstools/nut/milestone/12
      [PR #3237]
    * Extended processing of `MAXCONN` setting to allow larger values than the
      operating system allows, by only waiting for that amount of Unix sockets
-     or Windows `HANDLE`'s at a time, and moving on to another chunk. [#3302]
+     or Windows `HANDLE`'s at a time, and moving on to another chunk.
+     The system-provided value can be further limited by `NUT_SYSMAXCONN_LIMIT`
+     environment variable (e.g. in tests). [#3302]
 
  - `upsdrvctl` tool updates:
    * Make use of `setproctag()` and `getproctag()` to report parent/child
