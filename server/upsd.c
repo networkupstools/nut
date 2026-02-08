@@ -1222,34 +1222,51 @@ static void upsd_cleanup(void)
 	upsdebugx(1, "%s: finished", __func__);
 }
 
-static void poll_reload(void)
+static void update_sysmaxconn(void)
 {
-	long	ret;
-	size_t	maxalloc;
+	long	l;
 
 #ifndef WIN32
-	/* Not likely this would change, but refresh just in case */
-	ret = sysconf(_SC_OPEN_MAX);
+	/* default to system limit (may be overridden in upsd.conf) */
+	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
+	l = sysconf(_SC_OPEN_MAX);
 #else	/* WIN32 */
-	ret = (long)MAXIMUM_WAIT_OBJECTS;
+	/* hard-coded 64 (from ddk/wdm.h or winnt.h) */
+	l = (long)MAXIMUM_WAIT_OBJECTS;
 #endif	/* WIN32 */
 
-	if (ret < 1) {
-		/* TOTHINK: Not fail, but use a conservative fallback number? */
+	if (l < 1) {
+		/* TOTHINK: Not fail, but use a conservative fallback number?
+		 *  Can we trust the OS to support any?
+		 */
 		fatalx(EXIT_FAILURE,
 			"System reported an absurd value %ld as maximum number of connections.\n"
-			"The server won't start until this problem is resolved.\n", ret);
+			"The server won't start until this problem is resolved.\n",
+			l);
 	}
 
-	if ((intmax_t)ret < (intmax_t)maxconn) {
+	/* TOTHINK: envvar for NIT or similar tests?
+	 *  Still do not exceed what the OS said.
+	 *  Note this historically also serves as
+	 *  the initial/default MAXCONN setting.
+	 */
+	sysmaxconn = (nfds_t)l;
+}
+
+static void poll_reload(void)
+{
+	size_t	maxalloc;
+
+	/* Not likely this would change, but refresh just in case */
+	update_sysmaxconn();
+
+	if ((intmax_t)sysmaxconn < (intmax_t)maxconn) {
 		upslogx(LOG_WARNING,
-			"Your system limits the maximum number of connections to %ld\n"
+			"Your system limits the maximum number of connections to %" PRIdMAX "\n"
 			"but you requested %" PRIdMAX ". The server may handle connections\n"
 			"in smaller groups, maybe affecting efficiency and response time.\n",
-			ret, (intmax_t)maxconn);
+			(intmax_t)sysmaxconn, (intmax_t)maxconn);
 	}
-
-	sysmaxconn = (nfds_t)ret;
 
 	if (1 > maxconn) {
 		fatalx(EXIT_FAILURE,
@@ -2231,7 +2248,6 @@ void check_perms(const char *fn)
 int main(int argc, char **argv)
 {
 	int	i, cmdret = 0, foreground = -1;
-	long	l;
 #ifndef WIN32
 	int	cmd = 0;
 	pid_t	oldpid = -1;
@@ -2526,23 +2542,8 @@ int main(int argc, char **argv)
 		chroot_start(chroot_path);
 	}
 
-#ifndef WIN32
-	/* default to system limit (may be overridden in upsd.conf) */
-	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
-	l = sysconf(_SC_OPEN_MAX);
-#else	/* WIN32 */
-	/* hard-coded 64 (from ddk/wdm.h or winnt.h) */
-	l = (long)MAXIMUM_WAIT_OBJECTS;
-#endif	/* WIN32 */
-
-	if (l < 1) {
-		/* TOTHINK: Not fail, but use a conservative fallback number? */
-		fatalx(EXIT_FAILURE,
-			"System reported an absurd value %ld as maximum number of connections.\n"
-			"The server won't start until this problem is resolved.\n", l);
-	}
-
-	maxconn = sysmaxconn = (nfds_t)l;
+	update_sysmaxconn();
+	maxconn = sysmaxconn;
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
