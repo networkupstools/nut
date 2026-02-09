@@ -79,9 +79,13 @@ workspace to try subsequent iterations), although the latter are now also
 available for development iterations.
 
 See the live Wiki article on
-https://github.com/networkupstools/nut/wiki/Building-NUT-for-in%E2%80%90place-upgrades-or-non%E2%80%90disruptive-tests
-for latest suggestions for building, testing and installing the latest
-NUT code base.
+link:https://github.com/networkupstools/nut/wiki/Building-NUT-for-in%E2%80%90place-upgrades-or-non%E2%80%90disruptive-tests[Building
+NUT for in-place upgrades or non-disruptive tests]
+for the most up-to-date suggestions for building, testing and installing
+the latest (or experimental) revisions of the NUT code base, and
+link:https://github.com/networkupstools/nut/wiki/Finding-recent-development-iteration-artifacts[Finding
+recent development iteration artifacts] about fetching the results of
+the hard work done by the NUT CI farm.
 
 Code repository
 ^^^^^^^^^^^^^^^
