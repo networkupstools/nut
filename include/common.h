@@ -447,6 +447,11 @@ int sendsignalfnaliases(const char *pidfn, const char * sig, const char **progna
 const char *xbasename(const char *file);
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
+ * the stdout instead of stderr, and end them with HTML <BR/> tag,
+ * to help troubleshoot NUT CGI programs specifically */
+void cgilogbit_set(void);
+
+/* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void);
 
@@ -754,6 +759,12 @@ extern int optind;
 #define UPSLOG_SYSLOG		0x0002
 #define UPSLOG_STDERR_ON_FATAL	0x0004
 #define UPSLOG_SYSLOG_ON_FATAL	0x0008
+
+/* Special cases, primarily for NUT CGI programs to dump logs
+ *  in a way better usable when troubleshooting with a browser:
+ */
+#define UPSLOG_STDOUT		0x0010
+#define UPSLOG_CGI_BR		0x0020
 
 #ifndef HAVE_SETEUID
 #	define seteuid(x) setresuid(-1,x,-1)    /* Works for HP-UX 10.20 */
