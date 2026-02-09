@@ -1137,7 +1137,9 @@ int main(int argc, char **argv)
 	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: text/html\n");
+	printf("Pragma: no-cache\n");
+	printf("\n");
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
 	 * and NUT methods called from it. This line aims to just initialize
