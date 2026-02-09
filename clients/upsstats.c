@@ -70,7 +70,11 @@ static UPSCONN_t	ups;
 static FILE	*tf;
 static long	forofs = 0;
 
-static ulist_t	*ulhead = NULL, *currups = NULL;
+static ulist_t	*ulhead = NULL, *currups = NULL,
+	/* hijack the linked-list structure to store
+	 * just filenames (as "sys") so far */
+	*allowed_template_single_lhead = NULL,
+	*allowed_template_list_lhead = NULL;
 
 static int	skip_clause = 0, skip_block = 0;
 
@@ -1137,19 +1141,65 @@ static void parse_line(const char *buf)
 	upsdebug_call_finished0();
 }
 
-static void display_template(const char *tfn)
+/* type = 1 for upsstats-single.html (or custom copy), 2 for upsstats.html (list) */
+static void display_template(const char *tfn, int type)
 {
 	char	fn[NUT_PATH_MAX + 1], buf[LARGEBUF];
+	ulist_t	*tmp = NULL;
 
 	upsdebug_call_starting_for_str1(tfn);
 
-	if (!tfn || !*tfn || strstr(tfn, "/") || strstr(tfn, "\\") || !strstr(tfn, ".htm")) {
+	if (!tfn || !*tfn || strstr(tfn, "/") || strstr(tfn, "\\")) {
 		/* We only allow pre-configured templates in one managed location, with ".htm" in the name */
-		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look not exactly in the managed location\n", fn, strerror(errno));
+		errno = EPERM;
+		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look not exactly in the managed location\n", tfn, strerror(errno));
 
-		printf("Error: can't open template file (%s): asked to look not exactly in the managed location\n", tfn);
+		printf("Error: can't open template file (%s): Not authorized\n", tfn);
 
 		upsdebug_call_finished1(": subdir in template");
+		exit(EXIT_FAILURE);
+	}
+
+	if (!strstr(tfn, ".htm")) {
+		/* We only allow pre-configured templates with ".htm" in the name */
+		errno = EPERM;
+		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look at not a *.htm* file\n", tfn, strerror(errno));
+
+		printf("Error: can't open template file (%s): Not authorized\n", tfn);
+
+		upsdebug_call_finished1(": not a *.htm* file");
+		exit(EXIT_FAILURE);
+	}
+
+	if (type == 1) {
+		/* Check if [custom] single template is allowed
+		 * (built-in/legacy default starts the list) */
+		tmp = allowed_template_single_lhead;
+		while (tmp) {
+			if (!strcmp(tmp->sys, tfn))
+				break;
+			tmp = (ulist_t *)tmp->next;
+		}
+	} else
+	if (type == 2) {
+		/* Check if [custom] list template is allowed
+		 * (built-in/legacy default starts the list) */
+		tmp = allowed_template_list_lhead;
+		while (tmp) {
+			if (!strcmp(tmp->sys, tfn))
+				break;
+			tmp = (ulist_t *)tmp->next;
+		}
+	}
+
+	if (!tmp) {
+		/* We only allow pre-configured templates permitted via hosts.conf */
+		errno = EPERM;
+		fprintf(stderr, "upsstats: Can't open %s: %s: Not authorized: template not permitted via hosts.conf\n", tfn, strerror(errno));
+
+		printf("Error: can't open template file (%s): Not authorized\n", tfn);
+
+		upsdebug_call_finished1(": template not permitted via hosts.conf");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1291,13 +1341,69 @@ static void add_ups(char *sys, char *desc)
 		ulhead = tmp;
 }
 
+static void add_allowed_template_list(char *tfn)
+{
+	ulist_t	*tmp, *last;
+
+	if (!tfn || !*tfn)
+		return;
+
+	tmp = last = allowed_template_list_lhead;
+
+	while (tmp) {
+		if (!strcmp(tmp->sys, tfn))
+			return;
+		last = tmp;
+		tmp = (ulist_t *)tmp->next;
+	}
+
+	tmp = (ulist_t *)xmalloc(sizeof(ulist_t));
+
+	tmp->sys = xstrdup(tfn);
+	tmp->desc = NULL;
+	tmp->next = NULL;
+
+	if (last)
+		last->next = tmp;
+	else
+		allowed_template_list_lhead = tmp;
+}
+
+static void add_allowed_template_single(char *tfn)
+{
+	ulist_t	*tmp, *last;
+
+	if (!tfn || !*tfn)
+		return;
+
+	tmp = last = allowed_template_single_lhead;
+
+	while (tmp) {
+		if (!strcmp(tmp->sys, tfn))
+			return;
+		last = tmp;
+		tmp = (ulist_t *)tmp->next;
+	}
+
+	tmp = (ulist_t *)xmalloc(sizeof(ulist_t));
+
+	tmp->sys = xstrdup(tfn);
+	tmp->desc = NULL;
+	tmp->next = NULL;
+
+	if (last)
+		last->next = tmp;
+	else
+		allowed_template_single_lhead = tmp;
+}
+
 /* called for fatal errors in parseconf like malloc failures */
 static void upsstats_hosts_err(const char *errmsg)
 {
 	upslogx(LOG_ERR, "Fatal error in parseconf(hosts.conf): %s", errmsg);
 }
 
-static void load_hosts_conf(void)
+static void load_hosts_conf(int handle_MONITOR)
 {
 	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
@@ -1335,18 +1441,29 @@ static void load_hosts_conf(void)
 			continue;
 		}
 
+		if (ctx.numargs < 2)
+			continue;
+
+		/* CUSTOM_TEMPLATE_LIST <filename> */
+		if (!strcmp(ctx.arglist[0], "CUSTOM_TEMPLATE_LIST"))
+			add_allowed_template_list(ctx.arglist[1]);
+
+		/* CUSTOM_TEMPLATE_SINGLE <filename> */
+		if (!strcmp(ctx.arglist[0], "CUSTOM_TEMPLATE_SINGLE"))
+			add_allowed_template_single(ctx.arglist[1]);
+
 		if (ctx.numargs < 3)
 			continue;
 
 		/* MONITOR <host> <desc> */
-		if (!strcmp(ctx.arglist[0], "MONITOR"))
+		if (handle_MONITOR && !strcmp(ctx.arglist[0], "MONITOR"))
 			add_ups(ctx.arglist[1], ctx.arglist[2]);
 
 	}
 
 	pconf_finish(&ctx);
 
-	if (!ulhead) {
+	if (!ulhead && handle_MONITOR) {
 		/* Don't print HTML here if we are in JSON mode.
 		 * The JSON function will handle the error.
 		 */
@@ -1386,7 +1503,7 @@ static void display_single(void)
 	if (treemode)
 		display_tree(1);
 	else
-		display_template(template_single);
+		display_template(template_single, 1);
 
 	upscli_disconnect(&ups);
 	upsdebug_call_finished0();
@@ -1428,7 +1545,7 @@ static void display_json(void)
 		add_ups(monhost, monhostdesc);
 		currups = ulhead;
 	} else {
-		load_hosts_conf(); /* This populates ulhead */
+		load_hosts_conf(1); /* This populates ulhead */
 		currups = ulhead;
 	}
 
@@ -1576,9 +1693,6 @@ int main(int argc, char **argv)
 		nut_debug_level = i;
 	}
 
-	/* Built-in defaults */
-	template_single = xstrdup("upsstats-single.html");
-	template_list = xstrdup("upsstats.html");
 
 #ifdef NUT_CGI_DEBUG_UPSSTATS
 # if (NUT_CGI_DEBUG_UPSSTATS - 0 < 1)
@@ -1596,6 +1710,10 @@ int main(int argc, char **argv)
 		printf("\n");
 		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
 	}
+
+	/* Built-in defaults */
+	template_single = xstrdup("upsstats-single.html");
+	template_list = xstrdup("upsstats.html");
 
 	extractcgiargs();
 
@@ -1634,14 +1752,18 @@ int main(int argc, char **argv)
 	printf("Pragma: no-cache\n");
 	printf("\n");
 
-	/* if a host is specified, use upsstats-single.html instead */
+	/* if a host is specified, use upsstats-single.html instead
+	 * of listing whatever we know about with upsstats.html */
+	add_allowed_template_single("upsstats-single.html");
+	add_allowed_template_list("upsstats.html");
 	if (monhost) {
+		load_hosts_conf(0);
 		display_single();
 	} else {
 		/* default: multimon replacement mode */
-		load_hosts_conf();
+		load_hosts_conf(1);
 		currups = ulhead;
-		display_template(template_list);
+		display_template(template_list, 2);
 	}
 
 	/* Clean up memory */
@@ -1658,6 +1780,23 @@ int main(int argc, char **argv)
 	}
 	free(template_single);
 	free(template_list);
+
+	/* Free storage of allowed template names (reusing same kind of structure as UPSes) */
+	while (allowed_template_single_lhead) {
+		currups = (ulist_t *)allowed_template_single_lhead->next;
+		free(allowed_template_single_lhead->sys);
+		free(allowed_template_single_lhead->desc);
+		free(allowed_template_single_lhead);
+		allowed_template_single_lhead = currups;
+	}
+
+	while (allowed_template_list_lhead) {
+		currups = (ulist_t *)allowed_template_list_lhead->next;
+		free(allowed_template_list_lhead->sys);
+		free(allowed_template_list_lhead->desc);
+		free(allowed_template_list_lhead);
+		allowed_template_list_lhead = currups;
+	}
 
 	return 0;
 }

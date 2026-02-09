@@ -339,7 +339,8 @@ several `FSD` notifications into one executed action. [PR #3097]
      files now MUST start with (safety check that we are reading a template).
      [issue #3252, PR #3249]
    * (Experimental) Custom templates other than `upsstats{,-single}.html` can
-     now be specified as CGI parameters. [issue #2524, PR #3304]
+     now be specified as CGI parameters, if locally permitted via `hosts.conf`.
+     [issue #2524, PR #3304]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
