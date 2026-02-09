@@ -540,11 +540,11 @@ static void do_hostlink(void)
 
 	printf("<a href=\"%s?host=%s", upsstatpath, currups->sys);
 
-	if (strcmp(template_single, "upsstats-single.html")) {
+	if (template_single && strcmp(template_single, "upsstats-single.html")) {
 		printf("&amp;template_single=%s", template_single);
 	}
 
-	if (strcmp(template_list, "upsstats.html")) {
+	if (template_list && strcmp(template_list, "upsstats.html")) {
 		printf("&amp;template_list=%s", template_list);
 	}
 
@@ -568,11 +568,11 @@ static void do_treelink_json(const char *text)
 	printf("<a href=\"%s?host=%s&amp;json",
 		upsstatpath, currups->sys);
 
-	if (strcmp(template_single, "upsstats-single.html")) {
+	if (template_single && strcmp(template_single, "upsstats-single.html")) {
 		printf("&amp;template_single=%s", template_single);
 	}
 
-	if (strcmp(template_list, "upsstats.html")) {
+	if (template_list && strcmp(template_list, "upsstats.html")) {
 		printf("&amp;template_list=%s", template_list);
 	}
 
@@ -598,11 +598,11 @@ static void do_treelink(const char *text)
 	printf("<a href=\"%s?host=%s&amp;treemode",
 		upsstatpath, currups->sys);
 
-	if (strcmp(template_single, "upsstats-single.html")) {
+	if (template_single && strcmp(template_single, "upsstats-single.html")) {
 		printf("&amp;template_single=%s", template_single);
 	}
 
-	if (strcmp(template_list, "upsstats.html")) {
+	if (template_list && strcmp(template_list, "upsstats.html")) {
 		printf("&amp;template_list=%s", template_list);
 	}
 
