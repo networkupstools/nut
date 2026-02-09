@@ -1580,6 +1580,23 @@ int main(int argc, char **argv)
 	template_single = xstrdup("upsstats-single.html");
 	template_list = xstrdup("upsstats.html");
 
+#ifdef NUT_CGI_DEBUG_UPSSTATS
+# if (NUT_CGI_DEBUG_UPSSTATS - 0 < 1)
+#  undef NUT_CGI_DEBUG_UPSSTATS
+#  define NUT_CGI_DEBUG_UPSSTATS 6
+# endif
+	/* Un-comment via make flags when developer-troubleshooting: */
+	nut_debug_level = NUT_CGI_DEBUG_UPSSTATS;
+#endif
+
+	if (nut_debug_level > 0) {
+		cgilogbit_set();
+		printf("Content-type: text/html\n");
+		printf("Pragma: no-cache\n");
+		printf("\n");
+		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
+	}
+
 	extractcgiargs();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);

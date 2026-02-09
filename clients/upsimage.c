@@ -647,6 +647,23 @@ int main(int argc, char **argv)
 		nut_debug_level = i;
 	}
 
+#ifdef NUT_CGI_DEBUG_UPSIMAGE
+# if (NUT_CGI_DEBUG_UPSIMAGE - 0 < 1)
+#  undef NUT_CGI_DEBUG_UPSIMAGE
+#  define NUT_CGI_DEBUG_UPSIMAGE 6
+# endif
+	/* Un-comment via make flags when developer-troubleshooting: */
+	nut_debug_level = NUT_CGI_DEBUG_UPSIMAGE;
+#endif
+
+	if (nut_debug_level > 0) {
+		cgilogbit_set();
+		printf("Content-type: text/html\n");
+		printf("Pragma: no-cache\n");
+		printf("\n");
+		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
+	}
+
 	extractcgiargs();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
