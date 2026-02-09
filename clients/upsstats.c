@@ -1152,9 +1152,9 @@ static void display_template(const char *tfn, int type)
 	if (!tfn || !*tfn || strstr(tfn, "/") || strstr(tfn, "\\")) {
 		/* We only allow pre-configured templates in one managed location, with ".htm" in the name */
 		errno = EPERM;
-		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look not exactly in the managed location\n", tfn, strerror(errno));
+		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look not exactly in the managed location<br/>\n", tfn, strerror(errno));
 
-		printf("Error: can't open template file (%s): Not authorized\n", tfn);
+		printf("Error: can't open template file (%s): Not authorized<br/>\n", tfn);
 
 		upsdebug_call_finished1(": subdir in template");
 		exit(EXIT_FAILURE);
@@ -1163,9 +1163,9 @@ static void display_template(const char *tfn, int type)
 	if (!strstr(tfn, ".htm")) {
 		/* We only allow pre-configured templates with ".htm" in the name */
 		errno = EPERM;
-		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look at not a *.htm* file\n", tfn, strerror(errno));
+		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look at not a *.htm* file<br/>\n", tfn, strerror(errno));
 
-		printf("Error: can't open template file (%s): Not authorized\n", tfn);
+		printf("Error: can't open template file (%s): Not authorized<br/>\n", tfn);
 
 		upsdebug_call_finished1(": not a *.htm* file");
 		exit(EXIT_FAILURE);
@@ -1195,9 +1195,9 @@ static void display_template(const char *tfn, int type)
 	if (!tmp) {
 		/* We only allow pre-configured templates permitted via hosts.conf */
 		errno = EPERM;
-		fprintf(stderr, "upsstats: Can't open %s: %s: Not authorized: template not permitted via hosts.conf\n", tfn, strerror(errno));
+		fprintf(stderr, "upsstats: Can't open %s: %s: Not authorized: template not permitted via hosts.conf<br/>\n", tfn, strerror(errno));
 
-		printf("Error: can't open template file (%s): Not authorized\n", tfn);
+		printf("Error: can't open template file (%s): Not authorized<br/>\n", tfn);
 
 		upsdebug_call_finished1(": template not permitted via hosts.conf");
 		exit(EXIT_FAILURE);
@@ -1208,18 +1208,18 @@ static void display_template(const char *tfn, int type)
 	tf = fopen(fn, "rb");
 
 	if (!tf) {
-		fprintf(stderr, "upsstats: Can't open %s: %s\n", fn, strerror(errno));
+		fprintf(stderr, "upsstats: Can't open %s: %s<BR/>\n", fn, strerror(errno));
 
-		printf("Error: can't open template file (%s)\n", tfn);
+		printf("Error: can't open template file (%s)<BR/>\n", tfn);
 
 		upsdebug_call_finished1(": no template");
 		exit(EXIT_FAILURE);
 	}
 
 	if (!fgets(buf, sizeof(buf), tf)) {
-		fprintf(stderr, "upsstats: template file %s seems to be empty (fgets failed): %s\n", fn, strerror(errno));
+		fprintf(stderr, "upsstats: template file %s seems to be empty (fgets failed): %s<BR/>\n", fn, strerror(errno));
 
-		printf("Error: template file %s seems to be empty\n", tfn);
+		printf("Error: template file %s seems to be empty<BR/>\n", tfn);
 
 		upsdebug_call_finished1(": empty template");
 		exit(EXIT_FAILURE);
@@ -1229,9 +1229,9 @@ static void display_template(const char *tfn, int type)
 	if (!strncmp(buf, "@NUT_UPSSTATS_TEMPLATE", 22)) {
 		parse_line(buf);
 	} else {
-		fprintf(stderr, "upsstats: template file %s does not start with NUT_UPSSTATS_TEMPLATE command\n", fn);
+		fprintf(stderr, "upsstats: template file %s does not start with NUT_UPSSTATS_TEMPLATE command<BR/>\n", fn);
 
-		printf("Error: template file %s does not start with NUT_UPSSTATS_TEMPLATE command\n", tfn);
+		printf("Error: template file %s does not start with NUT_UPSSTATS_TEMPLATE command<BR/>\n", tfn);
 
 		upsdebug_call_finished1(": not a valid template");
 		exit(EXIT_FAILURE);
