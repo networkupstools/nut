@@ -111,6 +111,8 @@ void extractcgiargs(void)
 
 		cleanvar = unescape(varname);
 		cleanval = unescape(value);
+		upsdebugx(3, "%s: parsearg('%s', '%s')<br/>",
+			__func__, NUT_STRARG(cleanvar), NUT_STRARG(cleanval));
 		parsearg(cleanvar, cleanval);
 		free(cleanvar);
 		free(cleanval);
