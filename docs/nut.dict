@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3655 utf-8
+personal_ws-1.1 en 3659 utf-8
 AAC
 AAS
 ABI
@@ -3137,6 +3137,7 @@ setproctag
 setq
 setuid
 setupCommands
+setuptools
 setvar
 setvar's
 sfr
@@ -3335,6 +3336,8 @@ testime
 testtime
 testuser
 testvar
+tex
+texlive
 textproc
 tgcware
 tgt
@@ -3436,6 +3439,7 @@ unstash
 updateinfo
 upexia
 upower
+upquote
 upsBypassCurrent
 upsBypassPower
 upsBypassVoltage

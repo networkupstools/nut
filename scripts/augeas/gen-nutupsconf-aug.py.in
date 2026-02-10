@@ -27,6 +27,15 @@ import os
 import re
 import glob
 
+HAVE_WARNINGS = False
+try:
+	import warnings
+	warnings.filterwarnings("error")
+	HAVE_WARNINGS = True
+except Exception as x:
+	# sys.stderr.write("WARNING: failed to import warnings or configure them: %s" % str(x))
+	pass
+
 try:
 	# NOTE: Deprecated as of python3.14
 	import codecs
@@ -46,6 +55,9 @@ except Exception as x:
 	# sys.stderr.write("WARNING: import codecs failed: %s\n" % str(x))
 	HAVE_CODECS = False
 	USE_CODECS = False
+
+if HAVE_WARNINGS:
+	warnings.resetwarnings()
 
 # Return a sorted list of unique entries, based on the input 'list'
 def sortUnique(list):
@@ -129,9 +141,11 @@ if __name__ == '__main__':
 								defRow = re.findall(r'"([^"]*)",?', varDefine)
 								if (len(defRow) == 1):
 									variableNames.append(defRow[0])
+							defFd.close()
 					else:
 						# Remove quotes
 						variableNames.append(row[1].replace('"', '').lstrip())
+			fd.close()
 
 	# Filter multiply defined variables
 	variableNames = sortUnique(variableNames)
@@ -148,6 +162,7 @@ if __name__ == '__main__':
 
 	# 2.1/ Search for the pattern to replace
 	outputText = tplFd.read()
+	tplFd.close()
 	outputText = outputText.replace('@SPECIFIC_DRV_VARS@', specificVars)
 
 	# 3/ Output final lens
@@ -156,3 +171,4 @@ if __name__ == '__main__':
 	else:
 		outFd = open(outputFilename, mode='w', encoding='utf-8')
 	outFd.write(outputText)
+	outFd.close()
