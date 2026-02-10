@@ -2785,6 +2785,11 @@ case "${target_os}" in
         dnl Note: this regards target OS standard layout as documented in
         dnl https://docs.oracle.com/cd/E23824_01/html/821-1451/gladp.html
         dnl but may not fit certain packaging projects
+        dnl FIXME https://github.com/networkupstools/nut/issue/3314 :
+        dnl  If we have no tools or wish to build man pages, and would
+        dnl  just deliver what we have in dist tarball (or otherwise), we
+        dnl  must keep the original names and cross-links of files we copy
+        dnl  (no section substitutions then!)
         DEFAULT_MAN_SECTION_CMD_SYS="1m"
         DEFAULT_MAN_DIR_AS_BASE="no"
         ;;
