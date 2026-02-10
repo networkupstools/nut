@@ -2,7 +2,7 @@
  *  Copyright (C)
  *    2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *    2016 - 2021  EATON - Various threads-related improvements
- *    2020 - 2024  Jim Klimov <jimklimov+nut@gmail.com>
+ *    2020 - 2026  Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -150,6 +150,8 @@ int nutscan_unload_ipmi_library(void)
 int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_load_ipmi_library(const char *libname_path)
 {
+	char	*symbol = NULL;
+
 	if (dl_handle != NULL) {
 		/* if previous init failed */
 		if (dl_handle == (lt_dlhandle)1) {
@@ -175,103 +177,126 @@ int nutscan_load_ipmi_library(const char *libname_path)
 		goto err;
 	}
 
+	upsdebugx(2, "%s: lt_dlopen() succeeded, searching for needed methods", __func__);
+
 	/* Clear any existing error */
 	lt_dlerror();
 
-	*(void **) (&nut_ipmi_fru_close_device_id) = lt_dlsym(dl_handle, IPMI_FRU_CLOSE_DEVICE_ID);
+	*(void **) (&nut_ipmi_fru_close_device_id) = lt_dlsym(dl_handle,
+		symbol = IPMI_FRU_CLOSE_DEVICE_ID);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_fru_ctx_destroy) = lt_dlsym(dl_handle, IPMI_FRU_CTX_DESTROY);
+	*(void **) (&nut_ipmi_fru_ctx_destroy) = lt_dlsym(dl_handle,
+		symbol = IPMI_FRU_CTX_DESTROY);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 #ifdef HAVE_FREEIPMI_11X_12X
 
-	*(void **) (&nut_ipmi_sdr_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_sdr_ctx_destroy");
+	*(void **) (&nut_ipmi_sdr_ctx_destroy) = lt_dlsym(dl_handle,
+		symbol = "ipmi_sdr_ctx_destroy");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 #else /* HAVE_FREEIPMI_11X_12X */
 
-	*(void **) (&nut_ipmi_sdr_cache_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_sdr_cache_ctx_destroy");
+	*(void **) (&nut_ipmi_sdr_cache_ctx_destroy) = lt_dlsym(dl_handle,
+		symbol = "ipmi_sdr_cache_ctx_destroy");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_sdr_parse_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_sdr_parse_ctx_destroy");
+	*(void **) (&nut_ipmi_sdr_parse_ctx_destroy) = lt_dlsym(dl_handle,
+		symbol = "ipmi_sdr_parse_ctx_destroy");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 #endif /* HAVE_FREEIPMI_11X_12X */
 
-	*(void **) (&nut_ipmi_fru_ctx_create) = lt_dlsym(dl_handle, IPMI_FRU_CTX_CREATE);
+	*(void **) (&nut_ipmi_fru_ctx_create) = lt_dlsym(dl_handle,
+		symbol = IPMI_FRU_CTX_CREATE);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_fru_ctx_set_flags) = lt_dlsym(dl_handle, IPMI_FRU_CTX_SET_FLAGS);
+	*(void **) (&nut_ipmi_fru_ctx_set_flags) = lt_dlsym(dl_handle,
+		symbol = IPMI_FRU_CTX_SET_FLAGS);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_fru_open_device_id) = lt_dlsym(dl_handle, IPMI_FRU_OPEN_DEVICE_ID);
+	*(void **) (&nut_ipmi_fru_open_device_id) = lt_dlsym(dl_handle,
+		symbol = IPMI_FRU_OPEN_DEVICE_ID);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_fru_ctx_errormsg) = lt_dlsym(dl_handle, IPMI_FRU_CTX_ERRORMSG);
+	*(void **) (&nut_ipmi_fru_ctx_errormsg) = lt_dlsym(dl_handle,
+		symbol = IPMI_FRU_CTX_ERRORMSG);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_fru_read_data_area) = lt_dlsym(dl_handle, IPMI_FRU_READ_DATA_AREA);
+	*(void **) (&nut_ipmi_fru_read_data_area) = lt_dlsym(dl_handle,
+		symbol = IPMI_FRU_READ_DATA_AREA);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_fru_next) = lt_dlsym(dl_handle, IPMI_FRU_PARSE_NEXT);
+	*(void **) (&nut_ipmi_fru_next) = lt_dlsym(dl_handle,
+		symbol = IPMI_FRU_PARSE_NEXT);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_ctx_create) = lt_dlsym(dl_handle, "ipmi_ctx_create");
+	*(void **) (&nut_ipmi_ctx_create) = lt_dlsym(dl_handle,
+		symbol = "ipmi_ctx_create");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_ctx_find_inband) = lt_dlsym(dl_handle, "ipmi_ctx_find_inband");
+	*(void **) (&nut_ipmi_ctx_find_inband) = lt_dlsym(dl_handle,
+		symbol = "ipmi_ctx_find_inband");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_ctx_open_outofband) = lt_dlsym(dl_handle, "ipmi_ctx_open_outofband");
+	*(void **) (&nut_ipmi_ctx_open_outofband) = lt_dlsym(dl_handle,
+		symbol = "ipmi_ctx_open_outofband");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_ctx_errnum) = lt_dlsym(dl_handle, "ipmi_ctx_errnum");
+	*(void **) (&nut_ipmi_ctx_errnum) = lt_dlsym(dl_handle,
+		symbol = "ipmi_ctx_errnum");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_ctx_errormsg) = lt_dlsym(dl_handle, "ipmi_ctx_errormsg");
+	*(void **) (&nut_ipmi_ctx_errormsg) = lt_dlsym(dl_handle,
+		symbol = "ipmi_ctx_errormsg");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_ctx_close) = lt_dlsym(dl_handle, "ipmi_ctx_close");
+	*(void **) (&nut_ipmi_ctx_close) = lt_dlsym(dl_handle,
+		symbol = "ipmi_ctx_close");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ipmi_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_ctx_destroy");
+	*(void **) (&nut_ipmi_ctx_destroy) = lt_dlsym(dl_handle,
+		symbol = "ipmi_ctx_destroy");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+
+	/* Passed final lt_dlsym() */
+	symbol = NULL;
 
 	if (dl_saved_libname)
 		free(dl_saved_libname);
@@ -281,8 +306,12 @@ int nutscan_load_ipmi_library(const char *libname_path)
 
 err:
 	upsdebugx(0,
-		"Cannot load IPMI library (%s) : %s. IPMI search disabled.",
-		libname_path, dl_error);
+		"Cannot load IPMI library (%s) : %s%s%s%s. IPMI search disabled.",
+		libname_path, dl_error,
+		symbol ? " Error happened during search for symbol '" : "",
+		symbol ? symbol : "",
+		symbol ? "'" : ""
+		);
 	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {

@@ -1,7 +1,7 @@
 /*
  *  Copyright (C) 2011 - EATON
  *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
- *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
+ *  Copyright (C) 2020-2026 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -295,6 +295,8 @@ int nutscan_load_snmp_library(const char *libname_path)
 # endif
 
 #else	/* not WITH_SNMP_STATIC */
+	char	*symbol = NULL;
+
 	if (dl_handle != NULL) {
 		/* if previous init failed */
 		if (dl_handle == (lt_dlhandle)1) {
@@ -320,98 +322,104 @@ int nutscan_load_snmp_library(const char *libname_path)
 		goto err;
 	}
 
+	upsdebugx(2, "%s: lt_dlopen() succeeded, searching for needed methods", __func__);
+
 	/* Clear any existing error */
 	lt_dlerror();
 
-	*(void **) (&nut_init_snmp) = lt_dlsym(dl_handle, "init_snmp");
+	*(void **) (&nut_init_snmp) = lt_dlsym(dl_handle,
+		symbol = "init_snmp");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_init) = lt_dlsym(dl_handle,
-		"snmp_sess_init");
+		symbol = "snmp_sess_init");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_open) = lt_dlsym(dl_handle,
-		"snmp_sess_open");
+		symbol = "snmp_sess_open");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_close) = lt_dlsym(dl_handle,
-		"snmp_sess_close");
+		symbol = "snmp_sess_close");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_session) = lt_dlsym(dl_handle,
-		"snmp_sess_session");
+		symbol = "snmp_sess_session");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_parse_oid) = lt_dlsym(dl_handle,
-		"snmp_parse_oid");
+		symbol = "snmp_parse_oid");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_pdu_create) = lt_dlsym(dl_handle,
-		"snmp_pdu_create");
+		symbol = "snmp_pdu_create");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_add_null_var) = lt_dlsym(dl_handle,
-		"snmp_add_null_var");
+		symbol = "snmp_add_null_var");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_synch_response) = lt_dlsym(dl_handle,
-		"snmp_sess_synch_response");
+		symbol = "snmp_sess_synch_response");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_oid_compare) = lt_dlsym(dl_handle,
-		"snmp_oid_compare");
+		symbol = "snmp_oid_compare");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_snmp_free_pdu) = lt_dlsym(dl_handle, "snmp_free_pdu");
+	*(void **) (&nut_snmp_free_pdu) = lt_dlsym(dl_handle,
+		symbol = "snmp_free_pdu");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_generate_Ku) = lt_dlsym(dl_handle, "generate_Ku");
+	*(void **) (&nut_generate_Ku) = lt_dlsym(dl_handle,
+		symbol = "generate_Ku");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_out_toggle_options) = lt_dlsym(dl_handle,
-		"snmp_out_toggle_options");
+		symbol = "snmp_out_toggle_options");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_api_errstring) = lt_dlsym(dl_handle,
-		"snmp_api_errstring");
+		symbol = "snmp_api_errstring");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_snmp_errno) = lt_dlsym(dl_handle, "snmp_errno");
+	*(void **) (&nut_snmp_errno) = lt_dlsym(dl_handle,
+		symbol = "snmp_errno");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 #if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
 	*(void **) (&nut_usmAESPrivProtocol) = lt_dlsym(dl_handle,
-		USMAESPRIVPROTOCOL);
+		symbol = USMAESPRIVPROTOCOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -419,7 +427,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 #if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 	*(void **) (&nut_usmHMACMD5AuthProtocol) = lt_dlsym(dl_handle,
-		"usmHMACMD5AuthProtocol");
+		symbol = "usmHMACMD5AuthProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -427,7 +435,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 #if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
 	*(void **) (&nut_usmHMACSHA1AuthProtocol) = lt_dlsym(dl_handle,
-		"usmHMACSHA1AuthProtocol");
+		symbol = "usmHMACSHA1AuthProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -435,7 +443,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 	*(void **) (&nut_usmDESPrivProtocol) = lt_dlsym(dl_handle,
-		"usmDESPrivProtocol");
+		symbol = "usmDESPrivProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -444,7 +452,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 #if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 	*(void **) (&nut_usmAES192PrivProtocol) = lt_dlsym(dl_handle,
-		"usmAES192PrivProtocol");
+		symbol = "usmAES192PrivProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -452,7 +460,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 # if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
 	*(void **) (&nut_usmAES256PrivProtocol) = lt_dlsym(dl_handle,
-		"usmAES256PrivProtocol");
+		symbol = "usmAES256PrivProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -461,7 +469,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 #if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
 	*(void **) (&nut_usmHMAC192SHA256AuthProtocol) = lt_dlsym(dl_handle,
-		"usmHMAC192SHA256AuthProtocol");
+		symbol = "usmHMAC192SHA256AuthProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -469,7 +477,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 #if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
 	*(void **) (&nut_usmHMAC256SHA384AuthProtocol) = lt_dlsym(dl_handle,
-		"usmHMAC256SHA384AuthProtocol");
+		symbol = "usmHMAC256SHA384AuthProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -477,11 +485,14 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 #if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
 	*(void **) (&nut_usmHMAC384SHA512AuthProtocol) = lt_dlsym(dl_handle,
-		"usmHMAC384SHA512AuthProtocol");
+		symbol = "usmHMAC384SHA512AuthProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 #endif /* NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol */
+
+	/* Passed final lt_dlsym() */
+	symbol = NULL;
 
 	if (dl_saved_libname)
 		free(dl_saved_libname);
@@ -494,8 +505,12 @@ int nutscan_load_snmp_library(const char *libname_path)
 #ifndef WITH_SNMP_STATIC
 err:
 	upsdebugx(0,
-		"Cannot load SNMP library (%s) : %s. SNMP search disabled.",
-		libname_path, dl_error);
+		"Cannot load SNMP library (%s) : %s%s%s%s. SNMP search disabled.",
+		libname_path, dl_error,
+		symbol ? " Error happened during search for symbol '" : "",
+		symbol ? symbol : "",
+		symbol ? "'" : ""
+		);
 	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {

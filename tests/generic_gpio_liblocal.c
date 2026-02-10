@@ -271,7 +271,7 @@ int gpiod_line_request_get_values(
 		return -1;
 	}
 	for(i=0; i<num_lines; i++) {
-		values[i]=(gStatus&pinPos)!=0;
+		values[i]= ( (gStatus&pinPos)!=0 ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE);
 		pinPos=pinPos<<1;
 	}
 

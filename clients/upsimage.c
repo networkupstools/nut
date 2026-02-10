@@ -20,6 +20,7 @@
    Copyrights:
      (C) 1998  Russell Kroll <rkroll@exploits.org>
      (C) 2002  Simon Rozman <simon@rozman.net>
+     (C) 2020-2026 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -619,14 +620,14 @@ int main(int argc, char **argv)
 	double	var = 0;
 
 #ifdef WIN32
-        /* Required ritual before calling any socket functions */
-        static WSADATA  WSAdata;
-        static int      WSA_Started = 0;
-        if (!WSA_Started) {
-                WSAStartup(2, &WSAdata);
-                atexit((void(*)(void))WSACleanup);
-                WSA_Started = 1;
-        }
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 
 	/* Avoid binary output conversions, e.g.
 	 * mangling what looks like CRLF on WIN32 */
@@ -644,6 +645,23 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
+	}
+
+#ifdef NUT_CGI_DEBUG_UPSIMAGE
+# if (NUT_CGI_DEBUG_UPSIMAGE - 0 < 1)
+#  undef NUT_CGI_DEBUG_UPSIMAGE
+#  define NUT_CGI_DEBUG_UPSIMAGE 6
+# endif
+	/* Un-comment via make flags when developer-troubleshooting: */
+	nut_debug_level = NUT_CGI_DEBUG_UPSIMAGE;
+#endif
+
+	if (nut_debug_level > 0) {
+		cgilogbit_set();
+		printf("Content-type: text/html\n");
+		printf("Pragma: no-cache\n");
+		printf("\n");
+		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
 	}
 
 	extractcgiargs();

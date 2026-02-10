@@ -107,6 +107,8 @@ int nutscan_unload_usb_library(void)
 int nutscan_load_usb_library(const char *libname_path);
 int nutscan_load_usb_library(const char *libname_path)
 {
+	char	*symbol = NULL;
+
 	if (dl_handle != NULL) {
 		/* if previous init failed */
 		if (dl_handle == (lt_dlhandle)1) {
@@ -132,54 +134,62 @@ int nutscan_load_usb_library(const char *libname_path)
 		goto err;
 	}
 
+	upsdebugx(2, "%s: lt_dlopen() succeeded, searching for needed methods", __func__);
+
 	/* Clear any existing error */
 	lt_dlerror();
 
-	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle, USB_INIT_SYMBOL);
+	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle,
+		symbol = USB_INIT_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_usb_open) = lt_dlsym(dl_handle, USB_OPEN_SYMBOL);
+	*(void **) (&nut_usb_open) = lt_dlsym(dl_handle,
+		symbol = USB_OPEN_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_usb_close) = lt_dlsym(dl_handle, USB_CLOSE_SYMBOL);
+	*(void **) (&nut_usb_close) = lt_dlsym(dl_handle,
+		symbol = USB_CLOSE_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle, USB_STRERROR_SYMBOL);
+	*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle,
+		symbol = USB_STRERROR_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 #if WITH_LIBUSB_1_0
-	*(void **) (&nut_usb_exit) = lt_dlsym(dl_handle, "libusb_exit");
+	*(void **) (&nut_usb_exit) = lt_dlsym(dl_handle,
+		symbol = "libusb_exit");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_usb_get_version) = lt_dlsym(dl_handle, "libusb_get_version");
+	*(void **) (&nut_usb_get_version) = lt_dlsym(dl_handle,
+		symbol = "libusb_get_version");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usb_get_device_list) = lt_dlsym(dl_handle,
-		"libusb_get_device_list");
+		symbol = "libusb_get_device_list");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usb_free_device_list) = lt_dlsym(dl_handle,
-		"libusb_free_device_list");
+		symbol = "libusb_free_device_list");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usb_get_bus_number) = lt_dlsym(dl_handle,
-		"libusb_get_bus_number");
+		symbol = "libusb_get_bus_number");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -189,7 +199,7 @@ int nutscan_load_usb_library(const char *libname_path)
 	 * not for too long (libusb-1.0.12...1.0.16) and now it is deprecated.
 	 */
 	*(void **) (&nut_usb_get_device_address) = lt_dlsym(dl_handle,
-		"libusb_get_device_address");
+		symbol = "libusb_get_device_address");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
@@ -199,7 +209,7 @@ int nutscan_load_usb_library(const char *libname_path)
 	 *   #if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	 */
 	*(void **) (&nut_usb_get_port_number) = lt_dlsym(dl_handle,
-		"libusb_get_port_number");
+		symbol = "libusb_get_port_number");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		upsdebugx(0, "WARNING: %s: "
 			"While loading USB library (%s), failed to find libusb_get_port_number() : %s. "
@@ -209,19 +219,19 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 
 	*(void **) (&nut_usb_get_device_descriptor) = lt_dlsym(dl_handle,
-		"libusb_get_device_descriptor");
+		symbol = "libusb_get_device_descriptor");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usb_control_transfer) = lt_dlsym(dl_handle,
-		"libusb_control_transfer");
+		symbol = "libusb_control_transfer");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usb_get_string_with_langid) = lt_dlsym(dl_handle,
-		"libusb_get_string_descriptor");
+		symbol = "libusb_get_string_descriptor");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		/* This one may be only defined in a header as an inline method;
 		 * then we are adapting it via nut_usb_control_transfer().
@@ -230,39 +240,39 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 #else /* for libusb 0.1 */
 	*(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle,
-		"usb_find_busses");
+		symbol = "usb_find_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 # ifndef WIN32
 	*(void **) (&nut_usb_busses) = lt_dlsym(dl_handle,
-		"usb_busses");
+		symbol = "usb_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 # else
 	*(void **) (&nut_usb_get_busses) = lt_dlsym(dl_handle,
-		"usb_get_busses");
+		symbol = "usb_get_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 # endif	/* WIN32 */
 
 	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle,
-		"usb_find_devices");
+		symbol = "usb_find_devices");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usb_control_transfer) = lt_dlsym(dl_handle,
-		"usb_control_msg");
+		symbol = "usb_control_msg");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usb_get_string_with_langid) = lt_dlsym(dl_handle,
-		"usb_get_string");
+		symbol = "usb_get_string");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		/* See comment above */
 		nut_usb_get_string_with_langid = NULL;
@@ -273,6 +283,9 @@ int nutscan_load_usb_library(const char *libname_path)
 		nut_usb_get_string_with_langid = nut_usb_get_string_with_langid_control_transfer;
 	}
 
+	/* Passed final lt_dlsym() */
+	symbol = NULL;
+
 	if (dl_saved_libname)
 		free(dl_saved_libname);
 	dl_saved_libname = xstrdup(libname_path);
@@ -281,8 +294,12 @@ int nutscan_load_usb_library(const char *libname_path)
 
 err:
 	upsdebugx(0,
-		"Cannot load USB library (%s) : %s. USB search disabled.",
-		libname_path, dl_error);
+		"Cannot load USB library (%s) : %s%s%s%s. USB search disabled.",
+		libname_path, dl_error,
+		symbol ? " Error happened during search for symbol '" : "",
+		symbol ? symbol : "",
+		symbol ? "'" : ""
+		);
 	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {

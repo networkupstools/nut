@@ -501,7 +501,7 @@ int upscli_init(int certverify, const char *certpath,
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl)
 {
 #ifdef WITH_NSS
-	HOST_CERT_t* cert = xmalloc(sizeof(HOST_CERT_t));
+	HOST_CERT_t* cert = (HOST_CERT_t *)xmalloc(sizeof(HOST_CERT_t));
 	cert->next = first_host_cert;
 	cert->host = xstrdup(hostname);
 	cert->certname = xstrdup(certname);

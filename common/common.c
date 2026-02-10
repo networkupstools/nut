@@ -589,6 +589,16 @@ int syslog_is_disabled(void)
 }
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
+ * the stdout instead of stderr, and end them with HTML <BR/> tag,
+ * to help troubleshoot NUT CGI programs specifically */
+void cgilogbit_set(void)
+{
+	xbit_set(&upslog_flags, UPSLOG_STDOUT);
+	xbit_set(&upslog_flags, UPSLOG_CGI_BR);
+	xbit_clear(&upslog_flags, UPSLOG_STDERR);
+}
+
+/* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)
 {
@@ -3928,7 +3938,7 @@ vupslog_too_long:
 		upslog_start = now;
 	}
 
-	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
+	if (xbit_test(upslog_flags, UPSLOG_STDERR) || xbit_test(upslog_flags, UPSLOG_STDOUT)) {
 		if (nut_debug_level > 0) {
 			struct timeval		now;
 
@@ -3941,15 +3951,42 @@ vupslog_too_long:
 
 			/* Print all in one shot, to better avoid
 			 * mixed lines in parallel threads */
-			fprintf(stderr, "%4.0f.%06ld\t%s\n",
-				difftime(now.tv_sec, upslog_start.tv_sec),
-				(long)(now.tv_usec - upslog_start.tv_usec),
-				buf);
+			if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
+#ifdef WIN32
+				fflush(stderr);
+#endif	/* WIN32 */
+				fprintf(stderr, "%s%4.0f.%06ld\t%s%s\n",
+					xbit_test(upslog_flags, UPSLOG_CGI_BR) ? "<pre>" : "",
+					difftime(now.tv_sec, upslog_start.tv_sec),
+					(long)(now.tv_usec - upslog_start.tv_usec),
+					buf,
+					xbit_test(upslog_flags, UPSLOG_CGI_BR) ? "</pre>" : ""
+				);
+			}
+
+			if (xbit_test(upslog_flags, UPSLOG_STDOUT)) {
+#ifdef WIN32
+				fflush(stdout);
+#endif	/* WIN32 */
+				fprintf(stdout, "%s%4.0f.%06ld\t%s%s\n",
+					xbit_test(upslog_flags, UPSLOG_CGI_BR) ? "<pre>" : "",
+					difftime(now.tv_sec, upslog_start.tv_sec),
+					(long)(now.tv_usec - upslog_start.tv_usec),
+					buf,
+					xbit_test(upslog_flags, UPSLOG_CGI_BR) ? "</pre>" : ""
+				);
+			}
 		} else {
-			fprintf(stderr, "%s\n", buf);
+			if (xbit_test(upslog_flags, UPSLOG_STDERR))
+				fprintf(stderr, "%s\n", buf);
+			if (xbit_test(upslog_flags, UPSLOG_STDOUT))
+				fprintf(stdout, "%s\n", buf);
 		}
 #ifdef WIN32
-		fflush(stderr);
+		if (xbit_test(upslog_flags, UPSLOG_STDERR))
+			fflush(stderr);
+		if (xbit_test(upslog_flags, UPSLOG_STDOUT))
+			fflush(stdout);
 #endif	/* WIN32 */
 	}
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))

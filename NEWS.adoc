@@ -113,6 +113,11 @@ https://github.com/networkupstools/nut/milestone/12
      operations. (Re-)registration of the "Network UPS Tools" service should
      now populate a nice description of it. The `-U` (uninstall) action should
      now also try to stop the service first. [PR #3235]
+   * Using `nut.exe -N` for testing and pressing 'Ctrl+C' should now cause the
+     started daemons to be killed off. Previously they would linger and e.g.
+     preclude subsequent experiments with the service wrapper. Console close
+     events are ignored, so there is a way to indefinitely keep the daemons
+     started by test-mode wrapper running (kill via Task Manager). [#3312]
    * Revised WIN32 `WSAStartup()` and registration of `atexit(WSACleanup)` to
      only be done once per program (and cleanups to be always registered); this
      impacts the C `libupsclient` and C++ `libnutclient` libraries (and so most
@@ -276,6 +281,10 @@ https://github.com/networkupstools/nut/milestone/12
      built-in NUT configuration path on all platforms, but to also consider
      `NUT_CONFPATH` and other fallback locations, like other code does.
      [PR #3249]
+   * Enhance debug-logging of dynamic library loading with information about
+     any missing method in the library discovered at run-time, if lack of such
+     prevents us from using that library, and blocks scanning of corresponding
+     protocol and/or media to discover possibly supported devices. [PR #3310]
    * Introduced `nut-scanner` support for new `nut-upower` driver. [PR #3293]
 
  - `upsd` data server updates:
@@ -342,6 +351,9 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Introduced a `@NUT_UPSSTATS_TEMPLATE@` command which the HTML template
      files now MUST start with (safety check that we are reading a template).
      [issue #3252, PR #3249]
+   * (Experimental) Custom templates other than `upsstats{,-single}.html` can
+     now be specified as CGI parameters, if locally permitted via `hosts.conf`.
+     [issue #2524, PR #3304]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and

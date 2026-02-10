@@ -10,6 +10,15 @@ import sys
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+HAVE_WARNINGS = False
+try:
+    import warnings
+    warnings.filterwarnings("error")
+    HAVE_WARNINGS = True
+except Exception as x:
+    # sys.stderr.write("WARNING: failed to import warnings or configure them: %s" % str(x))
+    pass
+
 try:
     # NOTE: Deprecated as of python3.14
     import codecs
@@ -29,6 +38,9 @@ except Exception as x:
     # sys.stderr.write("WARNING: import codecs failed: %s\n" % str(x))
     HAVE_CODECS = False
     USE_CODECS = False
+
+if HAVE_WARNINGS:
+    warnings.resetwarnings()
 
 # README.txt appears from README.adoc during package or CI build
 if USE_CODECS:

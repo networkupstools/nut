@@ -2419,7 +2419,7 @@ static int	voltronic_sunny_energy_hour(item_t *item, char *command, const size_t
 		return -1;
 	}
 
-	buf = xcalloc(commandlen, sizeof(char));
+	buf = (char *)xcalloc(commandlen, sizeof(char));
 	if (!buf) {
 		upsdebugx(2, "%s: cannot allocate buffer", __func__);
 		return -1;
@@ -2448,7 +2448,7 @@ static int	voltronic_sunny_energy_day(item_t *item, char *command, const size_t 
 		return -1;
 	}
 
-	buf = xcalloc(commandlen, sizeof(char));
+	buf = (char *)xcalloc(commandlen, sizeof(char));
 	if (!buf) {
 		upsdebugx(2, "%s: cannot allocate buffer", __func__);
 		return -1;
@@ -2477,7 +2477,7 @@ static int	voltronic_sunny_energy_month(item_t *item, char *command, const size_
 		return -1;
 	}
 
-	buf = xcalloc(commandlen, sizeof(char));
+	buf = (char *)xcalloc(commandlen, sizeof(char));
 	if (!buf) {
 		upsdebugx(2, "%s: cannot allocate buffer", __func__);
 		return -1;
@@ -2506,7 +2506,7 @@ static int	voltronic_sunny_energy_year(item_t *item, char *command, const size_t
 		return -1;
 	}
 
-	buf = xcalloc(commandlen, sizeof(char));
+	buf = (char *)xcalloc(commandlen, sizeof(char));
 	if (!buf) {
 		upsdebugx(2, "%s: cannot allocate buffer", __func__);
 		return -1;
