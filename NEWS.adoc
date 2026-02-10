@@ -114,6 +114,11 @@ https://github.com/networkupstools/nut/milestone/12
      operations. (Re-)registration of the "Network UPS Tools" service should
      now populate a nice description of it. The `-U` (uninstall) action should
      now also try to stop the service first. [PR #3235]
+   * Using `nut.exe -N` for testing and pressing 'Ctrl+C' should now cause the
+     started daemons to be killed off. Previously they would linger and e.g.
+     preclude subsequent experiments with the service wrapper. Console close
+     events are ignored, so there is a way to indefinitely keep the daemons
+     started by test-mode wrapper running (kill via Task Manager). [#3312]
    * Revised WIN32 `WSAStartup()` and registration of `atexit(WSACleanup)` to
      only be done once per program (and cleanups to be always registered); this
      impacts the C `libupsclient` and C++ `libnutclient` libraries (and so most
