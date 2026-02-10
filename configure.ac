@@ -4129,6 +4129,11 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
+		if test x"${can_build_doc_man}" != xyes && test x"${have_disted_doc_man}" = xyes && test x"${nut_doc_build_target_flag}" != xno ; then
+			dnl https://github.com/networkupstools/nut/issue/3314
+			AC_MSG_NOTICE([Seems we can not build man pages, but have some pre-built ones...])
+			dnl want_disted_doc_man=yes
+		fi
 		can_install_doc_man=no
 		if test "${want_disted_doc_man}" = yes && ( test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ) ; then
 			AC_MSG_NOTICE([Requested, and can, install pre-built distributed copies of ${nut_doc_build_target_base} documentation])
