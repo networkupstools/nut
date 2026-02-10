@@ -1,6 +1,7 @@
 /* upsset - CGI program to manage read/write variables
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2020-2026 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1116,14 +1117,14 @@ int main(int argc, char **argv)
 	int i;
 
 #ifdef WIN32
-        /* Required ritual before calling any socket functions */
-        static WSADATA  WSAdata;
-        static int      WSA_Started = 0;
-        if (!WSA_Started) {
-                WSAStartup(2, &WSAdata);
-                atexit((void(*)(void))WSACleanup);
-                WSA_Started = 1;
-        }
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 
 	/* Avoid binary output conversions, e.g.
 	 * mangling what looks like CRLF on WIN32 */
@@ -1136,7 +1137,9 @@ int main(int argc, char **argv)
 	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: text/html\n");
+	printf("Pragma: no-cache\n");
+	printf("\n");
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
 	 * and NUT methods called from it. This line aims to just initialize
@@ -1146,6 +1149,20 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
+	}
+
+#ifdef NUT_CGI_DEBUG_UPSSET
+# if (NUT_CGI_DEBUG_UPSSET - 0 < 1)
+#  undef NUT_CGI_DEBUG_UPSSET
+#  define NUT_CGI_DEBUG_UPSSET 6
+# endif
+	/* Un-comment via make flags when developer-troubleshooting: */
+	nut_debug_level = NUT_CGI_DEBUG_UPSSET;
+#endif
+
+	if (nut_debug_level > 0) {
+		cgilogbit_set();
+		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
 	}
 
 	/* see if the magic string is present in the config file */
