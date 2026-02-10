@@ -2,7 +2,7 @@
  *  Copyright (C) 2011 - EATON
  *  Copyright (C) 2016 - EATON - IP addressed XML scan
  *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
- *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
+ *  Copyright (C) 2020-2026 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -102,6 +102,8 @@ int nutscan_unload_neon_library(void)
 int nutscan_load_neon_library(const char *libname_path);
 int nutscan_load_neon_library(const char *libname_path)
 {
+	char	*symbol = NULL;
+
 	if (dl_handle != NULL) {
 		/* if previous init failed */
 		if (dl_handle == (lt_dlhandle)1) {
@@ -127,34 +129,43 @@ int nutscan_load_neon_library(const char *libname_path)
 		goto err;
 	}
 
+	upsdebugx(2, "%s: lt_dlopen() succeeded, searching for needed methods", __func__);
+
 	/* Clear any existing error */
 	lt_dlerror();
 
 	*(void **) (&nut_ne_xml_push_handler) = lt_dlsym(dl_handle,
-		"ne_xml_push_handler");
+		symbol = "ne_xml_push_handler");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_destroy) = lt_dlsym(dl_handle, "ne_xml_destroy");
+	*(void **) (&nut_ne_xml_destroy) = lt_dlsym(dl_handle,
+		symbol = "ne_xml_destroy");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_create) = lt_dlsym(dl_handle, "ne_xml_create");
+	*(void **) (&nut_ne_xml_create) = lt_dlsym(dl_handle,
+		symbol = "ne_xml_create");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_parse) = lt_dlsym(dl_handle, "ne_xml_parse");
+	*(void **) (&nut_ne_xml_parse) = lt_dlsym(dl_handle,
+		symbol = "ne_xml_parse");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_failed) = lt_dlsym(dl_handle, "ne_xml_failed");
+	*(void **) (&nut_ne_xml_failed) = lt_dlsym(dl_handle,
+		symbol = "ne_xml_failed");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+
+	/* Passed final lt_dlsym() */
+	symbol = NULL;
 
 	if (dl_saved_libname)
 		free(dl_saved_libname);
@@ -164,8 +175,12 @@ int nutscan_load_neon_library(const char *libname_path)
 
 err:
 	upsdebugx(0,
-		"Cannot load XML library (%s) : %s. XML search disabled.",
-		libname_path, dl_error);
+		"Cannot load XML library (%s) : %s%s%s%s. XML search disabled.",
+		libname_path, dl_error,
+		symbol ? " Error happened during search for symbol '" : "",
+		symbol ? symbol : "",
+		symbol ? "'" : ""
+		);
 	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {

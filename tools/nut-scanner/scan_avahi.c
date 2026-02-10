@@ -1,7 +1,7 @@
 /*
  *  Copyright (C) 2011-2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
- *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
+ *  Copyright (C) 2020-2026 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -108,6 +108,8 @@ int nutscan_unload_avahi_library(void)
 int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_avahi_library(const char *libname_path)
 {
+	char	*symbol = NULL;
+
 	if (dl_handle != NULL) {
 		/* if previous init failed */
 		if (dl_handle == (lt_dlhandle)1) {
@@ -133,98 +135,121 @@ int nutscan_load_avahi_library(const char *libname_path)
 		goto err;
 	}
 
+	upsdebugx(2, "%s: lt_dlopen() succeeded, searching for needed methods", __func__);
+
 	/* Clear any existing error */
 	lt_dlerror();
 
-	*(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle, "avahi_service_browser_get_client");
+	*(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_browser_get_client");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_loop) = lt_dlsym(dl_handle, "avahi_simple_poll_loop");
+	*(void **) (&nut_avahi_simple_poll_loop) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_loop");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_client_free) = lt_dlsym(dl_handle, "avahi_client_free");
+	*(void **) (&nut_avahi_client_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_client_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_client_errno) = lt_dlsym(dl_handle, "avahi_client_errno");
+	*(void **) (&nut_avahi_client_errno) = lt_dlsym(dl_handle,
+		symbol = "avahi_client_errno");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_free) = lt_dlsym(dl_handle, "avahi_free");
+	*(void **) (&nut_avahi_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_quit) = lt_dlsym(dl_handle, "avahi_simple_poll_quit");
+	*(void **) (&nut_avahi_simple_poll_quit) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_quit");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_client_new) = lt_dlsym(dl_handle, "avahi_client_new");
+	*(void **) (&nut_avahi_client_new) = lt_dlsym(dl_handle,
+		symbol = "avahi_client_new");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_free) = lt_dlsym(dl_handle, "avahi_simple_poll_free");
+	*(void **) (&nut_avahi_simple_poll_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_resolver_new) = lt_dlsym(dl_handle, "avahi_service_resolver_new");
+	*(void **) (&nut_avahi_service_resolver_new) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_resolver_new");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_strerror) = lt_dlsym(dl_handle, "avahi_strerror");
+	*(void **) (&nut_avahi_strerror) = lt_dlsym(dl_handle,
+		symbol = "avahi_strerror");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_resolver_get_client) = lt_dlsym(dl_handle, "avahi_service_resolver_get_client");
+	*(void **) (&nut_avahi_service_resolver_get_client) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_resolver_get_client");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_browser_new) = lt_dlsym(dl_handle, "avahi_service_browser_new");
+	*(void **) (&nut_avahi_service_browser_new) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_browser_new");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_resolver_free) = lt_dlsym(dl_handle, "avahi_service_resolver_free");
+	*(void **) (&nut_avahi_service_resolver_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_resolver_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_new) = lt_dlsym(dl_handle, "avahi_simple_poll_new");
+	*(void **) (&nut_avahi_simple_poll_new) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_new");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_string_list_to_string) = lt_dlsym(dl_handle, "avahi_string_list_to_string");
+	*(void **) (&nut_avahi_string_list_to_string) = lt_dlsym(dl_handle,
+		symbol = "avahi_string_list_to_string");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_browser_free) = lt_dlsym(dl_handle, "avahi_service_browser_free");
+	*(void **) (&nut_avahi_service_browser_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_browser_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_address_snprint) = lt_dlsym(dl_handle, "avahi_address_snprint");
+	*(void **) (&nut_avahi_address_snprint) = lt_dlsym(dl_handle,
+		symbol = "avahi_address_snprint");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_get) = lt_dlsym(dl_handle, "avahi_simple_poll_get");
+	*(void **) (&nut_avahi_simple_poll_get) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_get");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+
+	/* Passed final lt_dlsym() */
+	symbol = NULL;
 
 	if (dl_saved_libname)
 		free(dl_saved_libname);
@@ -234,8 +259,12 @@ int nutscan_load_avahi_library(const char *libname_path)
 
 err:
 	upsdebugx(0,
-		"Cannot load AVAHI library (%s) : %s. AVAHI search disabled.",
-		libname_path, dl_error);
+		"Cannot load AVAHI library (%s) : %s%s%s%s. AVAHI search disabled.",
+		libname_path, dl_error,
+		symbol ? " Error happened during search for symbol '" : "",
+		symbol ? symbol : "",
+		symbol ? "'" : ""
+		);
 	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
