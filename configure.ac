@@ -2782,8 +2782,14 @@ DEFAULT_MAN_DIR_AS_BASE='m4nut_DEFAULT_MAN_DIR_AS_BASE'
 
 case "${target_os}" in
     solaris*|sunos*|SunOS*|illumos*)
-        dnl Note: this regards target OS standard layout
+        dnl Note: this regards target OS standard layout as documented in
+        dnl https://docs.oracle.com/cd/E23824_01/html/821-1451/gladp.html
         dnl but may not fit certain packaging projects
+        dnl FIXME https://github.com/networkupstools/nut/issue/3314 :
+        dnl  If we have no tools or wish to build man pages, and would
+        dnl  just deliver what we have in dist tarball (or otherwise), we
+        dnl  must keep the original names and cross-links of files we copy
+        dnl  (no section substitutions then!)
         DEFAULT_MAN_SECTION_CMD_SYS="1m"
         DEFAULT_MAN_DIR_AS_BASE="no"
         ;;
@@ -4123,6 +4129,11 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
+		if test x"${can_build_doc_man}" != xyes && test x"${have_disted_doc_man}" = xyes && test x"${nut_doc_build_target_flag}" != xno ; then
+			dnl https://github.com/networkupstools/nut/issue/3314
+			AC_MSG_NOTICE([Seems we can not build man pages, but have some pre-built ones...])
+			dnl want_disted_doc_man=yes
+		fi
 		can_install_doc_man=no
 		if test "${want_disted_doc_man}" = yes && ( test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ) ; then
 			AC_MSG_NOTICE([Requested, and can, install pre-built distributed copies of ${nut_doc_build_target_base} documentation])
@@ -4155,6 +4166,9 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 						if test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ; then
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 							DOC_INSTALL_DISTED_MANS="yes"
+							dnl Avoid rebuilding existing build products due to their timestamp dependencies;
+							dnl ignore "touch" errors due to e.g. read-only sources (distcheck, ISO image, etc.):
+							touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
 							can_install_doc_man=yes
 						else
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent; will reflect on this below])
