@@ -2782,7 +2782,8 @@ DEFAULT_MAN_DIR_AS_BASE='m4nut_DEFAULT_MAN_DIR_AS_BASE'
 
 case "${target_os}" in
     solaris*|sunos*|SunOS*|illumos*)
-        dnl Note: this regards target OS standard layout
+        dnl Note: this regards target OS standard layout as documented in
+        dnl https://docs.oracle.com/cd/E23824_01/html/821-1451/gladp.html
         dnl but may not fit certain packaging projects
         DEFAULT_MAN_SECTION_CMD_SYS="1m"
         DEFAULT_MAN_DIR_AS_BASE="no"
