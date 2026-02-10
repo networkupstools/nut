@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3659 utf-8
+personal_ws-1.1 en 3660 utf-8
 AAC
 AAS
 ABI
@@ -1241,6 +1241,7 @@ SX
 SXI
 SXL
 SYMLINKDIR
+SYSMAXCONN
 SafeNet
 Salicru
 Salvia

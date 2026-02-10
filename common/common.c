@@ -3778,7 +3778,8 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret, errno_orig = errno;
 #ifdef HAVE_VA_COPY_VARIANT
-	size_t	bufsize = 128;
+	/* Most our debug messages fit into this */
+	size_t	bufsize = 256;
 #else
 	/* err on the safe(r) side, as re-runs can truncate
 	 * the output when varargs are re-used */
