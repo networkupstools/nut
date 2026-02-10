@@ -4166,6 +4166,9 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 						if test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ; then
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 							DOC_INSTALL_DISTED_MANS="yes"
+							dnl Avoid rebuilding existing build products due to their timestamp dependencies;
+							dnl ignore "touch" errors due to e.g. read-only sources (distcheck, ISO image, etc.):
+							touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
 							can_install_doc_man=yes
 						else
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent; will reflect on this below])
