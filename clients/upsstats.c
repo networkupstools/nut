@@ -227,9 +227,9 @@ static void parse_var(const char *var)
 	upsdebug_call_finished0();
 }
 
-static void do_status(void)
+static void do_status(const char *sep)
 {
-	int	i;
+	int	i, count = 0;
 	char	status[SMALLBUF], *ptr, *last = NULL;
 
 	upsdebug_call_starting0();
@@ -244,7 +244,9 @@ static void do_status(void)
 		for (i = 0; stattab[i].name != NULL; i++) {
 
 			if (!strcasecmp(ptr, stattab[i].name)) {
-				printf("%s<br>", stattab[i].desc);
+				/* Note: sep="\0" is a valid case so we do not check for *sep */
+				printf("%s%s", count ? (sep ? sep : "<br/>") : "", stattab[i].desc);
+				count++;
 			}
 		}
 	}
@@ -926,8 +928,14 @@ static int do_command(char *cmd)
 		return 1;
 	}
 
+	if (!strncmp(cmd, "STATUS ", 7)) {
+		do_status(&cmd[7]);
+		upsdebug_call_finished0();
+		return 1;
+	}
+
 	if (!strcmp(cmd, "STATUS")) {
-		do_status();
+		do_status(NULL);
 		upsdebug_call_finished0();
 		return 1;
 	}
