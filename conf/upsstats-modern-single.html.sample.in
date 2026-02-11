@@ -465,7 +465,8 @@ on @HOST@</div>
 </div>
 </div>
 
-<div>@TREELINK_JSON Device data as JSON@ | @TREELINK Device data as HTML table@
+<div><small><hr/>
+@TREELINK_JSON Device data as JSON@ | @TREELINK Device data as HTML table@
 <a href="https://jigsaw.w3.org/css-validator/check/referer"><img
   style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss"
   alt="Valid CSS" title="Valid CSS" height="31" width="88"></a>
@@ -474,7 +475,7 @@ on @HOST@</div>
   alt="Valid HTML 4.01 Strict" title="Valid HTML 4.01 Strict"
   height="31" width="88"></a>
 <p align="right">Network UPS Tools upsstats @ESCAPED_TEMPLATE_VERSION@</p>
-</div>
+</small></div>
 
 </div>
 
