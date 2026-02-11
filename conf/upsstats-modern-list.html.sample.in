@@ -2,8 +2,8 @@
 <!-- upsstats template file -->
 
 <!--
-	This (upsstats.html) is the default template file which is used
-	when upsstats.cgi is loaded with no arguments.
+	This (upsstats-modern-list.html) is the custom template file which
+	is used when upsstats.cgi is loaded with no data selection arguments.
 
 	It usually contains a FOREACHUPS block to iterate through every
 	UPS in the hosts.conf.
@@ -25,15 +25,16 @@
 <html lang="en">
 
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 @REFRESH@
 <title>Network UPS Tools: Overview</title>
-<style>
+<style type="text/css">
 :root {
---bg: #0f172a; --card: #1e293b; --card-hover: #2d3748;
---text: #f8fafc; --dim: #94a3b8; --green: #4ade80; --border: #334155;
---accent: #38bdf8;
+  --bg: #0f172a; --card: #1e293b; --card-hover: #2d3748;
+  --text: #f8fafc; --dim: #94a3b8; --green: #4ade80; --border: #334155;
+  --accent: #38bdf8;
 }
 * { box-sizing: border-box; }
 
@@ -58,22 +59,23 @@ tbody tr:hover { background-color: var(--card-hover); transition: background-col
 a { text-decoration: none; }
 
 .host-link a, .tree-link a {
-display: inline-block;
-padding: 6px 14px;
-background-color: rgba(56, 189, 248, 0.1);
-color: var(--accent);
-border: 1px solid rgba(56, 189, 248, 0.25);
-border-radius: 6px;
-font-weight: 600;
-transition: all 0.2s ease;
+  display: inline-block;
+  padding: 6px 14px;
+  background-color: rgba(56, 189, 248, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 .host-link a:hover, .tree-link a:hover {
-background-color: var(--accent);
-color: var(--bg);
+  background-color: var(--accent);
+  color: var(--bg);
 }
 
 .status-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
 </style>
+<!-- link rel="stylesheet" type="text/css" href="nut.css" / -->
 </head>
 <body>
 
@@ -106,17 +108,46 @@ color: var(--bg);
 @FOREACHUPS@
 <tr>
 <td class="host-link">@HOSTLINK@</td>
-<td>@VAR ups.model@</td>
+
+<td>
+@IFSUPP device.model@
+@VAR device.model@
+@ELSE@
+@VAR ups.model@
+@ENDIF@
+</td>
+
 <td><span class="status-badge" style="color: @STATUSCOLOR@;">@STATUS@</span></td>
 
 <td>@IFSUPP battery.charge@@VAR battery.charge@ %@ENDIF@</td>
 
-<td>
 @IFSUPP input.L2-L3.voltage@
-@VAR input.L1-L2.voltage@ V<br>@VAR input.L2-L3.voltage@ V<br>@VAR input.L3-L1.voltage@ V
+@IFBETWEEN input.transfer.low input.transfer.high input.L1-L2.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L2-L3.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L3-L1.voltage@
+<td>
 @ELSE@
 @IFSUPP input.L2-N.voltage@
-@VAR input.L1-N.voltage@ V<br>@VAR input.L2-N.voltage@ V<br>@VAR input.L3-N.voltage@ V
+@IFBETWEEN input.transfer.low input.transfer.high input.L1-N.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L2-N.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L3-N.voltage@
+<td>
+@ELSE@
+@IFBETWEEN input.transfer.low input.transfer.high input.voltage@
+<td>
+@ELSE@
+<td style="background:red;">
+@ENDIF@
+
+@IFSUPP input.L2-L3.voltage@
+L1-L2: @VAR input.L1-L2.voltage@ V<br/>
+L2-L3: @VAR input.L2-L3.voltage@ V<br/>
+L3-L1: @VAR input.L3-L1.voltage@ V
+@ELSE@
+@IFSUPP input.L2-N.voltage@
+L1-N: @VAR input.L1-N.voltage@ V<br/>
+L2-N: @VAR input.L2-N.voltage@ V<br/>
+L3-N: @VAR input.L3-N.voltage@ V
 @ELSE@
 @IFSUPP input.voltage@
 @VAR input.voltage@ V
@@ -125,10 +156,14 @@ color: var(--bg);
 
 <td>
 @IFSUPP output.L2-L3.voltage@
-@VAR output.L1-L2.voltage@ V<br>@VAR output.L2-L3.voltage@ V<br>@VAR output.L3-L1.voltage@ V
+L1-L2: @VAR output.L1-L2.voltage@ V<br/>
+L2-L3: @VAR output.L2-L3.voltage@ V<br/>
+L3-L1: @VAR output.L3-L1.voltage@ V
 @ELSE@
 @IFSUPP output.L2-N.voltage@
-@VAR output.L1-N.voltage@ V<br>@VAR output.L2-N.voltage@ V<br>@VAR output.L3-N.voltage@ V
+L1-N: @VAR output.L1-N.voltage@ V<br/>
+L2-N: @VAR output.L2-N.voltage@ V<br/>
+L3-N: @VAR output.L3-N.voltage@ V
 @ELSE@
 @IFSUPP output.voltage@
 @VAR output.voltage@ V
@@ -137,10 +172,14 @@ color: var(--bg);
 
 <td>
 @IFSUPP output.L2.power.percent@
-L1: @VAR output.L1.power.percent@%<br>L2: @VAR output.L2.power.percent@%<br>L3: @VAR output.L3.power.percent@%
+L1: @VAR output.L1.power.percent@%<br/>
+L2: @VAR output.L2.power.percent@%<br/>
+L3: @VAR output.L3.power.percent@%
 @ELSE@
 @IFSUPP output.L2.realpower.percent@
-L1: @VAR output.L1.realpower.percent@%<br>L2: @VAR output.L2.realpower.percent@%<br>L3: @VAR output.L3.realpower.percent@%
+L1: @VAR output.L1.realpower.percent@%<br/>
+L2: @VAR output.L2.realpower.percent@%<br/>
+L3: @VAR output.L3.realpower.percent@%
 @ELSE@
 @IFSUPP ups.load@
 @VAR ups.load@ %
@@ -157,7 +196,8 @@ L1: @VAR output.L1.realpower.percent@%<br>L2: @VAR output.L2.realpower.percent@%
 </td>
 
 <td>@IFSUPP battery.runtime@@RUNTIME@@ENDIF@</td>
-<td class="tree-link">@TREELINK@</td>
+
+<td class="tree-link" align="center">@TREELINK@ @TREELINK_JSON@</td>
 </tr>
 @ENDFOR@
 </tbody>
@@ -167,6 +207,7 @@ L1: @VAR output.L1.realpower.percent@%<br>L2: @VAR output.L2.realpower.percent@%
 <a href="?json" title="All devices as one JSON document">JSON</a>
 <a href="https://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"></a>
 <a href="https://validator.w3.org/check?uri=referer"><img style="float:right" src="https://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01 Strict" height="31" width="88"></a>
+<p align="right">Network UPS Tools upsstats @ESCAPED_TEMPLATE_VERSION@</p>
 </small></div>
 
 </div>
