@@ -481,7 +481,7 @@ send_command( unsigned char cmd )
 	ssize_t ret = -1;
 	unsigned char ch, *psend = NULL;
 
-	if ( !(psend = xmalloc(sizeof(char) * sizes)) ) {
+	if ( !(psend = (unsigned char *)xmalloc(sizeof(char) * sizes)) ) {
 		upslogx(LOG_ERR, "send_command() failed to allocate buffer");
 		return -1;
 	}

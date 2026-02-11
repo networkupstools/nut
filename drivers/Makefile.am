@@ -15,7 +15,7 @@ $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/common/libnutdmfsnmp.la \
-$(top_builddir)/clients/libupsclient.la: dummy
+$(top_builddir)/clients/libupsclient.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Builds from root dir arrange stuff decently. Make sure parallel builds
@@ -30,7 +30,7 @@ $(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.
 if ENABLE_SHARED_PRIVATE_LIBS
 $(top_builddir)/common/libcommonversion-private.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
@@ -175,6 +175,7 @@ LINUX_I2C_DRIVERLIST = asem pijuice hwmon_ina219
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
 GPIO_DRIVERLIST = generic_gpio_libgpiod
+UPOWER_DRIVERLIST = nut-upower
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
@@ -182,6 +183,7 @@ EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
 EXTRA_PROGRAMS += $(NUTSW_DRIVERLIST)
 EXTRA_PROGRAMS += $(GPIO_DRIVERLIST)
+EXTRA_PROGRAMS += $(UPOWER_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -372,6 +374,16 @@ mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE=1
 mge_shut_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 
+# UPower
+if WITH_UPOWER
+# Only build nut-upower if the set of libGLib/libGIO was found
+  driverexec_PROGRAMS += $(UPOWER_DRIVERLIST)
+
+  nut_upower_SOURCES = nut-upower.c
+  nut_upower_LDADD = $(LDADD_DRIVERS) $(LIBGLIB_LIBS) $(LIBGIO_LIBS)
+  nut_upower_CFLAGS = $(AM_CFLAGS) $(LIBGLIB_CFLAGS) $(LIBGIO_CFLAGS)
+endif WITH_UPOWER
+
 # SNMP
 # Please keep the MIB table below sorted roughly alphabetically (incidentally
 # by vendor too) to ease maintenance and codebase fork resynchronisations
@@ -390,6 +402,7 @@ snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
  mge-mib.c \
  netvision-mib.c \
  raritan-pdu-mib.c raritan-px2-mib.c \
+ vertiv-mib.c \
  xppc-mib.c
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
@@ -563,7 +576,7 @@ dist_noinst_HEADERS = \
  nutdrv_qx_voltronic-axpert.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h \
  nutdrv_qx_zinto.h \
  upsdrvquery.h \
- xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
+ xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h vertiv-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h apc-epdu-mib.h ecoflow-hid.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h eaton-ups-pwnm2-mib.h eaton-ups-pxg-mib.h legrand-hid.h \
  hpe-pdu-mib.h hpe-pdu3-cis-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h eaton-pdu-nlogic-mib.h ydn23.h

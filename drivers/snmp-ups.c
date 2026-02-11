@@ -80,6 +80,7 @@
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
 #include "hpe-pdu3-cis-mib.h"
+#include "vertiv-mib.h"
 #endif /* WITH_DMFMIB */
 
 /* Address API change */
@@ -159,6 +160,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&netvision,			/* This struct comes from : netvision-mib.c */
 	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
 	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
+	&vertiv,		/* This struct comes from : vertiv-mib.c */
 	&xppc,				/* This struct comes from : xppc-mib.c */
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
@@ -213,7 +215,7 @@ static const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION	"1.38"
+#define DRIVER_VERSION	"1.39"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -296,7 +298,7 @@ static void analyze_mapping_usage(void) {
 		return;
 	}
 
-	unused_names = xcalloc(unused_bufsize, sizeof(char));
+	unused_names = (char*)xcalloc(unused_bufsize, sizeof(char));
 
 	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
 	{
@@ -349,7 +351,7 @@ static void analyze_mapping_usage(void) {
 					if (*pBufSize < SIZE_MAX - LARGEBUF) {
 						*pBufSize = *pBufSize + LARGEBUF;
 						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
-							*pNames = realloc(*pNames, *pBufSize);
+							*pNames = (char*)realloc(*pNames, *pBufSize);
 
 						if (!*pNames) {
 							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
@@ -903,7 +905,8 @@ void upsdrv_initups(void)
 	if (!strcmp(mibs, "--list")) {
 		int i;
 
-		printf("The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
+		printf(
+			"The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
 		       "and for 'mibs=auto' these mappings will be tried in the following order until\n"
 		       "the first one matches your device\n\n", mibs);
 		printf("%7s\t%-23s\t%-7s\t%-31s\t%-s\n",
@@ -1499,9 +1502,10 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			 * SNMPv1). This allows to proceed interpreting large
 			 * responses when one entry in the middle is rejectable.
 			 */
-			if (response->variables->type == SNMP_NOSUCHOBJECT ||
-			    response->variables->type == SNMP_NOSUCHINSTANCE ||
-			    response->variables->type == SNMP_ENDOFMIBVIEW) {
+			if (response->variables->type == SNMP_NOSUCHOBJECT
+			 || response->variables->type == SNMP_NOSUCHINSTANCE
+			 || response->variables->type == SNMP_ENDOFMIBVIEW
+			) {
 				upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
 						upsname?upsname:device_name, OID);
 				snmp_free_pdu(response);
@@ -1515,7 +1519,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 		nb_iteration++;
 		/* +1 is for the terminating NULL */
-		new_ret_array = realloc(
+		new_ret_array = (struct snmp_pdu**)realloc(
 			ret_array,
 			sizeof(struct snmp_pdu*) * ((size_t)nb_iteration+1)
 			);
@@ -1736,7 +1740,7 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 	switch (pdu->variables->type) {
 	case ASN_OCTET_STR:
 	case ASN_OPAQUE:
-		buf = xmalloc(pdu->variables->val_len + 1);
+		buf = (char*)xmalloc(pdu->variables->val_len + 1);
 		memcpy(buf, pdu->variables->val.string, pdu->variables->val_len);
 		buf[pdu->variables->val_len] = '\0';
 		value = strtol(buf, NULL, 0);
@@ -2548,9 +2552,13 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 #endif /* WITH_SNMP_LKP_FUN */
 
 	/* Otherwise, use the simple values mapping */
-	for (info_lkp = oid2info; (info_lkp != NULL) &&
-		 (info_lkp->info_value != NULL) && (strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
-
+	for (
+		info_lkp = oid2info;
+		(info_lkp != NULL)
+		&& (info_lkp->info_value != NULL)
+		&& (strcmp(info_lkp->info_value, "NULL"));
+		info_lkp++
+	) {
 		if (info_lkp->oid_value == value) {
 			upsdebugx(1, "%s: found %s (value: %ld)",
 					__func__, info_lkp->info_value, value);
@@ -3657,7 +3665,8 @@ bool_t snmp_ups_walk(int mode)
 			/* skip instcmd, not linked to outlets */
 			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
 				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
+				&& !(su_info_p->flags & SU_OUTLET_GROUP)
+			) {
 				upsdebugx(1, "SU_CMD_MASK => %s", su_info_p->OID);
 				continue;
 			}
@@ -3681,8 +3690,7 @@ bool_t snmp_ups_walk(int mode)
 			/* Set default value if we cannot fetch it
 			 * and set static flag on this element.
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
-			if (
-				    (su_info_p->flags & SU_FLAG_ABSENT)
+			if ( (su_info_p->flags & SU_FLAG_ABSENT)
 				&& !(su_info_p->flags & SU_OUTLET)
 				&& !(su_info_p->flags & SU_OUTLET_GROUP)
 				&& !(su_info_p->flags & SU_AMBIENT_TEMPLATE))

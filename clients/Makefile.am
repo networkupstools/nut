@@ -23,7 +23,7 @@ $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libcommonstrjson.la \
-$(top_builddir)/common/libparseconf.la: dummy
+$(top_builddir)/common/libparseconf.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Builds from root dir arrange stuff decently. Make sure parallel builds
@@ -39,7 +39,7 @@ LDADD_CLIENT =
 if ENABLE_SHARED_PRIVATE_LIBS
 $(top_builddir)/common/libcommonversion-private.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
@@ -238,8 +238,16 @@ libnutclient_la_SOURCES = nutclient.h nutclient.cpp
 libnutclient_la_LDFLAGS = -version-info 2:2:0
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
+if ENABLE_SHARED_PRIVATE_LIBS
+libnutclient_la_LIBADD = \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+if HAVE_WINDOWS
+  libnutclient_la_LIBADD += $(NETLIBS)
+endif HAVE_WINDOWS
+else !ENABLE_SHARED_PRIVATE_LIBS
 libnutclient_la_LIBADD = \
 	$(top_builddir)/common/libcommonclient.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutclient_la_LDFLAGS += -no-undefined

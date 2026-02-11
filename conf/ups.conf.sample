@@ -113,9 +113,10 @@ maxretry = 3
 #                The default is 75 seconds.
 #
 #   debug_min: OPTIONAL.  Specify a minimum debug level for all driver daemons
-#              (when specified at global level), or for this driver daemon
-#              (when specified in a driver section), e.g. for troubleshooting
-#              a deployment. This does not directly impact the foreground or
+#              and for the upsdrvctl tool (when specified at global level),
+#              or for this driver daemon (when specified in a driver section),
+#              e.g. for troubleshooting a deployment without changing init
+#              scripts. This does not directly impact the foreground or
 #              background running mode. If both the global and driver level
 #              `debug_min` are set, the driver-level setting takes precedence.
 #              Command-line option `-D` can only increase this verbosity level.

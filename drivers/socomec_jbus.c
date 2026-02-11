@@ -106,13 +106,13 @@ void upsdrv_initinfo(void)
 	}
 
 	if (tab_reg[3] && tab_reg[4] && tab_reg[5] && tab_reg[6] && tab_reg[7]) {
-		dstate_setinfo("ups.serial", "%c%c%c%c%c%c%c%c%c%c", 
-													  (tab_reg[3]&0xFF), (tab_reg[3]>>8),
-													  (tab_reg[4]&0xFF), (tab_reg[4]>>8),
-													  (tab_reg[5]&0xFF), (tab_reg[5]>>8),
-													  (tab_reg[6]&0xFF), (tab_reg[6]>>8),
-													  (tab_reg[7]&0xFF), (tab_reg[7]>>8)
-												);
+		dstate_setinfo("ups.serial", "%c%c%c%c%c%c%c%c%c%c",
+			(tab_reg[3]&0xFF), (tab_reg[3]>>8),
+			(tab_reg[4]&0xFF), (tab_reg[4]>>8),
+			(tab_reg[5]&0xFF), (tab_reg[5]>>8),
+			(tab_reg[6]&0xFF), (tab_reg[6]>>8),
+			(tab_reg[7]&0xFF), (tab_reg[7]>>8)
+			);
 	}
 
 	/* upsh.instcmd = instcmd; */

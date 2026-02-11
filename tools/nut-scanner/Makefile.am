@@ -31,7 +31,7 @@ nutscan-usb.h: nutscan-snmp.c
 
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
-$(NUT_SCANNER_DEPS): dummy
+$(NUT_SCANNER_DEPS): dummy @dotMAKE@
 	+@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
@@ -42,10 +42,10 @@ $(top_builddir)/common/libnutwincompat.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommonversion.la \
-$(top_builddir)/common/libcommon.la: dummy
+$(top_builddir)/common/libcommon.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-$(top_builddir)/include/nut_version.h:
+$(top_builddir)/include/nut_version.h: @dotMAKE@
 	+@if [ -s '$@' ] && ( [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ) ; then \
 	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
 	        echo "=== SKIP (nut-scanner) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \
@@ -78,7 +78,7 @@ if ENABLE_SHARED_PRIVATE_LIBS
 $(top_builddir)/common/libcommonversion-private.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
@@ -137,7 +137,8 @@ libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-snmp.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
-			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
+			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
+			scan_upower.c
 libnutscan_la_LIBADD = $(NETLIBS)
 libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
 
@@ -149,10 +150,12 @@ if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif WITH_LIBLTDL
 
+if WITH_THREADING
 if HAVE_SEMAPHORE_LIBS
 # Are additional libraries needed for semaphore support?
 libnutscan_la_LIBADD += $(SEMLIBS)
 endif HAVE_SEMAPHORE_LIBS
+endif WITH_THREADING
 
 libnutscan_la_LIBADD += $(SERLIBS)
 
@@ -172,7 +175,7 @@ libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 4:0:0
+libnutscan_la_LDFLAGS += -version-info 5:0:1
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -304,6 +307,9 @@ endif WITH_AVAHI
 if WITH_IPMI
   libnutscan_la_CFLAGS += $(LIBIPMI_CFLAGS)
 endif WITH_IPMI
+if WITH_UPOWER
+  libnutscan_la_CFLAGS += $(LIBGIO_CFLAGS)
+endif WITH_UPOWER
 
 # C is not a header, but there is no dist_noinst_SOURCES
 dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)

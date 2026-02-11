@@ -12,7 +12,6 @@ For a complete and more detailed list of changes, please refer to the
 ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
-
 PLANNED: Release notes for NUT 2.8.5 - what's new since 2.8.4
 -------------------------------------------------------------
 
@@ -83,6 +82,26 @@ https://github.com/networkupstools/nut/milestone/12
    * Fixed thread-safety of IP address printout in `libupsclient` method
      `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
      [issue #3234]
+   * The `upsdrvquery` code base was revised to handle SIGPIPE without crashing
+     (if the consumers did not neuter the signal themselves), although this
+     behavior is optional by `upsdrvquery_NOSIGPIPE`.
+     Separated an `upsdrvquery_ping()` operation from earlier code, so it can
+     be directly used by consumers (in-tree this is drivers and `upsdrvctl`).
+     [issue #3276, PR #3277]
+   * Revised `void*` pointer casting into specific types for values returned
+     by `xmalloc()` and friends, or iterated in loops via `something->next`,
+     as `clang-21` now warns about not-casting void pointers (formally valid,
+     practically uncertain if that code matches the developer's intention),
+     and (better safe than sorry) added `NULL`-return checks although we should
+     not normally get into those code paths with the `x*()` methods which
+     should bail out and abort the program with a common error message when
+     an allocation fails. [#3293]
+   * We have long abstracted `(s)size_t` value printing in debug logs etc.
+     using `PRIuSIZE` and similar macros. They fell back to `"%zu"` when not
+     provided otherwise, but not all platforms actually deliver these format
+     characters. Now it is evaluated at `configure` time (to check that the
+     characters may be used), and if not -- during `nut_stdint.h` parsing to
+     fit known `int`/`long`/`long long` types. [#3300]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -94,6 +113,11 @@ https://github.com/networkupstools/nut/milestone/12
      operations. (Re-)registration of the "Network UPS Tools" service should
      now populate a nice description of it. The `-U` (uninstall) action should
      now also try to stop the service first. [PR #3235]
+   * Using `nut.exe -N` for testing and pressing 'Ctrl+C' should now cause the
+     started daemons to be killed off. Previously they would linger and e.g.
+     preclude subsequent experiments with the service wrapper. Console close
+     events are ignored, so there is a way to indefinitely keep the daemons
+     started by test-mode wrapper running (kill via Task Manager). [#3312]
    * Revised WIN32 `WSAStartup()` and registration of `atexit(WSACleanup)` to
      only be done once per program (and cleanups to be always registered); this
      impacts the C `libupsclient` and C++ `libnutclient` libraries (and so most
@@ -127,12 +151,22 @@ https://github.com/networkupstools/nut/milestone/12
      referenced by this table, so now several higher speeds would be compiled
      conditionally. [issue #3163]
 
+ - `nut-ipmipsu` driver updates:
+   * Fixed an issue where multiple calls to clean-up crashed the program.
+     Special thanks to maintainer of libfreeipmi for helping catch it. [#3193]
+
  - `nutdrv_qx` driver updates:
    * Define an internal `QX_FLAG_MAPPING_HANDLED` to check if the subdriver
      code (mapping table) and the data found from device walk sit together
      well -- namely, that we successfully use reasonably many of the existing
      mappings. Suggest how user can help improve the driver if too few data
      points were seen. [PR #3095]
+   * The `qx_process_answer()` method was extended to raise `errno=ETIMEDOUT`
+     (rather than `EINVAL`) for short reads that are zero length (and/or that
+     `errno` value was set in caller's context already). This was used to make
+     `Voltronic` protocol initial connections more reliable when the device
+     controller lags upon first contact (is booting itself?) [issue #3276,
+     PR #3283]
    * New `nutdrv_qx_innovatae` adds support for Ippon INNOVA TAE series which
      are similar to Q1 except in reporting of nominal `voltage`, `current`,
      `frequency` data (that along with `battery_voltage_reports_one_pack` and
@@ -182,12 +216,23 @@ https://github.com/networkupstools/nut/milestone/12
      mappings. Suggest how user can help improve the driver if too few data
      points were seen, or if the `mibs=auto` detection only found the fallback
      IETF mapping. [PR #3095]
+   * Added new vendor extension mappings for Vertiv Liebert UPS, tested with
+     PSI5-750MT120 UPS model and IS-UNITY-DP (Firmware 8.4.7.0) SNMP card.
+     [issue #3296, PR #3299]
 
  - `tripplite_usb` driver updates:
    * Added support for Tripplite protocol 3017 (mostly ASCII). [issue #2258,
      PR #3093]
    * Fixed default `unit_id`, apparently broken by changes in NUT v2.8.1.
      [issue #3191, PR #3192]
+
+ - `tripplitesu` driver updates:
+   * Added configurable command delay to prevent read timeouts. [PR #3273]
+
+ - Introduced a new NUT driver named `nut-upower` which provides support
+   for monitoring UPS and battery devices managed by the UPower daemon
+   via D-Bus. This also introduces a new category of drivers that talk to
+   operating system services to obtain power state information. [PR #3279]
 
  - `usbhid-ups` driver updates:
    * Declared support for APC with USB ID `051d:0005` (details may evolve
@@ -217,18 +262,30 @@ https://github.com/networkupstools/nut/milestone/12
      fixed to use the same mapping helper as other subdrivers. [issue #3246]
    * `powercom-hid` subdriver improved with a `powercom_hack_voltage_lkp` to
      query `battery.voltage`. [issue #2766]
+   * `powercom-hid` subdriver now honours configured `offdelay` and `ondelay`
+     driver options in `ups.conf`, and prefers them (if present) over the
+     values received from the UPS itself (like `ups.delay.shutdown` and
+     `ups.delay.start`), to fix implementations of shutdown/stayoff/startup
+     instant commands. [PR #3288]
    * Improved handling of transient `LIBUSB_ERROR_IO` failures during polling.
      Some devices (CyberPower, etc.) have firmware bugs causing random I/O
      errors on certain HID reports. The driver now skips failing reports and
      continues polling rather than triggering expensive reconnection attempts.
      True disconnections are still detected via other error codes or when all
      polls fail. [issue #3116]
+  * `arduino-hid` subdriver enhanced with `ups.load`, `input.voltage` and
+    `output.voltage` readings where supported (e.g. Ugreen US3000). [#3281]
 
  - `nut-scanner` tool updates:
    * Fixed `nut-scanner` search for "simulation devices" to not use only the
      built-in NUT configuration path on all platforms, but to also consider
      `NUT_CONFPATH` and other fallback locations, like other code does.
      [PR #3249]
+   * Enhance debug-logging of dynamic library loading with information about
+     any missing method in the library discovered at run-time, if lack of such
+     prevents us from using that library, and blocks scanning of corresponding
+     protocol and/or media to discover possibly supported devices. [PR #3310]
+   * Introduced `nut-scanner` support for new `nut-upower` driver. [PR #3293]
 
  - `upsd` data server updates:
    * Sometimes "Data for UPS [X] is stale" and "UPS [X] data is no longer
@@ -238,10 +295,22 @@ https://github.com/networkupstools/nut/milestone/12
      comes into play and breaks things. [issue #661]
    * Fixed `LISTEN *` handling for `upsd.exe` in NUT for Windows builds.
      [PR #3237]
+   * Extended processing of `MAXCONN` setting to allow larger values than the
+     operating system allows, by only waiting for that amount of Unix sockets
+     or Windows `HANDLE`'s at a time, and moving on to another chunk.
+     The system-provided value can be further limited by `NUT_SYSMAXCONN_LIMIT`
+     environment variable (e.g. in tests). [#3302]
 
  - `upsdrvctl` tool updates:
    * Make use of `setproctag()` and `getproctag()` to report parent/child
      process names. [#3084]
+   * The global-level `debug_min` setting in `ups.conf` now also applies
+     to bumping the debug verbosity of `upsdrvctl` tool. [#3276]
+   * If we fail to stop a driver by signal (e.g. PID file was not saved),
+     retry to `INSTCMD driver.exit` it by socket protocol. [#3277]
+   * The NUT Integration Testing suite now also involves `upsdrvctl` to
+     run one driver instance indirectly, helping make check-NIT` catch
+     portability issues with different builds of the tool. [#2800, #3292]
 
  - `upslog` tool updates:
    * Updated `help()` and failure messages to suggest `-m '*,-'` for logging
@@ -282,6 +351,9 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Introduced a `@NUT_UPSSTATS_TEMPLATE@` command which the HTML template
      files now MUST start with (safety check that we are reading a template).
      [issue #3252, PR #3249]
+   * (Experimental) Custom templates other than `upsstats{,-single}.html` can
+     now be specified as CGI parameters, if locally permitted via `hosts.conf`.
+     [issue #2524, PR #3304]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
@@ -379,11 +451,25 @@ several `FSD` notifications into one executed action. [PR #3097]
      installed on every system capable of using it; this is a niche capability
      for users of specific devices via a cloud portal. [follow-up to PR #2813
      for issue #2807]
+   * Fixed `m4/ax_realpath_lib.m4` up with more ways to try and gauge the
+     build-time library name from linker/compiler, to improve the chances
+     that `nut-scanner` would find them. [#3293]
+   * Added an option to (primarily) `--disable-threading` for systems with
+     detected but broken `libpthread` support, or to test alternate code
+     paths during development or in CI. [#3300]
 
  - Recipes, CI and helper script updates not classified above:
    * Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
      include the source distribution (was posted for NUT v2.8.1 and v2.8.2
      tagged releases, but absent for v2.8.3 and v2.8.4). [#3056]
+   * A new version of BSD `make` in NetBSD 11 (Beta) aka `bmake` in some other
+     operating systems, complains about some of our sub-`$(MAKE)` calls despite
+     the explicit `+` prefix in corresponding lines, possibly because that call
+     happens not directly in a rule definition, but in a substituted shell code
+     snippet. The recommended workaround was to add a "Special Source" called
+     `.MAKE` to let the tool know that we expect sub-makes in that recipe.
+     However, *other* `make` implementations do not know about this token,
+     so its support is tried and detected at `configure` time. [PR #3300]
    * Updated `make spellcheck` to help avoid asciidoc admonition blocks with
      visually invalid sentences (after rendering as a box in HTML or PDF).
      [#3077]

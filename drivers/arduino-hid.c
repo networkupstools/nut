@@ -36,7 +36,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define ARDUINO_HID_VERSION	"Arduino HID 0.21"
+#define ARDUINO_HID_VERSION	"Arduino HID 0.22"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Arduino */
@@ -103,16 +103,20 @@ static hid_info_t arduino_hid2nut[] = {
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
 	{ "battery.runtime.low", 0, 0, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	/* Parse `*Capacity` values assuming `UPS.PowerSummary.CapacityMode` is set to 2, which means the `*Capacity`
-	   units are percent. The Arduino HID Powerdevice library is capable of doing other modes, if the Sketch wants
-	   to use them, but it appears most drivers just assume percent.
-	*/
+	 * units are percent. The Arduino HID Powerdevice library is capable of doing other modes, if the Sketch wants
+	 * to use them, but it appears most drivers just assume percent.
+	 */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL},
 	{ "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL},
 
+	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
+	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f", 0, NULL },
+	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
+
 	/* USB HID PresentStatus Flags
-	   TODO: Parse these into battery.charger.status
-	*/
+	 * TODO: Parse these into battery.charger.status
+	 */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info},
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info},
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info},

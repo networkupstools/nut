@@ -1043,8 +1043,8 @@ static ssize_t upscrecv(char *buf)
 	ssize_t	res;
 
 	/* NOTE: the serial port is set to use Canonical Mode Input Processing,
-	   which means ser_get_buf() either returns one line terminated with
-	   ENDCHAR, an error or times out. */
+	 * which means ser_get_buf() either returns one line terminated with
+	 * ENDCHAR, an error or times out. */
 
 	while (1) {
 		res = ser_get_buf(upsfd, buf, UPSC_BUFLEN, input_timeout_sec, 0);

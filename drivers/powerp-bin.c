@@ -274,9 +274,9 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
 		ret = powpan_command(cmdtab[i].command, cmdtab[i].len);
 		assert(cmdtab[i].len < SSIZE_MAX);
-		if (ret >= 0 &&
-		    (ret == (ssize_t)(cmdtab[i].len - 1)) &&
-		    (!memcmp(powpan_answer, cmdtab[i].command, cmdtab[i].len - 1))
+		if (ret >= 0
+		 && (ret == (ssize_t)(cmdtab[i].len - 1))
+		 && (!memcmp(powpan_answer, cmdtab[i].command, cmdtab[i].len - 1))
 		) {
 			return STAT_INSTCMD_HANDLED;
 		}

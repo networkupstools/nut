@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2025 by Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2025-2026 by Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -190,8 +190,9 @@ Actions:
         Return sorted (via expansion) list of original semvers (till end of args)
         in their original spelling (with unstripped leading zeroes, if present)
 
-    $0 [OPTS] {test|[} "SEMVER1" {-gt|-ge|-lt|-le|-eq|=|==|-ne|!=|<>|<|<=|>|>=} "SEMVER2"
-        Shellish syntax to compare two semvers
+    $0 [OPTS] {test|[|[[} "SEMVER1" {-gt|>|-ge|>=|-lt|<|-le|<=|-eq|=|==|-ne|!=|<>} "SEMVER2" {]|]]}
+        Relaxed shellish syntax to compare two semvers, so this script can be
+        just prefixed into existing (alphanumeric-based) shell comparisons
 EOF
             exit 0
             ;;

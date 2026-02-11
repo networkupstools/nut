@@ -344,10 +344,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		udev = *udevp;
 
 		/* collect the identifying information of this
-		   device. Note that this is safe, because
-		   there's no need to claim an interface for
-		   this (and therefore we do not yet need to
-		   detach any kernel drivers). */
+		 * device. Note that this is safe, because
+		 * there's no need to claim an interface for
+		 * this (and therefore we do not yet need to
+		 * detach any kernel drivers). */
 
 		free(curDevice->Vendor);
 		free(curDevice->Product);
@@ -666,14 +666,14 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		upsdebugx(3, "HID descriptor length (method 1) %" PRIi32, rdlen1);
 
 		/* SECOND METHOD: find HID descriptor among "extra" bytes of
-		   interface descriptor, i.e., bytes tucked onto the end of
-		   descriptor 2. */
+		 * interface descriptor, i.e., bytes tucked onto the end of
+		 * descriptor 2. */
 
 		/* Note: on some broken UPS's (e.g. Tripp Lite Smart1000LCD),
-			only this second method gives the correct result */
+		 * only this second method gives the correct result */
 
 		/* for now, we always assume configuration 0, interface 0,
-		   altsetting 0, as above. */
+		 * altsetting 0, as above. */
 
 		if_desc = &(conf_desc->interface[usb_subdriver.hid_rep_index].altsetting[0]);
 		for (i = 0; i < if_desc->extra_length; i += if_desc->extra[i]) {
@@ -696,9 +696,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		upsdebugx(3, "HID descriptor length (method 2) %" PRIi32, rdlen2);
 
 		/* when available, always choose the second value, as it
-			seems to be more reliable (it is the one reported e.g. by
-			lsusb). Note: if the need arises, can change this to use
-			the maximum of the two values instead. */
+		 * seems to be more reliable (it is the one reported e.g. by
+		 * lsusb). Note: if the need arises, can change this to use
+		 * the maximum of the two values instead. */
 		if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
 			upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
 			rdlens[0] = rdlen1;

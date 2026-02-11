@@ -221,6 +221,20 @@ This allows to monitor numerous Power Supply Units (PSU) found on servers.
 Note that you need to install freeipmi (0.8.5 or higher, for nut-scanner;
 and 1.0.1 or higher, for nut-ipmipsu) development package or files.
 
+UPower/D-Bus drivers
+~~~~~~~~~~~~~~~~~~~~
+
+	--with-upower (default: auto-detect)
+
+Build and install the `nut-upower` driver.
+
+This allows to monitor UPS and battery devices managed by the UPower daemon
+via D-Bus. This introduces a new category of drivers that talk to operating
+system services to obtain power state information.
+
+Note that you need to install `glib-2.0` and `gio-2.0` development packages
+or files.
+
 I2C bus drivers
 ~~~~~~~~~~~~~~~
 
@@ -328,6 +342,16 @@ that can be relayed by a local linkman:dummy-ups[8] driver instance.
 Many of the features depend on third-party libraries that are loosely linked
 at run-time using libltdl, and due to that, the build, delivery and use of the
 tool does not depend on *all* of them being available in the final deployment.
+
+	--with-threading (default: auto)
+
+Currently limited to linkman:nut-scanner[8] tool: require/allow build with
+pthreads and/or semaphore support to parallelize the network and local port
+scans, and scans of different media types.
+
+Some older systems' implementation of threading may be broken, so while we
+can detect support, builds using it can fail in practice -- so this toggle
+allows to keep building sequential-only code.
 
 NUT Configuration tool
 ~~~~~~~~~~~~~~~~~~~~~~

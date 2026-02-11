@@ -26,26 +26,40 @@ int is_usb_device_supported(usb_device_id_t *usb_device_id_list, USBDevice_t *de
 	int retval = NOT_SUPPORTED;
 	usb_device_id_t *usbdev;
 
-	for (usbdev = usb_device_id_list;
-	     (usbdev->vendorID != 0 || usbdev->productID != 0 || usbdev->fun != NULL);
-	     usbdev++
+	upsdebugx(3, "%s: checking if this driver can support USB device VID:PID 0x%04X:0x%04X",
+		__func__, (unsigned int)device->VendorID, (unsigned int)device->ProductID);
+
+	for (
+		usbdev = usb_device_id_list;
+		(usbdev->vendorID != 0 || usbdev->productID != 0 || usbdev->fun != NULL);
+		usbdev++
 	) {
+		upsdebugx(4, "%s: checking table entry for VID:PID 0x%04X:0x%04X "
+			"(custom init handler is%s available)",
+			__func__, (unsigned int)usbdev->vendorID,
+			(unsigned int)usbdev->productID,
+			(usbdev->fun == NULL ? " NOT" : ""));
+
 		if (usbdev->vendorID != device->VendorID) {
+			upsdebugx(4, "%s: NOT_SUPPORTED: vendor ID mismatch", __func__);
 			continue;
 		}
 
 		/* flag as possibly supported if we see a known vendor */
 		retval = POSSIBLY_SUPPORTED;
 
+		upsdebugx(4, "%s: POSSIBLY_SUPPORTED: known vendor ID at least", __func__);
 		if (usbdev->productID != device->ProductID) {
 			continue;
 		}
 
 		/* call the specific handler, if it exists */
 		if (usbdev->fun != NULL) {
+			upsdebugx(4, "%s: call the custom init handler", __func__);
 			(*usbdev->fun)(device);
 		}
 
+		upsdebugx(4, "%s: SUPPORTED: known vendor and product IDs", __func__);
 		return SUPPORTED;
 	}
 
@@ -65,37 +79,37 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 
 	if (hd->VendorID != data->VendorID) {
 		upsdebugx(2, "%s: failed match of %s: %4x != %4x",
-		    __func__, "VendorID", hd->VendorID, data->VendorID);
+			__func__, "VendorID", hd->VendorID, data->VendorID);
 		return 0;
 	}
 
 	if (hd->ProductID != data->ProductID) {
 		upsdebugx(2, "%s: failed match of %s: %4x != %4x",
-		    __func__, "ProductID", hd->ProductID, data->ProductID);
+			__func__, "ProductID", hd->ProductID, data->ProductID);
 		return 0;
 	}
 
 	if (strcmp_null(hd->Vendor, data->Vendor) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
-		    __func__, "Vendor", hd->Vendor, data->Vendor);
+			__func__, "Vendor", hd->Vendor, data->Vendor);
 		return 0;
 	}
 
 	if (strcmp_null(hd->Product, data->Product) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
-		    __func__, "Product", hd->Product, data->Product);
+			__func__, "Product", hd->Product, data->Product);
 		return 0;
 	}
 
 	if (strcmp_null(hd->Serial, data->Serial) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
-		    __func__, "Serial", hd->Serial, data->Serial);
+			__func__, "Serial", hd->Serial, data->Serial);
 		return 0;
 	}
 #ifdef DEBUG_EXACT_MATCH_BUS
 	if (strcmp_null(hd->Bus, data->Bus) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
-		    __func__, "Bus", hd->Bus, data->Bus);
+			__func__, "Bus", hd->Bus, data->Bus);
 		return 0;
 	}
 #endif
@@ -103,7 +117,7 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 # ifdef DEBUG_EXACT_MATCH_BUSPORT
 	if (strcmp_null(hd->BusPort, data->BusPort) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
-		    __func__, "BusPort", hd->BusPort, data->BusPort);
+			__func__, "BusPort", hd->BusPort, data->BusPort);
 		return 0;
 	}
 # endif
@@ -111,7 +125,7 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 #ifdef DEBUG_EXACT_MATCH_DEVICE
 	if (strcmp_null(hd->Device, data->Device) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
-		    __func__, "Device", hd->Device, data->Device);
+			__func__, "Device", hd->Device, data->Device);
 		return 0;
 	}
 #endif
@@ -127,12 +141,12 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 	USBDeviceMatcher_t	*m;
 	USBDevice_t		*data;
 
-	m = malloc(sizeof(*m));
+	m = (USBDeviceMatcher_t*)malloc(sizeof(*m));
 	if (!m) {
 		return -1;
 	}
 
-	data = calloc(1, sizeof(*data));
+	data = (USBDevice_t*)calloc(1, sizeof(*data));
 	if (!data) {
 		free(m);
 		return -1;
@@ -209,10 +223,10 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	if (r != 1) {
 /*
 		upsdebugx(2, "%s: failed match of %s: %4x !~ %s",
-		    __func__, "VendorID", hd->VendorID, data->regex[0]);
+			__func__, "VendorID", hd->VendorID, data->regex[0]);
 */
 		upsdebugx(2, "%s: failed match of %s: %4x",
-		    __func__, "VendorID", hd->VendorID);
+			__func__, "VendorID", hd->VendorID);
 		return r;
 	}
 
@@ -220,10 +234,10 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	if (r != 1) {
 /*
 		upsdebugx(2, "%s: failed match of %s: %4x !~ %s",
-		    __func__, "ProductID", hd->ProductID, data->regex[1]);
+			__func__, "ProductID", hd->ProductID, data->regex[1]);
 */
 		upsdebugx(2, "%s: failed match of %s: %4x",
-		    __func__, "ProductID", hd->ProductID);
+			__func__, "ProductID", hd->ProductID);
 		return r;
 	}
 
@@ -231,10 +245,10 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	if (r != 1) {
 /*
 		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
-		    __func__, "Vendor", hd->Vendor, data->regex[2]);
+			__func__, "Vendor", hd->Vendor, data->regex[2]);
 */
 		upsdebugx(2, "%s: failed match of %s: %s",
-		    __func__, "Vendor", hd->Vendor);
+			__func__, "Vendor", hd->Vendor);
 		return r;
 	}
 
@@ -242,10 +256,10 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	if (r != 1) {
 /*
 		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
-		    __func__, "Product", hd->Product, data->regex[3]);
+			__func__, "Product", hd->Product, data->regex[3]);
 */
 		upsdebugx(2, "%s: failed match of %s: %s",
-		    __func__, "Product", hd->Product);
+			__func__, "Product", hd->Product);
 		return r;
 	}
 
@@ -253,10 +267,10 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	if (r != 1) {
 /*
 		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
-		    __func__, "Serial", hd->Serial, data->regex[4]);
+			__func__, "Serial", hd->Serial, data->regex[4]);
 */
 		upsdebugx(2, "%s: failed match of %s: %s",
-		    __func__, "Serial", hd->Serial);
+			__func__, "Serial", hd->Serial);
 		return r;
 	}
 
@@ -264,10 +278,10 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	if (r != 1) {
 /*
 		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
-		    __func__, "Bus", hd->Bus, data->regex[5]);
+			__func__, "Bus", hd->Bus, data->regex[5]);
 */
 		upsdebugx(2, "%s: failed match of %s: %s",
-		    __func__, "Bus", hd->Bus);
+			__func__, "Bus", hd->Bus);
 		return r;
 	}
 
@@ -275,10 +289,10 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	if (r != 1) {
 /*
 		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
-		    __func__, "Device", hd->Device, data->regex[6]);
+			__func__, "Device", hd->Device, data->regex[6]);
 */
 		upsdebugx(2, "%s: failed match of %s: %s",
-		    __func__, "Device", hd->Device);
+			__func__, "Device", hd->Device);
 		return r;
 	}
 
@@ -287,10 +301,10 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	if (r != 1) {
 /*
 		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
-		    __func__, "Device", hd->Device, data->regex[6]);
+			__func__, "Device", hd->Device, data->regex[6]);
 */
 		upsdebugx(2, "%s: failed match of %s: %s",
-		    __func__, "Bus Port", hd->BusPort);
+			__func__, "Bus Port", hd->BusPort);
 		return r;
 	}
 #endif
@@ -315,12 +329,12 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 	USBDeviceMatcher_t	*m;
 	regex_matcher_data_t	*data;
 
-	m = malloc(sizeof(*m));
+	m = (USBDeviceMatcher_t*)malloc(sizeof(*m));
 	if (!m) {
 		return -1;
 	}
 
-	data = calloc(1, sizeof(*data));
+	data = (regex_matcher_data_t*)calloc(1, sizeof(*data));
 	if (!data) {
 		free(m);
 		return -1;

@@ -501,7 +501,7 @@ int upscli_init(int certverify, const char *certpath,
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl)
 {
 #ifdef WITH_NSS
-	HOST_CERT_t* cert = xmalloc(sizeof(HOST_CERT_t));
+	HOST_CERT_t* cert = (HOST_CERT_t *)xmalloc(sizeof(HOST_CERT_t));
 	cert->next = first_host_cert;
 	cert->host = xstrdup(hostname);
 	cert->certname = xstrdup(certname);
@@ -1167,9 +1167,9 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			close(sock_fd);
 			/* if timeout, break out so client can continue */
 			/* match Linux behavior that updates timeout struct */
-			if (timeout != NULL &&
-			    ups->upserror == UPSCLI_ERR_CONNFAILURE &&
-			    ups->syserrno == ETIMEDOUT
+			if (timeout != NULL
+			 && ups->upserror == UPSCLI_ERR_CONNFAILURE
+			 && ups->syserrno == ETIMEDOUT
 			) {
 				const char	*addrstr = xinet_ntopAI(ai);
 				upslogx(LOG_WARNING, "%s: Connection to host timed out: '%s'",
@@ -1972,7 +1972,7 @@ int upscli_init_default_connect_timeout(const char *cli_secs, const char *config
 	}
 
 	upsdebugx(1, "%s: upscli_default_connect_timeout=%" PRIiMAX
-		 ".%06" PRIiMAX " sec assigned from: %s",
+		".%06" PRIiMAX " sec assigned from: %s",
 		__func__, (intmax_t)upscli_default_connect_timeout.tv_sec,
 		(intmax_t)upscli_default_connect_timeout.tv_usec, cause);
 

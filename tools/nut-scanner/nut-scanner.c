@@ -2,7 +2,7 @@
  *  Copyright (C) 2011 - 2024  Arnaud Quette <arnaud.quette@free.fr>
  *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
- *  Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ *  Copyright (C) 2022 - 2026 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@
  *  regardless of WITH_DMFMIB value in the current build; we just handle
  *  them differently.
  */
-static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QnNPqIVaDzZ:";
+static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QnNPqIVaDJzZ:";
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option longopts[] = {
@@ -158,6 +158,7 @@ static const struct option longopts[] = {
 	{ "avahi_scan", no_argument, NULL, 'A' },	/* "new" NUT scan where deployed */
 	{ "nut_simulation_scan", no_argument, NULL, 'n' },
 	{ "ipmi_scan", no_argument, NULL, 'I' },
+	{ "upower_scan", no_argument, NULL, 'J' },
 	{ "disp_nut_conf_with_sanity_check", no_argument, NULL, 'Q' },
 	{ "disp_nut_conf", no_argument, NULL, 'N' },
 	{ "disp_parsable", no_argument, NULL, 'P' },
@@ -186,6 +187,7 @@ static nutscan_ip_range_list_t ip_ranges_list;
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
+#endif  /* HAVE_PTHREAD */
 
 static void * run_usb(void *arg)
 {
@@ -240,7 +242,6 @@ static void * run_usb(void *arg)
 	dev[TYPE_USB] = nutscan_scan_usb(scanopts_ptr);
 	return NULL;
 }
-#endif	/* HAVE_PTHREAD */
 
 static void * run_snmp(void * arg)
 {
@@ -300,7 +301,7 @@ static void * run_avahi(void *arg)
 static void * run_ipmi(void * arg)
 {
 	nutscan_ipmi_t * sec = (nutscan_ipmi_t *)arg;
-
+	
 	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
 		__func__, ip_ranges_list.ip_ranges_count);
 
@@ -315,6 +316,14 @@ static void * run_eaton_serial(void *arg)
 	char * arg_serial_ports = (char *)arg;
 
 	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(arg_serial_ports);
+	return NULL;
+}
+
+static void * run_upower(void *arg)
+{
+	NUT_UNUSED_VARIABLE(arg);
+
+	dev[TYPE_UPOWER] = nutscan_scan_upower();
 	return NULL;
 }
 
@@ -1058,6 +1067,11 @@ static void show_usage(const char *arg_progname)
 	} else {
 		printf("* Options for IPMI devices scan not enabled: library not detected.\n");
 	}
+	if (nutscan_avail_upower) {
+		printf("  -J, --upower_scan: Scan UPower devices.\n");
+	} else {
+		printf("* Options for UPower devices scan not enabled: library not detected.\n");
+	}
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
@@ -1226,6 +1240,7 @@ int main(int argc, char *argv[])
 	int allow_nut_simulation = 0;
 	int allow_avahi = 0;
 	int allow_ipmi = 0;
+	int allow_upower = 0;
 	int allow_eaton_serial = 0; /* MUST be requested explicitly! */
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
@@ -1325,8 +1340,8 @@ int main(int argc, char *argv[])
 						 * max(useconds_t)/1000000 ? */
 						upsdebugx(0,
 							"Illegal timeout value, using default %ds",
-						DEFAULT_NETWORK_TIMEOUT);
-					timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
+							DEFAULT_NETWORK_TIMEOUT);
+						timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
 					} else {
 						timeout = (useconds_t)l * 1000 * 1000; /*in usec*/
 					}
@@ -1346,7 +1361,7 @@ int main(int argc, char *argv[])
 					start_ip = strdup(optarg + 1);
 					start_ip[strlen(start_ip) - 1] = '\0';
 				} else {
-				start_ip = strdup(optarg);
+					start_ip = strdup(optarg);
 				}
 
 				if (end_ip != NULL) {
@@ -1370,7 +1385,7 @@ int main(int argc, char *argv[])
 					end_ip = strdup(optarg + 1);
 					end_ip[strlen(end_ip) - 1] = '\0';
 				} else {
-				end_ip = strdup(optarg);
+					end_ip = strdup(optarg);
 				}
 
 				if (start_ip != NULL) {
@@ -1608,6 +1623,12 @@ int main(int argc, char *argv[])
 				}
 				allow_ipmi = 1;
 				break;
+			case 'J':
+				if (!nutscan_avail_upower) {
+					goto display_help;
+				}
+				allow_upower = 1;
+				break;
 			case 'Q':
 				display_func = nutscan_display_ups_conf_with_sanity_check;
 				break;
@@ -1645,6 +1666,9 @@ int main(int argc, char *argv[])
 				}
 				if (nutscan_avail_ipmi) {
 					printf("IPMI\n");
+				}
+				if (nutscan_avail_upower) {
+					printf("UPOWER\n");
 				}
 				printf("EATON_SERIAL\n");
 				exit(EXIT_SUCCESS);
@@ -1688,8 +1712,8 @@ display_help:
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
-	   We need to destroy it before re-init. We currently can't change "sem value"
-	   on lib (need to be thread safe). */
+	 * We need to destroy it before re-init. We currently can't change "sem value"
+	 * on lib (need to be thread safe). */
 	current_sem = nutscan_semaphore();
 #  ifdef HAVE_SEMAPHORE_UNNAMED
 	sem_destroy(current_sem);
@@ -1752,7 +1776,7 @@ display_help:
 	}
 
 	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut && !allow_nut_simulation &&
-		!allow_avahi && !allow_ipmi && !allow_eaton_serial
+		!allow_avahi && !allow_ipmi && !allow_eaton_serial && !allow_upower
 	) {
 		allow_all = 1;
 	}
@@ -1770,6 +1794,7 @@ display_help:
 		allow_nut_simulation = 1;
 		allow_avahi = 1;
 		allow_ipmi = 1;
+		allow_upower = 1;
 		/* BEWARE: allow_all does not include allow_eaton_serial! */
 	}
 
@@ -1785,8 +1810,7 @@ display_help:
 		}
 #else
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
-		/* Not calling run_usb() here, as it re-processes the arg */
-		dev[TYPE_USB] = nutscan_scan_usb(&cli_link_detail_level);
+		dev[TYPE_USB] = run_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "USB SCAN: not requested or supported, SKIPPED");
@@ -1846,7 +1870,6 @@ display_help:
 		upsdebugx(1, "XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
 		/* dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec); */
 		run_xml(&xml_sec);
-		}
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "XML/HTTP SCAN: not requested or supported, SKIPPED");
@@ -1884,7 +1907,7 @@ display_help:
 			nutscan_avail_nut_simulation = 0;
 		}
 #else
-			upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
+		upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
 		/* dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(); */
 		run_nut_simulation(NULL);
 #endif /* HAVE_PTHREAD */
@@ -1929,6 +1952,22 @@ display_help:
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "IPMI SCAN: not requested or supported, SKIPPED");
+	}
+
+	if (allow_upower && nutscan_avail_upower) {
+		upsdebugx(quiet, "Scanning UPower bus.");
+#ifdef HAVE_PTHREAD
+		upsdebugx(1, "UPOWER SCAN: starting pthread_create with run_upower...");
+		if (pthread_create(&thread[TYPE_UPOWER], NULL, run_upower, NULL)) {
+			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
+			nutscan_avail_upower = 0;
+		}
+#else
+		upsdebugx(1, "UPOWER SCAN: no pthread support, starting nutscan_scan_upower...");
+		run_upower(NULL);
+#endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1, "UPOWER SCAN: not requested or supported, SKIPPED");
 	}
 
 	/* Eaton serial scan */
@@ -1978,6 +2017,10 @@ display_help:
 		upsdebugx(1, "IPMI SCAN: join back the pthread");
 		pthread_join(thread[TYPE_IPMI], NULL);
 	}
+	if (allow_upower && nutscan_avail_upower && thread[TYPE_UPOWER]) {
+		upsdebugx(1, "UPOWER SCAN: join back the pthread");
+		pthread_join(thread[TYPE_UPOWER], NULL);
+	}
 	if (allow_eaton_serial && thread[TYPE_EATON_SERIAL]) {
 		upsdebugx(1, "SERIAL SCAN: join back the pthread");
 		pthread_join(thread[TYPE_EATON_SERIAL], NULL);
@@ -2020,6 +2063,11 @@ display_help:
 	display_func(dev[TYPE_IPMI]);
 	upsdebugx(1, "SCANS DONE: free resources: IPMI");
 	nutscan_free_device(dev[TYPE_IPMI]);
+
+	upsdebugx(1, "SCANS DONE: display results: UPOWER");
+	display_func(dev[TYPE_UPOWER]);
+	upsdebugx(1, "SCANS DONE: free resources: UPOWER");
+	nutscan_free_device(dev[TYPE_UPOWER]);
 
 	upsdebugx(1, "SCANS DONE: display results: SERIAL");
 	display_func(dev[TYPE_EATON_SERIAL]);

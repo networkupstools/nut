@@ -799,7 +799,7 @@ static void do_addvar(int vartype, const char *name, const char *desc, int reloa
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(vartab_t));
+	tmp = (vartab_t *)xmalloc(sizeof(vartab_t));
 
 	tmp->vartype = vartype;
 	tmp->var = xstrdup(name);

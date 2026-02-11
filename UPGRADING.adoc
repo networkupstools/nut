@@ -93,6 +93,12 @@ Changes from 2.8.4 to 2.8.5
   of this new facility to keep working under both old and new file names.
   [#3101]
 
+- The `upsdrvquery*` semi-internal API for talking on the driver socket was
+  updated with default handling for SIGPIPE. If your consumer wants to catch
+  it themselves, instead of using `errno=EPIPE` after a failed call, you can
+  use `upsdrvquery_NOSIGPIPE=0` to disable neutering of the signal inside
+  the API itself. [PR #3277]
+
 - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
   to match the driver program name. Packaging recipes may have to be updated.
   Follow-up from slightly botched renaming in original contribution. [PR #545]
@@ -119,6 +125,15 @@ Changes from 2.8.4 to 2.8.5
   updated, either to explicitly package the binding for several versions,
   or to not-deliver files no longer installed into the prototype area. [#1792]
 
+- Added a `configure` script option to (primarily) `--disable-threading`
+  for systems with detected but broken `libpthread` support, which can
+  cause `nut-scanner` to crash while loading system libraries. [#3300]
+
+- Introduced a new driver category for interaction with OS-reported UPS
+  devices via D-Bus, with the `nut-upower` driver as the first implementation.
+  This driver requires `glib-2.0` and `gio-2.0` development libraries to be
+  available at build time. For packagers, this adds new dependencies if the
+  build should include this driver. [PR #3279]
 
 Changes from 2.8.3 to 2.8.4
 ---------------------------

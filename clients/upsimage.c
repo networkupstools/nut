@@ -20,6 +20,7 @@
    Copyrights:
      (C) 1998  Russell Kroll <rkroll@exploits.org>
      (C) 2002  Simon Rozman <simon@rozman.net>
+     (C) 2020-2026 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -359,9 +360,9 @@ static void noimage(const char *fmt, ...)
 }
 
 /* draws bar indicator when minimum, nominal or maximum values for the given
-   UPS variable can be determined.
-   deviation < 0 means that values below nom should be grey instead of
-   green */
+ * UPS variable can be determined.
+ * deviation < 0 means that values below nom should be grey instead of green
+ */
 static void drawgeneralbar(double var, int min, int nom, int max,
 		int deviation, 	const char *format)
 	__attribute__((noreturn));
@@ -388,7 +389,7 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 			max = nom + 3*deviation;
 	} else {
 		/* if nominal value isn't available, assume, it's the
-		   average between min and max */
+		 * average between min and max */
 		nom = (min + max) / 2;
 	}
 
@@ -619,14 +620,14 @@ int main(int argc, char **argv)
 	double	var = 0;
 
 #ifdef WIN32
-        /* Required ritual before calling any socket functions */
-        static WSADATA  WSAdata;
-        static int      WSA_Started = 0;
-        if (!WSA_Started) {
-                WSAStartup(2, &WSAdata);
-                atexit((void(*)(void))WSACleanup);
-                WSA_Started = 1;
-        }
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 
 	/* Avoid binary output conversions, e.g.
 	 * mangling what looks like CRLF on WIN32 */
@@ -644,6 +645,23 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
+	}
+
+#ifdef NUT_CGI_DEBUG_UPSIMAGE
+# if (NUT_CGI_DEBUG_UPSIMAGE - 0 < 1)
+#  undef NUT_CGI_DEBUG_UPSIMAGE
+#  define NUT_CGI_DEBUG_UPSIMAGE 6
+# endif
+	/* Un-comment via make flags when developer-troubleshooting: */
+	nut_debug_level = NUT_CGI_DEBUG_UPSIMAGE;
+#endif
+
+	if (nut_debug_level > 0) {
+		cgilogbit_set();
+		printf("Content-type: text/html\n");
+		printf("Pragma: no-cache\n");
+		printf("\n");
+		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
 	}
 
 	extractcgiargs();
@@ -678,7 +696,7 @@ int main(int argc, char **argv)
 		if (!strcmp(cmd, imgvar[i].name)) {
 
 			/* sanity check whether we have draw function
-			   registered with this variable */
+			 * registered with this variable */
 			if (!imgvar[i].drawfunc) {
 				noimage("Draw function N/A");
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -700,9 +718,10 @@ int main(int argc, char **argv)
 			}
 
 			/* when getting minimum, nominal and maximum values,
-			   we first look if the marginal value is supported
-			   by the UPS driver, if not, we look it up in the
-			   imgarg table under the SAME name */
+			 * we first look if the marginal value is supported
+			 * by the UPS driver, if not, we look it up in the
+			 * imgarg table under the SAME name
+			 */
 
 			/* get the minimum value */
 			if (imgvar[i].minimum) {

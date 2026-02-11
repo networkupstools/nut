@@ -54,7 +54,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 	}
 
 	/* grab some memory and add the info */
-	temp = xcalloc(1, sizeof(*temp));
+	temp = (upstype_t*)xcalloc(1, sizeof(*temp));
 	temp->fn = xstrdup(fn);
 	temp->name = xstrdup(name);
 
@@ -475,7 +475,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 
 	/* if not listed, create a new entry and prepend it to the list */
 	if (temp == NULL) {
-		temp = xcalloc(1, sizeof(*temp));
+		temp = (ups_t*)xcalloc(1, sizeof(*temp));
 		temp->upsname = xstrdup(upsname);
 		temp->next = upstable;
 		upstable = temp;

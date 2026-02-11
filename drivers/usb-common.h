@@ -203,14 +203,14 @@
                     usb_ctrl_charbuf bytes, int size, int timeout)
  {
 	/*
-	Map from libusb-0.1 API => libusb-1.0 API:
-	 int LIBUSB_CALL libusb_control_transfer(
-		libusb_device_handle *dev_handle, uint8_t request_type,
-		uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
-		unsigned char *data, uint16_t wLength, unsigned int timeout);
-	Note: In libusb-0.1 bytes was a (char*) but our consumer code
-	was already fixed to use "usb_ctrl_charbuf" to match other methods.
-	*/
+	 * Map from libusb-0.1 API => libusb-1.0 API:
+	 *  int LIBUSB_CALL libusb_control_transfer(
+	 *	libusb_device_handle *dev_handle, uint8_t request_type,
+	 *	uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
+	 *	unsigned char *data, uint16_t wLength, unsigned int timeout);
+	 * Note: In libusb-0.1 bytes was a (char*) but our consumer code
+	 * was already fixed to use "usb_ctrl_charbuf" to match other methods.
+	 */
 
 	if (requesttype < 0 || (uintmax_t)requesttype > UINT8_MAX
 	||  request < 0 || (uintmax_t)request > UINT8_MAX
@@ -239,13 +239,13 @@
                 usb_ctrl_charbuf bytes, int size, int timeout)
  {
 	/* NOTE: Also for routines below:
-	Map from libusb-0.1 API => libusb-1.0 API plus change of logic per below code:
-	 int LIBUSB_CALL libusb_interrupt_transfer(libusb_device_handle *dev_handle,
-		unsigned char endpoint, unsigned char *data, int length,
-		int *actual_length, unsigned int timeout);
-	Note: In libusb-0.1 bytes was a (char*) but our consumer code
-	was already fixed to use "usb_ctrl_charbuf" to match other methods.
-	*/
+	 * Map from libusb-0.1 API => libusb-1.0 API plus change of logic per below code:
+	 *  int LIBUSB_CALL libusb_interrupt_transfer(libusb_device_handle *dev_handle,
+	 *	unsigned char endpoint, unsigned char *data, int length,
+	 *	int *actual_length, unsigned int timeout);
+	 * Note: In libusb-0.1 bytes was a (char*) but our consumer code
+	 * was already fixed to use "usb_ctrl_charbuf" to match other methods.
+	 */
 	int ret;
 
 	if (ep < 0 || (uintmax_t)ep > UCHAR_MAX
@@ -255,8 +255,9 @@
 			"usb_interrupt_read() args out of range for libusb_interrupt_transfer() implementation");
 	}
 
-	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
-			size, &size, (unsigned int)timeout);
+	ret = libusb_interrupt_transfer(
+		dev, (unsigned char)ep, (unsigned char *) bytes,
+		size, &size, (unsigned int)timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
@@ -274,8 +275,9 @@
 			"usb_interrupt_write() args out of range for libusb_interrupt_transfer() implementation");
 	}
 
-	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
-			size, &size, (unsigned int)timeout);
+	ret = libusb_interrupt_transfer(
+		dev, (unsigned char)ep, (unsigned char *) bytes,
+		size, &size, (unsigned int)timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
@@ -293,8 +295,9 @@
 			"usb_bulk_read() args out of range for libusb_interrupt_transfer() implementation");
 	}
 
-	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
-			size, &size, (unsigned int)timeout);
+	ret = libusb_interrupt_transfer(
+		dev, (unsigned char)ep, (unsigned char *) bytes,
+		size, &size, (unsigned int)timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
@@ -312,8 +315,9 @@
 			"usb_bulk_write() args out of range for libusb_interrupt_transfer() implementation");
 	}
 
-	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
-			size, &size, (unsigned int)timeout);
+	ret = libusb_interrupt_transfer(
+		dev, (unsigned char)ep, (unsigned char *) bytes,
+		size, &size, (unsigned int)timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
@@ -497,7 +501,7 @@ typedef struct USBDevice_s {
 	char		*Product;  /*!< Device's Product Name */
 	char		*Serial;   /*!< Product serial number */
 	/* These data points can be determined by the driver for some devices
-	   or by libusb to detail its connection topology: */
+	 * or by libusb to detail its connection topology: */
 	char		*Bus;      /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
 	char		*Device;   /*!< Device name on the bus, e.g. "001"  */

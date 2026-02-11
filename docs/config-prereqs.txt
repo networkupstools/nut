@@ -65,7 +65,7 @@ environment, and build some tests:
 
 ------
 :; mkdir -p nut && cd nut && \
-    git clone https://github.com/networkupstools/nut/ -b fightwarn .
+    git clone https://github.com/networkupstools/nut/ -b master .
 :; ./autogen.sh && \
     ./configure --with-doc=all --with-all --with-cgi && \
     make all && make check && make spellcheck
@@ -259,6 +259,7 @@ metadata about recently published package revisions:
     libssl-dev libnss3-dev \
     augeas-tools libaugeas-dev augeas-lenses \
     libusb-dev libusb-1.0-0-dev \
+    libglib2.0-dev \
     libi2c-dev \
     libmodbus-dev \
     libsnmp-dev \
@@ -324,16 +325,21 @@ for the `xmllint` tool:
 :; apt-get install python-pycparser || apt-get install python3-pycparser
 ------
 
-CentOS 6 and 7
-~~~~~~~~~~~~~~
+CentOS 6 and 7, Fedora 43
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 CentOS is another popular baseline among Linux distributions, being a free
 derivative of the RedHat Linux, upon which many other distros are based as
 well. These systems typically use the RPM package manager, using directly
 `rpm` command, or `yum` or `dnf` front-ends depending on their generation.
 
+In fact, most of the instructions directly apply to much newer distributions
+like Fedora 43.
+
 For CI farm container setup, prepared root filesystem archives from
 http://download.proxmox.com/images/system/ worked sufficiently well.
+For Fedora, https://images.linuxcontainers.org/images/fedora/43/amd64/default
+nightly image was used.
 
 Prepare CentOS repository mirrors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -399,6 +405,7 @@ enable it:
 :; yum install \
     openssh-server openssh-clients
 
+# On CentOS 6/7:
 :; chkconfig sshd on
 :; service sshd start
 
@@ -411,8 +418,8 @@ NOTE: Below we request to install generic `python` per system defaults.
 You may request specifically `python2` or `python3` (or both): current
 NUT should be compatible with both (2.7+ at least).
 
-NOTE: On CentOS, `libusb` means 0.1.x and `libusbx` means 1.x.x API version
-(latter is not available for CentOS 6).
+NOTE: On CentOS, `libusb` means 0.1.x (not available on modern Fedora),
+and `libusbx` means 1.x.x API version (latter is not available for CentOS 6).
 
 NOTE: On CentOS, it seems that development against libi2c/smbus is not
 supported. Neither the suitable devel packages were found, nor i2c-based
@@ -446,6 +453,8 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 # You can find a list of what is (pre-)installed with:
 #   :; rpm -qa | grep -Ei 'perl|python'
 # Note that CentOS 6 includes python-2.6.x and does not serve newer versions
+# For Fedora 43, further packages can be installed to test more:
+#   :; yum install python3-qt5 python3-setuptools
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; yum install \
@@ -456,6 +465,10 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 :; yum install \
     asciidoc source-highlight python-pygments dblatex
 
+# For PDF generation, you may need explicitly (at least on Fedora 43):
+:; yum install \
+    texlive 'tex(upquote.sty)'
+
 # For CGI graph generation - massive packages (X11):
 :; yum install \
     gd-devel
@@ -465,25 +478,41 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
     systemd-devel
 
 # NOTE: "libusbx" is the CentOS way of naming "libusb-1.0" (not in CentOS 6)
-# vs. the older "libusb" as the package with "libusb-0.1"
+# vs. the older "libusb" as the package with "libusb-0.1" (not in recent Fedora)
+:; yum install \
+    libusb-devel
+
+:; yum install \
+    libusbx-devel
+
 :; yum install \
     cppunit-devel \
     openssl-devel nss-devel \
     augeas augeas-devel \
-    libusb-devel libusbx-devel \
+    glib2-devel \
     i2c-tools \
     libmodbus-devel \
     net-snmp-devel \
-    powerman-devel \
     freeipmi-devel \
     avahi-devel \
     neon-devel
+
+# Not in recent Fedora releases:
+:; yum install \
+    powerman-devel
+
+# Not in CentOS, some present in Fedora:
 #?# is python-augeas needed? exists at least...
 #?# no (lib)i2c-devel ...
 #?# no (lib)ipmimonitoring-devel ... would "freeipmi-ipmidetectd"
 #?#     cut it at least for run-time?
 #?# no (lib)gpio(d)-devel - starts with CentOS 8 (or extra repositories
 #?#     for later minor releases of CentOS 7)
+
+# In Fedora:
+:; yum install \
+    libi2c-devel \
+    libgpiod-devel
 
 # Some NUT code related to lua may be currently limited to lua-5.1
 # or possibly 5.2; the former is default in CentOS 7 releases...
@@ -492,6 +521,14 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 
 :; yum install \
     bash dash ksh
+
+# If available:
+:; yum install \
+    bash-completion
+
+# In Fedora:
+:; yum install \
+    busybox
 ------
 
 NOTE: `busybox` is not packaged for CentOS 7 release; a static binary can
@@ -509,8 +546,15 @@ other described environments by adding a symlink `/usr/lib/ccache`:
 ======
 For Jenkins agents, also need to install JDK 17 or newer, which is not
 available for CentOS 6 nor 7 directly (in distribution packaging).
-Alternative packaging, such as Temurin from the Adoptium project, is possible
-(checked for at least CentOS 7), see
+
+In Fedora e.g.:
+------
+:; yum install \
+    java-21-openjdk-headless
+------
+
+Alternative packaging for older distros, such as Temurin from the Adoptium
+project, is possible (checked for at least CentOS 7), see
 link:https://adoptium.net/installation/linux/#_centosrhelfedora_instructions[their
 instructions] for specific details. This may require updated library package
 versions as dependencies from the OS distribution, so you may also have to make
@@ -578,6 +622,7 @@ Install tools and prerequisites for NUT:
     openssl nss \
     augeas \
     libusb \
+    glib2 \
     neon \
     net-snmp \
     freeipmi \
@@ -749,6 +794,7 @@ For NUT dependencies and build tools:
 :; slackpkg-install \
     openssl openssl-solibs mozilla-nss \
     libusb \
+    glib2 \
     net-snmp \
     neon
 
@@ -887,6 +933,8 @@ below.
     cppunit \
     nss \
     augeas \
+    libusb \
+    glib \
     libmodbus \
     neon \
     net-snmp \
@@ -1068,6 +1116,7 @@ Finally, as `root` add the packages:
     openssl nss \
     augeas \
     libusb1 \
+    glib2 \
     net-snmp \
     avahi
 
@@ -1149,8 +1198,8 @@ build(s)), and use it to install the `pycparser` module, e.g.:
 :; pip3.6 install pycparser
 ------
 
-NetBSD 9.2
-~~~~~~~~~~
+NetBSD 9.2, 11.0 (Beta)
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Instructions below assume that `pkgin` tool (pkg-src component to
 "install binary packages") is present on the system. Text below
@@ -1202,6 +1251,11 @@ using the older tooling:
 :; pkg_add pkgin
 ----
 
+If you are using a test version that identifies like `11.0_BETA`, the
+`PKG_PATH` definition above may include that but the package repository
+might not serve the URL spelled as such. Trim it down to `11.0` manually
+then.
+
 For more details, see https://www.pkgsrc.org/#index1h1 and
 https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 (the latter also provides a nice cheat-sheet about `pkgin` operations).
@@ -1209,7 +1263,7 @@ https://www.librebyte.net/en/cli-en/pkgin-a-netbsd-package-manager/
 
 [NOTE]
 ======
-On NetBSD 9.2 the `openpimi` and `net-snmp` packages complain that
+On NetBSD 9.2 and 11 the `openpimi` and `net-snmp` packages complain that
 they require either OS ABI 9.0, or that `CHECK_OSABI=no` is set in
 a `pkg_install.conf`. Such file was not found in the test system,
 but can be created in `/etc/` and is honoured by `pkgin`:
@@ -1220,6 +1274,10 @@ but can be created in `/etc/` and is honoured by `pkgin`:
 ----
 ======
 
+Some packages include the software version in the name (so several
+variants may be installed side by side), so instructions below vary
+slightly depending on the OS distribution version:
+
 ------
 :; pkgin install \
     git perl curl \
@@ -1227,11 +1285,25 @@ but can be created in `/etc/` and is honoured by `pkgin`:
     bmake gmake autoconf automake libltdl libtool \
     cppcheck \
     pkgconf \
-    gcc7 gcc14 clang
+    clang
+
+# NOTE: ccache is installed and links configured for it below
+
+# NetBSD 9.2:
+:; pkgin install \
+    gcc7 gcc14
+
+# NetBSD 11:
+:; pkgin install \
+    gcc15
 
 # See comments below, python version and package naming depends on distro
+# NetBSD 9.2:
 :; pkgin install \
     python27 python39 python312 python313
+
+# NetBSD 11 (to cover the max testing scope with both python generations):
+:; pkgin install python27 python314
 
 :; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.13 python3 ) )
 # You can find a list of what is (pre-)installed with:
@@ -1245,8 +1317,10 @@ but can be created in `/etc/` and is honoured by `pkgin`:
 # For Python2:
 #   :; pkgin install py27-gtk2
 # For Python3:
+# * NetBSD 9.2:
 #   :; pkgin install py312-qt5 py313-qt5
-# FIXME: Consider qt6 since 2025
+# * NetBSD 11:
+#   :; pkgin install py314-qt6
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pkgin install \
@@ -1270,6 +1344,7 @@ but can be created in `/etc/` and is honoured by `pkgin`:
     openssl nss \
     augeas \
     libusb libusb1 \
+    glib2 \
     neon \
     net-snmp \
     avahi
@@ -1299,21 +1374,22 @@ It still seems to not work for NUT's expectations of FreeIPMI
 Recommended: For compatibility with common setups on other operating
 systems, can add dash-number suffixed symlinks to compiler tools (e.g.
 `gcc-7` beside the `gcc` installed by package) near the original
-binaries and into `/usr/lib/ccache`:
+binaries and into `/usr/lib/ccache`; use the numbers according to
+what you do have installed:
 ------
 :; ( cd /usr/pkg/bin && for TOOL in cpp gcc g++ ; do \
         for VER in "7" "14" ; do \
-            ln -fs "../gcc$VER/bin/$TOOL" "${TOOL}-${VER}" ; \
+            ln -fs "../gcc${VER}/bin/${TOOL}" "${TOOL}-${VER}" ; \
         done ; \
      done )
 
 # Note that the one delivered binary is `clang-13` (in originally described
-# installation; `clang-18` after an update in 2025 which auto-removed the
-# older version) and many (unnumbered) symlinks to it. For NUT CI style of
+# NetBSD 9.x installation; `clang-18` after an update in 2025 which auto-removed
+# the older version) and many (unnumbered) symlinks to it. For NUT CI style of
 # support for builds with many compilers, complete the known numbers:
 :; ( cd /usr/pkg/bin && for TOOL in clang-cpp clang++ ; do \
         for VER in "-18" ; do \
-            ln -s clang-18 "$TOOL$VER" ; \
+            ln -s clang"${VER}" "${TOOL}${VER}" ; \
         done ; \
      done )
 
@@ -1321,12 +1397,12 @@ binaries and into `/usr/lib/ccache`:
 :; ( mkdir -p /usr/lib/ccache && cd /usr/lib/ccache && \
         for TOOL in cpp gcc g++ clang ; do \
             for VER in "" "-7" "-14" ; do \
-                ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
+                ln -s ../../pkg/bin/ccache "${TOOL}${VER}" ; \
             done ; \
         done ; \
         for TOOL in clang clang++ clang-cpp ; do \
             for VER in "" "-18" ; do \
-                ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
+                ln -s ../../pkg/bin/ccache "${TOOL}${VER}" ; \
             done ; \
         done ; \
    )
@@ -1416,6 +1492,7 @@ Typical tooling would include:
     library/augeas python/augeas \
     libusb-1 libusbugen system/library/usb/libusb \
     system/header/header-usb driver/usb/ugen \
+    glib2 \
     libmodbus \
     library/neon \
     system/management/snmp/net-snmp \
@@ -1563,6 +1640,7 @@ site for setup details.
     developer/build/libtool library/libtool/libltdl \
     build-essential ccache git developer/pkg-config \
     runtime/perl \
+    glib \
     asciidoc \
     libgd
 
@@ -1780,7 +1858,7 @@ Currently known dependencies for basic build include:
 # Required:
 :; brew install ccache bash libtool binutils autoconf automake git m4 \
         pkg-config aspell asciidoc docbook-xsl cppunit gd \
-        libusb neon net-snmp \
+        libusb glib neon net-snmp \
         nss openssl \
         libmodbus freeipmi powerman
 
@@ -1992,7 +2070,8 @@ export PATH
 
 # This also pulls *-devel of several other projects:
 :; pacman -S --needed \
-    mingw-w64-x86_64-neon libneon-devel
+    mingw-w64-x86_64-neon libneon-devel \
+    mingw-w64-x86_64-glib2
 
 # For DMF XML capability, also add libxml:
 :; pacman -S --needed \
