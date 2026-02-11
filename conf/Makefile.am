@@ -11,7 +11,8 @@ SECFILES_GENERATED = upsmon.conf.sample
 PUBFILES_STATIC = nut.conf.sample
 PUBFILES_GENERATED = upssched.conf.sample
 CGIPUB_STATIC = hosts.conf.sample upsset.conf.sample
-CGIPUB_GENERATED = upsstats.html.sample upsstats-single.html.sample
+CGIPUB_GENERATED = upsstats.html.sample upsstats-single.html.sample \
+        upsstats-modern-list.html.sample upsstats-modern-single.html.sample
 
 SECFILES = $(SECFILES_STATIC) $(SECFILES_GENERATED)
 
@@ -31,6 +32,7 @@ nodist_conf_examples_DATA = $(SECFILES_GENERATED) $(PUBFILES_GENERATED) \
 
 SPELLCHECK_SRC = $(dist_sysconf_DATA) \
  upssched.conf.sample.in upsmon.conf.sample.in \
+ upsstats-modern-list.html.sample.in upsstats-modern-single.html.sample.in \
  upsstats.html.sample.in upsstats-single.html.sample.in
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.

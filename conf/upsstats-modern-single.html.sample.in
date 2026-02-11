@@ -1,0 +1,221 @@
+@NUT_UPSSTATS_TEMPLATE single@
+<!-- upsstats template file -->
+
+<!--
+	This is upsstats-modern-single.html, a template for monitoring a
+	single host. This mode is selected by adding "host=<host>" to the
+	upsstats.cgi URL.
+
+	Such URLs are generated automatically when using the HOSTLINK
+	command.
+
+	See upsstats.html(5) for more information on template files.
+-->
+
+<!-- change this to TEMPF if you don't like Celsius. -->
+
+@TEMPC@
+
+<!-- Note: on Windows you may have to use the `*.cgi.exe` in PATHs below -->
+
+@UPSSTATSPATH upsstats.cgi@EXEEXT@@
+@UPSIMAGEPATH upsimage.cgi@EXEEXT@@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @REFRESH@
+    <title>@HOSTDESC@ : @VAR ups.model@</title>
+    <style>
+        :root {
+            --bg: #0f172a; --card: #1e293b; --text: #f8fafc;
+            --dim: #94a3b8; --green: #4ade80; --border: #334155;
+            --accent: #38bdf8; --warn: #fbbf24; --crit: #ef4444;
+        }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 4vh 4vw; margin: 0; display: flex; justify-content: center; }
+        .dashboard { width: 100%; max-width: 1400px; display: flex; flex-direction: column; gap: 2rem; }
+        header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;}
+        h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
+
+        /* Fixed Grid Architecture: Prevents charts from dropping off screen */
+        .main-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 2rem; align-items: start; }
+
+        .sidebar { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; height: max-content; }
+        .sidebar-row { display: flex; justify-content: space-between; margin-bottom: 0.35rem; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.35rem; }
+        .sidebar-label { color: var(--green); font-weight: bold; }
+        .sidebar-value { text-align: right; }
+        .sidebar-group { margin-top: 1.25rem; margin-bottom: 0.5rem; color: var(--dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem;}
+
+        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        .card-header { font-size: 1rem; font-weight: bold; width: 100%; text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 2rem;}
+
+        .charts { display: flex; gap: 1.5rem; height: 180px; justify-content: center; width: 100%; margin-top: 1rem; margin-bottom: 1.5rem; }
+        .bar-group { display: flex; gap: 6px; height: 100%; align-items: flex-end; position: relative; }
+
+        .threshold-battery { width: 4px; height: 100%; border-radius: 2px; background: linear-gradient(to top, var(--crit) 0% 20%, var(--warn) 20% 40%, var(--green) 40% 100%); }
+        .threshold-voltage { width: 4px; height: 100%; border-radius: 2px; background: linear-gradient(to top, var(--crit) 0% 15%, var(--warn) 15% 25%, var(--green) 25% 85%, var(--warn) 85% 95%, var(--crit) 95% 100%); }
+
+        .bar-wrapper { position: relative; height: 100%; flex-shrink: 0; }
+        .bar-bg { width: 34px; height: 100%; border-radius: 4px; display: flex; align-items: flex-end; position: relative; overflow: hidden; background: #334155; background-image: repeating-linear-gradient(to top, transparent, transparent calc(20% - 1px), rgba(255,255,255,0.05) calc(20% - 1px), rgba(255,255,255,0.05) 20%); }
+        .bar-fill { width: 100%; background: var(--green); border-radius: 4px; }
+        .fill-blue { background: var(--accent); }
+
+        .y-axis { position: relative; height: 100%; width: 24px; flex-shrink: 0; }
+        .tick { position: absolute; left: 0; transform: translateY(50%); font-size: 0.65rem; color: var(--dim); display: flex; align-items: center; white-space: nowrap; }
+        .tick::before { content: ''; width: 4px; height: 1px; background: var(--border); margin-right: 4px; }
+
+        .label-top { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: var(--dim); white-space: nowrap; }
+        .label-bottom { position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); font-size: 0.85rem; font-weight: bold; white-space: nowrap; }
+
+        @media (max-width: 1024px) { .main-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <header>
+        <div><h1>Network UPS Tools</h1><div style="color: var(--dim)">@HOSTDESC@ - @VAR ups.model@</div></div>
+        <div style="color: var(--dim)">@DATE %a %b %d %X %Z %Y@</div>
+    </header>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="sidebar-row"><span class="sidebar-label">Model:</span> <span class="sidebar-value">@VAR ups.model@</span></div>
+            <div class="sidebar-row"><span class="sidebar-label">Status:</span> <span class="sidebar-value">@STATUS@</span></div>
+            @IFSUPP battery.runtime@<div class="sidebar-row"><span class="sidebar-label">Runtime:</span> <span class="sidebar-value">@RUNTIME@</span></div>@ENDIF@
+            @IFSUPP ups.temperature@<div class="sidebar-row"><span class="sidebar-label">UPS Temp:</span> <span class="sidebar-value">@UPSTEMP@ @DEGREES@</span></div>@ENDIF@
+            @IFSUPP ambient.temperature@<div class="sidebar-row"><span class="sidebar-label">Ambient:</span> <span class="sidebar-value">@VAR ambient.temperature@ @DEGREES@</span></div>@ENDIF@
+            @IFSUPP ambient.humidity@<div class="sidebar-row"><span class="sidebar-label">Humidity:</span> <span class="sidebar-value">@VAR ambient.humidity@ %</span></div>@ENDIF@
+
+            <div class="sidebar-group">Battery</div>
+            @IFSUPP battery.voltage@<div class="sidebar-row"><span class="sidebar-label">Voltage:</span> <span class="sidebar-value">@VAR battery.voltage@ V</span></div>@ENDIF@
+            @IFSUPP battery.current@<div class="sidebar-row"><span class="sidebar-label">Current:</span> <span class="sidebar-value">@VAR battery.current@ A</span></div>@ENDIF@
+
+            <div class="sidebar-group">Input</div>
+            @IFSUPP input.voltage@<div class="sidebar-row"><span class="sidebar-label">Voltage:</span> <span class="sidebar-value">@VAR input.voltage@ V</span></div>@ENDIF@
+            @IFSUPP input.current@<div class="sidebar-row"><span class="sidebar-label">Current:</span> <span class="sidebar-value">@VAR input.current@ A</span></div>@ENDIF@
+            @IFSUPP input.frequency@<div class="sidebar-row"><span class="sidebar-label">Freq:</span> <span class="sidebar-value">@VAR input.frequency@ Hz</span></div>@ENDIF@
+
+            <div class="sidebar-group">Output</div>
+            @IFSUPP output.voltage@<div class="sidebar-row"><span class="sidebar-label">Voltage:</span> <span class="sidebar-value">@VAR output.voltage@ V</span></div>@ENDIF@
+            @IFSUPP output.current@<div class="sidebar-row"><span class="sidebar-label">Current:</span> <span class="sidebar-value">@VAR output.current@ A</span></div>@ENDIF@
+            @IFSUPP output.frequency@<div class="sidebar-row"><span class="sidebar-label">Freq:</span> <span class="sidebar-value">@VAR output.frequency@ Hz</span></div>@ENDIF@
+        </div>
+
+        <div class="chart-grid">
+            <div class="card">
+                <div class="card-header">Battery</div>
+                <div class="charts">
+                    @IFSUPP battery.charge@
+                    <div class="bar-group">
+                        <div class="threshold-battery"></div>
+                        <div class="bar-wrapper">
+                            <div class="label-top">Charge</div>
+                            <div class="bar-bg"><div class="bar-fill" style="height: @VAR battery.charge@%;"></div></div>
+                            <div class="label-bottom">@VAR battery.charge@ %</div>
+                        </div>
+                        <div class="y-axis">
+                            <div class="tick" style="bottom: 100%">100</div><div class="tick" style="bottom: 50%">50</div><div class="tick" style="bottom: 0%">0</div>
+                        </div>
+                    </div>
+                    @ENDIF@
+                    @IFSUPP battery.voltage@
+                    <div class="bar-group">
+                        <div class="threshold-battery"></div>
+                        <div class="bar-wrapper">
+                            <div class="label-top">Voltage</div>
+                            <div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR battery.voltage@ - 10) / 20 * 100%);"></div></div>
+                            <div class="label-bottom">@VAR battery.voltage@ V</div>
+                        </div>
+                        <div class="y-axis">
+                            <div class="tick" style="bottom: 100%">30</div><div class="tick" style="bottom: 50%">20</div><div class="tick" style="bottom: 0%">10</div>
+                        </div>
+                    </div>
+                    @ENDIF@
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Line Voltage</div>
+                <div class="charts">
+                    @IFSUPP input.voltage@
+                    <div class="bar-group">
+                        <div class="threshold-voltage"></div>
+                        <div class="bar-wrapper">
+                            <div class="label-top">Input</div>
+                            <div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.voltage@ - 60) / 100 * 100%);"></div></div>
+                            <div class="label-bottom">@VAR input.voltage@ V</div>
+                        </div>
+                    </div>
+                    @ENDIF@
+                    @IFSUPP output.voltage@
+                    <div class="bar-group">
+                        <div class="threshold-voltage"></div>
+                        <div class="bar-wrapper">
+                            <div class="label-top">Output</div>
+                            <div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.voltage@ - 60) / 100 * 100%);"></div></div>
+                            <div class="label-bottom">@VAR output.voltage@ V</div>
+                        </div>
+                        <div class="y-axis">
+                            <div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+                        </div>
+                    </div>
+                    @ENDIF@
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Load</div>
+                <div class="charts">
+                    @IFSUPP ups.load@
+                    <div class="bar-group">
+                        <div class="bar-wrapper">
+                            <div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR ups.load@%;"></div></div>
+                            <div class="label-bottom">@VAR ups.load@ %</div>
+                        </div>
+                        <div class="y-axis">
+                            <div class="tick" style="bottom: 100%">100</div><div class="tick" style="bottom: 50%">50</div><div class="tick" style="bottom: 0%">0</div>
+                        </div>
+                    </div>
+                    @ENDIF@
+                </div>
+            </div>
+
+            @IFSUPP ambient.temperature@
+            <div class="card">
+                <div class="card-header">Environment</div>
+                <div class="charts">
+                    <div class="bar-group">
+                        <div class="bar-wrapper">
+                            <div class="label-top">Temp</div>
+                            <div class="bar-bg"><div class="bar-fill fill-warn" style="height: calc((@VAR ambient.temperature@ / 50) * 100%);"></div></div>
+                            <div class="label-bottom">@VAR ambient.temperature@ &deg;</div>
+                        </div>
+                        <div class="y-axis">
+                            <div class="tick" style="bottom: 100%">50</div><div class="tick" style="bottom: 0%">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @ENDIF@
+        </div>
+    </div>
+
+    <div>@TREELINK_JSON Device data as JSON@ | @TREELINK Device data as HTML table@
+    <a href="https://jigsaw.w3.org/css-validator/check/referer"><img
+        style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss"
+        alt="Valid CSS" title="Valid CSS" height="31" width="88"></a>
+    <a href="https://validator.w3.org/check?uri=referer"><img
+        style="float:right" src="https://www.w3.org/Icons/valid-html401"
+        alt="Valid HTML 4.01 Strict" title="Valid HTML 4.01 Strict"
+        height="31" width="88"></a></div>
+
+</div>
+
+</body>
+</html>
