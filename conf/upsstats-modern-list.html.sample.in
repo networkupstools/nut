@@ -38,11 +38,11 @@
 }
 * { box-sizing: border-box; }
 
-body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 4vh 5vw; margin: 0; display: flex; justify-content: center; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 4vh 4vw; margin: 0; display: flex; justify-content: center; }
 .dashboard { width: 100%; max-width: 1400px; display: flex; flex-direction: column; gap: 2rem; }
 
 header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;}
-h1 { margin: 0; font-size: 1.5rem; color: var(--text); }
+h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 
 /* Modern Table Wrapper */
 .table-container { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.5rem 1.5rem; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -205,8 +205,13 @@ L3: @VAR output.L3.realpower.percent@%
 
 <hr><div><small>
 <a href="?json" title="All devices as one JSON document">JSON</a>
-<a href="https://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"></a>
-<a href="https://validator.w3.org/check?uri=referer"><img style="float:right" src="https://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01 Strict" height="31" width="88"></a>
+<a href="https://jigsaw.w3.org/css-validator/check/referer"><img
+  style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss"
+  alt="Valid CSS" title="Valid CSS" height="31" width="88"></a>
+<a href="https://validator.w3.org/check?uri=referer"><img
+  style="float:right" src="https://www.w3.org/Icons/valid-html401"
+  alt="Valid HTML 4.01 Strict" title="Valid HTML 4.01 Strict"
+  height="31" width="88"></a>
 <p align="right">Network UPS Tools upsstats @ESCAPED_TEMPLATE_VERSION@</p>
 </small></div>
 
