@@ -51,6 +51,10 @@
 # and contain `.htm` in the file name.
 #
 # CUSTOM_TEMPLATE_LIST <filename>
+#
+# Examples:
+#
+# CUSTOM_TEMPLATE_LIST "upsstats-modern-list.html"
 
 # -----------------------------------------------------------------------
 #
@@ -59,3 +63,7 @@
 # configuration directory and contain `.htm` in the file name.
 #
 # CUSTOM_TEMPLATE_SINGLE <filename>
+#
+# Examples:
+#
+# CUSTOM_TEMPLATE_SINGLE "upsstats-modern-single.html"

@@ -26,6 +26,18 @@ Network UPS Tools
 <a href="@NUT_CGI_URI@/upsstats.cgi@EXEEXT@" target=mainFrame>Statistics</a>
 </td>
 
+<!-- To uncomment, prepare these templates and permit them in hosts.conf
+     Consider adding to COLSPAN above or commenting away the legacy Statistics
+     cell. Alternatively you can just replace the default-named templates'
+     contents with those from modern sample files.
+ -->
+<!--
+<tr ALIGN=CENTER>
+<td BGCOLOR="#00FFFF">
+<a href="@NUT_CGI_URI@/upsstats.cgi@EXEEXT@?template_list=upsstats-modern-list.html&template_single=upsstats-modern-single.html" target=mainFrame>Modern-looking Statistics</a>
+</td>
+-->
+
 <td BGCOLOR="#00FFFF">
 <a href="@NUT_CGI_URI@/upsset.cgi@EXEEXT@" target=mainFrame>Settings</a>
 </td>

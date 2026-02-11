@@ -7069,6 +7069,8 @@ AC_CONFIG_FILES([
  conf/upssched.conf.sample
  conf/upsstats.html.sample
  conf/upsstats-single.html.sample
+ conf/upsstats-modern-list.html.sample
+ conf/upsstats-modern-single.html.sample
  data/htmlcgi/header.html
  data/htmlcgi/Makefile
  data/Makefile
