@@ -2,7 +2,7 @@
 <!-- upsstats template file -->
 
 <!--
-	This is upsstats-modern-single.html, a template for monitoring a
+	This is upsstats-modern-single.html, a custom template for monitoring a
 	single host. This mode is selected by adding "host=<host>" to the
 	upsstats.cgi URL.
 
@@ -24,20 +24,24 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
             "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="en">
+
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 @REFRESH@
 <title>@HOSTDESC@ : @VAR ups.model@</title>
 <style>
 :root {
---bg: #0f172a; --card: #1e293b; --text: #f8fafc;
---dim: #94a3b8; --green: #4ade80; --border: #334155;
---accent: #38bdf8; --warn: #fbbf24; --crit: #ef4444;
+  --bg: #0f172a; --card: #1e293b; --text: #f8fafc;
+  --dim: #94a3b8; --green: #4ade80; --border: #334155;
+  --accent: #38bdf8; --warn: #fbbf24; --crit: #ef4444;
 }
 * { box-sizing: border-box; }
+
 body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 4vh 4vw; margin: 0; display: flex; justify-content: center; }
 .dashboard { width: 100%; max-width: 1400px; display: flex; flex-direction: column; gap: 2rem; }
+
 header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;}
 h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 
@@ -74,22 +78,50 @@ h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 
 @media (max-width: 1024px) { .main-layout { grid-template-columns: 1fr; } }
 </style>
+<!-- link rel="stylesheet" type="text/css" href="nut.css" / -->
 </head>
 <body>
 
 <div class="dashboard">
 <header>
-<div><h1>Network UPS Tools</h1><div style="color: var(--dim)">@HOSTDESC@ - @VAR ups.model@</div></div>
+<div>
+<h1>Network UPS Tools</h1>
+<div style="color: var(--dim)">@HOSTDESC@ -
+@IFSUPP device.model@
+@VAR device.model@
+@ELSE@
+@VAR ups.model@
+@ENDIF@
+on @HOST@</div>
+</div>
 <div style="color: var(--dim)">@DATE %a %b %d %X %Z %Y@</div>
 </header>
 
 <div class="main-layout">
 <div class="sidebar">
-<div class="sidebar-row"><span class="sidebar-label">Model:</span> <span class="sidebar-value">@VAR ups.model@</span></div>
-<div class="sidebar-row"><span class="sidebar-label">Status:</span> <span class="sidebar-value">@STATUS@</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Model:</span> <span class="sidebar-value">
+@IFSUPP device.model@
+@VAR device.model@
+@ELSE@
+@VAR ups.model@
+@ENDIF@
+</span></div>
+
+<div class="sidebar-row"><span class="sidebar-label">Status:</span> <span class="sidebar-value" style="nowrap">@STATUS@&nbsp;<b style="color: @STATUSCOLOR@">[]</b></span></div>
+
 @IFSUPP battery.runtime@<div class="sidebar-row"><span class="sidebar-label">Runtime:</span> <span class="sidebar-value">@RUNTIME@</span></div>@ENDIF@
+
 @IFSUPP ups.temperature@<div class="sidebar-row"><span class="sidebar-label">UPS Temp:</span> <span class="sidebar-value">@UPSTEMP@ @DEGREES@</span></div>@ENDIF@
-@IFSUPP ambient.temperature@<div class="sidebar-row"><span class="sidebar-label">Ambient:</span> <span class="sidebar-value">@VAR ambient.temperature@ @DEGREES@</span></div>@ENDIF@
+
+@IFSUPP ambient.temperature@
+<div class="sidebar-group">Ambient</div>
+@ELSE@
+@IFSUPP ambient.humidity@
+<div class="sidebar-group">Ambient</div>
+@ENDIF@
+
+@IFSUPP ambient.temperature@<div class="sidebar-row"><span class="sidebar-label">Temperature:</span> <span class="sidebar-value">@VAR ambient.temperature@ @DEGREES@</span></div>@ENDIF@
+
 @IFSUPP ambient.humidity@<div class="sidebar-row"><span class="sidebar-label">Humidity:</span> <span class="sidebar-value">@VAR ambient.humidity@ %</span></div>@ENDIF@
 
 <div class="sidebar-group">Battery</div>
@@ -97,13 +129,56 @@ h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 @IFSUPP battery.current@<div class="sidebar-row"><span class="sidebar-label">Current:</span> <span class="sidebar-value">@VAR battery.current@ A</span></div>@ENDIF@
 
 <div class="sidebar-group">Input</div>
-@IFSUPP input.voltage@<div class="sidebar-row"><span class="sidebar-label">Voltage:</span> <span class="sidebar-value">@VAR input.voltage@ V</span></div>@ENDIF@
-@IFSUPP input.current@<div class="sidebar-row"><span class="sidebar-label">Current:</span> <span class="sidebar-value">@VAR input.current@ A</span></div>@ENDIF@
+
+@IFSUPP input.L2-L3.voltage@
+<div class="sidebar-row"><span class="sidebar-label">Voltage L1-L2:</span> <span class="sidebar-value">@VAR input.L1-L2.voltage@ V</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Voltage L2-L3:</span> <span class="sidebar-value">@VAR input.L2-L3.voltage@ V</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Voltage L3-L1:</span> <span class="sidebar-value">@VAR input.L3-L1.voltage@ V</span></div>
+@ELSE@
+@IFSUPP input.L2-N.voltage@
+<div class="sidebar-row"><span class="sidebar-label">Voltage L1-N:</span> <span class="sidebar-value">@VAR input.L1-N.voltage@ V</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Voltage L2-N:</span> <span class="sidebar-value">@VAR input.L2-N.voltage@ V</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Voltage L3-N:</span> <span class="sidebar-value">@VAR input.L3-N.voltage@ V</span></div>
+@ELSE@
+@IFSUPP input.voltage@
+<div class="sidebar-row"><span class="sidebar-label">Voltage:</span> <span class="sidebar-value">@VAR input.voltage@ V</span></div>
+@ENDIF@
+
+@IFSUPP input.L2.current@
+<div class="sidebar-row"><span class="sidebar-label">Current L1:</span> <span class="sidebar-value">@VAR input.L1.current@ A</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Current L2:</span> <span class="sidebar-value">@VAR input.L2.current@ A</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Current L3:</span> <span class="sidebar-value">@VAR input.L3.current@ A</span></div>
+@ELSE@
+@IFSUPP input.current@
+<div class="sidebar-row"><span class="sidebar-label">Current:</span> <span class="sidebar-value">@VAR input.current@ A</span></div>
+@ENDIF@
+
 @IFSUPP input.frequency@<div class="sidebar-row"><span class="sidebar-label">Freq:</span> <span class="sidebar-value">@VAR input.frequency@ Hz</span></div>@ENDIF@
 
 <div class="sidebar-group">Output</div>
-@IFSUPP output.voltage@<div class="sidebar-row"><span class="sidebar-label">Voltage:</span> <span class="sidebar-value">@VAR output.voltage@ V</span></div>@ENDIF@
-@IFSUPP output.current@<div class="sidebar-row"><span class="sidebar-label">Current:</span> <span class="sidebar-value">@VAR output.current@ A</span></div>@ENDIF@
+@IFSUPP output.L2-L3.voltage@
+<div class="sidebar-row"><span class="sidebar-label">Voltage L1-L2:</span> <span class="sidebar-value">@VAR output.L1-L2.voltage@ V</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Voltage L2-L3:</span> <span class="sidebar-value">@VAR output.L2-L3.voltage@ V</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Voltage L3-L1:</span> <span class="sidebar-value">@VAR output.L3-L1.voltage@ V</span></div>
+@ELSE@
+@IFSUPP output.L2-N.voltage@
+<div class="sidebar-row"><span class="sidebar-label">Voltage L1-N:</span> <span class="sidebar-value">@VAR output.L1-N.voltage@ V</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Voltage L2-N:</span> <span class="sidebar-value">@VAR output.L2-N.voltage@ V</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Voltage L3-N:</span> <span class="sidebar-value">@VAR output.L3-N.voltage@ V</span></div>
+@ELSE@
+@IFSUPP output.voltage@
+<div class="sidebar-row"><span class="sidebar-label">Voltage:</span> <span class="sidebar-value">@VAR output.voltage@ V</span></div>
+@ENDIF@
+
+@IFSUPP output.L2.current@
+<div class="sidebar-row"><span class="sidebar-label">Current L1:</span> <span class="sidebar-value">@VAR output.L1.current@ A</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Current L2:</span> <span class="sidebar-value">@VAR output.L2.current@ A</span></div>
+<div class="sidebar-row"><span class="sidebar-label">Current L3:</span> <span class="sidebar-value">@VAR output.L3.current@ A</span></div>
+@ELSE@
+@IFSUPP output.current@
+<div class="sidebar-row"><span class="sidebar-label">Current:</span> <span class="sidebar-value">@VAR output.current@ A</span></div>
+@ENDIF@
+
 @IFSUPP output.frequency@<div class="sidebar-row"><span class="sidebar-label">Freq:</span> <span class="sidebar-value">@VAR output.frequency@ Hz</span></div>@ENDIF@
 </div>
 
@@ -124,6 +199,8 @@ h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 </div>
 </div>
 @ENDIF@
+
+<!-- WARNING: Hardcoded for ~24V nominal battery -->
 @IFSUPP battery.voltage@
 <div class="bar-group">
 <div class="threshold-battery"></div>
@@ -140,9 +217,59 @@ h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 </div>
 </div>
 
+<!-- WARNING: Hardcoded for ~120V nominal wall/load voltage -->
 <div class="card">
 <div class="card-header">Line Voltage</div>
 <div class="charts">
+@IFSUPP input.L2-L3.voltage@
+<div class="bar-group">
+<div class="threshold-voltage"></div>
+
+<div class="bar-wrapper">
+<div class="label-top">Input L1-L2</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L1-L2.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR input.L1-L2.voltage@ V</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Input L2-L3</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L2-L3.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR input.L2-L3.voltage@ V</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Input L3-L1</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L3-L1.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR input.L3-L1.voltage@ V</div>
+</div>
+
+</div>
+@ELSE@
+@IFSUPP input.L2-N.voltage@
+
+<div class="bar-group">
+<div class="threshold-voltage"></div>
+
+<div class="bar-wrapper">
+<div class="label-top">Input L1-N</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L1-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR input.L1-N.voltage@ V</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Input L2-N</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L2-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR input.L2-N.voltage@ V</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Input L3-N</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L3-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR input.L3-N.voltage@ V</div>
+</div>
+
+</div>
+@ELSE@
 @IFSUPP input.voltage@
 <div class="bar-group">
 <div class="threshold-voltage"></div>
@@ -153,6 +280,73 @@ h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 </div>
 </div>
 @ENDIF@
+<!-- WARNING: Hardcoded for ~120V nominal wall/load voltage -->
+@IFSUPP output.L2-L3.voltage@
+<div class="bar-group">
+<div class="threshold-voltage"></div>
+
+<div class="bar-wrapper">
+<div class="label-top">Output L1-L2</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L1-L2.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR output.L1-L2.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Output L2-L3</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L2-L3.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR output.L2-L3.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Output L3-L1</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L3-L1.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR output.L3-L1.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+</div>
+
+</div>
+@ELSE@
+@IFSUPP output.L2-N.voltage@
+<div class="bar-group">
+<div class="threshold-voltage"></div>
+
+<div class="bar-wrapper">
+<div class="label-top">Output L1-N</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L1-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR output.L1-N.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Output L2-N</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L2-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR output.L2-N.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Output L3-N</div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L3-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="label-bottom">@VAR output.L3-N.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+</div>
+
+</div>
+@ELSE@
 @IFSUPP output.voltage@
 <div class="bar-group">
 <div class="threshold-voltage"></div>
@@ -172,6 +366,70 @@ h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 <div class="card">
 <div class="card-header">Load</div>
 <div class="charts">
+@IFSUPP output.L2.power.percent@
+<div class="bar-group">
+
+<div class="bar-wrapper">
+<div class="label-top">Load L1</div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.power.percent@%;"></div></div>
+<div class="label-bottom">@VAR output.L1.power.percent@ %</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">100</div><div class="tick" style="bottom: 50%">50</div><div class="tick" style="bottom: 0%">0</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Load L2</div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.power.percent@%;"></div></div>
+<div class="label-bottom">@VAR output.L2.power.percent@ %</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">100</div><div class="tick" style="bottom: 50%">50</div><div class="tick" style="bottom: 0%">0</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Load L3</div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.power.percent@%;"></div></div>
+<div class="label-bottom">@VAR output.L3.power.percent@ %</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">100</div><div class="tick" style="bottom: 50%">50</div><div class="tick" style="bottom: 0%">0</div>
+</div>
+
+</div>
+@ELSE@
+@IFSUPP output.L2.realpower.percent@
+<div class="bar-group">
+
+<div class="bar-wrapper">
+<div class="label-top">Load L1</div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.realpower.percent@%;"></div></div>
+<div class="label-bottom">@VAR output.L1.realpower.percent@ %</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">100</div><div class="tick" style="bottom: 50%">50</div><div class="tick" style="bottom: 0%">0</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Load L2</div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.realpower.percent@%;"></div></div>
+<div class="label-bottom">@VAR output.L2.realpower.percent@ %</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">100</div><div class="tick" style="bottom: 50%">50</div><div class="tick" style="bottom: 0%">0</div>
+</div>
+
+<div class="bar-wrapper">
+<div class="label-top">Load L3</div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.realpower.percent@%;"></div></div>
+<div class="label-bottom">@VAR output.L3.realpower.percent@ %</div>
+</div>
+<div class="y-axis">
+<div class="tick" style="bottom: 100%">100</div><div class="tick" style="bottom: 50%">50</div><div class="tick" style="bottom: 0%">0</div>
+</div>
+
+</div>
+@ELSE@
 @IFSUPP ups.load@
 <div class="bar-group">
 <div class="bar-wrapper">
@@ -188,6 +446,7 @@ h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 
 @IFSUPP ambient.temperature@
 <div class="card">
+<!-- WARNING: Hardcoded for MAX 50 degrees (likely C, probably wrong for F) -->
 <div class="card-header">Environment</div>
 <div class="charts">
 <div class="bar-group">
@@ -208,12 +467,14 @@ h1 { margin: 0; font-size: 1.5rem; color: var(--green); }
 
 <div>@TREELINK_JSON Device data as JSON@ | @TREELINK Device data as HTML table@
 <a href="https://jigsaw.w3.org/css-validator/check/referer"><img
-style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss"
-alt="Valid CSS" title="Valid CSS" height="31" width="88"></a>
+  style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss"
+  alt="Valid CSS" title="Valid CSS" height="31" width="88"></a>
 <a href="https://validator.w3.org/check?uri=referer"><img
-style="float:right" src="https://www.w3.org/Icons/valid-html401"
-alt="Valid HTML 4.01 Strict" title="Valid HTML 4.01 Strict"
-height="31" width="88"></a></div>
+  style="float:right" src="https://www.w3.org/Icons/valid-html401"
+  alt="Valid HTML 4.01 Strict" title="Valid HTML 4.01 Strict"
+  height="31" width="88"></a>
+<p align="right">Network UPS Tools upsstats @ESCAPED_TEMPLATE_VERSION@</p>
+</div>
 
 </div>
 

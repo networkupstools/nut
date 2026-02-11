@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3675 utf-8
+personal_ws-1.1 en 3677 utf-8
 AAC
 AAS
 ABI
@@ -1222,6 +1222,7 @@ SRC
 SSD
 SSSS
 STARTTLS
+STATUSCOLOR
 STB
 STDCALL
 STESTI
@@ -2694,6 +2695,7 @@ natively
 nb
 nbproject
 nbr
+nbsp
 nc
 nd
 nde
