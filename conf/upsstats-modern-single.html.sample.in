@@ -107,7 +107,7 @@ on @HOST@</div>
 @ENDIF@
 </span></div>
 
-<div class="sidebar-row"><span class="sidebar-label">Status:</span> <span class="sidebar-value" style="nowrap">@STATUS@&nbsp;<b style="color: @STATUSCOLOR@">[]</b></span></div>
+<div class="sidebar-row"><span class="sidebar-label">Status:</span> <span class="sidebar-value" style="nowrap">@STATUS  @&nbsp;<b style="color: @STATUSCOLOR@">[]</b></span></div>
 
 @IFSUPP battery.runtime@<div class="sidebar-row"><span class="sidebar-label">Runtime:</span> <span class="sidebar-value">@RUNTIME@</span></div>@ENDIF@
 
