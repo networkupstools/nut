@@ -22,154 +22,154 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
             "http://www.w3.org/TR/html4/strict.dtd">
-
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    @REFRESH@
-    <title>Network UPS Tools: Overview</title>
-    <style>
-        :root {
-            --bg: #0f172a; --card: #1e293b; --card-hover: #2d3748;
-            --text: #f8fafc; --dim: #94a3b8; --green: #4ade80; --border: #334155;
-            --accent: #38bdf8;
-        }
-        * { box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+@REFRESH@
+<title>Network UPS Tools: Overview</title>
+<style>
+:root {
+--bg: #0f172a; --card: #1e293b; --card-hover: #2d3748;
+--text: #f8fafc; --dim: #94a3b8; --green: #4ade80; --border: #334155;
+--accent: #38bdf8;
+}
+* { box-sizing: border-box; }
 
-        body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 4vh 5vw; margin: 0; display: flex; justify-content: center; }
-        .dashboard { width: 100%; max-width: 1400px; display: flex; flex-direction: column; gap: 2rem; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 4vh 5vw; margin: 0; display: flex; justify-content: center; }
+.dashboard { width: 100%; max-width: 1400px; display: flex; flex-direction: column; gap: 2rem; }
 
-        header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;}
-        h1 { margin: 0; font-size: 1.5rem; color: var(--text); }
+header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;}
+h1 { margin: 0; font-size: 1.5rem; color: var(--text); }
 
-        /* Modern Table Wrapper */
-        .table-container { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.5rem 1.5rem; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+/* Modern Table Wrapper */
+.table-container { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.5rem 1.5rem; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-        table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
-        th { padding: 1.25rem 1rem; color: var(--dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid var(--border); font-weight: bold; }
-        td { padding: 1rem; font-size: 0.95rem; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+th { padding: 1.25rem 1rem; color: var(--dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid var(--border); font-weight: bold; }
+td { padding: 1rem; font-size: 0.95rem; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
 
-        /* Row Hover Effect */
-        tr:last-child td { border-bottom: none; }
-        tbody tr:hover { background-color: var(--card-hover); transition: background-color 0.2s; }
+/* Row Hover Effect */
+tr:last-child td { border-bottom: none; }
+tbody tr:hover { background-color: var(--card-hover); transition: background-color 0.2s; }
 
-        /* Button Styles */
-        a { text-decoration: none; }
+/* Button Styles */
+a { text-decoration: none; }
 
-        .host-link a, .tree-link a {
-            display: inline-block;
-            padding: 6px 14px;
-            background-color: rgba(56, 189, 248, 0.1);
-            color: var(--accent);
-            border: 1px solid rgba(56, 189, 248, 0.25);
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-        .host-link a:hover, .tree-link a:hover {
-            background-color: var(--accent);
-            color: var(--bg);
-        }
+.host-link a, .tree-link a {
+display: inline-block;
+padding: 6px 14px;
+background-color: rgba(56, 189, 248, 0.1);
+color: var(--accent);
+border: 1px solid rgba(56, 189, 248, 0.25);
+border-radius: 6px;
+font-weight: 600;
+transition: all 0.2s ease;
+}
+.host-link a:hover, .tree-link a:hover {
+background-color: var(--accent);
+color: var(--bg);
+}
 
-        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
-    </style>
+.status-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+</style>
 </head>
 <body>
 
 <div class="dashboard">
-    <header>
-        <div>
-            <h1>Network UPS Tools</h1>
-            <div style="color: var(--dim)">System Overview</div>
-        </div>
-        <div style="color: var(--dim)">@DATE %a %b %d %X %Z %Y@</div>
-    </header>
+<header>
+<div>
+<h1>Network UPS Tools</h1>
+<div style="color: var(--dim)">System Overview</div>
+</div>
+<div style="color: var(--dim)">@DATE %a %b %d %X %Z %Y@</div>
+</header>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>System</th>
-                    <th>Model</th>
-                    <th>Status</th>
-                    <th>Battery</th>
-                    <th>Input</th>
-                    <th>Output</th>
-                    <th>Load</th>
-                    <th>Temp</th>
-                    <th>Runtime</th>
-                    <th>Details</th>
-                </tr>
-            </thead>
-            <tbody>
-                @FOREACHUPS@
-                <tr>
-                    <td class="host-link">@HOSTLINK@</td>
-                    <td>@VAR ups.model@</td>
-                    <td><span class="status-badge" style="color: @STATUSCOLOR@;">@STATUS@</span></td>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Model</th>
+<th>Status</th>
+<th>Battery</th>
+<th>Input</th>
+<th>Output</th>
+<th>Load</th>
+<th>Temp</th>
+<th>Runtime</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+@FOREACHUPS@
+<tr>
+<td class="host-link">@HOSTLINK@</td>
+<td>@VAR ups.model@</td>
+<td><span class="status-badge" style="color: @STATUSCOLOR@;">@STATUS@</span></td>
 
-                    <td>@IFSUPP battery.charge@@VAR battery.charge@ %@ENDIF@</td>
+<td>@IFSUPP battery.charge@@VAR battery.charge@ %@ENDIF@</td>
 
-                    <td>
-                        @IFSUPP input.L2-L3.voltage@
-                            @VAR input.L1-L2.voltage@ V<br>@VAR input.L2-L3.voltage@ V<br>@VAR input.L3-L1.voltage@ V
-                        @ELSE@
-                        @IFSUPP input.L2-N.voltage@
-                            @VAR input.L1-N.voltage@ V<br>@VAR input.L2-N.voltage@ V<br>@VAR input.L3-N.voltage@ V
-                        @ELSE@
-                        @IFSUPP input.voltage@
-                            @VAR input.voltage@ V
-                        @ENDIF@
-                    </td>
+<td>
+@IFSUPP input.L2-L3.voltage@
+@VAR input.L1-L2.voltage@ V<br>@VAR input.L2-L3.voltage@ V<br>@VAR input.L3-L1.voltage@ V
+@ELSE@
+@IFSUPP input.L2-N.voltage@
+@VAR input.L1-N.voltage@ V<br>@VAR input.L2-N.voltage@ V<br>@VAR input.L3-N.voltage@ V
+@ELSE@
+@IFSUPP input.voltage@
+@VAR input.voltage@ V
+@ENDIF@
+</td>
 
-                    <td>
-                        @IFSUPP output.L2-L3.voltage@
-                            @VAR output.L1-L2.voltage@ V<br>@VAR output.L2-L3.voltage@ V<br>@VAR output.L3-L1.voltage@ V
-                        @ELSE@
-                        @IFSUPP output.L2-N.voltage@
-                            @VAR output.L1-N.voltage@ V<br>@VAR output.L2-N.voltage@ V<br>@VAR output.L3-N.voltage@ V
-                        @ELSE@
-                        @IFSUPP output.voltage@
-                            @VAR output.voltage@ V
-                        @ENDIF@
-                    </td>
+<td>
+@IFSUPP output.L2-L3.voltage@
+@VAR output.L1-L2.voltage@ V<br>@VAR output.L2-L3.voltage@ V<br>@VAR output.L3-L1.voltage@ V
+@ELSE@
+@IFSUPP output.L2-N.voltage@
+@VAR output.L1-N.voltage@ V<br>@VAR output.L2-N.voltage@ V<br>@VAR output.L3-N.voltage@ V
+@ELSE@
+@IFSUPP output.voltage@
+@VAR output.voltage@ V
+@ENDIF@
+</td>
 
-                    <td>
-                        @IFSUPP output.L2.power.percent@
-                            L1: @VAR output.L1.power.percent@%<br>L2: @VAR output.L2.power.percent@%<br>L3: @VAR output.L3.power.percent@%
-                        @ELSE@
-                        @IFSUPP output.L2.realpower.percent@
-                            L1: @VAR output.L1.realpower.percent@%<br>L2: @VAR output.L2.realpower.percent@%<br>L3: @VAR output.L3.realpower.percent@%
-                        @ELSE@
-                        @IFSUPP ups.load@
-                            @VAR ups.load@ %
-                        @ENDIF@
-                    </td>
+<td>
+@IFSUPP output.L2.power.percent@
+L1: @VAR output.L1.power.percent@%<br>L2: @VAR output.L2.power.percent@%<br>L3: @VAR output.L3.power.percent@%
+@ELSE@
+@IFSUPP output.L2.realpower.percent@
+L1: @VAR output.L1.realpower.percent@%<br>L2: @VAR output.L2.realpower.percent@%<br>L3: @VAR output.L3.realpower.percent@%
+@ELSE@
+@IFSUPP ups.load@
+@VAR ups.load@ %
+@ENDIF@
+</td>
 
-                    <td>
-                        @IFSUPP ups.temperature@
-                            @UPSTEMP@ @DEGREES@
-                        @ELSE@
-                        @IFSUPP battery.temperature@
-                            @BATTTEMP@ @DEGREES@
-                        @ENDIF@
-                    </td>
+<td>
+@IFSUPP ups.temperature@
+@UPSTEMP@ @DEGREES@
+@ELSE@
+@IFSUPP battery.temperature@
+@BATTTEMP@ @DEGREES@
+@ENDIF@
+</td>
 
-                    <td>@IFSUPP battery.runtime@@RUNTIME@@ENDIF@</td>
-                    <td class="tree-link">@TREELINK@</td>
-                </tr>
-                @ENDFOR@
-            </tbody>
-        </table>
+<td>@IFSUPP battery.runtime@@RUNTIME@@ENDIF@</td>
+<td class="tree-link">@TREELINK@</td>
+</tr>
+@ENDFOR@
+</tbody>
+</table>
 
-        <hr><div><small>
-        <a href="?json" title="All devices as one JSON document">JSON</a>
-        <a href="https://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"></a>
-        <a href="https://validator.w3.org/check?uri=referer"><img style="float:right" src="https://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01 Strict" height="31" width="88"></a>
-        </small></div>
+<hr><div><small>
+<a href="?json" title="All devices as one JSON document">JSON</a>
+<a href="https://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"></a>
+<a href="https://validator.w3.org/check?uri=referer"><img style="float:right" src="https://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01 Strict" height="31" width="88"></a>
+</small></div>
 
-    </div>
+</div>
 </div>
 
 </body></html>
