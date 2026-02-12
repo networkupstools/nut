@@ -817,6 +817,9 @@ double difftimeval(struct timeval x, struct timeval y);
 double difftimespec(struct timespec x, struct timespec y);
 #endif
 
+/* count the time elapsed since start in milliseconds */
+long elapsed_since_timeval(struct timeval *start);
+
 #ifndef HAVE_USLEEP
 /* int __cdecl usleep(unsigned int useconds); */
 /* Note: if we'd need to define an useconds_t for obscure systems,
