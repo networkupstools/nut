@@ -1313,7 +1313,7 @@ static void display_tree(int verbose)
 
 		printf("<TD>%s</TD>\n", answer[2]);
 		printf("<TD>:</TD>\n");
-		printf("<TD>%s<br></TD>\n", answer[3]);
+		printf("<TD>%s</TD>\n", answer[3]);
 
 		printf("</TR>\n");
 	}
