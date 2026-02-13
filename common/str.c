@@ -34,6 +34,8 @@
 #include <strings.h>	/* for strncasecmp() and strcasecmp() */
 #endif
 
+#include <stdarg.h>	/* get the va_* routines */
+
 #include "nut_stdint.h"
 #include "str.h"
 
@@ -630,6 +632,43 @@ int str_ends_with(const char *s, const char *suff) {
 	return (slen >= sufflen) && (!memcmp(s + slen - sufflen, suff, sufflen));
 }
 
+/* Based on code by "mmdemirbas" posted "Jul 9 '12 at 11:41" to forum page
+ * http://stackoverflow.com/questions/8465006/how-to-concatenate-2-strings-in-c
+ * This concatenates the given number of strings into one freshly allocated
+ * heap object; NOTE that it is up to the caller to free the object afterwards.
+ */
+char *	str_concat(size_t count, ...)
+{
+	va_list ap;
+	size_t i, len, null_pos;
+	char* merged = NULL;
+
+	/* Find required length to store merged string */
+	va_start(ap, count);
+	len = 1; /* room for '\0' in the end */
+	for(i=0 ; i<count ; i++)
+		len += strlen(va_arg(ap, char*));
+	va_end(ap);
+
+	/* Allocate memory to concat strings */
+	merged = (char*)calloc(len,sizeof(char));
+	if (merged == NULL)
+		return merged;
+
+	/* Actually concatenate strings */
+	va_start(ap, count);
+	null_pos = 0;
+	for(i=0 ; i<count ; i++)
+	{
+		char *s = va_arg(ap, char*);
+		strcpy(merged+null_pos, s);
+		null_pos += strlen(s);
+	}
+	va_end(ap);
+
+	return merged;
+}
+
 #ifndef HAVE_STRTOF
 # include <errno.h>
 # include <stdio.h>
@@ -656,4 +695,4 @@ float strtof(const char *nptr, char **endptr)
 
 	return (float)d;
 }
-#endif
+#endif	/* HAVE_STRTOF */
