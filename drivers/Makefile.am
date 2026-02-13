@@ -294,6 +294,10 @@ ve_direct_SOURCES = ve-direct.c
 ve_direct_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 meanwell_ntu_SOURCES = meanwell_ntu.c
 
+#alezz's blazer_soi
+blazer_soi_SOURCES = blazer.c blazer_soi.c
+blazer_soi_LDADD = $(LDADD) -lm
+
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
 # dummy (in NUTSW_DRIVERLIST)
