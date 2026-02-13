@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3660 utf-8
+personal_ws-1.1 en 3677 utf-8
 AAC
 AAS
 ABI
@@ -1222,6 +1222,7 @@ SRC
 SSD
 SSSS
 STARTTLS
+STATUSCOLOR
 STB
 STDCALL
 STESTI
@@ -1582,6 +1583,7 @@ addr
 addrange
 addvar
 addvars
+ade
 adelsystem
 adkorte
 adm
@@ -1719,6 +1721,7 @@ bcdDevice
 bcm
 bcmxcp
 bd
+bdf
 belkin
 belkinunv
 bestfcom
@@ -2110,11 +2113,13 @@ extradata
 faa
 fabula
 facto
+fafc
 failmode
 failover
 fallthrough
 fasttrack
 fatalx
+fbbf
 fc
 fcb
 fcntl
@@ -2422,6 +2427,7 @@ ktrace
 kvm
 labcd
 lan
+lang
 langid
 lasaine
 launchd
@@ -2616,6 +2622,7 @@ middleware
 mincharge
 mingw
 minicol
+minmax
 minruntime
 mins
 minva
@@ -2688,6 +2695,7 @@ natively
 nb
 nbproject
 nbr
+nbsp
 nc
 nd
 nde
@@ -2755,6 +2763,7 @@ notransferoids
 novendor
 nowait
 nowarn
+nowrap
 np
 nspr
 nss
@@ -3042,6 +3051,7 @@ rex
 rexx
 rf
 rfc
+rgba
 rh
 richcomm
 riello
@@ -3320,6 +3330,7 @@ sysutils
 sysvinit
 tagname
 targetArchitecture
+tbody
 tcflush
 tcgetattr
 tcl
@@ -3345,6 +3356,7 @@ tgt
 tgtsize
 tgz
 th
+thead
 timeframe
 timehead
 timername
@@ -3365,6 +3377,8 @@ topFrame
 topbot
 tport
 transactional
+translateX
+translateY
 treemode
 tripplite
 tripplitesu
@@ -3551,9 +3565,11 @@ verifySourceSig
 versa
 versioned
 versioning
+vh
 victron
 victronups
 vid
+viewport
 vin
 vio
 virsh
@@ -3570,6 +3586,7 @@ vscode
 vsnprintf
 vsnprintfcat
 vt
+vw
 wDescriptorLength
 waitbeforereconnect
 wakeup
