@@ -244,9 +244,14 @@ Insert the META header magic for refreshing the page if that variable
 has been set by the browser.  This needs to be in the HEAD section of
 the page.
 
+*@STATUS separator@*::
 *@STATUS@*::
 Expand the abbreviations in the ups.status variable -- OL becomes
-"On line", OB becomes "On battery", and so on.
+"On line", OB becomes "On battery", and so on.  Reported values are
+separated by the specified optional separator (`<br/>` if not specified),
+which starts at the next character after the "STATUS<space>" (e.g.
+a `@STATUS @` directive might be used to avoid any separation, or
+`@STATUS  @` to separate by spaces.
 
 *@STATUSCOLOR@*::
 Insert red, green, or yellow color triplets depending on the severity of

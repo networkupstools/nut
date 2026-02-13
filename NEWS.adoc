@@ -348,6 +348,8 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Now has JSON output mode via `?json` (or `&json`) CGI query parameter.
      New `@TREELINK_JSON@` keyword added and HTML templates updated to expose
      these JSON documents when browsing. [issue #2524, PRs #3171, #3249]
+   * The `@STATUS@` directive now optionally supports separators (not only
+     the hard-coded `<br/>` of the older versions. [issue #2525, PR #3318]
    * Handle `device.model` in addition to `ups.model` in upsstats HTML
      templates. [#3180]
    * Introduced a `@NUT_UPSSTATS_TEMPLATE@` command which the HTML template
