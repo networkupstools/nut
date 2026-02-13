@@ -66,6 +66,8 @@ https://github.com/networkupstools/nut/milestone/12
      reality agrees with a status reported by device/protocol (if any).
      This is also a step in direction of eventually providing a common
      `runtimecal` style fallback to all drivers. [issue #3146, PR #3156]
+   * Generalize `elapsed_since_timeval()` code, originally repeated in
+     several modbus drivers. [issue #1938, PR #3321]
    * Introduced `NOTIFY_STATE_EXTEND_TIMEOUT` option and relevant variables
      for `upsnotify()` method, so we can tell systemd to not kill the service
      unit if its shutdown takes long (see also the `SHUTDOWNEXIT` option in
