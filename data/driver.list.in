@@ -64,6 +64,7 @@
 "Advice"	"ups"	"2"	"Top V Pro 6-10K"	"USB"	"blazer_usb"	# https://www.advice.co.il/en/advice-products/ups-systems/ups-online-systems/one-phase-ups-5k-10k/%D7%90%D7%9C-%D7%A4%D7%A1%D7%A7-%D7%90%D7%95%D7%9F-%D7%9C%D7%99%D7%99%D7%9F-top-v-pro-6-10k-detail https://github.com/networkupstools/nut/issues/744
 "Advice"	"ups"	"2"	"PRS850"	"USB"	"blazer_usb"
 "Advice"	"ups"	"2"	"PRV700 Pro"	"USB"	"blazer_usb"
+"Accurat"	"ups"	"2"	"Flux 850"	"(USB ID 0925:1234, Richcomm V2.0, armac subdriver, megatec protocol)"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/2738
 
 "AEC"	"ups"	"1"	"MiniGuard UPS 700"	"Megatec M2501 cable"	"genericups upstype=21"
 
