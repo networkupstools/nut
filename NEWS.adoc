@@ -66,6 +66,8 @@ https://github.com/networkupstools/nut/milestone/12
      reality agrees with a status reported by device/protocol (if any).
      This is also a step in direction of eventually providing a common
      `runtimecal` style fallback to all drivers. [issue #3146, PR #3156]
+   * Generalize `elapsed_since_timeval()` code, originally repeated in
+     several modbus drivers. [issue #1938, PR #3321]
    * Introduced `NOTIFY_STATE_EXTEND_TIMEOUT` option and relevant variables
      for `upsnotify()` method, so we can tell systemd to not kill the service
      unit if its shutdown takes long (see also the `SHUTDOWNEXIT` option in
@@ -346,6 +348,8 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Now has JSON output mode via `?json` (or `&json`) CGI query parameter.
      New `@TREELINK_JSON@` keyword added and HTML templates updated to expose
      these JSON documents when browsing. [issue #2524, PRs #3171, #3249]
+   * The `@STATUS@` directive now optionally supports separators (not only
+     the hard-coded `<br/>` of the older versions. [issue #2525, PR #3318]
    * Handle `device.model` in addition to `ups.model` in upsstats HTML
      templates. [#3180]
    * Introduced a `@NUT_UPSSTATS_TEMPLATE@` command which the HTML template

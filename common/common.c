@@ -2734,6 +2734,31 @@ double difftimespec(struct timespec x, struct timespec y)
 }
 #endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 
+/* returns the time elapsed since start in milliseconds */
+long elapsed_since_timeval(struct timeval *start)
+{
+	long	rval;
+	struct timeval	end;
+
+	rval = gettimeofday(&end, NULL);
+	if (rval < 0) {
+		upslog_with_errno(LOG_ERR, "elapsed_since_timeval");
+	}
+	if (start->tv_usec < end.tv_usec) {
+		suseconds_t	nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
+		end.tv_usec -= 1000000 * nsec;
+		end.tv_sec += nsec;
+	}
+	if (start->tv_usec - end.tv_usec > 1000000) {
+		suseconds_t	nsec = (start->tv_usec - end.tv_usec) / 1000000;
+		end.tv_usec += 1000000 * nsec;
+		end.tv_sec -= nsec;
+	}
+	rval = (end.tv_sec - start->tv_sec) * 1000 + (end.tv_usec - start->tv_usec) / 1000;
+
+	return rval;
+}
+
 /* Help avoid cryptic "upsnotify: notify about state 4 with libsystemd:"
  * (with only numeric codes) below */
 const char *str_upsnotify_state(upsnotify_state_t state) {
