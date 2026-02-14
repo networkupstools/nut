@@ -241,6 +241,66 @@ static info_lkp_t powercom_shutdown_info[] = {
 	{ 0, NULL, powercom_shutdown_fun, powercom_shutdown_nuf }
 };
 
+/* Output section shutdown: uses discrete delay index (1-18) for
+ * UPS.Output.DelayBeforeShutdown (ReportID 0x23, 8-bit).
+ * Some Powercom UPS models (e.g. RPT-800AP, BNT-AP series) handle
+ * shutdown more reliably via the Output section registers than via
+ * PowerSummary. The native UPSMON PRO software uses these registers.
+ *
+ * Delay index table (from protocol spec):
+ *   Index  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
+ *   Value 12s 18s 24s 30s 36s 42s 48s 54s  1m  2m  3m  4m  5m  6m  7m  8m  9m 10m
+ */
+static double powercom_shutdown_output_nuf(const char *value)
+{
+	const char	*s = dstate_getinfo("ups.delay.shutdown");
+	const char	*cfg = getval("offdelay");
+	int iv;
+	uint8_t command;
+
+	if (value && *value)
+		iv = atoi(value);
+	else if (cfg && *cfg)
+		iv = atoi(cfg);
+	else if (s && *s)
+		iv = atoi(s);
+	else
+		iv = 60;
+
+	/* Convert seconds to discrete delay index per protocol spec */
+	if (iv <= 12)		command = 1;
+	else if (iv <= 18)	command = 2;
+	else if (iv <= 24)	command = 3;
+	else if (iv <= 30)	command = 4;
+	else if (iv <= 36)	command = 5;
+	else if (iv <= 42)	command = 6;
+	else if (iv <= 48)	command = 7;
+	else if (iv <= 54)	command = 8;
+	else if (iv <= 60)	command = 9;
+	else if (iv <= 120)	command = 10;
+	else if (iv <= 180)	command = 11;
+	else if (iv <= 240)	command = 12;
+	else if (iv <= 300)	command = 13;
+	else if (iv <= 360)	command = 14;
+	else if (iv <= 420)	command = 15;
+	else if (iv <= 480)	command = 16;
+	else if (iv <= 540)	command = 17;
+	else			command = 18;
+
+	upsdebugx(3, "%s: offdelay=%d -> discrete index=%d (ReportID 0x23)",
+		__func__, iv, command);
+
+	return (double)command;
+}
+
+static info_lkp_t powercom_shutdown_output_info[] = {
+	{ 0, NULL, powercom_shutdown_fun, powercom_shutdown_output_nuf }
+};
+
+static info_lkp_t powercom_stayoff_output_info[] = {
+	{ 0, NULL, NULL, powercom_shutdown_output_nuf }
+};
+
 static double powercom_stayoff_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
@@ -657,6 +717,9 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "test.battery.start.quick", 0, 0, "UPS.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
+	/* Output section shutdown (more reliable on RPT/BNT-AP series) */
+	{ "shutdown.return", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_shutdown_output_info },
+	{ "shutdown.stayoff", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_stayoff_output_info },
 	{ "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, NULL, HU_TYPE_CMD, powercom_startup_info },
 	{ "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_shutdown_info },
 	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_stayoff_info },
