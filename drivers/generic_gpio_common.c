@@ -75,13 +75,13 @@ struct gpioups_t *generic_gpio_open(const char *chipName) {
 	if (!rules)	/* rules is required configuration parameter */
 		fatalx(EXIT_FAILURE, "UPS status calculation rules not specified");
 
-	upsfdlocal = xcalloc(1, sizeof(*upsfdlocal));
+	upsfdlocal = (struct gpioups_t *)xcalloc(1, sizeof(*upsfdlocal));
 
 	upsfdlocal->runOptions = 0; /*	don't use ROPT_REQRES and ROPT_EVMODE yet	*/
 	upsfdlocal->chipName = chipName;
 
 	get_ups_rules(upsfdlocal, (unsigned char *)rules);
-	upsfdlocal->upsLinesStates = xcalloc(upsfdlocal->upsLinesCount, sizeof(int));
+	upsfdlocal->upsLinesStates = (int *)xcalloc(upsfdlocal->upsLinesCount, sizeof(int));
 
 	return upsfdlocal;
 }
@@ -122,7 +122,7 @@ void add_rule_item(struct gpioups_t *upsfdlocal, int newValue) {
 	int	subCount = (upsfdlocal->rules[upsfdlocal->rulesCount - 1]) ? upsfdlocal->rules[upsfdlocal->rulesCount - 1]->subCount + 1 : 1;
 	int	itemSize = subCount * sizeof(upsfdlocal->rules[0]->cRules[0]) + sizeof(rulesint);
 
-	upsfdlocal->rules[upsfdlocal->rulesCount - 1] = xrealloc(upsfdlocal->rules[upsfdlocal->rulesCount - 1], itemSize);
+	upsfdlocal->rules[upsfdlocal->rulesCount - 1] = (struct rulesint_t *)xrealloc(upsfdlocal->rules[upsfdlocal->rulesCount - 1], itemSize);
 	upsfdlocal->rules[upsfdlocal->rulesCount - 1]->subCount = subCount;
 	upsfdlocal->rules[upsfdlocal->rulesCount - 1]->cRules[subCount - 1] = newValue;
 }
@@ -197,8 +197,8 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 				} else {
 					lexStatus = 1;
 					upsfdlocal->rulesCount++;
-					upsfdlocal->rules = xrealloc(upsfdlocal->rules, (size_t)(sizeof(upsfdlocal->rules[0])*upsfdlocal->rulesCount));
-					upsfdlocal->rules[upsfdlocal->rulesCount -1 ] = xcalloc(1, sizeof(rulesint));
+					upsfdlocal->rules = (struct rulesint_t **)xrealloc(upsfdlocal->rules, (size_t)(sizeof(upsfdlocal->rules[0])*upsfdlocal->rulesCount));
+					upsfdlocal->rules[upsfdlocal->rulesCount -1 ] = (struct rulesint_t *)xcalloc(1, sizeof(rulesint));
 					strncpy(upsfdlocal->rules[upsfdlocal->rulesCount - 1]->stateName, (char *)(rulesString + startPos), endPos - startPos);
 					upsfdlocal->rules[upsfdlocal->rulesCount - 1]->stateName[endPos - startPos] = 0;
 				}
@@ -291,7 +291,7 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 			if (!pinOnList) {
 				if (upsfdlocal->rules[i]->cRules[j] >= 0) {
 					upsfdlocal->upsLinesCount++;
-					upsfdlocal->upsLines = xrealloc(upsfdlocal->upsLines, sizeof(upsfdlocal->upsLines[0])*upsfdlocal->upsLinesCount);
+					upsfdlocal->upsLines = (int *)xrealloc(upsfdlocal->upsLines, sizeof(upsfdlocal->upsLines[0])*upsfdlocal->upsLinesCount);
 					upsfdlocal->upsLines[upsfdlocal->upsLinesCount - 1] = upsfdlocal->rules[i]->cRules[j];
 					if (upsfdlocal->upsLines[upsfdlocal->upsLinesCount - 1] > upsfdlocal->upsMaxLine) {
 						upsfdlocal->upsMaxLine = upsfdlocal->upsLines[upsfdlocal->upsLinesCount - 1];

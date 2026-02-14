@@ -24,6 +24,7 @@
 	<mib2nut auto_check=".1.3.6.1.4.1.3808.1.1.1.1.1.1.0" mib_name="cyberpower" oid=".1.3.6.1.4.1.3808" />
 	<mib2nut auto_check=".1.3.6.1.4.1.3808.1.1.1.1.1.1.0" mib_name="cyberpower" oid=".1.3.6.1.4.1.3808.1.1.1" />
 	<mib2nut auto_check=".1.3.6.1.4.1.4555.1.1.1.1.1.1.0" mib_name="netvision" oid=".1.3.6.1.4.1.4555.1.1.1" />
+	<mib2nut auto_check=".1.3.6.1.4.1.476.1.42.2.4.2.1.4.1" mib_name="vertiv" oid=".1.3.6.1.4.1.476.1.42" />
 	<mib2nut auto_check=".1.3.6.1.4.1.4779.1.3.5.2.1.24.1" mib_name="baytech" oid=".1.3.6.1.4.1.4779" />
 	<mib2nut auto_check=".1.3.6.1.4.1.4779.1.3.5.5.1.3.2.1" mib_name="baytech_rpc3nc" oid=".1.3.6.1.4.1.4779" />
 	<mib2nut auto_check=".1.3.6.1.4.1.534.10.1.2.1.0" mib_name="eaton_ats30" oid=".1.3.6.1.4.1.534.10.1" />

@@ -317,7 +317,7 @@ NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE([confdir-examples], [DIRPATH], [Com
 
 dnl ---------------------------------------------------------------------
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
-AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
+AC_MSG_CHECKING([whether this make implementation supports 'export VAR=VAL' syntax])
 dnl # using printf formatting for some funniner shells out there
 nut_am_output="`printf 'export VAR=VAL\ntest:\n\t@echo \"VAR=%s%sVAR%s\"\n' '\$' '(' ')' | ${MAKE-make} -f - test`"
 nut_am_result="$?"
@@ -330,6 +330,24 @@ AS_IF([test x"${nut_am_result}" = x0 -a x"${nut_am_output}" = x"VAR=VAL"], [
 ])
 AC_SUBST(NUT_AM_MAKE_CAN_EXPORT)
 
+dnl ---------------------------------------------------------------------
+dnl Some versions of BSD make (e.g. in NetBSD 11) may require this syntax
+dnl in lieu of the more standard "+" prefix, but at least GNU make exploded
+dnl with it, so we can not use it everywhere:
+AC_MSG_CHECKING([whether this make implementation supports a .MAKE special source (pseudo-goal for sub-makes)])
+dnl # using printf formatting for some funniner shells out there
+nut_am_output="`printf 'sub: .MAKE\n\t@printf \\\"test:\\\\n\\\\t@echo %s\\\\n\\\" | $(MAKE) -f - test\n' '\\\\\\\"Hello world\\\\\\\"' | ${MAKE-make} -f - sub`"
+nut_am_result="$?"
+AS_IF([test x"${nut_am_result}" = x0 -a x"${nut_am_output}" = x"Hello world"], [
+	dotMAKE=".MAKE"
+	AC_MSG_RESULT(yes)
+], [
+	dotMAKE=""
+	AC_MSG_RESULT(no: got '${nut_am_output}')
+])
+AC_SUBST(dotMAKE)
+
+dnl ---------------------------------------------------------------------
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
 NUT_CHECK_PKGCONFIG
 
@@ -393,8 +411,8 @@ test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
 
 AS_CASE([x"${nut_with_confdir}"],
-	[yes], [AC_MSG_ERROR([--with-confdir should specify a path name or expansible expression])],
-	[/*|?:\*|?:/*|*/*|*'\'*], [
+	[xyes], [AC_MSG_ERROR([--with-confdir should specify a path name or expansible expression])],
+	[x/*|x?":\\"*|x?:/*|x*/*|x*'\'*], [
 		AC_MSG_NOTICE([A non-trivial --with-confdir path was specified (${nut_with_confdir}); any --with-confdir-suffix (${nut_with_confdir_suffix}) or --sysconfdir (${sysconfdir}) values are disregarded])
 	], [
 		RESULT_COMMENT=""
@@ -1300,9 +1318,13 @@ AC_CHECK_HEADER([poll.h],
         [Define to 1 if you have <poll.h>.])])
 
 SEMLIBS=""
+nut_have_semaphore_h=no
+nut_have_semaphore_unnamed=no
+nut_have_semaphore_named=no
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
+     nut_have_semaphore_h=yes
 
      AC_LANG_PUSH([C])
      myLIBS="${LIBS}"
@@ -1339,6 +1361,7 @@ sem_destroy(&semaphore);
         [AC_DEFINE([HAVE_SEMAPHORE_UNNAMED], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_init() and sem_destroy() for unnamed semaphores.])
          AC_MSG_RESULT([ok])
+         nut_have_semaphore_unnamed=yes
         ],
         [AC_MSG_RESULT([no])]
      )
@@ -1363,6 +1386,7 @@ if (semaphore != SEM_FAILED)
         [AC_DEFINE([HAVE_SEMAPHORE_NAMED], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_open() and sem_close() for named semaphores.])
          AC_MSG_RESULT([ok])
+         nut_have_semaphore_named=yes
         ],
         [AC_MSG_RESULT([no])]
      )
@@ -1371,8 +1395,28 @@ if (semaphore != SEM_FAILED)
      AC_LANG_POP([C])
     ]
 )
-AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, test -n "${SEMLIBS}")
+AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, [test -n "${SEMLIBS}"])
+AS_IF([test -n "${SEMLIBS}" -o x"${nut_have_semaphore_h}" = xyes -o x"${nut_have_semaphore_unnamed}" = xyes -o x"${nut_have_semaphore_named}" = xyes],
+    [nut_have_semaphore_ability=yes],
+    [nut_have_semaphore_ability=no])
 
+dnl ----------------------------------------------------------------------
+dnl Check for --with-threading request
+
+NUT_ARG_WITH([threading],
+    [If it is possible to parallelize some tools (e.g. nut-scanner), do so?],
+    [auto])
+
+AS_CASE(["${nut_with_threading}"],
+    [""|yes], [AS_IF([test x"${nut_have_semaphore_ability}" = xyes], [], [AC_MSG_ERROR([pthread support was required but libraries not detected])])],
+    [auto],[AS_IF([test x"${nut_have_semaphore_ability}" = xyes], [nut_with_threading=yes], [nut_with_threading=no])],
+    [no], [],
+        [AC_MSG_ERROR([Unsupported value for --with-threading option: "${nut_with_threading}"])]
+)
+NUT_REPORT_FEATURE([Enable support for parallelization of some tools], [${nut_with_threading}], [${SEMLIBS}],
+					[WITH_THREADING], [Define to enable build with threading support])
+
+dnl ----------------------------------------------------------------------
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit setlogmask)
@@ -1616,6 +1660,24 @@ if (res != 0) return res
 AS_IF([test x"${ac_cv_func_strdup}" = xyes],
     [AC_DEFINE([HAVE_STRDUP], 1, [defined if standard library has, and C standard allows, the strdup(s) method])],
     [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+AC_CACHE_CHECK([for %zu as PRIuSIZE],
+    [ac_cv_printfmt_zu],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdlib.h>
+],
+            [[size_t n = 123;
+char buf[64];
+snprintf(buf, sizeof(buf), "%zu", n);
+return !strcmp(buf, "123");
+]])],
+        [ac_cv_printfmt_zu=yes], [ac_cv_printfmt_zu=no]
+    )])
+AS_IF([test x"${ac_cv_printfmt_zu}" = xyes],
+    [AC_DEFINE([HAVE_PRINTF_ZU], 1, [defined if standard library has, and C standard allows, the printf("%zu", size_t) support])],
+    [AC_MSG_WARN([Desired C library support for printf("%zu", size_t) not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
 AC_CACHE_CHECK([for va_copy(dest,src)],
@@ -2316,6 +2378,7 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_powerman}"; then with_powerman="yes"; fi
 		if test -z "${with_modbus}"; then with_modbus="yes"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="yes"; fi
+		if test -z "${with_upower}"; then with_upower="yes"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
 		if test -z "${with_gpio}"; then
@@ -2353,6 +2416,7 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_upower}"; then with_upower="${withval}"; fi
 		if test -z "${with_gpio}"; then with_gpio="${withval}"; fi
 		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
 		if test -z "${with_macosx_ups}"; then with_macosx_ups="${withval}"; fi
@@ -2369,7 +2433,8 @@ AC_ARG_WITH(drivers,
 				SERIAL_DRIVERLIST USB_LIBUSB_DRIVERLIST SERIAL_USB_DRIVERLIST
 				SNMP_DRIVERLIST NEONXML_DRIVERLIST
 				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
-				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST"
+				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST
+				UPOWER_DRIVERLIST"
 
 			dnl Gets ONE Makefile assignment value
 			get_drivers_makefile_value() (
@@ -2520,6 +2585,11 @@ AC_ARG_WITH(drivers,
 										[AC_MSG_NOTICE([Requiring --with-gpio=yes for driver "$DRV"])
 										with_gpio=yes]
 									)],
+								[UPOWER_DRIVERLIST], [
+									AS_IF([test -z "${with_upower}"],
+										[AC_MSG_NOTICE([Requiring --with-upower=yes for driver "$DRV"])
+										with_upower=yes]
+									)],
 
 								[AC_MSG_WARN([Unhandled DRVLIST_NAME=$DRVLIST_NAME])]
 							)
@@ -2553,7 +2623,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, libxml2, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, dev-libnutconf, pynut, dmf, snmp_dmf]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, libxml2, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), upower, macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, dev-libnutconf, pynut, dmf, snmp_dmf]),
 dnl ### Not forced:   lua, dmf_lua, snmp_dmf_lua
 [
 	if test -n "${withval}"; then
@@ -2601,6 +2671,7 @@ dnl		if test -z "${with_snmp_dmf_lua}"; then with_snmp_dmf_lua="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_upower}"; then with_upower="${withval}"; fi
 		if test -z "${with_dmf}"; then with_dmf="${withval}"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
@@ -2694,6 +2765,7 @@ dnl Note that production drivers must conform to docs/nut-names.txt
 NUT_ARG_WITH([unmapped-data-points],
     [represent USB-HID and SNMP data points discovered during subdriver generation but not mapped to nut-names yet (no, yes, yes-if-not-DMF)],
     [no])
+dnl Note the final decision is made far below, after DMF option processing.
 
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
@@ -2740,8 +2812,14 @@ DEFAULT_MAN_DIR_AS_BASE='m4nut_DEFAULT_MAN_DIR_AS_BASE'
 
 case "${target_os}" in
     solaris*|sunos*|SunOS*|illumos*)
-        dnl Note: this regards target OS standard layout
+        dnl Note: this regards target OS standard layout as documented in
+        dnl https://docs.oracle.com/cd/E23824_01/html/821-1451/gladp.html
         dnl but may not fit certain packaging projects
+        dnl FIXME https://github.com/networkupstools/nut/issue/3314 :
+        dnl  If we have no tools or wish to build man pages, and would
+        dnl  just deliver what we have in dist tarball (or otherwise), we
+        dnl  must keep the original names and cross-links of files we copy
+        dnl  (no section substitutions then!)
         DEFAULT_MAN_SECTION_CMD_SYS="1m"
         DEFAULT_MAN_DIR_AS_BASE="no"
         ;;
@@ -2874,6 +2952,8 @@ dnl Platform-dependent drivers, currently their detection code is directly
 dnl spelled out in configure.ac
 NUT_ARG_WITH([macosx_ups], [build and install Mac OS X Power Sources meta-driver], [auto])
 NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
+NUT_ARG_WITH([upower], [build and install UPower driver and nut-scanner support (requires GLib/GIO)], [auto])
+NUT_CHECK_LIBGLIB
 
 dnl A Python GUI client application for the sysadmin desktop
 dnl (not necessarily on the NUT server itself):
@@ -3023,7 +3103,6 @@ NUT_REPORT_FEATURE([enable Avahi support], [${nut_with_avahi}], [],
 					[WITH_AVAHI], [Define to enable Avahi support])
 
 dnl ----------------------------------------------------------------------
-
 dnl checks related to --with-powerman
 
 dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto".
@@ -3141,8 +3220,14 @@ if test "${nut_with_gpio}" != "no"; then
 fi
 
 dnl NOTE: m4 scriptlet also defines WITH_LIBGPIO_VERSION like 0x00020000 in config.h
-NUT_REPORT_DRIVER([build GPIO driver (library v${GPIO_VERSION})], [${nut_with_gpio}], [${nut_gpio_lib}],
+AS_IF([test x"${GPIO_VERSION}" = xnone], [
+	REPORT_GPIO_VERSION="library version not detected"
+],[
+	REPORT_GPIO_VERSION="library v${GPIO_VERSION}"
+])
+NUT_REPORT_DRIVER([build GPIO driver (${REPORT_GPIO_VERSION})], [${nut_with_gpio}], [${nut_gpio_lib}],
 					[WITH_GPIO], [Define to enable GPIO support])
+unset REPORT_GPIO_VERSION
 
 dnl ----------------------------------------------------------------------
 dnl The Mac OS X meta-driver looks at IOKit Power Sources keys managed by
@@ -3164,6 +3249,31 @@ fi
 NUT_REPORT_DRIVER([build Mac OS X meta-driver],
 			[${nut_with_macosx_ups}], [${nut_macosx_ups_lib}],
 			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-upower
+dnl Check if we have detected libGLib / libGIO above (Required for the
+dnl nut-upower driver and/or nut-scanner UPower support)
+dnl NOTE: Do not confuse libglib{2} (GNOME) with glibc (part of compiler)
+dnl ----------------------------------------------------------------------
+
+AC_MSG_CHECKING([whether to build nut-upower driver and nut-scanner support])
+AS_IF([test "${nut_have_libglib}${nut_have_libgio}" = "yesyes"], [
+	AS_CASE(["${nut_with_upower}"],
+		[yes|auto], [nut_with_upower=yes]
+	)
+], [
+	AS_CASE(["${nut_with_upower}"],
+		[yes], [AC_MSG_ERROR([GLib/GIO not found but requested via --with-upower])],
+		[auto],[AC_MSG_WARN([GLib/GIO not found. The 'nut-upower' driver will not be built.])]
+	)
+	nut_with_upower=no
+])
+
+AC_MSG_RESULT(${nut_with_upower})
+NUT_REPORT_DRIVER([build UPower driver and nut-scanner support],
+			[${nut_with_upower}], [],
+			[WITH_UPOWER], [Define to build UPower driver and nut-scanner support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with_linux_i2c
@@ -3398,7 +3508,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     PYTHON2_TEST_MODULES="re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser"
     PYTHON3_TEST_MODULES_QT5="re,glob,codecs,PyQt5.uic,configparser"
     PYTHON3_TEST_MODULES_QT6="re,glob,codecs,PyQt6.uic,configparser"
-    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
+    if test -n "${PYTHON2_VERSION_INFO_REPORT}" -a -n "${PYTHON2}" ; then
         AC_MSG_CHECKING([if we have Python2 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
@@ -3452,7 +3562,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         fi
     fi
 
-    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" -a -n "${PYTHON3}" ; then
         AC_MSG_CHECKING([if we have Python3 Qt5 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES_QT5}" 1>&5 2>&5 \
         ; then
@@ -3468,7 +3578,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         fi
     fi
 
-    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" -a -n "${PYTHON3}" ; then
         AC_MSG_CHECKING([if we have Python3 Qt6 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES_QT6}" 1>&5 2>&5 \
         ; then
@@ -3486,7 +3596,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
 
     dnl Fall back to default interpreter
     if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}${nut_with_nut_monitor_py3qt6}" \
-    && test -n "${PYTHON_VERSION_INFO_REPORT}" \
+    && test -n "${PYTHON_VERSION_INFO_REPORT}" -a -n "${PYTHON}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
     ; then
@@ -4049,6 +4159,11 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
+		if test x"${can_build_doc_man}" != xyes && test x"${have_disted_doc_man}" = xyes && test x"${nut_doc_build_target_flag}" != xno ; then
+			dnl https://github.com/networkupstools/nut/issue/3314
+			AC_MSG_NOTICE([Seems we can not build man pages, but have some pre-built ones...])
+			dnl want_disted_doc_man=yes
+		fi
 		can_install_doc_man=no
 		if test "${want_disted_doc_man}" = yes && ( test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ) ; then
 			AC_MSG_NOTICE([Requested, and can, install pre-built distributed copies of ${nut_doc_build_target_base} documentation])
@@ -4081,6 +4196,9 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 						if test "${have_disted_doc_man}" = yes || test "${have_disted_doc_man}" = yes-placeholder ; then
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 							DOC_INSTALL_DISTED_MANS="yes"
+							dnl Avoid rebuilding existing build products due to their timestamp dependencies;
+							dnl ignore "touch" errors due to e.g. read-only sources (distcheck, ISO image, etc.):
+							touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
 							can_install_doc_man=yes
 						else
 							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent; will reflect on this below])
@@ -4403,10 +4521,10 @@ case "${nut_with_docs_changelog_start}" in
 				dnl # For the FTY NUT fork, the interesting list is differences from common master
 				GITLOG_START_POINT=master
 			 ], [
-				GITLOG_START_POINT=v"`echo \"${NUT_SOURCE_GITREV_NUMERIC}\" | sed -e 's/^\(@<:@0-9@:>@*\.@<:@0-9@:>@*\.@<:@0-9@:>@*\)@<:@^0-9@:>@*.*$/\1/'`" \
-				 && test x"${GITLOG_START_POINT}" != xv \
-				 || GITLOG_START_POINT="master"
-			    ])
+			 GITLOG_START_POINT=v"`echo \"${NUT_SOURCE_GITREV_NUMERIC}\" | sed -e 's/^\(@<:@0-9@:>@*\.@<:@0-9@:>@*\.@<:@0-9@:>@*\)@<:@^0-9@:>@*.*$/\1/'`" \
+			 && test x"${GITLOG_START_POINT}" != xv \
+			 || GITLOG_START_POINT="master"
+			])
 			])
 		;;
 	*) dnl # Else assume this is a git hash/tag/branch...
@@ -7283,9 +7401,12 @@ AS_CASE([${target_os}],
         AC_MSG_NOTICE([FWIW, assuming ABS_TOP_SRCDIR="$ABS_TOP_SRCDIR" and ABS_TOP_BUILDDIR="$ABS_TOP_BUILDDIR"])
 ])
 
-dnl Use these at best for tests (e.g. nutconf), not production code:
+dnl Use these at best for tests (e.g. nutconf, NIT), not production code:
 AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
 AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
+
+AC_SUBST(ABS_TOP_SRCDIR)
+AC_SUBST(ABS_TOP_BUILDDIR)
 
 dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING([whether to install External API integration script: Enphase Monitor])
@@ -7789,4 +7910,7 @@ AS_IF([test x"${theMAKE}" = x], [theMAKE="make"])
 AC_MSG_NOTICE([==========================================================])
 AC_MSG_NOTICE([Configuration complete: Run '$theMAKE' to build ${NUT_SOURCE_VERSION_REPORT} now.])
 AC_MSG_NOTICE([You may use parallelism if supported by your hardware and 'make' implementation, e.g. '$theMAKE -j 8'])
+AS_IF([test x"${dotMAKE}" = x.MAKE], [
+AC_MSG_NOTICE([WARNING: do not use (parallel) GNU make with this build configuration!])
+])
 AC_MSG_NOTICE([==========================================================])

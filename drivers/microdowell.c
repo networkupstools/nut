@@ -246,8 +246,8 @@ static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned 
 			{
 			/* FramePointer to valid data! */
 			p = InpBuff + ups.FramePointer ;
-			/* p now point to valid data.
-			 check if it is a error code. */
+			/* p now points to valid data.
+			 * check if it is a error code. */
 			ErrCode = CheckErrCode(p) ;
 			if (!ErrCode)
 				{
@@ -270,7 +270,7 @@ static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned 
 			if (ups.ErrCount > 100)
 			ups.ErrCount = 100 ;
 		}
-	return(NULL) ;	/* There have been errors in the reading of the data */
+	return((unsigned char *)NULL) ;	/* There have been errors in the reading of the data */
 }
 
 static int detect_hardware(void)
@@ -908,12 +908,12 @@ void upsdrv_initinfo(void)
 	if (detect_hardware() == -1)
 		{
 		fatalx(EXIT_FAILURE,
-		       "Unable to detect a Microdowell's  Enterprise UPS on port %s\nCheck the cable, port name and try again", device_path);
+			"Unable to detect a Microdowell's Enterprise UPS on port %s\nCheck the cable, port name and try again", device_path);
 		}
 
-	/* I set the correspondig UPS variables
-	   They were read in 'detect_hardware()'
-	   some other variables were set in 'detect_hardware()' */
+	/* I set the corresponding UPS variables
+	 * They were read in 'detect_hardware()'
+	 * some other variables were set in 'detect_hardware()' */
 	dstate_setinfo("ups.model", "Enterprise N%s", ups.UpsModel+3) ;
 	dstate_setinfo("ups.power.nominal", "%d", atoi(ups.UpsModel+3) * 100) ;
 	dstate_setinfo("ups.realpower.nominal", "%d", atoi(ups.UpsModel+3) * 60) ;
@@ -1056,7 +1056,7 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, B19200) ;
 
 	/* need to clear RTS and DTR: otherwise with default cable, communication will be problematic
-	   It is the same as removing pin7 from cable (pin 7 is needed for Plug&Play compatibility) */
+	 * It is the same as removing pin7 from cable (pin 7 is needed for Plug&Play compatibility) */
 	ser_set_dtr(upsfd, 0);
 	ser_set_rts(upsfd, 0);
 

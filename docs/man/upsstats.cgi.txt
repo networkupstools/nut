@@ -48,9 +48,24 @@ The web page that is displayed is actually a template containing
 commands to `upsstats` which are replaced by status information.
 
 The default file used for the overview of devices is `upsstats.html`.
+An alternate template may be provided by `&template_list=...` CGI
+query option; relevant file must be allowed via `CUSTOM_TEMPLATE_LIST`
+option in linkman:hosts.conf[5].
 
 When monitoring a single UPS, the file displayed is
 `upsstats-single.html`.
+An alternate template may be provided by `&template_single=...` CGI
+query option; relevant file must be allowed via `CUSTOM_TEMPLATE_SINGLE`
+option in linkman:hosts.conf[5].
+
+Alternate templates must be structured similarly to default ones,
+located in the same directory, and contain `.htm` in the file name.
+You can specify in the query string part of the URI (for example,
+in your local `index.html` and/or added cells of `header.html`) as e.g.
+
+------
+.../cgi-bin/upsstats.cgi?template_single=custom-s.html&template_list=custom-l.html
+------
 
 The format of these files, including the possible commands, is
 documented in linkman:upsstats.html[5].
@@ -83,7 +98,7 @@ parameter is also provided:
 In both modes, each UPS object includes:
 
 * *host*: The UPS identifier (e.g., "myups@localhost")
-* *desc*: The host description from ``hosts.conf``
+* *desc*: The host description from `hosts.conf`
 * *status_raw*: The raw status string (e.g., "OL")
 * *status_parsed*: An array of human-readable status strings
   (e.g., ["Online"])

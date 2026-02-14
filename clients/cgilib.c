@@ -31,7 +31,10 @@ static char *unescape(char *buf)
 	char	ch, *newbuf, hex[8];
 
 	buflen = strlen(buf) + 2;
-	newbuf = xmalloc(buflen);
+	newbuf = (char *)xmalloc(buflen);
+	if (newbuf == NULL) {
+		return NULL;
+	}
 	*newbuf = '\0';
 
 	fflush(stdout);
@@ -84,8 +87,15 @@ void extractcgiargs(void)
 	while (ptr) {
 		varname = ptr;
 		eq = strchr(varname, '=');
-		if (!eq) {
-			ptr = strchr(varname, '&');
+		amp = strchr(varname, '&');
+		if (!eq
+		 || (eq && amp && amp < eq)
+		) {
+			/* Last token is a flag (without assignment in sight),
+			 * OR we've got a flag token in the middle of a query
+			 * string, followed by another key=value pair later on.
+			 */
+			ptr = amp;
 			if (ptr)
 				*ptr++ = '\0';
 
@@ -96,6 +106,8 @@ void extractcgiargs(void)
 			continue;
 		}
 
+		/* The nearest point of interest is a key=value pair,
+		 * maybe followed by another amp and flag or assignment... */
 		*eq = '\0';
 		value = eq + 1;
 		amp = strchr(value, '&');
@@ -108,6 +120,8 @@ void extractcgiargs(void)
 
 		cleanvar = unescape(varname);
 		cleanval = unescape(value);
+		upsdebugx(3, "%s: parsearg('%s', '%s')<br/>",
+			__func__, NUT_STRARG(cleanvar), NUT_STRARG(cleanval));
 		parsearg(cleanvar, cleanval);
 		free(cleanvar);
 		free(cleanval);

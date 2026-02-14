@@ -1,7 +1,7 @@
 /*
  *  Copyright (C) 2011-2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
- *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
+ *  Copyright (C) 2020-2026 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 /* externally visible to nutscan-init */
 int nutscan_unload_avahi_library(void);
 
-#ifdef WITH_AVAHI
+#if (defined WITH_AVAHI) && WITH_AVAHI
 
 #include <stdio.h>
 #include <assert.h>
@@ -108,9 +108,11 @@ int nutscan_unload_avahi_library(void)
 int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_avahi_library(const char *libname_path)
 {
+	char	*symbol = NULL;
+
 	if (dl_handle != NULL) {
 		/* if previous init failed */
-		if (dl_handle == (void *)1) {
+		if (dl_handle == (lt_dlhandle)1) {
 			return 0;
 		}
 		/* init has already been done */
@@ -133,98 +135,121 @@ int nutscan_load_avahi_library(const char *libname_path)
 		goto err;
 	}
 
+	upsdebugx(2, "%s: lt_dlopen() succeeded, searching for needed methods", __func__);
+
 	/* Clear any existing error */
 	lt_dlerror();
 
-	*(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle, "avahi_service_browser_get_client");
+	*(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_browser_get_client");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_loop) = lt_dlsym(dl_handle, "avahi_simple_poll_loop");
+	*(void **) (&nut_avahi_simple_poll_loop) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_loop");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_client_free) = lt_dlsym(dl_handle, "avahi_client_free");
+	*(void **) (&nut_avahi_client_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_client_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_client_errno) = lt_dlsym(dl_handle, "avahi_client_errno");
+	*(void **) (&nut_avahi_client_errno) = lt_dlsym(dl_handle,
+		symbol = "avahi_client_errno");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_free) = lt_dlsym(dl_handle, "avahi_free");
+	*(void **) (&nut_avahi_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_quit) = lt_dlsym(dl_handle, "avahi_simple_poll_quit");
+	*(void **) (&nut_avahi_simple_poll_quit) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_quit");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_client_new) = lt_dlsym(dl_handle, "avahi_client_new");
+	*(void **) (&nut_avahi_client_new) = lt_dlsym(dl_handle,
+		symbol = "avahi_client_new");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_free) = lt_dlsym(dl_handle, "avahi_simple_poll_free");
+	*(void **) (&nut_avahi_simple_poll_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_resolver_new) = lt_dlsym(dl_handle, "avahi_service_resolver_new");
+	*(void **) (&nut_avahi_service_resolver_new) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_resolver_new");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_strerror) = lt_dlsym(dl_handle, "avahi_strerror");
+	*(void **) (&nut_avahi_strerror) = lt_dlsym(dl_handle,
+		symbol = "avahi_strerror");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_resolver_get_client) = lt_dlsym(dl_handle, "avahi_service_resolver_get_client");
+	*(void **) (&nut_avahi_service_resolver_get_client) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_resolver_get_client");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_browser_new) = lt_dlsym(dl_handle, "avahi_service_browser_new");
+	*(void **) (&nut_avahi_service_browser_new) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_browser_new");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_resolver_free) = lt_dlsym(dl_handle, "avahi_service_resolver_free");
+	*(void **) (&nut_avahi_service_resolver_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_resolver_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_new) = lt_dlsym(dl_handle, "avahi_simple_poll_new");
+	*(void **) (&nut_avahi_simple_poll_new) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_new");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_string_list_to_string) = lt_dlsym(dl_handle, "avahi_string_list_to_string");
+	*(void **) (&nut_avahi_string_list_to_string) = lt_dlsym(dl_handle,
+		symbol = "avahi_string_list_to_string");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_service_browser_free) = lt_dlsym(dl_handle, "avahi_service_browser_free");
+	*(void **) (&nut_avahi_service_browser_free) = lt_dlsym(dl_handle,
+		symbol = "avahi_service_browser_free");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_address_snprint) = lt_dlsym(dl_handle, "avahi_address_snprint");
+	*(void **) (&nut_avahi_address_snprint) = lt_dlsym(dl_handle,
+		symbol = "avahi_address_snprint");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_avahi_simple_poll_get) = lt_dlsym(dl_handle, "avahi_simple_poll_get");
+	*(void **) (&nut_avahi_simple_poll_get) = lt_dlsym(dl_handle,
+		symbol = "avahi_simple_poll_get");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+
+	/* Passed final lt_dlsym() */
+	symbol = NULL;
 
 	if (dl_saved_libname)
 		free(dl_saved_libname);
@@ -234,9 +259,13 @@ int nutscan_load_avahi_library(const char *libname_path)
 
 err:
 	upsdebugx(0,
-		"Cannot load AVAHI library (%s) : %s. AVAHI search disabled.",
-		libname_path, dl_error);
-	dl_handle = (void *)1;
+		"Cannot load AVAHI library (%s) : %s%s%s%s. AVAHI search disabled.",
+		libname_path, dl_error,
+		symbol ? " Error happened during search for symbol '" : "",
+		symbol ? symbol : "",
+		symbol ? "'" : ""
+		);
+	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
 		free(dl_saved_libname);
@@ -312,7 +341,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 				buf_size = strlen(device) +
 					strlen(host_name) +
 					5 + 1 + 1 + 1;
-				dev->port = malloc(buf_size);
+				dev->port = (char*)malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
 						device, host_name, port);
@@ -321,7 +350,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			else {
 				/*+1+1 is for '@' character and terminating 0 */
 				buf_size = strlen(device) + strlen(host_name) + 1 + 1;
-				dev->port = malloc(buf_size);
+				dev->port = (char*)malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s@%s",
 						device, host_name);
@@ -363,7 +392,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 				/*+1+1 is for ':' character and terminating 0 */
 				/*buf is the string containing the port number*/
 				buf_size = strlen(host_name) + strlen(buf) + 1 + 1;
-				dev->port = malloc(buf_size);
+				dev->port = (char*)malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s:%s",
 						host_name, buf);
@@ -488,7 +517,7 @@ static void browse_callback(
 		void* userdata)
 {
 
-	AvahiClient *c = userdata;
+	AvahiClient *c = (AvahiClient*)userdata;
 	assert(b);
 
 	NUT_UNUSED_VARIABLE(flags);
@@ -508,9 +537,9 @@ static void browse_callback(
 /*			upsdebugx(1, "%s: "(Browser) NEW: service '%s' of type '%s' in domain '%s'", __func__, name, type, domain); */
 
 			/* We ignore the returned resolver object. In the callback
-			   function we free it. If the server is terminated before
-			   the callback function is called the server will free
-			   the resolver for us. */
+			 * function we free it. If the server is terminated before
+			 * the callback function is called the server will free
+			 * the resolver for us. */
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic push
@@ -521,7 +550,7 @@ static void browse_callback(
 			 * but lacks a value in that enum for lack of flags (unconstrained
 			 * lookup). So we have to silence a warning here...
 			 */
-			if (!((*nut_avahi_service_resolver_new)(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, c)))
+			if (!((*nut_avahi_service_resolver_new)(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, (AvahiLookupFlags)0, resolve_callback, c)))
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
@@ -599,7 +628,7 @@ static AvahiClient* wrap_nut_avahi_client_new(int *error)
 	 * but lacks a value in that enum for lack of flags (unconstrained
 	 * lookup). So we have to silence a warning here...
 	 */
-	return (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), 0, client_callback, NULL, error);
+	return (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), (AvahiClientFlags)0, client_callback, NULL, error);
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
@@ -646,7 +675,8 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 	/* See comments about flags just a bit above */
 	if (!(sb = (*nut_avahi_service_browser_new)(
 		client, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-		"_upsd._tcp", NULL, 0, browse_callback, client))
+		"_upsd._tcp", NULL, (AvahiLookupFlags)0,
+		browse_callback, client))
 	) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop

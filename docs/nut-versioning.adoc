@@ -463,8 +463,11 @@ Return sorted (via expansion) list of original semver strings (till end
 of args), in their original spelling (with leading zeroes, if present,
 not stripped away).
 
-`semver-compare.sh [OPTS] {test|[} "SEMVER1" {-gt|-ge|-lt|-le|-eq|=|==|-ne|!=|<>|<|<=|>|>=} "SEMVER2"`::
-Shell-style syntax to compare two semver strings (via expanded variants).
+`semver-compare.sh [OPTS] {test|[|[[} "SEMVER1" {-gt|>|-ge|>=|-lt|<|-le|<=|-eq|=|==|-ne|!=|<>} "SEMVER2" {]|]]}`::
+Relaxed shell-style syntax to compare two semver strings (via their expanded
+variants). Introduced so this script can be just prefixed into existing
+(alphanumeric-based) shell comparisons, or newly added with a human-readable
+command-line interface.
 +
 Note that `--min-components` can play a role here (e.g. is `1.2.3` equal
 to `1.2.3.0.0`? You can specify whether and how many zeroes can be added

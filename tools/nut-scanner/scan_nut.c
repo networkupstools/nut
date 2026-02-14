@@ -2,7 +2,7 @@
  *  Copyright (C) 2011 - 2023 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
- *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
+ *  Copyright (C) 2020-2026 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -86,10 +86,12 @@ int nutscan_unload_upsclient_library(void)
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path)
 {
+	char	*symbol = NULL;
+
 	if (dl_handle != NULL) {
 		/* if previous init failed */
-		if (dl_handle == (void *)1) {
-				return 0;
+		if (dl_handle == (lt_dlhandle)1) {
+			return 0;
 		}
 		/* init has already been done */
 		return 1;
@@ -111,38 +113,43 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		goto err;
 	}
 
+	upsdebugx(2, "%s: lt_dlopen() succeeded, searching for needed methods", __func__);
+
 	/* Clear any existing error */
 	lt_dlerror();
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
-						"upscli_splitaddr");
+		symbol = "upscli_splitaddr");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
-						"upscli_tryconnect");
+		symbol = "upscli_tryconnect");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
-						"upscli_list_start");
+		symbol = "upscli_list_start");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
-						"upscli_list_next");
+		symbol = "upscli_list_next");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
 
 	*(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
-						"upscli_disconnect");
+		symbol = "upscli_disconnect");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			goto err;
+		goto err;
 	}
+
+	/* Passed final lt_dlsym() */
+	symbol = NULL;
 
 	if (dl_saved_libname)
 		free(dl_saved_libname);
@@ -152,9 +159,13 @@ int nutscan_load_upsclient_library(const char *libname_path)
 
 err:
 	upsdebugx(0,
-		"Cannot load NUT library (%s) : %s. NUT search disabled.",
-		libname_path, dl_error);
-	dl_handle = (void *)1;
+		"Cannot load NUT library (%s) : %s%s%s%s. NUT search disabled.",
+		libname_path, dl_error,
+		symbol ? " Error happened during search for symbol '" : "",
+		symbol ? symbol : "",
+		symbol ? "'" : ""
+		);
+	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
 		free(dl_saved_libname);
@@ -179,7 +190,7 @@ static void * list_nut_devices_thready(void * arg)
 	const char *query[4];
 	char **answer = NULL;
 	char *hostname = NULL;
-	UPSCONN_t *ups = xcalloc(1, sizeof(*ups));
+	UPSCONN_t *ups = (UPSCONN_t*)xcalloc(1, sizeof(*ups));
 	nutscan_device_t * dev = NULL;
 	size_t buf_size;
 
@@ -193,6 +204,7 @@ static void * list_nut_devices_thready(void * arg)
 
 	if ((*nut_upscli_splitaddr)(target_hostname, &hostname, &port) != 0) {
 		/* Avoid disconnect from not connected ups */
+		upsdebugx(4, "%s: upscli_splitaddr() failed", __func__);
 		if (ups) {
 			if (ups->host)
 				free(ups->host);
@@ -204,6 +216,7 @@ static void * list_nut_devices_thready(void * arg)
 
 	if ((*nut_upscli_tryconnect)(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
 		/* Avoid disconnect from not connected ups */
+		upsdebugx(4, "%s: upscli_tryconnect() failed", __func__);
 		if (ups) {
 			if (ups->host)
 				free(ups->host);
@@ -214,12 +227,14 @@ static void * list_nut_devices_thready(void * arg)
 	}
 
 	if ((*nut_upscli_list_start)(ups, numq, query) < 0) {
+		upsdebugx(4, "%s: upscli_list_start() failed", __func__);
 		goto end;
 	}
 
 	while ((*nut_upscli_list_next)(ups, numq, query, &numa, &answer) == 1) {
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
+			upsdebugx(4, "%s: upscli_list_next() failed", __func__);
 			goto end;
 		}
 
@@ -243,7 +258,7 @@ static void * list_nut_devices_thready(void * arg)
 			buf_size += 6;
 		}
 
-		dev->port = malloc(buf_size);
+		dev->port = (char*)malloc(buf_size);
 
 		if (dev->port) {
 			/* Check if IPv6 and needs brackets */
@@ -463,7 +478,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			 */
 			int	stwST = sem_trywait(semaphore_scantype);
 			int	stwS  = sem_trywait(semaphore);
-			pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
+			pass = (((max_threads_scantype == 0) || (stwST == 0)) && (stwS == 0)) ? TRUE : FALSE;
 			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 				" curr_threads=%" PRIuSIZE
 				" thread_count=%" PRIuSIZE
@@ -565,7 +580,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 				ip_dest = strdup(ip_str);
 			}
 
-			if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
+			if ((nut_arg = (struct scan_nut_arg*)malloc(sizeof(struct scan_nut_arg))) == NULL) {
 				upsdebugx(0, "%s: Memory allocation error", __func__);
 				free(ip_dest);
 				break;
@@ -583,7 +598,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 				thread_count++;
-				new_thread_array = realloc(thread_array,
+				new_thread_array = (nutscan_thread_t*)realloc(thread_array,
 					thread_count * sizeof(nutscan_thread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread array", __func__);

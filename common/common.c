@@ -589,6 +589,16 @@ int syslog_is_disabled(void)
 }
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
+ * the stdout instead of stderr, and end them with HTML <BR/> tag,
+ * to help troubleshoot NUT CGI programs specifically */
+void cgilogbit_set(void)
+{
+	xbit_set(&upslog_flags, UPSLOG_STDOUT);
+	xbit_set(&upslog_flags, UPSLOG_CGI_BR);
+	xbit_clear(&upslog_flags, UPSLOG_STDERR);
+}
+
+/* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)
 {
@@ -763,8 +773,8 @@ struct passwd *get_user_pwent(const char *name)
 		return r;
 
 	/* POSIX does not specify that "user not found" is an error, so
-	   some implementations of getpwnam() do not set errno when this
-	   happens. */
+	 * some implementations of getpwnam() do not set errno when this
+	 * happens. */
 	if (errno == 0)
 		fatalx(EXIT_FAILURE, "OS user %s not found", name);
 	else
@@ -1464,17 +1474,17 @@ int compareprocnames(pid_t pid, const char *procname, const char **prognames)
 		goto finish;
 	}
 
-	progbasenames = xcalloc(total_prognames, sizeof(char*));
+	progbasenames = (char **)xcalloc(total_prognames, sizeof(char*));
 	if (!progbasenames) {
 		ret = -2;
 		goto finish;
 	}
-	progbasenamelen = xcalloc(total_prognames, sizeof(size_t));
+	progbasenamelen = (size_t *)xcalloc(total_prognames, sizeof(size_t));
 	if (!progbasenamelen) {
 		ret = -2;
 		goto finish;
 	}
-	progbasenamedot = xcalloc(total_prognames, sizeof(size_t));
+	progbasenamedot = (size_t *)xcalloc(total_prognames, sizeof(size_t));
 	if (!progbasenamedot) {
 		ret = -2;
 		goto finish;
@@ -1482,7 +1492,7 @@ int compareprocnames(pid_t pid, const char *procname, const char **prognames)
 	memset(all_progbasenames, 0, sizeof(all_progbasenames));
 
 	for (i = 0; i < total_prognames - 1; i++) {
-		progbasenames[i] = xcalloc(NUT_PATH_MAX + 1, sizeof(char));
+		progbasenames[i] = (char *)xcalloc(NUT_PATH_MAX + 1, sizeof(char));
 
 		if (!progbasenames[i]) {
 			ret = -2;
@@ -1542,8 +1552,8 @@ int compareprocnames(pid_t pid, const char *procname, const char **prognames)
 			size_t	dot = progbasenamedot[i] ? progbasenamedot[i] : procbasenamedot;
 
 			/* Optimize away procbasename comparisons beyond first */
-			if (!strncasecmp(progbasenames[i], procbasename, dot - 1) &&
-			     (  (progbasenamedot[i] && !strcasecmp(progbasenames[i] + progbasenamedot[i], ".exe"))
+			if (!strncasecmp(progbasenames[i], procbasename, dot - 1)
+			  && (  (progbasenamedot[i] && !strcasecmp(progbasenames[i] + progbasenamedot[i], ".exe"))
 			     || (i == 0 && procbasenamedot && !strcasecmp(procbasename + procbasenamedot, ".exe")) )
 			) {
 				ret = 5;
@@ -1868,8 +1878,8 @@ char * getfullpath(char * relative_path)
 				upsdebugx(6, "%s: prefix_in_buf:\t'%s'", __func__, NUT_STRARG(prefix_in_buf));
 
 				/* Did we find the prefix and is it followed by some slash? */
-				if (prefix_in_buf &&
-				    (   *(prefix_in_buf + len_PREFIX) == '/'
+				if (prefix_in_buf
+				 && (   *(prefix_in_buf + len_PREFIX) == '/'
 				     || *(prefix_in_buf + len_PREFIX) == '\\')
 				) {
 					/* Make the path relative
@@ -2253,9 +2263,11 @@ pid_t parsepidfile(const char *pidfn)
 		 * for the first time and no opponent PID file exists,
 		 * so the cut-off verbosity is higher.
 		 */
-		if (nut_debug_level > 0 ||
-		    nut_sendsignal_debug_level >= NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE)
+		if (nut_debug_level > 0
+		 || nut_sendsignal_debug_level >= NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE
+		) {
 			upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
+		}
 		return -3;
 	}
 
@@ -2463,9 +2475,12 @@ repeat:
  * checking for uniqueness and going to add a newly seen token.
  * If such callback returns 0, abort the addition of token.
  */
-int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
-			    int (*callback_always)(char *, size_t, const char *),
-			    int (*callback_unique)(char *, size_t, const char *)
+int	str_add_unique_token(
+	char *tgt,
+	size_t tgtsize,
+	const char *token,
+	int (*callback_always)(char *, size_t, const char *),
+	int (*callback_unique)(char *, size_t, const char *)
 )
 {
 	size_t	toklen = 0, tgtlen = 0;
@@ -2718,6 +2733,31 @@ double difftimespec(struct timespec x, struct timespec y)
 	return d;
 }
 #endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
+
+/* returns the time elapsed since start in milliseconds */
+long elapsed_since_timeval(struct timeval *start)
+{
+	long	rval;
+	struct timeval	end;
+
+	rval = gettimeofday(&end, NULL);
+	if (rval < 0) {
+		upslog_with_errno(LOG_ERR, "elapsed_since_timeval");
+	}
+	if (start->tv_usec < end.tv_usec) {
+		suseconds_t	nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
+		end.tv_usec -= 1000000 * nsec;
+		end.tv_sec += nsec;
+	}
+	if (start->tv_usec - end.tv_usec > 1000000) {
+		suseconds_t	nsec = (start->tv_usec - end.tv_usec) / 1000000;
+		end.tv_usec += 1000000 * nsec;
+		end.tv_sec -= nsec;
+	}
+	rval = (end.tv_sec - start->tv_sec) * 1000 + (end.tv_usec - start->tv_usec) / 1000;
+
+	return rval;
+}
 
 /* Help avoid cryptic "upsnotify: notify about state 4 with libsystemd:"
  * (with only numeric codes) below */
@@ -3278,8 +3318,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 					char	*s = getenv("NUT_QUIET_INIT_UPSNOTIFY");
 
 					/* FIXME: Make an INVERTED server/conf.c::parse_boolean() reusable */
-					if (s && *s &&
-					    ( (!strcasecmp(s, "false")) || (!strcasecmp(s, "off")) || (!strcasecmp(s, "no")) || (!strcasecmp(s, "0")))
+					if (s && *s
+					 && ( (!strcasecmp(s, "false")) || (!strcasecmp(s, "off")) || (!strcasecmp(s, "no")) || (!strcasecmp(s, "0")) )
 					) {
 						upsdebugx(1, "Caller WANTS to see all these messages: NUT_QUIET_INIT_UPSNOTIFY=%s", NUT_STRARG(s));
 					} else {
@@ -3548,7 +3588,7 @@ int validate_formatting_string(const char *fmt_dynamic, const char *fmt_referenc
 		 */
 		size_t lenD = strlen(fmt_dynamic) + 1;
 		size_t lenR = strlen(fmt_reference) + 1;
-		char *bufD = xcalloc(lenD, sizeof(char)), *bufR = xcalloc(lenR, sizeof(char));
+		char *bufD = (char *)xcalloc(lenD, sizeof(char)), *bufR = (char *)xcalloc(lenR, sizeof(char));
 		size_t lenBufD;
 
 		if (!bufD || !bufR) {
@@ -3762,8 +3802,15 @@ char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret, errno_orig = errno;
+#ifdef HAVE_VA_COPY_VARIANT
+	/* Most our debug messages fit into this */
+	size_t	bufsize = 256;
+#else
+	/* err on the safe(r) side, as re-runs can truncate
+	 * the output when varargs are re-used */
 	size_t	bufsize = LARGEBUF;
-	char	*buf = xcalloc(bufsize, sizeof(char));
+#endif
+	char	*buf = (char *)xcalloc(bufsize, sizeof(char));
 
 	/* Be pedantic about our limitations */
 	bufsize *= sizeof(char);
@@ -3822,7 +3869,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 			 * Based on https://stackoverflow.com/a/72981237/4715872
 			 */
 			if (bufsize < SIZE_MAX/2) {
-				size_t	newbufsize = bufsize*2;
+				size_t	newbufsize = bufsize < LARGEBUF ? LARGEBUF : bufsize*2;
 				if (ret > 0) {
 					/* Be generous, we snprintfcat() some
 					 * suffixes, prefix a timestamp, etc. */
@@ -3842,7 +3889,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 						newbufsize);
 				}
 				bufsize = newbufsize;
-				buf = xrealloc(buf, bufsize);
+				buf = (char *)xrealloc(buf, bufsize);
 				continue;
 			}
 		} else {
@@ -3916,7 +3963,7 @@ vupslog_too_long:
 		upslog_start = now;
 	}
 
-	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
+	if (xbit_test(upslog_flags, UPSLOG_STDERR) || xbit_test(upslog_flags, UPSLOG_STDOUT)) {
 		if (nut_debug_level > 0) {
 			struct timeval		now;
 
@@ -3929,15 +3976,42 @@ vupslog_too_long:
 
 			/* Print all in one shot, to better avoid
 			 * mixed lines in parallel threads */
-			fprintf(stderr, "%4.0f.%06ld\t%s\n",
-				difftime(now.tv_sec, upslog_start.tv_sec),
-				(long)(now.tv_usec - upslog_start.tv_usec),
-				buf);
+			if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
+#ifdef WIN32
+				fflush(stderr);
+#endif	/* WIN32 */
+				fprintf(stderr, "%s%4.0f.%06ld\t%s%s\n",
+					xbit_test(upslog_flags, UPSLOG_CGI_BR) ? "<pre>" : "",
+					difftime(now.tv_sec, upslog_start.tv_sec),
+					(long)(now.tv_usec - upslog_start.tv_usec),
+					buf,
+					xbit_test(upslog_flags, UPSLOG_CGI_BR) ? "</pre>" : ""
+				);
+			}
+
+			if (xbit_test(upslog_flags, UPSLOG_STDOUT)) {
+#ifdef WIN32
+				fflush(stdout);
+#endif	/* WIN32 */
+				fprintf(stdout, "%s%4.0f.%06ld\t%s%s\n",
+					xbit_test(upslog_flags, UPSLOG_CGI_BR) ? "<pre>" : "",
+					difftime(now.tv_sec, upslog_start.tv_sec),
+					(long)(now.tv_usec - upslog_start.tv_usec),
+					buf,
+					xbit_test(upslog_flags, UPSLOG_CGI_BR) ? "</pre>" : ""
+				);
+			}
 		} else {
-			fprintf(stderr, "%s\n", buf);
+			if (xbit_test(upslog_flags, UPSLOG_STDERR))
+				fprintf(stderr, "%s\n", buf);
+			if (xbit_test(upslog_flags, UPSLOG_STDOUT))
+				fprintf(stdout, "%s\n", buf);
 		}
 #ifdef WIN32
-		fflush(stderr);
+		if (xbit_test(upslog_flags, UPSLOG_STDERR))
+			fflush(stderr);
+		if (xbit_test(upslog_flags, UPSLOG_STDOUT))
+			fflush(stdout);
 #endif	/* WIN32 */
 	}
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
@@ -4205,7 +4279,7 @@ void setproctag(const char *tag)
 	proctag = xstrdup(tag);
 
 	proctag_for_upsdebug_buflen = strlen(tag) + 2;
-	proctag_for_upsdebug = xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
+	proctag_for_upsdebug = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
 	if (proctag_for_upsdebug) {
 		snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s", tag);
 	}
@@ -4789,10 +4863,14 @@ static void nut_free_search_paths(void) {
 	}
 
 	if (search_paths != search_paths_builtin) {
+#if HAVE_DECL_REALPATH
 		size_t i;
 		for (i = 0; search_paths[i] != NULL; i++) {
+			upsdebugx(7, "%s: freeing search_paths[%" PRIuSIZE "]: '%s'",
+				__func__, i, NUT_STRARG(search_paths[i]));
 			free((char *)search_paths[i]);
 		}
+#endif	/* else: curated selection of pointers to some of the built-in strings */
 		free(search_paths);
 		search_paths = search_paths_builtin;
 	}
@@ -4814,14 +4892,21 @@ void nut_prepare_search_paths(void) {
 	size_t	count_builtin = 0, count_filtered = 0, i, j, index = 0;
 	const char ** filtered_search_paths;
 	DIR *dp;
+#if HAVE_DECL_REALPATH
+	/* Per docs, buffer must be at least PATH_MAX bytes */
+	char	realpath_buf[NUT_PATH_MAX + 1] = {0}, *realpath_dirname = NULL;
+#endif
 
 	/* As a starting point, allow at least as many items as before */
 	/* TODO: somehow extend (xrealloc?) if we mix other paths later */
-	for (i = 0; search_paths_builtin[i] != NULL; i++) {}
+	for (i = 0; search_paths_builtin[i] != NULL; i++) {
+		/* Different way of printing with minimal crash-ability on older systems */
+		upsdebugx(7, "counting search_paths_builtin[%d] : %s", (int)i, NUT_STRARG(search_paths_builtin[i]));
+	}
 	count_builtin = i + 1;	/* +1 for the NULL */
 
 	/* Bytes inside should all be zeroed... */
-	filtered_search_paths = xcalloc(count_builtin, sizeof(const char *));
+	filtered_search_paths = (const char **)xcalloc(count_builtin, sizeof(const char *));
 
 	/* FIXME: here "count_builtin" means size of filtered_search_paths[]
 	 * and may later be more, if we would consider other data sources */
@@ -4829,22 +4914,35 @@ void nut_prepare_search_paths(void) {
 		int dupe = 0;
 		const char *dirname = search_paths_builtin[i];
 
+		upsdebugx(7, "%s: checking search_paths_builtin[%" PRIuSIZE " of %" PRIuSIZE "] : %s",
+			__func__, i, count_builtin - 1, NUT_STRARG(dirname));
 		if ((dp = opendir(dirname)) == NULL) {
 			upsdebugx(5, "%s: SKIP "
 				"unreachable directory #%" PRIuSIZE " : %s",
-				__func__, index++, dirname);
+				__func__, index, NUT_STRARG(dirname));
+                        index++;
 			continue;
 		}
 		index++;
 
 #if HAVE_DECL_REALPATH
 		/* allocates the buffer we free() later */
-		dirname = (const char *)realpath(dirname, NULL);
+		upsdebugx(7, "%s: call realpath()", __func__);
+		errno = 0;
+		realpath_dirname = realpath(dirname, realpath_buf);
+		if (errno || !realpath_dirname)
+			upsdebug_with_errno(7, "%s: realpath() failed and returned: %s", __func__, NUT_STRARG(realpath_dirname));
+		else
+			upsdebugx(7, "%s: realpath() returned: %s", __func__, NUT_STRARG(realpath_dirname));
+		if (realpath_dirname)
+			dirname = (const char *)realpath_dirname;
 #endif
 
 		/* Revise for duplicates */
 		/* Note: (count_filtered == 0) means first existing dir seen, no hassle */
 		for (j = 0; j < count_filtered; j++) {
+			upsdebugx(7, "%s: check for duplicates filtered_search_paths[%" PRIuSIZE " of %" PRIuSIZE "] : %s",
+				__func__, j, count_filtered, NUT_STRARG(filtered_search_paths[j]));
 			if (!strcmp(filtered_search_paths[j], dirname)) {
 #if HAVE_DECL_REALPATH
 				if (strcmp(search_paths_builtin[i], dirname)) {
@@ -4861,7 +4959,6 @@ void nut_prepare_search_paths(void) {
 
 				dupe = 1;
 #if HAVE_DECL_REALPATH
-				free((char *)dirname);
 				/* Have some valid value, for kicks (likely
 				 * to be ignored in the code path below) */
 				dirname = search_paths_builtin[i];
@@ -4874,9 +4971,10 @@ void nut_prepare_search_paths(void) {
 			upsdebugx(5, "%s: ADD[#%" PRIuSIZE "] "
 				"existing unique directory: %s",
 				__func__, count_filtered, dirname);
-#if !HAVE_DECL_REALPATH
-			/* Make a copy of table entry, else we have
-			 * a dynamic result of realpath() made above.
+#if HAVE_DECL_REALPATH
+			/* Make a copy of table entry, or the buffer
+			 * with a result of realpath() made above,
+			 * to eventually conststently free().
 			 */
 			dirname = (const char *)xstrdup(dirname);
 #endif
@@ -4979,7 +5077,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	char current_test_path[NUT_PATH_MAX + 1];
 
 	upsdebugx(3, "%s('%s', %" PRIuSIZE ", '%s', %i): Entering method...",
-		__func__, base_libname, base_libname_length, dirname, index);
+		__func__, NUT_STRARG(base_libname), base_libname_length, NUT_STRARG(dirname), index);
 
 	memset(current_test_path, 0, sizeof(current_test_path));
 
@@ -5112,7 +5210,7 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 	/* First call to tokenization passes the string, others pass NULL */
 	pathset_tmp = xstrdup(pathset);
 	upsdebugx(4, "%s: Looking for lib %s in a colon-separated path set",
-		__func__, base_libname);
+		__func__, NUT_STRARG(base_libname));
 	while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ":" ))) {
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 		if (libname_path != NULL)
@@ -5148,7 +5246,7 @@ char * get_libname(const char* base_libname)
 	size_t base_libname_length = strlen(base_libname);
 	struct stat	st;
 
-	upsdebugx(3, "%s('%s'): Entering method...", __func__, base_libname);
+	upsdebugx(3, "%s('%s'): Entering method...", __func__, NUT_STRARG(base_libname));
 
 	/* First, check for an exact hit by absolute/relative path
 	 * if `base_libname` includes path separator character(s) */
@@ -5315,7 +5413,7 @@ int compile_regex(regex_t **compiled, const char *regex, const int cflags)
 		return 0;
 	}
 
-	preg = malloc(sizeof(*preg));
+	preg = (regex_t *)malloc(sizeof(*preg));
 	if (!preg) {
 		return -1;
 	}
@@ -5478,7 +5576,7 @@ const char *xinet_ntopSS(struct sockaddr_storage *s)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	char	*addrstr = (char*)xcalloc(INETADDRBUF_SIZE, sizeof(char*));
 	const char	*ret;
 
 	if (!addrstr)
@@ -5578,7 +5676,7 @@ const char *xinet_ntopAI(struct addrinfo *ai)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	char	*addrstr = xcalloc(INETADDRBUF_SIZE, sizeof(char*));
+	char	*addrstr = (char*)xcalloc(INETADDRBUF_SIZE, sizeof(char*));
 	const char	*ret;
 
 	if (!addrstr)

@@ -1,0 +1,68 @@
+<?xml version="1.0" ?>
+<nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
+	<lookup name="vertiv_beeper_status_info">
+		<lookup_info oid="1" value="enabled"/>
+		<lookup_info oid="2" value="disabled"/>
+	</lookup>
+	<lookup name="vertiv_power_source_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="OFF"/>
+		<lookup_info oid="3" value="OL"/>
+		<lookup_info oid="4" value="BYPASS"/>
+		<lookup_info oid="5" value="OB"/>
+		<lookup_info oid="6" value="BOOST"/>
+		<lookup_info oid="7" value="TRIM"/>
+	</lookup>
+	<alarm name="vertiv_alarms">
+		<info_alarm alarm="Battery Discharging" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.10.1.2.100.4168" status="OB"/>
+		<info_alarm alarm="Battery Low" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.10.1.2.100.4162" status="LB"/>
+		<info_alarm alarm="Output Overload" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.10.1.2.100.5806" status="OVER"/>
+		<info_alarm alarm="Replace Battery" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.10.1.2.100.6182" status="RB"/>
+		<info_alarm alarm="Inverter Failure" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.10.1.2.100.4233" status="FAULT"/>
+		<info_alarm alarm="Over Temperature" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.10.1.2.100.4310" status="OT"/>
+		<info_alarm alarm="UPS Output Off" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.10.1.2.100.4215" status="OFF"/>
+	</alarm>
+	<snmp name="vertiv_mib">
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.description" oid=".1.3.6.1.2.1.1.1.0" semistatic="yes" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.contact" oid=".1.3.6.1.2.1.1.4.0" semistatic="yes" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.location" oid=".1.3.6.1.2.1.1.6.0" semistatic="yes" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="device.mfr" oid=".1.3.6.1.4.1.476.1.42.2.1.1.0" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="device.model" oid=".1.3.6.1.4.1.476.1.42.2.4.2.1.4.1" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="device.serial" oid=".1.3.6.1.4.1.476.1.42.2.4.2.1.7.1" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="ups.firmware" oid=".1.3.6.1.4.1.476.1.42.2.4.2.1.5.1" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="device.type" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.20.1.2.1.4553" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="ups.mfr" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.20.1.2.1.4333" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="ups.model" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.20.1.2.1.4240" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ups.load" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.5861" positive="yes"/>
+		<snmp_info multiplier="1.0" name="ups.temperature" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.10.1.2.1.4291" positive="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="ups.type" oid=".1.3.6.1.4.1.476.1.42.3.9.20.1.20.1.2.1.6199" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.charge" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4153" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="60.0" name="battery.runtime" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4150" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.voltage" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4148" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.voltage.nominal" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.6189" static="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.voltage" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4096" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.current" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4113" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4105" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.voltage.nominal" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4102" static="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.current.nominal" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4104" static="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.frequency.nominal" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4103" static="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.voltage" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4385" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.current" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4204" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.frequency" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4207" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.power" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4208" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.power.apparent" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4209" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.voltage.nominal" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4260" static="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.power.nominal" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4264" static="yes"/>
+		<snmp_info default="" flag_ok="yes" lookup="vertiv_power_source_info" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.4872" power_status="yes" string="yes"/>
+		<snmp_info default="" lookup="vertiv_beeper_status_info" multiplier="128.0" name="ups.beeper.status" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.6188" string="yes" unique="yes"/>
+		<snmp_info command="yes" default="2" multiplier="1.0" name="beeper.disable" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.6188"/>
+		<snmp_info command="yes" default="1" multiplier="1.0" name="beeper.enable" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.6188"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ups.delay.shutdown" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.5814" time_val="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ups.delay.start" oid=".1.3.6.1.4.1.476.1.42.3.9.30.1.20.1.2.1.5816" time_val="yes" writable="yes"/>
+	</snmp>
+	<mib2nut alarms_info="vertiv_alarms" auto_check=".1.3.6.1.4.1.476.1.42.2.4.2.1.4.1" mib_name="vertiv" name="vertiv" oid=".1.3.6.1.4.1.476.1.42" power_status=".1.3.6.1.4.1.476.1.42.3.5.3" snmp_info="vertiv_mib" version="0.01"/>
+</nut>
+

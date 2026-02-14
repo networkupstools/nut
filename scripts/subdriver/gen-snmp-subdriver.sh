@@ -600,8 +600,8 @@ done
 
 # remove blank and "End of MIB" lines
 TABCHAR="`printf '\t'`"
-${EGREP} "^[ ${TABCHAR}]?\$" | ${GREP} "End of MIB" | ${GREP} -v "${NUMWALKFILE}" > "${TMP_NUMWALKFILE}"
-${EGREP} "^[ ${TABCHAR}]?\$" | ${GREP} "End of MIB" | ${GREP} -v "${STRWALKFILE}" > "${TMP_STRWALKFILE}"
+${EGREP} -v "^[ ${TABCHAR}]?\$" "${NUMWALKFILE}" | ${GREP} -v "End of MIB" > "${TMP_NUMWALKFILE}"
+${EGREP} -v "^[ ${TABCHAR}]?\$" "${STRWALKFILE}" | ${GREP} -v "End of MIB" > "${TMP_STRWALKFILE}"
 NUMWALKFILE="${TMP_NUMWALKFILE}"
 STRWALKFILE="${TMP_STRWALKFILE}"
 

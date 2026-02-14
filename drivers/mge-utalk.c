@@ -129,8 +129,9 @@ static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
 static void enable_ups_comm(void);
 static void disable_ups_comm(void);
-static void extract_info(const char *buf, const mge_info_item_t *mge,
-			 char *infostr, size_t infolen);
+static void extract_info(
+	const char *buf, const mge_info_item_t *mge,
+	char *infostr, size_t infolen);
 static const char *info_variable_cmd(const char *type);
 static bool_t info_variable_ok(const char *type);
 static int  get_ups_status(void);
@@ -259,7 +260,7 @@ void upsdrv_initinfo(void)
 	/* loop until we have at status */
 	tries = 0;
 	do {
-	    printf(".");
+		printf(".");
 
 		/* get model information in ASCII string form: <Family> <Model> <Firmware> */
 		bytes_rcvd = mge_command(buf, sizeof(buf), "Si 1");
@@ -289,45 +290,44 @@ void upsdrv_initinfo(void)
 			}
 		}
 		else
-		  {
+		{
 			upsdebugx(1, "initinfo: 'Si 1' unavailable, switching to 'Si' command");
 
 			/* get model information, numbered form, : <Model ID> <Version ID> <Firmware> */
 			bytes_rcvd = mge_command(buf, sizeof(buf), "Si");
 
-			if(bytes_rcvd > 0 && buf[0] != '?') {
-			  upsdebugx(1, "initinfo: Si == >%s<", buf);
+			if (bytes_rcvd > 0 && buf[0] != '?') {
+				upsdebugx(1, "initinfo: Si == >%s<", buf);
 
-			  printf("\nCAUTION : This is an older model. It may not support too much polling.\nPlease read man mge-utalk and use pollinterval\n");
+				printf("\nCAUTION : This is an older model. It may not support too much polling.\nPlease read man mge-utalk and use pollinterval\n");
 
-			  p = strchr(buf, ' ');
+				p = strchr(buf, ' ');
 
-			  if ( p != NULL ) {
-				*p = '\0';
-				si_data1 = atoi(buf);
-				v = p+1;
-			  	p = strchr(v, ' ');
-			  }
+				if ( p != NULL ) {
+					*p = '\0';
+					si_data1 = atoi(buf);
+					v = p+1;
+					p = strchr(v, ' ');
+				}
 
-			  if ( p != NULL ) {
-				*p = '\0';
-				si_data2 = atoi(v);
-			  }
+				if ( p != NULL ) {
+					*p = '\0';
+					si_data2 = atoi(v);
+				}
 
 				/* Parsing legacy model table in order to find it */
 				for ( legacy_model = mge_model ; legacy_model->name != NULL ; legacy_model++ ) {
-					if(legacy_model->Data1 == si_data1 && legacy_model->Data2 == si_data2){
+					if (legacy_model->Data1 == si_data1 && legacy_model->Data2 == si_data2) {
 						model = legacy_model->name;
 						upsdebugx(1, "initinfo: UPS model == >%s<", model);
 						break;
+					}
 				}
-			  }
 
-			  if( model == NULL )
-				printf("No model found by that model and version ID\nPlease contact us with UPS model, name and reminder info\nReminder info : Data1=%i , Data2=%i\n", si_data1, si_data2);
-
+				if (model == NULL)
+					printf("No model found by that model and version ID\nPlease contact us with UPS model, name and reminder info\nReminder info : Data1=%i , Data2=%i\n", si_data1, si_data2);
 			}
-		  }
+		}
 
 		if ( model ) {
 			upsdebugx(2, "Got model name: %s", model);
@@ -465,10 +465,10 @@ void upsdrv_updateinfo(void)
 				dstate_dataok();
 			} else
 			{
-			  upslogx(LOG_NOTICE, "updateinfo: Cannot update %s", item->type);
-			  /* try to re enable communication */
-			  disable_ups_comm();
-			  enable_ups_comm();
+				upslogx(LOG_NOTICE, "updateinfo: Cannot update %s", item->type);
+				/* try to re-enable communication */
+				disable_ups_comm();
+				enable_ups_comm();
 			}
 		} /* if item->ok */
 	}
@@ -750,8 +750,9 @@ static void enable_ups_comm(void)
    NOTE: buf="?" must be handled before calling extract_info
          buf is changed inspite of const !!!!!
 */
-static void extract_info(const char *buf, const mge_info_item_t *item,
-			 char *infostr, size_t infolen)
+static void extract_info(
+	const char *buf, const mge_info_item_t *item,
+	char *infostr, size_t infolen)
 {
 	/* initialize info string */
 	infostr[0] = '\0';

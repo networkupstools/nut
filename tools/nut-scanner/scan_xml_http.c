@@ -2,7 +2,7 @@
  *  Copyright (C) 2011 - EATON
  *  Copyright (C) 2016 - EATON - IP addressed XML scan
  *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
- *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
+ *  Copyright (C) 2020-2026 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 /* externally visible to nutscan-init */
 int nutscan_unload_neon_library(void);
 
-#ifdef WITH_NEON
+#if (defined WITH_NEON) && WITH_NEON
 
 #ifndef WIN32
 # include <sys/types.h>
@@ -64,11 +64,12 @@ static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 static char *dl_saved_libname = NULL;
 
-static void (*nut_ne_xml_push_handler)(ne_xml_parser *p,
-                            ne_xml_startelm_cb *startelm,
-                            ne_xml_cdata_cb *cdata,
-                            ne_xml_endelm_cb *endelm,
-                            void *userdata);
+static void (*nut_ne_xml_push_handler)(
+	ne_xml_parser *p,
+	ne_xml_startelm_cb *startelm,
+	ne_xml_cdata_cb *cdata,
+	ne_xml_endelm_cb *endelm,
+	void *userdata);
 static void (*nut_ne_xml_destroy)(ne_xml_parser *p);
 static int (*nut_ne_xml_failed)(ne_xml_parser *p);
 static ne_xml_parser * (*nut_ne_xml_create)(void);
@@ -101,10 +102,12 @@ int nutscan_unload_neon_library(void)
 int nutscan_load_neon_library(const char *libname_path);
 int nutscan_load_neon_library(const char *libname_path)
 {
+	char	*symbol = NULL;
+
 	if (dl_handle != NULL) {
 		/* if previous init failed */
-		if (dl_handle == (void *)1) {
-				return 0;
+		if (dl_handle == (lt_dlhandle)1) {
+			return 0;
 		}
 		/* init has already been done */
 		return 1;
@@ -126,34 +129,43 @@ int nutscan_load_neon_library(const char *libname_path)
 		goto err;
 	}
 
+	upsdebugx(2, "%s: lt_dlopen() succeeded, searching for needed methods", __func__);
+
 	/* Clear any existing error */
 	lt_dlerror();
 
 	*(void **) (&nut_ne_xml_push_handler) = lt_dlsym(dl_handle,
-						"ne_xml_push_handler");
+		symbol = "ne_xml_push_handler");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_destroy) = lt_dlsym(dl_handle, "ne_xml_destroy");
+	*(void **) (&nut_ne_xml_destroy) = lt_dlsym(dl_handle,
+		symbol = "ne_xml_destroy");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_create) = lt_dlsym(dl_handle, "ne_xml_create");
+	*(void **) (&nut_ne_xml_create) = lt_dlsym(dl_handle,
+		symbol = "ne_xml_create");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_parse) = lt_dlsym(dl_handle, "ne_xml_parse");
+	*(void **) (&nut_ne_xml_parse) = lt_dlsym(dl_handle,
+		symbol = "ne_xml_parse");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_failed) = lt_dlsym(dl_handle, "ne_xml_failed");
+	*(void **) (&nut_ne_xml_failed) = lt_dlsym(dl_handle,
+		symbol = "ne_xml_failed");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+
+	/* Passed final lt_dlsym() */
+	symbol = NULL;
 
 	if (dl_saved_libname)
 		free(dl_saved_libname);
@@ -163,9 +175,13 @@ int nutscan_load_neon_library(const char *libname_path)
 
 err:
 	upsdebugx(0,
-		"Cannot load XML library (%s) : %s. XML search disabled.",
-		libname_path, dl_error);
-	dl_handle = (void *)1;
+		"Cannot load XML library (%s) : %s%s%s%s. XML search disabled.",
+		libname_path, dl_error,
+		symbol ? " Error happened during search for symbol '" : "",
+		symbol ? symbol : "",
+		symbol ? "'" : ""
+		);
+	dl_handle = (lt_dlhandle)1;
 	lt_dlexit();
 	if (dl_saved_libname) {
 		free(dl_saved_libname);
@@ -309,9 +325,7 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 			upsdebugx(5, "%s: sent request to %s, "
 				"loop #%d/%d, waiting for responses",
 				__func__, (ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES);
-			while ((ret = select(peerSocket + 1, &fds, NULL, NULL,
-						&timeout))
-			) {
+			while ((ret = select(peerSocket + 1, &fds, NULL, NULL, &timeout))) {
 				ne_xml_parser	*parser;
 				int	parserFailed;
 
@@ -372,8 +386,9 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
 				parser = (*nut_ne_xml_create)();
-				(*nut_ne_xml_push_handler)(parser, startelm_cb,
-							NULL, NULL, nut_dev);
+				(*nut_ne_xml_push_handler)(
+					parser, startelm_cb,
+					NULL, NULL, nut_dev);
 				/* recv_size is a ssize_t, so in range of size_t */
 				(*nut_ne_xml_parse)(parser, buf, (size_t)recv_size);
 				parserFailed = (*nut_ne_xml_failed)(parser); /* 0 = ok, nonzero = fail */
@@ -610,7 +625,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 				 */
 				int	stwST = sem_trywait(semaphore_scantype);
 				int	stwS  = sem_trywait(semaphore);
-				pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
+				pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0) ? TRUE : FALSE;
 				upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 					" curr_threads=%" PRIuSIZE
 					" thread_count=%" PRIuSIZE
@@ -685,7 +700,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 					if (curr_threads >= max_threads
 					|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 					) {
-							usleep (10000); /* microSec's, so 0.01s here */
+						usleep (10000); /* microSec's, so 0.01s here */
 					}
 				}
 				upsdebugx(2, "%s: proceeding with scan", __func__);
@@ -698,7 +713,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 #endif   /* HAVE_PTHREAD */
 
 			if (pass) {
-				tmp_sec = malloc(sizeof(nutscan_xml_t));
+				tmp_sec = (nutscan_xml_t*)malloc(sizeof(nutscan_xml_t));
 				if (tmp_sec == NULL) {
 					upsdebugx(0, "%s: Memory allocation error", __func__);
 					break;
@@ -719,7 +734,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 					thread_count++;
-					new_thread_array = realloc(thread_array,
+					new_thread_array = (nutscan_thread_t*)realloc(thread_array,
 						thread_count * sizeof(nutscan_thread_t));
 					if (new_thread_array == NULL) {
 						upsdebugx(1, "%s: Failed to realloc thread array", __func__);
@@ -849,7 +864,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 	}	/* end of: scan range of 1+ IP address(es), maybe in parallel */
 
 	/* both start_ip == end_ip == NULL, scan broadcast */
-	tmp_sec = malloc(sizeof(nutscan_xml_t));
+	tmp_sec = (nutscan_xml_t*)malloc(sizeof(nutscan_xml_t));
 	if (tmp_sec == NULL) {
 		upsdebugx(0, "%s: Memory allocation error", __func__);
 		return NULL;

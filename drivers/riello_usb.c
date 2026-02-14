@@ -1244,13 +1244,13 @@ void upsdrv_shutdown(void)
 	int retry;
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
-	 it doesn't respond at first if possible */
+	 * it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
 
 
 	/* you may have to check the line status since the commands
-	 for toggling power are frequently different for OL vs. OB */
+	 * for toggling power are frequently different for OL vs. OB */
 
 	/* OL: this must power cycle the load if possible */
 

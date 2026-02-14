@@ -54,7 +54,7 @@ static void val_escape(st_tree_t *node)
 	/* if the escaped value grew, deal with it */
 	if (node->safesize < (strlen(etmp) + 1)) {
 		node->safesize = strlen(etmp) + 1;
-		node->safe = xrealloc(node->safe, node->safesize);
+		node->safe = (char *)xrealloc(node->safe, node->safesize);
 	}
 
 	snprintf(node->safe, node->safesize, "%s", etmp);
@@ -310,7 +310,7 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 		/* expand the buffer if the value grows */
 		if (node->rawsize < (strlen(val) + 1)) {
 			node->rawsize = strlen(val) + 1;
-			node->raw = xrealloc(node->raw, node->rawsize);
+			node->raw = (char *)xrealloc(node->raw, node->rawsize);
 		}
 
 		/* store the literal value for later comparisons */
@@ -321,7 +321,7 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 		return 1;	/* changed */
 	}
 
-	*nptr = xcalloc(1, sizeof(**nptr));
+	*nptr = (st_tree_t *)xcalloc(1, sizeof(**nptr));
 
 	(*nptr)->var = xstrdup(var);
 	(*nptr)->raw = xstrdup(val);
@@ -347,7 +347,7 @@ static int st_tree_enum_add(enum_t **list, const char *enc)
 		return 0;	/* duplicate */
 	}
 
-	item = xcalloc(1, sizeof(*item));
+	item = (enum_t *)xcalloc(1, sizeof(*item));
 	item->val = xstrdup(enc);
 	item->next = *list;
 
@@ -392,7 +392,7 @@ static int st_tree_range_add(range_t **list, const int min, const int max)
 		return 0;	/* duplicate */
 	}
 
-	item = xcalloc(1, sizeof(*item));
+	item = (range_t *)xcalloc(1, sizeof(*item));
 	item->min = min;
 	item->max = max;
 	item->next = *list;
@@ -581,7 +581,7 @@ int state_addcmd(cmdlist_t **list, const char *cmd)
 		return 0;	/* duplicate */
 	}
 
-	item = xcalloc(1, sizeof(*item));
+	item = (cmdlist_t *)xcalloc(1, sizeof(*item));
 	item->name = xstrdup(cmd);
 	item->next = *list;
 

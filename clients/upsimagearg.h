@@ -59,8 +59,8 @@ static struct {
 
 typedef struct {
 	char	*name;		/* name of the UPS variable                 */
-	char	*minimum;	/* name of minimum value UPS variable
-	                       or variable in imgarg table              */
+	char	*minimum;	/* name of minimum value UPS variable       */
+				/* or variable in imgarg table              */
 	char	*nominal;	/* as above, only for nominal value         */
 	char	*maximum;	/* as above, only for maximum value         */
 	int	deviation;	/* variable deviation - width of green zone */

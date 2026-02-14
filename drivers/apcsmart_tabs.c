@@ -73,13 +73,13 @@ apc_vartab_t apc_vartab[] = {
 
 	{ NULL, 0, 0, NULL, 0, 0 }
 	/* todo:
-
-	   I = alarm enable (hex field) - split into alarm.n.enable
-	   J = alarm status (hex field) - split into alarm.n.status
-
-	0x15 = output voltage selection (APC_F_VOLT)
-	0x5C = load power (APC_POLL|APC_F_PERCENT)
-
+	 *
+	 * I = alarm enable (hex field) - split into alarm.n.enable
+	 * J = alarm status (hex field) - split into alarm.n.status
+	 *
+	 * 0x15 = output voltage selection (APC_F_VOLT)
+	 * 0x5C = load power (APC_POLL|APC_F_PERCENT)
+	 *
 	 */
 };
 

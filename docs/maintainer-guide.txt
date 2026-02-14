@@ -164,9 +164,26 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
 
 * bump the release identification (consider committing as one commit later on):
 ** see `docs/nut-versioning.adoc` for details about NUT SEMVER spec and practice
+** revise `.github/workflows/08-PyNUTClient.yml` for fallback `TAG_NAME` naming
+** revise `appveyor.yml` for branch naming
+** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
+** revise `scripts/obs/debian.changelog` (at least a dummy entry)
+** revise `scripts/obs/nut.dsc` and `scripts/obs/nut.spec` for their `Version`
+   fields
 ** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
-   <exact incremented version> (ex: `2.8.0`), and provide the `VERSION_FORCED`
-   and `VERSION_FORCED_SEMVER` files (to same effect but more explicitly and
+   <exact incremented version> (ex: `2.8.0`)
+*** DOUBLE-CHECK that the `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh`
+    is an `X.Y.Z` triplet, without the fourth `.1` suffix, for the release!
+*** Note that since NUT v2.8.3 this script dictates the version propagated by
+    the `configure` script, so direct changes of `AC_INIT` there are no longer
+    needed
+** commit with a relevant release message, e.g.:
++
+----
+:; git commit -sm 'Update versions for release of NUT v2.8.0'
+----
+** provide the `VERSION_FORCED` and `VERSION_FORCED_SEMVER` files (to same
+   effect as fallback in `tools/gitlog2version.sh` but more explicitly and
    visibly) in the local workspace to be added to the `dist` archive tarball
    file (DO NOT add them to git to avoid confusion later, or revert any such
    addition after the release -- still has a chance to confuse e.g. branches
@@ -178,6 +195,8 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
 :; git tag v2.8.3-rc7
 
 :; NUT_VERSION_QUERY="UPDATE_FILE_GIT_RELEASE" ./tools/gitlog2version.sh
+
+# Output sample wrapped for readability:
 SEMVER=2.8.3; TRUNK='upstream/master'; BASE='735451f1f21556f2a7b8443053e8962c2184239f';
 DESC='v2.8.2-2881+gbdade6241' => TAG='v2.8.2' + SUFFIX='-2881+gbdade6241+v2.8.3+rc7'
  => VER5='2.8.2.2878.3' => DESC5='2.8.2.2878.3-2881+gbdade6241+v2.8.3+rc7'
@@ -211,19 +230,6 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 # Do not let them be easily lost; later you can just re-create these links
 # if file names in your top_srcdir are removed:
 :; ln .relver/* .
-----
-*** DOUBLE-CHECK that the `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh`
-    is an `X.Y.Z` triplet, without the fourth `.1` suffix, for the release!
-*** Note that since NUT v2.8.3 this script dictates the version propagated by
-    the `configure` script, so direct changes of `AC_INIT` there are no longer
-    needed
-** revise `.github/workflows/PyNUTClient.yml` for fallback `TAG_NAME` naming
-** revise `appveyor.yml` for branch naming
-** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
-** commit with a relevant release message, e.g.:
-+
-----
-:; git commit -sm 'Update versions for release of NUT v2.8.0'
 ----
 
 * last-minute update against possible master-branch changes (and be sure to

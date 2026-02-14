@@ -257,14 +257,14 @@ typedef struct alrm_ar alrm_ar_t;
 static inline
 alrm_ar_t *alloc_alrm_ar(int as, size_t extra)
 {
-	alrm_ar_t *ret = xcalloc(1, sizeof(alrm_t) + extra);
+	alrm_ar_t	*ret = (alrm_ar_t*)xcalloc(1, sizeof(alrm_t) + extra);
 	if (ret) {
-	memcpy(ret,
-		   &(alrm_ar_t const) {
-		   .alrm_c = as
-		   },
-		   sizeof(alrm_ar_t)
-	);
+		memcpy(ret,
+			&(alrm_ar_t const) {
+				.alrm_c = as
+			},
+			sizeof(alrm_ar_t)
+		);
 	}
 	return ret;
 }

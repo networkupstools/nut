@@ -53,7 +53,7 @@ static int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
 static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, size_t size)
 {
 	assert (size < INT_MAX);
-	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, (int)size, 1000);
+	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, (usb_ctrl_charbuf)buf, (int)size, 1000);
 }
 
 static void *powerware_ups(USBDevice_t *device) {
@@ -69,7 +69,7 @@ static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned
 	NUT_UNUSED_VARIABLE(index);
 	NUT_UNUSED_VARIABLE(type);
 	assert (size < INT_MAX);
-	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, (int)size, 1000);
+	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, (usb_ctrl_charbuf)buf, (int)size, 1000);
 }
 
 static void *phoenixtec_ups(USBDevice_t *device) {
@@ -233,7 +233,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		if ( my_buf[0] != PW_COMMAND_START_BYTE ) {
 			upsdebugx(2, "get_answer: wrong header 0xab vs. %02x", my_buf[0]);
 			/* Sometime we read something wrong. bad cables? bad ports? */
-			my_buf = memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
+			my_buf = (unsigned char*)memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
 			if (!my_buf)
 				return -1;
 		}
@@ -302,7 +302,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		tail = (ssize_t)bytes_read;
 		tail -= (ssize_t)(length + PW_HEADER_SIZE);
 		if (tail > 0)
-			my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
+			my_buf = (unsigned char*)memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
 		else if (tail == 0)
 			my_buf = &buf[0];
 		else { /* if (tail < 0) */

@@ -37,7 +37,10 @@ Device MemClientStub::getDevice(const std::string& name)
 
 std::set<std::string> MemClientStub::getDeviceNames()
 {
-	throw NutException("Not implemented");
+	volatile bool not_implemented = true;
+	if (not_implemented)
+		throw NutException("Not implemented");
+	return std::set<std::string>();
 }
 
 std::string MemClientStub::getDeviceDescription(const std::string& name)
@@ -176,7 +179,10 @@ TrackingID MemClientStub::executeDeviceCommand(const std::string& dev, const std
 
 std::map<std::string, std::set<std::string>> MemClientStub::listDeviceClients(void)
 {
-	throw NutException("Not implemented");
+	volatile bool not_implemented = true;
+	if (not_implemented)
+		throw NutException("Not implemented");
+	return std::map<std::string, std::set<std::string>>();
 }
 
 std::set<std::string> MemClientStub::deviceGetClients(const std::string& dev)

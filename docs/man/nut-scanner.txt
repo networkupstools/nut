@@ -29,11 +29,12 @@ INSTALLATION
 *nut-scanner* is only built if libltdl (part of libtool development suite)
 is available.
 
-Available scanning options (USB, SNMP, IPMI, ...) will vary according
+Available scanning options (USB, SNMP, IPMI, UPower, ...) will vary according
 to the available compile-time and run-time dependencies. For example, if
 Net-SNMP is installed, thus providing libsnmp libraries (`*.so` or `*.dll`)
 and header files during compilation, and at least the library files on the
-monitoring system, then SNMP discovery will be available.
+monitoring system, then SNMP discovery will be available. Similarly, UPower
+discovery requires GDBus/libgio libraries.
 
 OPTIONS
 -------
@@ -105,6 +106,9 @@ No IP address options are required or used.
 *-I* | *--ipmi_scan*::
 Scan NUT compatible power supplies available via IPMI on the current host,
 or over the network if IP address ranges are specified.
+
+*-J* | *--upower_scan*::
+Scan UPower devices. Requires GDBus/libgio libraries to be available.
 
 *-E* | *--eaton_serial* 'serial ports'::
 Scan Eaton devices (XCP and SHUT) available via serial bus on the current host.
@@ -361,6 +365,20 @@ on Windows):
 
 ----
 :; nut-scanner --eaton_serial 1-2
+----
+
+To scan for UPower devices:
+
+----
+:; nut-scanner -J
+
+[nutdev-upower1]
+        driver = "upower"
+        port = "/org/freedesktop/UPower/devices/ups_hiddev0"
+        vendor = "APC"
+        product = "Back-UPS ES 700G"
+        serial = "5B1234567890"
+        bus = "upower"
 ----
 
 SEE ALSO

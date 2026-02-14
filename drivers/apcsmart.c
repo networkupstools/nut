@@ -4,7 +4,7 @@
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
  *           (C) 2011+ Michal Soltys <soltys@ziu.info>
- *           (C) 2024  Jim Klimov <jimklimov+nut@gmail.com>
+ *           (C) 2024-2026  Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.37"
+#define DRIVER_VERSION	"3.38"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -95,10 +95,13 @@ static apc_vartab_t *vt_lookup_char(char cmdchar)
 {
 	int	i;
 
-	for (i = 0; apc_vartab[i].name != NULL; i++)
-		if ((apc_vartab[i].flags & APC_PRESENT) &&
-		    apc_vartab[i].cmd == cmdchar)
+	for (i = 0; apc_vartab[i].name != NULL; i++) {
+		if ((apc_vartab[i].flags & APC_PRESENT)
+		 && apc_vartab[i].cmd == cmdchar
+		) {
 			return &apc_vartab[i];
+		}
+	}
 
 	return NULL;
 }
@@ -705,7 +708,7 @@ static void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 		return;
 	}
 
-	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+	if ( !(name = (char *)xmalloc(sizeof(char) * vt->nlen0)) ) {
 		upslogx(LOG_ERR, "apc_dstate_delinfo() failed to allocate buffer");
 		return;
 	}
@@ -737,12 +740,12 @@ static void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 		return;
 	}
 
-	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+	if ( !(name = (char *)xmalloc(sizeof(char) * vt->nlen0)) ) {
 		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
 		return;
 	}
 
-	if ( !(temp = xmalloc(sizeof(char) * (upsvallen + 2))) ) {
+	if ( !(temp = (char *)xmalloc(sizeof(char) * (upsvallen + 2))) ) {
 		/* +2 seems like an overkill, but helps hush compiler warnings */
 		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
 		free(name);
@@ -1583,7 +1586,7 @@ static int sdcmd_AT(const void *str)
 {
 	ssize_t ret;
 	size_t cnt, padto, i;
-	const char *awd = str;
+	const char *awd = (const char *)str;
 	char temp[APC_SBUF], *ptr;
 
 	memset(temp, '\0', sizeof(temp));
@@ -2080,9 +2083,11 @@ static int instcmd(const char *cmd, const char *ext)
 	}
 
 	if (!(ct->flags & APC_PRESENT)) {
-		upslogx(LOG_INSTCMD_INVALID, "%s: command [%s %s] recognized, but"
-		       " not supported by your UPS model", __func__, cmd,
-				ext ? ext : "\b");
+		upslogx(LOG_INSTCMD_INVALID,
+			"%s: command [%s %s] recognized, but"
+			" not supported by your UPS model",
+			__func__, cmd,
+			ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
 	}
 
@@ -2161,11 +2166,6 @@ void upsdrv_tweak_prognames(void)
 
 void upsdrv_help(void)
 {
-	printf(
-		"\nFor detailed information, please refer to:\n"
-		  " - apcsmart(8)\n"
-		  " - https://www.networkupstools.org/docs/man/apcsmart.html\n"
-	      );
 }
 
 void upsdrv_initups(void)

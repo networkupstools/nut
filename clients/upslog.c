@@ -99,7 +99,7 @@ static struct logtarget_t *add_logfile(const char *logfn_arg)
 	if (!logfn_arg || !(*logfn_arg))
 		return p;
 
-	p = xcalloc(1, sizeof(struct monhost_ups_t));
+	p = (struct logtarget_t *)xcalloc(1, sizeof(struct logtarget_t));
 	p->logfn = xstrdup(logfn_arg);
 	p->logfile = NULL;
 
@@ -114,9 +114,10 @@ static void reopen_log(void)
 {
 	struct	logtarget_t	*p;
 
-	for (p = logfile_anchor;
-	     p != NULL;
-	     p = p->next
+	for (
+		p = logfile_anchor;
+		p != NULL;
+		p = p->next
 	) {
 		/* Never opened, e.g. removed asterisk entry */
 		if (!p->logfile)
@@ -128,8 +129,8 @@ static void reopen_log(void)
 		}
 
 		if ((p->logfile = freopen(
-		    p->logfn, "a",
-		    p->logfile)) == NULL
+			p->logfn, "a",
+			p->logfile)) == NULL
 		) {
 			fatal_with_errno(EXIT_FAILURE,
 				"could not reopen logfile %s", p->logfn);
@@ -224,7 +225,7 @@ static void help(const char *prog)
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
-	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 	printf("\n");
 	printf("Some valid format string escapes:\n");
@@ -373,7 +374,7 @@ static void add_call(void (*fptr)(const char *arg, const struct monhost_ups_t *m
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(flist_t));
+	tmp = (flist_t *)xmalloc(sizeof(flist_t));
 
 	tmp->fptr = fptr;
 
@@ -542,7 +543,7 @@ int main(int argc, char **argv)
 					char *m_arg, *s;
 
 					monhost_ups_prev = monhost_ups_current;
-					monhost_ups_current = xmalloc(sizeof(struct monhost_ups_t));
+					monhost_ups_current = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
 					if (monhost_ups_anchor == NULL)
 						monhost_ups_anchor = monhost_ups_current;
 					else
@@ -684,7 +685,7 @@ int main(int argc, char **argv)
 	if (argc >= 4) {
 		/* read out the remaining argv entries to the format string */
 
-		logformat = xmalloc(LARGEBUF);
+		logformat = (char *)xmalloc(LARGEBUF);
 		memset(logformat, '\0', LARGEBUF);
 		logformat_allocated = 1;
 
@@ -702,7 +703,7 @@ int main(int argc, char **argv)
 
 		/* May be or not be NULL here: */
 		monhost_ups_prev = monhost_ups_current;
-		monhost_ups_current = xmalloc(sizeof(struct monhost_ups_t));
+		monhost_ups_current = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
 		if (monhost_ups_anchor == NULL) {
 			/* Become the single-entry list */
 			monhost_ups_anchor = monhost_ups_current;
@@ -730,7 +731,7 @@ int main(int argc, char **argv)
 		char	*s = xstrdup(logformat);
 		if (s) {
 			if (!logformat_allocated) {
-				logformat = xmalloc(LARGEBUF);
+				logformat = (char *)xmalloc(LARGEBUF);
 				if (!logformat)
 					fatalx(EXIT_FAILURE, "Failed re-allocation to prepend UPSHOST to formatting string");
 				memset(logformat, '\0', LARGEBUF);
@@ -748,9 +749,10 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
 	/* Split the system specs in a common fashion for tuples and legacy args */
-	for (monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	for (
+		monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
+		monhost_ups_current != NULL;
+		monhost_ups_current = monhost_ups_current->next
 	) {
 		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
@@ -781,7 +783,7 @@ int main(int argc, char **argv)
 				monhost_ups_current->port
 			);
 
-			conn = xmalloc(sizeof(*conn));
+			conn = (UPSCONN_t *)xmalloc(sizeof(*conn));
 
 			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0) {
 				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
@@ -809,7 +811,13 @@ int main(int argc, char **argv)
 				found++;
 				upsdebugx(1, "FOUND: %s: %s", answer[1], answer[2]);
 
-				mu = xmalloc(sizeof(struct monhost_ups_t));
+				mu = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
+				if (mu == NULL) {
+					upslogx(LOG_ERR, "Failed to get memory for monitoring host structure. Not adding %s@%s:%" PRIu16,
+						answer[1], monhost_ups_current->hostname, monhost_ups_current->port);
+					continue;
+				}
+
 				snprintf(buf, sizeof(buf), "%s@%s:%" PRIu16,
 					answer[1],
 					monhost_ups_current->hostname,
@@ -880,9 +888,10 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
 	/* Report the logged systems, open the log files as needed */
-	for (monhost_ups_current = monhost_ups_anchor;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	for (
+		monhost_ups_current = monhost_ups_anchor;
+		monhost_ups_current != NULL;
+		monhost_ups_current = monhost_ups_current->next
 	) {
 		printf("logging status of %s to %s (%is intervals)\n",
 			monhost_ups_current->monhost,
@@ -894,7 +903,7 @@ int main(int argc, char **argv)
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		}
 
-		monhost_ups_current->ups = xmalloc(sizeof(UPSCONN_t));
+		monhost_ups_current->ups = (UPSCONN_t *)xmalloc(sizeof(UPSCONN_t));
 
 		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",
@@ -969,9 +978,10 @@ int main(int argc, char **argv)
 			upsnotify(NOTIFY_STATE_READY, NULL);
 		}
 
-		for (monhost_ups_current = monhost_ups_anchor;
-		     monhost_ups_current != NULL;
-		     monhost_ups_current = monhost_ups_current->next
+		for (
+			monhost_ups_current = monhost_ups_anchor;
+			monhost_ups_current != NULL;
+			monhost_ups_current = monhost_ups_current->next
 		) {
 			/* reconnect if necessary */
 			if (upscli_fd(monhost_ups_current->ups) < 0) {
@@ -1003,9 +1013,10 @@ int main(int argc, char **argv)
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 
-	for (monhost_ups_current = monhost_ups_anchor;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	for (
+		monhost_ups_current = monhost_ups_anchor;
+		monhost_ups_current != NULL;
+		monhost_ups_current = monhost_ups_current->next
 	) {
 		/* we might have several systems logged into same file;
 		 * take care to not close stdout though */

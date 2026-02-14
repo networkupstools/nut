@@ -396,9 +396,12 @@ int	str_contains_token(const char *string, const char *token);
  * checking for uniqueness and going to add a newly seen token.
  * If such callback returns 0, abort the addition of token and return -3.
  */
-int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
-			    int (*callback_always)(char *, size_t, const char *),
-			    int (*callback_unique)(char *, size_t, const char *)
+int	str_add_unique_token(
+	char *tgt,
+	size_t tgtsize,
+	const char *token,
+	int (*callback_always)(char *, size_t, const char *),
+	int (*callback_unique)(char *, size_t, const char *)
 );
 
 /* Report maximum platform value for the pid_t */
@@ -442,6 +445,11 @@ int sendsignalfnaliases(const char *pidfn, const char * sig, const char **progna
 /* return a pointer to character inside the file that starts a basename
  * caller should strdup() a copy to retain beyond the lifetime of "file" */
 const char *xbasename(const char *file);
+
+/* enable writing upslog_with_errno() and upslogx() type messages to
+ * the stdout instead of stderr, and end them with HTML <BR/> tag,
+ * to help troubleshoot NUT CGI programs specifically */
+void cgilogbit_set(void);
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
@@ -752,6 +760,12 @@ extern int optind;
 #define UPSLOG_STDERR_ON_FATAL	0x0004
 #define UPSLOG_SYSLOG_ON_FATAL	0x0008
 
+/* Special cases, primarily for NUT CGI programs to dump logs
+ *  in a way better usable when troubleshooting with a browser:
+ */
+#define UPSLOG_STDOUT		0x0010
+#define UPSLOG_CGI_BR		0x0020
+
 #ifndef HAVE_SETEUID
 #	define seteuid(x) setresuid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #	define setegid(x) setresgid(-1,x,-1)    /* Works for HP-UX 10.20 */
@@ -802,6 +816,9 @@ double difftimeval(struct timeval x, struct timeval y);
 #if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
 double difftimespec(struct timespec x, struct timespec y);
 #endif
+
+/* count the time elapsed since start in milliseconds */
+long elapsed_since_timeval(struct timeval *start);
 
 #ifndef HAVE_USLEEP
 /* int __cdecl usleep(unsigned int useconds); */

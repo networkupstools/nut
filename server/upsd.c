@@ -5,7 +5,7 @@
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
 	2019 		Eaton (author: Arnaud Quette <ArnaudQuette@eaton.com>)
-	2020 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2020 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -94,8 +94,12 @@ int allow_no_device = 0;
  */
 int allow_not_all_listeners = 0;
 
-/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
+/* preloaded to POSIX sysconf(_SC_OPEN_MAX) or WIN32 MAX_WAIT_OBJECTS in main
+ * and elsewhere, the run-time value can be overridden via upsd.conf `MAXCONN`
+ * option (may cause partial waits chunk by chunk, if sysmaxconn is smaller).
+ */
 nfds_t	maxconn = 0;
+static nfds_t	sysmaxconn = 0;
 
 /* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 char	*statepath = NULL;
@@ -112,7 +116,7 @@ nut_ctype_t	*firstclient = NULL;
 /* default is to listen on all local interfaces */
 static stype_t	*firstaddr = NULL;
 
-static int 	opt_af = AF_UNSPEC;
+static int	opt_af = AF_UNSPEC;
 
 typedef enum {
 	DRIVER = 1,
@@ -151,11 +155,13 @@ static tracking_t	*tracking_list = NULL;
 
 #ifndef WIN32
 	/* pollfd  */
-static struct pollfd	*fds = NULL;
+#define FTS_T struct pollfd
 #else	/* WIN32 */
-static HANDLE		*fds = NULL;
+#define FTS_T HANDLE
 static HANDLE		mutex = INVALID_HANDLE_VALUE;
 #endif	/* WIN32 */
+/* Dynamic array of file descriptors (or WIN32 handles) that we poll */
+static FTS_T	*fds = NULL;
 static handler_t	*handler = NULL;
 
 	/* pid file */
@@ -230,7 +236,7 @@ void listen_add(const char *addr, const char *port)
 	}
 
 	/* grab some memory and add the info */
-	server = xcalloc(1, sizeof(*server));
+	server = (stype_t*)xcalloc(1, sizeof(*server));
 	server->addr = xstrdup(addr);
 	server->port = xstrdup(port);
 	server->sock_fd = ERROR_FD_SOCK;
@@ -326,7 +332,7 @@ static void setuptcp(stype_t *server)
 			/* Not constrained to IPv6 */
 			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv4 any-address support",
 				__func__, server->port);
-			serverAnyV4 = xcalloc(1, sizeof(*serverAnyV4));
+			serverAnyV4 = (stype_t*)xcalloc(1, sizeof(*serverAnyV4));
 			serverAnyV4->addr = xstrdup("0.0.0.0");
 			serverAnyV4->port = xstrdup(server->port);
 			serverAnyV4->sock_fd = ERROR_FD_SOCK;
@@ -337,7 +343,7 @@ static void setuptcp(stype_t *server)
 			/* Not constrained to IPv4 */
 			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv6 any-address support",
 				__func__, server->port);
-			serverAnyV6 = xcalloc(1, sizeof(*serverAnyV6));
+			serverAnyV6 = (stype_t*)xcalloc(1, sizeof(*serverAnyV6));
 			serverAnyV6->addr = xstrdup("::0");
 			serverAnyV6->port = xstrdup(server->port);
 			serverAnyV6->sock_fd = ERROR_FD_SOCK;
@@ -750,7 +756,7 @@ static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 	 && (nut_debug_level > 9 || strcmp(arg[0], "PASSWORD"))	/* Do not log credentials by default */
 	) {
 		/* Not xcalloc() here, not too fatal if we fail */
-		char *s = calloc(LARGEBUF, sizeof(char));
+		char *s = (char*)calloc(LARGEBUF, sizeof(char));
 		if (s) {
 			size_t	i;
 
@@ -856,7 +862,7 @@ static void client_connect(stype_t *server)
 		return;
 	}
 
-	client = xcalloc(1, sizeof(*client));
+	client = (nut_ctype_t*)xcalloc(1, sizeof(*client));
 
 	client->sock_fd = fd;
 
@@ -1085,8 +1091,8 @@ void server_load(void)
 		return;
 
 	/* check for edge cases we can let slide */
-	if ( (listenersTotal - listenersValid) ==
-	     (listenersTotalLocalhost - listenersValidLocalhost)
+	if ( (listenersTotal - listenersValid)
+	  == (listenersTotalLocalhost - listenersValidLocalhost)
 	) {
 		/* Note that we can also get into this situation
 		 * when "dual-stack" IPv6 listener also handles
@@ -1216,22 +1222,68 @@ static void upsd_cleanup(void)
 	upsdebugx(1, "%s: finished", __func__);
 }
 
-static void poll_reload(void)
+static void update_sysmaxconn(void)
 {
-	long	ret;
-	size_t	maxalloc;
+	long	l;
+	char	*s = getenv("NUT_SYSMAXCONN_LIMIT");
 
 #ifndef WIN32
-	ret = sysconf(_SC_OPEN_MAX);
+	/* default to system limit (may be overridden in upsd.conf) */
+	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
+	l = sysconf(_SC_OPEN_MAX);
 #else	/* WIN32 */
-	ret = (long)MAXIMUM_WAIT_OBJECTS;
+	/* hard-coded 64 (from ddk/wdm.h or winnt.h) */
+	l = (long)MAXIMUM_WAIT_OBJECTS;
 #endif	/* WIN32 */
 
-	if ((intmax_t)ret < (intmax_t)maxconn) {
+	if (l < 1) {
+		/* TOTHINK: Not fail, but use a conservative fallback number?
+		 *  Can we trust the OS to support any?
+		 */
 		fatalx(EXIT_FAILURE,
-			"Your system limits the maximum number of connections to %ld\n"
-			"but you requested %" PRIdMAX ". The server won't start until this\n"
-			"problem is resolved.\n", ret, (intmax_t)maxconn);
+			"System reported an absurd value %ld as maximum number of connections.\n"
+			"The server won't start until this problem is resolved.\n",
+			l);
+	}
+
+	/* Note this historically also serves as
+	 * the initial/default MAXCONN setting
+	 * (so site/platform-dependent).
+	 */
+	sysmaxconn = (nfds_t)l;
+	if (maxconn < 1) {
+		upsdebugx(1, "%s: defaulting maxconn to sysmaxconn: %ld",
+			__func__, l);
+		maxconn = sysmaxconn;
+	}
+
+	/* Support envvar for NIT or similar tests.
+	 * Still do not exceed what the OS said.
+	 */
+	if (s && str_to_long(s, &l, 10)) {
+		if (l > 0 && (nfds_t)l < sysmaxconn) {
+			upslogx(LOG_INFO, "Adjusting sysmaxconn according to NUT_SYSMAXCONN_LIMIT envvar: %ld", l);
+			sysmaxconn  = (nfds_t)l;
+		} else {
+			upslogx(LOG_WARNING, "Adjusting sysmaxconn according to NUT_SYSMAXCONN_LIMIT envvar failed: %ld is out of range. Keeping OS-provided %ld.",
+			l, (long)sysmaxconn);
+		}
+	}	/* else nothing to bother about */
+}
+
+static void poll_reload(void)
+{
+	size_t	maxalloc;
+
+	/* Not likely this would change, but refresh just in case */
+	update_sysmaxconn();
+
+	if ((intmax_t)sysmaxconn < (intmax_t)maxconn) {
+		upslogx(LOG_WARNING,
+			"Your system limits the maximum number of connections to %" PRIdMAX "\n"
+			"but you requested %" PRIdMAX ". The server may handle connections\n"
+			"in smaller groups, maybe affecting efficiency and response time.\n",
+			(intmax_t)sysmaxconn, (intmax_t)maxconn);
 	}
 
 	if (1 > maxconn) {
@@ -1240,12 +1292,8 @@ static void poll_reload(void)
 			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn);
 	}
 
-#ifndef WIN32
 	/* How many items can we stuff into the array? */
 	maxalloc = SIZE_MAX / sizeof(void *);
-#else	/* WIN32 */
-	maxalloc = MAXIMUM_WAIT_OBJECTS;
-#endif	/* WIN32 */
 	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
 			"You requested %" PRIdMAX " as maximum number of connections, but we can only allocate %" PRIuSIZE ".\n"
@@ -1256,8 +1304,8 @@ static void poll_reload(void)
 	upsdebugx(1, "%s: (p)re-allocate %" PRIuMAX
 		" entries for polling FDs and handlers",
 		__func__, (uintmax_t)maxconn);
-	fds = xrealloc(fds, (size_t)maxconn * sizeof(*fds));
-	handler = xrealloc(handler, (size_t)maxconn * sizeof(*handler));
+	fds = (FTS_T*)xrealloc(fds, (size_t)maxconn * sizeof(*fds));
+	handler = (handler_t*)xrealloc(handler, (size_t)maxconn * sizeof(*handler));
 }
 
 /* instant command and setvar status tracking */
@@ -1270,7 +1318,7 @@ int tracking_add(const char *id)
 	if ((!tracking_enabled) || (!id))
 		return 0;
 
-	item = xcalloc(1, sizeof(*item));
+	item = (tracking_t*)xcalloc(1, sizeof(*item));
 
 	item->id = xstrdup(id);
 	item->status = STAT_PENDING;
@@ -1495,14 +1543,15 @@ static void mainloop(void)
 	nfds_t	i;
 #else	/* WIN32 */
 	DWORD	ret;
-	pipe_conn_t * conn;
+	pipe_conn_t	*conn;
+	size_t	chunk = 0;
 #endif	/* WIN32 */
 
 	size_t	nfds_wanted = 0,	/* Connections we looked at (some may be invalid) */
 		nfds_considered = 0;	/* Connections we wanted to poll (but might be over maxconn limit) */
 	nfds_t	nfds = 0;
 	upstype_t	*ups;
-	nut_ctype_t		*client, *cnext;
+	nut_ctype_t	*client, *cnext;
 	stype_t		*server;
 	time_t	now;
 
@@ -1642,18 +1691,58 @@ static void mainloop(void)
 	upsdebugx(2, "%s: polling %" PRIdMAX " filedescriptors; some stats: "
 		"considered %" PRIdMAX " connections, "
 		"wanted to actually poll %" PRIdMAX
-		" and was constrained by maxconn=%" PRIdMAX,
+		" and was constrained by maxconn=%" PRIdMAX
+		" and chunked by sysmaxconn=%" PRIdMAX,
 		__func__, (intmax_t)nfds, (intmax_t)nfds_considered,
-		(intmax_t)nfds_wanted, (intmax_t)maxconn);
+		(intmax_t)nfds_wanted, (intmax_t)maxconn, (intmax_t)sysmaxconn);
 
-	if (nfds_wanted != nfds || nfds_wanted >= maxconn) {
+	if (nfds_wanted != nfds || nfds_wanted > maxconn) {
 		upslogx(LOG_ERR, "upsd polling %" PRIdMAX " filedescriptors,"
 			" but wanted to poll %" PRIdMAX
-			" and was constrained by maxconn=%" PRIdMAX,
+			" and was constrained by maxconn=%" PRIdMAX
+			" (see upsd.conf MAXCONN setting to adjust)",
 			(intmax_t)nfds, (intmax_t)nfds_wanted, (intmax_t)maxconn);
 	}
 
-	ret = poll(fds, nfds, 2000);
+	if (nfds <= sysmaxconn) {
+		ret = poll(fds, nfds, 2000);
+	} else {
+		/* Chunk it all; try to fit into same 2 sec as above.
+		 * Note that nfds at the moment may be smaller than
+		 * maxconn (allocated array size).
+		 */
+		size_t	last_chunk = nfds % sysmaxconn, chunk,
+			chunks = nfds / sysmaxconn + (last_chunk ? 1 : 0);
+		int	poll_TO = 2000 / chunks, tmpret;
+
+		if (poll_TO < 10)
+			poll_TO = 10;
+
+		upsdebugx(4, "%s: chunked filedescriptor polling via %" PRIuSIZE
+			" chunks, last one sized %" PRIuSIZE
+			", with timeout of %d msec per chunk",
+			__func__, chunks, last_chunk, poll_TO);
+
+		ret = 0;
+		for (chunk = 0; chunk < chunks; chunk++) {
+			upsdebugx(5,
+				"%s: chunked filedescriptor polling #%" PRIuSIZE
+				" of %" PRIuSIZE " chunks, with %d hits so far",
+				__func__, chunk, chunks, ret);
+			tmpret = poll(&fds[chunk * sysmaxconn],
+				(last_chunk && chunk == chunks - 1 ? last_chunk : sysmaxconn),
+				poll_TO);
+			if (tmpret < 0) {
+				upsdebug_with_errno(2,
+					"%s: failed during chunked polling, handled %" PRIuSIZE
+					" of %" PRIuSIZE " chunks so far, with %d hits",
+					__func__, chunk, chunks, ret);
+				ret = tmpret;
+				break;
+			}
+			ret += tmpret;
+		}
+	}
 
 	if (ret == 0) {
 		upsdebugx(2, "%s: no data available", __func__);
@@ -1940,19 +2029,58 @@ static void mainloop(void)
 	upsdebugx(2, "%s: wait for %" PRIdMAX " filedescriptors; some stats: "
 		"considered %" PRIdMAX " connections, "
 		"wanted to actually poll %" PRIdMAX
-		" and was constrained by maxconn=%" PRIdMAX,
+		" and was constrained by maxconn=%" PRIdMAX
+		" and chunked by sysmaxconn=%" PRIdMAX,
 		__func__, (intmax_t)nfds, (intmax_t)nfds_considered,
-		(intmax_t)nfds_wanted, (intmax_t)maxconn);
+		(intmax_t)nfds_wanted, (intmax_t)maxconn, (intmax_t)sysmaxconn);
 
-	if (nfds_wanted != nfds || nfds_wanted >= maxconn) {
+	if (nfds_wanted != nfds || nfds_wanted > maxconn) {
 		upslogx(LOG_ERR, "upsd polling %" PRIuMAX " filedescriptors,"
 			" but wanted to poll %" PRIuMAX
-			" and was constrained by maxconn=%" PRIuMAX,
+			" and was constrained by maxconn=%" PRIuMAX
+			" (see upsd.conf MAXCONN setting to adjust)",
 			(uintmax_t)nfds, (uintmax_t)nfds_wanted, (uintmax_t)maxconn);
 	}
 
-	/* https://docs.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects */
-	ret = WaitForMultipleObjects(nfds,fds,FALSE,2000);
+	/* https://docs.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects
+	 * We handle whoever lights up first, one per loop cycle.
+	 */
+	chunk = 0;
+	if (nfds <= sysmaxconn) {
+		ret = WaitForMultipleObjects(nfds, fds, FALSE, 2000);
+	} else {
+		/* Chunk it all; try to fit into same 2 sec as above.
+		 * Note that nfds at the moment may be smaller than
+		 * maxconn (allocated array size).
+		 */
+		size_t	last_chunk = nfds % sysmaxconn,
+			chunks = nfds / sysmaxconn + (last_chunk ? 1 : 0);
+		DWORD	poll_TO = 2000 / chunks, tmpret;
+
+		if (poll_TO < 10)
+			poll_TO = 10;
+
+		upsdebugx(4, "%s: chunked filedescriptor polling via %" PRIuSIZE
+			" chunks, last one sized %" PRIuSIZE
+			", with timeout of %" PRIi64 " msec per chunk",
+			__func__, chunks, last_chunk, poll_TO);
+
+		ret = WAIT_TIMEOUT;
+		for (chunk = 0; chunk < chunks; chunk++) {
+			upsdebugx(5,
+				"%s: chunked filedescriptor polling #%" PRIuSIZE
+				" of %" PRIuSIZE " chunks, with %" PRIu64 " hits so far",
+				__func__, chunk, chunks, ret);
+			tmpret = WaitForMultipleObjects(
+				(last_chunk && chunk == chunks - 1 ? last_chunk : sysmaxconn),
+				&fds[chunk * sysmaxconn],
+				FALSE, poll_TO);
+			if (tmpret != WAIT_TIMEOUT) {
+				ret = tmpret;
+				break;
+			}
+		}
+	}
 
 	upsdebugx(6, "%s: wait for filedescriptors done: %" PRIu64, __func__, ret);
 
@@ -1979,7 +2107,7 @@ static void mainloop(void)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
-	if (ret >= WAIT_ABANDONED_0 && ret <= WAIT_ABANDONED_0 + nfds - 1) {
+	if (ret >= WAIT_ABANDONED_0 && ret <= WAIT_ABANDONED_0 + (nfds < sysmaxconn ? nfds : sysmaxconn) - 1) {
 		/* One abandoned mutex object that satisfied the wait? */
 		ret = ret - WAIT_ABANDONED_0;
 		upsdebugx(5, "%s: got abandoned FD array item: %" PRIu64, __func__, nfds, ret);
@@ -1989,7 +2117,7 @@ static void mainloop(void)
 		/* Which one handle was triggered this time? */
 		/* Note: WAIT_OBJECT_0 may be currently defined as 0,
 		 * but docs insist on checking and shifting the range */
-		ret = ret - WAIT_OBJECT_0;
+		ret = ret - WAIT_OBJECT_0 + chunk * sysmaxconn;
 		upsdebugx(5, "%s: got event on FD array item: %" PRIu64, __func__, nfds, ret);
 	}
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
@@ -2282,14 +2410,14 @@ int main(int argc, char **argv)
 	}
 
 	{ /* scoping */
-		char *s = getenv("NUT_DEBUG_LEVEL");
-		int l;
-		if (s && str_to_int(s, &l, 10)) {
-			if (l > 0 && nut_debug_level_args < 1) {
+		char	*s = getenv("NUT_DEBUG_LEVEL");
+		int	lvl;
+		if (s && str_to_int(s, &lvl, 10)) {
+			if (lvl > 0 && nut_debug_level_args < 1) {
 				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
-					"since none was requested by command-line options", l);
-				nut_debug_level = l;
-				nut_debug_level_args = l;
+					"since none was requested by command-line options", lvl);
+				nut_debug_level = lvl;
+				nut_debug_level_args = lvl;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
 	}
@@ -2442,14 +2570,8 @@ int main(int argc, char **argv)
 		chroot_start(chroot_path);
 	}
 
-#ifndef WIN32
-	/* default to system limit (may be overridden in upsd.conf) */
-	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
-	maxconn = (nfds_t)sysconf(_SC_OPEN_MAX);
-#else	/* WIN32 */
-	/* hard-coded 64 (from ddk/wdm.h or winnt.h) */
-	maxconn = MAXIMUM_WAIT_OBJECTS;
-#endif	/* WIN32 */
+	/* Also initializes maxconn to what the OS says */
+	update_sysmaxconn();
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */

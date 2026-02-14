@@ -13,6 +13,11 @@
   to look out for. PRs to update this template are also welcome :)
 
 * Local build iterations can be augmented with the ci_build.sh script.
+  Note that if your system has both GCC and CLANG, they can expose different
+  kinds of issues in their static analysis warnings, so incantations like
+  `CC=clang CXX=clang++ ./ci_build.sh` or `BUILD_TYPE=fightwarn ./ci_build.sh`
+  (to iterate a matrix of some build dependency combos and compilers) can
+  be useful.
 -->
 
 ## General points
@@ -26,6 +31,12 @@
   separate PR, but certainly in a dedicated commit to simplify reviews
   of "real" changes in the other commits. Similarly for typo fixes in
   comments or text documents.
+
+- [ ] Use of coding helper tools and AI should be disclosed in the commit
+  or PR comments (it is interesting to know which ones do a decent job).
+  As with other contributions, a human is responsible and thanked for the
+  quality and content of the change, and is presumed to have the right to
+  post that code to be published further under the project's license terms.
 
 - [ ] Please star NUT on GitHub, this helps with sponsorships! ;)
 
@@ -91,6 +102,10 @@ Also note below, a point about PR posting for NUT DDL
   `make distcheck` target passes.
 
 ## General documentation updates
+
+- [ ] Added a bullet point into `NEWS.adoc`, possibly also `UPGRADING.adoc`
+  if there is something packagers or custom-build users should take into
+  account (new driver categories, configuration options, dependencies...)
 
 - [ ] Updated `docs/acknowledgements.txt` (for vendor-backed device support)
 

@@ -339,10 +339,10 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			}
 
 			/* collect the identifying information of this
-			   device. Note that this is safe, because
-			   there's no need to claim an interface for
-			   this (and therefore we do not yet need to
-			   detach any kernel drivers). */
+			 * device. Note that this is safe, because
+			 * there's no need to claim an interface for
+			 * this (and therefore we do not yet need to
+			 * detach any kernel drivers). */
 
 			free(device->Vendor);
 			free(device->Product);
