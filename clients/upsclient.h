@@ -2,7 +2,7 @@
 
    Copyright (C)
         2002	Russell Kroll <rkroll@exploits.org>
-        2020 - 2025	Jim Klimov <jimklimov+nu@gmail.com>
+        2020 - 2026	Jim Klimov <jimklimov+nu@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -139,6 +139,16 @@ int upscli_upserror(UPSCONN_t *ups);
 
 /* returns 1 if SSL mode is active for this connection */
 int upscli_ssl(UPSCONN_t *ups);
+
+#define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
+#define UPSCLI_SSL_CAPS_OPENSSL	1	/* Can use OpenSSL-specific setup */
+#define UPSCLI_SSL_CAPS_NSS	2	/* Can use Mozilla NSS-specific setup */
+
+/* Return a bitmap of the above for the current libupsclient build */
+int upscli_ssl_caps(void);
+/* String version for program help banners etc. */
+const char *upscli_ssl_caps_descr(void);
+void upscli_report_build_details(void);
 
 /* Assign default upscli_connect() from string; return 0 if OK, or
  * return -1 if parsing failed and current value was kept  */

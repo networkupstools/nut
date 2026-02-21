@@ -2211,6 +2211,7 @@ static void help(const char *arg_progname)
 	printf("  -6		IPv6 only\n");
 
 	nut_report_config_flags();
+	upsdebugx(1, "NUT data server was built %s", net_ssl_caps_descr());
 
 	printf("\n%s", suggest_doc_links(progname, "ups.conf, upsd.conf and upsd.users"));
 

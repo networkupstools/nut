@@ -75,6 +75,7 @@ static void usage(const char *prog)
 	printf("Call without -s to show all possible read/write variables (same as -l).\n");
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }

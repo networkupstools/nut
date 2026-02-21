@@ -104,6 +104,11 @@ https://github.com/networkupstools/nut/milestone/12
      characters. Now it is evaluated at `configure` time (to check that the
      characters may be used), and if not -- during `nut_stdint.h` parsing to
      fit known `int`/`long`/`long long` types. [#3300]
+   * Added new API methods and defined bitmap values for `libupsclient`
+     C binding to query and report SSL capabilities of the current library
+     build (none, OpenSSL, Mozilla NSS): `upscli_ssl_caps_descr()` and
+     `upscli_ssl_caps()`. Updated common NUT clients to report this info
+     in their detailed help banners. Done similarly for `upsd`. [issue #3328]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files

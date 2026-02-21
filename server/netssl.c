@@ -3,6 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2020 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    based on the original implementation:
 
@@ -67,10 +68,42 @@ char	*certpasswd = NULL;
 int	disable_weak_ssl = 0;
 
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-int certrequest = 0;
+int	certrequest = 0;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 static int	ssl_initialized = 0;
+
+/* Similar to upscli_ssl_caps_descr() for client library,
+ * but with more bells and whistles */
+const char *net_ssl_caps_descr(void)
+{
+	static const char	*ret = "with"
+#ifndef WITH_SSL
+		"out SSL support";
+#else
+		" SSL support: "
+# ifdef WITH_OPENSSL
+		"OpenSSL"
+#  ifdef WITH_NSS
+	/* Not likely we'd get here, but... */
+		" and "
+#  endif
+# endif
+# ifdef WITH_NSS
+		"Mozilla NSS"
+# endif
+# if !(defined WITH_NSS) && !(defined WITH_OPENSSL)
+		"oddly undefined"
+# endif
+		"; with"
+# ifndef WITH_CLIENT_CERTIFICATE_VALIDATION
+		"out"
+# endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
+		" client certificate validation";
+#endif
+
+	return ret;
+}
 
 #ifndef WITH_SSL
 
