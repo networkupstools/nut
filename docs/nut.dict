@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3660 utf-8
+personal_ws-1.1 en 3662 utf-8
 AAC
 AAS
 ABI
@@ -1901,6 +1901,7 @@ crossbuild
 crt
 crw
 crypto
+cryptographic
 csh
 cshdelay
 csi
@@ -3260,6 +3261,7 @@ structs
 sts
 stst
 stty
+stunnel
 stylesheet
 stylesheets
 su

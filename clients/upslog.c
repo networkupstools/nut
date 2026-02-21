@@ -2,7 +2,7 @@
 
    Copyright (C)
      1998       Russell Kroll <rkroll@exploits.org>
-     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
+     2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -239,6 +239,7 @@ static void help(const char *prog)
 	printf("%s\n", DEFAULT_LOGFORMAT);
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(prog, NULL));
 

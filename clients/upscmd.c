@@ -74,6 +74,7 @@ static void usage(const char *prog)
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }

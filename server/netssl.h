@@ -33,7 +33,7 @@ extern char	*certname;
 extern char	*certpasswd;
 extern int	disable_weak_ssl;
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-extern int certrequest;
+extern int	certrequest;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 /* List possible values for certrequested */
@@ -44,6 +44,9 @@ extern int certrequest;
 /* Required (cnx failed if no certificate or invalid CA chain) */
 #define NETSSL_CERTREQ_REQUIRE	2
 
+/* Similar to upscli_ssl_caps_descr() for client library,
+ * but with more bells and whistles */
+const char *net_ssl_caps_descr(void);
 
 void ssl_init(void);
 void ssl_finish(nut_ctype_t *client);

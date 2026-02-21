@@ -51,6 +51,8 @@ static int (*nut_upscli_list_start)(UPSCONN_t *ups, size_t numq,
 static int (*nut_upscli_list_next)(UPSCONN_t *ups, size_t numq,
 			const char **query, size_t *numa, char ***answer);
 static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
+static int (*nut_upscli_ssl_caps)(void);
+static void (*nut_upscli_report_build_details)(void);
 
 /* This variable collects device(s) from a sequential or parallel scan,
  * is returned to caller, and cleared to allow subsequent independent scans */
@@ -146,6 +148,24 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		symbol = "upscli_disconnect");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
+	}
+
+	*(void **) (&nut_upscli_ssl_caps) = lt_dlsym(dl_handle,
+		symbol = "upscli_ssl_caps");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_ssl_caps = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_report_build_details) = lt_dlsym(dl_handle,
+		symbol = "upscli_report_build_details");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_report_build_details = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	} else {
+		(*nut_upscli_report_build_details)();
 	}
 
 	/* Passed final lt_dlsym() */

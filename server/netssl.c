@@ -3,6 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2020 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    based on the original implementation:
 
@@ -28,10 +29,10 @@
 
 #include <sys/types.h>
 #ifndef WIN32
-#include <netinet/in.h>
-#include <sys/socket.h>
+#	include <netinet/in.h>
+#	include <sys/socket.h>
 #else	/* WIN32 */
-#include "wincompat.h"
+#	include "wincompat.h"
 #endif	/* WIN32 */
 
 #include "upsd.h"
@@ -43,13 +44,13 @@
 #	include <pk11pub.h>
 #	include <prinit.h>
 #	include <private/pprio.h>
-#if defined(NSS_VMAJOR) && (NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && defined(NSS_VMINOR) && NSS_VMINOR >= 39))
+# if defined(NSS_VMAJOR) && (NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && defined(NSS_VMINOR) && NSS_VMINOR >= 39))
 #	include <keyhi.h>
 #	include <keythi.h>
-#else
+# else
 #	include <key.h>
 #	include <keyt.h>
-#endif /* NSS before 3.39 */
+# endif /* NSS before 3.39 */
 #	include <secerr.h>
 #	include <sslerr.h>
 #	include <sslproto.h>
@@ -67,10 +68,42 @@ char	*certpasswd = NULL;
 int	disable_weak_ssl = 0;
 
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-int certrequest = 0;
+int	certrequest = 0;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 static int	ssl_initialized = 0;
+
+/* Similar to upscli_ssl_caps_descr() for client library,
+ * but with more bells and whistles */
+const char *net_ssl_caps_descr(void)
+{
+	static const char	*ret = "with"
+#ifndef WITH_SSL
+		"out SSL support";
+#else
+		" SSL support: "
+# ifdef WITH_OPENSSL
+		"OpenSSL"
+#  ifdef WITH_NSS
+	/* Not likely we'd get here, but... */
+		" and "
+#  endif
+# endif
+# ifdef WITH_NSS
+		"Mozilla NSS"
+# endif
+# if !(defined WITH_NSS) && !(defined WITH_OPENSSL)
+		"oddly undefined"
+# endif
+		"; with"
+# ifndef WITH_CLIENT_CERTIFICATE_VALIDATION
+		"out"
+# endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
+		" client certificate validation";
+#endif
+
+	return ret;
+}
 
 #ifndef WITH_SSL
 

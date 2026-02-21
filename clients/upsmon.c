@@ -4,7 +4,7 @@
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
      2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
+     2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -3446,6 +3446,7 @@ static void help(const char *arg_progname)
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(arg_progname, "upsmon.conf"));
 

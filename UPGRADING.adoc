@@ -99,6 +99,10 @@ Changes from 2.8.4 to 2.8.5
   use `upsdrvquery_NOSIGPIPE=0` to disable neutering of the signal inside
   the API itself. [PR #3277]
 
+- Added new API methods and defined bitmap values for `libupsclient` C binding
+  to query and report SSL capabilities of the library build (none, OpenSSL,
+  Mozilla NSS): `upscli_ssl_caps_descr()` and `upscli_ssl_caps()`. [PR #33xx]
+
 - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
   to match the driver program name. Packaging recipes may have to be updated.
   Follow-up from slightly botched renaming in original contribution. [PR #545]

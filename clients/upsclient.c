@@ -3,7 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2020 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2020 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1879,6 +1879,55 @@ int upscli_ssl(UPSCONN_t *ups)
 #endif /* WITH_SSL */
 
 	return 0;
+}
+
+/* Return a bitmap of the abilities for the current libupsclient build */
+int upscli_ssl_caps(void)
+{
+	int	ret = UPSCLI_SSL_CAPS_NONE;
+
+#ifdef WITH_SSL
+# ifdef WITH_OPENSSL
+	ret |= UPSCLI_SSL_CAPS_OPENSSL;
+# endif
+# ifdef WITH_NSS
+	ret |= UPSCLI_SSL_CAPS_NSS;
+# endif
+#endif	/* WITH_SSL */
+
+	return ret;
+}
+
+/* String version (English) for program help banners etc. */
+const char *upscli_ssl_caps_descr(void)
+{
+	static const char	*ret = "with"
+#ifndef WITH_SSL
+		"out SSL support";
+#else	/* WITH_SSL */
+		" SSL support: "
+# ifdef WITH_OPENSSL
+		"OpenSSL"
+#  ifdef WITH_NSS
+	/* Not likely we'd get here, but... */
+		" and "
+#  endif
+# endif
+# ifdef WITH_NSS
+		"Mozilla NSS"
+# endif
+# if !(defined WITH_NSS) && !(defined WITH_OPENSSL)
+		"oddly undefined"
+# endif
+		;
+#endif	/* WITH_SSL */
+
+	return ret;
+}
+
+void upscli_report_build_details(void)
+{
+	upsdebugx(1, "Using NUT libupsclient library built %s", upscli_ssl_caps_descr());
 }
 
 int upscli_set_default_connect_timeout(const char *secs) {
