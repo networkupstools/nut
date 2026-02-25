@@ -68,14 +68,14 @@
 #	define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
 #else
 #	define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
-#endif  /* end of Solaris/i386 WA for non-blocking connect */
+#endif	/* end of Solaris/i386 WA for non-blocking connect */
 
 /* WA for AIX bug: non-blocking connect sets errno to 0 */
 #if (defined NUT_PLATFORM_AIX)
 #	define AIX_NBCONNECT_0(status) (0 == (status))
 #else
 #	define AIX_NBCONNECT_0(status) (0)
-#endif  /* end of AIX WA for non-blocking connect */
+#endif	/* end of AIX WA for non-blocking connect */
 
 #ifdef WITH_NSS
 #	include <prerror.h>
@@ -84,16 +84,16 @@
 #	include <prtypes.h>
 #	include <ssl.h>
 #	include <private/pprio.h>
-#endif /* WITH_NSS */
+#endif	/* WITH_NSS */
 
-#define UPSCLIENT_MAGIC 0x19980308
+#define UPSCLIENT_MAGIC	0x19980308
 
 #define SMALLBUF	512
 
 #ifdef SHUT_RDWR
-#define shutdown_how SHUT_RDWR
+#	define shutdown_how	SHUT_RDWR
 #else
-#define shutdown_how 2
+#	define shutdown_how	2
 #endif
 
 #include "nut_version.h"
@@ -381,30 +381,30 @@ int upscli_init(int certverify, const char *certpath,
 
 #ifdef WITH_OPENSSL
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+# if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_load_error_strings();
 	SSL_library_init();
 
 	ssl_ctx = SSL_CTX_new(SSLv23_client_method());
-#else
+# else
 	ssl_ctx = SSL_CTX_new(TLS_client_method());
-#endif
+# endif
 
 	if (!ssl_ctx) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		return -1;
 	}
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+# if OPENSSL_VERSION_NUMBER < 0x10100000L
 	/* set minimum protocol TLSv1 */
 	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
-#else
+# else
 	ret = SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_VERSION);
 	if (ret != 1) {
 		upslogx(LOG_ERR, "Can not set minimum protocol to TLSv1");
 		return -1;
 	}
-#endif
+# endif
 
 	if (!certpath) {
 		if (certverify == 1) {
@@ -684,7 +684,7 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
-#ifdef WITH_OPENSSL
+# ifdef WITH_OPENSSL
 		/* SSL_* routines deal with int type for return and buflen
 		 * We might need to window our I/O if we exceed 2GB (in
 		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
@@ -695,12 +695,12 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 		iret = SSL_read(ups->ssl, buf, (int)buflen);
 		assert(iret <= SSIZE_MAX);
 		ret = (ssize_t)iret;
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+# elif defined(WITH_NSS) /* WITH_OPENSSL */
 		/* PR_* routines deal in PRInt32 type
 		 * We might need to window our I/O if we exceed 2GB :) */
 		assert(buflen <= PR_INT32_MAX);
 		ret = PR_Read(ups->ssl, buf, (PRInt32)buflen);
-#endif	/* WITH_OPENSSL | WITH_NSS*/
+# endif	/* WITH_OPENSSL | WITH_NSS*/
 
 		if (ret < 1) {
 			ups->upserror = UPSCLI_ERR_SSLERR;
@@ -708,7 +708,7 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 
 		return ret;
 	}
-#endif
+#endif	/* WITH_SSL */
 
 	ret = upscli_select_read(ups->fd, buf, buflen, timeout, 0);
 
@@ -769,7 +769,7 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
-#ifdef WITH_OPENSSL
+# ifdef WITH_OPENSSL
 		/* SSL_* routines deal with int type for return and buflen
 		 * We might need to window our I/O if we exceed 2GB (in
 		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
@@ -780,12 +780,12 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 		iret = SSL_write(ups->ssl, buf, (int)buflen);
 		assert(iret <= SSIZE_MAX);
 		ret = (ssize_t)iret;
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+# elif defined(WITH_NSS) /* WITH_OPENSSL */
 		/* PR_* routines deal in PRInt32 type
 		 * We might need to window our I/O if we exceed 2GB :) */
 		assert(buflen <= PR_INT32_MAX);
 		ret = PR_Write(ups->ssl, buf, (PRInt32)buflen);
-#endif /* WITH_OPENSSL | WITH_NSS */
+# endif /* WITH_OPENSSL | WITH_NSS */
 
 		if (ret < 1) {
 			ups->upserror = UPSCLI_ERR_SSLERR;
@@ -793,7 +793,7 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 
 		return ret;
 	}
-#endif
+#endif	/* WITH_SSL */
 
 	ret = upscli_select_write(ups->fd, buf, buflen, timeout, 0);
 
@@ -1817,13 +1817,13 @@ int upscli_disconnect(UPSCONN_t *ups)
 		SSL_free(ups->ssl);
 		ups->ssl = NULL;
 	}
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+#elif defined(WITH_NSS) /* !WITH_OPENSSL */
 	if (ups->ssl) {
 		PR_Shutdown(ups->ssl, PR_SHUTDOWN_BOTH);
 		PR_Close(ups->ssl);
 		ups->ssl = NULL;
 	}
-#endif /* WITH_OPENSSL | WITH_NSS */
+#endif	/* WITH_OPENSSL | WITH_NSS */
 
 	shutdown(ups->fd, shutdown_how);
 
@@ -1873,7 +1873,7 @@ int upscli_ssl(UPSCONN_t *ups)
 	if (ups->ssl) {
 		return 1;
 	}
-#endif /* WITH_SSL */
+#endif	/* WITH_SSL */
 
 	return 0;
 }
