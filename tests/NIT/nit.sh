@@ -438,6 +438,33 @@ PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 
+WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none"
+# NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
+# Interesting idea: build and test server with one and clients with the other...
+# SIDE NOTE: As of NUT v2.8.5, it seems that only upsmon client cares about SSL!
+case "${WITH_SSL_CLIENT}" in
+    *"without SSL"*|none|"") WITH_SSL_CLIENT="none" ;;
+    *OpenSSL*) WITH_SSL_CLIENT="OpenSSL" ;;
+    *NSS*) WITH_SSL_CLIENT="NSS" ;;
+    *) log_warn "Unexpected client SSL support reported, ignoring: ${WITH_SSL_CLIENT}" ; WITH_SSL_CLIENT="none" ;;
+esac
+log_info "Tested client binaries SSL support: ${WITH_SSL_CLIENT}"
+
+WITH_SSL_SERVER="`upsd -Dh 2>&1 | grep 'NUT data server was built with'`" || WITH_SSL_SERVER="none"
+WITH_SSL_SERVER_CLIVAL="none"
+case "${WITH_SSL_SERVER}" in
+    *"without client certificate validation"*) WITH_SSL_SERVER_CLIVAL="false" ;;
+    *"with client certificate validation"*) WITH_SSL_SERVER_CLIVAL="true" ;;
+esac
+case "${WITH_SSL_SERVER}" in
+    *"without SSL"*|none|"") WITH_SSL_SERVER="none" ;;
+    *OpenSSL*) WITH_SSL_SERVER="OpenSSL" ;;
+    *NSS*) WITH_SSL_SERVER="NSS" ;;
+    *) log_warn "Unexpected server SSL support reported, ignoring: ${WITH_SSL_SERVER}" ; WITH_SSL_SERVER="none" ;;
+esac
+log_info "Tested server binaries SSL support: ${WITH_SSL_SERVER}"
+log_info "Tested server binaries client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
+
 # Platforms vary in abilities to report this...
 I_AM_NAME=""
 get_my_user_name() {
