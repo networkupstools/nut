@@ -340,20 +340,25 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
-	const char *quiet_init_ssl;
+	const char	*quiet_init_ssl;
 #ifdef WITH_OPENSSL
-	long ret;
-	int ssl_mode = SSL_VERIFY_NONE;
+	long	ret;
+	int	ssl_mode = SSL_VERIFY_NONE;
+	/* Now these are technically "used" below for the log messaging.
+	 * Keeping macros here to remind devs that these arguments are
+	 * not really used by library code in this variant of the build.
+	 */
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+#elif defined(WITH_NSS)	/* WITH_OPENSSL */
 	SECStatus	status;
-#else
+#else	/* neither backend: */
+	/* See comment above */
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(certpath);
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
-#endif /* WITH_OPENSSL | WITH_NSS */
+#endif	/* WITH_OPENSSL | WITH_NSS */
 
 	if (upscli_initialized == 1) {
 		upslogx(LOG_WARNING, "upscli already initialized");
@@ -380,6 +385,10 @@ int upscli_init(int certverify, const char *certpath,
 	}
 
 #ifdef WITH_OPENSSL
+
+	if (certname || certpasswd) {
+		upslogx(LOG_ERR, "upscli_init called with 'certname' and/or 'certpasswd' but OpenSSL backend does not use them");
+	}
 
 # if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_load_error_strings();
@@ -492,9 +501,12 @@ int upscli_init(int certverify, const char *certpath,
 	verify_certificate = certverify;
 #else
 	/* Note: historically we do not return with error here,
+	 * and nowadays have the default timeout handling etc.,
 	 * just fall through to below and treat as initialized.
 	 */
-	upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
+	if (certverify || certpath || certname || certpasswd) {
+		upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
+	}
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	upscli_initialized = 1;
@@ -516,6 +528,8 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(forcessl);
+
+	upsdebugx(1, "%s: no-op when libupsclient was not built WITH_NSS", __func__);
 #endif /* WITH_NSS */
 }
 
@@ -533,6 +547,8 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 	}
 #else
 	NUT_UNUSED_VARIABLE(hostname);
+
+	upsdebugx(4, "%s: no-op when libupsclient was not built WITH_NSS", __func__);
 #endif /* WITH_NSS */
 	return NULL;
 }
@@ -824,6 +840,8 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 #ifndef WITH_SSL
 	NUT_UNUSED_VARIABLE(ups);
 	NUT_UNUSED_VARIABLE(verifycert);
+
+	upsdebugx(1, "%s: no-op when libupsclient was not built WITH_SSL", __func__);
 
 	return 0;	/* not supported */
 
