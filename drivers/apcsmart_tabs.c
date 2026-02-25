@@ -84,6 +84,21 @@ apc_vartab_t apc_vartab[] = {
 };
 
 /*
+ * Dual-byte (multi-byte) command variable table.
+ * These are used by UPS models (e.g. SPM series) whose command set response
+ * includes dual-byte command extensions in the format: prefix + 0x3A + subcmds.
+ * Entries are marked APC_PRESENT at runtime when the UPS reports the
+ * corresponding prefix:sub pair in its command set.
+ */
+apc_vartab_dual_t apc_vartab_dual[] = {
+/* name                   prefix  sub   flags                regex */
+	{ "input.frequency",  0x9F,   0xD3, APC_POLL|APC_F_DEC,  NULL },
+	{ "battery.current",  0x9F,   0xD4, APC_POLL|APC_F_AMP,  NULL },
+
+	{ NULL, 0, 0, 0, NULL }
+};
+
+/*
  * APC commands mapped to NUT's instant commands
  * the format of extra values is matched by extended posix regex
  * APC_CMD_CUSTOM means that the instant command is handled by separate
