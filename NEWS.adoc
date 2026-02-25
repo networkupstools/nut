@@ -108,7 +108,9 @@ https://github.com/networkupstools/nut/milestone/12
      C binding to query and report SSL capabilities of the current library
      build (none, OpenSSL, Mozilla NSS): `upscli_ssl_caps_descr()` and
      `upscli_ssl_caps()`. Updated common NUT clients to report this info
-     in their detailed help banners. Done similarly for `upsd`. [issue #3328]
+     in their detailed help banners. Done similarly for `upsd`. The NIT
+     (NUT Integration Test) suite piggy-backs on this to add run-time
+     dependent tests of SSL capability. [issues #3328, #1771]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files

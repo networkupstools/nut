@@ -465,6 +465,11 @@ esac
 log_info "Tested server binaries SSL support: ${WITH_SSL_SERVER}"
 log_info "Tested server binaries client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
 
+TESTCERT_CLIENT_NAME="NIT upsmon"
+TESTCERT_CLIENT_PASS="MyPasSw0rD"
+TESTCERT_SERVER_NAME="NIT data server"
+TESTCERT_SERVER_PASS="TestS@rv!"
+
 # Platforms vary in abilities to report this...
 I_AM_NAME=""
 get_my_user_name() {
@@ -863,6 +868,56 @@ generatecfg_upsd_nodev() {
     || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
 }
 
+generatecfg_upsd_add_SSL() {
+    # May first call one of the above consumers of generatecfg_upsd_trivial()
+    if [ ! -s "$NUT_CONFPATH/upsd.conf" ] ; then
+        generatecfg_upsd_trivial
+    fi
+
+    if grep CERT "$NUT_CONFPATH/upsd.conf" >/dev/null ; then
+        # Already configured for SSL
+        return 0
+    fi
+
+    case "${WITH_SSL_SERVER}" in
+        none) return 0;;
+        OpenSSL)
+            { cat << EOF
+# OpenSSL CERTFILE: PEM file with data server cert, possibly the
+# intermediate and root CA's, and finally corresponding private key
+CERTFILE "${NUT_CONFPATH}/cert/upsd/upsd.pem"
+EOF
+            } >> "$NUT_CONFPATH/upsd.conf" \
+            && mkdir -p "${NUT_CONFPATH}/cert/upsd" \
+            || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+            ;;
+        NSS)
+            { cat << EOF
+# NSS CERTPATH: Directory with 3-file database of cert/key store
+CERTPATH "${NUT_CONFPATH}/cert/upsd"
+CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
+EOF
+
+              if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue ]; then
+                cat << EOF
+#  - 0 to not request to clients to provide any certificate
+#  - 1 to require to all clients a certificate
+#  - 2 to require to all clients a valid certificate
+CERTREQUEST 2
+EOF
+              fi
+            } >> "$NUT_CONFPATH/upsd.conf" \
+            && mkdir -p "${NUT_CONFPATH}/cert/upsd" \
+            || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+            ;;
+    esac
+
+    # FIXME: Check for old/new OS and libs to toggle this?
+    # echo "DISABLE_WEAK_SSL true" >> "$NUT_CONFPATH/upsd.conf" \
+    # || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+
+}
+
 ### upsd.users: ##################################################
 
 TESTPASS_ADMIN='mypass'
@@ -1020,6 +1075,55 @@ generatecfg_upsmon_secondary() {
     if [ $# -gt 0 ] ; then
         updatecfg_upsmon_supplies "$1"
     fi
+}
+
+generatecfg_upsmon_add_SSL() {
+    # May first call one of the above consumers of generatecfg_upsmon_trivial()
+    if [ ! -s "$NUT_CONFPATH/upsmon.conf" ] ; then
+        generatecfg_upsmon_trivial
+    fi
+
+    if grep CERTPATH "$NUT_CONFPATH/upsmon.conf" >/dev/null ; then
+        # Already configured for SSL
+        return 0
+    fi
+
+    case "${WITH_SSL_CLIENT}" in
+        none) return 0;;
+        OpenSSL)
+            { cat << EOF
+# OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
+#  CA subject name hash value (which must include our NUT server).
+#  Here we just use the path for PEM file that should be populated
+#  by the generatecfg_upsd_add_SSL() method.
+# We only support CERTPATH (to recognize servers), FORCESSL and
+# CERTVERIFY in OpenSSL builds.
+CERTPATH "${NUT_CONFPATH}/cert/upsd"
+# With OpenSSL this is the only way to configure these behaviors,
+# no CERTHOST setting here so far:
+FORCESSL 1
+CERTVERIFY 1
+EOF
+            } >> "$NUT_CONFPATH/upsmon.conf" \
+            && mkdir -p "${NUT_CONFPATH}/cert/upsd" \
+            || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+            ;;
+        NSS)
+            { cat << EOF
+# NSS CERTPATH: Directory with 3-file database of cert/key store
+CERTPATH "${NUT_CONFPATH}/cert/upsmon"
+CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
+CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
+# Defaults that NSS CERTHOST may override per-server, but
+# note that this impacts also the general upsmon behavior:
+FORCESSL 1
+CERTVERIFY 1
+EOF
+            } >> "$NUT_CONFPATH/upsmon.conf" \
+            && mkdir -p "${NUT_CONFPATH}/cert/upsmon" \
+            || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+            ;;
+    esac
 }
 
 ### ups.conf: ##################################################
