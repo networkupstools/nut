@@ -814,23 +814,28 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 # pragma GCC diagnostic pop
 #endif
 
-
-#ifdef WITH_SSL
-
 /*
- * 1 : OK
+ * 1  : OK
  * -1 : ERROR
- * 0 : SSL NOT SUPPORTED
+ * 0  : SSL NOT SUPPORTED (whether by library or by server)
  */
 static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
-#ifdef WITH_OPENSSL
+#ifndef WITH_SSL
+	NUT_UNUSED_VARIABLE(ups);
+	NUT_UNUSED_VARIABLE(verifycert);
+
+	return 0;	/* not supported */
+
+#else	/* WITH_SSL */
+
+# ifdef WITH_OPENSSL
 	int res;
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+# elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 	PRFileDesc	*socket;
 	HOST_CERT_t *cert;
-#endif /* WITH_OPENSSL | WITH_NSS */
+# endif /* WITH_OPENSSL | WITH_NSS */
 	char	buf[UPSCLI_NETBUF_LEN];
 
 	/* Intend to initialize upscli with no ssl db if not already done.
@@ -859,7 +864,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	/* upsd is happy, so let's crank up the client */
 
-#ifdef WITH_OPENSSL
+# ifdef WITH_OPENSSL
 
 	if (!ssl_ctx) {
 		upsdebugx(3, "SSL context is not available");
@@ -901,7 +906,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	return 1;
 
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+# elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	socket = PR_ImportTCPSocket(ups->fd);
 	if (socket == NULL){
@@ -990,20 +995,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	return 1;
 
-#endif /* WITH_OPENSSL | WITH_NSS */
-}
-
-#else /* WITH_SSL */
-
-static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
-{
-	NUT_UNUSED_VARIABLE(ups);
-	NUT_UNUSED_VARIABLE(verifycert);
-
-	return 0;	/* not supported */
-}
-
+# endif /* WITH_OPENSSL | WITH_NSS */
 #endif /* WITH_SSL */
+}
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval * timeout)
 {
