@@ -96,6 +96,9 @@
 #define shutdown_how 2
 #endif
 
+#include "nut_version.h"
+static const char *UPSCLI_VERSION = NUT_VERSION_MACRO;
+
 static struct {
 	int	flags;
 	const	char	*str;
@@ -1927,7 +1930,7 @@ const char *upscli_ssl_caps_descr(void)
 
 void upscli_report_build_details(void)
 {
-	upsdebugx(1, "Using NUT libupsclient library built %s", upscli_ssl_caps_descr());
+	upsdebugx(1, "Using NUT libupsclient library version %s built %s", UPSCLI_VERSION, upscli_ssl_caps_descr());
 }
 
 int upscli_set_default_connect_timeout(const char *secs) {
