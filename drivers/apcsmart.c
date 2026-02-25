@@ -5,6 +5,7 @@
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
  *           (C) 2011+ Michal Soltys <soltys@ziu.info>
  *           (C) 2024-2026  Jim Klimov <jimklimov+nut@gmail.com>
+ * 			 (C) 2026  Owen Li <geek@geeking.moe>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +38,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.38"
+#define DRIVER_VERSION	"3.39"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -51,7 +52,8 @@ upsdrv_info_t upsdrv_info = {
 	DRIVER_VERSION,
 	"Russell Kroll <rkroll@exploits.org>\n"
 	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>\n"
-	"Michal Soltys <soltys@ziu.info>",
+	"Michal Soltys <soltys@ziu.info>\n"
+	"Owen Li <geek@geeking.moe>",
 	DRV_STABLE,
 	{ &apc_tab_info, NULL }
 };

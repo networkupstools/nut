@@ -4,6 +4,7 @@
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
  *           (C) 2011+ Michal Soltys <soltys@ziu.info>
+ *           (C) 2026  Owen Li <geek@geeking.moe>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +26,7 @@
 
 #include "main.h"
 
-#define APC_TABLE_VERSION	"version 3.1"
+#define APC_TABLE_VERSION	"version 3.2"
 
 /* common flags */
 
